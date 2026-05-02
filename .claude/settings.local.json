@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node scripts/generate-test-data.mjs)",
+      "Bash(npx tsc *)",
+      "Bash(npx jest *)",
+      "Bash(kill 39715)",
+      "Bash(npm run *)",
+      "Bash(pkill -f \"next dev\")",
+      "Bash(curl -s http://localhost:3000)",
+      "mcp__Claude_in_Chrome__tabs_context_mcp",
+      "Bash(curl -s http://localhost:3001/dashboard)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" -X POST http://localhost:3001/api/demo)",
+      "Bash(curl -s http://localhost:3003/dashboard)",
+      "Bash(npx supabase *)",
+      "Bash(curl -s https://saeueexkqmubnveacepr.supabase.co/rest/v1/rpc/upsert_identity_v2 -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNhZXVlZXhrcW11Ym52ZWFjZXByIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzU3MDAwNTksImV4cCI6MjA5MzE0NjA1OX0.mrjxDjY8wYxcoP-mSKPL1owjl5BnwrlgzvN9k145ROk' -H 'Content-Type: application/json' -d '{\"p_email_hash\":\"test\",\"p_merchant_id\":\"00000000-0000-0000-0000-000000000000\",\"p_is_refund\":false,\"p_is_inr\":false,\"p_signals\":{}}')",
+      "Bash(curl -s https://saeueexkqmubnveacepr.supabase.co/rest/v1/ -H 'apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNhZXVlZXhrcW11Ym52ZWFjZXByIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzU3MDAwNTksImV4cCI6MjA5MzE0NjA1OX0.mrjxDjY8wYxcoP-mSKPL1owjl5BnwrlgzvN9k145ROk')",
+      "Bash(curl -X POST http://localhost:3005/api/audit -F file=@/Users/malikibrahim/Downloads/friendly_fraud_blind_test_2000.csv)",
+      "Bash(awk -F= '{print $1\": \"\\(length\\($2\\)>0?\"set \\(\"length\\($2\\)\" chars\\)\":\"empty\"\\)}')",
+      "Bash(npx ts-node *)",
+      "Bash(awk -F= '{print $1}')",
+      "Bash(IDENTITY_SALT=x npx ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' /tmp/test_norm.ts)",
+      "Bash(git init *)",
+      "Bash(git config *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)"
+    ]
+  }
+}

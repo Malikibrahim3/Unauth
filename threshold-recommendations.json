@@ -1,0 +1,269 @@
+{
+  "generated_at": "2026-05-02T22:38:25.011Z",
+  "dataset": "test-data/realistic_fraud_dataset.csv",
+  "rows": 2000,
+  "positives": 73,
+  "target_precision": 0.8,
+  "recommendation": {
+    "flag_threshold": 5,
+    "f1": 0.9104477611940298,
+    "precision": 1,
+    "recall": 0.8356164383561644
+  },
+  "unconstrained_best": {
+    "flag_threshold": 5,
+    "f1": 0.9104477611940298,
+    "precision": 1,
+    "recall": 0.8356164383561644
+  },
+  "sweep": [
+    {
+      "threshold": 5,
+      "precision": 1,
+      "recall": 0.8356164383561644,
+      "f1": 0.9104477611940298,
+      "tp": 61,
+      "fp": 0,
+      "fn": 12,
+      "tn": 1927
+    },
+    {
+      "threshold": 10,
+      "precision": 1,
+      "recall": 0.6164383561643836,
+      "f1": 0.7627118644067796,
+      "tp": 45,
+      "fp": 0,
+      "fn": 28,
+      "tn": 1927
+    },
+    {
+      "threshold": 15,
+      "precision": 1,
+      "recall": 0.6164383561643836,
+      "f1": 0.7627118644067796,
+      "tp": 45,
+      "fp": 0,
+      "fn": 28,
+      "tn": 1927
+    },
+    {
+      "threshold": 20,
+      "precision": 1,
+      "recall": 0.6164383561643836,
+      "f1": 0.7627118644067796,
+      "tp": 45,
+      "fp": 0,
+      "fn": 28,
+      "tn": 1927
+    },
+    {
+      "threshold": 25,
+      "precision": 1,
+      "recall": 0.6164383561643836,
+      "f1": 0.7627118644067796,
+      "tp": 45,
+      "fp": 0,
+      "fn": 28,
+      "tn": 1927
+    },
+    {
+      "threshold": 30,
+      "precision": 1,
+      "recall": 0.6164383561643836,
+      "f1": 0.7627118644067796,
+      "tp": 45,
+      "fp": 0,
+      "fn": 28,
+      "tn": 1927
+    },
+    {
+      "threshold": 35,
+      "precision": 1,
+      "recall": 0.6164383561643836,
+      "f1": 0.7627118644067796,
+      "tp": 45,
+      "fp": 0,
+      "fn": 28,
+      "tn": 1927
+    },
+    {
+      "threshold": 40,
+      "precision": 1,
+      "recall": 0.6164383561643836,
+      "f1": 0.7627118644067796,
+      "tp": 45,
+      "fp": 0,
+      "fn": 28,
+      "tn": 1927
+    },
+    {
+      "threshold": 45,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "tp": 0,
+      "fp": 0,
+      "fn": 73,
+      "tn": 1927
+    },
+    {
+      "threshold": 50,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "tp": 0,
+      "fp": 0,
+      "fn": 73,
+      "tn": 1927
+    },
+    {
+      "threshold": 55,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "tp": 0,
+      "fp": 0,
+      "fn": 73,
+      "tn": 1927
+    },
+    {
+      "threshold": 60,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "tp": 0,
+      "fp": 0,
+      "fn": 73,
+      "tn": 1927
+    },
+    {
+      "threshold": 65,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "tp": 0,
+      "fp": 0,
+      "fn": 73,
+      "tn": 1927
+    },
+    {
+      "threshold": 70,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "tp": 0,
+      "fp": 0,
+      "fn": 73,
+      "tn": 1927
+    },
+    {
+      "threshold": 75,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "tp": 0,
+      "fp": 0,
+      "fn": 73,
+      "tn": 1927
+    },
+    {
+      "threshold": 80,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "tp": 0,
+      "fp": 0,
+      "fn": 73,
+      "tn": 1927
+    },
+    {
+      "threshold": 85,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "tp": 0,
+      "fp": 0,
+      "fn": 73,
+      "tn": 1927
+    },
+    {
+      "threshold": 90,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "tp": 0,
+      "fp": 0,
+      "fn": 73,
+      "tn": 1927
+    },
+    {
+      "threshold": 95,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0,
+      "tp": 0,
+      "fp": 0,
+      "fn": 73,
+      "tn": 1927
+    }
+  ],
+  "per_signal_solo": [
+    {
+      "signal": "addressClustering",
+      "fires": 88,
+      "precision": 0.8295454545454546,
+      "recall": 1,
+      "f1": 0.906832298136646
+    },
+    {
+      "signal": "inrAbuse",
+      "fires": 45,
+      "precision": 1,
+      "recall": 0.6164383561643836,
+      "f1": 0.7627118644067796
+    },
+    {
+      "signal": "velocity",
+      "fires": 45,
+      "precision": 1,
+      "recall": 0.6164383561643836,
+      "f1": 0.7627118644067796
+    },
+    {
+      "signal": "paymentChurn",
+      "fires": 45,
+      "precision": 1,
+      "recall": 0.6164383561643836,
+      "f1": 0.7627118644067796
+    },
+    {
+      "signal": "refundRate",
+      "fires": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0
+    },
+    {
+      "signal": "inrSpeed",
+      "fires": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0
+    },
+    {
+      "signal": "emailPattern",
+      "fires": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0
+    },
+    {
+      "signal": "valueAnomaly",
+      "fires": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0
+    }
+  ]
+}
