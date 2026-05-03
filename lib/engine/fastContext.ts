@@ -1,3 +1,14 @@
+/* ────────────────────────────────────────────────────────────────────────────
+ * 🔒 LOCKED FILE — DO NOT MODIFY WITHOUT EXPLICIT USER PERMISSION 🔒
+ *
+ * Hot path of the CSV scoring pipeline. The cross-merchant profile fetch and
+ * column projections here were carefully tuned on 2026-05-03 to take the
+ * 2k-row run from ~120s back down to <15s. Reverting to `select *` or to the
+ * old `limit(10000)` cross-merchant fetch will reintroduce the perf cliff.
+ * Any change requires explicit user sign-off — see workspace memory rule
+ * "Locked CSV upload pipeline".
+ * ──────────────────────────────────────────────────────────────────────── */
+
 import type { NormalisedOrder } from './types';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { normaliseEmail, normaliseIP, normaliseAddress, normaliseCard } from '../identity/normalise';
@@ -78,6 +89,65 @@ export interface FastScoringContext {
   crossMerchantProfiles?: CrossMerchantProfile[];
   // Audit log rows accumulated during scoreBatch; flushed by worker after scoring.
   pendingAuditLogs: PendingAuditLog[];
+}
+
+/**
+ * Fetch customer_profiles whose identifier arrays overlap with the batch's
+ * identifiers, deduped by id. Used by buildFastContext for cross-merchant
+ * scoring. Replaces the old `limit(10000)` global pull.
+ *
+ * customer_profiles.{emails,ips,addresses,card_last4s} are stored as JSONB,
+ * NOT as native arrays — so the PG `&&` operator (Supabase `.overlaps()`)
+ * does not apply. We use chunked OR-of-contains (`@>`) queries instead.
+ * Each query asks "does this row's jsonb array contain ANY of these N
+ * values?" which PostgREST expresses as `or=(col.cs.[v1],col.cs.[v2],…)`.
+ */
+async function fetchCrossMerchantProfiles(
+  supabase: SupabaseClient,
+  emails: string[],
+  ips: string[],
+  addresses: string[],
+  cards: string[]
+): Promise<CrossMerchantProfile[]> {
+  const COLS =
+    'id,emails,ips,addresses,card_last4s,phones,total_orders,total_refund_claims,total_merchants_seen_at,merchant_ids';
+  const CHUNK = 100; // # of OR clauses per query — keeps URL well under limits
+
+  const fetchOne = async (col: string, values: string[]) => {
+    if (values.length === 0) return [] as CrossMerchantProfile[];
+    const chunks: string[][] = [];
+    for (let i = 0; i < values.length; i += CHUNK) chunks.push(values.slice(i, i + CHUNK));
+    const out = await Promise.all(
+      chunks.map(async (chunk) => {
+        const orExpr = chunk.map((v) => `${col}.cs.${JSON.stringify([v])}`).join(',');
+        const { data, error } = await supabase
+          .from('customer_profiles')
+          .select(COLS)
+          .gte('total_merchants_seen_at', 3)
+          .or(orExpr);
+        if (error) {
+          console.error(`[fastContext] cross-merchant or(${col}) failed: ${error.message}`);
+          return [] as CrossMerchantProfile[];
+        }
+        return (data as unknown as CrossMerchantProfile[]) ?? [];
+      })
+    );
+    return out.flat();
+  };
+
+  const [byEmail, byIp, byAddr, byCard] = await Promise.all([
+    fetchOne('emails',      emails),
+    fetchOne('ips',         ips),
+    fetchOne('addresses',   addresses),
+    fetchOne('card_last4s', cards),
+  ]);
+
+  // Dedupe by id — a profile may match on multiple identifier types.
+  const byId = new Map<string, CrossMerchantProfile>();
+  for (const p of [...byEmail, ...byIp, ...byAddr, ...byCard]) {
+    if (!byId.has(p.id)) byId.set(p.id, p);
+  }
+  return Array.from(byId.values());
 }
 
 function computePopulationRefundStats(orders: NormalisedOrder[]): { mean: number; stddev: number } {
@@ -214,6 +284,16 @@ export async function buildFastContext(
 
   // Chunks fire in parallel — no sequential for-loop, so 2000 unique emails at
   // IN_CHUNK=200 costs 1 wall-clock round-trip instead of 10 sequential ones.
+  //
+  // Column projection is critical: `select *` returned full rows including the
+  // unbounded `refund_timestamps[]` array, which can hold thousands of ISO
+  // strings per entity and dominated wire transfer time. We only project what
+  // downstream scoring + writeFraudEntities actually consume.
+  const FRAUD_ENTITY_COLS =
+    'id,entity_type,entity_value,first_seen,last_seen,total_orders,' +
+    'total_refund_claims,total_chargebacks,total_merchants,match_score_avg,' +
+    'flagged_count,refund_timestamps,refund_intervals_avg_days,' +
+    'refund_acceleration_score,fastest_claim_days';
   async function fetchEntityBatch(entityType: string, values: string[]): Promise<FraudEntity[]> {
     if (values.length === 0) return [];
     const chunks: string[][] = [];
@@ -222,14 +302,14 @@ export async function buildFastContext(
       chunks.map(async (chunk) => {
         const { data, error } = await supabase
           .from('fraud_entities')
-          .select('*')
+          .select(FRAUD_ENTITY_COLS)
           .eq('entity_type', entityType)
           .in('entity_value', chunk);
         if (error) {
           console.error(`[fastContext] fraud_entities ${entityType} fetch failed: ${error.message}`);
           return [] as FraudEntity[];
         }
-        return (data as FraudEntity[]) ?? [];
+        return (data as unknown as FraudEntity[]) ?? [];
       })
     );
     return results.flat();
@@ -292,15 +372,27 @@ export async function buildFastContext(
       fetchCoBatch('a', 'card_last4', allCards),
       fetchCoBatch('b', 'card_last4', allCards),
     ]),
-    // §1.2 — Cross-merchant profiles: fetch customer_profiles seen at 3+ merchants
-    // that do NOT include the requesting merchant (excludes self-matches).
-    // Limit to 10 000 to bound memory in pilot; production should use RPC.
+    // §1.2 — Cross-merchant profiles.
+    //
+    // PERF (2026-05-03): the previous implementation pulled up to 10 000
+    // customer_profiles rows on EVERY upload via
+    //   .gte('total_merchants_seen_at', 3).limit(10000)
+    // which (a) returned huge `emails[]/ips[]/addresses[]/card_last4s[]`
+    // arrays and (b) grew without bound as the network grew, eventually
+    // dominating wall-clock time of `buildFastContext`.
+    //
+    // We now fetch ONLY the profiles whose array columns overlap the
+    // identifiers actually present in this batch, chunked to stay under
+    // PostgREST's URL limit. For a typical 2k-row CSV this returns dozens
+    // of rows instead of 10k, and scales linearly with overlap rather than
+    // the size of the network.
     merchantId
-      ? supabase
-          .from('customer_profiles')
-          .select('id, emails, ips, addresses, card_last4s, phones, total_orders, total_refund_claims, total_merchants_seen_at, merchant_ids')
-          .gte('total_merchants_seen_at', 3)
-          .limit(10000)
+      ? fetchCrossMerchantProfiles(supabase, allEmails, allIPs, allAddresses, allCards)
+          .then((data) => ({ data, error: null }))
+          .catch((error) => {
+            console.error('[fastContext] cross-merchant fetch failed:', error?.message ?? error);
+            return { data: [] as CrossMerchantProfile[], error };
+          })
       : Promise.resolve({ data: null, error: null }),
   ]);
 

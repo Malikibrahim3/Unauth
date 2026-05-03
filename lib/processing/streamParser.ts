@@ -1,10 +1,26 @@
+/* ────────────────────────────────────────────────────────────────────────────
+ * 🔒 LOCKED FILE — DO NOT MODIFY WITHOUT EXPLICIT USER PERMISSION 🔒
+ *
+ * Stream-parses CSV uploads. The MAX_ROWS cap protects the chunked pipeline
+ * from runaway uploads; CHUNK_SIZE controls per-chunk wall-clock time on
+ * Vercel functions (must finish well under the 300s function cap). Any
+ * change requires explicit user sign-off — see workspace memory rule
+ * "Locked CSV upload pipeline".
+ * ──────────────────────────────────────────────────────────────────────── */
+
 import Papa from 'papaparse';
 import { Readable } from 'node:stream';
 import { cleanHeader } from '../csv/clean';
 import { validateHeaders } from '../csv/validate';
 import type { ParsedCsvRow } from './types';
 
-export const MAX_ROWS = 100_000;
+/** Hard cap on rows per upload. With CHUNK_SIZE=25k that's 200 chunks worst
+ *  case — still bounded but covers all realistic merchant CSVs. */
+export const MAX_ROWS = 5_000_000;
+
+/** Rows per chunk. Sized so a single chunk fits comfortably inside the 300s
+ *  Vercel function cap even with cross-merchant lookups + DB writes. */
+export const CHUNK_SIZE = 25_000;
 
 export interface StreamParseResult {
   rows: ParsedCsvRow[];

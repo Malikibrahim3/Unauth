@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { requirePermission, PERMISSIONS } from '@/lib/permissions';
+import { logAction } from '@/lib/permissions/audit';
 import { normaliseEmail, normaliseIP, normaliseAddress, normaliseCard } from '@/lib/identity/normalise';
 import { buildFastContext } from '@/lib/engine/fastContext';
 import { scoreBatch } from '@/lib/engine/fastScore';
@@ -37,6 +39,10 @@ export async function POST(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+  const service = createServiceClient();
+  const { denied, ctx } = await requirePermission(service, user.id, PERMISSIONS.LOOKUP_CUSTOMER);
+  if (denied) return denied;
+
   const body = await request.json().catch(() => ({}));
   const rawEmail   = (body.email   ?? '').trim();
   const rawName    = (body.name    ?? '').trim();
@@ -49,8 +55,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Shared rate limit with the main lookup endpoint
-  const service = createServiceClient();
-  const merchantId = user.id;
+  const merchantId = ctx.merchantId;
   const today = new Date().toISOString().slice(0, 10) as unknown as Date;
 
   const { data: newCount, error: countError } = await service.rpc(
@@ -143,6 +148,7 @@ export async function POST(request: NextRequest) {
       normCard    ? hashIdentifier(normCard)    : null,
     ].filter(Boolean) as string[];
 
+    logAction({ ctx: ctx as any, action: 'quick_score', resourceType: 'lookup', ip });
     service.from('access_audit_log').insert({
       merchant_id: merchantId,
       query_type: 'quick_score',

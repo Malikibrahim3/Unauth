@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { requirePermission, PERMISSIONS } from '@/lib/permissions'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,13 +19,18 @@ export async function GET(
     return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
   }
 
+  const serviceRole = createServiceClient()
+  const { denied, ctx } = await requirePermission(serviceRole, user.id, PERMISSIONS.VIEW_CUSTOMERS)
+  if (denied) return denied
+
   const { id } = params
 
-  // Verify merchant owns this package (RLS would also block, but be explicit)
-  const { data: packageRow, error: pkgError } = await supabase
+  // Verify merchant owns this package
+  const { data: packageRow, error: pkgError } = await serviceRole
     .from('evidence_packages')
     .select('id, pdf_storage_path, reference_number, merchant_id')
     .eq('id', id)
+    .eq('merchant_id', ctx.merchantId)
     .single() as unknown as {
       data: { id: string; pdf_storage_path: string | null; reference_number: string; merchant_id: string } | null
       error: unknown
@@ -34,15 +40,10 @@ export async function GET(
     return NextResponse.json({ error: 'Package not found' }, { status: 404 })
   }
 
-  if (packageRow.merchant_id !== user.id) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
-
   if (!packageRow.pdf_storage_path) {
     return NextResponse.json({ error: 'PDF not available' }, { status: 404 })
   }
 
-  const serviceRole = createServiceClient()
   const { data: fileData, error: dlError } = await serviceRole.storage
     .from('evidence-packages')
     .download(packageRow.pdf_storage_path)

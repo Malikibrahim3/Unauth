@@ -56,12 +56,21 @@ export default async function EvidenceDetailPage({ params }: Props) {
 
   return (
     <div className="p-8 max-w-4xl mx-auto space-y-6">
-      {/* Breadcrumb */}
-      <nav className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
-        <Link href="/chargebacks" className="hover:underline">Evidence Packages</Link>
-        <span>/</span>
-        <span style={{ color: 'var(--text)' }}>{pkg.reference_number}</span>
-      </nav>
+      {/* Back navigation */}
+      <div className="flex items-center gap-3" style={{ color: 'var(--text-muted)' }}>
+        <Link
+          href="/chargebacks"
+          className="inline-flex items-center gap-1.5 text-sm transition-colors hover:opacity-80"
+          style={{ color: 'var(--text-muted)' }}
+        >
+          <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+          </svg>
+          Back to Evidence Packages
+        </Link>
+        <span style={{ color: 'var(--border)' }}>/</span>
+        <span className="text-sm" style={{ color: 'var(--text)' }}>{pkg.reference_number}</span>
+      </div>
 
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
@@ -84,13 +93,6 @@ export default async function EvidenceDetailPage({ params }: Props) {
               Download PDF ⤓
             </a>
           )}
-          <Link
-            href="/chargebacks"
-            className="text-xs hover:underline"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            ← Back
-          </Link>
         </div>
       </div>
 

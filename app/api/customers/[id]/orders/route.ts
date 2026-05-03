@@ -3,7 +3,8 @@
 // Returns order list for a customer profile (for evidence package creation).
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { requirePermission, PERMISSIONS } from '@/lib/permissions'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,13 +16,18 @@ export async function GET(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
 
+  const service = createServiceClient()
+  const { denied, ctx } = await requirePermission(service, user.id, PERMISSIONS.VIEW_CUSTOMERS)
+  if (denied) return denied
+
   const { id: profileId } = params
 
   // Fetch profile
-  const { data: profileRow } = await supabase
+  const { data: profileRow } = await service
     .from('customer_profiles')
     .select('emails')
     .eq('id', profileId)
+    .eq('merchant_id', ctx.merchantId)
     .single() as unknown as { data: { emails: string[] } | null }
 
   if (!profileRow) {
@@ -29,7 +35,7 @@ export async function GET(
   }
 
   // Fetch orders matching this profile
-  const { data: txRows } = await supabase
+  const { data: txRows } = await service
     .from('audit_transactions')
     .select('id, order_id, processed_at, order_value, refund_claimed')
     .in('customer_email', profileRow.emails ?? [])

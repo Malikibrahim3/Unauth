@@ -252,7 +252,7 @@
 - `processCsvJob` and `app/api/process-csv-job` assume the `merchant-csv-uploads-2` bucket exists and that queue rows are claimed atomically.
 - The data-quality banner and lookup rate limiting depend on specific RPCs and table columns being present (`data_quality`, `lookup_daily_counts`, `increment_lookup_count`).
 - `CustomerIntelligenceDrawer`, `CustomerProfilePage`, and `API /api/customers/[id]` are tightly coupled; changes to one should be reflected in the others.
-- Several views rely on `localStorage` keys for dismissal state (`unauth.riskLegend.dismissed`, `unauth.dqBanner.*`, `unauth.shopifyGuide.open`).
+ - Several views rely on `localStorage` keys for dismissal state (`unauth.riskLegend.dismissed`, `unauth.dqBanner.*`, `unauth.exportGuide.open`).
 
 ## Design System Entry Points
 - **Theme:** `app/globals.css` and `tailwind.config.ts` define the color tokens, borders, radii, and base background/foreground styles.

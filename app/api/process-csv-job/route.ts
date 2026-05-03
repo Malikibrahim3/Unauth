@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { requirePermission, PERMISSIONS } from '@/lib/permissions';
+import { logAction } from '@/lib/permissions/audit';
 import { streamParseCsv, MAX_ROWS } from '@/lib/processing/streamParser';
 import { updateJobTotalRows, completeJob } from '@/lib/processing/job';
 import { processCsvJob } from '@/lib/processing/worker';
@@ -85,6 +87,8 @@ export async function POST(request: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
 
   const serviceClient = createServiceClient();
+  const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.UPLOAD_CSV);
+  if (denied) return denied;
 
   const { jobId } = await request.json();
 
@@ -96,9 +100,11 @@ export async function POST(request: NextRequest) {
     .select('merchant_id')
     .eq('id', jobId)
     .single();
-  if (!jobOwner || jobOwner.merchant_id !== user.id) {
+  if (!jobOwner || jobOwner.merchant_id !== ctx.merchantId) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
+
+  logAction({ ctx, action: 'upload_csv', resourceType: 'job', resourceId: jobId });
 
   // Step 1: Query csv_upload_queue for the specific job
   const { data: queueItem, error: queueError } = await serviceClient

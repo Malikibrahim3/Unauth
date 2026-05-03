@@ -1,29 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { requirePermission, PERMISSIONS } from '@/lib/permissions';
+import { logAction } from '@/lib/permissions/audit';
 
 export async function PATCH(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown';
+
+  const userClient = createClient();
+  const { data: { user } } = await userClient.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
 
-  // Scope to the merchant's own processing_jobs via the merchants → processing_jobs relationship
-  const { data: merchant } = await supabase
-    .from('merchants')
-    .select('id')
-    .eq('user_id', user.id)
-    .single();
+  const serviceClient = createServiceClient();
+  const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.HIDE_JOB);
+  if (denied) return denied;
 
-  if (!merchant) return NextResponse.json({ error: 'Merchant not found' }, { status: 404 });
-
-  const { error } = await supabase
+  const { error } = await serviceClient
     .from('processing_jobs')
     .update({ hidden_by_merchant: true } as any)
     .eq('id', params.id)
-    .eq('merchant_id', merchant.id);
+    .eq('merchant_id', ctx.merchantId);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  logAction({
+    ctx,
+    action: 'hide_job',
+    resourceType: 'processing_job',
+    resourceId: params.id,
+    ip,
+  });
+
   return NextResponse.json({ ok: true });
 }

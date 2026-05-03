@@ -3,7 +3,24 @@ import type { Database } from '../supabase/types';
 
 export type ServiceClient = SupabaseClient<Database>;
 
-export async function createJob(serviceClient: ServiceClient, merchantId: string, filename?: string): Promise<string> {
+export interface CreateJobOptions {
+  filename?: string;
+  label?: string;
+  dateRangeStart?: string; // ISO date string YYYY-MM-DD
+  dateRangeEnd?: string;   // ISO date string YYYY-MM-DD
+  uploadType?: 'standard' | 'historical' | 'investigation';
+}
+
+export async function createJob(
+  serviceClient: ServiceClient,
+  merchantId: string,
+  filenameOrOptions?: string | CreateJobOptions,
+): Promise<string> {
+  const opts: CreateJobOptions =
+    typeof filenameOrOptions === 'string'
+      ? { filename: filenameOrOptions }
+      : (filenameOrOptions ?? {});
+
   const { data, error } = await serviceClient
     .from('processing_jobs')
     .insert({
@@ -12,9 +29,13 @@ export async function createJob(serviceClient: ServiceClient, merchantId: string
       total_rows: 0,
       processed_rows: 0,
       failed_rows: 0,
-      filename: filename ?? 'unknown.csv',
+      filename: opts.filename ?? 'unknown.csv',
       hidden_by_merchant: false,
-    })
+      label: opts.label ?? null,
+      date_range_start: opts.dateRangeStart ?? null,
+      date_range_end: opts.dateRangeEnd ?? null,
+      upload_type: opts.uploadType ?? 'standard',
+    } as any)
     .select('id')
     .single();
 

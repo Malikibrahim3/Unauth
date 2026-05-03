@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { requirePermission, PERMISSIONS } from '@/lib/permissions';
+import { logAction } from '@/lib/permissions/audit';
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: { runId: string } }
 ) {
   const { runId } = params;
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown';
 
-  // Auth guard
+  // ── Auth + permission ─────────────────────────────────────────────────────
   const userClient = await createClient();
   const { data: { user }, error: authError } = await userClient.auth.getUser();
   if (authError || !user) {
@@ -15,8 +18,10 @@ export async function GET(
   }
 
   const serviceClient = createServiceClient();
+  const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.EXPORT_AUDIT);
+  if (denied) return denied;
 
-  // Verify ownership
+  // ── Verify ownership (must belong to this merchant) ──────────────────────
   const { data: job, error: jobError } = await serviceClient
     .from('processing_jobs')
     .select('id, merchant_id')
@@ -26,7 +31,7 @@ export async function GET(
   if (jobError || !job) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
-  if (job.merchant_id !== user.id) {
+  if (job.merchant_id !== ctx.merchantId) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
@@ -66,6 +71,16 @@ export async function GET(
 
   const csv = csvLines.join('\n');
   const fileName = `audit-${runId.slice(0, 8)}.csv`;
+
+  // ── Audit log ─────────────────────────────────────────────────────────────
+  logAction({
+    ctx,
+    action: 'export_audit',
+    resourceType: 'processing_job',
+    resourceId: runId,
+    metadata: { rowCount: rows?.length ?? 0 },
+    ip,
+  });
 
   return new NextResponse(csv, {
     status: 200,

@@ -56,6 +56,25 @@ function createMockSupabase(options?: {
                 });
                 return chain;
               },
+              // JSONB-aware OR of contains: emails.cs.["v1"],ips.cs.["v2"],…
+              or: (expr: string) => {
+                const clauses = expr.split(',').map((c) => {
+                  const m = c.match(/^([a-z_]+)\.cs\.(.+)$/);
+                  if (!m) return null;
+                  const col = m[1];
+                  let parsed: unknown;
+                  try { parsed = JSON.parse(m[2]); } catch { parsed = []; }
+                  const wanted = Array.isArray(parsed) ? (parsed as string[]) : [];
+                  return { col, wanted };
+                }).filter(Boolean) as { col: string; wanted: string[] }[];
+                filteredProfiles = filteredProfiles.filter((p) =>
+                  clauses.some((cl) => {
+                    const arr = ((p as any)[cl.col] as string[]) ?? [];
+                    return cl.wanted.every((v) => arr.includes(v));
+                  })
+                );
+                return chain;
+              },
               // Keep existing methods for resolveCustomerProfile tests
               contains: (_col: string, _val: string) => chain,
               gte: (col: string, val: number) => {
@@ -788,6 +807,7 @@ describe('Entity Resolution', () => {
           if (table === 'customer_profiles') {
             const emptySelectChain: any = {
               overlaps: () => emptySelectChain,
+              or:       () => emptySelectChain,
               gte:      () => emptySelectChain,
               contains: () => emptySelectChain,
               limit:    () => emptySelectChain,

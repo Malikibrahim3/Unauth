@@ -1,6 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { createServiceClient } from '@/lib/supabase/server';
-import { createServerClient } from '@supabase/ssr';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { scoreOrders } from '@/lib/engine';
 import { computeMetrics } from '@/lib/eval/metrics';
 import { createJob, completeJob } from '@/lib/processing/job';
@@ -240,23 +239,7 @@ function generateDemoOrders(): DemoOrder[] {
 
 export async function POST(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('Authorization');
-    const token = authHeader?.replace('Bearer ', '');
-
-    const supabase = createServerClient<Database>(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            if (name === 'sb-saeueexkqmubnveacepr-auth-token' && token) return token;
-            return request.cookies.get(name)?.value;
-          },
-          set() {},
-          remove() {},
-        },
-      }
-    );
+    const supabase = createClient();
     const serviceClient = createServiceClient();
 
     const { data: { user } } = await supabase.auth.getUser();

@@ -72,7 +72,6 @@ function buildGroups(inboxCount = 0, watchlistCount = 0): NavGroup[] {
       label: 'Investigations',
       items: [
         { href: '/customers',   label: 'Customers',   icon: Users },
-        { href: '/lookup',      label: 'Lookup',      icon: Search },
         { href: '/watchlist',   label: 'Watchlist',   icon: Star, badge: watchlistCount },
         { href: '/chargebacks', label: 'Evidence',    icon: ShieldCheck },
       ],

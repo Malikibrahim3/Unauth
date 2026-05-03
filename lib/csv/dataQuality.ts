@@ -125,7 +125,7 @@ const RECOMMENDATION_CATALOGUE: Record<
     impact:
       'Strongest single identity signal. A PSP card token is unique to a card across all merchants using the same PSP — even if the customer changes their email or address.',
     howToExport:
-      'Not available in standard Shopify exports. Available in Stripe Dashboard → Payments → export with "Payment method fingerprint" column. In Adyen: Transaction Overview export. Most small merchants will not have this field.',
+      'Not available in standard platform exports. Available in Stripe Dashboard → Payments → export with "Payment method fingerprint" column. In Adyen: Transaction Overview export. Most small merchants will not have this field.',
   },
   browser_fingerprint: {
     humanLabel: 'Browser fingerprint',
@@ -139,63 +139,63 @@ const RECOMMENDATION_CATALOGUE: Record<
     impact:
       'Persistent device identifier — survives email and account changes on the same physical device.',
     howToExport:
-      'Not available in standard Shopify or WooCommerce exports. Requires a device fingerprinting library in your storefront.',
+      'Not available in standard platform exports. Requires a device fingerprinting library (e.g. FingerprintJS) installed on your storefront.',
   },
   ip_address: {
     humanLabel: 'IP address',
     impact:
       'Links orders placed from the same location. Especially useful when combined with other signals.',
     howToExport:
-      'Shopify: The IP address is visible in the Orders admin but is NOT included in the standard CSV export. To include it, use a third-party export app such as "Easy Export" or "Order Printer Pro" and enable the IP address column. WooCommerce: Available in the database; exportable via the WP All Export plugin.',
+      'IP addresses are often visible in the order admin UI but are NOT included in many default CSV exports. To include IP addresses in bulk, use a third-party export app or your platform\'s reporting tools; for some platforms (e.g. WooCommerce) it may be available via plugins or direct DB export.',
   },
   card_last4: {
     humanLabel: 'Card last 4 digits',
     impact:
       'Enables card matching between different email addresses. Weaker than card fingerprint but widely available.',
     howToExport:
-      'Shopify: Orders export → the "Credit Card Last 4" column is included by default in most exports. WooCommerce: Available in the standard order export if you use WooCommerce Payments.',
+      'Many platform order exports include a "Credit Card Last 4" column. If it\'s not present, check your platform export settings or your PSP\'s reporting portal.',
   },
   cookie_id: {
     humanLabel: 'Cookie / session ID',
     impact:
       'Persistent first-party browser cookie — survives incognito mode if the same browser profile is reused.',
     howToExport:
-      'Not available in standard platform exports. Requires custom session tracking in your storefront.',
+      'Not available in standard platform exports. Requires custom session tracking or first-party cookie instrumentation in your storefront.',
   },
   card_bin: {
     humanLabel: 'Card BIN (first 6–8 digits)',
     impact:
       'Combined with last 4, creates a near-unique card identifier. Significantly improves card matching accuracy.',
     howToExport:
-      'Available in Stripe exports. In Shopify, the BIN is not exported directly — your PSP may include it in their own reporting portal.',
+      'Available in Stripe exports. In some platforms the BIN is not exported directly — your PSP may include it in their own reporting portal.',
   },
   customer_phone: {
     humanLabel: 'Customer phone number',
     impact:
       'Phone numbers are harder to change than email addresses. Strong corroborating signal when other identity signals are weak.',
     howToExport:
-      'Shopify: Orders export includes "Billing Phone" and "Shipping Phone" columns by default.',
+      'Most platform order exports include billing and shipping phone columns. Check your export columns or platform documentation.',
   },
   billing_address: {
     humanLabel: 'Billing address',
     impact:
       'Separate from shipping address — a systematic mismatch between billing and delivery can be a meaningful pattern.',
     howToExport:
-      'Shopify: Orders export includes all billing address columns (Billing Street, City, Province, Zip, Country).',
+      'Many platform order exports include billing address columns (street, city, region, postal code, country). Check your export columns or platform docs.',
   },
   account_id: {
     humanLabel: 'Account / customer ID',
     impact:
       'Platform customer ID definitively links multiple orders to the same account even if the email changes.',
     howToExport:
-      'Shopify: "Customer ID" column in the Orders export. WooCommerce: "Customer User ID" in order exports via WP All Export.',
+      'Some platforms include a stable customer/account ID in order exports (e.g. Customer ID). Check your platform export for an account identifier.',
   },
   payment_method: {
     humanLabel: 'Payment method',
     impact:
       'Useful for detecting patterns — e.g. the same digital wallet appearing under different names.',
     howToExport:
-      'Shopify: "Payment Method" column is included in the standard Orders export.',
+      'Payment method is commonly included in order exports as a payment method or gateway column. Check your platform export settings.',
   },
 };
 

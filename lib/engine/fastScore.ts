@@ -404,8 +404,7 @@ function refundPattern(order: NormalisedOrder, ctx: FastScoringContext): SignalR
     }
 
     // Extra penalty if faster than historical fastest
-    // Use != null so a real 0-day claim (instant refund) isn't treated as missing.
-    if (entityRecord.fastest_claim_days != null && daysToClaim < entityRecord.fastest_claim_days) {
+    if (entityRecord.fastest_claim_days && daysToClaim < entityRecord.fastest_claim_days) {
       score += 10;
       evidence.escalatingBehaviour = true;
     }

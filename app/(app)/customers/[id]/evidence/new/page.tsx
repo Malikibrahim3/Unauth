@@ -99,14 +99,23 @@ export default function EvidenceNewPage({ params, searchParams }: PageProps) {
 
   return (
     <div className="p-8 max-w-2xl mx-auto">
-      {/* Breadcrumb */}
-      <nav className="flex items-center gap-2 text-xs mb-6" style={{ color: 'var(--text-muted)' }}>
-        <Link href="/customers" className="hover:underline">Customers</Link>
-        <span>/</span>
-        <Link href={`/customers/${profileId}`} className="hover:underline">Profile</Link>
-        <span>/</span>
-        <span style={{ color: 'var(--text)' }}>Generate evidence</span>
-      </nav>
+      {/* Back navigation */}
+      <div className="flex items-center gap-3 mb-6" style={{ color: 'var(--text-muted)' }}>
+        <Link
+          href={`/customers/${profileId}`}
+          className="inline-flex items-center gap-1.5 text-sm transition-colors hover:opacity-80"
+          style={{ color: 'var(--text-muted)' }}
+        >
+          <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+          </svg>
+          Back to Profile
+        </Link>
+        <span style={{ color: 'var(--border)' }}>/</span>
+        <Link href="/customers" className="text-sm hover:opacity-80 transition-colors" style={{ color: 'var(--text-muted)' }}>Customers</Link>
+        <span style={{ color: 'var(--border)' }}>/</span>
+        <span className="text-sm" style={{ color: 'var(--text)' }}>Generate evidence</span>
+      </div>
 
       <h1 className="text-heading-lg mb-1" style={{ color: 'var(--text)' }}>
         Generate chargeback evidence

@@ -440,6 +440,114 @@ export interface Database {
         };
         Relationships: [];
       };
+      user_action_log: {
+        Row: {
+          id:            string;
+          merchant_id:   string;
+          actor_user_id: string;
+          actor_role:    string;
+          action:        string;
+          resource_type: string | null;
+          resource_id:   string | null;
+          metadata:      Json | null;
+          request_ip:    string | null;
+          created_at:    string;
+        };
+        Insert: {
+          id?:           string;
+          merchant_id:   string;
+          actor_user_id: string;
+          actor_role:    string;
+          action:        string;
+          resource_type?: string | null;
+          resource_id?:   string | null;
+          metadata?:      Json | null;
+          request_ip?:    string | null;
+          created_at?:   string;
+        };
+        Update: Partial<{
+          id:            string;
+          merchant_id:   string;
+          actor_user_id: string;
+          actor_role:    string;
+          action:        string;
+          resource_type: string | null;
+          resource_id:   string | null;
+          metadata:      Json | null;
+          request_ip:    string | null;
+          created_at:    string;
+        }>;
+        Relationships: [];
+      };
+      user_permission_grants: {
+        Row: {
+          id:              string;
+          merchant_id:     string;
+          grantor_user_id: string;
+          grantee_user_id: string;
+          permission:      string;
+          revoked:         boolean;
+          granted_at:      string;
+          revoked_at:      string | null;
+        };
+        Insert: {
+          id?:             string;
+          merchant_id:     string;
+          grantor_user_id: string;
+          grantee_user_id: string;
+          permission:      string;
+          revoked?:        boolean;
+          granted_at?:     string;
+          revoked_at?:     string | null;
+        };
+        Update: Partial<{
+          id:              string;
+          merchant_id:     string;
+          grantor_user_id: string;
+          grantee_user_id: string;
+          permission:      string;
+          revoked:         boolean;
+          granted_at:      string;
+          revoked_at:      string | null;
+        }>;
+        Relationships: [];
+      };
+      merchant_members: {
+        Row: {
+          id:            string;
+          merchant_id:   string;
+          user_id:       string | null;
+          invited_email: string;
+          role:          string;
+          invite_status: string;
+          invited_by:    string | null;
+          created_at:    string;
+          accepted_at:   string | null;
+        };
+        Insert: {
+          id?:           string;
+          merchant_id:   string;
+          user_id?:      string | null;
+          invited_email: string;
+          role?:         string;
+          invite_status?: string;
+          invited_by?:   string | null;
+          created_at?:   string;
+          accepted_at?:  string | null;
+        };
+        Update: Partial<{
+          id:            string;
+          merchant_id:   string;
+          user_id:       string | null;
+          invited_email: string;
+          role:          string;
+          invite_status: string;
+          invited_by:    string | null;
+          created_at:    string;
+          accepted_at:   string | null;
+        }>;
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;

@@ -23,20 +23,9 @@ export default async function DashboardPage() {
 
   const totalTransactions = typedRuns.reduce((sum, r) => sum + r.total_rows, 0);
   const totalFlagged = typedRuns.reduce((sum, r) => sum + (r.flagged_count ?? 0), 0);
+  const avgFlagRate = totalTransactions > 0 ? (totalFlagged / totalTransactions) * 100 : null;
 
   const isEmpty = typedRuns.length === 0;
-
-  // Cross-merchant status: count identities that fired crossMerchant signal in the latest audit
-  let crossMerchantCount = 0;
-  if (!isEmpty) {
-    const latestRun = typedRuns[0];
-    const { data: cmTx } = await supabase
-      .from('audit_transactions')
-      .select('id')
-      .eq('job_id', latestRun.id)
-      .contains('identity_signals', ['crossMerchant'] as any);
-    crossMerchantCount = cmTx?.length ?? 0;
-  }
 
   // Evidence packages stats
   const { data: evidenceRows } = await supabase
@@ -79,15 +68,20 @@ export default async function DashboardPage() {
       </div>
 
       {/* Aggregate stats */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-4 gap-4 mb-6">
         {[
           { label: 'Audit Runs', value: typedRuns.length.toLocaleString() },
           { label: 'Transactions Analysed', value: totalTransactions.toLocaleString() },
           { label: 'Flagged', value: totalFlagged.toLocaleString() },
-        ].map(({ label, value }) => (
+          {
+            label: 'Avg Flag Rate',
+            value: avgFlagRate !== null ? `${avgFlagRate.toFixed(1)}%` : '—',
+            highlight: avgFlagRate !== null && avgFlagRate >= 10 ? 'var(--risk-critical)' : avgFlagRate !== null && avgFlagRate >= 4 ? 'var(--risk-high)' : null,
+          },
+        ].map(({ label, value, highlight }) => (
           <div key={label} className="rounded-lg px-5 py-4 border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
             <div className="text-caption mb-1" style={{ color: 'var(--text-muted)' }}>{label}</div>
-            <div className="text-display-md font-mono" style={{ color: 'var(--text)' }}>{value}</div>
+            <div className="text-display-md font-mono" style={{ color: highlight ?? 'var(--text)' }}>{value}</div>
           </div>
         ))}
       </div>
@@ -98,12 +92,10 @@ export default async function DashboardPage() {
           <div className="mt-0.5 h-2 w-2 rounded-full flex-shrink-0 mt-1.5" style={{ background: 'var(--success)' }} />
           <div>
             <p className="text-body-sm font-semibold" style={{ color: 'var(--text)' }}>
-              Cross-merchant intelligence active
+              Per-merchant analysis
             </p>
             <p className="text-body-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>
-              {!isEmpty && crossMerchantCount > 0
-                ? `${crossMerchantCount.toLocaleString()} ${crossMerchantCount === 1 ? 'identity' : 'identities'} in the Unauth network observed across your most recent audit.`
-                : 'Your audits are contributing to the Unauth identity network. This signal activates for an identity once it has been observed at three or more merchants.'}
+              Signals are currently based on your own order history only. Cross-merchant intelligence — where identities are matched across multiple stores — is coming soon.
             </p>
           </div>
         </div>
@@ -136,6 +128,24 @@ export default async function DashboardPage() {
         </div>
       )}
 
+      {/* Most recent audit quick-link */}
+      {!isEmpty && typedRuns[0] && (typedRuns[0].status === 'completed' || typedRuns[0].status === 'complete') && (
+        <div className="rounded-lg px-5 py-4 mb-6 border flex items-center justify-between" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
+          <div>
+            <p className="text-caption mb-0.5" style={{ color: 'var(--text-muted)' }}>Latest audit</p>
+            <p className="text-body-sm font-semibold font-mono truncate max-w-xs" style={{ color: 'var(--text)' }}>{typedRuns[0].filename}</p>
+            <p className="text-caption mt-0.5" style={{ color: 'var(--text-subtle)' }}>
+              {typedRuns[0].total_rows.toLocaleString()} transactions · {(typedRuns[0].flagged_count ?? 0).toLocaleString()} flagged
+              {typedRuns[0].total_rows > 0 && (
+                <span> · {(((typedRuns[0].flagged_count ?? 0) / typedRuns[0].total_rows) * 100).toFixed(1)}% flag rate</span>
+              )}
+            </p>
+          </div>
+          <Link href={`/audit/${typedRuns[0].id}`} className="text-body-sm font-medium hover:underline flex-shrink-0 ml-4" style={{ color: 'var(--accent)' }}>
+            View audit →
+          </Link>
+        </div>
+      )}
       {isEmpty ? (
         <EmptyDashboardHero />
       ) : (

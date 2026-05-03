@@ -35,13 +35,25 @@ export default async function TransactionDetailPage({ params }: Props) {
     <div className="p-8 max-w-4xl space-y-6">
       <div>
         <div className="flex items-center gap-2 text-sm mb-1" style={{ color: 'var(--text-muted)' }}>
-          <Link href="/dashboard" className="hover:underline">Dashboard</Link>
+          <Link href="/dashboard" className="hover:opacity-80 transition-colors">Dashboard</Link>
           <span>/</span>
-          <Link href={`/audit/${params.runId}`} className="hover:underline">Audit</Link>
+          <Link href={`/audit/${params.runId}`} className="hover:opacity-80 transition-colors">Audit</Link>
           <span>/</span>
           <span>Transaction</span>
         </div>
         <h1 className="text-heading-lg">Order {txData.external_order_id}</h1>
+        <div className="mt-2">
+          <Link
+            href={`/audit/${params.runId}`}
+            className="inline-flex items-center gap-1.5 text-sm transition-colors hover:opacity-80"
+            style={{ color: 'var(--text-muted)' }}
+          >
+            <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+            </svg>
+            Back to Audit Results
+          </Link>
+        </div>
       </div>
 
       <div className="grid grid-cols-3 gap-4">
@@ -130,13 +142,6 @@ export default async function TransactionDetailPage({ params }: Props) {
           style={{ color: 'var(--text)' }}
         >
           View customer profile →
-        </Link>
-        <Link
-          href={`/audit/${params.runId}`}
-          className="text-sm hover:underline"
-          style={{ color: 'var(--text-muted)' }}
-        >
-          ← Back to audit
         </Link>
       </div>
     </div>

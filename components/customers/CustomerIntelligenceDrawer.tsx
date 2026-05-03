@@ -7,6 +7,7 @@ import ConfidenceGrade, { riskLevelToGrade } from '@/components/ConfidenceGrade'
 import WatchlistStarButton from '@/components/audit/WatchlistStarButton';
 import CustomerNotes from '@/components/audit/CustomerNotes';
 import type { CustomerIntelligencePanel } from '@/app/api/customers/[id]/route';
+import { STATUS_LABELS, STATUS_OPTIONS, statusStyle } from '@/lib/utils/investigationStatus';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -96,16 +97,13 @@ export default function CustomerIntelligenceDrawer({
   const [error, setError] = useState<string | null>(null);
   const [ordersExpanded, setOrdersExpanded] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
-  const prevProfileId = useRef<string | null>(null);
 
-  // Fetch data when profileId changes
+  // Fetch data whenever a new profileId is selected
   useEffect(() => {
     if (!profileId) {
       setPanel(null);
       return;
     }
-    if (profileId === prevProfileId.current && panel) return;
-    prevProfileId.current = profileId;
 
     setLoading(true);
     setError(null);
@@ -166,9 +164,7 @@ export default function CustomerIntelligenceDrawer({
         role="dialog"
         aria-modal="true"
         aria-label="Customer intelligence panel"
-        className={`fixed top-0 right-0 z-50 h-full w-full sm:w-[480px] shadow-2xl transform transition-transform duration-300 ease-in-out overflow-y-auto flex flex-col ${
-          isOpen ? 'translate-x-0' : 'translate-x-full'
-        }`}
+        className={`fixed top-0 right-0 z-50 h-full w-full sm:w-[624px] shadow-2xl transform transition-transform duration-300 ease-in-out overflow-y-auto flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
         style={{ background: 'var(--bg-surface)' }}
       >
         {/* Header */}
@@ -178,8 +174,9 @@ export default function CustomerIntelligenceDrawer({
             {profileId && (
               <Link
                 href={`/customers/${profileId}`}
-                className="text-xs hover:underline"
-                style={{ color: 'var(--accent)' }}
+                onClick={onClose}
+                className="text-xs px-2.5 py-1 rounded border transition-colors hover:bg-[var(--bg-subtle)]"
+                style={{ color: 'var(--text-muted)', borderColor: 'var(--border)' }}
               >
                 Full page →
               </Link>
@@ -241,6 +238,23 @@ function DrawerContent({
   const visibleOrders = ordersExpanded ? orderHistory : orderHistory.slice(0, 10);
   const variantCount = identityTimeline.filter((e) => e.isVariant).length;
 
+  // Optimistic investigation status
+  const [status, setStatus] = useState<string>((profile as any).investigation_status ?? 'new');
+  const [statusSaving, setStatusSaving] = useState(false);
+
+  async function handleStatusChange(newStatus: string) {
+    const prev = status;
+    setStatus(newStatus);
+    setStatusSaving(true);
+    const res = await fetch(`/api/customers/${profile.id}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: newStatus }),
+    });
+    if (!res.ok) setStatus(prev);
+    setStatusSaving(false);
+  }
+
   return (
     <div>
       {/* Identity summary */}
@@ -262,6 +276,7 @@ function DrawerContent({
               displayEmail={profile.primary_email ?? undefined}
               lastSeenRisk={profile.risk_level}
               initialWatchlisted={profile.on_watchlist}
+              watchlistEntryId={profile.watchlist_entry_id ?? null}
             />
           </div>
         </div>
@@ -292,6 +307,22 @@ function DrawerContent({
               style={{ width: `${profile.profile_confidence}%`, background: 'var(--info)' }}
             />
           </div>
+        </div>
+
+        {/* Investigation status */}
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Investigation status</span>
+          <select
+            value={status}
+            onChange={(e) => handleStatusChange(e.target.value)}
+            disabled={statusSaving}
+            className="text-xs rounded-md px-2.5 py-1 font-medium focus:outline-none cursor-pointer disabled:opacity-60"
+            style={statusStyle(status)}
+          >
+            {STATUS_OPTIONS.map((s) => (
+              <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+            ))}
+          </select>
         </div>
 
         {/* Identity fields */}

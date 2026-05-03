@@ -18,8 +18,13 @@ interface WatchlistTableClientProps {
   rows: WatchlistEntry[];
 }
 
-export default function WatchlistTableClient({ rows }: WatchlistTableClientProps) {
+export default function WatchlistTableClient({ rows: initialRows }: WatchlistTableClientProps) {
+  const [rows, setRows] = useState<WatchlistEntry[]>(initialRows);
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
+
+  function handleRemoved(id: string) {
+    setRows((prev) => prev.filter((r) => r.id !== id));
+  }
 
   return (
     <>
@@ -71,7 +76,7 @@ export default function WatchlistTableClient({ rows }: WatchlistTableClientProps
                   className="px-4 py-3 text-right"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <RemoveButton id={entry.id} />
+                  <RemoveButton id={entry.id} onRemoved={handleRemoved} />
                 </td>
               </tr>
             ))}

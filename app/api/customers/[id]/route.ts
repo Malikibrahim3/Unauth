@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { requirePermission, PERMISSIONS } from '@/lib/permissions';
+import { logAction } from '@/lib/permissions/audit';
 import { buildBehavioralNarrative } from '@/lib/customers/narrative';
 
 export const dynamic = 'force-dynamic';
@@ -77,24 +79,35 @@ export interface CustomerIntelligencePanel {
 // ---------------------------------------------------------------------------
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown';
+
+  const userClient = createClient();
+  const { data: { user } } = await userClient.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { id } = params;
-  const profileId = id;
+  const serviceClient = createServiceClient();
+  const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_CUSTOMERS);
+  if (denied) return denied;
+
+  const profileId = params.id;
 
   // -------------------------------------------------------------------------
   // 1. Fetch the customer profile — verify merchant has access
+  //
+  //    merchant_ids stores the merchants-table UUID for uploads processed
+  //    after the merchants table was introduced. Older uploads stored the
+  //    auth user UUID directly. Accept either to handle legacy data.
   // -------------------------------------------------------------------------
-  const { data: profileRow, error: profileError } = await supabase
+  const merchantFilter = `merchant_ids.cs.${JSON.stringify([ctx.merchantId])},merchant_ids.cs.${JSON.stringify([ctx.userId])}`;
+
+  const { data: profileRow, error: profileError } = await serviceClient
     .from('customer_profiles')
     .select('*')
     .eq('id', profileId)
-    .contains('merchant_ids', JSON.stringify([user.id]))
+    .or(merchantFilter)
     .single() as unknown as { data: Record<string, unknown> | null; error: unknown };
 
   if (profileError || !profileRow) {
@@ -106,17 +119,18 @@ export async function GET(
   // -------------------------------------------------------------------------
   // 2. Check watchlist status for this merchant
   // -------------------------------------------------------------------------
-  const { data: watchlistRow } = await supabase
+  const { data: watchlistRow } = await serviceClient
     .from('watchlist_entries')
     .select('id')
     .eq('customer_profile_id', profileId)
-    .eq('merchant_id', user.id)
+    .eq('merchant_id', ctx.merchantId)
+    .eq('removed_by_merchant', false)
     .maybeSingle() as unknown as { data: { id: string } | null };
 
   // -------------------------------------------------------------------------
   // 3. Fetch audit appearances for this merchant's jobs
   // -------------------------------------------------------------------------
-  const { data: appearances } = await supabase
+  const { data: appearances } = await serviceClient
     .from('customer_profile_audit_appearances')
     .select('audit_id')
     .eq('profile_id', profileId) as unknown as { data: { audit_id: string }[] | null };
@@ -133,7 +147,7 @@ export async function GET(
     const profileEmails = profile.emails as string[];
     const profileCards = profile.card_last4s as string[];
 
-    let txQuery = supabase
+    let txQuery = serviceClient
       .from('audit_transactions')
       .select(
         'id,job_id,order_id,customer_email,customer_name,shipping_address,device_ip,card_last4,order_value,match_score,fraud_flags,risk_level,refund_claimed,refund_reason,processed_at'
@@ -212,7 +226,7 @@ export async function GET(
   const linkedAccounts: LinkedAccount[] = [];
 
   if (profile.emails.length > 0) {
-    const { data: clusterRows } = await supabase
+    const { data: clusterRows } = await serviceClient
       .from('fraud_identity_clusters')
       .select('cluster_id,entity_type,entity_value,confidence,match_reasons')
       .in('entity_value', profile.emails)
@@ -229,7 +243,7 @@ export async function GET(
     if (clusterRows && clusterRows.length > 0) {
       const clusterIds = [...new Set(clusterRows.map((r) => r.cluster_id))];
 
-      const { data: allClusterMembers } = await supabase
+      const { data: allClusterMembers } = await serviceClient
         .from('fraud_identity_clusters')
         .select('cluster_id,entity_type,entity_value,confidence,match_reasons')
         .in('cluster_id', clusterIds)
@@ -307,6 +321,14 @@ export async function GET(
     linkedAccounts,
     narrative,
   };
+
+  logAction({
+    ctx,
+    action: 'view_customer',
+    resourceType: 'customer_profile',
+    resourceId: profileId,
+    ip,
+  });
 
   return NextResponse.json(panel);
 }

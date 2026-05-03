@@ -6,6 +6,23 @@ import type { Database } from '@/lib/supabase/types';
 
 type RunRow = Database['public']['Tables']['processing_jobs']['Row'];
 
+function formatDateRange(start?: string | null, end?: string | null): string {
+  if (!start && !end) return '—';
+  const fmt = (d: string) => {
+    const [y, m, day] = d.split('-');
+    return `${day} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][Number(m)-1]} ${y}`;
+  };
+  if (start && end) return `${fmt(start)} – ${fmt(end)}`;
+  if (start) return `From ${fmt(start)}`;
+  return `To ${fmt(end!)}`;
+}
+
+const UPLOAD_TYPE_LABELS: Record<string, string> = {
+  standard: 'Regular',
+  historical: 'Historical',
+  investigation: 'Investigation',
+};
+
 export default async function HistoryPage() {
   const supabase = createClient();
 
@@ -43,21 +60,45 @@ export default async function HistoryPage() {
           <table className="w-full text-sm">
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border-subtle)', background: 'var(--bg-subtle)' }}>
-                <th className="text-left px-4 py-2.5 text-overline">Filename</th>
+                <th className="text-left px-4 py-2.5 text-overline">Label</th>
+                <th className="text-left px-4 py-2.5 text-overline">Type</th>
+                <th className="text-left px-4 py-2.5 text-overline">Period</th>
                 <th className="text-left px-4 py-2.5 text-overline">Status</th>
                 <th className="text-right px-4 py-2.5 text-overline">Rows</th>
                 <th className="text-right px-4 py-2.5 text-overline">Flagged</th>
-                <th className="text-right px-4 py-2.5 text-overline">Flag %</th>
-                <th className="text-left px-4 py-2.5 text-overline">Date</th>
+                <th className="text-left px-4 py-2.5 text-overline">Uploaded</th>
                 <th className="px-4 py-2.5"></th>
               </tr>
             </thead>
             <tbody>
               {typedRuns.map((run) => {
                 const flagRate = run.total_rows > 0 ? (run.flagged_count ?? 0) / run.total_rows : 0;
+                const anyRun = run as any;
+                const displayLabel = anyRun.label || run.filename;
+                const period = formatDateRange(anyRun.date_range_start, anyRun.date_range_end);
+                const typeLabel = UPLOAD_TYPE_LABELS[anyRun.upload_type ?? 'standard'] ?? 'Regular';
                 return (
                   <tr key={run.id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                    <td className="px-4 py-3 font-mono text-xs max-w-xs truncate" style={{ color: 'var(--text)' }}>{run.filename}</td>
+                    <td className="px-4 py-3 max-w-xs">
+                      <span className="text-sm font-medium truncate block" style={{ color: 'var(--text)' }}>{displayLabel}</span>
+                      {anyRun.label && (
+                        <span className="text-xs font-mono truncate block" style={{ color: 'var(--text-subtle)' }}>{run.filename}</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border"
+                        style={{
+                          background: anyRun.upload_type === 'investigation' ? 'var(--info-bg)' :
+                                      anyRun.upload_type === 'historical'    ? 'var(--bg-subtle)' : 'var(--bg-subtle)',
+                          borderColor: anyRun.upload_type === 'investigation' ? 'var(--info-bd)' : 'var(--border)',
+                          color: anyRun.upload_type === 'investigation' ? 'var(--info)' : 'var(--text-muted)',
+                        }}
+                      >
+                        {typeLabel}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-muted)' }}>{period}</td>
                     <td className="px-4 py-3">
                       <span
                         className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border"
@@ -77,8 +118,14 @@ export default async function HistoryPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-right" style={{ color: 'var(--text)' }}>{run.total_rows.toLocaleString()}</td>
-                    <td className="px-4 py-3 text-right" style={{ color: 'var(--text)' }}>{(run.flagged_count ?? 0).toLocaleString()}</td>
-                    <td className="px-4 py-3 text-right" style={{ color: 'var(--text-muted)' }}>{(flagRate * 100).toFixed(1)}%</td>
+                    <td className="px-4 py-3 text-right" style={{ color: 'var(--text)' }}>
+                      {(run.flagged_count ?? 0).toLocaleString()}
+                      {run.total_rows > 0 && (
+                        <span className="ml-1 text-xs" style={{ color: 'var(--text-muted)' }}>
+                          ({(flagRate * 100).toFixed(1)}%)
+                        </span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-muted)' }}>{formatDate(run.created_at)}</td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-3">

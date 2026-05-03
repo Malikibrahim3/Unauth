@@ -4,7 +4,7 @@ This document translates the merchant-experience audit into a sequenced, build-r
 
 Each phase is self-contained: it can ship on its own without breaking the app. Phases are ordered by dependency first, then by effort.
 
-> **Scope guardrails** — Features that are **out of scope** in the audit remain out of scope here. No checkout integration, no Shopify plugin, no API for merchants, no email alerts, no multi-user, no billing, no mobile, no auto-blocking, no third-party integrations.
+> **Scope guardrails** — Features that are **out of scope** in the audit remain out of scope here. No checkout integration, no platform plugin, no API for merchants, no email alerts, no multi-user, no billing, no mobile, no auto-blocking, no third-party integrations.
 
 ---
 
@@ -273,7 +273,7 @@ Under the filter chip row, render a muted one-line description of the **currentl
 
 # Phase 2 — Upload flow
 
-Highest single risk to pilot success: a Shopify CSV fails out of the box. This phase fixes it.
+Highest single risk to pilot success: a platform CSV fails out of the box. This phase fixes it.
 
 ## 2.1 Column mapping (Finding #10)
 
@@ -336,24 +336,24 @@ Highest single risk to pilot success: a Shopify CSV fails out of the box. This p
 **Schema change** — add `csv_upload_queue.column_map JSONB` (migration `0014_csv_column_map.sql`).
 
 **Acceptance**
-- A raw, unmodified Shopify orders export uploads successfully.
+- A raw, unmodified store orders export uploads successfully.
 - When a required field cannot be auto-matched and the merchant leaves it blank, the upload button is disabled and the unmapped field is highlighted red.
 
-## 2.2 Shopify export guidance (Finding #11)
+## 2.2 Export guidance (Finding #11)
 
 **File** — `components/upload/UploadClient.tsx` — above the dropzone, add a collapsible panel:
 
 ```
-▸ How do I export this from Shopify?
+▸ How do I export this from your platform?
 ```
 
 Expanded content:
 
-> 1. In Shopify admin, go to **Orders**.
+> 1. In your store admin (e.g., Shopify), go to **Orders**.
 > 2. Click **Export** in the top right.
 > 3. Under "Export", choose **Orders by date** and pick the last 6 months.
 > 4. Choose **Plain CSV file**.
-> 5. Click **Export orders**. Shopify will email the file to you. Download it and drop it below.
+> 5. Click **Export orders**. Your platform may email the file to you; download it and drop it below.
 
 Plus one sentence under the dropzone: *"Exporting from WooCommerce, BigCommerce or Magento? Any CSV with orders, customers and refund info will work — we'll help you match the columns."*
 
@@ -752,7 +752,7 @@ Same fix in `lib/utils/format.ts` `formatCurrency` — already accepts a `curren
 |---|---|---|
 | `lib/copy/signalLabels.ts` | Single source of truth for plain-English signal names + recommended actions | 1.1 |
 | `lib/copy/uploadErrors.ts` | Human error mapper | 2.3 |
-| `lib/csv/headerAliases.ts` | Shopify / Woo / generic header → internal field mapping | 2.1 |
+| `lib/csv/headerAliases.ts` | Platform / Woo / generic header → internal field mapping | 2.1 |
 | `components/common/RiskLegend.tsx` | Dismissible risk-tier explainer strip | 1.5 |
 | `components/common/RiskTierBadge.tsx` | Badge + tooltip wrapper | 1.5 |
 | `components/common/DemoBanner.tsx` | Demo-data banner | 1.11 |

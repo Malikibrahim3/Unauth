@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import {
   normaliseEmail,
   normaliseIP,
@@ -40,6 +41,10 @@ export async function GET(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+  const service = createServiceClient();
+  const { denied, ctx } = await requirePermission(service, user.id, PERMISSIONS.LOOKUP_CUSTOMER);
+  if (denied) return denied;
+
   const { searchParams } = new URL(request.url);
   const rawEmail   = searchParams.get('email')?.trim()   ?? '';
   const rawName    = searchParams.get('name')?.trim()    ?? '';
@@ -53,11 +58,8 @@ export async function GET(request: NextRequest) {
 
   // -----------------------------------------------------------------------
   // Rate limiting: atomic per-merchant, per-day hard cap
-  // Uses increment_lookup_count RPC which does INSERT ... ON CONFLICT DO UPDATE
-  // atomically, so concurrent requests cannot both slip past the limit.
   // -----------------------------------------------------------------------
-  const service = createServiceClient();
-  const merchantId = user.id;
+  const merchantId = ctx.merchantId;
   const today = new Date().toISOString().slice(0, 10) as unknown as Date;
 
   const { data: newCount, error: countError } = await service.rpc(

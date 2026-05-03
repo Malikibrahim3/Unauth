@@ -6,36 +6,40 @@ export default function EmptyDashboardHero() {
     <div className="space-y-4">
       {/* Hero card */}
       <div
-        className="rounded-xl p-8"
+        className="rounded-xl overflow-hidden"
         style={{
-          background: 'linear-gradient(135deg, #0A0F1E 0%, #111827 100%)',
+          background: 'var(--bg-surface)',
           border: '1px solid var(--border-subtle)',
         }}
       >
-        <h2 className="font-semibold mb-2" style={{ fontSize: '24px', color: 'var(--text)' }}>
-          Run your first identity audit
-        </h2>
-        <p className="text-sm leading-relaxed mb-6 max-w-xl" style={{ color: 'var(--text-muted)' }}>
-          Upload a CSV of your orders. We&apos;ll identify customers who appear to be operating
-          multiple accounts and generate evidence you can use in chargeback disputes.
-        </p>
-        <div className="flex items-center gap-3 flex-wrap">
-          <Link
-            href="/upload"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md text-sm font-semibold"
-            style={{ background: '#6366F1', color: '#fff' }}
-          >
-            <Upload className="h-4 w-4" />
-            Upload a CSV
-            <ChevronRight className="h-4 w-4" />
-          </Link>
-          <Link
-            href="/demo"
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-md text-sm font-medium"
-            style={{ background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-muted)' }}
-          >
-            View sample audit
-          </Link>
+        {/* Accent top bar */}
+        <div className="h-1 w-full" style={{ background: 'var(--accent)' }} />
+        <div className="p-8">
+          <h2 className="font-semibold mb-2" style={{ fontSize: '24px', color: 'var(--text)' }}>
+            Run your first identity audit
+          </h2>
+          <p className="text-sm leading-relaxed mb-6 max-w-xl" style={{ color: 'var(--text-muted)' }}>
+            Upload a CSV of your orders. We&apos;ll identify customers who appear to be operating
+            multiple accounts and generate evidence you can use in chargeback disputes.
+          </p>
+          <div className="flex items-center gap-3 flex-wrap">
+            <Link
+              href="/upload"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md text-sm font-semibold transition-colors"
+              style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}
+            >
+              <Upload className="h-4 w-4" />
+              Upload a CSV
+              <ChevronRight className="h-4 w-4" />
+            </Link>
+            <Link
+              href="/demo"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-md text-sm font-medium transition-colors"
+              style={{ background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-muted)' }}
+            >
+              View sample audit
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -77,7 +81,7 @@ export default function EmptyDashboardHero() {
               { text: 'Order ID, date, customer email, and order value', note: 'required' },
               { text: 'Refund status and refund date', note: 'recommended' },
               { text: 'Phone, shipping address, payment details', note: 'optional — improves accuracy' },
-              { text: 'Any CSV from any platform — Shopify, WooCommerce, Magento, custom', note: null },
+              { text: 'Any CSV from any platform (Shopify, WooCommerce, Magento, etc.)', note: null },
             ].map(({ text, note }) => (
               <li key={text} className="flex gap-2 text-sm" style={{ color: 'var(--text-muted)' }}>
                 <span className="shrink-0 mt-0.5">•</span>

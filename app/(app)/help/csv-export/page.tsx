@@ -72,7 +72,7 @@ export default function CsvExportHelpPage() {
             name="Card last 4 digits"
             fieldKey="card_last4"
             impact="Enables card matching between different email addresses. If the same card appears under two different names, we can surface that pattern."
-            shopify="Included in the default Orders export — look for the 'Credit Card Last 4' column. If it's not there, try exporting from Orders → Export → All columns."
+            shopify="Often included in default Orders exports — look for the 'Credit Card Last 4' column. If it's not there, check your platform's export settings or your PSP's reporting." 
             woo="Available in the standard order export when using WooCommerce Payments. Look for 'Payment method title' or use WP All Export with custom fields."
             other="Most PSPs include last 4 in their transaction exports. Check your payment gateway's reporting portal."
           />
@@ -81,7 +81,7 @@ export default function CsvExportHelpPage() {
             name="IP address"
             fieldKey="ip_address"
             impact="Links orders placed from the same location — particularly useful when someone changes their email and name but uses the same Wi-Fi or mobile network."
-            shopify="The IP address is visible per order in the Shopify admin (Orders → order → scroll to Customer), but is NOT in the default CSV export. To export in bulk, use a third-party export app such as 'Easy Export' or 'Report Pundit' and enable the IP address column."
+            shopify="IP addresses are often visible in the order UI but are NOT included in many default CSV exports. To export in bulk, use a third-party export app or your platform's reporting tools — check platform docs for exact steps."
             woo="Available in the WooCommerce database (stored as order meta). Exportable via WP All Export using the '_customer_ip_address' field."
             other="Check your platform's API documentation or support team for whether IP is available in bulk exports."
           />
@@ -90,7 +90,7 @@ export default function CsvExportHelpPage() {
             name="Customer phone number"
             fieldKey="customer_phone"
             impact="Phone numbers are harder to change than email addresses. A strong corroborating signal — especially when the name varies between orders."
-            shopify="Included in the standard Orders export. Look for 'Billing Phone' and 'Shipping Phone' columns."
+            shopify="Included in most platform order exports. Look for 'Billing Phone' and 'Shipping Phone' columns or equivalent."
             woo="Included in WooCommerce order exports by default."
             other="Virtually all e-commerce platforms include phone in order exports. Check your export columns."
           />
@@ -99,7 +99,7 @@ export default function CsvExportHelpPage() {
             name="Billing address"
             fieldKey="billing_address"
             impact="A systematic mismatch between billing and delivery address can be a meaningful pattern when combined with other signals."
-            shopify="Included in the default Orders export. Columns: Billing Street, Billing City, Billing Province, Billing Zip, Billing Country."
+            shopify="Included in many platform order exports. Columns typically include billing street, city, region, postal code and country — check your export columns."
             woo="Included in WooCommerce order exports by default."
             other="Available in most platform exports alongside shipping address."
           />
@@ -110,7 +110,7 @@ export default function CsvExportHelpPage() {
             impact="The strongest single identity signal. A PSP card token is unique to a card — it identifies the physical card regardless of what email or address is used."
             shopify={
               <>
-                <strong>Not available</strong> in standard Shopify exports.
+                <strong>Not available</strong> in standard platform exports.
                 Available in{' '}
                 <strong>Stripe Dashboard</strong> → Payments → export with the
                 &ldquo;Payment method fingerprint&rdquo; column enabled.{' '}
@@ -120,14 +120,14 @@ export default function CsvExportHelpPage() {
             }
             woo="Not available in standard WooCommerce exports. Requires direct PSP-level export from Stripe or similar."
             other="Available through your PSP's reporting portal if they support card fingerprinting. Contact your PSP's support team."
-            caveat="This field requires PSP-level exports. Most merchants using Shopify Payments will not have it."
+            caveat="This field requires PSP-level exports. Most merchants using hosted payment processors will not have it."
           />
 
           <FieldRow
             name="Account / customer ID"
             fieldKey="account_id"
             impact="Definitively links multiple orders to the same logged-in account — even if the email changes between orders."
-            shopify="Available as 'Customer ID' in the Orders export. This is Shopify's internal ID for the customer account."
+            shopify="Some platforms include an internal customer/account ID in order exports. Check your platform's export for a stable customer identifier."
             woo="Available as 'Customer User ID' in WooCommerce exports via WP All Export."
             other="Check your platform for a stable customer account identifier in order exports."
           />
@@ -143,7 +143,7 @@ export default function CsvExportHelpPage() {
             name="Card BIN (first 6–8 digits)"
             fieldKey="card_bin"
             impact="Combined with last 4, creates a near-unique card identifier. Cards with the same BIN and last 4 are almost certainly the same physical card."
-            shopify="Not available in standard Shopify exports. Available in Stripe Dashboard exports."
+            shopify="Not available in many standard platform exports. Available in Stripe Dashboard exports; check your PSP reporting for BIN details."
             woo="Available via direct PSP export."
             other="Check your PSP's reporting portal."
           />
@@ -152,7 +152,7 @@ export default function CsvExportHelpPage() {
             name="Payment method"
             fieldKey="payment_method"
             impact="Useful for detecting patterns — for example, the same digital wallet appearing under different names."
-            shopify="Included as 'Payment Method' in the standard Orders export."
+            shopify="Often included as 'Payment Method' in standard order exports." 
             woo="Included as 'Payment method title' in standard WooCommerce exports."
             other="Available in virtually all platform exports."
           />
@@ -315,8 +315,8 @@ function FieldRow({
         )}
       </div>
       <div className="space-y-2 text-xs" style={{ color: 'var(--text-muted)' }}>
-        <div className="grid grid-cols-[80px_1fr] gap-2">
-          <span className="font-medium" style={{ color: 'var(--text)' }}>Shopify</span>
+        <div className="grid grid-cols-[120px_1fr] gap-2">
+          <span className="font-medium" style={{ color: 'var(--text)' }}>Platform (example)</span>
           <span>{shopify}</span>
         </div>
         <div className="grid grid-cols-[80px_1fr] gap-2">

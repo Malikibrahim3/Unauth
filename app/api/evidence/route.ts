@@ -5,23 +5,30 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { requirePermission, PERMISSIONS } from '@/lib/permissions'
+import { logAction } from '@/lib/permissions/audit'
 import { buildEvidencePackage } from '@/lib/evidence/buildPackage'
 import { buildNarrative } from '@/lib/evidence/narrative'
 import { renderEvidencePDF } from '@/lib/evidence/pdf'
 
 export const dynamic = 'force-dynamic'
-// PDF generation needs longer timeout — Vercel Pro max is 60s
 export const maxDuration = 60
 
 export async function POST(request: NextRequest) {
-  // 1. Auth
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown'
+
+  // ── Auth + permission ─────────────────────────────────────────────────────
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
     return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
   }
 
-  // 2. Validate body
+  const serviceRole = createServiceClient()
+  const { denied, ctx } = await requirePermission(serviceRole, user.id, PERMISSIONS.GENERATE_EVIDENCE)
+  if (denied) return denied
+
+  // ── Validate body ─────────────────────────────────────────────────────────
   let body: { customerProfileId?: string; disputedOrderId?: string; notes?: string }
   try {
     body = await request.json()
@@ -37,13 +44,11 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  const serviceRole = createServiceClient()
-
-  // 3. Build package (includes CE3 assessment)
+  // ── Build package ─────────────────────────────────────────────────────────
   let pkg
   try {
     pkg = await buildEvidencePackage(
-      user.id,
+      ctx.merchantId,
       customerProfileId,
       disputedOrderId,
       serviceRole as any
@@ -95,7 +100,7 @@ export async function POST(request: NextRequest) {
   const { data: inserted, error: insertError } = await serviceRole
     .from('evidence_packages')
     .insert({
-      merchant_id:              user.id,
+      merchant_id:              ctx.merchantId,
       customer_profile_id:      customerProfileId,
       generated_for_order_id:   disputedOrderId,
       reference_number:         pkg.referenceNumber,
@@ -118,6 +123,15 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
+
+  logAction({
+    ctx,
+    action: 'generate_evidence',
+    resourceType: 'evidence_package',
+    resourceId: (inserted as any).id,
+    metadata: { customerProfileId, disputedOrderId, referenceNumber: pkg.referenceNumber },
+    ip,
+  })
 
   return NextResponse.json({
     packageId:   (inserted as any).id,

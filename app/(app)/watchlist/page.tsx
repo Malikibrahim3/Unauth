@@ -21,6 +21,7 @@ export default async function WatchlistPage() {
       .from('watchlist_entries')
       .select('*')
       .eq('merchant_id', user!.id)
+      .eq('removed_by_merchant', false)
       .order('added_at', { ascending: false }),
     supabase
       .from('customer_profile_audit_appearances')

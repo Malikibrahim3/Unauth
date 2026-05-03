@@ -1,3 +1,13 @@
+/* ────────────────────────────────────────────────────────────────────────────
+ * 🔒 LOCKED FILE — DO NOT MODIFY WITHOUT EXPLICIT USER PERMISSION 🔒
+ *
+ * Part of the CSV upload + scanning pipeline. Bulk fetch + column projection
+ * here were tuned on 2026-05-03; reverting to `select *` or per-order DB
+ * round-trips will reintroduce the 10-minute upload regression. Any change
+ * requires explicit user sign-off — see workspace memory rule
+ * "Locked CSV upload pipeline".
+ * ──────────────────────────────────────────────────────────────────────── */
+
 /**
  * Entity Resolution — Living Customer Profiles
  *
@@ -411,19 +421,60 @@ export async function processProfilesForBatch(
   const uniqueIPs    = [...new Set(orderDataList.map((od) => od.normIP).filter(Boolean))];
 
   // -------------------------------------------------------------------------
-  // 1. Bulk fetch potentially matching profiles — 3 parallel queries
+  // 1. Bulk fetch potentially matching profiles — 3 parallel queries.
+  //
+  // Project only the columns we read/mutate — `select *` was returning every
+  // unbounded array column (refund_timestamps, names, …) for every candidate
+  // profile, which dominated bandwidth on large batches.
+  //
+  // Each `.overlaps()` URL is bounded by chunking input arrays to 100 values.
   // -------------------------------------------------------------------------
-  const [emailProfilesResult, cardProfilesResult, ipProfilesResult] = await Promise.all([
-    uniqueEmails.length > 0
-      ? serviceClient.from('customer_profiles').select('*').overlaps('emails' as any, uniqueEmails)
-      : Promise.resolve({ data: [] as CustomerProfileRow[], error: null }),
-    uniqueCards.length > 0
-      ? serviceClient.from('customer_profiles').select('*').overlaps('card_last4s' as any, uniqueCards)
-      : Promise.resolve({ data: [] as CustomerProfileRow[], error: null }),
-    uniqueIPs.length > 0
-      ? serviceClient.from('customer_profiles').select('*').overlaps('ips' as any, uniqueIPs).gte('risk_score', 50)
-      : Promise.resolve({ data: [] as CustomerProfileRow[], error: null }),
+  const PROFILE_COLS =
+    'id,primary_email,emails,ips,addresses,card_last4s,phones,names,' +
+    'risk_score,risk_level,fraud_flags,total_orders,total_refund_claims,' +
+    'total_chargebacks,total_merchants_seen_at,refund_rate,' +
+    'refund_timestamps,fastest_claim_days,avg_claim_days,' +
+    'refund_acceleration_score,merchant_ids,first_seen,last_seen,' +
+    'last_audit_id,profile_confidence,manually_reviewed,' +
+    'merchant_notes,on_watchlist';
+  // The identifier columns on customer_profiles are JSONB arrays, NOT native
+  // text[], so we cannot use `.overlaps()` (which generates the PG `&&`
+  // operator — only valid on real arrays). Instead we issue chunked
+  // OR-of-`@>` queries: "does this row's jsonb array contain ANY of these
+  // N values?" expressed in PostgREST as `or=(col.cs.[v1],col.cs.[v2],…)`.
+  const OVERLAP_CHUNK = 100;
+  const fetchProfilesByOverlap = async (
+    col: 'emails' | 'card_last4s' | 'ips',
+    values: string[],
+    extraFilter?: (q: any) => any
+  ): Promise<CustomerProfileRow[]> => {
+    if (values.length === 0) return [];
+    const chunks: string[][] = [];
+    for (let i = 0; i < values.length; i += OVERLAP_CHUNK) chunks.push(values.slice(i, i + OVERLAP_CHUNK));
+    const results = await Promise.all(
+      chunks.map(async (chunk) => {
+        const orExpr = chunk.map((v) => `${col}.cs.${JSON.stringify([v])}`).join(',');
+        let q: any = serviceClient.from('customer_profiles').select(PROFILE_COLS).or(orExpr);
+        if (extraFilter) q = extraFilter(q);
+        const { data, error } = await q;
+        if (error) {
+          console.error(`[entityResolution] or(${col}) failed: ${error.message}`);
+          return [] as CustomerProfileRow[];
+        }
+        return (data as unknown as CustomerProfileRow[]) ?? [];
+      })
+    );
+    return results.flat();
+  };
+
+  const [emailProfiles, cardProfiles, ipProfiles] = await Promise.all([
+    fetchProfilesByOverlap('emails',      uniqueEmails),
+    fetchProfilesByOverlap('card_last4s', uniqueCards),
+    fetchProfilesByOverlap('ips',         uniqueIPs, (q) => q.gte('risk_score', 50)),
   ]);
+  const emailProfilesResult = { data: emailProfiles, error: null };
+  const cardProfilesResult  = { data: cardProfiles,  error: null };
+  const ipProfilesResult    = { data: ipProfiles,    error: null };
 
   // Build lookup maps: entity value → profile (deduplicated by profile id)
   const profileByEmail = new Map<string, CustomerProfileRow>();

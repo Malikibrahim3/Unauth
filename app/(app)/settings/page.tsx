@@ -1,13 +1,21 @@
 import Link from 'next/link';
-import { Settings, User, Bell, Shield, CreditCard } from 'lucide-react';
+import { Settings, User, Bell, Shield, CreditCard, Users } from 'lucide-react';
+import BulkDeleteClient from '@/components/settings/BulkDeleteClient';
 
 const SECTIONS = [
   {
     icon: User,
     title: 'Account',
-    description: 'Manage your name, email and password.',
-    href: '#account',
-    comingSoon: true,
+    description: 'Manage your store name, email, password, and danger zone.',
+    href: '/settings/account',
+    comingSoon: false,
+  },
+  {
+    icon: Users,
+    title: 'Team & Access',
+    description: 'Invite team members, assign roles (admin, analyst, viewer), and manage access.',
+    href: '/settings/team',
+    comingSoon: false,
   },
   {
     icon: Bell,
@@ -120,6 +128,21 @@ export default function SettingsPage() {
           </a>
           .
         </p>
+      </div>
+
+      <div
+        className="rounded-lg px-5 py-4 border"
+        style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
+      >
+        <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
+          Danger zone
+        </p>
+        <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
+          Permanently delete selected app data. This does not remove our internal records.
+        </p>
+        <div className="mt-3">
+          <BulkDeleteClient />
+        </div>
       </div>
     </div>
   );

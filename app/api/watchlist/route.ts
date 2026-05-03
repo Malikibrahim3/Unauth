@@ -1,33 +1,46 @@
-import { createClient } from '@/lib/supabase/server';
-import { NextResponse } from 'next/server';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { requirePermission, PERMISSIONS } from '@/lib/permissions';
+import { logAction } from '@/lib/permissions/audit';
+import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET() {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+export async function GET(req: NextRequest) {
+  const userClient = createClient();
+  const { data: { user } } = await userClient.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { data, error } = await supabase
+  const serviceClient = createServiceClient();
+  const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_WATCHLIST);
+  if (denied) return denied;
+
+  const { data, error } = await serviceClient
     .from('watchlist_entries')
     .select('*')
-    .eq('merchant_id', user.id)
+    .eq('merchant_id', ctx.userId)
+    .eq('removed_by_merchant', false)
     .order('added_at', { ascending: false });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ entries: data });
 }
 
-export async function POST(req: Request) {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+export async function POST(req: NextRequest) {
+  const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown';
+
+  const userClient = createClient();
+  const { data: { user } } = await userClient.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const serviceClient = createServiceClient();
+  const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.MANAGE_WATCHLIST);
+  if (denied) return denied;
 
   const body = await req.json();
   const { customerProfileId, emailHash, displayName, displayEmail, lastSeenRisk } = body;
 
-  const { data, error } = await supabase
+  const { data, error } = await serviceClient
     .from('watchlist_entries')
     .upsert({
-      merchant_id: user.id,
+      merchant_id: ctx.userId,
       customer_profile_id: customerProfileId ?? null,
       email_hash: emailHash ?? null,
       display_name: displayName ?? null,
@@ -38,5 +51,15 @@ export async function POST(req: Request) {
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  logAction({
+    ctx,
+    action: 'add_to_watchlist',
+    resourceType: 'customer_profile',
+    resourceId: customerProfileId ?? undefined,
+    metadata: { displayEmail, displayName, lastSeenRisk },
+    ip,
+  });
+
   return NextResponse.json({ entry: data });
 }

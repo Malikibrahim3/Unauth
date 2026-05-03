@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { requirePermission, PERMISSIONS } from '@/lib/permissions';
+import { logAction } from '@/lib/permissions/audit';
 
 const ALL_SIGNALS = [
   'refundRate',
@@ -53,12 +55,14 @@ export async function POST(request: NextRequest) {
   const { transaction_id, outcome, signals_that_fired } = body;
   const fired = new Set(signals_that_fired);
 
-  // Auth check — must be authenticated and own the transaction
+  // Auth check — must be authenticated and have permission
   const userClient = createClient();
   const { data: { user } } = await userClient.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
 
   const supabase = createServiceClient();
+  const { denied, ctx } = await requirePermission(supabase, user.id, PERMISSIONS.SUBMIT_FRAUD_FEEDBACK);
+  if (denied) return denied;
 
   // Verify the transaction belongs to a job owned by this merchant
   const { data: txCheck } = await supabase
@@ -66,7 +70,7 @@ export async function POST(request: NextRequest) {
     .select('job_id, processing_jobs!inner(merchant_id)')
     .eq('id', transaction_id)
     .single();
-  if (!txCheck || (txCheck.processing_jobs as unknown as { merchant_id: string }).merchant_id !== user.id) {
+  if (!txCheck || (txCheck.processing_jobs as unknown as { merchant_id: string }).merchant_id !== ctx.merchantId) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
@@ -86,6 +90,16 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+
+  const ip = (request.headers.get('x-forwarded-for')?.split(',')[0].trim()) ?? 'unknown';
+  logAction({
+    ctx,
+    action: 'submit_fraud_feedback',
+    resourceType: 'transaction',
+    resourceId: transaction_id,
+    metadata: { outcome, signalsFired: Array.from(fired) },
+    ip,
+  });
 
   return NextResponse.json({
     success: true,

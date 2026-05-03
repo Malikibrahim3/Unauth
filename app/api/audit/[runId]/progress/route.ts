@@ -1,5 +1,15 @@
+/* ────────────────────────────────────────────────────────────────────────────
+ * 🔒 LOCKED FILE — DO NOT MODIFY WITHOUT EXPLICIT USER PERMISSION 🔒
+ *
+ * Polling endpoint for UploadClient.tsx. Response shape MUST remain stable
+ * (status, progressPercent, rowCount, errorMessage). Renaming fields will
+ * silently break upload progress. Any change requires explicit user sign-off
+ * — see workspace memory rule "Locked CSV upload pipeline".
+ * ──────────────────────────────────────────────────────────────────────── */
+
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 
 export async function GET(
   request: NextRequest,
@@ -11,6 +21,8 @@ export async function GET(
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
 
   const serviceClient = createServiceClient();
+  const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_AUDIT);
+  if (denied) return denied;
   const { runId } = params;
 
   const { data: job, error } = await serviceClient
@@ -20,11 +32,7 @@ export async function GET(
     .single();
 
   // Verify job belongs to the requesting merchant
-  if (error || !job || job.merchant_id !== user.id) {
-    return NextResponse.json({ error: 'Audit run not found' }, { status: 404 });
-  }
-
-  if (error || !job) {
+  if (error || !job || job.merchant_id !== ctx.merchantId) {
     return NextResponse.json({ error: 'Audit run not found' }, { status: 404 });
   }
 

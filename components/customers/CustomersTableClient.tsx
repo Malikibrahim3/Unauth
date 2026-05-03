@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 import ConfidenceGrade, { riskLevelToGrade } from '@/components/ConfidenceGrade';
 import CustomerIntelligenceDrawer from '@/components/customers/CustomerIntelligenceDrawer';
+import { STATUS_LABELS, STATUS_OPTIONS, statusStyle, type InvestigationStatus } from '@/lib/utils/investigationStatus';
 
 interface CustomerRow {
   id: string;
@@ -16,6 +16,7 @@ interface CustomerRow {
   names: string[] | null;
   on_watchlist: boolean;
   last_seen: string;
+  investigation_status: string;
 }
 
 interface CustomersTableClientProps {
@@ -24,6 +25,20 @@ interface CustomersTableClientProps {
 
 export default function CustomersTableClient({ rows }: CustomersTableClientProps) {
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
+  // Track optimistic status changes keyed by profile id
+  const [statusOverrides, setStatusOverrides] = useState<Record<string, string>>({});
+
+  async function handleStatusChange(id: string, newStatus: string) {
+    setStatusOverrides((prev) => ({ ...prev, [id]: newStatus }));
+    await fetch(`/api/customers/${id}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: newStatus }),
+    }).catch(() => {
+      // rollback on error
+      setStatusOverrides((prev) => { const copy = { ...prev }; delete copy[id]; return copy; });
+    });
+  }
 
   return (
     <>
@@ -32,6 +47,7 @@ export default function CustomersTableClient({ rows }: CustomersTableClientProps
           <thead>
             <tr className="border-b" style={{ background: 'var(--bg-subtle)', borderColor: 'var(--border-subtle)' }}>
               <th className="text-left px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Customer</th>
+              <th className="text-left px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Status</th>
               <th className="text-left px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Risk</th>
               <th className="text-right px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Score</th>
               <th className="text-right px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Orders</th>
@@ -62,6 +78,22 @@ export default function CustomersTableClient({ rows }: CustomersTableClientProps
                   </div>
                   <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{p.primary_email ?? '—'}</div>
                 </td>
+                {/* Inline status selector */}
+                <td
+                  className="px-4 py-3"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <select
+                    value={statusOverrides[p.id] ?? p.investigation_status ?? 'new'}
+                    onChange={(e) => handleStatusChange(p.id, e.target.value)}
+                    className="text-xs rounded-md px-2 py-1 font-medium focus:outline-none cursor-pointer"
+                    style={statusStyle(statusOverrides[p.id] ?? p.investigation_status ?? 'new')}
+                  >
+                    {STATUS_OPTIONS.map((s) => (
+                      <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+                    ))}
+                  </select>
+                </td>
                 <td className="px-4 py-3">
                   <ConfidenceGrade grade={riskLevelToGrade(p.risk_level)} size="sm" />
                 </td>
@@ -74,13 +106,15 @@ export default function CustomersTableClient({ rows }: CustomersTableClientProps
                   className="px-4 py-3 text-right"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <Link
-                    href={`/customers/${p.id}`}
-                    className="text-xs font-semibold hover:underline"
-                    style={{ color: 'var(--text)' }}
-                  >
-                    View →
-                  </Link>
+                  <div className="flex items-center justify-end gap-3">
+                    <button
+                      onClick={() => setSelectedProfileId(p.id)}
+                      className="text-xs font-semibold hover:underline"
+                      style={{ color: 'var(--text)' }}
+                    >
+                      View →
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}

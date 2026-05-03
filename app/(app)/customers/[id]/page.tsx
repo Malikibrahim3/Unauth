@@ -1,6 +1,6 @@
 import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { buildBehavioralNarrative } from '@/lib/customers/narrative';
 import IdentityTimeline from '@/components/customers/IdentityTimeline';
 import WatchlistStarButton from '@/components/audit/WatchlistStarButton';
@@ -58,17 +58,29 @@ export default async function CustomerProfilePage({ params }: PageProps) {
   } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
+  const svc = createServiceClient();
+  const { data: merchantRow } = await svc
+    .from('merchants')
+    .select('id')
+    .eq('user_id', user.id)
+    .maybeSingle();
+  const merchantId = merchantRow?.id ?? null;
+
   const { id } = params;
   const profileId = id;
 
   // -------------------------------------------------------------------------
   // Fetch profile
   // -------------------------------------------------------------------------
-  const { data: profileRow } = await supabase
+  const merchantFilter = merchantId
+    ? `merchant_ids.cs.${JSON.stringify([user.id])},merchant_ids.cs.${JSON.stringify([merchantId])}`
+    : `merchant_ids.cs.${JSON.stringify([user.id])}`;
+
+  const { data: profileRow } = await svc
     .from('customer_profiles')
     .select('*')
     .eq('id', profileId)
-    .contains('merchant_ids', JSON.stringify([user.id]))
+    .or(merchantFilter)
     .single() as unknown as { data: Record<string, unknown> | null };
 
   if (!profileRow) notFound();
@@ -78,17 +90,18 @@ export default async function CustomerProfilePage({ params }: PageProps) {
   // -------------------------------------------------------------------------
   // Watchlist check
   // -------------------------------------------------------------------------
-  const { data: watchlistRow } = await supabase
+  const { data: watchlistRow } = await svc
     .from('watchlist_entries')
     .select('id')
     .eq('customer_profile_id', profileId)
-    .eq('merchant_id', user.id)
+    .eq('merchant_id', merchantId ?? user.id)
+    .eq('removed_by_merchant', false)
     .maybeSingle() as unknown as { data: { id: string } | null };
 
   // -------------------------------------------------------------------------
   // Audit appearances → fetch transactions
   // -------------------------------------------------------------------------
-  const { data: appearances } = await supabase
+  const { data: appearances } = await svc
     .from('customer_profile_audit_appearances')
     .select('audit_id')
     .eq('profile_id', profileId) as unknown as { data: { audit_id: string }[] | null };
@@ -98,7 +111,7 @@ export default async function CustomerProfilePage({ params }: PageProps) {
   let transactions: Array<any> = [];
 
   if (auditIds.length > 0 && (profile.emails.length > 0 || profile.card_last4s.length > 0)) {
-    let txQuery = supabase
+    let txQuery = svc
       .from('audit_transactions')
       .select(
         'order_id,customer_email,customer_name,shipping_address,device_ip,card_last4,order_value,match_score,identity_signals,risk_level,refund_claimed,refund_reason,processed_at'
@@ -171,14 +184,21 @@ export default async function CustomerProfilePage({ params }: PageProps) {
   // -------------------------------------------------------------------------
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
-      {/* Breadcrumb */}
-      <nav className="flex items-center gap-2 text-sm mb-6" style={{ color: 'var(--text-muted)' }}>
-        <Link href="/customers" className="hover:underline">
-          Customers
+      {/* Back navigation */}
+      <div className="flex items-center gap-3 mb-6">
+        <Link
+          href="/customers"
+          className="inline-flex items-center gap-1.5 text-sm transition-colors hover:opacity-80"
+          style={{ color: 'var(--text-muted)' }}
+        >
+          <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+          </svg>
+          Back to Customers
         </Link>
-        <span>/</span>
-        <span className="font-medium truncate max-w-xs" style={{ color: 'var(--text)' }}>{displayName}</span>
-      </nav>
+        <span style={{ color: 'var(--border)' }}>/</span>
+        <span className="text-sm font-medium truncate max-w-xs" style={{ color: 'var(--text)' }}>{displayName}</span>
+      </div>
 
       {/* Page header */}
       <div className="flex items-start justify-between gap-4 mb-8">

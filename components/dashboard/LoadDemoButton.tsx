@@ -12,19 +12,10 @@ export function LoadDemoButton() {
     setLoading(true);
     setError(null);
     try {
-      // Get the Supabase session from localStorage
-      const sessionStr = localStorage.getItem('sb_saeueexkqmubnveacepr_auth_token');
-      if (!sessionStr) {
-        throw new Error('No auth session found. Please log in again.');
-      }
-
       const res = await fetch('/api/demo', {
         method: 'POST',
         credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${sessionStr}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
       });
 
       const text = await res.text();

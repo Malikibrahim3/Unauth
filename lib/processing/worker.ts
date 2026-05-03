@@ -1,3 +1,12 @@
+/* ────────────────────────────────────────────────────────────────────────────
+ * 🔒 LOCKED FILE — DO NOT MODIFY WITHOUT EXPLICIT USER PERMISSION 🔒
+ *
+ * Core of the CSV scoring pipeline. The parallel pipeline (transactions +
+ * intelligence writes) and per-batch progress reporting were tuned on
+ * 2026-05-03. Any change requires explicit user sign-off — see workspace
+ * memory rule "Locked CSV upload pipeline".
+ * ──────────────────────────────────────────────────────────────────────── */
+
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../supabase/types';
 import type { ParsedCsvRow, FraudTransactionInsert } from './types';
@@ -67,12 +76,29 @@ function rowToFraudTransaction(
   };
 }
 
+/**
+ * Optional chunked-execution metadata.
+ *
+ * When the chunked dispatcher (`/api/process-csv-chunk`) calls this function,
+ * it passes which slice of the upload these `rows` represent. We use this to:
+ *   - skip data-quality assessment except on the first chunk
+ *   - scope the post-pipeline `audit_transactions` lookup to the chunk's
+ *     order_ids only (otherwise chunk N would scan all N×CHUNK_SIZE rows)
+ */
+export interface ChunkInfo {
+  index: number;        // 0-based chunk index
+  totalChunks: number;  // how many chunks make up the full upload
+  isFirst: boolean;
+  isLast: boolean;
+}
+
 export async function processCsvJob(
   rows: Record<string, string | undefined>[],
   jobId: string,
   serviceClient: SupabaseClient<Database>,
   concurrency = DEFAULT_CONCURRENCY,
-  merchantId?: string
+  merchantId?: string,
+  chunkInfo?: ChunkInfo
 ): Promise<ScoredOrder[]> {
   const jobLog = (msg: string) => console.log(`[job ${jobId}] ${new Date().toISOString()} ${msg}`);
   const overallStart = Date.now();
@@ -98,15 +124,18 @@ export async function processCsvJob(
   const normOrders: NormalisedOrder[] = validPairs.map((p) => normaliseRow(p.parsed));
 
   // -----------------------------------------------------------------------
-  // 2b. Assess data quality and persist to the job record (non-blocking)
-  //     Merchants see a contextual banner in audit results if data is sparse.
+  // 2b. Assess data quality and persist to the job record (non-blocking).
+  //     Only on the first chunk — the data shape is fixed at upload time so
+  //     re-assessing per chunk is wasted work.
   // -----------------------------------------------------------------------
-  const dataQuality = assessDataQuality(normOrders);
-  void serviceClient
-    .from('processing_jobs')
-    .update({ data_quality: dataQuality } as any)
-    .eq('id', jobId)
-    .then(() => jobLog('Data quality report stored'));
+  if (!chunkInfo || chunkInfo.isFirst) {
+    const dataQuality = assessDataQuality(normOrders);
+    void serviceClient
+      .from('processing_jobs')
+      .update({ data_quality: dataQuality } as any)
+      .eq('id', jobId)
+      .then(() => jobLog('Data quality report stored'));
+  }
 
   // -----------------------------------------------------------------------
   // 3. Build scoring context once for the ENTIRE dataset (O(n))
@@ -243,16 +272,23 @@ export async function processCsvJob(
   // -----------------------------------------------------------------------
   if (merchantId) {
     try {
-      // Fetch the transaction IDs we just wrote so we can link appearances
-      const { data: txRows } = await serviceClient
-        .from('audit_transactions')
-        .select('id, order_id')
-        .eq('job_id', jobId);
-
+      // Fetch the transaction IDs we just wrote so we can link appearances.
+      //
+      // Scope the lookup to THIS chunk's order_ids when chunked — otherwise
+      // chunk N would scan rows from chunks 0..N-1 too, ballooning the
+      // payload as the upload progresses.
+      const chunkOrderIds = scored.map((s) => s.order.orderId);
       const txIdMap = new Map<string, string>();
-      if (txRows) {
-        for (const row of txRows) {
-          txIdMap.set(row.order_id, row.id);
+      const TX_LOOKUP_CHUNK = 500; // PostgREST URL cap — chunk the IN()
+      for (let i = 0; i < chunkOrderIds.length; i += TX_LOOKUP_CHUNK) {
+        const slice = chunkOrderIds.slice(i, i + TX_LOOKUP_CHUNK);
+        const { data: txRows } = await serviceClient
+          .from('audit_transactions')
+          .select('id, order_id')
+          .eq('job_id', jobId)
+          .in('order_id', slice);
+        if (txRows) {
+          for (const row of txRows) txIdMap.set(row.order_id, row.id);
         }
       }
 

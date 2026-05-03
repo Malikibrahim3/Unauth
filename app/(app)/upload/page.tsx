@@ -20,7 +20,7 @@ export default function UploadPage({ searchParams }: UploadPageProps) {
       )}
       <div className="mb-6">
         <h1 className="text-heading-lg">New Audit</h1>
-        <p className="text-body-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>Upload a CSV of orders to run identity matching.</p>
+        <p className="text-body-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>Upload a CSV export of your orders to detect suspicious refund patterns.</p>
       </div>
       <UploadClient />
     </div>

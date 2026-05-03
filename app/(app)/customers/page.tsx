@@ -1,7 +1,7 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import CustomersFilterBar from '@/components/customers/CustomersFilterBar';
+import CustomersFilterSheet from '@/components/customers/CustomersFilterSheet';
 import CustomersTableClient from '@/components/customers/CustomersTableClient';
 
 const PAGE_SIZE = 25;
@@ -41,6 +41,8 @@ interface PageProps {
     lastSeenTo?: string;
     // Fraud flag
     flag?: string;
+    // Investigation status
+    status?: string;
   };
 }
 
@@ -48,6 +50,16 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
+
+  // Resolve the merchants-table UUID so we can filter profiles from both
+  // legacy uploads (stored with auth user UUID) and current uploads.
+  const svc = createServiceClient();
+  const { data: merchantRow } = await svc
+    .from('merchants')
+    .select('id')
+    .eq('user_id', user.id)
+    .maybeSingle();
+  const merchantId = merchantRow?.id ?? null;
 
   const page = Math.max(1, parseInt(searchParams.page ?? '1', 10));
   const offset = (page - 1) * PAGE_SIZE;
@@ -89,12 +101,22 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
   // Fraud flag
   const flagFilter = searchParams.flag?.trim() ?? '';
 
-  let query = supabase
+  // Investigation status
+  const statusFilter = searchParams.status?.trim() ?? '';
+
+  // Scope to profiles this merchant owns — accepts both the auth-user UUID
+  // (legacy, pre-merchants-table uploads) and the merchants-table UUID (current).
+  const merchantFilter = merchantId
+    ? `merchant_ids.cs.${JSON.stringify([user.id])},merchant_ids.cs.${JSON.stringify([merchantId])}`
+    : `merchant_ids.cs.${JSON.stringify([user.id])}`;
+
+  let query = svc
     .from('customer_profiles')
     .select(
-      'id, risk_score, risk_level, total_orders, total_refund_claims, total_chargebacks, refund_rate, refund_acceleration_score, total_merchants_seen_at, fastest_claim_days, primary_email, names, on_watchlist, manually_reviewed, last_seen, first_seen, profile_confidence',
+      'id, risk_score, risk_level, total_orders, total_refund_claims, total_chargebacks, refund_rate, refund_acceleration_score, total_merchants_seen_at, fastest_claim_days, primary_email, names, on_watchlist, manually_reviewed, last_seen, first_seen, profile_confidence, investigation_status',
       { count: 'exact' }
-    );
+    )
+    .or(merchantFilter);
 
   // Text search (email or name)
   if (q.length >= 2) {
@@ -150,6 +172,11 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
     query = (query as any).ilike('identity_signals::text', `%${flagFilter}%`);
   }
 
+  // Investigation status
+  if (statusFilter) {
+    query = query.eq('investigation_status', statusFilter);
+  }
+
   switch (sort) {
     case 'recent':
       query = query.order('last_seen', { ascending: false });
@@ -198,6 +225,7 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
     last_seen: string;
     first_seen: string;
     profile_confidence: number;
+    investigation_status: string;
   }>;
 
   const total = count ?? 0;
@@ -209,14 +237,16 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
     riskMin === null && riskMax === null && refundRateMin === null && refundRateMax === null &&
     ordersMin === null && ordersMax === null && claimsMin === null && claimsMax === null &&
     chargebacksMin === null && merchantsMin === null && fastestClaimMax === null &&
-    !firstSeenFrom && !firstSeenTo && !lastSeenFrom && !lastSeenTo && !flagFilter;
+    !firstSeenFrom && !firstSeenTo && !lastSeenFrom && !lastSeenTo && !flagFilter && !statusFilter;
 
   return (
     <div className="p-8 space-y-6">
       <h1 className="text-heading-lg">Customers</h1>
-      <p className="text-body-sm" style={{ color: 'var(--text-muted)' }}>All customers identified across your audits, highest-risk first.</p>
+      <p className="text-body-sm" style={{ color: 'var(--text-muted)' }}>
+        All customers identified across your audits, highest-risk first.
+      </p>
 
-      <CustomersFilterBar />
+      <CustomersFilterSheet />
 
       {rows.length === 0 && noFilters ? (
         <div className="rounded-lg p-10" style={{ border: '1.5px dashed var(--border)' }}>

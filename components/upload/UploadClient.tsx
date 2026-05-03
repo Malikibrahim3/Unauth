@@ -2,14 +2,15 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { UploadCloud, FileText, AlertCircle, CheckCircle, ChevronDown, ChevronRight } from 'lucide-react';
+import { UploadCloud, FileText, AlertCircle, CheckCircle, ChevronDown, ChevronRight, Calendar } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { autoMapHeaders, REQUIRED_FIELDS, OPTIONAL_FIELD_GROUPS, type RequiredField } from '@/lib/csv/headerAliases';
 import { friendlyUploadError, type FriendlyError } from '@/lib/copy/uploadErrors';
 import { assessDataQualityFromMapping, type DataQualityReport } from '@/lib/csv/dataQuality';
 
-type UploadState = 'idle' | 'mapping' | 'uploading' | 'processing' | 'complete' | 'error';
+type UploadState = 'idle' | 'mapping' | 'context' | 'uploading' | 'processing' | 'complete' | 'error';
+type UploadType = 'standard' | 'historical' | 'investigation';
 
 const CSV_TEMPLATE_HEADERS =
   'order_id,order_date,customer_email,customer_name,shipping_address,order_total,order_status,currency,customer_phone,billing_address,refund_status,refund_reason,refund_date,refund_amount,payment_method,ip_address,device_id,card_last4,card_bin,card_fingerprint,browser_fingerprint,cookie_id,user_agent,asn,account_id';
@@ -59,11 +60,20 @@ export default function UploadClient() {
   const [statusText, setStatusText] = useState('Uploading…');
   const [runId, setRunId] = useState<string | null>(null);
   const [friendlyError, setFriendlyError] = useState<FriendlyError | null>(null);
-  const [shopifyOpen, setShopifyOpen] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return localStorage.getItem('unauth.shopifyGuide.open') !== '0';
-  });
-  const [shopifyFieldsOpen, setShopifyFieldsOpen] = useState(false);
+  const [uploadLabel, setUploadLabel] = useState('');
+  const [dateRangeStart, setDateRangeStart] = useState('');
+  const [dateRangeEnd, setDateRangeEnd] = useState('');
+  const [uploadType, setUploadType] = useState<UploadType>('standard');
+  const [exportGuideOpen, setExportGuideOpen] = useState(false);
+  useEffect(() => {
+    try {
+      const stored = typeof window !== 'undefined' ? localStorage.getItem('unauth.exportGuide.open') : null;
+      if (stored !== null) setExportGuideOpen(stored !== '0');
+    } catch {
+      /* ignore */
+    }
+  }, []);
+  const [exportFieldsOpen, setExportFieldsOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const requiredUnmapped = REQUIRED_FIELDS.filter((f) => !columnMap[f]);
@@ -101,6 +111,10 @@ export default function UploadClient() {
     if (state === 'mapping') setDataQuality(assessDataQualityFromMapping(columnMap));
   }, [columnMap, state]);
 
+  function proceedToContext() {
+    setState('context');
+  }
+
   async function runAudit() {
     if (!file || !canSubmit) return;
     setState('uploading');
@@ -114,13 +128,20 @@ export default function UploadClient() {
       if (!user) throw new Error('Not authenticated');
       const filePath = `${user.id}/${Date.now()}_${file.name}`;
       const { error: uploadError } = await supabase.storage
-        .from('csv-uploads')
+        .from('merchant-csv-uploads-2')
         .upload(filePath, file, { contentType: 'text/csv' });
       if (uploadError) throw uploadError;
       const res = await fetch('/api/audit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filePath, columnMap }),
+        body: JSON.stringify({
+          filePath,
+          columnMap,
+          label: uploadLabel.trim() || undefined,
+          dateRangeStart: dateRangeStart || undefined,
+          dateRangeEnd: dateRangeEnd || undefined,
+          uploadType,
+        }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
@@ -188,10 +209,10 @@ export default function UploadClient() {
     URL.revokeObjectURL(url);
   }
 
-  function toggleShopify() {
-    const next = !shopifyOpen;
-    setShopifyOpen(next);
-    localStorage.setItem('unauth.shopifyGuide.open', next ? '1' : '0');
+  function toggleExportGuide() {
+    const next = !exportGuideOpen;
+    setExportGuideOpen(next);
+    localStorage.setItem('unauth.exportGuide.open', next ? '1' : '0');
   }
 
   const isProcessing = state === 'uploading' || state === 'processing';
@@ -273,14 +294,14 @@ export default function UploadClient() {
         </div>
         <button
           type="button"
-          onClick={() => setShopifyFieldsOpen((v) => !v)}
+          onClick={() => setExportFieldsOpen((v) => !v)}
           className="flex items-center gap-1 text-xs font-semibold hover:underline"
           style={{ color: 'var(--text-muted)' }}
         >
-          {shopifyFieldsOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+          {exportFieldsOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
           How to add these fields
         </button>
-        {shopifyFieldsOpen && (
+        {exportFieldsOpen && (
           <div
             className="mt-2 pl-4 text-xs space-y-1"
             style={{ borderLeft: '2px solid var(--risk-high-bd)', color: 'var(--text-muted)' }}
@@ -307,30 +328,30 @@ export default function UploadClient() {
 
   return (
     <div className="space-y-6">
-      {/* Shopify accordion */}
+      {/* Export guidance accordion */}
       <div className="rounded-lg overflow-hidden border" style={{ borderColor: 'var(--border-subtle)' }}>
         <button
-          onClick={toggleShopify}
+          onClick={toggleExportGuide}
           className="w-full flex items-center gap-2 px-4 py-3 text-sm font-semibold text-left transition-colors"
           style={{ color: 'var(--text)' }}
           onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-subtle)')}
           onMouseLeave={(e) => (e.currentTarget.style.background = '')}
         >
-          {shopifyOpen ? (
+          {exportGuideOpen ? (
             <ChevronDown className="h-4 w-4 flex-shrink-0" />
           ) : (
             <ChevronRight className="h-4 w-4 flex-shrink-0" />
           )}
-          How do I export this from Shopify?
+          How do I export this from your platform?
         </button>
-        {shopifyOpen && (
+        {exportGuideOpen && (
           <div
             className="px-5 pb-5 pt-1 text-sm space-y-1.5"
             style={{ borderTop: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}
           >
             <ol className="list-decimal list-inside space-y-1.5">
               <li>
-                In Shopify admin, go to <strong>Orders</strong>.
+                In your store admin (e.g., Shopify), go to <strong>Orders</strong>.
               </li>
               <li>
                 Click <strong>Export</strong> in the top right.
@@ -403,7 +424,7 @@ export default function UploadClient() {
       )}
 
       {/* Column mapping panel */}
-      {state === 'mapping' && csvHeaders.length > 0 && (
+      {(state === 'mapping' || state === 'context') && csvHeaders.length > 0 && state === 'mapping' && (
         <div className="rounded-lg p-5 space-y-4 border" style={{ borderColor: 'var(--border-subtle)' }}>
           <div>
             <h3 className="text-sm font-semibold mb-0.5" style={{ color: 'var(--text)' }}>
@@ -535,6 +556,10 @@ export default function UploadClient() {
                   setColumnMap({});
                   setState('idle');
                   setDataQuality(null);
+                  setUploadLabel('');
+                  setDateRangeStart('');
+                  setDateRangeEnd('');
+                  setUploadType('standard');
                 }}
                 className="px-4 py-2 text-sm font-semibold rounded-md transition-colors border"
                 style={{ borderColor: 'var(--border)', color: 'var(--text)' }}
@@ -544,7 +569,7 @@ export default function UploadClient() {
                 Cancel
               </button>
               <button
-                onClick={runAudit}
+                onClick={proceedToContext}
                 disabled={!canSubmit}
                 className="px-5 py-2 text-sm font-semibold rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}
@@ -556,9 +581,7 @@ export default function UploadClient() {
                 }}
               >
                 {canSubmit
-                  ? dataQuality?.grade === 'minimal'
-                    ? 'Run limited analysis'
-                    : 'Upload and run audit'
+                  ? 'Continue →'
                   : `${requiredUnmapped.length} required field${requiredUnmapped.length !== 1 ? 's' : ''} unmapped`}
               </button>
             </div>
@@ -567,6 +590,151 @@ export default function UploadClient() {
                 This mapping will be saved as your default for future uploads.
               </p>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Upload context step */}
+      {state === 'context' && (
+        <div className="rounded-lg p-5 space-y-5 border" style={{ borderColor: 'var(--border-subtle)' }}>
+          <div>
+            <div className="flex items-center gap-2 mb-0.5">
+              <Calendar className="h-4 w-4" style={{ color: 'var(--icon-muted)' }} />
+              <h3 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
+                Upload context
+              </h3>
+            </div>
+            <p className="text-xs" style={{ color: 'var(--text-subtle)' }}>
+              Tell us a bit about this upload. All fields are optional — skip anything you don&apos;t need.
+            </p>
+          </div>
+
+          {/* Label */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>
+              Label
+            </label>
+            <input
+              type="text"
+              value={uploadLabel}
+              onChange={(e) => setUploadLabel(e.target.value)}
+              placeholder="e.g. January 2026, Black Friday week, Q1 2026"
+              maxLength={120}
+              className="w-full text-sm rounded-md px-3 py-2 focus:outline-none"
+              style={{
+                background: 'var(--bg-inset)',
+                border: '1px solid var(--border)',
+                color: 'var(--text)',
+              }}
+            />
+            <p className="text-xs" style={{ color: 'var(--text-subtle)' }}>
+              Appears in your audit history. Leave blank to use the upload date.
+            </p>
+          </div>
+
+          {/* Date range */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>
+              Date range this upload covers
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                type="date"
+                value={dateRangeStart}
+                onChange={(e) => setDateRangeStart(e.target.value)}
+                className="flex-1 text-sm rounded-md px-3 py-2 focus:outline-none"
+                style={{
+                  background: 'var(--bg-inset)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text)',
+                }}
+              />
+              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>to</span>
+              <input
+                type="date"
+                value={dateRangeEnd}
+                onChange={(e) => setDateRangeEnd(e.target.value)}
+                className="flex-1 text-sm rounded-md px-3 py-2 focus:outline-none"
+                style={{
+                  background: 'var(--bg-inset)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text)',
+                }}
+              />
+            </div>
+            <p className="text-xs" style={{ color: 'var(--text-subtle)' }}>
+              The order date range your export covers — not the upload date.
+            </p>
+          </div>
+
+          {/* Upload type */}
+          <div className="space-y-2">
+            <label className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>
+              Upload type
+            </label>
+            {(
+              [
+                {
+                  value: 'standard',
+                  title: 'Regular upload',
+                  description: 'Periodic export — a week, a month, a quarter.',
+                },
+                {
+                  value: 'historical',
+                  title: 'Historical import',
+                  description: 'One-time bulk import of past data. Builds your baseline without triggering new alerts.',
+                },
+                {
+                  value: 'investigation',
+                  title: 'Customer investigation',
+                  description: 'Targeted analysis for a specific customer or incident. Doesn\'t affect population statistics.',
+                },
+              ] as const
+            ).map((opt) => (
+              <label
+                key={opt.value}
+                className="flex items-start gap-3 rounded-md px-3 py-2.5 cursor-pointer border transition-colors"
+                style={{
+                  borderColor: uploadType === opt.value ? 'var(--accent)' : 'var(--border)',
+                  background: uploadType === opt.value ? 'var(--accent-subtle, var(--bg-subtle))' : 'var(--bg-subtle)',
+                }}
+              >
+                <input
+                  type="radio"
+                  name="uploadType"
+                  value={opt.value}
+                  checked={uploadType === opt.value}
+                  onChange={() => setUploadType(opt.value)}
+                  className="mt-0.5 accent-[var(--accent)]"
+                />
+                <div>
+                  <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>{opt.title}</p>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{opt.description}</p>
+                </div>
+              </label>
+            ))}
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-3">
+            <button
+              onClick={() => setState('mapping')}
+              className="px-4 py-2 text-sm font-semibold rounded-md transition-colors border"
+              style={{ borderColor: 'var(--border)', color: 'var(--text)' }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-subtle)')}
+              onMouseLeave={(e) => (e.currentTarget.style.background = '')}
+            >
+              ← Back
+            </button>
+            <button
+              onClick={runAudit}
+              className="px-5 py-2 text-sm font-semibold rounded-md transition-colors"
+              style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--accent-hover)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--accent)'; }}
+            >
+              {dataQuality?.grade === 'minimal' ? 'Run limited analysis' : 'Upload and run audit'}
+            </button>
           </div>
         </div>
       )}

@@ -28,11 +28,10 @@ export default function RiskLegend() {
       }}
     >
       <p>
-        Match confidence is 0&ndash;100.{' '}
-        <strong>Weak</strong> (0&ndash;24): low confidence.{' '}
-        <strong>Possible</strong> (25&ndash;49): worth watching.{' '}
-        <strong>Probable</strong> (50&ndash;74): likely identity match.{' '}
-        <strong>Definite</strong> (75+): high-confidence identity match.
+        <strong>Weak</strong>: low signal — keep an eye on it.{' '}
+        <strong>Possible</strong>: something looks off — worth a closer look.{' '}
+        <strong>Probable</strong>: likely abuse pattern — review before approving.{' '}
+        <strong>Definite</strong>: high-confidence match — act now.
       </p>
       <button
         onClick={dismiss}
