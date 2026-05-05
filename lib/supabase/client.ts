@@ -1,9 +1,24 @@
 import { createBrowserClient } from '@supabase/ssr';
 import type { Database } from './types';
 
-export function createClient() {
+function makeMissingEnvStub(name: string) {
+  return new Proxy({}, {
+    get() {
+      return () => Promise.resolve({ data: null, error: { message: `${name} not configured` } });
+    },
+  });
+}
+
+export function createClient(): any {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!url || !key) {
+    return makeMissingEnvStub('Supabase (browser)') as any;
+  }
+
   return createBrowserClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    url,
+    key
   );
 }

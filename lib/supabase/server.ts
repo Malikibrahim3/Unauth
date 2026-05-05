@@ -3,12 +3,37 @@ import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import type { Database } from './types';
 
-export function createClient() {
+function makeMissingEnvStub(name: string): any {
+  const message = `${name} not configured`;
+  const handler: ProxyHandler<any> = {
+    get(_target, _prop) {
+      // return a callable proxy which itself returns error-shaped responses when invoked
+      const fn = () => Promise.resolve({ data: null, error: { message } });
+      return new Proxy(fn, {
+        apply() { return Promise.resolve({ data: null, error: { message } }); },
+        get() { return fn; },
+      });
+    },
+    apply() { return Promise.resolve({ data: null, error: { message } }); },
+  };
+
+  return new Proxy(() => Promise.resolve({ data: null, error: { message } }), handler as any);
+}
+
+export function createClient(): any {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!url || !key) {
+    // Return a safe stub so static builds / prerendering won't crash.
+    return makeMissingEnvStub('Supabase (client)');
+  }
+
   const cookieStore = cookies();
 
   return createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    url,
+    key,
     {
       cookies: {
         get(name: string) {
@@ -31,10 +56,17 @@ export function createClient() {
   );
 }
 
-export function createServiceClient() {
+export function createServiceClient(): any {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!url || !key) {
+    return makeMissingEnvStub('Supabase (service)');
+  }
+
   return createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    url,
+    key,
     {
       cookies: {
         get() { return undefined; },
@@ -49,10 +81,17 @@ export function createServiceClient() {
   );
 }
 
-export function createAdminClient() {
+export function createAdminClient(): any {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!url || !key) {
+    return makeMissingEnvStub('Supabase (admin)');
+  }
+
   return createSupabaseClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    url,
+    key,
     {
       auth: {
         persistSession: false,
