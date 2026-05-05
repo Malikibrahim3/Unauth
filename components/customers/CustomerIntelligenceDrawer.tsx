@@ -255,11 +255,25 @@ function DrawerContent({
     setStatusSaving(false);
   }
 
+  // Derive recommended next action
+  const grade = riskLevelToGrade(profile.risk_level);
+  const refundRate = Math.round(profile.refund_rate * 100);
+  const isEligibleForEvidence = orderHistory.some((o) => o.refundClaimed) || profile.total_chargebacks > 0;
+  let recommendedAction = '';
+  if (grade === 'definite' || grade === 'probable') {
+    if (isEligibleForEvidence) recommendedAction = 'Generate evidence package and submit to payment processor.';
+    else recommendedAction = 'Manually review order history and flag for investigation.';
+  } else if (grade === 'possible') {
+    recommendedAction = 'Monitor for repeat claims before escalating.';
+  } else {
+    recommendedAction = 'No immediate action required.';
+  }
+
   return (
     <div>
-      {/* Identity summary */}
-      <Section title="Identity Summary">
-        <div className="flex items-start justify-between gap-3 mb-4">
+      {/* ── Compact confidence block ──────────────────────────────── */}
+      <div className="mb-5 rounded-xl p-4 border" style={{ background: 'var(--accent-soft)', borderColor: 'var(--border)' }}>
+        <div className="flex items-start justify-between gap-3 mb-3">
           <div className="min-w-0">
             <p className="text-base font-semibold truncate" style={{ color: 'var(--text)' }}>
               {profile.names[0] ?? profile.primary_email ?? 'Unknown'}
@@ -269,7 +283,7 @@ function DrawerContent({
             )}
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <ConfidenceGrade grade={riskLevelToGrade(profile.risk_level)} />
+            <ConfidenceGrade grade={grade} />
             <WatchlistStarButton
               customerProfileId={profile.id}
               displayName={profile.names[0] ?? undefined}
@@ -281,102 +295,81 @@ function DrawerContent({
           </div>
         </div>
 
-        {/* Match confidence bar */}
-        <div className="mb-4">
-          <div className="flex items-center justify-between text-xs mb-1" style={{ color: 'var(--text-muted)' }}>
-            <span>Match confidence</span>
-            <span className="font-semibold" style={{ color: 'var(--text)' }}>{Math.round(profile.risk_score)}</span>
-          </div>
-          <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--bg-subtle)' }}>
-            <div
-              className="h-full rounded-full transition-all"
-              style={{ width: `${Math.min(fmt(profile.risk_score), 100)}%`, ...riskBarStyle(profile.risk_level) }}
-            />
-          </div>
+        {/* Key metrics row */}
+        <div className="grid grid-cols-4 gap-3 mb-3">
+          {[
+            { label: 'Score', value: Math.round(profile.risk_score) },
+            { label: 'Orders', value: profile.total_orders },
+            { label: 'Refunds', value: profile.total_refund_claims },
+            { label: 'Refund rate', value: `${refundRate}%` },
+          ].map(({ label, value }) => (
+            <div key={label}>
+              <p className="text-[10px] uppercase font-medium tracking-wide" style={{ color: 'var(--text-muted)' }}>{label}</p>
+              <p className="text-sm font-semibold font-mono" style={{ color: 'var(--text)' }}>{value}</p>
+            </div>
+          ))}
         </div>
 
-        {/* Profile confidence */}
-        <div className="mb-4">
-          <div className="flex items-center justify-between text-xs mb-1" style={{ color: 'var(--text-muted)' }}>
-            <span>Profile confidence</span>
-            <span className="font-semibold" style={{ color: 'var(--text)' }}>{profile.profile_confidence}%</span>
-          </div>
-          <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--bg-subtle)' }}>
-            <div
-              className="h-full rounded-full transition-all"
-              style={{ width: `${profile.profile_confidence}%`, background: 'var(--info)' }}
-            />
-          </div>
+        {/* Recommended action */}
+        <div className="rounded-lg px-3 py-2.5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
+          <p className="text-[10px] uppercase font-medium tracking-wide mb-0.5" style={{ color: 'var(--text-muted)' }}>Recommended action</p>
+          <p className="text-xs" style={{ color: 'var(--text)' }}>{recommendedAction}</p>
         </div>
 
-        {/* Investigation status */}
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Investigation status</span>
+        {/* Status + Generate evidence row */}
+        <div className="flex items-center gap-2 mt-3">
           <select
             value={status}
             onChange={(e) => handleStatusChange(e.target.value)}
             disabled={statusSaving}
-            className="text-xs rounded-md px-2.5 py-1 font-medium focus:outline-none cursor-pointer disabled:opacity-60"
+            className="text-xs rounded-md px-2.5 py-1.5 font-medium focus:outline-none cursor-pointer disabled:opacity-60 flex-1"
             style={statusStyle(status)}
           >
             {STATUS_OPTIONS.map((s) => (
               <option key={s} value={s}>{STATUS_LABELS[s]}</option>
             ))}
           </select>
+          {isEligibleForEvidence ? (
+            <Link
+              href={`/customers/${profile.id}/evidence/new`}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors flex-shrink-0"
+              style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}
+            >
+              Generate evidence
+            </Link>
+          ) : (
+            <span
+              className="flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-semibold opacity-40 cursor-not-allowed"
+              title="No eligible orders found — customer needs at least one refund claim or chargeback"
+              style={{ background: 'var(--bg-muted)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
+            >
+              Generate evidence
+            </span>
+          )}
         </div>
+        {!isEligibleForEvidence && (
+          <p className="text-[10px] mt-1.5" style={{ color: 'var(--text-subtle)' }}>
+            Evidence generation requires at least one refund claim or chargeback in the customer history.
+          </p>
+        )}
+      </div>
 
-        {/* Identity fields */}
-        <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-          <div>
-            <dt className="text-xs" style={{ color: 'var(--text-muted)' }}>First seen</dt>
-            <dd className="font-medium" style={{ color: 'var(--text)' }}>{formatDate(profile.first_seen)}</dd>
-          </div>
-          <div>
-            <dt className="text-xs" style={{ color: 'var(--text-muted)' }}>Last seen</dt>
-            <dd className="font-medium" style={{ color: 'var(--text)' }}>{formatDate(profile.last_seen)}</dd>
-          </div>
-          <div>
-            <dt className="text-xs" style={{ color: 'var(--text-muted)' }}>Orders</dt>
-            <dd className="font-medium" style={{ color: 'var(--text)' }}>{profile.total_orders}</dd>
-          </div>
-          <div>
-            <dt className="text-xs" style={{ color: 'var(--text-muted)' }}>Refund rate</dt>
-            <dd className="font-medium" style={{ color: 'var(--text)' }}>
-              {Math.round(profile.refund_rate * 100)}%
-            </dd>
-          </div>
-          {profile.emails.length > 1 && (
-            <div className="col-span-2">
-              <dt className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>All emails</dt>
-              <dd className="space-y-0.5">
-                {profile.emails.map((e, i) => (
-                  <p key={i} className="text-xs font-mono truncate" style={{ color: 'var(--text)' }}>{e}</p>
-                ))}
-              </dd>
-            </div>
-          )}
-          {((profile as any).identity_signals ?? profile.fraud_flags ?? []).length > 0 && (
-            <div className="col-span-2">
-              <dt className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>Identity signals</dt>
-              <dd className="flex flex-wrap gap-1">
-                {((profile as any).identity_signals ?? profile.fraud_flags ?? []).map((f: string, i: number) => (
-                  <span
-                    key={i}
-                    className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium"
-                    style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}
-                  >
-                    {f}
-                  </span>
-                ))}
-              </dd>
-            </div>
-          )}
-        </dl>
-      </Section>
-
-      {/* Behavioral context */}
-      <Section title="Behavioral Context">
+      {/* ── Behavioral context ────────────────────────────────────── */}
+      <Section title="Behavioral context">
         <p className="text-body-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>{narrative}</p>
+        {((profile as any).identity_signals ?? profile.fraud_flags ?? []).length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {((profile as any).identity_signals ?? profile.fraud_flags ?? []).map((f: string, i: number) => (
+              <span
+                key={i}
+                className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium"
+                style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}
+              >
+                {f}
+              </span>
+            ))}
+          </div>
+        )}
         {profile.refund_acceleration_score > 0 && (
           <div className="mt-3">
             <div className="flex items-center justify-between text-xs mb-1" style={{ color: 'var(--text-muted)' }}>
@@ -398,38 +391,8 @@ function DrawerContent({
         )}
       </Section>
 
-      {/* Identity timeline */}
-      {identityTimeline.length > 0 && (
-        <Section title={`Identity Timeline${variantCount > 0 ? ` · ${variantCount} change${variantCount > 1 ? 's' : ''}` : ''}`}>
-          <IdentityTimeline entries={identityTimeline} />
-        </Section>
-      )}
-
-      {/* Linked accounts */}
-      {linkedAccounts.length > 0 && (
-        <Section title={`Linked Identities (${linkedAccounts.length})`}>
-          <ul className="space-y-2">
-            {linkedAccounts.slice(0, 8).map((acc, i) => (
-              <li key={i} className="flex items-start gap-2 text-sm">
-                <span
-                  className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium shrink-0"
-                  style={{ background: 'var(--watchlist-bg)', color: 'var(--watchlist)', border: '1px solid var(--watchlist-bd)' }}
-                >
-                  {acc.entityType}
-                </span>
-                <span className="font-mono break-all text-xs" style={{ color: 'var(--text)' }}>{acc.entityValue}</span>
-                <span className="text-xs shrink-0 ml-auto" style={{ color: 'var(--text-subtle)' }}>{acc.confidence}%</span>
-              </li>
-            ))}
-            {linkedAccounts.length > 8 && (
-              <p className="text-xs" style={{ color: 'var(--text-subtle)' }}>+{linkedAccounts.length - 8} more</p>
-            )}
-          </ul>
-        </Section>
-      )}
-
-      {/* Order history */}
-      <Section title={`Order History (${orderHistory.length})`}>
+      {/* ── Prior dispute / refund pattern ───────────────────────── */}
+      <Section title="Order & refund history">
         {orderHistory.length === 0 ? (
           <p className="text-body-sm italic" style={{ color: 'var(--text-muted)' }}>No orders in current dataset.</p>
         ) : (
@@ -456,7 +419,7 @@ function DrawerContent({
                   </div>
                   {order.refundClaimed && (
                     <p className="mt-1 text-xs font-medium" style={{ color: 'var(--risk-high)' }}>
-                      Refund claimed{order.refundReason ? ` · ${order.refundReason}` : ''}
+                      Prior dispute/refund pattern{order.refundReason ? ` · ${order.refundReason}` : ''}
                     </p>
                   )}
                 </div>
@@ -468,34 +431,48 @@ function DrawerContent({
                 className="mt-3 text-xs hover:underline"
                 style={{ color: 'var(--accent)' }}
               >
-                {ordersExpanded
-                  ? 'Show fewer'
-                  : `Show all ${orderHistory.length} orders`}
+                {ordersExpanded ? 'Show fewer' : `Show all ${orderHistory.length} orders`}
               </button>
             )}
           </>
         )}
       </Section>
 
-      {/* Merchant actions — notes */}
-      <Section title="Merchant Notes">
+      {/* ── Identity timeline ─────────────────────────────────────── */}
+      {identityTimeline.length > 0 && (
+        <Section title={`Identity timeline${variantCount > 0 ? ` · ${variantCount} change${variantCount > 1 ? 's' : ''}` : ''}`}>
+          <IdentityTimeline entries={identityTimeline} />
+        </Section>
+      )}
+
+      {/* ── Linked accounts ───────────────────────────────────────── */}
+      {linkedAccounts.length > 0 && (
+        <Section title={`Linked identities (${linkedAccounts.length})`}>
+          <ul className="space-y-2">
+            {linkedAccounts.slice(0, 8).map((acc, i) => (
+              <li key={i} className="flex items-start gap-2 text-sm">
+                <span
+                  className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium shrink-0"
+                  style={{ background: 'var(--watchlist-bg)', color: 'var(--watchlist)', border: '1px solid var(--watchlist-bd)' }}
+                >
+                  {acc.entityType}
+                </span>
+                <span className="font-mono break-all text-xs" style={{ color: 'var(--text)' }}>{acc.entityValue}</span>
+                <span className="text-xs shrink-0 ml-auto" style={{ color: 'var(--text-subtle)' }}>{acc.confidence}%</span>
+              </li>
+            ))}
+            {linkedAccounts.length > 8 && (
+              <p className="text-xs" style={{ color: 'var(--text-subtle)' }}>+{linkedAccounts.length - 8} more</p>
+            )}
+          </ul>
+        </Section>
+      )}
+
+      {/* ── Merchant notes ────────────────────────────────────────── */}
+      <Section title="Merchant notes">
         <CustomerNotes customerProfileId={profile.id} />
       </Section>
 
-      {/* Evidence package */}
-      <div className="pt-4 mt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
-        <Link
-          href={`/customers/${profile.id}/evidence/new`}
-          className="flex w-full items-center justify-center gap-1.5 px-3 py-2 rounded-md text-xs font-semibold transition-colors border"
-          style={{
-            background: 'var(--bg-subtle)',
-            borderColor: 'var(--border)',
-            color: 'var(--text)',
-          }}
-        >
-          Generate evidence
-        </Link>
-      </div>
     </div>
   );
 }

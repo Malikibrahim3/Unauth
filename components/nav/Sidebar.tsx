@@ -56,7 +56,7 @@ function buildGroups(inboxCount = 0, watchlistCount = 0): NavGroup[] {
     {
       label: 'Workspace',
       items: [
-        { href: '/dashboard', label: 'Home',  icon: Home },
+        { href: '/dashboard', label: 'Dashboard', icon: Home },
         { href: '/inbox',     label: 'Inbox', icon: Inbox, badge: inboxCount },
       ],
     },

@@ -1,0 +1,195 @@
+{
+  "generatedAt": "deterministic",
+  "datasets": [
+    {
+      "dataset": "small_sanity",
+      "seedNote": "Deterministic generator seeds are embedded in scripts/test-data/generateBlindMerchantCSVs.ts",
+      "totalRows": 91,
+      "expectedFlaggedRows": 9,
+      "expectedFlaggedRate": 0.0989010989010989,
+      "expectedClusters": 2,
+      "exactExpected": true,
+      "acceptance": {
+        "maxReviewRate": 0.45,
+        "minSeededRecall": 0.75,
+        "minDistinctNormalizedAddresses": 25,
+        "maxLargestCluster": 12
+      },
+      "expectedGradeCounts": {
+        "definite": 5,
+        "probable": 4
+      },
+      "scenarioCounts": {
+        "clean": 26,
+        "normal_repeat": 11,
+        "legit_refund": 1,
+        "fraud_same_phone_card_account": 5,
+        "fraud_phone_bridge": 4,
+        "false_corporate_office": 16,
+        "false_shared_household": 10,
+        "false_bin_last4_collision": 18
+      }
+    },
+    {
+      "dataset": "medium_realistic",
+      "seedNote": "Deterministic generator seeds are embedded in scripts/test-data/generateBlindMerchantCSVs.ts",
+      "totalRows": 1350,
+      "expectedFlaggedRows": 66,
+      "expectedFlaggedRate": 0.04888888888888889,
+      "expectedClusters": 8,
+      "exactExpected": false,
+      "acceptance": {
+        "maxReviewRate": 0.12,
+        "minSeededRecall": 0.55,
+        "minDistinctNormalizedAddresses": 500,
+        "maxLargestCluster": 35
+      },
+      "expectedGradeCounts": {
+        "definite": 18,
+        "probable": 38,
+        "possible": 10
+      },
+      "scenarioCounts": {
+        "clean": 780,
+        "normal_repeat": 332,
+        "legit_refund": 28,
+        "fraud_same_phone_card_account": 10,
+        "fraud_phone_bridge": 8,
+        "fraud_reship_refund": 10,
+        "fraud_paypal_device": 8,
+        "fraud_slow_burn": 12,
+        "fraud_chargeback": 8,
+        "fraud_high_value_inr": 8,
+        "fraud_two_order": 2,
+        "false_corporate_office": 64,
+        "false_shared_household": 40,
+        "false_bin_last4_collision": 40
+      }
+    },
+    {
+      "dataset": "large_merchant_scale",
+      "seedNote": "Deterministic generator seeds are embedded in scripts/test-data/generateBlindMerchantCSVs.ts",
+      "totalRows": 5400,
+      "expectedFlaggedRows": 130,
+      "expectedFlaggedRate": 0.024074074074074074,
+      "expectedClusters": 8,
+      "exactExpected": false,
+      "acceptance": {
+        "maxReviewRate": 0.08,
+        "minSeededRecall": 0.45,
+        "minDistinctNormalizedAddresses": 2500,
+        "maxLargestCluster": 70
+      },
+      "expectedGradeCounts": {
+        "definite": 36,
+        "probable": 74,
+        "possible": 20
+      },
+      "scenarioCounts": {
+        "clean": 3600,
+        "normal_repeat": 1400,
+        "legit_refund": 100,
+        "fraud_same_phone_card_account": 20,
+        "fraud_phone_bridge": 16,
+        "fraud_reship_refund": 20,
+        "fraud_paypal_device": 16,
+        "fraud_slow_burn": 24,
+        "fraud_chargeback": 16,
+        "fraud_high_value_inr": 16,
+        "fraud_two_order": 2,
+        "false_corporate_office": 128,
+        "false_shared_household": 42
+      }
+    },
+    {
+      "dataset": "negative_control",
+      "seedNote": "Deterministic generator seeds are embedded in scripts/test-data/generateBlindMerchantCSVs.ts",
+      "totalRows": 1500,
+      "expectedFlaggedRows": 0,
+      "expectedFlaggedRate": 0,
+      "expectedClusters": 0,
+      "exactExpected": false,
+      "acceptance": {
+        "maxReviewRate": 0.025,
+        "minSeededRecall": 1,
+        "minDistinctNormalizedAddresses": 400,
+        "maxLargestCluster": 35
+      },
+      "expectedGradeCounts": {},
+      "scenarioCounts": {
+        "clean": 1000,
+        "normal_repeat": 281,
+        "legit_refund": 19,
+        "false_corporate_office": 80,
+        "false_shared_household": 50,
+        "false_bin_last4_collision": 70
+      }
+    },
+    {
+      "dataset": "adversarial_fraud",
+      "seedNote": "Deterministic generator seeds are embedded in scripts/test-data/generateBlindMerchantCSVs.ts",
+      "totalRows": 402,
+      "expectedFlaggedRows": 98,
+      "expectedFlaggedRate": 0.24378109452736318,
+      "expectedClusters": 8,
+      "exactExpected": false,
+      "acceptance": {
+        "maxReviewRate": 0.35,
+        "minSeededRecall": 0.65,
+        "minDistinctNormalizedAddresses": 220,
+        "maxLargestCluster": 35
+      },
+      "expectedGradeCounts": {
+        "definite": 27,
+        "probable": 56,
+        "possible": 15
+      },
+      "scenarioCounts": {
+        "clean": 260,
+        "false_corporate_office": 16,
+        "false_shared_household": 10,
+        "false_bin_last4_collision": 18,
+        "fraud_same_phone_card_account": 15,
+        "fraud_phone_bridge": 12,
+        "fraud_reship_refund": 15,
+        "fraud_paypal_device": 12,
+        "fraud_slow_burn": 18,
+        "fraud_chargeback": 12,
+        "fraud_high_value_inr": 12,
+        "fraud_two_order": 2
+      }
+    }
+  ],
+  "headerChaosFormats": [
+    {
+      "suffix": "shopify",
+      "delimiter": ",",
+      "bom": false
+    },
+    {
+      "suffix": "woocommerce",
+      "delimiter": ",",
+      "bom": false
+    },
+    {
+      "suffix": "amazon",
+      "delimiter": "\t",
+      "bom": false
+    },
+    {
+      "suffix": "etsy_semicolon_bom",
+      "delimiter": ";",
+      "bom": true
+    },
+    {
+      "suffix": "stripe_pipe",
+      "delimiter": "|",
+      "bom": false
+    },
+    {
+      "suffix": "custom_mixed_case",
+      "delimiter": ",",
+      "bom": false
+    }
+  ]
+}

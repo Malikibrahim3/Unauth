@@ -1,44 +1,44 @@
 import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
-import { formatDate } from '@/lib/utils/format';
-import DeleteAuditButton from '@/components/audit/DeleteAuditButton';
+import AuditHistoryTableClient from '@/components/audit/AuditHistoryTableClient';
 import type { Database } from '@/lib/supabase/types';
+import PageSizeSelect from '@/components/common/PageSizeSelect';
 
 type RunRow = Database['public']['Tables']['processing_jobs']['Row'];
 
-function formatDateRange(start?: string | null, end?: string | null): string {
-  if (!start && !end) return '—';
-  const fmt = (d: string) => {
-    const [y, m, day] = d.split('-');
-    return `${day} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][Number(m)-1]} ${y}`;
-  };
-  if (start && end) return `${fmt(start)} – ${fmt(end)}`;
-  if (start) return `From ${fmt(start)}`;
-  return `To ${fmt(end!)}`;
-}
+const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
+const DEFAULT_PAGE_SIZE = 25;
 
-const UPLOAD_TYPE_LABELS: Record<string, string> = {
-  standard: 'Regular',
-  historical: 'Historical',
-  investigation: 'Investigation',
-};
-
-export default async function HistoryPage() {
+export default async function HistoryPage({ searchParams }: { searchParams?: { page?: string; pageSize?: string } }) {
   const supabase = createClient();
+  const page = Math.max(1, parseInt(searchParams?.page ?? '1', 10));
+  const requestedPageSize = parseInt(searchParams?.pageSize ?? String(DEFAULT_PAGE_SIZE), 10);
+  const pageSize = PAGE_SIZE_OPTIONS.includes(requestedPageSize as (typeof PAGE_SIZE_OPTIONS)[number])
+    ? requestedPageSize
+    : DEFAULT_PAGE_SIZE;
+  const offset = (page - 1) * pageSize;
 
-  const { data: runs } = await supabase
+  const { data: runs, count } = await supabase
     .from('processing_jobs')
-    .select('*')
+    .select('*', { count: 'exact' })
     .eq('hidden_by_merchant', false)
     .order('created_at', { ascending: false })
-    .limit(50);
+    .range(offset, offset + pageSize - 1);
 
   const typedRuns = (runs ?? []) as unknown as RunRow[];
+  const total = count ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const baseSearchParams = searchParams ?? {};
 
   return (
     <div className="p-8 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-heading-lg">Upload history</h1>
+        <div className="space-y-1">
+          <h1 className="text-heading-lg">Upload history</h1>
+          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+            Showing {total === 0 ? 0 : offset + 1}–{Math.min(offset + pageSize, total)} of {total.toLocaleString()} audits
+          </p>
+        </div>
         <Link
           href="/upload"
           className="px-4 py-2 text-sm font-semibold rounded-md transition-colors"
@@ -46,6 +46,32 @@ export default async function HistoryPage() {
         >
           New Audit
         </Link>
+      </div>
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <PageSizeSelect pathname="/history" searchParams={baseSearchParams} pageSize={pageSize} />
+        {totalPages > 1 && (
+          <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+            <span>Page {page} of {totalPages}</span>
+            {page > 1 && (
+              <Link
+                href={`/history?${new URLSearchParams({ ...baseSearchParams, page: String(page - 1), pageSize: String(pageSize) }).toString()}`}
+                className="px-2 py-1 rounded border"
+                style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}
+              >
+                ← Prev
+              </Link>
+            )}
+            {page < totalPages && (
+              <Link
+                href={`/history?${new URLSearchParams({ ...baseSearchParams, page: String(page + 1), pageSize: String(pageSize) }).toString()}`}
+                className="px-2 py-1 rounded border"
+                style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}
+              >
+                Next →
+              </Link>
+            )}
+          </div>
+        )}
       </div>
 
       {typedRuns.length === 0 ? (
@@ -56,93 +82,7 @@ export default async function HistoryPage() {
           </Link>
         </div>
       ) : (
-        <div className="rounded-lg overflow-hidden border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
-          <table className="w-full text-sm">
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--border-subtle)', background: 'var(--bg-subtle)' }}>
-                <th className="text-left px-4 py-2.5 text-overline">Label</th>
-                <th className="text-left px-4 py-2.5 text-overline">Type</th>
-                <th className="text-left px-4 py-2.5 text-overline">Period</th>
-                <th className="text-left px-4 py-2.5 text-overline">Status</th>
-                <th className="text-right px-4 py-2.5 text-overline">Rows</th>
-                <th className="text-right px-4 py-2.5 text-overline">Flagged</th>
-                <th className="text-left px-4 py-2.5 text-overline">Uploaded</th>
-                <th className="px-4 py-2.5"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {typedRuns.map((run) => {
-                const flagRate = run.total_rows > 0 ? (run.flagged_count ?? 0) / run.total_rows : 0;
-                const anyRun = run as any;
-                const displayLabel = anyRun.label || run.filename;
-                const period = formatDateRange(anyRun.date_range_start, anyRun.date_range_end);
-                const typeLabel = UPLOAD_TYPE_LABELS[anyRun.upload_type ?? 'standard'] ?? 'Regular';
-                return (
-                  <tr key={run.id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                    <td className="px-4 py-3 max-w-xs">
-                      <span className="text-sm font-medium truncate block" style={{ color: 'var(--text)' }}>{displayLabel}</span>
-                      {anyRun.label && (
-                        <span className="text-xs font-mono truncate block" style={{ color: 'var(--text-subtle)' }}>{run.filename}</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border"
-                        style={{
-                          background: anyRun.upload_type === 'investigation' ? 'var(--info-bg)' :
-                                      anyRun.upload_type === 'historical'    ? 'var(--bg-subtle)' : 'var(--bg-subtle)',
-                          borderColor: anyRun.upload_type === 'investigation' ? 'var(--info-bd)' : 'var(--border)',
-                          color: anyRun.upload_type === 'investigation' ? 'var(--info)' : 'var(--text-muted)',
-                        }}
-                      >
-                        {typeLabel}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-muted)' }}>{period}</td>
-                    <td className="px-4 py-3">
-                      <span
-                        className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border"
-                        style={{
-                          background: run.status === 'completed'  ? 'var(--success-bg)' :
-                                      run.status === 'processing' ? 'var(--info-bg)' :
-                                      run.status === 'pending'    ? 'var(--bg-subtle)' : 'var(--risk-critical-bg)',
-                          borderColor: run.status === 'completed'  ? 'var(--success-bd)' :
-                                       run.status === 'processing' ? 'var(--info-bd)' :
-                                       run.status === 'pending'    ? 'var(--border)' : 'var(--risk-critical-bd)',
-                          color: run.status === 'completed'  ? 'var(--success)' :
-                                 run.status === 'processing' ? 'var(--info)' :
-                                 run.status === 'pending'    ? 'var(--text-muted)' : 'var(--risk-critical)',
-                        }}
-                      >
-                        {run.status === 'completed' ? 'Completed' : run.status === 'processing' ? 'Processing' : run.status === 'pending' ? 'Pending' : 'Failed'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right" style={{ color: 'var(--text)' }}>{run.total_rows.toLocaleString()}</td>
-                    <td className="px-4 py-3 text-right" style={{ color: 'var(--text)' }}>
-                      {(run.flagged_count ?? 0).toLocaleString()}
-                      {run.total_rows > 0 && (
-                        <span className="ml-1 text-xs" style={{ color: 'var(--text-muted)' }}>
-                          ({(flagRate * 100).toFixed(1)}%)
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-muted)' }}>{formatDate(run.created_at)}</td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex items-center justify-end gap-3">
-                        {(run.status === 'complete' || run.status === 'completed') && (
-                          <Link href={`/audit/${run.id}`} className="text-sm font-medium hover:underline" style={{ color: 'var(--text)' }}>
-                            View &rarr;
-                          </Link>
-                        )}
-                        <DeleteAuditButton jobId={run.id} />
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        <AuditHistoryTableClient rows={typedRuns} />
       )}
     </div>
   );

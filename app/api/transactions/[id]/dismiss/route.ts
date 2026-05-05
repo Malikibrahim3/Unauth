@@ -52,4 +52,6 @@ export async function PATCH(
     ip,
   });
 
+  return NextResponse.json({ ok: true });
+
 }

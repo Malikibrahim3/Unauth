@@ -1,0 +1,92 @@
+order_id,_expected_cluster_label,_expected_confidence,_expected_should_flag,_expected_reason,_scenario,_ground_truth_person_id
+BT-000001,,,false,clean baseline order,clean,person_0000001
+BT-000002,,,false,clean baseline order,clean,person_0000002
+BT-000003,,,false,clean baseline order,clean,person_0000003
+BT-000004,,,false,clean baseline order,clean,person_0000004
+BT-000005,,,false,clean baseline order,clean,person_0000005
+BT-000006,,,false,clean baseline order,clean,person_0000006
+BT-000007,,,false,clean baseline order,clean,person_0000007
+BT-000008,,,false,clean baseline order,clean,person_0000008
+BT-000009,,,false,clean baseline order,clean,person_0000009
+BT-000010,,,false,clean baseline order,clean,person_0000010
+BT-000011,,,false,clean baseline order,clean,person_0000011
+BT-000012,,,false,clean baseline order,clean,person_0000012
+BT-000013,,,false,clean baseline order,clean,person_0000013
+BT-000014,,,false,clean baseline order,clean,person_0000014
+BT-000015,,,false,clean baseline order,clean,person_0000015
+BT-000016,,,false,clean baseline order,clean,person_0000016
+BT-000017,,,false,clean baseline order,clean,person_0000017
+BT-000018,,,false,clean baseline order,clean,person_0000018
+BT-000019,,,false,clean baseline order,clean,person_0000019
+BT-000020,,,false,clean baseline order,clean,person_0000020
+BT-000021,,,false,clean baseline order,clean,person_0000021
+BT-000022,,,false,clean baseline order,clean,person_0000022
+BT-000023,,,false,clean baseline order,clean,person_0000023
+BT-000024,,,false,clean baseline order,clean,person_0000024
+BT-000025,,,false,clean baseline order,clean,person_0000025
+BT-000026,,,false,clean baseline order,clean,person_0000026
+BT-000028,,,false,clean baseline order,normal_repeat,person_0000028
+BT-000029,,,false,clean baseline order,normal_repeat,person_0000029
+BT-000030,,,false,clean baseline order,normal_repeat,person_0000030
+BT-000032,,,false,clean baseline order,normal_repeat,person_0000032
+BT-000033,,,false,clean baseline order,normal_repeat,person_0000033
+BT-000034,,,false,clean baseline order,legit_refund,person_0000034
+BT-000036,,,false,clean baseline order,normal_repeat,person_0000036
+BT-000037,,,false,clean baseline order,normal_repeat,person_0000037
+BT-000038,,,false,clean baseline order,normal_repeat,person_0000038
+BT-000040,,,false,clean baseline order,normal_repeat,person_0000040
+BT-000041,,,false,clean baseline order,normal_repeat,person_0000041
+BT-000042,,,false,clean baseline order,normal_repeat,person_0000042
+BT-000043,SMALL_PHONE_CARD_ACCOUNT,definite,true,fraud_same_phone_card_account,fraud_same_phone_card_account,person_SMALL_PHONE_CARD_ACCOUNT
+BT-000044,SMALL_PHONE_CARD_ACCOUNT,definite,true,fraud_same_phone_card_account,fraud_same_phone_card_account,person_SMALL_PHONE_CARD_ACCOUNT
+BT-000045,SMALL_PHONE_CARD_ACCOUNT,definite,true,fraud_same_phone_card_account,fraud_same_phone_card_account,person_SMALL_PHONE_CARD_ACCOUNT
+BT-000046,SMALL_PHONE_CARD_ACCOUNT,definite,true,fraud_same_phone_card_account,fraud_same_phone_card_account,person_SMALL_PHONE_CARD_ACCOUNT
+BT-000047,SMALL_PHONE_CARD_ACCOUNT,definite,true,fraud_same_phone_card_account,fraud_same_phone_card_account,person_SMALL_PHONE_CARD_ACCOUNT
+BT-000048,SMALL_PHONE_BRIDGE,probable,true,fraud_phone_bridge,fraud_phone_bridge,person_SMALL_PHONE_BRIDGE
+BT-000049,SMALL_PHONE_BRIDGE,probable,true,fraud_phone_bridge,fraud_phone_bridge,person_SMALL_PHONE_BRIDGE
+BT-000050,SMALL_PHONE_BRIDGE,probable,true,fraud_phone_bridge,fraud_phone_bridge,person_SMALL_PHONE_BRIDGE
+BT-000051,SMALL_PHONE_BRIDGE,probable,true,fraud_phone_bridge,fraud_phone_bridge,person_SMALL_PHONE_BRIDGE
+BT-000052,,,false,corporate office shared address/IP trap,false_corporate_office,person_0000052
+BT-000053,,,false,corporate office shared address/IP trap,false_corporate_office,person_0000053
+BT-000054,,,false,corporate office shared address/IP trap,false_corporate_office,person_0000054
+BT-000055,,,false,corporate office shared address/IP trap,false_corporate_office,person_0000055
+BT-000056,,,false,corporate office shared address/IP trap,false_corporate_office,person_0000056
+BT-000057,,,false,corporate office shared address/IP trap,false_corporate_office,person_0000057
+BT-000058,,,false,corporate office shared address/IP trap,false_corporate_office,person_0000058
+BT-000059,,,false,corporate office shared address/IP trap,false_corporate_office,person_0000059
+BT-000060,,,false,corporate office shared address/IP trap,false_corporate_office,person_0000060
+BT-000061,,,false,corporate office shared address/IP trap,false_corporate_office,person_0000061
+BT-000062,,,false,corporate office shared address/IP trap,false_corporate_office,person_0000062
+BT-000063,,,false,corporate office shared address/IP trap,false_corporate_office,person_0000063
+BT-000064,,,false,corporate office shared address/IP trap,false_corporate_office,person_0000064
+BT-000065,,,false,corporate office shared address/IP trap,false_corporate_office,person_0000065
+BT-000066,,,false,corporate office shared address/IP trap,false_corporate_office,person_0000066
+BT-000067,,,false,corporate office shared address/IP trap,false_corporate_office,person_0000067
+BT-000068,,,false,roommates or dorm shared address trap,false_shared_household,person_0000068
+BT-000069,,,false,roommates or dorm shared address trap,false_shared_household,person_0000069
+BT-000070,,,false,roommates or dorm shared address trap,false_shared_household,person_0000070
+BT-000071,,,false,roommates or dorm shared address trap,false_shared_household,person_0000071
+BT-000072,,,false,roommates or dorm shared address trap,false_shared_household,person_0000072
+BT-000073,,,false,roommates or dorm shared address trap,false_shared_household,person_0000073
+BT-000074,,,false,roommates or dorm shared address trap,false_shared_household,person_0000074
+BT-000075,,,false,roommates or dorm shared address trap,false_shared_household,person_0000075
+BT-000076,,,false,roommates or dorm shared address trap,false_shared_household,person_0000076
+BT-000077,,,false,roommates or dorm shared address trap,false_shared_household,person_0000077
+BT-000078,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0000078
+BT-000079,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0000079
+BT-000080,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0000080
+BT-000081,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0000081
+BT-000082,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0000082
+BT-000083,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0000083
+BT-000084,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0000084
+BT-000085,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0000085
+BT-000086,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0000086
+BT-000087,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0000087
+BT-000088,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0000088
+BT-000089,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0000089
+BT-000090,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0000090
+BT-000091,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0000091
+BT-000092,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0000092
+BT-000093,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0000093
+BT-000094,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0000094
+BT-000095,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0000095

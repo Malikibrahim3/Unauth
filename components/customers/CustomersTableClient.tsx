@@ -42,7 +42,8 @@ export default function CustomersTableClient({ rows }: CustomersTableClientProps
 
   return (
     <>
-      <div className="rounded-lg overflow-hidden border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
+      {/* ── Desktop table (sm+) ─────────────────────────────── */}
+      <div className="hidden sm:block rounded-lg overflow-hidden border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b" style={{ background: 'var(--bg-subtle)', borderColor: 'var(--border-subtle)' }}>
@@ -120,6 +121,57 @@ export default function CustomersTableClient({ rows }: CustomersTableClientProps
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* ── Mobile card list (<sm) ───────────────────────────── */}
+      <div className="sm:hidden space-y-3">
+        {rows.map((p) => (
+          <div
+            key={p.id}
+            className="rounded-xl p-4 cursor-pointer transition-colors"
+            style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}
+            onClick={() => setSelectedProfileId(p.id)}
+          >
+            <div className="flex items-start justify-between gap-2 mb-2">
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{p.names?.[0] ?? '—'}</span>
+                  {p.on_watchlist && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-sm border font-medium" style={{ background: 'var(--watchlist-bg)', color: 'var(--watchlist)', borderColor: 'var(--watchlist-bd)' }}>watched</span>
+                  )}
+                </div>
+                <p className="text-xs truncate mt-0.5" style={{ color: 'var(--text-muted)' }}>{p.primary_email ?? '—'}</p>
+              </div>
+              <ConfidenceGrade grade={riskLevelToGrade(p.risk_level)} size="sm" />
+            </div>
+            <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--text-muted)' }}>
+              <span><span className="font-semibold font-mono" style={{ color: 'var(--text)' }}>{Math.round(p.risk_score)}</span> score</span>
+              <span style={{ color: 'var(--border)' }}>·</span>
+              <span><span className="font-semibold font-mono" style={{ color: 'var(--text)' }}>{p.total_orders}</span> orders</span>
+              <span style={{ color: 'var(--border)' }}>·</span>
+              <span><span className="font-semibold font-mono" style={{ color: 'var(--text)' }}>{p.total_refund_claims}</span> refunds</span>
+            </div>
+            <div className="mt-3 flex items-center justify-between gap-2" onClick={e => e.stopPropagation()}>
+              <select
+                value={statusOverrides[p.id] ?? p.investigation_status ?? 'new'}
+                onChange={(e) => handleStatusChange(p.id, e.target.value)}
+                className="text-xs rounded-md px-2 py-1 font-medium focus:outline-none cursor-pointer"
+                style={statusStyle(statusOverrides[p.id] ?? p.investigation_status ?? 'new')}
+              >
+                {STATUS_OPTIONS.map((s) => (
+                  <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+                ))}
+              </select>
+              <button
+                onClick={(e) => { e.stopPropagation(); setSelectedProfileId(p.id); }}
+                className="text-xs font-semibold hover:underline"
+                style={{ color: 'var(--text)' }}
+              >
+                View →
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
 
       <CustomerIntelligenceDrawer

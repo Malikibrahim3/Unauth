@@ -29,17 +29,21 @@ export default async function CustomersPage({ params }: PageProps) {
   const runData = run as unknown as RunRow;
   const dataClient = createServiceClient();
 
-  const TX_LIMIT = 2000;
-  // Fetch transactions for this job with a row cap to prevent memory exhaustion on large uploads.
-  const { data: rawTx } = await dataClient
-    .from('audit_transactions')
-    .select('*')
-    .eq('job_id', runData.id)
-    .order('match_score', { ascending: false })
-    .limit(TX_LIMIT);
-
-  const transactions = (rawTx ?? []) as unknown as TransactionRow[];
-  const wasCapped = transactions.length === TX_LIMIT;
+  // Fetch all transactions for this job in batches so merchants can inspect
+  // every customer represented in the upload.
+  const transactions: TransactionRow[] = [];
+  const BATCH = 1000;
+  for (let offset = 0; ; offset += BATCH) {
+    const { data } = await dataClient
+      .from('audit_transactions')
+      .select('*')
+      .eq('job_id', runData.id)
+      .order('match_score', { ascending: false })
+      .range(offset, offset + BATCH - 1);
+    if (!data || data.length === 0) break;
+    transactions.push(...(data as unknown as TransactionRow[]));
+    if (data.length < BATCH) break;
+  }
   const profiles = buildCustomerProfiles(transactions);
 
   const linkedGroups = profiles.filter((p) => p.emails.length > 1).length;
@@ -71,15 +75,9 @@ export default async function CustomersPage({ params }: PageProps) {
           </Link>
         </div>
         <p className="text-body-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>
-          Upload from {formatDate(runData.created_at)} &middot; {transactions.length.toLocaleString()} transactions{wasCapped ? ` (showing top ${TX_LIMIT} by score)` : ''}
+          Upload from {formatDate(runData.created_at)} &middot; {transactions.length.toLocaleString()} transactions
         </p>
       </div>
-
-      {wasCapped && (
-        <div className="rounded-lg px-4 py-3 text-body-sm" style={{ background: 'var(--risk-high-bg)', border: '1px solid var(--risk-high-bd)', color: 'var(--risk-high)' }}>
-          This upload contains more than {TX_LIMIT.toLocaleString()} transactions. Showing the {TX_LIMIT.toLocaleString()} highest-scored orders. Use the full export (coming soon) to see all results.
-        </div>
-      )}
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

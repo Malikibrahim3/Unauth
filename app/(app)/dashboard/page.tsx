@@ -1,14 +1,17 @@
 import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 import { formatDate } from '@/lib/utils/format';
-import { LoadDemoButton } from '@/components/dashboard/LoadDemoButton';
-import DeleteAuditButton from '@/components/audit/DeleteAuditButton';
 import DashboardCharts from '@/components/dashboard/DashboardCharts';
+import InsightsStrip from '@/components/dashboard/InsightsStrip';
 import EmptyDashboardHero from '@/components/EmptyDashboardHero';
 import TrackPageView from '@/components/common/TrackPageView';
 import type { Database } from '@/lib/supabase/types';
 
 type RunRow = Database['public']['Tables']['processing_jobs']['Row'];
+
+function formatCurrency(n: number) {
+  return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(n);
+}
 
 export default async function DashboardPage() {
   const supabase = createClient();
@@ -25,7 +28,6 @@ export default async function DashboardPage() {
   const totalTransactions = typedRuns.reduce((sum, r) => sum + r.total_rows, 0);
   const totalFlagged = typedRuns.reduce((sum, r) => sum + (r.flagged_count ?? 0), 0);
   const avgFlagRate = totalTransactions > 0 ? (totalFlagged / totalTransactions) * 100 : null;
-
   const isEmpty = typedRuns.length === 0;
 
   // Evidence packages stats
@@ -42,24 +44,69 @@ export default async function DashboardPage() {
     .is('reviewed_at', null);
   const unreviewedCount = unreviewedAppearances ?? 0;
 
-  return (
-    <div className="p-8">
-      <TrackPageView event="Dashboard Viewed" />
-      {/* Watchlist appearances amber banner */}
-      {unreviewedCount > 0 && (
-        <div className="mb-6 flex items-center justify-between rounded-lg px-4 py-3 border" style={{ background: 'var(--warning-bg, #fffbeb)', borderColor: 'var(--warning-bd, #fcd34d)' }}>
-          <p className="text-body-sm font-medium" style={{ color: 'var(--warning, #92400e)' }}>
-            {unreviewedCount} watchlisted {unreviewedCount === 1 ? 'customer' : 'customers'} appeared in your latest audit.
-          </p>
-          <Link href="/watchlist#recent-appearances" className="text-body-sm font-semibold ml-4 flex-shrink-0 hover:underline" style={{ color: 'var(--warning, #92400e)' }}>
-            Review appearances →
-          </Link>
-        </div>
-      )}
+  // Customer profile stats (for review queue KPIs)
+  const { count: customersNeedingReview } = await supabase
+    .from('customer_profiles')
+    .select('id', { count: 'exact', head: true })
+    .in('investigation_status', ['new', 'in_review'])
+    .in('risk_level', ['high', 'critical']);
+  const reviewQueue = customersNeedingReview ?? 0;
 
+  // Estimated exposure from latest run
+  const latestRun = typedRuns[0] ?? null;
+  const latestFlagRate = latestRun && latestRun.total_rows > 0
+    ? ((latestRun.flagged_count ?? 0) / latestRun.total_rows) * 100
+    : null;
+  const prevRun = typedRuns[1] ?? null;
+  const prevFlagRate = prevRun && prevRun.total_rows > 0
+    ? ((prevRun.flagged_count ?? 0) / prevRun.total_rows) * 100
+    : null;
+
+  // Build contextual insights
+  const insights: Array<{ text: string; level?: 'info' | 'warn' | 'positive' }> = [];
+
+  if (unreviewedCount > 0) {
+    insights.push({
+      text: `${unreviewedCount} watchlisted ${unreviewedCount === 1 ? 'customer' : 'customers'} appeared in your latest audit and need review.`,
+      level: 'warn',
+    });
+  }
+  if (latestFlagRate !== null && prevFlagRate !== null) {
+    const delta = latestFlagRate - prevFlagRate;
+    if (Math.abs(delta) >= 0.5) {
+      insights.push({
+        text: `Flagged rate ${delta > 0 ? 'increased' : 'decreased'} from ${prevFlagRate.toFixed(1)}% to ${latestFlagRate.toFixed(1)}% in the latest upload.`,
+        level: delta > 0 ? 'warn' : 'positive',
+      });
+    }
+  }
+  if (reviewQueue > 0) {
+    insights.push({
+      text: `${reviewQueue} high-confidence ${reviewQueue === 1 ? 'customer is' : 'customers are'} unresolved in the review queue.`,
+      level: 'info',
+    });
+  }
+  if (ce3Packages > 0) {
+    insights.push({
+      text: `${ce3Packages} evidence ${ce3Packages === 1 ? 'package' : 'packages'} ${ce3Packages === 1 ? 'is' : 'are'} CE3.0 eligible and ready to submit.`,
+      level: 'positive',
+    });
+  }
+  if (!isEmpty && typedRuns.length === 1) {
+    insights.push({ text: 'Upload a second dataset to compare flag rates over time.', level: 'info' });
+  }
+
+  return (
+    <div className="p-6 md:p-8">
+      <TrackPageView event="Dashboard Viewed" />
+
+      {/* ── Page header ──────────────────────────────────────────────── */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-heading-lg" style={{ color: 'var(--text)' }}>Audit Runs</h1>
+          <h1 className="text-heading-lg" style={{ color: 'var(--text)' }}>Risk Overview</h1>
+          <p className="text-body-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>
+            Monitor, segment, and act on fraud risk across all your uploads.
+          </p>
         </div>
         <Link
           href="/upload"
@@ -69,77 +116,79 @@ export default async function DashboardPage() {
         </Link>
       </div>
 
-      {/* Aggregate stats */}
-      <div className="grid grid-cols-4 gap-4 mb-6">
+      {/* ── Insights strip ───────────────────────────────────────────── */}
+      <InsightsStrip insights={insights} />
+
+      {/* ── KPI row ─────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         {[
-          { label: 'Audit Runs', value: typedRuns.length.toLocaleString() },
-          { label: 'Transactions Analysed', value: totalTransactions.toLocaleString() },
-          { label: 'Flagged', value: totalFlagged.toLocaleString() },
           {
-            label: 'Avg Flag Rate',
+            label: 'Customers to review',
+            value: reviewQueue > 0 ? reviewQueue.toLocaleString() : '—',
+            sub: reviewQueue > 0 ? 'High-confidence, unresolved' : 'All resolved',
+            href: reviewQueue > 0 ? '/customers?risk=high&status=new' : undefined,
+            highlight: reviewQueue > 0 ? 'var(--risk-high)' : null,
+          },
+          {
+            label: 'Transactions analysed',
+            value: totalTransactions.toLocaleString(),
+            sub: `${typedRuns.length} audit ${typedRuns.length === 1 ? 'run' : 'runs'}`,
+            href: '/history',
+          },
+          {
+            label: 'Evidence packages',
+            value: totalPackages.toLocaleString(),
+            sub: ce3Packages > 0 ? `${ce3Packages} CE3.0 eligible` : 'None CE3.0 eligible',
+            href: totalPackages > 0 ? '/chargebacks' : undefined,
+            highlight: ce3Packages > 0 ? 'var(--success)' : null,
+          },
+          {
+            label: 'Avg flag rate',
             value: avgFlagRate !== null ? `${avgFlagRate.toFixed(1)}%` : '—',
+            sub: avgFlagRate !== null && avgFlagRate >= 10 ? 'High — investigate upload' : avgFlagRate !== null && avgFlagRate >= 4 ? 'Elevated' : 'Normal range',
             highlight: avgFlagRate !== null && avgFlagRate >= 10 ? 'var(--risk-critical)' : avgFlagRate !== null && avgFlagRate >= 4 ? 'var(--risk-high)' : null,
           },
-        ].map(({ label, value, highlight }) => (
-          <div key={label} className="rounded-lg px-5 py-4 border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
-            <div className="text-caption mb-1" style={{ color: 'var(--text-muted)' }}>{label}</div>
-            <div className="text-display-md font-mono" style={{ color: highlight ?? 'var(--text)' }}>{value}</div>
-          </div>
-        ))}
+        ].map(({ label, value, sub, href, highlight }) => {
+          const inner = (
+            <div className="rounded-lg px-5 py-4 border h-full" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
+              <div className="text-caption mb-1" style={{ color: 'var(--text-muted)' }}>{label}</div>
+              <div className="text-display-md font-mono" style={{ color: highlight ?? 'var(--text)' }}>{value}</div>
+              {sub && <div className="text-caption mt-1" style={{ color: 'var(--text-subtle)' }}>{sub}</div>}
+            </div>
+          );
+          return href
+            ? <Link key={label} href={href} className="block hover:opacity-90 transition-opacity">{inner}</Link>
+            : <div key={label}>{inner}</div>;
+        })}
       </div>
 
-
-
-      {/* Evidence packages summary */}
-      {totalPackages > 0 && (
-        <div className="rounded-lg px-5 py-4 mb-6 border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
-          <div className="flex items-start justify-between">
-            <div className="flex items-start gap-3">
-              <div className="mt-1.5 h-2 w-2 rounded-full flex-shrink-0" style={{ background: 'var(--accent)' }} />
-              <div>
-                <p className="text-body-sm font-semibold" style={{ color: 'var(--text)' }}>
-                  {totalPackages.toLocaleString()} evidence {totalPackages === 1 ? 'package' : 'packages'} generated
-                  {ce3Packages > 0 && (
-                    <span className="ml-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium" style={{ background: 'var(--success-bg)', color: 'var(--success)' }}>
-                      {ce3Packages} CE3.0 eligible
-                    </span>
-                  )}
-                </p>
-                <p className="text-body-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                  Visa Compelling Evidence 3.0 packages can be submitted directly to your payment processor during chargeback representment.
-                </p>
-              </div>
-            </div>
-            <Link href="/chargebacks" className="text-body-sm font-medium hover:underline flex-shrink-0 ml-4" style={{ color: 'var(--accent)' }}>
-              View all →
-            </Link>
-          </div>
-        </div>
-      )}
-
-      {/* Most recent audit quick-link */}
-      {!isEmpty && typedRuns[0] && (typedRuns[0].status === 'completed' || typedRuns[0].status === 'complete') && (
-        <div className="rounded-lg px-5 py-4 mb-6 border flex items-center justify-between" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
-          <div>
-            <p className="text-caption mb-0.5" style={{ color: 'var(--text-muted)' }}>Latest audit</p>
-            <p className="text-body-sm font-semibold font-mono truncate max-w-xs" style={{ color: 'var(--text)' }}>{typedRuns[0].filename}</p>
-            <p className="text-caption mt-0.5" style={{ color: 'var(--text-subtle)' }}>
-              {typedRuns[0].total_rows.toLocaleString()} transactions · {(typedRuns[0].flagged_count ?? 0).toLocaleString()} flagged
-              {typedRuns[0].total_rows > 0 && (
-                <span> · {(((typedRuns[0].flagged_count ?? 0) / typedRuns[0].total_rows) * 100).toFixed(1)}% flag rate</span>
-              )}
-            </p>
-          </div>
-          <Link href={`/audit/${typedRuns[0].id}`} className="text-body-sm font-medium hover:underline flex-shrink-0 ml-4" style={{ color: 'var(--accent)' }}>
-            View audit →
-          </Link>
-        </div>
-      )}
       {isEmpty ? (
         <EmptyDashboardHero />
       ) : (
         <>
-          {/* Charts — only shown when there are runs */}
+          {/* ── Latest audit quick-link ─────────────────────────────── */}
+          {latestRun && (latestRun.status === 'completed' || latestRun.status === 'complete') && (
+            <Link
+              href={`/audit/${latestRun.id}`}
+              className="flex items-center justify-between rounded-lg px-5 py-4 mb-6 border hover:shadow-sm transition-shadow group"
+              style={{ background: 'var(--accent-soft)', borderColor: 'var(--border)' }}
+            >
+              <div>
+                <p className="text-caption mb-0.5" style={{ color: 'var(--text-muted)' }}>Latest audit</p>
+                <p className="text-body-sm font-semibold font-mono truncate max-w-xs" style={{ color: 'var(--text)' }}>{latestRun.filename}</p>
+                <p className="text-caption mt-0.5" style={{ color: 'var(--text-subtle)' }}>
+                  {latestRun.total_rows.toLocaleString()} transactions · {(latestRun.flagged_count ?? 0).toLocaleString()} flagged
+                  {latestFlagRate !== null && <span> · {latestFlagRate.toFixed(1)}% flag rate</span>}
+                  <span> · {formatDate(latestRun.created_at)}</span>
+                </p>
+              </div>
+              <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform flex-shrink-0 ml-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ color: 'var(--icon-muted)' }}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+              </svg>
+            </Link>
+          )}
+
+          {/* ── Charts ──────────────────────────────────────────────── */}
           <DashboardCharts runs={typedRuns.map(r => ({
             id: r.id,
             filename: r.filename,
@@ -147,6 +196,30 @@ export default async function DashboardPage() {
             flagged_count: r.flagged_count ?? 0,
             created_at: r.created_at,
           }))} />
+
+          {/* ── Quick links row ─────────────────────────────────────── */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+            {[
+              { href: '/customers?risk=high', label: 'High-confidence customers', desc: 'Review probable & definite matches' },
+              { href: '/customers?hasRefunds=1', label: 'Refund claimants', desc: 'Customers with at least one refund claim' },
+              { href: '/chargebacks', label: 'Evidence packages', desc: 'View generated dispute packages' },
+            ].map(({ href, label, desc }) => (
+              <Link
+                key={href}
+                href={href}
+                className="rounded-lg px-4 py-3 border flex items-start justify-between gap-2 group hover:shadow-sm transition-shadow"
+                style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
+              >
+                <div>
+                  <p className="text-body-sm font-medium" style={{ color: 'var(--text)' }}>{label}</p>
+                  <p className="text-caption mt-0.5" style={{ color: 'var(--text-muted)' }}>{desc}</p>
+                </div>
+                <svg className="w-4 h-4 flex-shrink-0 mt-0.5 opacity-40 group-hover:opacity-70 transition-opacity" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                </svg>
+              </Link>
+            ))}
+          </div>
 
           <div className="flex justify-end">
             <Link href="/history" className="text-body-sm font-medium hover:underline" style={{ color: 'var(--accent)' }}>

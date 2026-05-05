@@ -523,9 +523,17 @@ export function scoreCluster(input: ScoreClusterInput): ScoredCluster {
  * These are intentionally different from the linker weights — the linker
  * uses weights to decide WHETHER to link; this scorer uses weights to
  * decide HOW CONFIDENT we are that the cluster represents the same person.
+ *
+ * card is BIN+last4 only (no full PSP fingerprint flows through the
+ * linker pipeline).  BIN+last4 is NOT a unique card identifier — many
+ * unrelated customers share the same BIN and last4.  Weight kept at 12
+ * (matching the linker) so a card-only cluster stays below all grade
+ * thresholds.  A card+email cluster scores 12+25=37 → possible, which
+ * is appropriate.  For definite (≥ 85) at least two strong non-card
+ * signals (phone 30, account 30, email 25, device 20) are required.
  */
 const IDENTITY_SIGNAL_WEIGHTS: Record<string, number> = {
-  card: 35,
+  card: 12,
   phone: 30,
   account: 30,
   email: 25,
@@ -533,7 +541,7 @@ const IDENTITY_SIGNAL_WEIGHTS: Record<string, number> = {
   name: 10,
   ip: 10,
   postcode: 10,
-  device: 20,
+  device: 30,
 };
 
 export type IdentityGrade = 'definite' | 'probable' | 'possible';

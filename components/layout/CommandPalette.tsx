@@ -11,10 +11,17 @@ interface NavItem {
   icon: React.ReactNode;
 }
 
+interface CustomerResult {
+  id: string;
+  name: string;
+  email: string | null;
+  risk_level: string;
+}
+
 const NAV_ITEMS: NavItem[] = [
   {
-    label: 'Dashboard',
-    description: 'Overview and key metrics',
+    label: 'Risk Overview',
+    description: 'Dashboard, key metrics and trends',
     href: '/dashboard',
     icon: (
       <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -92,6 +99,27 @@ const NAV_ITEMS: NavItem[] = [
     ),
   },
   {
+    label: 'High-confidence flags',
+    description: 'Customers with grade A or B risk',
+    href: '/customers?risk=high',
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <path d="M8 2L9.5 6h4L10 9l1.5 5L8 12l-3.5 2L6 9 2.5 6h4z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  {
+    label: 'Needs review queue',
+    description: 'Customers with status: needs review',
+    href: '/customers?status=needs_review',
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.4" />
+        <path d="M8 5v3M8 11v.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
     label: 'Settings',
     description: 'Account and team settings',
     href: '/settings',
@@ -104,6 +132,13 @@ const NAV_ITEMS: NavItem[] = [
   },
 ];
 
+const RISK_LEVEL_COLORS: Record<string, string> = {
+  critical: 'var(--risk-critical)',
+  high: 'var(--risk-high)',
+  medium: 'var(--risk-medium)',
+  low: 'var(--risk-low)',
+};
+
 interface CommandPaletteProps {
   isOpen: boolean;
   onClose: () => void;
@@ -114,8 +149,11 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState('');
   const [activeIdx, setActiveIdx] = useState(0);
+  const [customerResults, setCustomerResults] = useState<CustomerResult[]>([]);
+  const [searchingCustomers, setSearchingCustomers] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const filtered = query.trim()
+  const filteredNav = query.trim()
     ? NAV_ITEMS.filter(
         (item) =>
           item.label.toLowerCase().includes(query.toLowerCase()) ||
@@ -123,11 +161,33 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
       )
     : NAV_ITEMS;
 
+  // Search customers when query has ≥2 chars
+  useEffect(() => {
+    if (!query.trim() || query.trim().length < 2) {
+      setCustomerResults([]);
+      return;
+    }
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    setSearchingCustomers(true);
+    debounceRef.current = setTimeout(() => {
+      fetch(`/api/customers/search?q=${encodeURIComponent(query.trim())}&limit=5`)
+        .then(r => r.ok ? r.json() : { results: [] })
+        .then((data: { results?: CustomerResult[] }) => setCustomerResults(data.results ?? []))
+        .catch(() => setCustomerResults([]))
+        .finally(() => setSearchingCustomers(false));
+    }, 250);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [query]);
+
+  // Total items: customer results + nav items (+ 1 for the search action row when query present)
+  const totalItems = (query.trim() ? 1 : 0) + customerResults.length + filteredNav.length;
+
   // Reset state when opened
   useEffect(() => {
     if (isOpen) {
       setQuery('');
       setActiveIdx(0);
+      setCustomerResults([]);
       setTimeout(() => inputRef.current?.focus(), 30);
     }
   }, [isOpen]);
@@ -140,43 +200,70 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
     [router, onClose],
   );
 
+  const handleCustomerSelect = useCallback(
+    (customer: CustomerResult) => {
+      onClose();
+      router.push(`/customers/${customer.id}`);
+    },
+    [router, onClose],
+  );
+
   const handleSearchSubmit = useCallback(() => {
     if (query.trim()) {
       onClose();
       router.push(`/customers?q=${encodeURIComponent(query.trim())}`);
-    } else if (filtered.length > 0) {
-      handleSelect(filtered[activeIdx] ?? filtered[0]);
+    } else if (filteredNav.length > 0) {
+      handleSelect(filteredNav[activeIdx] ?? filteredNav[0]);
     }
-  }, [query, filtered, activeIdx, onClose, router, handleSelect]);
+  }, [query, filteredNav, activeIdx, onClose, router, handleSelect]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key === 'ArrowDown') {
         e.preventDefault();
-        setActiveIdx((i) => Math.min(i + 1, filtered.length - 1));
+        setActiveIdx((i) => Math.min(i + 1, totalItems - 1));
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
         setActiveIdx((i) => Math.max(i - 1, 0));
       } else if (e.key === 'Enter') {
         e.preventDefault();
         if (query.trim()) {
-          handleSearchSubmit();
-        } else if (filtered.length > 0) {
-          handleSelect(filtered[activeIdx] ?? filtered[0]);
+          // index 0 = search action
+          if (activeIdx === 0) { handleSearchSubmit(); return; }
+          // indices 1..customerResults.length = customers
+          const customerOffset = 1;
+          if (activeIdx < customerOffset + customerResults.length) {
+            handleCustomerSelect(customerResults[activeIdx - customerOffset]);
+            return;
+          }
+          // rest = nav
+          const navOffset = customerOffset + customerResults.length;
+          const navItem = filteredNav[activeIdx - navOffset];
+          if (navItem) handleSelect(navItem);
+        } else {
+          const navItem = filteredNav[activeIdx];
+          if (navItem) handleSelect(navItem);
         }
       } else if (e.key === 'Escape') {
         onClose();
       }
     },
-    [filtered, activeIdx, query, handleSelect, handleSearchSubmit, onClose],
+    [filteredNav, activeIdx, query, customerResults, handleSelect, handleCustomerSelect, handleSearchSubmit, onClose, totalItems],
   );
 
   // Keep active index in bounds when filter changes
   useEffect(() => {
-    setActiveIdx((i) => Math.min(i, Math.max(filtered.length - 1, 0)));
-  }, [filtered.length]);
+    setActiveIdx(0);
+  }, [query]);
 
   if (!isOpen) return null;
+
+  // Build a flat index for active highlight
+  let globalIdx = 0;
+  const searchRowIdx = query.trim() ? globalIdx++ : -1;
+  const customerStartIdx = globalIdx;
+  globalIdx += customerResults.length;
+  const navStartIdx = globalIdx;
 
   return (
     <>
@@ -214,15 +301,18 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
           <input
             ref={inputRef}
             type="text"
-            placeholder="Search customers or navigate…"
+            placeholder="Search customers, audits, evidence packages…"
             value={query}
-            onChange={(e) => { setQuery(e.target.value); setActiveIdx(0); }}
+            onChange={(e) => { setQuery(e.target.value); }}
             onKeyDown={handleKeyDown}
             className="flex-1 bg-transparent text-sm outline-none placeholder:opacity-50"
             style={{ color: 'var(--text)' }}
             autoComplete="off"
             spellCheck={false}
           />
+          {searchingCustomers && (
+            <div className="w-3 h-3 rounded-full border border-t-transparent animate-spin" style={{ borderColor: 'var(--border)', borderTopColor: 'var(--accent)' }} />
+          )}
           {query && (
             <button
               type="button"
@@ -243,14 +333,14 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
 
         {/* Results */}
         <div className="max-h-80 overflow-y-auto py-2">
+          {/* Search-all row */}
           {query.trim() && (
             <button
               type="button"
-              className={cn(
-                'flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors',
-              )}
-              style={{ background: activeIdx === -1 ? 'var(--bg-subtle)' : 'transparent' }}
+              className={cn('flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors')}
+              style={{ background: activeIdx === searchRowIdx ? 'var(--bg-subtle)' : 'transparent' }}
               onClick={handleSearchSubmit}
+              onMouseEnter={() => setActiveIdx(searchRowIdx)}
             >
               <span
                 className="flex h-7 w-7 items-center justify-center rounded-md shrink-0"
@@ -265,58 +355,86 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
                 <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>
                   Search customers for &ldquo;{query}&rdquo;
                 </p>
-                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                  Browse all matching profiles
-                </p>
+                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Browse all matching profiles</p>
               </div>
               <span className="ml-auto shrink-0">
-                <kbd
-                  className="font-mono text-[10px] px-1.5 py-0.5 rounded"
-                  style={{ color: 'var(--text-subtle)', background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
-                >
-                  ↵
-                </kbd>
+                <kbd className="font-mono text-[10px] px-1.5 py-0.5 rounded" style={{ color: 'var(--text-subtle)', background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>↵</kbd>
               </span>
             </button>
           )}
 
-          {filtered.length === 0 && !query.trim() ? null : filtered.map((item, i) => (
-            <button
-              key={item.href}
-              type="button"
-              className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors"
-              style={{ background: i === activeIdx ? 'var(--bg-subtle)' : 'transparent' }}
-              onMouseEnter={() => setActiveIdx(i)}
-              onClick={() => handleSelect(item)}
-            >
-              <span
-                className="flex h-7 w-7 items-center justify-center rounded-md shrink-0"
-                style={{ background: 'var(--bg-subtle)', color: 'var(--icon-muted)' }}
-              >
-                {item.icon}
-              </span>
-              <div className="min-w-0">
-                <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>{item.label}</p>
-                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{item.description}</p>
-              </div>
-              <span className="ml-auto shrink-0">
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 12 12"
-                  fill="none"
-                  style={{ color: 'var(--text-subtle)' }}
-                  aria-hidden="true"
+          {/* Customer results */}
+          {customerResults.length > 0 && (
+            <>
+              <p className="px-4 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--text-subtle)' }}>Customers</p>
+              {customerResults.map((c, i) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  className="flex w-full items-center gap-3 px-4 py-2 text-left transition-colors"
+                  style={{ background: activeIdx === customerStartIdx + i ? 'var(--bg-subtle)' : 'transparent' }}
+                  onMouseEnter={() => setActiveIdx(customerStartIdx + i)}
+                  onClick={() => handleCustomerSelect(c)}
                 >
-                  <path d="M3 6h6M7 4l2 2-2 2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </span>
-            </button>
-          ))}
+                  <span
+                    className="flex h-7 w-7 items-center justify-center rounded-full shrink-0 text-xs font-bold"
+                    style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}
+                  >
+                    {(c.name?.[0] ?? '?').toUpperCase()}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium truncate" style={{ color: 'var(--text)' }}>{c.name}</p>
+                    {c.email && <p className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>{c.email}</p>}
+                  </div>
+                  <span
+                    className="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded shrink-0"
+                    style={{ color: RISK_LEVEL_COLORS[c.risk_level] ?? 'var(--text-muted)', background: 'var(--bg-subtle)' }}
+                  >
+                    {c.risk_level}
+                  </span>
+                </button>
+              ))}
+            </>
+          )}
 
-          {filtered.length === 0 && query.trim() && (
+          {/* Nav items */}
+          {(filteredNav.length > 0 || !query.trim()) && (
+            <>
+              {(customerResults.length > 0 || query.trim()) && (
+                <p className="px-4 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--text-subtle)' }}>Navigate</p>
+              )}
+              {filteredNav.map((item, i) => (
+                <button
+                  key={item.href}
+                  type="button"
+                  className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors"
+                  style={{ background: activeIdx === navStartIdx + i ? 'var(--bg-subtle)' : 'transparent' }}
+                  onMouseEnter={() => setActiveIdx(navStartIdx + i)}
+                  onClick={() => handleSelect(item)}
+                >
+                  <span
+                    className="flex h-7 w-7 items-center justify-center rounded-md shrink-0"
+                    style={{ background: 'var(--bg-subtle)', color: 'var(--icon-muted)' }}
+                  >
+                    {item.icon}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>{item.label}</p>
+                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{item.description}</p>
+                  </div>
+                  <span className="ml-auto shrink-0">
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ color: 'var(--text-subtle)' }} aria-hidden="true">
+                      <path d="M3 6h6M7 4l2 2-2 2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </span>
+                </button>
+              ))}
+            </>
+          )}
+
+          {filteredNav.length === 0 && customerResults.length === 0 && query.trim() && !searchingCustomers && (
             <p className="px-4 py-6 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
-              No pages match &ldquo;{query}&rdquo;
+              No results for &ldquo;{query}&rdquo;
             </p>
           )}
         </div>
@@ -340,3 +458,4 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
     </>
   );
 }
+

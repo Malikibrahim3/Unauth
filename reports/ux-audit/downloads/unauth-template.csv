@@ -1,0 +1,2 @@
+order_id,order_date,customer_email,customer_name,shipping_address,order_total,order_status,currency,customer_phone,billing_address,refund_status,refund_reason,refund_date,refund_amount,payment_method,ip_address,device_id,card_last4,card_bin,card_fingerprint,browser_fingerprint,cookie_id,user_agent,asn,account_id
+ORD-001,2024-01-15,alice@example.com,Alice Smith,"123 Main St",99.99,paid,USD,+1-555-0100,"123 Main St",not_refunded,,,,Visa,203.0.113.42,device_abc,4242,411111,fp_abc,bf_xyz,ck_123,Mozilla/5.0,AS15169,acc_001

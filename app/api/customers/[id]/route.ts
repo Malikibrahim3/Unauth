@@ -141,29 +141,34 @@ export async function GET(
   // 4. Fetch fraud transactions for this profile
   //    Join on job_id (from appearances) and match by email or card
   // -------------------------------------------------------------------------
-  let transactions: Array<any> = [];
+  const transactions: Array<any> = [];
 
   if (auditIds.length > 0) {
     const profileEmails = profile.emails as string[];
     const profileCards = profile.card_last4s as string[];
+    const BATCH = 1000;
+    for (let offset = 0; ; offset += BATCH) {
+      let txQuery = serviceClient
+        .from('audit_transactions')
+        .select(
+          'id,job_id,order_id,customer_email,customer_name,shipping_address,device_ip,card_last4,order_value,match_score,fraud_flags,risk_level,refund_claimed,refund_reason,processed_at'
+        )
+        .in('job_id', auditIds)
+        .order('processed_at', { ascending: true })
+        .range(offset, offset + BATCH - 1);
 
-    let txQuery = serviceClient
-      .from('audit_transactions')
-      .select(
-        'id,job_id,order_id,customer_email,customer_name,shipping_address,device_ip,card_last4,order_value,match_score,fraud_flags,risk_level,refund_claimed,refund_reason,processed_at'
-      )
-      .in('job_id', auditIds)
-      .order('processed_at', { ascending: true })
-      .limit(200);
+      if (profileEmails.length > 0) {
+        txQuery = txQuery.in('customer_email', profileEmails);
+      } else if (profileCards.length > 0) {
+        txQuery = txQuery.in('card_last4', profileCards);
+      }
 
-    if (profileEmails.length > 0) {
-      txQuery = txQuery.in('customer_email', profileEmails);
-    } else if (profileCards.length > 0) {
-      txQuery = txQuery.in('card_last4', profileCards);
+      const { data: txData } = await txQuery as unknown as { data: typeof transactions | null };
+      const rows = txData ?? [];
+      if (rows.length === 0) break;
+      transactions.push(...rows);
+      if (rows.length < BATCH) break;
     }
-
-    const { data: txData } = await txQuery as unknown as { data: typeof transactions | null };
-    transactions = txData ?? [];
   }
 
   // -------------------------------------------------------------------------
@@ -226,11 +231,21 @@ export async function GET(
   const linkedAccounts: LinkedAccount[] = [];
 
   if (profile.emails.length > 0) {
-    const { data: clusterRows } = await serviceClient
-      .from('fraud_identity_clusters')
-      .select('cluster_id,entity_type,entity_value,confidence,match_reasons')
-      .in('entity_value', profile.emails)
-      .limit(50) as unknown as {
+    const BATCH = 1000;
+    const clusterRows: Array<{
+      cluster_id: string;
+      entity_type: string;
+      entity_value: string;
+      confidence: number;
+      match_reasons: string[];
+    }> = [];
+
+    for (let offset = 0; ; offset += BATCH) {
+      const res = await serviceClient
+        .from('fraud_identity_clusters')
+        .select('cluster_id,entity_type,entity_value,confidence,match_reasons')
+        .in('entity_value', profile.emails)
+        .range(offset, offset + BATCH - 1) as unknown as {
         data: Array<{
           cluster_id: string;
           entity_type: string;
@@ -238,27 +253,51 @@ export async function GET(
           confidence: number;
           match_reasons: string[];
         }> | null;
-      };
+      } | null;
 
-    if (clusterRows && clusterRows.length > 0) {
+      const rows = res?.data ?? [];
+      if (rows.length === 0) break;
+      clusterRows.push(...rows);
+      if (rows.length < BATCH) break;
+    }
+
+    if (clusterRows.length > 0) {
       const clusterIds = [...new Set(clusterRows.map((r) => r.cluster_id))];
+      const allClusterMembers: Array<{
+        cluster_id: string;
+        entity_type: string;
+        entity_value: string;
+        confidence: number;
+        match_reasons: string[];
+      }> = [];
 
-      const { data: allClusterMembers } = await serviceClient
-        .from('fraud_identity_clusters')
-        .select('cluster_id,entity_type,entity_value,confidence,match_reasons')
-        .in('cluster_id', clusterIds)
-        .not('entity_value', 'in', `(${profile.emails.map((e: string) => `"${e}"`).join(',')})`)
-        .limit(100) as unknown as {
-          data: Array<{
-            cluster_id: string;
-            entity_type: string;
-            entity_value: string;
-            confidence: number;
-            match_reasons: string[];
-          }> | null;
-        };
+      for (let offset = 0; ; offset += BATCH) {
+        const res = await serviceClient
+          .from('fraud_identity_clusters')
+          .select('cluster_id,entity_type,entity_value,confidence,match_reasons')
+          .in('cluster_id', clusterIds)
+          .not('entity_value', 'in', `(${profile.emails.map((e: string) => `"${e}"`).join(',')})`)
+          .range(offset, offset + BATCH - 1) as unknown as {
+            data: Array<{
+              cluster_id: string;
+              entity_type: string;
+              entity_value: string;
+              confidence: number;
+              match_reasons: string[];
+            }> | null;
+          } | null;
 
-      for (const member of allClusterMembers ?? []) {
+        const rows = res?.data ?? [];
+        if (rows.length === 0) break;
+        allClusterMembers.push(...rows);
+        if (rows.length < BATCH) break;
+      }
+
+      const dedup = new Set<string>();
+      for (const member of allClusterMembers) {
+        const key = `${member.cluster_id}|${member.entity_type}|${member.entity_value}`;
+        if (dedup.has(key)) continue;
+        dedup.add(key);
         linkedAccounts.push({
           entityType: member.entity_type,
           entityValue: member.entity_value,

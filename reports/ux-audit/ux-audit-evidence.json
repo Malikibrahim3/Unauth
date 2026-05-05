@@ -1,0 +1,6543 @@
+{
+  "generatedAt": "2026-05-05T14:40:32.434Z",
+  "routes": [
+    "/",
+    "/audit/:runId",
+    "/audit/:runId/customer/:hash",
+    "/audit/:runId/customers",
+    "/audit/:runId/transaction/:id",
+    "/chargebacks",
+    "/chargebacks/:id",
+    "/customers",
+    "/customers/:id",
+    "/customers/:id/evidence/new",
+    "/dashboard",
+    "/demo",
+    "/eval",
+    "/help",
+    "/help/csv-export",
+    "/help/how-it-works",
+    "/history",
+    "/inbox",
+    "/legal/data-handling",
+    "/legal/dpa",
+    "/legal/privacy",
+    "/login",
+    "/lookup",
+    "/network-metrics",
+    "/onboarding",
+    "/saved",
+    "/settings",
+    "/settings/account",
+    "/settings/audit-trail",
+    "/settings/team",
+    "/upload",
+    "/watchlist"
+  ],
+  "pagesVisited": [
+    {
+      "name": "dashboard",
+      "url": "http://localhost:3000/dashboard",
+      "screenshot": "screenshots/dashboard.png"
+    },
+    {
+      "name": "upload-idle",
+      "url": "http://localhost:3000/upload",
+      "screenshot": "screenshots/upload-idle.png"
+    },
+    {
+      "name": "upload-export-guide-collapsed",
+      "url": "http://localhost:3000/upload",
+      "screenshot": "screenshots/upload-export-guide-collapsed.png"
+    },
+    {
+      "name": "upload-invalid-file-selected",
+      "url": "http://localhost:3000/upload",
+      "screenshot": "screenshots/upload-invalid-file-selected.png"
+    },
+    {
+      "name": "upload-column-mapping",
+      "url": "http://localhost:3000/upload",
+      "screenshot": "screenshots/upload-column-mapping.png"
+    },
+    {
+      "name": "upload-context",
+      "url": "http://localhost:3000/upload",
+      "screenshot": "screenshots/upload-context.png"
+    },
+    {
+      "name": "upload-back-to-mapping",
+      "url": "http://localhost:3000/upload",
+      "screenshot": "screenshots/upload-back-to-mapping.png"
+    },
+    {
+      "name": "upload-processing",
+      "url": "http://localhost:3000/upload",
+      "screenshot": "screenshots/upload-processing.png"
+    },
+    {
+      "name": "history-fallback-after-upload-timeout",
+      "url": "http://localhost:3000/history",
+      "screenshot": "screenshots/history-fallback-after-upload-timeout.png"
+    },
+    {
+      "name": "audit-results-overview",
+      "url": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410",
+      "screenshot": "screenshots/audit-results-overview.png"
+    },
+    {
+      "name": "audit-results-customers-tab",
+      "url": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410",
+      "screenshot": "screenshots/audit-results-customers-tab.png"
+    },
+    {
+      "name": "audit-customer-drawer",
+      "url": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410",
+      "screenshot": "screenshots/audit-customer-drawer.png"
+    },
+    {
+      "name": "audit-results-transactions-tab",
+      "url": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410",
+      "screenshot": "screenshots/audit-results-transactions-tab.png"
+    },
+    {
+      "name": "audit-results-data-quality-tab",
+      "url": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410",
+      "screenshot": "screenshots/audit-results-data-quality-tab.png"
+    },
+    {
+      "name": "return-dashboard",
+      "url": "http://localhost:3000/dashboard",
+      "screenshot": "screenshots/return-dashboard.png"
+    },
+    {
+      "name": "dashboard",
+      "url": "http://localhost:3000/dashboard",
+      "screenshot": "screenshots/dashboard.png"
+    },
+    {
+      "name": "history",
+      "url": "http://localhost:3000/history",
+      "screenshot": "screenshots/history.png"
+    },
+    {
+      "name": "customers",
+      "url": "http://localhost:3000/customers",
+      "screenshot": "screenshots/customers.png"
+    },
+    {
+      "name": "watchlist",
+      "url": "http://localhost:3000/watchlist",
+      "screenshot": "screenshots/watchlist.png"
+    },
+    {
+      "name": "inbox",
+      "url": "http://localhost:3000/inbox",
+      "screenshot": "screenshots/inbox.png"
+    },
+    {
+      "name": "chargebacks",
+      "url": "http://localhost:3000/chargebacks",
+      "screenshot": "screenshots/chargebacks.png"
+    },
+    {
+      "name": "settings",
+      "url": "http://localhost:3000/settings/account",
+      "screenshot": "screenshots/settings.png"
+    },
+    {
+      "name": "help",
+      "url": "http://localhost:3000/help",
+      "screenshot": "screenshots/help.png"
+    }
+  ],
+  "clicks": [
+    {
+      "page": "upload-idle",
+      "label": "How do I export this from your platform?",
+      "kind": "click",
+      "before": "http://localhost:3000/upload",
+      "after": "http://localhost:3000/upload",
+      "outcome": "State changed in place.",
+      "patternRecommendation": "inline"
+    },
+    {
+      "page": "upload-idle",
+      "label": "Download template",
+      "kind": "download",
+      "before": "http://localhost:3000/upload",
+      "after": "http://localhost:3000/upload",
+      "outcome": "Downloaded unauth-template.csv",
+      "patternRecommendation": "inline"
+    },
+    {
+      "page": "upload-invalid-file-selected",
+      "label": "Cancel",
+      "kind": "click",
+      "before": "http://localhost:3000/upload",
+      "after": "http://localhost:3000/upload",
+      "outcome": "State changed in place.",
+      "patternRecommendation": "inline"
+    },
+    {
+      "page": "upload-column-mapping",
+      "label": "Continue",
+      "kind": "click",
+      "before": "http://localhost:3000/upload",
+      "after": "http://localhost:3000/upload",
+      "outcome": "State changed in place.",
+      "patternRecommendation": "inline"
+    },
+    {
+      "page": "upload-context",
+      "label": "Historical import",
+      "kind": "click",
+      "before": "http://localhost:3000/upload",
+      "after": "http://localhost:3000/upload",
+      "outcome": "State changed in place.",
+      "patternRecommendation": "inline"
+    },
+    {
+      "page": "upload-context",
+      "label": "Customer investigation",
+      "kind": "click",
+      "before": "http://localhost:3000/upload",
+      "after": "http://localhost:3000/upload",
+      "outcome": "State changed in place.",
+      "patternRecommendation": "inline"
+    },
+    {
+      "page": "upload-context",
+      "label": "Regular upload",
+      "kind": "click",
+      "before": "http://localhost:3000/upload",
+      "after": "http://localhost:3000/upload",
+      "outcome": "State changed in place.",
+      "patternRecommendation": "inline"
+    },
+    {
+      "page": "upload-context",
+      "label": "Back",
+      "kind": "click",
+      "before": "http://localhost:3000/upload",
+      "after": "http://localhost:3000/upload",
+      "outcome": "State changed in place.",
+      "patternRecommendation": "inline"
+    },
+    {
+      "page": "upload-context",
+      "label": "Upload and run audit",
+      "kind": "button",
+      "before": "http://localhost:3000/upload",
+      "after": "http://localhost:3000/upload",
+      "outcome": "Starts upload/processing state, then should route to audit results when complete.",
+      "patternRecommendation": "page"
+    },
+    {
+      "page": "history-fallback-after-upload-timeout",
+      "label": "View completed audit fallback",
+      "kind": "click",
+      "before": "http://localhost:3000/history",
+      "after": "http://localhost:3000/history",
+      "outcome": "State changed in place.",
+      "patternRecommendation": "page"
+    },
+    {
+      "page": "audit-results-overview",
+      "label": "Export CSV",
+      "kind": "download",
+      "before": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410",
+      "after": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410",
+      "outcome": "Downloaded audit-f60c5d5d.csv",
+      "patternRecommendation": "inline"
+    },
+    {
+      "page": "audit-results-overview",
+      "label": "Customers tab",
+      "kind": "click",
+      "before": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410",
+      "after": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410",
+      "outcome": "State changed in place.",
+      "patternRecommendation": "inline"
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "label": "View customer",
+      "kind": "click",
+      "before": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410",
+      "after": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410",
+      "outcome": "State changed in place.",
+      "patternRecommendation": "drawer"
+    },
+    {
+      "page": "audit-customer-drawer",
+      "label": "Close profile",
+      "kind": "click",
+      "before": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410",
+      "after": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410",
+      "outcome": "State changed in place.",
+      "patternRecommendation": "drawer"
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "label": "Transactions tab",
+      "kind": "click",
+      "before": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410",
+      "after": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410",
+      "outcome": "State changed in place.",
+      "patternRecommendation": "inline"
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "label": "Data quality tab",
+      "kind": "click",
+      "before": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410",
+      "after": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410",
+      "outcome": "State changed in place.",
+      "patternRecommendation": "inline"
+    },
+    {
+      "page": "audit-results-data-quality-tab",
+      "label": "Risk Overview breadcrumb",
+      "kind": "click",
+      "before": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410",
+      "after": "http://localhost:3000/dashboard",
+      "outcome": "Navigated to http://localhost:3000/dashboard",
+      "patternRecommendation": "page"
+    }
+  ],
+  "inventories": [
+    {
+      "page": "dashboard",
+      "tag": "button",
+      "role": null,
+      "label": "Collapse sidebar",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "dashboard",
+      "tag": "a",
+      "role": null,
+      "label": "Home",
+      "href": "http://localhost:3000/dashboard",
+      "disabled": false
+    },
+    {
+      "page": "dashboard",
+      "tag": "a",
+      "role": null,
+      "label": "Inbox",
+      "href": "http://localhost:3000/inbox",
+      "disabled": false
+    },
+    {
+      "page": "dashboard",
+      "tag": "a",
+      "role": null,
+      "label": "New audit",
+      "href": "http://localhost:3000/upload",
+      "disabled": false
+    },
+    {
+      "page": "dashboard",
+      "tag": "a",
+      "role": null,
+      "label": "Audit history",
+      "href": "http://localhost:3000/history",
+      "disabled": false
+    },
+    {
+      "page": "dashboard",
+      "tag": "a",
+      "role": null,
+      "label": "Customers",
+      "href": "http://localhost:3000/customers",
+      "disabled": false
+    },
+    {
+      "page": "dashboard",
+      "tag": "a",
+      "role": null,
+      "label": "Watchlist",
+      "href": "http://localhost:3000/watchlist",
+      "disabled": false
+    },
+    {
+      "page": "dashboard",
+      "tag": "a",
+      "role": null,
+      "label": "Evidence packages",
+      "href": "http://localhost:3000/chargebacks",
+      "disabled": false
+    },
+    {
+      "page": "dashboard",
+      "tag": "a",
+      "role": null,
+      "label": "Help",
+      "href": "http://localhost:3000/help",
+      "disabled": false
+    },
+    {
+      "page": "dashboard",
+      "tag": "a",
+      "role": null,
+      "label": "Settings",
+      "href": "http://localhost:3000/settings",
+      "disabled": false
+    },
+    {
+      "page": "dashboard",
+      "tag": "button",
+      "role": null,
+      "label": "Sign out",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "dashboard",
+      "tag": "a",
+      "role": null,
+      "label": "Privacy",
+      "href": "http://localhost:3000/legal/privacy",
+      "disabled": false
+    },
+    {
+      "page": "dashboard",
+      "tag": "a",
+      "role": null,
+      "label": "Data handling",
+      "href": "http://localhost:3000/legal/data-handling",
+      "disabled": false
+    },
+    {
+      "page": "dashboard",
+      "tag": "a",
+      "role": null,
+      "label": "DPA",
+      "href": "http://localhost:3000/legal/dpa",
+      "disabled": false
+    },
+    {
+      "page": "dashboard",
+      "tag": "button",
+      "role": null,
+      "label": "Search (⌘K)",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "dashboard",
+      "tag": "a",
+      "role": null,
+      "label": "New Audit",
+      "href": "http://localhost:3000/upload",
+      "disabled": false
+    },
+    {
+      "page": "dashboard",
+      "tag": "a",
+      "role": null,
+      "label": "Transactions analysed01 audit run",
+      "href": "http://localhost:3000/history",
+      "disabled": false
+    },
+    {
+      "page": "dashboard",
+      "tag": "a",
+      "role": null,
+      "label": "Latest auditsample_audit_3000_orders.csv0 transactions · 220 flagged · 05 May 2026, 15:40",
+      "href": "http://localhost:3000/audit/6e2da488-fd42-4aa7-b9fa-d5af77587636",
+      "disabled": false
+    },
+    {
+      "page": "dashboard",
+      "tag": "a",
+      "role": null,
+      "label": "High-confidence customersReview probable & definite matches",
+      "href": "http://localhost:3000/customers?risk=high",
+      "disabled": false
+    },
+    {
+      "page": "dashboard",
+      "tag": "a",
+      "role": null,
+      "label": "Refund claimantsCustomers with at least one refund claim",
+      "href": "http://localhost:3000/customers?hasRefunds=1",
+      "disabled": false
+    },
+    {
+      "page": "dashboard",
+      "tag": "a",
+      "role": null,
+      "label": "Evidence packagesView generated dispute packages",
+      "href": "http://localhost:3000/chargebacks",
+      "disabled": false
+    },
+    {
+      "page": "dashboard",
+      "tag": "a",
+      "role": null,
+      "label": "View all audits →",
+      "href": "http://localhost:3000/history",
+      "disabled": false
+    },
+    {
+      "page": "upload-idle",
+      "tag": "button",
+      "role": null,
+      "label": "Collapse sidebar",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-idle",
+      "tag": "a",
+      "role": null,
+      "label": "Home",
+      "href": "http://localhost:3000/dashboard",
+      "disabled": false
+    },
+    {
+      "page": "upload-idle",
+      "tag": "a",
+      "role": null,
+      "label": "Inbox",
+      "href": "http://localhost:3000/inbox",
+      "disabled": false
+    },
+    {
+      "page": "upload-idle",
+      "tag": "a",
+      "role": null,
+      "label": "New audit",
+      "href": "http://localhost:3000/upload",
+      "disabled": false
+    },
+    {
+      "page": "upload-idle",
+      "tag": "a",
+      "role": null,
+      "label": "Audit history",
+      "href": "http://localhost:3000/history",
+      "disabled": false
+    },
+    {
+      "page": "upload-idle",
+      "tag": "a",
+      "role": null,
+      "label": "Customers",
+      "href": "http://localhost:3000/customers",
+      "disabled": false
+    },
+    {
+      "page": "upload-idle",
+      "tag": "a",
+      "role": null,
+      "label": "Watchlist",
+      "href": "http://localhost:3000/watchlist",
+      "disabled": false
+    },
+    {
+      "page": "upload-idle",
+      "tag": "a",
+      "role": null,
+      "label": "Evidence packages",
+      "href": "http://localhost:3000/chargebacks",
+      "disabled": false
+    },
+    {
+      "page": "upload-idle",
+      "tag": "a",
+      "role": null,
+      "label": "Help",
+      "href": "http://localhost:3000/help",
+      "disabled": false
+    },
+    {
+      "page": "upload-idle",
+      "tag": "a",
+      "role": null,
+      "label": "Settings",
+      "href": "http://localhost:3000/settings",
+      "disabled": false
+    },
+    {
+      "page": "upload-idle",
+      "tag": "button",
+      "role": null,
+      "label": "Sign out",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-idle",
+      "tag": "a",
+      "role": null,
+      "label": "Privacy",
+      "href": "http://localhost:3000/legal/privacy",
+      "disabled": false
+    },
+    {
+      "page": "upload-idle",
+      "tag": "a",
+      "role": null,
+      "label": "Data handling",
+      "href": "http://localhost:3000/legal/data-handling",
+      "disabled": false
+    },
+    {
+      "page": "upload-idle",
+      "tag": "a",
+      "role": null,
+      "label": "DPA",
+      "href": "http://localhost:3000/legal/dpa",
+      "disabled": false
+    },
+    {
+      "page": "upload-idle",
+      "tag": "button",
+      "role": null,
+      "label": "Search (⌘K)",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-idle",
+      "tag": "button",
+      "role": null,
+      "label": "How do I export this from your platform?",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-idle",
+      "tag": "button",
+      "role": null,
+      "label": "Choose file",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-idle",
+      "tag": "button",
+      "role": null,
+      "label": "Download template",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-invalid-file-selected",
+      "tag": "button",
+      "role": null,
+      "label": "Collapse sidebar",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-invalid-file-selected",
+      "tag": "a",
+      "role": null,
+      "label": "Home",
+      "href": "http://localhost:3000/dashboard",
+      "disabled": false
+    },
+    {
+      "page": "upload-invalid-file-selected",
+      "tag": "a",
+      "role": null,
+      "label": "Inbox",
+      "href": "http://localhost:3000/inbox",
+      "disabled": false
+    },
+    {
+      "page": "upload-invalid-file-selected",
+      "tag": "a",
+      "role": null,
+      "label": "New audit",
+      "href": "http://localhost:3000/upload",
+      "disabled": false
+    },
+    {
+      "page": "upload-invalid-file-selected",
+      "tag": "a",
+      "role": null,
+      "label": "Audit history",
+      "href": "http://localhost:3000/history",
+      "disabled": false
+    },
+    {
+      "page": "upload-invalid-file-selected",
+      "tag": "a",
+      "role": null,
+      "label": "Customers",
+      "href": "http://localhost:3000/customers",
+      "disabled": false
+    },
+    {
+      "page": "upload-invalid-file-selected",
+      "tag": "a",
+      "role": null,
+      "label": "Watchlist",
+      "href": "http://localhost:3000/watchlist",
+      "disabled": false
+    },
+    {
+      "page": "upload-invalid-file-selected",
+      "tag": "a",
+      "role": null,
+      "label": "Evidence packages",
+      "href": "http://localhost:3000/chargebacks",
+      "disabled": false
+    },
+    {
+      "page": "upload-invalid-file-selected",
+      "tag": "a",
+      "role": null,
+      "label": "Help",
+      "href": "http://localhost:3000/help",
+      "disabled": false
+    },
+    {
+      "page": "upload-invalid-file-selected",
+      "tag": "a",
+      "role": null,
+      "label": "Settings",
+      "href": "http://localhost:3000/settings",
+      "disabled": false
+    },
+    {
+      "page": "upload-invalid-file-selected",
+      "tag": "button",
+      "role": null,
+      "label": "Sign out",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-invalid-file-selected",
+      "tag": "a",
+      "role": null,
+      "label": "Privacy",
+      "href": "http://localhost:3000/legal/privacy",
+      "disabled": false
+    },
+    {
+      "page": "upload-invalid-file-selected",
+      "tag": "a",
+      "role": null,
+      "label": "Data handling",
+      "href": "http://localhost:3000/legal/data-handling",
+      "disabled": false
+    },
+    {
+      "page": "upload-invalid-file-selected",
+      "tag": "a",
+      "role": null,
+      "label": "DPA",
+      "href": "http://localhost:3000/legal/dpa",
+      "disabled": false
+    },
+    {
+      "page": "upload-invalid-file-selected",
+      "tag": "button",
+      "role": null,
+      "label": "Search (⌘K)",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-invalid-file-selected",
+      "tag": "button",
+      "role": null,
+      "label": "How do I export this from your platform?",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-invalid-file-selected",
+      "tag": "select",
+      "role": null,
+      "label": "— not mapped —this is not a useful merchant csv",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-invalid-file-selected",
+      "tag": "select",
+      "role": null,
+      "label": "— not mapped —this is not a useful merchant csv",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-invalid-file-selected",
+      "tag": "select",
+      "role": null,
+      "label": "— not mapped —this is not a useful merchant csv",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-invalid-file-selected",
+      "tag": "select",
+      "role": null,
+      "label": "— not mapped —this is not a useful merchant csv",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-invalid-file-selected",
+      "tag": "select",
+      "role": null,
+      "label": "— not mapped —this is not a useful merchant csv",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-invalid-file-selected",
+      "tag": "select",
+      "role": null,
+      "label": "— not mapped —this is not a useful merchant csv",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-invalid-file-selected",
+      "tag": "select",
+      "role": null,
+      "label": "— not mapped —this is not a useful merchant csv",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-invalid-file-selected",
+      "tag": "select",
+      "role": null,
+      "label": "— not mapped —this is not a useful merchant csv",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-invalid-file-selected",
+      "tag": "select",
+      "role": null,
+      "label": "— not mapped —this is not a useful merchant csv",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-invalid-file-selected",
+      "tag": "select",
+      "role": null,
+      "label": "— not mapped —this is not a useful merchant csv",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-invalid-file-selected",
+      "tag": "select",
+      "role": null,
+      "label": "— not mapped —this is not a useful merchant csv",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-invalid-file-selected",
+      "tag": "select",
+      "role": null,
+      "label": "— not mapped —this is not a useful merchant csv",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-invalid-file-selected",
+      "tag": "select",
+      "role": null,
+      "label": "— not mapped —this is not a useful merchant csv",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-invalid-file-selected",
+      "tag": "select",
+      "role": null,
+      "label": "— not mapped —this is not a useful merchant csv",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-invalid-file-selected",
+      "tag": "select",
+      "role": null,
+      "label": "— not mapped —this is not a useful merchant csv",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-invalid-file-selected",
+      "tag": "select",
+      "role": null,
+      "label": "— not mapped —this is not a useful merchant csv",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-invalid-file-selected",
+      "tag": "select",
+      "role": null,
+      "label": "— not mapped —this is not a useful merchant csv",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-invalid-file-selected",
+      "tag": "select",
+      "role": null,
+      "label": "— not mapped —this is not a useful merchant csv",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-invalid-file-selected",
+      "tag": "select",
+      "role": null,
+      "label": "— not mapped —this is not a useful merchant csv",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-invalid-file-selected",
+      "tag": "select",
+      "role": null,
+      "label": "— not mapped —this is not a useful merchant csv",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-invalid-file-selected",
+      "tag": "select",
+      "role": null,
+      "label": "— not mapped —this is not a useful merchant csv",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-invalid-file-selected",
+      "tag": "select",
+      "role": null,
+      "label": "— not mapped —this is not a useful merchant csv",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-invalid-file-selected",
+      "tag": "select",
+      "role": null,
+      "label": "— not mapped —this is not a useful merchant csv",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-invalid-file-selected",
+      "tag": "select",
+      "role": null,
+      "label": "— not mapped —this is not a useful merchant csv",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-invalid-file-selected",
+      "tag": "select",
+      "role": null,
+      "label": "— not mapped —this is not a useful merchant csv",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-invalid-file-selected",
+      "tag": "select",
+      "role": null,
+      "label": "— not mapped —this is not a useful merchant csv",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-invalid-file-selected",
+      "tag": "select",
+      "role": null,
+      "label": "— not mapped —this is not a useful merchant csv",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-invalid-file-selected",
+      "tag": "select",
+      "role": null,
+      "label": "— not mapped —this is not a useful merchant csv",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-invalid-file-selected",
+      "tag": "select",
+      "role": null,
+      "label": "— not mapped —this is not a useful merchant csv",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-invalid-file-selected",
+      "tag": "select",
+      "role": null,
+      "label": "— not mapped —this is not a useful merchant csv",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-invalid-file-selected",
+      "tag": "button",
+      "role": null,
+      "label": "Cancel",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-invalid-file-selected",
+      "tag": "button",
+      "role": null,
+      "label": "4 required fields unmapped",
+      "href": null,
+      "disabled": true
+    },
+    {
+      "page": "upload-column-mapping",
+      "tag": "button",
+      "role": null,
+      "label": "Collapse sidebar",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-column-mapping",
+      "tag": "a",
+      "role": null,
+      "label": "Home",
+      "href": "http://localhost:3000/dashboard",
+      "disabled": false
+    },
+    {
+      "page": "upload-column-mapping",
+      "tag": "a",
+      "role": null,
+      "label": "Inbox",
+      "href": "http://localhost:3000/inbox",
+      "disabled": false
+    },
+    {
+      "page": "upload-column-mapping",
+      "tag": "a",
+      "role": null,
+      "label": "New audit",
+      "href": "http://localhost:3000/upload",
+      "disabled": false
+    },
+    {
+      "page": "upload-column-mapping",
+      "tag": "a",
+      "role": null,
+      "label": "Audit history",
+      "href": "http://localhost:3000/history",
+      "disabled": false
+    },
+    {
+      "page": "upload-column-mapping",
+      "tag": "a",
+      "role": null,
+      "label": "Customers",
+      "href": "http://localhost:3000/customers",
+      "disabled": false
+    },
+    {
+      "page": "upload-column-mapping",
+      "tag": "a",
+      "role": null,
+      "label": "Watchlist",
+      "href": "http://localhost:3000/watchlist",
+      "disabled": false
+    },
+    {
+      "page": "upload-column-mapping",
+      "tag": "a",
+      "role": null,
+      "label": "Evidence packages",
+      "href": "http://localhost:3000/chargebacks",
+      "disabled": false
+    },
+    {
+      "page": "upload-column-mapping",
+      "tag": "a",
+      "role": null,
+      "label": "Help",
+      "href": "http://localhost:3000/help",
+      "disabled": false
+    },
+    {
+      "page": "upload-column-mapping",
+      "tag": "a",
+      "role": null,
+      "label": "Settings",
+      "href": "http://localhost:3000/settings",
+      "disabled": false
+    },
+    {
+      "page": "upload-column-mapping",
+      "tag": "button",
+      "role": null,
+      "label": "Sign out",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-column-mapping",
+      "tag": "a",
+      "role": null,
+      "label": "Privacy",
+      "href": "http://localhost:3000/legal/privacy",
+      "disabled": false
+    },
+    {
+      "page": "upload-column-mapping",
+      "tag": "a",
+      "role": null,
+      "label": "Data handling",
+      "href": "http://localhost:3000/legal/data-handling",
+      "disabled": false
+    },
+    {
+      "page": "upload-column-mapping",
+      "tag": "a",
+      "role": null,
+      "label": "DPA",
+      "href": "http://localhost:3000/legal/dpa",
+      "disabled": false
+    },
+    {
+      "page": "upload-column-mapping",
+      "tag": "button",
+      "role": null,
+      "label": "Search (⌘K)",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-column-mapping",
+      "tag": "button",
+      "role": null,
+      "label": "How do I export this from your platform?",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-column-mapping",
+      "tag": "select",
+      "role": null,
+      "label": "order_id",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-column-mapping",
+      "tag": "select",
+      "role": null,
+      "label": "order_date",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-column-mapping",
+      "tag": "select",
+      "role": null,
+      "label": "customer_email",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-column-mapping",
+      "tag": "select",
+      "role": null,
+      "label": "order_total",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-column-mapping",
+      "tag": "select",
+      "role": null,
+      "label": "customer_name",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-column-mapping",
+      "tag": "select",
+      "role": null,
+      "label": "shipping_address",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-column-mapping",
+      "tag": "select",
+      "role": null,
+      "label": "— not mapped —order_idorder_datecustomer_emailcustomer_nameshipping_addressbilling_addressorder_totalcurrencyorder_statusip_addressdevice_idcard_last4card_bincard_fingerprintpayment_methodrefund_statusrefund_reasonrefund_daterefund_amount",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-column-mapping",
+      "tag": "select",
+      "role": null,
+      "label": "billing_address",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-column-mapping",
+      "tag": "select",
+      "role": null,
+      "label": "ip_address",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-column-mapping",
+      "tag": "select",
+      "role": null,
+      "label": "— not mapped —order_idorder_datecustomer_emailcustomer_nameshipping_addressbilling_addressorder_totalcurrencyorder_statusip_addressdevice_idcard_last4card_bincard_fingerprintpayment_methodrefund_statusrefund_reasonrefund_daterefund_amount",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-column-mapping",
+      "tag": "select",
+      "role": null,
+      "label": "payment_method",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-column-mapping",
+      "tag": "select",
+      "role": null,
+      "label": "card_last4",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-column-mapping",
+      "tag": "select",
+      "role": null,
+      "label": "card_bin",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-column-mapping",
+      "tag": "select",
+      "role": null,
+      "label": "card_fingerprint",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-column-mapping",
+      "tag": "select",
+      "role": null,
+      "label": "device_id",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-column-mapping",
+      "tag": "select",
+      "role": null,
+      "label": "— not mapped —order_idorder_datecustomer_emailcustomer_nameshipping_addressbilling_addressorder_totalcurrencyorder_statusip_addressdevice_idcard_last4card_bincard_fingerprintpayment_methodrefund_statusrefund_reasonrefund_daterefund_amount",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-column-mapping",
+      "tag": "select",
+      "role": null,
+      "label": "— not mapped —order_idorder_datecustomer_emailcustomer_nameshipping_addressbilling_addressorder_totalcurrencyorder_statusip_addressdevice_idcard_last4card_bincard_fingerprintpayment_methodrefund_statusrefund_reasonrefund_daterefund_amount",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-column-mapping",
+      "tag": "select",
+      "role": null,
+      "label": "— not mapped —order_idorder_datecustomer_emailcustomer_nameshipping_addressbilling_addressorder_totalcurrencyorder_statusip_addressdevice_idcard_last4card_bincard_fingerprintpayment_methodrefund_statusrefund_reasonrefund_daterefund_amount",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-column-mapping",
+      "tag": "select",
+      "role": null,
+      "label": "— not mapped —order_idorder_datecustomer_emailcustomer_nameshipping_addressbilling_addressorder_totalcurrencyorder_statusip_addressdevice_idcard_last4card_bincard_fingerprintpayment_methodrefund_statusrefund_reasonrefund_daterefund_amount",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-column-mapping",
+      "tag": "select",
+      "role": null,
+      "label": "— not mapped —order_idorder_datecustomer_emailcustomer_nameshipping_addressbilling_addressorder_totalcurrencyorder_statusip_addressdevice_idcard_last4card_bincard_fingerprintpayment_methodrefund_statusrefund_reasonrefund_daterefund_amount",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-column-mapping",
+      "tag": "select",
+      "role": null,
+      "label": "— not mapped —order_idorder_datecustomer_emailcustomer_nameshipping_addressbilling_addressorder_totalcurrencyorder_statusip_addressdevice_idcard_last4card_bincard_fingerprintpayment_methodrefund_statusrefund_reasonrefund_daterefund_amount",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-column-mapping",
+      "tag": "select",
+      "role": null,
+      "label": "refund_status",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-column-mapping",
+      "tag": "select",
+      "role": null,
+      "label": "refund_reason",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-column-mapping",
+      "tag": "select",
+      "role": null,
+      "label": "refund_date",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-column-mapping",
+      "tag": "select",
+      "role": null,
+      "label": "refund_amount",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-column-mapping",
+      "tag": "select",
+      "role": null,
+      "label": "— not mapped —order_idorder_datecustomer_emailcustomer_nameshipping_addressbilling_addressorder_totalcurrencyorder_statusip_addressdevice_idcard_last4card_bincard_fingerprintpayment_methodrefund_statusrefund_reasonrefund_daterefund_amount",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-column-mapping",
+      "tag": "select",
+      "role": null,
+      "label": "— not mapped —order_idorder_datecustomer_emailcustomer_nameshipping_addressbilling_addressorder_totalcurrencyorder_statusip_addressdevice_idcard_last4card_bincard_fingerprintpayment_methodrefund_statusrefund_reasonrefund_daterefund_amount",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-column-mapping",
+      "tag": "select",
+      "role": null,
+      "label": "— not mapped —order_idorder_datecustomer_emailcustomer_nameshipping_addressbilling_addressorder_totalcurrencyorder_statusip_addressdevice_idcard_last4card_bincard_fingerprintpayment_methodrefund_statusrefund_reasonrefund_daterefund_amount",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-column-mapping",
+      "tag": "select",
+      "role": null,
+      "label": "currency",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-column-mapping",
+      "tag": "select",
+      "role": null,
+      "label": "order_status",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-column-mapping",
+      "tag": "button",
+      "role": null,
+      "label": "Cancel",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-column-mapping",
+      "tag": "button",
+      "role": null,
+      "label": "Continue →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-context",
+      "tag": "button",
+      "role": null,
+      "label": "Collapse sidebar",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-context",
+      "tag": "a",
+      "role": null,
+      "label": "Home",
+      "href": "http://localhost:3000/dashboard",
+      "disabled": false
+    },
+    {
+      "page": "upload-context",
+      "tag": "a",
+      "role": null,
+      "label": "Inbox",
+      "href": "http://localhost:3000/inbox",
+      "disabled": false
+    },
+    {
+      "page": "upload-context",
+      "tag": "a",
+      "role": null,
+      "label": "New audit",
+      "href": "http://localhost:3000/upload",
+      "disabled": false
+    },
+    {
+      "page": "upload-context",
+      "tag": "a",
+      "role": null,
+      "label": "Audit history",
+      "href": "http://localhost:3000/history",
+      "disabled": false
+    },
+    {
+      "page": "upload-context",
+      "tag": "a",
+      "role": null,
+      "label": "Customers",
+      "href": "http://localhost:3000/customers",
+      "disabled": false
+    },
+    {
+      "page": "upload-context",
+      "tag": "a",
+      "role": null,
+      "label": "Watchlist",
+      "href": "http://localhost:3000/watchlist",
+      "disabled": false
+    },
+    {
+      "page": "upload-context",
+      "tag": "a",
+      "role": null,
+      "label": "Evidence packages",
+      "href": "http://localhost:3000/chargebacks",
+      "disabled": false
+    },
+    {
+      "page": "upload-context",
+      "tag": "a",
+      "role": null,
+      "label": "Help",
+      "href": "http://localhost:3000/help",
+      "disabled": false
+    },
+    {
+      "page": "upload-context",
+      "tag": "a",
+      "role": null,
+      "label": "Settings",
+      "href": "http://localhost:3000/settings",
+      "disabled": false
+    },
+    {
+      "page": "upload-context",
+      "tag": "button",
+      "role": null,
+      "label": "Sign out",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-context",
+      "tag": "a",
+      "role": null,
+      "label": "Privacy",
+      "href": "http://localhost:3000/legal/privacy",
+      "disabled": false
+    },
+    {
+      "page": "upload-context",
+      "tag": "a",
+      "role": null,
+      "label": "Data handling",
+      "href": "http://localhost:3000/legal/data-handling",
+      "disabled": false
+    },
+    {
+      "page": "upload-context",
+      "tag": "a",
+      "role": null,
+      "label": "DPA",
+      "href": "http://localhost:3000/legal/dpa",
+      "disabled": false
+    },
+    {
+      "page": "upload-context",
+      "tag": "button",
+      "role": null,
+      "label": "Search (⌘K)",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-context",
+      "tag": "button",
+      "role": null,
+      "label": "How do I export this from your platform?",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-context",
+      "tag": "input",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-context",
+      "tag": "input",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-context",
+      "tag": "input",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-context",
+      "tag": "input",
+      "role": null,
+      "label": "standard",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-context",
+      "tag": "input",
+      "role": null,
+      "label": "historical",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-context",
+      "tag": "input",
+      "role": null,
+      "label": "investigation",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-context",
+      "tag": "button",
+      "role": null,
+      "label": "← Back",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "upload-context",
+      "tag": "button",
+      "role": null,
+      "label": "Upload and run audit",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-overview",
+      "tag": "button",
+      "role": null,
+      "label": "Collapse sidebar",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-overview",
+      "tag": "a",
+      "role": null,
+      "label": "Home",
+      "href": "http://localhost:3000/dashboard",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-overview",
+      "tag": "a",
+      "role": null,
+      "label": "Inbox",
+      "href": "http://localhost:3000/inbox",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-overview",
+      "tag": "a",
+      "role": null,
+      "label": "New audit",
+      "href": "http://localhost:3000/upload",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-overview",
+      "tag": "a",
+      "role": null,
+      "label": "Audit history",
+      "href": "http://localhost:3000/history",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-overview",
+      "tag": "a",
+      "role": null,
+      "label": "Customers",
+      "href": "http://localhost:3000/customers",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-overview",
+      "tag": "a",
+      "role": null,
+      "label": "Watchlist",
+      "href": "http://localhost:3000/watchlist",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-overview",
+      "tag": "a",
+      "role": null,
+      "label": "Evidence packages",
+      "href": "http://localhost:3000/chargebacks",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-overview",
+      "tag": "a",
+      "role": null,
+      "label": "Help",
+      "href": "http://localhost:3000/help",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-overview",
+      "tag": "a",
+      "role": null,
+      "label": "Settings",
+      "href": "http://localhost:3000/settings",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-overview",
+      "tag": "button",
+      "role": null,
+      "label": "Sign out",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-overview",
+      "tag": "a",
+      "role": null,
+      "label": "Privacy",
+      "href": "http://localhost:3000/legal/privacy",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-overview",
+      "tag": "a",
+      "role": null,
+      "label": "Data handling",
+      "href": "http://localhost:3000/legal/data-handling",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-overview",
+      "tag": "a",
+      "role": null,
+      "label": "DPA",
+      "href": "http://localhost:3000/legal/dpa",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-overview",
+      "tag": "a",
+      "role": null,
+      "label": "Audit results",
+      "href": "http://localhost:3000/audit",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-overview",
+      "tag": "button",
+      "role": null,
+      "label": "Search (⌘K)",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-overview",
+      "tag": "a",
+      "role": null,
+      "label": "Risk Overview",
+      "href": "http://localhost:3000/dashboard",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-overview",
+      "tag": "a",
+      "role": null,
+      "label": "↓ Export CSV",
+      "href": "http://localhost:3000/api/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410/export",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-overview",
+      "tag": "a",
+      "role": null,
+      "label": "See which fields to add →",
+      "href": "http://localhost:3000/help/csv-export",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-overview",
+      "tag": "button",
+      "role": null,
+      "label": "Dismiss banner",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-overview",
+      "tag": "button",
+      "role": "tab",
+      "label": "Overview",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-overview",
+      "tag": "button",
+      "role": "tab",
+      "label": "Customers (46)",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-overview",
+      "tag": "button",
+      "role": "tab",
+      "label": "Transactions (46)",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-overview",
+      "tag": "button",
+      "role": "tab",
+      "label": "Data quality",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Collapse sidebar",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Home",
+      "href": "http://localhost:3000/dashboard",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Inbox",
+      "href": "http://localhost:3000/inbox",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "a",
+      "role": null,
+      "label": "New audit",
+      "href": "http://localhost:3000/upload",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Audit history",
+      "href": "http://localhost:3000/history",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Customers",
+      "href": "http://localhost:3000/customers",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Watchlist",
+      "href": "http://localhost:3000/watchlist",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Evidence packages",
+      "href": "http://localhost:3000/chargebacks",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Help",
+      "href": "http://localhost:3000/help",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Settings",
+      "href": "http://localhost:3000/settings",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Sign out",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Privacy",
+      "href": "http://localhost:3000/legal/privacy",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Data handling",
+      "href": "http://localhost:3000/legal/data-handling",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "a",
+      "role": null,
+      "label": "DPA",
+      "href": "http://localhost:3000/legal/dpa",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Audit results",
+      "href": "http://localhost:3000/audit",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Search (⌘K)",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Risk Overview",
+      "href": "http://localhost:3000/dashboard",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "a",
+      "role": null,
+      "label": "↓ Export CSV",
+      "href": "http://localhost:3000/api/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410/export",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "a",
+      "role": null,
+      "label": "See which fields to add →",
+      "href": "http://localhost:3000/help/csv-export",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Dismiss banner",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": "tab",
+      "label": "Overview",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": "tab",
+      "label": "Customers (46)",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": "tab",
+      "label": "Transactions (46)",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": "tab",
+      "label": "Data quality",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "a",
+      "role": null,
+      "label": "25",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410?txPage=1&customerPage=1&txPageSize=50&customerPageSize=100&pageSize=25",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "a",
+      "role": null,
+      "label": "50",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410?txPage=1&customerPage=1&txPageSize=50&customerPageSize=100&pageSize=50",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "a",
+      "role": null,
+      "label": "100",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410?txPage=1&customerPage=1&txPageSize=50&customerPageSize=100&pageSize=100",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-customers-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Close profile",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": null,
+      "label": "Collapse sidebar",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "a",
+      "role": null,
+      "label": "Home",
+      "href": "http://localhost:3000/dashboard",
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "a",
+      "role": null,
+      "label": "Inbox",
+      "href": "http://localhost:3000/inbox",
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "a",
+      "role": null,
+      "label": "New audit",
+      "href": "http://localhost:3000/upload",
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "a",
+      "role": null,
+      "label": "Audit history",
+      "href": "http://localhost:3000/history",
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "a",
+      "role": null,
+      "label": "Customers",
+      "href": "http://localhost:3000/customers",
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "a",
+      "role": null,
+      "label": "Watchlist",
+      "href": "http://localhost:3000/watchlist",
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "a",
+      "role": null,
+      "label": "Evidence packages",
+      "href": "http://localhost:3000/chargebacks",
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "a",
+      "role": null,
+      "label": "Help",
+      "href": "http://localhost:3000/help",
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "a",
+      "role": null,
+      "label": "Settings",
+      "href": "http://localhost:3000/settings",
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": null,
+      "label": "Sign out",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "a",
+      "role": null,
+      "label": "Privacy",
+      "href": "http://localhost:3000/legal/privacy",
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "a",
+      "role": null,
+      "label": "Data handling",
+      "href": "http://localhost:3000/legal/data-handling",
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "a",
+      "role": null,
+      "label": "DPA",
+      "href": "http://localhost:3000/legal/dpa",
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "a",
+      "role": null,
+      "label": "Audit results",
+      "href": "http://localhost:3000/audit",
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": null,
+      "label": "Search (⌘K)",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "a",
+      "role": null,
+      "label": "Risk Overview",
+      "href": "http://localhost:3000/dashboard",
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "a",
+      "role": null,
+      "label": "↓ Export CSV",
+      "href": "http://localhost:3000/api/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410/export",
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "a",
+      "role": null,
+      "label": "See which fields to add →",
+      "href": "http://localhost:3000/help/csv-export",
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": null,
+      "label": "Dismiss banner",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": "tab",
+      "label": "Overview",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": "tab",
+      "label": "Customers (46)",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": "tab",
+      "label": "Transactions (46)",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": "tab",
+      "label": "Data quality",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "a",
+      "role": null,
+      "label": "25",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410?txPage=1&customerPage=1&txPageSize=50&customerPageSize=100&pageSize=25",
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "a",
+      "role": null,
+      "label": "50",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410?txPage=1&customerPage=1&txPageSize=50&customerPageSize=100&pageSize=50",
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "a",
+      "role": null,
+      "label": "100",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410?txPage=1&customerPage=1&txPageSize=50&customerPageSize=100&pageSize=100",
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-customer-drawer",
+      "tag": "button",
+      "role": null,
+      "label": "Close profile",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Collapse sidebar",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Home",
+      "href": "http://localhost:3000/dashboard",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Inbox",
+      "href": "http://localhost:3000/inbox",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "New audit",
+      "href": "http://localhost:3000/upload",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Audit history",
+      "href": "http://localhost:3000/history",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Customers",
+      "href": "http://localhost:3000/customers",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Watchlist",
+      "href": "http://localhost:3000/watchlist",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Evidence packages",
+      "href": "http://localhost:3000/chargebacks",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Help",
+      "href": "http://localhost:3000/help",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Settings",
+      "href": "http://localhost:3000/settings",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Sign out",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Privacy",
+      "href": "http://localhost:3000/legal/privacy",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Data handling",
+      "href": "http://localhost:3000/legal/data-handling",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "DPA",
+      "href": "http://localhost:3000/legal/dpa",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Audit results",
+      "href": "http://localhost:3000/audit",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Search (⌘K)",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Risk Overview",
+      "href": "http://localhost:3000/dashboard",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "↓ Export CSV",
+      "href": "http://localhost:3000/api/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410/export",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "See which fields to add →",
+      "href": "http://localhost:3000/help/csv-export",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Dismiss banner",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": "tab",
+      "label": "Overview",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": "tab",
+      "label": "Customers (46)",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": "tab",
+      "label": "Transactions (46)",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": "tab",
+      "label": "Data quality",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "25",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410?txPage=1&customerPage=1&txPageSize=50&customerPageSize=100&pageSize=25",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "50",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410?txPage=1&customerPage=1&txPageSize=50&customerPageSize=100&pageSize=50",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "100",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410?txPage=1&customerPage=1&txPageSize=50&customerPageSize=100&pageSize=100",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Same customer confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Different customers confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Details →",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410/transaction/bc7b519e-d54e-481c-bcec-b4ce683c50ab",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Same customer confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Different customers confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Details →",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410/transaction/f06b6a5b-a3dd-4769-a0eb-f9a5427c62a9",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Same customer confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Different customers confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Details →",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410/transaction/7408000e-bc3a-4866-ae4f-63948160b947",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Same customer confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Different customers confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Details →",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410/transaction/c7fe5273-8fd0-4276-916d-f0e6a0988eb4",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Same customer confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Different customers confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Details →",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410/transaction/4072a3c3-9a1d-4031-bab6-1f1933e00684",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Same customer confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Different customers confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Details →",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410/transaction/5bd3118a-04ae-4cc5-bbaf-6b73ae48a06a",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Same customer confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Different customers confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Details →",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410/transaction/56df576e-4a1b-4be5-8b09-33b80868cc92",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Same customer confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Different customers confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Details →",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410/transaction/9c298a26-6ae7-4b9f-8802-e8f13787be73",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Same customer confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Different customers confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Details →",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410/transaction/1b6494e8-d8e4-4364-bf7a-baa3371aead7",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Same customer confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Different customers confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Details →",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410/transaction/979523e0-016c-4762-bd3f-9526ae916cae",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Same customer confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Different customers confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Details →",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410/transaction/0c1d9418-fa16-4081-a8a9-ed11e61e0321",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Same customer confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Different customers confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Details →",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410/transaction/b4a054d2-aca6-43cd-950c-1e1fada2a634",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Same customer confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Different customers confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Details →",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410/transaction/e318c7a1-3833-41eb-9b42-e48517057185",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Same customer confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Different customers confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Details →",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410/transaction/5a572363-25b0-44ea-be0b-2161336d9630",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Same customer confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Different customers confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Details →",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410/transaction/73e8d8b9-e79e-4e2e-9dcd-ce11d8ace6a3",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Same customer confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Different customers confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Details →",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410/transaction/37ba741b-5727-48d0-9cbf-9bba8d4e89be",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Same customer confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Different customers confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Details →",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410/transaction/024b7f64-bf71-4d00-921b-2c4f1cb6690f",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Same customer confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Different customers confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Details →",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410/transaction/fb981f0b-7ada-434a-9732-ac14ca8b4755",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Same customer confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Different customers confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Details →",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410/transaction/e5c8fa21-5a56-4552-a41a-9519d776e9a2",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Same customer confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Different customers confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Details →",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410/transaction/a93adf21-51f1-445f-b6bb-db6a201e0012",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Same customer confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Different customers confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Details →",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410/transaction/89ec7dea-c242-46a8-9818-7656f7ca908b",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Same customer confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Different customers confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Details →",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410/transaction/55c6ef10-3cab-46f1-a59e-e0b0eb0c08d6",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Same customer confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Different customers confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Details →",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410/transaction/c0520f8b-8b69-439d-b8f4-386ff8da280c",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Same customer confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Different customers confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Details →",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410/transaction/94837b56-9666-47d3-8e47-59929bec83aa",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Same customer confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Different customers confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Details →",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410/transaction/f6c9bd4e-7c1d-4642-bc9e-862155ca84f1",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Same customer confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Different customers confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Details →",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410/transaction/7d5a3a38-f357-4646-a6e8-8e539be60b2c",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Same customer confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Different customers confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Details →",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410/transaction/6706dfd6-0662-49ac-82cb-36a5b6e8b78e",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Same customer confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Different customers confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Details →",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410/transaction/1cb9ae25-fc24-4acb-b65a-682aa6eba997",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Same customer confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Different customers confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Details →",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410/transaction/fdaa21f7-f018-4919-a3b4-ddec591cf34e",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Same customer confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Different customers confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Details →",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410/transaction/b9d41449-86e7-4d13-8187-b6d44af24610",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Same customer confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Different customers confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Details →",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410/transaction/c9fa3ce0-0f1b-4f85-b459-f0d6be3a97cf",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Same customer confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Different customers confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Details →",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410/transaction/94a94bec-ad99-4f5e-abc3-7cf8f91cb172",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Same customer confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Different customers confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Details →",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410/transaction/b90c5b39-7351-4821-80cc-2397c4593e7f",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Same customer confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Different customers confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Details →",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410/transaction/e67145fd-2963-4a1e-b751-61d7c188294a",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Same customer confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Different customers confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Details →",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410/transaction/c237adc9-f2bc-4ec7-9a6e-c0d9087a5af4",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Same customer confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Different customers confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Details →",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410/transaction/c430ed2e-7b97-40b1-ad1e-838ece02f1f2",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Same customer confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Different customers confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Details →",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410/transaction/de4a8170-74af-4039-b410-28063a21d5fa",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Same customer confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Different customers confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Details →",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410/transaction/0626f16f-4055-48da-9689-fe969be1b12e",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Same customer confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Different customers confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Details →",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410/transaction/cf9f860e-3eef-4e39-a743-a5eb9420208b",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Same customer confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Different customers confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Details →",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410/transaction/6f7103c3-6600-4096-89f7-85312edfab50",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Same customer confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Different customers confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Details →",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410/transaction/f55a5603-d995-4c69-a3f3-4fa536119528",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Same customer confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Different customers confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Details →",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410/transaction/678fe53c-9264-49af-96ec-b23a9e94dd32",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Same customer confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Different customers confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Details →",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410/transaction/03fad511-2991-4b71-a123-cf00db3a3475",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Same customer confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Different customers confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Details →",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410/transaction/01062fca-f0e6-4b29-944b-a4f7783cfa0f",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Same customer confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Different customers confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Details →",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410/transaction/6f6d304b-4491-4f46-8874-23c0fcde96e8",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Same customer confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "Different customers confirmed",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "a",
+      "role": null,
+      "label": "Details →",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410/transaction/8acf496d-3b97-4ce7-8c6c-964523174997",
+      "disabled": false
+    },
+    {
+      "page": "audit-results-transactions-tab",
+      "tag": "button",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "dashboard",
+      "tag": "button",
+      "role": null,
+      "label": "Collapse sidebar",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "dashboard",
+      "tag": "a",
+      "role": null,
+      "label": "Home",
+      "href": "http://localhost:3000/dashboard",
+      "disabled": false
+    },
+    {
+      "page": "dashboard",
+      "tag": "a",
+      "role": null,
+      "label": "Inbox",
+      "href": "http://localhost:3000/inbox",
+      "disabled": false
+    },
+    {
+      "page": "dashboard",
+      "tag": "a",
+      "role": null,
+      "label": "New audit",
+      "href": "http://localhost:3000/upload",
+      "disabled": false
+    },
+    {
+      "page": "dashboard",
+      "tag": "a",
+      "role": null,
+      "label": "Audit history",
+      "href": "http://localhost:3000/history",
+      "disabled": false
+    },
+    {
+      "page": "dashboard",
+      "tag": "a",
+      "role": null,
+      "label": "Customers",
+      "href": "http://localhost:3000/customers",
+      "disabled": false
+    },
+    {
+      "page": "dashboard",
+      "tag": "a",
+      "role": null,
+      "label": "Watchlist",
+      "href": "http://localhost:3000/watchlist",
+      "disabled": false
+    },
+    {
+      "page": "dashboard",
+      "tag": "a",
+      "role": null,
+      "label": "Evidence packages",
+      "href": "http://localhost:3000/chargebacks",
+      "disabled": false
+    },
+    {
+      "page": "dashboard",
+      "tag": "a",
+      "role": null,
+      "label": "Help",
+      "href": "http://localhost:3000/help",
+      "disabled": false
+    },
+    {
+      "page": "dashboard",
+      "tag": "a",
+      "role": null,
+      "label": "Settings",
+      "href": "http://localhost:3000/settings",
+      "disabled": false
+    },
+    {
+      "page": "dashboard",
+      "tag": "button",
+      "role": null,
+      "label": "Sign out",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "dashboard",
+      "tag": "a",
+      "role": null,
+      "label": "Privacy",
+      "href": "http://localhost:3000/legal/privacy",
+      "disabled": false
+    },
+    {
+      "page": "dashboard",
+      "tag": "a",
+      "role": null,
+      "label": "Data handling",
+      "href": "http://localhost:3000/legal/data-handling",
+      "disabled": false
+    },
+    {
+      "page": "dashboard",
+      "tag": "a",
+      "role": null,
+      "label": "DPA",
+      "href": "http://localhost:3000/legal/dpa",
+      "disabled": false
+    },
+    {
+      "page": "dashboard",
+      "tag": "button",
+      "role": null,
+      "label": "Search (⌘K)",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "dashboard",
+      "tag": "a",
+      "role": null,
+      "label": "New Audit",
+      "href": "http://localhost:3000/upload",
+      "disabled": false
+    },
+    {
+      "page": "dashboard",
+      "tag": "a",
+      "role": null,
+      "label": "Transactions analysed462 audit runs",
+      "href": "http://localhost:3000/history",
+      "disabled": false
+    },
+    {
+      "page": "dashboard",
+      "tag": "a",
+      "role": null,
+      "label": "Latest audit1777992045874_standard.csv46 transactions · 0 flagged · 0.0% flag rate · 05 May 2026, 15:40",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410",
+      "disabled": false
+    },
+    {
+      "page": "dashboard",
+      "tag": "a",
+      "role": null,
+      "label": "High-confidence customersReview probable & definite matches",
+      "href": "http://localhost:3000/customers?risk=high",
+      "disabled": false
+    },
+    {
+      "page": "dashboard",
+      "tag": "a",
+      "role": null,
+      "label": "Refund claimantsCustomers with at least one refund claim",
+      "href": "http://localhost:3000/customers?hasRefunds=1",
+      "disabled": false
+    },
+    {
+      "page": "dashboard",
+      "tag": "a",
+      "role": null,
+      "label": "Evidence packagesView generated dispute packages",
+      "href": "http://localhost:3000/chargebacks",
+      "disabled": false
+    },
+    {
+      "page": "dashboard",
+      "tag": "a",
+      "role": null,
+      "label": "View all audits →",
+      "href": "http://localhost:3000/history",
+      "disabled": false
+    },
+    {
+      "page": "history",
+      "tag": "button",
+      "role": null,
+      "label": "Collapse sidebar",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "history",
+      "tag": "a",
+      "role": null,
+      "label": "Home",
+      "href": "http://localhost:3000/dashboard",
+      "disabled": false
+    },
+    {
+      "page": "history",
+      "tag": "a",
+      "role": null,
+      "label": "Inbox",
+      "href": "http://localhost:3000/inbox",
+      "disabled": false
+    },
+    {
+      "page": "history",
+      "tag": "a",
+      "role": null,
+      "label": "New audit",
+      "href": "http://localhost:3000/upload",
+      "disabled": false
+    },
+    {
+      "page": "history",
+      "tag": "a",
+      "role": null,
+      "label": "Audit history",
+      "href": "http://localhost:3000/history",
+      "disabled": false
+    },
+    {
+      "page": "history",
+      "tag": "a",
+      "role": null,
+      "label": "Customers",
+      "href": "http://localhost:3000/customers",
+      "disabled": false
+    },
+    {
+      "page": "history",
+      "tag": "a",
+      "role": null,
+      "label": "Watchlist",
+      "href": "http://localhost:3000/watchlist",
+      "disabled": false
+    },
+    {
+      "page": "history",
+      "tag": "a",
+      "role": null,
+      "label": "Evidence packages",
+      "href": "http://localhost:3000/chargebacks",
+      "disabled": false
+    },
+    {
+      "page": "history",
+      "tag": "a",
+      "role": null,
+      "label": "Help",
+      "href": "http://localhost:3000/help",
+      "disabled": false
+    },
+    {
+      "page": "history",
+      "tag": "a",
+      "role": null,
+      "label": "Settings",
+      "href": "http://localhost:3000/settings",
+      "disabled": false
+    },
+    {
+      "page": "history",
+      "tag": "button",
+      "role": null,
+      "label": "Sign out",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "history",
+      "tag": "a",
+      "role": null,
+      "label": "Privacy",
+      "href": "http://localhost:3000/legal/privacy",
+      "disabled": false
+    },
+    {
+      "page": "history",
+      "tag": "a",
+      "role": null,
+      "label": "Data handling",
+      "href": "http://localhost:3000/legal/data-handling",
+      "disabled": false
+    },
+    {
+      "page": "history",
+      "tag": "a",
+      "role": null,
+      "label": "DPA",
+      "href": "http://localhost:3000/legal/dpa",
+      "disabled": false
+    },
+    {
+      "page": "history",
+      "tag": "button",
+      "role": null,
+      "label": "Search (⌘K)",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "history",
+      "tag": "a",
+      "role": null,
+      "label": "New Audit",
+      "href": "http://localhost:3000/upload",
+      "disabled": false
+    },
+    {
+      "page": "history",
+      "tag": "a",
+      "role": null,
+      "label": "25",
+      "href": "http://localhost:3000/history?pageSize=25",
+      "disabled": false
+    },
+    {
+      "page": "history",
+      "tag": "a",
+      "role": null,
+      "label": "50",
+      "href": "http://localhost:3000/history?pageSize=50",
+      "disabled": false
+    },
+    {
+      "page": "history",
+      "tag": "a",
+      "role": null,
+      "label": "100",
+      "href": "http://localhost:3000/history?pageSize=100",
+      "disabled": false
+    },
+    {
+      "page": "history",
+      "tag": "input",
+      "role": null,
+      "label": "Select all audits",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "history",
+      "tag": "input",
+      "role": null,
+      "label": "Select UX audit run 1777992045642",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "history",
+      "tag": "a",
+      "role": null,
+      "label": "View →",
+      "href": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410",
+      "disabled": false
+    },
+    {
+      "page": "history",
+      "tag": "input",
+      "role": null,
+      "label": "Select sample_audit_3000_orders.csv",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "history",
+      "tag": "a",
+      "role": null,
+      "label": "View →",
+      "href": "http://localhost:3000/audit/6e2da488-fd42-4aa7-b9fa-d5af77587636",
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "button",
+      "role": null,
+      "label": "Collapse sidebar",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "a",
+      "role": null,
+      "label": "Home",
+      "href": "http://localhost:3000/dashboard",
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "a",
+      "role": null,
+      "label": "Inbox",
+      "href": "http://localhost:3000/inbox",
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "a",
+      "role": null,
+      "label": "New audit",
+      "href": "http://localhost:3000/upload",
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "a",
+      "role": null,
+      "label": "Audit history",
+      "href": "http://localhost:3000/history",
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "a",
+      "role": null,
+      "label": "Customers",
+      "href": "http://localhost:3000/customers",
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "a",
+      "role": null,
+      "label": "Watchlist",
+      "href": "http://localhost:3000/watchlist",
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "a",
+      "role": null,
+      "label": "Evidence packages",
+      "href": "http://localhost:3000/chargebacks",
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "a",
+      "role": null,
+      "label": "Help",
+      "href": "http://localhost:3000/help",
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "a",
+      "role": null,
+      "label": "Settings",
+      "href": "http://localhost:3000/settings",
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "button",
+      "role": null,
+      "label": "Sign out",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "a",
+      "role": null,
+      "label": "Privacy",
+      "href": "http://localhost:3000/legal/privacy",
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "a",
+      "role": null,
+      "label": "Data handling",
+      "href": "http://localhost:3000/legal/data-handling",
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "a",
+      "role": null,
+      "label": "DPA",
+      "href": "http://localhost:3000/legal/dpa",
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "button",
+      "role": null,
+      "label": "Search (⌘K)",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "a",
+      "role": null,
+      "label": "New Audit",
+      "href": "http://localhost:3000/upload",
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "a",
+      "role": null,
+      "label": "New to reviewFilter →",
+      "href": "http://localhost:3000/customers?risk=high&status=new",
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "a",
+      "role": null,
+      "label": "Has refundsFilter →",
+      "href": "http://localhost:3000/customers?hasRefunds=1",
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "a",
+      "role": null,
+      "label": "Has chargebacksFilter →",
+      "href": "http://localhost:3000/customers?hasChargebacks=1",
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "a",
+      "role": null,
+      "label": "WatchlistedFilter →",
+      "href": "http://localhost:3000/customers?watchlisted=1",
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "a",
+      "role": null,
+      "label": "High-confidence unresolved",
+      "href": "http://localhost:3000/customers?risk=high&status=new",
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "a",
+      "role": null,
+      "label": "Repeat refund claims",
+      "href": "http://localhost:3000/customers?hasRefunds=1&sort=refundRate",
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "a",
+      "role": null,
+      "label": "Linked identities",
+      "href": "http://localhost:3000/customers?merchantsMin=2",
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "a",
+      "role": null,
+      "label": "Fast claimants",
+      "href": "http://localhost:3000/customers?fastestClaimMax=3",
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "input",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "select",
+      "role": null,
+      "label": "risk",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "button",
+      "role": null,
+      "label": "All",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "button",
+      "role": null,
+      "label": "New",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "button",
+      "role": null,
+      "label": "Review",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "button",
+      "role": null,
+      "label": "Contacted",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "button",
+      "role": null,
+      "label": "Resolved",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "button",
+      "role": null,
+      "label": "Cleared",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "button",
+      "role": null,
+      "label": "Filters",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "a",
+      "role": null,
+      "label": "25",
+      "href": "http://localhost:3000/customers?pageSize=25",
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "a",
+      "role": null,
+      "label": "50",
+      "href": "http://localhost:3000/customers?pageSize=50",
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "a",
+      "role": null,
+      "label": "100",
+      "href": "http://localhost:3000/customers?pageSize=100",
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "a",
+      "role": null,
+      "label": "Next →",
+      "href": "http://localhost:3000/customers?page=2&pageSize=25",
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "select",
+      "role": null,
+      "label": "new",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "select",
+      "role": null,
+      "label": "new",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "select",
+      "role": null,
+      "label": "new",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "select",
+      "role": null,
+      "label": "new",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "select",
+      "role": null,
+      "label": "new",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "select",
+      "role": null,
+      "label": "new",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "select",
+      "role": null,
+      "label": "new",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "select",
+      "role": null,
+      "label": "new",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "select",
+      "role": null,
+      "label": "new",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "select",
+      "role": null,
+      "label": "new",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "select",
+      "role": null,
+      "label": "new",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "select",
+      "role": null,
+      "label": "new",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "select",
+      "role": null,
+      "label": "new",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "select",
+      "role": null,
+      "label": "new",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "select",
+      "role": null,
+      "label": "new",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "select",
+      "role": null,
+      "label": "new",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "select",
+      "role": null,
+      "label": "new",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "select",
+      "role": null,
+      "label": "new",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "select",
+      "role": null,
+      "label": "new",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "select",
+      "role": null,
+      "label": "new",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "select",
+      "role": null,
+      "label": "new",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "select",
+      "role": null,
+      "label": "new",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "select",
+      "role": null,
+      "label": "new",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "select",
+      "role": null,
+      "label": "new",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "select",
+      "role": null,
+      "label": "new",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "button",
+      "role": null,
+      "label": "View →",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "customers",
+      "tag": "button",
+      "role": null,
+      "label": "Close panel",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "watchlist",
+      "tag": "button",
+      "role": null,
+      "label": "Collapse sidebar",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "watchlist",
+      "tag": "a",
+      "role": null,
+      "label": "Home",
+      "href": "http://localhost:3000/dashboard",
+      "disabled": false
+    },
+    {
+      "page": "watchlist",
+      "tag": "a",
+      "role": null,
+      "label": "Inbox",
+      "href": "http://localhost:3000/inbox",
+      "disabled": false
+    },
+    {
+      "page": "watchlist",
+      "tag": "a",
+      "role": null,
+      "label": "New audit",
+      "href": "http://localhost:3000/upload",
+      "disabled": false
+    },
+    {
+      "page": "watchlist",
+      "tag": "a",
+      "role": null,
+      "label": "Audit history",
+      "href": "http://localhost:3000/history",
+      "disabled": false
+    },
+    {
+      "page": "watchlist",
+      "tag": "a",
+      "role": null,
+      "label": "Customers",
+      "href": "http://localhost:3000/customers",
+      "disabled": false
+    },
+    {
+      "page": "watchlist",
+      "tag": "a",
+      "role": null,
+      "label": "Watchlist",
+      "href": "http://localhost:3000/watchlist",
+      "disabled": false
+    },
+    {
+      "page": "watchlist",
+      "tag": "a",
+      "role": null,
+      "label": "Evidence packages",
+      "href": "http://localhost:3000/chargebacks",
+      "disabled": false
+    },
+    {
+      "page": "watchlist",
+      "tag": "a",
+      "role": null,
+      "label": "Help",
+      "href": "http://localhost:3000/help",
+      "disabled": false
+    },
+    {
+      "page": "watchlist",
+      "tag": "a",
+      "role": null,
+      "label": "Settings",
+      "href": "http://localhost:3000/settings",
+      "disabled": false
+    },
+    {
+      "page": "watchlist",
+      "tag": "button",
+      "role": null,
+      "label": "Sign out",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "watchlist",
+      "tag": "a",
+      "role": null,
+      "label": "Privacy",
+      "href": "http://localhost:3000/legal/privacy",
+      "disabled": false
+    },
+    {
+      "page": "watchlist",
+      "tag": "a",
+      "role": null,
+      "label": "Data handling",
+      "href": "http://localhost:3000/legal/data-handling",
+      "disabled": false
+    },
+    {
+      "page": "watchlist",
+      "tag": "a",
+      "role": null,
+      "label": "DPA",
+      "href": "http://localhost:3000/legal/dpa",
+      "disabled": false
+    },
+    {
+      "page": "watchlist",
+      "tag": "button",
+      "role": null,
+      "label": "Search (⌘K)",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "watchlist",
+      "tag": "a",
+      "role": null,
+      "label": "Upload an audit →",
+      "href": "http://localhost:3000/upload",
+      "disabled": false
+    },
+    {
+      "page": "inbox",
+      "tag": "button",
+      "role": null,
+      "label": "Collapse sidebar",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "inbox",
+      "tag": "a",
+      "role": null,
+      "label": "Home",
+      "href": "http://localhost:3000/dashboard",
+      "disabled": false
+    },
+    {
+      "page": "inbox",
+      "tag": "a",
+      "role": null,
+      "label": "Inbox",
+      "href": "http://localhost:3000/inbox",
+      "disabled": false
+    },
+    {
+      "page": "inbox",
+      "tag": "a",
+      "role": null,
+      "label": "New audit",
+      "href": "http://localhost:3000/upload",
+      "disabled": false
+    },
+    {
+      "page": "inbox",
+      "tag": "a",
+      "role": null,
+      "label": "Audit history",
+      "href": "http://localhost:3000/history",
+      "disabled": false
+    },
+    {
+      "page": "inbox",
+      "tag": "a",
+      "role": null,
+      "label": "Customers",
+      "href": "http://localhost:3000/customers",
+      "disabled": false
+    },
+    {
+      "page": "inbox",
+      "tag": "a",
+      "role": null,
+      "label": "Watchlist",
+      "href": "http://localhost:3000/watchlist",
+      "disabled": false
+    },
+    {
+      "page": "inbox",
+      "tag": "a",
+      "role": null,
+      "label": "Evidence packages",
+      "href": "http://localhost:3000/chargebacks",
+      "disabled": false
+    },
+    {
+      "page": "inbox",
+      "tag": "a",
+      "role": null,
+      "label": "Help",
+      "href": "http://localhost:3000/help",
+      "disabled": false
+    },
+    {
+      "page": "inbox",
+      "tag": "a",
+      "role": null,
+      "label": "Settings",
+      "href": "http://localhost:3000/settings",
+      "disabled": false
+    },
+    {
+      "page": "inbox",
+      "tag": "button",
+      "role": null,
+      "label": "Sign out",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "inbox",
+      "tag": "a",
+      "role": null,
+      "label": "Privacy",
+      "href": "http://localhost:3000/legal/privacy",
+      "disabled": false
+    },
+    {
+      "page": "inbox",
+      "tag": "a",
+      "role": null,
+      "label": "Data handling",
+      "href": "http://localhost:3000/legal/data-handling",
+      "disabled": false
+    },
+    {
+      "page": "inbox",
+      "tag": "a",
+      "role": null,
+      "label": "DPA",
+      "href": "http://localhost:3000/legal/dpa",
+      "disabled": false
+    },
+    {
+      "page": "inbox",
+      "tag": "button",
+      "role": null,
+      "label": "Search (⌘K)",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "inbox",
+      "tag": "a",
+      "role": null,
+      "label": "Export Review Queue",
+      "href": "http://localhost:3000/api/inbox/export",
+      "disabled": false
+    },
+    {
+      "page": "inbox",
+      "tag": "a",
+      "role": null,
+      "label": "New Audit",
+      "href": "http://localhost:3000/upload",
+      "disabled": false
+    },
+    {
+      "page": "inbox",
+      "tag": "a",
+      "role": null,
+      "label": "25",
+      "href": "http://localhost:3000/inbox?pageSize=25",
+      "disabled": false
+    },
+    {
+      "page": "inbox",
+      "tag": "a",
+      "role": null,
+      "label": "50",
+      "href": "http://localhost:3000/inbox?pageSize=50",
+      "disabled": false
+    },
+    {
+      "page": "inbox",
+      "tag": "a",
+      "role": null,
+      "label": "100",
+      "href": "http://localhost:3000/inbox?pageSize=100",
+      "disabled": false
+    },
+    {
+      "page": "inbox",
+      "tag": "a",
+      "role": null,
+      "label": "Upload a CSV to get started →",
+      "href": "http://localhost:3000/upload",
+      "disabled": false
+    },
+    {
+      "page": "chargebacks",
+      "tag": "button",
+      "role": null,
+      "label": "Collapse sidebar",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "chargebacks",
+      "tag": "a",
+      "role": null,
+      "label": "Home",
+      "href": "http://localhost:3000/dashboard",
+      "disabled": false
+    },
+    {
+      "page": "chargebacks",
+      "tag": "a",
+      "role": null,
+      "label": "Inbox",
+      "href": "http://localhost:3000/inbox",
+      "disabled": false
+    },
+    {
+      "page": "chargebacks",
+      "tag": "a",
+      "role": null,
+      "label": "New audit",
+      "href": "http://localhost:3000/upload",
+      "disabled": false
+    },
+    {
+      "page": "chargebacks",
+      "tag": "a",
+      "role": null,
+      "label": "Audit history",
+      "href": "http://localhost:3000/history",
+      "disabled": false
+    },
+    {
+      "page": "chargebacks",
+      "tag": "a",
+      "role": null,
+      "label": "Customers",
+      "href": "http://localhost:3000/customers",
+      "disabled": false
+    },
+    {
+      "page": "chargebacks",
+      "tag": "a",
+      "role": null,
+      "label": "Watchlist",
+      "href": "http://localhost:3000/watchlist",
+      "disabled": false
+    },
+    {
+      "page": "chargebacks",
+      "tag": "a",
+      "role": null,
+      "label": "Evidence packages",
+      "href": "http://localhost:3000/chargebacks",
+      "disabled": false
+    },
+    {
+      "page": "chargebacks",
+      "tag": "a",
+      "role": null,
+      "label": "Help",
+      "href": "http://localhost:3000/help",
+      "disabled": false
+    },
+    {
+      "page": "chargebacks",
+      "tag": "a",
+      "role": null,
+      "label": "Settings",
+      "href": "http://localhost:3000/settings",
+      "disabled": false
+    },
+    {
+      "page": "chargebacks",
+      "tag": "button",
+      "role": null,
+      "label": "Sign out",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "chargebacks",
+      "tag": "a",
+      "role": null,
+      "label": "Privacy",
+      "href": "http://localhost:3000/legal/privacy",
+      "disabled": false
+    },
+    {
+      "page": "chargebacks",
+      "tag": "a",
+      "role": null,
+      "label": "Data handling",
+      "href": "http://localhost:3000/legal/data-handling",
+      "disabled": false
+    },
+    {
+      "page": "chargebacks",
+      "tag": "a",
+      "role": null,
+      "label": "DPA",
+      "href": "http://localhost:3000/legal/dpa",
+      "disabled": false
+    },
+    {
+      "page": "chargebacks",
+      "tag": "button",
+      "role": null,
+      "label": "Search (⌘K)",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "chargebacks",
+      "tag": "a",
+      "role": null,
+      "label": "View customers →",
+      "href": "http://localhost:3000/customers",
+      "disabled": false
+    },
+    {
+      "page": "chargebacks",
+      "tag": "a",
+      "role": null,
+      "label": "View customers →",
+      "href": "http://localhost:3000/customers",
+      "disabled": false
+    },
+    {
+      "page": "settings",
+      "tag": "button",
+      "role": null,
+      "label": "Collapse sidebar",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "settings",
+      "tag": "a",
+      "role": null,
+      "label": "Home",
+      "href": "http://localhost:3000/dashboard",
+      "disabled": false
+    },
+    {
+      "page": "settings",
+      "tag": "a",
+      "role": null,
+      "label": "Inbox",
+      "href": "http://localhost:3000/inbox",
+      "disabled": false
+    },
+    {
+      "page": "settings",
+      "tag": "a",
+      "role": null,
+      "label": "New audit",
+      "href": "http://localhost:3000/upload",
+      "disabled": false
+    },
+    {
+      "page": "settings",
+      "tag": "a",
+      "role": null,
+      "label": "Audit history",
+      "href": "http://localhost:3000/history",
+      "disabled": false
+    },
+    {
+      "page": "settings",
+      "tag": "a",
+      "role": null,
+      "label": "Customers",
+      "href": "http://localhost:3000/customers",
+      "disabled": false
+    },
+    {
+      "page": "settings",
+      "tag": "a",
+      "role": null,
+      "label": "Watchlist",
+      "href": "http://localhost:3000/watchlist",
+      "disabled": false
+    },
+    {
+      "page": "settings",
+      "tag": "a",
+      "role": null,
+      "label": "Evidence packages",
+      "href": "http://localhost:3000/chargebacks",
+      "disabled": false
+    },
+    {
+      "page": "settings",
+      "tag": "a",
+      "role": null,
+      "label": "Help",
+      "href": "http://localhost:3000/help",
+      "disabled": false
+    },
+    {
+      "page": "settings",
+      "tag": "a",
+      "role": null,
+      "label": "Settings",
+      "href": "http://localhost:3000/settings",
+      "disabled": false
+    },
+    {
+      "page": "settings",
+      "tag": "button",
+      "role": null,
+      "label": "Sign out",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "settings",
+      "tag": "a",
+      "role": null,
+      "label": "Privacy",
+      "href": "http://localhost:3000/legal/privacy",
+      "disabled": false
+    },
+    {
+      "page": "settings",
+      "tag": "a",
+      "role": null,
+      "label": "Data handling",
+      "href": "http://localhost:3000/legal/data-handling",
+      "disabled": false
+    },
+    {
+      "page": "settings",
+      "tag": "a",
+      "role": null,
+      "label": "DPA",
+      "href": "http://localhost:3000/legal/dpa",
+      "disabled": false
+    },
+    {
+      "page": "settings",
+      "tag": "a",
+      "role": null,
+      "label": "Settings",
+      "href": "http://localhost:3000/settings",
+      "disabled": false
+    },
+    {
+      "page": "settings",
+      "tag": "button",
+      "role": null,
+      "label": "Search (⌘K)",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "settings",
+      "tag": "a",
+      "role": null,
+      "label": "Settings",
+      "href": "http://localhost:3000/settings",
+      "disabled": false
+    },
+    {
+      "page": "settings",
+      "tag": "input",
+      "role": null,
+      "label": "ux-audit-1777992018605@unauth-test-automation.com",
+      "href": null,
+      "disabled": true
+    },
+    {
+      "page": "settings",
+      "tag": "a",
+      "role": null,
+      "label": "support@unauth.io",
+      "href": "mailto:support@unauth.io",
+      "disabled": false
+    },
+    {
+      "page": "settings",
+      "tag": "input",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "settings",
+      "tag": "select",
+      "role": null,
+      "label": "Select a range…Under 500500 – 2,0002,000 – 10,00010,000+",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "settings",
+      "tag": "select",
+      "role": null,
+      "label": "Select…Refund abuse / INR claimsChargebacksAccount takeoverMulti-accountingPromo / voucher abuseAll of the above",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "settings",
+      "tag": "button",
+      "role": null,
+      "label": "Save changes",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "settings",
+      "tag": "button",
+      "role": null,
+      "label": "Show",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "settings",
+      "tag": "input",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "settings",
+      "tag": "input",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "settings",
+      "tag": "button",
+      "role": null,
+      "label": "Update password",
+      "href": null,
+      "disabled": true
+    },
+    {
+      "page": "settings",
+      "tag": "input",
+      "role": null,
+      "label": "unlabelled",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "settings",
+      "tag": "button",
+      "role": null,
+      "label": "Delete account",
+      "href": null,
+      "disabled": true
+    },
+    {
+      "page": "help",
+      "tag": "button",
+      "role": null,
+      "label": "Collapse sidebar",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "help",
+      "tag": "a",
+      "role": null,
+      "label": "Home",
+      "href": "http://localhost:3000/dashboard",
+      "disabled": false
+    },
+    {
+      "page": "help",
+      "tag": "a",
+      "role": null,
+      "label": "Inbox",
+      "href": "http://localhost:3000/inbox",
+      "disabled": false
+    },
+    {
+      "page": "help",
+      "tag": "a",
+      "role": null,
+      "label": "New audit",
+      "href": "http://localhost:3000/upload",
+      "disabled": false
+    },
+    {
+      "page": "help",
+      "tag": "a",
+      "role": null,
+      "label": "Audit history",
+      "href": "http://localhost:3000/history",
+      "disabled": false
+    },
+    {
+      "page": "help",
+      "tag": "a",
+      "role": null,
+      "label": "Customers",
+      "href": "http://localhost:3000/customers",
+      "disabled": false
+    },
+    {
+      "page": "help",
+      "tag": "a",
+      "role": null,
+      "label": "Watchlist",
+      "href": "http://localhost:3000/watchlist",
+      "disabled": false
+    },
+    {
+      "page": "help",
+      "tag": "a",
+      "role": null,
+      "label": "Evidence packages",
+      "href": "http://localhost:3000/chargebacks",
+      "disabled": false
+    },
+    {
+      "page": "help",
+      "tag": "a",
+      "role": null,
+      "label": "Help",
+      "href": "http://localhost:3000/help",
+      "disabled": false
+    },
+    {
+      "page": "help",
+      "tag": "a",
+      "role": null,
+      "label": "Settings",
+      "href": "http://localhost:3000/settings",
+      "disabled": false
+    },
+    {
+      "page": "help",
+      "tag": "button",
+      "role": null,
+      "label": "Sign out",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "help",
+      "tag": "a",
+      "role": null,
+      "label": "Privacy",
+      "href": "http://localhost:3000/legal/privacy",
+      "disabled": false
+    },
+    {
+      "page": "help",
+      "tag": "a",
+      "role": null,
+      "label": "Data handling",
+      "href": "http://localhost:3000/legal/data-handling",
+      "disabled": false
+    },
+    {
+      "page": "help",
+      "tag": "a",
+      "role": null,
+      "label": "DPA",
+      "href": "http://localhost:3000/legal/dpa",
+      "disabled": false
+    },
+    {
+      "page": "help",
+      "tag": "button",
+      "role": null,
+      "label": "Search (⌘K)",
+      "href": null,
+      "disabled": false
+    },
+    {
+      "page": "help",
+      "tag": "a",
+      "role": null,
+      "label": "Read →",
+      "href": "http://localhost:3000/help/how-it-works",
+      "disabled": false
+    },
+    {
+      "page": "help",
+      "tag": "a",
+      "role": null,
+      "label": "Read →",
+      "href": "http://localhost:3000/help/csv-export",
+      "disabled": false
+    },
+    {
+      "page": "help",
+      "tag": "a",
+      "role": null,
+      "label": "support@unauth.io",
+      "href": "mailto:support@unauth.io",
+      "disabled": false
+    }
+  ],
+  "limitations": [
+    "Upload processing did not reach results within timeout: page.waitForURL: Timeout 45000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation until \"commit\"\n============================================================"
+  ],
+  "flowOutcome": {
+    "uploadCompleted": false,
+    "uploadedRunUrl": "http://localhost:3000/audit/f60c5d5d-e67c-46d2-af19-933d84f5d410",
+    "runId": "f60c5d5d-e67c-46d2-af19-933d84f5d410"
+  }
+}

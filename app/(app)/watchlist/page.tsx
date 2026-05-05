@@ -1,11 +1,14 @@
 import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 import ConfidenceGrade, { riskLevelToGrade } from '@/components/ConfidenceGrade';
-import RemoveButton from '@/components/watchlist/RemoveButton';
 import WatchlistTableClient from '@/components/watchlist/WatchlistTableClient';
 import { formatDate } from '@/lib/utils/format';
+import PageSizeSelect from '@/components/common/PageSizeSelect';
 
-export default async function WatchlistPage() {
+const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
+const DEFAULT_PAGE_SIZE = 25;
+
+export default async function WatchlistPage({ searchParams }: { searchParams?: { page?: string; pageSize?: string } }) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
@@ -15,14 +18,22 @@ export default async function WatchlistPage() {
 
   // Fetch watchlist entries and recent appearances in parallel
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const page = Math.max(1, parseInt(searchParams?.page ?? '1', 10));
+  const requestedPageSize = parseInt(searchParams?.pageSize ?? String(DEFAULT_PAGE_SIZE), 10);
+  const pageSize = PAGE_SIZE_OPTIONS.includes(requestedPageSize as (typeof PAGE_SIZE_OPTIONS)[number])
+    ? requestedPageSize
+    : DEFAULT_PAGE_SIZE;
+  const offset = (page - 1) * pageSize;
+  const querySearchParams = searchParams ?? {};
 
-  const [{ data: entries }, { data: recentRaw }] = await Promise.all([
+  const [{ data: entries, count }, { data: recentRaw }] = await Promise.all([
     supabase
       .from('watchlist_entries')
-      .select('*')
+      .select('*', { count: 'exact' })
       .eq('merchant_id', user!.id)
       .eq('removed_by_merchant', false)
-      .order('added_at', { ascending: false }),
+      .order('added_at', { ascending: false })
+      .range(offset, offset + pageSize - 1),
     supabase
       .from('customer_profile_audit_appearances')
       .select(`
@@ -65,6 +76,8 @@ export default async function WatchlistPage() {
   const recentAppearances = ((recentRaw ?? []) as unknown as RecentRow[]).filter(
     (r) => watchlistedProfileIds.has(r.profile_id)
   );
+  const total = count ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   return (
     <div className="p-8 space-y-6">
@@ -130,11 +143,38 @@ export default async function WatchlistPage() {
         </div>
       ) : (
         <div>
-          <h2 className="text-body-sm font-semibold mb-3" style={{ color: 'var(--text)' }}>All watchlisted customers</h2>
+          <div className="mb-3 flex items-center justify-between gap-3 flex-wrap">
+            <h2 className="text-body-sm font-semibold" style={{ color: 'var(--text)' }}>All watchlisted customers</h2>
+            <div className="flex items-center gap-2 flex-wrap">
+              <PageSizeSelect pathname="/watchlist" searchParams={querySearchParams} pageSize={pageSize} />
+              {totalPages > 1 && (
+                <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+                  <span>Page {page} of {totalPages}</span>
+                  {page > 1 && (
+                    <Link
+                      href={`/watchlist?${new URLSearchParams({ ...querySearchParams, page: String(page - 1), pageSize: String(pageSize) }).toString()}`}
+                      className="px-2 py-1 rounded border"
+                      style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}
+                    >
+                      ← Prev
+                    </Link>
+                  )}
+                  {page < totalPages && (
+                    <Link
+                      href={`/watchlist?${new URLSearchParams({ ...querySearchParams, page: String(page + 1), pageSize: String(pageSize) }).toString()}`}
+                      className="px-2 py-1 rounded border"
+                      style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}
+                    >
+                      Next →
+                    </Link>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
           <WatchlistTableClient rows={rows} />
         </div>
       )}
     </div>
   );
 }
-

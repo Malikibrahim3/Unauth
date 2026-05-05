@@ -1,0 +1,34 @@
+{
+  "dataset": "adversarial_fraud",
+  "seedNote": "Deterministic generator seeds are embedded in scripts/test-data/generateBlindMerchantCSVs.ts",
+  "totalRows": 402,
+  "expectedFlaggedRows": 98,
+  "expectedFlaggedRate": 0.24378109452736318,
+  "expectedClusters": 8,
+  "exactExpected": false,
+  "acceptance": {
+    "maxReviewRate": 0.35,
+    "minSeededRecall": 0.65,
+    "minDistinctNormalizedAddresses": 220,
+    "maxLargestCluster": 35
+  },
+  "expectedGradeCounts": {
+    "definite": 27,
+    "probable": 56,
+    "possible": 15
+  },
+  "scenarioCounts": {
+    "clean": 260,
+    "false_corporate_office": 16,
+    "false_shared_household": 10,
+    "false_bin_last4_collision": 18,
+    "fraud_same_phone_card_account": 15,
+    "fraud_phone_bridge": 12,
+    "fraud_reship_refund": 15,
+    "fraud_paypal_device": 12,
+    "fraud_slow_burn": 18,
+    "fraud_chargeback": 12,
+    "fraud_high_value_inr": 12,
+    "fraud_two_order": 2
+  }
+}

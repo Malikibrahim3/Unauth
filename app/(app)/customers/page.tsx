@@ -3,8 +3,33 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import CustomersFilterSheet from '@/components/customers/CustomersFilterSheet';
 import CustomersTableClient from '@/components/customers/CustomersTableClient';
+import PageSizeSelect from '@/components/common/PageSizeSelect';
 
-const PAGE_SIZE = 25;
+// Helper: build a URL with one search param removed
+function buildRemoveHref(sp: Record<string, string | undefined>, key: string) {
+  const copy = { ...sp };
+  delete copy[key];
+  delete copy['page'];
+  const qs = new URLSearchParams(copy as Record<string, string>).toString();
+  return `/customers${qs ? `?${qs}` : ''}`;
+}
+
+// Small inline filter chip component
+function FilterChip({ label, removeHref }: { label: string; removeHref: string }) {
+  return (
+    <Link
+      href={removeHref}
+      className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border transition-colors hover:bg-[var(--bg-subtle)]"
+      style={{ borderColor: 'var(--accent)', color: 'var(--accent)', background: 'var(--accent-soft)' }}
+    >
+      {label}
+      <span aria-hidden="true" style={{ fontWeight: 700 }}>×</span>
+    </Link>
+  );
+}
+
+const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
+const DEFAULT_PAGE_SIZE = 25;
 
 interface PageProps {
   searchParams: {
@@ -17,6 +42,7 @@ interface PageProps {
     manuallyReviewed?: string;
     sort?: string;
     page?: string;
+    pageSize?: string;
     // Identity
     ip?: string;
     address?: string;
@@ -62,6 +88,10 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
   const merchantId = merchantRow?.id ?? null;
 
   const page = Math.max(1, parseInt(searchParams.page ?? '1', 10));
+  const requestedPageSize = parseInt(searchParams.pageSize ?? String(DEFAULT_PAGE_SIZE), 10);
+  const PAGE_SIZE = PAGE_SIZE_OPTIONS.includes(requestedPageSize as (typeof PAGE_SIZE_OPTIONS)[number])
+    ? requestedPageSize
+    : DEFAULT_PAGE_SIZE;
   const offset = (page - 1) * PAGE_SIZE;
 
   // Basic
@@ -240,18 +270,89 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
     !firstSeenFrom && !firstSeenTo && !lastSeenFrom && !lastSeenTo && !flagFilter && !statusFilter;
 
   return (
-    <div className="p-8 space-y-6">
-      <h1 className="text-heading-lg">Customers</h1>
-      <p className="text-body-sm" style={{ color: 'var(--text-muted)' }}>
-        All customers identified across your audits, highest-risk first.
-      </p>
+    <div className="p-6 md:p-8 space-y-5">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-heading-lg">Customers</h1>
+          <p className="text-body-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>
+            Segment, filter, and act on all customer risk profiles.
+          </p>
+        </div>
+        <Link href="/upload" className="btn-accent px-4 py-2 rounded-md text-body-sm font-semibold transition-colors">
+          New Audit
+        </Link>
+      </div>
+
+      {/* ── Cohort summary cards ──────────────────────────────────── */}
+      {total > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {[
+            { label: 'New to review', href: '?risk=high&status=new', highlight: true },
+            { label: 'Has refunds', href: '?hasRefunds=1' },
+            { label: 'Has chargebacks', href: '?hasChargebacks=1' },
+            { label: 'Watchlisted', href: '?watchlisted=1' },
+          ].map(({ label, href, highlight }) => (
+            <Link
+              key={label}
+              href={href}
+              className="rounded-lg px-4 py-3 border hover:shadow-sm transition-shadow group"
+              style={{
+                background: highlight ? 'var(--accent-soft)' : 'var(--bg-surface)',
+                borderColor: highlight ? 'var(--accent)' : 'var(--border-subtle)',
+              }}
+            >
+              <p className="text-caption" style={{ color: 'var(--text-muted)' }}>{label}</p>
+              <p className="text-heading-sm font-medium mt-0.5 group-hover:underline" style={{ color: highlight ? 'var(--accent)' : 'var(--text)' }}>
+                Filter →
+              </p>
+            </Link>
+          ))}
+        </div>
+      )}
+
+      {/* ── Saved views strip ─────────────────────────────────────── */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-caption font-medium" style={{ color: 'var(--text-muted)' }}>Saved views:</span>
+        {[
+          { label: 'High-confidence unresolved', href: '?risk=high&status=new' },
+          { label: 'Repeat refund claims', href: '?hasRefunds=1&sort=refundRate' },
+          { label: 'Linked identities', href: '?merchantsMin=2' },
+          { label: 'Fast claimants', href: '?fastestClaimMax=3' },
+        ].map(({ label, href }) => (
+          <Link
+            key={label}
+            href={href}
+            className="text-xs px-3 py-1 rounded-full border transition-colors hover:bg-[var(--bg-subtle)]"
+            style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}
+          >
+            {label}
+          </Link>
+        ))}
+      </div>
 
       <CustomersFilterSheet />
 
+      {/* ── Active filter chips ───────────────────────────────────── */}
+      {!noFilters && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-caption" style={{ color: 'var(--text-muted)' }}>Active filters:</span>
+          {riskFilter && <FilterChip label={`Risk: ${riskFilter}`} removeHref={buildRemoveHref(searchParams, 'risk')} />}
+          {statusFilter && <FilterChip label={`Status: ${statusFilter}`} removeHref={buildRemoveHref(searchParams, 'status')} />}
+          {hasRefunds && <FilterChip label="Has refunds" removeHref={buildRemoveHref(searchParams, 'hasRefunds')} />}
+          {hasChargebacks && <FilterChip label="Has chargebacks" removeHref={buildRemoveHref(searchParams, 'hasChargebacks')} />}
+          {watchlistedOnly && <FilterChip label="Watchlisted" removeHref={buildRemoveHref(searchParams, 'watchlisted')} />}
+          {q && <FilterChip label={`Search: "${q}"`} removeHref={buildRemoveHref(searchParams, 'q')} />}
+          <Link href="/customers" className="text-xs hover:underline" style={{ color: 'var(--text-muted)' }}>Clear all</Link>
+        </div>
+      )}
+
       {rows.length === 0 && noFilters ? (
-        <div className="rounded-lg p-10" style={{ border: '1.5px dashed var(--border)' }}>
-          <p className="text-body-sm" style={{ color: 'var(--text-muted)' }}>No customer profiles yet. Run an audit to populate this list.</p>
-          <Link href="/upload" className="mt-4 inline-block text-sm font-medium underline" style={{ color: 'var(--text)' }}>
+        <div className="rounded-lg p-10 text-center" style={{ border: '1.5px dashed var(--border)' }}>
+          <p className="text-body-sm font-semibold mb-1" style={{ color: 'var(--text)' }}>No customer profiles yet</p>
+          <p className="text-body-sm mb-4" style={{ color: 'var(--text-muted)' }}>
+            Run an audit to populate this list. Customer profiles are built automatically from your uploaded transaction data.
+          </p>
+          <Link href="/upload" className="inline-block text-sm font-medium underline" style={{ color: 'var(--text)' }}>
             Upload a CSV →
           </Link>
         </div>
@@ -265,17 +366,18 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
             </p>
             {totalPages > 1 && (
               <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
-                <span>Page {page} of {totalPages}</span>
+              <span>Page {page} of {totalPages}</span>
+                <PageSizeSelect pathname="/customers" searchParams={searchParams} pageSize={PAGE_SIZE} />
                 {page > 1 && (
                   <Link
-                    href={`/customers?${new URLSearchParams({ ...searchParams, page: String(page - 1) }).toString()}`}
+                    href={`/customers?${new URLSearchParams({ ...searchParams, page: String(page - 1), pageSize: String(PAGE_SIZE) }).toString()}`}
                     className="px-2 py-1 rounded border"
                     style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}
                   >← Prev</Link>
                 )}
                 {page < totalPages && (
                   <Link
-                    href={`/customers?${new URLSearchParams({ ...searchParams, page: String(page + 1) }).toString()}`}
+                    href={`/customers?${new URLSearchParams({ ...searchParams, page: String(page + 1), pageSize: String(PAGE_SIZE) }).toString()}`}
                     className="px-2 py-1 rounded border"
                     style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}
                   >Next →</Link>

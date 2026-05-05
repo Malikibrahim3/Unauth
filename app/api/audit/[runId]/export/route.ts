@@ -35,36 +35,64 @@ export async function GET(
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  // Fetch high + critical transactions for this job
-  const { data: rows, error: txError } = await serviceClient
-    .from('audit_transactions')
-    .select(
-      'order_id, processed_at, order_value, match_score, risk_level, customer_email, customer_name, fraud_flags'
-    )
-    .eq('job_id', runId)
-    .in('risk_level', ['high', 'critical'])
-    .order('match_score', { ascending: false })
-    .limit(10000);
+  const rows: Array<{
+    order_id: string | null;
+    processed_at: string | null;
+    order_value: number | null;
+    identity_score: number | null;
+    identity_confidence_grade: string | null;
+    cluster_id: string | null;
+    signals_matched: unknown;
+    customer_email: string | null;
+    customer_name: string | null;
+  }> = [];
 
-  if (txError) {
-    return NextResponse.json({ error: 'Failed to fetch transactions' }, { status: 500 });
+  const PAGE_SIZE = 1000;
+  for (let offset = 0; ; offset += PAGE_SIZE) {
+    const { data, error: txError } = await serviceClient
+      .from('audit_transactions')
+      .select(
+        'order_id, processed_at, order_value, identity_score, identity_confidence_grade, cluster_id, signals_matched, customer_email, customer_name'
+      )
+      .eq('job_id', runId)
+      .not('identity_confidence_grade', 'is', null)
+      .order('identity_score', { ascending: false, nullsFirst: false })
+      .range(offset, offset + PAGE_SIZE - 1);
+
+    if (txError) {
+      return NextResponse.json({ error: 'Failed to fetch transactions' }, { status: 500 });
+    }
+    if (!data || data.length === 0) break;
+    rows.push(...(data as unknown as typeof rows));
+    if (data.length < PAGE_SIZE) break;
   }
 
   // Build CSV
-  const headers = ['order_id', 'processed_at', 'order_value', 'match_score', 'risk_level', 'customer_email', 'customer_name', 'top_signals'];
+  const headers = [
+    'order_id',
+    'processed_at',
+    'order_value',
+    'identity_score',
+    'identity_confidence_grade',
+    'cluster_id',
+    'customer_email',
+    'customer_name',
+    'signals_matched',
+  ];
   const csvLines: string[] = [headers.join(',')];
 
-  for (const row of rows ?? []) {
-    const flags = Array.isArray(row.fraud_flags) ? (row.fraud_flags as string[]).join('; ') : '';
+  for (const row of rows) {
+    const signals = Array.isArray(row.signals_matched) ? (row.signals_matched as string[]).join('; ') : '';
     const cells = [
       row.order_id ?? '',
       row.processed_at ?? '',
       row.order_value != null ? String(row.order_value) : '',
-      row.match_score != null ? String(Math.round(row.match_score)) : '',,
-      row.risk_level ?? '',
+      row.identity_score != null ? String(Math.round(row.identity_score)) : '',
+      row.identity_confidence_grade ?? '',
+      row.cluster_id ?? '',
       row.customer_email ? `"${row.customer_email.replace(/"/g, '""')}"` : '',
       row.customer_name ? `"${row.customer_name.replace(/"/g, '""')}"` : '',
-      flags ? `"${flags.replace(/"/g, '""')}"` : '',
+      signals ? `"${signals.replace(/"/g, '""')}"` : '',
     ];
     csvLines.push(cells.join(','));
   }
@@ -78,7 +106,7 @@ export async function GET(
     action: 'export_audit',
     resourceType: 'processing_job',
     resourceId: runId,
-    metadata: { rowCount: rows?.length ?? 0 },
+    metadata: { rowCount: rows.length },
     ip,
   });
 

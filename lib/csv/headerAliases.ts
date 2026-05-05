@@ -136,6 +136,7 @@ export const HEADER_ALIASES: Record<RequiredField, string[]> = {
     'order_id', 'order id', 'order number', 'order_name', 'id', 'name',
     'order #', 'order#', 'orderid', 'order-id', 'transaction_id', 'transaction id',
     'order ref', 'order reference', 'reference', 'order_no', 'order no',
+    'receipt id', 'receipt_id', 'receipt-id',
   ],
 
   order_date: [
@@ -189,18 +190,11 @@ export const HEADER_ALIASES: Record<RequiredField, string[]> = {
     'shipping street', 'shipping address', 'shipping_address1', 'shipping address1',
     'shipping address 1', 'shipping_address_1',
     // WooCommerce
-    'shipping_address_1', 'shipping address 1', 'shipping_address_2',
+    'shipping_address_1', 'shipping address 1',
     // General
     'delivery address', 'delivery_address', 'ship to', 'ship_to',
-    'address', 'street_address', 'street address', 'shipping', 'delivery',
-    // Postcode/ZIP — both shipping and billing variants (normaliser extracts postcode)
-    'shipping zip', 'shipping_zip', 'shipping postcode', 'shipping_postcode',
-    'shipping postal code', 'shipping_postal_code',
-    'billing zip', 'billing_zip', 'billing postcode', 'billing_postcode',
-    'billing postal code', 'billing_postal_code',
-    'postcode', 'zip', 'zip_code', 'zip code', 'postal_code', 'postal code',
-    // Country (sometimes the only geographic field available)
-    'shipping_country', 'shipping country', 'billing_country', 'billing country', 'country',
+    'ship address 1', 'ship_address_1', 'ship-address-1',
+    'address', 'address 1', 'address_1', 'street_address', 'street address', 'shipping', 'delivery',
   ],
 
   order_total: [
@@ -211,7 +205,8 @@ export const HEADER_ALIASES: Record<RequiredField, string[]> = {
     'order_total', 'total',
     // General
     'amount', 'grand_total', 'grand total', 'order_amount', 'order amount',
-    'price', 'revenue', 'net total', 'gross total', 'value',
+    'price', 'item-price', 'item price', 'order value', 'order_value',
+    'revenue', 'net total', 'gross total', 'value',
   ],
 
   currency: [
@@ -234,6 +229,7 @@ export const HEADER_ALIASES: Record<RequiredField, string[]> = {
     'billing_phone',
     // General
     'phone_number', 'phone number', 'telephone', 'tel', 'mobile',
+    'buyer phone number', 'buyer_phone_number', 'buyer-phone-number',
     'contact_number', 'contact number', 'cell', 'cellphone', 'cell_phone',
   ],
 
@@ -241,7 +237,6 @@ export const HEADER_ALIASES: Record<RequiredField, string[]> = {
     'billing_address', 'billing address', 'billing_address1', 'billing address1',
     'billing address 1', 'billing_address_1', 'billing_address_2',
     'billing street', 'billing street',
-    'billing_country', 'billing country', 'country',
   ],
 
   refund_status: [
@@ -277,6 +272,7 @@ export const HEADER_ALIASES: Record<RequiredField, string[]> = {
     'ip_address', 'ip address',
     'buyer ip', 'buyer_ip', 'browser ip', 'browser_ip',
     'customer ip', 'customer_ip', 'checkout_ip', 'checkout ip',
+    'customer ip address', 'customer_ip_address',
     'ip', 'remote_ip', 'remote ip', 'client_ip', 'client ip',
   ],
 

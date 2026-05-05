@@ -1,0 +1,24 @@
+{
+  "dataset": "negative_control",
+  "seedNote": "Deterministic generator seeds are embedded in scripts/test-data/generateBlindMerchantCSVs.ts",
+  "totalRows": 1500,
+  "expectedFlaggedRows": 0,
+  "expectedFlaggedRate": 0,
+  "expectedClusters": 0,
+  "exactExpected": false,
+  "acceptance": {
+    "maxReviewRate": 0.025,
+    "minSeededRecall": 1,
+    "minDistinctNormalizedAddresses": 400,
+    "maxLargestCluster": 35
+  },
+  "expectedGradeCounts": {},
+  "scenarioCounts": {
+    "clean": 1000,
+    "normal_repeat": 281,
+    "legit_refund": 19,
+    "false_corporate_office": 80,
+    "false_shared_household": 50,
+    "false_bin_last4_collision": 70
+  }
+}

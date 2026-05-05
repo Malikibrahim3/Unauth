@@ -96,11 +96,22 @@ export default function EvidenceNewPage({ params, searchParams }: PageProps) {
   }
 
   const selectedOrder = orders.find(o => o.id === selectedOrderId)
+  const hasEligibleOrders = orders.some(o => o.refund_claimed)
+  const canSubmit = !!selectedOrderId && !loading && !loadingOrders
+
+  // Package preview checklist (dynamic, based on selected order)
+  const packageIncludes = [
+    { label: 'Customer identity record', available: true },
+    { label: 'Order history (all known orders)', available: true },
+    { label: 'Identity signals & risk flags', available: true },
+    { label: 'CE3.0 qualifying prior transactions', available: ce3Preview === 'likely', pending: ce3Preview === 'unknown' },
+    { label: 'Merchant notes', available: !!notes.trim(), optional: true },
+  ]
 
   return (
     <div className="p-8 max-w-2xl mx-auto">
       {/* Back navigation */}
-      <div className="flex items-center gap-3 mb-6" style={{ color: 'var(--text-muted)' }}>
+      <div className="flex items-center gap-3 mb-6">
         <Link
           href={`/customers/${profileId}`}
           className="inline-flex items-center gap-1.5 text-sm transition-colors hover:opacity-80"
@@ -121,27 +132,59 @@ export default function EvidenceNewPage({ params, searchParams }: PageProps) {
         Generate chargeback evidence
       </h1>
       <p className="text-body-sm mb-8" style={{ color: 'var(--text-muted)' }}>
-        This creates a document you can submit to your payment processor to defend a chargeback.
-        Where your order history qualifies, the package will be formatted for Visa Compelling Evidence 3.0.
+        Creates a submission-ready document for your payment processor. Where eligible, the package is automatically formatted for Visa Compelling Evidence 3.0.
       </p>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Order select */}
-        <div>
-          <label
-            className="block text-xs font-semibold mb-2"
-            style={{ color: 'var(--text-muted)' }}
-            htmlFor="order-select"
+      {/* Loading state */}
+      {loadingOrders && (
+        <div className="rounded-xl p-8 text-center" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-subtle)' }}>
+          <div className="inline-block w-6 h-6 rounded-full border-2 border-t-transparent animate-spin mb-3" style={{ borderColor: 'var(--border)', borderTopColor: 'var(--accent)' }} />
+          <p className="text-body-sm" style={{ color: 'var(--text-muted)' }}>Loading order history…</p>
+        </div>
+      )}
+
+      {/* No orders state */}
+      {!loadingOrders && orders.length === 0 && (
+        <div className="rounded-xl p-8 text-center" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-subtle)' }}>
+          <p className="text-heading-sm mb-2" style={{ color: 'var(--text)' }}>No orders found</p>
+          <p className="text-body-sm mb-4" style={{ color: 'var(--text-muted)' }}>
+            This customer has no order history in the current dataset. Evidence packages require at least one order.
+          </p>
+          <Link
+            href={`/customers/${profileId}`}
+            className="text-sm hover:underline"
+            style={{ color: 'var(--accent)' }}
           >
-            Order in dispute *
-          </label>
-          {loadingOrders ? (
-            <div className="h-10 rounded-md animate-pulse" style={{ background: 'var(--bg-subtle)' }} />
-          ) : orders.length === 0 ? (
-            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-              No orders found for this customer.
+            ← Return to profile
+          </Link>
+        </div>
+      )}
+
+      {/* No eligible orders warning */}
+      {!loadingOrders && orders.length > 0 && !hasEligibleOrders && (
+        <div className="rounded-lg p-4 mb-6 flex items-start gap-3" style={{ background: 'var(--warning-bg)', border: '1px solid var(--warning-bd)' }}>
+          <span style={{ color: 'var(--warning)' }}>⚠</span>
+          <div>
+            <p className="text-sm font-semibold mb-0.5" style={{ color: 'var(--text)' }}>No refund claims or chargebacks on record</p>
+            <p className="text-caption" style={{ color: 'var(--text-muted)' }}>
+              Evidence packages are most effective when defending a disputed order with a refund claim. You can still generate a package, but it may carry less weight.
             </p>
-          ) : (
+          </div>
+        </div>
+      )}
+
+      {/* Main form */}
+      {!loadingOrders && orders.length > 0 && (
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Order select */}
+          <div>
+            <label
+              className="block text-xs font-semibold mb-2"
+              style={{ color: 'var(--text-muted)' }}
+              htmlFor="order-select"
+            >
+              Disputed order *
+            </label>
             <select
               id="order-select"
               value={selectedOrderId}
@@ -154,106 +197,148 @@ export default function EvidenceNewPage({ params, searchParams }: PageProps) {
               }}
               required
             >
-              <option value="">Select an order…</option>
+              <option value="">Select an order to defend…</option>
               {orders.map(o => (
                 <option key={o.id} value={o.id}>
-                  {o.order_id} —{' '}
-                  {new Date(o.processed_at).toLocaleDateString('en-GB')}{' '}
-                  {o.order_value != null ? `— ${o.order_value.toFixed(2)}` : ''}
-                  {o.refund_claimed ? ' (refund claimed)' : ''}
+                  {o.order_id} · {new Date(o.processed_at).toLocaleDateString('en-GB')}
+                  {o.order_value != null ? ` · ${o.order_value.toFixed(2)}` : ''}
+                  {o.refund_claimed ? ' ★ refund claimed' : ''}
                 </option>
               ))}
             </select>
-          )}
-        </div>
+            {!selectedOrderId && (
+              <p className="text-caption mt-1.5" style={{ color: 'var(--text-subtle)' }}>
+                Select the order the customer has disputed. Orders marked ★ have a refund claim on record.
+              </p>
+            )}
+          </div>
 
-        {/* CE3.0 pre-assessment indicator */}
-        {selectedOrderId && !ce3Checking && ce3Preview !== 'unknown' && (
-          <div
-            className="flex items-start gap-3 p-3 rounded-lg border"
-            style={{
-              background: ce3Preview === 'likely' ? '#EEF2FF' : '#FEF3C7',
-              borderColor: ce3Preview === 'likely' ? '#6366F1' : '#F59E0B',
-            }}
-          >
-            <span
-              className="text-lg leading-none"
-              style={{ color: ce3Preview === 'likely' ? '#6366F1' : '#D97706' }}
+          {/* CE3.0 eligibility banner */}
+          {selectedOrderId && (
+            <div>
+              {ce3Checking ? (
+                <div className="rounded-lg p-3 flex items-center gap-2" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-subtle)' }}>
+                  <div className="w-3 h-3 rounded-full border border-t-transparent animate-spin" style={{ borderColor: 'var(--border)', borderTopColor: 'var(--accent)' }} />
+                  <p className="text-caption" style={{ color: 'var(--text-muted)' }}>Checking CE3.0 eligibility…</p>
+                </div>
+              ) : ce3Preview === 'likely' ? (
+                <div className="rounded-lg p-3 flex items-start gap-2.5" style={{ background: 'var(--success-bg)', border: '1px solid var(--success-bd)' }}>
+                  <span style={{ color: 'var(--success)' }}>✓</span>
+                  <div>
+                    <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>CE3.0 eligible</p>
+                    <p className="text-caption mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                      A qualifying prior transaction history was found. The package will be formatted for Visa Compelling Evidence 3.0.
+                    </p>
+                  </div>
+                </div>
+              ) : ce3Preview === 'unlikely' ? (
+                <div className="rounded-lg p-3 flex items-start gap-2.5" style={{ background: 'var(--warning-bg)', border: '1px solid var(--warning-bd)' }}>
+                  <span style={{ color: 'var(--warning)' }}>⚠</span>
+                  <div>
+                    <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>CE3.0 requirements may not be met</p>
+                    <p className="text-caption mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                      No qualifying prior transactions detected. The package will use standard representment format instead.
+                    </p>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          )}
+
+          {/* Package preview */}
+          {selectedOrderId && (
+            <div className="rounded-xl p-5" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-subtle)' }}>
+              <p className="text-xs font-semibold mb-3" style={{ color: 'var(--text-muted)' }}>This package will include</p>
+              <ul className="space-y-1.5">
+                {packageIncludes.map((item, i) => (
+                  <li key={i} className="flex items-center gap-2 text-caption">
+                    {item.pending ? (
+                      <span style={{ color: 'var(--text-subtle)' }}>○</span>
+                    ) : item.available ? (
+                      <span style={{ color: 'var(--success)' }}>✓</span>
+                    ) : (
+                      <span style={{ color: 'var(--border)' }}>–</span>
+                    )}
+                    <span style={{ color: item.available ? 'var(--text)' : item.pending ? 'var(--text-subtle)' : 'var(--text-subtle)' }}>
+                      {item.label}
+                      {item.optional && !item.available && <span className="ml-1" style={{ color: 'var(--text-subtle)' }}>(add notes below)</span>}
+                      {item.pending && <span className="ml-1" style={{ color: 'var(--text-subtle)' }}>(checking…)</span>}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Notes */}
+          <div>
+            <label
+              className="block text-xs font-semibold mb-2"
+              style={{ color: 'var(--text-muted)' }}
+              htmlFor="notes"
             >
-              {ce3Preview === 'likely' ? '✓' : '⚠'}
-            </span>
-            <p
-              className="text-xs"
-              style={{ color: ce3Preview === 'likely' ? '#374151' : '#92400E' }}
-            >
-              {ce3Preview === 'likely'
-                ? 'This order appears CE3.0 eligible — a qualifying prior transaction history has been detected.'
-                : 'CE3.0 eligibility requirements may not be met for this order. The package will still be valid as standard representment evidence.'}
+              Merchant note{' '}
+              <span className="font-normal" style={{ color: 'var(--text-subtle)' }}>
+                (optional · appears in the package · max 500 characters)
+              </span>
+            </label>
+            <textarea
+              id="notes"
+              value={notes}
+              onChange={e => setNotes(e.target.value.slice(0, 500))}
+              rows={3}
+              placeholder="Any additional context to include in the evidence package…"
+              className="w-full px-3 py-2 rounded-md text-sm resize-none"
+              style={{
+                background: 'var(--bg-inset)',
+                border: '1px solid var(--border)',
+                color: 'var(--text)',
+              }}
+            />
+            <p className="text-caption mt-1 text-right" style={{ color: 'var(--text-subtle)' }}>
+              {notes.length}/500
             </p>
           </div>
-        )}
 
-        {/* Notes */}
-        <div>
-          <label
-            className="block text-xs font-semibold mb-2"
-            style={{ color: 'var(--text-muted)' }}
-            htmlFor="notes"
-          >
-            Notes to include{' '}
-            <span className="font-normal" style={{ color: 'var(--text-subtle)' }}>
-              (optional, max 500 characters)
-            </span>
-          </label>
-          <textarea
-            id="notes"
-            value={notes}
-            onChange={e => setNotes(e.target.value.slice(0, 500))}
-            rows={3}
-            placeholder="Any additional context for the evidence package…"
-            className="w-full px-3 py-2 rounded-md text-sm resize-none"
-            style={{
-              background: 'var(--bg-inset)',
-              border: '1px solid var(--border)',
-              color: 'var(--text)',
-            }}
-          />
-          <p className="text-caption mt-1 text-right" style={{ color: 'var(--text-subtle)' }}>
-            {notes.length}/500
-          </p>
-        </div>
+          {error && (
+            <div
+              className="p-3 rounded-md text-sm border"
+              style={{
+                background: 'var(--risk-critical-bg)',
+                borderColor: 'var(--risk-critical-bd)',
+                color: 'var(--risk-critical)',
+              }}
+            >
+              {error}
+            </div>
+          )}
 
-        {error && (
-          <div
-            className="p-3 rounded-md text-sm border"
-            style={{
-              background: 'var(--risk-critical-bg)',
-              borderColor: 'var(--risk-critical-bd)',
-              color: 'var(--risk-critical)',
-            }}
-          >
-            {error}
+          <div className="flex items-center justify-between pt-2">
+            <Link
+              href={`/customers/${profileId}`}
+              className="text-xs hover:underline"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              ← Cancel
+            </Link>
+            <div className="flex flex-col items-end gap-1">
+              <button
+                type="submit"
+                disabled={!canSubmit}
+                className="px-5 py-2.5 rounded-md text-sm font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}
+              >
+                {loading ? 'Generating package…' : 'Generate evidence package'}
+              </button>
+              {!selectedOrderId && (
+                <p className="text-[11px]" style={{ color: 'var(--text-subtle)' }}>
+                  Select an order above to continue
+                </p>
+              )}
+            </div>
           </div>
-        )}
-
-        <div className="flex items-center justify-between pt-2">
-          <Link
-            href={`/customers/${profileId}`}
-            className="text-xs hover:underline"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            ← Cancel
-          </Link>
-          <button
-            type="submit"
-            disabled={!selectedOrderId || loading}
-            className="px-5 py-2.5 rounded-md text-sm font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}
-          >
-            {loading ? 'Generating your evidence package and assessing CE3.0 eligibility…' : 'Generate evidence package'}
-          </button>
-        </div>
-      </form>
+        </form>
+      )}
     </div>
   )
 }

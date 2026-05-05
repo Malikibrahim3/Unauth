@@ -1,0 +1,1501 @@
+order_id,_expected_cluster_label,_expected_confidence,_expected_should_flag,_expected_reason,_scenario,_ground_truth_person_id
+BT-000001,,,false,clean baseline order,clean,person_0000001
+BT-000002,,,false,clean baseline order,clean,person_0000002
+BT-000003,,,false,clean baseline order,clean,person_0000003
+BT-000004,,,false,clean baseline order,clean,person_0000004
+BT-000005,,,false,clean baseline order,clean,person_0000005
+BT-000006,,,false,clean baseline order,clean,person_0000006
+BT-000007,,,false,clean baseline order,clean,person_0000007
+BT-000008,,,false,clean baseline order,clean,person_0000008
+BT-000009,,,false,clean baseline order,clean,person_0000009
+BT-000010,,,false,clean baseline order,clean,person_0000010
+BT-000011,,,false,clean baseline order,clean,person_0000011
+BT-000012,,,false,clean baseline order,clean,person_0000012
+BT-000013,,,false,clean baseline order,clean,person_0000013
+BT-000014,,,false,clean baseline order,clean,person_0000014
+BT-000015,,,false,clean baseline order,clean,person_0000015
+BT-000016,,,false,clean baseline order,clean,person_0000016
+BT-000017,,,false,clean baseline order,clean,person_0000017
+BT-000018,,,false,clean baseline order,clean,person_0000018
+BT-000019,,,false,clean baseline order,clean,person_0000019
+BT-000020,,,false,clean baseline order,clean,person_0000020
+BT-000021,,,false,clean baseline order,clean,person_0000021
+BT-000022,,,false,clean baseline order,clean,person_0000022
+BT-000023,,,false,clean baseline order,clean,person_0000023
+BT-000024,,,false,clean baseline order,clean,person_0000024
+BT-000025,,,false,clean baseline order,clean,person_0000025
+BT-000026,,,false,clean baseline order,clean,person_0000026
+BT-000027,,,false,clean baseline order,clean,person_0000027
+BT-000028,,,false,clean baseline order,clean,person_0000028
+BT-000029,,,false,clean baseline order,clean,person_0000029
+BT-000030,,,false,clean baseline order,clean,person_0000030
+BT-000031,,,false,clean baseline order,clean,person_0000031
+BT-000032,,,false,clean baseline order,clean,person_0000032
+BT-000033,,,false,clean baseline order,clean,person_0000033
+BT-000034,,,false,clean baseline order,clean,person_0000034
+BT-000035,,,false,clean baseline order,clean,person_0000035
+BT-000036,,,false,clean baseline order,clean,person_0000036
+BT-000037,,,false,clean baseline order,clean,person_0000037
+BT-000038,,,false,clean baseline order,clean,person_0000038
+BT-000039,,,false,clean baseline order,clean,person_0000039
+BT-000040,,,false,clean baseline order,clean,person_0000040
+BT-000041,,,false,clean baseline order,clean,person_0000041
+BT-000042,,,false,clean baseline order,clean,person_0000042
+BT-000043,,,false,clean baseline order,clean,person_0000043
+BT-000044,,,false,clean baseline order,clean,person_0000044
+BT-000045,,,false,clean baseline order,clean,person_0000045
+BT-000046,,,false,clean baseline order,clean,person_0000046
+BT-000047,,,false,clean baseline order,clean,person_0000047
+BT-000048,,,false,clean baseline order,clean,person_0000048
+BT-000049,,,false,clean baseline order,clean,person_0000049
+BT-000050,,,false,clean baseline order,clean,person_0000050
+BT-000051,,,false,clean baseline order,clean,person_0000051
+BT-000052,,,false,clean baseline order,clean,person_0000052
+BT-000053,,,false,clean baseline order,clean,person_0000053
+BT-000054,,,false,clean baseline order,clean,person_0000054
+BT-000055,,,false,clean baseline order,clean,person_0000055
+BT-000056,,,false,clean baseline order,clean,person_0000056
+BT-000057,,,false,clean baseline order,clean,person_0000057
+BT-000058,,,false,clean baseline order,clean,person_0000058
+BT-000059,,,false,clean baseline order,clean,person_0000059
+BT-000060,,,false,clean baseline order,clean,person_0000060
+BT-000061,,,false,clean baseline order,clean,person_0000061
+BT-000062,,,false,clean baseline order,clean,person_0000062
+BT-000063,,,false,clean baseline order,clean,person_0000063
+BT-000064,,,false,clean baseline order,clean,person_0000064
+BT-000065,,,false,clean baseline order,clean,person_0000065
+BT-000066,,,false,clean baseline order,clean,person_0000066
+BT-000067,,,false,clean baseline order,clean,person_0000067
+BT-000068,,,false,clean baseline order,clean,person_0000068
+BT-000069,,,false,clean baseline order,clean,person_0000069
+BT-000070,,,false,clean baseline order,clean,person_0000070
+BT-000071,,,false,clean baseline order,clean,person_0000071
+BT-000072,,,false,clean baseline order,clean,person_0000072
+BT-000073,,,false,clean baseline order,clean,person_0000073
+BT-000074,,,false,clean baseline order,clean,person_0000074
+BT-000075,,,false,clean baseline order,clean,person_0000075
+BT-000076,,,false,clean baseline order,clean,person_0000076
+BT-000077,,,false,clean baseline order,clean,person_0000077
+BT-000078,,,false,clean baseline order,clean,person_0000078
+BT-000079,,,false,clean baseline order,clean,person_0000079
+BT-000080,,,false,clean baseline order,clean,person_0000080
+BT-000081,,,false,clean baseline order,clean,person_0000081
+BT-000082,,,false,clean baseline order,clean,person_0000082
+BT-000083,,,false,clean baseline order,clean,person_0000083
+BT-000084,,,false,clean baseline order,clean,person_0000084
+BT-000085,,,false,clean baseline order,clean,person_0000085
+BT-000086,,,false,clean baseline order,clean,person_0000086
+BT-000087,,,false,clean baseline order,clean,person_0000087
+BT-000088,,,false,clean baseline order,clean,person_0000088
+BT-000089,,,false,clean baseline order,clean,person_0000089
+BT-000090,,,false,clean baseline order,clean,person_0000090
+BT-000091,,,false,clean baseline order,clean,person_0000091
+BT-000092,,,false,clean baseline order,clean,person_0000092
+BT-000093,,,false,clean baseline order,clean,person_0000093
+BT-000094,,,false,clean baseline order,clean,person_0000094
+BT-000095,,,false,clean baseline order,clean,person_0000095
+BT-000096,,,false,clean baseline order,clean,person_0000096
+BT-000097,,,false,clean baseline order,clean,person_0000097
+BT-000098,,,false,clean baseline order,clean,person_0000098
+BT-000099,,,false,clean baseline order,clean,person_0000099
+BT-000100,,,false,clean baseline order,clean,person_0000100
+BT-000101,,,false,clean baseline order,clean,person_0000101
+BT-000102,,,false,clean baseline order,clean,person_0000102
+BT-000103,,,false,clean baseline order,clean,person_0000103
+BT-000104,,,false,clean baseline order,clean,person_0000104
+BT-000105,,,false,clean baseline order,clean,person_0000105
+BT-000106,,,false,clean baseline order,clean,person_0000106
+BT-000107,,,false,clean baseline order,clean,person_0000107
+BT-000108,,,false,clean baseline order,clean,person_0000108
+BT-000109,,,false,clean baseline order,clean,person_0000109
+BT-000110,,,false,clean baseline order,clean,person_0000110
+BT-000111,,,false,clean baseline order,clean,person_0000111
+BT-000112,,,false,clean baseline order,clean,person_0000112
+BT-000113,,,false,clean baseline order,clean,person_0000113
+BT-000114,,,false,clean baseline order,clean,person_0000114
+BT-000115,,,false,clean baseline order,clean,person_0000115
+BT-000116,,,false,clean baseline order,clean,person_0000116
+BT-000117,,,false,clean baseline order,clean,person_0000117
+BT-000118,,,false,clean baseline order,clean,person_0000118
+BT-000119,,,false,clean baseline order,clean,person_0000119
+BT-000120,,,false,clean baseline order,clean,person_0000120
+BT-000121,,,false,clean baseline order,clean,person_0000121
+BT-000122,,,false,clean baseline order,clean,person_0000122
+BT-000123,,,false,clean baseline order,clean,person_0000123
+BT-000124,,,false,clean baseline order,clean,person_0000124
+BT-000125,,,false,clean baseline order,clean,person_0000125
+BT-000126,,,false,clean baseline order,clean,person_0000126
+BT-000127,,,false,clean baseline order,clean,person_0000127
+BT-000128,,,false,clean baseline order,clean,person_0000128
+BT-000129,,,false,clean baseline order,clean,person_0000129
+BT-000130,,,false,clean baseline order,clean,person_0000130
+BT-000131,,,false,clean baseline order,clean,person_0000131
+BT-000132,,,false,clean baseline order,clean,person_0000132
+BT-000133,,,false,clean baseline order,clean,person_0000133
+BT-000134,,,false,clean baseline order,clean,person_0000134
+BT-000135,,,false,clean baseline order,clean,person_0000135
+BT-000136,,,false,clean baseline order,clean,person_0000136
+BT-000137,,,false,clean baseline order,clean,person_0000137
+BT-000138,,,false,clean baseline order,clean,person_0000138
+BT-000139,,,false,clean baseline order,clean,person_0000139
+BT-000140,,,false,clean baseline order,clean,person_0000140
+BT-000141,,,false,clean baseline order,clean,person_0000141
+BT-000142,,,false,clean baseline order,clean,person_0000142
+BT-000143,,,false,clean baseline order,clean,person_0000143
+BT-000144,,,false,clean baseline order,clean,person_0000144
+BT-000145,,,false,clean baseline order,clean,person_0000145
+BT-000146,,,false,clean baseline order,clean,person_0000146
+BT-000147,,,false,clean baseline order,clean,person_0000147
+BT-000148,,,false,clean baseline order,clean,person_0000148
+BT-000149,,,false,clean baseline order,clean,person_0000149
+BT-000150,,,false,clean baseline order,clean,person_0000150
+BT-000151,,,false,clean baseline order,clean,person_0000151
+BT-000152,,,false,clean baseline order,clean,person_0000152
+BT-000153,,,false,clean baseline order,clean,person_0000153
+BT-000154,,,false,clean baseline order,clean,person_0000154
+BT-000155,,,false,clean baseline order,clean,person_0000155
+BT-000156,,,false,clean baseline order,clean,person_0000156
+BT-000157,,,false,clean baseline order,clean,person_0000157
+BT-000158,,,false,clean baseline order,clean,person_0000158
+BT-000159,,,false,clean baseline order,clean,person_0000159
+BT-000160,,,false,clean baseline order,clean,person_0000160
+BT-000161,,,false,clean baseline order,clean,person_0000161
+BT-000162,,,false,clean baseline order,clean,person_0000162
+BT-000163,,,false,clean baseline order,clean,person_0000163
+BT-000164,,,false,clean baseline order,clean,person_0000164
+BT-000165,,,false,clean baseline order,clean,person_0000165
+BT-000166,,,false,clean baseline order,clean,person_0000166
+BT-000167,,,false,clean baseline order,clean,person_0000167
+BT-000168,,,false,clean baseline order,clean,person_0000168
+BT-000169,,,false,clean baseline order,clean,person_0000169
+BT-000170,,,false,clean baseline order,clean,person_0000170
+BT-000171,,,false,clean baseline order,clean,person_0000171
+BT-000172,,,false,clean baseline order,clean,person_0000172
+BT-000173,,,false,clean baseline order,clean,person_0000173
+BT-000174,,,false,clean baseline order,clean,person_0000174
+BT-000175,,,false,clean baseline order,clean,person_0000175
+BT-000176,,,false,clean baseline order,clean,person_0000176
+BT-000177,,,false,clean baseline order,clean,person_0000177
+BT-000178,,,false,clean baseline order,clean,person_0000178
+BT-000179,,,false,clean baseline order,clean,person_0000179
+BT-000180,,,false,clean baseline order,clean,person_0000180
+BT-000181,,,false,clean baseline order,clean,person_0000181
+BT-000182,,,false,clean baseline order,clean,person_0000182
+BT-000183,,,false,clean baseline order,clean,person_0000183
+BT-000184,,,false,clean baseline order,clean,person_0000184
+BT-000185,,,false,clean baseline order,clean,person_0000185
+BT-000186,,,false,clean baseline order,clean,person_0000186
+BT-000187,,,false,clean baseline order,clean,person_0000187
+BT-000188,,,false,clean baseline order,clean,person_0000188
+BT-000189,,,false,clean baseline order,clean,person_0000189
+BT-000190,,,false,clean baseline order,clean,person_0000190
+BT-000191,,,false,clean baseline order,clean,person_0000191
+BT-000192,,,false,clean baseline order,clean,person_0000192
+BT-000193,,,false,clean baseline order,clean,person_0000193
+BT-000194,,,false,clean baseline order,clean,person_0000194
+BT-000195,,,false,clean baseline order,clean,person_0000195
+BT-000196,,,false,clean baseline order,clean,person_0000196
+BT-000197,,,false,clean baseline order,clean,person_0000197
+BT-000198,,,false,clean baseline order,clean,person_0000198
+BT-000199,,,false,clean baseline order,clean,person_0000199
+BT-000200,,,false,clean baseline order,clean,person_0000200
+BT-000201,,,false,clean baseline order,clean,person_0000201
+BT-000202,,,false,clean baseline order,clean,person_0000202
+BT-000203,,,false,clean baseline order,clean,person_0000203
+BT-000204,,,false,clean baseline order,clean,person_0000204
+BT-000205,,,false,clean baseline order,clean,person_0000205
+BT-000206,,,false,clean baseline order,clean,person_0000206
+BT-000207,,,false,clean baseline order,clean,person_0000207
+BT-000208,,,false,clean baseline order,clean,person_0000208
+BT-000209,,,false,clean baseline order,clean,person_0000209
+BT-000210,,,false,clean baseline order,clean,person_0000210
+BT-000211,,,false,clean baseline order,clean,person_0000211
+BT-000212,,,false,clean baseline order,clean,person_0000212
+BT-000213,,,false,clean baseline order,clean,person_0000213
+BT-000214,,,false,clean baseline order,clean,person_0000214
+BT-000215,,,false,clean baseline order,clean,person_0000215
+BT-000216,,,false,clean baseline order,clean,person_0000216
+BT-000217,,,false,clean baseline order,clean,person_0000217
+BT-000218,,,false,clean baseline order,clean,person_0000218
+BT-000219,,,false,clean baseline order,clean,person_0000219
+BT-000220,,,false,clean baseline order,clean,person_0000220
+BT-000221,,,false,clean baseline order,clean,person_0000221
+BT-000222,,,false,clean baseline order,clean,person_0000222
+BT-000223,,,false,clean baseline order,clean,person_0000223
+BT-000224,,,false,clean baseline order,clean,person_0000224
+BT-000225,,,false,clean baseline order,clean,person_0000225
+BT-000226,,,false,clean baseline order,clean,person_0000226
+BT-000227,,,false,clean baseline order,clean,person_0000227
+BT-000228,,,false,clean baseline order,clean,person_0000228
+BT-000229,,,false,clean baseline order,clean,person_0000229
+BT-000230,,,false,clean baseline order,clean,person_0000230
+BT-000231,,,false,clean baseline order,clean,person_0000231
+BT-000232,,,false,clean baseline order,clean,person_0000232
+BT-000233,,,false,clean baseline order,clean,person_0000233
+BT-000234,,,false,clean baseline order,clean,person_0000234
+BT-000235,,,false,clean baseline order,clean,person_0000235
+BT-000236,,,false,clean baseline order,clean,person_0000236
+BT-000237,,,false,clean baseline order,clean,person_0000237
+BT-000238,,,false,clean baseline order,clean,person_0000238
+BT-000239,,,false,clean baseline order,clean,person_0000239
+BT-000240,,,false,clean baseline order,clean,person_0000240
+BT-000241,,,false,clean baseline order,clean,person_0000241
+BT-000242,,,false,clean baseline order,clean,person_0000242
+BT-000243,,,false,clean baseline order,clean,person_0000243
+BT-000244,,,false,clean baseline order,clean,person_0000244
+BT-000245,,,false,clean baseline order,clean,person_0000245
+BT-000246,,,false,clean baseline order,clean,person_0000246
+BT-000247,,,false,clean baseline order,clean,person_0000247
+BT-000248,,,false,clean baseline order,clean,person_0000248
+BT-000249,,,false,clean baseline order,clean,person_0000249
+BT-000250,,,false,clean baseline order,clean,person_0000250
+BT-000251,,,false,clean baseline order,clean,person_0000251
+BT-000252,,,false,clean baseline order,clean,person_0000252
+BT-000253,,,false,clean baseline order,clean,person_0000253
+BT-000254,,,false,clean baseline order,clean,person_0000254
+BT-000255,,,false,clean baseline order,clean,person_0000255
+BT-000256,,,false,clean baseline order,clean,person_0000256
+BT-000257,,,false,clean baseline order,clean,person_0000257
+BT-000258,,,false,clean baseline order,clean,person_0000258
+BT-000259,,,false,clean baseline order,clean,person_0000259
+BT-000260,,,false,clean baseline order,clean,person_0000260
+BT-000261,,,false,clean baseline order,clean,person_0000261
+BT-000262,,,false,clean baseline order,clean,person_0000262
+BT-000263,,,false,clean baseline order,clean,person_0000263
+BT-000264,,,false,clean baseline order,clean,person_0000264
+BT-000265,,,false,clean baseline order,clean,person_0000265
+BT-000266,,,false,clean baseline order,clean,person_0000266
+BT-000267,,,false,clean baseline order,clean,person_0000267
+BT-000268,,,false,clean baseline order,clean,person_0000268
+BT-000269,,,false,clean baseline order,clean,person_0000269
+BT-000270,,,false,clean baseline order,clean,person_0000270
+BT-000271,,,false,clean baseline order,clean,person_0000271
+BT-000272,,,false,clean baseline order,clean,person_0000272
+BT-000273,,,false,clean baseline order,clean,person_0000273
+BT-000274,,,false,clean baseline order,clean,person_0000274
+BT-000275,,,false,clean baseline order,clean,person_0000275
+BT-000276,,,false,clean baseline order,clean,person_0000276
+BT-000277,,,false,clean baseline order,clean,person_0000277
+BT-000278,,,false,clean baseline order,clean,person_0000278
+BT-000279,,,false,clean baseline order,clean,person_0000279
+BT-000280,,,false,clean baseline order,clean,person_0000280
+BT-000281,,,false,clean baseline order,clean,person_0000281
+BT-000282,,,false,clean baseline order,clean,person_0000282
+BT-000283,,,false,clean baseline order,clean,person_0000283
+BT-000284,,,false,clean baseline order,clean,person_0000284
+BT-000285,,,false,clean baseline order,clean,person_0000285
+BT-000286,,,false,clean baseline order,clean,person_0000286
+BT-000287,,,false,clean baseline order,clean,person_0000287
+BT-000288,,,false,clean baseline order,clean,person_0000288
+BT-000289,,,false,clean baseline order,clean,person_0000289
+BT-000290,,,false,clean baseline order,clean,person_0000290
+BT-000291,,,false,clean baseline order,clean,person_0000291
+BT-000292,,,false,clean baseline order,clean,person_0000292
+BT-000293,,,false,clean baseline order,clean,person_0000293
+BT-000294,,,false,clean baseline order,clean,person_0000294
+BT-000295,,,false,clean baseline order,clean,person_0000295
+BT-000296,,,false,clean baseline order,clean,person_0000296
+BT-000297,,,false,clean baseline order,clean,person_0000297
+BT-000298,,,false,clean baseline order,clean,person_0000298
+BT-000299,,,false,clean baseline order,clean,person_0000299
+BT-000300,,,false,clean baseline order,clean,person_0000300
+BT-000301,,,false,clean baseline order,clean,person_0000301
+BT-000302,,,false,clean baseline order,clean,person_0000302
+BT-000303,,,false,clean baseline order,clean,person_0000303
+BT-000304,,,false,clean baseline order,clean,person_0000304
+BT-000305,,,false,clean baseline order,clean,person_0000305
+BT-000306,,,false,clean baseline order,clean,person_0000306
+BT-000307,,,false,clean baseline order,clean,person_0000307
+BT-000308,,,false,clean baseline order,clean,person_0000308
+BT-000309,,,false,clean baseline order,clean,person_0000309
+BT-000310,,,false,clean baseline order,clean,person_0000310
+BT-000311,,,false,clean baseline order,clean,person_0000311
+BT-000312,,,false,clean baseline order,clean,person_0000312
+BT-000313,,,false,clean baseline order,clean,person_0000313
+BT-000314,,,false,clean baseline order,clean,person_0000314
+BT-000315,,,false,clean baseline order,clean,person_0000315
+BT-000316,,,false,clean baseline order,clean,person_0000316
+BT-000317,,,false,clean baseline order,clean,person_0000317
+BT-000318,,,false,clean baseline order,clean,person_0000318
+BT-000319,,,false,clean baseline order,clean,person_0000319
+BT-000320,,,false,clean baseline order,clean,person_0000320
+BT-000321,,,false,clean baseline order,clean,person_0000321
+BT-000322,,,false,clean baseline order,clean,person_0000322
+BT-000323,,,false,clean baseline order,clean,person_0000323
+BT-000324,,,false,clean baseline order,clean,person_0000324
+BT-000325,,,false,clean baseline order,clean,person_0000325
+BT-000326,,,false,clean baseline order,clean,person_0000326
+BT-000327,,,false,clean baseline order,clean,person_0000327
+BT-000328,,,false,clean baseline order,clean,person_0000328
+BT-000329,,,false,clean baseline order,clean,person_0000329
+BT-000330,,,false,clean baseline order,clean,person_0000330
+BT-000331,,,false,clean baseline order,clean,person_0000331
+BT-000332,,,false,clean baseline order,clean,person_0000332
+BT-000333,,,false,clean baseline order,clean,person_0000333
+BT-000334,,,false,clean baseline order,clean,person_0000334
+BT-000335,,,false,clean baseline order,clean,person_0000335
+BT-000336,,,false,clean baseline order,clean,person_0000336
+BT-000337,,,false,clean baseline order,clean,person_0000337
+BT-000338,,,false,clean baseline order,clean,person_0000338
+BT-000339,,,false,clean baseline order,clean,person_0000339
+BT-000340,,,false,clean baseline order,clean,person_0000340
+BT-000341,,,false,clean baseline order,clean,person_0000341
+BT-000342,,,false,clean baseline order,clean,person_0000342
+BT-000343,,,false,clean baseline order,clean,person_0000343
+BT-000344,,,false,clean baseline order,clean,person_0000344
+BT-000345,,,false,clean baseline order,clean,person_0000345
+BT-000346,,,false,clean baseline order,clean,person_0000346
+BT-000347,,,false,clean baseline order,clean,person_0000347
+BT-000348,,,false,clean baseline order,clean,person_0000348
+BT-000349,,,false,clean baseline order,clean,person_0000349
+BT-000350,,,false,clean baseline order,clean,person_0000350
+BT-000351,,,false,clean baseline order,clean,person_0000351
+BT-000352,,,false,clean baseline order,clean,person_0000352
+BT-000353,,,false,clean baseline order,clean,person_0000353
+BT-000354,,,false,clean baseline order,clean,person_0000354
+BT-000355,,,false,clean baseline order,clean,person_0000355
+BT-000356,,,false,clean baseline order,clean,person_0000356
+BT-000357,,,false,clean baseline order,clean,person_0000357
+BT-000358,,,false,clean baseline order,clean,person_0000358
+BT-000359,,,false,clean baseline order,clean,person_0000359
+BT-000360,,,false,clean baseline order,clean,person_0000360
+BT-000361,,,false,clean baseline order,clean,person_0000361
+BT-000362,,,false,clean baseline order,clean,person_0000362
+BT-000363,,,false,clean baseline order,clean,person_0000363
+BT-000364,,,false,clean baseline order,clean,person_0000364
+BT-000365,,,false,clean baseline order,clean,person_0000365
+BT-000366,,,false,clean baseline order,clean,person_0000366
+BT-000367,,,false,clean baseline order,clean,person_0000367
+BT-000368,,,false,clean baseline order,clean,person_0000368
+BT-000369,,,false,clean baseline order,clean,person_0000369
+BT-000370,,,false,clean baseline order,clean,person_0000370
+BT-000371,,,false,clean baseline order,clean,person_0000371
+BT-000372,,,false,clean baseline order,clean,person_0000372
+BT-000373,,,false,clean baseline order,clean,person_0000373
+BT-000374,,,false,clean baseline order,clean,person_0000374
+BT-000375,,,false,clean baseline order,clean,person_0000375
+BT-000376,,,false,clean baseline order,clean,person_0000376
+BT-000377,,,false,clean baseline order,clean,person_0000377
+BT-000378,,,false,clean baseline order,clean,person_0000378
+BT-000379,,,false,clean baseline order,clean,person_0000379
+BT-000380,,,false,clean baseline order,clean,person_0000380
+BT-000381,,,false,clean baseline order,clean,person_0000381
+BT-000382,,,false,clean baseline order,clean,person_0000382
+BT-000383,,,false,clean baseline order,clean,person_0000383
+BT-000384,,,false,clean baseline order,clean,person_0000384
+BT-000385,,,false,clean baseline order,clean,person_0000385
+BT-000386,,,false,clean baseline order,clean,person_0000386
+BT-000387,,,false,clean baseline order,clean,person_0000387
+BT-000388,,,false,clean baseline order,clean,person_0000388
+BT-000389,,,false,clean baseline order,clean,person_0000389
+BT-000390,,,false,clean baseline order,clean,person_0000390
+BT-000391,,,false,clean baseline order,clean,person_0000391
+BT-000392,,,false,clean baseline order,clean,person_0000392
+BT-000393,,,false,clean baseline order,clean,person_0000393
+BT-000394,,,false,clean baseline order,clean,person_0000394
+BT-000395,,,false,clean baseline order,clean,person_0000395
+BT-000396,,,false,clean baseline order,clean,person_0000396
+BT-000397,,,false,clean baseline order,clean,person_0000397
+BT-000398,,,false,clean baseline order,clean,person_0000398
+BT-000399,,,false,clean baseline order,clean,person_0000399
+BT-000400,,,false,clean baseline order,clean,person_0000400
+BT-000401,,,false,clean baseline order,clean,person_0000401
+BT-000402,,,false,clean baseline order,clean,person_0000402
+BT-000403,,,false,clean baseline order,clean,person_0000403
+BT-000404,,,false,clean baseline order,clean,person_0000404
+BT-000405,,,false,clean baseline order,clean,person_0000405
+BT-000406,,,false,clean baseline order,clean,person_0000406
+BT-000407,,,false,clean baseline order,clean,person_0000407
+BT-000408,,,false,clean baseline order,clean,person_0000408
+BT-000409,,,false,clean baseline order,clean,person_0000409
+BT-000410,,,false,clean baseline order,clean,person_0000410
+BT-000411,,,false,clean baseline order,clean,person_0000411
+BT-000412,,,false,clean baseline order,clean,person_0000412
+BT-000413,,,false,clean baseline order,clean,person_0000413
+BT-000414,,,false,clean baseline order,clean,person_0000414
+BT-000415,,,false,clean baseline order,clean,person_0000415
+BT-000416,,,false,clean baseline order,clean,person_0000416
+BT-000417,,,false,clean baseline order,clean,person_0000417
+BT-000418,,,false,clean baseline order,clean,person_0000418
+BT-000419,,,false,clean baseline order,clean,person_0000419
+BT-000420,,,false,clean baseline order,clean,person_0000420
+BT-000421,,,false,clean baseline order,clean,person_0000421
+BT-000422,,,false,clean baseline order,clean,person_0000422
+BT-000423,,,false,clean baseline order,clean,person_0000423
+BT-000424,,,false,clean baseline order,clean,person_0000424
+BT-000425,,,false,clean baseline order,clean,person_0000425
+BT-000426,,,false,clean baseline order,clean,person_0000426
+BT-000427,,,false,clean baseline order,clean,person_0000427
+BT-000428,,,false,clean baseline order,clean,person_0000428
+BT-000429,,,false,clean baseline order,clean,person_0000429
+BT-000430,,,false,clean baseline order,clean,person_0000430
+BT-000431,,,false,clean baseline order,clean,person_0000431
+BT-000432,,,false,clean baseline order,clean,person_0000432
+BT-000433,,,false,clean baseline order,clean,person_0000433
+BT-000434,,,false,clean baseline order,clean,person_0000434
+BT-000435,,,false,clean baseline order,clean,person_0000435
+BT-000436,,,false,clean baseline order,clean,person_0000436
+BT-000437,,,false,clean baseline order,clean,person_0000437
+BT-000438,,,false,clean baseline order,clean,person_0000438
+BT-000439,,,false,clean baseline order,clean,person_0000439
+BT-000440,,,false,clean baseline order,clean,person_0000440
+BT-000441,,,false,clean baseline order,clean,person_0000441
+BT-000442,,,false,clean baseline order,clean,person_0000442
+BT-000443,,,false,clean baseline order,clean,person_0000443
+BT-000444,,,false,clean baseline order,clean,person_0000444
+BT-000445,,,false,clean baseline order,clean,person_0000445
+BT-000446,,,false,clean baseline order,clean,person_0000446
+BT-000447,,,false,clean baseline order,clean,person_0000447
+BT-000448,,,false,clean baseline order,clean,person_0000448
+BT-000449,,,false,clean baseline order,clean,person_0000449
+BT-000450,,,false,clean baseline order,clean,person_0000450
+BT-000451,,,false,clean baseline order,clean,person_0000451
+BT-000452,,,false,clean baseline order,clean,person_0000452
+BT-000453,,,false,clean baseline order,clean,person_0000453
+BT-000454,,,false,clean baseline order,clean,person_0000454
+BT-000455,,,false,clean baseline order,clean,person_0000455
+BT-000456,,,false,clean baseline order,clean,person_0000456
+BT-000457,,,false,clean baseline order,clean,person_0000457
+BT-000458,,,false,clean baseline order,clean,person_0000458
+BT-000459,,,false,clean baseline order,clean,person_0000459
+BT-000460,,,false,clean baseline order,clean,person_0000460
+BT-000461,,,false,clean baseline order,clean,person_0000461
+BT-000462,,,false,clean baseline order,clean,person_0000462
+BT-000463,,,false,clean baseline order,clean,person_0000463
+BT-000464,,,false,clean baseline order,clean,person_0000464
+BT-000465,,,false,clean baseline order,clean,person_0000465
+BT-000466,,,false,clean baseline order,clean,person_0000466
+BT-000467,,,false,clean baseline order,clean,person_0000467
+BT-000468,,,false,clean baseline order,clean,person_0000468
+BT-000469,,,false,clean baseline order,clean,person_0000469
+BT-000470,,,false,clean baseline order,clean,person_0000470
+BT-000471,,,false,clean baseline order,clean,person_0000471
+BT-000472,,,false,clean baseline order,clean,person_0000472
+BT-000473,,,false,clean baseline order,clean,person_0000473
+BT-000474,,,false,clean baseline order,clean,person_0000474
+BT-000475,,,false,clean baseline order,clean,person_0000475
+BT-000476,,,false,clean baseline order,clean,person_0000476
+BT-000477,,,false,clean baseline order,clean,person_0000477
+BT-000478,,,false,clean baseline order,clean,person_0000478
+BT-000479,,,false,clean baseline order,clean,person_0000479
+BT-000480,,,false,clean baseline order,clean,person_0000480
+BT-000481,,,false,clean baseline order,clean,person_0000481
+BT-000482,,,false,clean baseline order,clean,person_0000482
+BT-000483,,,false,clean baseline order,clean,person_0000483
+BT-000484,,,false,clean baseline order,clean,person_0000484
+BT-000485,,,false,clean baseline order,clean,person_0000485
+BT-000486,,,false,clean baseline order,clean,person_0000486
+BT-000487,,,false,clean baseline order,clean,person_0000487
+BT-000488,,,false,clean baseline order,clean,person_0000488
+BT-000489,,,false,clean baseline order,clean,person_0000489
+BT-000490,,,false,clean baseline order,clean,person_0000490
+BT-000491,,,false,clean baseline order,clean,person_0000491
+BT-000492,,,false,clean baseline order,clean,person_0000492
+BT-000493,,,false,clean baseline order,clean,person_0000493
+BT-000494,,,false,clean baseline order,clean,person_0000494
+BT-000495,,,false,clean baseline order,clean,person_0000495
+BT-000496,,,false,clean baseline order,clean,person_0000496
+BT-000497,,,false,clean baseline order,clean,person_0000497
+BT-000498,,,false,clean baseline order,clean,person_0000498
+BT-000499,,,false,clean baseline order,clean,person_0000499
+BT-000500,,,false,clean baseline order,clean,person_0000500
+BT-000501,,,false,clean baseline order,clean,person_0000501
+BT-000502,,,false,clean baseline order,clean,person_0000502
+BT-000503,,,false,clean baseline order,clean,person_0000503
+BT-000504,,,false,clean baseline order,clean,person_0000504
+BT-000505,,,false,clean baseline order,clean,person_0000505
+BT-000506,,,false,clean baseline order,clean,person_0000506
+BT-000507,,,false,clean baseline order,clean,person_0000507
+BT-000508,,,false,clean baseline order,clean,person_0000508
+BT-000509,,,false,clean baseline order,clean,person_0000509
+BT-000510,,,false,clean baseline order,clean,person_0000510
+BT-000511,,,false,clean baseline order,clean,person_0000511
+BT-000512,,,false,clean baseline order,clean,person_0000512
+BT-000513,,,false,clean baseline order,clean,person_0000513
+BT-000514,,,false,clean baseline order,clean,person_0000514
+BT-000515,,,false,clean baseline order,clean,person_0000515
+BT-000516,,,false,clean baseline order,clean,person_0000516
+BT-000517,,,false,clean baseline order,clean,person_0000517
+BT-000518,,,false,clean baseline order,clean,person_0000518
+BT-000519,,,false,clean baseline order,clean,person_0000519
+BT-000520,,,false,clean baseline order,clean,person_0000520
+BT-000521,,,false,clean baseline order,clean,person_0000521
+BT-000522,,,false,clean baseline order,clean,person_0000522
+BT-000523,,,false,clean baseline order,clean,person_0000523
+BT-000524,,,false,clean baseline order,clean,person_0000524
+BT-000525,,,false,clean baseline order,clean,person_0000525
+BT-000526,,,false,clean baseline order,clean,person_0000526
+BT-000527,,,false,clean baseline order,clean,person_0000527
+BT-000528,,,false,clean baseline order,clean,person_0000528
+BT-000529,,,false,clean baseline order,clean,person_0000529
+BT-000530,,,false,clean baseline order,clean,person_0000530
+BT-000531,,,false,clean baseline order,clean,person_0000531
+BT-000532,,,false,clean baseline order,clean,person_0000532
+BT-000533,,,false,clean baseline order,clean,person_0000533
+BT-000534,,,false,clean baseline order,clean,person_0000534
+BT-000535,,,false,clean baseline order,clean,person_0000535
+BT-000536,,,false,clean baseline order,clean,person_0000536
+BT-000537,,,false,clean baseline order,clean,person_0000537
+BT-000538,,,false,clean baseline order,clean,person_0000538
+BT-000539,,,false,clean baseline order,clean,person_0000539
+BT-000540,,,false,clean baseline order,clean,person_0000540
+BT-000541,,,false,clean baseline order,clean,person_0000541
+BT-000542,,,false,clean baseline order,clean,person_0000542
+BT-000543,,,false,clean baseline order,clean,person_0000543
+BT-000544,,,false,clean baseline order,clean,person_0000544
+BT-000545,,,false,clean baseline order,clean,person_0000545
+BT-000546,,,false,clean baseline order,clean,person_0000546
+BT-000547,,,false,clean baseline order,clean,person_0000547
+BT-000548,,,false,clean baseline order,clean,person_0000548
+BT-000549,,,false,clean baseline order,clean,person_0000549
+BT-000550,,,false,clean baseline order,clean,person_0000550
+BT-000551,,,false,clean baseline order,clean,person_0000551
+BT-000552,,,false,clean baseline order,clean,person_0000552
+BT-000553,,,false,clean baseline order,clean,person_0000553
+BT-000554,,,false,clean baseline order,clean,person_0000554
+BT-000555,,,false,clean baseline order,clean,person_0000555
+BT-000556,,,false,clean baseline order,clean,person_0000556
+BT-000557,,,false,clean baseline order,clean,person_0000557
+BT-000558,,,false,clean baseline order,clean,person_0000558
+BT-000559,,,false,clean baseline order,clean,person_0000559
+BT-000560,,,false,clean baseline order,clean,person_0000560
+BT-000561,,,false,clean baseline order,clean,person_0000561
+BT-000562,,,false,clean baseline order,clean,person_0000562
+BT-000563,,,false,clean baseline order,clean,person_0000563
+BT-000564,,,false,clean baseline order,clean,person_0000564
+BT-000565,,,false,clean baseline order,clean,person_0000565
+BT-000566,,,false,clean baseline order,clean,person_0000566
+BT-000567,,,false,clean baseline order,clean,person_0000567
+BT-000568,,,false,clean baseline order,clean,person_0000568
+BT-000569,,,false,clean baseline order,clean,person_0000569
+BT-000570,,,false,clean baseline order,clean,person_0000570
+BT-000571,,,false,clean baseline order,clean,person_0000571
+BT-000572,,,false,clean baseline order,clean,person_0000572
+BT-000573,,,false,clean baseline order,clean,person_0000573
+BT-000574,,,false,clean baseline order,clean,person_0000574
+BT-000575,,,false,clean baseline order,clean,person_0000575
+BT-000576,,,false,clean baseline order,clean,person_0000576
+BT-000577,,,false,clean baseline order,clean,person_0000577
+BT-000578,,,false,clean baseline order,clean,person_0000578
+BT-000579,,,false,clean baseline order,clean,person_0000579
+BT-000580,,,false,clean baseline order,clean,person_0000580
+BT-000581,,,false,clean baseline order,clean,person_0000581
+BT-000582,,,false,clean baseline order,clean,person_0000582
+BT-000583,,,false,clean baseline order,clean,person_0000583
+BT-000584,,,false,clean baseline order,clean,person_0000584
+BT-000585,,,false,clean baseline order,clean,person_0000585
+BT-000586,,,false,clean baseline order,clean,person_0000586
+BT-000587,,,false,clean baseline order,clean,person_0000587
+BT-000588,,,false,clean baseline order,clean,person_0000588
+BT-000589,,,false,clean baseline order,clean,person_0000589
+BT-000590,,,false,clean baseline order,clean,person_0000590
+BT-000591,,,false,clean baseline order,clean,person_0000591
+BT-000592,,,false,clean baseline order,clean,person_0000592
+BT-000593,,,false,clean baseline order,clean,person_0000593
+BT-000594,,,false,clean baseline order,clean,person_0000594
+BT-000595,,,false,clean baseline order,clean,person_0000595
+BT-000596,,,false,clean baseline order,clean,person_0000596
+BT-000597,,,false,clean baseline order,clean,person_0000597
+BT-000598,,,false,clean baseline order,clean,person_0000598
+BT-000599,,,false,clean baseline order,clean,person_0000599
+BT-000600,,,false,clean baseline order,clean,person_0000600
+BT-000601,,,false,clean baseline order,clean,person_0000601
+BT-000602,,,false,clean baseline order,clean,person_0000602
+BT-000603,,,false,clean baseline order,clean,person_0000603
+BT-000604,,,false,clean baseline order,clean,person_0000604
+BT-000605,,,false,clean baseline order,clean,person_0000605
+BT-000606,,,false,clean baseline order,clean,person_0000606
+BT-000607,,,false,clean baseline order,clean,person_0000607
+BT-000608,,,false,clean baseline order,clean,person_0000608
+BT-000609,,,false,clean baseline order,clean,person_0000609
+BT-000610,,,false,clean baseline order,clean,person_0000610
+BT-000611,,,false,clean baseline order,clean,person_0000611
+BT-000612,,,false,clean baseline order,clean,person_0000612
+BT-000613,,,false,clean baseline order,clean,person_0000613
+BT-000614,,,false,clean baseline order,clean,person_0000614
+BT-000615,,,false,clean baseline order,clean,person_0000615
+BT-000616,,,false,clean baseline order,clean,person_0000616
+BT-000617,,,false,clean baseline order,clean,person_0000617
+BT-000618,,,false,clean baseline order,clean,person_0000618
+BT-000619,,,false,clean baseline order,clean,person_0000619
+BT-000620,,,false,clean baseline order,clean,person_0000620
+BT-000621,,,false,clean baseline order,clean,person_0000621
+BT-000622,,,false,clean baseline order,clean,person_0000622
+BT-000623,,,false,clean baseline order,clean,person_0000623
+BT-000624,,,false,clean baseline order,clean,person_0000624
+BT-000625,,,false,clean baseline order,clean,person_0000625
+BT-000626,,,false,clean baseline order,clean,person_0000626
+BT-000627,,,false,clean baseline order,clean,person_0000627
+BT-000628,,,false,clean baseline order,clean,person_0000628
+BT-000629,,,false,clean baseline order,clean,person_0000629
+BT-000630,,,false,clean baseline order,clean,person_0000630
+BT-000631,,,false,clean baseline order,clean,person_0000631
+BT-000632,,,false,clean baseline order,clean,person_0000632
+BT-000633,,,false,clean baseline order,clean,person_0000633
+BT-000634,,,false,clean baseline order,clean,person_0000634
+BT-000635,,,false,clean baseline order,clean,person_0000635
+BT-000636,,,false,clean baseline order,clean,person_0000636
+BT-000637,,,false,clean baseline order,clean,person_0000637
+BT-000638,,,false,clean baseline order,clean,person_0000638
+BT-000639,,,false,clean baseline order,clean,person_0000639
+BT-000640,,,false,clean baseline order,clean,person_0000640
+BT-000641,,,false,clean baseline order,clean,person_0000641
+BT-000642,,,false,clean baseline order,clean,person_0000642
+BT-000643,,,false,clean baseline order,clean,person_0000643
+BT-000644,,,false,clean baseline order,clean,person_0000644
+BT-000645,,,false,clean baseline order,clean,person_0000645
+BT-000646,,,false,clean baseline order,clean,person_0000646
+BT-000647,,,false,clean baseline order,clean,person_0000647
+BT-000648,,,false,clean baseline order,clean,person_0000648
+BT-000649,,,false,clean baseline order,clean,person_0000649
+BT-000650,,,false,clean baseline order,clean,person_0000650
+BT-000651,,,false,clean baseline order,clean,person_0000651
+BT-000652,,,false,clean baseline order,clean,person_0000652
+BT-000653,,,false,clean baseline order,clean,person_0000653
+BT-000654,,,false,clean baseline order,clean,person_0000654
+BT-000655,,,false,clean baseline order,clean,person_0000655
+BT-000656,,,false,clean baseline order,clean,person_0000656
+BT-000657,,,false,clean baseline order,clean,person_0000657
+BT-000658,,,false,clean baseline order,clean,person_0000658
+BT-000659,,,false,clean baseline order,clean,person_0000659
+BT-000660,,,false,clean baseline order,clean,person_0000660
+BT-000661,,,false,clean baseline order,clean,person_0000661
+BT-000662,,,false,clean baseline order,clean,person_0000662
+BT-000663,,,false,clean baseline order,clean,person_0000663
+BT-000664,,,false,clean baseline order,clean,person_0000664
+BT-000665,,,false,clean baseline order,clean,person_0000665
+BT-000666,,,false,clean baseline order,clean,person_0000666
+BT-000667,,,false,clean baseline order,clean,person_0000667
+BT-000668,,,false,clean baseline order,clean,person_0000668
+BT-000669,,,false,clean baseline order,clean,person_0000669
+BT-000670,,,false,clean baseline order,clean,person_0000670
+BT-000671,,,false,clean baseline order,clean,person_0000671
+BT-000672,,,false,clean baseline order,clean,person_0000672
+BT-000673,,,false,clean baseline order,clean,person_0000673
+BT-000674,,,false,clean baseline order,clean,person_0000674
+BT-000675,,,false,clean baseline order,clean,person_0000675
+BT-000676,,,false,clean baseline order,clean,person_0000676
+BT-000677,,,false,clean baseline order,clean,person_0000677
+BT-000678,,,false,clean baseline order,clean,person_0000678
+BT-000679,,,false,clean baseline order,clean,person_0000679
+BT-000680,,,false,clean baseline order,clean,person_0000680
+BT-000681,,,false,clean baseline order,clean,person_0000681
+BT-000682,,,false,clean baseline order,clean,person_0000682
+BT-000683,,,false,clean baseline order,clean,person_0000683
+BT-000684,,,false,clean baseline order,clean,person_0000684
+BT-000685,,,false,clean baseline order,clean,person_0000685
+BT-000686,,,false,clean baseline order,clean,person_0000686
+BT-000687,,,false,clean baseline order,clean,person_0000687
+BT-000688,,,false,clean baseline order,clean,person_0000688
+BT-000689,,,false,clean baseline order,clean,person_0000689
+BT-000690,,,false,clean baseline order,clean,person_0000690
+BT-000691,,,false,clean baseline order,clean,person_0000691
+BT-000692,,,false,clean baseline order,clean,person_0000692
+BT-000693,,,false,clean baseline order,clean,person_0000693
+BT-000694,,,false,clean baseline order,clean,person_0000694
+BT-000695,,,false,clean baseline order,clean,person_0000695
+BT-000696,,,false,clean baseline order,clean,person_0000696
+BT-000697,,,false,clean baseline order,clean,person_0000697
+BT-000698,,,false,clean baseline order,clean,person_0000698
+BT-000699,,,false,clean baseline order,clean,person_0000699
+BT-000700,,,false,clean baseline order,clean,person_0000700
+BT-000701,,,false,clean baseline order,clean,person_0000701
+BT-000702,,,false,clean baseline order,clean,person_0000702
+BT-000703,,,false,clean baseline order,clean,person_0000703
+BT-000704,,,false,clean baseline order,clean,person_0000704
+BT-000705,,,false,clean baseline order,clean,person_0000705
+BT-000706,,,false,clean baseline order,clean,person_0000706
+BT-000707,,,false,clean baseline order,clean,person_0000707
+BT-000708,,,false,clean baseline order,clean,person_0000708
+BT-000709,,,false,clean baseline order,clean,person_0000709
+BT-000710,,,false,clean baseline order,clean,person_0000710
+BT-000711,,,false,clean baseline order,clean,person_0000711
+BT-000712,,,false,clean baseline order,clean,person_0000712
+BT-000713,,,false,clean baseline order,clean,person_0000713
+BT-000714,,,false,clean baseline order,clean,person_0000714
+BT-000715,,,false,clean baseline order,clean,person_0000715
+BT-000716,,,false,clean baseline order,clean,person_0000716
+BT-000717,,,false,clean baseline order,clean,person_0000717
+BT-000718,,,false,clean baseline order,clean,person_0000718
+BT-000719,,,false,clean baseline order,clean,person_0000719
+BT-000720,,,false,clean baseline order,clean,person_0000720
+BT-000721,,,false,clean baseline order,clean,person_0000721
+BT-000722,,,false,clean baseline order,clean,person_0000722
+BT-000723,,,false,clean baseline order,clean,person_0000723
+BT-000724,,,false,clean baseline order,clean,person_0000724
+BT-000725,,,false,clean baseline order,clean,person_0000725
+BT-000726,,,false,clean baseline order,clean,person_0000726
+BT-000727,,,false,clean baseline order,clean,person_0000727
+BT-000728,,,false,clean baseline order,clean,person_0000728
+BT-000729,,,false,clean baseline order,clean,person_0000729
+BT-000730,,,false,clean baseline order,clean,person_0000730
+BT-000731,,,false,clean baseline order,clean,person_0000731
+BT-000732,,,false,clean baseline order,clean,person_0000732
+BT-000733,,,false,clean baseline order,clean,person_0000733
+BT-000734,,,false,clean baseline order,clean,person_0000734
+BT-000735,,,false,clean baseline order,clean,person_0000735
+BT-000736,,,false,clean baseline order,clean,person_0000736
+BT-000737,,,false,clean baseline order,clean,person_0000737
+BT-000738,,,false,clean baseline order,clean,person_0000738
+BT-000739,,,false,clean baseline order,clean,person_0000739
+BT-000740,,,false,clean baseline order,clean,person_0000740
+BT-000741,,,false,clean baseline order,clean,person_0000741
+BT-000742,,,false,clean baseline order,clean,person_0000742
+BT-000743,,,false,clean baseline order,clean,person_0000743
+BT-000744,,,false,clean baseline order,clean,person_0000744
+BT-000745,,,false,clean baseline order,clean,person_0000745
+BT-000746,,,false,clean baseline order,clean,person_0000746
+BT-000747,,,false,clean baseline order,clean,person_0000747
+BT-000748,,,false,clean baseline order,clean,person_0000748
+BT-000749,,,false,clean baseline order,clean,person_0000749
+BT-000750,,,false,clean baseline order,clean,person_0000750
+BT-000751,,,false,clean baseline order,clean,person_0000751
+BT-000752,,,false,clean baseline order,clean,person_0000752
+BT-000753,,,false,clean baseline order,clean,person_0000753
+BT-000754,,,false,clean baseline order,clean,person_0000754
+BT-000755,,,false,clean baseline order,clean,person_0000755
+BT-000756,,,false,clean baseline order,clean,person_0000756
+BT-000757,,,false,clean baseline order,clean,person_0000757
+BT-000758,,,false,clean baseline order,clean,person_0000758
+BT-000759,,,false,clean baseline order,clean,person_0000759
+BT-000760,,,false,clean baseline order,clean,person_0000760
+BT-000761,,,false,clean baseline order,clean,person_0000761
+BT-000762,,,false,clean baseline order,clean,person_0000762
+BT-000763,,,false,clean baseline order,clean,person_0000763
+BT-000764,,,false,clean baseline order,clean,person_0000764
+BT-000765,,,false,clean baseline order,clean,person_0000765
+BT-000766,,,false,clean baseline order,clean,person_0000766
+BT-000767,,,false,clean baseline order,clean,person_0000767
+BT-000768,,,false,clean baseline order,clean,person_0000768
+BT-000769,,,false,clean baseline order,clean,person_0000769
+BT-000770,,,false,clean baseline order,clean,person_0000770
+BT-000771,,,false,clean baseline order,clean,person_0000771
+BT-000772,,,false,clean baseline order,clean,person_0000772
+BT-000773,,,false,clean baseline order,clean,person_0000773
+BT-000774,,,false,clean baseline order,clean,person_0000774
+BT-000775,,,false,clean baseline order,clean,person_0000775
+BT-000776,,,false,clean baseline order,clean,person_0000776
+BT-000777,,,false,clean baseline order,clean,person_0000777
+BT-000778,,,false,clean baseline order,clean,person_0000778
+BT-000779,,,false,clean baseline order,clean,person_0000779
+BT-000780,,,false,clean baseline order,clean,person_0000780
+BT-000781,,,false,clean baseline order,clean,person_0000781
+BT-000782,,,false,clean baseline order,clean,person_0000782
+BT-000783,,,false,clean baseline order,clean,person_0000783
+BT-000784,,,false,clean baseline order,clean,person_0000784
+BT-000785,,,false,clean baseline order,clean,person_0000785
+BT-000786,,,false,clean baseline order,clean,person_0000786
+BT-000787,,,false,clean baseline order,clean,person_0000787
+BT-000788,,,false,clean baseline order,clean,person_0000788
+BT-000789,,,false,clean baseline order,clean,person_0000789
+BT-000790,,,false,clean baseline order,clean,person_0000790
+BT-000791,,,false,clean baseline order,clean,person_0000791
+BT-000792,,,false,clean baseline order,clean,person_0000792
+BT-000793,,,false,clean baseline order,clean,person_0000793
+BT-000794,,,false,clean baseline order,clean,person_0000794
+BT-000795,,,false,clean baseline order,clean,person_0000795
+BT-000796,,,false,clean baseline order,clean,person_0000796
+BT-000797,,,false,clean baseline order,clean,person_0000797
+BT-000798,,,false,clean baseline order,clean,person_0000798
+BT-000799,,,false,clean baseline order,clean,person_0000799
+BT-000800,,,false,clean baseline order,clean,person_0000800
+BT-000801,,,false,clean baseline order,clean,person_0000801
+BT-000802,,,false,clean baseline order,clean,person_0000802
+BT-000803,,,false,clean baseline order,clean,person_0000803
+BT-000804,,,false,clean baseline order,clean,person_0000804
+BT-000805,,,false,clean baseline order,clean,person_0000805
+BT-000806,,,false,clean baseline order,clean,person_0000806
+BT-000807,,,false,clean baseline order,clean,person_0000807
+BT-000808,,,false,clean baseline order,clean,person_0000808
+BT-000809,,,false,clean baseline order,clean,person_0000809
+BT-000810,,,false,clean baseline order,clean,person_0000810
+BT-000811,,,false,clean baseline order,clean,person_0000811
+BT-000812,,,false,clean baseline order,clean,person_0000812
+BT-000813,,,false,clean baseline order,clean,person_0000813
+BT-000814,,,false,clean baseline order,clean,person_0000814
+BT-000815,,,false,clean baseline order,clean,person_0000815
+BT-000816,,,false,clean baseline order,clean,person_0000816
+BT-000817,,,false,clean baseline order,clean,person_0000817
+BT-000818,,,false,clean baseline order,clean,person_0000818
+BT-000819,,,false,clean baseline order,clean,person_0000819
+BT-000820,,,false,clean baseline order,clean,person_0000820
+BT-000821,,,false,clean baseline order,clean,person_0000821
+BT-000822,,,false,clean baseline order,clean,person_0000822
+BT-000823,,,false,clean baseline order,clean,person_0000823
+BT-000824,,,false,clean baseline order,clean,person_0000824
+BT-000825,,,false,clean baseline order,clean,person_0000825
+BT-000826,,,false,clean baseline order,clean,person_0000826
+BT-000827,,,false,clean baseline order,clean,person_0000827
+BT-000828,,,false,clean baseline order,clean,person_0000828
+BT-000829,,,false,clean baseline order,clean,person_0000829
+BT-000830,,,false,clean baseline order,clean,person_0000830
+BT-000831,,,false,clean baseline order,clean,person_0000831
+BT-000832,,,false,clean baseline order,clean,person_0000832
+BT-000833,,,false,clean baseline order,clean,person_0000833
+BT-000834,,,false,clean baseline order,clean,person_0000834
+BT-000835,,,false,clean baseline order,clean,person_0000835
+BT-000836,,,false,clean baseline order,clean,person_0000836
+BT-000837,,,false,clean baseline order,clean,person_0000837
+BT-000838,,,false,clean baseline order,clean,person_0000838
+BT-000839,,,false,clean baseline order,clean,person_0000839
+BT-000840,,,false,clean baseline order,clean,person_0000840
+BT-000841,,,false,clean baseline order,clean,person_0000841
+BT-000842,,,false,clean baseline order,clean,person_0000842
+BT-000843,,,false,clean baseline order,clean,person_0000843
+BT-000844,,,false,clean baseline order,clean,person_0000844
+BT-000845,,,false,clean baseline order,clean,person_0000845
+BT-000846,,,false,clean baseline order,clean,person_0000846
+BT-000847,,,false,clean baseline order,clean,person_0000847
+BT-000848,,,false,clean baseline order,clean,person_0000848
+BT-000849,,,false,clean baseline order,clean,person_0000849
+BT-000850,,,false,clean baseline order,clean,person_0000850
+BT-000851,,,false,clean baseline order,clean,person_0000851
+BT-000852,,,false,clean baseline order,clean,person_0000852
+BT-000853,,,false,clean baseline order,clean,person_0000853
+BT-000854,,,false,clean baseline order,clean,person_0000854
+BT-000855,,,false,clean baseline order,clean,person_0000855
+BT-000856,,,false,clean baseline order,clean,person_0000856
+BT-000857,,,false,clean baseline order,clean,person_0000857
+BT-000858,,,false,clean baseline order,clean,person_0000858
+BT-000859,,,false,clean baseline order,clean,person_0000859
+BT-000860,,,false,clean baseline order,clean,person_0000860
+BT-000861,,,false,clean baseline order,clean,person_0000861
+BT-000862,,,false,clean baseline order,clean,person_0000862
+BT-000863,,,false,clean baseline order,clean,person_0000863
+BT-000864,,,false,clean baseline order,clean,person_0000864
+BT-000865,,,false,clean baseline order,clean,person_0000865
+BT-000866,,,false,clean baseline order,clean,person_0000866
+BT-000867,,,false,clean baseline order,clean,person_0000867
+BT-000868,,,false,clean baseline order,clean,person_0000868
+BT-000869,,,false,clean baseline order,clean,person_0000869
+BT-000870,,,false,clean baseline order,clean,person_0000870
+BT-000871,,,false,clean baseline order,clean,person_0000871
+BT-000872,,,false,clean baseline order,clean,person_0000872
+BT-000873,,,false,clean baseline order,clean,person_0000873
+BT-000874,,,false,clean baseline order,clean,person_0000874
+BT-000875,,,false,clean baseline order,clean,person_0000875
+BT-000876,,,false,clean baseline order,clean,person_0000876
+BT-000877,,,false,clean baseline order,clean,person_0000877
+BT-000878,,,false,clean baseline order,clean,person_0000878
+BT-000879,,,false,clean baseline order,clean,person_0000879
+BT-000880,,,false,clean baseline order,clean,person_0000880
+BT-000881,,,false,clean baseline order,clean,person_0000881
+BT-000882,,,false,clean baseline order,clean,person_0000882
+BT-000883,,,false,clean baseline order,clean,person_0000883
+BT-000884,,,false,clean baseline order,clean,person_0000884
+BT-000885,,,false,clean baseline order,clean,person_0000885
+BT-000886,,,false,clean baseline order,clean,person_0000886
+BT-000887,,,false,clean baseline order,clean,person_0000887
+BT-000888,,,false,clean baseline order,clean,person_0000888
+BT-000889,,,false,clean baseline order,clean,person_0000889
+BT-000890,,,false,clean baseline order,clean,person_0000890
+BT-000891,,,false,clean baseline order,clean,person_0000891
+BT-000892,,,false,clean baseline order,clean,person_0000892
+BT-000893,,,false,clean baseline order,clean,person_0000893
+BT-000894,,,false,clean baseline order,clean,person_0000894
+BT-000895,,,false,clean baseline order,clean,person_0000895
+BT-000896,,,false,clean baseline order,clean,person_0000896
+BT-000897,,,false,clean baseline order,clean,person_0000897
+BT-000898,,,false,clean baseline order,clean,person_0000898
+BT-000899,,,false,clean baseline order,clean,person_0000899
+BT-000900,,,false,clean baseline order,clean,person_0000900
+BT-000901,,,false,clean baseline order,clean,person_0000901
+BT-000902,,,false,clean baseline order,clean,person_0000902
+BT-000903,,,false,clean baseline order,clean,person_0000903
+BT-000904,,,false,clean baseline order,clean,person_0000904
+BT-000905,,,false,clean baseline order,clean,person_0000905
+BT-000906,,,false,clean baseline order,clean,person_0000906
+BT-000907,,,false,clean baseline order,clean,person_0000907
+BT-000908,,,false,clean baseline order,clean,person_0000908
+BT-000909,,,false,clean baseline order,clean,person_0000909
+BT-000910,,,false,clean baseline order,clean,person_0000910
+BT-000911,,,false,clean baseline order,clean,person_0000911
+BT-000912,,,false,clean baseline order,clean,person_0000912
+BT-000913,,,false,clean baseline order,clean,person_0000913
+BT-000914,,,false,clean baseline order,clean,person_0000914
+BT-000915,,,false,clean baseline order,clean,person_0000915
+BT-000916,,,false,clean baseline order,clean,person_0000916
+BT-000917,,,false,clean baseline order,clean,person_0000917
+BT-000918,,,false,clean baseline order,clean,person_0000918
+BT-000919,,,false,clean baseline order,clean,person_0000919
+BT-000920,,,false,clean baseline order,clean,person_0000920
+BT-000921,,,false,clean baseline order,clean,person_0000921
+BT-000922,,,false,clean baseline order,clean,person_0000922
+BT-000923,,,false,clean baseline order,clean,person_0000923
+BT-000924,,,false,clean baseline order,clean,person_0000924
+BT-000925,,,false,clean baseline order,clean,person_0000925
+BT-000926,,,false,clean baseline order,clean,person_0000926
+BT-000927,,,false,clean baseline order,clean,person_0000927
+BT-000928,,,false,clean baseline order,clean,person_0000928
+BT-000929,,,false,clean baseline order,clean,person_0000929
+BT-000930,,,false,clean baseline order,clean,person_0000930
+BT-000931,,,false,clean baseline order,clean,person_0000931
+BT-000932,,,false,clean baseline order,clean,person_0000932
+BT-000933,,,false,clean baseline order,clean,person_0000933
+BT-000934,,,false,clean baseline order,clean,person_0000934
+BT-000935,,,false,clean baseline order,clean,person_0000935
+BT-000936,,,false,clean baseline order,clean,person_0000936
+BT-000937,,,false,clean baseline order,clean,person_0000937
+BT-000938,,,false,clean baseline order,clean,person_0000938
+BT-000939,,,false,clean baseline order,clean,person_0000939
+BT-000940,,,false,clean baseline order,clean,person_0000940
+BT-000941,,,false,clean baseline order,clean,person_0000941
+BT-000942,,,false,clean baseline order,clean,person_0000942
+BT-000943,,,false,clean baseline order,clean,person_0000943
+BT-000944,,,false,clean baseline order,clean,person_0000944
+BT-000945,,,false,clean baseline order,clean,person_0000945
+BT-000946,,,false,clean baseline order,clean,person_0000946
+BT-000947,,,false,clean baseline order,clean,person_0000947
+BT-000948,,,false,clean baseline order,clean,person_0000948
+BT-000949,,,false,clean baseline order,clean,person_0000949
+BT-000950,,,false,clean baseline order,clean,person_0000950
+BT-000951,,,false,clean baseline order,clean,person_0000951
+BT-000952,,,false,clean baseline order,clean,person_0000952
+BT-000953,,,false,clean baseline order,clean,person_0000953
+BT-000954,,,false,clean baseline order,clean,person_0000954
+BT-000955,,,false,clean baseline order,clean,person_0000955
+BT-000956,,,false,clean baseline order,clean,person_0000956
+BT-000957,,,false,clean baseline order,clean,person_0000957
+BT-000958,,,false,clean baseline order,clean,person_0000958
+BT-000959,,,false,clean baseline order,clean,person_0000959
+BT-000960,,,false,clean baseline order,clean,person_0000960
+BT-000961,,,false,clean baseline order,clean,person_0000961
+BT-000962,,,false,clean baseline order,clean,person_0000962
+BT-000963,,,false,clean baseline order,clean,person_0000963
+BT-000964,,,false,clean baseline order,clean,person_0000964
+BT-000965,,,false,clean baseline order,clean,person_0000965
+BT-000966,,,false,clean baseline order,clean,person_0000966
+BT-000967,,,false,clean baseline order,clean,person_0000967
+BT-000968,,,false,clean baseline order,clean,person_0000968
+BT-000969,,,false,clean baseline order,clean,person_0000969
+BT-000970,,,false,clean baseline order,clean,person_0000970
+BT-000971,,,false,clean baseline order,clean,person_0000971
+BT-000972,,,false,clean baseline order,clean,person_0000972
+BT-000973,,,false,clean baseline order,clean,person_0000973
+BT-000974,,,false,clean baseline order,clean,person_0000974
+BT-000975,,,false,clean baseline order,clean,person_0000975
+BT-000976,,,false,clean baseline order,clean,person_0000976
+BT-000977,,,false,clean baseline order,clean,person_0000977
+BT-000978,,,false,clean baseline order,clean,person_0000978
+BT-000979,,,false,clean baseline order,clean,person_0000979
+BT-000980,,,false,clean baseline order,clean,person_0000980
+BT-000981,,,false,clean baseline order,clean,person_0000981
+BT-000982,,,false,clean baseline order,clean,person_0000982
+BT-000983,,,false,clean baseline order,clean,person_0000983
+BT-000984,,,false,clean baseline order,clean,person_0000984
+BT-000985,,,false,clean baseline order,clean,person_0000985
+BT-000986,,,false,clean baseline order,clean,person_0000986
+BT-000987,,,false,clean baseline order,clean,person_0000987
+BT-000988,,,false,clean baseline order,clean,person_0000988
+BT-000989,,,false,clean baseline order,clean,person_0000989
+BT-000990,,,false,clean baseline order,clean,person_0000990
+BT-000991,,,false,clean baseline order,clean,person_0000991
+BT-000992,,,false,clean baseline order,clean,person_0000992
+BT-000993,,,false,clean baseline order,clean,person_0000993
+BT-000994,,,false,clean baseline order,clean,person_0000994
+BT-000995,,,false,clean baseline order,clean,person_0000995
+BT-000996,,,false,clean baseline order,clean,person_0000996
+BT-000997,,,false,clean baseline order,clean,person_0000997
+BT-000998,,,false,clean baseline order,clean,person_0000998
+BT-000999,,,false,clean baseline order,clean,person_0000999
+BT-001000,,,false,clean baseline order,clean,person_0001000
+BT-001002,,,false,clean baseline order,normal_repeat,person_0001002
+BT-001003,,,false,clean baseline order,normal_repeat,person_0001003
+BT-001004,,,false,clean baseline order,normal_repeat,person_0001004
+BT-001006,,,false,clean baseline order,normal_repeat,person_0001006
+BT-001007,,,false,clean baseline order,normal_repeat,person_0001007
+BT-001008,,,false,clean baseline order,legit_refund,person_0001008
+BT-001010,,,false,clean baseline order,normal_repeat,person_0001010
+BT-001011,,,false,clean baseline order,normal_repeat,person_0001011
+BT-001012,,,false,clean baseline order,normal_repeat,person_0001012
+BT-001014,,,false,clean baseline order,normal_repeat,person_0001014
+BT-001015,,,false,clean baseline order,normal_repeat,person_0001015
+BT-001016,,,false,clean baseline order,legit_refund,person_0001016
+BT-001018,,,false,clean baseline order,normal_repeat,person_0001018
+BT-001019,,,false,clean baseline order,normal_repeat,person_0001019
+BT-001020,,,false,clean baseline order,legit_refund,person_0001020
+BT-001022,,,false,clean baseline order,normal_repeat,person_0001022
+BT-001023,,,false,clean baseline order,normal_repeat,person_0001023
+BT-001024,,,false,clean baseline order,normal_repeat,person_0001024
+BT-001026,,,false,clean baseline order,normal_repeat,person_0001026
+BT-001027,,,false,clean baseline order,normal_repeat,person_0001027
+BT-001028,,,false,clean baseline order,legit_refund,person_0001028
+BT-001030,,,false,clean baseline order,normal_repeat,person_0001030
+BT-001031,,,false,clean baseline order,normal_repeat,person_0001031
+BT-001032,,,false,clean baseline order,normal_repeat,person_0001032
+BT-001034,,,false,clean baseline order,normal_repeat,person_0001034
+BT-001035,,,false,clean baseline order,normal_repeat,person_0001035
+BT-001036,,,false,clean baseline order,normal_repeat,person_0001036
+BT-001038,,,false,clean baseline order,normal_repeat,person_0001038
+BT-001039,,,false,clean baseline order,normal_repeat,person_0001039
+BT-001040,,,false,clean baseline order,normal_repeat,person_0001040
+BT-001042,,,false,clean baseline order,normal_repeat,person_0001042
+BT-001043,,,false,clean baseline order,normal_repeat,person_0001043
+BT-001044,,,false,clean baseline order,normal_repeat,person_0001044
+BT-001046,,,false,clean baseline order,normal_repeat,person_0001046
+BT-001047,,,false,clean baseline order,normal_repeat,person_0001047
+BT-001048,,,false,clean baseline order,normal_repeat,person_0001048
+BT-001050,,,false,clean baseline order,normal_repeat,person_0001050
+BT-001051,,,false,clean baseline order,normal_repeat,person_0001051
+BT-001052,,,false,clean baseline order,normal_repeat,person_0001052
+BT-001054,,,false,clean baseline order,normal_repeat,person_0001054
+BT-001055,,,false,clean baseline order,normal_repeat,person_0001055
+BT-001056,,,false,clean baseline order,normal_repeat,person_0001056
+BT-001058,,,false,clean baseline order,normal_repeat,person_0001058
+BT-001059,,,false,clean baseline order,normal_repeat,person_0001059
+BT-001060,,,false,clean baseline order,normal_repeat,person_0001060
+BT-001062,,,false,clean baseline order,normal_repeat,person_0001062
+BT-001063,,,false,clean baseline order,normal_repeat,person_0001063
+BT-001064,,,false,clean baseline order,normal_repeat,person_0001064
+BT-001066,,,false,clean baseline order,normal_repeat,person_0001066
+BT-001067,,,false,clean baseline order,normal_repeat,person_0001067
+BT-001068,,,false,clean baseline order,normal_repeat,person_0001068
+BT-001070,,,false,clean baseline order,normal_repeat,person_0001070
+BT-001071,,,false,clean baseline order,normal_repeat,person_0001071
+BT-001072,,,false,clean baseline order,normal_repeat,person_0001072
+BT-001074,,,false,clean baseline order,normal_repeat,person_0001074
+BT-001075,,,false,clean baseline order,normal_repeat,person_0001075
+BT-001076,,,false,clean baseline order,legit_refund,person_0001076
+BT-001078,,,false,clean baseline order,normal_repeat,person_0001078
+BT-001079,,,false,clean baseline order,normal_repeat,person_0001079
+BT-001080,,,false,clean baseline order,legit_refund,person_0001080
+BT-001082,,,false,clean baseline order,normal_repeat,person_0001082
+BT-001083,,,false,clean baseline order,normal_repeat,person_0001083
+BT-001084,,,false,clean baseline order,normal_repeat,person_0001084
+BT-001086,,,false,clean baseline order,normal_repeat,person_0001086
+BT-001087,,,false,clean baseline order,normal_repeat,person_0001087
+BT-001088,,,false,clean baseline order,normal_repeat,person_0001088
+BT-001090,,,false,clean baseline order,normal_repeat,person_0001090
+BT-001091,,,false,clean baseline order,normal_repeat,person_0001091
+BT-001092,,,false,clean baseline order,legit_refund,person_0001092
+BT-001094,,,false,clean baseline order,normal_repeat,person_0001094
+BT-001095,,,false,clean baseline order,normal_repeat,person_0001095
+BT-001096,,,false,clean baseline order,normal_repeat,person_0001096
+BT-001098,,,false,clean baseline order,normal_repeat,person_0001098
+BT-001099,,,false,clean baseline order,normal_repeat,person_0001099
+BT-001100,,,false,clean baseline order,legit_refund,person_0001100
+BT-001102,,,false,clean baseline order,normal_repeat,person_0001102
+BT-001103,,,false,clean baseline order,normal_repeat,person_0001103
+BT-001104,,,false,clean baseline order,normal_repeat,person_0001104
+BT-001106,,,false,clean baseline order,normal_repeat,person_0001106
+BT-001107,,,false,clean baseline order,normal_repeat,person_0001107
+BT-001108,,,false,clean baseline order,normal_repeat,person_0001108
+BT-001110,,,false,clean baseline order,normal_repeat,person_0001110
+BT-001111,,,false,clean baseline order,normal_repeat,person_0001111
+BT-001112,,,false,clean baseline order,normal_repeat,person_0001112
+BT-001114,,,false,clean baseline order,normal_repeat,person_0001114
+BT-001115,,,false,clean baseline order,normal_repeat,person_0001115
+BT-001116,,,false,clean baseline order,legit_refund,person_0001116
+BT-001118,,,false,clean baseline order,normal_repeat,person_0001118
+BT-001119,,,false,clean baseline order,normal_repeat,person_0001119
+BT-001120,,,false,clean baseline order,normal_repeat,person_0001120
+BT-001122,,,false,clean baseline order,normal_repeat,person_0001122
+BT-001123,,,false,clean baseline order,normal_repeat,person_0001123
+BT-001124,,,false,clean baseline order,legit_refund,person_0001124
+BT-001126,,,false,clean baseline order,normal_repeat,person_0001126
+BT-001127,,,false,clean baseline order,normal_repeat,person_0001127
+BT-001128,,,false,clean baseline order,normal_repeat,person_0001128
+BT-001130,,,false,clean baseline order,normal_repeat,person_0001130
+BT-001131,,,false,clean baseline order,normal_repeat,person_0001131
+BT-001132,,,false,clean baseline order,normal_repeat,person_0001132
+BT-001134,,,false,clean baseline order,normal_repeat,person_0001134
+BT-001135,,,false,clean baseline order,normal_repeat,person_0001135
+BT-001136,,,false,clean baseline order,normal_repeat,person_0001136
+BT-001138,,,false,clean baseline order,normal_repeat,person_0001138
+BT-001139,,,false,clean baseline order,normal_repeat,person_0001139
+BT-001140,,,false,clean baseline order,normal_repeat,person_0001140
+BT-001142,,,false,clean baseline order,normal_repeat,person_0001142
+BT-001143,,,false,clean baseline order,normal_repeat,person_0001143
+BT-001144,,,false,clean baseline order,normal_repeat,person_0001144
+BT-001146,,,false,clean baseline order,normal_repeat,person_0001146
+BT-001147,,,false,clean baseline order,normal_repeat,person_0001147
+BT-001148,,,false,clean baseline order,normal_repeat,person_0001148
+BT-001150,,,false,clean baseline order,normal_repeat,person_0001150
+BT-001151,,,false,clean baseline order,normal_repeat,person_0001151
+BT-001152,,,false,clean baseline order,normal_repeat,person_0001152
+BT-001154,,,false,clean baseline order,normal_repeat,person_0001154
+BT-001155,,,false,clean baseline order,normal_repeat,person_0001155
+BT-001156,,,false,clean baseline order,normal_repeat,person_0001156
+BT-001158,,,false,clean baseline order,normal_repeat,person_0001158
+BT-001159,,,false,clean baseline order,normal_repeat,person_0001159
+BT-001160,,,false,clean baseline order,normal_repeat,person_0001160
+BT-001162,,,false,clean baseline order,normal_repeat,person_0001162
+BT-001163,,,false,clean baseline order,normal_repeat,person_0001163
+BT-001164,,,false,clean baseline order,normal_repeat,person_0001164
+BT-001166,,,false,clean baseline order,normal_repeat,person_0001166
+BT-001167,,,false,clean baseline order,normal_repeat,person_0001167
+BT-001168,,,false,clean baseline order,normal_repeat,person_0001168
+BT-001170,,,false,clean baseline order,normal_repeat,person_0001170
+BT-001171,,,false,clean baseline order,normal_repeat,person_0001171
+BT-001172,,,false,clean baseline order,normal_repeat,person_0001172
+BT-001174,,,false,clean baseline order,normal_repeat,person_0001174
+BT-001175,,,false,clean baseline order,normal_repeat,person_0001175
+BT-001176,,,false,clean baseline order,normal_repeat,person_0001176
+BT-001178,,,false,clean baseline order,normal_repeat,person_0001178
+BT-001179,,,false,clean baseline order,normal_repeat,person_0001179
+BT-001180,,,false,clean baseline order,legit_refund,person_0001180
+BT-001182,,,false,clean baseline order,normal_repeat,person_0001182
+BT-001183,,,false,clean baseline order,normal_repeat,person_0001183
+BT-001184,,,false,clean baseline order,normal_repeat,person_0001184
+BT-001186,,,false,clean baseline order,normal_repeat,person_0001186
+BT-001187,,,false,clean baseline order,normal_repeat,person_0001187
+BT-001188,,,false,clean baseline order,normal_repeat,person_0001188
+BT-001190,,,false,clean baseline order,normal_repeat,person_0001190
+BT-001191,,,false,clean baseline order,normal_repeat,person_0001191
+BT-001192,,,false,clean baseline order,normal_repeat,person_0001192
+BT-001194,,,false,clean baseline order,normal_repeat,person_0001194
+BT-001195,,,false,clean baseline order,normal_repeat,person_0001195
+BT-001196,,,false,clean baseline order,normal_repeat,person_0001196
+BT-001198,,,false,clean baseline order,normal_repeat,person_0001198
+BT-001199,,,false,clean baseline order,normal_repeat,person_0001199
+BT-001200,,,false,clean baseline order,legit_refund,person_0001200
+BT-001202,,,false,clean baseline order,normal_repeat,person_0001202
+BT-001203,,,false,clean baseline order,normal_repeat,person_0001203
+BT-001204,,,false,clean baseline order,legit_refund,person_0001204
+BT-001206,,,false,clean baseline order,normal_repeat,person_0001206
+BT-001207,,,false,clean baseline order,normal_repeat,person_0001207
+BT-001208,,,false,clean baseline order,normal_repeat,person_0001208
+BT-001210,,,false,clean baseline order,normal_repeat,person_0001210
+BT-001211,,,false,clean baseline order,normal_repeat,person_0001211
+BT-001212,,,false,clean baseline order,normal_repeat,person_0001212
+BT-001214,,,false,clean baseline order,normal_repeat,person_0001214
+BT-001215,,,false,clean baseline order,normal_repeat,person_0001215
+BT-001216,,,false,clean baseline order,normal_repeat,person_0001216
+BT-001218,,,false,clean baseline order,normal_repeat,person_0001218
+BT-001219,,,false,clean baseline order,normal_repeat,person_0001219
+BT-001220,,,false,clean baseline order,normal_repeat,person_0001220
+BT-001222,,,false,clean baseline order,normal_repeat,person_0001222
+BT-001223,,,false,clean baseline order,normal_repeat,person_0001223
+BT-001224,,,false,clean baseline order,legit_refund,person_0001224
+BT-001226,,,false,clean baseline order,normal_repeat,person_0001226
+BT-001227,,,false,clean baseline order,normal_repeat,person_0001227
+BT-001228,,,false,clean baseline order,legit_refund,person_0001228
+BT-001230,,,false,clean baseline order,normal_repeat,person_0001230
+BT-001231,,,false,clean baseline order,normal_repeat,person_0001231
+BT-001232,,,false,clean baseline order,normal_repeat,person_0001232
+BT-001234,,,false,clean baseline order,normal_repeat,person_0001234
+BT-001235,,,false,clean baseline order,normal_repeat,person_0001235
+BT-001236,,,false,clean baseline order,normal_repeat,person_0001236
+BT-001238,,,false,clean baseline order,normal_repeat,person_0001238
+BT-001239,,,false,clean baseline order,normal_repeat,person_0001239
+BT-001240,,,false,clean baseline order,normal_repeat,person_0001240
+BT-001242,,,false,clean baseline order,normal_repeat,person_0001242
+BT-001243,,,false,clean baseline order,normal_repeat,person_0001243
+BT-001244,,,false,clean baseline order,normal_repeat,person_0001244
+BT-001246,,,false,clean baseline order,normal_repeat,person_0001246
+BT-001247,,,false,clean baseline order,normal_repeat,person_0001247
+BT-001248,,,false,clean baseline order,normal_repeat,person_0001248
+BT-001250,,,false,clean baseline order,normal_repeat,person_0001250
+BT-001251,,,false,clean baseline order,normal_repeat,person_0001251
+BT-001252,,,false,clean baseline order,normal_repeat,person_0001252
+BT-001254,,,false,clean baseline order,normal_repeat,person_0001254
+BT-001255,,,false,clean baseline order,normal_repeat,person_0001255
+BT-001256,,,false,clean baseline order,normal_repeat,person_0001256
+BT-001258,,,false,clean baseline order,normal_repeat,person_0001258
+BT-001259,,,false,clean baseline order,normal_repeat,person_0001259
+BT-001260,,,false,clean baseline order,normal_repeat,person_0001260
+BT-001262,,,false,clean baseline order,normal_repeat,person_0001262
+BT-001263,,,false,clean baseline order,normal_repeat,person_0001263
+BT-001264,,,false,clean baseline order,normal_repeat,person_0001264
+BT-001266,,,false,clean baseline order,normal_repeat,person_0001266
+BT-001267,,,false,clean baseline order,normal_repeat,person_0001267
+BT-001268,,,false,clean baseline order,normal_repeat,person_0001268
+BT-001270,,,false,clean baseline order,normal_repeat,person_0001270
+BT-001271,,,false,clean baseline order,normal_repeat,person_0001271
+BT-001272,,,false,clean baseline order,normal_repeat,person_0001272
+BT-001274,,,false,clean baseline order,normal_repeat,person_0001274
+BT-001275,,,false,clean baseline order,normal_repeat,person_0001275
+BT-001276,,,false,clean baseline order,normal_repeat,person_0001276
+BT-001278,,,false,clean baseline order,normal_repeat,person_0001278
+BT-001279,,,false,clean baseline order,normal_repeat,person_0001279
+BT-001280,,,false,clean baseline order,normal_repeat,person_0001280
+BT-001282,,,false,clean baseline order,normal_repeat,person_0001282
+BT-001283,,,false,clean baseline order,normal_repeat,person_0001283
+BT-001284,,,false,clean baseline order,normal_repeat,person_0001284
+BT-001286,,,false,clean baseline order,normal_repeat,person_0001286
+BT-001287,,,false,clean baseline order,normal_repeat,person_0001287
+BT-001288,,,false,clean baseline order,normal_repeat,person_0001288
+BT-001290,,,false,clean baseline order,normal_repeat,person_0001290
+BT-001291,,,false,clean baseline order,normal_repeat,person_0001291
+BT-001292,,,false,clean baseline order,normal_repeat,person_0001292
+BT-001294,,,false,clean baseline order,normal_repeat,person_0001294
+BT-001295,,,false,clean baseline order,normal_repeat,person_0001295
+BT-001296,,,false,clean baseline order,legit_refund,person_0001296
+BT-001298,,,false,clean baseline order,normal_repeat,person_0001298
+BT-001299,,,false,clean baseline order,normal_repeat,person_0001299
+BT-001300,,,false,clean baseline order,legit_refund,person_0001300
+BT-001302,,,false,clean baseline order,normal_repeat,person_0001302
+BT-001303,,,false,clean baseline order,normal_repeat,person_0001303
+BT-001304,,,false,clean baseline order,normal_repeat,person_0001304
+BT-001306,,,false,clean baseline order,normal_repeat,person_0001306
+BT-001307,,,false,clean baseline order,normal_repeat,person_0001307
+BT-001308,,,false,clean baseline order,normal_repeat,person_0001308
+BT-001310,,,false,clean baseline order,normal_repeat,person_0001310
+BT-001311,,,false,clean baseline order,normal_repeat,person_0001311
+BT-001312,,,false,clean baseline order,normal_repeat,person_0001312
+BT-001314,,,false,clean baseline order,normal_repeat,person_0001314
+BT-001315,,,false,clean baseline order,normal_repeat,person_0001315
+BT-001316,,,false,clean baseline order,normal_repeat,person_0001316
+BT-001318,,,false,clean baseline order,normal_repeat,person_0001318
+BT-001319,,,false,clean baseline order,normal_repeat,person_0001319
+BT-001320,,,false,clean baseline order,normal_repeat,person_0001320
+BT-001322,,,false,clean baseline order,normal_repeat,person_0001322
+BT-001323,,,false,clean baseline order,normal_repeat,person_0001323
+BT-001324,,,false,clean baseline order,legit_refund,person_0001324
+BT-001326,,,false,clean baseline order,normal_repeat,person_0001326
+BT-001327,,,false,clean baseline order,normal_repeat,person_0001327
+BT-001328,,,false,clean baseline order,normal_repeat,person_0001328
+BT-001330,,,false,clean baseline order,normal_repeat,person_0001330
+BT-001331,,,false,clean baseline order,normal_repeat,person_0001331
+BT-001332,,,false,clean baseline order,normal_repeat,person_0001332
+BT-001334,,,false,clean baseline order,normal_repeat,person_0001334
+BT-001335,,,false,clean baseline order,normal_repeat,person_0001335
+BT-001336,,,false,clean baseline order,normal_repeat,person_0001336
+BT-001338,,,false,clean baseline order,normal_repeat,person_0001338
+BT-001339,,,false,clean baseline order,normal_repeat,person_0001339
+BT-001340,,,false,clean baseline order,normal_repeat,person_0001340
+BT-001342,,,false,clean baseline order,normal_repeat,person_0001342
+BT-001343,,,false,clean baseline order,normal_repeat,person_0001343
+BT-001344,,,false,clean baseline order,normal_repeat,person_0001344
+BT-001346,,,false,clean baseline order,normal_repeat,person_0001346
+BT-001347,,,false,clean baseline order,normal_repeat,person_0001347
+BT-001348,,,false,clean baseline order,normal_repeat,person_0001348
+BT-001350,,,false,clean baseline order,normal_repeat,person_0001350
+BT-001351,,,false,clean baseline order,normal_repeat,person_0001351
+BT-001352,,,false,clean baseline order,normal_repeat,person_0001352
+BT-001354,,,false,clean baseline order,normal_repeat,person_0001354
+BT-001355,,,false,clean baseline order,normal_repeat,person_0001355
+BT-001356,,,false,clean baseline order,normal_repeat,person_0001356
+BT-001358,,,false,clean baseline order,normal_repeat,person_0001358
+BT-001359,,,false,clean baseline order,normal_repeat,person_0001359
+BT-001360,,,false,clean baseline order,normal_repeat,person_0001360
+BT-001362,,,false,clean baseline order,normal_repeat,person_0001362
+BT-001363,,,false,clean baseline order,normal_repeat,person_0001363
+BT-001364,,,false,clean baseline order,normal_repeat,person_0001364
+BT-001366,,,false,clean baseline order,normal_repeat,person_0001366
+BT-001367,,,false,clean baseline order,normal_repeat,person_0001367
+BT-001368,,,false,clean baseline order,legit_refund,person_0001368
+BT-001370,,,false,clean baseline order,normal_repeat,person_0001370
+BT-001371,,,false,clean baseline order,normal_repeat,person_0001371
+BT-001372,,,false,clean baseline order,normal_repeat,person_0001372
+BT-001374,,,false,clean baseline order,normal_repeat,person_0001374
+BT-001375,,,false,clean baseline order,normal_repeat,person_0001375
+BT-001376,,,false,clean baseline order,normal_repeat,person_0001376
+BT-001378,,,false,clean baseline order,normal_repeat,person_0001378
+BT-001379,,,false,clean baseline order,normal_repeat,person_0001379
+BT-001380,,,false,clean baseline order,normal_repeat,person_0001380
+BT-001382,,,false,clean baseline order,normal_repeat,person_0001382
+BT-001383,,,false,clean baseline order,normal_repeat,person_0001383
+BT-001384,,,false,clean baseline order,normal_repeat,person_0001384
+BT-001386,,,false,clean baseline order,normal_repeat,person_0001386
+BT-001387,,,false,clean baseline order,normal_repeat,person_0001387
+BT-001388,,,false,clean baseline order,normal_repeat,person_0001388
+BT-001390,,,false,clean baseline order,normal_repeat,person_0001390
+BT-001391,,,false,clean baseline order,normal_repeat,person_0001391
+BT-001392,,,false,clean baseline order,normal_repeat,person_0001392
+BT-001394,,,false,clean baseline order,normal_repeat,person_0001394
+BT-001395,,,false,clean baseline order,normal_repeat,person_0001395
+BT-001396,,,false,clean baseline order,normal_repeat,person_0001396
+BT-001398,,,false,clean baseline order,normal_repeat,person_0001398
+BT-001399,,,false,clean baseline order,normal_repeat,person_0001399
+BT-001400,,,false,clean baseline order,normal_repeat,person_0001400
+BT-001401,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001401
+BT-001402,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001402
+BT-001403,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001403
+BT-001404,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001404
+BT-001405,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001405
+BT-001406,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001406
+BT-001407,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001407
+BT-001408,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001408
+BT-001409,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001409
+BT-001410,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001410
+BT-001411,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001411
+BT-001412,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001412
+BT-001413,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001413
+BT-001414,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001414
+BT-001415,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001415
+BT-001416,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001416
+BT-001417,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001417
+BT-001418,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001418
+BT-001419,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001419
+BT-001420,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001420
+BT-001421,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001421
+BT-001422,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001422
+BT-001423,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001423
+BT-001424,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001424
+BT-001425,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001425
+BT-001426,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001426
+BT-001427,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001427
+BT-001428,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001428
+BT-001429,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001429
+BT-001430,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001430
+BT-001431,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001431
+BT-001432,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001432
+BT-001433,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001433
+BT-001434,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001434
+BT-001435,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001435
+BT-001436,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001436
+BT-001437,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001437
+BT-001438,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001438
+BT-001439,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001439
+BT-001440,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001440
+BT-001441,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001441
+BT-001442,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001442
+BT-001443,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001443
+BT-001444,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001444
+BT-001445,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001445
+BT-001446,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001446
+BT-001447,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001447
+BT-001448,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001448
+BT-001449,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001449
+BT-001450,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001450
+BT-001451,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001451
+BT-001452,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001452
+BT-001453,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001453
+BT-001454,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001454
+BT-001455,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001455
+BT-001456,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001456
+BT-001457,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001457
+BT-001458,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001458
+BT-001459,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001459
+BT-001460,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001460
+BT-001461,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001461
+BT-001462,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001462
+BT-001463,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001463
+BT-001464,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001464
+BT-001465,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001465
+BT-001466,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001466
+BT-001467,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001467
+BT-001468,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001468
+BT-001469,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001469
+BT-001470,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001470
+BT-001471,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001471
+BT-001472,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001472
+BT-001473,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001473
+BT-001474,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001474
+BT-001475,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001475
+BT-001476,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001476
+BT-001477,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001477
+BT-001478,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001478
+BT-001479,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001479
+BT-001480,,,false,corporate office shared address/IP trap,false_corporate_office,person_0001480
+BT-001481,,,false,roommates or dorm shared address trap,false_shared_household,person_0001481
+BT-001482,,,false,roommates or dorm shared address trap,false_shared_household,person_0001482
+BT-001483,,,false,roommates or dorm shared address trap,false_shared_household,person_0001483
+BT-001484,,,false,roommates or dorm shared address trap,false_shared_household,person_0001484
+BT-001485,,,false,roommates or dorm shared address trap,false_shared_household,person_0001485
+BT-001486,,,false,roommates or dorm shared address trap,false_shared_household,person_0001486
+BT-001487,,,false,roommates or dorm shared address trap,false_shared_household,person_0001487
+BT-001488,,,false,roommates or dorm shared address trap,false_shared_household,person_0001488
+BT-001489,,,false,roommates or dorm shared address trap,false_shared_household,person_0001489
+BT-001490,,,false,roommates or dorm shared address trap,false_shared_household,person_0001490
+BT-001491,,,false,roommates or dorm shared address trap,false_shared_household,person_0001491
+BT-001492,,,false,roommates or dorm shared address trap,false_shared_household,person_0001492
+BT-001493,,,false,roommates or dorm shared address trap,false_shared_household,person_0001493
+BT-001494,,,false,roommates or dorm shared address trap,false_shared_household,person_0001494
+BT-001495,,,false,roommates or dorm shared address trap,false_shared_household,person_0001495
+BT-001496,,,false,roommates or dorm shared address trap,false_shared_household,person_0001496
+BT-001497,,,false,roommates or dorm shared address trap,false_shared_household,person_0001497
+BT-001498,,,false,roommates or dorm shared address trap,false_shared_household,person_0001498
+BT-001499,,,false,roommates or dorm shared address trap,false_shared_household,person_0001499
+BT-001500,,,false,roommates or dorm shared address trap,false_shared_household,person_0001500
+BT-001501,,,false,roommates or dorm shared address trap,false_shared_household,person_0001501
+BT-001502,,,false,roommates or dorm shared address trap,false_shared_household,person_0001502
+BT-001503,,,false,roommates or dorm shared address trap,false_shared_household,person_0001503
+BT-001504,,,false,roommates or dorm shared address trap,false_shared_household,person_0001504
+BT-001505,,,false,roommates or dorm shared address trap,false_shared_household,person_0001505
+BT-001506,,,false,roommates or dorm shared address trap,false_shared_household,person_0001506
+BT-001507,,,false,roommates or dorm shared address trap,false_shared_household,person_0001507
+BT-001508,,,false,roommates or dorm shared address trap,false_shared_household,person_0001508
+BT-001509,,,false,roommates or dorm shared address trap,false_shared_household,person_0001509
+BT-001510,,,false,roommates or dorm shared address trap,false_shared_household,person_0001510
+BT-001511,,,false,roommates or dorm shared address trap,false_shared_household,person_0001511
+BT-001512,,,false,roommates or dorm shared address trap,false_shared_household,person_0001512
+BT-001513,,,false,roommates or dorm shared address trap,false_shared_household,person_0001513
+BT-001514,,,false,roommates or dorm shared address trap,false_shared_household,person_0001514
+BT-001515,,,false,roommates or dorm shared address trap,false_shared_household,person_0001515
+BT-001516,,,false,roommates or dorm shared address trap,false_shared_household,person_0001516
+BT-001517,,,false,roommates or dorm shared address trap,false_shared_household,person_0001517
+BT-001518,,,false,roommates or dorm shared address trap,false_shared_household,person_0001518
+BT-001519,,,false,roommates or dorm shared address trap,false_shared_household,person_0001519
+BT-001520,,,false,roommates or dorm shared address trap,false_shared_household,person_0001520
+BT-001521,,,false,roommates or dorm shared address trap,false_shared_household,person_0001521
+BT-001522,,,false,roommates or dorm shared address trap,false_shared_household,person_0001522
+BT-001523,,,false,roommates or dorm shared address trap,false_shared_household,person_0001523
+BT-001524,,,false,roommates or dorm shared address trap,false_shared_household,person_0001524
+BT-001525,,,false,roommates or dorm shared address trap,false_shared_household,person_0001525
+BT-001526,,,false,roommates or dorm shared address trap,false_shared_household,person_0001526
+BT-001527,,,false,roommates or dorm shared address trap,false_shared_household,person_0001527
+BT-001528,,,false,roommates or dorm shared address trap,false_shared_household,person_0001528
+BT-001529,,,false,roommates or dorm shared address trap,false_shared_household,person_0001529
+BT-001530,,,false,roommates or dorm shared address trap,false_shared_household,person_0001530
+BT-001531,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001531
+BT-001532,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001532
+BT-001533,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001533
+BT-001534,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001534
+BT-001535,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001535
+BT-001536,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001536
+BT-001537,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001537
+BT-001538,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001538
+BT-001539,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001539
+BT-001540,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001540
+BT-001541,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001541
+BT-001542,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001542
+BT-001543,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001543
+BT-001544,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001544
+BT-001545,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001545
+BT-001546,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001546
+BT-001547,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001547
+BT-001548,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001548
+BT-001549,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001549
+BT-001550,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001550
+BT-001551,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001551
+BT-001552,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001552
+BT-001553,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001553
+BT-001554,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001554
+BT-001555,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001555
+BT-001556,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001556
+BT-001557,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001557
+BT-001558,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001558
+BT-001559,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001559
+BT-001560,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001560
+BT-001561,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001561
+BT-001562,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001562
+BT-001563,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001563
+BT-001564,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001564
+BT-001565,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001565
+BT-001566,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001566
+BT-001567,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001567
+BT-001568,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001568
+BT-001569,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001569
+BT-001570,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001570
+BT-001571,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001571
+BT-001572,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001572
+BT-001573,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001573
+BT-001574,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001574
+BT-001575,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001575
+BT-001576,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001576
+BT-001577,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001577
+BT-001578,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001578
+BT-001579,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001579
+BT-001580,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001580
+BT-001581,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001581
+BT-001582,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001582
+BT-001583,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001583
+BT-001584,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001584
+BT-001585,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001585
+BT-001586,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001586
+BT-001587,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001587
+BT-001588,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001588
+BT-001589,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001589
+BT-001590,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001590
+BT-001591,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001591
+BT-001592,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001592
+BT-001593,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001593
+BT-001594,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001594
+BT-001595,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001595
+BT-001596,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001596
+BT-001597,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001597
+BT-001598,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001598
+BT-001599,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001599
+BT-001600,,,false,BIN + last4 collision trap,false_bin_last4_collision,person_0001600

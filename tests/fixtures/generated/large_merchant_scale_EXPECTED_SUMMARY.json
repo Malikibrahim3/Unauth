@@ -1,0 +1,35 @@
+{
+  "dataset": "large_merchant_scale",
+  "seedNote": "Deterministic generator seeds are embedded in scripts/test-data/generateBlindMerchantCSVs.ts",
+  "totalRows": 5400,
+  "expectedFlaggedRows": 130,
+  "expectedFlaggedRate": 0.024074074074074074,
+  "expectedClusters": 8,
+  "exactExpected": false,
+  "acceptance": {
+    "maxReviewRate": 0.08,
+    "minSeededRecall": 0.45,
+    "minDistinctNormalizedAddresses": 2500,
+    "maxLargestCluster": 70
+  },
+  "expectedGradeCounts": {
+    "definite": 36,
+    "probable": 74,
+    "possible": 20
+  },
+  "scenarioCounts": {
+    "clean": 3600,
+    "normal_repeat": 1400,
+    "legit_refund": 100,
+    "fraud_same_phone_card_account": 20,
+    "fraud_phone_bridge": 16,
+    "fraud_reship_refund": 20,
+    "fraud_paypal_device": 16,
+    "fraud_slow_burn": 24,
+    "fraud_chargeback": 16,
+    "fraud_high_value_inr": 16,
+    "fraud_two_order": 2,
+    "false_corporate_office": 128,
+    "false_shared_household": 42
+  }
+}

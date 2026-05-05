@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Trash2 } from 'lucide-react';
 
 interface InboxTransaction {
   id: string;
@@ -12,6 +12,8 @@ interface InboxTransaction {
   processed_at: string;
   processing_job_id: string;
   customer_profile_id?: string | null;
+  order_value?: number | null;
+  reason?: string;
 }
 
 interface Props {
@@ -22,6 +24,8 @@ export default function InboxClient({ initialItems }: Props) {
   const [items, setItems] = useState<InboxTransaction[]>(initialItems);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [pending, setPending] = useState<Record<string, boolean>>({});
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDismissing, setBulkDismissing] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown when clicking outside
@@ -38,6 +42,11 @@ export default function InboxClient({ initialItems }: Props) {
   async function dismissItem(txId: string) {
     // Optimistic remove
     setItems((prev) => prev.filter((t) => t.id !== txId));
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      next.delete(txId);
+      return next;
+    });
     try {
       await fetch(`/api/transactions/${txId}/dismiss`, { method: 'PATCH' });
     } catch {
@@ -45,7 +54,7 @@ export default function InboxClient({ initialItems }: Props) {
     }
   }
 
-  async function setStatusAndDismiss(tx: InboxTransaction, status: 'under_review' | 'contacted') {
+  async function setStatusAndDismiss(tx: InboxTransaction, status: 'under_review' | 'contacted' | 'resolved' | 'cleared') {
     setOpenDropdown(null);
     if (!tx.customer_profile_id) {
       // No profile — just dismiss
@@ -73,6 +82,24 @@ export default function InboxClient({ initialItems }: Props) {
     }
   }
 
+  async function bulkDismissSelected() {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`Dismiss ${selectedIds.size} case${selectedIds.size === 1 ? '' : 's'} from the inbox?`)) return;
+    const ids = Array.from(selectedIds);
+    setBulkDismissing(true);
+    setItems((prev) => prev.filter((t) => !selectedIds.has(t.id)));
+    setSelectedIds(new Set());
+    try {
+      await fetch('/api/inbox/bulk-dismiss', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids }),
+      });
+    } finally {
+      setBulkDismissing(false);
+    }
+  }
+
   if (items.length === 0) {
     return (
       <div
@@ -86,7 +113,7 @@ export default function InboxClient({ initialItems }: Props) {
           You&apos;re all caught up
         </p>
         <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-          No high or critical transactions need review.
+          No high or critical transactions need review right now.
         </p>
         <Link
           href="/upload"
@@ -100,13 +127,52 @@ export default function InboxClient({ initialItems }: Props) {
   }
 
   return (
-    <div className="rounded-lg overflow-hidden border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
+    <div className="space-y-3">
+      {selectedIds.size > 0 && (
+        <div className="flex items-center justify-between gap-3 rounded-lg px-3 py-2 border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
+          <div className="flex items-center gap-2">
+            <Trash2 className="h-4 w-4" />
+            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{selectedIds.size} selected</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={bulkDismissSelected}
+              disabled={bulkDismissing}
+              className="text-xs font-semibold rounded px-2 py-1 disabled:opacity-50"
+              style={{ background: 'var(--risk-critical-bg)', color: 'var(--risk-critical)', border: '1px solid var(--risk-critical-bd)' }}
+            >
+              {bulkDismissing ? 'Dismissing…' : 'Dismiss selected'}
+            </button>
+            <button onClick={() => setSelectedIds(new Set())} disabled={bulkDismissing} className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>
+              Clear
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="rounded-lg overflow-hidden border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b" style={{ background: 'var(--bg-subtle)', borderColor: 'var(--border-subtle)' }}>
+            <th className="text-left px-4 py-2.5 text-overline" style={{ width: 44, color: 'var(--text-muted)' }}>
+              <input
+                type="checkbox"
+                checked={items.length > 0 && selectedIds.size === items.length}
+                onChange={(e) => {
+                  if (!e.target.checked) {
+                    setSelectedIds(new Set());
+                    return;
+                  }
+                  setSelectedIds(new Set(items.map((item) => item.id)));
+                }}
+                aria-label="Select all inbox items"
+              />
+            </th>
             <th className="text-left px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Order ID</th>
             <th className="text-left px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Risk</th>
             <th className="text-right px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Score</th>
+            <th className="text-right px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Value</th>
+            <th className="text-left px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Why flagged</th>
             <th className="text-left px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Date</th>
             <th className="px-4 py-2.5" />
           </tr>
@@ -121,6 +187,19 @@ export default function InboxClient({ initialItems }: Props) {
                 opacity: pending[tx.id] ? 0.5 : 1,
               }}
             >
+              <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                <input
+                  type="checkbox"
+                  checked={selectedIds.has(tx.id)}
+                  onChange={(e) => {
+                    const next = new Set(selectedIds);
+                    if (e.target.checked) next.add(tx.id);
+                    else next.delete(tx.id);
+                    setSelectedIds(next);
+                  }}
+                  aria-label={`Select order ${tx.order_id}`}
+                />
+              </td>
               <td className="px-4 py-3 font-mono text-xs" style={{ color: 'var(--text-muted)' }}>
                 {tx.order_id}
               </td>
@@ -139,6 +218,12 @@ export default function InboxClient({ initialItems }: Props) {
               </td>
               <td className="px-4 py-3 text-right font-mono font-semibold" style={{ color: 'var(--text)' }}>
                 {Math.round(tx.match_score)}
+              </td>
+              <td className="px-4 py-3 text-right font-mono text-xs" style={{ color: 'var(--text)' }}>
+                {tx.order_value != null ? new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(tx.order_value) : '—'}
+              </td>
+              <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-muted)' }}>
+                {tx.reason ?? 'Needs manual review'}
               </td>
               <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-muted)' }}>
                 {new Date(tx.processed_at).toLocaleDateString()}
@@ -191,13 +276,29 @@ export default function InboxClient({ initialItems }: Props) {
                         >
                           Mark as Contacted
                         </button>
-                        <div style={{ borderTop: '1px solid var(--border-subtle)' }} />
                         <button
                           type="button"
                           className="w-full text-left px-3 py-2 text-xs hover:bg-[var(--bg-subtle)] transition-colors"
-                          style={{ color: 'var(--text-muted)' }}
-                          onClick={() => { setOpenDropdown(null); dismissItem(tx.id); }}
+                          style={{ color: 'var(--text)' }}
+                          onClick={() => setStatusAndDismiss(tx, 'resolved')}
                         >
+                          Mark as Refund blocked
+                        </button>
+                        <button
+                          type="button"
+                          className="w-full text-left px-3 py-2 text-xs hover:bg-[var(--bg-subtle)] transition-colors"
+                          style={{ color: 'var(--text)' }}
+                          onClick={() => setStatusAndDismiss(tx, 'cleared')}
+                        >
+                          Mark as False alarm
+                        </button>
+                        <div style={{ borderTop: '1px solid var(--border-subtle)' }} />
+                          <button
+                            type="button"
+                            className="w-full text-left px-3 py-2 text-xs hover:bg-[var(--bg-subtle)] transition-colors"
+                            style={{ color: 'var(--text-muted)' }}
+                            onClick={() => { setOpenDropdown(null); dismissItem(tx.id); }}
+                          >
                           Clear from inbox
                         </button>
                       </div>
@@ -209,6 +310,7 @@ export default function InboxClient({ initialItems }: Props) {
           ))}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }

@@ -1,0 +1,19 @@
+{
+  "dataset": "header_chaos",
+  "totalRows": 72,
+  "formats": [
+    "shopify",
+    "woocommerce",
+    "amazon",
+    "etsy_semicolon_bom",
+    "stripe_pipe",
+    "custom_mixed_case"
+  ],
+  "mustParseDelimiters": [
+    ",",
+    "\\t",
+    ";",
+    "|"
+  ],
+  "minDistinctNormalizedAddresses": 25
+}

@@ -10,7 +10,14 @@
     "test": "jest --passWithNoTests",
     "eval": "ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/eval.ts",
     "snapshot-metrics": "ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/snapshot-network-metrics.ts",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "generate:blind-csvs": "ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/test-data/generateBlindMerchantCSVs.ts",
+    "test:csv-blind": "npm run generate:blind-csvs && jest tests/identity --runInBand",
+    "test:identity": "jest tests/identity --runInBand",
+    "test:merchant-readiness": "npm run test:csv-blind",
+    "diagnose:audit-rls": "ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/test-data/diagnoseAuditRls.ts",
+    "ux:screenshots": "rm -rf .next && playwright test --config=tests/ux-audit/playwright.config.ts",
+    "ux:audit": "npm run ux:screenshots && node scripts/generate-ux-audit-report.mjs"
   },
   "dependencies": {
     "@amplitude/analytics-browser": "^2.42.0",
@@ -42,6 +49,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.0.1",
     "@types/jest": "^30.0.0",

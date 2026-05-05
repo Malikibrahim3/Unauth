@@ -13,6 +13,8 @@ const ALLOWED: Record<string, string> = {
   customer_notes: 'customer_notes',
   watchlist: 'watchlist_entries',
   watchlist_entries: 'watchlist_entries',
+  audits: 'processing_jobs',
+  processing_jobs: 'processing_jobs',
 };
 
 export async function POST(req: NextRequest) {
@@ -29,7 +31,7 @@ export async function POST(req: NextRequest) {
   let body: Body;
   try {
     body = await req.json();
-  } catch (err) {
+  } catch {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
@@ -42,6 +44,7 @@ export async function POST(req: NextRequest) {
   const SOFT_DELETE_FIELD: Record<string, string> = {
     customer_notes: 'deleted_by_merchant',
     watchlist_entries: 'removed_by_merchant',
+    processing_jobs: 'hidden_by_merchant',
   };
 
   // If entity === 'all' soft-delete all allowed tables for this merchant

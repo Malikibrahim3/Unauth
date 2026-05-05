@@ -12,11 +12,14 @@ interface RecommendedActionProps {
 }
 
 export default function RecommendedAction({ tier, topSignalName, runId, customersHref }: RecommendedActionProps) {
+  const safeTier: RiskTier = tier === 'low' || tier === 'medium' || tier === 'high' || tier === 'critical'
+    ? tier
+    : 'low';
   const recommendation = topSignalName
     ? signalLabel(topSignalName).recommended
-    : RISK_TIER_COPY[tier].default;
+    : RISK_TIER_COPY[safeTier].default;
 
-  if (tier === 'low') return null;
+  if (safeTier === 'low') return null;
 
   return (
     <div

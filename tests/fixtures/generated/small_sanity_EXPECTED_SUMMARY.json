@@ -1,0 +1,29 @@
+{
+  "dataset": "small_sanity",
+  "seedNote": "Deterministic generator seeds are embedded in scripts/test-data/generateBlindMerchantCSVs.ts",
+  "totalRows": 91,
+  "expectedFlaggedRows": 9,
+  "expectedFlaggedRate": 0.0989010989010989,
+  "expectedClusters": 2,
+  "exactExpected": true,
+  "acceptance": {
+    "maxReviewRate": 0.45,
+    "minSeededRecall": 0.75,
+    "minDistinctNormalizedAddresses": 25,
+    "maxLargestCluster": 12
+  },
+  "expectedGradeCounts": {
+    "definite": 5,
+    "probable": 4
+  },
+  "scenarioCounts": {
+    "clean": 26,
+    "normal_repeat": 11,
+    "legit_refund": 1,
+    "fraud_same_phone_card_account": 5,
+    "fraud_phone_bridge": 4,
+    "false_corporate_office": 16,
+    "false_shared_household": 10,
+    "false_bin_last4_collision": 18
+  }
+}

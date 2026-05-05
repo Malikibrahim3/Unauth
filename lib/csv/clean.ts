@@ -177,13 +177,33 @@ export const COLUMN_ALIASES: Record<string, string> = {
   ...Object.fromEntries(
     (Object.entries(HEADER_ALIASES) as [string, string[]][]).flatMap(
       ([field, aliases]) =>
-        aliases.map((alias) => [alias.trim().toLowerCase().replace(/\s+/g, '_'), field]),
+        aliases.map((alias) => [alias.trim().toLowerCase().replace(/[\s-]+/g, '_'), field]),
     ),
   ),
+  shipping_postcode: 'shipping_postcode',
+  shipping_zip: 'shipping_postcode',
+  shipping_zipcode: 'shipping_postcode',
+  shipping_postal_code: 'shipping_postcode',
+  ship_postal_code: 'shipping_postcode',
+  ship_zipcode: 'shipping_postcode',
+  ship_zip: 'shipping_postcode',
+  postcode: 'postcode',
+  post_code: 'postcode',
+  postal_code: 'postcode',
+  zip: 'postcode',
+  zip_code: 'postcode',
+  shipping_country: 'shipping_country',
+  shipping_country_code: 'shipping_country',
+  ship_country: 'shipping_country',
+  country: 'shipping_country',
+  // Shopify exports use "Name" for the order name/order number. Customer
+  // person names are covered by more specific aliases like billing_name,
+  // shipping_name, buyer_name, and customer_name.
+  name: 'order_id',
 };
 
 export function cleanHeader(raw: string): string {
-  const k = raw.trim().toLowerCase().replace(/\s+/g, '_');
+  const k = raw.trim().toLowerCase().replace(/[\s-]+/g, '_');
   return COLUMN_ALIASES[k] ?? k;
 }
 
@@ -191,7 +211,13 @@ export function cleanRow(raw: Record<string, unknown>): Record<string, unknown> 
   const out: Record<string, unknown> = {};
 
   for (const [key, val] of Object.entries(raw)) {
-    out[cleanHeader(key)] = val;
+    const canonical = cleanHeader(key);
+    const existing = out[canonical];
+    const next = cleanString(val);
+    const hasExisting = cleanString(existing) !== '';
+    if (hasExisting && next === '') continue;
+    if (hasExisting && next !== '' && canonical !== key) continue;
+    out[canonical] = val;
   }
 
   // Clean values

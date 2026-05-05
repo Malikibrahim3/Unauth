@@ -310,7 +310,16 @@ function addSignalPairsFrom(
 // ---------------------------------------------------------------------------
 
 const SIGNAL_WEIGHTS: Record<LinkerSignal, number> = {
-  card: 40,
+  // card = BIN + last4 only (no full PSP fingerprint in linker input).
+  // BIN+last4 is NOT unique — many unrelated customers share the same
+  // BIN (issuer) and last4 in real and synthetic datasets.  Keeping this
+  // below both POSSIBLE_THRESHOLD (15) and LINK_THRESHOLD (30) means:
+  //   - card alone: 12 → not even a candidate pair
+  //   - card + email: 12+20 = 32 → linked ✓
+  //   - card + phone: 12+30 = 42 → linked ✓
+  //   - card + device: 12+30 = 42 → linked ✓
+  //   - card + postcode: 12+10 = 22 → candidate only, not linked ✓
+  card: 12,
   phone: 30,
   device: 30,
   account: 25,
@@ -441,6 +450,10 @@ function guardCardLast4(raw: string | null | undefined): string | null {
 // ---------------------------------------------------------------------------
 
 export function linkIdentities(input: LinkerOrderInput[]): LinkerResult {
+  const rawEmailByOrderId = new Map(
+    input.map((row) => [row.order_id, row.email ? row.email.trim().toLowerCase() : null])
+  );
+
   // Step 1 — normalise. No comparisons yet.
   const normalised: NormalisedOrder[] = input.map((row) => ({
     order_id: row.order_id,
@@ -471,6 +484,10 @@ export function linkIdentities(input: LinkerOrderInput[]): LinkerResult {
   const linkedPairs: { a: string; b: string; score: number; signals: LinkerSignal[] }[] = [];
 
   for (const acc of Array.from(pairs.values())) {
+    const rawEmailA = rawEmailByOrderId.get(acc.order_id_a);
+    const rawEmailB = rawEmailByOrderId.get(acc.order_id_b);
+    if (rawEmailA && rawEmailB && rawEmailA === rawEmailB) continue;
+
     const { score, signals } = scorePair(acc.signals);
     if (score === 0) continue; // IP-only / postcode-only dropped
     if (score >= POSSIBLE_THRESHOLD) {
