@@ -12,6 +12,7 @@ import Papa from 'papaparse';
 import { Readable } from 'node:stream';
 import { cleanHeader } from '../csv/clean';
 import { validateHeaders } from '../csv/validate';
+import { sniffHeaders } from '../csv/sniffer';
 import type { ParsedCsvRow } from './types';
 
 /** Hard cap on rows per upload. With CHUNK_SIZE=25k that's 200 chunks worst
@@ -29,6 +30,8 @@ export interface StreamParseResult {
   missingRequired: string[];
   rowCount: number;
   hasGroundTruth: boolean;
+  /** Raw CSV headers that did not map to any known canonical field. Non-fatal — surface as a warning. */
+  unmappedHeaders: string[];
 }
 
 /**
@@ -66,13 +69,35 @@ export async function streamParseCsv(
   // Build the remap table once, before parsing begins
   const headerRemap = buildHeaderRemapFromColumnMap(columnMap);
 
-  const webStream = file.stream();
+  // ── Sniff the first chunk for BOM and delimiter ───────────────────────────
+  // We read the first 16 KB as text, strip BOM if present, and detect the
+  // delimiter so PapaParse gets an explicit hint rather than guessing.
+  const SNIFF_BYTES = 16_384;
+  const sniffSlice = file.slice(0, SNIFF_BYTES);
+  const sniffText = await sniffSlice.text();
+  const { delimiter: detectedDelimiter, hasBom } = sniffHeaders(sniffText);
+
+  // When the file starts with a BOM we rebuild the File without the BOM byte
+  // so PapaParse never sees it as part of the first header name.
+  let parseTarget: File = file;
+  if (hasBom) {
+    const rawBuffer = await file.arrayBuffer();
+    // UTF-8 BOM is 3 bytes: EF BB BF
+    const stripped = rawBuffer.slice(3);
+    parseTarget = new File([stripped], file.name, { type: file.type });
+  }
+
+  const webStream = parseTarget.stream();
   const nodeStream = Readable.fromWeb(webStream as any);
 
   await new Promise<void>((resolve, reject) => {
     Papa.parse(nodeStream as any, {
       header: true,
       skipEmptyLines: true,
+      // Supply the sniffed delimiter so PapaParse doesn't have to guess.
+      // PapaParse accepts '' to mean "auto-detect" — we always pass our own
+      // result because our detector is quote-aware and already ran.
+      delimiter: detectedDelimiter,
       transformHeader: (h: string) => {
         const lower = h.trim().toLowerCase();
         // If this header was explicitly mapped by the merchant, use that canonical name directly.
@@ -103,7 +128,7 @@ export async function streamParseCsv(
   // After transformHeader, keys in each row are already canonical field names.
   // We just need the header list for validation — derive it from the first row.
   const canonicalHeaders = rows.length > 0 ? Object.keys(rows[0]) : [];
-  const { missingRequired } = validateHeaders(canonicalHeaders);
+  const { missingRequired, unknownColumns } = validateHeaders(canonicalHeaders);
 
   const hasGroundTruth = canonicalHeaders.includes('ground_truth_label');
 
@@ -117,5 +142,6 @@ export async function streamParseCsv(
     missingRequired,
     rowCount: rows.length,
     hasGroundTruth,
+    unmappedHeaders: unknownColumns,
   };
 }

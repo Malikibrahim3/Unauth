@@ -37,7 +37,7 @@ export default async function InternalEvalPage() {
     .single();
 
   if (!merchant || !(merchant as unknown as { is_internal: boolean }).is_internal) {
-    redirect('/home');
+    redirect('/dashboard');
   }
 
   // Fetch the 10 most recent eval runs via service role.

@@ -70,6 +70,15 @@ export interface CustomerProfileRow {
   manually_reviewed: boolean;
   merchant_notes: string | null;
   on_watchlist: boolean;
+  identity_confidence_grade?: 'weak' | 'possible' | 'probable' | 'definite' | null;
+  identity_signals_summary?: string[];
+  identity_cluster_id?: string | null;
+}
+
+export interface ProfileIdentitySummary {
+  grade: 'weak' | 'possible' | 'probable' | 'definite' | null;
+  signals: string[];
+  clusterId: string | null;
 }
 
 interface ResolveResult {
@@ -87,6 +96,25 @@ function getRiskLevel(score: number): 'low' | 'medium' | 'high' | 'critical' {
   if (score >= RISK_TIER_THRESHOLDS.high) return 'high';
   if (score >= RISK_TIER_THRESHOLDS.medium) return 'medium';
   return 'low';
+}
+
+function mergeStrings(a: string[], b: string[]): string[] {
+  return Array.from(new Set([...(a ?? []), ...(b ?? [])].filter(Boolean)));
+}
+
+function strongerGrade(
+  a: ProfileIdentitySummary['grade'],
+  b: ProfileIdentitySummary['grade']
+): ProfileIdentitySummary['grade'] {
+  const rank: Record<NonNullable<ProfileIdentitySummary['grade']>, number> = {
+    weak: 1,
+    possible: 2,
+    probable: 3,
+    definite: 4,
+  };
+  if (!a) return b;
+  if (!b) return a;
+  return rank[b] > rank[a] ? b : a;
 }
 
 // ---------------------------------------------------------------------------
@@ -373,7 +401,8 @@ export async function processProfilesForBatch(
   merchantId: string,
   auditId: string,
   transactionIdMap: Map<string, string>, // orderId → audit_transactions.id
-  serviceClient: ServiceClient
+  serviceClient: ServiceClient,
+  identityByOrder?: Map<string, ProfileIdentitySummary>
 ): Promise<{ profilesCreated: number; profilesUpdated: number; errors: string[] }> {
   if (scored.length === 0) return { profilesCreated: 0, profilesUpdated: 0, errors: [] };
 
@@ -391,6 +420,7 @@ export async function processProfilesForBatch(
     flags: string[];
     isRefund: boolean;
     refundDate: string | null;
+    identity: ProfileIdentitySummary | null;
   }
 
   const orderDataList: OrderData[] = scored.map((scoredOrder) => {
@@ -413,7 +443,17 @@ export async function processProfilesForBatch(
       rawOrder.refundStatus === 'partial' ||
       rawOrder.orderStatus  === 'refunded';
     const refundDate = rawOrder.refundDate?.toISOString() ?? null;
-    return { scoredOrder, normEmail, normCard, normIP, normAddr, flags, isRefund, refundDate };
+    return {
+      scoredOrder,
+      normEmail,
+      normCard,
+      normIP,
+      normAddr,
+      flags,
+      isRefund,
+      refundDate,
+      identity: identityByOrder?.get(scoredOrder.order.orderId) ?? null,
+    };
   });
 
   const uniqueEmails = [...new Set(orderDataList.map((od) => od.normEmail).filter(Boolean))];
@@ -436,7 +476,8 @@ export async function processProfilesForBatch(
     'refund_timestamps,fastest_claim_days,avg_claim_days,' +
     'refund_acceleration_score,merchant_ids,first_seen,last_seen,' +
     'last_audit_id,profile_confidence,manually_reviewed,' +
-    'merchant_notes,on_watchlist';
+    'merchant_notes,on_watchlist,identity_confidence_grade,' +
+    'identity_signals_summary,identity_cluster_id';
   // The identifier columns on customer_profiles are JSONB arrays, NOT native
   // text[], so we cannot use `.overlaps()` (which generates the PG `&&`
   // operator — only valid on real arrays). Instead we issue chunked
@@ -550,6 +591,11 @@ export async function processProfilesForBatch(
       p.risk_score    = p.risk_score * 0.6 + od.scoredOrder.totalScore * 0.4;
       p.risk_level    = getRiskLevel(p.risk_score);
       p.profile_confidence = Math.min(p.profile_confidence, confidence);
+      if (od.identity) {
+        p.identity_confidence_grade = strongerGrade(p.identity_confidence_grade ?? null, od.identity.grade);
+        p.identity_signals_summary = mergeStrings(p.identity_signals_summary ?? [], od.identity.signals);
+        p.identity_cluster_id = p.identity_cluster_id ?? od.identity.clusterId;
+      }
       p.last_seen     = new Date().toISOString();
       p.last_audit_id = auditId;
       acc.matchConfidence = Math.min(acc.matchConfidence, confidence);
@@ -592,6 +638,9 @@ export async function processProfilesForBatch(
     last_seen:                 p.last_seen,
     last_audit_id:             p.last_audit_id,
     profile_confidence:        p.profile_confidence,
+    identity_confidence_grade: p.identity_confidence_grade ?? null,
+    identity_signals_summary:  p.identity_signals_summary ?? [],
+    identity_cluster_id:       p.identity_cluster_id ?? null,
   }));
 
   // -------------------------------------------------------------------------
@@ -608,6 +657,9 @@ export async function processProfilesForBatch(
     let maxScore      = 0;
     const refundTs: string[] = [];
     const allFlags    = new Set<string>();
+    const identitySignals = new Set<string>();
+    let identityGrade: ProfileIdentitySummary['grade'] = null;
+    let identityClusterId: string | null = null;
 
     for (const od of group) {
       totalOrders++;
@@ -618,6 +670,11 @@ export async function processProfilesForBatch(
       if (od.isRefund) { totalRefunds++; if (od.refundDate) refundTs.push(od.refundDate); }
       if (od.scoredOrder.totalScore > maxScore) maxScore = od.scoredOrder.totalScore;
       od.flags.forEach((f) => allFlags.add(f));
+      if (od.identity) {
+        identityGrade = strongerGrade(identityGrade, od.identity.grade);
+        od.identity.signals.forEach((signal) => identitySignals.add(signal));
+        identityClusterId = identityClusterId ?? od.identity.clusterId;
+      }
     }
 
     return {
@@ -640,6 +697,9 @@ export async function processProfilesForBatch(
       merchant_ids:            merchantId ? [merchantId] : ([] as string[]),
       last_audit_id:           auditId,
       profile_confidence:      100,
+      identity_confidence_grade: identityGrade,
+      identity_signals_summary:  [...identitySignals],
+      identity_cluster_id:       identityClusterId,
       first_seen:              now,
       last_seen:               now,
     };

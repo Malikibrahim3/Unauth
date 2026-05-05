@@ -13,19 +13,19 @@ export const metadata = {
 export default function DpaPage() {
   return (
     <div className="mx-auto max-w-3xl px-6 py-16">
-      {/* Review banner */}
-      <div className="mb-8 rounded-lg border border-amber-300 bg-amber-50 px-5 py-4">
-        <p className="text-sm font-semibold text-amber-800">
-          This DPA is in final review. Contact{' '}
+      {/* Contact banner */}
+      <div className="mb-8 rounded-lg border border-blue-200 bg-blue-50 px-5 py-4">
+        <p className="text-sm font-semibold text-blue-800">
+          Need a countersigned DPA for your procurement process? Contact{' '}
           <a href="mailto:dpa@unauth.io" className="underline">
             dpa@unauth.io
           </a>{' '}
-          for the current signed version.
+          and we&apos;ll turn it around within two business days.
         </p>
       </div>
 
       <h1 className="mb-2 text-3xl font-bold text-gray-900">Data Processing Agreement</h1>
-      <p className="mb-10 text-sm text-gray-500">Last updated: May 2026 (draft)</p>
+      <p className="mb-10 text-sm text-gray-500">Last updated: May 2026</p>
 
       <div className="space-y-10 text-gray-700">
 
@@ -95,6 +95,10 @@ export default function DpaPage() {
             hosting and edge functions, hosted in the EU and US). Controllers are notified of any
             addition or replacement of sub-processors at least 30 days in advance via email, with the
             right to object within that period.
+          </p>
+          <p className="mt-3">
+            We use Amplitude analytics software to track feature usage within the Unauth application.
+            No personal customer data is sent to Amplitude — only anonymised merchant behaviour events.
           </p>
         </section>
 

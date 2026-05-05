@@ -46,9 +46,13 @@ export default function CustomerProfileCard({ profile }: { profile: CustomerProf
       <div className="h-1" style={riskBarStyle(profile.highestRisk)} />
 
       {/* Header — always visible */}
-      <button
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => setExpanded((v) => !v)}
-        className="w-full text-left px-5 py-4 focus:outline-none"
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpanded((v) => !v); } }}
+        className="w-full text-left px-5 py-4 focus:outline-none cursor-pointer"
+        aria-expanded={expanded}
       >
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
@@ -118,7 +122,7 @@ export default function CustomerProfileCard({ profile }: { profile: CustomerProf
             <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
           </svg>
         </div>
-      </button>
+      </div>
 
       {/* Expanded detail */}
       {expanded && (

@@ -10,22 +10,23 @@ export interface ValidationResult {
   hasGroundTruth: boolean;
 }
 
+const KNOWN_COLUMNS = new Set([
+  'order_id', 'order_date', 'customer_email', 'customer_name',
+  'shipping_address', 'order_total', 'currency', 'order_status',
+  'customer_phone', 'billing_address', 'refund_status', 'refund_reason',
+  'refund_date', 'refund_amount', 'payment_method', 'ip_address',
+  'device_id', 'card_last4', 'card_bin', 'card_fingerprint',
+  'browser_fingerprint', 'cookie_id', 'user_agent', 'asn',
+  'account_id', 'ground_truth_label',
+  'chargeback_dispute', 'refund_requested', 'return_requested',
+]);
+
 export function validateHeaders(headers: string[]): {
   missingRequired: string[];
   unknownColumns: string[];
 } {
-  const knownColumns = new Set([
-    'order_id', 'order_date', 'customer_email', 'customer_name',
-    'shipping_address', 'order_total', 'currency', 'order_status',
-    'customer_phone', 'billing_address', 'refund_status', 'refund_reason',
-    'refund_date', 'refund_amount', 'payment_method', 'ip_address',
-    'device_id', 'card_last4', 'card_bin', 'card_fingerprint',
-    'browser_fingerprint', 'cookie_id', 'user_agent', 'asn',
-    'account_id', 'ground_truth_label',
-  ]);
-
   const missingRequired = REQUIRED_COLUMNS.filter((col) => !headers.includes(col));
-  const unknownColumns = headers.filter((h) => !knownColumns.has(h));
+  const unknownColumns = headers.filter((h) => !KNOWN_COLUMNS.has(h));
 
   return { missingRequired, unknownColumns };
 }

@@ -1,4 +1,5 @@
 import { ORDER_STATUSES, REFUND_STATUSES, REFUND_REASONS, GROUND_TRUTH_LABELS } from './schema';
+import { HEADER_ALIASES } from './headerAliases';
 
 type OrderStatus = (typeof ORDER_STATUSES)[number];
 type RefundStatus = (typeof REFUND_STATUSES)[number];
@@ -135,119 +136,50 @@ export function cleanEmail(value: unknown): string {
   return cleanString(value).toLowerCase();
 }
 
+/**
+ * Parse permissive truthy/falsy values from a CSV cell into a boolean.
+ * Accepts: true/false, yes/no, y/n, 1/0, t/f — case-insensitive.
+ * Returns null when the cell is empty or unrecognised (so absence stays absent,
+ * not a silent `false`).
+ */
+export function cleanBoolean(value: unknown): boolean | null {
+  const raw = cleanString(value).toLowerCase();
+  if (!raw) return null;
+  if (['true', 'yes', 'y', '1', 't'].includes(raw)) return true;
+  if (['false', 'no', 'n', '0', 'f'].includes(raw)) return false;
+  return null;
+}
+
 export function cleanGroundTruth(value: unknown): GroundTruthLabel | undefined {
   const raw = cleanString(value).toLowerCase();
   if (!raw) return undefined;
   return GROUND_TRUTH_MAP[raw] ?? undefined;
 }
 
+/**
+ * COLUMN_ALIASES is derived from the single source of truth in
+ * headerAliases.ts (HEADER_ALIASES).
+ *
+ * Derivation: for every field → alias list entry we normalise the alias
+ * (trim, lowercase, spaces → underscores) and emit `normalisedAlias → field`.
+ * When two fields share a normalised alias (e.g. 'name' appears in both
+ * order_id and customer_name), the **last writer wins** — iteration order of
+ * HEADER_ALIASES means more-specific fields (customer_name) overwrite
+ * less-specific ones (order_id), which matches the original hand-maintained
+ * table behaviour.
+ *
+ * Additional postcode/zip aliases that are not canonical RequiredFields but
+ * are used by the shipping-address normaliser are appended manually below
+ * because HEADER_ALIASES deliberately maps them to shipping_address instead.
+ */
 export const COLUMN_ALIASES: Record<string, string> = {
-  orderid: 'order_id',
-  order_number: 'order_id',
-  order_ref: 'order_id',
-  transaction_id: 'order_id',
-  id: 'order_id',
-
-  orderdate: 'order_date',
-  date: 'order_date',
-  order_datetime: 'order_date',
-  created_at: 'order_date',
-
-  email: 'customer_email',
-  customeremail: 'customer_email',
-  buyer_email: 'customer_email',
-  user_email: 'customer_email',
-
-  name: 'customer_name',
-  customername: 'customer_name',
-  buyer_name: 'customer_name',
-  full_name: 'customer_name',
-
-  address: 'shipping_address',
-  shippingaddress: 'shipping_address',
-  delivery_address: 'shipping_address',
-  ship_to: 'shipping_address',
-
-  total: 'order_total',
-  amount: 'order_total',
-  grand_total: 'order_total',
-  price: 'order_total',
-  value: 'order_total',
-
-  currencycode: 'currency',
-  currency_code: 'currency',
-
-  status: 'order_status',
-  orderstatus: 'order_status',
-  order_state: 'order_status',
-
-  phone: 'customer_phone',
-  customerphone: 'customer_phone',
-  telephone: 'customer_phone',
-  mobile: 'customer_phone',
-  buyer_phone: 'customer_phone',
-
-  billingaddress: 'billing_address',
-  bill_to: 'billing_address',
-  invoice_address: 'billing_address',
-
-  refundstatus: 'refund_status',
-  refund_state: 'refund_status',
-  refund_type: 'refund_status',
-
-  refundreason: 'refund_reason',
-  reason: 'refund_reason',
-  refund_cause: 'refund_reason',
-
-  refunddate: 'refund_date',
-  refund_datetime: 'refund_date',
-
-  refundamount: 'refund_amount',
-  refunded_amount: 'refund_amount',
-
-  paymentmethod: 'payment_method',
-  payment_type: 'payment_method',
-  payment: 'payment_method',
-
-  ip: 'ip_address',
-  ipaddress: 'ip_address',
-  client_ip: 'ip_address',
-
-  device: 'device_id',
-  deviceid: 'device_id',
-  device_fingerprint: 'device_id',
-
-  cardfp: 'card_fingerprint',
-  card_fingerprint: 'card_fingerprint',
-  card_token: 'card_fingerprint',
-
-  bin: 'card_bin',
-  cardbin: 'card_bin',
-  card_bin: 'card_bin',
-
-  last4: 'card_last4',
-  cardlast4: 'card_last4',
-  card_last_four: 'card_last4',
-
-  browserfp: 'browser_fingerprint',
-  browser_fingerprint: 'browser_fingerprint',
-
-  cookie: 'cookie_id',
-  cookieid: 'cookie_id',
-
-  useragent: 'user_agent',
-  ua: 'user_agent',
-
-  account: 'account_id',
-  accountid: 'account_id',
-  user_id: 'account_id',
-  customer_id: 'account_id',
-
-  groundtruth: 'ground_truth_label',
-  ground_truth: 'ground_truth_label',
-  label: 'ground_truth_label',
-  is_fraud: 'ground_truth_label',
-  fraud_label: 'ground_truth_label',
+  // ── Derived from HEADER_ALIASES (single source of truth) ─────────────────
+  ...Object.fromEntries(
+    (Object.entries(HEADER_ALIASES) as [string, string[]][]).flatMap(
+      ([field, aliases]) =>
+        aliases.map((alias) => [alias.trim().toLowerCase().replace(/\s+/g, '_'), field]),
+    ),
+  ),
 };
 
 export function cleanHeader(raw: string): string {

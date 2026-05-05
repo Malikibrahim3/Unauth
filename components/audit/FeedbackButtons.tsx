@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { track } from '@/lib/analytics/amplitude';
 
 interface FeedbackButtonsProps {
   transactionId: string;
@@ -25,6 +26,9 @@ export default function FeedbackButtons({ transactionId, signalsThatFired }: Fee
         }),
       });
       setSubmitted(outcome);
+      // Note: never send 'fraud' in analytics — use outcome mapping
+      const analyticsOutcome = outcome === 'confirmed_fraud' ? 'confirmed_same' : 'confirmed_different';
+      track('Feedback Submitted', { outcome: analyticsOutcome });
     } finally {
       setLoading(false);
     }

@@ -1,6 +1,7 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { logAction } from '@/lib/permissions/audit';
+import { writeActivityLog } from '@/lib/customers/activityLog';
 import { NextRequest, NextResponse } from 'next/server';
 
 const VALID_STATUSES = ['new', 'under_review', 'contacted', 'resolved', 'cleared'] as const;
@@ -37,7 +38,7 @@ export async function PATCH(
   // Verify the customer profile belongs to this merchant
   const { data: profile } = await serviceClient
     .from('customer_profiles')
-    .select('id')
+    .select('id, investigation_status')
     .eq('id', params.id)
     .contains('merchant_ids', JSON.stringify([ctx.merchantId]))
     .maybeSingle();
@@ -45,6 +46,8 @@ export async function PATCH(
   if (!profile) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
+
+  const previousStatus = (profile as any).investigation_status ?? 'new';
 
   const { data, error } = await serviceClient
     .from('customer_profiles')
@@ -64,6 +67,14 @@ export async function PATCH(
     resourceId: params.id,
     metadata: { newStatus: body.status },
     ip,
+  });
+
+  await writeActivityLog({
+    supabase: serviceClient,
+    profileId: params.id,
+    merchantId: ctx.merchantId,
+    eventType: 'status_changed',
+    eventData: { from: previousStatus, to: body.status },
   });
 
   return NextResponse.json(data);

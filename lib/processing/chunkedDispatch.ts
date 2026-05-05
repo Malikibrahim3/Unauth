@@ -117,6 +117,18 @@ export async function dispatchChunk(
 
 /** Compute origin URL from a NextRequest. Falls back to env var. */
 export function originFromRequest(req: Request): string {
+  try {
+    const u = new URL(req.url);
+    // In local dev the app can hop to another port if 3000 is busy.
+    // Prefer the actual request origin so chunk dispatch stays on the same
+    // running server instead of drifting to a stale env var.
+    if (u.hostname === 'localhost' || u.hostname === '127.0.0.1') {
+      return `${u.protocol}//${u.host}`;
+    }
+  } catch {
+    // fall through to env / default below
+  }
+
   const env = process.env.NEXT_PUBLIC_APP_URL ?? process.env.VERCEL_URL;
   if (env) return env.startsWith('http') ? env : `https://${env}`;
   // Derive from the incoming request URL.

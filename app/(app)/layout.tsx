@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import Sidebar from '@/components/nav/Sidebar';
 import AppHeader from '@/components/layout/AppHeader';
 import DemoBanner from '@/components/common/DemoBanner';
+import AmplitudeInit from '@/components/common/AmplitudeInit';
 import { headers } from 'next/headers';
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -38,6 +39,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     .select('is_demo')
     .limit(20);
 
+  const { data: merchantProfile } = await supabase
+    .from('merchants')
+    .select('id, name, monthly_order_volume, primary_fraud_concern')
+    .eq('user_id', user.id)
+    .maybeSingle();
+
   const allDemo =
     (jobs ?? []).length > 0 &&
     (jobs as unknown as Array<{ is_demo: boolean }>).every((j) => j.is_demo);
@@ -54,6 +61,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     >
       {/* ── Sidebar ── */}
       <Sidebar merchantName={null} userEmail={user.email ?? ''} />
+
+      {/* Amplitude — initialise after session confirmed */}
+      <AmplitudeInit
+        merchantId={(merchantProfile as any)?.id ?? null}
+        storeName={(merchantProfile as any)?.name ?? null}
+        monthlyOrderVolume={(merchantProfile as any)?.monthly_order_volume ?? null}
+        primaryConcern={(merchantProfile as any)?.primary_fraud_concern ?? null}
+      />
 
       {/* ── Right column ── */}
       <div className="flex flex-1 flex-col overflow-hidden">

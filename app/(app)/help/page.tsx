@@ -1,7 +1,15 @@
 import Link from 'next/link';
-import { BookOpen, FileText, HelpCircle } from 'lucide-react';
+import { BookOpen, FileText, HelpCircle, Info } from 'lucide-react';
 
 const ARTICLES = [
+  {
+    icon: Info,
+    title: 'How Unauth works',
+    description:
+      'How identity analysis works, how uploads build on each other, and how the chargeback evidence is generated.',
+    href: '/help/how-it-works',
+    comingSoon: false,
+  },
   {
     icon: FileText,
     title: 'Exporting your orders CSV',

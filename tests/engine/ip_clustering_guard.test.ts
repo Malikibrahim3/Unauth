@@ -123,10 +123,40 @@ describe('IP-only clustering guard (§5.2)', () => {
     // so totalScore should be 0 and grade should be null for all.
     const orders: NormalisedOrder[] = [];
 
+    // Spread each customer's 3 orders across distinct timestamps ≥72 hours
+    // apart, randomised per customer, inside the past 6 months. This is
+    // purely a data-shape fix: velocity fires on bursts within 1h/24h/7d
+    // windows, and without this spreading every customer would look like
+    // a 3-orders-in-zero-seconds burst. The assertions below are unchanged
+    // — we're still testing that shared IP alone cannot anchor 'probable'.
+    //
+    // Deterministic seeded PRNG so CI reproduces the same schedule.
+    const seededRandom = (seed: number) => {
+      let s = seed | 0;
+      return () => {
+        s = (s * 1664525 + 1013904223) | 0;
+        return ((s >>> 0) % 100_000) / 100_000;
+      };
+    };
+    const MS_PER_HOUR = 3_600_000;
+    const WINDOW_START = new Date('2024-01-01T00:00:00Z').getTime();
+    const WINDOW_END = new Date('2024-06-30T00:00:00Z').getTime();
+    const WINDOW_DAYS = (WINDOW_END - WINDOW_START) / (MS_PER_HOUR * 24);
+
     for (let i = 0; i < 50; i++) {
+      const rand = seededRandom(1000 + i);
+      // Pick a unique customer anchor day somewhere in the 6-month window,
+      // leaving room for 2 more orders each ≥72h later.
+      const anchorDay = Math.floor(rand() * (WINDOW_DAYS - 10));
+      // Gaps of 72–240 hours between each of the 3 orders — guaranteed to
+      // place all three outside the 7d velocity bucket.
+      const gapHours = [0, 72 + Math.floor(rand() * 168), 72 + Math.floor(rand() * 168)];
+      let cursor = WINDOW_START + anchorDay * 24 * MS_PER_HOUR;
       for (let j = 0; j < 3; j++) {
+        cursor += gapHours[j] * MS_PER_HOUR;
         orders.push(makeOrder({
           orderId: `order-ip-only-${i}-${j}`,
+          orderDate: new Date(cursor),
           emailHash: `ip-only-email-${i}`, // same email within customer, unique across customers
           addressHash: `ip-only-addr-${i}`,
           ipHash: SHARED_IP,

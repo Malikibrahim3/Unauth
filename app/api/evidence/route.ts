@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { requirePermission, PERMISSIONS } from '@/lib/permissions'
 import { logAction } from '@/lib/permissions/audit'
+import { writeActivityLog } from '@/lib/customers/activityLog'
 import { buildEvidencePackage } from '@/lib/evidence/buildPackage'
 import { buildNarrative } from '@/lib/evidence/narrative'
 import { renderEvidencePDF } from '@/lib/evidence/pdf'
@@ -131,6 +132,14 @@ export async function POST(request: NextRequest) {
     resourceId: (inserted as any).id,
     metadata: { customerProfileId, disputedOrderId, referenceNumber: pkg.referenceNumber },
     ip,
+  })
+
+  await writeActivityLog({
+    supabase: serviceRole,
+    profileId: customerProfileId,
+    merchantId: ctx.merchantId,
+    eventType: 'evidence_generated',
+    eventData: { reference_number: pkg.referenceNumber },
   })
 
   return NextResponse.json({

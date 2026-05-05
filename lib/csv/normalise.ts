@@ -1,26 +1,31 @@
 import type { CsvRow } from './schema';
 import type { NormalisedOrder } from '../engine/types';
 import { hashIdentifier, normaliseEmail, normaliseAddress, normalisePhone } from '../identity/hash';
-import { cleanOrderStatus, cleanRefundStatus, cleanRefundReason, cleanCurrency, cleanGroundTruth } from './clean';
+import { cleanOrderStatus, cleanRefundStatus, cleanRefundReason, cleanCurrency, cleanGroundTruth, cleanBoolean } from './clean';
 
 export interface NormalisedOrderWithRawEmail extends NormalisedOrder {
   _rawEmail: string;
   _rawIP?: string | null;
   _rawAddress?: string | null;
+  _rawPhone?: string | null;
+  _rawPostcode?: string | null;
   _rawCardLast4?: string | null;
+  _rawCardBin?: string | null;
+  _rawDeviceId?: string | null;
+  _rawAccountId?: string | null;
 }
 
 export function normaliseRow(row: CsvRow): NormalisedOrderWithRawEmail {
-  const normEmail = normaliseEmail(row.customer_email);
+  const normEmail = normaliseEmail(row.customer_email ?? '');
   const emailHash = hashIdentifier(normEmail);
 
-  const normAddress = normaliseAddress(row.shipping_address);
+  const normAddress = row.shipping_address ? normaliseAddress(row.shipping_address) : null;
   const addressHash = normAddress ? hashIdentifier(normAddress) : null;
 
   const normPhone = row.customer_phone ? normalisePhone(row.customer_phone) : null;
   const phoneHash = normPhone ? hashIdentifier(normPhone) : null;
 
-  const normName = row.customer_name.toLowerCase().trim().replace(/\s+/g, ' ');
+  const normName = (row.customer_name ?? '').toLowerCase().trim().replace(/\s+/g, ' ');
   const nameHash = normName ? hashIdentifier(normName) : null;
 
   const normBilling = row.billing_address ? normaliseAddress(row.billing_address) : null;
@@ -108,10 +113,21 @@ export function normaliseRow(row: CsvRow): NormalisedOrderWithRawEmail {
     refundAmount: row.refund_amount ? parseFloat(row.refund_amount) : null,
     paymentMethod: row.payment_method ?? null,
     groundTruthLabel: cleanedGroundTruth,
+    // Dispute-history intelligence (§1 consortium signal).
+    // Coerced with cleanBoolean which returns null for missing/unrecognised
+    // cells so "absent" doesn't silently collapse into false.
+    chargebackDispute: cleanBoolean(row.chargeback_dispute),
+    refundRequested: cleanBoolean(row.refund_requested),
+    returnRequested: cleanBoolean(row.return_requested),
     _rawEmail: row.customer_email,
     _rawIP: normIp,
     _rawAddress: normAddress,
+    _rawPhone: normPhone,
+    _rawPostcode: row.shipping_postcode?.trim() || row.postcode?.trim() || null,
     _rawCardLast4: normLast4,
+    _rawCardBin: normBin,
+    _rawDeviceId: normDevice,
+    _rawAccountId: normAccountId,
   };
 }
 

@@ -4,10 +4,10 @@ import React from 'react';
 import AuditCharts from './AuditCharts';
 
 interface Counts {
-  critical: number;
-  high: number;
-  medium: number;
-  low: number;
+  definite: number;
+  probable: number;
+  possible: number;
+  weak: number;
 }
 
 interface Props {
@@ -17,7 +17,7 @@ interface Props {
 }
 
 export default function AuditRiskChart({ counts, totalRows, totalFlagged }: Props) {
-  const summed = counts.critical + counts.high + counts.medium + counts.low;
+  const summed = counts.definite + counts.probable + counts.possible + counts.weak;
   const finalTotalFlagged = typeof totalFlagged === 'number' ? totalFlagged : summed;
   const finalTotalRows = typeof totalRows === 'number' ? totalRows : finalTotalFlagged;
 

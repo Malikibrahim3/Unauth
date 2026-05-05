@@ -218,9 +218,9 @@ async function runAudit(
   }
   log(`chunk staging complete`);
 
-  // ── Dispatch chunk 0 — the chain self-propagates from there ───────────────
+  // ── Dispatch chunk 0 — fire-and-forget, the chain self-propagates ────────
   log(`dispatching chunk 0 origin=${originFromRequest(request)}`);
-  await dispatchChunk(originFromRequest(request), {
+  void dispatchChunk(originFromRequest(request), {
     jobId,
     chunkIndex: 0,
     totalChunks,
@@ -228,12 +228,17 @@ async function runAudit(
     columnMap,
     storagePath: filePath,
   });
-  log('chunk 0 dispatched');
+  log('chunk 0 dispatched (fire-and-forget)');
 
   return NextResponse.json({
     runId: jobId,
     status: 'processing',
     rowCount: parseResult.rowCount,
     totalChunks,
+    // Non-fatal: columns in the CSV that didn't map to any known canonical field.
+    // The frontend can surface these as "we ignored N column(s)" for transparency.
+    ...(parseResult.unmappedHeaders.length > 0
+      ? { warnings: { unmappedHeaders: parseResult.unmappedHeaders } }
+      : {}),
   });
 }

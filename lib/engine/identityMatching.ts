@@ -1,7 +1,7 @@
-import { createHash } from 'node:crypto';
 import type { NormalisedOrder } from './types';
-import type { FastScoringContext, FraudEntity } from './fastContext';
+import type { FastScoringContext } from './fastContext';
 import type { IdentityAlert } from './types';
+import { linkIdentities, type LinkerOrderInput, type LinkerSignal } from '../linker';
 
 interface IdentityCluster {
   clusterId: string;
@@ -17,487 +17,219 @@ export interface IdentityClusterMap {
   [orderId: string]: IdentityCluster | null;
 }
 
-// Helper: Normalize address for fuzzy matching
-function normalizeAddress(address: string): string {
-  return address
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-// Helper: Check if addresses are similar (fuzzy match)
-function addressesSimilar(addr1: string, addr2: string): boolean {
-  const norm1 = normalizeAddress(addr1);
-  const norm2 = normalizeAddress(addr2);
-
-  if (norm1 === norm2) return true;
-
-  // Simple word overlap check
-  const words1 = new Set(norm1.split(' '));
-  const words2 = new Set(norm2.split(' '));
-
-  const intersection = new Set(Array.from(words1).filter((x) => words2.has(x)));
-  const union = new Set([...Array.from(words1), ...Array.from(words2)]);
-
-  return intersection.size / union.size > 0.6; // 60% similarity threshold
-}
-
-// Helper: Extract email domain
-function getEmailDomain(email: string): string {
-  const parts = email.toLowerCase().split('@');
-  return parts.length > 1 ? parts[1] : '';
-}
-
-// Helper: Check if order values are within 10%
-function valuesWithin10Percent(val1: number, val2: number): boolean {
-  const avg = (val1 + val2) / 2;
-  if (avg === 0) return val1 === val2;
-  const diff = Math.abs(val1 - val2);
-  return diff / avg <= 0.1;
-}
-
-// Helper: Extract item category from order (simplified - would need product catalog in production)
-function getItemCategory(order: NormalisedOrder): string {
-  if (order.orderTotal < 50) return 'low_value';
-  if (order.orderTotal < 200) return 'mid_value';
-  return 'high_value';
-}
-
-// Stable cluster_id derived from the strongest matched entity. Two orders
-// matched through the same entity get the same cluster_id, and re-running the
-// pipeline produces the same id — so fraud_identity_clusters is not bloated by
-// reprocessing (the previous implementation used crypto.randomUUID() per
-// order, producing a fresh row every time).
-function deterministicClusterId(entityType: string, entityValue: string): string {
-  const h = createHash('sha256').update(`${entityType}:${entityValue}`).digest('hex');
-  // Format as a UUIDv4-ish string so the column type stays compatible
-  return `${h.slice(0, 8)}-${h.slice(8, 12)}-4${h.slice(13, 16)}-${h.slice(16, 20)}-${h.slice(20, 32)}`;
-}
-
-interface RawIdentifiers {
+/**
+ * Raw identifiers lifted off a NormalisedOrder for downstream lookups.
+ * These carry the canonical, non-hashed values written by csv/normalise.ts
+ * through the `_rawEmail` / `_rawIP` / `_rawAddress` / `_rawCardLast4`
+ * carry-through properties.
+ */
+interface OrderRawIds {
   email: string;
   ip: string;
   address: string;
   card: string;
-  name: string;
+  phone: string;
+  postcode: string;
+  device: string;
+  account: string;
+  billingAddress: string;
 }
 
-function extractRawIdentifiers(order: NormalisedOrder): RawIdentifiers {
+function extractOrderRawIds(order: NormalisedOrder): OrderRawIds {
   const o = order as NormalisedOrder & {
     _rawEmail?: string;
     _rawIP?: string | null;
     _rawAddress?: string | null;
     _rawCardLast4?: string | null;
+    _rawPhone?: string | null;
+    _rawPostcode?: string | null;
+    _rawDevice?: string | null;
+    _rawDeviceId?: string | null;
+    _rawAccount?: string | null;
+    _rawAccountId?: string | null;
+    _rawBillingAddress?: string | null;
+    _rawCardBin?: string | null;
   };
   return {
-    email: o._rawEmail?.toLowerCase().trim() ?? '',
-    ip: o._rawIP?.trim().toLowerCase() ?? '',
-    address: o._rawAddress?.trim().toLowerCase() ?? '',
-    card: o._rawCardLast4?.trim() ?? '',
-    name: order.customerNameNorm?.trim() ?? '',
+    email: o._rawEmail ?? '',
+    ip: o._rawIP ?? '',
+    address: o._rawAddress ?? '',
+    card: o._rawCardLast4 ?? '',
+    phone: o._rawPhone ?? '',
+    postcode: o._rawPostcode ?? '',
+    device: o._rawDevice ?? o._rawDeviceId ?? '',
+    account: o._rawAccount ?? o._rawAccountId ?? '',
+    billingAddress: o._rawBillingAddress ?? '',
   };
-}
-
-// In-batch peer match: shared identifier types between this order and another
-// order in the same batch. IP alone is intentionally insufficient — see the
-// constraint comment in matchInBatch().
-interface PeerOverlap {
-  peerOrderId: string;
-  peerEmail: string;
-  sharedTypes: Set<'ip' | 'address' | 'card' | 'name'>;
-  reasons: string[];
-  // Strongest entity used to anchor the cluster_id.
-  anchorType: 'card_last4' | 'address' | 'ip';
-  anchorValue: string;
 }
 
 /**
- * Find an in-batch peer that shares enough identifiers with this order to
- * justify clustering, returning the strongest match.
+ * Choose a stable anchor (entityType, entityValue) for a cluster so that
+ * downstream consumers (generateIdentityAlert, fraud_identity_clusters
+ * upserts) can look the cluster up in the historical maps. The anchor
+ * priority mirrors the linker signal strength order: card → phone →
+ * device → account → email → postcode → ip.
  *
- * IP-ONLY CONSTRAINT (critical):
- *   IP can be shared by genuinely unrelated customers via NAT, mobile
- *   carriers, shared office networks, VPNs, and CGNAT. We never cluster two
- *   orders on IP alone. A peer with only `ip` in sharedTypes is rejected.
- *   This mirrors the IP-only downgrade in scoreBatch (lib/engine/fastScore.ts
- *   §5.2).
+ * Values are taken from the FIRST member order's raw fields and therefore
+ * use the same normalisation that populates ctx.historical*Map — do NOT
+ * substitute the linker's own normalised form here.
  */
-function matchInBatch(
-  order: NormalisedOrder,
-  ids: RawIdentifiers,
-  indexes: {
-    byIp: Map<string, NormalisedOrder[]>;
-    byAddress: Map<string, NormalisedOrder[]>;
-    byCard: Map<string, NormalisedOrder[]>;
-    byName: Map<string, NormalisedOrder[]>;
-  }
-): PeerOverlap | null {
-  const peerMap = new Map<string, PeerOverlap>();
-
-  const addOverlap = (
-    peer: NormalisedOrder,
-    type: 'ip' | 'address' | 'card' | 'name',
-    reason: string
-  ) => {
-    if (peer.orderId === order.orderId) return;
-    const peerIds = extractRawIdentifiers(peer);
-    // Only treat the peer as a candidate match if at least one identifier
-    // (the email itself) actually differs — otherwise the same identity has
-    // simply placed multiple orders, which is not a "cluster".
-    if (peerIds.email && peerIds.email === ids.email) return;
-    let entry = peerMap.get(peer.orderId);
-    if (!entry) {
-      entry = {
-        peerOrderId: peer.orderId,
-        peerEmail: peerIds.email,
-        sharedTypes: new Set(),
-        reasons: [],
-        anchorType: 'ip',
-        anchorValue: ids.ip || ids.address || ids.card,
-      };
-      peerMap.set(peer.orderId, entry);
+function chooseAnchor(
+  signals: Set<LinkerSignal> | LinkerSignal[],
+  members: NormalisedOrder[]
+): { entityType: string; entityValue: string } {
+  const sigSet = signals instanceof Set ? signals : new Set(signals);
+  const firstWith = (pred: (ids: OrderRawIds) => string | null | undefined) => {
+    for (const m of members) {
+      const ids = extractOrderRawIds(m);
+      const v = pred(ids);
+      if (v) return v;
     }
-    if (!entry.sharedTypes.has(type)) {
-      entry.sharedTypes.add(type);
-      entry.reasons.push(reason);
-    }
+    return '';
   };
 
-  if (ids.ip) {
-    for (const peer of indexes.byIp.get(ids.ip) ?? []) {
-      addOverlap(peer, 'ip', `Same IP address (${ids.ip}) seen on another order in this batch`);
-    }
+  if (sigSet.has('card')) {
+    const v = firstWith((i) => (i.card ? i.card.replace(/\D/g, '').slice(-4) : ''));
+    if (v) return { entityType: 'card_last4', entityValue: v };
   }
-  if (ids.address) {
-    for (const peer of indexes.byAddress.get(ids.address) ?? []) {
-      addOverlap(peer, 'address', 'Same shipping address used by another customer in this batch');
-    }
+  if (sigSet.has('phone')) {
+    const v = firstWith((i) => (i.phone ? i.phone.replace(/\D/g, '').slice(-10) : ''));
+    if (v) return { entityType: 'phone', entityValue: v };
   }
-  if (ids.card) {
-    for (const peer of indexes.byCard.get(ids.card) ?? []) {
-      addOverlap(peer, 'card', 'Same payment card last 4 digits used by another customer in this batch');
-    }
+  if (sigSet.has('device')) {
+    const v = firstWith((i) => i.device);
+    if (v) return { entityType: 'device', entityValue: v };
   }
-  if (ids.name) {
-    for (const peer of indexes.byName.get(ids.name) ?? []) {
-      addOverlap(peer, 'name', 'Same customer name used by another email address in this batch');
-    }
+  if (sigSet.has('account')) {
+    const v = firstWith((i) => i.account);
+    if (v) return { entityType: 'account_id', entityValue: v };
   }
-
-  // Score each peer and pick the strongest. IP-only peers are skipped — they
-  // would otherwise allow shared-network orders (NAT, carrier, office) to be
-  // clustered as the same identity, which damages merchant trust.
-  let best: { peer: PeerOverlap; confidence: number } | null = null;
-
-  for (const peer of Array.from(peerMap.values())) {
-    const types = peer.sharedTypes;
-
-    // Hard rejection: IP alone is not sufficient corroboration.
-    if (types.size === 1 && types.has('ip')) continue;
-
-    let confidence = 0;
-    let anchorType: 'card_last4' | 'address' | 'ip' = 'ip';
-    let anchorValue = ids.ip;
-
-    if (types.has('card') && types.has('address')) {
-      confidence = 90;                                // strong: card + address
-      anchorType = 'card_last4';
-      anchorValue = ids.card;
-    } else if (types.has('ip') && types.has('address') && types.has('name')) {
-      confidence = 92;                                // strong: ip + address + name
-      anchorType = 'address';
-      anchorValue = ids.address;
-    } else if (types.has('ip') && types.has('address')) {
-      confidence = 85;                                // strong: ip + address (Alice/Bob synthetic case)
-      anchorType = 'address';
-      anchorValue = ids.address;
-    } else if (types.has('address') && types.has('name')) {
-      confidence = 80;                                // strong: address + name (different email)
-      anchorType = 'address';
-      anchorValue = ids.address;
-    } else if (types.has('card')) {
-      confidence = 80;                                // card last4 alone (different email/name)
-      anchorType = 'card_last4';
-      anchorValue = ids.card;
-    } else if (types.has('address')) {
-      confidence = 65;                                // address alone (different email)
-      anchorType = 'address';
-      anchorValue = ids.address;
-    } else if (types.has('ip') && types.has('name')) {
-      confidence = 60;                                // ip + name (no address)
-      anchorType = 'ip';
-      anchorValue = ids.ip;
-    } else if (types.has('name')) {
-      confidence = 35;                                // name alone — weak
-      anchorType = 'address';
-      anchorValue = ids.address || ids.ip;
-    } else {
-      continue;
-    }
-
-    if (!best || confidence > best.confidence) {
-      best = { peer: { ...peer, anchorType, anchorValue }, confidence };
-    }
+  if (sigSet.has('email')) {
+    const v = firstWith((i) => (i.email ? i.email.toLowerCase().trim() : ''));
+    if (v) return { entityType: 'email', entityValue: v };
   }
-
-  return best?.peer ?? null;
+  if (sigSet.has('postcode')) {
+    const v = firstWith((i) => (i.postcode ? i.postcode.toUpperCase().replace(/\s+/g, '') : ''));
+    if (v) return { entityType: 'postcode', entityValue: v };
+  }
+  if (sigSet.has('ip')) {
+    const v = firstWith((i) => i.ip);
+    if (v) return { entityType: 'ip', entityValue: v };
+  }
+  return { entityType: 'unknown', entityValue: '' };
 }
 
+/**
+ * Render a human-readable reason list from the matched signals. Consumed by
+ * generateIdentityAlert and the fraud_identity_clusters UI.
+ */
+function reasonsFromSignals(signals: LinkerSignal[]): string[] {
+  const PHRASES: Record<LinkerSignal, string> = {
+    card: 'Same payment card (BIN + last 4) shared across orders',
+    phone: 'Same phone number shared across orders',
+    device: 'Same device fingerprint shared across orders',
+    account: 'Same merchant account ID shared across orders',
+    email: 'Same email base (dots/aliases ignored) shared across orders',
+    postcode: 'Same postcode shared across orders',
+    ip: 'Same IP address shared across orders (corroborating signal only)',
+  };
+  return signals.map((s) => PHRASES[s]);
+}
+
+/**
+ * Build a per-order identity cluster map for an in-memory batch.
+ *
+ * This function is a thin adapter over `lib/linker.ts`. The linker does the
+ * real work — normalise, index, score pairs, union-find — and returns
+ * clusters in a clean shape. We translate those clusters into the
+ * IdentityClusterMap contract that worker.ts / fastScore.ts expect.
+ *
+ * Historical enrichment (fraud_entities / customer_profiles lookups) is
+ * deliberately NOT performed here anymore. The linker does one job —
+ * in-batch identity linking. Historical risk data is still consumed
+ * separately by `generateIdentityAlert` below, which reads
+ * ctx.historical*Map via the cluster's entityValue.
+ *
+ * The `ctx` parameter is kept for backwards-compatible call sites (worker.ts
+ * passes it) but is intentionally unused by the linker itself — mark with
+ * `void` so lints stay clean.
+ */
 export async function buildIdentityClusters(
   orders: NormalisedOrder[],
   ctx: FastScoringContext
 ): Promise<IdentityClusterMap> {
-  const clusterMap: IdentityClusterMap = {};
+  void ctx;
 
-  // ---------------------------------------------------------------------
-  // In-batch indexes — built once, reused for every order.
-  // The previous implementation only matched against historical Supabase
-  // entities, which meant two orders that arrived in the same upload
-  // sharing IP+address could not be linked unless one was already in
-  // history. That blind spot let the most obvious duplicate-identity
-  // pattern (refund-fraud rings uploading bursts of orders) slip through.
-  // ---------------------------------------------------------------------
-  const byIp = new Map<string, NormalisedOrder[]>();
-  const byAddress = new Map<string, NormalisedOrder[]>();
-  const byCard = new Map<string, NormalisedOrder[]>();
-  const byName = new Map<string, NormalisedOrder[]>();
+  // Build linker inputs from the raw fields we plumbed through csv/normalise.ts.
+  // billing_address is intentionally skipped — the linker uses shipping
+  // postcode (and explicit device/account/card/phone) for linking, not
+  // addresses.
+  const linkerInput: LinkerOrderInput[] = orders.map((o) => {
+    const ids = extractOrderRawIds(o);
+    const x = o as NormalisedOrder & { _rawCardBin?: string | null };
+    return {
+      order_id: o.orderId,
+      email: ids.email || null,
+      phone: ids.phone || null,
+      address: ids.address || null,
+      // Extract postcode from the explicit column if present; otherwise try
+      // the trailing token of the address (UK postcodes conventionally sit
+      // at the end of the shipping_address string).
+      postcode: ids.postcode || postcodeFromAddress(ids.address) || null,
+      ip: ids.ip || null,
+      card_last4: ids.card || null,
+      card_bin: x._rawCardBin ?? null,
+      device_fingerprint: ids.device || null,
+      account_id: ids.account || null,
+    };
+  });
 
-  for (const o of orders) {
-    const ids = extractRawIdentifiers(o);
-    if (ids.ip) (byIp.get(ids.ip) ?? byIp.set(ids.ip, []).get(ids.ip)!).push(o);
-    if (ids.address) (byAddress.get(ids.address) ?? byAddress.set(ids.address, []).get(ids.address)!).push(o);
-    if (ids.card) (byCard.get(ids.card) ?? byCard.set(ids.card, []).get(ids.card)!).push(o);
-    if (ids.name) (byName.get(ids.name) ?? byName.set(ids.name, []).get(ids.name)!).push(o);
+  const linkerResult = linkIdentities(linkerInput);
+  const { clusters } = linkerResult;
+
+  // Build an order_id → cluster index for quick lookup.
+  const memberById = new Map<string, NormalisedOrder>();
+  for (const o of orders) memberById.set(o.orderId, o);
+
+  const now = new Date().toISOString();
+  const map: IdentityClusterMap = {};
+  for (const o of orders) map[o.orderId] = null;
+
+  for (const cluster of clusters) {
+    const members = cluster.order_ids
+      .map((id) => memberById.get(id))
+      .filter((m): m is NormalisedOrder => !!m);
+    if (members.length < 2) continue;
+
+    const anchor = chooseAnchor(cluster.signals_matched, members);
+    const record: IdentityCluster = {
+      clusterId: cluster.cluster_id,
+      entityType: anchor.entityType,
+      entityValue: anchor.entityValue,
+      confidence: cluster.confidence_score,
+      matchReasons: reasonsFromSignals(cluster.signals_matched),
+      firstSeen: now,
+      lastSeen: now,
+    };
+    for (const id of cluster.order_ids) {
+      map[id] = record;
+    }
   }
 
-  for (const order of orders) {
-    const ids = extractRawIdentifiers(order);
-
-    if (!ids.email) {
-      clusterMap[order.orderId] = null;
-      continue;
-    }
-
-    let matchedCluster: IdentityCluster | null = null;
-    const now = new Date().toISOString();
-
-    // -------------------------------------------------------------------
-    // Pass 1 — In-batch peer match.
-    // Always considered first because the batch is the freshest evidence
-    // and historical maps may not contain identifiers seen for the first
-    // time in this upload.
-    // -------------------------------------------------------------------
-    const peer = matchInBatch(order, ids, { byIp, byAddress, byCard, byName });
-    if (peer) {
-      const clusterId = deterministicClusterId(peer.anchorType, peer.anchorValue);
-      matchedCluster = {
-        clusterId,
-        entityType: peer.anchorType,
-        entityValue: peer.anchorValue,
-        confidence: scoreFromTypes(peer.sharedTypes),
-        matchReasons: peer.reasons,
-        firstSeen: now,
-        lastSeen: now,
-      };
-    }
-
-    // -------------------------------------------------------------------
-    // Pass 2 — Historical match (preserved from prior implementation,
-    // refactored to use deterministic cluster_ids). Skipped if a strong
-    // in-batch match already exists; otherwise considered as an
-    // alternative or upgrade.
-    // -------------------------------------------------------------------
-    matchedCluster = strongestOf(matchedCluster, historicalMatch(order, ids, ctx, now));
-
-    clusterMap[order.orderId] = matchedCluster;
-  }
-
-  return clusterMap;
+  return map;
 }
 
-function scoreFromTypes(types: Set<'ip' | 'address' | 'card' | 'name'>): number {
-  if (types.has('card') && types.has('address')) return 90;
-  if (types.has('ip') && types.has('address') && types.has('name')) return 92;
-  if (types.has('ip') && types.has('address')) return 85;
-  if (types.has('address') && types.has('name')) return 80;
-  if (types.has('card')) return 80;
-  if (types.has('address')) return 65;
-  if (types.has('ip') && types.has('name')) return 60;
-  if (types.has('name')) return 35;
-  return 0;
-}
-
-function strongestOf(
-  a: IdentityCluster | null,
-  b: IdentityCluster | null
-): IdentityCluster | null {
-  if (!a) return b;
-  if (!b) return a;
-  return b.confidence > a.confidence ? b : a;
-}
-
-function historicalMatch(
-  order: NormalisedOrder,
-  ids: RawIdentifiers,
-  ctx: FastScoringContext,
-  now: string
-): IdentityCluster | null {
-  // Priority 1 — Hard match (95): same card + email-was-different historically.
-  if (ids.card) {
-    const cardRecord = ctx.historicalCardMap.get(ids.card);
-    if (cardRecord) {
-      // If the historical card has been seen with email(s) other than this one,
-      // that's the strong "stolen card / shared payment" signal.
-      let differentEmailExists = false;
-      for (const [emailValue] of Array.from(ctx.historicalEmailMap.entries())) {
-        if (emailValue && emailValue !== ids.email) {
-          differentEmailExists = true;
-          break;
-        }
-      }
-      if (differentEmailExists) {
-        return {
-          clusterId: deterministicClusterId('card_last4', ids.card),
-          entityType: 'card_last4',
-          entityValue: ids.card,
-          confidence: 95,
-          matchReasons: ['Same payment card previously used with a different email address'],
-          firstSeen: cardRecord.first_seen,
-          lastSeen: cardRecord.last_seen,
-        };
-      }
-    }
-  }
-
-  // Priority 2a — Strong (92): same IP + same shipping address (history).
-  if (ids.ip && ids.address) {
-    const ipRecord = ctx.historicalIPMap.get(ids.ip);
-    let addressRecord: FraudEntity | undefined = ctx.historicalAddressMap.get(ids.address);
-    if (!addressRecord) {
-      const norm = normalizeAddress(ids.address);
-      for (const [addrValue, addrRec] of Array.from(ctx.historicalAddressMap.entries())) {
-        if (normalizeAddress(addrValue) === norm) {
-          addressRecord = addrRec;
-          break;
-        }
-      }
-    }
-    if (ipRecord && addressRecord) {
-      return {
-        clusterId: deterministicClusterId('address', ids.address),
-        entityType: 'ip',
-        entityValue: ids.ip,
-        confidence: 92,
-        matchReasons: ['Same IP address and shipping address as a previous customer'],
-        firstSeen: ipRecord.first_seen,
-        lastSeen: ipRecord.last_seen,
-      };
-    }
-  }
-
-  // Priority 2b — Strong (88): same card + same shipping address (history).
-  if (ids.card && ids.address) {
-    const cardRecord = ctx.historicalCardMap.get(ids.card);
-    const addressRecord = ctx.historicalAddressMap.get(ids.address);
-    if (cardRecord && addressRecord) {
-      return {
-        clusterId: deterministicClusterId('card_last4', ids.card),
-        entityType: 'card_last4',
-        entityValue: ids.card,
-        confidence: 88,
-        matchReasons: ['Same payment card and shipping address as a previous customer'],
-        firstSeen: cardRecord.first_seen,
-        lastSeen: cardRecord.last_seen,
-      };
-    }
-  }
-
-  // Priority 3 — Probable (70): same IP + fuzzy-similar address (history).
-  if (ids.ip && ids.address) {
-    for (const [addrValue, addrRec] of Array.from(ctx.historicalAddressMap.entries())) {
-      if (addressesSimilar(ids.address, addrValue)) {
-        return {
-          clusterId: deterministicClusterId('address', addrValue),
-          entityType: 'ip',
-          entityValue: ids.ip,
-          confidence: 70,
-          matchReasons: ['Same IP address with a similar shipping address to a previous customer'],
-          firstSeen: addrRec.first_seen,
-          lastSeen: addrRec.last_seen,
-        };
-      }
-    }
-  }
-
-  // Priority 4 — Probable (65): same IP + same email domain (history).
-  if (ids.ip && ids.email) {
-    const ipRecord = ctx.historicalIPMap.get(ids.ip);
-    if (ipRecord) {
-      const domain = getEmailDomain(ids.email);
-      for (const [emailValue, emailRec] of Array.from(ctx.historicalEmailMap.entries())) {
-        if (emailValue !== ids.email && getEmailDomain(emailValue) === domain) {
-          return {
-            clusterId: deterministicClusterId('ip', ids.ip),
-            entityType: 'ip',
-            entityValue: ids.ip,
-            confidence: 65,
-            matchReasons: ['Same IP address previously used with an email from the same domain'],
-            firstSeen: emailRec.first_seen,
-            lastSeen: emailRec.last_seen,
-          };
-        }
-      }
-    }
-  }
-
-  // Priority 5 — Possible (50): same address + similar order value/category.
-  if (ids.address) {
-    for (const [addrValue, addrRec] of Array.from(ctx.historicalAddressMap.entries())) {
-      if (normalizeAddress(addrValue) !== normalizeAddress(ids.address)) continue;
-      for (const otherOrder of ctx.allOrders) {
-        if (otherOrder.orderId === order.orderId) continue;
-        const otherIds = extractRawIdentifiers(otherOrder);
-        if (otherIds.address === ids.address) continue;
-        if (
-          valuesWithin10Percent(order.orderTotal, otherOrder.orderTotal) &&
-          getItemCategory(order) === getItemCategory(otherOrder)
-        ) {
-          return {
-            clusterId: deterministicClusterId('address', ids.address),
-            entityType: 'address',
-            entityValue: ids.address,
-            confidence: 50,
-            matchReasons: ['Similar shipping address, order value, and item type to a previous customer'],
-            firstSeen: addrRec.first_seen,
-            lastSeen: addrRec.last_seen,
-          };
-        }
-      }
-    }
-  }
-
-  // Priority 6 — Weak (35): IP previously associated with flagged accounts.
-  // Despite the IP-alone constraint, this is allowed because the corroboration
-  // comes from a *historical* signal (flagged_count >= 2 means the IP has
-  // been linked to confirmed bad actors before, not just any neighbour on the
-  // same network). It is also the lowest tier and capped at 'weak' downstream.
-  if (ids.ip) {
-    const ipRecord = ctx.historicalIPMap.get(ids.ip);
-    if (ipRecord && ipRecord.flagged_count >= 2) {
-      return {
-        clusterId: deterministicClusterId('ip', ids.ip),
-        entityType: 'ip',
-        entityValue: ids.ip,
-        confidence: 35,
-        matchReasons: ['IP address previously associated with flagged accounts'],
-        firstSeen: ipRecord.first_seen,
-        lastSeen: ipRecord.last_seen,
-      };
-    }
-  }
-
-  return null;
+/**
+ * Fallback: if the merchant didn't provide an explicit postcode column, try
+ * to lift one from the trailing tokens of the shipping address. UK postcode
+ * shape (ABC1 2DE / AB1 2CD / A1 2BC) is used as a heuristic; anything that
+ * doesn't fit is ignored so we don't emit garbage postcodes.
+ */
+const UK_POSTCODE_RE = /\b([A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2})\b/i;
+function postcodeFromAddress(address: string): string {
+  if (!address) return '';
+  const m = address.match(UK_POSTCODE_RE);
+  return m ? m[1].toUpperCase().replace(/\s+/g, '') : '';
 }
 
 export function generateIdentityAlert(

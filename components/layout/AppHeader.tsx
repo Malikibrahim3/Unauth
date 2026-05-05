@@ -2,8 +2,10 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect, useState, useCallback } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import CommandPalette from './CommandPalette';
 
 export interface BreadcrumbSegment {
   label: string;
@@ -29,7 +31,22 @@ export default function AppHeader({
   sidebarCollapsed,
 }: AppHeaderProps) {
   const pathname = usePathname();
+  const [paletteOpen, setPaletteOpen] = useState(false);
 
+  const openPalette = useCallback(() => setPaletteOpen(true), []);
+  const closePalette = useCallback(() => setPaletteOpen(false), []);
+
+  // Global ⌘K / Ctrl+K shortcut
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setPaletteOpen((v) => !v);
+      }
+    }
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, []);
   // Derive a simple breadcrumb from pathname when none is provided
   const segments: BreadcrumbSegment[] = breadcrumbs ?? deriveFromPathname(pathname);
 
@@ -44,25 +61,27 @@ export default function AppHeader({
       style={{ borderBottomColor: 'var(--border-subtle)' }}
     >
       {/* Sidebar collapse toggle */}
-      <button
-        type="button"
-        aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        onClick={onToggleSidebar}
-        className={cn(
-          'flex h-7 w-7 items-center justify-center rounded-md',
-          'text-[var(--text-subtle)] hover:bg-[var(--bg-subtle)] hover:text-[var(--text)]',
-          'transition-colors duration-[var(--duration-fast)]',
-          'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] focus-visible:outline-offset-2',
-          'flex-shrink-0',
-        )}
-      >
-        {/* Hamburger / bars icon */}
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-          <rect x="2" y="4"  width="12" height="1.5" rx="0.75" fill="currentColor" />
-          <rect x="2" y="7.25" width="12" height="1.5" rx="0.75" fill="currentColor" />
-          <rect x="2" y="10.5" width="12" height="1.5" rx="0.75" fill="currentColor" />
-        </svg>
-      </button>
+      {onToggleSidebar && (
+        <button
+          type="button"
+          aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          onClick={onToggleSidebar}
+          className={cn(
+            'flex h-7 w-7 items-center justify-center rounded-md',
+            'text-[var(--text-subtle)] hover:bg-[var(--bg-subtle)] hover:text-[var(--text)]',
+            'transition-colors duration-[var(--duration-fast)]',
+            'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] focus-visible:outline-offset-2',
+            'flex-shrink-0',
+          )}
+        >
+          {/* Hamburger / bars icon */}
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <rect x="2" y="4"  width="12" height="1.5" rx="0.75" fill="currentColor" />
+            <rect x="2" y="7.25" width="12" height="1.5" rx="0.75" fill="currentColor" />
+            <rect x="2" y="10.5" width="12" height="1.5" rx="0.75" fill="currentColor" />
+          </svg>
+        </button>
+      )}
 
       {/* Breadcrumb */}
       <nav aria-label="Breadcrumb" className="flex min-w-0 flex-1 items-center gap-0">
@@ -116,6 +135,7 @@ export default function AppHeader({
       <button
         type="button"
         aria-label="Search (⌘K)"
+        onClick={openPalette}
         className={cn(
           'flex h-7 items-center gap-1.5 rounded-md px-2',
           'border border-[var(--border)] bg-[var(--bg-inset)]',
@@ -133,6 +153,8 @@ export default function AppHeader({
         <span className="hidden sm:inline">Search</span>
         <kbd className="hidden sm:inline font-mono text-[10px] opacity-60">⌘K</kbd>
       </button>
+
+      <CommandPalette isOpen={paletteOpen} onClose={closePalette} />
     </header>
   );
 }
@@ -143,20 +165,20 @@ export default function AppHeader({
 
 function deriveFromPathname(pathname: string): BreadcrumbSegment[] {
   const segmentMap: Record<string, string> = {
-    dashboard:   'Dashboard',
+    dashboard:   'Home',
     upload:      'New Audit',
     audits:      'Audits',
     customers:   'Customers',
     lookup:      'Lookup',
     watchlist:   'Watchlist',
-    history:     'History',
+    history:     'Audit history',
     inbox:       'Inbox',
     home:        'Home',
     onboarding:  'Onboarding',
     help:        'Help',
     settings:    'Settings',
     saved:       'Saved Views',
-    audit:       'Audit',
+    audit:       'Audit results',
     new:         'New Audit',
   };
 

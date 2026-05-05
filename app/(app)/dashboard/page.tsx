@@ -5,6 +5,7 @@ import { LoadDemoButton } from '@/components/dashboard/LoadDemoButton';
 import DeleteAuditButton from '@/components/audit/DeleteAuditButton';
 import DashboardCharts from '@/components/dashboard/DashboardCharts';
 import EmptyDashboardHero from '@/components/EmptyDashboardHero';
+import TrackPageView from '@/components/common/TrackPageView';
 import type { Database } from '@/lib/supabase/types';
 
 type RunRow = Database['public']['Tables']['processing_jobs']['Row'];
@@ -43,6 +44,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="p-8">
+      <TrackPageView event="Dashboard Viewed" />
       {/* Watchlist appearances amber banner */}
       {unreviewedCount > 0 && (
         <div className="mb-6 flex items-center justify-between rounded-lg px-4 py-3 border" style={{ background: 'var(--warning-bg, #fffbeb)', borderColor: 'var(--warning-bd, #fcd34d)' }}>
@@ -86,20 +88,7 @@ export default async function DashboardPage() {
         ))}
       </div>
 
-      {/* Cross-merchant intelligence status */}
-      <div className="rounded-lg px-5 py-4 mb-6 border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
-        <div className="flex items-start gap-3">
-          <div className="mt-0.5 h-2 w-2 rounded-full flex-shrink-0 mt-1.5" style={{ background: 'var(--success)' }} />
-          <div>
-            <p className="text-body-sm font-semibold" style={{ color: 'var(--text)' }}>
-              Per-merchant analysis
-            </p>
-            <p className="text-body-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>
-              Signals are currently based on your own order history only. Cross-merchant intelligence — where identities are matched across multiple stores — is coming soon.
-            </p>
-          </div>
-        </div>
-      </div>
+
 
       {/* Evidence packages summary */}
       {totalPackages > 0 && (
@@ -159,63 +148,10 @@ export default async function DashboardPage() {
             created_at: r.created_at,
           }))} />
 
-          {/* Audit runs table */}
-          <div className="rounded-lg overflow-hidden border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
-            <div className="px-4 py-3 border-b flex items-center justify-between" style={{ borderColor: 'var(--border-subtle)' }}>
-              <span className="text-heading-sm" style={{ color: 'var(--text)' }}>Audit Runs</span>
-              <span className="text-caption" style={{ color: 'var(--text-subtle)' }}>{typedRuns.length} total</span>
-            </div>
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b" style={{ background: 'var(--bg-subtle)', borderColor: 'var(--border-subtle)' }}>
-                  <th className="text-left px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Filename</th>
-                  <th className="text-left px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Status</th>
-                  <th className="text-right px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Rows</th>
-                  <th className="text-right px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Flagged</th>
-                  <th className="text-right px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Flag %</th>
-                  <th className="text-left px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Date</th>
-                  <th className="px-4 py-2.5"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {typedRuns.map((run) => {
-                  const flagRate = run.total_rows > 0 ? (run.flagged_count ?? 0) / run.total_rows : 0;
-                  return (
-                    <tr
-                      key={run.id}
-                      className="border-b transition-colors hover-bg-subtle"
-                      style={{ borderColor: 'var(--border-subtle)' }}
-                    >
-                      <td className="px-4 py-3 font-mono text-xs max-w-xs truncate" style={{ color: 'var(--text-muted)' }}>{run.filename}</td>
-                      <td className="px-4 py-3">
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm border text-xs font-medium" style={{
-                          background: run.status === 'completed' ? 'var(--success-bg)' : run.status === 'processing' ? 'var(--info-bg)' : 'var(--risk-critical-bg)',
-                          color:      run.status === 'completed' ? 'var(--success)'    : run.status === 'processing' ? 'var(--info)'    : 'var(--risk-critical)',
-                          borderColor:run.status === 'completed' ? 'var(--success-bd)' : run.status === 'processing' ? 'var(--info-bd)' : 'var(--risk-critical-bd)',
-                        }}>
-                          <span className="h-1.5 w-1.5 rounded-full flex-shrink-0" style={{ background: 'currentColor' }} aria-hidden="true" />
-                          {run.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-right font-mono" style={{ color: 'var(--text)' }}>{run.total_rows.toLocaleString()}</td>
-                      <td className="px-4 py-3 text-right font-mono" style={{ color: 'var(--text)' }}>{(run.flagged_count ?? 0).toLocaleString()}</td>
-                      <td className="px-4 py-3 text-right font-mono" style={{ color: 'var(--text-muted)' }}>{(flagRate * 100).toFixed(1)}%</td>
-                      <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-muted)' }}>{formatDate(run.created_at)}</td>
-                      <td className="px-4 py-3 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          {(run.status === 'complete' || run.status === 'completed') && (
-                            <Link href={`/audit/${run.id}`} className="px-2.5 py-1 rounded text-xs font-semibold transition-colors hover:bg-[var(--bg-subtle)]" style={{ color: 'var(--text)' }}>
-                              View →
-                            </Link>
-                          )}
-                          <DeleteAuditButton jobId={run.id} />
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <div className="flex justify-end">
+            <Link href="/history" className="text-body-sm font-medium hover:underline" style={{ color: 'var(--accent)' }}>
+              View all audits →
+            </Link>
           </div>
         </>
       )}

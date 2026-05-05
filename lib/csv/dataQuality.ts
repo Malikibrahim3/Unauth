@@ -27,8 +27,7 @@ export type DataQualityGrade = 'rich' | 'adequate' | 'sparse' | 'minimal';
 export const FIELD_TIERS = {
   /** Always present — no scoring contribution */
   required: [
-    'order_id', 'order_date', 'customer_email',
-    'customer_name', 'shipping_address', 'order_total',
+    'order_id', 'order_date', 'customer_email', 'order_total',
   ],
   /** Hardware / PSP signals — dramatically improve matching */
   high: [
@@ -46,6 +45,8 @@ export const FIELD_TIERS = {
     'billing_address',
     'account_id',
     'payment_method',
+    'customer_name',
+    'shipping_address',
   ],
   /** Marginal improvement */
   low: [
@@ -55,6 +56,7 @@ export const FIELD_TIERS = {
     'refund_amount',
     'user_agent',
     'asn',
+    'order_status',
   ],
 } as const;
 
@@ -70,6 +72,8 @@ export const FIELD_SCORES: Record<string, number> = {
   customer_phone:       5,
   billing_address:      5,
   account_id:           5,
+  customer_name:        4,
+  shipping_address:     4,
   payment_method:       3,
   refund_status:        2,
   refund_reason:        2,
@@ -77,6 +81,7 @@ export const FIELD_SCORES: Record<string, number> = {
   refund_amount:        2,
   user_agent:           1,
   asn:                  1,
+  order_status:         0,
 };
 
 /** Minimum row coverage for a field to count as "present" */

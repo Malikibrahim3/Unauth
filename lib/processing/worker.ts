@@ -13,10 +13,12 @@ import type { ParsedCsvRow, FraudTransactionInsert } from './types';
 import { buildFastContext } from '../engine/fastContext';
 import { scoreBatch } from '../engine/fastScore';
 import { buildIdentityClusters } from '../engine/identityMatching';
+import { linkIdentities, type LinkedCluster, type LinkerOrderInput } from '../linker';
+import { scoreAllClusters, scoreIdentityFromSignals, type ScoredCluster, type ScorerOrder } from '../scorer';
 import { assessDataQuality } from '../csv/dataQuality';
 import type { NormalisedOrder, ScoredOrder } from '../engine/types';
 import { normaliseRow } from '../csv/normalise';
-import { cleanRow } from '../csv/clean';
+import { cleanBoolean, cleanRow } from '../csv/clean';
 import type { CsvRow } from '../csv/schema';
 import { csvRowSchema } from '../csv/schema';
 import {
@@ -42,6 +44,171 @@ function splitIntoBatches<T>(items: T[], size: number): T[][] {
   return batches;
 }
 
+type PersistedIdentityResult = {
+  grade: 'weak' | 'possible' | 'probable' | 'definite' | null;
+  identityScore: number | null;
+  signalsMatched: string[];
+  behaviouralFlags: string[];
+  recommendedAction: string | null;
+  ce3Eligible: boolean;
+  ce3QualifyingTransactions: string[];
+  clusterId: string | null;
+};
+
+function normalisePhoneForDiversity(phone: string | null | undefined): string {
+  if (!phone) return '';
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length < 7) return '';
+  return digits.slice(-10);
+}
+
+function rawIds(order: NormalisedOrder) {
+  return order as NormalisedOrder & {
+    _rawEmail?: string | null;
+    _rawPhone?: string | null;
+    _rawPostcode?: string | null;
+    _rawIP?: string | null;
+    _rawAddress?: string | null;
+    _rawCardLast4?: string | null;
+    _rawCardBin?: string | null;
+    _rawDeviceId?: string | null;
+    _rawAccountId?: string | null;
+  };
+}
+
+function buildLinkerInput(orders: NormalisedOrder[]): LinkerOrderInput[] {
+  return orders.map((order) => {
+    const ids = rawIds(order);
+    return {
+      order_id: order.orderId,
+      email: ids._rawEmail || null,
+      phone: ids._rawPhone || null,
+      address: ids._rawAddress || null,
+      postcode: ids._rawPostcode || null,
+      ip: ids._rawIP || null,
+      card_last4: ids._rawCardLast4 || null,
+      card_bin: ids._rawCardBin || null,
+      device_fingerprint: ids._rawDeviceId || null,
+      account_id: ids._rawAccountId || null,
+    };
+  });
+}
+
+function rowToScorerOrder(row: CsvRow): ScorerOrder {
+  const toBoolean = (value: unknown): boolean | null => {
+    if (typeof value === 'boolean') return value;
+    if (typeof value === 'number') return value === 1 ? true : value === 0 ? false : null;
+    if (typeof value === 'string') {
+      const v = value.trim().toLowerCase();
+      if (v === 'true' || v === '1' || v === 'yes' || v === 'y') return true;
+      if (v === 'false' || v === '0' || v === 'no' || v === 'n') return false;
+    }
+    return null;
+  };
+
+  const orderDateRaw = row.order_date ?? (row as CsvRow & { created_at?: string | null }).created_at ?? null;
+  const parsedOrderDate = orderDateRaw ? new Date(orderDateRaw) : null;
+  const orderDate = parsedOrderDate && !Number.isNaN(parsedOrderDate.getTime())
+    ? parsedOrderDate.toISOString()
+    : row.order_date;
+
+  return {
+    order_id: row.order_id,
+    order_date: orderDate,
+    order_total: parseFloat(row.order_total ?? '0'),
+    currency: row.currency,
+    customer_email: row.customer_email,
+    customer_name: row.customer_name ?? null,
+    shipping_address: row.shipping_address ?? null,
+    billing_address: row.billing_address ?? null,
+    customer_phone: row.customer_phone ?? null,
+    ip_address: row.ip_address ?? null,
+    card_last4: row.card_last4 ?? null,
+    card_bin: row.card_bin ?? null,
+    device_id: row.device_id ?? null,
+    browser_fingerprint: row.browser_fingerprint ?? null,
+    cookie_id: row.cookie_id ?? null,
+    account_id: row.account_id ?? null,
+    payment_method: row.payment_method ?? null,
+    refund_status: (row.refund_status as ScorerOrder['refund_status']) ?? null,
+    refund_reason: row.refund_reason ?? null,
+    refund_date: row.refund_date ?? null,
+    refund_amount: row.refund_amount ? parseFloat(row.refund_amount) : null,
+    refund_requested: toBoolean(row.refund_requested),
+    chargeback_filed: toBoolean((row as CsvRow & { chargeback_filed?: unknown }).chargeback_filed ?? row.chargeback_dispute),
+  };
+}
+
+function buildClusterIdentityResults(
+  clusters: LinkedCluster[],
+  clusterScores: ScoredCluster[],
+  scored: ScoredOrder[],
+  rawRowsByOrderId: Map<string, ParsedCsvRow>
+): Map<string, PersistedIdentityResult> {
+  const scoresByCluster = new Map(clusterScores.map((score) => [score.cluster_id, score]));
+  const result = new Map<string, PersistedIdentityResult>();
+
+  for (const cluster of clusters) {
+    const clusterScore = scoresByCluster.get(cluster.cluster_id);
+
+    // ── Grade resolution ──────────────────────────────────────────────────
+    // Priority 1: use the full scorer output (includes behavioural flags,
+    //             CE 3.0, hard caps, etc.)
+    // Priority 2: deterministic signal-weight fallback — ensures EVERY row
+    //             with a cluster_id + non-empty signals_matched receives a
+    //             grade, regardless of identity diversity within the cluster.
+    //
+    // The old `hasIdentityDiversity` gate used to force grade=null for any
+    // cluster where all orders shared the same email/card/phone/account.
+    // That was the root cause of the production bug: a repeat customer
+    // placing 11 orders with the same credentials would have
+    // hasIdentityDiversity=false, silently dropping the score/grade even
+    // though the scorer had already computed a correct DEFINITE grade.
+    let grade: PersistedIdentityResult['grade'] = null;
+    let identityScore: number | null = null;
+    let recommendedAction: string | null = null;
+
+    if (clusterScore) {
+      // Full scorer path — trust it entirely.
+      grade = clusterScore.confidence_grade.toLowerCase() as PersistedIdentityResult['grade'];
+      identityScore = clusterScore.review_priority_score;
+      recommendedAction = clusterScore.recommended_action;
+    } else if (cluster.signals_matched.length > 0) {
+      // Fallback: deterministic signal-weight scorer.
+      const sig = scoreIdentityFromSignals(cluster.signals_matched);
+      if (sig.identity_confidence_grade) {
+        grade = sig.identity_confidence_grade;
+        identityScore = sig.identity_score;
+        recommendedAction = sig.recommended_action;
+      }
+    }
+
+    const ce3OrderIds = Array.from(
+      new Set(
+        (clusterScore?.ce3_qualifying_transactions ?? []).flatMap((pair) => [
+          pair.disputed_order_id,
+          pair.prior_order_id,
+        ])
+      )
+    );
+
+    for (const orderId of cluster.order_ids) {
+      result.set(orderId, {
+        grade,
+        identityScore,
+        signalsMatched: cluster.signals_matched,
+        behaviouralFlags: (clusterScore?.behavioural_flags ?? []).map((flag) => flag.flag),
+        recommendedAction,
+        ce3Eligible: clusterScore?.ce3_eligible ?? false,
+        ce3QualifyingTransactions: ce3OrderIds,
+        clusterId: cluster.cluster_id,
+      });
+    }
+  }
+
+  return result;
+}
+
 // IMPORTANT: this takes the *cleaned/aliased* CsvRow (validPairs[i].parsed),
 // NOT the raw streamParser row. The raw row keeps the CSV's original header
 // names (e.g. `email`, `Customer Email`) — only the parsed row guarantees
@@ -49,6 +216,7 @@ function splitIntoBatches<T>(items: T[], size: number): T[][] {
 function rowToFraudTransaction(
   row: CsvRow,
   scored: { totalScore: number; riskTier: 'low' | 'medium' | 'high' | 'critical'; flagged: boolean; signals: { name: string; fired: boolean }[] },
+  identity: PersistedIdentityResult | undefined,
   jobId: string
 ): FraudTransactionInsert {
   const flags = scored.signals.filter((s) => s.fired).map((s) => s.name);
@@ -73,6 +241,14 @@ function rowToFraudTransaction(
     match_score: scored.totalScore,
     fraud_flags: flags,
     risk_level: scored.riskTier,
+    identity_confidence_grade: identity?.grade ?? null,
+    identity_score: identity?.identityScore ?? null,
+    signals_matched: identity?.signalsMatched ?? [],
+    behavioural_flags: identity?.behaviouralFlags ?? [],
+    recommended_action: identity?.recommendedAction ?? null,
+    ce3_eligible: identity?.ce3Eligible ?? false,
+    ce3_qualifying_transactions: identity?.ce3QualifyingTransactions ?? [],
+    cluster_id: identity?.clusterId ?? null,
   };
 }
 
@@ -150,11 +326,16 @@ export async function processCsvJob(
   //     scoring (identityAlerts) and persistence to fraud_identity_clusters.
   // -----------------------------------------------------------------------
   const identityClusterMap = await buildIdentityClusters(normOrders, context);
+  const linkerResult = linkIdentities(buildLinkerInput(normOrders));
+  const ordersById = new Map(validPairs.map((pair) => [pair.parsed.order_id, rowToScorerOrder(pair.parsed)]));
+  const rawRowsByOrderId = new Map(validPairs.map((pair) => [pair.parsed.order_id, pair.raw]));
+  const clusterScores = scoreAllClusters(linkerResult.clusters, ordersById);
 
   // -----------------------------------------------------------------------
   // 4. Score all rows synchronously (O(n) thanks to precomputed context)
   // -----------------------------------------------------------------------
   const scored = scoreBatch(normOrders, context, identityClusterMap);
+  const identityResultsByOrder = buildClusterIdentityResults(linkerResult.clusters, clusterScores, scored, rawRowsByOrderId);
   jobLog(`scoreBatch completed in ${Date.now() - overallStart}ms`);
 
   // §1.2 — Flush cross-merchant access audit log entries (fire-and-forget, non-fatal).
@@ -192,7 +373,7 @@ export async function processCsvJob(
   // wall-clock time roughly in half vs the previous sequential approach.
   // -----------------------------------------------------------------------
   const allInserts: FraudTransactionInsert[] = scored.map((s, i) =>
-    rowToFraudTransaction(validPairs[i].parsed, s, jobId)
+    rowToFraudTransaction(validPairs[i].parsed, s, identityResultsByOrder.get(s.order.orderId), jobId)
   );
 
   const dbBatches = splitIntoBatches(allInserts, BATCH_SIZE);
@@ -297,7 +478,17 @@ export async function processCsvJob(
         merchantId,
         jobId,
         txIdMap,
-        serviceClient
+        serviceClient,
+        new Map(
+          Array.from(identityResultsByOrder.entries()).map(([orderId, identity]) => [
+            orderId,
+            {
+              grade: identity.grade,
+              signals: identity.signalsMatched,
+              clusterId: identity.clusterId,
+            },
+          ])
+        )
       );
 
       console.log(

@@ -27,6 +27,11 @@ export interface NormalisedOrder {
   refundAmount: number | null;
   paymentMethod: string | null;
   groundTruthLabel?: 'fraud' | 'legitimate' | 'same_person' | 'different_people' | 'unknown' | null;
+  // Dispute-history intelligence (§1 consortium signal).
+  // null when the merchant did not provide the column; explicit true/false otherwise.
+  chargebackDispute?: boolean | null;
+  refundRequested?: boolean | null;
+  returnRequested?: boolean | null;
 }
 
 /** The four identity confidence grades used by both the fraud scoring and identity clustering systems. */

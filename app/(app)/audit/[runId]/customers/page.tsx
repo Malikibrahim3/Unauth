@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
 import { formatDate } from '@/lib/utils/format';
@@ -11,6 +11,8 @@ type RunRow = Database['public']['Tables']['processing_jobs']['Row'];
 interface PageProps {
   params: { runId: string };
 }
+
+export const dynamic = 'force-dynamic';
 
 export default async function CustomersPage({ params }: PageProps) {
   const supabase = createClient();
@@ -25,10 +27,11 @@ export default async function CustomersPage({ params }: PageProps) {
 
   if (!run) notFound();
   const runData = run as unknown as RunRow;
+  const dataClient = createServiceClient();
 
   const TX_LIMIT = 2000;
   // Fetch transactions for this job with a row cap to prevent memory exhaustion on large uploads.
-  const { data: rawTx } = await supabase
+  const { data: rawTx } = await dataClient
     .from('audit_transactions')
     .select('*')
     .eq('job_id', runData.id)

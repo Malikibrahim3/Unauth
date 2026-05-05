@@ -8,6 +8,8 @@ import { emailPattern } from './signals/emailPattern';
 import { addressClustering } from './signals/addressClustering';
 import { valueAnomaly } from './signals/valueAnomaly';
 import { paymentChurn } from './signals/paymentChurn';
+import { disputeHistory } from './signals/disputeHistory';
+import { addressMismatch } from './signals/addressMismatch';
 
 const SIGNALS = [
   { fn: refundRate, key: 'refundRate' as const },
@@ -18,6 +20,8 @@ const SIGNALS = [
   { fn: addressClustering, key: 'addressClustering' as const },
   { fn: valueAnomaly, key: 'valueAnomaly' as const },
   { fn: paymentChurn, key: 'paymentChurn' as const },
+  { fn: disputeHistory, key: 'disputeHistory' as const },
+  { fn: addressMismatch, key: 'addressMismatch' as const },
 ];
 
 function buildContext(orders: NormalisedOrder[]): ScoringContext {
@@ -33,16 +37,27 @@ function buildContext(orders: NormalisedOrder[]): ScoringContext {
 function computeScore(signals: SignalResult[]): number {
   let weightedSum = 0;
   let totalWeight = 0;
+  let hasBroadOverlap = false;
+  let hasStrongFraudEvidence = false;
 
   for (const signal of signals) {
     const weight = SIGNAL_WEIGHTS[signal.name as keyof typeof SIGNAL_WEIGHTS];
     if (weight === undefined) continue;
+    if (!signal.fired) continue;
+    if (['addressClustering', 'emailPattern', 'crossMerchant', 'addressMismatch'].includes(signal.name)) {
+      hasBroadOverlap = true;
+    }
+    if (['refundRate', 'inrAbuse', 'inrSpeed', 'paymentChurn', 'refundPattern', 'disputeHistory', 'valueAnomaly'].includes(signal.name)) {
+      hasStrongFraudEvidence = true;
+    }
     weightedSum += signal.score * weight;
     totalWeight += weight;
   }
 
   if (totalWeight === 0) return 0;
-  return Math.min(100, Math.max(0, weightedSum / totalWeight));
+  const rawScore = weightedSum / totalWeight;
+  const corroboratedScore = hasBroadOverlap && !hasStrongFraudEvidence ? rawScore * 0.45 : rawScore;
+  return Math.min(100, Math.max(0, corroboratedScore));
 }
 
 function getRiskTier(score: number): 'low' | 'medium' | 'high' | 'critical' {

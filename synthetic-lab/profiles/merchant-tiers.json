@@ -1,0 +1,14 @@
+{
+  "tier1_low_maturity": {
+    "description": "Minimal merchant exports with sparse metadata, inconsistent formatting, and high optional-field missingness.",
+    "examples": ["basic Shopify order export", "manual WooCommerce CSV", "support team refund export"]
+  },
+  "tier2_medium_maturity": {
+    "description": "Moderately enriched merchant data with payment, IP, delivery, and partial device fields.",
+    "examples": ["Shopify plus export plus Stripe fields", "OMS export with courier status", "support tool claims export"]
+  },
+  "tier3_high_maturity": {
+    "description": "Rich fraud-tool or OMS-enriched export with device, browser, payment, delivery, claim, and behavioural metadata.",
+    "examples": ["Shopify plus plus fraud app export", "Stripe Radar plus WMS feed", "OMS/support/customer data warehouse export"]
+  }
+}

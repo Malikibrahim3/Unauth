@@ -23,9 +23,11 @@ export default function PrivacyPage() {
           <p>
             Unauth collects order history data uploaded by merchants. This typically includes customer
             names, email addresses, delivery addresses, phone numbers, order identifiers, order
-            values, and refund or chargeback records. Unauth does not collect payment card data. We
-            also collect standard account information for registered merchants (name, email, billing
-            details) and usage logs for the platform itself.
+            values, and refund or chargeback records. Where merchants include them in their export,
+            we also process partial card identifiers (last 4 digits and BIN prefix) as pseudonymous
+            matching signals — we never receive, store, or process full card numbers, CVV codes, or
+            complete card credentials. We also collect standard account information for registered
+            merchants (name, email, billing details) and usage logs for the platform itself.
           </p>
         </section>
 

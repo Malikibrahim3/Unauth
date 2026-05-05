@@ -27,7 +27,7 @@ export const addressClustering: Signal = (order: NormalisedOrder, context: Scori
     };
   }
 
-  const score = Math.min(80, 30 + 10 * (distinctEmails.size - 3));
+  const score = Math.min(90, 30 + 10 * (distinctEmails.size - 3));
 
   return {
     name: 'addressClustering',

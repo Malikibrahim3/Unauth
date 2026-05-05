@@ -114,8 +114,8 @@ export function computeCrossMerchantSignal(input: CrossMerchantInput): SignalRes
   const networkMerchantCount = merchantSet.size;
   const inrRate = networkOrders > 0 ? networkRefundClaims / networkOrders : 0;
 
-  let score = 30 + Math.round(inrRate * 50);
-  score = Math.min(score, 80);
+  let score = 30 + Math.round(inrRate * 40);
+  score = Math.min(score, 70);
 
   // Privacy invariant: reasoning contains only COUNTS, never merchant names
   const reason = `This identity has been observed at ${networkMerchantCount} other merchant${networkMerchantCount !== 1 ? 's' : ''} in the Unauth network with ${Math.round(inrRate * 100)}% 'item not received' claim rate.`;

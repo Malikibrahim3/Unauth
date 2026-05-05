@@ -25,8 +25,8 @@ export const csvRowSchema = z.object({
     return !isNaN(d.getTime());
   }, 'order_date must be a valid date (e.g. 2024-01-31 or 2024-01-31T14:22:00Z)'),
   customer_email: z.string().min(1, 'customer_email is required'),
-  customer_name: z.string().min(1, 'customer_name is required'),
-  shipping_address: z.string().min(1, 'shipping_address is required'),
+  customer_name: z.string().optional(),
+  shipping_address: z.string().optional(),
   order_total: z.string().refine((v) => {
     if (v === '') return false; // blank cell is not valid
     const n = parseFloat(v);
@@ -37,6 +37,8 @@ export const csvRowSchema = z.object({
 
   customer_phone: z.string().optional(),
   billing_address: z.string().optional(),
+  shipping_postcode: z.string().optional(),
+  postcode: z.string().optional(),
   refund_status: z.string().optional(),
   refund_reason: z.string().optional(),
   refund_date: z.string().optional().refine((v) => {
@@ -61,6 +63,12 @@ export const csvRowSchema = z.object({
   asn: z.string().optional(),
   account_id: z.string().optional(),
   ground_truth_label: z.string().optional(),
+
+  // Dispute-history intelligence (§1 consortium signal).
+  // Accepted forms are parsed by cleanBoolean: true/false, yes/no, 1/0, y/n.
+  chargeback_dispute: z.string().optional(),
+  refund_requested: z.string().optional(),
+  return_requested: z.string().optional(),
 });
 
 export type CsvRow = z.infer<typeof csvRowSchema>;
@@ -69,7 +77,5 @@ export const REQUIRED_COLUMNS = [
   'order_id',
   'order_date',
   'customer_email',
-  'customer_name',
-  'shipping_address',
   'order_total',
 ] as const;

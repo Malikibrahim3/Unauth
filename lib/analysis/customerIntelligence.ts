@@ -27,6 +27,11 @@ export interface TransactionRow {
   refund_claimed: boolean | null;
   refund_reason: string | null;
   processed_at: string;
+  identity_confidence_grade?: string | null;
+  identity_score?: number | null;
+  signals_matched?: unknown;
+  behavioural_flags?: unknown;
+  cluster_id?: string | null;
 }
 
 export interface OrderSummary {
@@ -150,6 +155,33 @@ function highestRisk(levels: string[]): string {
   return max;
 }
 
+function gradeToRiskLevel(grade: string | null | undefined): string | null {
+  switch (grade) {
+    case 'weak':
+      return 'low';
+    case 'possible':
+      return 'medium';
+    case 'probable':
+      return 'high';
+    case 'definite':
+      return 'critical';
+    default:
+      return null;
+  }
+}
+
+function asStringArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((v): v is string => typeof v === 'string' && v.length > 0) : [];
+}
+
+function humaniseFlag(flag: string): string {
+  return flag
+    .split('_')
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+}
+
 // ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
@@ -174,10 +206,17 @@ export function buildCustomerProfiles(transactions: TransactionRow[]): CustomerP
   const addressToEmails = new Map<string, Set<number>>();
   const cardToEmails = new Map<string, Set<number>>();
   const ipToEmails = new Map<string, Set<number>>();
+  const clusterIdToEmails = new Map<string, Set<number>>();
 
   for (const tx of transactions) {
     const emailIdx = emailIndex.get(norm(tx.customer_email));
     if (emailIdx === undefined) continue;
+
+    const clusterId = tx.cluster_id?.trim();
+    if (clusterId) {
+      if (!clusterIdToEmails.has(clusterId)) clusterIdToEmails.set(clusterId, new Set());
+      clusterIdToEmails.get(clusterId)!.add(emailIdx);
+    }
 
     const addr = normAddress(tx.shipping_address);
     if (addr) {
@@ -204,47 +243,13 @@ export function buildCustomerProfiles(transactions: TransactionRow[]): CustomerP
 
   // Step 3: union-find merges
   const uf = new UnionFind(uniqueEmails.length);
-  const recordedLinks: IdentityLink[] = [];
 
-  // Strong merge: same card
-  for (const [card, idxs] of Array.from(cardToEmails.entries())) {
+  // Only merge identities that the persisted linker/scorer output explicitly
+  // grouped together. Legacy address/card merging is too broad for this view:
+  // it can visually attach clean neighbours or family members to a flagged ring.
+  for (const idxs of Array.from(clusterIdToEmails.values())) {
     const arr = Array.from(idxs);
-    if (arr.length > 1) {
-      recordedLinks.push({
-        type: 'shared_card',
-        sharedValue: `****${card}`,
-        linkedEmails: arr.map((i) => uniqueEmails[i]),
-        description: `Same card ending ${card} used across ${arr.length} email addresses`,
-      });
-      for (let i = 1; i < arr.length; i++) uf.union(arr[0], arr[i]);
-    }
-  }
-
-  // Strong merge: same normalized address
-  for (const [addr, idxs] of Array.from(addressToEmails.entries())) {
-    const arr = Array.from(idxs);
-    if (arr.length > 1) {
-      recordedLinks.push({
-        type: 'shared_address',
-        sharedValue: addr,
-        linkedEmails: arr.map((i) => uniqueEmails[i]),
-        description: `Same delivery address used by ${arr.length} different email addresses`,
-      });
-      for (let i = 1; i < arr.length; i++) uf.union(arr[0], arr[i]);
-    }
-  }
-
-  // Shared IP: record as evidence but don't merge (too noisy)
-  for (const [ip, idxs] of Array.from(ipToEmails.entries())) {
-    const arr = Array.from(idxs);
-    if (arr.length > 1) {
-      recordedLinks.push({
-        type: 'shared_ip',
-        sharedValue: ip,
-        linkedEmails: arr.map((i) => uniqueEmails[i]),
-        description: `Same IP address ${ip} used by ${arr.length} different accounts`,
-      });
-    }
+    for (let i = 1; i < arr.length; i++) uf.union(arr[0], arr[i]);
   }
 
   // Step 4: group emails into clusters
@@ -284,8 +289,8 @@ export function buildCustomerProfiles(transactions: TransactionRow[]): CustomerP
         address: tx.shipping_address?.trim() ?? '',
         refunded: !!tx.refund_claimed,
         refundReason: tx.refund_reason,
-        fraudScore: tx.match_score,
-        riskLevel: tx.risk_level,
+        fraudScore: tx.identity_score ?? tx.match_score,
+        riskLevel: gradeToRiskLevel(tx.identity_confidence_grade) ?? tx.risk_level,
       }))
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
@@ -295,11 +300,56 @@ export function buildCustomerProfiles(transactions: TransactionRow[]): CustomerP
     const avgScore = scores.length > 0 ? scores.reduce((s, v) => s + v, 0) / scores.length : 0;
     const maxScore = scores.length > 0 ? Math.max(...scores) : 0;
 
-    // Gather links that involve this cluster's emails
-    const clusterLinks = recordedLinks.filter((l) => l.linkedEmails.some((e) => clusterEmailArr.includes(e)));
+    // Explain links inside this persisted profile only. This avoids showing a
+    // clean customer as linked merely because they share a noisy address or IP.
+    const clusterLinks: IdentityLink[] = [];
+    if (emails.length > 1) {
+      for (const [card, idxs] of Array.from(cardToEmails.entries())) {
+        const linkedEmails = Array.from(idxs).map((i) => uniqueEmails[i]).filter((e) => clusterEmailArr.includes(e));
+        if (linkedEmails.length > 1) {
+          clusterLinks.push({
+            type: 'shared_card',
+            sharedValue: `****${card}`,
+            linkedEmails,
+            description: `Same card ending ${card} used across ${linkedEmails.length} email addresses`,
+          });
+        }
+      }
+      for (const [addr, idxs] of Array.from(addressToEmails.entries())) {
+        const linkedEmails = Array.from(idxs).map((i) => uniqueEmails[i]).filter((e) => clusterEmailArr.includes(e));
+        if (linkedEmails.length > 1) {
+          clusterLinks.push({
+            type: 'shared_address',
+            sharedValue: addr,
+            linkedEmails,
+            description: `Same delivery address used by ${linkedEmails.length} linked accounts`,
+          });
+        }
+      }
+      for (const [ip, idxs] of Array.from(ipToEmails.entries())) {
+        const linkedEmails = Array.from(idxs).map((i) => uniqueEmails[i]).filter((e) => clusterEmailArr.includes(e));
+        if (linkedEmails.length > 1) {
+          clusterLinks.push({
+            type: 'shared_ip',
+            sharedValue: ip,
+            linkedEmails,
+            description: `Same IP address ${ip} used by ${linkedEmails.length} linked accounts`,
+          });
+        }
+      }
+    }
 
     // Detect obfuscation flags
     const flags: ObfuscationFlag[] = [];
+    const persistedFlags = unique(clusterTxs.flatMap((tx) => asStringArray(tx.behavioural_flags)));
+    for (const flag of persistedFlags) {
+      flags.push({
+        severity: 'high',
+        title: humaniseFlag(flag),
+        description: 'Detected by the identity scoring pipeline for this linked cluster',
+        evidence: [],
+      });
+    }
 
     if (names.length > 1) {
       flags.push({

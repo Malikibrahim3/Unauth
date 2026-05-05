@@ -1,6 +1,7 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { logAction } from '@/lib/permissions/audit';
+import { writeActivityLog } from '@/lib/customers/activityLog';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
@@ -13,6 +14,14 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   const serviceClient = createServiceClient();
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.DELETE_CUSTOMER_NOTE);
   if (denied) return denied;
+
+  // Fetch the note before deleting so we have profile_id for activity log
+  const { data: noteRow } = await serviceClient
+    .from('customer_notes')
+    .select('id, customer_profile_id')
+    .eq('id', params.id)
+    .eq('merchant_id', ctx.merchantId)
+    .maybeSingle();
 
   const { error } = await serviceClient
     .from('customer_notes')
@@ -29,6 +38,15 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     resourceId: params.id,
     ip,
   });
+
+  if (noteRow?.customer_profile_id) {
+    await writeActivityLog({
+      supabase: serviceClient,
+      profileId: noteRow.customer_profile_id,
+      merchantId: ctx.merchantId,
+      eventType: 'note_deleted',
+    });
+  }
 
   return NextResponse.json({ ok: true });
 }

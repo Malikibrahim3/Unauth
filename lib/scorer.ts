@@ -1,0 +1,632 @@
+/**
+ * Identity Scorer — sits on top of lib/linker.ts output.
+ *
+ * Receives a cluster (from the linker), the full order data for every
+ * order in that cluster, and optional historical entity data. Produces
+ * a confidence grade, review priority score, plain-English signal summary,
+ * recommended action, behavioural flags, and CE 3.0 eligibility.
+ *
+ * This module NEVER links identities — that is the linker's job. It only
+ * interprets what the linker already found and adds behavioural context.
+ */
+
+import type { LinkedCluster, LinkerSignal } from './linker';
+
+// ---------------------------------------------------------------------------
+// INPUT / OUTPUT TYPES
+// ---------------------------------------------------------------------------
+
+/** Per-order data needed for behavioural scoring. Must contain all fields
+ *  the linker used plus the refund / chargeback / value fields. */
+export interface ScorerOrder {
+  order_id: string;
+  order_date: string;          // ISO date string
+  order_total: number;
+  currency?: string;
+  customer_email: string;
+  customer_name?: string | null;
+  shipping_address?: string | null;
+  billing_address?: string | null;
+  customer_phone?: string | null;
+  ip_address?: string | null;
+  card_last4?: string | null;
+  card_bin?: string | null;
+  device_id?: string | null;
+  browser_fingerprint?: string | null;
+  cookie_id?: string | null;
+  account_id?: string | null;
+  payment_method?: string | null;
+
+  // Refund / chargeback fields
+  refund_status?: 'none' | 'partial' | 'full' | null;
+  refund_reason?: string | null;
+  refund_date?: string | null;   // ISO date string
+  refund_amount?: number | null;
+  refund_requested?: boolean | null;
+  chargeback_filed?: boolean | null;
+  chargeback_date?: string | null;
+}
+
+/** Historical entity data (from fraud_entities / customer_profiles). */
+export interface HistoricalEntity {
+  entityType: 'email' | 'phone' | 'card' | 'ip' | 'account';
+  value: string;
+  flagged_count: number;
+  chargeback_count: number;
+  refund_count: number;
+  first_seen: string;
+  last_seen: string;
+}
+
+export type ConfidenceGrade = 'DEFINITE' | 'PROBABLE' | 'POSSIBLE' | 'WEAK';
+
+export interface BehaviouralFlag {
+  flag: string;
+  detail: string;
+  points: number;
+}
+
+export interface CE3QualifyingPair {
+  disputed_order_id: string;
+  prior_order_id: string;
+  matching_signals: string[];
+}
+
+export interface ScoredCluster {
+  cluster_id: string;
+  order_ids: string[];
+
+  // Grade & score
+  confidence_grade: ConfidenceGrade;
+  review_priority_score: number;   // 0–100
+
+  // Identity linkage summary
+  signals_summary: string[];
+  recommended_action: string;
+
+  // Behavioural signals
+  behavioural_flags: BehaviouralFlag[];
+  behavioural_score: number;
+
+  // CE 3.0
+  ce3_eligible: boolean;
+  ce3_qualifying_transactions: CE3QualifyingPair[];
+}
+
+// ---------------------------------------------------------------------------
+// CONSTANTS
+// ---------------------------------------------------------------------------
+
+const GRADE_THRESHOLDS = {
+  DEFINITE: 85,
+  PROBABLE: 60,
+  POSSIBLE: 35,
+} as const;
+
+const HARD_SIGNALS: LinkerSignal[] = ['card', 'phone', 'device', 'account'];
+const SOFT_SIGNALS: LinkerSignal[] = ['email', 'postcode', 'ip'];
+
+// ---------------------------------------------------------------------------
+// LANGUAGE RULES — ENFORCED IN EVERY OUTPUT STRING
+// ---------------------------------------------------------------------------
+
+const FORBIDDEN_WORDS = ['fraud', 'fraudulent', 'scammer', 'criminal', 'confirmed fraud'];
+
+function guardLanguage(text: string): string {
+  let safe = text;
+  for (const word of FORBIDDEN_WORDS) {
+    const re = new RegExp(word, 'gi');
+    safe = safe.replace(re, 'unusual activity');
+  }
+  return safe;
+}
+
+// ---------------------------------------------------------------------------
+// UTILITY
+// ---------------------------------------------------------------------------
+
+function parseDate(iso: string | null | undefined): Date | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function daysBetween(a: Date, b: Date): number {
+  return Math.abs(b.getTime() - a.getTime()) / (1000 * 60 * 60 * 24);
+}
+
+function gradeFromScore(score: number): ConfidenceGrade {
+  if (score >= GRADE_THRESHOLDS.DEFINITE) return 'DEFINITE';
+  if (score >= GRADE_THRESHOLDS.PROBABLE) return 'PROBABLE';
+  if (score >= GRADE_THRESHOLDS.POSSIBLE) return 'POSSIBLE';
+  return 'WEAK';
+}
+
+// ---------------------------------------------------------------------------
+// BEHAVIOURAL SCORING (additive on top of linker base_score)
+// ---------------------------------------------------------------------------
+
+/**
+ * 1. REFUND RATE — (refund claims / total orders in cluster)
+ */
+function scoreRefundRate(orders: ScorerOrder[]): { points: number; detail: string } {
+  const refundCount = orders.filter(
+    (o) =>
+      o.refund_status === 'full' ||
+      o.refund_status === 'partial' ||
+      o.refund_requested === true
+  ).length;
+  const rate = orders.length > 0 ? refundCount / orders.length : 0;
+
+  if (rate > 0.8) return { points: 20, detail: `Refund rate ${(rate * 100).toFixed(0)}% across ${orders.length} orders` };
+  if (rate >= 0.6) return { points: 12, detail: `Refund rate ${(rate * 100).toFixed(0)}% across ${orders.length} orders` };
+  if (rate >= 0.4) return { points: 6, detail: `Refund rate ${(rate * 100).toFixed(0)}% across ${orders.length} orders` };
+  return { points: 0, detail: `Refund rate ${(rate * 100).toFixed(0)}% — within normal range` };
+}
+
+/**
+ * 2. CLAIM VELOCITY — average days between order date and refund claim date
+ */
+function scoreClaimVelocity(orders: ScorerOrder[]): { points: number; detail: string } {
+  const claimDays: number[] = [];
+  for (const o of orders) {
+    const orderDate = parseDate(o.order_date);
+    const refundDate = parseDate(o.refund_date);
+    if (orderDate && refundDate) {
+      claimDays.push(daysBetween(orderDate, refundDate));
+    }
+  }
+  if (claimDays.length === 0) return { points: 0, detail: 'No refund dates available for velocity check' };
+
+  const avg = claimDays.reduce((a, b) => a + b, 0) / claimDays.length;
+
+  if (avg < 3) return { points: 15, detail: `Average ${avg.toFixed(1)} days to refund claim` };
+  if (avg <= 7) return { points: 8, detail: `Average ${avg.toFixed(1)} days to refund claim` };
+  return { points: 0, detail: `Average ${avg.toFixed(1)} days to refund claim — within normal range` };
+}
+
+/**
+ * 3. DENIAL-THEN-CHARGEBACK PATTERN — merchant denied refund, then chargeback filed.
+ * We detect this as: chargeback_filed=true AND refund_status is none/partial/denied.
+ * If merchant approved refund (full), a subsequent chargeback is less common.
+ */
+function scoreDenialThenChargeback(orders: ScorerOrder[]): { points: number; detail: string } {
+  const instances = orders.filter(
+    (o) =>
+      o.chargeback_filed === true &&
+      (o.refund_status !== 'full' || o.refund_requested === false)
+  );
+
+  if (instances.length > 0) {
+    return {
+      points: 20,
+      detail: `Denial-then-chargeback pattern detected in ${instances.length} order${instances.length > 1 ? 's' : ''}`,
+    };
+  }
+  return { points: 0, detail: 'No denial-then-chargeback pattern detected' };
+}
+
+/**
+ * 4. ORDER VALUE ESCALATION — last 2 refund claims are top 2 orders by value.
+ */
+function scoreValueEscalation(orders: ScorerOrder[]): { points: number; detail: string } {
+  // Orders with refund claims
+  const refundOrders = orders.filter(
+    (o) => o.refund_status === 'full' || o.refund_status === 'partial' || o.refund_requested === true
+  );
+  if (refundOrders.length < 2) return { points: 0, detail: 'Less than 2 refund claims — no escalation pattern' };
+
+  // Sort all orders by value descending
+  const byValue = [...orders].sort((a, b) => b.order_total - a.order_total);
+  const top2 = new Set([byValue[0]?.order_id, byValue[1]?.order_id]);
+
+  // Sort refund orders by date descending (most recent first)
+  const byDate = [...refundOrders]
+    .map((o) => ({ o, d: parseDate(o.order_date) }))
+    .filter((x): x is { o: ScorerOrder; d: Date } => x.d !== null)
+    .sort((a, b) => b.d.getTime() - a.d.getTime());
+
+  if (byDate.length < 2) return { points: 0, detail: 'Insufficient dated refund claims' };
+
+  const last2RefundIds = new Set([byDate[0].o.order_id, byDate[1].o.order_id]);
+  const match = last2RefundIds.size === 2 && [...last2RefundIds].every((id) => top2.has(id));
+
+  if (match) {
+    return {
+      points: 10,
+      detail: 'Order values escalated before refund claims — highest-value orders were refunded most recently',
+    };
+  }
+  return { points: 0, detail: 'No order value escalation pattern detected' };
+}
+
+/**
+ * 5. REASON ROTATION — 3+ distinct refund reasons across the cluster.
+ */
+function scoreReasonRotation(orders: ScorerOrder[]): { points: number; detail: string } {
+  const reasons = [
+    ...new Set(
+      orders
+        .map((o) => o.refund_reason)
+        .filter((r): r is string => !!r && r.trim().length > 0)
+    ),
+  ];
+
+  if (reasons.length >= 3) {
+    return {
+      points: 8,
+      detail: `${reasons.length} distinct refund reasons used: ${reasons.slice(0, 3).join(', ')}${reasons.length > 3 ? '...' : ''}`,
+    };
+  }
+  return { points: 0, detail: `${reasons.length} distinct refund reason(s) — no rotation pattern` };
+}
+
+/**
+ * 6. HIGH CHARGEBACK COUNT
+ */
+function scoreChargebackCount(orders: ScorerOrder[]): { points: number; detail: string } {
+  const count = orders.filter((o) => o.chargeback_filed === true).length;
+  if (count >= 2) return { points: 15, detail: `${count} chargebacks filed in this cluster` };
+  if (count === 1) return { points: 5, detail: '1 chargeback filed in this cluster' };
+  return { points: 0, detail: 'No chargebacks filed' };
+}
+
+// ---------------------------------------------------------------------------
+// IDENTITY SIGNALS → PLAIN ENGLISH SUMMARY
+// ---------------------------------------------------------------------------
+
+const SIGNAL_LABELS: Record<LinkerSignal, string> = {
+  card: 'same payment card',
+  phone: 'same phone number',
+  device: 'same device fingerprint',
+  account: 'same account ID',
+  email: 'same email address',
+  postcode: 'same postcode',
+  ip: 'same IP address',
+};
+
+function buildSignalsSummary(cluster: LinkedCluster): string[] {
+  const summaries: string[] = [];
+  for (const sig of cluster.signals_matched) {
+    summaries.push(SIGNAL_LABELS[sig]);
+  }
+  return summaries;
+}
+
+// ---------------------------------------------------------------------------
+// HARD CAPS
+// ---------------------------------------------------------------------------
+
+function applyHardCaps(
+  grade: ConfidenceGrade,
+  score: number,
+  cluster: LinkedCluster
+): { grade: ConfidenceGrade; score: number; capReason: string | null } {
+  // Cap 1: single-order cluster → max POSSIBLE
+  if (cluster.order_ids.length < 2) {
+    const capped = score >= GRADE_THRESHOLDS.POSSIBLE ? 'POSSIBLE' : grade;
+    return {
+      grade: capped,
+      score: Math.min(score, GRADE_THRESHOLDS.POSSIBLE - 1),
+      capReason: 'Single order — identity match insufficient for higher confidence',
+    };
+  }
+
+  // Cap 2: IP-only cluster → max WEAK
+  const hasHard = cluster.signals_matched.some((s) => HARD_SIGNALS.includes(s));
+  const onlySoft = cluster.signals_matched.every((s) => SOFT_SIGNALS.includes(s));
+  if (!hasHard && onlySoft && cluster.signals_matched.includes('ip')) {
+    return {
+      grade: 'WEAK',
+      score: Math.min(score, GRADE_THRESHOLDS.POSSIBLE - 1),
+      capReason: 'IP-only match — insufficient for higher confidence without additional signals',
+    };
+  }
+
+  return { grade, score, capReason: null };
+}
+
+// ---------------------------------------------------------------------------
+// RECOMMENDED ACTION
+// ---------------------------------------------------------------------------
+
+function buildRecommendedAction(
+  grade: ConfidenceGrade,
+  flags: BehaviouralFlag[],
+  hasChargeback: boolean
+): string {
+  if (grade === 'DEFINITE') {
+    if (hasChargeback) {
+      return guardLanguage(
+        'Multiple linked accounts with chargeback history — review all orders before processing refunds or shipments.'
+      );
+    }
+    return guardLanguage(
+      'High-confidence identity match across linked accounts — verify manually before approving high-value transactions.'
+    );
+  }
+  if (grade === 'PROBABLE') {
+    return guardLanguage(
+      'Linked accounts detected with corroborating signals — review before approving refund claims.'
+    );
+  }
+  if (grade === 'POSSIBLE') {
+    return guardLanguage(
+      'Possible linked accounts — review if a refund or return is requested on any of these orders.'
+    );
+  }
+  return guardLanguage('Weak identity overlap — informational only, no action needed.');
+}
+
+// ---------------------------------------------------------------------------
+// CE 3.0 ELIGIBILITY
+// ---------------------------------------------------------------------------
+
+/**
+ * CE 3.0: A cluster is eligible if:
+ *   - At least 1 disputed order (chargeback_filed)
+ *   - At least 2 prior orders from the same customer where no dispute was filed
+ *   - Those prior orders are dated 120+ days before the disputed order
+ *   - At least 2 of these signals match between prior and disputed:
+ *     device_id, ip_address, email, shipping_address, phone, account_id
+ */
+function checkCE3Eligibility(
+  cluster: LinkedCluster,
+  orders: ScorerOrder[]
+): { eligible: boolean; pairs: CE3QualifyingPair[] } {
+  const disputed = orders.filter((o) => o.chargeback_filed === true);
+  if (disputed.length === 0) return { eligible: false, pairs: [] };
+
+  const prior = orders.filter((o) => o.chargeback_filed !== true);
+  if (prior.length < 2) return { eligible: false, pairs: [] };
+
+  const pairs: CE3QualifyingPair[] = [];
+
+  for (const d of disputed) {
+    const dDate = parseDate(d.order_date);
+    if (!dDate) continue;
+
+    for (const p of prior) {
+      const pDate = parseDate(p.order_date);
+      if (!pDate) continue;
+
+      const gap = daysBetween(dDate, pDate);
+      if (gap < 120) continue; // prior must be 120+ days BEFORE disputed
+      if (pDate > dDate) continue; // prior must be earlier
+
+      const matching: string[] = [];
+      if (d.device_id && p.device_id && d.device_id === p.device_id) matching.push('device_id');
+      if (d.ip_address && p.ip_address && d.ip_address === p.ip_address) matching.push('ip_address');
+      if (d.customer_email && p.customer_email && d.customer_email === p.customer_email) matching.push('email');
+      if (d.shipping_address && p.shipping_address && d.shipping_address === p.shipping_address) matching.push('shipping_address');
+      if (d.customer_phone && p.customer_phone && d.customer_phone === p.customer_phone) matching.push('phone');
+      if (d.account_id && p.account_id && d.account_id === p.account_id) matching.push('account_id');
+
+      if (matching.length >= 2) {
+        pairs.push({
+          disputed_order_id: d.order_id,
+          prior_order_id: p.order_id,
+          matching_signals: matching,
+        });
+      }
+    }
+  }
+
+  return {
+    eligible: pairs.length > 0,
+    pairs,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// MAIN ENTRY POINT
+// ---------------------------------------------------------------------------
+
+export interface ScoreClusterInput {
+  cluster: LinkedCluster;
+  orders: ScorerOrder[];
+  historicalEntities?: HistoricalEntity[];
+}
+
+export function scoreCluster(input: ScoreClusterInput): ScoredCluster {
+  const { cluster, orders, historicalEntities } = input;
+
+  // --- 1. Base score from linker confidence ---
+  let baseScore = cluster.confidence_score; // 0–133 typically
+  const maxBase = 100;
+  const normalisedBase = Math.min(baseScore, maxBase);
+
+  // --- 2. Behavioural scoring (only for multi-order clusters) ---
+  let behaviouralScore = 0;
+  const flags: BehaviouralFlag[] = [];
+
+  if (cluster.order_ids.length >= 2) {
+    const r1 = scoreRefundRate(orders);
+    if (r1.points > 0) flags.push({ flag: 'elevated_refund_rate', detail: r1.detail, points: r1.points });
+    behaviouralScore += r1.points;
+
+    const r2 = scoreClaimVelocity(orders);
+    if (r2.points > 0) flags.push({ flag: 'fast_claim_velocity', detail: r2.detail, points: r2.points });
+    behaviouralScore += r2.points;
+
+    const r3 = scoreDenialThenChargeback(orders);
+    if (r3.points > 0) flags.push({ flag: 'denial_then_chargeback', detail: r3.detail, points: r3.points });
+    behaviouralScore += r3.points;
+
+    const r4 = scoreValueEscalation(orders);
+    if (r4.points > 0) flags.push({ flag: 'value_escalation', detail: r4.detail, points: r4.points });
+    behaviouralScore += r4.points;
+
+    const r5 = scoreReasonRotation(orders);
+    if (r5.points > 0) flags.push({ flag: 'reason_rotation', detail: r5.detail, points: r5.points });
+    behaviouralScore += r5.points;
+
+    const r6 = scoreChargebackCount(orders);
+    if (r6.points > 0) flags.push({ flag: 'multiple_chargebacks', detail: r6.detail, points: r6.points });
+    behaviouralScore += r6.points;
+
+    // Historical entity boost (lightweight)
+    if (historicalEntities) {
+      for (const he of historicalEntities) {
+        if (he.chargeback_count >= 2) {
+          flags.push({
+            flag: 'historical_chargebacks',
+            detail: `${he.entityType} ${he.value} has ${he.chargeback_count} prior chargebacks`,
+            points: 10,
+          });
+          behaviouralScore += 10;
+          break; // only count once
+        }
+      }
+    }
+  }
+
+  // Cap behavioural score at 40 so it never overwhelms identity confidence
+  behaviouralScore = Math.min(behaviouralScore, 40);
+
+  // --- 3. Combined score ---
+  const combinedScore = normalisedBase + behaviouralScore;
+  const cappedCombined = Math.min(combinedScore, 100);
+
+  // --- 4. Grade from score, then apply hard caps ---
+  let grade = gradeFromScore(cappedCombined);
+  const capResult = applyHardCaps(grade, cappedCombined, cluster);
+  grade = capResult.grade;
+
+  // --- 5. CE 3.0 ---
+  const ce3 = checkCE3Eligibility(cluster, orders);
+
+  // --- 6. Build output ---
+  const hasChargeback = orders.some((o) => o.chargeback_filed === true);
+  const signalsSummary = buildSignalsSummary(cluster);
+
+  return {
+    cluster_id: cluster.cluster_id,
+    order_ids: cluster.order_ids,
+    confidence_grade: grade,
+    review_priority_score: capResult.score,
+    signals_summary: signalsSummary,
+    recommended_action: buildRecommendedAction(grade, flags, hasChargeback),
+    behavioural_flags: flags,
+    behavioural_score: behaviouralScore,
+    ce3_eligible: ce3.eligible,
+    ce3_qualifying_transactions: ce3.pairs,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// DETERMINISTIC SIGNAL-WEIGHT SCORER
+// ---------------------------------------------------------------------------
+
+/**
+ * Signal weights for the deterministic identity scorer.
+ * These are intentionally different from the linker weights — the linker
+ * uses weights to decide WHETHER to link; this scorer uses weights to
+ * decide HOW CONFIDENT we are that the cluster represents the same person.
+ */
+const IDENTITY_SIGNAL_WEIGHTS: Record<string, number> = {
+  card: 35,
+  phone: 30,
+  account: 30,
+  email: 25,
+  address: 20,
+  name: 10,
+  ip: 10,
+  postcode: 10,
+  device: 20,
+};
+
+export type IdentityGrade = 'definite' | 'probable' | 'possible';
+
+export interface SignalScoreResult {
+  identity_score: number;
+  identity_confidence_grade: IdentityGrade | null;
+  recommended_action: string | null;
+}
+
+/**
+ * Deterministic identity scorer that derives score/grade from the set of
+ * signals already matched by the linker.
+ *
+ * This is the AUTHORITATIVE function for converting signals_matched into a
+ * score/grade. It is called:
+ *   1. By `buildClusterIdentityResults` in worker.ts for every clustered row.
+ *   2. As a fallback when the full `scoreCluster` output is unavailable.
+ *
+ * Weights (each signal counted once regardless of how many orders match it):
+ *   card:    35 — strongest (physical payment instrument)
+ *   phone:   30 — requires a real SIM
+ *   account: 30 — merchant-namespace identifier
+ *   email:   25 — normalised base (plus-alias stripped)
+ *   device:  20 — device fingerprint
+ *   address: 20 — normalised street address
+ *   name:    10 — supporting signal only
+ *   ip:      10 — corroborating only
+ *   postcode:10 — corroborating only
+ *
+ * Grade thresholds (score capped at 100):
+ *   >= 85 → definite
+ *   >= 60 → probable
+ *   >= 35 → possible
+ *    < 35 → null  (below product threshold — do not surface)
+ */
+export function scoreIdentityFromSignals(signals: string[]): SignalScoreResult {
+  if (!signals || signals.length === 0) {
+    return { identity_score: 0, identity_confidence_grade: null, recommended_action: null };
+  }
+
+  let raw = 0;
+  for (const s of signals) {
+    raw += IDENTITY_SIGNAL_WEIGHTS[s.toLowerCase()] ?? 0;
+  }
+  const identity_score = Math.min(raw, 100);
+
+  let identity_confidence_grade: IdentityGrade | null = null;
+  if (identity_score >= GRADE_THRESHOLDS.DEFINITE) identity_confidence_grade = 'definite';
+  else if (identity_score >= GRADE_THRESHOLDS.PROBABLE) identity_confidence_grade = 'probable';
+  else if (identity_score >= GRADE_THRESHOLDS.POSSIBLE) identity_confidence_grade = 'possible';
+
+  const recommended_action: string | null =
+    identity_confidence_grade === 'definite'
+      ? 'High-confidence identity match — verify manually before approving high-value transactions.'
+      : identity_confidence_grade === 'probable'
+        ? 'Multiple signals link these orders — review before processing refunds.'
+        : identity_confidence_grade === 'possible'
+          ? 'Partial identity overlap detected — monitor for further activity.'
+          : null;
+
+  return { identity_score, identity_confidence_grade, recommended_action };
+}
+
+// ---------------------------------------------------------------------------
+// BATCH ENTRY POINT (convenience)
+// ---------------------------------------------------------------------------
+
+export function scoreAllClusters(
+  clusters: LinkedCluster[],
+  ordersById: Map<string, ScorerOrder>,
+  historicalEntities?: Map<string, HistoricalEntity[]>
+): ScoredCluster[] {
+  return clusters.map((cluster) => {
+    const orders = cluster.order_ids
+      .map((id) => ordersById.get(id))
+      .filter((o): o is ScorerOrder => o !== undefined);
+
+    const hist = historicalEntities
+      ? cluster.order_ids.flatMap((id) => {
+          const o = ordersById.get(id);
+          if (!o) return [];
+          const keys = [
+            o.customer_email,
+            o.customer_phone,
+            o.ip_address,
+            o.account_id,
+            o.card_last4,
+          ].filter((k): k is string => !!k);
+          return keys.flatMap((k) => historicalEntities.get(k) ?? []);
+        })
+      : undefined;
+
+    return scoreCluster({ cluster, orders, historicalEntities: hist });
+  });
+}

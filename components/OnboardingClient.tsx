@@ -58,7 +58,8 @@ export default function OnboardingClient({ userId }: OnboardingClientProps) {
     if (upsertError) {
       setError(upsertError.message);
     } else {
-      setStep(3);
+      router.push('/upload?welcome=1');
+      router.refresh();
     }
   }
 
@@ -73,7 +74,7 @@ export default function OnboardingClient({ userId }: OnboardingClientProps) {
         style={{ borderRight: '1px solid var(--border-subtle)' }}
       >
         <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: 'var(--text-subtle)' }}>
-          Setup
+          Start here
         </p>
         {STEPS.map(({ num, label }) => {
           const isActive = step === num;
@@ -125,7 +126,7 @@ export default function OnboardingClient({ userId }: OnboardingClientProps) {
                   Welcome to Unauth
                 </h1>
                 <p className="mt-1 text-sm" style={{ color: 'var(--text-muted)' }}>
-                  Three steps, about 2 minutes.
+                  Answer four quick questions, then run your first audit.
                 </p>
               </div>
 
@@ -288,7 +289,7 @@ export default function OnboardingClient({ userId }: OnboardingClientProps) {
                   className="px-5 py-2.5 rounded-md text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{ background: 'var(--accent)', color: '#fff' }}
                 >
-                  {loading ? 'Saving…' : 'Continue →'}
+                  {loading ? 'Saving…' : 'Go to upload →'}
                 </button>
               </div>
             </>

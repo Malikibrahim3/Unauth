@@ -34,21 +34,51 @@ export async function GET(
     return NextResponse.json({ orders: [] })
   }
 
-  // Fetch orders matching this profile
-  const { data: txRows } = await service
-    .from('audit_transactions')
-    .select('id, order_id, processed_at, order_value, refund_claimed')
-    .in('customer_email', profileRow.emails ?? [])
-    .order('processed_at', { ascending: true })
-    .limit(200) as unknown as {
-      data: Array<{
-        id: string
-        order_id: string
-        processed_at: string
-        order_value: number | null
-        refund_claimed: boolean
-      }> | null
+  // Fetch orders matching this profile — primary path: by email
+  type TxRow = {
+    id: string
+    order_id: string
+    processed_at: string
+    order_value: number | null
+    refund_claimed: boolean
+  }
+  let txRows: TxRow[] | null = null
+
+  if ((profileRow.emails ?? []).length > 0) {
+    const { data } = await service
+      .from('audit_transactions')
+      .select('id, order_id, processed_at, order_value, refund_claimed')
+      .in('customer_email', profileRow.emails)
+      .order('processed_at', { ascending: true })
+      .limit(200) as unknown as { data: TxRow[] | null }
+    txRows = data
+  }
+
+  // Fallback: look up via audit appearances when email-based lookup finds nothing
+  if (!txRows || txRows.length === 0) {
+    const { data: appearances } = await service
+      .from('customer_profile_audit_appearances')
+      .select('audit_id')
+      .eq('profile_id', profileId) as unknown as { data: { audit_id: string }[] | null }
+
+    const auditIds = (appearances ?? []).map((a) => a.audit_id)
+
+    if (auditIds.length > 0) {
+      let query = service
+        .from('audit_transactions')
+        .select('id, order_id, processed_at, order_value, refund_claimed')
+        .in('job_id', auditIds)
+        .order('processed_at', { ascending: true })
+        .limit(200)
+
+      if ((profileRow.emails ?? []).length > 0) {
+        query = query.in('customer_email', profileRow.emails)
+      }
+
+      const { data } = await query as unknown as { data: TxRow[] | null }
+      txRows = data
     }
+  }
 
   return NextResponse.json({ orders: txRows ?? [] })
 }

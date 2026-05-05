@@ -1,6 +1,7 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { logAction } from '@/lib/permissions/audit';
+import { writeActivityLog } from '@/lib/customers/activityLog';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
@@ -54,6 +55,14 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     resourceId: params.id,
     metadata: { noteId: (data as any).id },
     ip,
+  });
+
+  await writeActivityLog({
+    supabase: serviceClient,
+    profileId: params.id,
+    merchantId: ctx.merchantId,
+    eventType: 'note_added',
+    eventData: { note_preview: body.slice(0, 80) },
   });
 
   return NextResponse.json({ note: data });

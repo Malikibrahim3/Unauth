@@ -1,0 +1,16 @@
+{
+  "orders": 100000,
+  "customers": 20000,
+  "fraudRate": 0.04,
+  "iterations": 20,
+  "seed": 42,
+  "threshold": 60,
+  "tiers": [1, 2, 3],
+  "targets": {
+    "cleanBaselineFalsePositiveRateMax": 0.05,
+    "refundAbusersF1Min": 0.8,
+    "inrRecallMin": 0.9,
+    "addressClusterRecallMin": 0.95,
+    "mixedRealisticF1Min": 0.75
+  }
+}

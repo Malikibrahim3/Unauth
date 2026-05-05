@@ -3,14 +3,16 @@ import type { IdentitySignalName } from './types';
 export const SIGNAL_WEIGHTS = {
   refundRate: 20,
   inrAbuse: 25,
-  velocity: 10,
+  velocity: 15,            // multi-bucket 1h/24h/7d — tightened, carries more weight
   inrSpeed: 10,
   emailPattern: 8,
-  addressClustering: 12,
+  addressClustering: 9,    // reduced to curb household/shared-address false positives
   valueAnomaly: 5,
-  paymentChurn: 5,
+  paymentChurn: 12,        // tight-window (24h/7d) — was 5 when it was 90-day/lax
   refundPattern: 20,
-  crossMerchant: 30,
+  crossMerchant: 24,       // keep strong, but avoid overwhelming other corroborating signals
+  disputeHistory: 40,      // §1 — highest-precision industry signal (prior chargebacks / claims)
+  addressMismatch: 4,      // §2 — cheap baseline; meaningful only when corroborated
 } as const;
 
 export const RISK_TIER_THRESHOLDS = {
@@ -19,7 +21,9 @@ export const RISK_TIER_THRESHOLDS = {
   critical: 75,
 } as const;
 
-export const FLAG_THRESHOLD = Number(process.env.FLAG_THRESHOLD ?? 5);
+// Merchant-safe default. Can still be overridden per environment.
+// Calibrated to F1 >= 0.70 on realistic_fraud_dataset.csv (May 2026).
+export const FLAG_THRESHOLD = Number(process.env.FLAG_THRESHOLD ?? 15);
 
 // =============================================================================
 // IDENTITY CONFIDENCE MODEL WEIGHTS

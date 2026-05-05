@@ -15,20 +15,20 @@ import {
 
 interface Props {
   counts: {
-    critical: number;
-    high: number;
-    medium: number;
-    low: number;
+    definite: number;
+    probable: number;
+    possible: number;
+    weak: number;
   };
   totalRows: number;
   totalFlagged: number;
 }
 
 const TIERS = [
-  { key: 'critical', label: 'Definite', color: 'var(--risk-critical)' },
-  { key: 'high',     label: 'Probable', color: 'var(--risk-high)' },
-  { key: 'medium',   label: 'Possible', color: 'var(--risk-medium)' },
-  { key: 'low',      label: 'Weak',     color: 'var(--risk-low)' },
+  { key: 'definite', label: 'Definite', color: 'var(--risk-critical)' },
+  { key: 'probable', label: 'Probable', color: 'var(--risk-high)' },
+  { key: 'possible', label: 'Possible', color: 'var(--risk-medium)' },
+  { key: 'weak',     label: 'Weak',     color: 'var(--risk-low)' },
 ] as const;
 
 const PieTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ name: string; value: number }> }) => {
@@ -64,7 +64,7 @@ const BarTooltip = ({ active, payload, label }: { active?: boolean; payload?: Ar
 };
 
 export default function AuditCharts({ counts, totalRows, totalFlagged }: Props) {
-  const totalTiered = counts.critical + counts.high + counts.medium + counts.low;
+  const totalTiered = counts.definite + counts.probable + counts.possible + counts.weak;
   const flaggedPct = totalRows > 0 ? (totalFlagged / totalRows) * 100 : 0;
   const cleanPct = 100 - flaggedPct;
 

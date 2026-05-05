@@ -72,27 +72,91 @@ function inrAbuse(order: NormalisedOrder, ctx: FastScoringContext): SignalResult
   };
 }
 
-function velocity(order: NormalisedOrder, ctx: FastScoringContext): SignalResult {
-  const maxWindow = ctx.customerMaxVelocity.get(order.emailHash) ?? 0;
+// Multi-bucket velocity (§3): industry standard is 1h / 24h / 7d rather than a
+// single flat window. We compute all three from the customer's order history
+// and return the highest-severity bucket that fired; evidence exposes every
+// bucket so the merchant can see exactly which window triggered the flag.
+const VELOCITY_WINDOWS: { label: '1h' | '24h' | '7d'; ms: number; thresholds: { count: number; score: number }[] }[] = [
+  {
+    label: '1h',
+    ms: 60 * 60 * 1000,
+    // A customer placing ≥2 orders in 60 minutes is a classic burst pattern
+    // (card-testing or account-takeover); ≥3 is near-definitive.
+    thresholds: [{ count: 3, score: 90 }, { count: 2, score: 70 }],
+  },
+  {
+    label: '24h',
+    ms: 24 * 60 * 60 * 1000,
+    thresholds: [{ count: 5, score: 75 }, { count: 3, score: 50 }],
+  },
+  {
+    label: '7d',
+    ms: 7 * 24 * 60 * 60 * 1000,
+    thresholds: [{ count: 15, score: 55 }, { count: 8, score: 35 }],
+  },
+];
 
-  if (maxWindow < 3) {
+function computeMaxInWindow(sortedTimes: number[], windowMs: number): number {
+  if (sortedTimes.length === 0) return 0;
+  let maxCount = 0;
+  let i = 0;
+  for (let j = 0; j < sortedTimes.length; j++) {
+    while (sortedTimes[j] - sortedTimes[i] > windowMs) i++;
+    const count = j - i + 1;
+    if (count > maxCount) maxCount = count;
+  }
+  return maxCount;
+}
+
+function velocity(order: NormalisedOrder, ctx: FastScoringContext): SignalResult {
+  const customerOrders = ctx.customerOrderHistory.get(order.emailHash) ?? [];
+  if (customerOrders.length < 2) {
     return {
       name: 'velocity',
       fired: false,
       score: 0,
-      reason: 'No burst ordering detected.',
-      evidence: { maxOrdersIn24h: maxWindow },
+      reason: 'Insufficient order history to evaluate velocity.',
+      evidence: {},
     };
   }
 
-  const score = Math.min(90, 50 + 10 * (maxWindow - 3));
+  const times = customerOrders
+    .map((o) => o.orderDate.getTime())
+    .sort((a, b) => a - b);
+
+  const bucketCounts: Record<string, number> = {};
+  let bestScore = 0;
+  let bestLabel: string | null = null;
+  let bestCount = 0;
+
+  for (const w of VELOCITY_WINDOWS) {
+    const max = computeMaxInWindow(times, w.ms);
+    bucketCounts[w.label] = max;
+    for (const t of w.thresholds) {
+      if (max >= t.count && t.score > bestScore) {
+        bestScore = t.score;
+        bestLabel = w.label;
+        bestCount = max;
+      }
+    }
+  }
+
+  if (bestScore === 0) {
+    return {
+      name: 'velocity',
+      fired: false,
+      score: 0,
+      reason: 'No burst ordering detected across 1h / 24h / 7d windows.',
+      evidence: { buckets: bucketCounts, totalOrders: customerOrders.length },
+    };
+  }
 
   return {
     name: 'velocity',
     fired: true,
-    score,
-    reason: `Customer placed ${maxWindow} orders within a 24-hour window.`,
-    evidence: { maxOrdersIn24h: maxWindow, totalOrders: (ctx.customerOrderHistory.get(order.emailHash) ?? []).length },
+    score: bestScore,
+    reason: `Customer placed ${bestCount} orders within a ${bestLabel} window (1h=${bucketCounts['1h']}, 24h=${bucketCounts['24h']}, 7d=${bucketCounts['7d']}).`,
+    evidence: { buckets: bucketCounts, triggeringWindow: bestLabel, triggeringCount: bestCount, totalOrders: customerOrders.length },
     identifierTypesUsed: ['email'],
   };
 }
@@ -246,7 +310,7 @@ function addressClustering(order: NormalisedOrder, ctx: FastScoringContext): Sig
 
   const distinctEmails = ctx.addressEmailMap.get(order.addressHash) ?? new Set();
 
-  if (distinctEmails.size < 3) {
+  if (distinctEmails.size < 4) {
     return {
       name: 'addressClustering',
       fired: false,
@@ -256,7 +320,7 @@ function addressClustering(order: NormalisedOrder, ctx: FastScoringContext): Sig
     };
   }
 
-  const score = Math.min(80, 30 + 10 * (distinctEmails.size - 3));
+  const score = Math.min(70, 25 + 8 * (distinctEmails.size - 4));
 
   return {
     name: 'addressClustering',
@@ -308,26 +372,215 @@ function valueAnomaly(order: NormalisedOrder, ctx: FastScoringContext): SignalRe
   };
 }
 
-function paymentChurn(order: NormalisedOrder, ctx: FastScoringContext): SignalResult {
-  const methods = ctx.customerPaymentMethods.get(order.emailHash) ?? new Set();
+// Tight-window payment-method churn (§4). The prior 90-day / ≥4-method rule
+// was too lax — a legitimate customer rotating PayPal / Apple Pay / Visa
+// across three months trivially hit it. Industry (Sift / Kount / Stripe Radar)
+// uses days, not months: rotating ≥2 distinct methods in 7 days is a strong
+// card-testing / compromised-instrument signal.
+const PAYMENT_CHURN_WINDOWS: { label: string; ms: number; thresholds: { count: number; score: number }[] }[] = [
+  {
+    label: '24h',
+    ms: 24 * 60 * 60 * 1000,
+    thresholds: [{ count: 3, score: 85 }, { count: 2, score: 65 }],
+  },
+  {
+    label: '7d',
+    ms: 7 * 24 * 60 * 60 * 1000,
+    thresholds: [{ count: 4, score: 70 }, { count: 3, score: 50 }],
+  },
+];
 
-  if (methods.size < 4) {
+function paymentChurn(order: NormalisedOrder, ctx: FastScoringContext): SignalResult {
+  const customerOrders = ctx.customerOrderHistory.get(order.emailHash) ?? [];
+  if (customerOrders.length < 2) {
     return {
       name: 'paymentChurn',
       fired: false,
       score: 0,
-      reason: `Customer used ${methods.size} distinct payment method(s) in the last 90 days — below the threshold.`,
-      evidence: { distinctMethodCount: methods.size, windowDays: 90 },
+      reason: 'Insufficient order history to evaluate payment-method churn.',
+      evidence: {},
+    };
+  }
+
+  // Scan every window ending at this order's date; track the highest distinct
+  // method count observed in any sliding window, per bucket.
+  const sorted = [...customerOrders].sort((a, b) => a.orderDate.getTime() - b.orderDate.getTime());
+  const bucketCounts: Record<string, number> = {};
+  let bestScore = 0;
+  let bestLabel: string | null = null;
+  let bestCount = 0;
+
+  for (const w of PAYMENT_CHURN_WINDOWS) {
+    let maxDistinct = 0;
+    let i = 0;
+    const methodsInWindow = new Map<string, number>();
+    for (let j = 0; j < sorted.length; j++) {
+      const m = sorted[j].paymentMethod?.toLowerCase();
+      if (m) methodsInWindow.set(m, (methodsInWindow.get(m) ?? 0) + 1);
+      while (sorted[j].orderDate.getTime() - sorted[i].orderDate.getTime() > w.ms) {
+        const om = sorted[i].paymentMethod?.toLowerCase();
+        if (om) {
+          const n = (methodsInWindow.get(om) ?? 0) - 1;
+          if (n <= 0) methodsInWindow.delete(om);
+          else methodsInWindow.set(om, n);
+        }
+        i++;
+      }
+      if (methodsInWindow.size > maxDistinct) maxDistinct = methodsInWindow.size;
+    }
+    bucketCounts[w.label] = maxDistinct;
+    for (const t of w.thresholds) {
+      if (maxDistinct >= t.count && t.score > bestScore) {
+        bestScore = t.score;
+        bestLabel = w.label;
+        bestCount = maxDistinct;
+      }
+    }
+  }
+
+  if (bestScore === 0) {
+    return {
+      name: 'paymentChurn',
+      fired: false,
+      score: 0,
+      reason: 'No tight-window payment-method churn detected.',
+      evidence: { buckets: bucketCounts, totalOrders: customerOrders.length },
     };
   }
 
   return {
     name: 'paymentChurn',
     fired: true,
-    score: 60,
-    reason: `Customer used ${methods.size} distinct payment methods within a 90-day window, which is consistent with testing multiple stolen or compromised payment instruments.`,
-    evidence: { distinctMethodCount: methods.size, windowDays: 90, recentOrderCount: (ctx.customerOrderHistory.get(order.emailHash) ?? []).length },
+    score: bestScore,
+    reason: `Customer used ${bestCount} distinct payment methods within a ${bestLabel} window — consistent with testing multiple stolen or compromised payment instruments.`,
+    evidence: { buckets: bucketCounts, triggeringWindow: bestLabel, triggeringCount: bestCount, totalOrders: customerOrders.length },
     identifierTypesUsed: ['email', 'payment'],
+  };
+}
+
+// §1 — Consortium / dispute-history intelligence.
+//
+// This is the single highest-precision signal in the industry (Signifyd,
+// Riskified, Forter, Stripe Radar, Kount, Chargeflow). Any customer whose
+// history contains a chargeback, dispute, refund claim, or return claim is
+// elevated for *all* future orders, because friendly-fraud behaviour is
+// extraordinarily repeatable.
+//
+// We look at the *customer's* order history (emailHash, already an identity
+// cluster key by virtue of normalisation) and check for prior orders (strictly
+// before this order's date) that either:
+//   • had chargeback_dispute = true             → very strong (95)
+//   • had refund_requested or return_requested  → strong (60–75)
+//   • actually went through as refunded (refundStatus != 'none')
+//     → moderate (40–50), only if the CSV didn't give us the explicit flags
+//
+// If the merchant's CSV omits all three new columns entirely, we fall back to
+// refundStatus-derived signal at a lower weight. We NEVER elevate off the
+// current order's own flags — those are the ground-truth label we're trying
+// to predict, not a predictor.
+function disputeHistory(order: NormalisedOrder, ctx: FastScoringContext): SignalResult {
+  const customerOrders = ctx.customerOrderHistory.get(order.emailHash) ?? [];
+  const prior = customerOrders.filter(
+    (o) => o.orderId !== order.orderId && o.orderDate.getTime() < order.orderDate.getTime()
+  );
+
+  if (prior.length === 0) {
+    return {
+      name: 'disputeHistory',
+      fired: false,
+      score: 0,
+      reason: 'No prior order history for this customer.',
+      evidence: { priorOrderCount: 0 },
+    };
+  }
+
+  const priorChargebacks = prior.filter((o) => o.chargebackDispute === true).length;
+  const priorRefundRequests = prior.filter((o) => o.refundRequested === true).length;
+  const priorReturnRequests = prior.filter((o) => o.returnRequested === true).length;
+  const priorActualRefunds = prior.filter(
+    (o) => o.refundStatus === 'full' || o.refundStatus === 'partial' || o.orderStatus === 'refunded'
+  ).length;
+
+  const hasExplicitFlags = prior.some(
+    (o) =>
+      o.chargebackDispute !== null && o.chargebackDispute !== undefined ||
+      o.refundRequested !== null && o.refundRequested !== undefined ||
+      o.returnRequested !== null && o.returnRequested !== undefined
+  );
+
+  let score = 0;
+  const reasons: string[] = [];
+
+  if (priorChargebacks > 0) {
+    // Any prior chargeback is the strongest possible consortium signal.
+    score = Math.max(score, priorChargebacks >= 2 ? 100 : 95);
+    reasons.push(`${priorChargebacks} prior chargeback${priorChargebacks > 1 ? 's' : ''}`);
+  }
+  if (priorRefundRequests > 0) {
+    score = Math.max(score, priorRefundRequests >= 3 ? 80 : priorRefundRequests >= 2 ? 70 : 60);
+    reasons.push(`${priorRefundRequests} prior refund request${priorRefundRequests > 1 ? 's' : ''}`);
+  }
+  if (priorReturnRequests > 0) {
+    score = Math.max(score, priorReturnRequests >= 3 ? 70 : priorReturnRequests >= 2 ? 60 : 50);
+    reasons.push(`${priorReturnRequests} prior return request${priorReturnRequests > 1 ? 's' : ''}`);
+  }
+  // Fallback: explicit flags absent but the merchant actually processed refunds.
+  if (!hasExplicitFlags && priorActualRefunds > 0) {
+    score = Math.max(score, priorActualRefunds >= 2 ? 50 : 40);
+    reasons.push(`${priorActualRefunds} prior refund${priorActualRefunds > 1 ? 's' : ''} on record`);
+  }
+
+  if (score === 0) {
+    return {
+      name: 'disputeHistory',
+      fired: false,
+      score: 0,
+      reason: 'No prior disputes, refund requests, or return requests on this customer.',
+      evidence: { priorOrderCount: prior.length, priorChargebacks, priorRefundRequests, priorReturnRequests, priorActualRefunds },
+    };
+  }
+
+  return {
+    name: 'disputeHistory',
+    fired: true,
+    score,
+    reason: `Customer has ${reasons.join(', ')} across ${prior.length} prior order${prior.length > 1 ? 's' : ''} — consortium / dispute-history elevation.`,
+    evidence: { priorOrderCount: prior.length, priorChargebacks, priorRefundRequests, priorReturnRequests, priorActualRefunds, hasExplicitFlags },
+    identifierTypesUsed: ['email'],
+  };
+}
+
+// §2 — Billing / shipping address mismatch.
+//
+// Cheap baseline rule used industry-wide. Not a fraud determinant on its own
+// (gifts, business orders, parents buying for kids all legitimately mismatch),
+// but a well-calibrated corroborating signal when combined with anything else.
+function addressMismatch(order: NormalisedOrder): SignalResult {
+  if (!order.addressHash || !order.billingAddressHash) {
+    return {
+      name: 'addressMismatch',
+      fired: false,
+      score: 0,
+      reason: 'Billing or shipping address missing — cannot compare.',
+      evidence: {},
+    };
+  }
+  if (order.addressHash === order.billingAddressHash) {
+    return {
+      name: 'addressMismatch',
+      fired: false,
+      score: 0,
+      reason: 'Billing and shipping addresses match.',
+      evidence: {},
+    };
+  }
+  return {
+    name: 'addressMismatch',
+    fired: true,
+    score: 35,
+    reason: 'Billing address does not match shipping address — commonly associated with card-not-present fraud when corroborated by other signals.',
+    evidence: { match: false },
+    identifierTypesUsed: ['address'],
   };
 }
 
@@ -503,6 +756,8 @@ function crossMerchant(order: NormalisedOrder, ctx: FastScoringContext): SignalR
 function computeScore(signals: SignalResult[]): number {
   let weightedSum = 0;
   let totalWeight = 0;
+  let hasBroadOverlap = false;
+  let hasStrongFraudEvidence = false;
 
   for (const signal of signals) {
     const weight = SIGNAL_WEIGHTS[signal.name as keyof typeof SIGNAL_WEIGHTS];
@@ -511,12 +766,20 @@ function computeScore(signals: SignalResult[]): number {
     // Including unfired signals in the denominator dilutes the score and causes
     // real fraud patterns to fall below the flagging threshold.
     if (!signal.fired) continue;
+    if (['addressClustering', 'emailPattern', 'crossMerchant', 'addressMismatch'].includes(signal.name)) {
+      hasBroadOverlap = true;
+    }
+    if (['refundRate', 'inrAbuse', 'inrSpeed', 'paymentChurn', 'refundPattern', 'disputeHistory', 'valueAnomaly'].includes(signal.name)) {
+      hasStrongFraudEvidence = true;
+    }
     weightedSum += signal.score * weight;
     totalWeight += weight;
   }
 
   if (totalWeight === 0) return 0;
-  return Math.min(100, Math.max(0, weightedSum / totalWeight));
+  const rawScore = weightedSum / totalWeight;
+  const corroboratedScore = hasBroadOverlap && !hasStrongFraudEvidence ? rawScore * 0.45 : rawScore;
+  return Math.min(100, Math.max(0, corroboratedScore));
 }
 
 function getRiskTier(score: number): 'low' | 'medium' | 'high' | 'critical' {
@@ -559,13 +822,15 @@ export function scoreBatch(
       paymentChurn(order, ctx),
       refundPattern(order, ctx),
       crossMerchant(order, ctx),
+      disputeHistory(order, ctx),
+      addressMismatch(order),
     ];
 
     const signals = rawSignals.map((s) => applyAdjustment(s, ctx));
 
     const totalScore = computeScore(signals);
     const riskTier = getRiskTier(totalScore);
-    const flagged = totalScore >= FLAG_THRESHOLD;
+    const baseFlagged = totalScore >= FLAG_THRESHOLD;
 
     // §5.1 — Data completeness cap
     // A 'definite' grade requires at least 2 distinct strong identifier types.
@@ -607,6 +872,7 @@ export function scoreBatch(
 
     const cluster = identityClusterMap[order.orderId] || null;
     const identityAlerts = generateIdentityAlert(order, cluster, ctx);
+    const flagged = baseFlagged && confidenceGrade !== null && confidenceGrade !== 'weak';
 
     return {
       order,

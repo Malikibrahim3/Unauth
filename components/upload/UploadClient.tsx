@@ -5,9 +5,18 @@ import { useRouter } from 'next/navigation';
 import { UploadCloud, FileText, AlertCircle, CheckCircle, ChevronDown, ChevronRight, Calendar } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
-import { autoMapHeaders, REQUIRED_FIELDS, OPTIONAL_FIELD_GROUPS, type RequiredField } from '@/lib/csv/headerAliases';
+import {
+  autoMapHeaders,
+  REQUIRED_FIELDS,
+  OPTIONAL_FIELD_GROUPS,
+  FIELD_IMPORTANCE,
+  type RequiredField,
+  type FieldImportance,
+} from '@/lib/csv/headerAliases';
+import { sniffFile } from '@/lib/csv/sniffer';
 import { friendlyUploadError, type FriendlyError } from '@/lib/copy/uploadErrors';
 import { assessDataQualityFromMapping, type DataQualityReport } from '@/lib/csv/dataQuality';
+import { track } from '@/lib/analytics/amplitude';
 
 type UploadState = 'idle' | 'mapping' | 'context' | 'uploading' | 'processing' | 'complete' | 'error';
 type UploadType = 'standard' | 'historical' | 'investigation';
@@ -45,6 +54,12 @@ const FIELD_LABELS: Record<RequiredField, string> = {
   asn: 'ASN',
   account_id: 'Account ID',
   ground_truth_label: 'Ground truth label',
+  // Dispute / claim signals — optional. Merchants without a disputes export
+  // will leave these blank; the scorer handles `null` as "unknown" rather
+  // than "no dispute", so omitting them never falsely exonerates an order.
+  chargeback_dispute: 'Chargeback filed',
+  refund_requested: 'Refund requested',
+  return_requested: 'Return requested',
 };
 
 export default function UploadClient() {
@@ -54,6 +69,7 @@ export default function UploadClient() {
   const [dragOver, setDragOver] = useState(false);
   const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
   const [columnMap, setColumnMap] = useState<Partial<Record<RequiredField, string>>>({});
+  const [fuzzyFields, setFuzzyFields] = useState<Set<RequiredField>>(new Set());
   const [dataQuality, setDataQuality] = useState<DataQualityReport | null>(null);
   const [progress, setProgress] = useState(0);
   const [totalRows, setTotalRows] = useState(0);
@@ -81,20 +97,23 @@ export default function UploadClient() {
 
   const handleFile = useCallback((f: File) => {
     setFile(f);
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const text = e.target?.result as string;
-      const headers = text
-        .split('\n')[0]
-        .split(',')
-        .map((h) => h.trim().replace(/^"|"$/g, ''));
+    // Use sniffFile for robust BOM stripping, delimiter detection, and
+    // quoted-field-aware header tokenisation (instead of a naive comma-split).
+    sniffFile(f).then(({ headers, collisions }) => {
+      if (collisions.length > 0) {
+        console.warn(
+          '[UploadClient] Header collisions detected:',
+          collisions.map((c) => `${c.field}: [${c.headers.join(', ')}]`).join(' | '),
+        );
+      }
       setCsvHeaders(headers);
-      const mapped = autoMapHeaders(headers);
-      setColumnMap(mapped);
-      setDataQuality(assessDataQualityFromMapping(mapped));
+      const { exact, fuzzy } = autoMapHeaders(headers);
+      // Merge exact + fuzzy so dropdowns are pre-filled; track fuzzy for "?" badges
+      setColumnMap({ ...exact, ...fuzzy });
+      setFuzzyFields(new Set(Object.keys(fuzzy) as RequiredField[]));
+      setDataQuality(assessDataQualityFromMapping({ ...exact, ...fuzzy }));
       setState('mapping');
-    };
-    reader.readAsText(f);
+    });
   }, []);
 
   const onDrop = useCallback(
@@ -110,6 +129,15 @@ export default function UploadClient() {
   useEffect(() => {
     if (state === 'mapping') setDataQuality(assessDataQualityFromMapping(columnMap));
   }, [columnMap, state]);
+
+  /** Remove a field from fuzzy set when user manually changes its mapping */
+  const clearFuzzy = useCallback((field: RequiredField) => {
+    setFuzzyFields((prev) => {
+      const next = new Set(prev);
+      next.delete(field);
+      return next;
+    });
+  }, []);
 
   function proceedToContext() {
     setState('context');
@@ -151,6 +179,12 @@ export default function UploadClient() {
       setRunId(newRunId);
       setState('processing');
       setStatusText('Queued for processing…');
+      track('CSV Uploaded', {
+        uploadType,
+        hasLabel: !!uploadLabel.trim(),
+        hasDateRange: !!(dateRangeStart || dateRangeEnd),
+        dataQualityGrade: dataQuality?.grade ?? null,
+      });
     } catch (err) {
       setState('error');
       setFriendlyError(friendlyUploadError(err instanceof Error ? err.message : String(err)));
@@ -164,27 +198,29 @@ export default function UploadClient() {
     async function poll() {
       if (cancelled) return;
       try {
-        const res = await fetch(`/api/jobs/${runId}`);
+        const res = await fetch(`/api/audit/${runId}/progress`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const job = await res.json();
-        if (job.total_rows > 0) {
-          setTotalRows(job.total_rows);
-          setProgress(Math.round((job.processed_rows / job.total_rows) * 100));
+        if (job.rowCount > 0) {
+          setTotalRows(job.rowCount);
+          setProgress(job.progressPercent ?? 0);
         }
-        if (job.status === 'completed') {
+        if (job.status === 'complete') {
           setState('complete');
           router.push(`/audit/${runId}`);
           return;
         }
         if (job.status === 'failed') {
           setState('error');
-          const log = job.error_log as Array<{ message?: string }> | null;
-          setFriendlyError(friendlyUploadError(log?.[0]?.message ?? 'Processing failed.'));
+          setFriendlyError(friendlyUploadError(job.errorMessage ?? 'Processing failed.'));
           return;
         }
+        const processed = job.rowCount > 0
+          ? Math.round((job.progressPercent / 100) * job.rowCount)
+          : 0;
         setStatusText(
           job.status === 'processing'
-            ? `Processing ${job.processed_rows.toLocaleString()} of ${job.total_rows.toLocaleString()} orders`
+            ? `Processing ${processed.toLocaleString()} of ${job.rowCount.toLocaleString()} orders`
             : 'Queued for processing…',
         );
       } catch {
@@ -425,7 +461,7 @@ export default function UploadClient() {
 
       {/* Column mapping panel */}
       {(state === 'mapping' || state === 'context') && csvHeaders.length > 0 && state === 'mapping' && (
-        <div className="rounded-lg p-5 space-y-4 border" style={{ borderColor: 'var(--border-subtle)' }}>
+        <div data-testid="column-mapping" className="rounded-lg p-5 space-y-4 border" style={{ borderColor: 'var(--border-subtle)' }}>
           <div>
             <h3 className="text-sm font-semibold mb-0.5" style={{ color: 'var(--text)' }}>
               We found {csvHeaders.length} columns in your CSV. Match them:
@@ -446,6 +482,7 @@ export default function UploadClient() {
             {REQUIRED_FIELDS.map((field) => {
               const mapped = columnMap[field];
               const isUnmapped = !mapped;
+              const isFuzzy = fuzzyFields.has(field);
               return (
                 <div
                   key={field}
@@ -463,9 +500,10 @@ export default function UploadClient() {
                   </span>
                   <select
                     value={mapped ?? ''}
-                    onChange={(e) =>
-                      setColumnMap((m) => ({ ...m, [field]: e.target.value || undefined }))
-                    }
+                    onChange={(e) => {
+                      setColumnMap((m) => ({ ...m, [field]: e.target.value || undefined }));
+                      clearFuzzy(field);
+                    }}
                     className="text-xs rounded px-2 py-1 flex-1 focus:outline-none"
                     style={{
                       background: 'var(--bg-inset)',
@@ -480,8 +518,17 @@ export default function UploadClient() {
                       </option>
                     ))}
                   </select>
-                  {!isUnmapped && (
+                  {mapped && !isFuzzy && (
                     <CheckCircle className="h-3.5 w-3.5 flex-shrink-0" style={{ color: 'var(--success)' }} />
+                  )}
+                  {mapped && isFuzzy && (
+                    <span
+                      className="text-[10px] px-1 py-0.5 rounded font-semibold flex-shrink-0"
+                      style={{ background: 'var(--accent-subtle)', color: 'var(--accent)' }}
+                      title="Auto-detected — please confirm this match is correct"
+                    >
+                      ?
+                    </span>
                   )}
                   {isUnmapped && (
                     <AlertCircle
@@ -494,25 +541,38 @@ export default function UploadClient() {
             })}
           </div>
 
-          {/* Optional field groups */}
+          {/* Match quality improvers */}
           <div className="space-y-4">
-            <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
-              Optional columns — leave blank if not in your file
-            </p>
-            {OPTIONAL_FIELD_GROUPS.map((group) => (
+            <div className="flex items-center gap-2">
+              <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+                Match quality improvers
+              </p>
+              <span
+                className="text-[10px] px-1.5 py-0.5 rounded"
+                style={{ background: 'var(--risk-medium-bg)', color: 'var(--risk-medium)' }}
+              >
+                Optional — more fields = stronger matches
+              </span>
+            </div>
+            {OPTIONAL_FIELD_GROUPS.filter((g) => g.importance === 'match_improver').map((group) => (
               <div key={group.label} className="space-y-1.5">
                 <p className="text-xs font-medium pl-1" style={{ color: 'var(--text-subtle)' }}>
                   {group.label}
                 </p>
                 {group.fields.map((field) => {
                   const mapped = columnMap[field];
+                  const isUnmapped = !mapped;
+                  const isFuzzy = fuzzyFields.has(field);
                   return (
                     <div
                       key={field}
                       className="flex items-center gap-3 rounded px-3 py-2"
-                      style={{ background: 'var(--bg-subtle)' }}
+                      style={{
+                        background: isUnmapped ? 'var(--risk-medium-bg)' : 'var(--bg-subtle)',
+                        border: `1px solid ${isUnmapped ? 'var(--risk-medium-bd)' : 'transparent'}`,
+                      }}
                     >
-                      <span className="text-xs w-44 flex-shrink-0" style={{ color: 'var(--text-muted)' }}>
+                      <span className="text-xs w-44 flex-shrink-0" style={{ color: 'var(--text)' }}>
                         {FIELD_LABELS[field]}
                       </span>
                       <span className="text-xs" style={{ color: 'var(--text-subtle)' }}>
@@ -520,9 +580,10 @@ export default function UploadClient() {
                       </span>
                       <select
                         value={mapped ?? ''}
-                        onChange={(e) =>
-                          setColumnMap((m) => ({ ...m, [field]: e.target.value || undefined }))
-                        }
+                        onChange={(e) => {
+                          setColumnMap((m) => ({ ...m, [field]: e.target.value || undefined }));
+                          clearFuzzy(field);
+                        }}
                         className="text-xs rounded px-2 py-1 flex-1 focus:outline-none"
                         style={{
                           background: 'var(--bg-inset)',
@@ -537,6 +598,91 @@ export default function UploadClient() {
                           </option>
                         ))}
                       </select>
+                      {mapped && !isFuzzy && (
+                        <CheckCircle className="h-3.5 w-3.5 flex-shrink-0" style={{ color: 'var(--success)' }} />
+                      )}
+                      {mapped && isFuzzy && (
+                        <span
+                          className="text-[10px] px-1 py-0.5 rounded font-semibold flex-shrink-0"
+                          style={{ background: 'var(--accent-subtle)', color: 'var(--accent)' }}
+                          title="Auto-detected — please confirm this match is correct"
+                        >
+                          ?
+                        </span>
+                      )}
+                      {isUnmapped && (
+                        <span
+                          className="text-[10px] px-1 py-0.5 rounded flex-shrink-0"
+                          style={{ background: 'var(--risk-medium-bg)', color: 'var(--risk-medium)' }}
+                          title="Adding this field improves match accuracy"
+                        >
+                          +
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+
+          {/* Nice-to-have optional fields */}
+          <div className="space-y-4">
+            <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+              Optional fields
+            </p>
+            {OPTIONAL_FIELD_GROUPS.filter((g) => g.importance === 'nice_to_have').map((group) => (
+              <div key={group.label} className="space-y-1.5">
+                <p className="text-xs font-medium pl-1" style={{ color: 'var(--text-subtle)' }}>
+                  {group.label}
+                </p>
+                {group.fields.map((field) => {
+                  const mapped = columnMap[field];
+                  const isFuzzy = fuzzyFields.has(field);
+                  return (
+                    <div
+                      key={field}
+                      className="flex items-center gap-3 rounded px-3 py-2"
+                      style={{ background: 'var(--bg-subtle)' }}
+                    >
+                      <span className="text-xs w-44 flex-shrink-0" style={{ color: 'var(--text-muted)' }}>
+                        {FIELD_LABELS[field]}
+                      </span>
+                      <span className="text-xs" style={{ color: 'var(--text-subtle)' }}>
+                        ←
+                      </span>
+                      <select
+                        value={mapped ?? ''}
+                        onChange={(e) => {
+                          setColumnMap((m) => ({ ...m, [field]: e.target.value || undefined }));
+                          clearFuzzy(field);
+                        }}
+                        className="text-xs rounded px-2 py-1 flex-1 focus:outline-none"
+                        style={{
+                          background: 'var(--bg-inset)',
+                          border: '1px solid var(--border)',
+                          color: 'var(--text)',
+                        }}
+                      >
+                        <option value="">— not mapped —</option>
+                        {csvHeaders.map((h) => (
+                          <option key={h} value={h}>
+                            {h}
+                          </option>
+                        ))}
+                      </select>
+                      {mapped && !isFuzzy && (
+                        <CheckCircle className="h-3.5 w-3.5 flex-shrink-0" style={{ color: 'var(--success)' }} />
+                      )}
+                      {mapped && isFuzzy && (
+                        <span
+                          className="text-[10px] px-1 py-0.5 rounded font-semibold flex-shrink-0"
+                          style={{ background: 'var(--accent-subtle)', color: 'var(--accent)' }}
+                          title="Auto-detected — please confirm this match is correct"
+                        >
+                          ?
+                        </span>
+                      )}
                     </div>
                   );
                 })}
@@ -596,7 +742,7 @@ export default function UploadClient() {
 
       {/* Upload context step */}
       {state === 'context' && (
-        <div className="rounded-lg p-5 space-y-5 border" style={{ borderColor: 'var(--border-subtle)' }}>
+        <div data-testid="upload-context" className="rounded-lg p-5 space-y-5 border" style={{ borderColor: 'var(--border-subtle)' }}>
           <div>
             <div className="flex items-center gap-2 mb-0.5">
               <Calendar className="h-4 w-4" style={{ color: 'var(--icon-muted)' }} />
@@ -615,6 +761,7 @@ export default function UploadClient() {
               Label
             </label>
             <input
+              data-testid="upload-label"
               type="text"
               value={uploadLabel}
               onChange={(e) => setUploadLabel(e.target.value)}
@@ -639,6 +786,7 @@ export default function UploadClient() {
             </label>
             <div className="flex items-center gap-2">
               <input
+                data-testid="date-range-start"
                 type="date"
                 value={dateRangeStart}
                 onChange={(e) => setDateRangeStart(e.target.value)}
@@ -651,6 +799,7 @@ export default function UploadClient() {
               />
               <span className="text-xs" style={{ color: 'var(--text-muted)' }}>to</span>
               <input
+                data-testid="date-range-end"
                 type="date"
                 value={dateRangeEnd}
                 onChange={(e) => setDateRangeEnd(e.target.value)}
@@ -727,6 +876,7 @@ export default function UploadClient() {
               ← Back
             </button>
             <button
+              data-testid="submit-upload"
               onClick={runAudit}
               className="px-5 py-2 text-sm font-semibold rounded-md transition-colors"
               style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}

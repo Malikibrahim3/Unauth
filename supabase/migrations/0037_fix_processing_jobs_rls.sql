@@ -20,6 +20,7 @@ BEGIN;
 DROP POLICY IF EXISTS "processing_jobs_select_own" ON processing_jobs;
 DROP POLICY IF EXISTS "processing_jobs_insert_own" ON processing_jobs;
 DROP POLICY IF EXISTS "processing_jobs_update_own" ON processing_jobs;
+DROP POLICY IF EXISTS "processing_jobs_delete_own" ON processing_jobs;
 
 CREATE POLICY "processing_jobs_select_own" ON processing_jobs
   FOR SELECT TO authenticated USING (

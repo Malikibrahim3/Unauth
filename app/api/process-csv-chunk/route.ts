@@ -128,8 +128,8 @@ export async function POST(request: NextRequest) {
     log('Pipeline complete for this chunk');
 
     if (!isLast) {
-      // Hand off to the next chunk and return.
-      await dispatchChunk(originFromRequest(request), {
+      // Hand off to the next chunk fire-and-forget, then return immediately.
+      void dispatchChunk(originFromRequest(request), {
         jobId,
         chunkIndex: chunkIndex + 1,
         totalChunks,
@@ -137,7 +137,7 @@ export async function POST(request: NextRequest) {
         columnMap: body.columnMap,
         storagePath,
       });
-      log(`Dispatched chunk ${chunkIndex + 1}`);
+      log(`Dispatched chunk ${chunkIndex + 1} (fire-and-forget)`);
       return NextResponse.json({ ok: true, dispatched: chunkIndex + 1 });
     }
 

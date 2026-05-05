@@ -1,6 +1,7 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { logAction } from '@/lib/permissions/audit';
+import { writeActivityLog } from '@/lib/customers/activityLog';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(req: NextRequest) {
@@ -60,6 +61,15 @@ export async function POST(req: NextRequest) {
     metadata: { displayEmail, displayName, lastSeenRisk },
     ip,
   });
+
+  if (customerProfileId) {
+    await writeActivityLog({
+      supabase: serviceClient,
+      profileId: customerProfileId,
+      merchantId: ctx.merchantId,
+      eventType: 'watchlist_added',
+    });
+  }
 
   return NextResponse.json({ entry: data });
 }

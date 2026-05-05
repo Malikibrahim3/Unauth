@@ -9,3 +9,7 @@ node_modules/
 dist/
 build/
 .turbo/
+tests/.test-credentials.json
+tests/reports/
+tests/utils/csv-fixtures/
+synthetic-lab/outputs/

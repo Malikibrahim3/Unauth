@@ -16,7 +16,6 @@ import {
   HelpCircle,
   Settings,
   ChevronRight,
-  BookMarked,
   ShieldCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -64,16 +63,16 @@ function buildGroups(inboxCount = 0, watchlistCount = 0): NavGroup[] {
     {
       label: 'Audits',
       items: [
-        { href: '/history',   label: 'All Audits', icon: ListChecks },
-        { href: '/upload',    label: 'New Audit',  icon: PlusSquare, isPrimary: true },
+        { href: '/upload', label: 'New audit', icon: PlusSquare, isPrimary: true },
+        { href: '/history', label: 'Audit history', icon: ListChecks },
       ],
     },
     {
       label: 'Investigations',
       items: [
-        { href: '/customers',   label: 'Customers',   icon: Users },
-        { href: '/watchlist',   label: 'Watchlist',   icon: Star, badge: watchlistCount },
-        { href: '/chargebacks', label: 'Evidence',    icon: ShieldCheck },
+        { href: '/customers', label: 'Customers', icon: Users },
+        { href: '/watchlist', label: 'Watchlist', icon: Star, badge: watchlistCount },
+        { href: '/chargebacks', label: 'Evidence packages', icon: ShieldCheck },
       ],
     },
   ];
@@ -181,6 +180,7 @@ export default function Sidebar({
   const supabase = createClient();
 
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
     try {
@@ -188,6 +188,11 @@ export default function Sidebar({
       if (stored === 'true') setCollapsed(true);
     } catch { /* SSR guard */ }
   }, []);
+
+  // Close mobile drawer on route change
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
 
   function toggleCollapse() {
     setCollapsed((prev) => {
@@ -205,14 +210,18 @@ export default function Sidebar({
   const groups = buildGroups(inboxCount, watchlistCount);
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
 
-  return (
+  const sidebarContent = (isMobile = false) => (
     <aside
       className={cn(
         'relative flex h-full flex-shrink-0 flex-col',
         'bg-[var(--bg-surface)] border-r border-[var(--border-subtle)]',
-        'transition-[width] duration-[var(--duration-base)] ease-[var(--ease-out)]',
-        'overflow-hidden',
-        collapsed ? 'w-14' : 'w-60',
+        isMobile
+          ? 'w-72'
+          : cn(
+              'transition-[width] duration-[var(--duration-base)] ease-[var(--ease-out)]',
+              'overflow-hidden',
+              collapsed ? 'w-14' : 'w-60',
+            ),
       )}
     >
       {/* Logo / merchant */}
@@ -280,25 +289,7 @@ export default function Sidebar({
           </div>
         ))}
 
-        {!collapsed && (
-          <div>
-            <div className="mt-4 mb-1 px-2">
-              <span className="text-overline text-[var(--text-subtle)]">Saved Views</span>
-            </div>
-            <Link
-              href="/saved"
-              className={cn(
-                'flex h-8 items-center gap-3 rounded-sm px-2',
-                'text-body-sm text-[var(--text-muted)] hover:bg-[var(--bg-subtle)] hover:text-[var(--text)]',
-                'transition-colors duration-[var(--duration-fast)]',
-                'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] focus-visible:outline-offset-2',
-              )}
-            >
-              <BookMarked className="h-4 w-4 flex-shrink-0 text-[var(--icon-muted)]" aria-hidden="true" />
-              <span className="truncate">Manage views</span>
-            </Link>
-          </div>
-        )}
+
       </nav>
 
       {/* Footer */}
@@ -397,5 +388,48 @@ export default function Sidebar({
         )}
       </div>
     </aside>
+  );
+
+  return (
+    <>
+      {/* Desktop sidebar — hidden on mobile */}
+      <div className="hidden md:block h-full">
+        {sidebarContent(false)}
+      </div>
+
+      {/* Mobile hamburger toggle — visible only on mobile */}
+      <button
+        type="button"
+        aria-label="Open navigation"
+        onClick={() => setMobileOpen(true)}
+        className={cn(
+          'md:hidden fixed top-3 left-3 z-50',
+          'flex h-9 w-9 items-center justify-center rounded-md',
+          'bg-[var(--bg-surface)] border border-[var(--border-subtle)]',
+          'text-[var(--icon-muted)] hover:text-[var(--icon)]',
+          'shadow-sm transition-colors',
+        )}
+      >
+        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+        </svg>
+      </button>
+
+      {/* Mobile overlay drawer */}
+      {mobileOpen && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="md:hidden fixed inset-0 z-40 bg-black/40"
+            aria-hidden="true"
+            onClick={() => setMobileOpen(false)}
+          />
+          {/* Drawer */}
+          <div className="md:hidden fixed inset-y-0 left-0 z-50 h-full">
+            {sidebarContent(true)}
+          </div>
+        </>
+      )}
+    </>
   );
 }

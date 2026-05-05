@@ -9,6 +9,8 @@ export interface ParsedCsvRow {
   order_status?: string;
   customer_phone?: string;
   billing_address?: string;
+  shipping_postcode?: string;
+  postcode?: string;
   refund_status?: string;
   refund_reason?: string;
   refund_date?: string;
@@ -17,6 +19,8 @@ export interface ParsedCsvRow {
   ip_address?: string;
   device_id?: string;
   card_last4?: string;
+  card_bin?: string;
+  account_id?: string;
   ground_truth_label?: string;
   [key: string]: string | undefined;
 }
@@ -41,4 +45,12 @@ export interface FraudTransactionInsert {
   match_score: number;
   fraud_flags: string[];
   risk_level: 'low' | 'medium' | 'high' | 'critical';
+  identity_confidence_grade?: 'weak' | 'possible' | 'probable' | 'definite' | null;
+  identity_score?: number | null;
+  signals_matched?: string[];
+  behavioural_flags?: string[];
+  recommended_action?: string | null;
+  ce3_eligible?: boolean;
+  ce3_qualifying_transactions?: string[];
+  cluster_id?: string | null;
 }

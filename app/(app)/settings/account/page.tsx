@@ -45,7 +45,7 @@ export default function AccountSettingsPage() {
 
       const { data } = await supabase
         .from('merchants')
-        .select('id, name')
+        .select('id, name, monthly_order_volume, primary_fraud_concern, setup_complete')
         .eq('user_id', user?.id ?? '')
         .single();
 
@@ -207,7 +207,7 @@ export default function AccountSettingsPage() {
 
         <div>
           <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text)' }}>
-            Primary fraud concern
+            Primary review focus
           </label>
           <select
             value={fraudConcern}

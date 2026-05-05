@@ -4,12 +4,13 @@ import Link from 'next/link';
 import { createHash } from 'crypto';
 import { formatDate, formatCurrency } from '@/lib/utils/format';
 import { signalLabel } from '@/lib/copy/signalLabels';
-import ConfidenceGrade, { riskLevelToGrade } from '@/components/ConfidenceGrade';
+import ConfidenceGrade from '@/components/ConfidenceGrade';
 import RiskLegend from '@/components/common/RiskLegend';
 import DismissTransactionButton from '@/components/audit/DismissTransactionButton';
 import FeedbackButtons from '@/components/audit/FeedbackButtons';
 import DataQualityBanner from '@/components/audit/DataQualityBanner';
 import AuditRiskChart from '@/components/audit/AuditRiskChart';
+import { computeAuditSummary } from '@/lib/analysis/auditSummary';
 import type { DataQualityReport } from '@/lib/csv/dataQuality';
 import type { Database } from '@/lib/supabase/types';
 
@@ -42,49 +43,73 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
   const runData = run as unknown as RunRow;
   const dataQuality = (run as unknown as { data_quality?: DataQualityReport }).data_quality ?? null;
 
+  // ── Summary fetch: lightweight columns only, used for counts + metrics ──────
+  // Intentionally does NOT filter by risk_level — uses identity_confidence_grade
+  // NOTE: use params.runId (the route param / job_id) — NOT runData.id (the PK of processing_jobs)
+  const jobId = params.runId;
+
+  // Debug log — confirm which IDs we have
+  console.log('[AuditPage] route runId=%s | runData.id=%s | runData.job_id=%s | querying job_id=%s',
+    params.runId,
+    (runData as any).id,
+    (runData as any).job_id ?? '(none)',
+    jobId,
+  );
+
+  const { data: summaryRows, error: summaryError } = await supabase
+    .from('audit_transactions')
+    .select('identity_confidence_grade, order_value, cluster_id')
+    .eq('job_id', jobId);
+
+  if (summaryError) {
+    console.error('[AuditPage] summaryRows query error:', summaryError);
+  }
+
+  const summary = computeAuditSummary((summaryRows ?? []) as any);
+
+  // Debug log — visible in Next.js server stdout
+  console.log('[AuditPage] runId=%s rows_fetched=%d grade_counts=%j first3=%j',
+    params.runId,
+    (summaryRows ?? []).length,
+    { definite: summary.definite, probable: summary.probable, possible: summary.possible, weak: summary.weak, ungraded: summary.ungraded },
+    (summaryRows ?? []).slice(0, 3),
+  );
+
+  const gradeCounts = {
+    definite: summary.definite,
+    probable: summary.probable,
+    possible: summary.possible,
+    weak:     summary.weak,
+  };
+
+  // ── Paginated flagged-transactions table (graded rows only) ─────────────────
   const { data: transactions, count: flaggedTotal } = await supabase
     .from('audit_transactions')
     .select('*', { count: 'exact' })
-    .eq('job_id', runData.id)
-    .in('risk_level', ['high', 'critical'])
-    .eq('dismissed_by_merchant', false)
-    .order('match_score', { ascending: false })
+    .eq('job_id', jobId)
+    .not('identity_confidence_grade', 'is', null)
+    .order('identity_score', { ascending: false, nullsFirst: false })
     .range(offset, offset + PAGE_SIZE - 1);
 
-  // Tier counts: 4 lightweight count-only queries (no row data transferred)
-  const [lowRes, medRes, highRes, critRes] = await Promise.all([
-    supabase.from('audit_transactions').select('*', { count: 'exact', head: true }).eq('job_id', runData.id).eq('risk_level', 'low'),
-    supabase.from('audit_transactions').select('*', { count: 'exact', head: true }).eq('job_id', runData.id).eq('risk_level', 'medium'),
-    supabase.from('audit_transactions').select('*', { count: 'exact', head: true }).eq('job_id', runData.id).eq('risk_level', 'high'),
-    supabase.from('audit_transactions').select('*', { count: 'exact', head: true }).eq('job_id', runData.id).eq('risk_level', 'critical'),
-  ]);
-  const tierCounts = {
-    low:      lowRes.count  ?? 0,
-    medium:   medRes.count  ?? 0,
-    high:     highRes.count ?? 0,
-    critical: critRes.count ?? 0,
-  };
-
-  // Fetch only flagged (medium/high/critical) rows, limited to 2000, for
-  // value-at-risk total and top-customers table. Much safer than fetching all rows.
+  // ── Top-customers table: graded rows, grouped by email ─────────────────────
   const { data: riskTx } = await supabase
     .from('audit_transactions')
-    .select('customer_email, match_score, order_value, risk_level')
-    .eq('job_id', runData.id)
-    .in('risk_level', ['medium', 'high', 'critical'])
-    .order('match_score', { ascending: false })
+    .select('customer_email, identity_score, identity_confidence_grade, order_value, cluster_id, signals_matched')
+    .eq('job_id', jobId)
+    .not('identity_confidence_grade', 'is', null)
+    .order('identity_score', { ascending: false, nullsFirst: false })
     .limit(2000);
 
-  let valueAtRisk = 0;
-  let estimatedExposure = 0;
   const customerScores = new Map<string, { maxScore: number; orderCount: number; totalSpend: number }>();
-  for (const tx of (riskTx ?? []) as unknown as Array<{ customer_email: string | null; match_score: number; order_value: number | null; risk_level: string }>) {
-    if (tx.order_value) valueAtRisk += tx.order_value;
-    if (tx.order_value && (tx.risk_level === 'high' || tx.risk_level === 'critical')) estimatedExposure += tx.order_value;
+  for (const tx of (riskTx ?? []) as unknown as Array<{
+    customer_email: string | null;
+    identity_score: number | null;
+    order_value: number | null;
+  }>) {
     if (tx.customer_email) {
       const existing = customerScores.get(tx.customer_email) ?? { maxScore: 0, orderCount: 0, totalSpend: 0 };
       customerScores.set(tx.customer_email, {
-        maxScore: Math.max(existing.maxScore, tx.match_score),
+        maxScore:   Math.max(existing.maxScore, tx.identity_score ?? 0),
         orderCount: existing.orderCount + 1,
         totalSpend: existing.totalSpend + (tx.order_value ?? 0),
       });
@@ -95,9 +120,12 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
     .sort((a, b) => b[1].maxScore - a[1].maxScore)
     .slice(0, 20);
 
-  const hasFlags = tierCounts.high + tierCounts.critical + tierCounts.medium > 0;
+  const hasFlags = summary.flaggedTransactions > 0;
   const totalFlagged = flaggedTotal ?? 0;
   const totalPages = Math.ceil(totalFlagged / PAGE_SIZE);
+
+  const valueAtRisk       = summary.valueAtRisk;
+  const estimatedExposure = summary.estimatedExposure;
 
   return (
     <div className="p-8 space-y-8">
@@ -155,7 +183,7 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
           { label: 'Transactions', value: runData.total_rows.toLocaleString() },
           { label: 'Processed', value: `${runData.processed_rows.toLocaleString()} (${runData.total_rows > 0 ? ((runData.processed_rows / runData.total_rows) * 100).toFixed(1) : 0}%)` },
           { label: 'Value at risk', value: formatCurrency(valueAtRisk) },
-          { label: 'Critical flags', value: tierCounts.critical.toLocaleString() },
+          { label: 'Definite flags', value: gradeCounts.definite.toLocaleString() },
           { label: 'Estimated exposure', value: formatCurrency(estimatedExposure), title: 'Total order value for probable and definite identity matches. Where CE3.0 criteria are met, this exposure may be recoverable through chargeback representment.' },
         ].map(({ label, value, title }) => (
           <div key={label} className="rounded-lg px-5 py-4 border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }} title={title}>
@@ -166,18 +194,15 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
       </div>
 
       <div className="grid grid-cols-4 gap-3">
-        {(['weak', 'possible', 'probable', 'definite'] as const).map((grade, i) => {
-          const tier = (['low', 'medium', 'high', 'critical'] as const)[i];
-          return (
-            <div key={grade} className="rounded-lg px-4 py-3 border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
-              <div className="mb-1"><ConfidenceGrade grade={grade} size="sm" /></div>
-              <div className="text-heading-sm font-mono" style={{ color: 'var(--text)' }}>{tierCounts[tier].toLocaleString()}</div>
-            </div>
-          );
-        })}
+        {(['weak', 'possible', 'probable', 'definite'] as const).map((grade) => (
+          <div key={grade} className="rounded-lg px-4 py-3 border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
+            <div className="mb-1"><ConfidenceGrade grade={grade} size="sm" /></div>
+            <div className="text-heading-sm font-mono" style={{ color: 'var(--text)' }}>{gradeCounts[grade].toLocaleString()}</div>
+          </div>
+        ))}
       </div>
 
-      <AuditRiskChart counts={tierCounts} />
+      <AuditRiskChart counts={gradeCounts} totalRows={runData.total_rows} totalFlagged={summary.flaggedTransactions} />
 
       {!hasFlags && (
         <div className="rounded-xl px-6 py-6 text-center border" style={{ background: 'var(--success-bg)', borderColor: 'var(--success-bd)' }}>
@@ -236,16 +261,16 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
             </thead>
             <tbody>
               {((transactions ?? []) as unknown as TxRow[]).map((tx) => {
-                const flags = ((tx as any).identity_signals as string[]) ?? ((tx as any).fraud_flags as string[]) ?? [];
+                const flags = ((tx as any).signals_matched as string[]) ?? ((tx as any).identity_signals as string[]) ?? ((tx as any).fraud_flags as string[]) ?? [];
                 const topFlag = flags[0];
                 return (
                   <tr key={tx.id} className="border-b transition-colors hover-bg-subtle" style={{ borderColor: 'var(--border-subtle)' }}>
                     <td className="px-4 py-2.5 font-mono text-xs" style={{ color: 'var(--text-muted)' }}>{tx.order_id}</td>
                     <td className="px-4 py-2.5 text-xs" style={{ color: 'var(--text-muted)' }}>{formatDate(tx.processed_at)}</td>
                     <td className="px-4 py-2.5 text-right font-mono" style={{ color: 'var(--text)' }}>{formatCurrency(tx.order_value ?? 0)}</td>
-                    <td className="px-4 py-2.5 text-right font-mono font-semibold" style={{ color: 'var(--text)' }}>{Math.round(tx.match_score)}</td>
+                    <td className="px-4 py-2.5 text-right font-mono font-semibold" style={{ color: 'var(--text)' }}>{Math.round((tx as any).identity_score ?? (tx as any).match_score ?? 0)}</td>
                     <td className="px-4 py-2.5">
-                      <ConfidenceGrade grade={riskLevelToGrade(tx.risk_level)} size="sm" />
+                      <ConfidenceGrade grade={((tx as any).identity_confidence_grade ?? 'weak') as any} size="sm" />
                     </td>
                     <td className="px-4 py-2.5 text-xs max-w-xs" style={{ color: 'var(--text-muted)' }}>
                       <div className="truncate">{topFlag ? signalLabel(topFlag).short : '—'}</div>
