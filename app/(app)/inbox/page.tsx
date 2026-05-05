@@ -4,6 +4,7 @@ import InboxClient from '@/components/inbox/InboxClient';
 import TrackPageView from '@/components/common/TrackPageView';
 import { signalLabel } from '@/lib/copy/signalLabels';
 import PageSizeSelect from '@/components/common/PageSizeSelect';
+import { PageHeader } from '@/components/common/PageHeader';
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
 const DEFAULT_PAGE_SIZE = 25;
@@ -34,7 +35,7 @@ export default async function InboxPage({ searchParams }: { searchParams?: { pag
     .range(offset, offset + pageSize - 1);
 
   // Map job_id → processing_job_id to match the InboxClient interface
-  const items = (flagged ?? []).map((row) => ({
+  const items = (flagged ?? []).map((row: unknown) => ({
     ...(row as unknown as Record<string, unknown>),
     processing_job_id: (row as unknown as { job_id: string }).job_id,
     reason: topReason((row as unknown as { signals_matched?: unknown }).signals_matched),
@@ -56,14 +57,10 @@ export default async function InboxPage({ searchParams }: { searchParams?: { pag
 
   return (
     <div className="p-8 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-heading-lg" style={{ color: 'var(--text)' }}>Inbox</h1>
-          <p className="text-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>
-            High and critical transactions awaiting review
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
+      <PageHeader
+        title="Inbox"
+        subtitle="High and critical transactions awaiting review"
+        actions={<div className="flex items-center gap-2">
           <a
             href="/api/inbox/export"
             className="px-3 py-2 text-sm font-semibold rounded-md border transition-colors"
@@ -74,8 +71,8 @@ export default async function InboxPage({ searchParams }: { searchParams?: { pag
           <Link href="/upload" className="btn-accent px-4 py-2 text-sm font-semibold rounded-md transition-colors">
             New Audit
           </Link>
-        </div>
-      </div>
+        </div>}
+      />
       <div className="rounded-lg px-4 py-3 border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
         <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
           {items.length.toLocaleString()} cases in queue

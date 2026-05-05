@@ -158,7 +158,8 @@ export async function POST(request: NextRequest) {
       matched_merchant_count: matchingEntities.length,
       lookup_type: 'quick_score',
       request_ip: ip,
-    } as any).then(({ error: auditErr }) => {
+    } as any).then((res: any) => {
+      const auditErr = res?.error;
       if (auditErr) console.error('[quick-score] audit_log insert failed (non-fatal):', auditErr.message);
     });
 

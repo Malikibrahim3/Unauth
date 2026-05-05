@@ -68,7 +68,8 @@ export function logAction(params: LogActionParams): void {
       metadata:      (metadata ?? null) as any,
       request_ip:    ip            ?? null,
     })
-    .then(({ error }) => {
+    .then((res: any) => {
+      const error = res?.error;
       if (error) {
         // Non-fatal: log but don't expose to caller
         console.error('[audit] logAction failed:', error.message);

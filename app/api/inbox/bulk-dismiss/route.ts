@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, dismissed: 0 });
   }
 
-  const jobIds = [...new Set(txList.map((row) => row.job_id).filter(Boolean))];
+  const jobIds = [...new Set(txList.map((row: any) => row.job_id).filter(Boolean))];
   const { data: jobs, error: jobError } = await serviceClient
     .from('processing_jobs')
     .select('id, merchant_id')
@@ -39,8 +39,8 @@ export async function POST(req: NextRequest) {
 
   if (jobError) return NextResponse.json({ error: jobError.message }, { status: 500 });
 
-  const allowedJobs = new Set((jobs ?? []).filter((job) => job.merchant_id === ctx.merchantId).map((job) => job.id));
-  const allowedIds = txList.filter((row) => allowedJobs.has(row.job_id)).map((row) => row.id);
+  const allowedJobs = new Set((jobs ?? []).filter((job: any) => job.merchant_id === ctx.merchantId).map((job: any) => job.id));
+  const allowedIds = txList.filter((row: any) => allowedJobs.has(row.job_id)).map((row: any) => row.id);
 
   if (allowedIds.length === 0) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });

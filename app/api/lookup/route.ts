@@ -117,7 +117,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Search failed' }, { status: 500 });
   }
 
-  const results = (rows ?? []).map((p) => {
+  const results = (rows ?? []).map((p: any) => {
     const merchantIds: string[] = Array.isArray(p.merchant_ids) ? (p.merchant_ids as string[]) : [];
     const merchantContributed = merchantIds.includes(merchantId);
 
@@ -157,7 +157,8 @@ export async function GET(request: NextRequest) {
     matched_merchant_count: results.length,
     lookup_type: 'merchant_lookup',
     request_ip: ip,
-  } as any).then(({ error: auditErr }) => {
+  } as any).then((res: any) => {
+    const auditErr = res?.error;
     if (auditErr) console.error('[lookup] audit_log insert failed (non-fatal):', auditErr.message);
   });
 
