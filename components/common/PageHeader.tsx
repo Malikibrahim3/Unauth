@@ -1,3 +1,11 @@
+// App Cohesion Audit Phase 1 DONE: PageHeader is now adopted in:
+//   - app/(app)/audit/[runId]/page.tsx
+//   - app/(app)/customers/page.tsx
+//   - app/(app)/inbox/page.tsx
+// Remaining adoption targets:
+//   - app/(app)/audit/[runId]/transaction/[id]/page.tsx
+//   - app/(app)/settings/* pages
+// See reports/ui-ux-audit/APP_COHESION_AUDIT.md — Issue D6.
 import { type ReactNode } from 'react';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';

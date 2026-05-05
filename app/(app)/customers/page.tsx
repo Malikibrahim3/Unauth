@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import CustomersFilterSheet from '@/components/customers/CustomersFilterSheet';
 import CustomersTableClient from '@/components/customers/CustomersTableClient';
 import PageSizeSelect from '@/components/common/PageSizeSelect';
+import { PageHeader } from '@/components/common/PageHeader';
 
 // Helper: build a URL with one search param removed
 function buildRemoveHref(sp: Record<string, string | undefined>, key: string) {
@@ -271,17 +272,15 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
 
   return (
     <div className="p-6 md:p-8 space-y-5">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-heading-lg">Customers</h1>
-          <p className="text-body-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>
-            Segment, filter, and act on all customer risk profiles.
-          </p>
-        </div>
-        <Link href="/upload" className="btn-accent px-4 py-2 rounded-md text-body-sm font-semibold transition-colors">
-          New Audit
-        </Link>
-      </div>
+      <PageHeader
+        title="Customers"
+        subtitle="Segment, filter, and act on all customer risk profiles."
+        actions={
+          <Link href="/upload" className="btn-accent px-4 py-2 rounded-md text-body-sm font-semibold transition-colors">
+            New Audit
+          </Link>
+        }
+      />
 
       {/* ── Cohort summary cards ──────────────────────────────────── */}
       {total > 0 && (

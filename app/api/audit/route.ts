@@ -77,6 +77,8 @@ async function runAudit(
   let dateRangeStart: string | undefined;
   let dateRangeEnd: string | undefined;
   let uploadType: 'standard' | 'historical' | 'investigation' = 'standard';
+  let fileHash: string | undefined;
+  let forceReupload = false;
   try {
     const body = await request.json();
     filePath = body.filePath;
@@ -84,6 +86,8 @@ async function runAudit(
     uploadLabel = body.label ?? undefined;
     dateRangeStart = body.dateRangeStart ?? undefined;
     dateRangeEnd = body.dateRangeEnd ?? undefined;
+    fileHash = typeof body.fileHash === 'string' && body.fileHash ? body.fileHash : undefined;
+    forceReupload = body.forceReupload === true;
     if (body.uploadType === 'historical' || body.uploadType === 'investigation') {
       uploadType = body.uploadType;
     }
@@ -93,6 +97,36 @@ async function runAudit(
       { error: err instanceof Error ? err.message : 'Invalid request body' },
       { status: 400 }
     );
+  }
+
+  // ── Duplicate-upload detection ─────────────────────────────────────────────
+  if (fileHash && !forceReupload) {
+    // Cast to any because `label` and `file_hash` columns were added via migration
+    // but Supabase types have not been regenerated yet.
+    const { data: existing } = await (serviceClient
+      .from('processing_jobs')
+      .select('id, filename, created_at, label, status')
+      .eq('merchant_id', ctx.merchantId)
+      .eq('file_hash' as any, fileHash)
+      .neq('status', 'failed')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle() as any) as { data: { id: string; filename: string; created_at: string; label: string | null; status: string } | null };
+
+    if (existing) {
+      log(`duplicate file_hash detected existingJobId=${existing.id}`);
+      return NextResponse.json(
+        {
+          duplicate: true,
+          existingRunId: existing.id,
+          existingFilename: existing.filename,
+          existingLabel: existing.label ?? null,
+          existingCreatedAt: existing.created_at,
+          existingStatus: existing.status,
+        },
+        { status: 409 }
+      );
+    }
   }
 
   // ── Download from Storage ─────────────────────────────────────────────────
@@ -130,6 +164,7 @@ async function runAudit(
       dateRangeStart,
       dateRangeEnd,
       uploadType,
+      fileHash,
     });
     log(`createJob ok jobId=${jobId}`);
   } catch (err) {

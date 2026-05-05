@@ -5,6 +5,7 @@ import fs from 'fs'
 import path from 'path'
 
 const CREDENTIALS_PATH = path.join(__dirname, '.ux-audit-credentials.json')
+const STORAGE_STATE_PATH = path.join(__dirname, '.ux-audit-storage-state.json')
 
 async function globalTeardown(config: FullConfig) {
   void config
@@ -26,6 +27,7 @@ async function globalTeardown(config: FullConfig) {
   }
 
   fs.unlinkSync(CREDENTIALS_PATH)
+  if (fs.existsSync(STORAGE_STATE_PATH)) fs.unlinkSync(STORAGE_STATE_PATH)
 }
 
 export default globalTeardown

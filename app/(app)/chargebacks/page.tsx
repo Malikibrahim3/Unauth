@@ -5,7 +5,8 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { formatDate } from '@/lib/utils/format'
-import ConfidenceGrade, { riskLevelToGrade } from '@/components/ConfidenceGrade'
+import { PageHeader } from '@/components/common/PageHeader'
+import { EmptyState } from '@/components/ui/EmptyState'
 
 export const metadata = {
   title: 'Evidence Packages — Unauth',
@@ -59,47 +60,26 @@ export default async function ChargebacksPage() {
 
   return (
     <div className="p-8 max-w-5xl mx-auto">
-      <div className="flex items-start justify-between mb-6">
-        <div>
-          <h1 className="text-heading-lg" style={{ color: 'var(--text)' }}>
-            Evidence Packages
-          </h1>
-          <p className="text-body-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-            Chargeback representment documents generated for disputed orders.
-            {pkgs.some(p => p.ce3_eligible) && (
-              <> Where eligible, packages are formatted for Visa Compelling Evidence 3.0.</>
-            )}
-          </p>
-        </div>
-        <Link
-          href="/customers"
-          className="text-xs font-semibold hover:underline shrink-0"
-          style={{ color: 'var(--accent)' }}
-        >
-          View customers →
-        </Link>
-      </div>
-
-      {pkgs.length === 0 ? (
-        <div
-          className="rounded-xl p-10 text-center border"
-          style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
-        >
-          <p className="text-body-sm font-semibold mb-2" style={{ color: 'var(--text)' }}>
-            No evidence packages yet.
-          </p>
-          <p className="text-body-sm mb-4 max-w-md mx-auto" style={{ color: 'var(--text-muted)' }}>
-            When a customer files a chargeback, generate an evidence package from their profile.
-            Where eligible, packages are formatted for Visa Compelling Evidence 3.0 submission.
-          </p>
-          <Link
-            href="/customers"
-            className="inline-flex items-center gap-1 text-xs font-semibold hover:underline"
-            style={{ color: 'var(--accent)' }}
-          >
+      <PageHeader
+        title="Evidence Packages"
+        subtitle={`Chargeback representment documents generated for disputed orders.${pkgs.some(p => p.ce3_eligible) ? ' Where eligible, packages are formatted for Visa Compelling Evidence 3.0.' : ''}`}
+        actions={
+          <Link href="/customers" className="text-xs font-semibold hover:underline shrink-0" style={{ color: 'var(--accent)' }}>
             View customers →
           </Link>
-        </div>
+        }
+      />
+
+      {pkgs.length === 0 ? (
+        <EmptyState
+          title="No evidence packages yet."
+          description="When a customer files a chargeback, generate an evidence package from their profile. Where eligible, packages are formatted for Visa Compelling Evidence 3.0 submission."
+          action={
+            <Link href="/customers" className="inline-flex items-center gap-1 text-xs font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
+              View customers →
+            </Link>
+          }
+        />
       ) : (
         <div
           className="rounded-lg overflow-hidden border"

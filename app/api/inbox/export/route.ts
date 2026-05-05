@@ -3,6 +3,8 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { signalLabel } from '@/lib/copy/signalLabels';
 
+export const dynamic = 'force-dynamic';
+
 function csvEscape(value: string): string {
   return `"${value.replace(/"/g, '""')}"`;
 }
@@ -16,7 +18,8 @@ function topReason(signals: unknown): string {
 
 export async function GET() {
   const userClient = createClient();
-  const { data: { user }, error: authError } = await userClient.auth.getUser();
+  const { data, error: authError } = await userClient.auth.getUser();
+  const user = data?.user ?? null;
   if (authError || !user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }

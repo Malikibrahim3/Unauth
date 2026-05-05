@@ -5,59 +5,37 @@ import { buildBehavioralNarrative } from '@/lib/customers/narrative';
 import IdentityTimeline from '@/components/customers/IdentityTimeline';
 import WatchlistStarButton from '@/components/audit/WatchlistStarButton';
 import CustomerNotes from '@/components/audit/CustomerNotes';
-import ConfidenceGrade, { riskLevelToGrade } from '@/components/ConfidenceGrade';
+import { ConfidenceBadge, riskLevelToNewGrade } from '@/components/ui/ConfidenceBadge';
+import { RiskScoreBadge } from '@/components/ui/RiskScoreBadge';
+import { SectionCard } from '@/components/ui/SectionCard';
+import { MetricCard } from '@/components/ui/MetricCard';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { Badge } from '@/components/ui/Badge';
 import InvestigationStatusSelect from '@/components/customers/InvestigationStatusSelect';
 import type { CustomerIntelligencePanel } from '@/app/api/customers/[id]/route';
+import { riskBadgeStyle, riskBarStyle } from '@/lib/utils/riskStyles';
+import { formatCurrencyNullable, formatDateShort } from '@/lib/utils/format';
 
 interface PageProps {
   params: { id: string };
+  searchParams: { audit?: string };
 }
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-import type { CSSProperties } from 'react';
-
-function riskBarStyle(level: string): CSSProperties {
-  const t = ['low','medium','high','critical'].includes(level) ? level : 'low';
-  return { background: `var(--risk-${t})` };
-}
-
-function riskBadgeStyle(level: string): CSSProperties {
-  const t = ['low','medium','high','critical'].includes(level) ? level : 'low';
-  return { background: `var(--risk-${t}-bg)`, color: `var(--risk-${t})`, border: `1px solid var(--risk-${t}-bd)` };
-}
-
-function formatDate(iso: string) {
-  try {
-    return new Intl.DateTimeFormat('en-GB', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    }).format(new Date(iso));
-  } catch {
-    return iso;
-  }
-}
-
-function formatCurrency(n: number | null) {
-  if (n == null) return '—';
-  return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(n);
-}
-
-
 
 // ---------------------------------------------------------------------------
 // Page — server component
 // ---------------------------------------------------------------------------
 
-export default async function CustomerProfilePage({ params }: PageProps) {
+export default async function CustomerProfilePage({ params, searchParams }: PageProps) {
   const supabase = createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect('/login');
+
+  // The ?audit=runId param is set when navigating here from an audit context.
+  // It is used to build a contextual back link so users can return to the audit
+  // instead of being dropped at the global /customers list.
+  const auditRunId = searchParams.audit ?? null;
 
   const svc = createServiceClient();
   const { data: merchantRow } = await svc
@@ -115,7 +93,7 @@ export default async function CustomerProfilePage({ params }: PageProps) {
     let txQuery = svc
       .from('audit_transactions')
       .select(
-        'order_id,customer_email,customer_name,shipping_address,device_ip,card_last4,order_value,match_score,fraud_flags,risk_level,refund_claimed,refund_reason,processed_at'
+        'order_id,order_date,customer_email,customer_name,shipping_address,device_ip,card_last4,order_value,match_score,fraud_flags,risk_level,refund_status,refund_claimed,refund_requested,refund_reason,refund_date,refund_amount,return_requested,chargeback_dispute,chargeback_date,chargeback_reason_code,processed_at'
       )
       .in('job_id', auditIds)
       .order('processed_at', { ascending: true })
@@ -223,104 +201,137 @@ export default async function CustomerProfilePage({ params }: PageProps) {
   // Render
   // -------------------------------------------------------------------------
   const refundRate = Math.round(profile.refund_rate * 100);
-  const isEligibleForEvidence = transactions.some((tx: any) => tx.refund_claimed) || profile.total_chargebacks > 0;
+  const isEligibleForEvidence = transactions.some((tx: any) => tx.refund_requested ?? tx.refund_claimed) || profile.total_chargebacks > 0;
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
-      {/* Back navigation */}
+      {/* Back navigation — context-aware: returns to audit if ?audit=runId is set */}
       <div className="flex items-center gap-3 mb-6">
         <Link
-          href="/customers"
+          href={auditRunId ? `/audit/${auditRunId}?tab=customers` : '/customers'}
           className="inline-flex items-center gap-1.5 text-sm transition-colors hover:opacity-80"
           style={{ color: 'var(--text-muted)' }}
         >
           <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
           </svg>
-          Back to Customers
+          {auditRunId ? 'Back to Audit' : 'Back to Customers'}
         </Link>
+        {auditRunId && (
+          <>
+            <span style={{ color: 'var(--border)' }}>/</span>
+            <Link href="/customers" className="text-sm transition-colors hover:opacity-80" style={{ color: 'var(--text-muted)' }}>All Customers</Link>
+          </>
+        )}
         <span style={{ color: 'var(--border)' }}>/</span>
         <span className="text-sm font-medium truncate max-w-xs" style={{ color: 'var(--text)' }}>{displayName}</span>
       </div>
 
-      {/* ── Case summary panel ─────────────────────────────────────── */}
-      <div className="rounded-xl p-6 mb-8 border" style={{ background: 'var(--accent-soft)', borderColor: 'var(--border)' }}>
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-heading-lg">{displayName}</h1>
-              <ConfidenceGrade grade={riskLevelToGrade(profile.risk_level)} />
-            </div>
-            {profile.primary_email && profile.names[0] && (
-              <p className="text-body-sm mb-3" style={{ color: 'var(--text-muted)' }}>{profile.primary_email}</p>
-            )}
-            <p className="text-body-sm" style={{ color: 'var(--text-muted)' }}>
-              {profile.total_orders} {profile.total_orders === 1 ? 'order' : 'orders'},{' '}
-              {profile.total_refund_claims} refund {profile.total_refund_claims === 1 ? 'claim' : 'claims'},{' '}
-              {refundRate}% refund claim rate
-              {profile.total_chargebacks > 0 && ` · ${profile.total_chargebacks} chargeback${profile.total_chargebacks > 1 ? 's' : ''}`}
-            </p>
+      <div className="flex items-start justify-between gap-4 mb-8 flex-wrap">
+        <div>
+          <div className="flex items-center gap-[var(--space-3)] mb-2">
+            <h1 className="text-h1">{displayName}</h1>
+            <ConfidenceBadge grade={riskLevelToNewGrade(profile.risk_level)} />
+            <RiskScoreBadge score={Math.round(profile.risk_score)} level={profile.risk_level} />
           </div>
-          {/* Right-side action panel */}
-          <div className="flex flex-col gap-2 shrink-0 min-w-[180px]">
-            {isEligibleForEvidence ? (
-              <Link
-                href={`/customers/${profile.id}/evidence/new`}
-                className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-md text-sm font-semibold transition-colors"
-                style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}
-              >
-                Generate evidence package
-              </Link>
-            ) : (
-              <div>
-                <span
-                  className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-md text-sm font-semibold opacity-40 cursor-not-allowed w-full"
-                  title="No eligible orders for evidence generation"
-                  style={{ background: 'var(--bg-muted)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
-                >
-                  Generate evidence package
-                </span>
-                <p className="text-[11px] mt-1 text-center" style={{ color: 'var(--text-subtle)' }}>
-                  Requires a refund claim or chargeback
-                </p>
-              </div>
-            )}
-            <div className="flex items-center gap-2">
-              <WatchlistStarButton
-                customerProfileId={profile.id}
-                displayName={profile.names[0] ?? undefined}
-                displayEmail={profile.primary_email ?? undefined}
-                lastSeenRisk={profile.risk_level}
-                initialWatchlisted={!!watchlistRow}
-              />
-              <InvestigationStatusSelect profileId={profile.id} initialStatus={(profile as any).investigation_status ?? 'new'} />
-            </div>
-          </div>
+          {profile.primary_email && profile.names[0] && (
+            <p className="text-body-sm mt-1" style={{ color: 'var(--text-muted)' }}>{profile.primary_email}</p>
+          )}
+        </div>
+        <div className="flex items-center gap-3 shrink-0 flex-wrap justify-end">
+          <WatchlistStarButton
+            customerProfileId={profile.id}
+            displayName={profile.names[0] ?? undefined}
+            displayEmail={profile.primary_email ?? undefined}
+            lastSeenRisk={profile.risk_level}
+            initialWatchlisted={!!watchlistRow}
+          />
+          <InvestigationStatusSelect profileId={profile.id} initialStatus={(profile as any).investigation_status ?? 'new'} />
+          {isEligibleForEvidence ? (
+            <Link
+              href={`/customers/${profile.id}/evidence/new`}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors"
+              style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}
+            >
+              Generate evidence package
+            </Link>
+          ) : (
+            <span
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold opacity-40 cursor-not-allowed"
+              title="No eligible orders for evidence generation"
+              style={{ background: 'var(--bg-muted)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
+            >
+              Generate evidence package
+            </span>
+          )}
         </div>
       </div>
 
-      {/* Two-column layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-        {/* Left column — 60% */}
-        <div className="lg:col-span-3 space-y-8">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-[var(--space-6)]">
+        <div className="xl:col-span-8 space-y-[var(--space-5)]">
+          <SectionCard title="Identity Overview">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-[var(--space-3)] mb-[var(--space-4)]">
+              <MetricCard label="Risk score" value={Math.round(profile.risk_score)} density="compact" />
+              <MetricCard label="Orders" value={profile.total_orders} density="compact" />
+              <MetricCard label="Refund claims" value={profile.total_refund_claims} density="compact" />
+              <MetricCard label="Chargebacks" value={profile.total_chargebacks} density="compact" />
+            </div>
 
-          {/* Case narrative */}
-          <section className="rounded-xl p-6" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
-            <h2 className="text-overline mb-3">Why this customer needs review</h2>
-            <p className="text-body-sm leading-relaxed" style={{ color: 'var(--text)' }}>{narrative}</p>
-            {(profile.identity_signals ?? profile.fraud_flags ?? []).length > 0 && (
-              <div className="mt-4 flex flex-wrap gap-1.5">
-                {(profile.identity_signals ?? profile.fraud_flags ?? []).map((f: string, i: number) => (
-                  <span
-                    key={i}
-                    className="inline-flex items-center px-2 py-0.5 rounded text-caption font-medium"
-                    style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}
-                  >
-                    {f}
-                  </span>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-[var(--space-3)] mb-[var(--space-4)] pt-[var(--space-4)]" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+              <MetricCard label="Refund rate" value={`${refundRate}%`} density="compact" />
+              <MetricCard label="Merchants" value={profile.total_merchants_seen_at} density="compact" />
+              <MetricCard label="Fastest claim" value={profile.fastest_claim_days != null ? `${profile.fastest_claim_days}d` : '—'} density="compact" />
+              <MetricCard label="Avg claim" value={profile.avg_claim_days != null ? `${Math.round(profile.avg_claim_days)}d` : '—'} density="compact" />
+            </div>
+
+            <div className="mb-3">
+              <div className="flex items-center justify-between text-caption mb-1" style={{ color: 'var(--text-muted)' }}>
+                <span>Risk score</span>
+                <span className="font-semibold" style={{ color: 'var(--text)' }}>{Math.round(profile.risk_score)}</span>
+              </div>
+              <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--bg-subtle)' }}>
+                <div className="h-full rounded-full" style={{ ...riskBarStyle(profile.risk_level), width: `${Math.min(profile.risk_score, 100)}%` }} />
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between text-caption mb-1" style={{ color: 'var(--text-muted)' }}>
+                <span>Profile confidence</span>
+                <span className="font-semibold" style={{ color: 'var(--text)' }}>{profile.profile_confidence}%</span>
+              </div>
+              <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--bg-subtle)' }}>
+                <div className="h-full rounded-full" style={{ width: `${profile.profile_confidence}%`, background: 'var(--info)' }} />
+              </div>
+            </div>
+
+            {((profile as any).identity_signals ?? profile.fraud_flags ?? []).length > 0 && (
+              <div className="mt-[var(--space-3)] flex flex-wrap gap-[var(--space-2)]">
+                {((profile as any).identity_signals ?? profile.fraud_flags ?? []).map((flag: string, index: number) => (
+                  <Badge key={index} tone="neutral" variant="subtle" size="sm">{flag}</Badge>
                 ))}
               </div>
             )}
+          </SectionCard>
+
+          {linkedAccounts.length > 0 && (
+            <SectionCard title={`Linked Identities (${linkedAccounts.length})`}>
+              <ul className="space-y-2">
+                {linkedAccounts.slice(0, 8).map((acc: any, index: number) => (
+                  <li key={index} className="flex items-start gap-2 text-sm">
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium shrink-0" style={{ background: 'var(--watchlist-bg)', color: 'var(--watchlist)', border: '1px solid var(--watchlist-bd)' }}>{acc.entityType}</span>
+                    <span className="font-mono break-all text-xs" style={{ color: 'var(--text)' }}>{acc.entityValue}</span>
+                    <span className="text-xs shrink-0 ml-auto" style={{ color: 'var(--text-subtle)' }}>{acc.confidence}%</span>
+                  </li>
+                ))}
+                {linkedAccounts.length > 8 && (
+                  <p className="text-xs" style={{ color: 'var(--text-subtle)' }}>+{linkedAccounts.length - 8} more</p>
+                )}
+              </ul>
+            </SectionCard>
+          )}
+
+          <SectionCard title="Behavioral Context">
+            <p className="text-body-sm leading-relaxed" style={{ color: 'var(--text)' }}>{narrative}</p>
             {profile.refund_acceleration_score > 0 && (
               <div className="mt-4">
                 <div className="flex items-center justify-between text-caption mb-1" style={{ color: 'var(--text-muted)' }}>
@@ -334,251 +345,171 @@ export default async function CustomerProfilePage({ params }: PageProps) {
                       background: profile.refund_acceleration_score >= 75
                         ? 'var(--risk-critical)'
                         : profile.refund_acceleration_score >= 50
-                        ? 'var(--risk-high)'
-                        : 'var(--risk-medium)',
+                          ? 'var(--risk-high)'
+                          : 'var(--risk-medium)',
                       width: `${Math.min(profile.refund_acceleration_score, 100)}%`,
                     }}
                   />
                 </div>
               </div>
             )}
-          </section>
+          </SectionCard>
 
-          {/* Chronological order / refund timeline */}
-          <section className="rounded-xl p-6" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
-            <h2 className="text-overline mb-4">Order & refund timeline ({transactions.length})</h2>
+          <SectionCard title={`Order History (${transactions.length})`}>
             {transactions.length === 0 ? (
-              <p className="text-body-sm italic" style={{ color: 'var(--text-muted)' }}>No orders in current dataset.</p>
+              <EmptyState title="No orders in dataset" description="No transactions found for this customer in the current dataset." />
             ) : (
-              <ol className="relative space-y-0" style={{ borderLeft: '2px solid var(--border-subtle)', paddingLeft: '1.5rem', marginLeft: '0.5rem' }}>
-                {transactions.map((tx: any, i: number) => (
-                  <li key={i} className="relative pb-5 last:pb-0">
-                    {/* Timeline dot */}
-                    <span
-                      className="absolute -left-[1.625rem] top-1 flex h-3 w-3 items-center justify-center rounded-full"
-                      style={{ background: tx.refund_claimed ? 'var(--risk-high)' : 'var(--border)', border: '2px solid var(--bg-surface)' }}
-                    />
-                    <div className="rounded-lg p-3" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-subtle)' }}>
-                      <div className="flex items-center justify-between gap-2 mb-1">
-                        <span className="font-mono text-caption" style={{ color: 'var(--text-muted)' }}>{tx.order_id}</span>
-                        <span
-                          className="inline-flex items-center px-1.5 py-0.5 rounded text-caption font-semibold uppercase"
-                          style={riskBadgeStyle(tx.risk_level)}
-                        >
-                          {tx.risk_level}
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-caption" style={{ color: 'var(--text-muted)' }}>
-                        <span>{formatDate(tx.processed_at)}</span>
-                        <span className="font-medium text-right" style={{ color: 'var(--text)' }}>
-                          {formatCurrency(tx.order_value)}
-                        </span>
-                        {tx.customer_email && <span className="truncate col-span-2">{tx.customer_email}</span>}
-                      </div>
-                      {tx.refund_claimed && (
-                        <p className="mt-1.5 text-caption font-medium" style={{ color: 'var(--risk-high)' }}>
-                          Prior dispute/refund pattern{tx.refund_reason ? ` · ${tx.refund_reason}` : ''}
-                        </p>
-                      )}
+              <div className="space-y-3">
+                {transactions.map((tx: any, index: number) => (
+                  <div
+                    key={index}
+                    className="rounded-lg p-4"
+                    style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-subtle)' }}
+                  >
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <span className="font-mono text-caption" style={{ color: 'var(--text-muted)' }}>{tx.order_id}</span>
+                      <span
+                        className="inline-flex items-center px-1.5 py-0.5 rounded text-caption font-semibold uppercase"
+                        style={riskBadgeStyle(tx.risk_level)}
+                      >
+                        {tx.risk_level}
+                      </span>
                     </div>
-                  </li>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-caption" style={{ color: 'var(--text-muted)' }}>
+                      <span>{formatDateShort(tx.order_date ?? tx.processed_at)}</span>
+                      <span className="font-medium text-right" style={{ color: 'var(--text)' }}>
+                        {formatCurrencyNullable(tx.order_value)}
+                      </span>
+                      {tx.customer_email && <span className="truncate col-span-2">{tx.customer_email}</span>}
+                    </div>
+                    {(tx.refund_requested ?? tx.refund_claimed) && (
+                      <p className="mt-1.5 text-caption font-medium" style={{ color: 'var(--risk-high)' }}>
+                        Refund requested{tx.refund_reason ? ` · ${tx.refund_reason}` : ''}
+                      </p>
+                    )}
+                  </div>
                 ))}
-              </ol>
+              </div>
             )}
-          </section>
-
-          {/* Linked accounts (from clusters) */}
-          {linkedAccounts.length > 0 && (
-            <section className="rounded-xl p-6" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
-              <h2 className="text-overline mb-4">Linked Identities ({linkedAccounts.length})</h2>
-              <ul className="space-y-2">
-                {linkedAccounts.slice(0, 8).map((acc: any, i: number) => (
-                  <li key={i} className="flex items-start gap-2 text-sm">
-                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium shrink-0" style={{ background: 'var(--watchlist-bg)', color: 'var(--watchlist)', border: '1px solid var(--watchlist-bd)' }}>{acc.entityType}</span>
-                    <span className="font-mono break-all text-xs" style={{ color: 'var(--text)' }}>{acc.entityValue}</span>
-                    <span className="text-xs shrink-0 ml-auto" style={{ color: 'var(--text-subtle)' }}>{acc.confidence}%</span>
-                  </li>
-                ))}
-                {linkedAccounts.length > 8 && (
-                  <p className="text-xs" style={{ color: 'var(--text-subtle)' }}>+{linkedAccounts.length - 8} more</p>
-                )}
-              </ul>
-            </section>
-          )}
+          </SectionCard>
         </div>
 
-        {/* Right column — 40% */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Risk metrics */}
-          <section className="rounded-xl p-6" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
-            <h2 className="text-overline mb-4">Risk metrics</h2>
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div>
-                <p className="text-caption mb-1" style={{ color: 'var(--text-muted)' }}>Risk score</p>
-                <p className="text-display-sm font-bold" style={{ color: 'var(--text)' }}>{Math.round(profile.risk_score)}</p>
-              </div>
-              <div>
-                <p className="text-caption mb-1" style={{ color: 'var(--text-muted)' }}>Refund rate</p>
-                <p className="text-display-sm font-bold" style={{ color: 'var(--text)' }}>{refundRate}%</p>
-              </div>
-              <div>
-                <p className="text-caption mb-1" style={{ color: 'var(--text-muted)' }}>Fastest claim</p>
-                <p className="text-display-sm font-bold" style={{ color: 'var(--text)' }}>
-                  {profile.fastest_claim_days != null ? `${profile.fastest_claim_days}d` : '—'}
-                </p>
-              </div>
-              <div>
-                <p className="text-caption mb-1" style={{ color: 'var(--text-muted)' }}>Merchants</p>
-                <p className="text-display-sm font-bold" style={{ color: 'var(--text)' }}>{profile.total_merchants_seen_at}</p>
-              </div>
-            </div>
-            <div className="pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
-              <div className="flex items-center justify-between text-caption mb-1" style={{ color: 'var(--text-muted)' }}>
-                <span>Risk score</span>
-                <span className="font-semibold" style={{ color: 'var(--text)' }}>{Math.round(profile.risk_score)}</span>
-              </div>
-              <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--bg-subtle)' }}>
-                <div className="h-full rounded-full" style={{ ...riskBarStyle(profile.risk_level), width: `${Math.min(profile.risk_score, 100)}%` }} />
-              </div>
-            </div>
-          </section>
-
-          {/* Identity data — collapsible */}
-          <details className="rounded-xl" style={{ border: '1px solid var(--border-subtle)' }}>
-            <summary
-              className="px-6 py-4 cursor-pointer text-overline list-none flex items-center justify-between"
-              style={{ background: 'var(--bg-surface)', borderRadius: 'inherit' }}
-            >
-              <span>Identity data</span>
-              <svg className="w-4 h-4 opacity-40" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-              </svg>
-            </summary>
-            <div className="px-6 pb-6 pt-2" style={{ background: 'var(--bg-surface)', borderTop: '1px solid var(--border-subtle)' }}>
-              <dl className="space-y-3 text-body-sm">
-                {profile.emails.length > 0 && (
-                  <div>
-                    <dt className="text-caption mb-1" style={{ color: 'var(--text-muted)' }}>Email{profile.emails.length > 1 ? 's' : ''}</dt>
-                    <dd className="space-y-0.5">
-                      {profile.emails.map((e: string, i: number) => (
-                        <p key={i} className="font-mono text-caption truncate" style={{ color: 'var(--text)' }}>{e}</p>
-                      ))}
-                    </dd>
-                  </div>
-                )}
-                {profile.names.length > 0 && (
-                  <div>
-                    <dt className="text-caption mb-1" style={{ color: 'var(--text-muted)' }}>Name{profile.names.length > 1 ? 's' : ''}</dt>
-                    <dd className="space-y-0.5">
-                      {profile.names.map((n: string, i: number) => (
-                        <p key={i} className="text-caption" style={{ color: 'var(--text)' }}>{n}</p>
-                      ))}
-                    </dd>
-                  </div>
-                )}
-                {profile.addresses.length > 0 && (
-                  <div>
-                    <dt className="text-caption mb-1" style={{ color: 'var(--text-muted)' }}>Address{profile.addresses.length > 1 ? 'es' : ''}</dt>
-                    <dd className="space-y-0.5">
-                      {profile.addresses.slice(0, 3).map((a: string, i: number) => (
-                        <p key={i} className="text-caption" style={{ color: 'var(--text)' }}>{a}</p>
-                      ))}
-                      {profile.addresses.length > 3 && (
-                        <p className="text-caption" style={{ color: 'var(--text-subtle)' }}>+{profile.addresses.length - 3} more</p>
-                      )}
-                    </dd>
-                  </div>
-                )}
-                {profile.card_last4s.length > 0 && (
-                  <div>
-                    <dt className="text-caption mb-1" style={{ color: 'var(--text-muted)' }}>Cards (last 4)</dt>
-                    <dd className="flex flex-wrap gap-1">
-                      {profile.card_last4s.map((c: string, i: number) => (
-                        <span key={i} className="font-mono text-caption px-1.5 py-0.5 rounded" style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
-                          •••• {c}
-                        </span>
-                      ))}
-                    </dd>
-                  </div>
-                )}
-                {profile.phones && profile.phones.length > 0 && (
-                  <div>
-                    <dt className="text-caption mb-1" style={{ color: 'var(--text-muted)' }}>Phone{profile.phones.length > 1 ? 's' : ''}</dt>
-                    <dd className="space-y-0.5">
-                      {profile.phones.map((p: string, i: number) => (
-                        <p key={i} className="font-mono text-caption" style={{ color: 'var(--text)' }}>{p}</p>
-                      ))}
-                    </dd>
-                  </div>
-                )}
-                {profile.ips && profile.ips.length > 0 && (
-                  <div>
-                    <dt className="text-caption mb-1" style={{ color: 'var(--text-muted)' }}>IP{profile.ips.length > 1 ? 's' : ''}</dt>
-                    <dd className="space-y-0.5">
-                      {profile.ips.slice(0, 5).map((ip: string, i: number) => (
-                        <p key={i} className="font-mono text-caption" style={{ color: 'var(--text)' }}>{ip}</p>
-                      ))}
-                      {profile.ips.length > 5 && (
-                        <p className="text-caption" style={{ color: 'var(--text-subtle)' }}>+{profile.ips.length - 5} more</p>
-                      )}
-                    </dd>
-                  </div>
-                )}
-                <div className="grid grid-cols-2 gap-x-4 gap-y-2 pt-2" style={{ borderTop: '1px solid var(--border-subtle)' }}>
-                  <div>
-                    <dt className="text-caption" style={{ color: 'var(--text-muted)' }}>First seen</dt>
-                    <dd className="text-caption font-medium" style={{ color: 'var(--text)' }}>{formatDate(profile.first_seen)}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-caption" style={{ color: 'var(--text-muted)' }}>Last seen</dt>
-                    <dd className="text-caption font-medium" style={{ color: 'var(--text)' }}>{formatDate(profile.last_seen)}</dd>
-                  </div>
+        <div className="xl:col-span-4 space-y-[var(--space-5)]">
+          <SectionCard title="Identity Data">
+            <dl className="space-y-3 text-body-sm">
+              {profile.emails.length > 0 && (
+                <div>
+                  <dt className="text-caption mb-1" style={{ color: 'var(--text-muted)' }}>Email{profile.emails.length > 1 ? 's' : ''}</dt>
+                  <dd className="space-y-0.5">
+                    {profile.emails.map((e: string, i: number) => (
+                      <p key={i} className="font-mono text-caption truncate" style={{ color: 'var(--text)' }}>{e}</p>
+                    ))}
+                  </dd>
                 </div>
-              </dl>
-            </div>
-          </details>
+              )}
+              {profile.names.length > 0 && (
+                <div>
+                  <dt className="text-caption mb-1" style={{ color: 'var(--text-muted)' }}>Name{profile.names.length > 1 ? 's' : ''}</dt>
+                  <dd className="space-y-0.5">
+                    {profile.names.map((n: string, i: number) => (
+                      <p key={i} className="text-caption" style={{ color: 'var(--text)' }}>{n}</p>
+                    ))}
+                  </dd>
+                </div>
+              )}
+              {profile.addresses.length > 0 && (
+                <div>
+                  <dt className="text-caption mb-1" style={{ color: 'var(--text-muted)' }}>Address{profile.addresses.length > 1 ? 'es' : ''}</dt>
+                  <dd className="space-y-0.5">
+                    {profile.addresses.slice(0, 3).map((a: string, i: number) => (
+                      <p key={i} className="text-caption" style={{ color: 'var(--text)' }}>{a}</p>
+                    ))}
+                    {profile.addresses.length > 3 && (
+                      <p className="text-caption" style={{ color: 'var(--text-subtle)' }}>+{profile.addresses.length - 3} more</p>
+                    )}
+                  </dd>
+                </div>
+              )}
+              {profile.card_last4s.length > 0 && (
+                <div>
+                  <dt className="text-caption mb-1" style={{ color: 'var(--text-muted)' }}>Cards (last 4)</dt>
+                  <dd className="flex flex-wrap gap-1">
+                    {profile.card_last4s.map((c: string, i: number) => (
+                      <span key={i} className="font-mono text-caption px-1.5 py-0.5 rounded" style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
+                        •••• {c}
+                      </span>
+                    ))}
+                  </dd>
+                </div>
+              )}
+              {profile.phones && profile.phones.length > 0 && (
+                <div>
+                  <dt className="text-caption mb-1" style={{ color: 'var(--text-muted)' }}>Phone{profile.phones.length > 1 ? 's' : ''}</dt>
+                  <dd className="space-y-0.5">
+                    {profile.phones.map((p: string, i: number) => (
+                      <p key={i} className="font-mono text-caption" style={{ color: 'var(--text)' }}>{p}</p>
+                    ))}
+                  </dd>
+                </div>
+              )}
+              {profile.ips && profile.ips.length > 0 && (
+                <div>
+                  <dt className="text-caption mb-1" style={{ color: 'var(--text-muted)' }}>IP{profile.ips.length > 1 ? 's' : ''}</dt>
+                  <dd className="space-y-0.5">
+                    {profile.ips.slice(0, 5).map((ip: string, i: number) => (
+                      <p key={i} className="font-mono text-caption" style={{ color: 'var(--text)' }}>{ip}</p>
+                    ))}
+                    {profile.ips.length > 5 && (
+                      <p className="text-caption" style={{ color: 'var(--text-subtle)' }}>+{profile.ips.length - 5} more</p>
+                    )}
+                  </dd>
+                </div>
+              )}
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2 pt-2" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+                <div>
+                  <dt className="text-caption" style={{ color: 'var(--text-muted)' }}>First seen</dt>
+                  <dd className="text-caption font-medium" style={{ color: 'var(--text)' }}>{formatDateShort(profile.first_seen)}</dd>
+                </div>
+                <div>
+                  <dt className="text-caption" style={{ color: 'var(--text-muted)' }}>Last seen</dt>
+                  <dd className="text-caption font-medium" style={{ color: 'var(--text)' }}>{formatDateShort(profile.last_seen)}</dd>
+                </div>
+              </div>
+            </dl>
+          </SectionCard>
 
-          {/* Identity timeline */}
           {identityTimeline.length > 0 && (
-            <section className="rounded-xl p-6" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
-              <h2 className="text-overline mb-4">
-                Identity Timeline
-                {variantCount > 0 && (
-                  <span className="ml-2 normal-case font-normal" style={{ color: 'var(--risk-high)' }}>
-                    · {variantCount} change{variantCount > 1 ? 's' : ''}
-                  </span>
-                )}
-              </h2>
+            <SectionCard
+              title="Identity Timeline"
+              description={variantCount > 0 ? `${variantCount} change${variantCount > 1 ? 's' : ''} detected` : undefined}
+            >
               <IdentityTimeline entries={identityTimeline} />
-            </section>
+            </SectionCard>
           )}
 
-          {/* Notes & activity */}
-          <section className="rounded-xl p-6" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
-            <h2 className="text-overline mb-4">Merchant Notes</h2>
+          <SectionCard title="Merchant Notes">
             <CustomerNotes customerProfileId={profile.id} />
-          </section>
+          </SectionCard>
 
-          <section className="rounded-xl p-6" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
-            <h2 className="text-overline mb-4">Activity</h2>
+          <SectionCard title="Activity">
             {activityLog.length === 0 ? (
-              <p className="text-body-sm" style={{ color: 'var(--text-muted)' }}>No activity recorded yet.</p>
+              <EmptyState title="No activity yet" description="Actions and changes will appear here." />
             ) : (
               <ol className="space-y-3">
                 {activityLog.map((entry) => {
                   const d = entry.event_data as Record<string, unknown>;
                   let description = '';
                   switch (entry.event_type) {
-                    case 'profile_created':    description = 'Profile created from audit'; break;
-                    case 'status_changed':     description = `Status changed to ${d.to}`; break;
-                    case 'note_added':         description = `Note added: ${d.note_preview ?? ''}…`; break;
-                    case 'note_deleted':       description = 'Note removed'; break;
-                    case 'watchlist_added':    description = 'Added to watchlist'; break;
-                    case 'watchlist_removed':  description = 'Removed from watchlist'; break;
+                    case 'profile_created': description = 'Profile created from audit'; break;
+                    case 'status_changed': description = `Status changed to ${d.to}`; break;
+                    case 'note_added': description = `Note added: ${d.note_preview ?? ''}…`; break;
+                    case 'note_deleted': description = 'Note removed'; break;
+                    case 'watchlist_added': description = 'Added to watchlist'; break;
+                    case 'watchlist_removed': description = 'Removed from watchlist'; break;
                     case 'evidence_generated': description = `Evidence package generated (${d.reference_number})`; break;
-                    case 'audit_appearance':   description = `Appeared in ${d.audit_label ?? 'an audit'} with ${d.score ?? ''} confidence`; break;
-                    case 'manually_reviewed':  description = 'Marked as manually reviewed'; break;
-                    default:                   description = entry.event_type.replace(/_/g, ' ');
+                    case 'audit_appearance': description = `Appeared in ${d.audit_label ?? 'an audit'} with ${d.score ?? ''} confidence`; break;
+                    case 'manually_reviewed': description = 'Marked as manually reviewed'; break;
+                    default: description = entry.event_type.replace(/_/g, ' ');
                   }
                   const relativeTime = (() => {
                     const ms = Date.now() - new Date(entry.created_at).getTime();
@@ -600,7 +531,7 @@ export default async function CustomerProfilePage({ params }: PageProps) {
                 })}
               </ol>
             )}
-          </section>
+          </SectionCard>
         </div>
       </div>
     </div>

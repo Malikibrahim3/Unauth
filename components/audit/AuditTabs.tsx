@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface Tab {
   id: string;
@@ -15,6 +15,11 @@ interface AuditTabsProps {
 
 export default function AuditTabs({ tabs, panels, defaultTab }: AuditTabsProps) {
   const [active, setActive] = useState(defaultTab ?? tabs[0]?.id ?? '');
+
+  // Sync when the server re-renders with a new defaultTab (e.g. ?tab=customers)
+  useEffect(() => {
+    if (defaultTab) setActive(defaultTab);
+  }, [defaultTab]);
 
   return (
     <div>

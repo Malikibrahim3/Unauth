@@ -5,6 +5,8 @@ import DashboardCharts from '@/components/dashboard/DashboardCharts';
 import InsightsStrip from '@/components/dashboard/InsightsStrip';
 import EmptyDashboardHero from '@/components/EmptyDashboardHero';
 import TrackPageView from '@/components/common/TrackPageView';
+import { MetricCard } from '@/components/ui/MetricCard';
+import { PageHeader } from '@/components/ui/PageHeader';
 import type { Database } from '@/lib/supabase/types';
 
 type RunRow = Database['public']['Tables']['processing_jobs']['Row'];
@@ -101,65 +103,57 @@ export default async function DashboardPage() {
       <TrackPageView event="Dashboard Viewed" />
 
       {/* ── Page header ──────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-heading-lg" style={{ color: 'var(--text)' }}>Risk Overview</h1>
-          <p className="text-body-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>
-            Monitor, segment, and act on fraud risk across all your uploads.
-          </p>
-        </div>
-        <Link
-          href="/upload"
-          className="btn-accent px-4 py-2 rounded-md text-body-sm font-semibold transition-colors"
-        >
-          New Audit
-        </Link>
+      <div className="mb-[var(--space-5)]">
+        <PageHeader
+          title="Risk Overview"
+          subtitle="Monitor, segment, and act on fraud risk across all your uploads."
+          primaryAction={
+            <Link href="/upload" className="btn-accent px-4 py-2 rounded-md text-body-sm font-semibold transition-colors">
+              New Audit
+            </Link>
+          }
+        />
       </div>
 
       {/* ── Insights strip ───────────────────────────────────────────── */}
       <InsightsStrip insights={insights} />
 
       {/* ── KPI row ─────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        {[
-          {
-            label: 'Customers to review',
-            value: reviewQueue > 0 ? reviewQueue.toLocaleString() : '—',
-            sub: reviewQueue > 0 ? 'High-confidence, unresolved' : 'All resolved',
-            href: reviewQueue > 0 ? '/customers?risk=high&status=new' : undefined,
-            highlight: reviewQueue > 0 ? 'var(--risk-high)' : null,
-          },
-          {
-            label: 'Transactions analysed',
-            value: totalTransactions.toLocaleString(),
-            sub: `${typedRuns.length} audit ${typedRuns.length === 1 ? 'run' : 'runs'}`,
-            href: '/history',
-          },
-          {
-            label: 'Evidence packages',
-            value: totalPackages.toLocaleString(),
-            sub: ce3Packages > 0 ? `${ce3Packages} CE3.0 eligible` : 'None CE3.0 eligible',
-            href: totalPackages > 0 ? '/chargebacks' : undefined,
-            highlight: ce3Packages > 0 ? 'var(--success)' : null,
-          },
-          {
-            label: 'Avg flag rate',
-            value: avgFlagRate !== null ? `${avgFlagRate.toFixed(1)}%` : '—',
-            sub: avgFlagRate !== null && avgFlagRate >= 10 ? 'High — investigate upload' : avgFlagRate !== null && avgFlagRate >= 4 ? 'Elevated' : 'Normal range',
-            highlight: avgFlagRate !== null && avgFlagRate >= 10 ? 'var(--risk-critical)' : avgFlagRate !== null && avgFlagRate >= 4 ? 'var(--risk-high)' : null,
-          },
-        ].map(({ label, value, sub, href, highlight }) => {
-          const inner = (
-            <div className="rounded-lg px-5 py-4 border h-full" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
-              <div className="text-caption mb-1" style={{ color: 'var(--text-muted)' }}>{label}</div>
-              <div className="text-display-md font-mono" style={{ color: highlight ?? 'var(--text)' }}>{value}</div>
-              {sub && <div className="text-caption mt-1" style={{ color: 'var(--text-subtle)' }}>{sub}</div>}
-            </div>
-          );
-          return href
-            ? <Link key={label} href={href} className="block hover:opacity-90 transition-opacity">{inner}</Link>
-            : <div key={label}>{inner}</div>;
-        })}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-[var(--space-3)] mb-[var(--space-5)]">
+        {reviewQueue > 0 ? (
+          <Link href="/customers?risk=high&status=new" className="block">
+            <MetricCard label="Customers to review" value={reviewQueue.toLocaleString()} hint="High-confidence, unresolved" />
+          </Link>
+        ) : (
+          <MetricCard label="Customers to review" value="—" hint="All resolved" />
+        )}
+        <Link href="/history" className="block">
+          <MetricCard
+            label="Transactions analysed"
+            value={totalTransactions.toLocaleString()}
+            hint={`${typedRuns.length} audit ${typedRuns.length === 1 ? 'run' : 'runs'}`}
+          />
+        </Link>
+        {totalPackages > 0 ? (
+          <Link href="/chargebacks" className="block">
+            <MetricCard
+              label="Evidence packages"
+              value={totalPackages.toLocaleString()}
+              hint={ce3Packages > 0 ? `${ce3Packages} CE3.0 eligible` : 'None CE3.0 eligible'}
+            />
+          </Link>
+        ) : (
+          <MetricCard label="Evidence packages" value="0" hint="None CE3.0 eligible" />
+        )}
+        <MetricCard
+          label="Avg flag rate"
+          value={avgFlagRate !== null ? `${avgFlagRate.toFixed(1)}%` : '—'}
+          hint={
+            avgFlagRate !== null && avgFlagRate >= 10 ? 'High — investigate upload'
+            : avgFlagRate !== null && avgFlagRate >= 4 ? 'Elevated'
+            : 'Normal range'
+          }
+        />
       </div>
 
       {isEmpty ? (

@@ -6,6 +6,12 @@ export function formatCurrency(amount: number, currency = 'GBP'): string {
   }).format(amount);
 }
 
+/** Null-safe currency formatter — returns '—' for null/undefined values. */
+export function formatCurrencyNullable(amount: number | null | undefined, currency = 'GBP'): string {
+  if (amount == null) return '—';
+  return formatCurrency(amount, currency);
+}
+
 export function formatDate(date: Date | string): string {
   const d = typeof date === 'string' ? new Date(date) : date;
   const parts = new Intl.DateTimeFormat('en-GB', {
@@ -19,6 +25,16 @@ export function formatDate(date: Date | string): string {
 
   const lookup = Object.fromEntries(parts.map((part) => [part.type, part.value]));
   return `${lookup.day} ${lookup.month} ${lookup.year}, ${lookup.hour}:${lookup.minute}`;
+}
+
+/** Short date format — day, month, year only. No time. */
+export function formatDateShort(date: Date | string): string {
+  try {
+    const d = typeof date === 'string' ? new Date(date) : date;
+    return new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(d);
+  } catch {
+    return String(date);
+  }
 }
 
 export function formatPercent(value: number, decimals = 1): string {

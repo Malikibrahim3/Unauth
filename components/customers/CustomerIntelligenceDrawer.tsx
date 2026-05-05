@@ -1,51 +1,22 @@
+// TODO (App Cohesion Audit – Phase 2): This component is one of THREE separate
+// customer profile renderers in the app.
+//
+// Phase 1 DONE: Local riskTok / riskBadgeStyle / riskBarStyle / formatCurrency /
+// formatDate helpers replaced with canonical imports from @/lib/utils/riskStyles
+// and @/lib/utils/format.
+// See reports/ui-ux-audit/APP_COHESION_AUDIT.md — Issue D3, D4, D5.
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import Link from 'next/link';
 import IdentityTimeline from './IdentityTimeline';
-import ConfidenceGrade, { riskLevelToGrade } from '@/components/ConfidenceGrade';
+import { ConfidenceBadge, riskLevelToNewGrade } from '@/components/ui/ConfidenceBadge';
 import WatchlistStarButton from '@/components/audit/WatchlistStarButton';
 import CustomerNotes from '@/components/audit/CustomerNotes';
 import type { CustomerIntelligencePanel } from '@/app/api/customers/[id]/route';
 import { STATUS_LABELS, STATUS_OPTIONS, statusStyle } from '@/lib/utils/investigationStatus';
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function riskTok(level: string) {
-  if (level === 'critical' || level === 'high' || level === 'medium' || level === 'low') return level;
-  return 'low';
-}
-
-function riskBadgeStyle(level: string): React.CSSProperties {
-  const t = riskTok(level);
-  return {
-    background: `var(--risk-${t}-bg)`,
-    borderColor: `var(--risk-${t}-bd)`,
-    color: `var(--risk-${t})`,
-    border: `1px solid var(--risk-${t}-bd)`,
-  };
-}
-
-function riskBarStyle(level: string): React.CSSProperties {
-  return { background: `var(--risk-${riskTok(level)})` };
-}
-
-function fmt(n: number, max = 100) {
-  return Math.round((n / max) * 100);
-}
-
-function formatDate(iso: string) {
-  try {
-    return new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(iso));
-  } catch { return iso; }
-}
-
-function formatCurrency(n: number | null) {
-  if (n == null) return '—';
-  return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(n);
-}
+import { riskBadgeStyle, riskBarStyle } from '@/lib/utils/riskStyles';
+import { formatCurrencyNullable, formatDateShort } from '@/lib/utils/format';
 
 // ---------------------------------------------------------------------------
 // Skeleton
@@ -254,26 +225,12 @@ function DrawerContent({
     if (!res.ok) setStatus(prev);
     setStatusSaving(false);
   }
-
-  // Derive recommended next action
-  const grade = riskLevelToGrade(profile.risk_level);
-  const refundRate = Math.round(profile.refund_rate * 100);
-  const isEligibleForEvidence = orderHistory.some((o) => o.refundClaimed) || profile.total_chargebacks > 0;
-  let recommendedAction = '';
-  if (grade === 'definite' || grade === 'probable') {
-    if (isEligibleForEvidence) recommendedAction = 'Generate evidence package and submit to payment processor.';
-    else recommendedAction = 'Manually review order history and flag for investigation.';
-  } else if (grade === 'possible') {
-    recommendedAction = 'Monitor for repeat claims before escalating.';
-  } else {
-    recommendedAction = 'No immediate action required.';
-  }
+  const isEligibleForEvidence = orderHistory.some((order) => order.refundRequested) || profile.total_chargebacks > 0;
 
   return (
     <div>
-      {/* ── Compact confidence block ──────────────────────────────── */}
-      <div className="mb-5 rounded-xl p-4 border" style={{ background: 'var(--accent-soft)', borderColor: 'var(--border)' }}>
-        <div className="flex items-start justify-between gap-3 mb-3">
+      <Section title="Identity Summary">
+        <div className="flex items-start justify-between gap-3 mb-4">
           <div className="min-w-0">
             <p className="text-base font-semibold truncate" style={{ color: 'var(--text)' }}>
               {profile.names[0] ?? profile.primary_email ?? 'Unknown'}
@@ -283,7 +240,7 @@ function DrawerContent({
             )}
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <ConfidenceGrade grade={grade} />
+            <ConfidenceBadge grade={riskLevelToNewGrade(profile.risk_level)} />
             <WatchlistStarButton
               customerProfileId={profile.id}
               displayName={profile.names[0] ?? undefined}
@@ -295,67 +252,96 @@ function DrawerContent({
           </div>
         </div>
 
-        {/* Key metrics row */}
-        <div className="grid grid-cols-4 gap-3 mb-3">
-          {[
-            { label: 'Score', value: Math.round(profile.risk_score) },
-            { label: 'Orders', value: profile.total_orders },
-            { label: 'Refunds', value: profile.total_refund_claims },
-            { label: 'Refund rate', value: `${refundRate}%` },
-          ].map(({ label, value }) => (
-            <div key={label}>
-              <p className="text-[10px] uppercase font-medium tracking-wide" style={{ color: 'var(--text-muted)' }}>{label}</p>
-              <p className="text-sm font-semibold font-mono" style={{ color: 'var(--text)' }}>{value}</p>
-            </div>
-          ))}
+        <div className="mb-4">
+          <div className="flex items-center justify-between text-xs mb-1" style={{ color: 'var(--text-muted)' }}>
+            <span>Match confidence</span>
+            <span className="font-semibold" style={{ color: 'var(--text)' }}>{Math.round(profile.risk_score)}</span>
+          </div>
+          <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--bg-subtle)' }}>
+            <div
+              className="h-full rounded-full transition-all"
+              style={{ width: `${Math.min(Math.round(profile.risk_score), 100)}%`, ...riskBarStyle(profile.risk_level) }}
+            />
+          </div>
         </div>
 
-        {/* Recommended action */}
-        <div className="rounded-lg px-3 py-2.5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
-          <p className="text-[10px] uppercase font-medium tracking-wide mb-0.5" style={{ color: 'var(--text-muted)' }}>Recommended action</p>
-          <p className="text-xs" style={{ color: 'var(--text)' }}>{recommendedAction}</p>
+        <div className="mb-4">
+          <div className="flex items-center justify-between text-xs mb-1" style={{ color: 'var(--text-muted)' }}>
+            <span>Profile confidence</span>
+            <span className="font-semibold" style={{ color: 'var(--text)' }}>{profile.profile_confidence}%</span>
+          </div>
+          <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--bg-subtle)' }}>
+            <div
+              className="h-full rounded-full transition-all"
+              style={{ width: `${profile.profile_confidence}%`, background: 'var(--info)' }}
+            />
+          </div>
         </div>
 
-        {/* Status + Generate evidence row */}
-        <div className="flex items-center gap-2 mt-3">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Investigation status</span>
           <select
             value={status}
             onChange={(e) => handleStatusChange(e.target.value)}
             disabled={statusSaving}
-            className="text-xs rounded-md px-2.5 py-1.5 font-medium focus:outline-none cursor-pointer disabled:opacity-60 flex-1"
+            className="text-xs rounded-md px-2.5 py-1 font-medium focus:outline-none cursor-pointer disabled:opacity-60"
             style={statusStyle(status)}
           >
             {STATUS_OPTIONS.map((s) => (
               <option key={s} value={s}>{STATUS_LABELS[s]}</option>
             ))}
           </select>
-          {isEligibleForEvidence ? (
-            <Link
-              href={`/customers/${profile.id}/evidence/new`}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors flex-shrink-0"
-              style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}
-            >
-              Generate evidence
-            </Link>
-          ) : (
-            <span
-              className="flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-semibold opacity-40 cursor-not-allowed"
-              title="No eligible orders found — customer needs at least one refund claim or chargeback"
-              style={{ background: 'var(--bg-muted)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
-            >
-              Generate evidence
-            </span>
-          )}
         </div>
-        {!isEligibleForEvidence && (
-          <p className="text-[10px] mt-1.5" style={{ color: 'var(--text-subtle)' }}>
-            Evidence generation requires at least one refund claim or chargeback in the customer history.
-          </p>
-        )}
-      </div>
 
-      {/* ── Behavioral context ────────────────────────────────────── */}
-      <Section title="Behavioral context">
+        <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+          <div>
+            <dt className="text-xs" style={{ color: 'var(--text-muted)' }}>First seen</dt>
+            <dd className="font-medium" style={{ color: 'var(--text)' }}>{formatDateShort(profile.first_seen)}</dd>
+          </div>
+          <div>
+            <dt className="text-xs" style={{ color: 'var(--text-muted)' }}>Last seen</dt>
+            <dd className="font-medium" style={{ color: 'var(--text)' }}>{formatDateShort(profile.last_seen)}</dd>
+          </div>
+          <div>
+            <dt className="text-xs" style={{ color: 'var(--text-muted)' }}>Orders</dt>
+            <dd className="font-medium" style={{ color: 'var(--text)' }}>{profile.total_orders}</dd>
+          </div>
+          <div>
+            <dt className="text-xs" style={{ color: 'var(--text-muted)' }}>Refund rate</dt>
+            <dd className="font-medium" style={{ color: 'var(--text)' }}>
+              {Math.round(profile.refund_rate * 100)}%
+            </dd>
+          </div>
+          {profile.emails.length > 1 && (
+            <div className="col-span-2">
+              <dt className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>All emails</dt>
+              <dd className="space-y-0.5">
+                {profile.emails.map((email, index) => (
+                  <p key={index} className="text-xs font-mono truncate" style={{ color: 'var(--text)' }}>{email}</p>
+                ))}
+              </dd>
+            </div>
+          )}
+          {((profile as any).identity_signals ?? profile.fraud_flags ?? []).length > 0 && (
+            <div className="col-span-2">
+              <dt className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>Identity signals</dt>
+              <dd className="flex flex-wrap gap-1">
+                {((profile as any).identity_signals ?? profile.fraud_flags ?? []).map((flag: string, index: number) => (
+                  <span
+                    key={index}
+                    className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium"
+                    style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}
+                  >
+                    {flag}
+                  </span>
+                ))}
+              </dd>
+            </div>
+          )}
+        </dl>
+      </Section>
+
+      <Section title="Behavioral Context">
         <p className="text-body-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>{narrative}</p>
         {((profile as any).identity_signals ?? profile.fraud_flags ?? []).length > 0 && (
           <div className="mt-3 flex flex-wrap gap-1.5">
@@ -391,66 +377,17 @@ function DrawerContent({
         )}
       </Section>
 
-      {/* ── Prior dispute / refund pattern ───────────────────────── */}
-      <Section title="Order & refund history">
-        {orderHistory.length === 0 ? (
-          <p className="text-body-sm italic" style={{ color: 'var(--text-muted)' }}>No orders in current dataset.</p>
-        ) : (
-          <>
-            <div className="space-y-2">
-              {visibleOrders.map((order, i) => (
-                <div
-                  key={i}
-                  className="rounded-lg p-3 text-sm"
-                  style={{ border: '1px solid var(--border-subtle)', background: 'var(--bg-subtle)' }}
-                >
-                  <div className="flex items-center justify-between gap-2 mb-1">
-                    <span className="font-mono text-xs truncate" style={{ color: 'var(--text-muted)' }}>{order.orderId}</span>
-                    <span
-                      className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-semibold uppercase"
-                      style={riskBadgeStyle(order.riskLevel)}
-                    >
-                      {order.riskLevel}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs" style={{ color: 'var(--text-muted)' }}>
-                    <span>{formatDate(order.date)}</span>
-                    <span className="font-medium" style={{ color: 'var(--text)' }}>{formatCurrency(order.orderValue)}</span>
-                  </div>
-                  {order.refundClaimed && (
-                    <p className="mt-1 text-xs font-medium" style={{ color: 'var(--risk-high)' }}>
-                      Prior dispute/refund pattern{order.refundReason ? ` · ${order.refundReason}` : ''}
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
-            {orderHistory.length > 10 && (
-              <button
-                onClick={onToggleOrders}
-                className="mt-3 text-xs hover:underline"
-                style={{ color: 'var(--accent)' }}
-              >
-                {ordersExpanded ? 'Show fewer' : `Show all ${orderHistory.length} orders`}
-              </button>
-            )}
-          </>
-        )}
-      </Section>
-
-      {/* ── Identity timeline ─────────────────────────────────────── */}
       {identityTimeline.length > 0 && (
-        <Section title={`Identity timeline${variantCount > 0 ? ` · ${variantCount} change${variantCount > 1 ? 's' : ''}` : ''}`}>
+        <Section title={`Identity Timeline${variantCount > 0 ? ` · ${variantCount} change${variantCount > 1 ? 's' : ''}` : ''}`}>
           <IdentityTimeline entries={identityTimeline} />
         </Section>
       )}
 
-      {/* ── Linked accounts ───────────────────────────────────────── */}
       {linkedAccounts.length > 0 && (
-        <Section title={`Linked identities (${linkedAccounts.length})`}>
+        <Section title={`Linked Identities (${linkedAccounts.length})`}>
           <ul className="space-y-2">
-            {linkedAccounts.slice(0, 8).map((acc, i) => (
-              <li key={i} className="flex items-start gap-2 text-sm">
+            {linkedAccounts.slice(0, 8).map((acc, index) => (
+              <li key={index} className="flex items-start gap-2 text-sm">
                 <span
                   className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium shrink-0"
                   style={{ background: 'var(--watchlist-bg)', color: 'var(--watchlist)', border: '1px solid var(--watchlist-bd)' }}
@@ -468,11 +405,82 @@ function DrawerContent({
         </Section>
       )}
 
-      {/* ── Merchant notes ────────────────────────────────────────── */}
+      <Section title={`Order History (${orderHistory.length})`}>
+        {orderHistory.length === 0 ? (
+          <p className="text-body-sm italic" style={{ color: 'var(--text-muted)' }}>No orders in current dataset.</p>
+        ) : (
+          <>
+            <div className="space-y-2">
+              {visibleOrders.map((order, index) => (
+                <div
+                  key={index}
+                  className="rounded-lg p-3 text-sm"
+                  style={{ border: '1px solid var(--border-subtle)', background: 'var(--bg-subtle)' }}
+                >
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <span className="font-mono text-xs truncate" style={{ color: 'var(--text-muted)' }}>{order.orderId}</span>
+                    <span
+                      className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-semibold uppercase"
+                      style={riskBadgeStyle(order.riskLevel)}
+                    >
+                      {order.riskLevel}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs" style={{ color: 'var(--text-muted)' }}>
+                    <span>{formatDateShort(order.orderDate ?? order.processedAt)}</span>
+                    <span className="font-medium" style={{ color: 'var(--text)' }}>{formatCurrencyNullable(order.orderValue)}</span>
+                  </div>
+                  {order.refundRequested && (
+                    <p className="mt-1 text-xs font-medium" style={{ color: 'var(--risk-high)' }}>
+                      Refund requested{order.refundReason ? ` · ${order.refundReason}` : ''}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+            {orderHistory.length > 10 && (
+              <button
+                onClick={onToggleOrders}
+                className="mt-3 text-xs hover:underline"
+                style={{ color: 'var(--accent)' }}
+              >
+                {ordersExpanded ? 'Show fewer' : `Show all ${orderHistory.length} orders`}
+              </button>
+            )}
+          </>
+        )}
+      </Section>
       <Section title="Merchant notes">
         <CustomerNotes customerProfileId={profile.id} />
       </Section>
 
+      <div className="pt-4 mt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+        {isEligibleForEvidence ? (
+          <Link
+            href={`/customers/${profile.id}/evidence/new`}
+            className="flex w-full items-center justify-center gap-1.5 px-3 py-2 rounded-md text-xs font-semibold transition-colors border"
+            style={{
+              background: 'var(--bg-subtle)',
+              borderColor: 'var(--border)',
+              color: 'var(--text)',
+            }}
+          >
+            Generate evidence
+          </Link>
+        ) : (
+          <span
+            className="flex w-full items-center justify-center gap-1.5 px-3 py-2 rounded-md text-xs font-semibold border opacity-40 cursor-not-allowed"
+            title="No eligible orders found — customer needs at least one refund claim or chargeback"
+            style={{
+              background: 'var(--bg-subtle)',
+              borderColor: 'var(--border)',
+              color: 'var(--text)',
+            }}
+          >
+            Generate evidence
+          </span>
+        )}
+      </div>
     </div>
   );
 }

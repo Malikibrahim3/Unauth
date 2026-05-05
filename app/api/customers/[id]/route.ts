@@ -19,7 +19,8 @@ export interface IdentityTimelineEntry {
 
 export interface OrderHistoryEntry {
   orderId: string;
-  date: string;
+  orderDate: string | null;
+  processedAt: string;
   email: string | null;
   name: string | null;
   address: string | null;
@@ -29,8 +30,17 @@ export interface OrderHistoryEntry {
   fraudScore: number;
   riskLevel: string;
   fraudFlags: string[];
-  refundClaimed: boolean;
+  // Refund / claim fields
+  refundStatus: string | null;
+  refundRequested: boolean;
   refundReason: string | null;
+  refundDate: string | null;
+  refundAmount: number | null;
+  returnRequested: boolean;
+  // Chargeback fields
+  chargebackFiled: boolean;
+  chargebackDate: string | null;
+  chargebackReasonCode: string | null;
 }
 
 export interface LinkedAccount {
@@ -151,7 +161,7 @@ export async function GET(
       let txQuery = serviceClient
         .from('audit_transactions')
         .select(
-          'id,job_id,order_id,customer_email,customer_name,shipping_address,device_ip,card_last4,order_value,match_score,fraud_flags,risk_level,refund_claimed,refund_reason,processed_at'
+          'id,job_id,order_id,order_date,customer_email,customer_name,shipping_address,device_ip,card_last4,order_value,match_score,fraud_flags,risk_level,refund_status,refund_claimed,refund_requested,refund_reason,refund_date,refund_amount,return_requested,chargeback_dispute,chargeback_date,chargeback_reason_code,processed_at'
         )
         .in('job_id', auditIds)
         .order('processed_at', { ascending: true })
@@ -176,7 +186,8 @@ export async function GET(
   // -------------------------------------------------------------------------
   const orderHistory: OrderHistoryEntry[] = transactions.map((tx) => ({
     orderId: tx.order_id,
-    date: tx.processed_at,
+    orderDate: tx.order_date ?? null,
+    processedAt: tx.processed_at,
     email: tx.customer_email,
     name: tx.customer_name,
     address: tx.shipping_address,
@@ -186,8 +197,15 @@ export async function GET(
     fraudScore: tx.match_score,
     riskLevel: tx.risk_level,
     fraudFlags: Array.isArray(tx.fraud_flags) ? tx.fraud_flags : [],
-    refundClaimed: tx.refund_claimed ?? false,
-    refundReason: tx.refund_reason,
+    refundStatus: tx.refund_status ?? null,
+    refundRequested: !!(tx.refund_requested ?? tx.refund_claimed),
+    refundReason: tx.refund_reason ?? null,
+    refundDate: tx.refund_date ?? null,
+    refundAmount: tx.refund_amount ?? null,
+    returnRequested: !!(tx.return_requested),
+    chargebackFiled: !!(tx.chargeback_dispute),
+    chargebackDate: tx.chargeback_date ?? null,
+    chargebackReasonCode: tx.chargeback_reason_code ?? null,
   }));
 
   // -------------------------------------------------------------------------

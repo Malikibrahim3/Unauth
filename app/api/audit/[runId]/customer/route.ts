@@ -69,6 +69,16 @@ export async function GET(
   const clusterIds = uniq(direct.map((row) => row.cluster_id));
   let rows = direct;
 
+  const merchantFilter = `merchant_ids.cs.${JSON.stringify([ctx.userId])},merchant_ids.cs.${JSON.stringify([ctx.merchantId])}`;
+  const { data: profileRows } = await serviceClient
+    .from('customer_profiles')
+    .select('id')
+    .or(merchantFilter)
+    .or(`primary_email.ilike.${email},emails.cs.["${email}"]`)
+    .limit(1) as unknown as { data: Array<{ id: string }> | null };
+
+  const profileId = profileRows?.[0]?.id ?? null;
+
   if (clusterIds.length > 0) {
     const { data: clusterRows } = await serviceClient
       .from('audit_transactions')
@@ -91,6 +101,7 @@ export async function GET(
 
   return NextResponse.json({
     customer: {
+      id: profileId,
       email,
       names: uniq(rows.map((row) => row.customer_name)),
       emails: uniq(rows.map((row) => row.customer_email)),

@@ -3,8 +3,9 @@ import { Download, Users, ArrowRight } from 'lucide-react';
 import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
 import { formatDate, formatCurrency } from '@/lib/utils/format';
+import { scoreToGrade } from '@/lib/utils/riskStyles';
 import { signalLabel } from '@/lib/copy/signalLabels';
-import ConfidenceGrade from '@/components/ConfidenceGrade';
+import { ConfidenceBadge, riskLevelToNewGrade, scoreToGrade as scoreToNewGrade } from '@/components/ui/ConfidenceBadge';
 import DismissTransactionButton from '@/components/audit/DismissTransactionButton';
 import FeedbackButtons from '@/components/audit/FeedbackButtons';
 import DataQualityBanner from '@/components/audit/DataQualityBanner';
@@ -15,6 +16,7 @@ import type { DataQualityReport } from '@/lib/csv/dataQuality';
 import type { Database } from '@/lib/supabase/types';
 import PageSizeSelect from '@/components/common/PageSizeSelect';
 import AuditCustomersTableClient from '@/components/audit/AuditCustomersTableClient';
+import { PageHeader } from '@/components/common/PageHeader';
 
 type RunRow = Database['public']['Tables']['processing_jobs']['Row'];
 type TxRow = Database['public']['Tables']['audit_transactions']['Row'];
@@ -31,13 +33,6 @@ const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
 function normalizePageSize(value: string | undefined, fallback: number): number {
   const parsed = parseInt(value ?? String(fallback), 10);
   return PAGE_SIZE_OPTIONS.includes(parsed as (typeof PAGE_SIZE_OPTIONS)[number]) ? parsed : fallback;
-}
-
-function scoreToGrade(score: number): 'definite' | 'probable' | 'possible' | 'weak' {
-  if (score >= 85) return 'definite';
-  if (score >= 70) return 'probable';
-  if (score >= 55) return 'possible';
-  return 'weak';
 }
 
 export default async function AuditRunPage({ params, searchParams }: RunPageProps) {
@@ -200,27 +195,24 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
   const valueAtRisk       = summary.valueAtRisk;
   const estimatedExposure = summary.estimatedExposure;
 
+  const statusBadge = (
+    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-sm border text-xs font-medium" style={{
+      background:   runData.status === 'completed' ? 'var(--success-bg)'        : runData.status === 'processing' ? 'var(--info-bg)'    : 'var(--risk-critical-bg)',
+      color:        runData.status === 'completed' ? 'var(--success)'           : runData.status === 'processing' ? 'var(--info)'       : 'var(--risk-critical)',
+      borderColor:  runData.status === 'completed' ? 'var(--success-bd)'        : runData.status === 'processing' ? 'var(--info-bd)'    : 'var(--risk-critical-bd)',
+    }}>
+      <span className="h-1.5 w-1.5 rounded-full" style={{ background: 'currentColor' }} aria-hidden="true" />
+      {runData.status}
+    </span>
+  );
+
   return (
     <div className="p-6 md:p-8 space-y-6">
-      {/* ── Breadcrumb + header ───────────────────────────────────────── */}
-      <div className="flex items-start justify-between flex-wrap gap-3">
-        <div>
-          <div className="flex items-center gap-2 text-body-sm mb-1" style={{ color: 'var(--text-muted)' }}>
-            <Link href="/dashboard" className="inline-flex items-center gap-1 hover:opacity-80 transition-colors">
-              <svg className="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-              </svg>
-              Dashboard
-            </Link>
-            <span>/</span>
-            <span>Audit result</span>
-          </div>
-          <h1 className="text-heading-lg" style={{ color: 'var(--text)' }}>Audit Results</h1>
-          <p className="text-body-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>
-            {runData.filename} · {formatDate(runData.created_at)}
-          </p>
-        </div>
-        <div className="flex items-center gap-3 flex-wrap">
+      <PageHeader
+        title="Audit Results"
+        subtitle={`${runData.filename} · ${formatDate(runData.created_at)}`}
+        breadcrumbs={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'Audit result' }]}
+        actions={<>
           <a
             href={`/api/audit/${runData.id}/export`}
             className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-md transition-colors border"
@@ -230,16 +222,9 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
             <Download className="h-4 w-4" />
             Export report
           </a>
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-sm border text-xs font-medium" style={{
-            background:   runData.status === 'completed' ? 'var(--success-bg)'        : runData.status === 'processing' ? 'var(--info-bg)'    : 'var(--risk-critical-bg)',
-            color:        runData.status === 'completed' ? 'var(--success)'           : runData.status === 'processing' ? 'var(--info)'       : 'var(--risk-critical)',
-            borderColor:  runData.status === 'completed' ? 'var(--success-bd)'        : runData.status === 'processing' ? 'var(--info-bd)'    : 'var(--risk-critical-bd)',
-          }}>
-            <span className="h-1.5 w-1.5 rounded-full" style={{ background: 'currentColor' }} aria-hidden="true" />
-            {runData.status}
-          </span>
-        </div>
-      </div>
+          {statusBadge}
+        </>}
+      />
 
       {/* ── Action bar ───────────────────────────────────────────────── */}
       {hasFlags && (
@@ -249,7 +234,7 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
           </p>
           <div className="flex items-center gap-2 flex-wrap">
             <Link
-              href={`/audit/${runData.id}?tab=customers`}
+              href={`/audit/${jobId}?tab=customers`}
               className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-md transition-colors"
               style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}
             >
@@ -257,7 +242,7 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
               Review risky customers
             </Link>
             <a
-              href={`/api/audit/${runData.id}/export`}
+              href={`/api/audit/${jobId}/export`}
               className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-md transition-colors border"
               style={{ color: 'var(--text)', borderColor: 'var(--border)' }}
               download
@@ -266,7 +251,7 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
               Export report
             </a>
             <Link
-              href={`/audit/${runData.id}?tab=transactions`}
+              href={`/audit/${jobId}?tab=transactions`}
               className="text-sm font-medium hover:underline"
               style={{ color: 'var(--text-muted)' }}
             >
@@ -315,7 +300,7 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
               <div className="grid grid-cols-4 gap-3">
                 {(['weak', 'possible', 'probable', 'definite'] as const).map((grade) => (
                   <div key={grade} className="rounded-lg px-4 py-3 border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
-                    <div className="mb-1"><ConfidenceGrade grade={grade} size="sm" /></div>
+                    <div className="mb-1"><ConfidenceBadge grade={({'weak':'D','possible':'C','probable':'B','definite':'A'} as const)[grade]} size="sm" /></div>
                     <div className="text-heading-sm font-mono" style={{ color: 'var(--text)' }}>{gradeCounts[grade].toLocaleString()}</div>
                   </div>
                 ))}
@@ -362,7 +347,7 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
                               <td className="px-4 py-2.5 text-right font-mono font-semibold" style={{ color: 'var(--text)' }}>{Math.round(stats.maxScore)}</td>
                               <td className="px-4 py-2.5 text-right">
                                 <Link
-                                  href={`/audit/${runData.id}?tab=customers&customerEmail=${encodeURIComponent(email)}&customerPage=${customerPage}&txPage=${txPage}&customerPageSize=${customerPageSize}&txPageSize=${txPageSize}`}
+                                  href={`/audit/${jobId}?tab=customers&customerPage=${customerPage}&txPage=${txPage}&customerPageSize=${customerPageSize}&txPageSize=${txPageSize}`}
                                   className="inline-flex items-center gap-0.5 text-xs font-semibold hover:underline"
                                   style={{ color: 'var(--text)' }}
                                 >
@@ -388,7 +373,7 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
                     <span>
                       Showing {totalCustomers === 0 ? 0 : customerOffset + 1}–{Math.min(customerOffset + customerPageSize, totalCustomers)} of {totalCustomers.toLocaleString()} customers
                     </span>
-                    <PageSizeSelect pathname={`/audit/${runData.id}`} searchParams={{ ...searchParams, txPage: String(txPage), customerPage: String(customerPage), txPageSize: String(txPageSize), customerPageSize: String(customerPageSize) }} pageSize={customerPageSize} label="Customers per page" />
+                    <PageSizeSelect pathname={`/audit/${jobId}`} searchParams={{ ...searchParams, txPage: String(txPage), customerPage: String(customerPage), txPageSize: String(txPageSize), customerPageSize: String(customerPageSize) }} pageSize={customerPageSize} label="Customers per page" />
                   </div>
                   <AuditCustomersTableClient
                     runId={runData.id}
@@ -407,10 +392,10 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
                     <div className="px-4 py-2.5 flex items-center justify-end gap-2 text-xs border-t" style={{ color: 'var(--text-muted)', borderColor: 'var(--border-subtle)' }}>
                       <span>Page {customerPage} of {customerPages}</span>
                       {customerPage > 1 && (
-                        <Link href={`/audit/${runData.id}?customerPage=${customerPage - 1}&txPage=${txPage}&customerPageSize=${customerPageSize}&txPageSize=${txPageSize}`} className="px-2 py-1 border rounded" style={{ borderColor: 'var(--border)' }}>&larr; Prev</Link>
+                        <Link href={`/audit/${jobId}?customerPage=${customerPage - 1}&txPage=${txPage}&customerPageSize=${customerPageSize}&txPageSize=${txPageSize}`} className="px-2 py-1 border rounded" style={{ borderColor: 'var(--border)' }}>&larr; Prev</Link>
                       )}
                       {customerPage < customerPages && (
-                        <Link href={`/audit/${runData.id}?customerPage=${customerPage + 1}&txPage=${txPage}&customerPageSize=${customerPageSize}&txPageSize=${txPageSize}`} className="px-2 py-1 border rounded" style={{ borderColor: 'var(--border)' }}>Next &rarr;</Link>
+                        <Link href={`/audit/${jobId}?customerPage=${customerPage + 1}&txPage=${txPage}&customerPageSize=${customerPageSize}&txPageSize=${txPageSize}`} className="px-2 py-1 border rounded" style={{ borderColor: 'var(--border)' }}>Next &rarr;</Link>
                       )}
                     </div>
                   )}
@@ -424,7 +409,7 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
               {txPage > 1 && (transactions ?? []).length === 0 && (
                 <div className="rounded-xl px-6 py-8 text-center border" style={{ background: 'var(--bg-subtle)', borderColor: 'var(--border-subtle)' }}>
                   <p className="text-body-sm font-semibold mb-2" style={{ color: 'var(--text)' }}>No more transactions on this page.</p>
-                  <Link href={`/audit/${runData.id}`} className="text-caption hover:underline" style={{ color: 'var(--text-muted)' }}>← Back to page 1</Link>
+                  <Link href={`/audit/${jobId}`} className="text-caption hover:underline" style={{ color: 'var(--text-muted)' }}>← Back to page 1</Link>
                 </div>
               )}
 
@@ -439,16 +424,16 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
                       <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
                         <span>Page {txPage} of {txPages}</span>
                         {txPage > 1 && (
-                          <Link href={`/audit/${runData.id}?txPage=${txPage - 1}&customerPage=${customerPage}&customerPageSize=${customerPageSize}&txPageSize=${txPageSize}`} className="px-2 py-1 border rounded" style={{ borderColor: 'var(--border)' }}>&larr; Prev</Link>
+                          <Link href={`/audit/${jobId}?txPage=${txPage - 1}&customerPage=${customerPage}&customerPageSize=${customerPageSize}&txPageSize=${txPageSize}`} className="px-2 py-1 border rounded" style={{ borderColor: 'var(--border)' }}>&larr; Prev</Link>
                         )}
                         {txPage < txPages && (
-                          <Link href={`/audit/${runData.id}?txPage=${txPage + 1}&customerPage=${customerPage}&customerPageSize=${customerPageSize}&txPageSize=${txPageSize}`} className="px-2 py-1 border rounded" style={{ borderColor: 'var(--border)' }}>Next &rarr;</Link>
+                          <Link href={`/audit/${jobId}?txPage=${txPage + 1}&customerPage=${customerPage}&customerPageSize=${customerPageSize}&txPageSize=${txPageSize}`} className="px-2 py-1 border rounded" style={{ borderColor: 'var(--border)' }}>Next &rarr;</Link>
                         )}
                       </div>
                     )}
                   </div>
                   <div className="mb-3 flex items-center justify-end">
-                    <PageSizeSelect pathname={`/audit/${runData.id}`} searchParams={{ ...searchParams, txPage: String(txPage), customerPage: String(customerPage), txPageSize: String(txPageSize), customerPageSize: String(customerPageSize) }} pageSize={txPageSize} label="Transactions per page" />
+                    <PageSizeSelect pathname={`/audit/${jobId}`} searchParams={{ ...searchParams, txPage: String(txPage), customerPage: String(customerPage), txPageSize: String(txPageSize), customerPageSize: String(customerPageSize) }} pageSize={txPageSize} label="Transactions per page" />
                   </div>
                   <div className="rounded-lg overflow-hidden border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
                     <table className="w-full text-sm">
@@ -475,7 +460,7 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
                               <td className="px-4 py-2.5 text-right font-mono font-semibold" style={{ color: 'var(--text)' }}>{Math.round((tx as any).identity_score ?? (tx as any).match_score ?? 0)}</td>
                               <td className="px-4 py-2.5">
                                 {(tx as any).identity_confidence_grade
-                                  ? <ConfidenceGrade grade={(tx as any).identity_confidence_grade as any} size="sm" />
+                                  ? <ConfidenceBadge grade={riskLevelToNewGrade((tx as any).risk_level)} size="sm" />
                                   : <span className="text-xs" style={{ color: 'var(--text-subtle)' }}>Ungraded</span>}
                               </td>
                               <td className="px-4 py-2.5 text-xs max-w-xs" style={{ color: 'var(--text-muted)' }}>
@@ -484,7 +469,7 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
                               </td>
                               <td className="px-4 py-2.5 text-right">
                                 <div className="flex items-center justify-end gap-1">
-                                  <Link href={`/audit/${runData.id}/transaction/${tx.id}`} className="inline-flex items-center gap-0.5 text-xs font-semibold hover:underline" style={{ color: 'var(--text)' }}>
+                                  <Link href={`/audit/${jobId}/transaction/${tx.id}`} className="inline-flex items-center gap-0.5 text-xs font-semibold hover:underline" style={{ color: 'var(--text)' }}>
                                     Details <ArrowRight className="h-3 w-3" />
                                   </Link>
                                   <DismissTransactionButton txId={tx.id} />
@@ -516,7 +501,7 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
           data_quality: (
             <div className="space-y-4">
               {dataQuality ? (
-                <DataQualityBanner report={dataQuality} runId={runData.id} />
+                <DataQualityBanner report={dataQuality} runId={jobId} />
               ) : (
                 <div className="rounded-lg p-6 text-center border" style={{ background: 'var(--success-bg)', borderColor: 'var(--success-bd)' }}>
                   <p className="text-body-sm font-semibold" style={{ color: 'var(--success)' }}>No data quality issues detected in this upload.</p>

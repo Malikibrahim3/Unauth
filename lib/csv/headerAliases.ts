@@ -26,8 +26,13 @@ export type RequiredField =
   | 'account_id'
   | 'ground_truth_label'
   | 'chargeback_dispute'
+  | 'chargeback_date'
+  | 'chargeback_reason_code'
   | 'refund_requested'
-  | 'return_requested';
+  | 'return_requested'
+  | 'delivery_status'
+  | 'delivery_method'
+  | 'tracking_number';
 
 /** Fields that MUST be mapped before the upload can proceed. */
 export const REQUIRED_FIELDS: RequiredField[] = [
@@ -72,8 +77,13 @@ export const FIELD_IMPORTANCE: Record<RequiredField, FieldImportance> = {
   refund_amount: 'nice_to_have',
   ground_truth_label: 'nice_to_have',
   chargeback_dispute: 'nice_to_have',
+  chargeback_date: 'nice_to_have',
+  chargeback_reason_code: 'nice_to_have',
   refund_requested: 'nice_to_have',
   return_requested: 'nice_to_have',
+  delivery_status: 'nice_to_have',
+  delivery_method: 'nice_to_have',
+  tracking_number: 'nice_to_have',
 };
 
 export const OPTIONAL_FIELDS: RequiredField[] = Object.keys(FIELD_IMPORTANCE).filter(
@@ -81,53 +91,48 @@ export const OPTIONAL_FIELDS: RequiredField[] = Object.keys(FIELD_IMPORTANCE).fi
 );
 
 /** Logical grouping of optional fields for the mapping UI */
-export const OPTIONAL_FIELD_GROUPS: { label: string; fields: RequiredField[]; importance?: FieldImportance }[] = [
+export const OPTIONAL_FIELD_GROUPS: { label: string; fields: RequiredField[]; importance?: FieldImportance; collapsed?: boolean }[] = [
   {
-    label: 'Identity signals — more fields = stronger matches',
+    label: 'Identity fields',
     fields: [
       'customer_name',
       'shipping_address',
       'customer_phone',
       'billing_address',
-      'ip_address',
       'account_id',
     ],
     importance: 'match_improver',
   },
   {
-    label: 'Payment & card signals',
-    fields: ['payment_method', 'card_last4', 'card_bin', 'card_fingerprint'],
+    label: 'Payment signals — Card BIN + last 4 are not unique by themselves, but support other matches.',
+    fields: ['payment_method', 'card_last4', 'card_bin'],
     importance: 'match_improver',
   },
   {
-    label: 'Device & network signals',
-    fields: ['device_id', 'browser_fingerprint', 'cookie_id', 'user_agent', 'asn'],
-    importance: 'match_improver',
-  },
-  {
-    label: 'Refund information',
-    fields: ['refund_status', 'refund_reason', 'refund_date', 'refund_amount'],
+    label: 'Refund & dispute fields',
+    fields: [
+      'refund_status',
+      'refund_requested',
+      'refund_reason',
+      'refund_date',
+      'refund_amount',
+      'return_requested',
+      'chargeback_dispute',
+      'chargeback_date',
+      'chargeback_reason_code',
+    ],
     importance: 'nice_to_have',
   },
   {
-    // Dispute / claim signals — not all merchants have these exports, but
-    // when present they are the single highest-precision fraud signals we
-    // consume. Surfacing them in the mapper (as optional, per spec) stops
-    // the prior silent-drop bug where merchants had the data but no way
-    // to map it.
-    label: 'Dispute & claim signals',
-    fields: ['chargeback_dispute', 'refund_requested', 'return_requested'],
+    label: 'Order & delivery fields',
+    fields: ['currency', 'order_status', 'delivery_status', 'delivery_method', 'tracking_number'],
     importance: 'nice_to_have',
   },
   {
-    label: 'Order extras',
-    fields: ['currency', 'order_status'],
+    label: 'Advanced optional CSV fields',
+    fields: ['ip_address', 'user_agent'],
     importance: 'nice_to_have',
-  },
-  {
-    label: 'Account & eval',
-    fields: ['account_id', 'ground_truth_label'],
-    importance: 'match_improver',
+    collapsed: true,
   },
 ];
 
@@ -354,6 +359,41 @@ export const HEADER_ALIASES: Record<RequiredField, string[]> = {
     'return_requested', 'return requested',
     'return_claim', 'return claim', 'return_claimed',
     'has_return', 'has return', 'return_filed', 'return filed',
+  ],
+
+  chargeback_date: [
+    'chargeback_date', 'chargeback date',
+    'dispute_date', 'dispute date', 'disputed_at', 'chargeback_at',
+    'chargeback filed date', 'chargeback_filed_date',
+  ],
+
+  chargeback_reason_code: [
+    'chargeback_reason_code', 'chargeback reason code',
+    'dispute_reason', 'dispute reason', 'chargeback_reason', 'chargeback reason',
+    'reason code', 'reason_code', 'dispute_code', 'dispute code',
+  ],
+
+  delivery_status: [
+    'delivery_status', 'delivery status',
+    'fulfillment_status', 'fulfillment status',
+    'shipment_status', 'shipment status',
+    'shipping_status', 'shipping status',
+  ],
+
+  delivery_method: [
+    'delivery_method', 'delivery method',
+    'shipping_method', 'shipping method',
+    'fulfillment_method', 'fulfillment method',
+    'carrier', 'shipping_carrier', 'shipping carrier',
+    'courier', 'shipment_method', 'shipment method',
+  ],
+
+  tracking_number: [
+    'tracking_number', 'tracking number',
+    'tracking_id', 'tracking id',
+    'shipment_tracking', 'shipment tracking',
+    'tracking_code', 'tracking code',
+    'tracking', 'track', 'courier_tracking',
   ],
 };
 

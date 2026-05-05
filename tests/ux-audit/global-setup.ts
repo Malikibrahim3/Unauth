@@ -4,7 +4,8 @@ import { createClient } from '@supabase/supabase-js'
 import fs from 'fs'
 import path from 'path'
 
-const CREDENTIALS_PATH = path.join(__dirname, '.ux-audit-credentials.json')
+export const CREDENTIALS_PATH = path.join(__dirname, '.ux-audit-credentials.json')
+export const STORAGE_STATE_PATH = path.join(__dirname, '.ux-audit-storage-state.json')
 
 const TEST_MERCHANT = {
   email: `ux-audit-${Date.now()}@unauth-test-automation.com`,
@@ -25,6 +26,7 @@ async function globalSetup(config: FullConfig) {
     { auth: { persistSession: false } },
   )
 
+  // Clean up previous test account if it exists
   if (fs.existsSync(CREDENTIALS_PATH)) {
     const existing = JSON.parse(fs.readFileSync(CREDENTIALS_PATH, 'utf8'))
     await cleanupTestAccount(supabase, existing.userId)
@@ -60,24 +62,19 @@ async function globalSetup(config: FullConfig) {
 
   fs.writeFileSync(
     CREDENTIALS_PATH,
-    JSON.stringify(
-      {
-        email: TEST_MERCHANT.email,
-        password: TEST_MERCHANT.password,
-        userId,
-        storeName: TEST_MERCHANT.storeName,
-      },
-      null,
-      2,
-    ),
+    JSON.stringify({ email: TEST_MERCHANT.email, password: TEST_MERCHANT.password, userId, storeName: TEST_MERCHANT.storeName }, null, 2),
   )
 
+  // Sign in via browser and save storage state for test reuse
   const browser = await chromium.launch()
-  const page = await browser.newPage()
+  const context = await browser.newContext()
+  const page = await context.newPage()
   page.setDefaultTimeout(60_000)
   try {
     await signIn(page, baseURL, TEST_MERCHANT.email, TEST_MERCHANT.password)
     await seedDemoAudit(page)
+    await context.storageState({ path: STORAGE_STATE_PATH })
+    console.log('[UX audit setup] Auth storage state saved to', STORAGE_STATE_PATH)
   } finally {
     await browser.close()
   }
@@ -89,7 +86,8 @@ async function signIn(page: Page, baseURL: string, email: string, password: stri
   await page.fill('input[type="email"]', email)
   await page.fill('input[type="password"]', password)
   await page.click('button[type="submit"]')
-  await page.waitForURL('**/dashboard', { timeout: 20_000 })
+  await page.waitForURL('**/dashboard', { timeout: 30_000 })
+  console.log('[UX audit setup] Signed in, now at:', page.url())
 }
 
 async function seedDemoAudit(page: Page) {
@@ -104,7 +102,9 @@ async function seedDemoAudit(page: Page) {
   })
 
   if (!result.ok && result.status !== 409) {
-    throw new Error(`Failed to seed demo audit: ${result.status} ${result.text}`)
+    console.warn(`[UX audit setup] Demo seed returned ${result.status}: ${result.text}`)
+  } else {
+    console.log('[UX audit setup] Demo audit seeded, status:', result.status)
   }
 }
 

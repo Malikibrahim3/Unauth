@@ -1,38 +1,21 @@
+// TODO (App Cohesion Audit – Phase 2): This component is one of THREE separate
+// customer profile renderers in the app:
+//   1. CustomerProfileCard (this file) — used only on /audit/[runId]/customers
+//   2. CustomerIntelligenceDrawer — slide-out panel used everywhere else
+//   3. app/(app)/customers/[id]/page.tsx — full standalone page
+//
+// Phase 1 DONE: All local risk helpers and format functions have been replaced
+// with canonical imports from @/lib/utils/riskStyles and @/lib/utils/format.
+// Planned next: replace all three with a shared <CustomerProfilePanel> component.
+// See reports/ui-ux-audit/APP_COHESION_AUDIT.md — Issue D1.
 'use client';
 
 import { useState } from 'react';
 import type { CustomerProfile } from '@/lib/analysis/customerIntelligence';
 import WatchlistStarButton from './WatchlistStarButton';
 import CustomerNotes from './CustomerNotes';
-
-function riskTok(level: string) {
-  if (level === 'critical' || level === 'high' || level === 'medium' || level === 'low') return level;
-  return 'low';
-}
-
-function riskBarStyle(level: string): React.CSSProperties {
-  return { background: `var(--risk-${riskTok(level)})` };
-}
-
-function riskBadgeStyle(level: string): React.CSSProperties {
-  const t = riskTok(level);
-  return { background: `var(--risk-${t}-bg)`, color: `var(--risk-${t})`, border: `1px solid var(--risk-${t}-bd)` };
-}
-
-function severityStyle(severity: string): React.CSSProperties {
-  // weak=possible match, possible=probable match, probable=definite match for flag severity
-  const map: Record<string, string> = { low: 'medium', medium: 'high', high: 'critical' };
-  const t = riskTok(map[severity] ?? severity);
-  return { background: `var(--risk-${t}-bg)`, color: `var(--risk-${t})`, borderColor: `var(--risk-${t}-bd)` };
-}
-
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(amount);
-}
-
-function formatDate(d: string): string {
-  return new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(d));
-}
+import { riskBadgeStyle, riskBarStyle, severityStyle } from '@/lib/utils/riskStyles';
+import { formatCurrencyNullable, formatDateShort } from '@/lib/utils/format';
 
 export default function CustomerProfileCard({ profile }: { profile: CustomerProfile }) {
   const [expanded, setExpanded] = useState(false);
@@ -86,7 +69,7 @@ export default function CustomerProfileCard({ profile }: { profile: CustomerProf
 
             <div className="flex items-center gap-4 mt-2 text-xs" style={{ color: 'var(--text-muted)' }}>
               <span><strong style={{ color: 'var(--text)' }}>{profile.orderCount}</strong> order{profile.orderCount !== 1 ? 's' : ''}</span>
-              <span><strong style={{ color: 'var(--text)' }}>{formatCurrency(profile.totalSpend)}</strong> spent</span>
+              <span><strong style={{ color: 'var(--text)' }}>{formatCurrencyNullable(profile.totalSpend)}</strong> spent</span>
               {profile.refundCount > 0 && (
                 <span style={profile.refundRate > 0.5 ? { color: 'var(--risk-critical)', fontWeight: 600 } : {}}>
                   <strong>{profile.refundCount}</strong> refund{profile.refundCount !== 1 ? 's' : ''} ({Math.round(profile.refundRate * 100)}%)
@@ -215,9 +198,9 @@ export default function CustomerProfileCard({ profile }: { profile: CustomerProf
                 <tbody>
                   {profile.orders.map((order) => (
                     <tr key={order.orderId} style={{ borderTop: '1px solid var(--border-subtle)' }}>
-                      <td className="px-3 py-2 whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>{formatDate(order.date)}</td>
+                      <td className="px-3 py-2 whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>{formatDateShort(order.date)}</td>
                       <td className="px-3 py-2 font-mono" style={{ color: 'var(--text)' }}>{order.orderId}</td>
-                      <td className="px-3 py-2 text-right" style={{ color: 'var(--text)' }}>{formatCurrency(order.amount)}</td>
+                      <td className="px-3 py-2 text-right" style={{ color: 'var(--text)' }}>{formatCurrencyNullable(order.amount)}</td>
                       <td className="px-3 py-2">
                         {order.refunded ? (
                           <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium" style={riskBadgeStyle('critical')}>

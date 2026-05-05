@@ -1,4 +1,5 @@
 import UploadClient from '@/components/upload/UploadClient';
+import { PageHeader } from '@/components/common/PageHeader';
 
 interface UploadPageProps {
   searchParams: { welcome?: string };
@@ -18,9 +19,8 @@ export default function UploadPage({ searchParams }: UploadPageProps) {
           </p>
         </div>
       )}
-      <div className="mb-6">
-        <h1 className="text-heading-lg">New Audit</h1>
-        <p className="text-body-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>Upload a CSV export of your orders to detect suspicious refund patterns.</p>
+      <div className="mb-[var(--space-5)]">
+        <PageHeader title="New Audit" subtitle="Upload a CSV export of your orders to detect suspicious refund patterns." />
       </div>
       <UploadClient />
     </div>

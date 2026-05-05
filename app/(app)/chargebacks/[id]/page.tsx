@@ -5,7 +5,6 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { formatDate } from '@/lib/utils/format'
-import ConfidenceGrade from '@/components/ConfidenceGrade'
 
 interface Props {
   params: { id: string }

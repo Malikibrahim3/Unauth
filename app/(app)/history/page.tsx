@@ -3,6 +3,8 @@ import Link from 'next/link';
 import AuditHistoryTableClient from '@/components/audit/AuditHistoryTableClient';
 import type { Database } from '@/lib/supabase/types';
 import PageSizeSelect from '@/components/common/PageSizeSelect';
+import { PageHeader } from '@/components/common/PageHeader';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 type RunRow = Database['public']['Tables']['processing_jobs']['Row'];
 
@@ -32,21 +34,15 @@ export default async function HistoryPage({ searchParams }: { searchParams?: { p
 
   return (
     <div className="p-8 space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <h1 className="text-heading-lg">Upload history</h1>
-          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-            Showing {total === 0 ? 0 : offset + 1}–{Math.min(offset + pageSize, total)} of {total.toLocaleString()} audits
-          </p>
-        </div>
-        <Link
-          href="/upload"
-          className="px-4 py-2 text-sm font-semibold rounded-md transition-colors"
-          style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}
-        >
-          New Audit
-        </Link>
-      </div>
+      <PageHeader
+        title="Upload history"
+        subtitle={`Showing ${total === 0 ? 0 : offset + 1}–${Math.min(offset + pageSize, total)} of ${total.toLocaleString()} audits`}
+        actions={
+          <Link href="/upload" className="px-4 py-2 text-sm font-semibold rounded-md transition-colors" style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}>
+            New Audit
+          </Link>
+        }
+      />
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <PageSizeSelect pathname="/history" searchParams={baseSearchParams} pageSize={pageSize} />
         {totalPages > 1 && (
@@ -75,12 +71,11 @@ export default async function HistoryPage({ searchParams }: { searchParams?: { p
       </div>
 
       {typedRuns.length === 0 ? (
-        <div className="rounded-lg p-10" style={{ border: '1.5px dashed var(--border)' }}>
-          <p className="text-body-sm" style={{ color: 'var(--text-muted)' }}>No audits yet.</p>
-          <Link href="/upload" className="mt-4 inline-block text-sm font-medium underline" style={{ color: 'var(--text)' }}>
-            Upload your first CSV &rarr;
-          </Link>
-        </div>
+        <EmptyState
+          title="No audits yet"
+          description="Upload your first CSV to start detecting suspicious refund patterns."
+          action={<Link href="/upload" className="text-sm font-medium underline" style={{ color: 'var(--text)' }}>Upload your first CSV &rarr;</Link>}
+        />
       ) : (
         <AuditHistoryTableClient rows={typedRuns} />
       )}

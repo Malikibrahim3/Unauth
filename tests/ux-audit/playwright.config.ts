@@ -15,6 +15,7 @@ export default defineConfig({
     screenshot: 'off',
     video: 'off',
     trace: 'retain-on-failure',
+    storageState: require('path').join(__dirname, '.ux-audit-storage-state.json'),
   },
   webServer: {
     command: 'npm run dev',

@@ -54,12 +54,14 @@ const FIELD_LABELS: Record<RequiredField, string> = {
   asn: 'ASN',
   account_id: 'Account ID',
   ground_truth_label: 'Ground truth label',
-  // Dispute / claim signals — optional. Merchants without a disputes export
-  // will leave these blank; the scorer handles `null` as "unknown" rather
-  // than "no dispute", so omitting them never falsely exonerates an order.
   chargeback_dispute: 'Chargeback filed',
+  chargeback_date: 'Chargeback date',
+  chargeback_reason_code: 'Chargeback reason code',
   refund_requested: 'Refund requested',
   return_requested: 'Return requested',
+  delivery_status: 'Delivery status',
+  delivery_method: 'Delivery method',
+  tracking_number: 'Tracking number',
 };
 
 export default function UploadClient() {
@@ -80,6 +82,14 @@ export default function UploadClient() {
   const [dateRangeStart, setDateRangeStart] = useState('');
   const [dateRangeEnd, setDateRangeEnd] = useState('');
   const [uploadType, setUploadType] = useState<UploadType>('standard');
+  const [fileHash, setFileHash] = useState<string | null>(null);
+  const [duplicateWarning, setDuplicateWarning] = useState<{
+    existingRunId: string;
+    existingFilename: string;
+    existingLabel: string | null;
+    existingCreatedAt: string;
+    existingStatus: string;
+  } | null>(null);
   const [exportGuideOpen, setExportGuideOpen] = useState(false);
   useEffect(() => {
     try {
@@ -90,6 +100,7 @@ export default function UploadClient() {
     }
   }, []);
   const [exportFieldsOpen, setExportFieldsOpen] = useState(false);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const requiredUnmapped = REQUIRED_FIELDS.filter((f) => !columnMap[f]);
@@ -97,6 +108,16 @@ export default function UploadClient() {
 
   const handleFile = useCallback((f: File) => {
     setFile(f);
+    setDuplicateWarning(null);
+    // Compute SHA-256 for duplicate-upload detection
+    f.arrayBuffer().then((buf) =>
+      crypto.subtle.digest('SHA-256', buf).then((hashBuf) => {
+        const hex = Array.from(new Uint8Array(hashBuf))
+          .map((b) => b.toString(16).padStart(2, '0'))
+          .join('');
+        setFileHash(hex);
+      }),
+    );
     // Use sniffFile for robust BOM stripping, delimiter detection, and
     // quoted-field-aware header tokenisation (instead of a naive comma-split).
     sniffFile(f).then(({ headers, collisions }) => {
@@ -143,7 +164,7 @@ export default function UploadClient() {
     setState('context');
   }
 
-  async function runAudit() {
+  async function runAudit(forceReupload = false) {
     if (!file || !canSubmit) return;
     setState('uploading');
     setStatusText('Uploading…');
@@ -169,8 +190,23 @@ export default function UploadClient() {
           dateRangeStart: dateRangeStart || undefined,
           dateRangeEnd: dateRangeEnd || undefined,
           uploadType,
+          fileHash: fileHash ?? undefined,
+          forceReupload,
         }),
       });
+      if (res.status === 409) {
+        // Duplicate file detected — surface the warning and let the user decide
+        const body = await res.json();
+        setState('context'); // go back to context step so UI is interactive
+        setDuplicateWarning({
+          existingRunId: body.existingRunId,
+          existingFilename: body.existingFilename,
+          existingLabel: body.existingLabel,
+          existingCreatedAt: body.existingCreatedAt,
+          existingStatus: body.existingStatus,
+        });
+        return;
+      }
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error ?? `HTTP ${res.status}`);
@@ -467,7 +503,7 @@ export default function UploadClient() {
               We found {csvHeaders.length} columns in your CSV. Match them:
             </h3>
             <p className="text-xs" style={{ color: 'var(--text-subtle)' }}>
-              Auto-matched where possible. Fix any mismatches before uploading.
+              Upload your existing order export. Unauth works with standard order, customer, payment and refund fields. Advanced integrations can add device, payment and delivery intelligence later.
             </p>
           </div>
 
@@ -541,154 +577,158 @@ export default function UploadClient() {
             })}
           </div>
 
-          {/* Match quality improvers */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
-                Match quality improvers
-              </p>
-              <span
-                className="text-[10px] px-1.5 py-0.5 rounded"
-                style={{ background: 'var(--risk-medium-bg)', color: 'var(--risk-medium)' }}
+          {/* Optional field groups */}
+          {OPTIONAL_FIELD_GROUPS.filter((g) => !g.collapsed).map((group) => (
+            <div key={group.label} className="space-y-2">
+              <p
+                className="text-xs font-semibold uppercase tracking-wide mb-1"
+                style={{ color: 'var(--text-muted)' }}
               >
-                Optional — more fields = stronger matches
-              </span>
-            </div>
-            {OPTIONAL_FIELD_GROUPS.filter((g) => g.importance === 'match_improver').map((group) => (
-              <div key={group.label} className="space-y-1.5">
-                <p className="text-xs font-medium pl-1" style={{ color: 'var(--text-subtle)' }}>
-                  {group.label}
-                </p>
-                {group.fields.map((field) => {
-                  const mapped = columnMap[field];
-                  const isUnmapped = !mapped;
-                  const isFuzzy = fuzzyFields.has(field);
-                  return (
-                    <div
-                      key={field}
-                      className="flex items-center gap-3 rounded px-3 py-2"
+                {group.label}
+              </p>
+              {group.fields.map((field) => {
+                const mapped = columnMap[field];
+                const isUnmapped = !mapped;
+                const isFuzzy = fuzzyFields.has(field);
+                const isImprover = group.importance === 'match_improver';
+                return (
+                  <div
+                    key={field}
+                    className="flex items-center gap-3 rounded px-3 py-2"
+                    style={{
+                      background: isUnmapped && isImprover ? 'var(--risk-medium-bg)' : 'var(--bg-subtle)',
+                      border: `1px solid ${isUnmapped && isImprover ? 'var(--risk-medium-bd)' : 'transparent'}`,
+                    }}
+                  >
+                    <span className="text-xs w-44 flex-shrink-0" style={{ color: 'var(--text)' }}>
+                      {FIELD_LABELS[field]}
+                    </span>
+                    <span className="text-xs" style={{ color: 'var(--text-subtle)' }}>
+                      ←
+                    </span>
+                    <select
+                      value={mapped ?? ''}
+                      onChange={(e) => {
+                        setColumnMap((m) => ({ ...m, [field]: e.target.value || undefined }));
+                        clearFuzzy(field);
+                      }}
+                      className="text-xs rounded px-2 py-1 flex-1 focus:outline-none"
                       style={{
-                        background: isUnmapped ? 'var(--risk-medium-bg)' : 'var(--bg-subtle)',
-                        border: `1px solid ${isUnmapped ? 'var(--risk-medium-bd)' : 'transparent'}`,
+                        background: 'var(--bg-inset)',
+                        border: '1px solid var(--border)',
+                        color: 'var(--text)',
                       }}
                     >
-                      <span className="text-xs w-44 flex-shrink-0" style={{ color: 'var(--text)' }}>
-                        {FIELD_LABELS[field]}
-                      </span>
-                      <span className="text-xs" style={{ color: 'var(--text-subtle)' }}>
-                        ←
-                      </span>
-                      <select
-                        value={mapped ?? ''}
-                        onChange={(e) => {
-                          setColumnMap((m) => ({ ...m, [field]: e.target.value || undefined }));
-                          clearFuzzy(field);
-                        }}
-                        className="text-xs rounded px-2 py-1 flex-1 focus:outline-none"
-                        style={{
-                          background: 'var(--bg-inset)',
-                          border: '1px solid var(--border)',
-                          color: 'var(--text)',
-                        }}
+                      <option value="">— not mapped —</option>
+                      {csvHeaders.map((h) => (
+                        <option key={h} value={h}>
+                          {h}
+                        </option>
+                      ))}
+                    </select>
+                    {mapped && !isFuzzy && (
+                      <CheckCircle className="h-3.5 w-3.5 flex-shrink-0" style={{ color: 'var(--success)' }} />
+                    )}
+                    {mapped && isFuzzy && (
+                      <span
+                        className="text-[10px] px-1 py-0.5 rounded font-semibold flex-shrink-0"
+                        style={{ background: 'var(--accent-subtle)', color: 'var(--accent)' }}
+                        title="Auto-detected — please confirm this match is correct"
                       >
-                        <option value="">— not mapped —</option>
-                        {csvHeaders.map((h) => (
-                          <option key={h} value={h}>
-                            {h}
-                          </option>
-                        ))}
-                      </select>
-                      {mapped && !isFuzzy && (
-                        <CheckCircle className="h-3.5 w-3.5 flex-shrink-0" style={{ color: 'var(--success)' }} />
-                      )}
-                      {mapped && isFuzzy && (
-                        <span
-                          className="text-[10px] px-1 py-0.5 rounded font-semibold flex-shrink-0"
-                          style={{ background: 'var(--accent-subtle)', color: 'var(--accent)' }}
-                          title="Auto-detected — please confirm this match is correct"
-                        >
-                          ?
-                        </span>
-                      )}
-                      {isUnmapped && (
-                        <span
-                          className="text-[10px] px-1 py-0.5 rounded flex-shrink-0"
-                          style={{ background: 'var(--risk-medium-bg)', color: 'var(--risk-medium)' }}
-                          title="Adding this field improves match accuracy"
-                        >
-                          +
-                        </span>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            ))}
-          </div>
+                        ?
+                      </span>
+                    )}
+                    {isUnmapped && isImprover && (
+                      <span
+                        className="text-[10px] px-1 py-0.5 rounded flex-shrink-0"
+                        style={{ background: 'var(--risk-medium-bg)', color: 'var(--risk-medium)' }}
+                        title="Adding this field improves match accuracy"
+                      >
+                        +
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
 
-          {/* Nice-to-have optional fields */}
-          <div className="space-y-4">
-            <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
-              Optional fields
-            </p>
-            {OPTIONAL_FIELD_GROUPS.filter((g) => g.importance === 'nice_to_have').map((group) => (
-              <div key={group.label} className="space-y-1.5">
-                <p className="text-xs font-medium pl-1" style={{ color: 'var(--text-subtle)' }}>
-                  {group.label}
-                </p>
-                {group.fields.map((field) => {
-                  const mapped = columnMap[field];
-                  const isFuzzy = fuzzyFields.has(field);
-                  return (
-                    <div
-                      key={field}
-                      className="flex items-center gap-3 rounded px-3 py-2"
-                      style={{ background: 'var(--bg-subtle)' }}
-                    >
-                      <span className="text-xs w-44 flex-shrink-0" style={{ color: 'var(--text-muted)' }}>
-                        {FIELD_LABELS[field]}
-                      </span>
-                      <span className="text-xs" style={{ color: 'var(--text-subtle)' }}>
-                        ←
-                      </span>
-                      <select
-                        value={mapped ?? ''}
-                        onChange={(e) => {
-                          setColumnMap((m) => ({ ...m, [field]: e.target.value || undefined }));
-                          clearFuzzy(field);
-                        }}
-                        className="text-xs rounded px-2 py-1 flex-1 focus:outline-none"
-                        style={{
-                          background: 'var(--bg-inset)',
-                          border: '1px solid var(--border)',
-                          color: 'var(--text)',
-                        }}
+          {/* Advanced optional CSV fields — collapsed by default */}
+          {OPTIONAL_FIELD_GROUPS.filter((g) => g.collapsed).map((group) => (
+            <div key={group.label} className="rounded-lg overflow-hidden border" style={{ borderColor: 'var(--border-subtle)' }}>
+              <button
+                onClick={() => setAdvancedOpen((v) => !v)}
+                className="w-full flex items-center gap-2 px-3 py-2 text-left transition-colors"
+                style={{ color: 'var(--text-muted)' }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-subtle)')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = '')}
+              >
+                {advancedOpen ? (
+                  <ChevronDown className="h-3.5 w-3.5 flex-shrink-0" />
+                ) : (
+                  <ChevronRight className="h-3.5 w-3.5 flex-shrink-0" />
+                )}
+                <span className="text-xs font-semibold uppercase tracking-wide">{group.label}</span>
+              </button>
+              {advancedOpen && (
+                <div className="px-3 pb-3 space-y-1.5" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+                  <p className="text-xs pt-2" style={{ color: 'var(--text-subtle)' }}>
+                    These fields can be exported from some platforms but are not required. Advanced integrations (below) provide richer signals.
+                  </p>
+                  {group.fields.map((field) => {
+                    const mapped = columnMap[field];
+                    const isFuzzy = fuzzyFields.has(field);
+                    return (
+                      <div
+                        key={field}
+                        className="flex items-center gap-3 rounded px-3 py-2"
+                        style={{ background: 'var(--bg-subtle)' }}
                       >
-                        <option value="">— not mapped —</option>
-                        {csvHeaders.map((h) => (
-                          <option key={h} value={h}>
-                            {h}
-                          </option>
-                        ))}
-                      </select>
-                      {mapped && !isFuzzy && (
-                        <CheckCircle className="h-3.5 w-3.5 flex-shrink-0" style={{ color: 'var(--success)' }} />
-                      )}
-                      {mapped && isFuzzy && (
-                        <span
-                          className="text-[10px] px-1 py-0.5 rounded font-semibold flex-shrink-0"
-                          style={{ background: 'var(--accent-subtle)', color: 'var(--accent)' }}
-                          title="Auto-detected — please confirm this match is correct"
-                        >
-                          ?
+                        <span className="text-xs w-44 flex-shrink-0" style={{ color: 'var(--text-muted)' }}>
+                          {FIELD_LABELS[field]}
                         </span>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            ))}
-          </div>
+                        <span className="text-xs" style={{ color: 'var(--text-subtle)' }}>
+                          ←
+                        </span>
+                        <select
+                          value={mapped ?? ''}
+                          onChange={(e) => {
+                            setColumnMap((m) => ({ ...m, [field]: e.target.value || undefined }));
+                            clearFuzzy(field);
+                          }}
+                          className="text-xs rounded px-2 py-1 flex-1 focus:outline-none"
+                          style={{
+                            background: 'var(--bg-inset)',
+                            border: '1px solid var(--border)',
+                            color: 'var(--text)',
+                          }}
+                        >
+                          <option value="">— not mapped —</option>
+                          {csvHeaders.map((h) => (
+                            <option key={h} value={h}>
+                              {h}
+                            </option>
+                          ))}
+                        </select>
+                        {mapped && !isFuzzy && (
+                          <CheckCircle className="h-3.5 w-3.5 flex-shrink-0" style={{ color: 'var(--success)' }} />
+                        )}
+                        {mapped && isFuzzy && (
+                          <span
+                            className="text-[10px] px-1 py-0.5 rounded font-semibold flex-shrink-0"
+                            style={{ background: 'var(--accent-subtle)', color: 'var(--accent)' }}
+                            title="Auto-detected — please confirm this match is correct"
+                          >
+                            ?
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          ))}
 
           {renderDataQualityPanel()}
 
@@ -740,7 +780,65 @@ export default function UploadClient() {
         </div>
       )}
 
-      {/* Upload context step */}
+      {/* Advanced Integrations card */}
+      {state === 'mapping' && (
+        <div className="rounded-lg p-5 space-y-4 border" style={{ borderColor: 'var(--border-subtle)' }}>
+          <div>
+            <h3 className="text-sm font-semibold mb-0.5" style={{ color: 'var(--text)' }}>
+              Advanced Integrations
+            </h3>
+            <p className="text-xs" style={{ color: 'var(--text-subtle)' }}>
+              These signals go beyond what a CSV export can provide. Connect a data source to unlock deeper fraud detection.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {[
+              {
+                title: 'Checkout tracking',
+                description: 'Device fingerprint, session ID, and visitor signals captured at checkout.',
+                icon: '🖥️',
+              },
+              {
+                title: 'Payment provider',
+                description: 'Card fingerprint, AVS/CVV/3DS results directly from your PSP.',
+                icon: '💳',
+              },
+              {
+                title: 'Courier / delivery',
+                description: 'Tracking events, proof of delivery, and failed delivery signals.',
+                icon: '📦',
+              },
+              {
+                title: 'IP intelligence',
+                description: 'VPN, proxy, and Tor detection on the IP used at checkout.',
+                icon: '🌐',
+              },
+            ].map((integration) => (
+              <div
+                key={integration.title}
+                className="flex items-start gap-3 rounded-lg px-4 py-3 border"
+                style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-subtle)' }}
+              >
+                <span className="text-lg flex-shrink-0">{integration.icon}</span>
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold" style={{ color: 'var(--text)' }}>
+                    {integration.title}
+                  </p>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-subtle)' }}>
+                    {integration.description}
+                  </p>
+                  <span
+                    className="inline-block mt-1.5 text-[10px] px-2 py-0.5 rounded font-semibold"
+                    style={{ background: 'var(--bg-inset)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
+                  >
+                    Coming soon
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       {state === 'context' && (
         <div data-testid="upload-context" className="rounded-lg p-5 space-y-5 border" style={{ borderColor: 'var(--border-subtle)' }}>
           <div>
@@ -864,6 +962,45 @@ export default function UploadClient() {
             ))}
           </div>
 
+          {/* Duplicate upload warning */}
+          {duplicateWarning && (
+            <div
+              className="rounded-lg border px-4 py-3 text-sm"
+              style={{ background: 'var(--risk-medium-bg)', borderColor: 'var(--risk-medium-bd)' }}
+            >
+              <p className="font-semibold" style={{ color: 'var(--text)' }}>
+                Looks like you&apos;ve already uploaded this file
+              </p>
+              <p className="mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                {duplicateWarning.existingLabel
+                  ? `"${duplicateWarning.existingLabel}" was`
+                  : `"${duplicateWarning.existingFilename}" was`}{' '}
+                processed on{' '}
+                {new Date(duplicateWarning.existingCreatedAt).toLocaleDateString(undefined, {
+                  day: 'numeric',
+                  month: 'short',
+                  year: 'numeric',
+                })}
+                {duplicateWarning.existingStatus === 'complete' && (
+                  <>
+                    {' — '}
+                    <Link
+                      href={`/audit/${duplicateWarning.existingRunId}`}
+                      className="underline"
+                      style={{ color: 'var(--accent)' }}
+                    >
+                      view that audit
+                    </Link>
+                  </>
+                )}
+                .
+              </p>
+              <p className="mt-1" style={{ color: 'var(--text-muted)' }}>
+                Want to run it again anyway?
+              </p>
+            </div>
+          )}
+
           {/* Actions */}
           <div className="flex gap-3">
             <button
@@ -875,16 +1012,29 @@ export default function UploadClient() {
             >
               ← Back
             </button>
-            <button
-              data-testid="submit-upload"
-              onClick={runAudit}
-              className="px-5 py-2 text-sm font-semibold rounded-md transition-colors"
-              style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--accent-hover)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--accent)'; }}
-            >
-              {dataQuality?.grade === 'minimal' ? 'Run limited analysis' : 'Upload and run audit'}
-            </button>
+            {duplicateWarning ? (
+              <button
+                data-testid="submit-upload"
+                onClick={() => runAudit(true)}
+                className="px-5 py-2 text-sm font-semibold rounded-md transition-colors"
+                style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--accent-hover)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--accent)'; }}
+              >
+                Run again anyway
+              </button>
+            ) : (
+              <button
+                data-testid="submit-upload"
+                onClick={() => runAudit()}
+                className="px-5 py-2 text-sm font-semibold rounded-md transition-colors"
+                style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--accent-hover)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--accent)'; }}
+              >
+                {dataQuality?.grade === 'minimal' ? 'Run limited analysis' : 'Upload and run audit'}
+              </button>
+            )}
           </div>
         </div>
       )}

@@ -3,7 +3,7 @@ import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
 import { formatDate, formatCurrency } from '@/lib/utils/format';
 import { signalLabel } from '@/lib/copy/signalLabels';
-import ConfidenceGrade, { riskLevelToGrade } from '@/components/ConfidenceGrade';
+import { ConfidenceBadge, riskLevelToNewGrade } from '@/components/ui/ConfidenceBadge';
 import RecommendedAction from '@/components/audit/RecommendedAction';
 import type { Database } from '@/lib/supabase/types';
 
@@ -69,7 +69,7 @@ export default async function TransactionDetailPage({ params }: Props) {
         <div className="rounded-lg px-5 py-4 border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
           <div className="text-caption mb-1" style={{ color: 'var(--text-muted)' }}>Identity confidence</div>
           <div className="text-display-sm font-bold" style={{ color: 'var(--text)' }}>{Math.round((txData.identity_score ?? txData.match_score) ?? 0)} / 100</div>
-          <div className="mt-1"><ConfidenceGrade grade={(txData.identity_confidence_grade ?? riskLevelToGrade((txData as any).risk_level)) as any} /></div>
+          <div className="mt-1"><ConfidenceBadge grade={riskLevelToNewGrade((txData as any).risk_level)} /></div>
         </div>
         <div className="rounded-lg px-5 py-4 border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
           <div className="text-caption mb-1" style={{ color: 'var(--text-muted)' }}>Order total</div>
@@ -132,7 +132,7 @@ export default async function TransactionDetailPage({ params }: Props) {
       </div>
 
       <RecommendedAction
-        tier={((txData.identity_confidence_grade ?? riskLevelToGrade((txData as any).risk_level)) as 'low' | 'medium' | 'high' | 'critical')}
+        tier={((txData.identity_confidence_grade ?? riskLevelToNewGrade((txData as any).risk_level)) as 'low' | 'medium' | 'high' | 'critical')}
         topSignalName={signals[0]}
         customersHref={`/audit/${params.runId}/customers`}
       />

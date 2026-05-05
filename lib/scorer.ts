@@ -519,29 +519,34 @@ export function scoreCluster(input: ScoreClusterInput): ScoredCluster {
 // ---------------------------------------------------------------------------
 
 /**
- * Signal weights for the deterministic identity scorer.
- * These are intentionally different from the linker weights — the linker
- * uses weights to decide WHETHER to link; this scorer uses weights to
- * decide HOW CONFIDENT we are that the cluster represents the same person.
+ * Signal weights for the deterministic identity scorer fallback.
+ * These MUST mirror the linker's SIGNAL_WEIGHTS (lib/linker.ts) so that
+ * the fallback path (no clusterScore available) produces scores consistent
+ * with the full scoreCluster output.
  *
- * card is BIN+last4 only (no full PSP fingerprint flows through the
- * linker pipeline).  BIN+last4 is NOT a unique card identifier — many
- * unrelated customers share the same BIN and last4.  Weight kept at 12
- * (matching the linker) so a card-only cluster stays below all grade
- * thresholds.  A card+email cluster scores 12+25=37 → possible, which
- * is appropriate.  For definite (≥ 85) at least two strong non-card
- * signals (phone 30, account 30, email 25, device 20) are required.
+ * Linker weights (authoritative source of truth):
+ *   card:     12 — BIN+last4 only; not a unique identifier
+ *   phone:    30 — requires a real SIM
+ *   device:   30 — device fingerprint
+ *   account:  25 — merchant-namespace identifier
+ *   email:    20 — normalised base (plus-alias stripped)
+ *   postcode: 10 — corroborating only
+ *   ip:        8 — corroborating only
+ *
+ * Grade thresholds (score capped at 100):
+ *   >= 85 → definite   e.g. phone+device+account (85) or phone+device+email (80) + behavioural
+ *   >= 60 → probable   e.g. phone+account (55) → possible; phone+device (60) → probable
+ *   >= 35 → possible   e.g. card+email (32) → below; email+account (45) → possible
+ *    < 35 → null       below product threshold — do not surface
  */
 const IDENTITY_SIGNAL_WEIGHTS: Record<string, number> = {
   card: 12,
   phone: 30,
-  account: 30,
-  email: 25,
-  address: 20,
-  name: 10,
-  ip: 10,
-  postcode: 10,
   device: 30,
+  account: 25,
+  email: 20,
+  postcode: 10,
+  ip: 8,
 };
 
 export type IdentityGrade = 'definite' | 'probable' | 'possible';
@@ -561,16 +566,15 @@ export interface SignalScoreResult {
  *   1. By `buildClusterIdentityResults` in worker.ts for every clustered row.
  *   2. As a fallback when the full `scoreCluster` output is unavailable.
  *
- * Weights (each signal counted once regardless of how many orders match it):
- *   card:    35 — strongest (physical payment instrument)
- *   phone:   30 — requires a real SIM
- *   account: 30 — merchant-namespace identifier
- *   email:   25 — normalised base (plus-alias stripped)
- *   device:  20 — device fingerprint
- *   address: 20 — normalised street address
- *   name:    10 — supporting signal only
- *   ip:      10 — corroborating only
- *   postcode:10 — corroborating only
+ * Weights (each signal counted once regardless of how many orders match it,
+ * must stay in sync with IDENTITY_SIGNAL_WEIGHTS above and linker.ts):
+ *   phone:    30 — requires a real SIM
+ *   device:   30 — device fingerprint
+ *   account:  25 — merchant-namespace identifier
+ *   email:    20 — normalised base (plus-alias stripped)
+ *   postcode: 10 — corroborating only
+ *   card:     12 — BIN+last4 only; not a unique identifier
+ *   ip:        8 — weakest corroborating signal
  *
  * Grade thresholds (score capped at 100):
  *   >= 85 → definite

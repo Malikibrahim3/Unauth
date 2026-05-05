@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import ConfidenceGrade, { riskLevelToGrade } from '@/components/ConfidenceGrade';
+import { ConfidenceBadge, riskLevelToNewGrade } from '@/components/ui/ConfidenceBadge';
 import RemoveButton from '@/components/watchlist/RemoveButton';
 import CustomerIntelligenceDrawer from '@/components/customers/CustomerIntelligenceDrawer';
 
@@ -147,7 +147,7 @@ export default function WatchlistTableClient({ rows: initialRows }: WatchlistTab
                 </td>
                 <td className="px-4 py-3">
                   {entry.last_seen_risk ? (
-                    <ConfidenceGrade grade={riskLevelToGrade(entry.last_seen_risk)} size="sm" />
+                    <ConfidenceBadge grade={riskLevelToNewGrade(entry.last_seen_risk)} size="sm" />
                   ) : (
                     <span className="text-xs" style={{ color: 'var(--text-subtle)' }}>—</span>
                   )}

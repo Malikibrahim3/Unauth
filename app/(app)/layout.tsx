@@ -6,9 +6,12 @@ import DemoBanner from '@/components/common/DemoBanner';
 import AmplitudeInit from '@/components/common/AmplitudeInit';
 import { headers } from 'next/headers';
 
+export const dynamic = 'force-dynamic';
+
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data } = await supabase.auth.getUser();
+  const user = data?.user ?? null;
 
   if (!user) {
     redirect('/login');

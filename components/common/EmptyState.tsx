@@ -1,3 +1,7 @@
+// TODO (App Cohesion Audit – Phase 2): This component is defined but has ZERO usages.
+// Every page builds its own inline empty state. This should be adopted everywhere.
+// Also: components/EmptyDashboardHero.tsx should be replaced by this component.
+// See reports/ui-ux-audit/APP_COHESION_AUDIT.md — Issue D7.
 import { type ReactNode } from 'react';
 import Link from 'next/link';
 

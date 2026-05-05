@@ -2,8 +2,113 @@
 
 @layer base {
   :root {
-    /* ── Surfaces ── */
-    --bg-canvas:        #FAFAF9;
+    /* ══════════════════════════════════════════════════════════════════════
+     * SPEC TOKENS (§5 of the UI/UX Refinement Plan) — light mode
+     * These live alongside the existing tokens. Existing variable names are
+     * preserved for backward compatibility. New components use spec tokens.
+     * ═════════════════════════════════════════════════════════════════════ */
+
+    /* Surfaces & lines */
+    --bg-canvas:        #F7F8FB;
+    --bg-surface:       #FFFFFF;
+    --bg-surface-alt:   #F4F5F8;
+    --bg-surface-sunk:  #EEF0F4;
+    --bg-hover:         #F1F2F6;
+    --bg-selected:      #E8ECF7;
+
+    --border-subtle:    #E5E7EC;
+    --border-default:   #D4D7DD;
+    --border-strong:    #9CA1AB;
+
+    /* Text */
+    --text-primary:     #0E1116;
+    --text-secondary:   #3F4651;
+    --text-tertiary:    #6A717C;
+    --text-disabled:    #A4AAB3;
+    --text-inverse:     #FFFFFF;
+    --text-link:        #2A4BD9;
+
+    /* Accent — primary action */
+    --accent-50:        #EEF1FE;
+    --accent-100:       #DCE2FD;
+    --accent-200:       #BAC6FB;
+    --accent-500:       #4F66E8;
+    --accent-600:       #3A4FD0;
+    --accent-700:       #2C3DAE;
+    --accent-fg-on-500: #FFFFFF;
+
+    /* Risk / status palette */
+    --risk-critical-bg:   #FBE9EA;
+    --risk-critical-fg:   #9A1D24;
+    --risk-critical-line: #E59097;
+
+    --risk-high-bg:       #FCEBDA;
+    --risk-high-fg:       #8A4214;
+    --risk-high-line:     #E8B280;
+
+    --risk-medium-bg:     #FBF3D8;
+    --risk-medium-fg:     #715414;
+    --risk-medium-line:   #DDC375;
+
+    --risk-low-bg:        #E1F1E6;
+    --risk-low-fg:        #1F5A33;
+    --risk-low-line:      #8DC4A1;
+
+    --info-bg:            #E5EBFB;
+    --info-fg:            #1F3FA8;
+    --info-line:          #97A8E5;
+
+    /* Spacing scale */
+    --space-0:  0px;
+    --space-1:  4px;
+    --space-2:  8px;
+    --space-3:  12px;
+    --space-4:  16px;
+    --space-5:  20px;
+    --space-6:  24px;
+    --space-7:  32px;
+    --space-8:  40px;
+    --space-9:  48px;
+    --space-10: 64px;
+    --space-11: 80px;
+
+    /* Typography */
+    --font-sans: "DM Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --font-mono: "DM Mono", "SF Mono", Menlo, Consolas, monospace;
+
+    /* Radius */
+    --radius-1:    4px;
+    --radius-2:    6px;
+    --radius-3:    8px;
+    --radius-4:    12px;
+    --radius-pill: 9999px;
+
+    /* Shadows */
+    --shadow-0:      0 0 0 1px var(--border-subtle);
+    --shadow-1:      0 1px 2px rgba(14,17,22,0.04), 0 1px 3px rgba(14,17,22,0.06);
+    --shadow-2:      0 2px 4px rgba(14,17,22,0.04), 0 4px 12px rgba(14,17,22,0.08);
+    --shadow-drawer: -8px 0 24px rgba(14,17,22,0.10), -16px 0 48px rgba(14,17,22,0.08);
+    --shadow-modal:  0 8px 24px rgba(14,17,22,0.12), 0 16px 48px rgba(14,17,22,0.14);
+    --shadow-focus:  0 0 0 3px rgba(79,102,232,0.30);
+
+    /* Motion */
+    --duration-fast:    120ms;
+    --duration-default: 180ms;
+    --duration-slow:    240ms;
+    --ease-standard:    cubic-bezier(0.2, 0, 0, 1);
+    --ease-emphasized:  cubic-bezier(0.3, 0, 0, 1);
+
+    /* Z-index scale */
+    --z-base:     0;
+    --z-sticky:   100;
+    --z-dropdown: 200;
+    --z-drawer:   300;
+    --z-modal:    400;
+    --z-toast:    500;
+    --z-tooltip:  600;
+
+    /* ── Existing tokens preserved below (backward compat) ── */
+    /* Surfaces ── */
     --bg-surface:       #FFFFFF;
     --bg-subtle:        #F5F5F4;
     --bg-muted:         #EFEEEC;
@@ -118,11 +223,44 @@
   }
 
   .dark {
-    --bg-canvas:        #131211;
-    --bg-surface:       #1A1918;
-    --bg-subtle:        #222120;
-    --bg-muted:         #2A2927;
-    --bg-inset:         #131211;
+    /* ══ SPEC TOKENS — dark mode (§5.3) ═══════════════════════════════════ */
+    --bg-canvas:        #0B0D11;
+    --bg-surface:       #14171D;
+    --bg-surface-alt:   #1A1E26;
+    --bg-surface-sunk:  #0F1217;
+    --bg-hover:         #1F242E;
+    --bg-selected:      #1E2A4D;
+    --border-subtle:    #232830;
+    --border-default:   #323843;
+    --border-strong:    #525864;
+    --text-primary:     #E8EAED;
+    --text-secondary:   #B4B9C2;
+    --text-tertiary:    #838892;
+    --text-disabled:    #5A606C;
+    --text-inverse:     #0E1116;
+    --text-link:        #8497F4;
+    --accent-500:       #6F84F0;
+    --accent-600:       #8497F4;
+    --risk-critical-bg:   #2A1210;
+    --risk-critical-fg:   #F97066;
+    --risk-critical-line: #7A2020;
+    --risk-high-bg:       #2A1D08;
+    --risk-high-fg:       #F79009;
+    --risk-high-line:     #7A4A0A;
+    --risk-medium-bg:     #2A2008;
+    --risk-medium-fg:     #FBBF24;
+    --risk-medium-line:   #7A5A0A;
+    --risk-low-bg:        #0A2A14;
+    --risk-low-fg:        #4ADE80;
+    --risk-low-line:      #1A6A34;
+    --info-bg:            #0A1628;
+    --info-fg:            #60A5FA;
+    --info-line:          #1A3A6A;
+    --shadow-focus:       0 0 0 3px rgba(111,132,240,0.35);
+    /* ── Existing dark tokens preserved below ── */
+    --bg-subtle:        #1A1E26;
+    --bg-muted:         #1F242E;
+    --bg-inset:         #0B0D11;
 
     --border-subtle:    #2E2C29;
     --border:           #383532;
@@ -222,6 +360,21 @@
   .text-overline    { font-size: 11px; line-height: 16px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
   .text-mono-md     { font-size: 13px; line-height: 18px; font-weight: 500; font-family: var(--font-mono); font-feature-settings: "tnum" 1, "cv11" 1; }
   .text-mono-lg     { font-size: 16px; line-height: 22px; font-weight: 500; font-family: var(--font-mono); font-feature-settings: "tnum" 1, "cv11" 1; }
+
+  /* ══ SPEC type scale aliases (§5.5) ══════════════════════════════════════ */
+  .text-display    { font-size: 24px; line-height: 32px; font-weight: 600; letter-spacing: -0.01em; }
+  .text-h1         { font-size: 20px; line-height: 28px; font-weight: 600; letter-spacing: -0.005em; }
+  .text-h2         { font-size: 16px; line-height: 24px; font-weight: 600; letter-spacing: 0; }
+  .text-h3         { font-size: 14px; line-height: 20px; font-weight: 600; letter-spacing: 0; }
+  .text-body       { font-size: 14px; line-height: 20px; font-weight: 400; letter-spacing: 0; }
+  .text-body-strong{ font-size: 14px; line-height: 20px; font-weight: 500; letter-spacing: 0; }
+  .text-small      { font-size: 13px; line-height: 18px; font-weight: 400; letter-spacing: 0; }
+  .text-meta       { font-size: 12px; line-height: 16px; font-weight: 500; letter-spacing: 0.02em; }
+  .text-overline   { font-size: 11px; line-height: 16px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+  .text-mono-sm    { font-size: 12px; line-height: 16px; font-weight: 500; font-family: var(--font-mono); font-feature-settings: "tnum" 1, "ss01" 1; }
+
+  /* Tabular-nums utility — apply to all numeric display */
+  .num { font-feature-settings: "tnum" 1, "ss01" 1; font-variant-numeric: tabular-nums; }
 }
 
 /* ── Hover utilities (safe for Server Components — no JS handlers needed) ── */

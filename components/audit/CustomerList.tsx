@@ -1,3 +1,12 @@
+// TODO (App Cohesion Audit – Phase 2): This component and its parent page
+// (app/(app)/audit/[runId]/customers) represent a DUPLICATE customer list view.
+// The primary customer list lives in AuditCustomersTableClient (table format).
+// This accordion-card format lives at /audit/[runId]/customers — a separate page
+// that most users never discover.
+//
+// Planned: delete this component and the /audit/[runId]/customers page entirely.
+// Redirect /audit/[runId]/customers → /audit/[runId]?tab=customers.
+// See reports/ui-ux-audit/APP_COHESION_AUDIT.md — Issue D2.
 'use client';
 
 import { useState, useMemo } from 'react';

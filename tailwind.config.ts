@@ -30,7 +30,46 @@ const config: Config = {
         display: ['var(--font-display)', 'var(--font-sans)', 'sans-serif'],
         mono:    ['var(--font-mono)', 'SF Mono', 'Menlo', 'monospace'],
       },
+      spacing: {
+        's1':  'var(--space-1)',
+        's2':  'var(--space-2)',
+        's3':  'var(--space-3)',
+        's4':  'var(--space-4)',
+        's5':  'var(--space-5)',
+        's6':  'var(--space-6)',
+        's7':  'var(--space-7)',
+        's8':  'var(--space-8)',
+        's9':  'var(--space-9)',
+        's10': 'var(--space-10)',
+        's11': 'var(--space-11)',
+      },
       colors: {
+        /* ── Spec token surface aliases ── */
+        'surface-alt':  'var(--bg-surface-alt)',
+        'surface-sunk': 'var(--bg-surface-sunk)',
+        'hover':        'var(--bg-hover)',
+        'selected':     'var(--bg-selected)',
+        /* ── Spec text aliases ── */
+        'text-primary':   'var(--text-primary)',
+        'text-secondary': 'var(--text-secondary)',
+        'text-tertiary':  'var(--text-tertiary)',
+        'text-link':      'var(--text-link)',
+        /* ── Spec accent ── */
+        'accent-500': 'var(--accent-500)',
+        'accent-600': 'var(--accent-600)',
+        'accent-700': 'var(--accent-700)',
+        /* ── Spec risk semantic aliases ── */
+        'risk-critical-fg':   'var(--risk-critical-fg)',
+        'risk-critical-line': 'var(--risk-critical-line)',
+        'risk-high-fg':       'var(--risk-high-fg)',
+        'risk-high-line':     'var(--risk-high-line)',
+        'risk-medium-fg':     'var(--risk-medium-fg)',
+        'risk-medium-line':   'var(--risk-medium-line)',
+        'risk-low-fg':        'var(--risk-low-fg)',
+        'risk-low-line':      'var(--risk-low-line)',
+        'info-fg':            'var(--info-fg)',
+        'info-line':          'var(--info-line)',
+
         /* ── Surfaces ── */
         canvas:  'var(--bg-canvas)',
         surface: 'var(--bg-surface)',
@@ -125,16 +164,28 @@ const config: Config = {
         lg:   'var(--radius-lg)',
         xl:   'var(--radius-xl)',
         full: 'var(--radius-full)',
-        /* keep default Tailwind rounded-* utilities working */
+        /* spec tokens */
+        r1:   'var(--radius-1)',
+        r2:   'var(--radius-2)',
+        r3:   'var(--radius-3)',
+        r4:   'var(--radius-4)',
+        pill: 'var(--radius-pill)',
         DEFAULT: 'var(--radius-md)',
       },
 
       boxShadow: {
-        xs: 'var(--shadow-xs)',
-        sm: 'var(--shadow-sm)',
-        md: 'var(--shadow-md)',
-        lg: 'var(--shadow-lg)',
-        xl: 'var(--shadow-xl)',
+        xs:     'var(--shadow-xs)',
+        sm:     'var(--shadow-sm)',
+        md:     'var(--shadow-md)',
+        lg:     'var(--shadow-lg)',
+        xl:     'var(--shadow-xl)',
+        /* spec tokens */
+        s0:     'var(--shadow-0)',
+        s1:     'var(--shadow-1)',
+        s2:     'var(--shadow-2)',
+        drawer: 'var(--shadow-drawer)',
+        modal:  'var(--shadow-modal)',
+        focus:  'var(--shadow-focus)',
       },
 
       /* Spacing uses Tailwind's default 4px base — we document the tokens in globals.css */

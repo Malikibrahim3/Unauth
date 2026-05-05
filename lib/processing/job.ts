@@ -9,6 +9,7 @@ export interface CreateJobOptions {
   dateRangeStart?: string; // ISO date string YYYY-MM-DD
   dateRangeEnd?: string;   // ISO date string YYYY-MM-DD
   uploadType?: 'standard' | 'historical' | 'investigation';
+  fileHash?: string; // SHA-256 hex digest of the raw file bytes
 }
 
 export async function createJob(
@@ -35,6 +36,7 @@ export async function createJob(
       date_range_start: opts.dateRangeStart ?? null,
       date_range_end: opts.dateRangeEnd ?? null,
       upload_type: opts.uploadType ?? 'standard',
+      file_hash: opts.fileHash ?? null,
     } as any)
     .select('id')
     .single();

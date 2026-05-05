@@ -1,9 +1,10 @@
 import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
-import ConfidenceGrade, { riskLevelToGrade } from '@/components/ConfidenceGrade';
+import { ConfidenceBadge, riskLevelToNewGrade } from '@/components/ui/ConfidenceBadge';
 import WatchlistTableClient from '@/components/watchlist/WatchlistTableClient';
 import { formatDate } from '@/lib/utils/format';
 import PageSizeSelect from '@/components/common/PageSizeSelect';
+import { PageHeader } from '@/components/common/PageHeader';
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
 const DEFAULT_PAGE_SIZE = 25;
@@ -81,9 +82,7 @@ export default async function WatchlistPage({ searchParams }: { searchParams?: {
 
   return (
     <div className="p-8 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-heading-lg" style={{ color: 'var(--text)' }}>Watchlist</h1>
-      </div>
+      <PageHeader title="Watchlist" subtitle="Customers you're monitoring across future audits." />
 
       {/* Recent appearances section */}
       <div>
@@ -116,7 +115,7 @@ export default async function WatchlistPage({ searchParams }: { searchParams?: {
                     </td>
                     <td className="px-4 py-3 text-right font-mono font-semibold" style={{ color: 'var(--text)' }}>{Math.round(r.score_at_time)}</td>
                     <td className="px-4 py-3">
-                      <ConfidenceGrade grade={riskLevelToGrade(r.customer_profiles.risk_level)} size="sm" />
+                      <ConfidenceBadge grade={riskLevelToNewGrade(r.customer_profiles.risk_level)} size="sm" />
                     </td>
                     <td className="px-4 py-3 text-right">
                       <Link href={`/audit/${r.processing_jobs.id}`} className="text-xs font-semibold hover:underline" style={{ color: 'var(--watchlist)' }}>

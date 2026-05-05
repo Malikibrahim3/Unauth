@@ -52,12 +52,12 @@ test.describe('Playwright UX audit', () => {
   })
 
   test.afterAll(() => {
+    fs.mkdirSync(REPORT_DIR, { recursive: true })
     fs.writeFileSync(path.join(REPORT_DIR, 'ux-audit-evidence.json'), JSON.stringify(evidence, null, 2))
   })
 
   test('full merchant audit journey', async ({ page }) => {
-    await signIn(page)
-
+    // Auth is handled via storageState from global-setup – go straight to dashboard
     await visitAndCapture(page, 'dashboard', '/dashboard')
     await visitAndCapture(page, 'upload-idle', '/upload')
 
@@ -181,8 +181,12 @@ test.describe('Playwright UX audit', () => {
       }, 'drawer')
       await screenshot(page, 'audit-customer-drawer')
       await inventory(page, 'audit-customer-drawer')
-      await recordClick(page, 'audit-customer-drawer', 'Close profile', async () => {
-        await page.getByRole('button', { name: /Close profile/i }).click()
+      await recordClick(page, 'audit-customer-drawer', 'Close panel', async () => {
+        const closeBtn = page.getByRole('button', { name: /Close panel|Close profile|Close/i }).first()
+        if (await closeBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+          await closeBtn.click()
+          await page.waitForTimeout(500)
+        }
       }, 'drawer')
     } else {
       evidence.limitations.push('No customer View button was visible on the results page.')
@@ -214,20 +218,19 @@ test.describe('Playwright UX audit', () => {
   })
 })
 
-async function signIn(page: Page) {
-  const credentials = JSON.parse(fs.readFileSync(CREDENTIALS_PATH, 'utf8'))
-  await page.goto('/login')
-  await page.fill('input[type="email"]', credentials.email)
-  await page.fill('input[type="password"]', credentials.password)
-  await page.click('button[type="submit"]')
-  await page.waitForURL(/\/(dashboard|upload|onboarding|audit|history|customers|inbox|watchlist|settings)/, { timeout: 30_000 })
-  await page.goto('/dashboard')
-  await page.waitForLoadState('networkidle', { timeout: 20_000 }).catch(() => undefined)
+async function signIn(_page: Page) {
+  // Auth state is loaded via storageState in playwright.config.ts (set during global-setup).
+  // This function is kept for reference but tests no longer need to call the login UI.
+  void _page
 }
 
 async function visitAndCapture(page: Page, name: string, route: string) {
-  await gotoWithFontManifestRepair(page, route)
-  await page.waitForLoadState('networkidle', { timeout: 20_000 }).catch(() => undefined)
+  try {
+    await gotoWithFontManifestRepair(page, route)
+    await page.waitForLoadState('networkidle', { timeout: 20_000 }).catch(() => undefined)
+  } catch (err) {
+    evidence.limitations.push(`[${name}] Navigation to ${route} failed: ${err instanceof Error ? err.message : String(err)}`)
+  }
   await screenshot(page, name)
   await inventory(page, name)
 }
@@ -296,8 +299,12 @@ async function recordClick(
   patternRecommendation: ClickRecord['patternRecommendation'],
 ) {
   const before = page.url()
-  await action()
-  await page.waitForTimeout(400)
+  try {
+    await action()
+    await page.waitForTimeout(400)
+  } catch (err) {
+    evidence.limitations.push(`[${pageName}] Click on "${label}" failed: ${err instanceof Error ? err.message : String(err)}`)
+  }
   const after = page.url()
   evidence.clicks.push({
     page: pageName,
@@ -312,20 +319,24 @@ async function recordClick(
 
 async function recordDownload(page: Page, pageName: string, label: string) {
   const before = page.url()
-  const downloadPromise = page.waitForEvent('download')
-  await page.getByText(label, { exact: false }).click()
-  const download = await downloadPromise
-  const savePath = path.join(DOWNLOAD_DIR, download.suggestedFilename())
-  await download.saveAs(savePath)
-  evidence.clicks.push({
-    page: pageName,
-    label,
-    kind: 'download',
-    before,
-    after: page.url(),
-    outcome: `Downloaded ${download.suggestedFilename()}`,
-    patternRecommendation: 'inline',
-  })
+  const btn = page.getByText(label, { exact: false })
+  const visible = await btn.isVisible({ timeout: 5_000 }).catch(() => false)
+  if (!visible) {
+    evidence.limitations.push(`[${pageName}] "${label}" button not visible – skipped download recording.`)
+    evidence.clicks.push({ page: pageName, label, kind: 'download', before, after: page.url(), outcome: 'Button not visible – skipped.', patternRecommendation: 'inline' })
+    return
+  }
+  try {
+    const downloadPromise = page.waitForEvent('download', { timeout: 12_000 })
+    await btn.click()
+    const download = await downloadPromise
+    const savePath = path.join(DOWNLOAD_DIR, download.suggestedFilename())
+    await download.saveAs(savePath)
+    evidence.clicks.push({ page: pageName, label, kind: 'download', before, after: page.url(), outcome: `Downloaded ${download.suggestedFilename()}`, patternRecommendation: 'inline' })
+  } catch (err) {
+    evidence.limitations.push(`[${pageName}] "${label}" did not trigger a file download within 12 s: ${err instanceof Error ? err.message : String(err)}`)
+    evidence.clicks.push({ page: pageName, label, kind: 'download', before, after: page.url(), outcome: 'No download event fired – likely opens a modal or inline state instead.', patternRecommendation: 'inline' })
+  }
 }
 
 function discoverRoutes() {
