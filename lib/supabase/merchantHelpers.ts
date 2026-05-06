@@ -14,6 +14,7 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { inspect } from 'util';
 import { resolveCallerContext } from '@/lib/permissions';
 import type { CallerContext } from '@/lib/permissions';
 
@@ -644,6 +645,6 @@ export async function fetchMerchantReviewQueueRows(
   const from = options.from ?? 0;
   const to = options.to ?? 999;
   const { data, error } = await buildQuery(from, to);
-  if (error) throw new Error(`fetchMerchantReviewQueueRows failed: ${String(error)}`);
+  if (error) throw new Error(`fetchMerchantReviewQueueRows failed: ${inspect(error, { depth: null })}`);
   return { rows: data ?? [], ownedJobIds };
 }
