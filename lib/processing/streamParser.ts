@@ -24,11 +24,14 @@ export const MAX_ROWS = 5_000_000;
 export const CHUNK_SIZE = 25_000;
 
 export interface StreamParseResult {
+  /** Parsed rows. When onChunk is provided, this will be empty (rows are flushed to Storage).
+   *  When onChunk is not provided, this contains all rows (backward-compatible). */
   rows: ParsedCsvRow[];
   headers: string[];
   valid: boolean;
   missingRequired: string[];
   rowCount: number;
+  totalChunks: number;
   hasGroundTruth: boolean;
   /** Raw CSV headers that did not map to any known canonical field. Non-fatal — surface as a warning. */
   unmappedHeaders: string[];
@@ -61,10 +64,14 @@ function buildHeaderRemapFromColumnMap(
 
 export async function streamParseCsv(
   file: File,
-  columnMap?: Record<string, string> | null
+  columnMap?: Record<string, string> | null,
+  onChunk?: (rows: ParsedCsvRow[], chunkIndex: number) => Promise<void>
 ): Promise<StreamParseResult> {
-  const rows: ParsedCsvRow[] = [];
+  let rows: ParsedCsvRow[] = [];
+  let chunkIndex = 0;
+  let totalRowCount = 0;
   let parsedMeta: Papa.ParseMeta | null = null;
+  let firstRowKeys: string[] | null = null;
 
   // Build the remap table once, before parsing begins
   const headerRemap = buildHeaderRemapFromColumnMap(columnMap);
@@ -104,13 +111,21 @@ export async function streamParseCsv(
         // Otherwise fall back to the alias table in cleanHeader.
         return headerRemap.get(lower) ?? cleanHeader(h);
       },
-      step: (result: Papa.ParseStepResult<ParsedCsvRow>, parser: Papa.Parser) => {
+      step: async (result: Papa.ParseStepResult<ParsedCsvRow>, parser: Papa.Parser) => {
         if (rows.length >= MAX_ROWS) {
           parser.abort();
           return;
         }
         if (result.data) {
+          // Capture header keys from the first row before onChunk may clear them
+          if (!firstRowKeys) firstRowKeys = Object.keys(result.data) as string[];
           rows.push(result.data);
+          totalRowCount++;
+          if (rows.length >= CHUNK_SIZE && onChunk) {
+            const batch = rows;
+            rows = [];
+            await onChunk(batch, chunkIndex++);
+          }
         }
       },
       complete: (results: any) => {
@@ -125,9 +140,15 @@ export async function streamParseCsv(
     nodeStream.on('error', (err) => reject(err));
   });
 
+  // Flush any remaining rows as the final chunk
+  if (rows.length > 0 && onChunk) {
+    await onChunk(rows, chunkIndex++);
+  }
+  const totalChunks = chunkIndex;
+
   // After transformHeader, keys in each row are already canonical field names.
-  // We just need the header list for validation — derive it from the first row.
-  const canonicalHeaders = rows.length > 0 ? Object.keys(rows[0]) : [];
+  // We just need the header list for validation — derive it from the first row keys we captured.
+  const canonicalHeaders: string[] = firstRowKeys ?? [];
   const { missingRequired, unknownColumns } = validateHeaders(canonicalHeaders);
 
   const hasGroundTruth = canonicalHeaders.includes('ground_truth_label');
@@ -140,7 +161,8 @@ export async function streamParseCsv(
     headers: canonicalHeaders,
     valid: missingRequired.length === 0,
     missingRequired,
-    rowCount: rows.length,
+    rowCount: totalRowCount,
+    totalChunks,
     hasGroundTruth,
     unmappedHeaders: unknownColumns,
   };

@@ -18,7 +18,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission, PERMISSIONS, type CallerContext } from '@/lib/permissions';
 import { logAction } from '@/lib/permissions/audit';
 import { NextRequest, NextResponse } from 'next/server';
-import { streamParseCsv, MAX_ROWS, CHUNK_SIZE } from '@/lib/processing/streamParser';
+import { streamParseCsv, MAX_ROWS } from '@/lib/processing/streamParser';
 import { createJob, updateJobTotalRows, completeJob } from '@/lib/processing/job';
 import {
   uploadChunkRows,
@@ -176,11 +176,14 @@ async function runAudit(
     );
   }
 
-  // Stream-parse the CSV — do NOT load the entire file into a single buffer
+  // Stream-parse the CSV — chunks are uploaded to Storage as they are parsed
+  // so memory stays bounded at CHUNK_SIZE rows regardless of file size.
   let parseResult: Awaited<ReturnType<typeof streamParseCsv>>;
   try {
-    parseResult = await streamParseCsv(file, columnMap);
-    log(`parse ok rows=${parseResult.rowCount}`);
+    parseResult = await streamParseCsv(file, columnMap, async (chunkRows, chunkIdx) => {
+      await uploadChunkRows(serviceClient, jobId, chunkIdx, chunkRows);
+    });
+    log(`parse ok rows=${parseResult.rowCount} chunks=${parseResult.totalChunks}`);
   } catch (err) {
     log(`parse FAILED: ${err instanceof Error ? err.message : String(err)}`);
     const message = err instanceof Error ? err.message : 'CSV parse failed';
@@ -218,41 +221,10 @@ async function runAudit(
     ip,
   });
 
-  // ── Chunk rows and stage them in Storage ──────────────────────────────────
-  // Splitting up front means the chunk worker can run on independent Vercel
-  // function invocations and each gets its own 300s budget, scaling to
-  // millions of rows without bumping into per-request timeouts.
-  const totalChunks = Math.max(1, Math.ceil(parseResult.rowCount / CHUNK_SIZE));
-  log(`staging ${totalChunks} chunks of ≤${CHUNK_SIZE} rows each`);
-  try {
-    // Upload chunks in parallel batches of 5 to keep this dispatcher fast
-    // without saturating Storage. Each chunk is ~5 MB at 25k rows.
-    const PARALLEL = 5;
-    let nextIndex = 0;
-    const launchOne = async (i: number) => {
-      const start = i * CHUNK_SIZE;
-      const slice = parseResult.rows.slice(start, start + CHUNK_SIZE);
-      await uploadChunkRows(serviceClient, jobId, i, slice);
-    };
-    const inFlight: Promise<void>[] = [];
-    while (nextIndex < totalChunks || inFlight.length > 0) {
-      while (inFlight.length < PARALLEL && nextIndex < totalChunks) {
-        const idx = nextIndex++;
-        const p = launchOne(idx).finally(() => {
-          const at = inFlight.indexOf(p);
-          if (at >= 0) inFlight.splice(at, 1);
-        });
-        inFlight.push(p);
-      }
-      await Promise.race(inFlight);
-    }
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'chunk upload failed';
-    log(`chunk staging FAILED: ${message}`);
-    await completeJob(serviceClient, jobId, false, [{ message }]);
-    return NextResponse.json({ error: message }, { status: 500 });
-  }
-  log(`chunk staging complete`);
+  // Chunks were already uploaded to Storage during streaming parse.
+  // No in-memory staging needed — memory stayed at O(CHUNK_SIZE).
+  const totalChunks = parseResult.totalChunks;
+  log(`chunks staged during parse: ${totalChunks} total`);
 
   // ── Dispatch chunk 0 — await to ensure the first chunk is accepted before
   // returning. In serverless runtimes, fire-and-forget work after response
