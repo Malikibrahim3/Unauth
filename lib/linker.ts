@@ -73,9 +73,19 @@ export interface LinkedCluster {
   signals_matched: LinkerSignal[];
 }
 
+export interface SkippedGroupDiagnostic {
+  signal: string;
+  groupKey: string;
+  groupSize: number;
+  strategy: 'localized_expansion' | 'skipped_no_suspicious_nodes';
+  evaluatedPairs: number;
+  skippedCartesianPairs: number;
+}
+
 export interface LinkerResult {
   clusters: LinkedCluster[];
   candidatePairs: CandidatePair[];
+  diagnostics: SkippedGroupDiagnostic[];
 }
 
 // ---------------------------------------------------------------------------
@@ -275,34 +285,135 @@ interface PairAccumulator {
   signals: Set<LinkerSignal>;
 }
 
-function addSignalPairsFrom(
-  idx: Map<string, string[]>,
+function addPairToMap(
+  a: string,
+  b: string,
   signal: LinkerSignal,
   pairs: Map<string, PairAccumulator>
 ): void {
+  const key = pairKey(a, b);
+  let acc = pairs.get(key);
+  if (!acc) {
+    acc = {
+      order_id_a: a < b ? a : b,
+      order_id_b: a < b ? b : a,
+      signals: new Set<LinkerSignal>(),
+    };
+    pairs.set(key, acc);
+  }
+  acc.signals.add(signal);
+}
+
+/**
+ * Generate all pair combinations for a group (existing behaviour).
+ * Used for strong signals and small weak-signal groups.
+ */
+function addSignalPairsFrom(
+  idx: Map<string, string[]>,
+  signal: LinkerSignal,
+  pairs: Map<string, PairAccumulator>,
+  maxGroupSize = 500
+): void {
   for (const orderIds of Array.from(idx.values())) {
     if (orderIds.length < 2) continue;
-    // Dedupe within the group — an order should only contribute once even
-    // if it somehow appears twice (shouldn't, but defensive).
+    if (orderIds.length > maxGroupSize) continue;
     const unique = Array.from(new Set(orderIds));
     for (let i = 0; i < unique.length; i++) {
       for (let j = i + 1; j < unique.length; j++) {
-        const a = unique[i];
-        const b = unique[j];
-        const key = pairKey(a, b);
-        let acc = pairs.get(key);
-        if (!acc) {
-          acc = {
-            order_id_a: a < b ? a : b,
-            order_id_b: a < b ? b : a,
-            signals: new Set<LinkerSignal>(),
-          };
-          pairs.set(key, acc);
-        }
-        acc.signals.add(signal);
+        addPairToMap(unique[i], unique[j], signal, pairs);
       }
     }
   }
+}
+
+/**
+ * Selective weak-signal expansion for large groups.
+ *
+ * Instead of skipping groups > maxGroupSize entirely (which loses recall on
+ * sparse fraud rings), we only expand around nodes that are already
+ * "suspicious" — i.e., connected to at least one other order via a strong
+ * signal. This keeps pair generation sub-quadratic while recovering the
+ * bridge edges that sparse fraud rings depend on.
+ *
+ * Strategy:
+ *   1. Identify suspicious nodes (already have strong-signal pairs).
+ *   2. For each suspicious node, pair it with up to maxExpansionPerNode
+ *      other members of the group.
+ *   3. If no suspicious nodes exist in the group, skip it entirely — a
+ *      weak signal alone cannot anchor a fraud cluster.
+ */
+function addWeakSignalPairsSelective(
+  idx: Map<string, string[]>,
+  signal: LinkerSignal,
+  pairs: Map<string, PairAccumulator>,
+  maxGroupSize = 50,
+  maxExpansionPerNode = 25
+): SkippedGroupDiagnostic[] {
+  const diagnostics: SkippedGroupDiagnostic[] = [];
+
+  // Collect nodes that already participate in at least one strong-signal pair.
+  // These are our "suspicious" anchors — weak-signal expansion only fans out
+  // from them, never from completely cold nodes.
+  const suspiciousNodes = new Set<string>();
+  for (const acc of pairs.values()) {
+    suspiciousNodes.add(acc.order_id_a);
+    suspiciousNodes.add(acc.order_id_b);
+  }
+
+  for (const [groupKey, orderIds] of Array.from(idx.entries())) {
+    if (orderIds.length < 2) continue;
+
+    const unique = Array.from(new Set(orderIds));
+
+    if (unique.length <= maxGroupSize) {
+      // Small group — full pair generation (existing behaviour, no regression risk)
+      for (let i = 0; i < unique.length; i++) {
+        for (let j = i + 1; j < unique.length; j++) {
+          addPairToMap(unique[i], unique[j], signal, pairs);
+        }
+      }
+      continue;
+    }
+
+    // Large group — selective expansion
+    const suspiciousInGroup = unique.filter((id) => suspiciousNodes.has(id));
+
+    if (suspiciousInGroup.length === 0) {
+      const cartesianPairs = (unique.length * (unique.length - 1)) / 2;
+      diagnostics.push({
+        signal,
+        groupKey,
+        groupSize: unique.length,
+        strategy: 'skipped_no_suspicious_nodes',
+        evaluatedPairs: 0,
+        skippedCartesianPairs: cartesianPairs,
+      });
+      continue;
+    }
+
+    let evaluatedPairs = 0;
+
+    for (const suspiciousId of suspiciousInGroup) {
+      const candidates = unique.filter((id) => id !== suspiciousId);
+      const limited = candidates.slice(0, maxExpansionPerNode);
+      for (const candidateId of limited) {
+        addPairToMap(suspiciousId, candidateId, signal, pairs);
+        evaluatedPairs++;
+      }
+    }
+
+    const cartesianPairs = (unique.length * (unique.length - 1)) / 2;
+    diagnostics.push({
+      signal,
+      groupKey,
+      groupSize: unique.length,
+      strategy: 'localized_expansion',
+      evaluatedPairs,
+      skippedCartesianPairs: cartesianPairs - evaluatedPairs,
+    });
+  }
+
+  return diagnostics;
 }
 
 // ---------------------------------------------------------------------------
@@ -394,8 +505,11 @@ class UnionFind {
 /**
  * Deterministic UUID-v4-shaped cluster identifier derived from the sorted
  * member order_ids. Same set of members → same cluster_id across runs.
+ *
+ * Exported so that the second-stage cluster expansion can mint stable IDs
+ * for promoted candidate groups without re-implementing the same hash logic.
  */
-function deterministicClusterId(orderIds: string[]): string {
+export function deterministicClusterId(orderIds: string[]): string {
   const sorted = [...orderIds].sort();
   const h = createHash('sha256').update(sorted.join('|')).digest('hex');
   return `${h.slice(0, 8)}-${h.slice(8, 12)}-4${h.slice(13, 16)}-${h.slice(16, 20)}-${h.slice(20, 32)}`;
@@ -471,13 +585,25 @@ export function linkIdentities(input: LinkerOrderInput[]): LinkerResult {
 
   // Step 3 — candidate pairs. Only from groups with >= 2 orders.
   const pairs = new Map<string, PairAccumulator>();
-  addSignalPairsFrom(ix.card, 'card', pairs);
-  addSignalPairsFrom(ix.phone, 'phone', pairs);
-  addSignalPairsFrom(ix.device, 'device', pairs);
-  addSignalPairsFrom(ix.account, 'account', pairs);
-  addSignalPairsFrom(ix.email, 'email', pairs);
-  addSignalPairsFrom(ix.postcode, 'postcode', pairs);
-  addSignalPairsFrom(ix.ip, 'ip', pairs);
+
+  // Stage 1 — Strong signals: unrestricted candidate generation.
+  // These create the initial suspicious graph safely. Card/phone/device/
+  // account/email are sparse enough that the 500 cap is rarely hit, and
+  // when it is, the group genuinely represents shared infrastructure.
+  addSignalPairsFrom(ix.card,     'card',     pairs);        // 500 default
+  addSignalPairsFrom(ix.phone,    'phone',    pairs);        // 500 default
+  addSignalPairsFrom(ix.device,   'device',   pairs);        // 500 default
+  addSignalPairsFrom(ix.account,  'account',  pairs);        // 500 default
+  addSignalPairsFrom(ix.email,    'email',    pairs);        // 500 default
+
+  // Stage 2 — Weak signals: localized expansion around suspicious nodes.
+  // Small groups (≤50) get full pair generation (existing behaviour).
+  // Large groups (>50) only expand from nodes already connected via strong
+  // signals, with a per-node cap of 25 candidates. This recovers sparse
+  // fraud-ring recall without the O(n²) explosion of full Cartesian pairs.
+  const postcodeDiags = addWeakSignalPairsSelective(ix.postcode, 'postcode', pairs, 50, 25);
+  const ipDiags = addWeakSignalPairsSelective(ix.ip,       'ip',       pairs, 50, 25);
+  const allDiagnostics = [...postcodeDiags, ...ipDiags];
 
   // Step 4 — score each pair.
   const candidatePairs: CandidatePair[] = [];
@@ -551,5 +677,33 @@ export function linkIdentities(input: LinkerOrderInput[]): LinkerResult {
   // Stable cluster ordering by first member id.
   clusters.sort((a, b) => (a.order_ids[0] < b.order_ids[0] ? -1 : 1));
 
-  return { clusters, candidatePairs };
+  // Log diagnostics for every large skipped/selective group so operators
+  // can verify the expansion strategy is working as intended.
+  if (allDiagnostics.length > 0) {
+    const summary = allDiagnostics.reduce(
+      (acc, d) => {
+        acc.totalSkippedCartesian += d.skippedCartesianPairs;
+        acc.totalEvaluated += d.evaluatedPairs;
+        if (d.strategy === 'localized_expansion') acc.localizedGroups++;
+        else acc.fullySkippedGroups++;
+        return acc;
+      },
+      { totalSkippedCartesian: 0, totalEvaluated: 0, localizedGroups: 0, fullySkippedGroups: 0 }
+    );
+    console.error(
+      `[linker] weak-signal expansion: ${allDiagnostics.length} large group(s) — ` +
+      `${summary.localizedGroups} localized (${summary.totalEvaluated} pairs evaluated), ` +
+      `${summary.fullySkippedGroups} fully skipped (no suspicious anchors), ` +
+      `${summary.totalSkippedCartesian.toLocaleString()} Cartesian pairs avoided`
+    );
+    for (const d of allDiagnostics) {
+      console.error(
+        `[linker]   signal=${d.signal} groupSize=${d.groupSize} ` +
+        `strategy=${d.strategy} evaluatedPairs=${d.evaluatedPairs} ` +
+        `skippedCartesianPairs=${d.skippedCartesianPairs.toLocaleString()}`
+      );
+    }
+  }
+
+  return { clusters, candidatePairs, diagnostics: allDiagnostics };
 }
