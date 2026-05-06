@@ -53,4 +53,11 @@ export interface FraudTransactionInsert {
   ce3_eligible?: boolean;
   ce3_qualifying_transactions?: string[];
   cluster_id?: string | null;
+  /** Two-tier identity model — derived from identity_score via product thresholds. */
+  match_status?: 'none' | 'candidate' | 'probable' | 'definite';
+  /** Set for probable + definite rows (identity_score ≥ 50). */
+  candidate_cluster_id?: string | null;
+  /** Set ONLY for definite rows (identity_score ≥ 75). */
+  confirmed_identity_id?: string | null;
+  false_positive_reported?: boolean;
 }

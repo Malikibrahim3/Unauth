@@ -11,10 +11,15 @@ type RunRow = Database['public']['Tables']['processing_jobs']['Row'];
 const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
 const DEFAULT_PAGE_SIZE = 25;
 
-export default async function HistoryPage({ searchParams }: { searchParams?: { page?: string; pageSize?: string } }) {
+export default async function HistoryPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ page?: string; pageSize?: string }>;
+}) {
+  const resolvedSearchParams = (await searchParams) ?? {};
   const supabase = createClient();
-  const page = Math.max(1, parseInt(searchParams?.page ?? '1', 10));
-  const requestedPageSize = parseInt(searchParams?.pageSize ?? String(DEFAULT_PAGE_SIZE), 10);
+  const page = Math.max(1, parseInt(resolvedSearchParams.page ?? '1', 10));
+  const requestedPageSize = parseInt(resolvedSearchParams.pageSize ?? String(DEFAULT_PAGE_SIZE), 10);
   const pageSize = PAGE_SIZE_OPTIONS.includes(requestedPageSize as (typeof PAGE_SIZE_OPTIONS)[number])
     ? requestedPageSize
     : DEFAULT_PAGE_SIZE;
@@ -30,7 +35,7 @@ export default async function HistoryPage({ searchParams }: { searchParams?: { p
   const typedRuns = (runs ?? []) as unknown as RunRow[];
   const total = count ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  const baseSearchParams = searchParams ?? {};
+  const baseSearchParams = resolvedSearchParams;
 
   return (
     <div className="p-8 space-y-6">
@@ -73,7 +78,7 @@ export default async function HistoryPage({ searchParams }: { searchParams?: { p
       {typedRuns.length === 0 ? (
         <EmptyState
           title="No audits yet"
-          description="Upload your first CSV to start detecting suspicious refund patterns."
+          description="Upload your first CSV to start reviewing identity match patterns."
           action={<Link href="/upload" className="text-sm font-medium underline" style={{ color: 'var(--text)' }}>Upload your first CSV &rarr;</Link>}
         />
       ) : (

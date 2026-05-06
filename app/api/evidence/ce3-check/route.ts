@@ -6,6 +6,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { requirePermission, PERMISSIONS } from '@/lib/permissions'
 import { assessCE3Eligibility } from '@/lib/evidence/ce3'
+import {
+  fetchMerchantScopedCustomerProfile,
+  fetchMerchantScopedCustomerTransactions,
+} from '@/lib/supabase/merchantHelpers'
 import type { IdentitySignalResult } from '@/lib/engine/types'
 
 export const dynamic = 'force-dynamic'
@@ -26,32 +30,28 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'profileId and orderId required' }, { status: 400 })
   }
 
-  // Fetch profile emails
-  const { data: profileRow } = await service
-    .from('customer_profiles')
-    .select('emails')
-    .eq('id', profileId)
-    .eq('merchant_id', ctx.merchantId)
-    .single() as unknown as { data: { emails: string[] } | null }
+  // Fetch profile via merchant-scoped helper (verifies merchant_ids membership)
+  const profile = await fetchMerchantScopedCustomerProfile(service, ctx.merchantId, profileId)
+  if (!profile) return NextResponse.json({ eligible: false, reason: 'Profile not found or not owned by merchant' })
 
-  if (!profileRow) return NextResponse.json({ eligible: false })
+  // Fetch transactions via merchant-scoped helper (verifies job ownership)
+  // This also verifies that the disputed order, if found in the results,
+  // belongs to a merchant-owned job — no cross-merchant order IDs will appear.
+  const txRows = await fetchMerchantScopedCustomerTransactions(
+    service,
+    ctx.merchantId,
+    profileId,
+    profile,
+    { select: 'id,processed_at,refund_claimed,identity_signals,job_id' }
+  ) as Array<{ id: string; processed_at: string; refund_claimed: boolean; identity_signals: string[] | null; job_id: string }>
 
-  // Fetch all transactions for this customer
-  const { data: txRows } = await service
-    .from('audit_transactions')
-    .select('id, processed_at, refund_claimed, identity_signals')
-    .in('customer_email', profileRow.emails ?? [])
-    .eq('merchant_id', ctx.merchantId)
-    .order('processed_at', { ascending: true })
-    .limit(500) as unknown as {
-      data: Array<{ id: string; processed_at: string; refund_claimed: boolean; identity_signals: string[] | null }> | null
-    }
+  if (txRows.length === 0) return NextResponse.json({ eligible: false, reason: 'No transactions found for this profile in merchant account' })
 
-  if (!txRows || txRows.length === 0) return NextResponse.json({ eligible: false })
-
-  // Find disputed transaction
+  // Find disputed transaction — if not present, the order does not belong to this merchant
   const disputedTx = txRows.find(tx => tx.id === orderId)
-  if (!disputedTx) return NextResponse.json({ eligible: false })
+  if (!disputedTx) {
+    return NextResponse.json({ eligible: false, reason: 'Disputed order not found in merchant account' })
+  }
 
   const orderHistory = txRows.map(tx => ({
     order_id: tx.id,

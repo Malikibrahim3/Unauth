@@ -6,26 +6,40 @@ import { signalLabel } from '@/lib/copy/signalLabels';
 import { ConfidenceBadge, riskLevelToNewGrade } from '@/components/ui/ConfidenceBadge';
 import RecommendedAction from '@/components/audit/RecommendedAction';
 import type { Database } from '@/lib/supabase/types';
+import { requirePermission, PERMISSIONS } from '@/lib/permissions';
+import { fetchMerchantScopedTransaction } from '@/lib/supabase/merchantHelpers';
 
 type AuditTxRow = Database['public']['Tables']['audit_transactions']['Row'];
 
 interface Props {
-  params: { runId: string; id: string };
+  params: Promise<{ runId: string; id: string }>;
 }
 
 export const dynamic = 'force-dynamic';
 
 export default async function TransactionDetailPage({ params }: Props) {
+  const resolvedParams = await params;
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
   const svc = createServiceClient();
-  const { data: tx } = await svc
-    .from('audit_transactions')
-    .select('*')
-    .eq('id', params.id)
-    .single();
+  // Verify caller has view permission and get their merchantId
+  const { denied, ctx } = await requirePermission(svc, user.id, PERMISSIONS.VIEW_AUDIT);
+  if (denied) {
+    return (
+      <div className="p-8">
+        <h1 className="text-heading-lg">Access denied</h1>
+        <p className="text-body-sm mt-2" style={{ color: 'var(--text-muted)' }}>
+          You do not have permission to view audit transactions.
+        </p>
+      </div>
+    );
+  }
+
+  // Verify runId belongs to this merchant AND fetch transaction scoped by both
+  // id AND job_id — prevents cross-merchant transaction lookup by UUID.
+  const tx = await fetchMerchantScopedTransaction(svc, ctx.merchantId, resolvedParams.id, resolvedParams.runId);
 
   if (!tx) notFound();
 
@@ -46,14 +60,14 @@ export default async function TransactionDetailPage({ params }: Props) {
         <div className="flex items-center gap-2 text-sm mb-1" style={{ color: 'var(--text-muted)' }}>
           <Link href="/dashboard" className="hover:opacity-80 transition-colors">Dashboard</Link>
           <span>/</span>
-          <Link href={`/audit/${params.runId}`} className="hover:opacity-80 transition-colors">Audit</Link>
+          <Link href={`/audit/${resolvedParams.runId}`} className="hover:opacity-80 transition-colors">Audit</Link>
           <span>/</span>
           <span>Transaction</span>
         </div>
         <h1 className="text-heading-lg">Order {txData.order_id}</h1>
         <div className="mt-2">
           <Link
-            href={`/audit/${params.runId}`}
+            href={`/audit/${resolvedParams.runId}`}
             className="inline-flex items-center gap-1.5 text-sm transition-colors hover:opacity-80"
             style={{ color: 'var(--text-muted)' }}
           >
@@ -89,7 +103,7 @@ export default async function TransactionDetailPage({ params }: Props) {
           {[
             { label: 'Order ID', value: txData.order_id },
             { label: 'Customer', value: txData.customer_email ?? '—' },
-            { label: 'Risk grade', value: txData.identity_confidence_grade ?? '—' },
+            { label: 'Identity confidence grade', value: txData.identity_confidence_grade ?? '—' },
             { label: 'Recommended action', value: txData.recommended_action ?? '—' },
             { label: 'Refund reason', value: txData.refund_reason ?? '—' },
           ].map(({ label, value }) => (
@@ -102,7 +116,7 @@ export default async function TransactionDetailPage({ params }: Props) {
       </div>
 
       <div className="rounded-lg p-5 border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
-        <h2 className="text-heading-sm mb-3">Why this was flagged for review ({signals.length})</h2>
+        <h2 className="text-heading-sm mb-3">Identity match signals ({signals.length})</h2>
         {signals.length === 0 ? (
           <p className="text-body-sm" style={{ color: 'var(--text-muted)' }}>No review reasons were stored for this order.</p>
         ) : (
@@ -134,7 +148,7 @@ export default async function TransactionDetailPage({ params }: Props) {
       <RecommendedAction
         tier={((txData.identity_confidence_grade ?? riskLevelToNewGrade((txData as any).risk_level)) as 'low' | 'medium' | 'high' | 'critical')}
         topSignalName={signals[0]}
-        customersHref={`/audit/${params.runId}/customers`}
+        customersHref={`/audit/${resolvedParams.runId}/customers`}
       />
     </div>
   );

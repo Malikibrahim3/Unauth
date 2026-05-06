@@ -1,58 +1,181 @@
-// TODO (App Cohesion Audit – Phase 2): This component is one of THREE separate
-// customer profile renderers in the app.
-//
-// Phase 1 DONE: Local riskTok / riskBadgeStyle / riskBarStyle / formatCurrency /
-// formatDate helpers replaced with canonical imports from @/lib/utils/riskStyles
-// and @/lib/utils/format.
-// See reports/ui-ux-audit/APP_COHESION_AUDIT.md — Issue D3, D4, D5.
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { ComponentType, CSSProperties, ReactNode } from 'react';
 import Link from 'next/link';
-import IdentityTimeline from './IdentityTimeline';
+import {
+  AlertTriangle,
+  CalendarDays,
+  CreditCard,
+  ExternalLink,
+  FileText,
+  GitBranch,
+  Mail,
+  MapPin,
+  Phone,
+  ReceiptText,
+  RotateCcw,
+  ShieldCheck,
+  UserRound,
+  X,
+} from 'lucide-react';
 import { ConfidenceBadge, riskLevelToNewGrade } from '@/components/ui/ConfidenceBadge';
 import WatchlistStarButton from '@/components/audit/WatchlistStarButton';
 import CustomerNotes from '@/components/audit/CustomerNotes';
-import type { CustomerIntelligencePanel } from '@/app/api/customers/[id]/route';
+import type { CustomerIntelligencePanel, OrderHistoryEntry } from '@/app/api/customers/[id]/route';
 import { STATUS_LABELS, STATUS_OPTIONS, statusStyle } from '@/lib/utils/investigationStatus';
-import { riskBadgeStyle, riskBarStyle } from '@/lib/utils/riskStyles';
-import { formatCurrencyNullable, formatDateShort } from '@/lib/utils/format';
-
-// ---------------------------------------------------------------------------
-// Skeleton
-// ---------------------------------------------------------------------------
+import { riskBadgeStyle, riskBarStyle, riskTok } from '@/lib/utils/riskStyles';
+import { formatCurrencyNullable, formatDate } from '@/lib/utils/format';
 
 function DrawerSkeleton() {
   return (
     <div className="animate-pulse p-6 space-y-5">
       <div className="h-6 rounded w-2/3" style={{ background: 'var(--bg-subtle)' }} />
       <div className="h-4 rounded w-1/2" style={{ background: 'var(--bg-subtle)' }} />
-      <div className="space-y-3 mt-6">
-        {[...Array(4)].map((_, i) => (
-          <div key={i} className="h-4 rounded w-full" style={{ background: 'var(--bg-subtle)' }} />
+      <div className="grid grid-cols-3 gap-3">
+        {[...Array(6)].map((_, i) => (
+          <div key={i} className="h-20 rounded-lg" style={{ background: 'var(--bg-subtle)' }} />
         ))}
       </div>
-      <div className="h-32 rounded mt-4" style={{ background: 'var(--bg-subtle)' }} />
+      <div className="space-y-3">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="h-32 rounded-lg" style={{ background: 'var(--bg-subtle)' }} />
+        ))}
+      </div>
     </div>
   );
 }
 
-// ---------------------------------------------------------------------------
-// Section wrapper
-// ---------------------------------------------------------------------------
-
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function RoadmapSection({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className="pt-5 mt-5 first:pt-0 first:mt-0" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+    <section className="pt-5 mt-5 first:pt-0 first:mt-0" style={{ borderTop: '1px solid var(--border-subtle)' }}>
       <h3 className="text-overline mb-3">{title}</h3>
       {children}
+    </section>
+  );
+}
+
+function StatTile({ label, value, hint }: { label: string; value: ReactNode; hint?: string }) {
+  return (
+    <div className="rounded-lg border p-3" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)' }}>
+      <p className="text-caption" style={{ color: 'var(--text-subtle)' }}>{label}</p>
+      <p className="mt-1 text-base font-semibold" style={{ color: 'var(--text)' }}>{value}</p>
+      {hint && <p className="mt-1 text-caption truncate" style={{ color: 'var(--text-muted)' }}>{hint}</p>}
     </div>
   );
 }
 
-// ---------------------------------------------------------------------------
-// Main drawer
-// ---------------------------------------------------------------------------
+function DetailLine({
+  icon: Icon,
+  label,
+  value,
+  mono = false,
+}: {
+  icon: ComponentType<{ className?: string; style?: CSSProperties }>;
+  label: string;
+  value: React.ReactNode;
+  mono?: boolean;
+}) {
+  if (value == null || value === '') return null;
+  return (
+    <div className="flex items-start gap-2 min-w-0">
+      <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0" style={{ color: 'var(--text-subtle)' }} />
+      <div className="min-w-0">
+        <p className="text-[11px] leading-4" style={{ color: 'var(--text-subtle)' }}>{label}</p>
+        <p className={`text-xs leading-5 break-words ${mono ? 'font-mono' : ''}`} style={{ color: 'var(--text)' }}>
+          {value}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function flagLabel(flag: string) {
+  return flag
+    .replace(/[_-]/g, ' ')
+    .replace(/\b\w/g, (m) => m.toUpperCase());
+}
+
+function lifecycleTitle(order: OrderHistoryEntry) {
+  if (order.chargebackFiled) return 'Chargeback filed';
+  if (order.refundRequested) return 'Refund or return claim';
+  if (riskTok(order.riskLevel) === 'critical' || riskTok(order.riskLevel) === 'high') return 'Order requiring review';
+  return 'Order placed';
+}
+
+function OrderRoadmapCard({ order, isLast }: { order: OrderHistoryEntry; isLast: boolean }) {
+  const hasClaim = order.refundRequested || order.returnRequested || order.chargebackFiled;
+
+  return (
+    <li className="relative pl-9 pb-4 last:pb-0">
+      {!isLast && (
+        <span
+          aria-hidden="true"
+          className="absolute left-[11px] top-7 bottom-0 w-px"
+          style={{ background: 'var(--border-subtle)' }}
+        />
+      )}
+      <span
+        aria-hidden="true"
+        className="absolute left-0 top-1 flex h-6 w-6 items-center justify-center rounded-full border"
+        style={{
+          background: hasClaim ? 'var(--risk-high-bg)' : 'var(--bg-surface)',
+          borderColor: hasClaim ? 'var(--risk-high-bd)' : 'var(--border)',
+          color: hasClaim ? 'var(--risk-high)' : 'var(--text-muted)',
+        }}
+      >
+        {order.chargebackFiled ? <AlertTriangle className="h-3.5 w-3.5" /> : hasClaim ? <RotateCcw className="h-3.5 w-3.5" /> : <ReceiptText className="h-3.5 w-3.5" />}
+      </span>
+
+      <article className="rounded-lg border p-3" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{lifecycleTitle(order)}</p>
+            <p className="mt-0.5 text-caption font-mono truncate" style={{ color: 'var(--text-muted)' }}>{order.orderId}</p>
+          </div>
+          <span className="inline-flex shrink-0 items-center px-1.5 py-0.5 rounded text-caption font-semibold uppercase" style={riskBadgeStyle(order.riskLevel)}>
+            {order.riskLevel}
+          </span>
+        </div>
+
+        <div className="mt-3 grid grid-cols-2 gap-3">
+          <DetailLine icon={CalendarDays} label="Timestamp" value={formatDate(order.orderDate ?? order.processedAt)} />
+          <DetailLine icon={ReceiptText} label="Order value" value={formatCurrencyNullable(order.orderValue)} />
+          <DetailLine icon={Mail} label="Email used" value={order.email} mono />
+          <DetailLine icon={UserRound} label="Name used" value={order.name} />
+          <DetailLine icon={MapPin} label="Ship-to address" value={order.address} />
+          <DetailLine icon={CreditCard} label="Card" value={order.cardLast4 ? `•••• ${order.cardLast4}` : null} mono />
+        </div>
+
+        {(order.refundRequested || order.returnRequested || order.chargebackFiled) && (
+          <div className="mt-3 rounded-md border p-2" style={{ borderColor: 'var(--risk-high-bd)', background: 'var(--risk-high-bg)' }}>
+            <p className="text-xs font-semibold" style={{ color: 'var(--risk-high)' }}>
+              {order.chargebackFiled ? 'Chargeback' : order.returnRequested ? 'Return / refund activity' : 'Refund activity'}
+            </p>
+            <p className="mt-0.5 text-xs" style={{ color: 'var(--text)' }}>
+              {order.refundAmount != null && `${formatCurrencyNullable(order.refundAmount)} `}
+              {order.refundReason || order.chargebackReasonCode || order.refundStatus || 'Claim recorded'}
+              {(order.refundDate || order.chargebackDate || order.processedAt) && ` · ${formatDate(order.refundDate ?? order.chargebackDate ?? order.processedAt)}`}
+            </p>
+          </div>
+        )}
+
+        {order.fraudFlags.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {order.fraudFlags.slice(0, 5).map((flag) => (
+              <span key={flag} className="rounded border px-1.5 py-0.5 text-[11px] font-medium" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
+                {flagLabel(flag)}
+              </span>
+            ))}
+            {order.fraudFlags.length > 5 && (
+              <span className="text-[11px]" style={{ color: 'var(--text-subtle)' }}>+{order.fraudFlags.length - 5} more</span>
+            )}
+          </div>
+        )}
+      </article>
+    </li>
+  );
+}
 
 interface CustomerIntelligenceDrawerProps {
   profileId: string | null;
@@ -69,7 +192,6 @@ export default function CustomerIntelligenceDrawer({
   const [ordersExpanded, setOrdersExpanded] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
 
-  // Fetch data whenever a new profileId is selected
   useEffect(() => {
     if (!profileId) {
       setPanel(null);
@@ -94,14 +216,13 @@ export default function CustomerIntelligenceDrawer({
         setError(err.message);
         setLoading(false);
       });
-  }, [profileId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [profileId]);
 
-  // Escape key
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     },
-    [onClose]
+    [onClose],
   );
 
   useEffect(() => {
@@ -109,7 +230,6 @@ export default function CustomerIntelligenceDrawer({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
 
-  // Click outside
   const handleOverlayClick = (e: React.MouseEvent) => {
     if (drawerRef.current && !drawerRef.current.contains(e.target as Node)) {
       onClose();
@@ -120,7 +240,6 @@ export default function CustomerIntelligenceDrawer({
 
   return (
     <>
-      {/* Backdrop */}
       <div
         aria-hidden="true"
         onClick={handleOverlayClick}
@@ -129,47 +248,41 @@ export default function CustomerIntelligenceDrawer({
         }`}
       />
 
-      {/* Drawer panel */}
       <div
         ref={drawerRef}
         role="dialog"
         aria-modal="true"
-        aria-label="Customer intelligence panel"
-        className={`fixed top-0 right-0 z-50 h-full w-full sm:w-[624px] shadow-2xl transform transition-transform duration-300 ease-in-out overflow-y-auto flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
+        aria-label="Customer roadmap panel"
+        className={`fixed top-0 right-0 z-50 h-full w-full sm:w-[680px] shadow-2xl transform transition-transform duration-300 ease-in-out overflow-y-auto flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
         style={{ background: 'var(--bg-surface)' }}
       >
-        {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 sticky top-0 z-10" style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-surface)' }}>
-          <h2 className="text-heading-sm">Customer Profile</h2>
-          <div className="flex items-center gap-3">
+          <div>
+            <p className="text-overline">Customer Roadmap</p>
+            <h2 className="text-heading-sm">What happened, in order</h2>
+          </div>
+          <div className="flex items-center gap-2">
             {profileId && (
               <Link
                 href={`/customers/${profileId}`}
                 onClick={onClose}
-                className="text-xs px-2.5 py-1 rounded border transition-colors hover:bg-[var(--bg-subtle)]"
-                style={{ color: 'var(--text-muted)', borderColor: 'var(--border)' }}
+                className="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-semibold transition-colors hover:bg-[var(--bg-subtle)]"
+                style={{ color: 'var(--text)', borderColor: 'var(--border)' }}
               >
-                Full page →
+                Full profile <ExternalLink className="h-3.5 w-3.5" />
               </Link>
             )}
             <button
               onClick={onClose}
               aria-label="Close panel"
-              className="p-1.5 rounded-md transition-colors"
+              className="rounded-md p-1.5 transition-colors hover:bg-[var(--bg-subtle)]"
               style={{ color: 'var(--icon-muted)' }}
             >
-              <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
-                <path
-                  fillRule="evenodd"
-                  d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                  clipRule="evenodd"
-                />
-              </svg>
+              <X className="h-5 w-5" />
             </button>
           </div>
         </div>
 
-        {/* Body */}
         <div className="flex-1 p-6">
           {loading && <DrawerSkeleton />}
 
@@ -192,10 +305,6 @@ export default function CustomerIntelligenceDrawer({
   );
 }
 
-// ---------------------------------------------------------------------------
-// Inner content — separated to keep the outer component readable
-// ---------------------------------------------------------------------------
-
 function DrawerContent({
   panel,
   ordersExpanded,
@@ -206,10 +315,14 @@ function DrawerContent({
   onToggleOrders: () => void;
 }) {
   const { profile, orderHistory, identityTimeline, linkedAccounts, narrative } = panel;
-  const visibleOrders = ordersExpanded ? orderHistory : orderHistory.slice(0, 10);
+  const visibleOrders = ordersExpanded ? orderHistory : orderHistory.slice(0, 6);
   const variantCount = identityTimeline.filter((e) => e.isVariant).length;
+  const identitySignals = ((profile as any).identity_signals ?? profile.fraud_flags ?? []) as string[];
+  const totalOrderValue = orderHistory.reduce((sum, order) => sum + (order.orderValue ?? 0), 0);
+  const totalRefundValue = orderHistory.reduce((sum, order) => sum + (order.refundAmount ?? 0), 0);
+  const claimCount = orderHistory.filter((order) => order.refundRequested || order.returnRequested || order.chargebackFiled).length;
+  const displayName = profile.names[0] ?? profile.primary_email ?? 'Unknown customer';
 
-  // Optimistic investigation status
   const [status, setStatus] = useState<string>((profile as any).investigation_status ?? 'new');
   const [statusSaving, setStatusSaving] = useState(false);
 
@@ -225,37 +338,36 @@ function DrawerContent({
     if (!res.ok) setStatus(prev);
     setStatusSaving(false);
   }
+
   const isEligibleForEvidence = orderHistory.some((order) => order.refundRequested) || profile.total_chargebacks > 0;
 
   return (
     <div>
-      <Section title="Identity Summary">
-        <div className="flex items-start justify-between gap-3 mb-4">
+      <div className="rounded-lg border p-4" style={{ borderColor: 'var(--border)', background: 'var(--bg-inset)' }}>
+        <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <p className="text-base font-semibold truncate" style={{ color: 'var(--text)' }}>
-              {profile.names[0] ?? profile.primary_email ?? 'Unknown'}
-            </p>
-            {profile.primary_email && profile.names[0] && (
-              <p className="text-sm truncate" style={{ color: 'var(--text-muted)' }}>{profile.primary_email}</p>
+            <div className="flex items-center gap-2">
+              <h3 className="text-xl font-semibold truncate" style={{ color: 'var(--text)' }}>{displayName}</h3>
+              <ConfidenceBadge grade={riskLevelToNewGrade(profile.risk_level)} />
+            </div>
+            {profile.primary_email && (
+              <p className="mt-1 truncate text-sm" style={{ color: 'var(--text-muted)' }}>{profile.primary_email}</p>
             )}
           </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <ConfidenceBadge grade={riskLevelToNewGrade(profile.risk_level)} />
-            <WatchlistStarButton
-              customerProfileId={profile.id}
-              displayName={profile.names[0] ?? undefined}
-              displayEmail={profile.primary_email ?? undefined}
-              lastSeenRisk={profile.risk_level}
-              initialWatchlisted={profile.on_watchlist}
-              watchlistEntryId={profile.watchlist_entry_id ?? null}
-            />
-          </div>
+          <WatchlistStarButton
+            customerProfileId={profile.id}
+            displayName={profile.names[0] ?? undefined}
+            displayEmail={profile.primary_email ?? undefined}
+            lastSeenRisk={profile.risk_level}
+            initialWatchlisted={profile.on_watchlist}
+            watchlistEntryId={profile.watchlist_entry_id ?? null}
+          />
         </div>
 
-        <div className="mb-4">
+        <div className="mt-4">
           <div className="flex items-center justify-between text-xs mb-1" style={{ color: 'var(--text-muted)' }}>
-            <span>Match confidence</span>
-            <span className="font-semibold" style={{ color: 'var(--text)' }}>{Math.round(profile.risk_score)}</span>
+            <span>Review priority</span>
+            <span className="font-semibold" style={{ color: 'var(--text)' }}>{Math.round(profile.risk_score)} / 100</span>
           </div>
           <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--bg-subtle)' }}>
             <div
@@ -265,20 +377,7 @@ function DrawerContent({
           </div>
         </div>
 
-        <div className="mb-4">
-          <div className="flex items-center justify-between text-xs mb-1" style={{ color: 'var(--text-muted)' }}>
-            <span>Profile confidence</span>
-            <span className="font-semibold" style={{ color: 'var(--text)' }}>{profile.profile_confidence}%</span>
-          </div>
-          <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--bg-subtle)' }}>
-            <div
-              className="h-full rounded-full transition-all"
-              style={{ width: `${profile.profile_confidence}%`, background: 'var(--info)' }}
-            />
-          </div>
-        </div>
-
-        <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="mt-4 flex items-center justify-between gap-3">
           <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Investigation status</span>
           <select
             value={status}
@@ -292,184 +391,121 @@ function DrawerContent({
             ))}
           </select>
         </div>
+      </div>
 
-        <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-          <div>
-            <dt className="text-xs" style={{ color: 'var(--text-muted)' }}>First seen</dt>
-            <dd className="font-medium" style={{ color: 'var(--text)' }}>{formatDateShort(profile.first_seen)}</dd>
-          </div>
-          <div>
-            <dt className="text-xs" style={{ color: 'var(--text-muted)' }}>Last seen</dt>
-            <dd className="font-medium" style={{ color: 'var(--text)' }}>{formatDateShort(profile.last_seen)}</dd>
-          </div>
-          <div>
-            <dt className="text-xs" style={{ color: 'var(--text-muted)' }}>Orders</dt>
-            <dd className="font-medium" style={{ color: 'var(--text)' }}>{profile.total_orders}</dd>
-          </div>
-          <div>
-            <dt className="text-xs" style={{ color: 'var(--text-muted)' }}>Refund rate</dt>
-            <dd className="font-medium" style={{ color: 'var(--text)' }}>
-              {Math.round(profile.refund_rate * 100)}%
-            </dd>
-          </div>
-          {profile.emails.length > 1 && (
-            <div className="col-span-2">
-              <dt className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>All emails</dt>
-              <dd className="space-y-0.5">
-                {profile.emails.map((email, index) => (
-                  <p key={index} className="text-xs font-mono truncate" style={{ color: 'var(--text)' }}>{email}</p>
-                ))}
-              </dd>
-            </div>
-          )}
-          {((profile as any).identity_signals ?? profile.fraud_flags ?? []).length > 0 && (
-            <div className="col-span-2">
-              <dt className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>Identity signals</dt>
-              <dd className="flex flex-wrap gap-1">
-                {((profile as any).identity_signals ?? profile.fraud_flags ?? []).map((flag: string, index: number) => (
-                  <span
-                    key={index}
-                    className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium"
-                    style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}
-                  >
-                    {flag}
-                  </span>
-                ))}
-              </dd>
-            </div>
-          )}
-        </dl>
-      </Section>
+      <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <StatTile label="Orders" value={profile.total_orders} hint={`${formatCurrencyNullable(totalOrderValue)} total`} />
+        <StatTile label="Claims" value={claimCount || profile.total_refund_claims} hint={`${Math.round(profile.refund_rate * 100)}% refund rate`} />
+        <StatTile label="Chargebacks" value={profile.total_chargebacks} hint={totalRefundValue > 0 ? `${formatCurrencyNullable(totalRefundValue)} refunded` : undefined} />
+        <StatTile label="Identity changes" value={variantCount} hint={`${profile.profile_confidence}% profile confidence`} />
+        <StatTile label="Linked IDs" value={linkedAccounts.length} hint={linkedAccounts[0]?.entityType ? flagLabel(linkedAccounts[0].entityType) : undefined} />
+        <StatTile label="First seen" value={`${formatDate(profile.first_seen)}`} hint={`Last seen ${formatDate(profile.last_seen)}`} />
+      </div>
 
-      <Section title="Behavioral Context">
-        <p className="text-body-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>{narrative}</p>
-        {((profile as any).identity_signals ?? profile.fraud_flags ?? []).length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            {((profile as any).identity_signals ?? profile.fraud_flags ?? []).map((f: string, i: number) => (
-              <span
-                key={i}
-                className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium"
-                style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}
-              >
-                {f}
-              </span>
-            ))}
+      <RoadmapSection title="Roadmap summary">
+        <div className="rounded-lg border p-3" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}>
+          <div className="flex items-start gap-3">
+            <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" style={{ color: 'var(--text-muted)' }} />
+            <p className="text-body-sm leading-relaxed" style={{ color: 'var(--text)' }}>{narrative}</p>
           </div>
-        )}
-        {profile.refund_acceleration_score > 0 && (
-          <div className="mt-3">
-            <div className="flex items-center justify-between text-xs mb-1" style={{ color: 'var(--text-muted)' }}>
-              <span>Refund acceleration</span>
-              <span className="font-semibold" style={{ color: 'var(--text)' }}>{profile.refund_acceleration_score}</span>
-            </div>
-            <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--bg-subtle)' }}>
-              <div
-                className="h-full rounded-full transition-all"
-                style={{
-                  width: `${Math.min(profile.refund_acceleration_score, 100)}%`,
-                  background: profile.refund_acceleration_score >= 75 ? 'var(--risk-critical)' :
-                              profile.refund_acceleration_score >= 50 ? 'var(--risk-high)' :
-                              'var(--risk-medium)',
-                }}
-              />
-            </div>
-          </div>
-        )}
-      </Section>
-
-      {identityTimeline.length > 0 && (
-        <Section title={`Identity Timeline${variantCount > 0 ? ` · ${variantCount} change${variantCount > 1 ? 's' : ''}` : ''}`}>
-          <IdentityTimeline entries={identityTimeline} />
-        </Section>
-      )}
-
-      {linkedAccounts.length > 0 && (
-        <Section title={`Linked Identities (${linkedAccounts.length})`}>
-          <ul className="space-y-2">
-            {linkedAccounts.slice(0, 8).map((acc, index) => (
-              <li key={index} className="flex items-start gap-2 text-sm">
-                <span
-                  className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium shrink-0"
-                  style={{ background: 'var(--watchlist-bg)', color: 'var(--watchlist)', border: '1px solid var(--watchlist-bd)' }}
-                >
-                  {acc.entityType}
+          {identitySignals.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {identitySignals.map((flag) => (
+                <span key={flag} className="rounded border px-1.5 py-0.5 text-[11px] font-medium" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
+                  {flagLabel(flag)}
                 </span>
-                <span className="font-mono break-all text-xs" style={{ color: 'var(--text)' }}>{acc.entityValue}</span>
-                <span className="text-xs shrink-0 ml-auto" style={{ color: 'var(--text-subtle)' }}>{acc.confidence}%</span>
-              </li>
-            ))}
-            {linkedAccounts.length > 8 && (
-              <p className="text-xs" style={{ color: 'var(--text-subtle)' }}>+{linkedAccounts.length - 8} more</p>
-            )}
-          </ul>
-        </Section>
-      )}
+              ))}
+            </div>
+          )}
+        </div>
+      </RoadmapSection>
 
-      <Section title={`Order History (${orderHistory.length})`}>
+      <RoadmapSection title={`Customer roadmap (${orderHistory.length})`}>
         {orderHistory.length === 0 ? (
           <p className="text-body-sm italic" style={{ color: 'var(--text-muted)' }}>No orders in current dataset.</p>
         ) : (
           <>
-            <div className="space-y-2">
+            <ol>
               {visibleOrders.map((order, index) => (
-                <div
-                  key={index}
-                  className="rounded-lg p-3 text-sm"
-                  style={{ border: '1px solid var(--border-subtle)', background: 'var(--bg-subtle)' }}
-                >
-                  <div className="flex items-center justify-between gap-2 mb-1">
-                    <span className="font-mono text-xs truncate" style={{ color: 'var(--text-muted)' }}>{order.orderId}</span>
-                    <span
-                      className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-semibold uppercase"
-                      style={riskBadgeStyle(order.riskLevel)}
-                    >
-                      {order.riskLevel}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs" style={{ color: 'var(--text-muted)' }}>
-                    <span>{formatDateShort(order.orderDate ?? order.processedAt)}</span>
-                    <span className="font-medium" style={{ color: 'var(--text)' }}>{formatCurrencyNullable(order.orderValue)}</span>
-                  </div>
-                  {order.refundRequested && (
-                    <p className="mt-1 text-xs font-medium" style={{ color: 'var(--risk-high)' }}>
-                      Refund requested{order.refundReason ? ` · ${order.refundReason}` : ''}
-                    </p>
-                  )}
-                </div>
+                <OrderRoadmapCard key={`${order.orderId}-${index}`} order={order} isLast={index === visibleOrders.length - 1} />
               ))}
-            </div>
-            {orderHistory.length > 10 && (
+            </ol>
+            {orderHistory.length > 6 && (
               <button
                 onClick={onToggleOrders}
-                className="mt-3 text-xs hover:underline"
+                className="mt-1 text-xs font-semibold hover:underline"
                 style={{ color: 'var(--accent)' }}
               >
-                {ordersExpanded ? 'Show fewer' : `Show all ${orderHistory.length} orders`}
+                {ordersExpanded ? 'Show fewer moments' : `Show all ${orderHistory.length} roadmap moments`}
               </button>
             )}
           </>
         )}
-      </Section>
-      <Section title="Merchant notes">
+      </RoadmapSection>
+
+      {(identityTimeline.length > 0 || linkedAccounts.length > 0) && (
+        <RoadmapSection title="Identity trail">
+          <div className="grid grid-cols-1 gap-3">
+            {identityTimeline.slice(0, 8).map((entry, index) => (
+              <div key={`${entry.field}-${entry.value}-${index}`} className="flex items-start gap-3 rounded-lg border p-3" style={{ borderColor: 'var(--border-subtle)', background: entry.isVariant ? 'var(--info-bg)' : 'var(--bg-surface)' }}>
+                <GitBranch className="mt-0.5 h-4 w-4 shrink-0" style={{ color: entry.isVariant ? 'var(--info)' : 'var(--text-muted)' }} />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>{flagLabel(entry.field)}</p>
+                    <p className="text-caption shrink-0" style={{ color: 'var(--text-subtle)' }}>{formatDate(entry.date)}</p>
+                  </div>
+                  <p className="mt-1 break-words text-sm" style={{ color: 'var(--text)' }}>{entry.value}</p>
+                </div>
+              </div>
+            ))}
+            {linkedAccounts.slice(0, 5).map((acc, index) => (
+              <div key={`${acc.entityType}-${acc.entityValue}-${index}`} className="flex items-start gap-3 rounded-lg border p-3" style={{ borderColor: 'var(--watchlist-bd)', background: 'var(--watchlist-bg)' }}>
+                <GitBranch className="mt-0.5 h-4 w-4 shrink-0" style={{ color: 'var(--watchlist)' }} />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--watchlist)' }}>{flagLabel(acc.entityType)}</p>
+                    <p className="text-caption shrink-0" style={{ color: 'var(--text-muted)' }}>{acc.confidence}%</p>
+                  </div>
+                  <p className="mt-1 break-all font-mono text-xs" style={{ color: 'var(--text)' }}>{acc.entityValue}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </RoadmapSection>
+      )}
+
+      <RoadmapSection title="Stored identity details">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <DetailLine icon={Mail} label="Emails" value={profile.emails.join(', ')} mono />
+          <DetailLine icon={UserRound} label="Names" value={profile.names.join(', ')} />
+          <DetailLine icon={MapPin} label="Addresses" value={profile.addresses.slice(0, 3).join(' / ')} />
+          <DetailLine icon={Phone} label="Phones" value={profile.phones.join(', ')} mono />
+          <DetailLine icon={CreditCard} label="Cards" value={profile.card_last4s.map((c) => `•••• ${c}`).join(', ')} mono />
+          <DetailLine icon={GitBranch} label="IP addresses" value={profile.ips.slice(0, 5).join(', ')} mono />
+        </div>
+      </RoadmapSection>
+
+      <RoadmapSection title="Merchant notes">
         <CustomerNotes customerProfileId={profile.id} />
-      </Section>
+      </RoadmapSection>
 
       <div className="pt-4 mt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
         {isEligibleForEvidence ? (
           <Link
             href={`/customers/${profile.id}/evidence/new`}
-            className="flex w-full items-center justify-center gap-1.5 px-3 py-2 rounded-md text-xs font-semibold transition-colors border"
+            className="flex w-full items-center justify-center gap-2 px-3 py-2 rounded-md text-xs font-semibold transition-colors border"
             style={{
               background: 'var(--bg-subtle)',
               borderColor: 'var(--border)',
               color: 'var(--text)',
             }}
           >
+            <FileText className="h-4 w-4" />
             Generate evidence
           </Link>
         ) : (
           <span
-            className="flex w-full items-center justify-center gap-1.5 px-3 py-2 rounded-md text-xs font-semibold border opacity-40 cursor-not-allowed"
+            className="flex w-full items-center justify-center gap-2 px-3 py-2 rounded-md text-xs font-semibold border opacity-40 cursor-not-allowed"
             title="No eligible orders found — customer needs at least one refund claim or chargeback"
             style={{
               background: 'var(--bg-subtle)',
@@ -477,6 +513,7 @@ function DrawerContent({
               color: 'var(--text)',
             }}
           >
+            <FileText className="h-4 w-4" />
             Generate evidence
           </span>
         )}

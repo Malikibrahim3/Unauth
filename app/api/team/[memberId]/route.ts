@@ -6,8 +6,9 @@ import { NextRequest, NextResponse } from 'next/server';
 // PATCH /api/team/[memberId] – update role
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { memberId: string } }
+  { params }: { params: Promise<{ memberId: string }> }
 ) {
+  const resolvedParams = await params;
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown';
   const userClient = createClient();
   const { data: { user } } = await userClient.auth.getUser();
@@ -24,23 +25,24 @@ export async function PATCH(
 
   const { data: target } = await serviceClient
     .from('merchant_members').select('id, role')
-    .eq('id', params.memberId).eq('merchant_id', ctx.merchantId).single();
+    .eq('id', resolvedParams.memberId).eq('merchant_id', ctx.merchantId).single();
   if (!target) return NextResponse.json({ error: 'Member not found.' }, { status: 404 });
   if ((target as any).role === 'owner') return NextResponse.json({ error: "The owner's role cannot be changed." }, { status: 403 });
 
   const { data: updated, error } = await serviceClient
-    .from('merchant_members').update({ role }).eq('id', params.memberId).select().single();
+    .from('merchant_members').update({ role }).eq('id', resolvedParams.memberId).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  logAction({ ctx, action: 'update_team_member_role', resourceType: 'merchant_member', resourceId: params.memberId, metadata: { newRole: role, previousRole: (target as any).role }, ip });
+  logAction({ ctx, action: 'update_team_member_role', resourceType: 'merchant_member', resourceId: resolvedParams.memberId, metadata: { newRole: role, previousRole: (target as any).role }, ip });
   return NextResponse.json({ member: updated });
 }
 
 // DELETE /api/team/[memberId] – remove member or cancel invite
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { memberId: string } }
+  { params }: { params: Promise<{ memberId: string }> }
 ) {
+  const resolvedParams = await params;
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown';
   const userClient = createClient();
   const { data: { user } } = await userClient.auth.getUser();
@@ -52,13 +54,13 @@ export async function DELETE(
 
   const { data: target } = await serviceClient
     .from('merchant_members').select('id, role, invited_email')
-    .eq('id', params.memberId).eq('merchant_id', ctx.merchantId).single();
+    .eq('id', resolvedParams.memberId).eq('merchant_id', ctx.merchantId).single();
   if (!target) return NextResponse.json({ error: 'Member not found.' }, { status: 404 });
   if ((target as any).role === 'owner') return NextResponse.json({ error: 'The owner cannot be removed.' }, { status: 403 });
 
-  const { error } = await serviceClient.from('merchant_members').delete().eq('id', params.memberId);
+  const { error } = await serviceClient.from('merchant_members').delete().eq('id', resolvedParams.memberId);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  logAction({ ctx, action: 'remove_team_member', resourceType: 'merchant_member', resourceId: params.memberId, metadata: { email: (target as any).invited_email, role: (target as any).role }, ip });
+  logAction({ ctx, action: 'remove_team_member', resourceType: 'merchant_member', resourceId: resolvedParams.memberId, metadata: { email: (target as any).invited_email, role: (target as any).role }, ip });
   return NextResponse.json({ success: true });
 }

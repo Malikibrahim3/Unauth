@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { formatDate, formatCurrency } from '@/lib/utils/format';
 import { scoreToGrade } from '@/lib/utils/riskStyles';
 import { signalLabel } from '@/lib/copy/signalLabels';
-import { ConfidenceBadge, riskLevelToNewGrade, scoreToGrade as scoreToNewGrade } from '@/components/ui/ConfidenceBadge';
+import { ConfidenceBadge, riskLevelToNewGrade } from '@/components/ui/ConfidenceBadge';
 import DismissTransactionButton from '@/components/audit/DismissTransactionButton';
 import FeedbackButtons from '@/components/audit/FeedbackButtons';
 import DataQualityBanner from '@/components/audit/DataQualityBanner';
@@ -22,8 +22,8 @@ type RunRow = Database['public']['Tables']['processing_jobs']['Row'];
 type TxRow = Database['public']['Tables']['audit_transactions']['Row'];
 
 interface RunPageProps {
-  params: { runId: string };
-  searchParams: { page?: string; txPage?: string; customerPage?: string; txPageSize?: string; customerPageSize?: string; tab?: string; customerEmail?: string };
+  params: Promise<{ runId: string }>;
+  searchParams: Promise<{ page?: string; txPage?: string; customerPage?: string; txPageSize?: string; customerPageSize?: string; tab?: string; customerEmail?: string }>;
 }
 
 const TX_PAGE_SIZE = 50;
@@ -36,23 +36,25 @@ function normalizePageSize(value: string | undefined, fallback: number): number 
 }
 
 export default async function AuditRunPage({ params, searchParams }: RunPageProps) {
+  const resolvedParams = await params;
+  const resolvedSearchParams = await searchParams;
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  const txPage = Math.max(1, parseInt(searchParams.txPage ?? searchParams.page ?? '1', 10));
-  const txPageSize = normalizePageSize(searchParams.txPageSize, TX_PAGE_SIZE);
+  const txPage = Math.max(1, parseInt(resolvedSearchParams.txPage ?? resolvedSearchParams.page ?? '1', 10));
+  const txPageSize = normalizePageSize(resolvedSearchParams.txPageSize, TX_PAGE_SIZE);
   const txOffset = (txPage - 1) * txPageSize;
-  const customerPage = Math.max(1, parseInt(searchParams.customerPage ?? '1', 10));
-  const customerPageSize = normalizePageSize(searchParams.customerPageSize, CUSTOMER_PAGE_SIZE);
+  const customerPage = Math.max(1, parseInt(resolvedSearchParams.customerPage ?? '1', 10));
+  const customerPageSize = normalizePageSize(resolvedSearchParams.customerPageSize, CUSTOMER_PAGE_SIZE);
   const customerOffset = (customerPage - 1) * customerPageSize;
-  const defaultTab = searchParams.tab ?? 'overview';
-  const selectedCustomerEmail = searchParams.customerEmail ?? null;
+  const defaultTab = resolvedSearchParams.tab ?? 'overview';
+  const selectedCustomerEmail = resolvedSearchParams.customerEmail ?? null;
 
   const { data: run } = await supabase
     .from('processing_jobs')
     .select('*')
-    .eq('id', params.runId)
+    .eq('id', resolvedParams.runId)
     .single();
 
   if (!run) notFound();
@@ -63,11 +65,11 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
   // ── Summary fetch: lightweight columns only, used for counts + metrics ──────
   // Intentionally does NOT filter by risk_level — uses identity_confidence_grade
   // NOTE: use params.runId (the route param / job_id) — NOT runData.id (the PK of processing_jobs)
-  const jobId = params.runId;
+  const jobId = resolvedParams.runId;
 
   // Debug log — confirm which IDs we have
   console.log('[AuditPage] route runId=%s | runData.id=%s | runData.job_id=%s | querying job_id=%s',
-    params.runId,
+    resolvedParams.runId,
     (runData as any).id,
     (runData as any).job_id ?? '(none)',
     jobId,
@@ -120,7 +122,7 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
 
   console.log(
     '[AuditPage] runId=%s rows_fetched=%d graded=%d distinct_clusters=%d largest_clusters=%j top_signals=%j grade_counts=%j',
-    params.runId,
+    resolvedParams.runId,
     summaryRows.length,
     gradedRows,
     distinctClusters.size,
@@ -212,25 +214,14 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
         title="Audit Results"
         subtitle={`${runData.filename} · ${formatDate(runData.created_at)}`}
         breadcrumbs={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'Audit result' }]}
-        actions={<>
-          <a
-            href={`/api/audit/${runData.id}/export`}
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-md transition-colors border"
-            style={{ color: 'var(--text)', borderColor: 'var(--border)' }}
-            download
-          >
-            <Download className="h-4 w-4" />
-            Export report
-          </a>
-          {statusBadge}
-        </>}
+        actions={statusBadge}
       />
 
       {/* ── Action bar ───────────────────────────────────────────────── */}
       {hasFlags && (
         <div className="flex items-center gap-3 flex-wrap rounded-lg px-4 py-3 border" style={{ background: 'var(--accent-soft)', borderColor: 'var(--border)' }}>
           <p className="text-body-sm flex-1" style={{ color: 'var(--text-muted)' }}>
-            <strong style={{ color: 'var(--text)' }}>{summary.flaggedTransactions.toLocaleString()} orders</strong> flagged for review across <strong style={{ color: 'var(--text)' }}>{allCustomers.filter(([, s]) => s.maxScore >= 55).length}</strong> customers.
+            <strong style={{ color: 'var(--text)' }}>{summary.flaggedTransactions.toLocaleString()} orders</strong> with match signals across <strong style={{ color: 'var(--text)' }}>{allCustomers.filter(([, s]) => s.maxScore >= 55).length}</strong> customers.
           </p>
           <div className="flex items-center gap-2 flex-wrap">
             <Link
@@ -239,7 +230,7 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
               style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}
             >
               <Users className="h-4 w-4" />
-              Review risky customers
+              Review matched profiles
             </Link>
             <a
               href={`/api/audit/${jobId}/export`}
@@ -298,10 +289,16 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
             <div className="space-y-6">
               {/* Grade cards */}
               <div className="grid grid-cols-4 gap-3">
-                {(['weak', 'possible', 'probable', 'definite'] as const).map((grade) => (
+                {([
+                  { grade: 'weak',     tileLabel: 'Low signals' },
+                  { grade: 'possible', tileLabel: 'Possible signals found' },
+                  { grade: 'probable', tileLabel: 'Probable connections' },
+                  { grade: 'definite', tileLabel: 'Linked accounts' },
+                ] as const).map(({ grade, tileLabel }) => (
                   <div key={grade} className="rounded-lg px-4 py-3 border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
                     <div className="mb-1"><ConfidenceBadge grade={({'weak':'D','possible':'C','probable':'B','definite':'A'} as const)[grade]} size="sm" /></div>
                     <div className="text-heading-sm font-mono" style={{ color: 'var(--text)' }}>{gradeCounts[grade].toLocaleString()}</div>
+                    <div className="text-caption mt-0.5" style={{ color: 'var(--text-muted)' }}>{tileLabel}</div>
                   </div>
                 ))}
               </div>
@@ -310,8 +307,8 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
 
               {!hasFlags && (
                 <div className="rounded-xl px-6 py-8 text-center border space-y-3" style={{ background: 'var(--success-bg)', borderColor: 'var(--success-bd)' }}>
-                  <p className="text-body-sm font-semibold" style={{ color: 'var(--success)' }}>Good news — no customers in this upload showed suspicious patterns.</p>
-                  <p className="text-caption" style={{ color: 'var(--success)' }}>Upload a longer date range to surface slower repeat abusers.</p>
+                  <p className="text-body-sm font-semibold" style={{ color: 'var(--success)' }}>No identity match signals were found in this upload.</p>
+                  <p className="text-caption" style={{ color: 'var(--success)' }}>Upload a longer date range to surface slower repeat claim patterns.</p>
                   <div className="flex items-center justify-center gap-3 pt-1 flex-wrap">
                     <Link href="/upload" className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-md transition-colors" style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}>
                       Upload a longer range
@@ -325,7 +322,7 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
 
               {hasFlags && allCustomers.length > 0 && (
                 <div>
-                  <h2 className="text-body-sm font-semibold mb-3" style={{ color: 'var(--text)' }}>Top flagged customers</h2>
+                  <h2 className="text-body-sm font-semibold mb-3" style={{ color: 'var(--text)' }}>Top matched profiles</h2>
                   <div className="rounded-lg overflow-hidden border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
                     <table className="w-full text-sm">
                       <thead>
@@ -347,7 +344,7 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
                               <td className="px-4 py-2.5 text-right font-mono font-semibold" style={{ color: 'var(--text)' }}>{Math.round(stats.maxScore)}</td>
                               <td className="px-4 py-2.5 text-right">
                                 <Link
-                                  href={`/audit/${jobId}?tab=customers&customerPage=${customerPage}&txPage=${txPage}&customerPageSize=${customerPageSize}&txPageSize=${txPageSize}`}
+                                  href={`/audit/${jobId}?tab=customers&customerEmail=${encodeURIComponent(email)}&customerPage=${customerPage}&txPage=${txPage}&customerPageSize=${customerPageSize}&txPageSize=${txPageSize}`}
                                   className="inline-flex items-center gap-0.5 text-xs font-semibold hover:underline"
                                   style={{ color: 'var(--text)' }}
                                 >
@@ -373,7 +370,7 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
                     <span>
                       Showing {totalCustomers === 0 ? 0 : customerOffset + 1}–{Math.min(customerOffset + customerPageSize, totalCustomers)} of {totalCustomers.toLocaleString()} customers
                     </span>
-                    <PageSizeSelect pathname={`/audit/${jobId}`} searchParams={{ ...searchParams, txPage: String(txPage), customerPage: String(customerPage), txPageSize: String(txPageSize), customerPageSize: String(customerPageSize) }} pageSize={customerPageSize} label="Customers per page" />
+                    <PageSizeSelect pathname={`/audit/${jobId}`} searchParams={{ ...resolvedSearchParams, txPage: String(txPage), customerPage: String(customerPage), txPageSize: String(txPageSize), customerPageSize: String(customerPageSize) }} pageSize={customerPageSize} label="Customers per page" />
                   </div>
                   <AuditCustomersTableClient
                     runId={runData.id}
@@ -433,7 +430,7 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
                     )}
                   </div>
                   <div className="mb-3 flex items-center justify-end">
-                    <PageSizeSelect pathname={`/audit/${jobId}`} searchParams={{ ...searchParams, txPage: String(txPage), customerPage: String(customerPage), txPageSize: String(txPageSize), customerPageSize: String(customerPageSize) }} pageSize={txPageSize} label="Transactions per page" />
+                    <PageSizeSelect pathname={`/audit/${jobId}`} searchParams={{ ...resolvedSearchParams, txPage: String(txPage), customerPage: String(customerPage), txPageSize: String(txPageSize), customerPageSize: String(customerPageSize) }} pageSize={txPageSize} label="Transactions per page" />
                   </div>
                   <div className="rounded-lg overflow-hidden border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
                     <table className="w-full text-sm">
@@ -514,8 +511,8 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
                   {[
                     { label: 'Total rows', value: runData.total_rows.toLocaleString() },
                     { label: 'Processed', value: `${runData.processed_rows.toLocaleString()} (${runData.total_rows > 0 ? ((runData.processed_rows / runData.total_rows) * 100).toFixed(1) : 0}%)` },
-                    { label: 'Graded rows', value: summary.flaggedTransactions.toLocaleString() },
-                    { label: 'Value at risk', value: formatCurrency(valueAtRisk) },
+                    { label: 'Matched rows', value: summary.flaggedTransactions.toLocaleString() },
+                    { label: 'Order value under review', value: formatCurrency(valueAtRisk) },
                     { label: 'Estimated exposure', value: formatCurrency(estimatedExposure) },
                   ].map(({ label, value }) => (
                     <div key={label}>

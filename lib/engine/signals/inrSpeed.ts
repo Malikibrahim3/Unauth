@@ -2,7 +2,7 @@ import type { NormalisedOrder, Signal, SignalResult, ScoringContext } from '../t
 
 const SUSPICIOUS_HOURS = 48;
 
-export const inrSpeed: Signal = (order: NormalisedOrder, _context: ScoringContext): SignalResult => {
+export const inrSpeed: Signal = (order: NormalisedOrder, _context?: ScoringContext): SignalResult => {
   if (order.refundReason !== 'inr' || !order.refundDate) {
     return {
       name: 'inrSpeed',

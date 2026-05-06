@@ -8,6 +8,9 @@ export interface AuditRow {
   identity_confidence_grade: string | null;
   order_value: number | null;
   cluster_id: string | null;
+  /** Two-tier model: set only for definite (confirmed) rows. */
+  confirmed_identity_id?: string | null;
+  match_status?: string | null;
 }
 
 export interface GradeCounts {
@@ -51,7 +54,11 @@ export function computeAuditSummary(rows: AuditRow[]): AuditSummary {
     if (g === 'probable' || g === 'definite') {
       estimatedExposure += row.order_value ?? 0;
     }
-    if (row.cluster_id) clusters.add(row.cluster_id);
+    // Count unique cluster_ids from ALL graded rows (definite, probable, possible, weak).
+    // This represents all identity clusters surfaced for review — not just confirmed ones.
+    // Use confirmed_identity_id when available (two-tier model), otherwise fall back to cluster_id.
+    const clusterId = row.confirmed_identity_id ?? row.cluster_id;
+    if (clusterId) clusters.add(clusterId);
   }
 
   const flaggedTransactions =

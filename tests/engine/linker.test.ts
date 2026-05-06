@@ -114,10 +114,22 @@ function mkOrder(id: string, overrides: Partial<LinkerOrderInput> = {}): LinkerO
 }
 
 describe('linkIdentities', () => {
-  test('same card (BIN+last4) with different emails → linked', () => {
+  test('card BIN+last4 alone (different emails) → NOT linked, not a candidate (conservative model)', () => {
+    // card weight = 12 in linker, below POSSIBLE_THRESHOLD (15).
+    // BIN+last4 collisions are real; card alone cannot anchor a link.
     const result = linkIdentities([
       mkOrder('A', { email: 'alice@example.com', card_last4: '4242', card_bin: '411111' }),
       mkOrder('B', { email: 'bob@example.com',   card_last4: '4242', card_bin: '411111' }),
+    ]);
+    expect(result.clusters).toHaveLength(0);
+    expect(result.candidatePairs).toHaveLength(0); // 12 < POSSIBLE_THRESHOLD 15
+  });
+
+  test('same card (BIN+last4) + same phone with different emails → linked', () => {
+    // card(12) + phone(30) = 42 ≥ LINK_THRESHOLD(30) → linked
+    const result = linkIdentities([
+      mkOrder('A', { email: 'alice@example.com', card_last4: '4242', card_bin: '411111', phone: '+447700900123' }),
+      mkOrder('B', { email: 'bob@example.com',   card_last4: '4242', card_bin: '411111', phone: '+447700900123' }),
     ]);
     expect(result.clusters).toHaveLength(1);
     expect(result.clusters[0].order_ids).toEqual(['A', 'B']);
@@ -179,12 +191,12 @@ describe('linkIdentities', () => {
   });
 
   test('name differences are ignored entirely (no signal emitted)', () => {
-    // Two orders with DIFFERENT names but SAME card should still link on card.
-    // Conversely, two orders with IDENTICAL names and no other shared id should
-    // NOT link.
+    // Two orders with DIFFERENT names but SAME card+phone should still link.
+    // Name is not a field in LinkerOrderInput at all — it cannot contribute.
+    // card(12)+phone(30) = 42 ≥ LINK_THRESHOLD(30) → linked.
     const linked = linkIdentities([
-      mkOrder('A', { email: 'a@x.com', card_last4: '4242', card_bin: '411111' }),
-      mkOrder('B', { email: 'b@y.com', card_last4: '4242', card_bin: '411111' }),
+      mkOrder('A', { email: 'a@x.com', card_last4: '4242', card_bin: '411111', phone: '+447700900123' }),
+      mkOrder('B', { email: 'b@y.com', card_last4: '4242', card_bin: '411111', phone: '+447700900123' }),
     ]);
     expect(linked.clusters).toHaveLength(1);
 
@@ -209,23 +221,29 @@ describe('linkIdentities', () => {
   });
 
   test('union-find: transitive clustering A–B–C', () => {
+    // A and B share card+phone (12+30=42 ≥ 30 → linked)
+    // B and C share phone (30 ≥ 30 → linked)
+    // Transitively: {A, B, C} in one cluster; D is isolated
     const result = linkIdentities([
-      mkOrder('A', { card_last4: '4242', card_bin: '411111' }),          // linked to B via card
+      mkOrder('A', { card_last4: '4242', card_bin: '411111', phone: '+447700900123' }),
       mkOrder('B', { card_last4: '4242', card_bin: '411111', phone: '+447700900123' }),
       mkOrder('C', { phone: '+44 7700 900123' }),                        // linked to B via phone
       mkOrder('D', { card_last4: '9999', card_bin: '555555' }),          // isolated
     ]);
     expect(result.clusters).toHaveLength(1);
-    expect(result.clusters[0].order_ids).toEqual(['A', 'B', 'C']);
+    expect(result.clusters[0].order_ids).toEqual(expect.arrayContaining(['A', 'B', 'C']));
+    expect(result.clusters[0].order_ids).toHaveLength(3);
   });
 
   test('deterministic cluster_id: identical input → identical id', () => {
+    // Use phone (weight 30 ≥ LINK_THRESHOLD 30) so the cluster forms.
     const orders: LinkerOrderInput[] = [
-      mkOrder('A', { card_last4: '4242', card_bin: '411111' }),
-      mkOrder('B', { card_last4: '4242', card_bin: '411111' }),
+      mkOrder('A', { phone: '+447700900123' }),
+      mkOrder('B', { phone: '+447700900123' }),
     ];
     const r1 = linkIdentities(orders);
     const r2 = linkIdentities([...orders].reverse()); // different input order
+    expect(r1.clusters).toHaveLength(1);
     expect(r1.clusters[0].cluster_id).toBe(r2.clusters[0].cluster_id);
   });
 

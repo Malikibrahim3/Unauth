@@ -19,14 +19,6 @@ function getDisposableDomains(): Set<string> {
   return disposableDomains;
 }
 
-function extractEmailParts(emailHash: string): null {
-  return null;
-}
-
-function getRawEmailFromOrders(emailHash: string, allOrders: NormalisedOrder[]): string | null {
-  return null;
-}
-
 export const emailPattern: Signal = (order: NormalisedOrder, context: ScoringContext): SignalResult => {
   const allOrders = context.allOrders;
 

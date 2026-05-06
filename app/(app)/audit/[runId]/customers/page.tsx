@@ -11,9 +11,10 @@
 import { redirect } from 'next/navigation';
 
 interface PageProps {
-  params: { runId: string };
+  params: Promise<{ runId: string }>;
 }
 
-export default function CustomersPageRedirect({ params }: PageProps) {
-  redirect(`/audit/${params.runId}?tab=customers`);
+export default async function CustomersPageRedirect({ params }: PageProps) {
+  const resolvedParams = await params;
+  redirect(`/audit/${resolvedParams.runId}?tab=customers`);
 }

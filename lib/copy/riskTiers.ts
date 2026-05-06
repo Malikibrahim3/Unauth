@@ -9,22 +9,22 @@ export interface RiskTierCopy {
 export const RISK_TIER_COPY: Record<RiskTier, RiskTierCopy> = {
   low: {
     label: 'Low',
-    description: 'Normal customer behaviour.',
+    description: 'No strong identity match signals.',
     default: 'No action needed.',
   },
   medium: {
     label: 'Medium',
-    description: 'Worth watching — something looks off.',
-    default: 'Keep on watchlist for their next order.',
+    description: 'Some identity signals present — worth monitoring.',
+    default: 'Keep on review list for their next order.',
   },
   high: {
     label: 'High',
-    description: 'Likely review priority.',
+    description: 'Probable identity match — review recommended.',
     default: 'Review this refund claim manually before approving.',
   },
   critical: {
     label: 'Critical',
-    description: 'Act now — strong identity match detected.',
-    default: 'Hold any pending refund and contact the customer.',
+    description: 'Strong identity match detected — review required.',
+    default: 'Hold any pending refund and request additional verification.',
   },
 } as const;

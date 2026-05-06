@@ -2,11 +2,12 @@ import UploadClient from '@/components/upload/UploadClient';
 import { PageHeader } from '@/components/common/PageHeader';
 
 interface UploadPageProps {
-  searchParams: { welcome?: string };
+  searchParams: Promise<{ welcome?: string }>;
 }
 
-export default function UploadPage({ searchParams }: UploadPageProps) {
-  const isWelcome = searchParams.welcome === '1';
+export default async function UploadPage({ searchParams }: UploadPageProps) {
+  const resolvedSearchParams = await searchParams;
+  const isWelcome = resolvedSearchParams.welcome === '1';
   return (
     <div className="p-8 max-w-3xl">
       {isWelcome && (
@@ -20,7 +21,7 @@ export default function UploadPage({ searchParams }: UploadPageProps) {
         </div>
       )}
       <div className="mb-[var(--space-5)]">
-        <PageHeader title="New Audit" subtitle="Upload a CSV export of your orders to detect suspicious refund patterns." />
+        <PageHeader title="New Audit" subtitle="Upload a CSV export of your orders to detect identity matches and repeated claim patterns." />
       </div>
       <UploadClient />
     </div>

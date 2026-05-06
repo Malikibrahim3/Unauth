@@ -1,0 +1,2241 @@
+{
+  "grouped": {
+    "csv-export": 77,
+    "broad-select": 48,
+    "service-role": 15
+  },
+  "findings": [
+    {
+      "check": "csv-export",
+      "file": "app/(app)/audit/[runId]/page.tsx",
+      "line": 239,
+      "text": "download",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "broad-select",
+      "file": "app/(app)/audit/[runId]/page.tsx",
+      "line": 56,
+      "text": ".select('*')",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "broad-select",
+      "file": "app/(app)/audit/[runId]/page.tsx",
+      "line": 144,
+      "text": ".select('*', { count: 'exact' })",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "app/(app)/chargebacks/[id]/page.tsx",
+      "line": 91,
+      "text": "download",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "broad-select",
+      "file": "app/(app)/chargebacks/[id]/page.tsx",
+      "line": 21,
+      "text": ".select('*')",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "app/(app)/chargebacks/page.tsx",
+      "line": 148,
+      "text": "download",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "service-role",
+      "file": "app/(app)/customers/page.tsx",
+      "line": 1,
+      "text": "import { createClient, createServiceClient } from '@/lib/supabase/server';",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "service-role",
+      "file": "app/(app)/customers/page.tsx",
+      "line": 85,
+      "text": "const svc = createServiceClient();",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "broad-select",
+      "file": "app/(app)/dashboard/page.tsx",
+      "line": 41,
+      "text": ".select('*')",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "broad-select",
+      "file": "app/(app)/history/page.tsx",
+      "line": 30,
+      "text": ".select('*', { count: 'exact' })",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "broad-select",
+      "file": "app/(app)/layout.tsx",
+      "line": 27,
+      "text": "supabase.from('processing_jobs').select('*', { count: 'exact', head: true }).eq('is_demo', false),",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "broad-select",
+      "file": "app/(app)/watchlist/page.tsx",
+      "line": 45,
+      "text": ".select('*', { count: 'exact' })",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "broad-select",
+      "file": "app/(internal)/network-metrics/page.tsx",
+      "line": 50,
+      "text": ".select('*')",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "broad-select",
+      "file": "app/api/audit/[runId]/customer/route.ts",
+      "line": 61,
+      "text": ".select('*')",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "broad-select",
+      "file": "app/api/audit/[runId]/customer/route.ts",
+      "line": 90,
+      "text": ".select('*')",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "app/api/audit/[runId]/export/route.ts",
+      "line": 147,
+      "text": "'Content-Type': 'text/csv; charset=utf-8',",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "app/api/audit/[runId]/export/route.ts",
+      "line": 148,
+      "text": "'Content-Disposition': `attachment; filename=\"${fileName}\"`,",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "broad-select",
+      "file": "app/api/audit/[runId]/export/route.ts",
+      "line": 73,
+      "text": ".select('*', { count: 'exact', head: true })",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "broad-select",
+      "file": "app/api/audit/[runId]/progress/route.ts",
+      "line": 46,
+      "text": ".select('*', { count: 'exact', head: true })",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "app/api/audit/route.ts",
+      "line": 134,
+      "text": "log(`downloading from storage path=${filePath}`);",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "app/api/audit/route.ts",
+      "line": 135,
+      "text": "const { data: fileData, error: downloadError } = await serviceClient.storage",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "app/api/audit/route.ts",
+      "line": 137,
+      "text": ".download(filePath);",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "app/api/audit/route.ts",
+      "line": 139,
+      "text": "if (downloadError || !fileData) {",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "app/api/audit/route.ts",
+      "line": 140,
+      "text": "log(`storage download FAILED: ${downloadError?.message ?? 'no data'}`);",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "app/api/audit/route.ts",
+      "line": 142,
+      "text": "{ error: downloadError?.message ?? 'Failed to download file from storage' },",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "app/api/audit/route.ts",
+      "line": 146,
+      "text": "log(`download ok size=${fileData.size}`);",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "app/api/audit/route.ts",
+      "line": 149,
+      "text": "const file = new File([fileData], fileName, { type: 'text/csv' });",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "broad-select",
+      "file": "app/api/audit-trail/route.ts",
+      "line": 45,
+      "text": ".select('*', { count: 'exact' })",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "broad-select",
+      "file": "app/api/customers/[id]/notes/route.ts",
+      "line": 19,
+      "text": ".select('*')",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "broad-select",
+      "file": "app/api/customers/[id]/route.ts",
+      "line": 122,
+      "text": ".select('*')",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/demo/route.ts",
+      "line": 2,
+      "text": "import { createClient, createServiceClient } from '@/lib/supabase/server';",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/demo/route.ts",
+      "line": 243,
+      "text": "const serviceClient = createServiceClient();",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/demo/runs/route.ts",
+      "line": 17,
+      "text": "import { createClient as createServiceClient } from '@supabase/supabase-js';",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/demo/runs/route.ts",
+      "line": 36,
+      "text": "const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/demo/runs/route.ts",
+      "line": 41,
+      "text": "const supabase = createServiceClient(SUPABASE_URL, SERVICE_ROLE_KEY, {",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "app/api/evidence/[id]/pdf/route.ts",
+      "line": 48,
+      "text": ".download(packageRow.pdf_storage_path)",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "app/api/evidence/[id]/pdf/route.ts",
+      "line": 51,
+      "text": "console.error('[evidence/pdf] Storage download failed:', dlError)",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "app/api/evidence/[id]/pdf/route.ts",
+      "line": 61,
+      "text": "'Content-Disposition': `attachment; filename=\"${packageRow.reference_number}.pdf\"`,",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "app/api/inbox/export/route.ts",
+      "line": 50,
+      "text": "'Content-Type': 'text/csv; charset=utf-8',",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "app/api/inbox/export/route.ts",
+      "line": 51,
+      "text": "'Content-Disposition': `attachment; filename=\"review-queue-${new Date().toISOString().slice(0, 10)}.csv\"`,",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "app/api/inbox/export/route.ts",
+      "line": 86,
+      "text": "'Content-Type': 'text/csv; charset=utf-8',",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "app/api/inbox/export/route.ts",
+      "line": 87,
+      "text": "'Content-Disposition': `attachment; filename=\"${filename}\"`,",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/process-csv-chunk/route.ts",
+      "line": 15,
+      "text": "import { createServiceClient } from '@/lib/supabase/server';",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/process-csv-chunk/route.ts",
+      "line": 138,
+      "text": "const sc = createServiceClient();",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "app/api/process-csv-chunk/route.ts",
+      "line": 19,
+      "text": "downloadChunkRows,",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "app/api/process-csv-chunk/route.ts",
+      "line": 156,
+      "text": "const rows = await downloadChunkRows(sc, jobId, chunkIndex);",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "app/api/process-csv-job/route.ts",
+      "line": 171,
+      "text": "routeLog('Claimed job; downloading file from storage');",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "app/api/process-csv-job/route.ts",
+      "line": 173,
+      "text": "const { data: fileData, error: downloadError } = await serviceClient.storage",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "app/api/process-csv-job/route.ts",
+      "line": 175,
+      "text": ".download(queueItem.storage_path);",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "app/api/process-csv-job/route.ts",
+      "line": 177,
+      "text": "if (downloadError || !fileData) {",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "app/api/process-csv-job/route.ts",
+      "line": 178,
+      "text": "throw new Error(`Failed to download file: ${downloadError?.message ?? 'unknown'}`);",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "app/api/process-csv-job/route.ts",
+      "line": 186,
+      "text": "const file = new File([fileData], 'uploaded.csv', { type: 'text/csv' });",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "broad-select",
+      "file": "app/api/process-csv-job/route.ts",
+      "line": 150,
+      "text": ".select('*')",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "broad-select",
+      "file": "app/api/team/route.ts",
+      "line": 19,
+      "text": ".from('merchant_members').select('*').eq('merchant_id', ctx.merchantId)",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "broad-select",
+      "file": "app/api/watchlist/route.ts",
+      "line": 18,
+      "text": ".select('*')",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "components/EmptyDashboardHero.tsx",
+      "line": 61,
+      "text": "'A downloadable PDF evidence package for any disputed order',",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "components/upload/UploadClient.tsx",
+      "line": 179,
+      "text": ".upload(filePath, file, { contentType: 'text/csv' });",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "components/upload/UploadClient.tsx",
+      "line": 271,
+      "text": "function downloadTemplate() {",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "components/upload/UploadClient.tsx",
+      "line": 273,
+      "text": "const blob = new Blob([csv], { type: 'text/csv' });",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "components/upload/UploadClient.tsx",
+      "line": 277,
+      "text": "a.download = 'unauth-template.csv';",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "components/upload/UploadClient.tsx",
+      "line": 1113,
+      "text": "onClick={downloadTemplate}",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "broad-select",
+      "file": "lib/analysis/entityResolution.ts",
+      "line": 152,
+      "text": ".select('*')",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "broad-select",
+      "file": "lib/analysis/entityResolution.ts",
+      "line": 165,
+      "text": ".select('*')",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "broad-select",
+      "file": "lib/analysis/entityResolution.ts",
+      "line": 178,
+      "text": ".select('*')",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "broad-select",
+      "file": "lib/analysis/entityResolution.ts",
+      "line": 192,
+      "text": ".select('*')",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "broad-select",
+      "file": "lib/analysis/entityResolution.ts",
+      "line": 258,
+      "text": ".select('*')",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "broad-select",
+      "file": "lib/analysis/entityResolution.ts",
+      "line": 347,
+      "text": ".select('*')",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "broad-select",
+      "file": "lib/engine/fastContext.ts",
+      "line": 329,
+      "text": ".select('*')",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "service-role",
+      "file": "lib/permissions/audit.ts",
+      "line": 11,
+      "text": "import { createServiceClient } from '@/lib/supabase/server';",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "service-role",
+      "file": "lib/permissions/audit.ts",
+      "line": 57,
+      "text": "const svc = createServiceClient();",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "lib/processing/chunkedDispatch.ts",
+      "line": 16,
+      "text": "// Path uses .csv extension and we declare text/csv on upload because the",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "lib/processing/chunkedDispatch.ts",
+      "line": 17,
+      "text": "// bucket's MIME allow-list only permits text/csv. The body is still JSON —",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "lib/processing/chunkedDispatch.ts",
+      "line": 22,
+      "text": "const CHUNK_CONTENT_TYPE = 'text/csv';",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "lib/processing/chunkedDispatch.ts",
+      "line": 48,
+      "text": "export async function downloadChunkRows(",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "lib/processing/chunkedDispatch.ts",
+      "line": 55,
+      "text": ".download(chunkPath(jobId, index));",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "lib/processing/chunkedDispatch.ts",
+      "line": 56,
+      "text": "if (error || !data) throw new Error(`downloadChunkRows ${index} failed: ${error?.message ?? 'no data'}`);",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "service-role",
+      "file": "lib/processing/internalAuth.ts",
+      "line": 7,
+      "text": "* server-only SUPABASE_SERVICE_ROLE_KEY is a safe shared secret.",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "service-role",
+      "file": "lib/processing/internalAuth.ts",
+      "line": 15,
+      "text": "const k = process.env.SUPABASE_SERVICE_ROLE_KEY;",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "service-role",
+      "file": "lib/processing/internalAuth.ts",
+      "line": 16,
+      "text": "if (!k) throw new Error('SUPABASE_SERVICE_ROLE_KEY not set — cannot sign internal chunk requests');",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "broad-select",
+      "file": "lib/supabase/merchantHelpers.ts",
+      "line": 561,
+      "text": "*   serviceClient.from('audit_transactions').select('*')",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "service-role",
+      "file": "lib/utils/env.ts",
+      "line": 6,
+      "text": "SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "scripts/bench-upload-pipeline.ts",
+      "line": 93,
+      "text": "const file = new File([csv], 'bench.csv', { type: 'text/csv' });",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "scripts/deployment-readiness/audit-security.mjs",
+      "line": 25,
+      "text": "{ id: 'csv-export', pattern: /Content-Disposition|text\\/csv|download/g },",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "broad-select",
+      "file": "scripts/diagnose-identity.ts",
+      "line": 188,
+      "text": ".select('*', { count: 'exact', head: true })",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "broad-select",
+      "file": "scripts/diagnose-identity.ts",
+      "line": 200,
+      "text": ".select('*', { count: 'exact', head: true });",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "scripts/generate-ux-audit-report.mjs",
+      "line": 94,
+      "text": "Explanation: Some controls are filled buttons, some bordered buttons, some text links with arrows, some raw anchors with download glyphs, and some icon buttons with SVGs. The sidebar has a primary nav item that looks lik",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "scripts/generate-ux-audit-report.mjs",
+      "line": 152,
+      "text": "2. Upload idle: merchant sees export guidance, dropzone, choose file, and template download.",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "scripts/generate-ux-audit-report.mjs",
+      "line": 200,
+      "text": "2. New Audit: upload CSV, template download, and platform export guide.",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "scripts/generate-ux-audit-report.mjs",
+      "line": 218,
+      "text": "- Modals: destructive confirmations, template/download confirmations only if needed.",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "broad-select",
+      "file": "scripts/inspect-db-with-creds.ts",
+      "line": 67,
+      "text": ".select('*', { count: 'exact', head: true });",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "broad-select",
+      "file": "scripts/inspect-db-with-creds.ts",
+      "line": 77,
+      "text": ".select('*', { count: 'exact', head: true });",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "broad-select",
+      "file": "scripts/inspect-db.ts",
+      "line": 62,
+      "text": ".select('*', { count: 'exact', head: true });",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "broad-select",
+      "file": "scripts/inspect-db.ts",
+      "line": 72,
+      "text": ".select('*', { count: 'exact', head: true });",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "broad-select",
+      "file": "scripts/migrate-customer-profiles.ts",
+      "line": 123,
+      "text": ".select('*')",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "scripts/setup-storage.ts",
+      "line": 14,
+      "text": "- Allowed MIME types: text/csv, application/vnd.ms-excel, text/plain",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "broad-select",
+      "file": "scripts/test-data/diagnoseAuditRls.ts",
+      "line": 20,
+      "text": "serviceClient.from('audit_transactions').select('*', { count: 'exact', head: true }).eq('job_id', jobId),",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "broad-select",
+      "file": "scripts/test-data/diagnoseAuditRls.ts",
+      "line": 21,
+      "text": "anonClient.from('audit_transactions').select('*', { count: 'exact', head: true }).eq('job_id', jobId),",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "broad-select",
+      "file": "scripts/test-fraud-intelligence.ts",
+      "line": 64,
+      "text": "const { count, error } = await supabase.from('fraud_entities').select('*', { count: 'exact', head: true });",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "broad-select",
+      "file": "scripts/test-fraud-intelligence.ts",
+      "line": 75,
+      "text": ".select('*')",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "scripts/test-performance.ts",
+      "line": 94,
+      "text": "return new File([text], `test-${rowCount}.csv`, { type: 'text/csv' });",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "scripts/test-performance.ts",
+      "line": 99,
+      "text": "return new File([buf], 'clean.csv', { type: 'text/csv' });",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "broad-select",
+      "file": "scripts/test-performance.ts",
+      "line": 170,
+      "text": ".select('*', { count: 'exact', head: true })",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "broad-select",
+      "file": "scripts/test-performance.ts",
+      "line": 197,
+      "text": ".select('*', { count: 'exact', head: true })",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "broad-select",
+      "file": "scripts/test-performance.ts",
+      "line": 222,
+      "text": ".select('*', { count: 'exact', head: true })",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "broad-select",
+      "file": "scripts/test-performance.ts",
+      "line": 229,
+      "text": ".select('*', { count: 'exact', head: true })",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "broad-select",
+      "file": "scripts/test-performance.ts",
+      "line": 244,
+      "text": ".select('*', { count: 'exact', head: true })",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "broad-select",
+      "file": "scripts/test-performance.ts",
+      "line": 315,
+      "text": ".select('*', { count: 'exact', head: true })",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "broad-select",
+      "file": "scripts/test-performance.ts",
+      "line": 348,
+      "text": ".select('*', { count: 'exact', head: true })",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "broad-select",
+      "file": "scripts/test-refund-pattern-intelligence.ts",
+      "line": 206,
+      "text": "const { data: ipCheck } = await supabase.from('fraud_entities').select('*').eq('entity_type', 'ip').eq('entity_value', '192.168.1.100').single();",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "broad-select",
+      "file": "scripts/test-refund-pattern-intelligence.ts",
+      "line": 207,
+      "text": "const { data: addrCheck } = await supabase.from('fraud_entities').select('*').eq('entity_type', 'address').eq('entity_value', normalizedAddress).single();",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "broad-select",
+      "file": "scripts/test-refund-pattern-intelligence.ts",
+      "line": 487,
+      "text": ".select('*')",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "broad-select",
+      "file": "tests/api/routeSecurity.test.ts",
+      "line": 1064,
+      "text": "// Dashboard must not have a bare audit_transactions select('*').",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "tests/evidence/pdf-content.spec.ts",
+      "line": 18,
+      "text": "const downloadDir = path.join(__dirname, '../reports/pdfs')",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "tests/evidence/pdf-content.spec.ts",
+      "line": 19,
+      "text": "fs.mkdirSync(downloadDir, { recursive: true })",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "tests/evidence/pdf-content.spec.ts",
+      "line": 20,
+      "text": "const downloadPromise = page.waitForEvent('download')",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "tests/evidence/pdf-content.spec.ts",
+      "line": 21,
+      "text": "await page.locator('[data-testid=\"download-pdf\"], a[download]').first().click()",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "tests/evidence/pdf-content.spec.ts",
+      "line": 22,
+      "text": "const download = await downloadPromise",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "tests/evidence/pdf-content.spec.ts",
+      "line": 23,
+      "text": "const pdfPath = path.join(downloadDir, download.suggestedFilename())",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "tests/evidence/pdf-content.spec.ts",
+      "line": 24,
+      "text": "await download.saveAs(pdfPath)",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "tests/identity/blindHarness.ts",
+      "line": 75,
+      "text": "const file = new File([buffer], fileName, { type: 'text/csv' }) as unknown as globalThis.File;",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "tests/processing/chunked-pipeline.test.ts",
+      "line": 7,
+      "text": "*   - downloadChunkRows / uploadChunkRows round-trip preserves row data",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "tests/processing/chunked-pipeline.test.ts",
+      "line": 16,
+      "text": "downloadChunkRows,",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "tests/processing/chunked-pipeline.test.ts",
+      "line": 60,
+      "text": "it('uploadChunkRows then downloadChunkRows preserves row payload', async () => {",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "tests/processing/chunked-pipeline.test.ts",
+      "line": 74,
+      "text": "async download(path: string) {",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "tests/processing/chunked-pipeline.test.ts",
+      "line": 92,
+      "text": "const recovered = await downloadChunkRows(supabase, 'job-1', 0);",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "tests/utils/test-fixtures.ts",
+      "line": 198,
+      "text": "export async function downloadFile(",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "tests/utils/test-fixtures.ts",
+      "line": 203,
+      "text": "const downloadPromise = page.waitForEvent('download')",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "tests/utils/test-fixtures.ts",
+      "line": 205,
+      "text": "const download = await downloadPromise",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "tests/utils/test-fixtures.ts",
+      "line": 206,
+      "text": "const savePath = path.join(saveDir, download.suggestedFilename())",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "tests/utils/test-fixtures.ts",
+      "line": 207,
+      "text": "await download.saveAs(savePath)",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "tests/ux-audit/ux-audit.spec.ts",
+      "line": 7,
+      "text": "const DOWNLOAD_DIR = path.join(REPORT_DIR, 'downloads')",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "tests/ux-audit/ux-audit.spec.ts",
+      "line": 325,
+      "text": "evidence.limitations.push(`[${pageName}] \"${label}\" button not visible – skipped download recording.`)",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "tests/ux-audit/ux-audit.spec.ts",
+      "line": 326,
+      "text": "evidence.clicks.push({ page: pageName, label, kind: 'download', before, after: page.url(), outcome: 'Button not visible – skipped.', patternRecommendation: 'inline' })",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "tests/ux-audit/ux-audit.spec.ts",
+      "line": 330,
+      "text": "const downloadPromise = page.waitForEvent('download', { timeout: 12_000 })",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "tests/ux-audit/ux-audit.spec.ts",
+      "line": 332,
+      "text": "const download = await downloadPromise",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "tests/ux-audit/ux-audit.spec.ts",
+      "line": 333,
+      "text": "const savePath = path.join(DOWNLOAD_DIR, download.suggestedFilename())",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "tests/ux-audit/ux-audit.spec.ts",
+      "line": 334,
+      "text": "await download.saveAs(savePath)",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "tests/ux-audit/ux-audit.spec.ts",
+      "line": 335,
+      "text": "evidence.clicks.push({ page: pageName, label, kind: 'download', before, after: page.url(), outcome: `Downloaded ${download.suggestedFilename()}`, patternRecommendation: 'inline' })",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "tests/ux-audit/ux-audit.spec.ts",
+      "line": 337,
+      "text": "evidence.limitations.push(`[${pageName}] \"${label}\" did not trigger a file download within 12 s: ${err instanceof Error ? err.message : String(err)}`)",
+      "suppressed": false,
+      "suppressionReason": ""
+    },
+    {
+      "check": "csv-export",
+      "file": "tests/ux-audit/ux-audit.spec.ts",
+      "line": 338,
+      "text": "evidence.clicks.push({ page: pageName, label, kind: 'download', before, after: page.url(), outcome: 'No download event fired – likely opens a modal or inline state instead.', patternRecommendation: 'inline' })",
+      "suppressed": false,
+      "suppressionReason": ""
+    }
+  ],
+  "suppressedGrouped": {
+    "service-role": 108,
+    "banned-language": 19,
+    "fixed-limit": 10,
+    "unsafe-html": 1
+  },
+  "suppressed": [
+    {
+      "check": "service-role",
+      "file": "app/(app)/audit/[runId]/transaction/[id]/page.tsx",
+      "line": 1,
+      "text": "import { createClient, createServiceClient } from '@/lib/supabase/server';",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/(app)/audit/[runId]/transaction/[id]/page.tsx",
+      "line": 26,
+      "text": "const svc = createServiceClient();",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/(app)/customers/[id]/page.tsx",
+      "line": 17,
+      "text": "import { createClient, createServiceClient } from '@/lib/supabase/server';",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/(app)/customers/[id]/page.tsx",
+      "line": 202,
+      "text": "const svc = createServiceClient();",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/(app)/dashboard/page.tsx",
+      "line": 1,
+      "text": "import { createClient, createServiceClient } from '@/lib/supabase/server';",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/(app)/dashboard/page.tsx",
+      "line": 19,
+      "text": "const serviceClient = createServiceClient();",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/(app)/inbox/page.tsx",
+      "line": 2,
+      "text": "import { createClient, createServiceClient } from '@/lib/supabase/server';",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/(app)/inbox/page.tsx",
+      "line": 44,
+      "text": "const serviceClient = createServiceClient();",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/audit/[runId]/customer/route.ts",
+      "line": 2,
+      "text": "import { createClient, createServiceClient } from '@/lib/supabase/server';",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/audit/[runId]/customer/route.ts",
+      "line": 45,
+      "text": "const serviceClient = createServiceClient();",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/audit/[runId]/export/route.ts",
+      "line": 2,
+      "text": "import { createClient, createServiceClient } from '@/lib/supabase/server';",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/audit/[runId]/export/route.ts",
+      "line": 40,
+      "text": "const serviceClient = createServiceClient();",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/audit/[runId]/progress/route.ts",
+      "line": 11,
+      "text": "import { createClient, createServiceClient } from '@/lib/supabase/server';",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/audit/[runId]/progress/route.ts",
+      "line": 24,
+      "text": "const serviceClient = createServiceClient();",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/audit/route.ts",
+      "line": 17,
+      "text": "import { createClient, createServiceClient } from '@/lib/supabase/server';",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/audit/route.ts",
+      "line": 51,
+      "text": "const serviceClient = createServiceClient();",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/audit/route.ts",
+      "line": 68,
+      "text": "serviceClient: ReturnType<typeof createServiceClient>,",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/audit-trail/route.ts",
+      "line": 16,
+      "text": "import { createClient, createServiceClient } from '@/lib/supabase/server';",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/audit-trail/route.ts",
+      "line": 27,
+      "text": "const service = createServiceClient();",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/customers/[id]/notes/route.ts",
+      "line": 1,
+      "text": "import { createClient, createServiceClient } from '@/lib/supabase/server';",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/customers/[id]/notes/route.ts",
+      "line": 13,
+      "text": "const serviceClient = createServiceClient();",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/customers/[id]/notes/route.ts",
+      "line": 37,
+      "text": "const serviceClient = createServiceClient();",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/customers/[id]/orders/route.ts",
+      "line": 7,
+      "text": "import { createClient, createServiceClient } from '@/lib/supabase/server'",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/customers/[id]/orders/route.ts",
+      "line": 25,
+      "text": "const service = createServiceClient()",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/customers/[id]/route.ts",
+      "line": 2,
+      "text": "import { createClient, createServiceClient } from '@/lib/supabase/server';",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/customers/[id]/route.ts",
+      "line": 105,
+      "text": "const serviceClient = createServiceClient();",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/customers/[id]/status/route.ts",
+      "line": 1,
+      "text": "import { createClient, createServiceClient } from '@/lib/supabase/server';",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/customers/[id]/status/route.ts",
+      "line": 21,
+      "text": "const serviceClient = createServiceClient();",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/customers/notes/[id]/route.ts",
+      "line": 1,
+      "text": "import { createClient, createServiceClient } from '@/lib/supabase/server';",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/customers/notes/[id]/route.ts",
+      "line": 15,
+      "text": "const serviceClient = createServiceClient();",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/customers/search/route.ts",
+      "line": 2,
+      "text": "import { createClient, createServiceClient } from '@/lib/supabase/server';",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/customers/search/route.ts",
+      "line": 32,
+      "text": "const serviceClient = createServiceClient();",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/evidence/[id]/pdf/route.ts",
+      "line": 7,
+      "text": "import { createClient, createServiceClient } from '@/lib/supabase/server'",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/evidence/[id]/pdf/route.ts",
+      "line": 23,
+      "text": "const serviceRole = createServiceClient()",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/evidence/ce3-check/route.ts",
+      "line": 6,
+      "text": "import { createClient, createServiceClient } from '@/lib/supabase/server'",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/evidence/ce3-check/route.ts",
+      "line": 22,
+      "text": "const service = createServiceClient()",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/evidence/route.ts",
+      "line": 7,
+      "text": "import { createClient, createServiceClient } from '@/lib/supabase/server'",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/evidence/route.ts",
+      "line": 28,
+      "text": "const serviceRole = createServiceClient()",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/fraud-feedback/route.ts",
+      "line": 2,
+      "text": "import { createClient, createServiceClient } from '@/lib/supabase/server';",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/fraud-feedback/route.ts",
+      "line": 63,
+      "text": "const supabase = createServiceClient();",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/inbox/bulk-dismiss/route.ts",
+      "line": 2,
+      "text": "import { createClient, createServiceClient } from '@/lib/supabase/server';",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/inbox/bulk-dismiss/route.ts",
+      "line": 18,
+      "text": "const serviceClient = createServiceClient();",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/inbox/export/route.ts",
+      "line": 2,
+      "text": "import { createClient, createServiceClient } from '@/lib/supabase/server';",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/inbox/export/route.ts",
+      "line": 27,
+      "text": "const serviceClient = createServiceClient();",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/jobs/[id]/hide/route.ts",
+      "line": 2,
+      "text": "import { createClient, createServiceClient } from '@/lib/supabase/server';",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/jobs/[id]/hide/route.ts",
+      "line": 17,
+      "text": "const serviceClient = createServiceClient();",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/lookup/quick-score/route.ts",
+      "line": 2,
+      "text": "import { createClient, createServiceClient } from '@/lib/supabase/server';",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/lookup/quick-score/route.ts",
+      "line": 42,
+      "text": "const service = createServiceClient();",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/lookup/remaining/route.ts",
+      "line": 2,
+      "text": "import { createClient, createServiceClient } from '@/lib/supabase/server';",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/lookup/remaining/route.ts",
+      "line": 13,
+      "text": "const service = createServiceClient();",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/lookup/route.ts",
+      "line": 2,
+      "text": "import { createClient, createServiceClient } from '@/lib/supabase/server';",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/lookup/route.ts",
+      "line": 44,
+      "text": "const service = createServiceClient();",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/process-csv-job/route.ts",
+      "line": 2,
+      "text": "import { createClient, createServiceClient } from '@/lib/supabase/server';",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/process-csv-job/route.ts",
+      "line": 127,
+      "text": "const serviceClient = createServiceClient();",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/settings/bulk-delete/route.ts",
+      "line": 1,
+      "text": "import { createClient, createServiceClient } from '@/lib/supabase/server';",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/settings/bulk-delete/route.ts",
+      "line": 27,
+      "text": "const serviceClient = createServiceClient();",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/team/[memberId]/permissions/route.ts",
+      "line": 8,
+      "text": "import { createClient, createServiceClient } from '@/lib/supabase/server';",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/team/[memberId]/permissions/route.ts",
+      "line": 24,
+      "text": "const service = createServiceClient();",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/team/[memberId]/permissions/route.ts",
+      "line": 61,
+      "text": "const service = createServiceClient();",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/team/[memberId]/permissions/route.ts",
+      "line": 126,
+      "text": "const service = createServiceClient();",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/team/[memberId]/route.ts",
+      "line": 1,
+      "text": "import { createClient, createServiceClient } from '@/lib/supabase/server';",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/team/[memberId]/route.ts",
+      "line": 17,
+      "text": "const serviceClient = createServiceClient();",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/team/[memberId]/route.ts",
+      "line": 51,
+      "text": "const serviceClient = createServiceClient();",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/team/route.ts",
+      "line": 1,
+      "text": "import { createClient, createAdminClient, createServiceClient } from '@/lib/supabase/server';",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/team/route.ts",
+      "line": 11,
+      "text": "const serviceClient = createServiceClient();",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/team/route.ts",
+      "line": 32,
+      "text": "const serviceClient = createServiceClient();",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/team/route.ts",
+      "line": 57,
+      "text": "const adminClient = createAdminClient();",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/transactions/[id]/dismiss/route.ts",
+      "line": 2,
+      "text": "import { createClient, createServiceClient } from '@/lib/supabase/server';",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/transactions/[id]/dismiss/route.ts",
+      "line": 17,
+      "text": "const serviceClient = createServiceClient();",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/watchlist/[id]/route.ts",
+      "line": 1,
+      "text": "import { createClient, createServiceClient } from '@/lib/supabase/server';",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/watchlist/[id]/route.ts",
+      "line": 15,
+      "text": "const serviceClient = createServiceClient();",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/watchlist/route.ts",
+      "line": 1,
+      "text": "import { createClient, createServiceClient } from '@/lib/supabase/server';",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/watchlist/route.ts",
+      "line": 12,
+      "text": "const serviceClient = createServiceClient();",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "service-role",
+      "file": "app/api/watchlist/route.ts",
+      "line": 34,
+      "text": "const serviceClient = createServiceClient();",
+      "suppressed": true,
+      "suppressionReason": "Route/page has auth.getUser + requirePermission gate"
+    },
+    {
+      "check": "banned-language",
+      "file": "lib/copy/terms.ts",
+      "line": 103,
+      "text": "'fraudster',",
+      "suppressed": true,
+      "suppressionReason": "Canonical banned-term dictionary — intentional"
+    },
+    {
+      "check": "banned-language",
+      "file": "lib/copy/terms.ts",
+      "line": 106,
+      "text": "'confirmed fraud',",
+      "suppressed": true,
+      "suppressionReason": "Canonical banned-term dictionary — intentional"
+    },
+    {
+      "check": "banned-language",
+      "file": "lib/copy/terms.ts",
+      "line": 107,
+      "text": "'fraud confirmed',",
+      "suppressed": true,
+      "suppressionReason": "Canonical banned-term dictionary — intentional"
+    },
+    {
+      "check": "banned-language",
+      "file": "lib/copy/terms.ts",
+      "line": 110,
+      "text": "'probable fraud',",
+      "suppressed": true,
+      "suppressionReason": "Canonical banned-term dictionary — intentional"
+    },
+    {
+      "check": "banned-language",
+      "file": "lib/copy/terms.ts",
+      "line": 111,
+      "text": "'possible fraud',",
+      "suppressed": true,
+      "suppressionReason": "Canonical banned-term dictionary — intentional"
+    },
+    {
+      "check": "banned-language",
+      "file": "lib/copy/terms.ts",
+      "line": 113,
+      "text": "'deny claim',",
+      "suppressed": true,
+      "suppressionReason": "Canonical banned-term dictionary — intentional"
+    },
+    {
+      "check": "banned-language",
+      "file": "lib/copy/terms.ts",
+      "line": 114,
+      "text": "'guilty',",
+      "suppressed": true,
+      "suppressionReason": "Canonical banned-term dictionary — intentional"
+    },
+    {
+      "check": "banned-language",
+      "file": "lib/copy/terms.ts",
+      "line": 115,
+      "text": "'not a fraudster',",
+      "suppressed": true,
+      "suppressionReason": "Canonical banned-term dictionary — intentional"
+    },
+    {
+      "check": "fixed-limit",
+      "file": "lib/engine/fastContext.ts",
+      "line": 379,
+      "text": "//   .gte('total_merchants_seen_at', 3).limit(10000)",
+      "suppressed": true,
+      "suppressionReason": "Commented-out example — not live code"
+    },
+    {
+      "check": "banned-language",
+      "file": "lib/scorer.ts",
+      "line": 113,
+      "text": "const FORBIDDEN_WORDS = ['fraud', 'fraudulent', 'scammer', 'criminal', 'confirmed fraud'];",
+      "suppressed": true,
+      "suppressionReason": "Forbidden-word detector constant — intentional"
+    },
+    {
+      "check": "service-role",
+      "file": "lib/supabase/server.ts",
+      "line": 62,
+      "text": "export function createServiceClient(): any {",
+      "suppressed": true,
+      "suppressionReason": "Supabase client factory definition, not a route data access path"
+    },
+    {
+      "check": "service-role",
+      "file": "lib/supabase/server.ts",
+      "line": 64,
+      "text": "const key = process.env.SUPABASE_SERVICE_ROLE_KEY;",
+      "suppressed": true,
+      "suppressionReason": "Supabase client factory definition, not a route data access path"
+    },
+    {
+      "check": "service-role",
+      "file": "lib/supabase/server.ts",
+      "line": 87,
+      "text": "export function createAdminClient(): any {",
+      "suppressed": true,
+      "suppressionReason": "Supabase client factory definition, not a route data access path"
+    },
+    {
+      "check": "service-role",
+      "file": "lib/supabase/server.ts",
+      "line": 89,
+      "text": "const key = process.env.SUPABASE_SERVICE_ROLE_KEY;",
+      "suppressed": true,
+      "suppressionReason": "Supabase client factory definition, not a route data access path"
+    },
+    {
+      "check": "service-role",
+      "file": "scripts/bench-upload-pipeline.ts",
+      "line": 7,
+      "text": "* against your live Supabase project (using SUPABASE_SERVICE_ROLE_KEY from",
+      "suppressed": true,
+      "suppressionReason": "Script file — non-runtime operational tooling"
+    },
+    {
+      "check": "service-role",
+      "file": "scripts/bench-upload-pipeline.ts",
+      "line": 46,
+      "text": "const KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;",
+      "suppressed": true,
+      "suppressionReason": "Script file — non-runtime operational tooling"
+    },
+    {
+      "check": "service-role",
+      "file": "scripts/bench-upload-pipeline.ts",
+      "line": 54,
+      "text": "console.error('ERROR: NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set in .env.local');",
+      "suppressed": true,
+      "suppressionReason": "Script file — non-runtime operational tooling"
+    },
+    {
+      "check": "service-role",
+      "file": "scripts/deployment-readiness/audit-security.mjs",
+      "line": 23,
+      "text": "{ id: 'service-role', pattern: /SUPABASE_SERVICE_ROLE_KEY|createServiceClient|createAdminClient/g },",
+      "suppressed": true,
+      "suppressionReason": "Script file — non-runtime operational tooling"
+    },
+    {
+      "check": "service-role",
+      "file": "scripts/deployment-readiness/audit-security.mjs",
+      "line": 34,
+      "text": "const hasServiceRole = /createServiceClient|createAdminClient|SUPABASE_SERVICE_ROLE_KEY/.test(content);",
+      "suppressed": true,
+      "suppressionReason": "Script file — non-runtime operational tooling"
+    },
+    {
+      "check": "service-role",
+      "file": "scripts/deployment-readiness/audit-security.mjs",
+      "line": 40,
+      "text": "const hasServiceRole = /createServiceClient|createAdminClient|SUPABASE_SERVICE_ROLE_KEY/.test(content);",
+      "suppressed": true,
+      "suppressionReason": "Script file — non-runtime operational tooling"
+    },
+    {
+      "check": "unsafe-html",
+      "file": "scripts/deployment-readiness/audit-security.mjs",
+      "line": 24,
+      "text": "{ id: 'unsafe-html', pattern: /dangerouslySetInnerHTML|innerHTML\\s*=|eval\\s*\\(|new Function/g },",
+      "suppressed": true,
+      "suppressionReason": "Scanner pattern definition self-match — not product rendering code"
+    },
+    {
+      "check": "banned-language",
+      "file": "scripts/deployment-readiness/audit-security.mjs",
+      "line": 26,
+      "text": "{ id: 'banned-language', pattern: /\\bfraudster\\b|\\bguilty\\b|confirmed fraud|fraud confirmed|deny claim|probable fraud|possible fraud/gi },",
+      "suppressed": true,
+      "suppressionReason": "Scanner pattern definitions — intentional"
+    },
+    {
+      "check": "service-role",
+      "file": "scripts/diagnose-identity.ts",
+      "line": 95,
+      "text": "const key = process.env.SUPABASE_SERVICE_ROLE_KEY;",
+      "suppressed": true,
+      "suppressionReason": "Script file — non-runtime operational tooling"
+    },
+    {
+      "check": "service-role",
+      "file": "scripts/inspect-db.ts",
+      "line": 16,
+      "text": "process.env.SUPABASE_SERVICE_ROLE_KEY!",
+      "suppressed": true,
+      "suppressionReason": "Script file — non-runtime operational tooling"
+    },
+    {
+      "check": "service-role",
+      "file": "scripts/migrate-customer-profiles.ts",
+      "line": 28,
+      "text": "const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;",
+      "suppressed": true,
+      "suppressionReason": "Script file — non-runtime operational tooling"
+    },
+    {
+      "check": "service-role",
+      "file": "scripts/migrate-customer-profiles.ts",
+      "line": 31,
+      "text": "console.error('Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');",
+      "suppressed": true,
+      "suppressionReason": "Script file — non-runtime operational tooling"
+    },
+    {
+      "check": "service-role",
+      "file": "scripts/snapshot-network-metrics.ts",
+      "line": 30,
+      "text": "const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;",
+      "suppressed": true,
+      "suppressionReason": "Script file — non-runtime operational tooling"
+    },
+    {
+      "check": "service-role",
+      "file": "scripts/snapshot-network-metrics.ts",
+      "line": 33,
+      "text": "console.error('Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');",
+      "suppressed": true,
+      "suppressionReason": "Script file — non-runtime operational tooling"
+    },
+    {
+      "check": "service-role",
+      "file": "scripts/test-data/diagnoseAuditRls.ts",
+      "line": 11,
+      "text": "const service = process.env.SUPABASE_SERVICE_ROLE_KEY;",
+      "suppressed": true,
+      "suppressionReason": "Script file — non-runtime operational tooling"
+    },
+    {
+      "check": "service-role",
+      "file": "scripts/test-data/diagnoseAuditRls.ts",
+      "line": 13,
+      "text": "throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, or SUPABASE_SERVICE_ROLE_KEY');",
+      "suppressed": true,
+      "suppressionReason": "Script file — non-runtime operational tooling"
+    },
+    {
+      "check": "service-role",
+      "file": "scripts/test-fraud-intelligence.ts",
+      "line": 26,
+      "text": "const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;",
+      "suppressed": true,
+      "suppressionReason": "Script file — non-runtime operational tooling"
+    },
+    {
+      "check": "service-role",
+      "file": "scripts/test-fraud-intelligence.ts",
+      "line": 31,
+      "text": "console.error('SUPABASE_SERVICE_ROLE_KEY:', !!supabaseServiceKey);",
+      "suppressed": true,
+      "suppressionReason": "Script file — non-runtime operational tooling"
+    },
+    {
+      "check": "service-role",
+      "file": "scripts/test-performance.ts",
+      "line": 37,
+      "text": "const serviceKey = env.SUPABASE_SERVICE_ROLE_KEY!;",
+      "suppressed": true,
+      "suppressionReason": "Script file — non-runtime operational tooling"
+    },
+    {
+      "check": "service-role",
+      "file": "scripts/test-refund-pattern-intelligence.ts",
+      "line": 26,
+      "text": "const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;",
+      "suppressed": true,
+      "suppressionReason": "Script file — non-runtime operational tooling"
+    },
+    {
+      "check": "service-role",
+      "file": "scripts/verify-check3.ts",
+      "line": 12,
+      "text": "const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;",
+      "suppressed": true,
+      "suppressionReason": "Script file — non-runtime operational tooling"
+    },
+    {
+      "check": "fixed-limit",
+      "file": "scripts/verify-check3.ts",
+      "line": 21,
+      "text": ".limit(1000);",
+      "suppressed": true,
+      "suppressionReason": "Diagnostic/migration script — not production runtime"
+    },
+    {
+      "check": "fixed-limit",
+      "file": "scripts/verify-check3.ts",
+      "line": 27,
+      "text": ".limit(1000);",
+      "suppressed": true,
+      "suppressionReason": "Diagnostic/migration script — not production runtime"
+    },
+    {
+      "check": "fixed-limit",
+      "file": "scripts/verify-check3.ts",
+      "line": 33,
+      "text": ".limit(1000);",
+      "suppressed": true,
+      "suppressionReason": "Diagnostic/migration script — not production runtime"
+    },
+    {
+      "check": "service-role",
+      "file": "tests/api/merchantIsolation.test.ts",
+      "line": 12,
+      "text": "* 5. The public demo page does NOT reference SUPABASE_SERVICE_ROLE_KEY.",
+      "suppressed": true,
+      "suppressionReason": "Test file — static security assertions/mocks"
+    },
+    {
+      "check": "service-role",
+      "file": "tests/api/merchantIsolation.test.ts",
+      "line": 336,
+      "text": "it('demo page.tsx does not reference SUPABASE_SERVICE_ROLE_KEY', () => {",
+      "suppressed": true,
+      "suppressionReason": "Test file — static security assertions/mocks"
+    },
+    {
+      "check": "service-role",
+      "file": "tests/api/merchantIsolation.test.ts",
+      "line": 343,
+      "text": "expect(demoPage).not.toContain('SUPABASE_SERVICE_ROLE_KEY');",
+      "suppressed": true,
+      "suppressionReason": "Test file — static security assertions/mocks"
+    },
+    {
+      "check": "service-role",
+      "file": "tests/api/routeSecurity.test.ts",
+      "line": 72,
+      "text": "content.includes('createServiceClient') ||",
+      "suppressed": true,
+      "suppressionReason": "Test file — static security assertions/mocks"
+    },
+    {
+      "check": "service-role",
+      "file": "tests/api/routeSecurity.test.ts",
+      "line": 73,
+      "text": "content.includes('SUPABASE_SERVICE_ROLE_KEY');",
+      "suppressed": true,
+      "suppressionReason": "Test file — static security assertions/mocks"
+    },
+    {
+      "check": "service-role",
+      "file": "tests/api/routeSecurity.test.ts",
+      "line": 390,
+      "text": "expect(content).toContain('createServiceClient');",
+      "suppressed": true,
+      "suppressionReason": "Test file — static security assertions/mocks"
+    },
+    {
+      "check": "fixed-limit",
+      "file": "tests/api/routeSecurity.test.ts",
+      "line": 1262,
+      "text": "// app/api/customers/[id]/route.ts — no .limit(1000) regression",
+      "suppressed": true,
+      "suppressionReason": "Test file — .limit() used in assertions or mock data, not production"
+    },
+    {
+      "check": "fixed-limit",
+      "file": "tests/api/routeSecurity.test.ts",
+      "line": 1264,
+      "text": "describe('app/api/customers/[id]/route.ts — no fixed .limit(1000)', () => {",
+      "suppressed": true,
+      "suppressionReason": "Test file — .limit() used in assertions or mock data, not production"
+    },
+    {
+      "check": "fixed-limit",
+      "file": "tests/api/routeSecurity.test.ts",
+      "line": 1265,
+      "text": "it('does NOT contain .limit(1000) in fetchDirectIdentityRows', () => {",
+      "suppressed": true,
+      "suppressionReason": "Test file — .limit() used in assertions or mock data, not production"
+    },
+    {
+      "check": "fixed-limit",
+      "file": "tests/api/routeSecurity.test.ts",
+      "line": 1271,
+      "text": "expect(content).not.toContain('.limit(1000)');",
+      "suppressed": true,
+      "suppressionReason": "Test file — .limit() used in assertions or mock data, not production"
+    },
+    {
+      "check": "banned-language",
+      "file": "tests/banned-terms.test.ts",
+      "line": 5,
+      "text": "* a customer is guilty of fraud. ParcelClaim is an identity intelligence tool,",
+      "suppressed": true,
+      "suppressionReason": "Test file — terms are test patterns, not user-facing copy"
+    },
+    {
+      "check": "banned-language",
+      "file": "tests/banned-terms.test.ts",
+      "line": 20,
+      "text": "{ pattern: /\\bnot a fraudster\\b/i,     description: '\"not a fraudster\" label' },",
+      "suppressed": true,
+      "suppressionReason": "Test file — terms are test patterns, not user-facing copy"
+    },
+    {
+      "check": "banned-language",
+      "file": "tests/banned-terms.test.ts",
+      "line": 22,
+      "text": "{ pattern: /\\bdeny claim\\b/i,           description: '\"Deny claim\" CTA' },",
+      "suppressed": true,
+      "suppressionReason": "Test file — terms are test patterns, not user-facing copy"
+    },
+    {
+      "check": "banned-language",
+      "file": "tests/banned-terms.test.ts",
+      "line": 23,
+      "text": "{ pattern: /\\bconfirmed fraud\\b/i,      description: '\"confirmed fraud\" label' },",
+      "suppressed": true,
+      "suppressionReason": "Test file — terms are test patterns, not user-facing copy"
+    },
+    {
+      "check": "banned-language",
+      "file": "tests/banned-terms.test.ts",
+      "line": 24,
+      "text": "{ pattern: /\\bfraud confirmed\\b/i,      description: '\"fraud confirmed\" label' },",
+      "suppressed": true,
+      "suppressionReason": "Test file — terms are test patterns, not user-facing copy"
+    },
+    {
+      "check": "banned-language",
+      "file": "tests/banned-terms.test.ts",
+      "line": 27,
+      "text": "{ pattern: /\\bprobable fraud\\b/i,       description: '\"probable fraud\" label' },",
+      "suppressed": true,
+      "suppressionReason": "Test file — terms are test patterns, not user-facing copy"
+    },
+    {
+      "check": "banned-language",
+      "file": "tests/banned-terms.test.ts",
+      "line": 28,
+      "text": "{ pattern: /\\bpossible fraud\\b/i,       description: '\"possible fraud\" label' },",
+      "suppressed": true,
+      "suppressionReason": "Test file — terms are test patterns, not user-facing copy"
+    },
+    {
+      "check": "banned-language",
+      "file": "tests/banned-terms.test.ts",
+      "line": 29,
+      "text": "{ pattern: /\\bguilty\\b/i,               description: '\"guilty\" label' },",
+      "suppressed": true,
+      "suppressionReason": "Test file — terms are test patterns, not user-facing copy"
+    },
+    {
+      "check": "banned-language",
+      "file": "tests/banned-terms.test.ts",
+      "line": 30,
+      "text": "{ pattern: /\\bfraudster\\b/i,            description: '\"fraudster\" label' },",
+      "suppressed": true,
+      "suppressionReason": "Test file — terms are test patterns, not user-facing copy"
+    },
+    {
+      "check": "service-role",
+      "file": "tests/global-setup.ts",
+      "line": 22,
+      "text": "process.env.SUPABASE_SERVICE_ROLE_KEY!,",
+      "suppressed": true,
+      "suppressionReason": "Test file — static security assertions/mocks"
+    },
+    {
+      "check": "service-role",
+      "file": "tests/global-teardown.ts",
+      "line": 21,
+      "text": "process.env.SUPABASE_SERVICE_ROLE_KEY!,",
+      "suppressed": true,
+      "suppressionReason": "Test file — static security assertions/mocks"
+    },
+    {
+      "check": "fixed-limit",
+      "file": "tests/identity/pagination.test.ts",
+      "line": 23,
+      "text": "expect(source).not.toContain('.limit(10000)');",
+      "suppressed": true,
+      "suppressionReason": "Test file — .limit() used in assertions or mock data, not production"
+    },
+    {
+      "check": "service-role",
+      "file": "tests/processing/chunked-pipeline.test.ts",
+      "line": 23,
+      "text": "process.env.SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? 'test-secret-key';",
+      "suppressed": true,
+      "suppressionReason": "Test file — static security assertions/mocks"
+    },
+    {
+      "check": "fixed-limit",
+      "file": "tests/processing/upload-pipeline-perf.test.ts",
+      "line": 84,
+      "text": "it('uses targeted or(cs…) JSONB-aware filter, never .limit(10000)', async () => {",
+      "suppressed": true,
+      "suppressionReason": "Test file — .limit() used in assertions or mock data, not production"
+    },
+    {
+      "check": "service-role",
+      "file": "tests/ux-audit/global-setup.ts",
+      "line": 25,
+      "text": "process.env.SUPABASE_SERVICE_ROLE_KEY!,",
+      "suppressed": true,
+      "suppressionReason": "Test file — static security assertions/mocks"
+    },
+    {
+      "check": "service-role",
+      "file": "tests/ux-audit/global-teardown.ts",
+      "line": 19,
+      "text": "process.env.SUPABASE_SERVICE_ROLE_KEY!,",
+      "suppressed": true,
+      "suppressionReason": "Test file — static security assertions/mocks"
+    }
+  ]
+}

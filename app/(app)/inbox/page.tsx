@@ -1,10 +1,13 @@
-import { createClient } from '@/lib/supabase/server';
+import { redirect } from 'next/navigation';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import Link from 'next/link';
 import InboxClient from '@/components/inbox/InboxClient';
 import TrackPageView from '@/components/common/TrackPageView';
 import { signalLabel } from '@/lib/copy/signalLabels';
 import PageSizeSelect from '@/components/common/PageSizeSelect';
 import { PageHeader } from '@/components/common/PageHeader';
+import { fetchMerchantReviewQueueRows } from '@/lib/supabase/merchantHelpers';
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
 const DEFAULT_PAGE_SIZE = 25;
@@ -16,50 +19,92 @@ function topReason(signals: unknown): string {
   return signalLabel(first).short;
 }
 
-export default async function InboxPage({ searchParams }: { searchParams?: { page?: string; pageSize?: string } }) {
-  const supabase = createClient();
-  const page = Math.max(1, parseInt(searchParams?.page ?? '1', 10));
-  const requestedPageSize = parseInt(searchParams?.pageSize ?? String(DEFAULT_PAGE_SIZE), 10);
+export default async function InboxPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ page?: string; pageSize?: string }>;
+}) {
+  const resolvedSearchParams = (await searchParams) ?? {};
+  const userClient = createClient();
+  const { data: { user } } = await userClient.auth.getUser();
+
+  // Unauthenticated users must be redirected to login, not shown an empty queue.
+  if (!user) {
+    redirect('/login');
+  }
+
+  const page = Math.max(1, parseInt(resolvedSearchParams.page ?? '1', 10));
+  const requestedPageSize = parseInt(resolvedSearchParams.pageSize ?? String(DEFAULT_PAGE_SIZE), 10);
   const pageSize = PAGE_SIZE_OPTIONS.includes(requestedPageSize as (typeof PAGE_SIZE_OPTIONS)[number])
     ? requestedPageSize
     : DEFAULT_PAGE_SIZE;
   const offset = (page - 1) * pageSize;
-  const querySearchParams = searchParams ?? {};
+  const querySearchParams = resolvedSearchParams;
 
-  const { data: flagged, count } = await supabase
-    .from('audit_transactions')
-    .select('id, order_id, match_score, risk_level, processed_at, job_id, customer_profile_id, order_value, signals_matched', { count: 'exact' })
-    .in('risk_level', ['high', 'critical'])
-    .is('dismissed_by_merchant', false)
-    .order('match_score', { ascending: false })
-    .range(offset, offset + pageSize - 1);
+  const serviceClient = createServiceClient();
+  const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_INBOX);
+  // Next.js App Router pages must return React nodes (not Response objects).
+  // Fail closed with an explicit access-denied UI.
+  if (denied) {
+    return (
+      <div className="p-8">
+        <h1 className="text-heading-lg">Access denied</h1>
+        <p className="text-body-sm mt-2" style={{ color: 'var(--text-muted)' }}>
+          You do not have permission to view the review inbox.
+        </p>
+      </div>
+    );
+  }
 
-  // Map job_id → processing_job_id to match the InboxClient interface
-  const items = (flagged ?? []).map((row: unknown) => ({
-    ...(row as unknown as Record<string, unknown>),
-    processing_job_id: (row as unknown as { job_id: string }).job_id,
-    reason: topReason((row as unknown as { signals_matched?: unknown }).signals_matched),
-  })) as unknown as Array<{
+  let items: Array<{
     id: string;
     order_id: string;
-    match_score: number;
-    risk_level: string;
+    identity_score: number;
+    identity_confidence_grade: string | null;
+    match_status: string | null;
     processed_at: string;
     processing_job_id: string;
     customer_profile_id: string | null;
     order_value?: number | null;
     reason?: string;
-  }>;
+  }> = [];
+  let total = 0;
+
+  // Use shared review-queue definition: identity fields, merchant scoped,
+  // excludes dismissed. Ordered by identity_score.
+  const { rows } = await fetchMerchantReviewQueueRows(serviceClient, ctx.merchantId, {
+    from: offset,
+    to: offset + pageSize - 1,
+  });
+
+  // Get total count separately (paginate with id-only select)
+  const { rows: allRows } = await fetchMerchantReviewQueueRows(serviceClient, ctx.merchantId, {
+    paginate: true,
+    select: 'id',
+  });
+  total = allRows.length;
+
+  items = rows.map((row: any) => ({
+    id: row.id,
+    order_id: row.order_id,
+    identity_score: row.identity_score ?? 0,
+    identity_confidence_grade: row.identity_confidence_grade ?? null,
+    match_status: row.match_status ?? null,
+    processed_at: row.processed_at,
+    processing_job_id: row.job_id,
+    customer_profile_id: row.customer_profile_id ?? null,
+    order_value: row.order_value ?? null,
+    reason: topReason(row.signals_matched),
+  }));
 
   const totalValueAtRisk = items.reduce((sum, item) => sum + (item.order_value ?? 0), 0);
-  const total = count ?? items.length;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   return (
     <div className="p-8 space-y-6">
       <PageHeader
         title="Inbox"
-        subtitle="High and critical transactions awaiting review"
+        subtitle="Identity-flagged transactions awaiting review"
         actions={<div className="flex items-center gap-2">
           <a
             href="/api/inbox/export"
@@ -78,7 +123,7 @@ export default async function InboxPage({ searchParams }: { searchParams?: { pag
           {items.length.toLocaleString()} cases in queue
         </p>
         <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-          Approximate value at risk: {new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(totalValueAtRisk)}
+          Approximate order value under review: {new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(totalValueAtRisk)}
         </p>
       </div>
       <div className="flex items-center justify-between gap-3 flex-wrap">

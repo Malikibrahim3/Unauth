@@ -5,6 +5,7 @@ import CustomersFilterSheet from '@/components/customers/CustomersFilterSheet';
 import CustomersTableClient from '@/components/customers/CustomersTableClient';
 import PageSizeSelect from '@/components/common/PageSizeSelect';
 import { PageHeader } from '@/components/common/PageHeader';
+import { escapePostgrestFilterValue } from '@/lib/supabase/merchantHelpers';
 
 // Helper: build a URL with one search param removed
 function buildRemoveHref(sp: Record<string, string | undefined>, key: string) {
@@ -33,7 +34,7 @@ const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
 const DEFAULT_PAGE_SIZE = 25;
 
 interface PageProps {
-  searchParams: {
+  searchParams: Promise<{
     // Basic
     q?: string;
     risk?: string;
@@ -70,10 +71,11 @@ interface PageProps {
     flag?: string;
     // Investigation status
     status?: string;
-  };
+  }>;
 }
 
-export default async function CustomersOverviewPage({ searchParams }: PageProps) {
+export default async function CustomersOverviewPage({ searchParams: searchParamsPromise }: PageProps) {
+  const searchParams = await searchParamsPromise;
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
@@ -151,7 +153,10 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
 
   // Text search (email or name)
   if (q.length >= 2) {
-    query = query.or(`primary_email.ilike.%${q}%,names.cs.["${q}"]`);
+    // Use shared escape helper — prevents PostgREST filter injection via
+    // ( ) ' % , { } " \ and other control characters.
+    const safeQ = escapePostgrestFilterValue(q);
+    query = query.or(`primary_email.ilike.%${safeQ}%,names.cs.["${safeQ}"]`);
   }
 
   // Identity exact-match filters

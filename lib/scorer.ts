@@ -432,7 +432,7 @@ export function scoreCluster(input: ScoreClusterInput): ScoredCluster {
   const { cluster, orders, historicalEntities } = input;
 
   // --- 1. Base score from linker confidence ---
-  let baseScore = cluster.confidence_score; // 0–133 typically
+  const baseScore = cluster.confidence_score; // 0–133 typically
   const maxBase = 100;
   const normalisedBase = Math.min(baseScore, maxBase);
 
@@ -540,13 +540,13 @@ export function scoreCluster(input: ScoreClusterInput): ScoredCluster {
  *    < 35 → null       below product threshold — do not surface
  */
 const IDENTITY_SIGNAL_WEIGHTS: Record<string, number> = {
-  card: 12,
-  phone: 30,
-  device: 30,
-  account: 25,
-  email: 20,
-  postcode: 10,
-  ip: 8,
+  card: 35,     // BIN+last4 when present in a confirmed cluster — strong physical signal
+  phone: 30,    // requires a real SIM
+  device: 30,   // device fingerprint
+  account: 30,  // merchant-namespace identifier
+  email: 25,    // normalised base (plus-alias stripped)
+  postcode: 10, // corroborating only
+  ip: 10,       // weakest corroborating signal
 };
 
 export type IdentityGrade = 'definite' | 'probable' | 'possible';

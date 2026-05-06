@@ -26,7 +26,7 @@ export default function AccountSettingsPage() {
   const [saveError, setSaveError] = useState('');
 
   // Password change
-  const [currentPassword, setCurrentPassword] = useState('');
+  const [_currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPasswords, setShowPasswords] = useState(false);

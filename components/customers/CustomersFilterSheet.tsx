@@ -186,14 +186,14 @@ export default function CustomersFilterSheet() {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {/* Risk level */}
             <div>
-              <label className="block text-xs mb-1.5" style={{ color: 'var(--text-subtle)' }}>Risk level</label>
+              <label className="block text-xs mb-1.5" style={{ color: 'var(--text-subtle)' }}>Match confidence</label>
               <select
                 value={searchParams.get('risk') ?? ''}
                 onChange={(e) => updateParam('risk', e.target.value)}
                 className="w-full text-xs rounded-lg px-2 py-2 focus:outline-none"
                 style={{ background: 'var(--bg-inset)', border: '1px solid var(--border)', color: 'var(--text)' }}
               >
-                <option value="">All risk levels</option>
+                <option value="">All confidence levels</option>
                 <option value="low">Low</option>
                 <option value="medium">Medium</option>
                 <option value="high">High</option>
@@ -336,9 +336,9 @@ export default function CustomersFilterSheet() {
                   </div>
                 </div>
 
-                {/* Fraud flag */}
+                {/* Identity signal */}
                 <div>
-                  <p className="text-xs font-medium mb-2 uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Fraud flag</p>
+                  <p className="text-xs font-medium mb-2 uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Identity signal</p>
                   <input
                     key={searchParams.get('flag')}
                     type="search"

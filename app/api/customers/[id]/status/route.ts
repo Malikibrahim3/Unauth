@@ -9,8 +9,9 @@ type InvestigationStatus = typeof VALID_STATUSES[number];
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const resolvedParams = await params;
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown';
 
   const userClient = createClient();
@@ -39,7 +40,7 @@ export async function PATCH(
   const { data: profile } = await serviceClient
     .from('customer_profiles')
     .select('id, investigation_status')
-    .eq('id', params.id)
+    .eq('id', resolvedParams.id)
     .contains('merchant_ids', JSON.stringify([ctx.merchantId]))
     .maybeSingle();
 
@@ -52,7 +53,7 @@ export async function PATCH(
   const { data, error } = await serviceClient
     .from('customer_profiles')
     .update({ investigation_status: body.status })
-    .eq('id', params.id)
+    .eq('id', resolvedParams.id)
     .select('id, investigation_status')
     .single();
 
@@ -64,14 +65,14 @@ export async function PATCH(
     ctx,
     action: 'update_customer_status',
     resourceType: 'customer_profile',
-    resourceId: params.id,
+    resourceId: resolvedParams.id,
     metadata: { newStatus: body.status },
     ip,
   });
 
   await writeActivityLog({
     supabase: serviceClient,
-    profileId: params.id,
+    profileId: resolvedParams.id,
     merchantId: ctx.merchantId,
     eventType: 'status_changed',
     eventData: { from: previousStatus, to: body.status },

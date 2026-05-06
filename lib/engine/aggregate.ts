@@ -1,4 +1,4 @@
-import type { NormalisedOrder, ScoredOrder } from './types';
+import type { ScoredOrder } from './types';
 
 export interface CustomerAggregate {
   emailHash: string;

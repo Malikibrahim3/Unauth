@@ -18,7 +18,7 @@
 import { useCallback, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { MoreHorizontal, X, Copy, ExternalLink } from 'lucide-react';
+import { MoreHorizontal, X, Copy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCustomerIntelligence } from '@/lib/hooks/useCustomerIntelligence';
 import {
@@ -35,10 +35,9 @@ import {
   ActionBar,
   DataTable,
   EmptyState,
-  LoadingState,
   Skeleton,
 } from '@/components/ui';
-import { formatCurrencyNullable, formatDateShort, formatPercent } from '@/lib/utils/format';
+import { formatCurrencyNullable, formatDateShort } from '@/lib/utils/format';
 import type { Transaction } from '@/types/customer';
 
 // ---------------------------------------------------------------------------
@@ -114,10 +113,10 @@ export function CustomerDrawer({ profileId, onClose, onAction }: CustomerDrawerP
 
   // -------- Recommended action CTA label --------
   const primaryCTALabel =
-    customer?.recommendation.action === 'block' ? 'Block customer'
-    : customer?.recommendation.action === 'watch' ? 'Add to watchlist'
+    customer?.recommendation.action === 'block' ? 'Escalate for review'
+    : customer?.recommendation.action === 'watch' ? 'Add to review list'
     : customer?.recommendation.action === 'review' ? 'Mark for review'
-    : customer?.recommendation.action === 'allow' ? 'Mark as safe'
+    : customer?.recommendation.action === 'allow' ? 'Mark as cleared'
     : 'Take action';
 
   // -------- Footer --------
@@ -126,10 +125,10 @@ export function CustomerDrawer({ profileId, onClose, onAction }: CustomerDrawerP
       leftActions={
         <>
           <Button variant="secondary" size="sm" onClick={() => onAction?.('mark_safe', customer.id)}>
-            Mark safe
+            Mark as not a match
           </Button>
           <Button variant="secondary" size="sm" onClick={() => onAction?.('watchlist', customer.id)}>
-            Add to watchlist
+            Add to review list
           </Button>
           <Button variant="ghost" size="sm" onClick={() => onAction?.('dismiss', customer.id)}>
             Dismiss
@@ -237,16 +236,16 @@ export function CustomerDrawer({ profileId, onClose, onAction }: CustomerDrawerP
 
             {/* §9.4 — Snapshot metrics (2×3 grid) */}
             <div className="grid grid-cols-2 gap-[var(--space-3)]">
-              <MetricCard label="Confidence" value={`${customer.confidence.grade} · ${customer.confidence.score}`} density="compact" />
-              <MetricCard label="Risk score" value={customer.risk.score} hint={customer.risk.level} density="compact" />
+              <MetricCard label="Identity confidence" value={`${customer.confidence.grade} · ${customer.confidence.score}`} density="compact" />
+              <MetricCard label="Match confidence score" value={customer.risk.score} hint={customer.risk.level} density="compact" />
               <MetricCard label="Order value" value={formatCurrencyNullable(customer.metrics.totalOrderValue)} density="compact" />
               <MetricCard label="Refunded" value={formatCurrencyNullable(customer.metrics.totalRefundedValue)} density="compact" />
               <MetricCard label="Linked identities" value={customer.metrics.linkedIdentityCount} density="compact" />
               <MetricCard label="Chargebacks" value={customer.metrics.chargebackCount} density="compact" />
             </div>
 
-            {/* §9.5 — Why flagged */}
-            <SectionCard title="Why this customer is flagged">
+            {/* §9.5 — Why matched */}
+            <SectionCard title="Why this profile was matched">
               <p className="text-body-strong text-[var(--text-primary)] mb-[var(--space-3)]">
                 {customer.whyFlagged.headline}
               </p>
@@ -284,7 +283,7 @@ export function CustomerDrawer({ profileId, onClose, onAction }: CustomerDrawerP
                     confidence: id.confidence,
                     linkedBy: id.linkedBy,
                   }))}
-                  onViewClick={(id) => router.push(`/customers/${customer.id}#identity-graph`)}
+                  onViewClick={(_id) => router.push(`/customers/${customer.id}#identity-graph`)}
                 />
               )}
             </SectionCard>

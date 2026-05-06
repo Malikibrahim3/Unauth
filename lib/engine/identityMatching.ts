@@ -216,6 +216,50 @@ export async function buildIdentityClusters(
     }
   }
 
+  // §6 — Same-email fallback clustering
+  // Orders from the same normalised email address are trivially the same
+  // person, but the linker intentionally skips scoring same-raw-email pairs.
+  // Without this pass, multi-order email groups never get a cluster_id, so
+  // the UI can't group probable/possible rows together.
+  // Only create a synthetic cluster when ≥2 orders share the email AND at
+  // least one is not already in a cross-email identity cluster.
+  const emailToOrders = new Map<string, NormalisedOrder[]>();
+  for (const o of orders) {
+    const rawEmail = (o as NormalisedOrder & { _rawEmail?: string })._rawEmail;
+    if (!rawEmail) continue;
+    const norm = rawEmail.toLowerCase().trim();
+    const arr = emailToOrders.get(norm) ?? [];
+    arr.push(o);
+    emailToOrders.set(norm, arr);
+  }
+
+  for (const [normEmail, emailOrders] of emailToOrders) {
+    if (emailOrders.length < 2) continue;
+    // Only apply when at least one order in the group has no cluster yet.
+    const hasMissing = emailOrders.some((o) => map[o.orderId] === null);
+    if (!hasMissing) continue;
+
+    // Find or create a cluster record for this email group.
+    // Prefer an existing cross-email cluster if any member is already in one.
+    const existing = emailOrders.map((o) => map[o.orderId]).find((c) => c !== null) ?? null;
+    const syntheticClusterId = existing?.clusterId ?? `email-cluster:${normEmail}`;
+    const record: IdentityCluster = existing ?? {
+      clusterId: syntheticClusterId,
+      entityType: 'email',
+      entityValue: normEmail,
+      confidence: 60, // moderate confidence for email-only grouping
+      matchReasons: ['Same email address shared across orders'],
+      firstSeen: now,
+      lastSeen: now,
+    };
+
+    for (const o of emailOrders) {
+      if (map[o.orderId] === null) {
+        map[o.orderId] = record;
+      }
+    }
+  }
+
   return map;
 }
 

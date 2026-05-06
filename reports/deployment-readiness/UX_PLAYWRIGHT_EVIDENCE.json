@@ -1,0 +1,123 @@
+{
+  "baseURL": "http://localhost:3000",
+  "notes": [
+    {
+      "name": "dashboard",
+      "url": "http://localhost:3000/dashboard",
+      "screenshot": "reports/deployment-readiness/screenshots/01-dashboard.png",
+      "actions": [
+        "Viewed dashboard"
+      ],
+      "textSample": "U Unauth WORKSPACE Dashboard Inbox AUDITS New audit Audit history INVESTIGATIONS Customers Watchlist Evidence packages playwright-audit-1777942649504@unauth-test-automation.com Help Settings Sign out Privacy Data handling DPA Home Search ⌘K Identity Review Overview Monitor identity match signals and review evidence across all your uploads. New Audit Match rate increased from 0.0% to 3.4% in the latest upload. 4 high-confidence customers are unresolved in the review queue. CUSTOMERS TO REVIEW 4 High-confidence, unresolved TRANSACTIONS ANALYSED 135 2 audit runs EVIDENCE PACKAGES 0 None CE3.0 eligible AVG MATCH RATE 2.2% Normal range Latest audit 1777943156028_rich.csv 89 transactions · 3 matched · 3.4% flag rate · 05 May 2026, 02:05 MATCH RATE BY RUN Last 2 audits MATCHED TRANSACTIONS OVER TIME Per audit run OVERALL COMPOSITION With signals 2.2% No signals 97.8% 3 with signals of 135 transactions 132 no signals High-confidence matches Review probable & definite matches Refund claimants C"
+    },
+    {
+      "name": "upload-empty",
+      "url": "http://localhost:3000/upload",
+      "screenshot": "reports/deployment-readiness/screenshots/02-upload-empty.png",
+      "actions": [
+        "Viewed upload page"
+      ],
+      "textSample": "U Unauth WORKSPACE Dashboard Inbox AUDITS New audit Audit history INVESTIGATIONS Customers Watchlist Evidence packages playwright-audit-1777942649504@unauth-test-automation.com Help Settings Sign out Privacy Data handling DPA New Audit Search ⌘K New Audit Upload a CSV export of your orders to detect identity matches and repeated claim patterns. How do I export this from your platform? Drop your CSV here or click to browse Max 500 MB · up to 5,000,000 rows Choose file Download template Exporting from WooCommerce, BigCommerce or Magento? Any CSV with orders, customers and refund info will work — we'll help you match the columns."
+    },
+    {
+      "name": "upload-mapping",
+      "url": "http://localhost:3000/upload",
+      "screenshot": "reports/deployment-readiness/screenshots/03-upload-mapping.png",
+      "actions": [
+        "Selected minimal CSV",
+        "Observed mapping/data-quality step"
+      ],
+      "textSample": "U Unauth WORKSPACE Dashboard Inbox AUDITS New audit Audit history INVESTIGATIONS Customers Watchlist Evidence packages playwright-audit-1777942649504@unauth-test-automation.com Help Settings Sign out Privacy Data handling DPA New Audit Search ⌘K New Audit Upload a CSV export of your orders to detect identity matches and repeated claim patterns. How do I export this from your platform? We found 19 columns in your CSV. Match them: Upload your existing order export. Unauth works with standard order, customer, payment and refund fields. Advanced integrations can add device, payment and delivery intelligence later. REQUIRED COLUMNS Order ID ← — not mapped — order_id order_date customer_email customer_name shipping_address billing_address order_total currency order_status ip_address device_id card_last4 card_bin card_fingerprint payment_method refund_status refund_reason refund_date refund_amount Order date ← — not mapped — order_id order_date customer_email customer_name shipping_address bi"
+    },
+    {
+      "name": "upload-context",
+      "url": "http://localhost:3000/upload",
+      "screenshot": "reports/deployment-readiness/screenshots/04-upload-context.png",
+      "actions": [
+        "Clicked Continue to upload context"
+      ],
+      "textSample": "U Unauth WORKSPACE Dashboard Inbox AUDITS New audit Audit history INVESTIGATIONS Customers Watchlist Evidence packages playwright-audit-1777942649504@unauth-test-automation.com Help Settings Sign out Privacy Data handling DPA New Audit Search ⌘K New Audit Upload a CSV export of your orders to detect identity matches and repeated claim patterns. How do I export this from your platform? minimal.csv 2 KB Upload context Tell us a bit about this upload. All fields are optional — skip anything you don't need. Label Appears in your audit history. Leave blank to use the upload date. Date range this upload covers to The order date range your export covers — not the upload date. Upload type Regular upload Periodic export — a week, a month, a quarter. Historical import One-time bulk import of past data. Builds your baseline without triggering new alerts. Customer investigation Targeted analysis for a specific customer or incident. Doesn't affect population statistics. ← Back Upload and run audit "
+    },
+    {
+      "name": "history",
+      "url": "http://localhost:3000/history",
+      "screenshot": "reports/deployment-readiness/screenshots/05-history.png",
+      "actions": [
+        "Viewed audit history"
+      ],
+      "textSample": "U Unauth WORKSPACE Dashboard Inbox AUDITS New audit Audit history INVESTIGATIONS Customers Watchlist Evidence packages playwright-audit-1777942649504@unauth-test-automation.com Help Settings Sign out Privacy Data handling DPA Audit history Search ⌘K Upload history Showing 1–2 of 2 audits New Audit Rows per page 25 50 100 LABEL TYPE PERIOD STATUS ROWS MATCHED UPLOADED Codex audit rich 2026-05-05 1777943156028_rich.csv Regular — Completed 89 3(3.4%) 05 May 2026, 02:05 View → Codex audit standard 2026-05-05 1777942973782_standard.csv Regular — Completed 46 0(0.0%) 05 May 2026, 02:02 View →"
+    },
+    {
+      "name": "audit-results",
+      "url": "http://localhost:3000/audit/b5c8618c-d15e-4a57-bf88-e1377dc59142",
+      "screenshot": "reports/deployment-readiness/screenshots/06-audit-results.png",
+      "actions": [
+        "Opened latest audit result"
+      ],
+      "textSample": "U Unauth WORKSPACE Dashboard Inbox AUDITS New audit Audit history INVESTIGATIONS Customers Watchlist Evidence packages playwright-audit-1777942649504@unauth-test-automation.com Help Settings Sign out Privacy Data handling DPA Audit results b5c8618c… Search ⌘K Dashboard / Audit result Audit Results 1777943156028_rich.csv · 05 May 2026, 02:05 completed 9 orders with match signals across 2 customers. Review matched profiles Export report View all transactions Orders analysed 89 Review-worthy 9 Definite matches 5 Estimated exposure £974.99 Completed 05 May 2026, 02:05 ⚠ Limited identity data in this audit Results are marked ‘possible’ — confidence could be higher with more identity fields in your export. See which fields to add → ✕ Overview Customers (82) Transactions (89) Data quality D 0 Low signals C 0 Possible signals found B 4 Probable connections A 5 Linked accounts MATCH DISTRIBUTION 9 customers with match signals Definite 5 · 55.6% Probable 4 · 44.4% CUSTOMERS BY MATCH CONFIDENCE C"
+    },
+    {
+      "name": "audit-customers-tab",
+      "url": "http://localhost:3000/audit/b5c8618c-d15e-4a57-bf88-e1377dc59142",
+      "screenshot": "reports/deployment-readiness/screenshots/07-audit-customers-tab.png",
+      "actions": [
+        "Opened audit customers tab"
+      ],
+      "textSample": "U Unauth WORKSPACE Dashboard Inbox AUDITS New audit Audit history INVESTIGATIONS Customers Watchlist Evidence packages playwright-audit-1777942649504@unauth-test-automation.com Help Settings Sign out Privacy Data handling DPA Audit results b5c8618c… Search ⌘K Dashboard / Audit result Audit Results 1777943156028_rich.csv · 05 May 2026, 02:05 completed 9 orders with match signals across 2 customers. Review matched profiles Export report View all transactions Orders analysed 89 Review-worthy 9 Definite matches 5 Estimated exposure £974.99 Completed 05 May 2026, 02:05 ⚠ Limited identity data in this audit Results are marked ‘possible’ — confidence could be higher with more identity fields in your export. See which fields to add → ✕ Overview Customers (82) Transactions (89) Data quality D 0 Low signals C 0 Possible signals found B 4 Probable connections A 5 Linked accounts MATCH DISTRIBUTION 9 customers with match signals Definite 5 · 55.6% Probable 4 · 44.4% CUSTOMERS BY MATCH CONFIDENCE C"
+    },
+    {
+      "name": "audit-customer-drawer",
+      "url": "http://localhost:3000/audit/b5c8618c-d15e-4a57-bf88-e1377dc59142?tab=customers",
+      "screenshot": "reports/deployment-readiness/screenshots/08-audit-customer-drawer.png",
+      "actions": [
+        "Clicked first customer View"
+      ],
+      "textSample": "U Unauth WORKSPACE Dashboard Inbox AUDITS New audit Audit history INVESTIGATIONS Customers Watchlist Evidence packages playwright-audit-1777942649504@unauth-test-automation.com Help Settings Sign out Privacy Data handling DPA Audit results b5c8618c… Search ⌘K Dashboard / Audit result Audit Results 1777943156028_rich.csv · 05 May 2026, 02:05 completed 9 orders with match signals across 2 customers. Review matched profiles Export report View all transactions Orders analysed 89 Review-worthy 9 Definite matches 5 Estimated exposure £974.99 Completed 05 May 2026, 02:05 ⚠ Limited identity data in this audit Results are marked ‘possible’ — confidence could be higher with more identity fields in your export. See which fields to add → ✕ Overview Customers (82) Transactions (89) Data quality Showing 1–82 of 82 customers Customers per page 25 50 100 All confidence Definite Probable Possible Weak 82 of 82 CUSTOMER ORDERS ↓ SPEND MAX SCORE ↓ acceleration.tester@gmail.com A 5 £375 98 View ce3.test.c"
+    },
+    {
+      "name": "customers-list",
+      "url": "http://localhost:3000/customers",
+      "screenshot": "reports/deployment-readiness/screenshots/09-customers-list.png",
+      "actions": [
+        "Viewed global customers list"
+      ],
+      "textSample": "U Unauth WORKSPACE Dashboard Inbox AUDITS New audit Audit history INVESTIGATIONS Customers Watchlist Evidence packages playwright-audit-1777942649504@unauth-test-automation.com Help Settings Sign out Privacy Data handling DPA Customers Search ⌘K Customers Segment, filter, and act on all customer risk profiles. New Audit New to review Filter → Has refunds Filter → Has chargebacks Filter → Watchlisted Filter → Saved views: High-confidence unresolved Repeat refund claims Linked identities Fast claimants Sort: Highest risk Sort: Most recent Sort: Oldest first Sort: Most orders Sort: Highest refund rate Sort: Most chargebacks Sort: Most merchants Sort: Fastest claims All New Review Contacted Resolved Cleared Filters Showing 1–25 of 127 customers Page 1 of 6 Rows per page 25 50 100 Next → CUSTOMER RISK SCORE ORDERS REFUNDS — rich.background.24@example.com D 58 13 3 View → — overlap.b.1@outlook.com D 55 19 4 View → — rich.background.54@example.com C 49 13 3 View → — james.r1+refund@gmail.com "
+    },
+    {
+      "name": "customer-drawer-or-profile",
+      "url": "http://localhost:3000/customers",
+      "screenshot": "reports/deployment-readiness/screenshots/10-customer-drawer-or-profile.png",
+      "actions": [
+        "Clicked first customer row"
+      ],
+      "textSample": "U Unauth WORKSPACE Dashboard Inbox AUDITS New audit Audit history INVESTIGATIONS Customers Watchlist Evidence packages playwright-audit-1777942649504@unauth-test-automation.com Help Settings Sign out Privacy Data handling DPA Customers Search ⌘K Customers Segment, filter, and act on all customer risk profiles. New Audit New to review Filter → Has refunds Filter → Has chargebacks Filter → Watchlisted Filter → Saved views: High-confidence unresolved Repeat refund claims Linked identities Fast claimants Sort: Highest risk Sort: Most recent Sort: Oldest first Sort: Most orders Sort: Highest refund rate Sort: Most chargebacks Sort: Most merchants Sort: Fastest claims All New Review Contacted Resolved Cleared Filters Showing 1–25 of 127 customers Page 1 of 6 Rows per page 25 50 100 Next → CUSTOMER RISK SCORE ORDERS REFUNDS — rich.background.24@example.com D 58 13 3 View → — overlap.b.1@outlook.com D 55 19 4 View → — rich.background.54@example.com C 49 13 3 View → — james.r1+refund@gmail.com "
+    },
+    {
+      "name": "watchlist",
+      "url": "http://localhost:3000/watchlist",
+      "screenshot": "reports/deployment-readiness/screenshots/11-watchlist.png",
+      "actions": [
+        "Viewed watchlist"
+      ],
+      "textSample": "U Unauth WORKSPACE Dashboard Inbox AUDITS New audit Audit history INVESTIGATIONS Customers Watchlist Evidence packages playwright-audit-1777942649504@unauth-test-automation.com Help Settings Sign out Privacy Data handling DPA Watchlist Search ⌘K Watchlist Customers you're monitoring across future audits. Appeared in recent audits No watchlisted customers have appeared in recent audits. Your watchlist is empty. Star any customer on an audit to keep an eye on them — they'll appear here with their latest match confidence every time you upload new orders. Upload an audit →"
+    },
+    {
+      "name": "evidence-packages",
+      "url": "http://localhost:3000/chargebacks",
+      "screenshot": "reports/deployment-readiness/screenshots/12-evidence-packages.png",
+      "actions": [
+        "Viewed evidence packages"
+      ],
+      "textSample": "U Unauth WORKSPACE Dashboard Inbox AUDITS New audit Audit history INVESTIGATIONS Customers Watchlist Evidence packages playwright-audit-1777942649504@unauth-test-automation.com Help Settings Sign out Privacy Data handling DPA Chargebacks Search ⌘K Evidence Packages Chargeback representment documents generated for disputed orders. View customers → No evidence packages yet. When a customer files a chargeback, generate an evidence package from their profile. Where eligible, packages are formatted for Visa Compelling Evidence 3.0 submission. View customers →"
+    },
+    {
+      "name": "settings",
+      "url": "http://localhost:3000/settings/account",
+      "screenshot": "reports/deployment-readiness/screenshots/13-settings.png",
+      "actions": [
+        "Viewed settings"
+      ],
+      "textSample": "U Unauth WORKSPACE Dashboard Inbox AUDITS New audit Audit history INVESTIGATIONS Customers Watchlist Evidence packages playwright-audit-1777942649504@unauth-test-automation.com Help Settings Sign out Privacy Data handling DPA Settings Account Search ⌘K Settings Account & Profile Update your store information and account preferences. Store details Email address To change your email, contact support@unauth.io. Store / business name * Monthly order volume Select a range… Under 500 500 – 2,000 2,000 – 10,000 10,000+ Primary review focus Select… Refund abuse / INR claims Chargebacks Account takeover Multi-accounting Promo / voucher abuse All of the above Save changes Change password Show New password Confirm new password Update password Danger zone Delete your account This permanently deletes all your audits, customer profiles, watchlist, and notes. This action cannot be undone. Type DELETE to confirm Delete account"
+    }
+  ]
+}

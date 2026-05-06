@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ConfidenceBadge, scoreToGrade as scoreToNewGrade, type ConfidenceGradeValue } from '@/components/ui/ConfidenceBadge';
+import { ConfidenceBadge, type ConfidenceGradeValue } from '@/components/ui/ConfidenceBadge';
 import { ArrowRight, Search, X, ExternalLink } from 'lucide-react';
 
 /** Maps legacy grade strings to new A-F confidence values */
@@ -388,15 +388,16 @@ export default function AuditCustomersTableClient({
                 <td className="px-4 py-2.5 text-right font-mono" style={{ color: 'var(--text)' }}>{row.orderCount}</td>
                 <td className="px-4 py-2.5 text-right font-mono" style={{ color: 'var(--text)' }}>{formatCurrency(row.totalSpend)}</td>
                 <td className="px-4 py-2.5 text-right font-mono font-semibold" style={{ color: 'var(--text)' }}>{Math.round(row.maxScore)}</td>
-                <td className="px-4 py-2.5 text-right">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); openDrawerForEmail(row.email); }}
-                    className="inline-flex items-center gap-0.5 text-xs font-semibold hover:underline"
-                    style={{ color: 'var(--text)' }}
-                  >
-                    View <ArrowRight className="h-3 w-3" />
-                  </button>
-                </td>
+                  <td className="px-4 py-2.5 text-right">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); openDrawerForEmail(row.email); }}
+                      className="inline-flex items-center gap-0.5 text-xs font-semibold hover:underline"
+                      style={{ color: 'var(--text)' }}
+                      aria-label={`Open customer drawer for ${row.email}`}
+                    >
+                      View <ArrowRight className="h-3 w-3" />
+                    </button>
+                  </td>
               </tr>
             ))}
             {filtered.length === 0 && (
@@ -434,6 +435,7 @@ export default function AuditCustomersTableClient({
               onClick={(e) => { e.stopPropagation(); openDrawerForEmail(row.email); }}
               className="flex-shrink-0 inline-flex items-center gap-0.5 text-xs font-semibold hover:underline"
               style={{ color: 'var(--text)' }}
+              aria-label={`Open customer drawer for ${row.email}`}
             >
               View <ArrowRight className="h-3 w-3" />
             </button>

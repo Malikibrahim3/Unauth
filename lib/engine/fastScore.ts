@@ -1,8 +1,7 @@
 import type { NormalisedOrder, SignalResult, ScoredOrder, ConfidenceGrade } from './types';
 import { SIGNAL_WEIGHTS, RISK_TIER_THRESHOLDS, FLAG_THRESHOLD } from './weights';
 import type { FastScoringContext } from './fastContext';
-import { cleanOrderTotal } from '../csv/clean';
-import { buildIdentityClusters, generateIdentityAlert, type IdentityClusterMap } from './identityMatching';
+import { generateIdentityAlert, type IdentityClusterMap } from './identityMatching';
 import { normaliseEmail, normaliseIP, normaliseAddress, normaliseCard } from '../identity/normalise';
 import { computeCrossMerchantSignal } from './signals/crossMerchant';
 
@@ -310,7 +309,10 @@ function addressClustering(order: NormalisedOrder, ctx: FastScoringContext): Sig
 
   const distinctEmails = ctx.addressEmailMap.get(order.addressHash) ?? new Set();
 
-  if (distinctEmails.size < 4) {
+  // Threshold is 3 distinct emails (down from 4) so smaller reshipping rings
+  // are still caught. Base score is raised to 35 so that after the
+  // corroboration penalty (×0.45) the effective score clears FLAG_THRESHOLD.
+  if (distinctEmails.size < 3) {
     return {
       name: 'addressClustering',
       fired: false,
@@ -320,13 +322,13 @@ function addressClustering(order: NormalisedOrder, ctx: FastScoringContext): Sig
     };
   }
 
-  const score = Math.min(70, 25 + 8 * (distinctEmails.size - 4));
+  const score = Math.min(70, 35 + 8 * (distinctEmails.size - 3));
 
   return {
     name: 'addressClustering',
     fired: true,
     score,
-    reason: `${distinctEmails.size} distinct email addresses have placed orders to this shipping address — consistent with an organised returns fraud ring.`,
+    reason: `${distinctEmails.size} distinct email addresses have placed orders to this shipping address — consistent with an organised reshipping fraud ring.`,
     evidence: { distinctEmailCount: distinctEmails.size, totalOrdersAtAddress: (ctx.customerOrderHistory.get(order.emailHash) ?? []).length },
     identifierTypesUsed: ['address'],
   };
@@ -845,11 +847,39 @@ export function scoreBatch(
     }
     const strongCount = strongIdentifierTypes.size;
 
+    // Count how many distinct email-based fraud signals fired. When ≥3
+    // independent email signals corroborate the same address, that constitutes
+    // multi-signal evidence even when only one identifier type (email) is
+    // present — so the single-identifier cap should not apply.
+    const emailSignalCount = signals.filter(
+      (s) =>
+        s.fired &&
+        s.identifierTypesUsed &&
+        s.identifierTypesUsed.includes('email') &&
+        !s.identifierTypesUsed.includes('address')
+    ).length;
+    const multiCorroborated = emailSignalCount >= 3;
+
+    // §5.3 — PayPal / thin-evidence caps
+    // (a) Customers who used a single payment method across ALL their orders
+    //     lack card-fingerprint evidence; cap at probable regardless of score.
+    // (b) Customers with only 2 orders in the batch have too thin a history
+    //     to warrant a definite grade.
+    const customerOrders = ctx.customerOrderHistory.get(order.emailHash) ?? [];
+    const uniquePMs = new Set(customerOrders.map((o) => (o.paymentMethod ?? '').toLowerCase().trim()));
+    const isSinglePMOnly = uniquePMs.size === 1;
+    const isTwoOrderCluster = customerOrders.length <= 2;
+
     let confidenceGrade: ConfidenceGrade | null;
-    if (totalScore >= 75 && strongCount >= 2) {
+    // Multi-corroborated email evidence (≥3 distinct signals) is treated as
+    // equivalent to a two-identifier definite — but only when the score
+    // already clears the definite bar AND the order is not subject to a cap.
+    if (totalScore >= 75 && strongCount >= 2 && !isSinglePMOnly) {
       confidenceGrade = 'definite';
-    } else if (totalScore >= 75 && strongCount === 1) {
-      confidenceGrade = 'probable'; // single-identifier cap
+    } else if (totalScore >= 75 && multiCorroborated && !isSinglePMOnly && !isTwoOrderCluster) {
+      confidenceGrade = 'definite'; // ≥3 corroborating email signals, no thin-evidence cap
+    } else if (totalScore >= 75) {
+      confidenceGrade = 'probable'; // single-identifier cap (or PM/thin-history cap)
     } else if (totalScore >= 50 && strongCount >= 2) {
       confidenceGrade = 'probable';
     } else if (totalScore >= 25 && strongCount >= 1) {

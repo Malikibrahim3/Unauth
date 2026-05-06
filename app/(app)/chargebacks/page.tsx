@@ -40,7 +40,7 @@ export default async function ChargebacksPage() {
 
   // Fetch masked email hints for each package
   const profileIds = [...new Set(pkgs.map(p => p.customer_profile_id).filter(Boolean))]
-  let profileMap: Record<string, { maskedEmail: string }> = {}
+  const profileMap: Record<string, { maskedEmail: string }> = {}
   if (profileIds.length > 0) {
     const { data: profiles } = await supabase
       .from('customer_profiles')

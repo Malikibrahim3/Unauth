@@ -154,7 +154,7 @@ export default function CustomerProfileCard({ profile }: { profile: CustomerProf
           {/* Identity changes / flags */}
           {profile.flags.length > 0 && (
             <div>
-              <h4 className="text-overline mb-2">Suspicious activity</h4>
+              <h4 className="text-overline mb-2">Evidence signals</h4>
               <div className="space-y-2">
                 {profile.flags.map((flag, i) => (
                   <div key={i} className="rounded-lg border px-3 py-2" style={severityStyle(flag.severity)}>

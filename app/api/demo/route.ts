@@ -237,7 +237,7 @@ function generateDemoOrders(): DemoOrder[] {
   return orders;
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     const supabase = createClient();
     const serviceClient = createServiceClient();
@@ -275,7 +275,7 @@ export async function POST(request: NextRequest) {
 
     const predicted = scored.map((s) => s.flagged);
     const actual = scored.map((s) => s.order.groundTruthLabel);
-    const evalMetrics = computeMetrics(predicted, actual);
+    const _evalMetrics = computeMetrics(predicted, actual);
 
     // Create processing_jobs record (unified schema)
     const jobId = await createJob(serviceClient, merchantData.id, 'sample_audit_3000_orders.csv');

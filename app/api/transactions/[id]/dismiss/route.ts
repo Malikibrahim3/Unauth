@@ -5,8 +5,9 @@ import { logAction } from '@/lib/permissions/audit';
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const resolvedParams = await params;
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown';
 
   const userClient = createClient();
@@ -21,7 +22,7 @@ export async function PATCH(
   const { data: tx } = await serviceClient
     .from('audit_transactions')
     .select('id, job_id')
-    .eq('id', params.id)
+    .eq('id', resolvedParams.id)
     .single();
 
   if (!tx) return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -40,7 +41,7 @@ export async function PATCH(
   const { error } = await serviceClient
     .from('audit_transactions')
     .update({ dismissed_by_merchant: true } as any)
-    .eq('id', params.id);
+    .eq('id', resolvedParams.id);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
@@ -48,7 +49,7 @@ export async function PATCH(
     ctx,
     action: 'dismiss_transaction',
     resourceType: 'transaction',
-    resourceId: params.id,
+    resourceId: resolvedParams.id,
     ip,
   });
 

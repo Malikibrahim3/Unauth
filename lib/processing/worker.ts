@@ -18,7 +18,7 @@ import { scoreAllClusters, scoreIdentityFromSignals, type ScoredCluster, type Sc
 import { assessDataQuality } from '../csv/dataQuality';
 import type { NormalisedOrder, ScoredOrder } from '../engine/types';
 import { normaliseRow } from '../csv/normalise';
-import { cleanBoolean, cleanRow } from '../csv/clean';
+import { cleanRow } from '../csv/clean';
 import type { CsvRow } from '../csv/schema';
 import { csvRowSchema } from '../csv/schema';
 import {
@@ -44,23 +44,39 @@ function splitIntoBatches<T>(items: T[], size: number): T[][] {
   return batches;
 }
 
+type MatchStatus = 'none' | 'candidate' | 'probable' | 'definite';
+
+/**
+ * Maps a raw identity score to a product-level match_status using the
+ * two-tier spec thresholds (independent of scorer.ts grade strings):
+ *   < 25  → none      (nothing surfaced)
+ *   25–49 → candidate (signal only, no profile merge)
+ *   50–74 → probable  (profile created with identity_status='candidate')
+ *   ≥ 75  → definite  (confirmed link, profile with identity_status='confirmed')
+ */
+function scoreToMatchStatus(score: number | null): MatchStatus {
+  if (!score || score < 25) return 'none';
+  if (score < 50) return 'candidate';
+  if (score < 75) return 'probable';
+  return 'definite';
+}
+
 type PersistedIdentityResult = {
   grade: 'weak' | 'possible' | 'probable' | 'definite' | null;
+  matchStatus: MatchStatus;
   identityScore: number | null;
   signalsMatched: string[];
   behaviouralFlags: string[];
   recommendedAction: string | null;
   ce3Eligible: boolean;
   ce3QualifyingTransactions: string[];
+  /** Only populated for definite (match_status='definite'). */
   clusterId: string | null;
+  /** Set for probable + definite rows (score ≥ 50). */
+  candidateClusterId: string | null;
+  /** Set ONLY for definite rows (score ≥ 75). */
+  confirmedIdentityId: string | null;
 };
-
-function normalisePhoneForDiversity(phone: string | null | undefined): string {
-  if (!phone) return '';
-  const digits = phone.replace(/\D/g, '');
-  if (digits.length < 7) return '';
-  return digits.slice(-10);
-}
 
 function rawIds(order: NormalisedOrder) {
   return order as NormalisedOrder & {
@@ -141,9 +157,7 @@ function rowToScorerOrder(row: CsvRow): ScorerOrder {
 
 function buildClusterIdentityResults(
   clusters: LinkedCluster[],
-  clusterScores: ScoredCluster[],
-  scored: ScoredOrder[],
-  rawRowsByOrderId: Map<string, ParsedCsvRow>
+  clusterScores: ScoredCluster[]
 ): Map<string, PersistedIdentityResult> {
   const scoresByCluster = new Map(clusterScores.map((score) => [score.cluster_id, score]));
   const result = new Map<string, PersistedIdentityResult>();
@@ -192,16 +206,29 @@ function buildClusterIdentityResults(
       )
     );
 
+    // ── Product-level match status gate ───────────────────────────────────────
+    // Applies the two-tier spec thresholds on top of the scorer grade.
+    // Scores 25–34 are not graded by scorer.ts (POSSIBLE floor = 35) but the
+    // product spec still surfaces them as 'candidate' signals.
+    const matchStatus = scoreToMatchStatus(identityScore);
+    const isConfirmed  = matchStatus === 'definite';
+    const isProbable   = matchStatus === 'probable';
+
     for (const orderId of cluster.order_ids) {
       result.set(orderId, {
         grade,
+        matchStatus,
         identityScore,
         signalsMatched: cluster.signals_matched,
         behaviouralFlags: (clusterScore?.behavioural_flags ?? []).map((flag) => flag.flag),
         recommendedAction,
         ce3Eligible: clusterScore?.ce3_eligible ?? false,
         ce3QualifyingTransactions: ce3OrderIds,
-        clusterId: cluster.cluster_id,
+        // clusterId kept ONLY for confirmed links — downstream consumers that
+        // haven't migrated yet can still read this field safely.
+        clusterId: isConfirmed ? cluster.cluster_id : null,
+        candidateClusterId: (isProbable || isConfirmed) ? cluster.cluster_id : null,
+        confirmedIdentityId: isConfirmed ? cluster.cluster_id : null,
       });
     }
   }
@@ -249,6 +276,10 @@ function rowToFraudTransaction(
     ce3_eligible: identity?.ce3Eligible ?? false,
     ce3_qualifying_transactions: identity?.ce3QualifyingTransactions ?? [],
     cluster_id: identity?.clusterId ?? null,
+    match_status: identity?.matchStatus ?? 'none',
+    candidate_cluster_id: identity?.candidateClusterId ?? null,
+    confirmed_identity_id: identity?.confirmedIdentityId ?? null,
+    false_positive_reported: false,
   };
 }
 
@@ -327,15 +358,14 @@ export async function processCsvJob(
   // -----------------------------------------------------------------------
   const identityClusterMap = await buildIdentityClusters(normOrders, context);
   const linkerResult = linkIdentities(buildLinkerInput(normOrders));
-  const ordersById = new Map(validPairs.map((pair) => [pair.parsed.order_id, rowToScorerOrder(pair.parsed)]));
-  const rawRowsByOrderId = new Map(validPairs.map((pair) => [pair.parsed.order_id, pair.raw]));
+  const ordersById = new Map(validPairs.map((pair) => [pair.parsed.order_id, rowToScorerOrder(pair.parsed)]))
   const clusterScores = scoreAllClusters(linkerResult.clusters, ordersById);
 
   // -----------------------------------------------------------------------
   // 4. Score all rows synchronously (O(n) thanks to precomputed context)
   // -----------------------------------------------------------------------
   const scored = scoreBatch(normOrders, context, identityClusterMap);
-  const identityResultsByOrder = buildClusterIdentityResults(linkerResult.clusters, clusterScores, scored, rawRowsByOrderId);
+  const identityResultsByOrder = buildClusterIdentityResults(linkerResult.clusters, clusterScores);
   jobLog(`scoreBatch completed in ${Date.now() - overallStart}ms`);
 
   // §1.2 — Flush cross-merchant access audit log entries (fire-and-forget, non-fatal).
@@ -486,6 +516,7 @@ export async function processCsvJob(
               grade: identity.grade,
               signals: identity.signalsMatched,
               clusterId: identity.clusterId,
+              matchStatus: identity.matchStatus,
             },
           ])
         )
@@ -516,7 +547,7 @@ export async function processCsvJob(
           if (watchlistRows && watchlistRows.length > 0) {
             const now = new Date().toISOString();
             // Batch all watchlist updates into a single upsert — no serial loop
-            const watchlistUpdates = (watchlistRows as { id: string; email_hash: string }[]).map(
+            const watchlistUpdates = (watchlistRows as unknown as { id: string; email_hash: string }[]).map(
               (row) => ({
                 id: row.id,
                 last_seen_risk: emailRiskMap.get(row.email_hash),
@@ -757,7 +788,7 @@ async function writeFraudEntities(
   const CHUNK = 500;
   for (let i = 0; i < directRows.length; i += CHUNK) {
     const chunk = directRows.slice(i, i + CHUNK);
-    const { error: upsertError } = await serviceClient
+    const { error: upsertError } = await (serviceClient as any)
       .from('fraud_entities')
       .upsert(chunk as any, { onConflict: 'entity_type,entity_value', ignoreDuplicates: false });
     if (upsertError) {
@@ -878,7 +909,7 @@ async function writeCoOccurrences(
   const CHUNK = 500;
   for (let i = 0; i < directRows.length; i += CHUNK) {
     const chunk = directRows.slice(i, i + CHUNK);
-    const { error: upsertError } = await serviceClient
+    const { error: upsertError } = await (serviceClient as any)
       .from('fraud_entity_co_occurrences')
       .upsert(chunk as any, {
         onConflict: 'entity_a_type,entity_a_value,entity_b_type,entity_b_value',
@@ -936,7 +967,7 @@ async function writeIdentityClusters(
     return true;
   });
 
-  const { error } = await serviceClient
+  const { error } = await (serviceClient as any)
     .from('fraud_identity_clusters')
     .upsert(deduped as any, {
       onConflict: 'cluster_id,entity_type,entity_value',
@@ -972,20 +1003,3 @@ async function upsertBatchNoProgress(
   }
 }
 
-// Keep the original upsertBatch for backward-compatibility in case it's
-// referenced elsewhere; it now delegates to upsertBatchNoProgress and then
-// calls incrementJobProgress once.
-async function upsertBatch(
-  inserts: FraudTransactionInsert[],
-  jobId: string,
-  serviceClient: SupabaseClient<Database>
-): Promise<void> {
-  try {
-    await upsertBatchNoProgress(inserts, jobId, serviceClient);
-    await incrementJobProgress(serviceClient, jobId, inserts.length, 0);
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    await incrementJobProgress(serviceClient, jobId, 0, inserts.length);
-    throw new Error(message);
-  }
-}

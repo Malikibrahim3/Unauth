@@ -17,11 +17,11 @@ const GRADE_TONE = {
 } as const;
 
 const GRADE_LABEL = {
-  A: 'Grade A — highest confidence, strong evidence of fraud',
-  B: 'Grade B — high confidence',
-  C: 'Grade C — moderate confidence',
-  D: 'Grade D — low confidence',
-  F: 'Grade F — insufficient evidence',
+  A: 'Grade A — definite identity match',
+  B: 'Grade B — probable identity match',
+  C: 'Grade C — possible identity match',
+  D: 'Grade D — weak match signals',
+  F: 'Grade F — insufficient signals',
 } as const;
 
 export function ConfidenceBadge({ grade, score, size = 'md' }: ConfidenceBadgeProps) {
@@ -55,7 +55,7 @@ export function scoreToGrade(score: number): ConfidenceGradeValue {
   return 'F';
 }
 
-/** Maps legacy risk level strings to new A–F grades */
+/** Maps legacy risk level strings to identity match confidence grades (A–F) */
 export function riskLevelToNewGrade(level: string | null | undefined): ConfidenceGradeValue {
   switch ((level ?? '').toLowerCase()) {
     case 'critical': return 'F';

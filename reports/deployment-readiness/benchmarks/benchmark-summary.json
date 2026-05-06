@@ -1,0 +1,216 @@
+{
+  "summaries": [
+    {
+      "dataset": "small_sanity",
+      "rows": 91,
+      "processed": 91,
+      "expectedFlagged": 9,
+      "surfaced": 9,
+      "truePositives": 9,
+      "falsePositives": 0,
+      "falseNegatives": 0,
+      "precision": 1,
+      "recall": 1,
+      "reviewRate": 0.0989,
+      "largestCluster": 5,
+      "linkedClusters": 2,
+      "gradeCounts": {
+        "definite": 0,
+        "probable": 9,
+        "possible": 0,
+        "weak": 0
+      },
+      "durationMs": 129
+    },
+    {
+      "dataset": "medium_realistic",
+      "rows": 1350,
+      "processed": 1350,
+      "expectedFlagged": 66,
+      "surfaced": 56,
+      "truePositives": 56,
+      "falsePositives": 0,
+      "falseNegatives": 10,
+      "precision": 1,
+      "recall": 0.8485,
+      "reviewRate": 0.0415,
+      "largestCluster": 12,
+      "linkedClusters": 7,
+      "gradeCounts": {
+        "definite": 20,
+        "probable": 24,
+        "possible": 12,
+        "weak": 0
+      },
+      "durationMs": 284
+    },
+    {
+      "dataset": "negative_control",
+      "rows": 1500,
+      "processed": 1500,
+      "expectedFlagged": 0,
+      "surfaced": 0,
+      "truePositives": 0,
+      "falsePositives": 0,
+      "falseNegatives": 0,
+      "precision": 1,
+      "recall": 1,
+      "reviewRate": 0,
+      "largestCluster": 0,
+      "linkedClusters": 0,
+      "gradeCounts": {
+        "definite": 0,
+        "probable": 0,
+        "possible": 0,
+        "weak": 0
+      },
+      "durationMs": 285
+    },
+    {
+      "dataset": "adversarial_fraud",
+      "rows": 402,
+      "processed": 402,
+      "expectedFlagged": 98,
+      "surfaced": 83,
+      "truePositives": 83,
+      "falsePositives": 0,
+      "falseNegatives": 15,
+      "precision": 1,
+      "recall": 0.8469,
+      "reviewRate": 0.2065,
+      "largestCluster": 18,
+      "linkedClusters": 7,
+      "gradeCounts": {
+        "definite": 12,
+        "probable": 53,
+        "possible": 18,
+        "weak": 0
+      },
+      "durationMs": 149
+    },
+    {
+      "dataset": "large_merchant_scale",
+      "rows": 5400,
+      "processed": 5400,
+      "expectedFlagged": 130,
+      "surfaced": 110,
+      "truePositives": 110,
+      "falsePositives": 0,
+      "falseNegatives": 20,
+      "precision": 1,
+      "recall": 0.8462,
+      "reviewRate": 0.0204,
+      "largestCluster": 24,
+      "linkedClusters": 7,
+      "gradeCounts": {
+        "definite": 16,
+        "probable": 54,
+        "possible": 40,
+        "weak": 0
+      },
+      "durationMs": 626
+    }
+  ],
+  "headerChaos": [
+    {
+      "file": "header_chaos_shopify.csv",
+      "valid": true,
+      "rowCount": 72,
+      "missingRequired": [],
+      "unmappedHeaders": [
+        "shipping_city",
+        "shipping_province",
+        "shipping_postcode",
+        "shipping_country",
+        "delivery_status",
+        "tracking_number",
+        "unmapped_loyalty_tier"
+      ],
+      "headerCount": 26
+    },
+    {
+      "file": "header_chaos_woocommerce.csv",
+      "valid": true,
+      "rowCount": 72,
+      "missingRequired": [],
+      "unmappedHeaders": [
+        "shipping_city",
+        "shipping_postcode"
+      ],
+      "headerCount": 22
+    },
+    {
+      "file": "header_chaos_amazon.csv",
+      "valid": true,
+      "rowCount": 72,
+      "missingRequired": [],
+      "unmappedHeaders": [
+        "ship_city",
+        "shipping_postcode",
+        "shipping_country"
+      ],
+      "headerCount": 19
+    },
+    {
+      "file": "header_chaos_etsy_semicolon_bom.csv",
+      "valid": true,
+      "rowCount": 72,
+      "missingRequired": [],
+      "unmappedHeaders": [
+        "ship_name",
+        "address_2",
+        "ship_city",
+        "shipping_postcode",
+        "shipping_country"
+      ],
+      "headerCount": 18
+    },
+    {
+      "file": "header_chaos_stripe_pipe.csv",
+      "valid": true,
+      "rowCount": 72,
+      "missingRequired": [],
+      "unmappedHeaders": [
+        "order_id_1",
+        "postcode",
+        "shipping_country",
+        "metadata,_merchant_note"
+      ],
+      "headerCount": 20
+    },
+    {
+      "file": "header_chaos_custom_mixed_case.csv",
+      "valid": true,
+      "rowCount": 72,
+      "missingRequired": [],
+      "unmappedHeaders": [
+        "shipping_postcode",
+        "shipping_country",
+        "extra_column"
+      ],
+      "headerCount": 20
+    },
+    {
+      "file": "header_chaos_duplicate_headers.csv",
+      "valid": true,
+      "rowCount": 72,
+      "missingRequired": [],
+      "unmappedHeaders": [
+        "shipping_country",
+        "customer_phone_1",
+        "unmapped_extra"
+      ],
+      "headerCount": 13
+    },
+    {
+      "file": "header_chaos_missing_important.csv",
+      "valid": true,
+      "rowCount": 72,
+      "missingRequired": [],
+      "unmappedHeaders": [
+        "shipping_country"
+      ],
+      "headerCount": 5
+    }
+  ]
+}

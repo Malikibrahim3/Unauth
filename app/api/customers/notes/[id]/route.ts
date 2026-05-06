@@ -4,7 +4,8 @@ import { logAction } from '@/lib/permissions/audit';
 import { writeActivityLog } from '@/lib/customers/activityLog';
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = await params;
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown';
 
   const userClient = createClient();
@@ -19,14 +20,14 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   const { data: noteRow } = await serviceClient
     .from('customer_notes')
     .select('id, customer_profile_id')
-    .eq('id', params.id)
+    .eq('id', resolvedParams.id)
     .eq('merchant_id', ctx.merchantId)
     .maybeSingle();
 
   const { error } = await serviceClient
     .from('customer_notes')
     .update({ deleted_by_merchant: true } as any)
-    .eq('id', params.id)
+    .eq('id', resolvedParams.id)
     .eq('merchant_id', ctx.merchantId);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -35,7 +36,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     ctx,
     action: 'delete_customer_note',
     resourceType: 'customer_note',
-    resourceId: params.id,
+    resourceId: resolvedParams.id,
     ip,
   });
 

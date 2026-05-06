@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { SectionCard } from './SectionCard';
 import { EvidenceList } from './EvidenceList';
@@ -43,19 +43,19 @@ interface RecommendedActionCardProps {
 }
 
 const ACTION_LABELS: Record<RecommendedActionKey, string> = {
-  block:            'Block this customer',
-  watch:            'Add to watchlist',
-  review:           'Review manually',
-  allow:            'Allow — no action needed',
-  request_evidence: 'Request evidence from customer',
+  block:            'Escalate for manual review',
+  watch:            'Add to review list',
+  review:           'Review before refund',
+  allow:            'No action needed',
+  request_evidence: 'Request additional verification',
 };
 
 const ACTION_BUTTON_LABELS: Record<RecommendedActionKey, string> = {
-  block:            'Block customer',
-  watch:            'Add to watchlist',
+  block:            'Escalate for review',
+  watch:            'Add to review list',
   review:           'Mark for review',
-  allow:            'Mark as safe',
-  request_evidence: 'Request evidence',
+  allow:            'Mark as cleared',
+  request_evidence: 'Request verification',
 };
 
 const FP_LEVEL_BADGE: Record<FalsePositiveRisk['level'], { text: string; color: string }> = {
@@ -153,11 +153,18 @@ export function RecommendedActionCard({
             )}
             {onMarkSafe && (
               <Button variant="secondary" size="sm" className="mt-[var(--space-4)]" onClick={onMarkSafe}>
-                Mark as safe — not a fraudster
+                Mark as not a match
               </Button>
             )}
           </div>
         )}
+
+        {/* Disclaimer */}
+        <div className="px-[var(--space-5)] py-[var(--space-3)] border-t border-[var(--border-subtle)]">
+          <p className="text-[11px] leading-relaxed" style={{ color: 'var(--text-tertiary)' }}>
+            ParcelClaim identifies identity and order-pattern matches. Final decisions should be made by the merchant using the underlying evidence.
+          </p>
+        </div>
       </div>
     </SectionCard>
   );

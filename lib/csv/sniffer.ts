@@ -17,7 +17,6 @@
  */
 
 import { cleanHeader } from './clean';
-import type { RequiredField } from './headerAliases';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants

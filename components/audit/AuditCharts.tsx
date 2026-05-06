@@ -84,9 +84,9 @@ export default function AuditCharts({ counts, totalRows, totalFlagged }: Props) 
         className="rounded-lg border px-5 pt-4 pb-3"
         style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
       >
-        <div className="text-overline mb-0.5" style={{ color: 'var(--text-muted)' }}>Risk Distribution</div>
+        <div className="text-overline mb-0.5" style={{ color: 'var(--text-muted)' }}>Match Distribution</div>
         <div className="text-caption mb-3" style={{ color: 'var(--text-subtle)' }}>
-          {totalTiered.toLocaleString()} flagged {totalTiered === 1 ? 'customer' : 'customers'}
+          {totalTiered.toLocaleString()} {totalTiered === 1 ? 'customer' : 'customers'} with match signals
         </div>
         {pieData.length === 0 ? (
           <div className="flex items-center justify-center h-[160px] rounded-md" style={{ background: 'var(--bg-subtle)' }}>
@@ -99,8 +99,8 @@ export default function AuditCharts({ counts, totalRows, totalFlagged }: Props) 
                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                 </svg>
               </div>
-              <p className="text-caption font-medium" style={{ color: 'var(--text)' }}>No risk tiers triggered</p>
-              <p className="text-caption" style={{ color: 'var(--text-subtle)' }}>All transactions clean</p>
+              <p className="text-caption font-medium" style={{ color: 'var(--text)' }}>No match signals found</p>
+              <p className="text-caption" style={{ color: 'var(--text-subtle)' }}>All transactions appear clean</p>
             </div>
           </div>
         ) : (
@@ -149,8 +149,8 @@ export default function AuditCharts({ counts, totalRows, totalFlagged }: Props) 
         className="rounded-lg border px-5 pt-4 pb-3"
         style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
       >
-        <div className="text-overline mb-0.5" style={{ color: 'var(--text-muted)' }}>Customers by Confidence</div>
-        <div className="text-caption mb-4" style={{ color: 'var(--text-subtle)' }}>Counts across all four risk tiers</div>
+        <div className="text-overline mb-0.5" style={{ color: 'var(--text-muted)' }}>Customers by Match Confidence</div>
+        <div className="text-caption mb-4" style={{ color: 'var(--text-subtle)' }}>Counts across all four confidence tiers</div>
         <ResponsiveContainer width="100%" height={160}>
           <BarChart data={barData} margin={{ top: 0, right: 8, left: -12, bottom: 0 }} barSize={20}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" vertical={false} />
@@ -186,11 +186,11 @@ export default function AuditCharts({ counts, totalRows, totalFlagged }: Props) 
           <div className="flex items-center gap-4 text-caption" style={{ color: 'var(--text-subtle)' }}>
             <span className="flex items-center gap-1.5">
               <span className="h-2 w-2 rounded-sm inline-block" style={{ background: 'var(--risk-high)' }} />
-              Flagged {flaggedPct.toFixed(1)}%
+              With signals {flaggedPct.toFixed(1)}%
             </span>
             <span className="flex items-center gap-1.5">
               <span className="h-2 w-2 rounded-sm inline-block" style={{ background: 'var(--risk-low)' }} />
-              Clean {cleanPct.toFixed(1)}%
+              No signals {cleanPct.toFixed(1)}%
             </span>
           </div>
         </div>
@@ -202,10 +202,10 @@ export default function AuditCharts({ counts, totalRows, totalFlagged }: Props) 
         </div>
         <div className="flex items-center justify-between mt-2">
           <span className="text-caption" style={{ color: 'var(--text-subtle)' }}>
-            {totalFlagged.toLocaleString()} flagged of {totalRows.toLocaleString()} transactions
+            {totalFlagged.toLocaleString()} with signals of {totalRows.toLocaleString()} transactions
           </span>
           <span className="text-caption font-mono" style={{ color: 'var(--text-muted)' }}>
-            {(totalRows - totalFlagged).toLocaleString()} clean
+            {(totalRows - totalFlagged).toLocaleString()} no signals
           </span>
         </div>
       </div>

@@ -17,8 +17,8 @@ const dmMono = DM_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Unauth — Refund Fraud Audit',
-  description: 'CSV-based fraud audit tool for ecommerce merchants.',
+  title: 'Unauth — Order Identity Review',
+  description: 'CSV-based identity match and evidence review tool for ecommerce merchants.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

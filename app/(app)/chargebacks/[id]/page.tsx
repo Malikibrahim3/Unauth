@@ -7,10 +7,11 @@ import Link from 'next/link'
 import { formatDate } from '@/lib/utils/format'
 
 interface Props {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 export default async function EvidenceDetailPage({ params }: Props) {
+  const { id } = await params
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -18,7 +19,7 @@ export default async function EvidenceDetailPage({ params }: Props) {
   const { data: pkg } = await supabase
     .from('evidence_packages')
     .select('*')
-    .eq('id', params.id)
+    .eq('id', id)
     .single() as unknown as {
       data: {
         id: string

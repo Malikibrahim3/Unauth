@@ -107,6 +107,7 @@ async function runAudit(
       .from('processing_jobs')
       .select('id, filename, created_at, label, status')
       .eq('merchant_id', ctx.merchantId)
+      .eq('hidden_by_merchant' as any, false)
       .eq('file_hash' as any, fileHash)
       .neq('status', 'failed')
       .order('created_at', { ascending: false })
@@ -149,7 +150,7 @@ async function runAudit(
 
   if (file.size > MAX_FILE_SIZE_BYTES) {
     return NextResponse.json(
-      { error: `File exceeds the 50 MB limit (${(file.size / 1024 / 1024).toFixed(1)} MB)` },
+      { error: `File exceeds the 500 MB limit (${(file.size / 1024 / 1024).toFixed(1)} MB)` },
       { status: 400 }
     );
   }
@@ -253,17 +254,27 @@ async function runAudit(
   }
   log(`chunk staging complete`);
 
-  // ── Dispatch chunk 0 — fire-and-forget, the chain self-propagates ────────
+  // ── Dispatch chunk 0 — await to ensure the first chunk is accepted before
+  // returning. In serverless runtimes, fire-and-forget work after response
+  // may be frozen before the fetch is sent. Awaiting the first dispatch
+  // guarantees the chain is started; subsequent chunks self-propagate.
   log(`dispatching chunk 0 origin=${originFromRequest(request)}`);
-  void dispatchChunk(originFromRequest(request), {
-    jobId,
-    chunkIndex: 0,
-    totalChunks,
-    merchantId,
-    columnMap,
-    storagePath: filePath,
-  });
-  log('chunk 0 dispatched (fire-and-forget)');
+  try {
+    await dispatchChunk(originFromRequest(request), {
+      jobId,
+      chunkIndex: 0,
+      totalChunks,
+      merchantId,
+      columnMap,
+      storagePath: filePath,
+    });
+    log('chunk 0 dispatched successfully');
+  } catch (dispatchErr) {
+    const dispatchMsg = dispatchErr instanceof Error ? dispatchErr.message : String(dispatchErr);
+    log(`chunk 0 dispatch FAILED: ${dispatchMsg}`);
+    await completeJob(serviceClient, jobId, false, [{ message: `Dispatch failed: ${dispatchMsg}` }]);
+    return NextResponse.json({ error: 'Failed to start processing. Please retry.' }, { status: 500 });
+  }
 
   return NextResponse.json({
     runId: jobId,

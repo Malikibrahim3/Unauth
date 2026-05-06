@@ -3,8 +3,13 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { EvidencePackage } from './types'
-import { assessCE3Eligibility, CE3_SIGNAL_LABELS } from './ce3'
+import { assessCE3Eligibility } from './ce3'
 import type { IdentitySignalResult } from '@/lib/engine/types'
+import {
+  fetchMerchantScopedCustomerProfile,
+  fetchMerchantScopedCustomerTransactions,
+  getMerchantOwnedJobIds,
+} from '@/lib/supabase/merchantHelpers'
 
 const ENGINE_VERSION = '2.0'
 
@@ -35,16 +40,6 @@ export function maskPhone(phone: string): string {
   return `${phone.slice(0, 3)}****${phone.slice(-3)}`
 }
 
-// CE3.0-accepted signal types mapped to identifier type strings
-const CE3_ACCEPTED_IDENTIFIER_TYPES = new Set([
-  'email',
-  'ip',
-  'address',
-  'phone',
-  'device',
-  'account_id',
-])
-
 // =============================================================================
 // Main function
 // =============================================================================
@@ -74,48 +69,56 @@ export async function buildEvidencePackage(
     'Merchant'
 
   // -------------------------------------------------------------------------
-  // 2. Customer profile
+  // 2. Customer profile — verified to belong to this merchant
   // -------------------------------------------------------------------------
-  const { data: profileRow } = await supabaseServiceRole
-    .from('customer_profiles')
-    .select('*')
-    .eq('id', customerProfileId)
-    .single() as unknown as { data: Record<string, any> | null }
+  const profileRow = await fetchMerchantScopedCustomerProfile(
+    supabaseServiceRole,
+    merchantId,
+    customerProfileId
+  )
+  if (!profileRow) throw new Error(`Customer profile not found or not owned by merchant: ${customerProfileId}`)
 
-  if (!profileRow) throw new Error(`Customer profile not found: ${customerProfileId}`)
-
-  // -------------------------------------------------------------------------
-  // 3. All orders for this customer from this merchant
-  // -------------------------------------------------------------------------
-  const { data: txRows } = await supabaseServiceRole
-    .from('audit_transactions')
-    .select(
-      'id, order_id, customer_email, customer_name, shipping_address, device_ip, card_last4, order_value, match_score, risk_level, identity_signals, refund_claimed, refund_reason, processed_at, job_id'
-    )
-    .in('customer_email', profileRow.emails ?? [])
-    .order('processed_at', { ascending: true })
-    .limit(500) as unknown as { data: Array<Record<string, any>> | null }
-
-  const allTxs = (txRows ?? [])
+  // Cast to any for local use — all access is through merchant-scoped fetch above
+  const profile = profileRow as Record<string, any>
 
   // -------------------------------------------------------------------------
-  // 4. Identify disputed order
+  // 3. All orders for this customer — scoped to merchant-owned jobs only
   // -------------------------------------------------------------------------
-  const disputedTx = allTxs.find(tx => tx.id === disputedOrderId || tx.order_id === disputedOrderId)
-  if (!disputedTx) throw new Error(`Disputed order not found: ${disputedOrderId}`)
+  const txRows = await fetchMerchantScopedCustomerTransactions(
+    supabaseServiceRole,
+    merchantId,
+    customerProfileId,
+    profile,
+    { select: 'id,order_id,customer_email,customer_name,shipping_address,device_ip,card_last4,order_value,match_score,risk_level,identity_signals,refund_claimed,refund_reason,processed_at,job_id' }
+  )
 
-  const disputedDate = new Date(disputedTx.processed_at)
+  // -------------------------------------------------------------------------
+  // 3b. Verify disputed order belongs to this merchant
+  // -------------------------------------------------------------------------
+  const ownedJobIds = await getMerchantOwnedJobIds(supabaseServiceRole, merchantId)
+  const allTxs = txRows
+
+  // -------------------------------------------------------------------------
+  // 4. Identify disputed order — must belong to this merchant's jobs
+  // -------------------------------------------------------------------------
+  const disputedTx = allTxs.find(tx =>
+    (tx.id === disputedOrderId || tx.order_id === disputedOrderId) &&
+    ownedJobIds.includes(tx.job_id as string)
+  )
+  if (!disputedTx) throw new Error(`Disputed order not found or not owned by merchant: ${disputedOrderId}`)
+
+  const disputedDate = new Date(disputedTx.processed_at as string)
 
   // -------------------------------------------------------------------------
   // 5. Build identity evidence list
   // -------------------------------------------------------------------------
-  const emailsPresent = (profileRow.emails ?? []) as string[]
-  const addressesPresent = (profileRow.addresses ?? []) as string[]
-  const phonesPresent = (profileRow.phones ?? []) as string[]
-  const ipsPresent = (profileRow.ips ?? []) as string[]
-  const cardsPresent = (profileRow.card_last4s ?? []) as string[]
+  const emailsPresent = (profile.emails ?? []) as string[]
+  const addressesPresent = (profile.addresses ?? []) as string[]
+  const phonesPresent = (profile.phones ?? []) as string[]
+  const ipsPresent = (profile.ips ?? []) as string[]
+  const cardsPresent = (profile.card_last4s ?? []) as string[]
 
-  const firstSeenDate = profileRow.first_seen ? new Date(profileRow.first_seen) : disputedDate
+  const firstSeenDate = profile.first_seen ? new Date(profile.first_seen as string) : disputedDate
 
   const identityEvidence: EvidencePackage['identityEvidence'] = []
 
@@ -183,8 +186,8 @@ export async function buildEvidencePackage(
   }))
 
   const orderHistoryForCE3 = allTxs.map(tx => ({
-    order_id: tx.id,
-    order_date: tx.processed_at,
+    order_id: tx.id as string,
+    order_date: tx.processed_at as string,
     refund_status: tx.refund_claimed ? 'full' : 'none',
   }))
 
@@ -198,7 +201,7 @@ export async function buildEvidencePackage(
   // -------------------------------------------------------------------------
   // 7. Cross-merchant snapshot (from customer profile)
   // -------------------------------------------------------------------------
-  const totalMerchantsSeenAt: number = profileRow.total_merchants_seen_at ?? 1
+  const totalMerchantsSeenAt: number = profile.total_merchants_seen_at ?? 1
   const K_ANON_THRESHOLD = 3
 
   const crossMerchant: EvidencePackage['crossMerchant'] =
@@ -206,8 +209,8 @@ export async function buildEvidencePackage(
       ? {
           satisfied: true,
           merchantCount: totalMerchantsSeenAt,
-          networkOrderCount: profileRow.total_orders ?? allTxs.length,
-          networkRefundRate: Math.round((profileRow.refund_rate ?? 0) * 100),
+          networkOrderCount: profile.total_orders ?? allTxs.length,
+          networkRefundRate: Math.round((profile.refund_rate ?? 0) * 100),
           networkInrRate: null as unknown as number,
         }
       : { satisfied: false }
@@ -236,7 +239,7 @@ export async function buildEvidencePackage(
   // -------------------------------------------------------------------------
   // 10. Confidence grade
   // -------------------------------------------------------------------------
-  const riskLevel: string = profileRow.risk_level ?? 'low'
+  const riskLevel: string = profile.risk_level ?? 'low'
   const gradeMap: Record<string, EvidencePackage['confidenceGrade']> = {
     critical: 'definite',
     high: 'probable',
@@ -264,13 +267,13 @@ export async function buildEvidencePackage(
     }
 
     return {
-      orderId: tx.order_id ?? tx.id,
-      date: new Date(tx.processed_at),
-      value: tx.order_value ?? 0,
+      orderId: (tx.order_id ?? tx.id) as string,
+      date: new Date(tx.processed_at as string),
+      value: (tx.order_value ?? 0) as number,
       outcome,
       timeToClaim,
       isDisputedOrder: isDisputed,
-      isCE3QualifyingTransaction: ce3QualifyingIds.has(tx.id),
+      isCE3QualifyingTransaction: ce3QualifyingIds.has(tx.id as string),
     }
   })
 
@@ -300,9 +303,9 @@ export async function buildEvidencePackage(
     generatedAt: new Date(),
     merchant: { name: merchantName, id: merchantId },
     disputedOrder: {
-      orderId: disputedTx.order_id ?? disputedTx.id,
+      orderId: ((disputedTx.order_id ?? disputedTx.id) as string),
       orderDate: disputedDate,
-      orderValue: disputedTx.order_value ?? 0,
+      orderValue: (disputedTx.order_value ?? 0) as number,
       currency: 'GBP',
       outcome: 'disputed',
     },

@@ -84,14 +84,18 @@ export interface CustomerIntelligencePanel {
   narrative: string;
 }
 
+const TX_SELECT =
+  'id,job_id,order_id,customer_email,customer_name,shipping_address,device_ip,card_last4,order_value,match_score,fraud_flags,risk_level,refund_claimed,refund_reason,chargeback_filed,chargeback_date,chargeback_reason_code,processed_at,cluster_id';
+
 // ---------------------------------------------------------------------------
 // GET /api/customers/[id]
 // ---------------------------------------------------------------------------
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const resolvedParams = await params;
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown';
 
   const userClient = createClient();
@@ -102,7 +106,7 @@ export async function GET(
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_CUSTOMERS);
   if (denied) return denied;
 
-  const profileId = params.id;
+  const profileId = resolvedParams.id;
 
   // -------------------------------------------------------------------------
   // 1. Fetch the customer profile — verify merchant has access
@@ -138,31 +142,119 @@ export async function GET(
     .maybeSingle() as unknown as { data: { id: string } | null };
 
   // -------------------------------------------------------------------------
-  // 3. Fetch audit appearances for this merchant's jobs
+  // 3a. Resolve merchant-owned job IDs — used as the security boundary for
+  //     ALL subsequent transaction queries. Service role bypasses RLS so
+  //     we MUST enforce merchant scope at the application layer.
   // -------------------------------------------------------------------------
-  const { data: appearances } = await serviceClient
-    .from('customer_profile_audit_appearances')
-    .select('audit_id')
-    .eq('profile_id', profileId) as unknown as { data: { audit_id: string }[] | null };
+  const { data: ownedJobs } = await serviceClient
+    .from('processing_jobs')
+    .select('id')
+    .eq('merchant_id', ctx.merchantId) as unknown as { data: { id: string }[] | null };
 
-  const auditIds = (appearances ?? []).map((a) => a.audit_id);
+  const ownedJobIds = (ownedJobs ?? []).map((j) => j.id);
+
+  // -------------------------------------------------------------------------
+  // 3b. Fetch audit appearances scoped strictly to this merchant's jobs
+  // -------------------------------------------------------------------------
+  let appearances: { audit_id: string; transaction_id: string | null }[] = [];
+  if (ownedJobIds.length > 0) {
+    const { data: appRows } = await serviceClient
+      .from('customer_profile_audit_appearances')
+      .select('audit_id,transaction_id')
+      .eq('profile_id', profileId)
+      .in('audit_id', ownedJobIds) as unknown as { data: { audit_id: string; transaction_id: string | null }[] | null };
+    appearances = appRows ?? [];
+  }
+
+  const auditIds = appearances.map((a) => a.audit_id);
+  const transactionIds = appearances
+    .map((a) => (a as { transaction_id?: string | null }).transaction_id)
+    .filter((id): id is string => typeof id === 'string' && id.length > 0);
 
   // -------------------------------------------------------------------------
   // 4. Fetch fraud transactions for this profile
-  //    Join on job_id (from appearances) and match by email or card
+  //    Primary path: join on appearance job_ids + identity match
+  //    Fallback path: direct identity query when appearances are missing/stale
   // -------------------------------------------------------------------------
   const transactions: Array<any> = [];
+  const profileEmails = profile.emails as string[];
+  const profileCards = profile.card_last4s as string[];
+  const profileIps = profile.ips as string[];
 
-  if (auditIds.length > 0) {
-    const profileEmails = profile.emails as string[];
-    const profileCards = profile.card_last4s as string[];
+  async function fetchDirectIdentityRows() {
+    // Scope by merchant-owned job IDs to prevent cross-merchant data leakage.
+    if (ownedJobIds.length === 0) return [];
+
+    // Identify the primary identity attribute to match on.
+    // If none present, return empty — we cannot scope safely.
+    let identityField: string | null = null;
+    let identityValues: string[] = [];
+    if (profileEmails.length > 0) {
+      identityField = 'customer_email';
+      identityValues = profileEmails;
+    } else if (profileCards.length > 0) {
+      identityField = 'card_last4';
+      identityValues = profileCards;
+    } else if (profileIps.length > 0) {
+      identityField = 'device_ip';
+      identityValues = profileIps;
+    } else {
+      return [];
+    }
+
+    // Paginate without a fixed cap.  Uses the same 1000-row page size as the
+    // primary path above, but loops until exhausted (no hard limit).
+    const rows: Array<any> = [];
+    const PAGE = 1000;
+    for (let offset = 0; ; offset += PAGE) {
+      const { data: page } = await (serviceClient
+        .from('audit_transactions')
+        .select(TX_SELECT)
+        .in('job_id', ownedJobIds)
+        .in(identityField, identityValues)
+        .order('processed_at', { ascending: true })
+        .range(offset, offset + PAGE - 1)) as unknown as { data: Array<any> | null };
+      if (!page || page.length === 0) break;
+      rows.push(...page);
+      if (page.length < PAGE) break;
+    }
+    return rows;
+  }
+
+  const pushRows = (rows: Array<any>) => {
+    const seen = new Set(transactions.map((row) => row.id ?? `${row.order_id}-${row.processed_at}`));
+    for (const row of rows) {
+      const key = row.id ?? `${row.order_id}-${row.processed_at}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      transactions.push(row);
+    }
+  };
+
+  if (transactionIds.length > 0) {
+    // Paginate to remove the 1000-row cap; always include job_id scope.
+    const BATCH = 1000;
+    for (let offset = 0; ; offset += BATCH) {
+      const { data: txByAppearance } = await serviceClient
+        .from('audit_transactions')
+        .select(TX_SELECT)
+        .in('id', transactionIds)
+        .in('job_id', ownedJobIds)
+        .order('processed_at', { ascending: true })
+        .range(offset, offset + BATCH - 1) as unknown as { data: Array<any> | null };
+      const rows = txByAppearance ?? [];
+      if (rows.length === 0) break;
+      pushRows(rows);
+      if (rows.length < BATCH) break;
+    }
+  }
+
+  if (transactions.length < (profile.total_orders ?? 0) && auditIds.length > 0) {
     const BATCH = 1000;
     for (let offset = 0; ; offset += BATCH) {
       let txQuery = serviceClient
         .from('audit_transactions')
-        .select(
-          'id,job_id,order_id,order_date,customer_email,customer_name,shipping_address,device_ip,card_last4,order_value,match_score,fraud_flags,risk_level,refund_status,refund_claimed,refund_requested,refund_reason,refund_date,refund_amount,return_requested,chargeback_dispute,chargeback_date,chargeback_reason_code,processed_at'
-        )
+        .select(TX_SELECT)
         .in('job_id', auditIds)
         .order('processed_at', { ascending: true })
         .range(offset, offset + BATCH - 1);
@@ -171,14 +263,21 @@ export async function GET(
         txQuery = txQuery.in('customer_email', profileEmails);
       } else if (profileCards.length > 0) {
         txQuery = txQuery.in('card_last4', profileCards);
+      } else if (profileIps.length > 0) {
+        txQuery = txQuery.in('device_ip', profileIps);
       }
 
       const { data: txData } = await txQuery as unknown as { data: typeof transactions | null };
       const rows = txData ?? [];
       if (rows.length === 0) break;
-      transactions.push(...rows);
+      pushRows(rows);
       if (rows.length < BATCH) break;
     }
+  }
+
+  if (transactions.length === 0 && auditIds.length === 0) {
+    const rows = await fetchDirectIdentityRows();
+    pushRows(rows);
   }
 
   // -------------------------------------------------------------------------
@@ -186,7 +285,7 @@ export async function GET(
   // -------------------------------------------------------------------------
   const orderHistory: OrderHistoryEntry[] = transactions.map((tx) => ({
     orderId: tx.order_id,
-    orderDate: tx.order_date ?? null,
+    orderDate: null,
     processedAt: tx.processed_at,
     email: tx.customer_email,
     name: tx.customer_name,
@@ -197,13 +296,13 @@ export async function GET(
     fraudScore: tx.match_score,
     riskLevel: tx.risk_level,
     fraudFlags: Array.isArray(tx.fraud_flags) ? tx.fraud_flags : [],
-    refundStatus: tx.refund_status ?? null,
-    refundRequested: !!(tx.refund_requested ?? tx.refund_claimed),
+    refundStatus: null,
+    refundRequested: !!tx.refund_claimed,
     refundReason: tx.refund_reason ?? null,
-    refundDate: tx.refund_date ?? null,
-    refundAmount: tx.refund_amount ?? null,
-    returnRequested: !!(tx.return_requested),
-    chargebackFiled: !!(tx.chargeback_dispute),
+    refundDate: null,
+    refundAmount: null,
+    returnRequested: false,
+    chargebackFiled: !!tx.chargeback_filed,
     chargebackDate: tx.chargeback_date ?? null,
     chargebackReasonCode: tx.chargeback_reason_code ?? null,
   }));
@@ -244,86 +343,47 @@ export async function GET(
   identityTimeline.sort((a, b) => a.date.localeCompare(b.date));
 
   // -------------------------------------------------------------------------
-  // 7. Fetch linked accounts from fraud_identity_clusters
+  // 7. Derive linked-identity signals from merchant-owned audit_transactions.
+  //    SECURITY: Do NOT read the global identity cluster graph table — that
+  //    table contains cross-merchant entity values, cluster membership counts,
+  //    entity types, confidence scores, and match reasons that must never be
+  //    exposed via merchant-facing APIs, even in aggregated form.
+  //    Instead, surface identity signals directly from the transactions this
+  //    merchant uploaded: count how many distinct identity fields the customer
+  //    has used, treating each distinct variant as a linked-account signal.
   // -------------------------------------------------------------------------
   const linkedAccounts: LinkedAccount[] = [];
 
-  if (profile.emails.length > 0) {
-    const BATCH = 1000;
-    const clusterRows: Array<{
-      cluster_id: string;
-      entity_type: string;
-      entity_value: string;
-      confidence: number;
-      match_reasons: string[];
-    }> = [];
-
-    for (let offset = 0; ; offset += BATCH) {
-      const res = await serviceClient
-        .from('fraud_identity_clusters')
-        .select('cluster_id,entity_type,entity_value,confidence,match_reasons')
-        .in('entity_value', profile.emails)
-        .range(offset, offset + BATCH - 1) as unknown as {
-        data: Array<{
-          cluster_id: string;
-          entity_type: string;
-          entity_value: string;
-          confidence: number;
-          match_reasons: string[];
-        }> | null;
-      } | null;
-
-      const rows = res?.data ?? [];
-      if (rows.length === 0) break;
-      clusterRows.push(...rows);
-      if (rows.length < BATCH) break;
+  // Group variants by field type — each distinct value variant is a signal.
+  const variantsByField = new Map<string, Set<string>>();
+  for (const entry of identityTimeline) {
+    if (!variantsByField.has(entry.field)) {
+      variantsByField.set(entry.field, new Set());
     }
+    variantsByField.get(entry.field)!.add(entry.value);
+  }
 
-    if (clusterRows.length > 0) {
-      const clusterIds = [...new Set(clusterRows.map((r) => r.cluster_id))];
-      const allClusterMembers: Array<{
-        cluster_id: string;
-        entity_type: string;
-        entity_value: string;
-        confidence: number;
-        match_reasons: string[];
-      }> = [];
-
-      for (let offset = 0; ; offset += BATCH) {
-        const res = await serviceClient
-          .from('fraud_identity_clusters')
-          .select('cluster_id,entity_type,entity_value,confidence,match_reasons')
-          .in('cluster_id', clusterIds)
-          .not('entity_value', 'in', `(${profile.emails.map((e: string) => `"${e}"`).join(',')})`)
-          .range(offset, offset + BATCH - 1) as unknown as {
-            data: Array<{
-              cluster_id: string;
-              entity_type: string;
-              entity_value: string;
-              confidence: number;
-              match_reasons: string[];
-            }> | null;
-          } | null;
-
-        const rows = res?.data ?? [];
-        if (rows.length === 0) break;
-        allClusterMembers.push(...rows);
-        if (rows.length < BATCH) break;
-      }
-
-      const dedup = new Set<string>();
-      for (const member of allClusterMembers) {
-        const key = `${member.cluster_id}|${member.entity_type}|${member.entity_value}`;
-        if (dedup.has(key)) continue;
-        dedup.add(key);
-        linkedAccounts.push({
-          entityType: member.entity_type,
-          entityValue: member.entity_value,
-          confidence: member.confidence,
-          matchReasons: Array.isArray(member.match_reasons) ? member.match_reasons : [],
-        });
-      }
+  for (const [field, values] of variantsByField.entries()) {
+    if (values.size > 1) {
+      // Multiple distinct values for this field type — signals identity change/alias
+      linkedAccounts.push({
+        entityType: field,
+        entityValue: `${values.size} distinct values observed`,
+        confidence: 0.7,
+        matchReasons: ['identity_variant_within_merchant_scope'],
+      });
     }
+  }
+
+  // Also count distinct orders across this merchant's jobs as a corroboration signal.
+  const distinctJobIds = new Set(transactions.map((tx: any) => tx.job_id).filter(Boolean));
+  if (distinctJobIds.size > 1) {
+    linkedAccounts.push({
+      entityType: 'job',
+      entityValue: `Seen across ${distinctJobIds.size} uploads`,
+      confidence: 0.5,
+      matchReasons: ['multi_upload_recurrence'],
+    });
   }
 
   // -------------------------------------------------------------------------

@@ -10,7 +10,6 @@ import {
   ListChecks,
   PlusSquare,
   Users,
-  Search,
   Star,
   LogOut,
   HelpCircle,

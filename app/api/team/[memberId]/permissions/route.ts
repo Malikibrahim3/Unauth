@@ -14,8 +14,9 @@ export const dynamic = 'force-dynamic';
 // ── GET ──────────────────────────────────────────────────────────────────────
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { memberId: string } }
+  { params }: { params: Promise<{ memberId: string }> }
 ) {
+  const { memberId } = await params;
   const userClient = createClient();
   const { data: { user } } = await userClient.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
@@ -23,8 +24,6 @@ export async function GET(
   const service = createServiceClient();
   const { denied, ctx } = await requirePermission(service, user.id, PERMISSIONS.VIEW_TEAM);
   if (denied) return denied;
-
-  const { memberId } = params;
 
   // Verify the member belongs to this merchant
   const { data: member } = await service
@@ -52,8 +51,9 @@ export async function GET(
 // ── POST ─────────────────────────────────────────────────────────────────────
 export async function POST(
   request: NextRequest,
-  { params }: { params: { memberId: string } }
+  { params }: { params: Promise<{ memberId: string }> }
 ) {
+  const { memberId } = await params;
   const userClient = createClient();
   const { data: { user } } = await userClient.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
@@ -62,7 +62,6 @@ export async function POST(
   const { denied, ctx } = await requirePermission(service, user.id, PERMISSIONS.GRANT_PERMISSIONS);
   if (denied) return denied;
 
-  const { memberId } = params;
   const body = await request.json().catch(() => ({}));
   const { permission } = body as { permission: string };
 
@@ -117,8 +116,9 @@ export async function POST(
 // ── DELETE ────────────────────────────────────────────────────────────────────
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { memberId: string } }
+  { params }: { params: Promise<{ memberId: string }> }
 ) {
+  const { memberId } = await params;
   const userClient = createClient();
   const { data: { user } } = await userClient.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
@@ -127,7 +127,6 @@ export async function DELETE(
   const { denied, ctx } = await requirePermission(service, user.id, PERMISSIONS.GRANT_PERMISSIONS);
   if (denied) return denied;
 
-  const { memberId } = params;
   const body = await request.json().catch(() => ({}));
   const { permission } = body as { permission: string };
 

@@ -101,7 +101,7 @@ export default function AuditHistoryTableClient({ rows: initialRows }: AuditHist
               <th className="text-left px-4 py-2.5 text-overline">Period</th>
               <th className="text-left px-4 py-2.5 text-overline">Status</th>
               <th className="text-right px-4 py-2.5 text-overline">Rows</th>
-              <th className="text-right px-4 py-2.5 text-overline">Flagged</th>
+              <th className="text-right px-4 py-2.5 text-overline">Matched</th>
               <th className="text-left px-4 py-2.5 text-overline">Uploaded</th>
               <th className="px-4 py-2.5"></th>
             </tr>

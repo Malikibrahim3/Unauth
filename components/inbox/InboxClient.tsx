@@ -7,8 +7,11 @@ import { ChevronDown, Trash2 } from 'lucide-react';
 interface InboxTransaction {
   id: string;
   order_id: string;
-  match_score: number;
-  risk_level: string;
+  /** New identity score (0–100). Replaces legacy match_score. */
+  identity_score?: number | null;
+  /** New confidence grade (A–F). Replaces legacy risk_level display. */
+  identity_confidence_grade?: string | null;
+  match_status?: string | null;
   processed_at: string;
   processing_job_id: string;
   customer_profile_id?: string | null;
@@ -113,7 +116,7 @@ export default function InboxClient({ initialItems }: Props) {
           You&apos;re all caught up
         </p>
         <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-          No high or critical transactions need review right now.
+          No identity-flagged transactions need review right now.
         </p>
         <Link
           href="/upload"
@@ -172,7 +175,7 @@ export default function InboxClient({ initialItems }: Props) {
             <th className="text-left px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Risk</th>
             <th className="text-right px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Score</th>
             <th className="text-right px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Value</th>
-            <th className="text-left px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Why flagged</th>
+            <th className="text-left px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Match signals</th>
             <th className="text-left px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Date</th>
             <th className="px-4 py-2.5" />
           </tr>
@@ -207,17 +210,17 @@ export default function InboxClient({ initialItems }: Props) {
                 <span
                   className="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm border text-xs font-medium"
                   style={{
-                    background: tx.risk_level === 'critical' ? 'var(--risk-critical-bg)' : 'var(--risk-high-bg)',
-                    color: tx.risk_level === 'critical' ? 'var(--risk-critical)' : 'var(--risk-high)',
-                    borderColor: tx.risk_level === 'critical' ? 'var(--risk-critical-bd)' : 'var(--risk-high-bd)',
+                    background: 'var(--risk-high-bg)',
+                    color: 'var(--risk-high)',
+                    borderColor: 'var(--risk-high-bd)',
                   }}
                 >
                   <span className="h-1.5 w-1.5 rounded-full flex-shrink-0" style={{ background: 'currentColor' }} />
-                  {tx.risk_level}
+                  {tx.identity_confidence_grade ?? tx.match_status ?? 'review'}
                 </span>
               </td>
               <td className="px-4 py-3 text-right font-mono font-semibold" style={{ color: 'var(--text)' }}>
-                {Math.round(tx.match_score)}
+                {tx.identity_score != null ? Math.round(tx.identity_score) : '—'}
               </td>
               <td className="px-4 py-3 text-right font-mono text-xs" style={{ color: 'var(--text)' }}>
                 {tx.order_value != null ? new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(tx.order_value) : '—'}

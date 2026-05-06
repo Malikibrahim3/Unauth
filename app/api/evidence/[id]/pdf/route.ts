@@ -11,8 +11,9 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
@@ -22,8 +23,6 @@ export async function GET(
   const serviceRole = createServiceClient()
   const { denied, ctx } = await requirePermission(serviceRole, user.id, PERMISSIONS.VIEW_CUSTOMERS)
   if (denied) return denied
-
-  const { id } = params
 
   // Verify merchant owns this package
   const { data: packageRow, error: pkgError } = await serviceRole

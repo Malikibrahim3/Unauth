@@ -122,7 +122,7 @@ export function buildBehavioralNarrative(ctx: NarrativeContext): string {
   // Safety check — never throw in production, return cleaned text
   try {
     assertNoBannedWords(narrative);
-  } catch (err) {
+  } catch {
     // Fallback: strip the offending sentence and return what remains
     const safe = sentences
       .filter((s) => {

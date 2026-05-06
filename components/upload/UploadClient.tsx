@@ -9,9 +9,7 @@ import {
   autoMapHeaders,
   REQUIRED_FIELDS,
   OPTIONAL_FIELD_GROUPS,
-  FIELD_IMPORTANCE,
   type RequiredField,
-  type FieldImportance,
 } from '@/lib/csv/headerAliases';
 import { sniffFile } from '@/lib/csv/sniffer';
 import { friendlyUploadError, type FriendlyError } from '@/lib/copy/uploadErrors';
@@ -488,7 +486,7 @@ export default function UploadClient() {
                 Drop your CSV here or click to browse
               </p>
               <p className="text-xs mt-1" style={{ color: 'var(--text-subtle)' }}>
-                Max 50 MB · up to 100,000 rows
+                Max 500 MB · up to 5,000,000 rows
               </p>
             </div>
           )}
@@ -788,7 +786,7 @@ export default function UploadClient() {
               Advanced Integrations
             </h3>
             <p className="text-xs" style={{ color: 'var(--text-subtle)' }}>
-              These signals go beyond what a CSV export can provide. Connect a data source to unlock deeper fraud detection.
+              These signals go beyond what a CSV export can provide. Connect a data source to unlock deeper identity match analysis.
             </p>
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

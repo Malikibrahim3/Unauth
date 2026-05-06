@@ -73,12 +73,16 @@ export interface CustomerProfileRow {
   identity_confidence_grade?: 'weak' | 'possible' | 'probable' | 'definite' | null;
   identity_signals_summary?: string[];
   identity_cluster_id?: string | null;
+  /** Two-tier model: 'candidate' = probable link, 'confirmed' = definite/merged. */
+  identity_status?: 'candidate' | 'confirmed' | null;
 }
 
 export interface ProfileIdentitySummary {
   grade: 'weak' | 'possible' | 'probable' | 'definite' | null;
   signals: string[];
   clusterId: string | null;
+  /** Two-tier product status; controls whether a profile is created/updated. */
+  matchStatus: 'none' | 'candidate' | 'probable' | 'definite';
 }
 
 interface ResolveResult {
@@ -143,7 +147,7 @@ export async function resolveCustomerProfile(
 
   // Priority 1: exact email match — strongest signal
   if (normEmail) {
-    const { data } = await serviceClient
+    const { data } = await (serviceClient as any)
       .from('customer_profiles')
       .select('*')
       .contains('emails', JSON.stringify([normEmail]))
@@ -156,7 +160,7 @@ export async function resolveCustomerProfile(
 
   // Priority 2: card match — very strong
   if (normCard && normCard.length === 4) {
-    const { data } = await serviceClient
+    const { data } = await (serviceClient as any)
       .from('customer_profiles')
       .select('*')
       .contains('card_last4s', JSON.stringify([normCard]))
@@ -169,7 +173,7 @@ export async function resolveCustomerProfile(
 
   // Priority 3: IP + address match — strong
   if (normIP && normAddr) {
-    const { data } = await serviceClient
+    const { data } = await (serviceClient as any)
       .from('customer_profiles')
       .select('*')
       .contains('ips', JSON.stringify([normIP]))
@@ -183,7 +187,7 @@ export async function resolveCustomerProfile(
 
   // Priority 4: IP only — moderate, ONLY if existing profile is already suspicious
   if (normIP) {
-    const { data } = await serviceClient
+    const { data } = await (serviceClient as any)
       .from('customer_profiles')
       .select('*')
       .contains('ips', JSON.stringify([normIP]))
@@ -228,7 +232,7 @@ export async function createCustomerProfile(
     rawOrder.orderStatus === 'refunded';
   const refundDate = rawOrder.refundDate?.toISOString() ?? null;
 
-  const { data, error } = await serviceClient
+  const { data, error } = await (serviceClient as any)
     .from('customer_profiles')
     .insert({
       primary_email: normEmail || null,
@@ -317,7 +321,7 @@ export async function updateCustomerProfile(
   // Lower profile confidence if matched on weaker signals
   const newConfidence = Math.min(existingProfile.profile_confidence, matchConfidence);
 
-  const { data, error } = await serviceClient
+  const { data, error } = await (serviceClient as any)
     .from('customer_profiles')
     .update({
       emails: mergedEmails,
@@ -348,33 +352,6 @@ export async function updateCustomerProfile(
   }
 
   return data as unknown as CustomerProfileRow;
-}
-
-// ---------------------------------------------------------------------------
-// Appearance link
-// ---------------------------------------------------------------------------
-
-async function writeAppearanceLink(
-  profileId: string,
-  auditId: string,
-  transactionId: string | null,
-  score: number,
-  flags: string[],
-  serviceClient: ServiceClient
-): Promise<void> {
-  const { error } = await serviceClient
-    .from('customer_profile_audit_appearances')
-    .insert({
-      profile_id: profileId,
-      audit_id: auditId,
-      transaction_id: transactionId,
-      score_at_time: score,
-      flags_at_time: flags,
-    } as any);
-
-  if (error) {
-    console.error(`[entityResolution] Failed to write appearance link: ${error.message}`);
-  }
 }
 
 // ---------------------------------------------------------------------------
@@ -495,7 +472,7 @@ export async function processProfilesForBatch(
     const results = await Promise.all(
       chunks.map(async (chunk) => {
         const orExpr = chunk.map((v) => `${col}.cs.${JSON.stringify([v])}`).join(',');
-        let q: any = serviceClient.from('customer_profiles').select(PROFILE_COLS).or(orExpr);
+        let q: any = (serviceClient as any).from('customer_profiles').select(PROFILE_COLS).or(orExpr);
         if (extraFilter) q = extraFilter(q);
         const { data, error } = await q;
         if (error) {
@@ -551,6 +528,14 @@ export async function processProfilesForBatch(
   const profileIdForOrder   = new Map<string, string>(); // orderId → profileId (filled later)
 
   for (const od of orderDataList) {
+    // ── Two-tier gate ───────────────────────────────────────────────────────
+    // none (<25) and candidate (25–49) scores are surfaced as signals only.
+    // They must NOT create or update customer profiles.
+    if (od.identity &&
+        (od.identity.matchStatus === 'none' || od.identity.matchStatus === 'candidate')) {
+      continue;
+    }
+
     let matchedProfile: CustomerProfileRow | null = null;
     let confidence = 0;
 
@@ -594,7 +579,14 @@ export async function processProfilesForBatch(
       if (od.identity) {
         p.identity_confidence_grade = strongerGrade(p.identity_confidence_grade ?? null, od.identity.grade);
         p.identity_signals_summary = mergeStrings(p.identity_signals_summary ?? [], od.identity.signals);
-        p.identity_cluster_id = p.identity_cluster_id ?? od.identity.clusterId;
+        // identity_cluster_id is ONLY set for confirmed (definite) links.
+        // Probable rows update the profile but leave the cluster link empty.
+        if (od.identity.matchStatus === 'definite') {
+          p.identity_cluster_id = p.identity_cluster_id ?? od.identity.clusterId;
+          p.identity_status = 'confirmed';
+        } else if (od.identity.matchStatus === 'probable' && p.identity_status !== 'confirmed') {
+          p.identity_status = 'candidate';
+        }
       }
       p.last_seen     = new Date().toISOString();
       p.last_audit_id = auditId;
@@ -641,6 +633,7 @@ export async function processProfilesForBatch(
     identity_confidence_grade: p.identity_confidence_grade ?? null,
     identity_signals_summary:  p.identity_signals_summary ?? [],
     identity_cluster_id:       p.identity_cluster_id ?? null,
+    identity_status:           p.identity_status ?? null,
   }));
 
   // -------------------------------------------------------------------------
@@ -660,6 +653,7 @@ export async function processProfilesForBatch(
     const identitySignals = new Set<string>();
     let identityGrade: ProfileIdentitySummary['grade'] = null;
     let identityClusterId: string | null = null;
+    let identityStatus: 'candidate' | 'confirmed' | null = null;
 
     for (const od of group) {
       totalOrders++;
@@ -673,7 +667,13 @@ export async function processProfilesForBatch(
       if (od.identity) {
         identityGrade = strongerGrade(identityGrade, od.identity.grade);
         od.identity.signals.forEach((signal) => identitySignals.add(signal));
-        identityClusterId = identityClusterId ?? od.identity.clusterId;
+        // Only set cluster_id for confirmed links; probable rows get identity_status but no cluster.
+        if (od.identity.matchStatus === 'definite') {
+          identityClusterId = identityClusterId ?? od.identity.clusterId;
+          identityStatus = 'confirmed';
+        } else if (od.identity.matchStatus === 'probable' && identityStatus !== 'confirmed') {
+          identityStatus = 'candidate';
+        }
       }
     }
 
@@ -700,6 +700,7 @@ export async function processProfilesForBatch(
       identity_confidence_grade: identityGrade,
       identity_signals_summary:  [...identitySignals],
       identity_cluster_id:       identityClusterId,
+      identity_status:           identityStatus,
       first_seen:              now,
       last_seen:               now,
     };
@@ -713,21 +714,21 @@ export async function processProfilesForBatch(
 
   await Promise.all([
     profileUpserts.length > 0
-      ? serviceClient
+      ? (serviceClient as any)
           .from('customer_profiles')
           .upsert(profileUpserts as any, { onConflict: 'id', ignoreDuplicates: false })
-          .then(({ error }) => {
+          .then(({ error }: { error: any }) => {
             if (error) errors.push(`Bulk profile update failed: ${error.message}`);
             else profilesUpdated = profileUpserts.length;
           })
       : Promise.resolve(),
 
     newProfileInserts.length > 0
-      ? serviceClient
+      ? (serviceClient as any)
           .from('customer_profiles')
           .insert(newProfileInserts as any)
           .select('id, emails, card_last4s, ips')
-          .then(({ data, error }) => {
+          .then(({ data, error }: { data: any; error: any }) => {
             if (error) {
               errors.push(`Bulk profile insert failed: ${error.message}`);
               return;
@@ -769,7 +770,7 @@ export async function processProfilesForBatch(
     .filter(Boolean);
 
   if (appearanceInserts.length > 0) {
-    const { error } = await serviceClient
+    const { error } = await (serviceClient as any)
       .from('customer_profile_audit_appearances')
       .insert(appearanceInserts as any);
     if (error) errors.push(`Bulk appearance link insert failed: ${error.message}`);

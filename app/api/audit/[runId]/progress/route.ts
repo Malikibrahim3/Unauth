@@ -13,8 +13,9 @@ import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { runId: string } }
+  { params }: { params: Promise<{ runId: string }> }
 ) {
+  const resolvedParams = await params;
   // Auth check
   const userClient = createClient();
   const { data: { user } } = await userClient.auth.getUser();
@@ -23,7 +24,7 @@ export async function GET(
   const serviceClient = createServiceClient();
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_AUDIT);
   if (denied) return denied;
-  const { runId } = params;
+  const { runId } = resolvedParams;
 
   const { data: job, error } = await serviceClient
     .from('processing_jobs')
@@ -36,14 +37,15 @@ export async function GET(
     return NextResponse.json({ error: 'Audit run not found' }, { status: 404 });
   }
 
-  // Count flagged transactions for completed jobs
+  // Count flagged transactions for completed jobs using identity confidence grade,
+  // not the legacy risk_level field which is no longer the source of truth.
   let flaggedCount = 0;
   if (job.status === 'completed') {
     const { count } = await serviceClient
       .from('audit_transactions')
       .select('*', { count: 'exact', head: true })
       .eq('job_id', runId)
-      .in('risk_level', ['high', 'critical']);
+      .not('identity_confidence_grade', 'is', null);
     flaggedCount = count ?? 0;
   }
 

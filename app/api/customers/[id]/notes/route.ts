@@ -4,7 +4,8 @@ import { logAction } from '@/lib/permissions/audit';
 import { writeActivityLog } from '@/lib/customers/activityLog';
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = await params;
   const userClient = createClient();
   const { data: { user } } = await userClient.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -17,7 +18,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     .from('customer_notes')
     .select('*')
     .eq('merchant_id', ctx.merchantId)
-    .eq('customer_profile_id', params.id)
+    .eq('customer_profile_id', resolvedParams.id)
     .eq('deleted_by_merchant', false)
     .order('created_at', { ascending: false });
 
@@ -25,7 +26,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   return NextResponse.json({ notes: data });
 }
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = await params;
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown';
 
   const userClient = createClient();
@@ -42,7 +44,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   const { data, error } = await serviceClient
     .from('customer_notes')
-    .insert({ merchant_id: ctx.merchantId, customer_profile_id: params.id, body })
+    .insert({ merchant_id: ctx.merchantId, customer_profile_id: resolvedParams.id, body })
     .select()
     .single();
 
@@ -52,14 +54,14 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     ctx,
     action: 'add_customer_note',
     resourceType: 'customer_profile',
-    resourceId: params.id,
+    resourceId: resolvedParams.id,
     metadata: { noteId: (data as any).id },
     ip,
   });
 
   await writeActivityLog({
     supabase: serviceClient,
-    profileId: params.id,
+    profileId: resolvedParams.id,
     merchantId: ctx.merchantId,
     eventType: 'note_added',
     eventData: { note_preview: body.slice(0, 80) },

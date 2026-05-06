@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
+import { escapePostgrestFilterValue } from '@/lib/supabase/merchantHelpers';
 
 type AuditTx = {
   id: string;
@@ -31,8 +32,9 @@ function uniq(values: Array<string | null | undefined>) {
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { runId: string } }
+  { params }: { params: Promise<{ runId: string }> }
 ) {
+  const resolvedParams = await params;
   const email = req.nextUrl.searchParams.get('email')?.trim().toLowerCase();
   if (!email) return NextResponse.json({ error: 'Missing email' }, { status: 400 });
 
@@ -47,7 +49,7 @@ export async function GET(
   const { data: job } = await serviceClient
     .from('processing_jobs')
     .select('id, merchant_id')
-    .eq('id', params.runId)
+    .eq('id', resolvedParams.runId)
     .single();
 
   if (!job || job.merchant_id !== ctx.merchantId) {
@@ -57,7 +59,7 @@ export async function GET(
   const { data: directRows, error: directError } = await serviceClient
     .from('audit_transactions')
     .select('*')
-    .eq('job_id', params.runId)
+    .eq('job_id', resolvedParams.runId)
     .eq('customer_email', email)
     .order('processed_at', { ascending: true });
 
@@ -70,11 +72,14 @@ export async function GET(
   let rows = direct;
 
   const merchantFilter = `merchant_ids.cs.${JSON.stringify([ctx.userId])},merchant_ids.cs.${JSON.stringify([ctx.merchantId])}`;
+  // Escape email before using in PostgREST .or() filter string to prevent
+  // special characters from breaking filter parsing.
+  const safeEmail = escapePostgrestFilterValue(email);
   const { data: profileRows } = await serviceClient
     .from('customer_profiles')
     .select('id')
     .or(merchantFilter)
-    .or(`primary_email.ilike.${email},emails.cs.["${email}"]`)
+    .or(`primary_email.ilike.${safeEmail},emails.cs.["${safeEmail}"]`)
     .limit(1) as unknown as { data: Array<{ id: string }> | null };
 
   const profileId = profileRows?.[0]?.id ?? null;
@@ -83,7 +88,7 @@ export async function GET(
     const { data: clusterRows } = await serviceClient
       .from('audit_transactions')
       .select('*')
-      .eq('job_id', params.runId)
+      .eq('job_id', resolvedParams.runId)
       .in('cluster_id', clusterIds)
       .order('processed_at', { ascending: true });
 

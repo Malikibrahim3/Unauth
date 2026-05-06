@@ -67,7 +67,7 @@ const NAV_ITEMS: NavItem[] = [
   },
   {
     label: 'Watchlist',
-    description: 'Monitored high-risk customers',
+    description: 'Profiles you are monitoring for review',
     href: '/watchlist',
     icon: (
       <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -77,7 +77,7 @@ const NAV_ITEMS: NavItem[] = [
   },
   {
     label: 'Inbox',
-    description: 'Flagged transactions to review',
+    description: 'Matched transactions to review',
     href: '/inbox',
     icon: (
       <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -99,8 +99,8 @@ const NAV_ITEMS: NavItem[] = [
     ),
   },
   {
-    label: 'High-confidence flags',
-    description: 'Customers with grade A or B risk',
+    label: 'High-confidence matches',
+    description: 'Customers with grade A or B match confidence',
     href: '/customers?risk=high',
     icon: (
       <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">

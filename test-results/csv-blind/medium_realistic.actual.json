@@ -1,0 +1,224 @@
+{
+  "dataset": "medium_realistic",
+  "fileName": "medium_realistic.csv",
+  "summary": {
+    "definite": 20,
+    "probable": 24,
+    "possible": 12,
+    "weak": 0,
+    "flaggedTransactions": 56,
+    "ungraded": 1294,
+    "linkedClusters": 7,
+    "valueAtRisk": 20917.590000000004,
+    "estimatedExposure": 18464.96
+  },
+  "diagnostics": {
+    "totalRows": 1350,
+    "rowsFetched": 1350,
+    "expectedFlagged": 66,
+    "actualFlagged": 56,
+    "falsePositiveIds": [],
+    "falseNegativeIds": [
+      "BT-001279",
+      "BT-001280",
+      "BT-001281",
+      "BT-001282",
+      "BT-001283",
+      "BT-001284",
+      "BT-001285",
+      "BT-001286",
+      "BT-001287",
+      "BT-001288"
+    ],
+    "seededRecall": 0.8484848484848485,
+    "reviewRate": 0.04148148148148148,
+    "distinctAddresses": 999,
+    "largestCluster": 12,
+    "nullScoreWithCluster": [],
+    "topSignalCombos": [
+      {
+        "signals": "account,phone",
+        "count": 20
+      },
+      {
+        "signals": "account,card,phone",
+        "count": 12
+      },
+      {
+        "signals": "device,phone",
+        "count": 8
+      },
+      {
+        "signals": "account,device,phone",
+        "count": 8
+      },
+      {
+        "signals": "card,phone",
+        "count": 8
+      }
+    ],
+    "scenarioOutcomes": {
+      "clean": {
+        "total": 780,
+        "expected": 0,
+        "actual": 0,
+        "falsePositives": 0,
+        "falseNegatives": 0
+      },
+      "normal_repeat": {
+        "total": 332,
+        "expected": 0,
+        "actual": 0,
+        "falsePositives": 0,
+        "falseNegatives": 0
+      },
+      "legit_refund": {
+        "total": 28,
+        "expected": 0,
+        "actual": 0,
+        "falsePositives": 0,
+        "falseNegatives": 0
+      },
+      "fraud_same_phone_card_account": {
+        "total": 10,
+        "expected": 10,
+        "actual": 10,
+        "falsePositives": 0,
+        "falseNegatives": 0
+      },
+      "fraud_phone_bridge": {
+        "total": 8,
+        "expected": 8,
+        "actual": 8,
+        "falsePositives": 0,
+        "falseNegatives": 0
+      },
+      "fraud_reship_refund": {
+        "total": 10,
+        "expected": 10,
+        "actual": 0,
+        "falsePositives": 0,
+        "falseNegatives": 10
+      },
+      "fraud_paypal_device": {
+        "total": 8,
+        "expected": 8,
+        "actual": 8,
+        "falsePositives": 0,
+        "falseNegatives": 0
+      },
+      "fraud_slow_burn": {
+        "total": 12,
+        "expected": 12,
+        "actual": 12,
+        "falsePositives": 0,
+        "falseNegatives": 0
+      },
+      "fraud_chargeback": {
+        "total": 8,
+        "expected": 8,
+        "actual": 8,
+        "falsePositives": 0,
+        "falseNegatives": 0
+      },
+      "fraud_high_value_inr": {
+        "total": 8,
+        "expected": 8,
+        "actual": 8,
+        "falsePositives": 0,
+        "falseNegatives": 0
+      },
+      "fraud_two_order": {
+        "total": 2,
+        "expected": 2,
+        "actual": 2,
+        "falsePositives": 0,
+        "falseNegatives": 0
+      },
+      "false_corporate_office": {
+        "total": 64,
+        "expected": 0,
+        "actual": 0,
+        "falsePositives": 0,
+        "falseNegatives": 0
+      },
+      "false_shared_household": {
+        "total": 40,
+        "expected": 0,
+        "actual": 0,
+        "falsePositives": 0,
+        "falseNegatives": 0
+      },
+      "false_bin_last4_collision": {
+        "total": 40,
+        "expected": 0,
+        "actual": 0,
+        "falsePositives": 0,
+        "falseNegatives": 0
+      }
+    }
+  },
+  "parse": {
+    "valid": true,
+    "rowCount": 1350,
+    "missingRequired": [],
+    "unmappedHeaders": [
+      "customer_name_1",
+      "shipping_address_2",
+      "shipping_city",
+      "shipping_state",
+      "shipping_postcode",
+      "shipping_country",
+      "billing_city",
+      "billing_postcode",
+      "ip_address_1",
+      "payment_method_1",
+      "chargeback_date",
+      "chargeback_reason_code",
+      "delivery_status",
+      "tracking_number",
+      "merchant_note",
+      "loyalty_tier"
+    ],
+    "headers": [
+      "order_id",
+      "order_date",
+      "customer_email",
+      "customer_name",
+      "customer_name_1",
+      "customer_phone",
+      "shipping_address",
+      "shipping_address_2",
+      "shipping_city",
+      "shipping_state",
+      "shipping_postcode",
+      "shipping_country",
+      "billing_address",
+      "billing_city",
+      "billing_postcode",
+      "ip_address",
+      "ip_address_1",
+      "card_last4",
+      "card_bin",
+      "payment_method",
+      "payment_method_1",
+      "order_total",
+      "currency",
+      "account_id",
+      "refund_requested",
+      "refund_amount",
+      "refund_reason",
+      "chargeback_dispute",
+      "chargeback_date",
+      "chargeback_reason_code",
+      "delivery_status",
+      "order_status",
+      "tracking_number",
+      "device_id",
+      "user_agent",
+      "merchant_note",
+      "loyalty_tier"
+    ]
+  },
+  "invalidRows": []
+}

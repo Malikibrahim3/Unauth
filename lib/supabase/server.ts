@@ -29,24 +29,27 @@ export function createClient(): any {
     return makeMissingEnvStub('Supabase (client)');
   }
 
-  const cookieStore = cookies();
+  const cookieStorePromise = cookies();
 
   return createServerClient<Database>(
     url,
     key,
     {
       cookies: {
-        get(name: string) {
+        async get(name: string) {
+          const cookieStore = await cookieStorePromise;
           return cookieStore.get(name)?.value;
         },
-        set(name: string, value: string, options: any) {
+        async set(name: string, value: string, options?: any) {
           try {
+            const cookieStore = await cookieStorePromise;
             cookieStore.set(name, value, options);
           } catch {
           }
         },
-        remove(name: string, options: any) {
+        async remove(name: string, _options?: any) {
           try {
+            const cookieStore = await cookieStorePromise;
             cookieStore.delete(name);
           } catch {
           }

@@ -2,12 +2,12 @@ import { NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { signalLabel } from '@/lib/copy/signalLabels';
+import {
+  escapeCsvCell,
+  fetchMerchantReviewQueueRows,
+} from '@/lib/supabase/merchantHelpers';
 
 export const dynamic = 'force-dynamic';
-
-function csvEscape(value: string): string {
-  return `"${value.replace(/"/g, '""')}"`;
-}
 
 function topReason(signals: unknown): string {
   if (!Array.isArray(signals) || signals.length === 0) return 'Needs manual review';
@@ -25,24 +25,39 @@ export async function GET() {
   }
 
   const serviceClient = createServiceClient();
-  const { denied } = await requirePermission(serviceClient, user.id, PERMISSIONS.EXPORT_AUDIT);
+  const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.EXPORT_AUDIT);
   if (denied) return denied;
 
-  const { data: rows, error } = await serviceClient
-    .from('audit_transactions')
-    .select('order_id, processed_at, order_value, match_score, risk_level, customer_email, customer_name, signals_matched')
-    .in('risk_level', ['high', 'critical'])
-    .is('dismissed_by_merchant', false)
-    .order('match_score', { ascending: false })
-    .limit(10000);
+  // Use shared review-queue definition — same as inbox page. No drift possible.
+  // Filters: identity_confidence_grade NOT NULL or match_status IN (candidate,probable,definite),
+  //          dismissed_by_merchant != true, match_status != 'none'.
+  // Order: identity_score DESC, processed_at DESC.
+  let rows: Array<Record<string, unknown>>;
+  try {
+    const result = await fetchMerchantReviewQueueRows(serviceClient, ctx.merchantId, {
+      paginate: true,
+    });
+    rows = result.rows;
+  } catch {
+    return NextResponse.json({ error: 'Failed to export queue' }, { status: 500 });
+  }
 
-  if (error) return NextResponse.json({ error: 'Failed to export queue' }, { status: 500 });
+  if (rows.length === 0) {
+    const csv = ['order_id,date,confidence_grade,identity_score,value_at_risk,why_flagged,customer_email,customer_name'].join('\n');
+    return new NextResponse(csv, {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/csv; charset=utf-8',
+        'Content-Disposition': `attachment; filename="review-queue-${new Date().toISOString().slice(0, 10)}.csv"`,
+      },
+    });
+  }
 
   const headers = [
     'order_id',
     'date',
-    'risk_level',
-    'score',
+    'confidence_grade',
+    'identity_score',
     'value_at_risk',
     'why_flagged',
     'customer_email',
@@ -50,16 +65,16 @@ export async function GET() {
   ];
   const lines = [headers.join(',')];
 
-  for (const row of (rows ?? []) as any[]) {
+  for (const row of rows) {
     lines.push([
-      row.order_id ?? '',
-      row.processed_at ?? '',
-      row.risk_level ?? '',
-      row.match_score != null ? String(Math.round(row.match_score)) : '',
-      row.order_value != null ? String(row.order_value) : '',
-      csvEscape(topReason(row.signals_matched)),
-      row.customer_email ? csvEscape(row.customer_email) : '',
-      row.customer_name ? csvEscape(row.customer_name) : '',
+      escapeCsvCell(row.order_id ?? ''),
+      escapeCsvCell(row.processed_at ?? ''),
+      escapeCsvCell(row.identity_confidence_grade ?? row.match_status ?? ''),
+      escapeCsvCell(row.identity_score != null ? String(Math.round(row.identity_score as number)) : ''),
+      escapeCsvCell(row.order_value != null ? String(row.order_value) : ''),
+      escapeCsvCell(topReason(row.signals_matched)),
+      escapeCsvCell(row.customer_email ?? ''),
+      escapeCsvCell(row.customer_name ?? ''),
     ].join(','));
   }
 

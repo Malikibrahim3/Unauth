@@ -4,10 +4,13 @@
  * Public demo route — no authentication required.
  * Renders the merchant dashboard in read-only mode against the demo merchant's data.
  * Write operations are intercepted and replaced with a "Sign up" prompt.
+ *
+ * SECURITY: This page must NOT use the service-role key directly.
+ * All demo data is fetched via /api/demo/runs which is a tightly-scoped server
+ * helper that only exposes whitelisted synthetic fields for the demo merchant.
  */
 
 import Link from 'next/link';
-import { createClient as createServiceClient } from '@supabase/supabase-js';
 
 const DEMO_MERCHANT_ID = process.env.NEXT_PUBLIC_DEMO_MERCHANT_ID;
 
@@ -23,6 +26,24 @@ interface DemoRun {
 export const metadata = {
   title: 'Demo | Unauth — Refund Abuse Intelligence',
 };
+
+async function getDemoRuns(): Promise<DemoRun[]> {
+  if (!DEMO_MERCHANT_ID) return [];
+  // Use the internal demo API which scopes reads to the demo merchant only
+  // and does NOT use service-role credentials in this public route.
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+    const res = await fetch(`${baseUrl}/api/demo/runs`, {
+      cache: 'no-store',
+      headers: { 'x-internal-demo': '1' },
+    });
+    if (!res.ok) return [];
+    const json = await res.json();
+    return (json.runs ?? []) as DemoRun[];
+  } catch {
+    return [];
+  }
+}
 
 export default async function DemoPage() {
   if (!DEMO_MERCHANT_ID) {
@@ -44,21 +65,7 @@ export default async function DemoPage() {
     );
   }
 
-  // Fetch demo data using service role (no auth required — demo merchant is public)
-  const supabase = createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  );
-
-  const { data: runs } = await supabase
-    .from('processing_jobs')
-    .select('id, filename, total_rows, flagged_count, status, created_at')
-    .eq('merchant_id', DEMO_MERCHANT_ID)
-    .order('created_at', { ascending: false })
-    .limit(10);
-
-  const typedRuns = (runs ?? []) as DemoRun[];
+  const typedRuns = await getDemoRuns();
   const totalTransactions = typedRuns.reduce((sum, r) => sum + r.total_rows, 0);
   const totalFlagged = typedRuns.reduce((sum, r) => sum + (r.flagged_count ?? 0), 0);
 
@@ -99,7 +106,7 @@ export default async function DemoPage() {
           {[
             { label: 'Audit Runs', value: typedRuns.length.toLocaleString() },
             { label: 'Transactions Analysed', value: totalTransactions.toLocaleString() },
-            { label: 'Flagged', value: totalFlagged.toLocaleString() },
+            { label: 'Matched', value: totalFlagged.toLocaleString() },
           ].map(({ label, value }) => (
             <div
               key={label}
@@ -124,7 +131,7 @@ export default async function DemoPage() {
               <tr className="border-b border-gray-100 bg-gray-50">
                 <th className="text-left px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-gray-500">Filename</th>
                 <th className="text-right px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-gray-500">Rows</th>
-                <th className="text-right px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-gray-500">Flagged</th>
+                <th className="text-right px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-gray-500">Matched</th>
                 <th className="text-left px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-gray-500">Date</th>
                 <th className="px-4 py-2.5"></th>
               </tr>

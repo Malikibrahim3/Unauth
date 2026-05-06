@@ -125,7 +125,7 @@ export async function completeJob(
 
   const { error } = await serviceClient
     .from('processing_jobs')
-    .update(update)
+    .update(update as any)
     .eq('id', jobId);
 
   if (error) {

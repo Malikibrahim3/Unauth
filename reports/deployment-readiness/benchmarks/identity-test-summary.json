@@ -1,0 +1,6 @@
+{
+  "command": "npx jest tests/engine/linker.test.ts tests/engine/identityScoring.test.ts tests/engine/identityMatchGating.test.ts tests/identity/scoringModel.blind.test.ts --runInBand",
+  "exitCode": 0,
+  "passed": true,
+  "outputFile": "identity-jest-output.txt"
+}

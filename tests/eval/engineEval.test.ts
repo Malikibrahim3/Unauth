@@ -41,24 +41,24 @@ describe('Engine eval on labelled datasets', () => {
     // eslint-disable-next-line no-console
     console.log('mixed.csv eval:', JSON.stringify(metrics, null, 2));
 
-    // Baseline at FLAG_THRESHOLD=5: higher recall at cost of precision.
-    // realistic_fraud_dataset.csv calibration: F1=0.910, P=1.000, R=0.836.
-    // mixed.csv has different signal distribution so precision is lower here.
-    expect(metrics.f1).toBeGreaterThan(0.1);
-    expect(metrics.precision).toBeGreaterThan(0.1);
+    // Conservative enterprise baseline:
+    // reduce false positives while preserving useful recall on mixed data.
+    expect(metrics.f1).toBeGreaterThan(0.5);
+    expect(metrics.precision).toBeGreaterThan(0.45);
+    expect(metrics.recall).toBeGreaterThan(0.55);
     expect(metrics.baseRate).toBeGreaterThan(0);
   });
 
-  it('clean.csv: no false positives on all-legitimate data', () => {
+  it('clean.csv: strict false-positive ceiling on all-legitimate data', () => {
     const file = path.join(__dirname, '../../test-data/clean.csv');
     const metrics = evaluateFile(file);
 
     // eslint-disable-next-line no-console
     console.log('clean.csv eval:', JSON.stringify(metrics, null, 2));
 
-    // At FLAG_THRESHOLD=5, single low-weight signals (valueAnomaly=5, paymentChurn=5)
-    // can fire on legitimate orders. Calibration on realistic_fraud_dataset gives FP=0
-    // but clean.csv has some orders at the edge. Bound rather than strict 0.
-    expect(metrics.confusionMatrix.falsePositives).toBeLessThan(100);
+    // Enterprise launch gate:
+    // clean all-legitimate datasets must stay below 2.5% flag rate.
+    expect(metrics.confusionMatrix.falsePositives).toBeLessThanOrEqual(5);
+    expect((metrics.flagRate ?? 0)).toBeLessThanOrEqual(0.025);
   });
 });

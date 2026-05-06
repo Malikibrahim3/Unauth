@@ -3,11 +3,31 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { logAction } from '@/lib/permissions/audit';
 
+// ---------------------------------------------------------------------------
+// CSV cell escaping — neutralizes formula injection (CVE-class: CSV injection).
+// Cells beginning with =, +, -, @, tab (0x09) or CR (0x0D) are prefixed with
+// a single-quote so spreadsheet apps (Excel, Sheets) treat them as text.
+// Cells containing commas or double-quotes are also quoted per RFC 4180.
+// ---------------------------------------------------------------------------
+function escapeCsvCell(value: string): string {
+  if (!value) return '';
+  // Neutralize formula-leading characters
+  const FORMULA_PREFIXES = ['=', '+', '-', '@', '\t', '\r'];
+  if (FORMULA_PREFIXES.some((p) => value.startsWith(p))) {
+    value = `'${value}`;
+  }
+  // RFC 4180: quote cells containing comma, double-quote, or newline
+  if (value.includes(',') || value.includes('"') || value.includes('\n') || value.includes('\r')) {
+    return `"${value.replace(/"/g, '""')}"`;
+  }
+  return value;
+}
+
 export async function GET(
   req: NextRequest,
-  { params }: { params: { runId: string } }
+  { params }: { params: Promise<{ runId: string }> }
 ) {
-  const { runId } = params;
+  const { runId } = await params;
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown';
 
   // ── Auth + permission ─────────────────────────────────────────────────────
@@ -47,6 +67,14 @@ export async function GET(
     customer_name: string | null;
   }> = [];
 
+  // Determine total rows expected so we can detect truncation.
+  const { count: totalCount } = await serviceClient
+    .from('audit_transactions')
+    .select('*', { count: 'exact', head: true })
+    .eq('job_id', runId);
+
+  const expectedTotalRows = totalCount ?? 0;
+
   const PAGE_SIZE = 1000;
   for (let offset = 0; ; offset += PAGE_SIZE) {
     const { data, error: txError } = await serviceClient
@@ -55,8 +83,7 @@ export async function GET(
         'order_id, processed_at, order_value, identity_score, identity_confidence_grade, cluster_id, signals_matched, customer_email, customer_name'
       )
       .eq('job_id', runId)
-      .not('identity_confidence_grade', 'is', null)
-      .order('identity_score', { ascending: false, nullsFirst: false })
+      .order('id', { ascending: true })
       .range(offset, offset + PAGE_SIZE - 1);
 
     if (txError) {
@@ -67,7 +94,11 @@ export async function GET(
     if (data.length < PAGE_SIZE) break;
   }
 
-  // Build CSV
+  // Sanity-check — warn in headers if we got fewer rows than expected.
+  const rowsIncomplete = !(rows.length >= expectedTotalRows);
+
+  // Build CSV — all user-supplied values pass through escapeCsvCell to prevent
+  // formula injection when exported files are opened in Excel / Sheets.
   const headers = [
     'order_id',
     'processed_at',
@@ -84,15 +115,15 @@ export async function GET(
   for (const row of rows) {
     const signals = Array.isArray(row.signals_matched) ? (row.signals_matched as string[]).join('; ') : '';
     const cells = [
-      row.order_id ?? '',
-      row.processed_at ?? '',
+      escapeCsvCell(row.order_id ?? ''),
+      escapeCsvCell(row.processed_at ?? ''),
       row.order_value != null ? String(row.order_value) : '',
       row.identity_score != null ? String(Math.round(row.identity_score)) : '',
-      row.identity_confidence_grade ?? '',
-      row.cluster_id ?? '',
-      row.customer_email ? `"${row.customer_email.replace(/"/g, '""')}"` : '',
-      row.customer_name ? `"${row.customer_name.replace(/"/g, '""')}"` : '',
-      signals ? `"${signals.replace(/"/g, '""')}"` : '',
+      escapeCsvCell(row.identity_confidence_grade ?? ''),
+      escapeCsvCell(row.cluster_id ?? ''),
+      escapeCsvCell(row.customer_email ?? ''),
+      escapeCsvCell(row.customer_name ?? ''),
+      escapeCsvCell(signals),
     ];
     csvLines.push(cells.join(','));
   }
@@ -115,6 +146,7 @@ export async function GET(
     headers: {
       'Content-Type': 'text/csv; charset=utf-8',
       'Content-Disposition': `attachment; filename="${fileName}"`,
+      ...(rowsIncomplete ? { 'X-Export-Warning': `Expected ${expectedTotalRows} rows, exported ${rows.length}` } : {}),
     },
   });
 }

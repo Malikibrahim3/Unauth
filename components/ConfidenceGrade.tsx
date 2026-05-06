@@ -6,6 +6,8 @@ interface ConfidenceGradeProps {
   grade: ConfidenceGradeValue;
   size?: 'sm' | 'md';
   showDot?: boolean;
+  /** When true, renders a secondary "Disputed" badge alongside the grade. */
+  falsePositiveReported?: boolean;
 }
 
 const GRADE_CONFIG: Record<
@@ -15,7 +17,7 @@ const GRADE_CONFIG: Record<
   definite: {
     dot:   '#E5484D',
     bg:    'rgba(229, 72, 77, 0.12)',
-    label: 'DEFINITE',
+    label: 'LINKED',
     text:  '#E5484D',
   },
   probable: {
@@ -27,7 +29,7 @@ const GRADE_CONFIG: Record<
   possible: {
     dot:   '#FFE629',
     bg:    'rgba(255, 230, 41, 0.12)',
-    label: 'POSSIBLE',
+    label: 'SIGNAL',
     text:  '#B5A800',
   },
   weak: {
@@ -54,41 +56,64 @@ export default function ConfidenceGrade({
   grade,
   size = 'md',
   showDot = true,
+  falsePositiveReported = false,
 }: ConfidenceGradeProps) {
   const cfg = GRADE_CONFIG[grade] ?? GRADE_CONFIG.weak;
   const fontSize = size === 'sm' ? 11 : 12;
 
   return (
-    <span
-      style={{
-        display:        'inline-flex',
-        alignItems:     'center',
-        gap:            '6px',
-        padding:        '4px 8px',
-        borderRadius:   '4px',
-        background:     cfg.bg,
-        fontSize:       `${fontSize}px`,
-        fontWeight:     500,
-        letterSpacing:  '0.05em',
-        textTransform:  'uppercase',
-        color:          cfg.text,
-        lineHeight:     1,
-      }}
-    >
-      {showDot && (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+      <span
+        style={{
+          display:        'inline-flex',
+          alignItems:     'center',
+          gap:            '6px',
+          padding:        '4px 8px',
+          borderRadius:   '4px',
+          background:     cfg.bg,
+          fontSize:       `${fontSize}px`,
+          fontWeight:     500,
+          letterSpacing:  '0.05em',
+          textTransform:  'uppercase',
+          color:          cfg.text,
+          lineHeight:     1,
+        }}
+      >
+        {showDot && (
+          <span
+            aria-hidden="true"
+            style={{
+              display:      'inline-block',
+              width:        '6px',
+              height:       '6px',
+              borderRadius: '50%',
+              background:   cfg.dot,
+              flexShrink:   0,
+            }}
+          />
+        )}
+        {cfg.label}
+      </span>
+      {falsePositiveReported && (
         <span
-          aria-hidden="true"
+          title="Flagged as possible false positive — under review"
           style={{
-            display:      'inline-block',
-            width:        '6px',
-            height:       '6px',
-            borderRadius: '50%',
-            background:   cfg.dot,
-            flexShrink:   0,
+            display:       'inline-flex',
+            alignItems:    'center',
+            padding:       '4px 6px',
+            borderRadius:  '4px',
+            background:    'rgba(113, 113, 122, 0.10)',
+            fontSize:      `${fontSize}px`,
+            fontWeight:    500,
+            letterSpacing: '0.05em',
+            textTransform: 'uppercase',
+            color:         '#71717A',
+            lineHeight:    1,
           }}
-        />
+        >
+          Disputed
+        </span>
       )}
-      {cfg.label}
     </span>
   );
 }

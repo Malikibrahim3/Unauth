@@ -63,7 +63,7 @@ const TrendTooltip = ({ active, payload, label }: { active?: boolean; payload?: 
         }}
       >
         <div className="font-medium mb-0.5">{label}</div>
-        <div style={{ color: 'var(--text-muted)' }}>Transactions flagged: <span style={{ color: 'var(--text)' }}>{payload[0].value.toLocaleString()}</span></div>
+        <div style={{ color: 'var(--text-muted)' }}>Matched transactions: <span style={{ color: 'var(--text)' }}>{payload[0].value.toLocaleString()}</span></div>
       </div>
     );
   }
@@ -104,7 +104,7 @@ export default function DashboardCharts({ runs }: Props) {
         className="rounded-lg border px-5 pt-4 pb-3"
         style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
       >
-        <div className="text-overline mb-0.5" style={{ color: 'var(--text-muted)' }}>Flag Rate by Run</div>
+        <div className="text-overline mb-0.5" style={{ color: 'var(--text-muted)' }}>Match Rate by Run</div>
         <div className="text-caption mb-4" style={{ color: 'var(--text-subtle)' }}>Last {rateData.length} audits</div>
         <ResponsiveContainer width="100%" height={160}>
           <BarChart data={rateData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }} barSize={14}>
@@ -139,7 +139,7 @@ export default function DashboardCharts({ runs }: Props) {
         className="rounded-lg border px-5 pt-4 pb-3"
         style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
       >
-        <div className="text-overline mb-0.5" style={{ color: 'var(--text-muted)' }}>Flagged Transactions Over Time</div>
+        <div className="text-overline mb-0.5" style={{ color: 'var(--text-muted)' }}>Matched Transactions Over Time</div>
         <div className="text-caption mb-4" style={{ color: 'var(--text-subtle)' }}>Per audit run</div>
         <ResponsiveContainer width="100%" height={160}>
           <LineChart data={trendData} margin={{ top: 0, right: 4, left: -20, bottom: 0 }}>
@@ -179,11 +179,11 @@ export default function DashboardCharts({ runs }: Props) {
           <div className="flex items-center gap-4 text-caption" style={{ color: 'var(--text-subtle)' }}>
             <span className="flex items-center gap-1.5">
               <span className="h-2 w-2 rounded-sm inline-block" style={{ background: 'var(--risk-high)' }} />
-              Flagged {flaggedPct.toFixed(1)}%
+              With signals {flaggedPct.toFixed(1)}%
             </span>
             <span className="flex items-center gap-1.5">
               <span className="h-2 w-2 rounded-sm inline-block" style={{ background: 'var(--risk-low)' }} />
-              Clean {cleanPct.toFixed(1)}%
+              No signals {cleanPct.toFixed(1)}%
             </span>
           </div>
         </div>
@@ -195,10 +195,10 @@ export default function DashboardCharts({ runs }: Props) {
         </div>
         <div className="flex items-center justify-between mt-2">
           <span className="text-caption" style={{ color: 'var(--text-subtle)' }}>
-            {totalFlagged.toLocaleString()} flagged of {totalRows.toLocaleString()} transactions
+            {totalFlagged.toLocaleString()} with signals of {totalRows.toLocaleString()} transactions
           </span>
           <span className="text-caption font-mono" style={{ color: 'var(--text-muted)' }}>
-            {(totalRows - totalFlagged).toLocaleString()} clean
+            {(totalRows - totalFlagged).toLocaleString()} no signals
           </span>
         </div>
       </div>

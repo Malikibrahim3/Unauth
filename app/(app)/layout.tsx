@@ -18,7 +18,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   }
 
   // Onboarding redirect: skip if already on /onboarding
-  const headerList = headers();
+  const headerList = await headers();
   const pathname = headerList.get('x-pathname') ?? '';
   const isOnboarding = pathname.startsWith('/onboarding');
 

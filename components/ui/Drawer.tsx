@@ -2,7 +2,6 @@
 
 import { type ReactNode, useEffect, useRef, useCallback } from 'react';
 import { X } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 interface DrawerProps {
   open: boolean;

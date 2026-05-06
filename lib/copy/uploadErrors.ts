@@ -4,7 +4,7 @@ export interface FriendlyError {
   code: string;
 }
 
-export function friendlyUploadError(raw: string, _code?: string): FriendlyError {
+export function friendlyUploadError(raw: string): FriendlyError {
   const msg = raw.toLowerCase();
 
   if (msg.includes('row-level security') || msg.includes('rls') || msg.includes('permission denied')) {

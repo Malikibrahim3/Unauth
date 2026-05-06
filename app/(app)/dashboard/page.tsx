@@ -1,5 +1,6 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { formatDate } from '@/lib/utils/format';
 import DashboardCharts from '@/components/dashboard/DashboardCharts';
 import InsightsStrip from '@/components/dashboard/InsightsStrip';
@@ -8,15 +9,32 @@ import TrackPageView from '@/components/common/TrackPageView';
 import { MetricCard } from '@/components/ui/MetricCard';
 import { PageHeader } from '@/components/ui/PageHeader';
 import type { Database } from '@/lib/supabase/types';
+import { countMerchantReviewQueueProfiles } from '@/lib/supabase/merchantHelpers';
+import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 
 type RunRow = Database['public']['Tables']['processing_jobs']['Row'];
 
-function formatCurrency(n: number) {
-  return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(n);
-}
-
 export default async function DashboardPage() {
   const supabase = createClient();
+  const serviceClient = createServiceClient();
+
+  // Resolve authenticated user + merchant context.
+  // Dashboard only shows data for the calling merchant — no cross-tenant reads.
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect('/login');
+
+  const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_DASHBOARD);
+  // App Router pages must return React nodes (not Response objects).
+  if (denied) {
+    return (
+      <div className="p-8">
+        <h1 className="text-heading-lg">Access denied</h1>
+        <p className="text-body-sm mt-2" style={{ color: 'var(--text-muted)' }}>
+          You do not have permission to view dashboard analytics.
+        </p>
+      </div>
+    );
+  }
 
   const { data: runs } = await supabase
     .from('processing_jobs')
@@ -28,6 +46,9 @@ export default async function DashboardPage() {
   const typedRuns = (runs ?? []) as unknown as RunRow[];
 
   const totalTransactions = typedRuns.reduce((sum, r) => sum + r.total_rows, 0);
+  // NOTE: totalFlagged uses STORED processing_jobs.flagged_count — these are the
+  // values written by countReviewWorthyTransactions() at job finalisation and may
+  // reflect historical import state for older rows.
   const totalFlagged = typedRuns.reduce((sum, r) => sum + (r.flagged_count ?? 0), 0);
   const avgFlagRate = totalTransactions > 0 ? (totalFlagged / totalTransactions) * 100 : null;
   const isEmpty = typedRuns.length === 0;
@@ -46,13 +67,27 @@ export default async function DashboardPage() {
     .is('reviewed_at', null);
   const unreviewedCount = unreviewedAppearances ?? 0;
 
-  // Customer profile stats (for review queue KPIs)
-  const { count: customersNeedingReview } = await supabase
-    .from('customer_profiles')
-    .select('id', { count: 'exact', head: true })
-    .in('investigation_status', ['new', 'in_review'])
-    .in('risk_level', ['high', 'critical']);
-  const reviewQueue = customersNeedingReview ?? 0;
+  // LIVE identity review queue — distinct customer profiles with at least one
+  // review-worthy, non-dismissed transaction across ALL merchant-owned jobs.
+  //
+  // Uses the shared countMerchantReviewQueueProfiles() helper which:
+  //   - scopes through processing_jobs.merchant_id (not loose profile status)
+  //   - applies the canonical review-worthy definition (grade IS NOT NULL OR
+  //     status IN candidate/probable/definite, excluding dismissed IS TRUE)
+  //   - paginates in 1000-row batches — no Supabase default row cap
+  //
+  // IMPORTANT: this count is DIFFERENT from totalFlagged above.
+  //   totalFlagged  = sum of stored processing_jobs.flagged_count (historical)
+  //   reviewQueue   = live distinct customer count with open review signals
+  //
+  // NULL means the count could not be loaded (helper threw). Render as
+  // "Unavailable" — do NOT convert data-access failures into 0.
+  let reviewQueue: number | null = null;
+  try {
+    reviewQueue = await countMerchantReviewQueueProfiles(serviceClient, ctx.merchantId);
+  } catch {
+    // reviewQueue stays null — rendered as "Unavailable" in the KPI card.
+  }
 
   // Estimated exposure from latest run
   const latestRun = typedRuns[0] ?? null;
@@ -77,12 +112,12 @@ export default async function DashboardPage() {
     const delta = latestFlagRate - prevFlagRate;
     if (Math.abs(delta) >= 0.5) {
       insights.push({
-        text: `Flagged rate ${delta > 0 ? 'increased' : 'decreased'} from ${prevFlagRate.toFixed(1)}% to ${latestFlagRate.toFixed(1)}% in the latest upload.`,
+        text: `Match rate ${delta > 0 ? 'increased' : 'decreased'} from ${prevFlagRate.toFixed(1)}% to ${latestFlagRate.toFixed(1)}% in the latest upload.`,
         level: delta > 0 ? 'warn' : 'positive',
       });
     }
   }
-  if (reviewQueue > 0) {
+  if (reviewQueue !== null && reviewQueue > 0) {
     insights.push({
       text: `${reviewQueue} high-confidence ${reviewQueue === 1 ? 'customer is' : 'customers are'} unresolved in the review queue.`,
       level: 'info',
@@ -105,8 +140,8 @@ export default async function DashboardPage() {
       {/* ── Page header ──────────────────────────────────────────────── */}
       <div className="mb-[var(--space-5)]">
         <PageHeader
-          title="Risk Overview"
-          subtitle="Monitor, segment, and act on fraud risk across all your uploads."
+          title="Identity Review Overview"
+          subtitle="Monitor identity match signals and review evidence across all your uploads."
           primaryAction={
             <Link href="/upload" className="btn-accent px-4 py-2 rounded-md text-body-sm font-semibold transition-colors">
               New Audit
@@ -120,7 +155,9 @@ export default async function DashboardPage() {
 
       {/* ── KPI row ─────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-[var(--space-3)] mb-[var(--space-5)]">
-        {reviewQueue > 0 ? (
+        {reviewQueue === null ? (
+          <MetricCard label="Customers to review" value="Unavailable" hint="Count could not be loaded" />
+        ) : reviewQueue > 0 ? (
           <Link href="/customers?risk=high&status=new" className="block">
             <MetricCard label="Customers to review" value={reviewQueue.toLocaleString()} hint="High-confidence, unresolved" />
           </Link>
@@ -146,7 +183,7 @@ export default async function DashboardPage() {
           <MetricCard label="Evidence packages" value="0" hint="None CE3.0 eligible" />
         )}
         <MetricCard
-          label="Avg flag rate"
+          label="Avg match rate"
           value={avgFlagRate !== null ? `${avgFlagRate.toFixed(1)}%` : '—'}
           hint={
             avgFlagRate !== null && avgFlagRate >= 10 ? 'High — investigate upload'
@@ -171,7 +208,7 @@ export default async function DashboardPage() {
                 <p className="text-caption mb-0.5" style={{ color: 'var(--text-muted)' }}>Latest audit</p>
                 <p className="text-body-sm font-semibold font-mono truncate max-w-xs" style={{ color: 'var(--text)' }}>{latestRun.filename}</p>
                 <p className="text-caption mt-0.5" style={{ color: 'var(--text-subtle)' }}>
-                  {latestRun.total_rows.toLocaleString()} transactions · {(latestRun.flagged_count ?? 0).toLocaleString()} flagged
+                  {latestRun.total_rows.toLocaleString()} transactions · {(latestRun.flagged_count ?? 0).toLocaleString()} matched
                   {latestFlagRate !== null && <span> · {latestFlagRate.toFixed(1)}% flag rate</span>}
                   <span> · {formatDate(latestRun.created_at)}</span>
                 </p>
@@ -194,7 +231,7 @@ export default async function DashboardPage() {
           {/* ── Quick links row ─────────────────────────────────────── */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
             {[
-              { href: '/customers?risk=high', label: 'High-confidence customers', desc: 'Review probable & definite matches' },
+              { href: '/customers?risk=high', label: 'High-confidence matches', desc: 'Review probable & definite matches' },
               { href: '/customers?hasRefunds=1', label: 'Refund claimants', desc: 'Customers with at least one refund claim' },
               { href: '/chargebacks', label: 'Evidence packages', desc: 'View generated dispute packages' },
             ].map(({ href, label, desc }) => (

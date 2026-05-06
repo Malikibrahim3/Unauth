@@ -24,7 +24,7 @@ export default function InvestigationStatusSelect({ profileId, initialStatus }: 
       } else {
         track('Investigation Status Changed', { from: prev, to: newStatus });
       }
-    } catch (err) {
+    } catch {
       setStatus(prev);
     } finally {
       setSaving(false);

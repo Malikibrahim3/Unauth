@@ -38,7 +38,7 @@ export function RiskScoreBadge({ score, level, size = 'md', className }: RiskSco
         border,
         className,
       )}
-      title={`Risk score ${score}/100 — ${level}`}
+      title={`Identity confidence ${score}/100 — ${level}`}
     >
       <span aria-hidden="true" className={cn('w-1.5 h-1.5 rounded-full shrink-0', styles.dot)} />
       {score}

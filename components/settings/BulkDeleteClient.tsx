@@ -32,7 +32,7 @@ export default function BulkDeleteClient() {
       } else {
         setMessage('Delete completed.');
       }
-    } catch (err) {
+    } catch {
       setMessage('Network error');
     } finally {
       setLoading(false);

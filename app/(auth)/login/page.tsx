@@ -57,7 +57,7 @@ export default function LoginPage() {
               <span className="flex h-8 w-8 items-center justify-center rounded-md text-heading-sm font-bold" style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}>U</span>
               <span className="text-heading-lg" style={{ color: 'var(--text)' }}>Unauth</span>
             </div>
-            <p className="text-body-sm" style={{ color: 'var(--text-muted)' }}>Refund fraud audit for ecommerce merchants</p>
+            <p className="text-body-sm" style={{ color: 'var(--text-muted)' }}>Identity match review for ecommerce merchants</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">

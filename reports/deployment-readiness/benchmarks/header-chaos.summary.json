@@ -1,0 +1,102 @@
+[
+  {
+    "file": "header_chaos_shopify.csv",
+    "valid": true,
+    "rowCount": 72,
+    "missingRequired": [],
+    "unmappedHeaders": [
+      "shipping_city",
+      "shipping_province",
+      "shipping_postcode",
+      "shipping_country",
+      "delivery_status",
+      "tracking_number",
+      "unmapped_loyalty_tier"
+    ],
+    "headerCount": 26
+  },
+  {
+    "file": "header_chaos_woocommerce.csv",
+    "valid": true,
+    "rowCount": 72,
+    "missingRequired": [],
+    "unmappedHeaders": [
+      "shipping_city",
+      "shipping_postcode"
+    ],
+    "headerCount": 22
+  },
+  {
+    "file": "header_chaos_amazon.csv",
+    "valid": true,
+    "rowCount": 72,
+    "missingRequired": [],
+    "unmappedHeaders": [
+      "ship_city",
+      "shipping_postcode",
+      "shipping_country"
+    ],
+    "headerCount": 19
+  },
+  {
+    "file": "header_chaos_etsy_semicolon_bom.csv",
+    "valid": true,
+    "rowCount": 72,
+    "missingRequired": [],
+    "unmappedHeaders": [
+      "ship_name",
+      "address_2",
+      "ship_city",
+      "shipping_postcode",
+      "shipping_country"
+    ],
+    "headerCount": 18
+  },
+  {
+    "file": "header_chaos_stripe_pipe.csv",
+    "valid": true,
+    "rowCount": 72,
+    "missingRequired": [],
+    "unmappedHeaders": [
+      "order_id_1",
+      "postcode",
+      "shipping_country",
+      "metadata,_merchant_note"
+    ],
+    "headerCount": 20
+  },
+  {
+    "file": "header_chaos_custom_mixed_case.csv",
+    "valid": true,
+    "rowCount": 72,
+    "missingRequired": [],
+    "unmappedHeaders": [
+      "shipping_postcode",
+      "shipping_country",
+      "extra_column"
+    ],
+    "headerCount": 20
+  },
+  {
+    "file": "header_chaos_duplicate_headers.csv",
+    "valid": true,
+    "rowCount": 72,
+    "missingRequired": [],
+    "unmappedHeaders": [
+      "shipping_country",
+      "customer_phone_1",
+      "unmapped_extra"
+    ],
+    "headerCount": 13
+  },
+  {
+    "file": "header_chaos_missing_important.csv",
+    "valid": true,
+    "rowCount": 72,
+    "missingRequired": [],
+    "unmappedHeaders": [
+      "shipping_country"
+    ],
+    "headerCount": 5
+  }
+]

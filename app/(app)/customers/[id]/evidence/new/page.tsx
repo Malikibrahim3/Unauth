@@ -95,7 +95,7 @@ export default function EvidenceNewPage({ params, searchParams }: PageProps) {
     }
   }
 
-  const selectedOrder = orders.find(o => o.id === selectedOrderId)
+  const _selectedOrder = orders.find(o => o.id === selectedOrderId)
   const hasEligibleOrders = orders.some(o => o.refund_claimed)
   const canSubmit = !!selectedOrderId && !loading && !loadingOrders
 
