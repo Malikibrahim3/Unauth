@@ -9,12 +9,7 @@ import { PageHeader } from '@/components/common/PageHeader';
 const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
 const DEFAULT_PAGE_SIZE = 25;
 
-export default async function WatchlistPage({
-  searchParams,
-}: {
-  searchParams?: Promise<{ page?: string; pageSize?: string }>;
-}) {
-  const resolvedSearchParams = (await searchParams) ?? {};
+export default async function WatchlistPage({ searchParams }: { searchParams?: { page?: string; pageSize?: string } }) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
@@ -22,28 +17,22 @@ export default async function WatchlistPage({
     redirect('/login');
   }
 
-  const { data: merchantRow } = await supabase
-    .from('merchants')
-    .select('id')
-    .eq('user_id', user.id)
-    .maybeSingle();
-  const merchantId = merchantRow?.id ?? user.id;
-
   // Fetch watchlist entries and recent appearances in parallel
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-  const page = Math.max(1, parseInt(resolvedSearchParams.page ?? '1', 10));
-  const requestedPageSize = parseInt(resolvedSearchParams.pageSize ?? String(DEFAULT_PAGE_SIZE), 10);
+  const sp = (await Promise.resolve(searchParams)) ?? {};
+  const page = Math.max(1, parseInt(sp?.page ?? '1', 10));
+  const requestedPageSize = parseInt(sp?.pageSize ?? String(DEFAULT_PAGE_SIZE), 10);
   const pageSize = PAGE_SIZE_OPTIONS.includes(requestedPageSize as (typeof PAGE_SIZE_OPTIONS)[number])
     ? requestedPageSize
     : DEFAULT_PAGE_SIZE;
   const offset = (page - 1) * pageSize;
-  const querySearchParams = resolvedSearchParams;
+  const querySearchParams = sp ?? {};
 
   const [{ data: entries, count }, { data: recentRaw }] = await Promise.all([
     supabase
       .from('watchlist_entries')
       .select('*', { count: 'exact' })
-      .eq('merchant_id', merchantId)
+      .eq('merchant_id', user!.id)
       .eq('removed_by_merchant', false)
       .order('added_at', { ascending: false })
       .range(offset, offset + pageSize - 1),

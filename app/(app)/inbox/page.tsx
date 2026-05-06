@@ -19,12 +19,7 @@ function topReason(signals: unknown): string {
   return signalLabel(first).short;
 }
 
-export default async function InboxPage({
-  searchParams,
-}: {
-  searchParams?: Promise<{ page?: string; pageSize?: string }>;
-}) {
-  const resolvedSearchParams = (await searchParams) ?? {};
+export default async function InboxPage({ searchParams }: { searchParams?: Promise<{ page?: string; pageSize?: string }> }) {
   const userClient = createClient();
   const { data: { user } } = await userClient.auth.getUser();
 
@@ -33,6 +28,7 @@ export default async function InboxPage({
     redirect('/login');
   }
 
+  const resolvedSearchParams = (await searchParams) ?? {};
   const page = Math.max(1, parseInt(resolvedSearchParams.page ?? '1', 10));
   const requestedPageSize = parseInt(resolvedSearchParams.pageSize ?? String(DEFAULT_PAGE_SIZE), 10);
   const pageSize = PAGE_SIZE_OPTIONS.includes(requestedPageSize as (typeof PAGE_SIZE_OPTIONS)[number])
@@ -43,18 +39,8 @@ export default async function InboxPage({
 
   const serviceClient = createServiceClient();
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_INBOX);
-  // Next.js App Router pages must return React nodes (not Response objects).
-  // Fail closed with an explicit access-denied UI.
-  if (denied) {
-    return (
-      <div className="p-8">
-        <h1 className="text-heading-lg">Access denied</h1>
-        <p className="text-body-sm mt-2" style={{ color: 'var(--text-muted)' }}>
-          You do not have permission to view the review inbox.
-        </p>
-      </div>
-    );
-  }
+  // Permission denied: return the denied response (403) rather than an empty queue.
+  if (denied) return denied;
 
   let items: Array<{
     id: string;
@@ -64,7 +50,6 @@ export default async function InboxPage({
     match_status: string | null;
     processed_at: string;
     processing_job_id: string;
-    customer_profile_id: string | null;
     order_value?: number | null;
     reason?: string;
   }> = [];
@@ -92,7 +77,6 @@ export default async function InboxPage({
     match_status: row.match_status ?? null,
     processed_at: row.processed_at,
     processing_job_id: row.job_id,
-    customer_profile_id: row.customer_profile_id ?? null,
     order_value: row.order_value ?? null,
     reason: topReason(row.signals_matched),
   }));

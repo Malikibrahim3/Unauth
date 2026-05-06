@@ -589,7 +589,7 @@ export async function paginateAll<T>(
 export const REVIEW_QUEUE_SELECT =
   'id,job_id,order_id,processed_at,order_value,identity_confidence_grade,' +
   'identity_score,match_status,customer_email,customer_name,signals_matched,' +
-  'customer_profile_id,dismissed_by_merchant';
+  'dismissed_by_merchant';
 
 /**
  * Returns review-worthy rows across all merchant-owned jobs.

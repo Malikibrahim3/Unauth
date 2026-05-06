@@ -36,8 +36,8 @@ import { riskBadgeStyle, riskBarStyle, riskTok } from '@/lib/utils/riskStyles';
 import { formatCurrencyNullable, formatDate } from '@/lib/utils/format';
 
 interface PageProps {
-  params: Promise<{ id: string }>;
-  searchParams: Promise<{ audit?: string }>;
+  params: Promise<{ id: string }> | { id: string };
+  searchParams: Promise<{ audit?: string }> | { audit?: string };
 }
 
 // TX_SAFE_SELECT is imported from merchantHelpers — it includes identity fields
@@ -185,13 +185,14 @@ function RoadmapOrderCard({ tx, isLast }: { tx: any; isLast: boolean }) {
 // ---------------------------------------------------------------------------
 
 export default async function CustomerProfilePage({ params, searchParams }: PageProps) {
-  const resolvedParams = await params;
-  const resolvedSearchParams = await searchParams;
   const supabase = createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect('/login');
+
+  const resolvedParams = await Promise.resolve(params);
+  const resolvedSearchParams = await Promise.resolve(searchParams);
 
   // The ?audit=runId param is set when navigating here from an audit context.
   // It is used to build a contextual back link so users can return to the audit
@@ -201,16 +202,7 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
 // ── Auth + permission ──────────────────────────────────────────────────
   const svc = createServiceClient();
   const { denied, ctx } = await requirePermission(svc, user.id, PERMISSIONS.VIEW_CUSTOMERS);
-  if (denied) {
-    return (
-      <div className="p-8">
-        <h1 className="text-heading-lg">Access denied</h1>
-        <p className="text-body-sm mt-2" style={{ color: 'var(--text-muted)' }}>
-          You do not have permission to view customer profiles.
-        </p>
-      </div>
-    );
-  }
+  if (denied) return denied as any;
 
   const merchantId = ctx.merchantId;
   const { id } = resolvedParams;

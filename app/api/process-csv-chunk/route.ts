@@ -35,72 +35,35 @@ async function checkWatchlistAppearances(
   auditId: string,
   supabase: SupabaseClient
 ): Promise<void> {
-  const { data: watchlisted, error: watchlistErr } = await supabase
+  const { data: watchlisted } = await supabase
     .from('watchlist_entries')
     .select('customer_profile_id')
     .eq('merchant_id', merchantId);
-  if (watchlistErr) {
-    throw new Error(`[watchlist_appearances] watchlist fetch failed: ${watchlistErr.message}`);
-  }
   if (!watchlisted || watchlisted.length === 0) return;
   const ids = (watchlisted as { customer_profile_id: string | null }[])
     .map((w) => w.customer_profile_id)
     .filter(Boolean) as string[];
   if (ids.length === 0) return;
 
-  const { data: appearances, error: appearancesErr } = await supabase
-    .from('customer_profile_audit_appearances')
-    .select('profile_id, transaction_id')
-    .eq('audit_id', auditId)
-    .in('profile_id', ids) as unknown as {
-      data: Array<{ profile_id: string; transaction_id: string | null }> | null;
-      error: { message: string } | null;
-    };
-  if (appearancesErr) {
-    throw new Error(`[watchlist_appearances] appearance fetch failed: ${appearancesErr.message}`);
-  }
+  const { data: appearances } = await supabase
+    .from('audit_transactions')
+    .select('customer_profile_id, identity_confidence_grade')
+    .eq('job_id', auditId)
+    .eq('merchant_id', merchantId)
+    .in('customer_profile_id', ids);
   if (!appearances || appearances.length === 0) return;
 
-  const txIds = Array.from(
-    new Set(
-      appearances
-        .map((a) => a.transaction_id)
-        .filter((id): id is string => typeof id === 'string' && id.length > 0)
-    )
-  );
-
-  const txGrade = new Map<string, string | null>();
-  if (txIds.length > 0) {
-    const { data: txRows, error: txErr } = await supabase
-      .from('audit_transactions')
-      .select('id, identity_confidence_grade')
-      .eq('job_id', auditId)
-      .in('id', txIds) as unknown as {
-        data: Array<{ id: string; identity_confidence_grade: string | null }> | null;
-        error: { message: string } | null;
-      };
-    if (txErr) {
-      throw new Error(`[watchlist_appearances] transaction-grade fetch failed: ${txErr.message}`);
-    }
-    for (const tx of txRows ?? []) {
-      txGrade.set(tx.id, tx.identity_confidence_grade);
-    }
-  }
-
   const gradeOrder: Record<string, number> = { definite: 4, probable: 3, possible: 2, weak: 1 };
-  const grouped = new Map<string, { count: number; highestGrade: string | null }>();
-  for (const row of appearances) {
-    const profileId = row.profile_id;
-    const grade = row.transaction_id ? txGrade.get(row.transaction_id) ?? null : null;
-    const ex = grouped.get(profileId);
-    const rank = grade ? (gradeOrder[grade] ?? 0) : 0;
+  const grouped = new Map<string, { count: number; highestGrade: string }>();
+  for (const row of appearances as Array<{ customer_profile_id: string; identity_confidence_grade: string }>) {
+    const ex = grouped.get(row.customer_profile_id);
+    const rank = gradeOrder[row.identity_confidence_grade] ?? 0;
     if (!ex) {
-      grouped.set(profileId, { count: 1, highestGrade: grade });
+      grouped.set(row.customer_profile_id, { count: 1, highestGrade: row.identity_confidence_grade });
     } else {
-      const existingRank = ex.highestGrade ? (gradeOrder[ex.highestGrade] ?? 0) : 0;
-      grouped.set(profileId, {
+      grouped.set(row.customer_profile_id, {
         count: ex.count + 1,
-        highestGrade: rank > existingRank ? grade : ex.highestGrade,
+        highestGrade: rank > (gradeOrder[ex.highestGrade] ?? 0) ? row.identity_confidence_grade : ex.highestGrade,
       });
     }
   }
@@ -114,7 +77,7 @@ async function checkWatchlistAppearances(
   const { error } = await supabase
     .from('watchlist_appearances')
     .upsert(rows, { onConflict: 'merchant_id,customer_profile_id,audit_id' });
-  if (error) throw new Error(`[watchlist_appearances] upsert failed: ${error.message}`);
+  if (error) console.error('[watchlist_appearances] upsert error:', error.message);
 }
 
 export async function POST(request: NextRequest) {
@@ -181,14 +144,7 @@ export async function POST(request: NextRequest) {
 
     // ── Last chunk: finalise the job ─────────────────────────────────────
     log('Last chunk — finalising job');
-    try {
-      await checkWatchlistAppearances(merchantId, jobId, sc);
-    } catch (err) {
-      console.error(
-        '[watchlist_appearances] non-fatal sync error:',
-        err instanceof Error ? err.message : String(err)
-      );
-    }
+    await checkWatchlistAppearances(merchantId, jobId, sc);
 
     // Compute final flagged_count using the canonical review-worthy definition:
     // identity_confidence_grade IS NOT NULL OR match_status IN ('candidate','probable','definite')

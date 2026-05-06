@@ -1,0 +1,646 @@
+order_id,created_at,customer_email,customer_name,billing_name,phone,shipping_address,shipping_city,shipping_postcode,shipping_country,ip_address,card_last4,card_bin,payment_method,order_total,currency,account_id,refund_requested,refund_amount,refund_reason,chargeback_filed
+ORD-269168,2026-02-15 08:00:00,olivia.adams.loyal6@gmail.com,Olivia Adams,Olivia Adams,+44 7700 788505,17 Loyal Customer Road,London,SW1A 1AA,GB,172.24.144.185,1722,414720,apple_pay,52.43,GBP,ACC-E9B3C36E,FALSE,,,FALSE
+ORD-783244,2026-04-16 22:52:00,leo.brown181@icloud.com,Leo Brown,Leo Brown,+1 696-555-9436,30 Pine Street,Berlin,10115,DE,52.214.101.192,6336,492181,debit_card,205.19,EUR,ACC-7585A4BD,FALSE,,,FALSE
+ORD-462486,2025-10-14 04:59:00,grace.evans552@outlook.com,Grace Evans,Grace Evans,,169 Market Lane,London,SW1A 1AA,GB,13.240.11.253,6185,535522,paypal,153.45,GBP,ACC-CDD55910,FALSE,,,FALSE
+ORD-018357,2025-10-30 15:34:00,theo.wilson626@icloud.com,Theo Wilson,Theo Wilson,,219 Maple Street,Berlin,10115,DE,,7574,455673,paypal,79.92,EUR,ACC-925431D8,FALSE,,,FALSE
+ORD-358286,2025-11-29 23:54:00,ruby.king940@icloud.com,Ruby King,Ruby King,+1 724-555-6138,96 Pine Ave,Paris,75002,FR,98.21.29.190,5011,543212,apple_pay,215.67,EUR,ACC-58E21742,TRUE,215.67,late_delivery,FALSE
+ORD-639452,2026-04-07 22:36:00,ethan.young435@icloud.com,Ethan Young,Ethan Young,+1 617-555-2848,195 Station St,Dallas,TX 75201,US,74.184.147.143,1665,455673,debit_card,93.37,USD,ACC-04ACA9D1,FALSE,,,FALSE
+ORD-788865,2025-11-30 22:21:00,ava.johnson216@icloud.com,Ava Johnson,Ava Johnson,+1 846-555-6196,226 Market St,New York,NY 10011,US,,2312,535522,klarna,128.83,USD,ACC-2D5C7836,FALSE,,,FALSE
+ORD-836394,2026-02-04 08:22:00,samir.khan.work@gmail.com,Sam Khan,Samir K,07911345678,"Flat B, 9 Palmer Lane",Manchester,M21AA,GB,90.200.10.77,6620,535522,debit_card,230.00,GBP,ACC-77F2696B,FALSE,,,TRUE
+ORD-027624,2026-03-23 05:40:00,zara.green875@icloud.com,Zara Green,Zara Green,+1 250-555-7131,147 Park Street,Berlin,10115,DE,99.95.141.129,1749,400000,paypal,110.87,EUR,ACC-F115D385,FALSE,,,FALSE
+ORD-744211,2026-01-21 21:07:00,freya.smith523@yahoo.com,Freya Smith,Freya Smith,+1 501-555-2022,95 Oak St,Paris,75002,FR,56.56.144.222,1510,492181,paypal,119.07,EUR,ACC-0EC9192F,FALSE,,,FALSE
+ORD-847866,2025-12-19 14:49:00,lucas.green945@icloud.com,Lucas Green,Lucas Green,,51 High Ave,Dallas,TX 75201,US,,6105,492181,klarna,208.94,USD,ACC-5C3B4A50,FALSE,,,FALSE
+ORD-309816,2026-03-17 02:49:00,henry.hall282@icloud.com,Henry Hall,Henry Hall,,40 Park Road,Toronto,M5V 2T6,CA,69.0.194.188,4039,455673,debit_card,165.69,CAD,ACC-17156B9D,FALSE,,,FALSE
+ORD-510890,2026-02-21 12:41:00,olivia.taylor31@gmail.com,Olivia Taylor,Olivia Taylor,,113 Cedar Lane,Los Angeles,CA 90015,US,14.101.101.73,3853,492181,apple_pay,231.57,USD,ACC-1A24353F,FALSE,,,FALSE
+ORD-977952,2025-09-26 04:28:00,jack.thomas366@outlook.com,Jack Thomas,Jack Thomas,,103 Station St,Birmingham,B1 1AA,GB,19.142.188.12,2103,492181,paypal,113.95,GBP,ACC-51C6F22A,FALSE,,,FALSE
+ORD-132471,2025-12-23 19:59:00,amelia.wilson448@yahoo.com,Amelia Wilson,Amelia Wilson,+1 595-555-6554,48 Park Ave,Los Angeles,CA 90015,US,45.42.217.21,8055,400000,apple_pay,258.78,USD,ACC-6B513DFA,FALSE,,,FALSE
+ORD-260167,2026-02-01 13:42:00,henry.green18@outlook.com,Henry Green,Henry Green,,15 Maple Road,Paris,75002,FR,56.83.27.70,6917,535522,klarna,169.79,EUR,ACC-1169A2C9,FALSE,,,FALSE
+ORD-499022,2026-04-27 19:54:00,freya.nelson635@gmail.com,Freya Nelson,Freya Nelson,07697 678635,81 High Street,London,SW1A 1AA,GB,44.202.67.172,5915,535522,credit_card,90.41,GBP,ACC-0D5F5171,FALSE,,,FALSE
+ORD-384062,2026-04-09 09:37:00,noah.young347@icloud.com,Noah Young,Noah Young,+1 901-555-8612,179 Park Street,Berlin,10115,DE,69.18.150.52,1717,492181,paypal,231.68,EUR,ACC-638D996C,FALSE,,,FALSE
+ORD-539972,2025-11-27 18:02:00,leo.wright675@icloud.com,Leo Wright,Leo Wright,+1 204-555-9689,189 Oak Lane,Toronto,M5V 2T6,CA,72.90.88.188,3103,455673,apple_pay,108.08,CAD,ACC-CB1C534D,FALSE,,,FALSE
+ORD-651695,2025-09-18 15:50:00,ruby.nelson653@gmail.com,Ruby Nelson,Ruby Nelson,+1 945-555-5644,22 Cedar Ave,Paris,75002,FR,72.87.112.213,7730,400000,apple_pay,47.39,EUR,ACC-3FE27748,FALSE,,,FALSE
+ORD-124795,2025-11-12 11:25:00,oscar.mitchell378@yahoo.com,Oscar Mitchell,Oscar Mitchell,+1 552-555-7971,191 Station Road,Paris,75002,FR,43.118.61.185,4155,414720,debit_card,41.65,EUR,ACC-3572A41B,FALSE,,,FALSE
+ORD-221993,2026-01-17 12:29:00,ivy.allen967@outlook.com,Ivy Allen,Ivy Allen,,88 Market Street,London,SW1A 1AA,GB,,7262,400000,debit_card,250.23,GBP,ACC-FC69AE51,FALSE,,,FALSE
+ORD-158041,2025-09-18 08:11:00,lucas.roberts536@outlook.com,Lucas Roberts,Lucas Roberts,+1 580-555-3718,37 High Lane,New York,NY 10011,US,58.128.241.119,4450,414720,paypal,241.92,USD,ACC-EC24279B,FALSE,,,FALSE
+ORD-917144,2025-11-06 13:05:00,theo.davies178@outlook.com,Theo Davies,Theo Davies,+1 403-555-2382,107 Station Street,New York,NY 10011,US,84.114.10.243,1376,400000,credit_card,172.48,USD,ACC-79C90E70,FALSE,,,FALSE
+ORD-445790,2025-12-13 00:35:00,theo.king120@icloud.com,Theo King,Theo King,07856 819555,125 Park St,London,SW1A 1AA,GB,36.150.200.14,6469,455673,klarna,37.46,GBP,ACC-4F8386AC,FALSE,,,FALSE
+ORD-740993,2025-11-09 09:23:00,isla.davies779@outlook.com,Isla Davies,Isla Davies,,31 High Lane,New York,NY 10011,US,,8718,492181,apple_pay,175.78,USD,ACC-B163DC11,FALSE,,,FALSE
+ORD-006799,2025-10-17 08:30:00,hannah.evans.loyal18@gmail.com,Hannah Evans,Hannah Evans,+44 7700 745346,179 Loyal Customer Road,Birmingham,B1 1AA,GB,172.17.128.21,5722,414720,apple_pay,57.09,GBP,ACC-68300FAF,FALSE,,,FALSE
+ORD-405457,2026-03-19 08:00:00,zara.johnson.loyal13@gmail.com,Zara Johnson,Zara Johnson,+44 7700 602651,158 Loyal Customer Road,Manchester,M1 2AB,GB,172.29.80.62,3384,414720,credit_card,103.40,GBP,ACC-B6A37CF7,FALSE,,,FALSE
+ORD-511778,2026-02-05 06:36:00,ethan.evans779@yahoo.com,Ethan Evans,Ethan Evans,07196 982553,88 Maple Street,Birmingham,B1 1AA,GB,38.157.156.82,9690,535522,debit_card,37.52,GBP,ACC-B8736896,FALSE,,,FALSE
+ORD-967181,2026-02-17 06:06:00,olivia.mitchell852@gmail.com,Olivia Mitchell,Olivia Mitchell,,26 Pine Ave,London,SW1A 1AA,GB,43.98.17.7,2506,455673,klarna,244.75,GBP,ACC-351B19B9,FALSE,,,FALSE
+ORD-959807,2026-02-20 08:26:00,elia.fischer+gift@gmail.com,Elia F,Elia Fischer,,Prenzlauer Allee 44,Berlin,10405,DE,,7701,492181,credit_card,159.95,EUR,ACC-9684EB76,TRUE,159.95,wrong_size_then_lost,FALSE
+ORD-900151,2025-09-26 09:00:00,mia.walker.loyal15@gmail.com,Mia Walker,Mia Walker,+1 646-555-2180,65 Loyal Customer Road,Paris,75002,FR,,7934,455673,credit_card,39.67,EUR,ACC-654EC1DB,FALSE,,,FALSE
+ORD-414610,2025-12-19 21:22:00,amelia.davies281@gmail.com,Amelia Davies,Amelia Davies,,160 Pine Street,Manchester,M1 2AB,GB,45.72.145.147,5011,492181,debit_card,29.67,GBP,ACC-18BD7D88,FALSE,,,FALSE
+ORD-228355,2026-04-08 09:00:00,jack.johnson.loyal24@gmail.com,Jack Johnson,Jack Johnson,+44 7700 586903,40 Loyal Customer Road,Glasgow,G1 1AA,GB,,2357,455673,credit_card,54.24,GBP,ACC-D853F346,FALSE,,,FALSE
+ORD-969870,2025-09-01 13:04:00,henry.taylor342@gmail.com,Henry Taylor,Henry Taylor,+1 286-555-1710,155 Maple Street,Paris,75002,FR,34.217.76.229,5940,400000,debit_card,214.76,EUR,ACC-11B62E73,FALSE,,,FALSE
+ORD-117889,2026-01-19 23:44:00,olivia.baker145@gmail.com,Olivia Baker,Olivia Baker,,147 Market Lane,Berlin,10115,DE,37.176.108.106,9397,492181,klarna,51.92,EUR,ACC-13B3F789,FALSE,,,FALSE
+ORD-729866,2025-10-10 13:30:00,grace.carter498@yahoo.com,Grace Carter,Grace Carter,+1 780-555-3161,230 High Street,Los Angeles,CA 90015,US,58.147.24.38,6785,414720,debit_card,125.07,USD,ACC-B0249B63,FALSE,,,FALSE
+ORD-753741,2026-04-11 22:50:00,ryan.scott789@yahoo.com,Ryan Scott,Ryan Scott,,113 Maple Street,Dallas,TX 75201,US,17.135.59.14,3745,535522,credit_card,110.89,USD,ACC-DD399C87,FALSE,,,FALSE
+ORD-594377,2026-01-03 19:21:00,sophie.hall267@outlook.com,Sophie Hall,Sophie Hall,+1 320-555-8709,14 Pine Ave,Los Angeles,CA 90015,US,98.195.152.106,1885,492181,debit_card,46.07,USD,ACC-2BF4D68B,FALSE,,,FALSE
+ORD-847033,2025-10-21 09:30:00,leo.baker.loyal12@gmail.com,Leo Baker,Leo Baker,+44 7700 343529,52 Loyal Customer Road,London,SW1A 1AA,GB,,7122,492181,apple_pay,170.02,GBP,ACC-302B4D40,FALSE,,,FALSE
+ORD-919882,2026-01-24 10:48:00,grace.smith195@outlook.com,Grace Smith,Grace Smith,07817 757673,76 Maple Ave,Birmingham,B1 1AA,GB,22.46.207.219,5315,492181,paypal,189.54,GBP,ACC-54D8B1D6,FALSE,,,FALSE
+ORD-623543,2026-02-15 09:00:00,adam.young.loyal28@gmail.com,Adam Young,Adam Young,+1 646-555-7111,87 Loyal Customer Road,Los Angeles,CA 90015,US,,1634,455673,klarna,168.65,USD,ACC-E3F5B89E,FALSE,,,FALSE
+ORD-047609,2026-02-11 21:31:00,leo.wright959@icloud.com,Leo Wright,Leo Wright,+1 426-555-1324,195 High Road,Los Angeles,CA 90015,US,,5967,543212,credit_card,66.84,USD,ACC-216CE450,FALSE,,,FALSE
+ORD-669647,2025-11-25 15:38:00,ivy.wright494@icloud.com,Ivy Wright,Ivy Wright,,44 Pine St,Birmingham,B1 1AA,GB,31.167.196.197,5593,492181,klarna,190.36,GBP,ACC-7823F980,FALSE,,,FALSE
+ORD-252787,2026-01-24 09:33:00,imran.mitchell566@yahoo.com,Imran Mitchell,Imran Mitchell,,197 Market Street,London,SW1A 1AA,GB,28.59.224.31,7024,414720,credit_card,60.02,GBP,ACC-BE219DE6,FALSE,,,FALSE
+ORD-964150,2025-10-10 12:01:00,theo.carter451@yahoo.com,Theo Carter,Theo Carter,+1 626-555-3668,37 Maple Ave,Dallas,TX 75201,US,76.60.108.117,8755,455673,paypal,197.13,USD,ACC-AB088052,FALSE,,,FALSE
+ORD-552034,2026-01-04 07:32:00,lily.baker949@icloud.com,Lily Baker,Lily Baker,,118 Station Street,Paris,75002,FR,,7014,400000,klarna,73.96,EUR,ACC-26BFDD60,FALSE,,,FALSE
+ORD-778444,2026-04-29 05:44:00,adam.davies555@icloud.com,Adam Davies,Adam Davies,+1 516-555-9582,233 Maple Ave,Paris,75002,FR,29.80.162.18,9732,543212,paypal,41.36,EUR,ACC-E68A0366,FALSE,,,FALSE
+ORD-246963,2026-02-26 06:53:00,henry.adams695@icloud.com,Henry Adams,Henry Adams,07537 795961,44 Oak St,Birmingham,B1 1AA,GB,17.60.173.152,8107,492181,credit_card,167.49,GBP,ACC-E3CD7C32,FALSE,,,FALSE
+ORD-329500,2026-02-17 08:00:00,elia.fischer@gmail.com,Elia Fischer,Elia Fischer,+49 1512 3344556,Prenzlauer Allee 44,Berlin,10405,DE,91.64.12.9,7701,492181,credit_card,199.90,EUR,ACC-4E2AF64A,TRUE,199.90,item_not_received,FALSE
+ORD-348935,2025-11-24 08:30:00,zara.johnson.loyal13@gmail.com,Zara Johnson,Zara Johnson,+44 7700 602651,158 Loyal Customer Road,Manchester,M1 2AB,GB,172.29.80.62,6048,492181,klarna,79.12,GBP,ACC-B6A37CF7,FALSE,,,FALSE
+ORD-889269,2026-04-23 16:31:00,nadia.hall865@yahoo.com,Nadia Hall,Nadia Hall,,175 Park Ave,Dallas,TX 75201,US,39.24.142.236,7882,400000,debit_card,123.32,USD,ACC-DAC40F58,TRUE,123.32,wrong_size,FALSE
+ORD-281701,2026-03-30 09:00:00,hannah.evans.loyal18@gmail.com,Hannah Evans,Hannah Evans,+44 7700 745346,179 Loyal Customer Road,Birmingham,B1 1AA,GB,,3928,414720,credit_card,170.72,GBP,ACC-68300FAF,FALSE,,,FALSE
+ORD-080011,2026-03-19 09:00:00,imran.hall.loyal8@gmail.com,Imran Hall,Imran Hall,+1 646-555-2915,84 Loyal Customer Road,Toronto,M5V 2T6,CA,,2168,455673,paypal,152.04,CAD,ACC-9EBB2027,FALSE,,,FALSE
+ORD-991651,2025-09-27 00:59:00,zara.young182@yahoo.com,Zara Young,Zara Young,+1 990-555-3908,130 Maple Ave,Paris,75002,FR,,1635,400000,debit_card,232.28,EUR,ACC-48421A14,FALSE,,,FALSE
+ORD-362561,2026-02-05 08:00:00,jack.hall.loyal14@gmail.com,Jack Hall,Jack Hall,+1 646-555-4922,145 Loyal Customer Road,Los Angeles,CA 90015,US,172.22.178.249,3281,414720,paypal,50.70,USD,ACC-B38F3EA0,FALSE,,,FALSE
+ORD-780842,2026-01-11 05:57:00,ryan.walker558@icloud.com,Ryan Walker,Ryan Walker,+1 587-555-6985,151 Pine Lane,Paris,75002,FR,,4651,400000,paypal,112.65,EUR,ACC-9BD9B5C6,FALSE,,,FALSE
+ORD-267338,2026-02-05 04:27:00,imran.allen724@icloud.com,Imran Allen,Imran Allen,+1 298-555-7350,33 Station Street,Toronto,M5V 2T6,CA,47.217.201.137,2174,414720,apple_pay,133.10,CAD,ACC-DC79A2F4,FALSE,,,FALSE
+ORD-268604,2025-10-25 08:26:00,imran.wilson541@icloud.com,Imran Wilson,Imran Wilson,+1 877-555-9029,72 Station Ave,Berlin,10115,DE,,5322,414720,debit_card,188.42,EUR,ACC-0E78F534,FALSE,,,FALSE
+ORD-266665,2026-01-27 18:39:00,freya.scott730@outlook.com,Freya Scott,Freya Scott,07659 690475,9 Oak Lane,Glasgow,G1 1AA,GB,85.246.40.37,9624,414720,klarna,127.30,GBP,ACC-805DC7B3,TRUE,127.30,wrong_size,FALSE
+ORD-989630,2025-12-01 19:16:00,olivia.brown770@gmail.com,Olivia Brown,Olivia Brown,+1 242-555-2586,55 Oak Ave,New York,NY 10011,US,45.248.242.194,6521,400000,credit_card,118.50,USD,ACC-C7145DC9,FALSE,,,FALSE
+ORD-028370,2026-03-14 09:33:00,grace.johnson14@gmail.com,Grace Johnson,Grace Johnson,07955 687785,127 Maple St,London,SW1A 1AA,GB,23.131.118.117,5850,414720,credit_card,127.14,GBP,ACC-1C696F78,FALSE,,,FALSE
+ORD-465184,2025-09-03 18:07:00,adam.johnson473@yahoo.com,Adam Johnson,Adam Johnson,+1 957-555-2334,236 Pine Ave,Los Angeles,CA 90015,US,12.82.62.43,4233,535522,credit_card,227.70,USD,ACC-ACDAC94D,FALSE,,,FALSE
+ORD-652679,2026-03-27 10:14:00,daniel.johnson362@outlook.com,Daniel Johnson,Daniel Johnson,+1 633-555-5540,14 Pine Road,Los Angeles,CA 90015,US,,8966,400000,debit_card,142.62,USD,ACC-27E21C7E,FALSE,,,FALSE
+ORD-828137,2025-09-13 05:36:00,olivia.hall850@outlook.com,Olivia Hall,Olivia Hall,+1 582-555-2741,12 Maple Ave,Los Angeles,CA 90015,US,,7704,455673,klarna,75.06,USD,ACC-5365CAC8,FALSE,,,FALSE
+ORD-632024,2026-01-04 09:00:00,mason.baker.loyal20@gmail.com,Mason Baker,Mason Baker,+1 646-555-9602,120 Loyal Customer Road,Dallas,TX 75201,US,,7541,492181,apple_pay,146.48,USD,ACC-973A1B0D,FALSE,,,FALSE
+ORD-205074,2026-02-04 05:34:00,ethan.smith453@outlook.com,Ethan Smith,Ethan Smith,07105 700417,85 Pine Road,Glasgow,G1 1AA,GB,12.139.17.166,5504,543212,apple_pay,130.73,GBP,ACC-A227CB9E,TRUE,130.73,late_delivery,FALSE
+ORD-190947,2026-01-06 09:00:00,olivia.brown134@icloud.com,Olivia Brown,Olivia Brown,07481 802745,166 Pine Lane,Glasgow,G1 1AA,GB,20.11.33.51,8265,492181,apple_pay,34.81,GBP,ACC-185F220F,FALSE,,,FALSE
+ORD-031664,2025-10-03 04:26:00,lucas.king500@gmail.com,Lucas King,Lucas King,07208 168431,181 Park Lane,Manchester,M1 2AB,GB,,4852,400000,debit_card,245.95,GBP,ACC-00035949,FALSE,,,FALSE
+ORD-577108,2026-02-22 06:55:00,daniel.adams819@yahoo.com,Daniel Adams,Daniel Adams,07215 849590,231 Oak Street,Manchester,M1 2AB,GB,14.205.112.115,6855,455673,credit_card,92.94,GBP,ACC-6689C801,FALSE,,,FALSE
+ORD-465027,2025-09-04 15:07:00,zara.roberts420@outlook.com,Zara Roberts,Zara Roberts,,134 Pine St,Los Angeles,CA 90015,US,15.103.54.125,4139,455673,apple_pay,19.89,USD,ACC-0153FFC5,FALSE,,,FALSE
+ORD-378959,2026-01-22 02:05:00,amelia.brown972@icloud.com,Amelia Brown,Amelia Brown,+1 637-555-9120,13 Station Ave,Berlin,10115,DE,64.209.76.77,7167,492181,debit_card,199.10,EUR,ACC-6A5BAD90,FALSE,,,FALSE
+ORD-768757,2026-03-01 18:32:00,daniel.davies652@yahoo.com,Daniel Davies,Daniel Davies,+1 883-555-8357,39 Station St,Berlin,10115,DE,63.198.119.231,7478,414720,klarna,146.17,EUR,ACC-C331AB39,FALSE,,,FALSE
+ORD-390143,2025-12-23 10:37:00,noah.young446@outlook.com,Noah Young,Noah Young,+1 258-555-2229,172 Market Road,Paris,75002,FR,31.15.73.218,8179,455673,klarna,43.31,EUR,ACC-C14FA2FA,FALSE,,,FALSE
+ORD-047594,2026-02-22 18:39:00,isla.brown83@icloud.com,Isla Brown,Isla Brown,,199 Market St,Los Angeles,CA 90015,US,43.195.6.32,5078,535522,paypal,203.26,USD,ACC-33022CA9,FALSE,,,FALSE
+ORD-464448,2025-11-21 17:19:00,adam.brown225@icloud.com,Adam Brown,Adam Brown,07340 505323,79 Market Ave,Glasgow,G1 1AA,GB,58.130.43.35,2376,414720,apple_pay,122.24,GBP,ACC-CDED19B2,FALSE,,,FALSE
+ORD-548390,2026-04-28 14:29:00,ruby.johnson209@outlook.com,Ruby Johnson,Ruby Johnson,+1 660-555-7079,24 Cedar St,New York,NY 10011,US,,1647,455673,credit_card,58.66,USD,ACC-39E1F840,FALSE,,,FALSE
+ORD-296414,2025-11-21 08:30:00,mia.walker.loyal15@gmail.com,Mia Walker,Mia Walker,+1 646-555-2180,65 Loyal Customer Road,Paris,75002,FR,172.19.192.209,2956,455673,debit_card,87.28,EUR,ACC-654EC1DB,FALSE,,,FALSE
+ORD-664671,2025-11-17 23:49:00,zara.nelson708@yahoo.com,Zara Nelson,Zara Nelson,+1 289-555-3049,35 Oak Street,Los Angeles,CA 90015,US,,1260,543212,debit_card,252.69,USD,ACC-91C56866,FALSE,,,FALSE
+ORD-949220,2026-03-22 17:28:00,lucas.hall650@icloud.com,Lucas Hall,Lucas Hall,07373 943393,166 Maple Road,Birmingham,B1 1AA,GB,41.58.76.50,1453,492181,klarna,209.67,GBP,ACC-D39AE7AE,FALSE,,,FALSE
+ORD-956069,2026-04-13 09:30:00,zara.johnson.loyal13@gmail.com,Zara Johnson,Zara Johnson,+44 7700 602651,158 Loyal Customer Road,Manchester,M1 2AB,GB,,5734,414720,klarna,130.63,GBP,ACC-B6A37CF7,FALSE,,,FALSE
+ORD-770997,2026-01-25 16:54:00,kai.green470@gmail.com,Kai Green,Kai Green,,96 Oak Street,Paris,75002,FR,23.195.40.87,5947,535522,paypal,111.38,EUR,ACC-BF50ABF8,FALSE,,,FALSE
+ORD-044724,2026-03-25 12:46:00,nadia.wilson162@outlook.com,Nadia Wilson,Nadia Wilson,07813 717141,56 Station Street,Birmingham,B1 1AA,GB,,5066,414720,credit_card,110.27,GBP,ACC-5B4622A7,TRUE,110.27,changed_mind,FALSE
+ORD-408567,2026-04-05 05:24:00,grace.hall983@yahoo.com,Grace Hall,Grace Hall,,101 Cedar Lane,Manchester,M1 2AB,GB,84.219.65.241,7396,543212,paypal,55.08,GBP,ACC-EDA88C27,FALSE,,,FALSE
+ORD-552070,2026-01-12 12:01:00,lily.king896@gmail.com,Lily King,Lily King,+1 639-555-4759,206 Park Ave,Los Angeles,CA 90015,US,84.50.217.35,5170,535522,klarna,201.93,USD,ACC-39951814,FALSE,,,FALSE
+ORD-557410,2025-11-23 13:51:00,oscar.hall8@yahoo.com,Oscar Hall,Oscar Hall,07279 232489,137 Cedar Lane,Birmingham,B1 1AA,GB,56.36.203.221,1693,535522,klarna,16.65,GBP,ACC-A5B5B951,FALSE,,,FALSE
+ORD-995708,2025-09-07 20:36:00,oscar.evans295@outlook.com,Oscar Evans,Oscar Evans,07329 273395,235 High Lane,Birmingham,B1 1AA,GB,96.142.72.25,4388,400000,debit_card,220.02,GBP,ACC-0588AB97,FALSE,,,FALSE
+ORD-649869,2025-12-18 05:32:00,olivia.king360@icloud.com,Olivia King,Olivia King,07765 764651,45 High Road,Birmingham,B1 1AA,GB,,9363,535522,klarna,204.14,GBP,ACC-E2B21F2F,FALSE,,,FALSE
+ORD-122368,2026-01-09 00:40:00,ivy.johnson292@icloud.com,Ivy Johnson,Ivy Johnson,+1 756-555-5956,157 Oak Lane,Los Angeles,CA 90015,US,,2697,492181,paypal,77.59,USD,ACC-86896228,FALSE,,,FALSE
+ORD-375530,2025-09-27 18:05:00,adam.mitchell991@outlook.com,Adam Mitchell,Adam Mitchell,+1 640-555-2735,3 Pine Road,Dallas,TX 75201,US,,9499,400000,apple_pay,155.97,USD,ACC-85585821,FALSE,,,FALSE
+ORD-144592,2025-11-18 23:48:00,jack.roberts872@outlook.com,Jack Roberts,Jack Roberts,+1 602-555-6345,82 Park Road,New York,NY 10011,US,,4321,492181,paypal,205.42,USD,ACC-E8401CF3,FALSE,,,FALSE
+ORD-351533,2025-12-31 20:07:00,ethan.smith222@gmail.com,Ethan Smith,Ethan Smith,07729 250246,43 Park St,Glasgow,G1 1AA,GB,,1855,492181,paypal,138.90,GBP,ACC-CBFCE703,FALSE,,,FALSE
+ORD-394351,2025-12-21 21:01:00,imran.adams380@outlook.com,Imran Adams,Imran Adams,,230 High Lane,London,SW1A 1AA,GB,74.233.211.106,6762,414720,paypal,217.39,GBP,ACC-7E06DD84,FALSE,,,FALSE
+ORD-798627,2026-03-27 17:10:00,zara.johnson562@outlook.com,Zara Johnson,Zara Johnson,,226 Market Ave,London,SW1A 1AA,GB,,7385,535522,apple_pay,66.71,GBP,ACC-5B1574E3,TRUE,66.71,duplicate_order,FALSE
+ORD-580084,2026-05-01 03:26:00,hannah.baker159@icloud.com,Hannah Baker,Hannah Baker,+1 259-555-9883,16 Station St,Toronto,M5V 2T6,CA,,8811,400000,debit_card,240.01,CAD,ACC-608BFF88,FALSE,,,FALSE
+ORD-201149,2026-03-25 08:00:00,sophia.carter.loyal5@gmail.com,Sophia Carter,Sophia Carter,+44 7700 543721,190 Loyal Customer Road,Glasgow,G1 1AA,GB,172.27.38.72,4353,455673,credit_card,124.58,GBP,ACC-C7389B0F,FALSE,,,FALSE
+ORD-571223,2025-12-02 17:56:00,amelia.wilson658@gmail.com,Amelia Wilson,Amelia Wilson,+1 926-555-9053,193 Cedar Road,Los Angeles,CA 90015,US,,8285,414720,paypal,207.27,USD,ACC-B496E30F,FALSE,,,FALSE
+ORD-225258,2026-02-08 08:33:00,khan.samir@outlook.com,S. Khan,Samir Khan,,8 Palmer Lane,Manchester,M2 1AA,GB,,6620,535522,debit_card,74.20,GBP,ACC-2BD7CE55,TRUE,74.20,late_delivery,FALSE
+ORD-101804,2026-01-15 19:46:00,adam.taylor748@icloud.com,Adam Taylor,Adam Taylor,07269 689158,22 High Lane,Birmingham,B1 1AA,GB,12.217.69.123,9156,400000,debit_card,181.91,GBP,ACC-DE3790BF,FALSE,,,FALSE
+ORD-972632,2026-05-05 04:27:00,freya.green47@icloud.com,Freya Green,Freya Green,+1 776-555-2145,77 Pine Ave,New York,NY 10011,US,82.143.221.54,9270,414720,paypal,231.22,USD,ACC-118F5208,FALSE,,,FALSE
+ORD-299671,2025-10-11 14:06:00,ruby.adams929@gmail.com,Ruby Adams,Ruby Adams,07656 652583,168 Maple Road,Glasgow,G1 1AA,GB,86.148.68.119,9210,400000,klarna,34.46,GBP,ACC-6D65A23D,FALSE,,,FALSE
+ORD-873389,2026-02-04 13:00:00,grace.hall791@icloud.com,Grace Hall,Grace Hall,+1 602-555-1607,170 Maple Lane,Dallas,TX 75201,US,,9516,414720,apple_pay,115.99,USD,ACC-AF6A4DC7,FALSE,,,FALSE
+ORD-818944,2025-09-11 06:02:00,grace.young826@icloud.com,Grace Young,Grace Young,,52 High Road,Berlin,10115,DE,75.165.3.30,6460,414720,debit_card,110.22,EUR,ACC-8606FF99,FALSE,,,FALSE
+ORD-465686,2025-09-12 04:32:00,ryan.walker656@outlook.com,Ryan Walker,Ryan Walker,+1 457-555-6843,22 Oak St,New York,NY 10011,US,85.253.113.152,8106,543212,credit_card,77.91,USD,ACC-F4E79A05,FALSE,,,FALSE
+ORD-757809,2026-02-05 06:11:00,ryan.green935@outlook.com,Ryan Green,Ryan Green,,112 Oak Lane,London,SW1A 1AA,GB,79.251.144.148,6468,543212,debit_card,28.64,GBP,ACC-9369A37D,TRUE,28.64,duplicate_order,FALSE
+ORD-638831,2026-03-17 07:47:00,olivia.davies624@yahoo.com,Olivia Davies,Olivia Davies,,3 Maple Ave,London,SW1A 1AA,GB,73.201.41.202,2270,400000,credit_card,19.67,GBP,ACC-761E2B37,FALSE,,,FALSE
+ORD-262273,2026-03-01 23:46:00,grace.mitchell375@gmail.com,Grace Mitchell,Grace Mitchell,+1 966-555-4215,33 Cedar Lane,Berlin,10115,DE,,3336,492181,klarna,175.48,EUR,ACC-FB4E0C88,FALSE,,,FALSE
+ORD-549573,2025-10-07 06:30:00,olivia.allen705@outlook.com,Olivia Allen,Olivia Allen,07209 258536,167 High Road,Glasgow,G1 1AA,GB,57.141.203.194,4337,535522,credit_card,148.92,GBP,ACC-7AAFC6F8,FALSE,,,FALSE
+ORD-682751,2026-04-09 00:01:00,nadia.mitchell650@outlook.com,Nadia Mitchell,Nadia Mitchell,+1 301-555-2435,207 Pine St,Dallas,TX 75201,US,63.53.254.192,9924,455673,credit_card,169.11,USD,ACC-1239031E,FALSE,,,FALSE
+ORD-559554,2025-09-20 16:24:00,isla.scott867@icloud.com,Isla Scott,Isla Scott,,24 Cedar Road,Birmingham,B1 1AA,GB,,3757,543212,apple_pay,138.17,GBP,ACC-2BF9C955,FALSE,,,FALSE
+ORD-294513,2025-11-29 15:09:00,mia.wright512@outlook.com,Mia Wright,Mia Wright,,173 Market Road,Manchester,M1 2AB,GB,198.51.100.42,3059,543212,debit_card,123.43,GBP,ACC-EE5DFF30,FALSE,,,FALSE
+ORD-399058,2025-11-06 09:30:00,freya.walker.loyal23@gmail.com,Freya Walker,Freya Walker,+44 7700 100594,17 Loyal Customer Road,Glasgow,G1 1AA,GB,,2744,455673,klarna,170.39,GBP,ACC-5ED284B2,FALSE,,,FALSE
+ORD-122304,2025-10-09 03:39:00,grace.wilson456@yahoo.com,Grace Wilson,Grace Wilson,07460 673617,20 Station Ave,Glasgow,G1 1AA,GB,64.117.64.237,9808,492181,apple_pay,204.56,GBP,ACC-AEC7E48F,FALSE,,,FALSE
+ORD-725346,2026-02-21 03:10:00,freya.adams691@outlook.com,Freya Adams,Freya Adams,+1 632-555-1209,134 Pine St,Dallas,TX 75201,US,18.102.136.193,3636,414720,debit_card,181.48,USD,ACC-6751DB1A,FALSE,,,FALSE
+ORD-816424,2025-11-10 09:00:00,jack.hall.loyal14@gmail.com,Jack Hall,Jack Hall,+1 646-555-4922,145 Loyal Customer Road,Los Angeles,CA 90015,US,,8521,414720,paypal,52.92,USD,ACC-B38F3EA0,FALSE,,,FALSE
+ORD-531517,2025-11-24 09:30:00,hannah.evans.loyal18@gmail.com,Hannah Evans,Hannah Evans,+44 7700 745346,179 Loyal Customer Road,Birmingham,B1 1AA,GB,,3814,492181,klarna,144.65,GBP,ACC-68300FAF,FALSE,,,FALSE
+ORD-603506,2025-10-05 23:45:00,mason.baker920@icloud.com,Mason Baker,Mason Baker,+1 479-555-8140,125 Oak Ave,Paris,75002,FR,,7624,543212,debit_card,52.93,EUR,ACC-152D38C2,FALSE,,,FALSE
+ORD-703497,2025-11-20 03:55:00,adam.mitchell465@outlook.com,Adam Mitchell,Adam Mitchell,07210 205112,153 Pine Lane,London,SW1A 1AA,GB,84.64.131.91,7897,535522,klarna,191.71,GBP,ACC-3782C7DC,FALSE,,,FALSE
+ORD-092379,2026-03-30 17:25:00,jack.adams220@yahoo.com,Jack Adams,Jack Adams,+1 962-555-5162,93 Park Ave,Berlin,10115,DE,203.0.113.10,5660,400000,klarna,16.04,EUR,ACC-14550678,FALSE,,,FALSE
+ORD-007165,2025-09-04 08:00:00,leo.baker.loyal12@gmail.com,Leo Baker,Leo Baker,+44 7700 343529,52 Loyal Customer Road,London,SW1A 1AA,GB,172.20.153.35,5969,455673,paypal,132.24,GBP,ACC-302B4D40,FALSE,,,FALSE
+ORD-801268,2025-12-19 07:13:00,ivy.johnson75@icloud.com,Ivy Johnson,Ivy Johnson,+1 784-555-1255,12 Market Street,Los Angeles,CA 90015,US,48.2.123.169,6419,492181,klarna,256.80,USD,ACC-4FC8D8E2,FALSE,,,FALSE
+ORD-227581,2025-10-01 02:35:00,amelia.mitchell161@icloud.com,Amelia Mitchell,Amelia Mitchell,,20 Maple St,Birmingham,B1 1AA,GB,71.149.16.60,5720,543212,debit_card,82.11,GBP,ACC-4EDEA61B,FALSE,,,FALSE
+ORD-731782,2025-10-23 13:50:00,sophia.allen609@outlook.com,Sophia Allen,Sophia Allen,07605 631543,28 Oak Street,Manchester,M1 2AB,GB,17.18.136.62,2078,400000,debit_card,37.06,GBP,ACC-82D28D6A,FALSE,,,FALSE
+ORD-033952,2026-01-04 04:42:00,lucas.smith808@outlook.com,Lucas Smith,Lucas Smith,07991 747252,103 Station St,Manchester,M1 2AB,GB,33.77.94.56,2553,455673,apple_pay,109.04,GBP,ACC-D91FE7C7,FALSE,,,FALSE
+ORD-008083,2026-04-19 20:10:00,amelia.mitchell788@icloud.com,Amelia Mitchell,Amelia Mitchell,+1 788-555-4240,39 Market Road,Paris,75002,FR,27.249.161.157,9693,543212,debit_card,167.77,EUR,ACC-44857C1B,TRUE,167.77,wrong_size,FALSE
+ORD-999805,2025-09-28 19:26:00,adam.thomas329@outlook.com,Adam Thomas,Adam Thomas,+1 987-555-2465,167 Cedar Lane,New York,NY 10011,US,15.89.213.226,3880,455673,paypal,259.30,USD,ACC-2F7DC68F,FALSE,,,FALSE
+ORD-755635,2025-09-16 22:50:00,grace.smith870@outlook.com,Grace Smith,Grace Smith,,136 Cedar Ave,Dallas,TX 75201,US,29.143.47.12,4792,400000,debit_card,114.44,USD,ACC-F63523AC,FALSE,,,FALSE
+ORD-569477,2026-01-11 10:22:00,ethan.taylor382@yahoo.com,Ethan Taylor,Ethan Taylor,+1 880-555-5021,39 Market Street,New York,NY 10011,US,,8025,535522,credit_card,239.67,USD,ACC-2984B59A,FALSE,,,FALSE
+ORD-164818,2026-01-19 10:58:00,sophie.mitchell788@icloud.com,Sophie Mitchell,Sophie Mitchell,07613 628846,156 Station Ave,Manchester,M1 2AB,GB,57.220.20.229,7350,492181,apple_pay,63.79,GBP,ACC-7ECF7D29,FALSE,,,FALSE
+ORD-086858,2026-04-25 03:31:00,theo.davies716@outlook.com,Theo Davies,Theo Davies,+1 939-555-6526,114 Oak Road,Berlin,10115,DE,,1983,543212,klarna,19.97,EUR,ACC-CA53413D,FALSE,,,FALSE
+ORD-998622,2026-04-12 18:28:00,ruby.brown726@icloud.com,Ruby Brown,Ruby Brown,+1 930-555-4643,176 Park Road,Paris,75002,FR,95.92.150.25,8713,492181,apple_pay,195.75,EUR,ACC-3328C243,FALSE,,,FALSE
+ORD-167403,2026-02-19 08:13:00,e.fischer.shop@web.de,E Fischer,E. Fischer,01512 3344556,"Prenzlauer Allee 44, 2OG",Berlin,D-10405,DE,91.64.12.9,7701,492181,credit_card,219.90,EUR,ACC-4F4600BE,TRUE,219.90,empty_box,TRUE
+ORD-648400,2026-03-14 15:31:00,ethan.scott711@icloud.com,Ethan Scott,Ethan Scott,+1 701-555-5732,36 Maple Road,Berlin,10115,DE,56.4.248.35,4196,535522,paypal,251.03,EUR,ACC-6147EE04,FALSE,,,FALSE
+ORD-527892,2026-03-30 22:38:00,sophie.smith160@outlook.com,Sophie Smith,Sophie Smith,07885 800342,14 Station Ave,Manchester,M1 2AB,GB,66.245.148.73,8961,455673,debit_card,200.70,GBP,ACC-AC652CA8,FALSE,,,FALSE
+ORD-175426,2026-05-05 04:05:00,sophia.wilson26@yahoo.com,Sophia Wilson,Sophia Wilson,+1 324-555-5913,104 Park Street,Toronto,M5V 2T6,CA,80.133.224.220,3018,535522,apple_pay,48.27,CAD,ACC-A12F862D,TRUE,48.27,changed_mind,FALSE
+ORD-736187,2026-01-06 04:39:00,zara.wilson722@icloud.com,Zara Wilson,Zara Wilson,,191 Pine Street,London,SW1A 1AA,GB,,2500,455673,debit_card,119.38,GBP,ACC-CDDB35D5,FALSE,,,FALSE
+ORD-553152,2026-01-17 03:37:00,freya.thomas16@gmail.com,Freya Thomas,Freya Thomas,+1 762-555-5661,186 Station Road,Berlin,10115,DE,88.99.232.239,7618,400000,paypal,13.15,EUR,ACC-A430116B,FALSE,,,FALSE
+ORD-092449,2026-02-04 21:24:00,sophie.evans713@icloud.com,Sophie Evans,Sophie Evans,,120 Pine Ave,Birmingham,B1 1AA,GB,65.165.131.42,2212,414720,debit_card,204.72,GBP,ACC-7333F767,FALSE,,,FALSE
+ORD-545090,2026-03-15 15:05:00,leo.taylor504@gmail.com,Leo Taylor,Leo Taylor,+1 902-555-1878,39 Maple Lane,Dallas,TX 75201,US,42.60.213.156,4697,400000,debit_card,106.33,USD,ACC-254913B4,FALSE,,,FALSE
+ORD-355334,2025-09-02 18:41:00,ava.roberts257@gmail.com,Ava Roberts,Ava Roberts,,149 Park Road,Birmingham,B1 1AA,GB,41.51.145.159,2143,492181,debit_card,90.81,GBP,ACC-287148D4,FALSE,,,FALSE
+ORD-446051,2026-04-02 06:03:00,mason.green534@gmail.com,Mason Green,Mason Green,07946 998143,225 Cedar Lane,London,SW1A 1AA,GB,16.198.25.49,5770,535522,apple_pay,110.71,GBP,ACC-2D4BDE31,FALSE,,,FALSE
+ORD-875056,2025-09-19 01:16:00,zara.nelson797@icloud.com,Zara Nelson,Zara Nelson,07210 692126,238 High Lane,Birmingham,B1 1AA,GB,61.101.38.152,4978,455673,paypal,184.90,GBP,ACC-E935CE8E,FALSE,,,FALSE
+ORD-710243,2025-09-14 16:37:00,oscar.johnson184@outlook.com,Oscar Johnson,Oscar Johnson,,137 Maple Road,Los Angeles,CA 90015,US,,1893,400000,apple_pay,84.45,USD,ACC-34961F04,FALSE,,,FALSE
+ORD-461962,2025-10-11 18:36:00,noah.wright323@outlook.com,Noah Wright,Noah Wright,07891 513985,132 Oak Lane,Birmingham,B1 1AA,GB,77.185.255.161,8242,455673,klarna,62.48,GBP,ACC-09CAB04D,FALSE,,,FALSE
+ORD-045233,2026-03-31 07:14:00,nadia.wright325@gmail.com,Nadia Wright,Nadia Wright,+1 433-555-1996,183 High Road,Paris,75002,FR,,6789,400000,apple_pay,190.14,EUR,ACC-2C1C499E,FALSE,,,FALSE
+ORD-875935,2026-01-09 08:00:00,nora.bell@gmail.com,Nora Bell,Nora Bell,(917) 555-0119,"Suite 781, 1010 Market Hub",Jersey City,NJ 07302,US,68.175.44.21,1209,414720,credit_card,428.00,USD,ACC-D5402D07,TRUE,428.00,item_not_received,TRUE
+ORD-388692,2025-11-16 23:07:00,ruby.davies624@yahoo.com,Ruby Davies,Ruby Davies,,228 Station Street,Paris,75002,FR,,8785,414720,paypal,234.46,EUR,ACC-6686351F,TRUE,234.46,late_delivery,FALSE
+ORD-865664,2026-03-28 18:55:00,sophia.wright815@outlook.com,Sophia Wright,Sophia Wright,+1 775-555-2085,99 High Lane,Paris,75002,FR,,4562,455673,debit_card,151.12,EUR,ACC-A311BF16,FALSE,,,FALSE
+ORD-868570,2026-01-10 08:05:00,bell.nora+returns@gmail.com,N Bell,Nora B,9175550119,1010 Market Hub #781,Jersey City,07302,US,68.175.44.21,8890,414720,credit_card,389.95,USD,ACC-B9D88E57,TRUE,389.95,porch_pirate,FALSE
+ORD-840815,2026-05-01 11:16:00,theo.baker118@outlook.com,Theo Baker,Theo Baker,07757 728736,63 Oak Road,London,SW1A 1AA,GB,25.197.131.139,5633,455673,debit_card,238.01,GBP,ACC-1966FA6D,FALSE,,,FALSE
+ORD-174826,2025-12-09 14:18:00,mia.brown4@yahoo.com,Mia Brown,Mia Brown,,211 Park Street,Los Angeles,CA 90015,US,,4390,492181,paypal,170.27,USD,ACC-E4952DB3,FALSE,,,FALSE
+ORD-843572,2025-11-13 11:10:00,hannah.wright577@yahoo.com,Hannah Wright,Hannah Wright,+1 975-555-6565,199 Park Ave,Dallas,TX 75201,US,72.59.132.18,7269,543212,apple_pay,207.59,USD,ACC-34FEDA62,FALSE,,,FALSE
+ORD-512377,2026-03-21 03:50:00,ava.carter897@outlook.com,Ava Carter,Ava Carter,,84 Station Road,Dallas,TX 75201,US,58.240.150.160,1510,492181,paypal,103.34,USD,ACC-4DEC70B6,FALSE,,,FALSE
+ORD-455686,2026-03-26 07:39:00,mia.king421@yahoo.com,Mia King,Mia King,07853 844163,181 Maple Lane,Glasgow,G1 1AA,GB,,6325,543212,paypal,130.64,GBP,ACC-A7F6E189,FALSE,,,FALSE
+ORD-008829,2025-12-10 08:30:00,leo.brown.loyal4@gmail.com,Leo Brown,Leo Brown,+1 646-555-2748,191 Loyal Customer Road,Dallas,TX 75201,US,172.22.102.195,6363,492181,apple_pay,54.69,USD,ACC-B9F371F1,FALSE,,,FALSE
+ORD-116632,2025-09-21 22:30:00,nadia.baker720@gmail.com,Nadia Baker,Nadia Baker,+1 278-555-2909,210 Maple St,Berlin,10115,DE,57.71.226.228,9570,414720,credit_card,54.71,EUR,ACC-8847079F,FALSE,,,FALSE
+ORD-402525,2025-11-07 02:43:00,ryan.wright150@yahoo.com,Ryan Wright,Ryan Wright,,210 Cedar Street,Paris,75002,FR,21.57.27.63,3419,414720,apple_pay,15.41,EUR,ACC-462C9548,FALSE,,,FALSE
+ORD-150109,2026-02-19 09:00:00,daniel.roberts.loyal7@gmail.com,Daniel Roberts,Daniel Roberts,+44 7700 953779,173 Loyal Customer Road,Manchester,M1 2AB,GB,,3698,414720,debit_card,33.08,GBP,ACC-9422A083,FALSE,,,FALSE
+ORD-538312,2025-11-21 23:03:00,imran.davies742@gmail.com,Imran Davies,Imran Davies,07830 985634,30 Oak Road,Glasgow,G1 1AA,GB,87.44.170.120,1755,455673,credit_card,141.10,GBP,ACC-33F96F35,FALSE,,,FALSE
+ORD-535177,2025-09-10 16:01:00,hannah.roberts799@outlook.com,Hannah Roberts,Hannah Roberts,+1 450-555-9631,229 High Road,Los Angeles,CA 90015,US,17.177.210.181,8966,414720,apple_pay,31.45,USD,ACC-05ADA74A,FALSE,,,FALSE
+ORD-449333,2026-01-04 08:30:00,jack.johnson.loyal24@gmail.com,Jack Johnson,Jack Johnson,+44 7700 586903,40 Loyal Customer Road,Glasgow,G1 1AA,GB,172.19.185.106,9058,492181,klarna,84.95,GBP,ACC-D853F346,FALSE,,,FALSE
+ORD-890407,2025-11-23 08:00:00,lucy.miles@uni.example,Lucy Miles,Lucy Miles,,"Block C, Room 204, North Campus",Leeds,LS2 9JT,GB,,5551,492181,debit_card,36.00,GBP,ACC-C44C6982,TRUE,36.00,size_exchange,FALSE
+ORD-194740,2026-04-21 18:14:00,ethan.thomas435@icloud.com,Ethan Thomas,Ethan Thomas,07410 392690,115 Cedar Road,Glasgow,G1 1AA,GB,57.203.193.43,8712,535522,klarna,116.83,GBP,ACC-F33CF054,FALSE,,,FALSE
+ORD-933751,2025-11-01 23:55:00,oscar.carter495@icloud.com,Oscar Carter,Oscar Carter,+1 901-555-7653,77 Park St,New York,NY 10011,US,64.247.237.53,6573,400000,credit_card,47.63,USD,ACC-15F8A4E4,FALSE,,,FALSE
+ORD-791936,2026-02-03 04:44:00,sophia.wright874@gmail.com,Sophia Wright,Sophia Wright,+1 791-555-3102,79 Oak Ave,Toronto,M5V 2T6,CA,54.115.214.109,7608,543212,klarna,145.33,CAD,ACC-8EB0FF3D,FALSE,,,FALSE
+ORD-161601,2025-09-10 14:17:00,olivia.wright990@outlook.com,Olivia Wright,Olivia Wright,07964 669323,105 Oak Lane,London,SW1A 1AA,GB,89.160.32.113,3945,414720,klarna,201.96,GBP,ACC-48224695,FALSE,,,FALSE
+ORD-702427,2026-03-15 18:14:00,lucas.allen640@yahoo.com,Lucas Allen,Lucas Allen,+1 760-555-3958,226 Oak Lane,New York,NY 10011,US,38.239.137.240,9728,400000,apple_pay,223.49,USD,ACC-B21C4FFC,FALSE,,,FALSE
+ORD-507981,2025-12-25 18:44:00,imran.hall311@gmail.com,Imran Hall,Imran Hall,07776 869632,197 Park Ave,Manchester,M1 2AB,GB,,9157,535522,apple_pay,137.19,GBP,ACC-C0DA6113,FALSE,,,FALSE
+ORD-502233,2025-10-27 05:06:00,ryan.mitchell503@outlook.com,Ryan Mitchell,Ryan Mitchell,,182 Station Lane,New York,NY 10011,US,,4012,400000,klarna,28.91,USD,ACC-AFB55BA6,FALSE,,,FALSE
+ORD-675245,2025-10-02 08:30:00,jack.hall.loyal14@gmail.com,Jack Hall,Jack Hall,+1 646-555-4922,145 Loyal Customer Road,Los Angeles,CA 90015,US,172.22.178.249,5775,414720,debit_card,50.39,USD,ACC-B38F3EA0,FALSE,,,FALSE
+ORD-979809,2026-03-06 12:04:00,oscar.baker339@icloud.com,Oscar Baker,Oscar Baker,+1 720-555-7670,37 Station St,New York,NY 10011,US,56.61.36.158,2042,400000,paypal,114.60,USD,ACC-0880BA29,FALSE,,,FALSE
+ORD-740509,2026-04-01 11:47:00,isla.thomas637@outlook.com,Isla Thomas,Isla Thomas,+1 320-555-5576,168 Station Road,Toronto,M5V 2T6,CA,54.249.233.170,2581,543212,credit_card,224.34,CAD,ACC-BD932530,FALSE,,,FALSE
+ORD-908536,2025-12-07 18:56:00,grace.hall624@gmail.com,Grace Hall,Grace Hall,+1 246-555-2208,190 Station Ave,Paris,75002,FR,66.148.244.180,3205,543212,apple_pay,57.50,EUR,ACC-2881E510,FALSE,,,FALSE
+ORD-393191,2026-03-06 18:27:00,sophie.king27@icloud.com,Sophie King,Sophie King,,32 Pine Lane,Dallas,TX 75201,US,22.185.170.200,5476,492181,klarna,227.48,USD,ACC-521F6354,FALSE,,,FALSE
+ORD-545819,2025-09-19 04:25:00,zara.johnson163@yahoo.com,Zara Johnson,Zara Johnson,+1 548-555-4411,209 Market Ave,Berlin,10115,DE,99.120.88.170,2276,543212,credit_card,242.85,EUR,ACC-3A08DCCC,FALSE,,,FALSE
+ORD-375734,2025-09-26 06:29:00,isla.hall510@gmail.com,Isla Hall,Isla Hall,,106 Oak Lane,Birmingham,B1 1AA,GB,88.155.105.168,8474,414720,debit_card,102.11,GBP,ACC-230425A7,TRUE,102.11,damaged_packaging,FALSE
+ORD-261465,2025-11-14 23:58:00,mia.young853@outlook.com,Mia Young,Mia Young,07601 556497,122 High Lane,Birmingham,B1 1AA,GB,65.188.95.112,7979,455673,apple_pay,22.03,GBP,ACC-74A069B8,FALSE,,,FALSE
+ORD-579875,2025-09-06 07:05:00,grace.carter5@yahoo.com,Grace Carter,Grace Carter,,195 Maple Lane,London,SW1A 1AA,GB,22.66.222.163,8035,535522,credit_card,118.40,GBP,ACC-C6929418,FALSE,,,TRUE
+ORD-468935,2025-10-01 19:39:00,chloe.young15@yahoo.com,Chloe Young,Chloe Young,+1 883-555-2007,17 Cedar Lane,Berlin,10115,DE,,5368,455673,apple_pay,54.80,EUR,ACC-DFA55083,TRUE,54.80,duplicate_order,FALSE
+ORD-599739,2026-03-01 00:37:00,olivia.thomas678@outlook.com,Olivia Thomas,Olivia Thomas,07482 124429,110 Market Road,Glasgow,G1 1AA,GB,38.225.140.28,2219,492181,debit_card,51.78,GBP,ACC-050F91F2,FALSE,,,FALSE
+ORD-280723,2026-01-21 16:47:00,lucas.allen150@icloud.com,Lucas Allen,Lucas Allen,07109 280531,128 Maple Lane,Glasgow,G1 1AA,GB,73.153.128.144,1781,535522,paypal,36.55,GBP,ACC-BE7E67DF,FALSE,,,FALSE
+ORD-287441,2026-03-06 22:28:00,lily.allen503@outlook.com,Lily Allen,Lily Allen,07623 157782,93 Market Street,Glasgow,G1 1AA,GB,60.190.6.73,6651,414720,apple_pay,88.41,GBP,ACC-C9D8F23B,FALSE,,,FALSE
+ORD-043542,2026-02-05 09:28:00,amelia.davies554@outlook.com,Amelia Davies,Amelia Davies,07212 776987,7 Maple St,Manchester,M1 2AB,GB,86.165.8.45,5347,455673,klarna,43.44,GBP,ACC-F3361DF0,FALSE,,,FALSE
+ORD-064690,2026-01-03 08:30:00,freya.mitchell.loyal10@gmail.com,Freya Mitchell,Freya Mitchell,+44 7700 630888,114 Loyal Customer Road,London,SW1A 1AA,GB,172.18.92.119,8966,455673,credit_card,156.57,GBP,ACC-5A704DA0,FALSE,,,FALSE
+ORD-218537,2026-02-20 08:00:00,noah.carter.loyal2@gmail.com,Noah Carter,Noah Carter,+1 646-555-1396,14 Loyal Customer Road,Berlin,10115,DE,172.23.245.11,7484,455673,klarna,55.04,EUR,ACC-D6382F18,FALSE,,,FALSE
+ORD-642913,2026-01-11 11:37:00,kai.taylor142@yahoo.com,Kai Taylor,Kai Taylor,,55 High Ave,Glasgow,G1 1AA,GB,,7292,543212,apple_pay,56.61,GBP,ACC-F014D228,FALSE,,,FALSE
+ORD-575311,2026-02-20 00:42:00,jack.allen191@yahoo.com,Jack Allen,Jack Allen,07855 728302,116 Market Ave,Manchester,M1 2AB,GB,,4519,492181,klarna,81.03,GBP,ACC-D050ED40,FALSE,,,FALSE
+ORD-855657,2025-10-07 09:00:00,zara.johnson.loyal13@gmail.com,Zara Johnson,Zara Johnson,+44 7700 602651,158 Loyal Customer Road,Manchester,M1 2AB,GB,,8689,492181,credit_card,98.05,GBP,ACC-B6A37CF7,FALSE,,,FALSE
+ORD-647219,2025-09-25 09:00:00,olivia.wilson.loyal22@gmail.com,Olivia Wilson,Olivia Wilson,+44 7700 880494,183 Loyal Customer Road,Manchester,M1 2AB,GB,,7289,492181,apple_pay,169.27,GBP,ACC-F1FA329E,FALSE,,,FALSE
+ORD-817880,2025-11-27 05:05:00,ryan.davies96@yahoo.com,Ryan Davies,Ryan Davies,+1 218-555-6940,80 Maple Street,Berlin,10115,DE,,8967,492181,debit_card,68.18,EUR,ACC-1C19D32B,FALSE,,,FALSE
+ORD-294013,2026-03-30 01:42:00,henry.wright930@yahoo.com,Henry Wright,Henry Wright,,96 Cedar Lane,Dallas,TX 75201,US,,5333,414720,klarna,219.94,USD,ACC-D33066E8,FALSE,,,FALSE
+ORD-506410,2025-12-08 17:41:00,nadia.allen210@yahoo.com,Nadia Allen,Nadia Allen,,99 Cedar Ave,Dallas,TX 75201,US,,8397,543212,debit_card,233.90,USD,ACC-F50A56C5,FALSE,,,FALSE
+ORD-276384,2026-01-17 18:41:00,henry.king509@gmail.com,Henry King,Henry King,07648 319394,68 Oak Road,Glasgow,G1 1AA,GB,39.47.48.152,6518,414720,debit_card,28.68,GBP,ACC-82C3D4B7,FALSE,,,FALSE
+ORD-540677,2026-01-19 01:03:00,jack.taylor413@yahoo.com,Jack Taylor,Jack Taylor,07959 680878,60 Oak Ave,Manchester,M1 2AB,GB,,6102,543212,paypal,95.79,GBP,ACC-395ACE62,FALSE,,,FALSE
+ORD-890600,2026-03-25 22:10:00,sophia.brown511@gmail.com,Sophia Brown,Sophia Brown,+1 631-555-2953,32 Park Street,Toronto,M5V 2T6,CA,41.10.145.5,1076,535522,paypal,82.52,CAD,ACC-0DD9895A,FALSE,,,FALSE
+ORD-661713,2026-01-16 08:20:00,nora.bell.outlet@icloud.com,Norah Bell,Nora Bell,+1 917 555 0119,1010 Market Hubs Suite 781,Jersey City,NJ07302,US,68.175.44.21,1209,414720,credit_card,610.40,USD,ACC-9127D3D9,TRUE,610.40,chargeback,TRUE
+ORD-415814,2026-03-25 05:00:00,leo.thomas470@icloud.com,Leo Thomas,Leo Thomas,+1 438-555-2180,10 Maple Ave,Berlin,10115,DE,90.23.124.180,3138,455673,debit_card,54.72,EUR,ACC-0BFC0529,TRUE,54.72,wrong_size,FALSE
+ORD-223130,2026-02-24 08:22:00,henry.young461@icloud.com,Henry Young,Henry Young,07623 359700,105 High Lane,Birmingham,B1 1AA,GB,78.180.203.8,2878,492181,paypal,212.64,GBP,ACC-07323FDF,FALSE,,,FALSE
+ORD-918248,2025-11-18 03:58:00,mia.adams89@icloud.com,Mia Adams,Mia Adams,,122 Station St,Paris,75002,FR,59.45.3.105,5478,535522,paypal,55.37,EUR,ACC-26F1B2CA,FALSE,,,FALSE
+ORD-652409,2026-04-26 16:43:00,ivy.davies487@outlook.com,Ivy Davies,Ivy Davies,+1 221-555-1570,216 Oak Street,Los Angeles,CA 90015,US,,7302,414720,paypal,170.46,USD,ACC-093F29CC,FALSE,,,FALSE
+ORD-936987,2026-03-08 12:31:00,freya.taylor953@yahoo.com,Freya Taylor,Freya Taylor,,236 Pine Street,Paris,75002,FR,86.10.86.202,1171,492181,paypal,170.21,EUR,ACC-0EEECA64,FALSE,,,FALSE
+ORD-205161,2025-10-17 21:24:00,ava.scott153@icloud.com,Ava Scott,Ava Scott,+1 507-555-5073,134 Market Road,New York,NY 10011,US,16.55.217.106,2548,535522,credit_card,175.89,USD,ACC-5A51C0A7,FALSE,,,FALSE
+ORD-644249,2026-03-23 13:47:00,oscar.mitchell335@yahoo.com,Oscar Mitchell,Oscar Mitchell,+1 767-555-3085,50 Market Ave,Dallas,TX 75201,US,89.154.207.141,1006,414720,credit_card,83.15,USD,ACC-39CCB94F,FALSE,,,FALSE
+ORD-023679,2025-12-13 04:57:00,chloe.johnson802@icloud.com,Chloe Johnson,Chloe Johnson,,131 Market Road,Toronto,M5V 2T6,CA,98.26.82.100,1086,455673,klarna,216.17,CAD,ACC-74D0BC61,FALSE,,,FALSE
+ORD-437207,2026-02-19 18:38:00,henry.evans697@icloud.com,Henry Evans,Henry Evans,07979 733331,216 Maple Lane,Birmingham,B1 1AA,GB,36.142.25.246,7567,414720,debit_card,108.66,GBP,ACC-A53E782C,FALSE,,,FALSE
+ORD-921093,2026-01-18 09:00:00,mason.baker.loyal29@gmail.com,Mason Baker,Mason Baker,+1 646-555-1267,129 Loyal Customer Road,Dallas,TX 75201,US,,9989,414720,credit_card,127.49,USD,ACC-335EE0B5,FALSE,,,FALSE
+ORD-009486,2026-03-14 04:10:00,zara.davies943@outlook.com,Zara Davies,Zara Davies,+1 874-555-9978,213 Market Ave,Paris,75002,FR,19.173.126.94,3316,492181,credit_card,250.18,EUR,ACC-7FC8F8B2,FALSE,,,FALSE
+ORD-375741,2025-10-25 01:16:00,ivy.nelson469@yahoo.com,Ivy Nelson,Ivy Nelson,+1 387-555-2565,101 Oak Street,Dallas,TX 75201,US,91.149.34.179,4559,535522,credit_card,114.00,USD,ACC-42EE61B8,FALSE,,,FALSE
+ORD-522696,2026-03-19 08:00:00,jack.johnson.loyal24@gmail.com,Jack Johnson,Jack Johnson,+44 7700 586903,40 Loyal Customer Road,Glasgow,G1 1AA,GB,172.19.185.106,6143,455673,apple_pay,83.98,GBP,ACC-D853F346,FALSE,,,FALSE
+ORD-469128,2026-03-08 18:35:00,sophia.brown331@gmail.com,Sophia Brown,Sophia Brown,+1 760-555-7248,24 Market Road,New York,NY 10011,US,,7535,455673,klarna,17.09,USD,ACC-FF29C937,FALSE,,,FALSE
+ORD-667949,2025-10-28 11:28:00,oscar.wilson908@yahoo.com,Oscar Wilson,Oscar Wilson,,234 Cedar St,Berlin,10115,DE,,7314,492181,paypal,99.62,EUR,ACC-A8CFDB8C,FALSE,,,FALSE
+ORD-299984,2025-09-12 09:22:00,freya.baker89@yahoo.com,Freya Baker,Freya Baker,07600 982321,152 Park Ave,Glasgow,G1 1AA,GB,,8014,543212,apple_pay,228.40,GBP,ACC-D6DED4E9,FALSE,,,FALSE
+ORD-247774,2026-01-30 08:00:00,zara.adams.loyal9@gmail.com,Zara Adams,Zara Adams,+1 646-555-1686,174 Loyal Customer Road,Toronto,M5V 2T6,CA,172.31.16.128,6751,414720,apple_pay,76.24,CAD,ACC-009920D5,FALSE,,,FALSE
+ORD-365968,2026-01-04 02:28:00,theo.brown515@outlook.com,Theo Brown,Theo Brown,07995 965550,26 Park St,Manchester,M1 2AB,GB,94.79.38.121,5342,414720,credit_card,166.57,GBP,ACC-17D6AE36,FALSE,,,FALSE
+ORD-747830,2025-10-09 04:19:00,lily.taylor259@icloud.com,Lily Taylor,Lily Taylor,+1 481-555-5209,4 Pine Lane,New York,NY 10011,US,,3476,543212,debit_card,122.77,USD,ACC-E708321B,FALSE,,,FALSE
+ORD-375288,2026-02-20 00:09:00,mason.baker80@icloud.com,Mason Baker,Mason Baker,,56 High Street,Glasgow,G1 1AA,GB,,2676,492181,debit_card,209.63,GBP,ACC-35E50D62,FALSE,,,FALSE
+ORD-855827,2026-03-22 04:20:00,mason.carter63@yahoo.com,Mason Carter,Mason Carter,,32 Park St,Los Angeles,CA 90015,US,87.10.25.202,6464,492181,credit_card,257.23,USD,ACC-EBB62052,FALSE,,,FALSE
+ORD-230481,2026-04-12 03:42:00,lily.green905@outlook.com,Lily Green,Lily Green,+1 334-555-6373,109 Station Street,Paris,75002,FR,15.197.24.204,4242,492181,apple_pay,15.55,EUR,ACC-FF9E89C7,FALSE,,,FALSE
+ORD-547729,2025-12-29 16:07:00,kai.nelson945@outlook.com,Kai Nelson,Kai Nelson,+1 805-555-4547,194 Oak Road,Los Angeles,CA 90015,US,65.29.55.142,7358,543212,debit_card,243.25,USD,ACC-8E91C5C5,FALSE,,,FALSE
+ORD-755055,2026-02-26 02:07:00,mason.roberts895@outlook.com,Mason Roberts,Mason Roberts,07546 666184,222 Maple Ave,Manchester,M1 2AB,GB,76.99.72.216,4634,455673,debit_card,61.27,GBP,ACC-39BBB319,FALSE,,,FALSE
+ORD-982661,2025-10-13 08:00:00,tom.jones@gmail.com,Tom Jones,Thomas Jones,07700 333444,14 Alder House,Bristol,BS1 4ST,GB,81.2.69.142,7732,455673,credit_card,58.50,GBP,ACC-26CDD066,FALSE,,,FALSE
+ORD-609278,2026-04-18 15:31:00,nadia.johnson79@gmail.com,Nadia Johnson,Nadia Johnson,,47 High St,London,SW1A 1AA,GB,,5001,414720,apple_pay,44.17,GBP,ACC-6C1D8744,FALSE,,,FALSE
+ORD-930086,2025-12-30 08:28:00,m.reid.checkout@yahoo.co.uk,M Reid,Maya Reed,,"22 Kingly Court, Flat 4",London,W1B 5PW,GB,82.132.231.14,4411,455673,credit_card,301.10,GBP,ACC-A6DBB6F1,TRUE,301.10,chargeback,TRUE
+ORD-359206,2025-10-20 02:16:00,adam.wilson959@icloud.com,Adam Wilson,Adam Wilson,+1 445-555-7056,208 Station Street,Los Angeles,CA 90015,US,90.222.33.31,3366,492181,paypal,209.13,USD,ACC-AAB2B3BF,FALSE,,,FALSE
+ORD-368338,2026-04-10 06:13:00,oscar.walker150@gmail.com,Oscar Walker,Oscar Walker,,71 Market Road,Toronto,M5V 2T6,CA,43.126.253.153,4203,535522,klarna,38.53,CAD,ACC-191D1556,FALSE,,,FALSE
+ORD-431206,2026-04-07 08:19:00,henry.carter723@outlook.com,Henry Carter,Henry Carter,+1 296-555-4032,129 Park Road,New York,NY 10011,US,32.161.35.43,4069,414720,klarna,235.17,USD,ACC-98B8649B,FALSE,,,FALSE
+ORD-472471,2025-10-04 18:00:00,zara.green614@yahoo.com,Zara Green,Zara Green,07432 724355,43 Park St,Birmingham,B1 1AA,GB,192.0.2.55,7378,400000,credit_card,138.81,GBP,ACC-7114E0D1,FALSE,,,FALSE
+ORD-416955,2026-04-29 08:30:00,sophia.johnson.loyal26@gmail.com,Sophia Johnson,Sophia Johnson,+1 646-555-3436,181 Loyal Customer Road,Toronto,M5V 2T6,CA,172.20.18.21,4436,492181,credit_card,134.98,CAD,ACC-80F460B6,FALSE,,,FALSE
+ORD-890928,2026-03-24 21:15:00,mason.scott935@outlook.com,Mason Scott,Mason Scott,+1 384-555-1427,82 Cedar St,Los Angeles,CA 90015,US,18.241.183.197,4813,492181,paypal,36.83,USD,ACC-8514F240,FALSE,,,FALSE
+ORD-503624,2025-10-31 09:30:00,mia.walker.loyal15@gmail.com,Mia Walker,Mia Walker,+1 646-555-2180,65 Loyal Customer Road,Paris,75002,FR,,4611,414720,klarna,162.61,EUR,ACC-654EC1DB,FALSE,,,FALSE
+ORD-444432,2026-04-23 09:00:00,ruby.wright.loyal17@gmail.com,Ruby Wright,Ruby Wright,+1 646-555-4366,96 Loyal Customer Road,Paris,75002,FR,,5257,492181,debit_card,77.52,EUR,ACC-5EDD792D,TRUE,77.52,wrong_size,FALSE
+ORD-838722,2026-01-20 09:20:00,lucas.allen554@icloud.com,Lucas Allen,Lucas Allen,,177 Park St,Birmingham,B1 1AA,GB,56.170.155.103,1904,543212,apple_pay,259.26,GBP,ACC-6F93A250,FALSE,,,FALSE
+ORD-885053,2026-01-29 09:32:00,adam.wilson88@icloud.com,Adam Wilson,Adam Wilson,+1 754-555-1866,146 Cedar Ave,Berlin,10115,DE,192.0.2.55,9713,492181,apple_pay,250.67,EUR,ACC-8DED81FA,FALSE,,,FALSE
+ORD-711439,2026-03-24 00:28:00,hannah.nelson732@gmail.com,Hannah Nelson,Hannah Nelson,+1 943-555-1979,75 Market St,Berlin,10115,DE,76.225.219.202,3032,455673,debit_card,48.20,EUR,ACC-C6F1561E,FALSE,,,FALSE
+ORD-563019,2025-10-13 06:56:00,freya.mitchell465@yahoo.com,Freya Mitchell,Freya Mitchell,+1 815-555-1107,63 High Lane,Toronto,M5V 2T6,CA,37.25.94.38,1902,543212,paypal,98.56,CAD,ACC-BA2D590D,FALSE,,,FALSE
+ORD-203229,2026-01-31 08:11:00,s.khan.trainers@gmail.com,S Khan,Samir Khan,+44 7911 345678,8 Palmer Ln,Manchester,M2 1AA,GB,90.200.10.77,6620,535522,debit_card,122.50,GBP,ACC-AF3C75AF,TRUE,122.50,wrong_item,FALSE
+ORD-972256,2025-09-09 00:59:00,nadia.taylor202@outlook.com,Nadia Taylor,Nadia Taylor,,78 Pine Lane,New York,NY 10011,US,85.78.87.169,6531,400000,klarna,22.22,USD,ACC-35D14A37,FALSE,,,FALSE
+ORD-004731,2025-09-17 04:01:00,lucas.wright424@outlook.com,Lucas Wright,Lucas Wright,07508 525847,25 Station Ave,Glasgow,G1 1AA,GB,,5176,414720,klarna,248.49,GBP,ACC-1A83E536,FALSE,,,FALSE
+ORD-158095,2025-12-04 02:34:00,ruby.baker803@yahoo.com,Ruby Baker,Ruby Baker,,215 Pine Street,Berlin,10115,DE,34.92.2.143,8327,414720,debit_card,42.52,EUR,ACC-F6F50192,FALSE,,,FALSE
+ORD-141844,2026-03-02 03:08:00,kai.king925@outlook.com,Kai King,Kai King,+1 979-555-5321,133 Station Ave,New York,NY 10011,US,73.77.225.14,4095,492181,apple_pay,25.53,USD,ACC-A82C7E2E,FALSE,,,FALSE
+ORD-755963,2026-01-13 07:29:00,sophie.adams186@yahoo.com,Sophie Adams,Sophie Adams,+1 826-555-1472,221 Maple Ave,Toronto,M5V 2T6,CA,63.225.23.17,5286,543212,klarna,89.93,CAD,ACC-54F19846,FALSE,,,FALSE
+ORD-160912,2026-01-15 08:30:00,ryan.smith.loyal19@gmail.com,Ryan Smith,Ryan Smith,+1 646-555-9265,15 Loyal Customer Road,Berlin,10115,DE,172.28.69.43,9027,414720,apple_pay,134.15,EUR,ACC-D2DB8788,FALSE,,,FALSE
+ORD-512696,2025-11-24 12:24:00,mason.hall692@outlook.com,Mason Hall,Mason Hall,+1 652-555-7966,103 High St,New York,NY 10011,US,,4587,414720,klarna,169.79,USD,ACC-33D89609,TRUE,169.79,changed_mind,FALSE
+ORD-070003,2026-01-10 16:07:00,lucas.thomas774@icloud.com,Lucas Thomas,Lucas Thomas,+1 608-555-7118,113 Park St,Berlin,10115,DE,,2049,414720,paypal,17.22,EUR,ACC-B93E277D,FALSE,,,FALSE
+ORD-170594,2026-04-29 00:14:00,noah.roberts355@yahoo.com,Noah Roberts,Noah Roberts,07865 590319,52 High Lane,Birmingham,B1 1AA,GB,89.122.124.13,9700,492181,apple_pay,170.21,GBP,ACC-6C990359,TRUE,170.21,damaged_packaging,FALSE
+ORD-911218,2026-02-06 07:32:00,grace.hall278@outlook.com,Grace Hall,Grace Hall,,149 Station Street,New York,NY 10011,US,,9489,414720,klarna,104.51,USD,ACC-372C2B26,FALSE,,,FALSE
+ORD-589928,2025-11-01 04:28:00,ethan.carter987@yahoo.com,Ethan Carter,Ethan Carter,07156 980185,81 High St,London,SW1A 1AA,GB,57.46.203.242,3302,492181,credit_card,39.76,GBP,ACC-593C54BF,FALSE,,,FALSE
+ORD-546194,2026-03-12 14:25:00,adam.johnson711@outlook.com,Adam Johnson,Adam Johnson,07205 492615,151 High Street,Glasgow,G1 1AA,GB,,1749,414720,debit_card,247.22,GBP,ACC-D2B34D56,FALSE,,,FALSE
+ORD-502067,2025-12-18 14:37:00,isla.wilson247@gmail.com,Isla Wilson,Isla Wilson,07291 373129,122 Park Road,Birmingham,B1 1AA,GB,,2377,414720,paypal,119.01,GBP,ACC-8BFB3D8A,FALSE,,,FALSE
+ORD-834346,2026-02-26 15:15:00,isla.allen472@gmail.com,Isla Allen,Isla Allen,07305 276408,79 Pine Street,Manchester,M1 2AB,GB,,4331,535522,apple_pay,34.36,GBP,ACC-35BCDD62,FALSE,,,FALSE
+ORD-666665,2026-01-15 21:23:00,ruby.baker388@gmail.com,Ruby Baker,Ruby Baker,,56 Cedar St,Manchester,M1 2AB,GB,31.205.209.91,4567,535522,debit_card,235.31,GBP,ACC-739A88B6,FALSE,,,FALSE
+ORD-235006,2026-04-22 08:38:00,ruby.wilson146@yahoo.com,Ruby Wilson,Ruby Wilson,+1 464-555-7152,212 Pine St,Los Angeles,CA 90015,US,,4874,535522,paypal,138.14,USD,ACC-779D4AB3,FALSE,,,FALSE
+ORD-264248,2025-12-24 11:00:00,leo.king494@outlook.com,Leo King,Leo King,07756 494252,215 Oak St,Glasgow,G1 1AA,GB,71.253.84.20,9055,414720,apple_pay,71.74,GBP,ACC-1CCF6A44,FALSE,,,FALSE
+ORD-843493,2026-02-18 06:15:00,ryan.smith744@outlook.com,Ryan Smith,Ryan Smith,+1 793-555-9022,222 Maple Ave,New York,NY 10011,US,81.193.233.239,6272,492181,debit_card,255.23,USD,ACC-90AC3DCE,FALSE,,,FALSE
+ORD-666769,2025-11-06 22:17:00,adam.nelson290@outlook.com,Adam Nelson,Adam Nelson,+1 693-555-2045,87 High Road,Paris,75002,FR,94.152.96.39,9475,492181,apple_pay,235.12,EUR,ACC-92876CC1,FALSE,,,FALSE
+ORD-849784,2026-03-29 08:00:00,henry.evans.loyal27@gmail.com,Henry Evans,Henry Evans,+1 646-555-4137,89 Loyal Customer Road,Dallas,TX 75201,US,172.18.25.9,6356,414720,apple_pay,82.33,USD,ACC-390812D9,FALSE,,,FALSE
+ORD-708003,2026-04-24 13:07:00,grace.king537@gmail.com,Grace King,Grace King,,148 Pine Ave,New York,NY 10011,US,74.85.188.41,5179,455673,debit_card,233.78,USD,ACC-73FBD080,FALSE,,,FALSE
+ORD-755703,2025-12-15 08:30:00,adam.young.loyal28@gmail.com,Adam Young,Adam Young,+1 646-555-7111,87 Loyal Customer Road,Los Angeles,CA 90015,US,172.16.53.124,2028,492181,apple_pay,92.79,USD,ACC-E3F5B89E,FALSE,,,FALSE
+ORD-765021,2026-03-16 09:30:00,leo.brown.loyal1@gmail.com,Leo Brown,Leo Brown,+1 646-555-8816,95 Loyal Customer Road,Los Angeles,CA 90015,US,,5272,455673,debit_card,86.62,USD,ACC-0BDE17DF,FALSE,,,FALSE
+ORD-728212,2026-03-14 06:30:00,ruby.scott243@yahoo.com,Ruby Scott,Ruby Scott,07688 402816,76 Oak Ave,Birmingham,B1 1AA,GB,,1803,400000,debit_card,196.80,GBP,ACC-6A562CE5,FALSE,,,FALSE
+ORD-874565,2026-03-12 08:30:00,olivia.wilson.loyal22@gmail.com,Olivia Wilson,Olivia Wilson,+44 7700 880494,183 Loyal Customer Road,Manchester,M1 2AB,GB,172.24.30.7,9289,455673,debit_card,113.70,GBP,ACC-F1FA329E,FALSE,,,FALSE
+ORD-563316,2025-10-27 22:06:00,sophia.taylor609@gmail.com,Sophia Taylor,Sophia Taylor,07788 820993,13 Cedar St,Birmingham,B1 1AA,GB,38.28.71.129,5739,492181,paypal,214.31,GBP,ACC-C4E583E1,FALSE,,,FALSE
+ORD-190322,2026-02-05 23:28:00,olivia.baker197@gmail.com,Olivia Baker,Olivia Baker,07197 733470,221 Cedar Ave,Glasgow,G1 1AA,GB,46.27.99.29,3444,543212,credit_card,221.26,GBP,ACC-FF79433B,FALSE,,,FALSE
+ORD-792430,2025-11-30 18:16:00,henry.scott2@yahoo.com,Henry Scott,Henry Scott,+1 683-555-2792,12 Oak Lane,Paris,75002,FR,40.85.75.199,2538,455673,paypal,87.54,EUR,ACC-C0E5FB15,FALSE,,,FALSE
+ORD-929091,2026-03-28 21:34:00,mason.davies131@icloud.com,Mason Davies,Mason Davies,07828 358998,195 Station Road,London,SW1A 1AA,GB,66.34.247.108,9581,400000,apple_pay,208.14,GBP,ACC-B625EE13,FALSE,,,FALSE
+ORD-461341,2025-10-28 09:06:00,mia.thomas135@icloud.com,Mia Thomas,Mia Thomas,,157 High Lane,Birmingham,B1 1AA,GB,40.118.13.92,2302,543212,apple_pay,205.40,GBP,ACC-D7B100B4,FALSE,,,FALSE
+ORD-049095,2026-03-19 05:20:00,oscar.wright700@gmail.com,Oscar Wright,Oscar Wright,,45 Pine Ave,Manchester,M1 2AB,GB,,5572,400000,klarna,77.53,GBP,ACC-057A4EB6,FALSE,,,FALSE
+ORD-987428,2025-11-20 11:23:00,ethan.green287@gmail.com,Ethan Green,Ethan Green,,127 Station St,Paris,75002,FR,85.218.146.83,7292,414720,paypal,199.81,EUR,ACC-2E8BD2D0,FALSE,,,FALSE
+ORD-123965,2026-03-31 08:00:00,henry.brown.loyal0@gmail.com,Henry Brown,Henry Brown,+1 646-555-5040,58 Loyal Customer Road,Toronto,M5V 2T6,CA,172.16.167.92,4083,414720,klarna,97.21,CAD,ACC-13590837,FALSE,,,FALSE
+ORD-288269,2025-09-25 08:00:00,freya.walker.loyal16@gmail.com,Freya Walker,Freya Walker,+1 646-555-6792,61 Loyal Customer Road,Berlin,10115,DE,172.20.11.142,5419,492181,credit_card,70.67,EUR,ACC-BE16515F,FALSE,,,FALSE
+ORD-236560,2026-03-15 19:52:00,adam.wright22@yahoo.com,Adam Wright,Adam Wright,07376 384702,99 High St,Birmingham,B1 1AA,GB,,7290,535522,credit_card,16.67,GBP,ACC-CFEC1DE6,FALSE,,,FALSE
+ORD-209312,2026-02-09 07:10:00,ivy.green496@gmail.com,Ivy Green,Ivy Green,,133 Oak Street,Paris,75002,FR,95.72.182.128,1506,492181,klarna,155.24,EUR,ACC-BABADBE9,FALSE,,,FALSE
+ORD-888506,2025-10-18 12:47:00,isla.carter537@yahoo.com,Isla Carter,Isla Carter,+1 337-555-9261,120 High Street,Berlin,10115,DE,69.131.95.4,6523,414720,apple_pay,152.81,EUR,ACC-19BB4F11,FALSE,,,FALSE
+ORD-560378,2026-02-06 11:27:00,kai.brown321@gmail.com,Kai Brown,Kai Brown,+1 263-555-8240,15 High Lane,Dallas,TX 75201,US,97.28.26.76,7249,535522,paypal,35.77,USD,ACC-08D6468A,FALSE,,,FALSE
+ORD-168723,2026-01-15 08:00:00,adam.young.loyal28@gmail.com,Adam Young,Adam Young,+1 646-555-7111,87 Loyal Customer Road,Los Angeles,CA 90015,US,172.16.53.124,4222,492181,credit_card,52.27,USD,ACC-E3F5B89E,FALSE,,,FALSE
+ORD-214386,2025-11-04 22:31:00,leo.evans545@yahoo.com,Leo Evans,Leo Evans,+1 281-555-3463,2 Station Lane,Dallas,TX 75201,US,,9436,400000,paypal,192.45,USD,ACC-5E757E51,FALSE,,,FALSE
+ORD-100628,2025-10-09 04:18:00,lucas.baker587@icloud.com,Lucas Baker,Lucas Baker,+1 280-555-7468,232 Oak Lane,Toronto,M5V 2T6,CA,84.75.61.244,8357,492181,paypal,247.37,CAD,ACC-11BDAFE1,FALSE,,,FALSE
+ORD-660561,2025-11-29 15:16:00,ryan.wilson711@icloud.com,Ryan Wilson,Ryan Wilson,+1 434-555-7276,23 Pine St,Dallas,TX 75201,US,,5902,492181,debit_card,106.91,USD,ACC-5084BD79,FALSE,,,FALSE
+ORD-747532,2026-03-01 17:09:00,imran.baker995@gmail.com,Imran Baker,Imran Baker,,193 Market Lane,Berlin,10115,DE,45.105.94.1,3621,400000,klarna,66.02,EUR,ACC-7D95C093,FALSE,,,FALSE
+ORD-263959,2025-09-30 16:54:00,nadia.brown228@icloud.com,Nadia Brown,Nadia Brown,+1 671-555-6728,79 Cedar Street,Toronto,M5V 2T6,CA,,4164,535522,debit_card,93.41,CAD,ACC-EA088343,FALSE,,,FALSE
+ORD-965687,2026-01-30 08:00:00,samir.khan.deals@gmail.com,Samir Khan,Samir Khan,07911 345678,8 Palmer Lane,Manchester,M2 1AA,GB,90.200.10.77,6620,535522,debit_card,89.99,GBP,ACC-77F2696B,TRUE,89.99,item_not_received,FALSE
+ORD-660535,2025-11-24 01:08:00,ryan.wilson658@outlook.com,Ryan Wilson,Ryan Wilson,,207 Market St,Paris,75002,FR,53.178.222.107,2974,492181,debit_card,197.42,EUR,ACC-6B4C48B7,FALSE,,,FALSE
+ORD-716091,2025-12-17 04:09:00,nadia.davies337@outlook.com,Nadia Davies,Nadia Davies,07736 374999,188 Pine Road,Manchester,M1 2AB,GB,62.204.233.70,7319,543212,apple_pay,222.97,GBP,ACC-B762F4C5,FALSE,,,FALSE
+ORD-466505,2025-10-25 08:30:00,noah.carter.loyal2@gmail.com,Noah Carter,Noah Carter,+1 646-555-1396,14 Loyal Customer Road,Berlin,10115,DE,172.23.245.11,4760,414720,apple_pay,142.49,EUR,ACC-D6382F18,FALSE,,,FALSE
+ORD-617200,2026-03-05 08:00:00,nadia.smith105@yahoo.com,Nadia Smith,Nadia Smith,+1 243-555-3571,73 High St,Berlin,10115,DE,,5051,455673,apple_pay,79.57,EUR,ACC-115C6987,FALSE,,,FALSE
+ORD-156397,2026-03-18 07:20:00,nadia.green680@outlook.com,Nadia Green,Nadia Green,07676 688819,137 Market Lane,Birmingham,B1 1AA,GB,28.229.101.75,7984,535522,credit_card,119.91,GBP,ACC-4BA93B4F,FALSE,,,FALSE
+ORD-855543,2026-01-19 06:33:00,amelia.nelson385@gmail.com,Amelia Nelson,Amelia Nelson,,164 Station Road,Paris,75002,FR,47.56.241.35,2212,414720,paypal,254.34,EUR,ACC-7A75D39A,FALSE,,,FALSE
+ORD-420954,2026-04-22 07:59:00,olivia.smith620@icloud.com,Olivia Smith,Olivia Smith,,151 Market Street,Berlin,10115,DE,52.217.11.78,5490,535522,klarna,62.26,EUR,ACC-41673B75,FALSE,,,FALSE
+ORD-861684,2026-04-12 19:17:00,nadia.green24@icloud.com,Nadia Green,Nadia Green,07209 348176,46 Station St,Birmingham,B1 1AA,GB,,4882,455673,credit_card,226.20,GBP,ACC-82C4B014,TRUE,226.20,late_delivery,FALSE
+ORD-901308,2026-04-26 15:51:00,mia.walker599@outlook.com,Mia Walker,Mia Walker,07769 781305,198 Station Lane,Glasgow,G1 1AA,GB,,3429,492181,debit_card,88.50,GBP,ACC-D7682860,FALSE,,,FALSE
+ORD-411621,2025-10-26 14:40:00,mason.allen433@yahoo.com,Mason Allen,Mason Allen,+1 975-555-7412,101 Pine Lane,Los Angeles,CA 90015,US,35.201.49.34,6298,400000,credit_card,226.73,USD,ACC-4C75E3C6,TRUE,226.73,late_delivery,FALSE
+ORD-286115,2025-09-11 20:24:00,leo.wright174@outlook.com,Leo Wright,Leo Wright,,72 Station Road,Los Angeles,CA 90015,US,,3935,543212,paypal,203.44,USD,ACC-E03C1A89,FALSE,,,FALSE
+ORD-928853,2026-02-07 21:45:00,hannah.thomas711@gmail.com,Hannah Thomas,Hannah Thomas,07438 196162,160 Park Lane,Glasgow,G1 1AA,GB,,6741,543212,paypal,150.67,GBP,ACC-B389A06B,FALSE,,,FALSE
+ORD-734228,2026-03-07 07:06:00,henry.evans121@gmail.com,Henry Evans,Henry Evans,+1 645-555-8433,212 Park St,Paris,75002,FR,,4328,492181,debit_card,246.62,EUR,ACC-CCC4C3B1,FALSE,,,FALSE
+ORD-670886,2025-12-06 05:04:00,lucas.carter235@gmail.com,Lucas Carter,Lucas Carter,+1 599-555-8722,5 High Road,New York,NY 10011,US,,5079,492181,apple_pay,152.02,USD,ACC-8D5FFFC3,FALSE,,,FALSE
+ORD-772143,2025-11-20 01:00:00,sophia.taylor140@outlook.com,Sophia Taylor,Sophia Taylor,,117 Park Road,Manchester,M1 2AB,GB,52.9.77.13,9764,455673,paypal,58.11,GBP,ACC-2E452A84,FALSE,,,FALSE
+ORD-413867,2026-02-12 04:52:00,sophia.nelson183@yahoo.com,Sophia Nelson,Sophia Nelson,+1 668-555-4181,162 Station Road,Toronto,M5V 2T6,CA,,3084,455673,debit_card,183.67,CAD,ACC-02B9BE28,TRUE,183.67,damaged_packaging,FALSE
+ORD-052939,2025-11-24 03:51:00,amelia.carter719@icloud.com,Amelia Carter,Amelia Carter,,183 Station Street,Manchester,M1 2AB,GB,73.72.137.161,7786,535522,credit_card,124.09,GBP,ACC-00E60B8F,FALSE,,,FALSE
+ORD-971399,2025-11-19 12:49:00,imran.allen42@icloud.com,Imran Allen,Imran Allen,+1 719-555-2767,108 Market Road,New York,NY 10011,US,14.83.85.237,5924,400000,paypal,251.38,USD,ACC-D29E6D8A,FALSE,,,FALSE
+ORD-821480,2026-03-03 15:54:00,lily.thomas770@yahoo.com,Lily Thomas,Lily Thomas,+1 332-555-2595,85 Market Lane,Los Angeles,CA 90015,US,,3460,455673,debit_card,157.62,USD,ACC-B2A4D0A5,FALSE,,,FALSE
+ORD-134833,2026-03-16 11:21:00,hannah.brown424@gmail.com,Hannah Brown,Hannah Brown,+1 443-555-7088,116 High Street,New York,NY 10011,US,58.19.103.234,2517,535522,klarna,137.49,USD,ACC-A2A94CC1,FALSE,,,FALSE
+ORD-591261,2026-02-04 09:30:00,ryan.king143@outlook.com,Ryan King,Ryan King,,169 Maple Ave,Toronto,M5V 2T6,CA,87.245.205.137,9300,543212,klarna,115.74,CAD,ACC-F24052C5,TRUE,115.74,duplicate_order,FALSE
+ORD-657608,2025-11-17 19:52:00,ava.smith184@gmail.com,Ava Smith,Ava Smith,07707 390526,178 Park Street,London,SW1A 1AA,GB,,5439,400000,apple_pay,123.70,GBP,ACC-0756A10A,FALSE,,,FALSE
+ORD-111373,2026-04-30 01:42:00,daniel.king76@icloud.com,Daniel King,Daniel King,+1 857-555-2215,116 Park Lane,Paris,75002,FR,,3981,492181,paypal,119.29,EUR,ACC-35F5BF75,FALSE,,,FALSE
+ORD-969725,2025-10-15 20:54:00,olivia.davies722@icloud.com,Olivia Davies,Olivia Davies,+1 738-555-6978,19 Station Ave,Paris,75002,FR,52.69.80.188,8157,543212,paypal,250.24,EUR,ACC-E0B31A23,FALSE,,,FALSE
+ORD-866022,2026-04-06 21:57:00,isla.hall679@yahoo.com,Isla Hall,Isla Hall,,119 Station St,Glasgow,G1 1AA,GB,,7522,543212,credit_card,43.76,GBP,ACC-5733EB59,FALSE,,,FALSE
+ORD-015422,2025-10-18 09:00:00,henry.evans.loyal27@gmail.com,Henry Evans,Henry Evans,+1 646-555-4137,89 Loyal Customer Road,Dallas,TX 75201,US,,7846,455673,credit_card,160.08,USD,ACC-390812D9,FALSE,,,FALSE
+ORD-751687,2026-03-31 18:48:00,ivy.king987@outlook.com,Ivy King,Ivy King,,90 Market Ave,Los Angeles,CA 90015,US,31.223.181.234,7375,455673,credit_card,151.11,USD,ACC-79E7ECF9,FALSE,,,FALSE
+ORD-805471,2025-12-11 15:20:00,ryan.brown634@yahoo.com,Ryan Brown,Ryan Brown,+1 646-555-2059,44 Oak Lane,Toronto,M5V 2T6,CA,55.244.75.17,6806,455673,apple_pay,248.77,CAD,ACC-330F3677,FALSE,,,FALSE
+ORD-635939,2025-12-21 19:45:00,imran.nelson336@yahoo.com,Imran Nelson,Imran Nelson,+1 262-555-2483,56 Maple Lane,Dallas,TX 75201,US,11.75.76.116,9704,414720,credit_card,108.72,USD,ACC-AA8631FA,FALSE,,,FALSE
+ORD-619211,2026-01-22 22:33:00,kai.taylor852@icloud.com,Kai Taylor,Kai Taylor,07451 566903,53 Park Road,Birmingham,B1 1AA,GB,68.163.34.77,1732,543212,apple_pay,40.54,GBP,ACC-B8997443,FALSE,,,FALSE
+ORD-606435,2026-01-01 07:57:00,kai.allen234@icloud.com,Kai Allen,Kai Allen,07234 316851,6 Maple St,London,SW1A 1AA,GB,15.192.130.198,9761,400000,debit_card,24.05,GBP,ACC-36599222,FALSE,,,FALSE
+ORD-515811,2026-04-25 14:08:00,sophia.davies162@outlook.com,Sophia Davies,Sophia Davies,07936 221776,59 Market Road,Manchester,M1 2AB,GB,72.245.107.152,3641,543212,klarna,218.67,GBP,ACC-A0FF1F3E,TRUE,218.67,duplicate_order,FALSE
+ORD-842844,2025-10-10 09:00:00,freya.walker.loyal16@gmail.com,Freya Walker,Freya Walker,+1 646-555-6792,61 Loyal Customer Road,Berlin,10115,DE,,7299,414720,apple_pay,89.63,EUR,ACC-BE16515F,FALSE,,,FALSE
+ORD-899335,2025-10-12 09:30:00,leo.brown.loyal4@gmail.com,Leo Brown,Leo Brown,+1 646-555-2748,191 Loyal Customer Road,Dallas,TX 75201,US,,2593,455673,paypal,119.08,USD,ACC-B9F371F1,FALSE,,,FALSE
+ORD-351731,2025-12-13 09:00:00,olivia.adams.loyal6@gmail.com,Olivia Adams,Olivia Adams,+44 7700 788505,17 Loyal Customer Road,London,SW1A 1AA,GB,,7096,492181,paypal,46.22,GBP,ACC-E9B3C36E,FALSE,,,FALSE
+ORD-362659,2025-09-17 18:24:00,grace.brown605@gmail.com,Grace Brown,Grace Brown,,94 Station Lane,London,SW1A 1AA,GB,,6591,535522,credit_card,36.14,GBP,ACC-00C8104C,FALSE,,,FALSE
+ORD-989033,2026-03-04 09:27:00,imran.thomas713@yahoo.com,Imran Thomas,Imran Thomas,+1 845-555-6886,125 Pine Ave,New York,NY 10011,US,35.12.122.126,7369,455673,apple_pay,208.60,USD,ACC-9365EC73,FALSE,,,FALSE
+ORD-771727,2025-12-19 08:30:00,henry.brown.loyal0@gmail.com,Henry Brown,Henry Brown,+1 646-555-5040,58 Loyal Customer Road,Toronto,M5V 2T6,CA,172.16.167.92,1178,492181,paypal,39.26,CAD,ACC-13590837,FALSE,,,FALSE
+ORD-704486,2026-01-05 16:07:00,ruby.brown935@outlook.com,Ruby Brown,Ruby Brown,07775 983253,42 Maple Street,Manchester,M1 2AB,GB,50.158.228.74,3960,455673,debit_card,234.84,GBP,ACC-C3E09AE0,FALSE,,,TRUE
+ORD-163989,2026-03-25 12:59:00,zara.scott981@icloud.com,Zara Scott,Zara Scott,,77 Cedar Road,Glasgow,G1 1AA,GB,99.250.162.123,6714,400000,paypal,243.56,GBP,ACC-BEC9E2ED,FALSE,,,FALSE
+ORD-035955,2026-04-04 21:12:00,ivy.allen192@yahoo.com,Ivy Allen,Ivy Allen,,113 Park Road,Los Angeles,CA 90015,US,,5400,400000,klarna,27.29,USD,ACC-0FAAABE6,FALSE,,,FALSE
+ORD-534346,2025-09-10 13:52:00,grace.taylor398@yahoo.com,Grace Taylor,Grace Taylor,07977 382632,118 Oak Lane,Birmingham,B1 1AA,GB,25.212.76.38,2641,455673,paypal,151.55,GBP,ACC-6729693F,FALSE,,,FALSE
+ORD-772297,2026-04-20 14:37:00,zara.allen167@icloud.com,Zara Allen,Zara Allen,07889 739928,232 Maple Ave,Manchester,M1 2AB,GB,,6968,543212,paypal,190.46,GBP,ACC-D979021B,FALSE,,,FALSE
+ORD-043167,2026-02-13 08:00:00,leo.brown.loyal1@gmail.com,Leo Brown,Leo Brown,+1 646-555-8816,95 Loyal Customer Road,Los Angeles,CA 90015,US,172.20.161.213,5635,492181,klarna,80.00,USD,ACC-0BDE17DF,FALSE,,,FALSE
+ORD-742014,2026-02-11 15:17:00,adam.baker112@gmail.com,Adam Baker,Adam Baker,,28 Market Ave,Toronto,M5V 2T6,CA,,6385,455673,paypal,90.69,CAD,ACC-DB0831C6,FALSE,,,FALSE
+ORD-549699,2026-02-17 13:00:00,chloe.davies315@gmail.com,Chloe Davies,Chloe Davies,07423 697948,115 Park Road,Glasgow,G1 1AA,GB,23.81.77.42,7802,455673,apple_pay,144.01,GBP,ACC-5DBE70B5,FALSE,,,FALSE
+ORD-960540,2026-03-04 17:22:00,noah.taylor783@gmail.com,Noah Taylor,Noah Taylor,07962 745336,18 Maple St,London,SW1A 1AA,GB,,8471,414720,klarna,26.99,GBP,ACC-C440EF6E,FALSE,,,FALSE
+ORD-087222,2025-10-23 17:11:00,amelia.young518@yahoo.com,Amelia Young,Amelia Young,+1 326-555-1500,62 Station Ave,Toronto,M5V 2T6,CA,71.179.176.42,5237,543212,apple_pay,218.06,CAD,ACC-A940DFE2,FALSE,,,FALSE
+ORD-907840,2025-10-16 21:03:00,ryan.king286@outlook.com,Ryan King,Ryan King,+1 859-555-7557,92 Park Lane,Toronto,M5V 2T6,CA,76.142.75.197,8448,455673,klarna,42.30,CAD,ACC-A8A9815B,FALSE,,,FALSE
+ORD-556270,2026-01-03 10:48:00,noah.hall798@gmail.com,Noah Hall,Noah Hall,+1 724-555-8687,147 Station Ave,Berlin,10115,DE,48.148.85.10,5981,543212,debit_card,206.69,EUR,ACC-FD641B8F,FALSE,,,FALSE
+ORD-553416,2025-11-01 18:00:00,adam.thomas898@yahoo.com,Adam Thomas,Adam Thomas,,31 Market Road,Manchester,M1 2AB,GB,71.51.64.223,1558,535522,credit_card,17.94,GBP,ACC-6C30C1A9,FALSE,,,FALSE
+ORD-746721,2026-02-27 11:41:00,oscar.young921@outlook.com,Oscar Young,Oscar Young,,64 Pine Road,London,SW1A 1AA,GB,63.79.121.222,3662,492181,apple_pay,230.59,GBP,ACC-62EBB159,TRUE,230.59,late_delivery,FALSE
+ORD-600047,2025-10-07 21:54:00,ryan.evans177@icloud.com,Ryan Evans,Ryan Evans,+1 355-555-3975,94 Pine Street,Dallas,TX 75201,US,,4343,414720,credit_card,112.11,USD,ACC-827F2106,FALSE,,,FALSE
+ORD-751369,2025-09-26 23:36:00,lily.brown970@gmail.com,Lily Brown,Lily Brown,07701 865684,139 Maple Road,Glasgow,G1 1AA,GB,17.155.197.49,6763,400000,debit_card,25.00,GBP,ACC-08388154,FALSE,,,FALSE
+ORD-147726,2025-12-16 22:07:00,theo.nelson438@outlook.com,Theo Nelson,Theo Nelson,,148 Station Street,New York,NY 10011,US,91.254.252.207,3947,400000,credit_card,69.71,USD,ACC-AEEA134B,FALSE,,,FALSE
+ORD-903888,2025-11-15 23:42:00,lucas.baker552@yahoo.com,Lucas Baker,Lucas Baker,+1 435-555-7301,22 Market Lane,Toronto,M5V 2T6,CA,39.44.120.93,1046,492181,debit_card,258.49,CAD,ACC-0E75CF66,TRUE,258.49,changed_mind,FALSE
+ORD-114187,2026-04-16 22:06:00,jack.evans196@outlook.com,Jack Evans,Jack Evans,07650 105804,223 Oak Road,Birmingham,B1 1AA,GB,17.155.38.68,6395,543212,apple_pay,163.96,GBP,ACC-08639C2E,FALSE,,,FALSE
+ORD-769043,2026-04-09 11:43:00,imran.scott553@icloud.com,Imran Scott,Imran Scott,07684 690584,63 Park Ave,Glasgow,G1 1AA,GB,,2588,543212,debit_card,118.90,GBP,ACC-7DAAF576,FALSE,,,FALSE
+ORD-335161,2025-09-30 18:31:00,theo.davies914@outlook.com,Theo Davies,Theo Davies,+1 623-555-1917,214 High Lane,Toronto,M5V 2T6,CA,79.9.106.148,6434,414720,paypal,28.42,CAD,ACC-A71DE6BC,FALSE,,,FALSE
+ORD-212896,2025-10-27 04:11:00,lucas.mitchell255@outlook.com,Lucas Mitchell,Lucas Mitchell,,133 High Lane,London,SW1A 1AA,GB,99.160.180.156,9818,400000,paypal,64.04,GBP,ACC-2ED8830A,FALSE,,,FALSE
+ORD-424111,2026-01-03 14:12:00,adam.adams834@icloud.com,Adam Adams,Adam Adams,,54 Market Road,Los Angeles,CA 90015,US,,3759,535522,klarna,12.39,USD,ACC-B615A974,TRUE,12.39,duplicate_order,FALSE
+ORD-260437,2026-04-09 03:28:00,chloe.green436@yahoo.com,Chloe Green,Chloe Green,07917 813941,26 Park Ave,London,SW1A 1AA,GB,,1203,543212,klarna,193.48,GBP,ACC-9E580576,FALSE,,,FALSE
+ORD-432409,2026-03-08 08:30:00,mason.baker.loyal29@gmail.com,Mason Baker,Mason Baker,+1 646-555-1267,129 Loyal Customer Road,Dallas,TX 75201,US,172.25.26.128,5230,455673,paypal,22.27,USD,ACC-335EE0B5,FALSE,,,FALSE
+ORD-360001,2025-11-23 07:28:00,amelia.hall410@gmail.com,Amelia Hall,Amelia Hall,+1 520-555-9090,157 Oak Ave,Los Angeles,CA 90015,US,,8447,535522,apple_pay,222.47,USD,ACC-F0CCCA8B,FALSE,,,FALSE
+ORD-493706,2025-10-08 16:55:00,ruby.scott657@gmail.com,Ruby Scott,Ruby Scott,+1 239-555-3039,99 Maple Street,New York,NY 10011,US,55.250.188.179,1945,543212,klarna,107.56,USD,ACC-00AFE1D9,FALSE,,,FALSE
+ORD-013476,2025-09-20 07:28:00,oscar.adams750@yahoo.com,Oscar Adams,Oscar Adams,+1 664-555-5832,236 Pine St,Dallas,TX 75201,US,44.44.70.72,2908,414720,paypal,211.30,USD,ACC-131F2CBF,FALSE,,,FALSE
+ORD-978181,2025-11-05 08:30:00,henry.evans.loyal27@gmail.com,Henry Evans,Henry Evans,+1 646-555-4137,89 Loyal Customer Road,Dallas,TX 75201,US,172.18.25.9,7812,455673,apple_pay,125.34,USD,ACC-390812D9,FALSE,,,FALSE
+ORD-207554,2026-01-24 14:22:00,jack.evans94@outlook.com,Jack Evans,Jack Evans,+1 977-555-1983,16 Station Street,Toronto,M5V 2T6,CA,27.249.119.82,6690,535522,klarna,193.83,CAD,ACC-FF77E068,TRUE,193.83,changed_mind,FALSE
+ORD-179053,2026-03-06 00:11:00,imran.baker340@outlook.com,Imran Baker,Imran Baker,07470 860897,151 Station Street,Manchester,M1 2AB,GB,60.44.54.34,2971,455673,debit_card,157.47,GBP,ACC-4CDEDC68,FALSE,,,FALSE
+ORD-286174,2025-09-02 10:42:00,ivy.young425@gmail.com,Ivy Young,Ivy Young,07482 341495,21 Station Street,London,SW1A 1AA,GB,,2623,543212,credit_card,173.19,GBP,ACC-D2819B72,FALSE,,,FALSE
+ORD-311235,2026-03-28 21:13:00,nadia.wright864@icloud.com,Nadia Wright,Nadia Wright,07394 670264,37 Station St,Birmingham,B1 1AA,GB,,2067,535522,klarna,140.48,GBP,ACC-2D03B240,TRUE,140.48,late_delivery,FALSE
+ORD-717495,2026-02-12 10:00:00,mason.adams738@yahoo.com,Mason Adams,Mason Adams,+1 400-555-6404,59 Market Lane,Paris,75002,FR,94.172.131.196,9005,543212,klarna,171.14,EUR,ACC-C7E1243F,FALSE,,,FALSE
+ORD-908734,2025-12-16 21:28:00,mason.davies745@icloud.com,Mason Davies,Mason Davies,,119 High Ave,Berlin,10115,DE,,8878,455673,paypal,94.64,EUR,ACC-5F159E4C,FALSE,,,FALSE
+ORD-446742,2025-10-28 12:54:00,hannah.nelson645@yahoo.com,Hannah Nelson,Hannah Nelson,+1 519-555-6444,210 Cedar Lane,Paris,75002,FR,,8629,400000,klarna,44.69,EUR,ACC-09B777DD,FALSE,,,FALSE
+ORD-397020,2025-11-03 08:30:00,zara.adams.loyal9@gmail.com,Zara Adams,Zara Adams,+1 646-555-1686,174 Loyal Customer Road,Toronto,M5V 2T6,CA,172.31.16.128,2540,492181,apple_pay,179.14,CAD,ACC-009920D5,FALSE,,,FALSE
+ORD-715867,2026-03-12 19:53:00,freya.evans646@outlook.com,Freya Evans,Freya Evans,,236 Market St,London,SW1A 1AA,GB,43.183.176.91,5074,414720,debit_card,122.61,GBP,ACC-AAFC8C51,TRUE,122.61,late_delivery,FALSE
+ORD-799846,2025-10-18 23:00:00,henry.evans800@icloud.com,Henry Evans,Henry Evans,+1 269-555-2623,210 Oak Lane,Berlin,10115,DE,,4138,414720,credit_card,54.60,EUR,ACC-C50D31FE,FALSE,,,TRUE
+ORD-058920,2026-03-05 23:56:00,sophie.mitchell623@yahoo.com,Sophie Mitchell,Sophie Mitchell,07287 552744,2 Pine Ave,Glasgow,G1 1AA,GB,,4153,455673,paypal,169.32,GBP,ACC-52D242DA,FALSE,,,FALSE
+ORD-714897,2026-02-27 09:30:00,jack.johnson.loyal24@gmail.com,Jack Johnson,Jack Johnson,+44 7700 586903,40 Loyal Customer Road,Glasgow,G1 1AA,GB,,3488,455673,credit_card,33.17,GBP,ACC-D853F346,FALSE,,,FALSE
+ORD-140508,2025-11-14 16:34:00,imran.carter509@icloud.com,Imran Carter,Imran Carter,+1 784-555-8761,129 Station Road,Berlin,10115,DE,28.34.224.110,7162,455673,apple_pay,153.15,EUR,ACC-1C6BD1F9,FALSE,,,FALSE
+ORD-925883,2026-02-19 08:30:00,freya.walker.loyal23@gmail.com,Freya Walker,Freya Walker,+44 7700 100594,17 Loyal Customer Road,Glasgow,G1 1AA,GB,172.21.19.68,6349,414720,debit_card,156.10,GBP,ACC-5ED284B2,FALSE,,,FALSE
+ORD-196460,2025-10-24 20:57:00,henry.nelson505@outlook.com,Henry Nelson,Henry Nelson,+1 982-555-9374,72 Market Street,Los Angeles,CA 90015,US,78.216.244.241,9859,455673,klarna,136.61,USD,ACC-515AF5D4,FALSE,,,FALSE
+ORD-862018,2026-01-12 11:18:00,theo.hall125@gmail.com,Theo Hall,Theo Hall,07628 247675,190 Park Street,London,SW1A 1AA,GB,,3535,414720,debit_card,167.80,GBP,ACC-7F6ED7CC,FALSE,,,FALSE
+ORD-677659,2025-12-29 17:11:00,hannah.young442@outlook.com,Hannah Young,Hannah Young,+1 440-555-6245,139 Station St,New York,NY 10011,US,42.65.49.252,9314,543212,klarna,129.98,USD,ACC-053A4E8B,FALSE,,,FALSE
+ORD-845657,2025-11-14 22:39:00,amelia.thomas562@yahoo.com,Amelia Thomas,Amelia Thomas,,74 Cedar Road,Manchester,M1 2AB,GB,,4906,535522,credit_card,170.46,GBP,ACC-17E77414,FALSE,,,FALSE
+ORD-101458,2025-09-24 15:34:00,imran.adams473@outlook.com,Imran Adams,Imran Adams,+1 714-555-9641,108 Maple Street,Toronto,M5V 2T6,CA,43.26.246.224,7081,400000,apple_pay,243.70,CAD,ACC-3BE08216,FALSE,,,FALSE
+ORD-715034,2026-01-30 22:06:00,amelia.young188@outlook.com,Amelia Young,Amelia Young,+1 532-555-8426,125 Oak St,Dallas,TX 75201,US,70.87.144.197,6711,400000,debit_card,154.52,USD,ACC-AE49D1E3,FALSE,,,FALSE
+ORD-334592,2026-02-23 10:45:00,oscar.smith833@yahoo.com,Oscar Smith,Oscar Smith,+1 383-555-2753,236 Pine Lane,Berlin,10115,DE,,4144,400000,credit_card,142.56,EUR,ACC-F907D882,FALSE,,,FALSE
+ORD-280005,2025-09-09 03:51:00,sophie.johnson284@outlook.com,Sophie Johnson,Sophie Johnson,,188 Station Ave,Dallas,TX 75201,US,50.249.55.45,2343,414720,klarna,224.96,USD,ACC-33C3E61C,FALSE,,,FALSE
+ORD-848804,2026-04-19 16:46:00,mason.allen740@icloud.com,Mason Allen,Mason Allen,,4 Station Street,Paris,75002,FR,,2086,455673,debit_card,252.25,EUR,ACC-7E774291,FALSE,,,FALSE
+ORD-336295,2026-03-27 10:06:00,theo.nelson91@icloud.com,Theo Nelson,Theo Nelson,,118 Oak St,Berlin,10115,DE,,9673,414720,paypal,94.73,EUR,ACC-213FCB60,FALSE,,,FALSE
+ORD-402934,2026-04-25 08:30:00,sophie.wilson.loyal11@gmail.com,Sophie Wilson,Sophie Wilson,+44 7700 272420,36 Loyal Customer Road,Birmingham,B1 1AA,GB,172.20.12.113,4985,455673,credit_card,109.17,GBP,ACC-E0455318,FALSE,,,FALSE
+ORD-675651,2026-03-30 13:14:00,amelia.davies433@gmail.com,Amelia Davies,Amelia Davies,+1 466-555-7255,167 Maple Ave,Paris,75002,FR,97.217.73.138,4338,455673,paypal,168.13,EUR,ACC-C073F89C,FALSE,,,FALSE
+ORD-262534,2026-02-14 08:00:00,leo.brown.loyal4@gmail.com,Leo Brown,Leo Brown,+1 646-555-2748,191 Loyal Customer Road,Dallas,TX 75201,US,172.22.102.195,4765,414720,paypal,137.71,USD,ACC-B9F371F1,FALSE,,,FALSE
+ORD-911933,2025-09-26 06:50:00,lucas.scott523@yahoo.com,Lucas Scott,Lucas Scott,07411 212375,94 High Road,London,SW1A 1AA,GB,17.93.20.1,1854,543212,credit_card,196.70,GBP,ACC-CF1AED3A,FALSE,,,FALSE
+ORD-048379,2025-12-11 19:08:00,freya.davies952@gmail.com,Freya Davies,Freya Davies,+1 777-555-4939,146 Market Lane,Dallas,TX 75201,US,,3292,543212,credit_card,191.59,USD,ACC-BC014541,FALSE,,,FALSE
+ORD-135125,2026-04-29 22:36:00,olivia.brown786@icloud.com,Olivia Brown,Olivia Brown,+1 583-555-4908,52 Pine St,Dallas,TX 75201,US,54.98.32.57,2582,543212,credit_card,53.63,USD,ACC-8F449DB0,FALSE,,,FALSE
+ORD-804025,2025-12-23 08:07:00,m.reed.outlet@gmail.com,M. Reed,Maya Reed,+44 7700 900321,22 Kingly Ct Apt 4,London,W1B5PW,GB,82.132.231.14,4411,455673,credit_card,210.99,GBP,ACC-07FABADC,TRUE,210.99,empty_box,TRUE
+ORD-445569,2026-04-08 06:25:00,freya.nelson238@gmail.com,Freya Nelson,Freya Nelson,+1 632-555-6174,142 Pine Road,Toronto,M5V 2T6,CA,71.59.253.160,6681,535522,apple_pay,184.98,CAD,ACC-3CEB2118,TRUE,184.98,changed_mind,FALSE
+ORD-936664,2026-02-27 18:18:00,mia.johnson991@outlook.com,Mia Johnson,Mia Johnson,,102 Oak Road,Dallas,TX 75201,US,97.134.195.211,7086,455673,apple_pay,179.36,USD,ACC-2777B6F3,FALSE,,,FALSE
+ORD-772220,2026-01-26 02:45:00,grace.evans165@gmail.com,Grace Evans,Grace Evans,+1 295-555-6536,153 Park St,Dallas,TX 75201,US,88.222.80.14,2659,414720,apple_pay,62.98,USD,ACC-2BFF5750,FALSE,,,FALSE
+ORD-119907,2026-03-15 09:30:00,mason.baker.loyal29@gmail.com,Mason Baker,Mason Baker,+1 646-555-1267,129 Loyal Customer Road,Dallas,TX 75201,US,,5424,455673,credit_card,32.20,USD,ACC-335EE0B5,FALSE,,,FALSE
+ORD-142327,2026-04-20 08:00:00,ruby.wright.loyal17@gmail.com,Ruby Wright,Ruby Wright,+1 646-555-4366,96 Loyal Customer Road,Paris,75002,FR,172.20.39.154,4782,492181,klarna,129.32,EUR,ACC-5EDD792D,FALSE,,,FALSE
+ORD-152617,2025-12-16 11:36:00,kai.taylor821@gmail.com,Kai Taylor,Kai Taylor,+1 961-555-7814,211 Station St,Toronto,M5V 2T6,CA,16.36.155.20,4537,400000,klarna,36.09,CAD,ACC-C37037D1,FALSE,,,FALSE
+ORD-001417,2026-04-16 09:30:00,olivia.wilson.loyal22@gmail.com,Olivia Wilson,Olivia Wilson,+44 7700 880494,183 Loyal Customer Road,Manchester,M1 2AB,GB,,3484,492181,klarna,55.24,GBP,ACC-F1FA329E,FALSE,,,FALSE
+ORD-827424,2026-03-02 17:45:00,jack.evans476@gmail.com,Jack Evans,Jack Evans,+1 324-555-8478,35 Park Lane,Berlin,10115,DE,67.218.228.230,3607,543212,debit_card,225.65,EUR,ACC-F082BB9A,FALSE,,,FALSE
+ORD-425250,2025-09-12 11:30:00,daniel.carter136@icloud.com,Daniel Carter,Daniel Carter,07374 246742,154 Oak St,London,SW1A 1AA,GB,54.43.103.36,8871,400000,klarna,233.31,GBP,ACC-CB338D67,FALSE,,,FALSE
+ORD-379484,2025-10-10 12:50:00,grace.adams715@gmail.com,Grace Adams,Grace Adams,+1 944-555-6227,116 Station Ave,Los Angeles,CA 90015,US,73.160.97.59,3794,455673,apple_pay,183.33,USD,ACC-5E73A6EC,FALSE,,,FALSE
+ORD-881440,2025-12-10 08:30:00,leo.baker.loyal12@gmail.com,Leo Baker,Leo Baker,+44 7700 343529,52 Loyal Customer Road,London,SW1A 1AA,GB,172.20.153.35,9870,455673,debit_card,167.32,GBP,ACC-302B4D40,FALSE,,,FALSE
+ORD-507967,2025-10-18 16:10:00,ryan.baker972@outlook.com,Ryan Baker,Ryan Baker,,24 Oak Ave,Manchester,M1 2AB,GB,,3507,455673,debit_card,165.29,GBP,ACC-1609B994,FALSE,,,FALSE
+ORD-628028,2025-09-23 22:59:00,noah.walker551@outlook.com,Noah Walker,Noah Walker,,118 Park Lane,Glasgow,G1 1AA,GB,45.187.21.195,8231,400000,credit_card,66.20,GBP,ACC-10E4C1B7,FALSE,,,FALSE
+ORD-757503,2025-10-27 08:00:00,aisha.patel@workmail.example,Aisha Patel,Aisha Patel,020 7946 0101,70 Studio Yard,London,E1 6AN,GB,203.0.113.10,1104,400000,credit_card,122.00,GBP,ACC-806A520D,FALSE,,,FALSE
+ORD-114107,2026-02-25 08:00:00,sophia.johnson.loyal26@gmail.com,Sophia Johnson,Sophia Johnson,+1 646-555-3436,181 Loyal Customer Road,Toronto,M5V 2T6,CA,172.20.18.21,6242,414720,debit_card,114.03,CAD,ACC-80F460B6,FALSE,,,FALSE
+ORD-515937,2026-03-30 06:01:00,isla.young448@gmail.com,Isla Young,Isla Young,,151 Market Lane,Birmingham,B1 1AA,GB,,6083,543212,debit_card,96.20,GBP,ACC-D9C2F9CC,FALSE,,,FALSE
+ORD-493184,2025-09-03 13:24:00,henry.mitchell401@yahoo.com,Henry Mitchell,Henry Mitchell,+1 309-555-8601,107 Market Street,New York,NY 10011,US,,8488,455673,paypal,151.92,USD,ACC-4C917123,TRUE,151.92,duplicate_order,FALSE
+ORD-123235,2026-01-02 00:33:00,leo.wright834@icloud.com,Leo Wright,Leo Wright,,16 Maple Street,Paris,75002,FR,,7697,535522,credit_card,167.46,EUR,ACC-D70B27DE,FALSE,,,FALSE
+ORD-460786,2026-03-17 02:49:00,oscar.wright63@yahoo.com,Oscar Wright,Oscar Wright,07536 802210,126 Park St,London,SW1A 1AA,GB,29.33.64.71,9984,543212,debit_card,92.65,GBP,ACC-A748E2BA,FALSE,,,FALSE
+ORD-844728,2025-11-27 17:47:00,ryan.wilson801@gmail.com,Ryan Wilson,Ryan Wilson,07142 619207,43 Pine Street,Birmingham,B1 1AA,GB,48.226.255.188,2626,492181,klarna,172.48,GBP,ACC-E9BA86A2,FALSE,,,FALSE
+ORD-409812,2025-12-21 06:41:00,jack.roberts72@yahoo.com,Jack Roberts,Jack Roberts,,133 Oak Street,Berlin,10115,DE,,7731,535522,apple_pay,50.94,EUR,ACC-419216D1,FALSE,,,FALSE
+ORD-472662,2025-09-10 06:33:00,leo.johnson19@outlook.com,Leo Johnson,Leo Johnson,,157 High Lane,Glasgow,G1 1AA,GB,92.168.199.122,1205,414720,klarna,96.47,GBP,ACC-0401F044,FALSE,,,FALSE
+ORD-721345,2025-11-03 08:27:00,mason.smith822@yahoo.com,Mason Smith,Mason Smith,,181 Station Road,London,SW1A 1AA,GB,94.25.107.93,9773,492181,credit_card,256.33,GBP,ACC-1E361915,FALSE,,,FALSE
+ORD-329029,2026-03-16 12:41:00,daniel.nelson691@gmail.com,Daniel Nelson,Daniel Nelson,,170 Market Ave,London,SW1A 1AA,GB,38.58.176.111,2816,414720,paypal,180.20,GBP,ACC-D6E4F1B8,FALSE,,,FALSE
+ORD-450097,2025-10-18 21:50:00,daniel.wright282@yahoo.com,Daniel Wright,Daniel Wright,+1 322-555-2910,22 Pine Ave,Dallas,TX 75201,US,39.11.245.71,2549,400000,credit_card,56.91,USD,ACC-9EF5A620,FALSE,,,FALSE
+ORD-189904,2025-11-12 18:36:00,kai.brown823@yahoo.com,Kai Brown,Kai Brown,,64 Market Road,Berlin,10115,DE,,2276,400000,paypal,104.46,EUR,ACC-84D153E4,FALSE,,,FALSE
+ORD-570390,2025-12-01 17:38:00,daniel.hall246@outlook.com,Daniel Hall,Daniel Hall,,28 Pine Street,London,SW1A 1AA,GB,50.96.103.164,1530,492181,apple_pay,78.75,GBP,ACC-93F7BAD0,FALSE,,,FALSE
+ORD-694902,2026-01-25 06:46:00,freya.thomas373@yahoo.com,Freya Thomas,Freya Thomas,+1 982-555-7688,96 High Street,Paris,75002,FR,80.231.153.232,7752,455673,debit_card,61.45,EUR,ACC-EF312B15,FALSE,,,FALSE
+ORD-715796,2026-04-13 10:07:00,hannah.young894@icloud.com,Hannah Young,Hannah Young,07176 647689,62 High Ave,Birmingham,B1 1AA,GB,25.241.134.168,1491,455673,debit_card,95.84,GBP,ACC-1DDA238E,FALSE,,,FALSE
+ORD-116554,2026-03-23 09:00:00,sophie.wilson.loyal11@gmail.com,Sophie Wilson,Sophie Wilson,+44 7700 272420,36 Loyal Customer Road,Birmingham,B1 1AA,GB,,4039,414720,apple_pay,23.86,GBP,ACC-E0455318,TRUE,23.86,wrong_size,FALSE
+ORD-903498,2025-09-27 07:24:00,leo.davies969@gmail.com,Leo Davies,Leo Davies,07604 218199,61 Maple Ave,London,SW1A 1AA,GB,80.214.79.227,7797,543212,paypal,36.56,GBP,ACC-85FD3332,FALSE,,,FALSE
+ORD-602276,2025-12-22 08:00:00,maya.reed92@gmail.com,Maya Reed,Maya Reed,07700 900321,"Flat 4, 22 Kingly Court",London,W1B 5PW,GB,82.132.231.14,4411,455673,credit_card,184.50,GBP,ACC-A90D02E3,TRUE,184.50,item_not_received,TRUE
+ORD-010885,2025-11-25 22:03:00,ivy.wright83@yahoo.com,Ivy Wright,Ivy Wright,07395 178211,43 High St,Birmingham,B1 1AA,GB,37.11.150.107,9870,492181,klarna,129.53,GBP,ACC-4F3647BA,FALSE,,,FALSE
+ORD-109226,2025-11-30 05:34:00,mason.adams253@icloud.com,Mason Adams,Mason Adams,07516 556185,217 Cedar Street,Birmingham,B1 1AA,GB,42.216.231.11,1016,535522,debit_card,250.36,GBP,ACC-A79114A7,FALSE,,,FALSE
+ORD-405291,2026-03-30 17:31:00,isla.smith655@yahoo.com,Isla Smith,Isla Smith,07863 508976,50 Market St,Birmingham,B1 1AA,GB,,2878,543212,debit_card,239.45,GBP,ACC-FA2269CF,FALSE,,,FALSE
+ORD-757190,2026-01-17 19:49:00,ava.baker9@outlook.com,Ava Baker,Ava Baker,,145 High Lane,Toronto,M5V 2T6,CA,,7033,400000,credit_card,253.02,CAD,ACC-77DF5D12,FALSE,,,FALSE
+ORD-803874,2026-04-21 08:52:00,freya.carter590@gmail.com,Freya Carter,Freya Carter,,196 Cedar Road,Birmingham,B1 1AA,GB,88.215.201.184,1653,414720,debit_card,172.48,GBP,ACC-8F5C9C8B,FALSE,,,FALSE
+ORD-754223,2025-11-27 09:00:00,theo.evans.loyal25@gmail.com,Theo Evans,Theo Evans,+44 7700 239967,75 Loyal Customer Road,London,SW1A 1AA,GB,,3667,414720,apple_pay,156.38,GBP,ACC-09E878F1,TRUE,156.38,wrong_size,FALSE
+ORD-122457,2026-02-08 04:56:00,mason.hall421@outlook.com,Mason Hall,Mason Hall,07868 533988,235 Oak Road,Birmingham,B1 1AA,GB,84.108.79.169,8900,492181,klarna,222.12,GBP,ACC-EC046B90,FALSE,,,FALSE
+ORD-996942,2025-11-28 03:42:00,lily.roberts743@outlook.com,Lily Roberts,Lily Roberts,+1 331-555-7054,145 Park St,Los Angeles,CA 90015,US,,7062,535522,paypal,73.04,USD,ACC-81B5FBBD,FALSE,,,FALSE
+ORD-582378,2026-03-07 12:01:00,jack.taylor119@yahoo.com,Jack Taylor,Jack Taylor,+1 256-555-6067,171 Maple St,Dallas,TX 75201,US,,3248,543212,credit_card,14.81,USD,ACC-D3632372,FALSE,,,FALSE
+ORD-291475,2026-02-20 13:10:00,kai.nelson983@gmail.com,Kai Nelson,Kai Nelson,,106 Maple Street,Paris,75002,FR,42.200.81.166,7865,535522,debit_card,158.67,EUR,ACC-87A11172,FALSE,,,FALSE
+ORD-018824,2026-04-24 20:18:00,amelia.king662@gmail.com,Amelia King,Amelia King,,55 Market Ave,Paris,75002,FR,18.81.33.80,9303,535522,debit_card,45.64,EUR,ACC-2CD51E6D,FALSE,,,FALSE
+ORD-888610,2026-05-01 22:56:00,ethan.green827@gmail.com,Ethan Green,Ethan Green,07216 732332,31 Cedar Ave,London,SW1A 1AA,GB,,6575,414720,apple_pay,202.80,GBP,ACC-75A50C7A,FALSE,,,FALSE
+ORD-808623,2026-03-01 11:23:00,zara.davies386@gmail.com,Zara Davies,Zara Davies,,16 High Street,London,SW1A 1AA,GB,17.238.4.18,7367,543212,paypal,79.28,GBP,ACC-47C41FC1,FALSE,,,FALSE
+ORD-763499,2026-04-05 01:53:00,freya.green536@outlook.com,Freya Green,Freya Green,+1 696-555-3770,223 Park Street,Los Angeles,CA 90015,US,96.33.175.58,6067,492181,debit_card,67.63,USD,ACC-29826738,FALSE,,,FALSE
+ORD-709046,2025-10-06 23:35:00,grace.green670@yahoo.com,Grace Green,Grace Green,+1 475-555-4747,239 High Ave,Toronto,M5V 2T6,CA,58.74.156.86,6798,543212,paypal,90.21,CAD,ACC-40F5B096,FALSE,,,FALSE
+ORD-795639,2025-12-09 21:57:00,adam.taylor609@yahoo.com,Adam Taylor,Adam Taylor,+1 767-555-1672,116 Cedar Road,Paris,75002,FR,18.230.52.208,6626,543212,paypal,32.91,EUR,ACC-8F874AD4,FALSE,,,FALSE
+ORD-398061,2026-01-13 05:37:00,freya.mitchell754@yahoo.com,Freya Mitchell,Freya Mitchell,07141 324879,125 Cedar St,Manchester,M1 2AB,GB,,4834,455673,paypal,177.81,GBP,ACC-F365F5BE,FALSE,,,FALSE
+ORD-049940,2025-12-28 08:00:00,freya.walker.loyal23@gmail.com,Freya Walker,Freya Walker,+44 7700 100594,17 Loyal Customer Road,Glasgow,G1 1AA,GB,172.21.19.68,6615,414720,paypal,97.23,GBP,ACC-5ED284B2,FALSE,,,FALSE
+ORD-943615,2025-11-02 15:24:00,ruby.walker377@gmail.com,Ruby Walker,Ruby Walker,07407 247143,118 Market Lane,Manchester,M1 2AB,GB,27.180.106.242,7648,535522,debit_card,231.14,GBP,ACC-BA32DE9C,FALSE,,,FALSE
+ORD-288345,2025-09-19 19:37:00,kai.evans111@yahoo.com,Kai Evans,Kai Evans,+1 852-555-4272,51 High Ave,Los Angeles,CA 90015,US,36.82.222.209,9659,492181,debit_card,33.33,USD,ACC-DA18C091,TRUE,33.33,wrong_size,FALSE
+ORD-903782,2025-12-16 09:00:00,zara.adams.loyal9@gmail.com,Zara Adams,Zara Adams,+1 646-555-1686,174 Loyal Customer Road,Toronto,M5V 2T6,CA,,2555,455673,debit_card,139.85,CAD,ACC-009920D5,TRUE,139.85,wrong_size,FALSE
+ORD-549843,2025-10-21 08:30:00,henry.thomas.loyal21@gmail.com,Henry Thomas,Henry Thomas,+1 646-555-3136,107 Loyal Customer Road,Toronto,M5V 2T6,CA,172.17.125.243,6084,414720,debit_card,76.76,CAD,ACC-69165937,FALSE,,,FALSE
+ORD-648482,2025-11-14 05:44:00,leo.johnson578@gmail.com,Leo Johnson,Leo Johnson,,211 Park Lane,London,SW1A 1AA,GB,89.198.230.234,4893,543212,debit_card,133.66,GBP,ACC-FBDDAB86,FALSE,,,FALSE
+ORD-965254,2026-04-29 22:34:00,nadia.walker513@yahoo.com,Nadia Walker,Nadia Walker,,50 Maple St,Paris,75002,FR,27.132.116.226,9570,543212,credit_card,206.00,EUR,ACC-83F83041,FALSE,,,FALSE
+ORD-310332,2025-10-04 10:58:00,adam.walker503@icloud.com,Adam Walker,Adam Walker,+1 584-555-8075,48 Market St,Toronto,M5V 2T6,CA,42.37.42.69,3526,535522,debit_card,188.50,CAD,ACC-F0D476ED,FALSE,,,FALSE
+ORD-342205,2026-02-10 02:03:00,zara.mitchell587@icloud.com,Zara Mitchell,Zara Mitchell,+1 967-555-6901,239 Oak St,Paris,75002,FR,59.34.218.216,2063,414720,credit_card,128.76,EUR,ACC-99CDA6B7,FALSE,,,FALSE
+ORD-320472,2026-03-19 08:30:00,mason.baker.loyal20@gmail.com,Mason Baker,Mason Baker,+1 646-555-9602,120 Loyal Customer Road,Dallas,TX 75201,US,172.27.207.193,3411,492181,klarna,164.67,USD,ACC-973A1B0D,FALSE,,,FALSE
+ORD-680914,2026-05-04 22:36:00,nadia.taylor651@outlook.com,Nadia Taylor,Nadia Taylor,+1 747-555-7516,56 Market Street,Toronto,M5V 2T6,CA,47.172.66.145,8951,414720,debit_card,233.75,CAD,ACC-AAB68FED,FALSE,,,FALSE
+ORD-277615,2025-12-15 18:54:00,chloe.baker465@gmail.com,Chloe Baker,Chloe Baker,+1 856-555-4010,162 Park Street,Los Angeles,CA 90015,US,,4278,543212,apple_pay,87.78,USD,ACC-8835C04E,FALSE,,,FALSE
+ORD-713567,2026-03-13 03:48:00,chloe.brown969@outlook.com,Chloe Brown,Chloe Brown,+1 313-555-7274,94 Park Lane,Berlin,10115,DE,,7003,492181,debit_card,172.75,EUR,ACC-1DE76D30,FALSE,,,FALSE
+ORD-563020,2025-10-27 03:44:00,ivy.green587@icloud.com,Ivy Green,Ivy Green,,219 Park St,Glasgow,G1 1AA,GB,73.46.228.208,1911,535522,credit_card,44.72,GBP,ACC-A6C1D3ED,FALSE,,,FALSE
+ORD-615321,2025-12-28 08:35:00,kai.smith819@outlook.com,Kai Smith,Kai Smith,,64 High Road,New York,NY 10011,US,198.51.100.42,6926,414720,apple_pay,175.49,USD,ACC-5B210C87,FALSE,,,FALSE
+ORD-130900,2025-09-02 08:00:00,theo.evans.loyal25@gmail.com,Theo Evans,Theo Evans,+44 7700 239967,75 Loyal Customer Road,London,SW1A 1AA,GB,172.27.182.171,4149,455673,apple_pay,34.00,GBP,ACC-09E878F1,FALSE,,,FALSE
+ORD-758619,2026-01-28 21:09:00,noah.allen183@outlook.com,Noah Allen,Noah Allen,,81 Market Street,New York,NY 10011,US,36.90.151.67,8202,414720,debit_card,34.92,USD,ACC-44B0AA42,FALSE,,,FALSE
+ORD-898042,2026-03-04 02:20:00,ivy.smith592@yahoo.com,Ivy Smith,Ivy Smith,07800 717554,62 Maple Ave,Glasgow,G1 1AA,GB,88.169.81.63,8572,543212,credit_card,250.69,GBP,ACC-64E93E17,TRUE,250.69,damaged_packaging,FALSE
+ORD-932008,2025-12-02 07:06:00,mia.roberts983@yahoo.com,Mia Roberts,Mia Roberts,+1 889-555-6902,204 Park Street,Dallas,TX 75201,US,22.247.66.45,4268,492181,debit_card,162.23,USD,ACC-1CB08562,FALSE,,,FALSE
+ORD-196053,2025-12-06 09:30:00,imran.hall.loyal8@gmail.com,Imran Hall,Imran Hall,+1 646-555-2915,84 Loyal Customer Road,Toronto,M5V 2T6,CA,,4415,492181,apple_pay,92.42,CAD,ACC-9EBB2027,FALSE,,,FALSE
+ORD-813128,2025-12-13 12:11:00,nadia.taylor962@outlook.com,Nadia Taylor,Nadia Taylor,,173 Park St,Toronto,M5V 2T6,CA,97.43.61.37,7468,535522,debit_card,184.37,CAD,ACC-ECF5566E,FALSE,,,FALSE
+ORD-911748,2026-02-26 08:30:00,sophia.carter.loyal5@gmail.com,Sophia Carter,Sophia Carter,+44 7700 543721,190 Loyal Customer Road,Glasgow,G1 1AA,GB,172.27.38.72,5475,492181,credit_card,160.85,GBP,ACC-C7389B0F,FALSE,,,FALSE
+ORD-965607,2025-09-07 08:30:00,ruby.wright.loyal17@gmail.com,Ruby Wright,Ruby Wright,+1 646-555-4366,96 Loyal Customer Road,Paris,75002,FR,172.20.39.154,7371,414720,paypal,160.44,EUR,ACC-5EDD792D,FALSE,,,FALSE
+ORD-431367,2025-10-14 19:56:00,sophia.scott668@icloud.com,Sophia Scott,Sophia Scott,+1 953-555-9589,64 Cedar St,Dallas,TX 75201,US,,8046,414720,klarna,181.82,USD,ACC-1A5BB11E,FALSE,,,FALSE
+ORD-234716,2025-12-27 08:00:00,imran.hall.loyal8@gmail.com,Imran Hall,Imran Hall,+1 646-555-2915,84 Loyal Customer Road,Toronto,M5V 2T6,CA,172.27.202.134,3551,414720,debit_card,151.10,CAD,ACC-9EBB2027,FALSE,,,FALSE
+ORD-075586,2026-01-01 07:41:00,theo.baker230@gmail.com,Theo Baker,Theo Baker,+1 357-555-5303,77 Park St,Toronto,M5V 2T6,CA,64.91.251.233,5009,455673,credit_card,41.60,CAD,ACC-7F3C0927,FALSE,,,FALSE
+ORD-446168,2026-02-27 09:10:00,noah.adams195@yahoo.com,Noah Adams,Noah Adams,+1 527-555-6980,205 Maple Lane,Berlin,10115,DE,24.202.4.138,8546,414720,klarna,47.89,EUR,ACC-412434C3,FALSE,,,FALSE
+ORD-826374,2025-12-27 08:00:00,ryan.smith.loyal19@gmail.com,Ryan Smith,Ryan Smith,+1 646-555-9265,15 Loyal Customer Road,Berlin,10115,DE,172.28.69.43,3869,414720,credit_card,95.05,EUR,ACC-D2DB8788,FALSE,,,FALSE
+ORD-756265,2026-01-27 19:52:00,lily.green358@yahoo.com,Lily Green,Lily Green,07278 771255,91 Station Ave,Glasgow,G1 1AA,GB,46.155.201.18,8925,535522,klarna,250.71,GBP,ACC-67953270,FALSE,,,FALSE
+ORD-019949,2026-01-29 08:00:00,mia.walker.loyal15@gmail.com,Mia Walker,Mia Walker,+1 646-555-2180,65 Loyal Customer Road,Paris,75002,FR,172.19.192.209,5539,414720,klarna,177.42,EUR,ACC-654EC1DB,FALSE,,,FALSE
+ORD-613328,2026-01-29 09:00:00,freya.mitchell.loyal10@gmail.com,Freya Mitchell,Freya Mitchell,+44 7700 630888,114 Loyal Customer Road,London,SW1A 1AA,GB,,9083,455673,apple_pay,81.97,GBP,ACC-5A704DA0,FALSE,,,FALSE
+ORD-568728,2025-12-22 09:00:00,freya.walker.loyal23@gmail.com,Freya Walker,Freya Walker,+44 7700 100594,17 Loyal Customer Road,Glasgow,G1 1AA,GB,,8919,492181,paypal,126.84,GBP,ACC-5ED284B2,FALSE,,,FALSE
+ORD-308131,2026-01-04 14:44:00,theo.roberts219@gmail.com,Theo Roberts,Theo Roberts,+1 782-555-7449,56 High Lane,New York,NY 10011,US,198.51.100.42,8999,455673,credit_card,100.22,USD,ACC-E476C8AF,FALSE,,,FALSE
+ORD-157863,2025-09-06 11:45:00,ethan.evans584@yahoo.com,Ethan Evans,Ethan Evans,07284 763388,6 High Street,Glasgow,G1 1AA,GB,98.96.35.37,2180,535522,credit_card,72.82,GBP,ACC-98E95104,FALSE,,,FALSE
+ORD-565947,2025-12-22 17:56:00,mia.roberts618@icloud.com,Mia Roberts,Mia Roberts,+1 381-555-7524,82 High Ave,Los Angeles,CA 90015,US,52.192.143.210,7437,414720,credit_card,40.24,USD,ACC-FD1F3B14,FALSE,,,FALSE
+ORD-920436,2025-12-21 08:00:00,henry.thomas.loyal21@gmail.com,Henry Thomas,Henry Thomas,+1 646-555-3136,107 Loyal Customer Road,Toronto,M5V 2T6,CA,172.17.125.243,2279,414720,paypal,163.53,CAD,ACC-69165937,FALSE,,,FALSE
+ORD-633229,2026-01-13 08:15:00,lina.cross@yahoo.com,Lina Cross,Lina Cross,,1010 Market Hub Suite 781,Jersey City,NJ 07302,US,68.175.44.21,7781,414720,credit_card,275.10,USD,ACC-19EE48C9,TRUE,275.10,item_not_received,FALSE
+ORD-444405,2026-05-04 22:22:00,oscar.roberts305@yahoo.com,Oscar Roberts,Oscar Roberts,07484 901996,214 Market St,Birmingham,B1 1AA,GB,,8240,543212,credit_card,89.69,GBP,ACC-BDA7BD69,FALSE,,,FALSE
+ORD-605661,2026-01-01 08:00:00,sophie.wilson.loyal11@gmail.com,Sophie Wilson,Sophie Wilson,+44 7700 272420,36 Loyal Customer Road,Birmingham,B1 1AA,GB,172.20.12.113,1549,492181,apple_pay,78.67,GBP,ACC-E0455318,FALSE,,,FALSE
+ORD-315571,2025-09-22 04:48:00,zara.taylor647@outlook.com,Zara Taylor,Zara Taylor,07864 192544,26 Pine Ave,Glasgow,G1 1AA,GB,,5906,455673,apple_pay,23.41,GBP,ACC-7BCBE101,FALSE,,,FALSE
+ORD-465522,2026-04-14 17:48:00,lucas.taylor572@icloud.com,Lucas Taylor,Lucas Taylor,+1 239-555-7851,177 High Lane,Toronto,M5V 2T6,CA,92.178.247.136,3950,414720,apple_pay,220.49,CAD,ACC-54085DBD,FALSE,,,FALSE
+ORD-558410,2026-01-10 13:18:00,ryan.scott542@outlook.com,Ryan Scott,Ryan Scott,07986 388664,70 Pine St,Birmingham,B1 1AA,GB,,7382,492181,debit_card,97.60,GBP,ACC-D68B2164,FALSE,,,FALSE
+ORD-013916,2026-01-30 18:07:00,theo.roberts886@gmail.com,Theo Roberts,Theo Roberts,+1 719-555-1103,21 Maple Street,Paris,75002,FR,,9880,400000,klarna,253.24,EUR,ACC-C1B72160,FALSE,,,FALSE
+ORD-064379,2025-12-25 09:00:00,henry.brown.loyal0@gmail.com,Henry Brown,Henry Brown,+1 646-555-5040,58 Loyal Customer Road,Toronto,M5V 2T6,CA,,7259,414720,debit_card,52.68,CAD,ACC-13590837,FALSE,,,FALSE
+ORD-656616,2025-12-23 09:47:00,ethan.smith103@icloud.com,Ethan Smith,Ethan Smith,+1 747-555-7403,44 Pine St,Paris,75002,FR,56.91.110.183,1564,543212,klarna,144.01,EUR,ACC-4C0C663B,FALSE,,,FALSE
+ORD-352748,2025-11-01 09:30:00,theo.evans.loyal25@gmail.com,Theo Evans,Theo Evans,+44 7700 239967,75 Loyal Customer Road,London,SW1A 1AA,GB,,6067,414720,paypal,149.64,GBP,ACC-09E878F1,FALSE,,,FALSE
+ORD-866103,2025-11-27 03:02:00,theo.nelson293@gmail.com,Theo Nelson,Theo Nelson,+1 641-555-3194,226 High Road,Toronto,M5V 2T6,CA,62.26.99.93,5728,455673,paypal,107.81,CAD,ACC-46ECCC1A,FALSE,,,FALSE
+ORD-865889,2025-12-04 09:30:00,ruby.wright.loyal17@gmail.com,Ruby Wright,Ruby Wright,+1 646-555-4366,96 Loyal Customer Road,Paris,75002,FR,,1786,455673,credit_card,46.97,EUR,ACC-5EDD792D,FALSE,,,FALSE
+ORD-621295,2025-11-25 08:00:00,mason.baker.loyal29@gmail.com,Mason Baker,Mason Baker,+1 646-555-1267,129 Loyal Customer Road,Dallas,TX 75201,US,172.25.26.128,3903,414720,debit_card,54.15,USD,ACC-335EE0B5,FALSE,,,FALSE
+ORD-312011,2026-02-16 22:58:00,lucas.nelson449@icloud.com,Lucas Nelson,Lucas Nelson,+1 987-555-1672,170 Cedar Street,Los Angeles,CA 90015,US,12.78.174.221,5109,492181,credit_card,98.83,USD,ACC-4EE2990B,FALSE,,,FALSE
+ORD-712138,2026-02-13 11:29:00,isla.allen500@gmail.com,Isla Allen,Isla Allen,07933 704879,136 Station Road,Glasgow,G1 1AA,GB,75.54.66.57,6957,535522,debit_card,253.82,GBP,ACC-64BC0F84,FALSE,,,FALSE
+ORD-160883,2026-03-01 13:46:00,theo.evans768@gmail.com,Theo Evans,Theo Evans,,8 Maple Street,Toronto,M5V 2T6,CA,64.61.28.114,2021,414720,klarna,36.17,CAD,ACC-AB934999,FALSE,,,FALSE
+ORD-033030,2025-12-13 09:00:00,leo.brown.loyal1@gmail.com,Leo Brown,Leo Brown,+1 646-555-8816,95 Loyal Customer Road,Los Angeles,CA 90015,US,,9931,455673,klarna,46.14,USD,ACC-0BDE17DF,FALSE,,,FALSE
+ORD-779461,2025-11-29 05:58:00,hannah.evans650@outlook.com,Hannah Evans,Hannah Evans,+1 650-555-5831,40 Maple Street,Paris,75002,FR,43.116.14.218,4467,400000,debit_card,87.13,EUR,ACC-2BC1E6B5,FALSE,,,FALSE
+ORD-206457,2026-04-12 17:00:00,henry.roberts683@icloud.com,Henry Roberts,Henry Roberts,+1 732-555-5057,27 Station Lane,New York,NY 10011,US,57.232.50.38,7974,535522,klarna,32.32,USD,ACC-B0F890BE,TRUE,32.32,damaged_packaging,FALSE
+ORD-016459,2025-09-26 07:19:00,amelia.smith63@gmail.com,Amelia Smith,Amelia Smith,+1 297-555-3760,1 Oak St,Paris,75002,FR,,6017,455673,debit_card,210.41,EUR,ACC-4FC2C6AD,FALSE,,,FALSE
+ORD-672950,2025-12-07 20:15:00,imran.king363@icloud.com,Imran King,Imran King,07381 386556,227 Maple St,Manchester,M1 2AB,GB,93.151.255.106,8848,455673,apple_pay,33.75,GBP,ACC-CCB4DB9A,FALSE,,,FALSE
+ORD-773432,2025-12-08 04:08:00,sophia.roberts435@outlook.com,Sophia Roberts,Sophia Roberts,,236 Cedar Road,Manchester,M1 2AB,GB,,8203,455673,credit_card,218.87,GBP,ACC-63ABA0C8,FALSE,,,FALSE
+ORD-543934,2026-02-22 16:24:00,daniel.hall853@yahoo.com,Daniel Hall,Daniel Hall,+1 961-555-4865,240 Market Street,Los Angeles,CA 90015,US,,3869,492181,paypal,252.54,USD,ACC-2B3C48C7,FALSE,,,FALSE
+ORD-030571,2025-10-06 00:24:00,mia.brown995@yahoo.com,Mia Brown,Mia Brown,+1 789-555-9269,24 Cedar Ave,Dallas,TX 75201,US,,7460,492181,klarna,44.78,USD,ACC-169A02CD,FALSE,,,FALSE
+ORD-369023,2026-02-19 21:29:00,oscar.nelson969@icloud.com,Oscar Nelson,Oscar Nelson,07549 110306,218 High Street,London,SW1A 1AA,GB,,9364,400000,apple_pay,185.22,GBP,ACC-C05CF00E,FALSE,,,FALSE
+ORD-488172,2025-12-17 02:55:00,mia.taylor147@icloud.com,Mia Taylor,Mia Taylor,+1 282-555-5764,57 Oak Ave,New York,NY 10011,US,97.197.216.103,2607,414720,debit_card,240.21,USD,ACC-02B8EF2C,FALSE,,,FALSE
+ORD-962795,2026-01-11 00:44:00,adam.scott148@yahoo.com,Adam Scott,Adam Scott,,165 Pine Ave,Birmingham,B1 1AA,GB,20.36.128.199,8305,455673,apple_pay,234.34,GBP,ACC-FC5FA8A9,FALSE,,,FALSE
+ORD-098830,2025-10-28 08:00:00,ben.wood@workmail.example,Ben Wood,Ben Wood,020 7946 0199,70 Studio Yard,London,E1 6AN,GB,203.0.113.10,2104,400000,credit_card,118.00,GBP,ACC-558ED760,FALSE,,,FALSE
+ORD-251763,2025-10-11 08:32:00,ava.thomas346@yahoo.com,Ava Thomas,Ava Thomas,+1 900-555-9943,36 Station Street,Dallas,TX 75201,US,53.32.61.71,3314,535522,apple_pay,53.68,USD,ACC-BDA2659C,FALSE,,,FALSE
+ORD-734689,2025-10-19 21:03:00,ryan.green544@gmail.com,Ryan Green,Ryan Green,+1 419-555-3721,163 High Street,Los Angeles,CA 90015,US,73.128.61.143,8133,543212,paypal,98.35,USD,ACC-CB88E64C,TRUE,98.35,damaged_packaging,FALSE
+ORD-435642,2026-04-05 18:18:00,zara.mitchell510@icloud.com,Zara Mitchell,Zara Mitchell,,164 High Ave,Glasgow,G1 1AA,GB,,1153,535522,debit_card,235.50,GBP,ACC-DB688E08,FALSE,,,FALSE
+ORD-016525,2025-12-26 08:14:00,maya.r+sale@gmail.com,Maya R,M Reed,07700900321,22 Kingly Court Flat 04,LONDON,W1B 5PW,GB,,4411,455673,credit_card,96.00,GBP,ACC-0E00B3C1,TRUE,96.00,wrong_item,FALSE
+ORD-989586,2026-01-16 04:19:00,olivia.baker265@icloud.com,Olivia Baker,Olivia Baker,+1 511-555-7926,130 Pine St,Paris,75002,FR,75.181.63.13,3043,535522,debit_card,85.89,EUR,ACC-FEC1B090,FALSE,,,FALSE
+ORD-982719,2025-11-09 02:50:00,chloe.thomas681@gmail.com,Chloe Thomas,Chloe Thomas,+1 301-555-6398,130 Pine Road,Los Angeles,CA 90015,US,79.40.28.115,9567,492181,paypal,72.68,USD,ACC-AA8AE13C,FALSE,,,FALSE
+ORD-617108,2026-01-10 00:03:00,chloe.wright604@yahoo.com,Chloe Wright,Chloe Wright,07357 872516,154 High Ave,Glasgow,G1 1AA,GB,72.145.153.68,9719,492181,apple_pay,96.60,GBP,ACC-03AFA76E,FALSE,,,FALSE
+ORD-431144,2026-02-17 21:40:00,freya.smith591@gmail.com,Freya Smith,Freya Smith,+1 379-555-8708,133 Park Road,New York,NY 10011,US,,8141,543212,klarna,213.93,USD,ACC-2450A77A,FALSE,,,FALSE
+ORD-642607,2026-03-17 11:38:00,oscar.green344@gmail.com,Oscar Green,Oscar Green,+1 969-555-4848,173 High Street,Paris,75002,FR,16.125.243.157,2193,535522,apple_pay,114.78,EUR,ACC-4CBBF423,FALSE,,,FALSE
+ORD-366170,2026-01-22 20:51:00,imran.nelson809@outlook.com,Imran Nelson,Imran Nelson,,25 Market Road,London,SW1A 1AA,GB,,3463,414720,paypal,32.21,GBP,ACC-F2B00B94,FALSE,,,FALSE
+ORD-907468,2025-12-24 08:24:00,lucas.green224@yahoo.com,Lucas Green,Lucas Green,,89 Cedar Lane,New York,NY 10011,US,,5123,414720,credit_card,199.07,USD,ACC-73281BA9,TRUE,199.07,late_delivery,FALSE
+ORD-111208,2025-12-16 13:06:00,ryan.baker249@icloud.com,Ryan Baker,Ryan Baker,+1 257-555-3257,31 Maple Ave,Dallas,TX 75201,US,65.190.27.180,2736,543212,debit_card,156.24,USD,ACC-AF72344B,FALSE,,,FALSE
+ORD-396056,2026-01-05 08:00:00,freya.mitchell.loyal10@gmail.com,Freya Mitchell,Freya Mitchell,+44 7700 630888,114 Loyal Customer Road,London,SW1A 1AA,GB,172.18.92.119,3849,492181,paypal,131.54,GBP,ACC-5A704DA0,FALSE,,,FALSE
+ORD-755223,2026-02-09 21:48:00,daniel.baker8@gmail.com,Daniel Baker,Daniel Baker,,162 Cedar Ave,Berlin,10115,DE,66.36.78.7,8523,543212,apple_pay,94.27,EUR,ACC-28272089,FALSE,,,FALSE
+ORD-620832,2026-01-17 09:50:00,ava.brown384@yahoo.com,Ava Brown,Ava Brown,07255 484309,165 Oak Street,Manchester,M1 2AB,GB,67.168.68.72,6202,543212,debit_card,207.17,GBP,ACC-0F5E2200,TRUE,207.17,damaged_packaging,FALSE
+ORD-458760,2025-10-30 07:00:00,adam.davies847@icloud.com,Adam Davies,Adam Davies,,43 High Lane,New York,NY 10011,US,47.224.63.120,5982,543212,klarna,111.82,USD,ACC-CEDDB07A,FALSE,,,FALSE
+ORD-240733,2026-02-05 03:31:00,daniel.smith974@yahoo.com,Daniel Smith,Daniel Smith,,172 Cedar Street,New York,NY 10011,US,,8197,400000,klarna,133.51,USD,ACC-69013AF0,FALSE,,,FALSE
+ORD-131605,2025-10-25 00:43:00,lily.johnson18@yahoo.com,Lily Johnson,Lily Johnson,+1 581-555-9955,183 Pine Ave,Dallas,TX 75201,US,,1407,535522,klarna,203.26,USD,ACC-6F16F30E,FALSE,,,FALSE
+ORD-076429,2026-02-25 05:04:00,imran.roberts556@outlook.com,Imran Roberts,Imran Roberts,,92 Market St,London,SW1A 1AA,GB,15.57.182.188,1599,400000,debit_card,195.19,GBP,ACC-F85F6337,FALSE,,,FALSE
+ORD-710604,2026-04-02 09:00:00,sophia.carter.loyal5@gmail.com,Sophia Carter,Sophia Carter,+44 7700 543721,190 Loyal Customer Road,Glasgow,G1 1AA,GB,,8630,492181,debit_card,132.46,GBP,ACC-C7389B0F,FALSE,,,FALSE
+ORD-447288,2025-09-23 17:31:00,olivia.king109@yahoo.com,Olivia King,Olivia King,+1 850-555-8532,182 Maple Ave,Toronto,M5V 2T6,CA,,9548,543212,apple_pay,78.98,CAD,ACC-1703FF93,FALSE,,,FALSE
+ORD-038018,2026-03-22 01:08:00,isla.mitchell536@outlook.com,Isla Mitchell,Isla Mitchell,07780 266410,125 High St,Manchester,M1 2AB,GB,203.0.113.10,4560,414720,klarna,216.72,GBP,ACC-16D19533,FALSE,,,FALSE
+ORD-691991,2026-02-10 18:56:00,leo.brown902@yahoo.com,Leo Brown,Leo Brown,07588 274885,6 Station Ave,Manchester,M1 2AB,GB,13.251.176.227,6566,455673,paypal,231.85,GBP,ACC-1BAC4433,TRUE,231.85,late_delivery,FALSE
+ORD-142963,2026-03-12 11:12:00,ava.wilson588@yahoo.com,Ava Wilson,Ava Wilson,+1 590-555-8772,36 Station Street,Dallas,TX 75201,US,,6818,492181,klarna,187.40,USD,ACC-D34E8BBA,FALSE,,,FALSE
+ORD-455974,2026-03-05 04:40:00,oscar.young302@yahoo.com,Oscar Young,Oscar Young,,37 Maple Lane,New York,NY 10011,US,50.145.110.47,9008,455673,debit_card,42.34,USD,ACC-F4860968,FALSE,,,FALSE
+ORD-918037,2026-01-02 01:56:00,imran.young564@outlook.com,Imran Young,Imran Young,07971 261828,182 Maple Road,Birmingham,B1 1AA,GB,36.71.121.203,9094,455673,apple_pay,101.50,GBP,ACC-C4401247,FALSE,,,FALSE
+ORD-201464,2026-02-25 19:18:00,daniel.davies481@outlook.com,Daniel Davies,Daniel Davies,07398 477108,133 Maple St,Manchester,M1 2AB,GB,,1894,535522,klarna,97.27,GBP,ACC-E691339C,FALSE,,,FALSE
+ORD-234505,2025-09-14 19:21:00,lucas.evans812@icloud.com,Lucas Evans,Lucas Evans,,68 Cedar Lane,Dallas,TX 75201,US,85.234.43.3,8682,492181,debit_card,228.12,USD,ACC-DCF19D77,FALSE,,,FALSE
+ORD-571078,2025-11-28 01:19:00,olivia.baker96@icloud.com,Olivia Baker,Olivia Baker,+1 316-555-8560,31 Maple Ave,Dallas,TX 75201,US,45.212.247.251,8736,492181,paypal,125.28,USD,ACC-BB39A247,FALSE,,,FALSE
+ORD-775136,2025-10-17 18:41:00,oscar.wright695@outlook.com,Oscar Wright,Oscar Wright,+1 899-555-1672,25 Station Ave,Dallas,TX 75201,US,45.171.138.69,2610,414720,klarna,174.28,USD,ACC-9E2004FD,FALSE,,,FALSE
+ORD-418484,2025-09-24 07:16:00,mia.green408@outlook.com,Mia Green,Mia Green,+1 455-555-2858,7 Maple Ave,Los Angeles,CA 90015,US,26.134.133.181,8311,492181,paypal,259.10,USD,ACC-961DCA65,FALSE,,,FALSE
+ORD-428292,2025-11-20 08:00:00,hannah.evans.loyal18@gmail.com,Hannah Evans,Hannah Evans,+44 7700 745346,179 Loyal Customer Road,Birmingham,B1 1AA,GB,172.17.128.21,3730,414720,credit_card,169.12,GBP,ACC-68300FAF,FALSE,,,FALSE
+ORD-109408,2026-05-04 09:26:00,imran.hall568@icloud.com,Imran Hall,Imran Hall,07462 323687,69 Maple Street,Birmingham,B1 1AA,GB,41.135.105.59,4322,492181,apple_pay,219.41,GBP,ACC-2F52FF4E,FALSE,,,FALSE
+ORD-357663,2025-12-21 16:08:00,noah.brown519@outlook.com,Noah Brown,Noah Brown,+1 713-555-7806,109 Market St,Dallas,TX 75201,US,30.142.42.80,2294,400000,credit_card,240.39,USD,ACC-D381A978,FALSE,,,FALSE
+ORD-483084,2026-05-01 07:49:00,olivia.roberts843@outlook.com,Olivia Roberts,Olivia Roberts,+1 613-555-7647,211 Oak Ave,New York,NY 10011,US,30.203.116.59,4438,535522,apple_pay,69.96,USD,ACC-A656C1F6,FALSE,,,FALSE
+ORD-963348,2026-03-06 11:02:00,isla.mitchell261@icloud.com,Isla Mitchell,Isla Mitchell,07778 961265,4 Pine St,Manchester,M1 2AB,GB,61.41.96.225,7929,492181,credit_card,217.78,GBP,ACC-6FDE0AC9,FALSE,,,FALSE
+ORD-510253,2026-02-21 20:02:00,isla.wright34@icloud.com,Isla Wright,Isla Wright,07981 898410,227 Maple Ave,London,SW1A 1AA,GB,60.249.56.146,9037,543212,paypal,149.34,GBP,ACC-AFCD0BE8,FALSE,,,FALSE
+ORD-493893,2026-02-23 06:35:00,noah.king718@gmail.com,Noah King,Noah King,+1 261-555-2130,240 Park St,Los Angeles,CA 90015,US,,3948,492181,klarna,201.93,USD,ACC-D8ADC34B,FALSE,,,FALSE
+ORD-213135,2026-01-26 21:05:00,adam.hall398@yahoo.com,Adam Hall,Adam Hall,+1 556-555-6766,217 Park Lane,Paris,75002,FR,,5873,400000,apple_pay,158.36,EUR,ACC-7644F3E5,FALSE,,,FALSE
+ORD-757463,2025-09-16 05:21:00,leo.evans47@icloud.com,Leo Evans,Leo Evans,07754 251384,238 Maple Road,Glasgow,G1 1AA,GB,42.107.59.1,6692,543212,credit_card,162.08,GBP,ACC-18732D2C,FALSE,,,FALSE
+ORD-893452,2025-10-08 08:33:00,chloe.scott713@icloud.com,Chloe Scott,Chloe Scott,07345 665429,199 High Ave,Glasgow,G1 1AA,GB,50.133.184.132,9147,535522,paypal,36.45,GBP,ACC-683DD774,FALSE,,,FALSE
+ORD-972551,2025-10-23 08:00:00,olivia.young.loyal3@gmail.com,Olivia Young,Olivia Young,+44 7700 709834,95 Loyal Customer Road,Birmingham,B1 1AA,GB,172.21.203.55,5198,492181,debit_card,105.80,GBP,ACC-E6D37579,FALSE,,,FALSE
+ORD-575539,2025-09-29 10:06:00,adam.roberts630@icloud.com,Adam Roberts,Adam Roberts,,35 Park Street,Los Angeles,CA 90015,US,58.212.241.194,9806,543212,klarna,216.75,USD,ACC-1C22BFE1,FALSE,,,FALSE
+ORD-211520,2025-11-09 16:02:00,leo.hall628@outlook.com,Leo Hall,Leo Hall,,68 Cedar Road,Los Angeles,CA 90015,US,57.94.255.109,4449,535522,klarna,185.78,USD,ACC-5DB12329,FALSE,,,FALSE
+ORD-700712,2025-12-19 16:18:00,adam.allen341@icloud.com,Adam Allen,Adam Allen,07804 425971,171 Park St,Manchester,M1 2AB,GB,,8354,535522,klarna,138.73,GBP,ACC-427E82E7,FALSE,,,FALSE
+ORD-114689,2026-02-03 00:36:00,ava.king322@yahoo.com,Ava King,Ava King,+1 660-555-5342,88 Maple Street,New York,NY 10011,US,,5248,543212,paypal,38.37,USD,ACC-78290490,FALSE,,,TRUE
+ORD-403927,2025-12-26 17:44:00,sophia.thomas460@icloud.com,Sophia Thomas,Sophia Thomas,+1 485-555-8579,64 Pine Ave,Berlin,10115,DE,23.25.7.249,2528,492181,apple_pay,53.25,EUR,ACC-6E92B806,FALSE,,,FALSE
+ORD-714528,2025-11-24 08:00:00,omar.ali@uni.example,Omar Ali,Omar Ali,,"Block C, Room 207, North Campus",Leeds,LS2 9JT,GB,,7841,492181,debit_card,47.20,GBP,ACC-A9BD095B,FALSE,,,FALSE
+ORD-400863,2025-09-25 17:55:00,daniel.davies929@outlook.com,Daniel Davies,Daniel Davies,+1 794-555-9391,96 Maple Lane,Paris,75002,FR,48.27.201.33,7601,543212,klarna,13.48,EUR,ACC-71B43DA5,FALSE,,,FALSE
+ORD-212066,2026-01-11 08:30:00,olivia.young.loyal3@gmail.com,Olivia Young,Olivia Young,+44 7700 709834,95 Loyal Customer Road,Birmingham,B1 1AA,GB,172.21.203.55,7646,455673,debit_card,72.33,GBP,ACC-E6D37579,FALSE,,,FALSE
+ORD-205404,2025-10-02 10:55:00,ethan.hall65@gmail.com,Ethan Hall,Ethan Hall,,111 Oak Lane,New York,NY 10011,US,43.126.55.122,4905,414720,credit_card,218.46,USD,ACC-5669A190,FALSE,,,FALSE
+ORD-728434,2025-12-02 13:26:00,nadia.scott342@outlook.com,Nadia Scott,Nadia Scott,07857 924956,59 Station Road,Birmingham,B1 1AA,GB,,2481,543212,debit_card,112.70,GBP,ACC-8D20123C,FALSE,,,FALSE
+ORD-504746,2025-11-13 08:00:00,olivia.wilson.loyal22@gmail.com,Olivia Wilson,Olivia Wilson,+44 7700 880494,183 Loyal Customer Road,Manchester,M1 2AB,GB,172.24.30.7,7028,455673,klarna,54.99,GBP,ACC-F1FA329E,FALSE,,,FALSE
+ORD-347414,2026-01-05 14:11:00,ryan.young749@outlook.com,Ryan Young,Ryan Young,,5 Pine Ave,Glasgow,G1 1AA,GB,91.105.226.57,6312,414720,apple_pay,62.57,GBP,ACC-E77179AB,FALSE,,,FALSE
+ORD-997031,2026-03-17 17:25:00,hannah.thomas989@outlook.com,Hannah Thomas,Hannah Thomas,07686 334825,152 Cedar Street,Manchester,M1 2AB,GB,13.160.48.99,3430,400000,debit_card,91.77,GBP,ACC-42B469AE,FALSE,,,FALSE
+ORD-073767,2026-03-08 19:20:00,zara.young585@yahoo.com,Zara Young,Zara Young,,172 Pine Lane,Glasgow,G1 1AA,GB,78.10.199.224,8702,455673,debit_card,169.65,GBP,ACC-42FDCE40,FALSE,,,FALSE
+ORD-061807,2026-02-04 05:32:00,zara.allen47@gmail.com,Zara Allen,Zara Allen,07262 337198,171 Pine Ave,Birmingham,B1 1AA,GB,40.121.53.231,3850,543212,credit_card,233.33,GBP,ACC-C1CD0254,FALSE,,,FALSE
+ORD-865581,2026-03-25 08:30:00,daniel.roberts.loyal7@gmail.com,Daniel Roberts,Daniel Roberts,+44 7700 953779,173 Loyal Customer Road,Manchester,M1 2AB,GB,172.31.208.93,3285,455673,apple_pay,101.02,GBP,ACC-9422A083,FALSE,,,FALSE
+ORD-509693,2026-03-08 03:25:00,imran.wilson27@outlook.com,Imran Wilson,Imran Wilson,+1 896-555-2998,101 Station Lane,Los Angeles,CA 90015,US,52.78.14.21,8540,543212,debit_card,175.57,USD,ACC-50C58908,FALSE,,,FALSE
+ORD-527204,2025-10-25 07:29:00,sophia.mitchell309@yahoo.com,Sophia Mitchell,Sophia Mitchell,07778 632376,160 Maple Ave,London,SW1A 1AA,GB,90.60.144.30,2741,535522,apple_pay,61.26,GBP,ACC-3257CB72,FALSE,,,FALSE
+ORD-084428,2025-10-18 09:50:00,freya.brown793@yahoo.com,Freya Brown,Freya Brown,,207 Station Ave,Paris,75002,FR,38.11.216.70,5129,543212,credit_card,55.67,EUR,ACC-C93E5A27,FALSE,,,FALSE
+ORD-913089,2026-05-02 03:47:00,ava.smith776@yahoo.com,Ava Smith,Ava Smith,,28 Oak Lane,Toronto,M5V 2T6,CA,43.22.33.78,1168,455673,paypal,206.03,CAD,ACC-938CE134,FALSE,,,FALSE
+ORD-724700,2025-11-06 11:34:00,sophia.johnson359@outlook.com,Sophia Johnson,Sophia Johnson,07837 101149,99 Park Ave,Birmingham,B1 1AA,GB,74.193.179.140,7149,455673,credit_card,217.54,GBP,ACC-B6A1571F,FALSE,,,FALSE
+ORD-034163,2025-09-07 09:59:00,nadia.smith448@icloud.com,Nadia Smith,Nadia Smith,+1 740-555-6199,98 High St,Los Angeles,CA 90015,US,,2627,400000,paypal,53.70,USD,ACC-A9547A08,FALSE,,,FALSE
+ORD-284873,2025-09-30 23:59:00,adam.wilson317@yahoo.com,Adam Wilson,Adam Wilson,,94 Maple St,London,SW1A 1AA,GB,64.89.102.34,9837,414720,credit_card,143.65,GBP,ACC-0951A09C,FALSE,,,FALSE
+ORD-759256,2025-10-14 12:44:00,lucas.wright569@yahoo.com,Lucas Wright,Lucas Wright,,23 Station Lane,Berlin,10115,DE,,6315,535522,paypal,15.06,EUR,ACC-81BC3745,FALSE,,,FALSE
+ORD-624194,2025-11-05 20:35:00,noah.walker336@icloud.com,Noah Walker,Noah Walker,+1 545-555-7211,72 Market Road,Dallas,TX 75201,US,80.26.179.58,2124,543212,debit_card,21.98,USD,ACC-21950644,TRUE,21.98,wrong_size,FALSE
+ORD-552533,2026-02-10 13:27:00,isla.carter909@yahoo.com,Isla Carter,Isla Carter,07931 900764,104 Cedar Road,Glasgow,G1 1AA,GB,,9805,414720,credit_card,108.72,GBP,ACC-615715E8,FALSE,,,FALSE
+ORD-315937,2025-12-02 15:52:00,sophia.allen34@icloud.com,Sophia Allen,Sophia Allen,+1 864-555-2285,20 Cedar Lane,Paris,75002,FR,81.214.62.217,9646,455673,apple_pay,162.56,EUR,ACC-43897BDE,FALSE,,,FALSE
+ORD-057749,2025-10-07 08:30:00,leo.brown.loyal1@gmail.com,Leo Brown,Leo Brown,+1 646-555-8816,95 Loyal Customer Road,Los Angeles,CA 90015,US,172.20.161.213,3483,455673,klarna,141.04,USD,ACC-0BDE17DF,FALSE,,,FALSE
+ORD-279372,2025-10-18 08:13:00,freya.hall307@yahoo.com,Freya Hall,Freya Hall,+1 307-555-8443,225 Oak Ave,Paris,75002,FR,,1060,543212,paypal,67.31,EUR,ACC-E344836C,FALSE,,,FALSE
+ORD-429577,2025-09-22 05:10:00,olivia.wright791@icloud.com,Olivia Wright,Olivia Wright,+1 615-555-4030,203 Station Ave,Toronto,M5V 2T6,CA,192.0.2.55,2158,535522,paypal,233.57,CAD,ACC-71AA04A7,FALSE,,,FALSE
+ORD-862799,2026-03-13 02:32:00,olivia.evans240@outlook.com,Olivia Evans,Olivia Evans,+1 567-555-2350,76 Pine Road,Toronto,M5V 2T6,CA,20.184.19.140,4281,414720,paypal,60.77,CAD,ACC-87639887,FALSE,,,FALSE
+ORD-306338,2026-03-04 18:15:00,freya.walker112@yahoo.com,Freya Walker,Freya Walker,07905 421546,156 Pine Ave,London,SW1A 1AA,GB,16.223.0.134,9821,543212,klarna,190.42,GBP,ACC-E4B52B5E,FALSE,,,FALSE
+ORD-704126,2025-09-03 08:16:00,hannah.davies163@outlook.com,Hannah Davies,Hannah Davies,,93 High St,New York,NY 10011,US,32.26.202.161,6005,543212,paypal,185.46,USD,ACC-D7CF371F,FALSE,,,FALSE
+ORD-454825,2025-12-05 08:00:00,mason.baker.loyal20@gmail.com,Mason Baker,Mason Baker,+1 646-555-9602,120 Loyal Customer Road,Dallas,TX 75201,US,172.27.207.193,5889,455673,klarna,103.76,USD,ACC-973A1B0D,FALSE,,,FALSE
+ORD-777720,2025-12-05 08:30:00,olivia.adams.loyal6@gmail.com,Olivia Adams,Olivia Adams,+44 7700 788505,17 Loyal Customer Road,London,SW1A 1AA,GB,172.24.144.185,8475,492181,klarna,109.43,GBP,ACC-E9B3C36E,FALSE,,,FALSE
+ORD-219645,2026-02-23 08:00:00,daniel.roberts.loyal7@gmail.com,Daniel Roberts,Daniel Roberts,+44 7700 953779,173 Loyal Customer Road,Manchester,M1 2AB,GB,172.31.208.93,3691,455673,paypal,33.83,GBP,ACC-9422A083,FALSE,,,FALSE
+ORD-824112,2025-09-29 08:30:00,freya.walker.loyal16@gmail.com,Freya Walker,Freya Walker,+1 646-555-6792,61 Loyal Customer Road,Berlin,10115,DE,172.20.11.142,1051,455673,paypal,35.31,EUR,ACC-BE16515F,FALSE,,,FALSE
+ORD-015245,2026-01-27 22:40:00,ava.thomas928@icloud.com,Ava Thomas,Ava Thomas,07162 312333,63 Park Ave,Birmingham,B1 1AA,GB,,1836,414720,credit_card,207.92,GBP,ACC-2613A588,TRUE,207.92,damaged_packaging,FALSE
+ORD-180768,2025-12-24 08:23:00,chloe.roberts182@gmail.com,Chloe Roberts,Chloe Roberts,07686 500971,198 Oak Street,Manchester,M1 2AB,GB,89.113.53.240,9129,492181,paypal,94.13,GBP,ACC-ACF3C80F,TRUE,94.13,late_delivery,FALSE
+ORD-289609,2026-03-21 22:02:00,daniel.johnson831@outlook.com,Daniel Johnson,Daniel Johnson,07724 747538,43 Maple Street,Glasgow,G1 1AA,GB,83.179.143.153,9827,492181,credit_card,92.27,GBP,ACC-8253F1EC,FALSE,,,FALSE
+ORD-440774,2025-09-21 19:21:00,hannah.taylor618@yahoo.com,Hannah Taylor,Hannah Taylor,,229 Market Street,Los Angeles,CA 90015,US,76.143.12.126,6219,492181,klarna,24.90,USD,ACC-187F5D6F,FALSE,,,FALSE
+ORD-870669,2026-04-16 08:32:00,mia.carter122@icloud.com,Mia Carter,Mia Carter,+1 602-555-9664,33 Cedar St,Los Angeles,CA 90015,US,70.217.194.211,4762,492181,debit_card,126.24,USD,ACC-CBC45974,FALSE,,,FALSE
+ORD-509217,2026-04-24 19:02:00,kai.evans243@outlook.com,Kai Evans,Kai Evans,07814 467705,8 Station Lane,Manchester,M1 2AB,GB,35.252.158.45,9035,455673,credit_card,34.38,GBP,ACC-0DEB2945,FALSE,,,FALSE
+ORD-555454,2025-09-05 20:34:00,daniel.davies617@yahoo.com,Daniel Davies,Daniel Davies,07146 139240,183 Station Ave,Glasgow,G1 1AA,GB,76.71.167.239,6218,492181,paypal,109.45,GBP,ACC-0F098E1D,FALSE,,,FALSE
+ORD-654772,2026-03-11 00:45:00,ava.carter575@outlook.com,Ava Carter,Ava Carter,,192 Station Road,Toronto,M5V 2T6,CA,,6166,535522,debit_card,179.28,CAD,ACC-EC54C3DE,TRUE,179.28,changed_mind,FALSE
+ORD-175494,2026-01-27 21:41:00,sophie.davies254@gmail.com,Sophie Davies,Sophie Davies,+1 486-555-3071,218 Park Street,Los Angeles,CA 90015,US,95.33.85.131,7358,543212,klarna,198.28,USD,ACC-E0EE209A,FALSE,,,FALSE
+ORD-220212,2026-01-12 08:10:00,dylan.kerr@proton.me,Dylan Kerr,D Kerr,917-555-0119,1010 Market Hub Ste 781,Jersey City,NJ 07302,US,,1120,414720,paypal,512.25,USD,ACC-C100C4E4,TRUE,512.25,empty_box,TRUE
+ORD-890078,2026-01-16 04:45:00,theo.taylor927@gmail.com,Theo Taylor,Theo Taylor,+1 272-555-7819,154 Pine Lane,Paris,75002,FR,16.53.18.128,9316,492181,apple_pay,173.28,EUR,ACC-BB6F5EAB,FALSE,,,FALSE
+ORD-851736,2026-01-19 23:56:00,chloe.nelson357@yahoo.com,Chloe Nelson,Chloe Nelson,07587 774977,180 Pine Ave,Birmingham,B1 1AA,GB,,4196,543212,debit_card,47.50,GBP,ACC-C6909E59,FALSE,,,FALSE
+ORD-818611,2025-09-20 20:22:00,oscar.johnson954@icloud.com,Oscar Johnson,Oscar Johnson,,24 Market Street,Dallas,TX 75201,US,18.112.200.48,2264,543212,klarna,128.17,USD,ACC-7BB28152,FALSE,,,FALSE
+ORD-652614,2026-02-23 08:39:00,elia.fishcher@gmail.com,Eli Fischer,Elia Fischer,+4915123344556,Prenzlauer Allee 44,Berlin,10405,DE,,3309,492181,klarna,244.00,EUR,ACC-4250F201,TRUE,244.00,chargeback,TRUE
+ORD-170871,2025-11-12 09:22:00,lily.green421@gmail.com,Lily Green,Lily Green,07107 259887,169 High Street,Manchester,M1 2AB,GB,57.219.93.138,5415,455673,debit_card,257.36,GBP,ACC-EAAE4DDC,FALSE,,,FALSE
+ORD-174901,2026-02-09 09:00:00,leo.baker.loyal12@gmail.com,Leo Baker,Leo Baker,+44 7700 343529,52 Loyal Customer Road,London,SW1A 1AA,GB,,7774,414720,paypal,126.73,GBP,ACC-302B4D40,FALSE,,,FALSE
+ORD-808631,2025-12-28 08:21:00,mayareed1992@icloud.com,May Reed,Maya Reid,07700 900 321,Flat Four 22 Kingly Court,London,W1B 5PW,GB,,8842,455673,apple_pay,145.25,GBP,ACC-656B5205,TRUE,145.25,item_not_received,FALSE
+ORD-277230,2026-04-29 00:09:00,freya.allen82@icloud.com,Freya Allen,Freya Allen,07421 424768,75 High Lane,Birmingham,B1 1AA,GB,67.185.230.106,3741,492181,klarna,223.84,GBP,ACC-B00364D2,FALSE,,,FALSE
+ORD-567427,2026-02-01 19:31:00,hannah.wilson891@gmail.com,Hannah Wilson,Hannah Wilson,,122 Station Road,Los Angeles,CA 90015,US,56.156.83.120,9958,492181,apple_pay,198.51,USD,ACC-C424A011,FALSE,,,FALSE
+ORD-908549,2025-11-16 21:18:00,amelia.hall915@gmail.com,Amelia Hall,Amelia Hall,,60 Market Street,Los Angeles,CA 90015,US,63.169.238.107,2020,492181,apple_pay,218.56,USD,ACC-075EB43E,FALSE,,,FALSE
+ORD-247402,2025-12-14 07:36:00,jack.wright625@yahoo.com,Jack Wright,Jack Wright,+1 706-555-6325,47 Park Street,Paris,75002,FR,46.141.5.133,4130,455673,debit_card,71.86,EUR,ACC-EFD7C344,FALSE,,,FALSE
+ORD-393374,2026-03-05 19:02:00,henry.mitchell720@yahoo.com,Henry Mitchell,Henry Mitchell,+1 370-555-3955,141 Market Lane,Toronto,M5V 2T6,CA,,3591,400000,klarna,259.61,CAD,ACC-EA5C0957,FALSE,,,FALSE
+ORD-496619,2026-04-24 16:23:00,grace.davies458@yahoo.com,Grace Davies,Grace Davies,+1 315-555-8003,187 High Street,Dallas,TX 75201,US,,3089,492181,apple_pay,202.35,USD,ACC-83AD1B6B,FALSE,,,FALSE
+ORD-387388,2025-12-16 16:30:00,ethan.nelson962@outlook.com,Ethan Nelson,Ethan Nelson,+1 714-555-8519,71 Cedar St,Paris,75002,FR,62.126.168.234,9043,535522,debit_card,126.75,EUR,ACC-79833045,TRUE,126.75,damaged_packaging,FALSE
+ORD-191121,2025-09-21 00:52:00,oscar.thomas861@icloud.com,Oscar Thomas,Oscar Thomas,+1 587-555-5267,169 Oak Road,Berlin,10115,DE,,3355,543212,paypal,17.74,EUR,ACC-DD0B1624,FALSE,,,FALSE
+ORD-668434,2025-11-26 02:15:00,sophie.taylor703@gmail.com,Sophie Taylor,Sophie Taylor,+1 614-555-1200,42 Station Street,Los Angeles,CA 90015,US,69.5.248.168,7581,535522,paypal,203.30,USD,ACC-11BC3F3A,FALSE,,,FALSE
+ORD-897496,2025-11-19 08:30:00,imran.hall.loyal8@gmail.com,Imran Hall,Imran Hall,+1 646-555-2915,84 Loyal Customer Road,Toronto,M5V 2T6,CA,172.27.202.134,4962,492181,paypal,134.59,CAD,ACC-9EBB2027,FALSE,,,FALSE
+ORD-386894,2026-02-11 11:35:00,ryan.walker642@yahoo.com,Ryan Walker,Ryan Walker,07272 997826,178 Park Road,Birmingham,B1 1AA,GB,,2688,455673,paypal,259.41,GBP,ACC-102FDC50,FALSE,,,FALSE
+ORD-644832,2025-12-19 04:38:00,ryan.king296@icloud.com,Ryan King,Ryan King,,19 Oak Street,Manchester,M1 2AB,GB,66.69.43.36,7813,535522,credit_card,233.61,GBP,ACC-24869841,FALSE,,,FALSE
+ORD-753040,2025-12-04 17:47:00,jack.wilson263@icloud.com,Jack Wilson,Jack Wilson,,40 Pine Street,Manchester,M1 2AB,GB,70.229.165.222,6179,492181,credit_card,121.06,GBP,ACC-D280F391,FALSE,,,FALSE
+ORD-726483,2025-09-07 09:30:00,freya.walker.loyal16@gmail.com,Freya Walker,Freya Walker,+1 646-555-6792,61 Loyal Customer Road,Berlin,10115,DE,,9176,414720,klarna,23.68,EUR,ACC-BE16515F,FALSE,,,FALSE
+ORD-408483,2026-05-01 18:34:00,ava.evans936@gmail.com,Ava Evans,Ava Evans,,54 Pine Ave,Berlin,10115,DE,51.212.97.54,2487,400000,credit_card,101.24,EUR,ACC-D76BCF48,FALSE,,,FALSE
+ORD-340994,2025-09-03 22:41:00,isla.davies182@yahoo.com,Isla Davies,Isla Davies,+1 851-555-8126,135 High Road,Berlin,10115,DE,22.226.157.94,7753,414720,paypal,50.62,EUR,ACC-845E5513,TRUE,50.62,changed_mind,FALSE
+ORD-513759,2025-10-07 18:10:00,grace.smith690@gmail.com,Grace Smith,Grace Smith,+1 856-555-2036,194 Oak St,Dallas,TX 75201,US,48.154.44.73,8170,535522,paypal,109.99,USD,ACC-A74C913E,FALSE,,,FALSE
+ORD-607796,2025-10-11 20:55:00,ava.green185@icloud.com,Ava Green,Ava Green,07431 561125,46 Park Lane,Birmingham,B1 1AA,GB,69.46.128.83,3686,543212,klarna,193.85,GBP,ACC-FDF6ED3F,FALSE,,,FALSE
+ORD-449729,2026-01-07 07:23:00,ivy.wright180@outlook.com,Ivy Wright,Ivy Wright,+1 557-555-6426,101 Market Road,Berlin,10115,DE,,1673,400000,debit_card,140.98,EUR,ACC-3F9CBA7D,FALSE,,,FALSE
+ORD-041030,2026-02-25 10:18:00,ethan.baker172@outlook.com,Ethan Baker,Ethan Baker,+1 932-555-7524,73 High Road,Los Angeles,CA 90015,US,26.202.103.244,2417,400000,debit_card,221.92,USD,ACC-B958011F,FALSE,,,FALSE
+ORD-098509,2025-11-20 08:32:00,ava.allen387@yahoo.com,Ava Allen,Ava Allen,,3 Maple St,Dallas,TX 75201,US,53.48.21.59,4463,543212,debit_card,232.11,USD,ACC-76B2B30B,FALSE,,,FALSE
+ORD-872189,2026-04-08 15:18:00,ivy.brown103@outlook.com,Ivy Brown,Ivy Brown,,143 Oak St,Dallas,TX 75201,US,,7163,492181,credit_card,178.99,USD,ACC-91F17BD5,FALSE,,,FALSE
+ORD-924935,2025-11-15 23:56:00,chloe.walker198@gmail.com,Chloe Walker,Chloe Walker,07630 624879,40 Cedar Road,Birmingham,B1 1AA,GB,,4554,455673,apple_pay,93.23,GBP,ACC-4325D0D0,FALSE,,,FALSE
+ORD-195133,2026-03-08 08:03:00,daniel.nelson660@outlook.com,Daniel Nelson,Daniel Nelson,07834 860853,186 Market Lane,Birmingham,B1 1AA,GB,40.114.132.30,5767,455673,paypal,39.62,GBP,ACC-BEBA413A,FALSE,,,FALSE
+ORD-961035,2025-12-20 12:21:00,ivy.brown650@yahoo.com,Ivy Brown,Ivy Brown,07145 103441,198 Maple Road,Birmingham,B1 1AA,GB,,8239,400000,credit_card,187.01,GBP,ACC-8DA59560,FALSE,,,FALSE
+ORD-988389,2025-12-14 18:40:00,mia.allen754@outlook.com,Mia Allen,Mia Allen,,186 Station Street,Paris,75002,FR,69.93.224.253,6799,535522,credit_card,136.55,EUR,ACC-60A162F0,FALSE,,,FALSE
+ORD-727014,2025-12-12 00:36:00,mason.green707@gmail.com,Mason Green,Mason Green,,198 Pine Road,New York,NY 10011,US,68.109.94.83,8673,492181,credit_card,126.28,USD,ACC-83916181,FALSE,,,FALSE
+ORD-329566,2025-10-10 20:40:00,ethan.carter763@gmail.com,Ethan Carter,Ethan Carter,,164 High Street,London,SW1A 1AA,GB,96.111.57.61,8113,414720,credit_card,15.74,GBP,ACC-89D04348,FALSE,,,FALSE
+ORD-250943,2025-12-21 09:30:00,adam.young.loyal28@gmail.com,Adam Young,Adam Young,+1 646-555-7111,87 Loyal Customer Road,Los Angeles,CA 90015,US,,1782,455673,paypal,60.66,USD,ACC-E3F5B89E,FALSE,,,FALSE
+ORD-754299,2025-09-23 06:44:00,noah.davies11@gmail.com,Noah Davies,Noah Davies,+1 404-555-8702,98 Market St,Paris,75002,FR,59.171.187.206,9398,535522,paypal,112.98,EUR,ACC-4B820CD6,FALSE,,,FALSE
+ORD-695631,2025-12-01 03:11:00,sophie.davies423@outlook.com,Sophie Davies,Sophie Davies,07660 981421,183 Cedar Street,Manchester,M1 2AB,GB,,5760,543212,apple_pay,97.63,GBP,ACC-16D336C2,FALSE,,,FALSE
+ORD-978728,2026-04-22 13:26:00,grace.roberts706@gmail.com,Grace Roberts,Grace Roberts,,218 Park Street,Berlin,10115,DE,59.30.170.40,4450,543212,credit_card,243.74,EUR,ACC-9AA61393,FALSE,,,FALSE
+ORD-565099,2026-04-03 20:46:00,lily.smith486@icloud.com,Lily Smith,Lily Smith,07715 920108,58 High Lane,London,SW1A 1AA,GB,93.140.216.230,7168,414720,klarna,125.83,GBP,ACC-B4D3ADCE,FALSE,,,FALSE
+ORD-897675,2026-02-02 14:42:00,chloe.carter399@icloud.com,Chloe Carter,Chloe Carter,+1 912-555-5712,178 Oak Ave,Berlin,10115,DE,98.160.27.4,5117,492181,debit_card,165.90,EUR,ACC-AF76BBCE,FALSE,,,FALSE
+ORD-337750,2025-09-14 13:18:00,olivia.nelson30@icloud.com,Olivia Nelson,Olivia Nelson,,196 High Road,New York,NY 10011,US,29.205.35.37,1502,455673,debit_card,197.04,USD,ACC-913D836F,FALSE,,,FALSE
+ORD-382571,2025-12-22 18:42:00,imran.wilson598@outlook.com,Imran Wilson,Imran Wilson,+1 942-555-1436,153 Park Road,Dallas,TX 75201,US,85.116.26.150,8871,492181,apple_pay,142.01,USD,ACC-3CDFD5CA,FALSE,,,FALSE
+ORD-498251,2025-10-11 08:00:00,emma.jones@gmail.com,Emma Jones,Emma Jones,07700 111222,14 Alder House,Bristol,BS1 4ST,GB,81.2.69.142,9012,455673,credit_card,42.99,GBP,ACC-A1886A6A,FALSE,,,FALSE
+ORD-919556,2025-11-16 00:10:00,leo.brown589@icloud.com,Leo Brown,Leo Brown,+1 578-555-4022,53 Oak Road,Los Angeles,CA 90015,US,68.83.154.32,1408,535522,paypal,242.91,USD,ACC-31C5969E,FALSE,,,FALSE
+ORD-452982,2026-02-06 09:00:00,leo.brown.loyal4@gmail.com,Leo Brown,Leo Brown,+1 646-555-2748,191 Loyal Customer Road,Dallas,TX 75201,US,,2757,455673,credit_card,116.29,USD,ACC-B9F371F1,TRUE,116.29,wrong_size,FALSE
+ORD-068349,2026-01-17 17:17:00,noah.smith537@gmail.com,Noah Smith,Noah Smith,,159 Maple St,Dallas,TX 75201,US,50.117.126.189,5655,535522,klarna,167.37,USD,ACC-126B1B52,FALSE,,,FALSE
+ORD-813395,2025-09-02 13:24:00,kai.thomas104@yahoo.com,Kai Thomas,Kai Thomas,+1 623-555-2205,125 Pine Street,Dallas,TX 75201,US,51.230.82.47,5894,455673,klarna,236.10,USD,ACC-848C9364,FALSE,,,FALSE
+ORD-706950,2026-04-30 07:09:00,ruby.davies17@icloud.com,Ruby Davies,Ruby Davies,07616 800529,212 Maple Lane,Birmingham,B1 1AA,GB,,8796,400000,apple_pay,160.75,GBP,ACC-EF34046D,FALSE,,,FALSE
+ORD-319257,2025-10-01 17:54:00,chloe.mitchell701@gmail.com,Chloe Mitchell,Chloe Mitchell,+1 372-555-9577,232 Cedar Street,Berlin,10115,DE,,3184,400000,paypal,99.62,EUR,ACC-80A2D7A5,TRUE,99.62,changed_mind,FALSE
+ORD-134587,2025-11-20 07:33:00,grace.johnson268@yahoo.com,Grace Johnson,Grace Johnson,,193 High Road,London,SW1A 1AA,GB,,1187,414720,credit_card,174.11,GBP,ACC-8822B161,FALSE,,,FALSE
+ORD-773778,2025-10-04 11:44:00,ruby.king923@gmail.com,Ruby King,Ruby King,,51 Park Road,Los Angeles,CA 90015,US,,9012,400000,credit_card,134.90,USD,ACC-F52FE4AF,FALSE,,,FALSE
+ORD-403425,2025-09-13 09:43:00,amelia.wright145@gmail.com,Amelia Wright,Amelia Wright,,99 Market Street,Glasgow,G1 1AA,GB,52.160.97.196,3610,535522,paypal,259.00,GBP,ACC-51205B2C,FALSE,,,FALSE
+ORD-074239,2026-01-06 17:35:00,theo.young962@gmail.com,Theo Young,Theo Young,,130 Market Road,Paris,75002,FR,27.21.91.67,3783,400000,paypal,134.22,EUR,ACC-8ABCD414,FALSE,,,FALSE
+ORD-422806,2025-10-07 08:30:00,theo.evans.loyal25@gmail.com,Theo Evans,Theo Evans,+44 7700 239967,75 Loyal Customer Road,London,SW1A 1AA,GB,172.27.182.171,2064,492181,klarna,151.87,GBP,ACC-09E878F1,FALSE,,,FALSE
+ORD-405080,2025-10-28 19:00:00,daniel.taylor838@outlook.com,Daniel Taylor,Daniel Taylor,+1 956-555-3493,167 Station St,Dallas,TX 75201,US,,6567,535522,apple_pay,142.87,USD,ACC-D634FDDC,FALSE,,,FALSE
+ORD-514905,2025-09-04 16:56:00,sophia.allen662@gmail.com,Sophia Allen,Sophia Allen,+1 445-555-9108,99 Pine Street,New York,NY 10011,US,78.6.184.240,6185,492181,debit_card,107.94,USD,ACC-D6522BE8,FALSE,,,FALSE
+ORD-646261,2026-04-20 00:40:00,hannah.carter210@outlook.com,Hannah Carter,Hannah Carter,+1 210-555-7813,211 Market Ave,New York,NY 10011,US,,4104,535522,credit_card,74.85,USD,ACC-08ED8723,TRUE,74.85,wrong_size,FALSE
+ORD-054410,2025-10-28 12:43:00,nadia.allen775@yahoo.com,Nadia Allen,Nadia Allen,+1 660-555-3571,237 Maple Ave,Toronto,M5V 2T6,CA,,9727,414720,klarna,201.21,CAD,ACC-1D70E6D7,FALSE,,,FALSE
+ORD-712274,2025-10-13 09:30:00,henry.brown.loyal0@gmail.com,Henry Brown,Henry Brown,+1 646-555-5040,58 Loyal Customer Road,Toronto,M5V 2T6,CA,,3105,492181,credit_card,115.02,CAD,ACC-13590837,FALSE,,,FALSE
+ORD-591153,2026-01-26 21:12:00,jack.wright252@icloud.com,Jack Wright,Jack Wright,07380 126606,58 Cedar Street,London,SW1A 1AA,GB,38.74.6.76,4992,455673,paypal,224.67,GBP,ACC-AE6F63EA,FALSE,,,FALSE
+ORD-676863,2026-01-12 04:42:00,kai.king704@yahoo.com,Kai King,Kai King,+1 288-555-2646,36 Pine Lane,Paris,75002,FR,65.161.71.64,5537,543212,klarna,32.89,EUR,ACC-784A142A,FALSE,,,FALSE
+ORD-030834,2026-02-04 00:32:00,olivia.wright743@icloud.com,Olivia Wright,Olivia Wright,,32 High Street,Dallas,TX 75201,US,95.243.211.170,4079,455673,apple_pay,256.57,USD,ACC-852C53A1,FALSE,,,FALSE
+ORD-644356,2026-04-19 09:09:00,mason.adams720@yahoo.com,Mason Adams,Mason Adams,07930 798915,74 Cedar Road,Glasgow,G1 1AA,GB,45.46.107.67,4575,535522,paypal,76.69,GBP,ACC-06119BA5,FALSE,,,FALSE

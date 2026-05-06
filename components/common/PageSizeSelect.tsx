@@ -13,17 +13,20 @@ function buildHref(pathname: string, searchParams: Record<string, string | undef
   return `${pathname}?${next.toString()}`;
 }
 
-export default function PageSizeSelect({
+export default async function PageSizeSelect({
   pathname,
   searchParams,
   pageSize,
   label = 'Rows per page',
 }: {
   pathname: string;
-  searchParams: Record<string, string | undefined>;
+  // searchParams may be a Promise from Next; accept either and resolve.
+  searchParams: Record<string, string | undefined> | Promise<Record<string, string | undefined>>;
   pageSize: number;
   label?: string;
 }) {
+  const sp = (await Promise.resolve(searchParams)) ?? {};
+
   return (
     <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
       <span>{label}</span>
@@ -33,7 +36,7 @@ export default function PageSizeSelect({
           return (
             <Link
               key={size}
-              href={buildHref(pathname, searchParams, size)}
+              href={buildHref(pathname, sp, size)}
               className="px-2.5 py-1.5 font-semibold transition-colors"
               style={{
                 background: active ? 'var(--text)' : 'var(--bg-surface)',

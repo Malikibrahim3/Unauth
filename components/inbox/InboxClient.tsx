@@ -23,6 +23,19 @@ interface Props {
   initialItems: InboxTransaction[];
 }
 
+function formatInboxDate(iso: string): string {
+  try {
+    return new Intl.DateTimeFormat('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      timeZone: 'UTC',
+    }).format(new Date(iso));
+  } catch {
+    return iso;
+  }
+}
+
 export default function InboxClient({ initialItems }: Props) {
   const [items, setItems] = useState<InboxTransaction[]>(initialItems);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
@@ -229,7 +242,7 @@ export default function InboxClient({ initialItems }: Props) {
                 {tx.reason ?? 'Needs manual review'}
               </td>
               <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-muted)' }}>
-                {new Date(tx.processed_at).toLocaleDateString()}
+                {formatInboxDate(tx.processed_at)}
               </td>
               <td className="px-4 py-3 text-right">
                 <div className="flex items-center justify-end gap-2" ref={openDropdown === tx.id ? dropdownRef : undefined}>

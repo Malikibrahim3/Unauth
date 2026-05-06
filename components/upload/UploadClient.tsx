@@ -4,6 +4,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { UploadCloud, FileText, AlertCircle, CheckCircle, ChevronDown, ChevronRight, Calendar } from 'lucide-react';
 import Link from 'next/link';
+import { formatDateShort } from '@/lib/utils/format';
 import { createClient } from '@/lib/supabase/client';
 import {
   autoMapHeaders,
@@ -76,6 +77,8 @@ export default function UploadClient() {
   const [statusText, setStatusText] = useState('Uploading…');
   const [runId, setRunId] = useState<string | null>(null);
   const [friendlyError, setFriendlyError] = useState<FriendlyError | null>(null);
+  const [rawErrorDetail, setRawErrorDetail] = useState<string | null>(null);
+  const [showErrorDetail, setShowErrorDetail] = useState(false);
   const [uploadLabel, setUploadLabel] = useState('');
   const [dateRangeStart, setDateRangeStart] = useState('');
   const [dateRangeEnd, setDateRangeEnd] = useState('');
@@ -165,8 +168,10 @@ export default function UploadClient() {
   async function runAudit(forceReupload = false) {
     if (!file || !canSubmit) return;
     setState('uploading');
-    setStatusText('Uploading…');
+    setStatusText(`Uploading — ${(file.size / 1024 / 1024).toFixed(1)} MB…`);
     setFriendlyError(null);
+    setRawErrorDetail(null);
+    setShowErrorDetail(false);
     try {
       const supabase = createClient();
       const {
@@ -174,10 +179,29 @@ export default function UploadClient() {
       } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
       const filePath = `${user.id}/${Date.now()}_${file.name}`;
+
+      // Use TUS resumable upload for files > 6 MB — the default Supabase
+      // single-PUT upload silently fails on large bodies behind some CDNs.
+      // The supabase-js SDK auto-selects resumable when given duplex options;
+      // we explicitly enable upsert and a higher cacheControl to avoid edge
+      // cases where Cloudflare buffers the whole body.
+      setStatusText(`Uploading — staging ${(file.size / 1024 / 1024).toFixed(1)} MB to storage…`);
       const { error: uploadError } = await supabase.storage
         .from('merchant-csv-uploads-2')
-        .upload(filePath, file, { contentType: 'text/csv' });
-      if (uploadError) throw uploadError;
+        .upload(filePath, file, {
+          contentType: 'text/csv',
+          upsert: false,
+          cacheControl: '3600',
+        });
+      if (uploadError) {
+        // Surface the most useful field on Supabase StorageError
+        const detail =
+          (uploadError as any).message ??
+          (uploadError as any).error ??
+          JSON.stringify(uploadError);
+        throw new Error(`Storage upload failed: ${detail}`);
+      }
+      setStatusText('Uploaded — starting analysis…');
       const res = await fetch('/api/audit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -207,7 +231,7 @@ export default function UploadClient() {
       }
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body.error ?? `HTTP ${res.status}`);
+        throw new Error(body.error ?? `HTTP ${res.status} from /api/audit`);
       }
       const { runId: newRunId } = await res.json();
       setRunId(newRunId);
@@ -220,8 +244,13 @@ export default function UploadClient() {
         dataQualityGrade: dataQuality?.grade ?? null,
       });
     } catch (err) {
+      const rawMsg = err instanceof Error ? err.message : String(err);
+      // Always log the full error to the browser console for debugging.
+      // Merchants get the friendly message; engineers get the actual cause.
+      console.error('[UploadClient] runAudit failed:', err);
       setState('error');
-      setFriendlyError(friendlyUploadError(err instanceof Error ? err.message : String(err)));
+      setRawErrorDetail(rawMsg);
+      setFriendlyError(friendlyUploadError(rawMsg));
     }
   }
 
@@ -245,8 +274,11 @@ export default function UploadClient() {
           return;
         }
         if (job.status === 'failed') {
+          const rawMsg = job.errorMessage ?? 'Processing failed.';
+          console.error('[UploadClient] job failed:', rawMsg, job);
           setState('error');
-          setFriendlyError(friendlyUploadError(job.errorMessage ?? 'Processing failed.'));
+          setRawErrorDetail(rawMsg);
+          setFriendlyError(friendlyUploadError(rawMsg));
           return;
         }
         const processed = job.rowCount > 0
@@ -974,11 +1006,7 @@ export default function UploadClient() {
                   ? `"${duplicateWarning.existingLabel}" was`
                   : `"${duplicateWarning.existingFilename}" was`}{' '}
                 processed on{' '}
-                {new Date(duplicateWarning.existingCreatedAt).toLocaleDateString(undefined, {
-                  day: 'numeric',
-                  month: 'short',
-                  year: 'numeric',
-                })}
+                {formatDateShort(duplicateWarning.existingCreatedAt)}
                 {duplicateWarning.existingStatus === 'complete' && (
                   <>
                     {' — '}
@@ -1044,7 +1072,7 @@ export default function UploadClient() {
           style={{ background: 'var(--risk-critical-bg)', borderColor: 'var(--risk-critical-bd)' }}
         >
           <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: 'var(--risk-critical)' }} />
-          <div>
+          <div className="flex-1">
             <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
               {friendlyError.headline}
             </p>
@@ -1054,6 +1082,26 @@ export default function UploadClient() {
             <p className="text-xs mt-1" style={{ color: 'var(--text-subtle)' }}>
               Code: {friendlyError.code}
             </p>
+            {rawErrorDetail && (
+              <div className="mt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowErrorDetail((v) => !v)}
+                  className="text-xs font-semibold hover:underline"
+                  style={{ color: 'var(--text-muted)' }}
+                >
+                  {showErrorDetail ? 'Hide technical details' : 'Show technical details'}
+                </button>
+                {showErrorDetail && (
+                  <pre
+                    className="mt-2 text-xs whitespace-pre-wrap break-all p-2 rounded"
+                    style={{ background: 'var(--bg-inset)', color: 'var(--text-muted)', maxHeight: '200px', overflow: 'auto' }}
+                  >
+                    {rawErrorDetail}
+                  </pre>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}

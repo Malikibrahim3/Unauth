@@ -11,15 +11,11 @@ type RunRow = Database['public']['Tables']['processing_jobs']['Row'];
 const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
 const DEFAULT_PAGE_SIZE = 25;
 
-export default async function HistoryPage({
-  searchParams,
-}: {
-  searchParams?: Promise<{ page?: string; pageSize?: string }>;
-}) {
-  const resolvedSearchParams = (await searchParams) ?? {};
+export default async function HistoryPage({ searchParams }: { searchParams?: { page?: string; pageSize?: string } }) {
   const supabase = createClient();
-  const page = Math.max(1, parseInt(resolvedSearchParams.page ?? '1', 10));
-  const requestedPageSize = parseInt(resolvedSearchParams.pageSize ?? String(DEFAULT_PAGE_SIZE), 10);
+  const sp = (await Promise.resolve(searchParams)) ?? {};
+  const page = Math.max(1, parseInt(sp?.page ?? '1', 10));
+  const requestedPageSize = parseInt(sp?.pageSize ?? String(DEFAULT_PAGE_SIZE), 10);
   const pageSize = PAGE_SIZE_OPTIONS.includes(requestedPageSize as (typeof PAGE_SIZE_OPTIONS)[number])
     ? requestedPageSize
     : DEFAULT_PAGE_SIZE;
@@ -35,7 +31,7 @@ export default async function HistoryPage({
   const typedRuns = (runs ?? []) as unknown as RunRow[];
   const total = count ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  const baseSearchParams = resolvedSearchParams;
+  const baseSearchParams = sp ?? {};
 
   return (
     <div className="p-8 space-y-6">

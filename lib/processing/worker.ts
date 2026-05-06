@@ -32,6 +32,11 @@ import {
   logBatchError,
 } from './job';
 import { processProfilesForBatch } from '../analysis/entityResolution';
+import { getRowMatchedSignals } from './signals';
+import {
+  expandSuspiciousClusters,
+  type RowBehaviourFlags,
+} from './clusterExpansion';
 
 const BATCH_SIZE = 500;  // 500 rows per upsert — halves round-trips vs the old 200
 const DEFAULT_CONCURRENCY = 5;
@@ -157,9 +162,11 @@ function rowToScorerOrder(row: CsvRow): ScorerOrder {
 
 function buildClusterIdentityResults(
   clusters: LinkedCluster[],
-  clusterScores: ScoredCluster[]
+  clusterScores: ScoredCluster[],
+  linkerInputs: LinkerOrderInput[],
 ): Map<string, PersistedIdentityResult> {
   const scoresByCluster = new Map(clusterScores.map((score) => [score.cluster_id, score]));
+  const inputByOrderId = new Map(linkerInputs.map((r) => [r.order_id, r]));
   const result = new Map<string, PersistedIdentityResult>();
 
   for (const cluster of clusters) {
@@ -214,12 +221,26 @@ function buildClusterIdentityResults(
     const isConfirmed  = matchStatus === 'definite';
     const isProbable   = matchStatus === 'probable';
 
+    // Pre-build the LinkerOrderInput array for all members in this cluster
+    // so we can compute per-row signals without repeated map lookups.
+    const clusterInputs = cluster.order_ids
+      .map((id) => inputByOrderId.get(id))
+      .filter((r): r is LinkerOrderInput => r !== undefined);
+
     for (const orderId of cluster.order_ids) {
+      // Calculate signals_matched per-row: only signals present AND matched
+      // by at least one other order in the same cluster. This prevents blank-
+      // field rows from inheriting signals they don't actually contribute.
+      const thisInput = inputByOrderId.get(orderId);
+      const rowSignals = thisInput
+        ? getRowMatchedSignals(thisInput, clusterInputs)
+        : (cluster.signals_matched as string[]);
+
       result.set(orderId, {
         grade,
         matchStatus,
         identityScore,
-        signalsMatched: cluster.signals_matched,
+        signalsMatched: rowSignals,
         behaviouralFlags: (clusterScore?.behavioural_flags ?? []).map((flag) => flag.flag),
         recommendedAction,
         ce3Eligible: clusterScore?.ce3_eligible ?? false,
@@ -357,7 +378,8 @@ export async function processCsvJob(
   //     scoring (identityAlerts) and persistence to fraud_identity_clusters.
   // -----------------------------------------------------------------------
   const identityClusterMap = await buildIdentityClusters(normOrders, context);
-  const linkerResult = linkIdentities(buildLinkerInput(normOrders));
+  const linkerInputs = buildLinkerInput(normOrders);
+  const linkerResult = linkIdentities(linkerInputs);
   const ordersById = new Map(validPairs.map((pair) => [pair.parsed.order_id, rowToScorerOrder(pair.parsed)]))
   const clusterScores = scoreAllClusters(linkerResult.clusters, ordersById);
 
@@ -365,7 +387,119 @@ export async function processCsvJob(
   // 4. Score all rows synchronously (O(n) thanks to precomputed context)
   // -----------------------------------------------------------------------
   const scored = scoreBatch(normOrders, context, identityClusterMap);
-  const identityResultsByOrder = buildClusterIdentityResults(linkerResult.clusters, clusterScores);
+  const identityResultsByOrder = buildClusterIdentityResults(linkerResult.clusters, clusterScores, linkerInputs);
+
+  // -----------------------------------------------------------------------
+  // 3c. Second-stage graph expansion — cautious, false-positive-safe.
+  //     Runs AFTER the core linker so it can only ADD rows to existing or
+  //     promoted clusters; it never lowers the main linker thresholds.
+  // -----------------------------------------------------------------------
+  const behaviourMap = new Map<string, RowBehaviourFlags>();
+  for (const pair of validPairs) {
+    const r = pair.parsed;
+    const toBoolean = (v: unknown): boolean => {
+      if (typeof v === 'boolean') return v;
+      if (typeof v === 'string') {
+        const lv = v.trim().toLowerCase();
+        return lv === 'true' || lv === '1' || lv === 'yes' || lv === 'y';
+      }
+      return false;
+    };
+    behaviourMap.set(r.order_id, {
+      order_id: r.order_id,
+      refund_requested: toBoolean(r.refund_requested ?? r.refund_status),
+      chargeback_filed: toBoolean((r as CsvRow & { chargeback_filed?: unknown }).chargeback_filed ?? r.chargeback_dispute),
+      order_total: parseFloat(r.order_total ?? '0'),
+    });
+  }
+  const nameMap = new Map<string, string>(
+    validPairs.map((p) => [p.parsed.order_id, p.parsed.customer_name ?? ''])
+  );
+
+  const expansion = expandSuspiciousClusters(
+    linkerResult.clusters,
+    linkerResult.candidatePairs,
+    linkerInputs,
+    behaviourMap,
+    nameMap,
+  );
+
+  // Log any debug reports so they're visible in job logs
+  if (expansion.debugReports.length > 0) {
+    jobLog(`[expansion] ${expansion.promotedClusters.length} promoted clusters, ` +
+      `${expansion.additionalClusterAssignments.size} expanded rows`);
+    for (const report of expansion.debugReports) {
+      jobLog(`[expansion] ${report.missed_order_id} → cluster ${report.nearest_cluster_id}: ` +
+        `${report.recommended_fix ?? 'no fix'}`);
+    }
+  }
+
+  // Merge expansion results: only update rows that aren't already in a cluster
+  if (expansion.additionalClusterAssignments.size > 0 || expansion.promotedClusters.length > 0) {
+    // Build cluster info for promoted clusters (no scorer grade available — use
+    // signal-weight fallback, same logic as buildClusterIdentityResults phase 2).
+    const allExpansionClusters = [
+      ...expansion.promotedClusters,
+      // For expanded rows in existing clusters, we synthesise minimal LinkedCluster
+      // objects so buildClusterIdentityResults can process them.
+      ...Array.from(
+        new Map(
+          [...expansion.additionalClusterAssignments.entries()].map(([orderId, clusterId]) => [
+            clusterId,
+            orderId,
+          ])
+        ).entries()
+      ).map(([clusterId]) => {
+        const existing = linkerResult.clusters.find((c) => c.cluster_id === clusterId);
+        return existing;
+      }).filter((c): c is typeof linkerResult.clusters[0] => c !== undefined),
+    ];
+
+    // Compute per-row identity results for newly included rows
+    const expansionResults = buildClusterIdentityResults(
+      allExpansionClusters,
+      clusterScores, // existing scores — promoted clusters get fallback grades
+      linkerInputs,
+    );
+
+    // Apply expansion results only to rows that aren't already identity-scored
+    for (const [orderId, clusterId] of Array.from(expansion.additionalClusterAssignments.entries())) {
+      if (!identityResultsByOrder.has(orderId)) {
+        const existingClusterResult = expansionResults.get(orderId) ??
+          // If not found in expansion results, look at the existing cluster members
+          // and inherit their grade/score
+          Array.from(identityResultsByOrder.entries())
+            .find(([id]) => {
+              const existingCluster = linkerResult.clusters.find((c) => c.cluster_id === clusterId);
+              return existingCluster?.order_ids.includes(id);
+            })?.[1];
+
+        if (existingClusterResult) {
+          // Use the existing cluster's grade/score; recompute per-row signals
+          const thisInput = linkerInputs.find((r) => r.order_id === orderId);
+          const clusterInputs = linkerInputs.filter((r) => {
+            const existingCluster = linkerResult.clusters.find((c) => c.cluster_id === clusterId);
+            return existingCluster?.order_ids.includes(r.order_id);
+          });
+          const rowSignals = thisInput ? getRowMatchedSignals(thisInput, [...clusterInputs, ...(thisInput ? [thisInput] : [])]) : [];
+          identityResultsByOrder.set(orderId, {
+            ...existingClusterResult,
+            signalsMatched: rowSignals,
+            clusterId: existingClusterResult.clusterId ?? null,
+            candidateClusterId: existingClusterResult.candidateClusterId ?? clusterId,
+          });
+        }
+      }
+    }
+
+    // Apply promoted cluster results
+    for (const [orderId, result] of Array.from(expansionResults.entries())) {
+      if (!identityResultsByOrder.has(orderId)) {
+        identityResultsByOrder.set(orderId, result);
+      }
+    }
+  }
+
   jobLog(`scoreBatch completed in ${Date.now() - overallStart}ms`);
 
   // §1.2 — Flush cross-merchant access audit log entries (fire-and-forget, non-fatal).
@@ -411,13 +545,27 @@ export async function processCsvJob(
   let failedCount    = 0;
   const errors: string[] = [];
 
-  // Core transaction upserts — track counts locally, one progress update at the end.
+  // Core transaction upserts — report progress every PROGRESS_INTERVAL rows
+  // so the UI bar moves smoothly rather than jumping straight to done.
+  const PROGRESS_INTERVAL = 1000;
+  let pendingProgressRows = 0; // rows accumulated since last DB progress write
+  let pendingProgressFailed = 0;
+
+  const flushProgress = async () => {
+    if (pendingProgressRows === 0 && pendingProgressFailed === 0) return;
+    const rows = pendingProgressRows;
+    const failed = pendingProgressFailed;
+    pendingProgressRows = 0;
+    pendingProgressFailed = 0;
+    await incrementJobProgress(serviceClient, jobId, rows, failed);
+  };
+
   const upsertAllBatches = async () => {
     let active    = 0;
     let completed = 0;
+    let rowsSinceLastFlush = 0;
     const batchQueue = [...dbBatches];
     const totalBatches = batchQueue.length;
-    const reportEvery = Math.max(1, Math.floor(totalBatches / 10));
 
     await new Promise<void>((resolve) => {
       function startNext() {
@@ -428,16 +576,26 @@ export async function processCsvJob(
         const batch = batchQueue.shift()!;
         active++;
         upsertBatchNoProgress(batch, jobId, serviceClient)
-          .then(() => {
+          .then(async () => {
             processedCount += batch.length;
+            pendingProgressRows += batch.length;
+            rowsSinceLastFlush += batch.length;
             completed++;
-            if (completed % reportEvery === 0 || completed === totalBatches) {
-              jobLog(`transactions upsert progress: batches ${completed}/${totalBatches}, processed ${processedCount}/${allInserts.length}`);
+            jobLog(`transactions upsert progress: batches ${completed}/${totalBatches}, processed ${processedCount}/${allInserts.length}`);
+            if (rowsSinceLastFlush >= PROGRESS_INTERVAL) {
+              rowsSinceLastFlush = 0;
+              await flushProgress();
             }
           })
-          .catch((err: Error) => {
+          .catch(async (err: Error) => {
             failedCount += batch.length;
+            pendingProgressFailed += batch.length;
+            rowsSinceLastFlush += batch.length;
             errors.push(err.message);
+            if (rowsSinceLastFlush >= PROGRESS_INTERVAL) {
+              rowsSinceLastFlush = 0;
+              await flushProgress();
+            }
           })
           .finally(() => {
             active--;
@@ -468,12 +626,10 @@ export async function processCsvJob(
     if (r.status === 'rejected') jobLog(`parallel task failed: ${String((r as PromiseRejectedResult).reason)}`);
   }
 
-  // Single atomic progress update for the whole job instead of per-batch calls
-  if (processedCount > 0 || failedCount > 0) {
-    jobLog(`About to increment job progress: processed=${processedCount} failed=${failedCount}`);
-    await incrementJobProgress(serviceClient, jobId, processedCount, failedCount);
-    jobLog('Job progress incremented');
-  }
+  // Flush any remaining rows that didn't hit the PROGRESS_INTERVAL threshold.
+  jobLog(`About to flush final progress: processed=${processedCount} failed=${failedCount}`);
+  await flushProgress();
+  jobLog('Job progress flushed');
 
   jobLog(`processCsvJob finished: processed=${processedCount} failed=${failedCount} duration=${Date.now() - overallStart}ms`);
 

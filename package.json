@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "dev": "NODE_OPTIONS=--max-old-space-size=8192 next dev",
+    "build": "NODE_OPTIONS=--max-old-space-size=8192 next build",
+    "start": "NODE_OPTIONS=--max-old-space-size=8192 next start",
     "lint": "next lint",
     "test": "jest --passWithNoTests",
     "eval": "ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/eval.ts",

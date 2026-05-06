@@ -3,12 +3,11 @@
 // Generate a chargeback evidence package for a customer.
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
 interface PageProps {
   params: { id: string }
-  searchParams: { disputedOrder?: string }
 }
 
 interface OrderOption {
@@ -19,10 +18,11 @@ interface OrderOption {
   refund_claimed: boolean
 }
 
-export default function EvidenceNewPage({ params, searchParams }: PageProps) {
+export default function EvidenceNewPage({ params }: PageProps) {
   const router = useRouter()
+  const searchParamsHook = useSearchParams()
   const profileId = params.id
-  const preselectedOrder = searchParams.disputedOrder ?? ''
+  const preselectedOrder = searchParamsHook.get('disputedOrder') ?? ''
 
   const [orders, setOrders] = useState<OrderOption[]>([])
   const [selectedOrderId, setSelectedOrderId] = useState(preselectedOrder)

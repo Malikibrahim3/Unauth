@@ -34,7 +34,6 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ runId: string }> }
 ) {
-  const resolvedParams = await params;
   const email = req.nextUrl.searchParams.get('email')?.trim().toLowerCase();
   if (!email) return NextResponse.json({ error: 'Missing email' }, { status: 400 });
 
@@ -46,10 +45,12 @@ export async function GET(
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_AUDIT);
   if (denied) return denied;
 
+  const { runId } = await params;
+
   const { data: job } = await serviceClient
     .from('processing_jobs')
     .select('id, merchant_id')
-    .eq('id', resolvedParams.runId)
+    .eq('id', runId)
     .single();
 
   if (!job || job.merchant_id !== ctx.merchantId) {
@@ -59,7 +60,7 @@ export async function GET(
   const { data: directRows, error: directError } = await serviceClient
     .from('audit_transactions')
     .select('*')
-    .eq('job_id', resolvedParams.runId)
+    .eq('job_id', runId)
     .eq('customer_email', email)
     .order('processed_at', { ascending: true });
 
@@ -88,7 +89,7 @@ export async function GET(
     const { data: clusterRows } = await serviceClient
       .from('audit_transactions')
       .select('*')
-      .eq('job_id', resolvedParams.runId)
+      .eq('job_id', runId)
       .in('cluster_id', clusterIds)
       .order('processed_at', { ascending: true });
 

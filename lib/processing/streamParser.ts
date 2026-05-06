@@ -111,21 +111,48 @@ export async function streamParseCsv(
         // Otherwise fall back to the alias table in cleanHeader.
         return headerRemap.get(lower) ?? cleanHeader(h);
       },
-      step: async (result: Papa.ParseStepResult<ParsedCsvRow>, parser: Papa.Parser) => {
+      // PapaParse step is invoked synchronously and does NOT await Promises.
+      // To keep memory bounded we must pause the parser while the chunk
+      // upload runs, then resume it. Without pause/resume the parser keeps
+      // pushing rows while the upload is in flight — defeating the streaming
+      // memory bound and risking out-of-order chunk indices.
+      step: (result: Papa.ParseStepResult<ParsedCsvRow>, parser: Papa.Parser) => {
         if (rows.length >= MAX_ROWS) {
           parser.abort();
           return;
         }
-        if (result.data) {
-          // Capture header keys from the first row before onChunk may clear them
-          if (!firstRowKeys) firstRowKeys = Object.keys(result.data) as string[];
-          rows.push(result.data);
-          totalRowCount++;
-          if (rows.length >= CHUNK_SIZE && onChunk) {
-            const batch = rows;
-            rows = [];
-            await onChunk(batch, chunkIndex++);
-          }
+        if (!result.data) return;
+        // Capture header keys from the first row before onChunk may clear them
+        if (!firstRowKeys) firstRowKeys = Object.keys(result.data) as string[];
+        rows.push(result.data);
+        totalRowCount++;
+        if (rows.length >= CHUNK_SIZE && onChunk) {
+          const batch = rows;
+          rows = [];
+          const idx = chunkIndex++;
+          parser.pause();
+          // Retry up to 3 times with exponential back-off on transient errors.
+          const MAX_RETRIES = 3;
+          (async () => {
+            let lastErr: unknown;
+            for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+              try {
+                await onChunk(batch, idx);
+                return;
+              } catch (err) {
+                lastErr = err;
+                if (attempt < MAX_RETRIES - 1) {
+                  await new Promise((r) => setTimeout(r, 1000 * Math.pow(2, attempt)));
+                }
+              }
+            }
+            throw lastErr instanceof Error ? lastErr : new Error(String(lastErr));
+          })()
+            .then(() => parser.resume())
+            .catch((err) => {
+              parser.abort();
+              reject(err instanceof Error ? err : new Error(String(err)));
+            });
         }
       },
       complete: (results: any) => {
@@ -140,9 +167,26 @@ export async function streamParseCsv(
     nodeStream.on('error', (err) => reject(err));
   });
 
-  // Flush any remaining rows as the final chunk
+  // Flush any remaining rows as the final chunk — with the same retry policy.
   if (rows.length > 0 && onChunk) {
-    await onChunk(rows, chunkIndex++);
+    const idx = chunkIndex++;
+    const finalBatch = rows;
+    rows = [];
+    const MAX_RETRIES = 3;
+    let lastErr: unknown;
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+      try {
+        await onChunk(finalBatch, idx);
+        lastErr = undefined;
+        break;
+      } catch (err) {
+        lastErr = err;
+        if (attempt < MAX_RETRIES - 1) {
+          await new Promise((r) => setTimeout(r, 1000 * Math.pow(2, attempt)));
+        }
+      }
+    }
+    if (lastErr) throw lastErr instanceof Error ? lastErr : new Error(String(lastErr));
   }
   const totalChunks = chunkIndex;
 

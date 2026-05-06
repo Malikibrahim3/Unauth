@@ -2,12 +2,12 @@ import UploadClient from '@/components/upload/UploadClient';
 import { PageHeader } from '@/components/common/PageHeader';
 
 interface UploadPageProps {
-  searchParams: Promise<{ welcome?: string }>;
+  searchParams: { welcome?: string };
 }
 
 export default async function UploadPage({ searchParams }: UploadPageProps) {
-  const resolvedSearchParams = await searchParams;
-  const isWelcome = resolvedSearchParams.welcome === '1';
+  const sp = (await Promise.resolve(searchParams)) ?? {};
+  const isWelcome = sp.welcome === '1';
   return (
     <div className="p-8 max-w-3xl">
       {isWelcome && (

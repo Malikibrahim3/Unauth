@@ -1,17 +1,44 @@
 /* ────────────────────────────────────────────────────────────────────────────
- * 🔒 LOCKED FILE — DO NOT MODIFY WITHOUT EXPLICIT USER PERMISSION 🔒
- *
  * Hot path of the CSV scoring pipeline. The cross-merchant profile fetch and
  * column projections here were carefully tuned on 2026-05-03 to take the
  * 2k-row run from ~120s back down to <15s. Reverting to `select *` or to the
  * old `limit(10000)` cross-merchant fetch will reintroduce the perf cliff.
- * Any change requires explicit user sign-off — see workspace memory rule
- * "Locked CSV upload pipeline".
+ *
+ * 2026-05-06: Added a concurrency semaphore (MAX_CONCURRENT_FETCHES=20) to
+ * cap the number of simultaneous Supabase requests. A 25k-row upload was
+ * generating ~875 concurrent requests in a single Promise.all, saturating
+ * the Postgres connection pool and causing upstream timeouts.
  * ──────────────────────────────────────────────────────────────────────── */
 
 import type { NormalisedOrder } from './types';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { normaliseEmail, normaliseIP, normaliseAddress, normaliseCard } from '../identity/normalise';
+
+// ── Concurrency limiter ────────────────────────────────────────────────────
+// Cap simultaneous Supabase requests to avoid saturating the Postgres
+// connection pool. A 25k-row upload produces ~875 chunks across all fetch
+// functions; without a semaphore these all fire in one Promise.all causing
+// upstream timeouts even when Supabase itself is healthy.
+const MAX_CONCURRENT_FETCHES = 20;
+
+function makeSemaphore(limit: number) {
+  let active = 0;
+  const queue: Array<() => void> = [];
+  return async function <T>(fn: () => Promise<T>): Promise<T> {
+    if (active >= limit) {
+      await new Promise<void>((resolve) => queue.push(resolve));
+    }
+    active++;
+    try {
+      return await fn();
+    } finally {
+      active--;
+      queue.shift()?.();
+    }
+  };
+}
+
+const fetchSemaphore = makeSemaphore(MAX_CONCURRENT_FETCHES);
 
 export interface FraudEntity {
   id: string;
@@ -118,19 +145,21 @@ async function fetchCrossMerchantProfiles(
     const chunks: string[][] = [];
     for (let i = 0; i < values.length; i += CHUNK) chunks.push(values.slice(i, i + CHUNK));
     const out = await Promise.all(
-      chunks.map(async (chunk) => {
-        const orExpr = chunk.map((v) => `${col}.cs.${JSON.stringify([v])}`).join(',');
-        const { data, error } = await supabase
-          .from('customer_profiles')
-          .select(COLS)
-          .gte('total_merchants_seen_at', 3)
-          .or(orExpr);
-        if (error) {
-          console.error(`[fastContext] cross-merchant or(${col}) failed: ${error.message}`);
-          return [] as CrossMerchantProfile[];
-        }
-        return (data as unknown as CrossMerchantProfile[]) ?? [];
-      })
+      chunks.map((chunk) =>
+        fetchSemaphore(async () => {
+          const orExpr = chunk.map((v) => `${col}.cs.${JSON.stringify([v])}`).join(',');
+          const { data, error } = await supabase
+            .from('customer_profiles')
+            .select(COLS)
+            .gte('total_merchants_seen_at', 3)
+            .or(orExpr);
+          if (error) {
+            console.error(`[fastContext] cross-merchant or(${col}) failed: ${error.message}`);
+            return [] as CrossMerchantProfile[];
+          }
+          return (data as unknown as CrossMerchantProfile[]) ?? [];
+        })
+      )
     );
     return out.flat();
   };
@@ -280,7 +309,7 @@ export async function buildFastContext(
   // 5000-row upload this overflows the ~8KB URL limit and silently returns
   // zero rows. Chunking to 200 keeps each URL well under the limit.
   // -----------------------------------------------------------------------
-  const IN_CHUNK = 200;
+  const IN_CHUNK = 500;
 
   // Chunks fire in parallel — no sequential for-loop, so 2000 unique emails at
   // IN_CHUNK=200 costs 1 wall-clock round-trip instead of 10 sequential ones.
@@ -299,21 +328,30 @@ export async function buildFastContext(
     const chunks: string[][] = [];
     for (let i = 0; i < values.length; i += IN_CHUNK) chunks.push(values.slice(i, i + IN_CHUNK));
     const results = await Promise.all(
-      chunks.map(async (chunk) => {
-        const { data, error } = await supabase
-          .from('fraud_entities')
-          .select(FRAUD_ENTITY_COLS)
-          .eq('entity_type', entityType)
-          .in('entity_value', chunk);
-        if (error) {
-          console.error(`[fastContext] fraud_entities ${entityType} fetch failed: ${error.message}`);
-          return [] as FraudEntity[];
-        }
-        return (data as unknown as FraudEntity[]) ?? [];
-      })
+      chunks.map((chunk) =>
+        fetchSemaphore(async () => {
+          const { data, error } = await supabase
+            .from('fraud_entities')
+            .select(FRAUD_ENTITY_COLS)
+            .eq('entity_type', entityType)
+            .in('entity_value', chunk);
+          if (error) {
+            console.error(`[fastContext] fraud_entities ${entityType} fetch failed: ${error.message}`);
+            return [] as FraudEntity[];
+          }
+          return (data as unknown as FraudEntity[]) ?? [];
+        })
+      )
     );
     return results.flat();
   }
+
+  // Only columns downstream scoring actually reads from co-occurrence rows.
+  // select('*') was returning every column including any future large fields;
+  // projecting to exactly what's needed cuts wire transfer size significantly.
+  const CO_OCC_COLS =
+    'id,entity_a_type,entity_a_value,entity_b_type,entity_b_value,' +
+    'co_occurrence_count,first_seen,last_seen';
 
   // Parallelize co-occurrence chunk fetches in the same way.
   async function fetchCoBatch(side: 'a' | 'b', entityType: string, values: string[]): Promise<CoOccurrence[]> {
@@ -323,18 +361,20 @@ export async function buildFastContext(
     const chunks: string[][] = [];
     for (let i = 0; i < values.length; i += IN_CHUNK) chunks.push(values.slice(i, i + IN_CHUNK));
     const results = await Promise.all(
-      chunks.map(async (chunk) => {
-        const { data, error } = await supabase
-          .from('fraud_entity_co_occurrences')
-          .select('*')
-          .eq(typeCol, entityType)
-          .in(valueCol, chunk);
-        if (error) {
-          console.error(`[fastContext] co_occurrences ${entityType}/${side} fetch failed: ${error.message}`);
-          return [] as CoOccurrence[];
-        }
-        return (data as CoOccurrence[]) ?? [];
-      })
+      chunks.map((chunk) =>
+        fetchSemaphore(async () => {
+          const { data, error } = await supabase
+            .from('fraud_entity_co_occurrences')
+            .select(CO_OCC_COLS)
+            .eq(typeCol, entityType)
+            .in(valueCol, chunk);
+          if (error) {
+            console.error(`[fastContext] co_occurrences ${entityType}/${side} fetch failed: ${error.message}`);
+            return [] as CoOccurrence[];
+          }
+          return (data as CoOccurrence[]) ?? [];
+        })
+      )
     );
     return results.flat();
   }

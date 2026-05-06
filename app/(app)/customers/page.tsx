@@ -34,7 +34,7 @@ const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
 const DEFAULT_PAGE_SIZE = 25;
 
 interface PageProps {
-  searchParams: Promise<{
+  searchParams: {
     // Basic
     q?: string;
     risk?: string;
@@ -71,11 +71,10 @@ interface PageProps {
     flag?: string;
     // Investigation status
     status?: string;
-  }>;
+  };
 }
 
-export default async function CustomersOverviewPage({ searchParams: searchParamsPromise }: PageProps) {
-  const searchParams = await searchParamsPromise;
+export default async function CustomersOverviewPage({ searchParams }: PageProps) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
@@ -89,53 +88,55 @@ export default async function CustomersOverviewPage({ searchParams: searchParams
     .eq('user_id', user.id)
     .maybeSingle();
   const merchantId = merchantRow?.id ?? null;
+  // `searchParams` may be a Promise in newer Next.js versions — await to normalize.
+  const sp = (await Promise.resolve(searchParams)) ?? {};
 
-  const page = Math.max(1, parseInt(searchParams.page ?? '1', 10));
-  const requestedPageSize = parseInt(searchParams.pageSize ?? String(DEFAULT_PAGE_SIZE), 10);
+  const page = Math.max(1, parseInt(sp.page ?? '1', 10));
+  const requestedPageSize = parseInt(sp.pageSize ?? String(DEFAULT_PAGE_SIZE), 10);
   const PAGE_SIZE = PAGE_SIZE_OPTIONS.includes(requestedPageSize as (typeof PAGE_SIZE_OPTIONS)[number])
     ? requestedPageSize
     : DEFAULT_PAGE_SIZE;
   const offset = (page - 1) * PAGE_SIZE;
 
   // Basic
-  const q               = searchParams.q?.trim() ?? '';
-  const riskFilter      = searchParams.risk ?? '';
-  const hasRefunds      = searchParams.hasRefunds === '1';
-  const hasChargebacks  = searchParams.hasChargebacks === '1';
-  const watchlistedOnly = searchParams.watchlisted === '1';
-  const manuallyReviewed = searchParams.manuallyReviewed === '1';
-  const sort            = searchParams.sort ?? 'risk';
+  const q               = sp.q?.trim() ?? '';
+  const riskFilter      = sp.risk ?? '';
+  const hasRefunds      = sp.hasRefunds === '1';
+  const hasChargebacks  = sp.hasChargebacks === '1';
+  const watchlistedOnly = sp.watchlisted === '1';
+  const manuallyReviewed = sp.manuallyReviewed === '1';
+  const sort            = sp.sort ?? 'risk';
 
   // Identity
-  const ipFilter      = searchParams.ip?.trim() ?? '';
-  const addressFilter = searchParams.address?.trim() ?? '';
-  const cardFilter    = searchParams.card?.trim() ?? '';
-  const phoneFilter   = searchParams.phone?.trim() ?? '';
+  const ipFilter      = sp.ip?.trim() ?? '';
+  const addressFilter = sp.address?.trim() ?? '';
+  const cardFilter    = sp.card?.trim() ?? '';
+  const phoneFilter   = sp.phone?.trim() ?? '';
 
   // Numeric ranges
-  const riskMin         = searchParams.riskMin ? parseFloat(searchParams.riskMin) : null;
-  const riskMax         = searchParams.riskMax ? parseFloat(searchParams.riskMax) : null;
-  const refundRateMin   = searchParams.refundRateMin ? parseFloat(searchParams.refundRateMin) : null;
-  const refundRateMax   = searchParams.refundRateMax ? parseFloat(searchParams.refundRateMax) : null;
-  const ordersMin       = searchParams.ordersMin ? parseInt(searchParams.ordersMin, 10) : null;
-  const ordersMax       = searchParams.ordersMax ? parseInt(searchParams.ordersMax, 10) : null;
-  const claimsMin       = searchParams.claimsMin ? parseInt(searchParams.claimsMin, 10) : null;
-  const claimsMax       = searchParams.claimsMax ? parseInt(searchParams.claimsMax, 10) : null;
-  const chargebacksMin  = searchParams.chargebacksMin ? parseInt(searchParams.chargebacksMin, 10) : null;
-  const merchantsMin    = searchParams.merchantsMin ? parseInt(searchParams.merchantsMin, 10) : null;
-  const fastestClaimMax = searchParams.fastestClaimMax ? parseFloat(searchParams.fastestClaimMax) : null;
+  const riskMin         = sp.riskMin ? parseFloat(sp.riskMin) : null;
+  const riskMax         = sp.riskMax ? parseFloat(sp.riskMax) : null;
+  const refundRateMin   = sp.refundRateMin ? parseFloat(sp.refundRateMin) : null;
+  const refundRateMax   = sp.refundRateMax ? parseFloat(sp.refundRateMax) : null;
+  const ordersMin       = sp.ordersMin ? parseInt(sp.ordersMin, 10) : null;
+  const ordersMax       = sp.ordersMax ? parseInt(sp.ordersMax, 10) : null;
+  const claimsMin       = sp.claimsMin ? parseInt(sp.claimsMin, 10) : null;
+  const claimsMax       = sp.claimsMax ? parseInt(sp.claimsMax, 10) : null;
+  const chargebacksMin  = sp.chargebacksMin ? parseInt(sp.chargebacksMin, 10) : null;
+  const merchantsMin    = sp.merchantsMin ? parseInt(sp.merchantsMin, 10) : null;
+  const fastestClaimMax = sp.fastestClaimMax ? parseFloat(sp.fastestClaimMax) : null;
 
   // Date ranges
-  const firstSeenFrom = searchParams.firstSeenFrom ?? '';
-  const firstSeenTo   = searchParams.firstSeenTo ?? '';
-  const lastSeenFrom  = searchParams.lastSeenFrom ?? '';
-  const lastSeenTo    = searchParams.lastSeenTo ?? '';
+  const firstSeenFrom = sp.firstSeenFrom ?? '';
+  const firstSeenTo   = sp.firstSeenTo ?? '';
+  const lastSeenFrom  = sp.lastSeenFrom ?? '';
+  const lastSeenTo    = sp.lastSeenTo ?? '';
 
   // Fraud flag
-  const flagFilter = searchParams.flag?.trim() ?? '';
+  const flagFilter = sp.flag?.trim() ?? '';
 
   // Investigation status
-  const statusFilter = searchParams.status?.trim() ?? '';
+  const statusFilter = sp.status?.trim() ?? '';
 
   // Scope to profiles this merchant owns — accepts both the auth-user UUID
   // (legacy, pre-merchants-table uploads) and the merchants-table UUID (current).
@@ -340,12 +341,12 @@ export default async function CustomersOverviewPage({ searchParams: searchParams
       {!noFilters && (
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-caption" style={{ color: 'var(--text-muted)' }}>Active filters:</span>
-          {riskFilter && <FilterChip label={`Risk: ${riskFilter}`} removeHref={buildRemoveHref(searchParams, 'risk')} />}
-          {statusFilter && <FilterChip label={`Status: ${statusFilter}`} removeHref={buildRemoveHref(searchParams, 'status')} />}
-          {hasRefunds && <FilterChip label="Has refunds" removeHref={buildRemoveHref(searchParams, 'hasRefunds')} />}
-          {hasChargebacks && <FilterChip label="Has chargebacks" removeHref={buildRemoveHref(searchParams, 'hasChargebacks')} />}
-          {watchlistedOnly && <FilterChip label="Watchlisted" removeHref={buildRemoveHref(searchParams, 'watchlisted')} />}
-          {q && <FilterChip label={`Search: "${q}"`} removeHref={buildRemoveHref(searchParams, 'q')} />}
+          {riskFilter && <FilterChip label={`Risk: ${riskFilter}`} removeHref={buildRemoveHref(sp, 'risk')} />}
+          {statusFilter && <FilterChip label={`Status: ${statusFilter}`} removeHref={buildRemoveHref(sp, 'status')} />}
+          {hasRefunds && <FilterChip label="Has refunds" removeHref={buildRemoveHref(sp, 'hasRefunds')} />}
+          {hasChargebacks && <FilterChip label="Has chargebacks" removeHref={buildRemoveHref(sp, 'hasChargebacks')} />}
+          {watchlistedOnly && <FilterChip label="Watchlisted" removeHref={buildRemoveHref(sp, 'watchlisted')} />}
+          {q && <FilterChip label={`Search: "${q}"`} removeHref={buildRemoveHref(sp, 'q')} />}
           <Link href="/customers" className="text-xs hover:underline" style={{ color: 'var(--text-muted)' }}>Clear all</Link>
         </div>
       )}
@@ -368,20 +369,20 @@ export default async function CustomersOverviewPage({ searchParams: searchParams
                 ? 'No customers match your filters.'
                 : `Showing ${from}–${to} of ${total.toLocaleString()} customers`}
             </p>
-            {totalPages > 1 && (
+                {totalPages > 1 && (
               <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
               <span>Page {page} of {totalPages}</span>
-                <PageSizeSelect pathname="/customers" searchParams={searchParams} pageSize={PAGE_SIZE} />
+                <PageSizeSelect pathname="/customers" searchParams={sp} pageSize={PAGE_SIZE} />
                 {page > 1 && (
                   <Link
-                    href={`/customers?${new URLSearchParams({ ...searchParams, page: String(page - 1), pageSize: String(PAGE_SIZE) }).toString()}`}
+                    href={`/customers?${new URLSearchParams({ ...sp, page: String(page - 1), pageSize: String(PAGE_SIZE) }).toString()}`}
                     className="px-2 py-1 rounded border"
                     style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}
                   >← Prev</Link>
                 )}
                 {page < totalPages && (
                   <Link
-                    href={`/customers?${new URLSearchParams({ ...searchParams, page: String(page + 1), pageSize: String(PAGE_SIZE) }).toString()}`}
+                    href={`/customers?${new URLSearchParams({ ...sp, page: String(page + 1), pageSize: String(PAGE_SIZE) }).toString()}`}
                     className="px-2 py-1 rounded border"
                     style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}
                   >Next →</Link>
