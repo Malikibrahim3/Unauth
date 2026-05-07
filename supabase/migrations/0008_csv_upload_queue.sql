@@ -34,28 +34,32 @@ CREATE POLICY "csv_upload_queue_update_own" ON csv_upload_queue
 -- Drop existing policies if they exist
 DROP POLICY IF EXISTS "Authenticated users can upload" ON storage.objects;
 DROP POLICY IF EXISTS "Authenticated users can view own files" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated users can delete own files" ON storage.objects;
 
--- Allow authenticated users to upload files (anyone can upload to their own folder)
+-- Create the bucket if it doesn't exist
+INSERT INTO storage.buckets (id, name, public, file_size_limit)
+VALUES ('merchant-csv-uploads-2', 'merchant-csv-uploads-2', true, 52428800)
+ON CONFLICT (id) DO UPDATE SET file_size_limit = 52428800;
+
+-- RLS policies (drop first to avoid duplicates)
+DO $$
+BEGIN
+  DROP POLICY IF EXISTS "Authenticated users can upload" ON storage.objects;
+  DROP POLICY IF EXISTS "Authenticated users can view own files" ON storage.objects;
+  DROP POLICY IF EXISTS "Authenticated users can delete own files" ON storage.objects;
+END $$;
+
 CREATE POLICY "Authenticated users can upload" ON storage.objects
-  FOR INSERT
-  WITH CHECK (
-    bucket_id = 'merchant-csv-uploads-2'
-    AND auth.role() = 'authenticated'
-    AND (storage.foldername(name))[1] = auth.uid()::text
-  );
+  FOR INSERT TO authenticated
+  WITH CHECK (bucket_id = 'merchant-csv-uploads-2' AND auth.uid() = (storage.foldername(name))[1]::uuid);
 
--- Allow authenticated users to view their own files
 CREATE POLICY "Authenticated users can view own files" ON storage.objects
-  FOR SELECT
-  USING (
-    bucket_id = 'merchant-csv-uploads-2'
-    AND auth.role() = 'authenticated'
-    AND (storage.foldername(name))[1] = auth.uid()::text
-  );
+  FOR SELECT TO authenticated
+  USING (bucket_id = 'merchant-csv-uploads-2' AND auth.uid() = (storage.foldername(name))[1]::uuid);
 
--- Allow authenticated users to delete their own files
 CREATE POLICY "Authenticated users can delete own files" ON storage.objects
-  FOR DELETE
+  FOR DELETE TO authenticated
+  USING (bucket_id = 'merchant-csv-uploads-2' AND auth.uid() = (storage.foldername(name))[1]::uuid);
   USING (
     bucket_id = 'merchant-csv-uploads-2'
     AND auth.role() = 'authenticated'

@@ -66,14 +66,14 @@ export default function OnboardingClient({ userId }: OnboardingClientProps) {
   return (
     <div
       className="min-h-screen flex"
-      style={{ background: '#0A0F1E', color: 'var(--text)' }}
+      style={{ background: 'var(--bg-canvas)', color: 'var(--text)' }}
     >
       {/* Left sidebar */}
       <aside
         className="hidden md:flex flex-col gap-2 px-6 py-10 w-56 shrink-0"
         style={{ borderRight: '1px solid var(--border-subtle)' }}
       >
-        <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: 'var(--text-subtle)' }}>
+        <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: 'var(--text-muted)' }}>
           Start here
         </p>
         {STEPS.map(({ num, label }) => {
@@ -83,7 +83,7 @@ export default function OnboardingClient({ userId }: OnboardingClientProps) {
             <div
               key={num}
               className="flex items-center gap-2.5 text-sm"
-              style={{ color: isActive ? 'var(--text)' : 'var(--text-subtle)' }}
+              style={{ color: isActive ? 'var(--text)' : 'var(--text-muted)' }}
             >
               {isDone ? (
                 <CheckCircle className="h-4 w-4 shrink-0" style={{ color: 'var(--success)' }} />
@@ -93,7 +93,7 @@ export default function OnboardingClient({ userId }: OnboardingClientProps) {
                   style={{
                     borderColor: isActive ? 'var(--text)' : 'var(--border)',
                     background: isActive ? 'var(--text)' : 'transparent',
-                    color: isActive ? '#0A0F1E' : 'inherit',
+                    color: isActive ? 'var(--text-inverse)' : 'var(--text-muted)',
                     fontWeight: isActive ? 700 : 400,
                   }}
                 >
@@ -111,8 +111,8 @@ export default function OnboardingClient({ userId }: OnboardingClientProps) {
         <div
           className="w-full max-w-lg rounded-xl p-8 space-y-6"
           style={{
-            background: '#111827',
-            border: '1px solid #1F2937',
+            background: 'var(--bg-surface)',
+            border: '1px solid var(--border-subtle)',
           }}
         >
           {/* ── Step 1: Welcome ── */}
@@ -139,7 +139,7 @@ export default function OnboardingClient({ userId }: OnboardingClientProps) {
                   <div key={i} className="flex gap-3">
                     <span
                       className="mt-0.5 h-5 w-5 rounded-full shrink-0 flex items-center justify-center text-xs font-bold"
-                      style={{ background: 'var(--accent)', color: '#fff' }}
+                      style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}
                     >
                       {i + 1}
                     </span>
@@ -153,7 +153,7 @@ export default function OnboardingClient({ userId }: OnboardingClientProps) {
               {/* Callout */}
               <div
                 className="rounded-lg p-4 text-sm leading-relaxed"
-                style={{ background: 'rgba(99, 102, 241, 0.08)', border: '1px solid rgba(99,102,241,0.2)', color: 'var(--text-muted)' }}
+                style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}
               >
                 <p>
                   When a customer disputes a refund refusal, your payment processor gives you{' '}
@@ -167,7 +167,7 @@ export default function OnboardingClient({ userId }: OnboardingClientProps) {
                 <button
                   onClick={() => setStep(2)}
                   className="px-5 py-2.5 rounded-md text-sm font-semibold"
-                  style={{ background: 'var(--accent)', color: '#fff' }}
+                  style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}
                 >
                   Continue →
                 </button>
