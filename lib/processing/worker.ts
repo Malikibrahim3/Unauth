@@ -32,7 +32,7 @@ import {
   logBatchError,
 } from './job';
 import { processProfilesForBatch } from '../analysis/entityResolution';
-import { withRetry } from '../engine/dbSemaphore';
+import { withRetry, isUpstreamDown } from '../engine/dbSemaphore';
 import { getRowMatchedSignals } from './signals';
 import {
   expandSuspiciousClusters,
@@ -893,6 +893,14 @@ async function writeFraudEntities(
 
   if (rpcSucceeded) return;
 
+  // Upstream is down (Supabase 521 / schema-cache thrash). Falling back to a
+  // chunked direct upsert just hammers the same broken endpoint with 100+
+  // sequential failing requests. Skip — fraud_entities is best-effort.
+  if (isUpstreamDown(rpcError)) {
+    console.warn(`[worker] ${new Date().toISOString()} writeFraudEntities skipped: upstream unavailable (${(rpcError as any)?.message ?? 'unknown'})`);
+    return;
+  }
+
   if (rpcError && rpcError.code !== 'PGRST202' && rpcError.code !== '42883') {
     console.error(`[worker] ${new Date().toISOString()} bulk_upsert_fraud_entities RPC failed: ${rpcError.message}`);
   }
@@ -957,6 +965,10 @@ async function writeFraudEntities(
       .from('fraud_entities')
       .upsert(chunk as any, { onConflict: 'entity_type,entity_value', ignoreDuplicates: false });
     if (upsertError) {
+      if (isUpstreamDown(upsertError)) {
+        console.warn(`[worker] ${new Date().toISOString()} fraud_entities direct upsert: upstream down at chunk ${i}, aborting fallback`);
+        return;
+      }
       console.error(`[worker] ${new Date().toISOString()} fraud_entities direct upsert failed (chunk ${i}): ${upsertError.message}`);
     }
   }
@@ -1055,6 +1067,14 @@ async function writeCoOccurrences(
 
   if (coRpcSucceeded) return;
 
+  // Upstream down (Supabase 521 / schema cache). Skip the fallback loop — it
+  // would do 100+ sequential failing 500-row upserts against a broken endpoint.
+  // co_occurrences is best-effort intelligence.
+  if (isUpstreamDown(coRpcError)) {
+    console.warn(`[worker] ${new Date().toISOString()} writeCoOccurrences skipped: upstream unavailable (${(coRpcError as any)?.message ?? 'unknown'})`);
+    return;
+  }
+
   if (coRpcError && coRpcError.code !== 'PGRST202' && coRpcError.code !== '42883') {
     console.error(`[worker] ${new Date().toISOString()} bulk_upsert_co_occurrences RPC failed: ${coRpcError.message}`);
   }
@@ -1094,6 +1114,10 @@ async function writeCoOccurrences(
         ignoreDuplicates: false,
       });
     if (upsertError) {
+      if (isUpstreamDown(upsertError)) {
+        console.warn(`[worker] ${new Date().toISOString()} co_occurrences direct upsert: upstream down at chunk ${i}, aborting fallback`);
+        return;
+      }
       console.error(`[worker] ${new Date().toISOString()} co_occurrences direct upsert failed (chunk ${i}): ${upsertError.message}`);
     }
   }
