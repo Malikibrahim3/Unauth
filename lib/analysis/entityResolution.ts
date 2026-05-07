@@ -34,6 +34,7 @@ import {
   normaliseCard,
 } from '../identity/normalise';
 import { RISK_TIER_THRESHOLDS } from '../engine/weights';
+import { dbSlot, withRetry } from '../engine/dbSemaphore';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -470,17 +471,24 @@ export async function processProfilesForBatch(
     const chunks: string[][] = [];
     for (let i = 0; i < values.length; i += OVERLAP_CHUNK) chunks.push(values.slice(i, i + OVERLAP_CHUNK));
     const results = await Promise.all(
-      chunks.map(async (chunk) => {
-        const orExpr = chunk.map((v) => `${col}.cs.${JSON.stringify([v])}`).join(',');
-        let q: any = (serviceClient as any).from('customer_profiles').select(PROFILE_COLS).or(orExpr);
-        if (extraFilter) q = extraFilter(q);
-        const { data, error } = await q;
-        if (error) {
-          console.error(`[entityResolution] or(${col}) failed: ${error.message}`);
+      chunks.map((chunk) =>
+        dbSlot(() =>
+          withRetry(async () => {
+            const orExpr = chunk.map((v) => `${col}.cs.${JSON.stringify([v])}`).join(',');
+            let q: any = (serviceClient as any).from('customer_profiles').select(PROFILE_COLS).or(orExpr);
+            if (extraFilter) q = extraFilter(q);
+            const { data, error } = await q;
+            if (error) {
+              console.error(`[entityResolution] or(${col}) failed: ${error.message}`);
+              throw new Error(error.message);
+            }
+            return (data as unknown as CustomerProfileRow[]) ?? [];
+          })
+        ).catch((err) => {
+          console.error(`[entityResolution] or(${col}) chunk exhausted retries: ${err?.message ?? err}`);
           return [] as CustomerProfileRow[];
-        }
-        return (data as unknown as CustomerProfileRow[]) ?? [];
-      })
+        })
+      )
     );
     return results.flat();
   };

@@ -292,7 +292,7 @@ export default function UploadClient() {
       } catch {
         /* swallow poll errors */
       }
-      if (!cancelled && Date.now() - startTime <= MAX_POLL_MS) setTimeout(poll, 3000);
+      if (!cancelled && Date.now() - startTime <= MAX_POLL_MS) setTimeout(poll, 5000);
     }
     poll();
     return () => {

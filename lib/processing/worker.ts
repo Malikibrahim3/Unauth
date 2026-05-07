@@ -32,6 +32,7 @@ import {
   logBatchError,
 } from './job';
 import { processProfilesForBatch } from '../analysis/entityResolution';
+import { withRetry } from '../engine/dbSemaphore';
 import { getRowMatchedSignals } from './signals';
 import {
   expandSuspiciousClusters,
@@ -607,10 +608,99 @@ export async function processCsvJob(
     });
   };
 
-  // Run core upserts in parallel with all intelligence enrichment
+  // Run core upserts first, then in parallel: entity resolution + intelligence writes.
+  // Entity resolution needs audit_transactions to exist (for txIdMap) so it starts
+  // after upsertAllBatches, but runs concurrently with the fraud/co-occ/cluster writers.
   jobLog('Starting parallel pipeline: transactions + intelligence writes');
+  await upsertAllBatches();
+
+  const entityResolutionTask = merchantId
+    ? (async () => {
+        try {
+          // Scope the lookup to THIS chunk's order_ids — otherwise chunk N scans
+          // rows from chunks 0..N-1, ballooning the payload as upload progresses.
+          const chunkOrderIds = scored.map((s) => s.order.orderId);
+          const txIdMap = new Map<string, string>();
+          const TX_LOOKUP_CHUNK = 500;
+          for (let i = 0; i < chunkOrderIds.length; i += TX_LOOKUP_CHUNK) {
+            const slice = chunkOrderIds.slice(i, i + TX_LOOKUP_CHUNK);
+            const { data: txRows } = await serviceClient
+              .from('audit_transactions')
+              .select('id, order_id')
+              .eq('job_id', jobId)
+              .in('order_id', slice);
+            if (txRows) {
+              for (const row of txRows) txIdMap.set(row.order_id, row.id);
+            }
+          }
+
+          const profileResult = await processProfilesForBatch(
+        scored,
+        merchantId,
+        jobId,
+        txIdMap,
+        serviceClient,
+        new Map(
+          Array.from(identityResultsByOrder.entries()).map(([orderId, identity]) => [
+            orderId,
+            {
+              grade: identity.grade,
+              signals: identity.signalsMatched,
+              clusterId: identity.clusterId,
+              matchStatus: identity.matchStatus,
+            },
+          ])
+        )
+      );
+
+          console.log(
+            `[worker] Entity resolution: ${profileResult.profilesCreated} created, ${profileResult.profilesUpdated} updated, ${profileResult.errors.length} errors`
+          );
+          // Auto-refresh last_seen_risk on watchlist entries for customers in batch
+          try {
+            const riskOrder = { low: 0, medium: 1, high: 2, critical: 3 } as const;
+            type RiskTier = 'low' | 'medium' | 'high' | 'critical';
+            const emailRiskMap = new Map<string, RiskTier>();
+            for (const s of scored) {
+              const hash = (s as any).emailHash as string | undefined;
+              if (!hash) continue;
+              const prev = emailRiskMap.get(hash);
+              if (!prev || riskOrder[s.riskTier] > riskOrder[prev]) {
+                emailRiskMap.set(hash, s.riskTier);
+              }
+            }
+            if (emailRiskMap.size > 0) {
+              const { data: watchlistRows } = await serviceClient
+                .from('watchlist_entries' as any)
+                .select('id, email_hash')
+                .eq('merchant_id', merchantId)
+                .in('email_hash', Array.from(emailRiskMap.keys()));
+              if (watchlistRows && watchlistRows.length > 0) {
+                const now = new Date().toISOString();
+                const watchlistUpdates = (watchlistRows as unknown as { id: string; email_hash: string }[]).map(
+                  (row) => ({
+                    id: row.id,
+                    last_seen_risk: emailRiskMap.get(row.email_hash),
+                    last_seen_at: now,
+                  })
+                );
+                await serviceClient
+                  .from('watchlist_entries' as any)
+                  .upsert(watchlistUpdates, { onConflict: 'id', ignoreDuplicates: false });
+                console.log(`[worker] Refreshed last_seen_risk for ${watchlistRows.length} watchlist entries (bulk)`);
+              }
+            }
+          } catch (watchlistErr) {
+            console.error('[worker] Watchlist refresh failed (non-fatal):', watchlistErr);
+          }
+        } catch (err) {
+          console.error('[worker] processProfilesForBatch failed:', err);
+        }
+      })()
+    : Promise.resolve();
+
   const parallelResults = await Promise.allSettled([
-    upsertAllBatches(),
+    entityResolutionTask,
     writeFraudEntities(scored, serviceClient, context).catch((err) =>
       console.error('[worker] writeFraudEntities failed:', err)
     ),
@@ -632,97 +722,6 @@ export async function processCsvJob(
   jobLog('Job progress flushed');
 
   jobLog(`processCsvJob finished: processed=${processedCount} failed=${failedCount} duration=${Date.now() - overallStart}ms`);
-
-  // -----------------------------------------------------------------------
-  // 8. Entity Resolution — build/update living customer profiles
-  //    Non-fatal: a failure here never breaks the main scoring pipeline.
-  // -----------------------------------------------------------------------
-  if (merchantId) {
-    try {
-      // Fetch the transaction IDs we just wrote so we can link appearances.
-      //
-      // Scope the lookup to THIS chunk's order_ids when chunked — otherwise
-      // chunk N would scan rows from chunks 0..N-1 too, ballooning the
-      // payload as the upload progresses.
-      const chunkOrderIds = scored.map((s) => s.order.orderId);
-      const txIdMap = new Map<string, string>();
-      const TX_LOOKUP_CHUNK = 500; // PostgREST URL cap — chunk the IN()
-      for (let i = 0; i < chunkOrderIds.length; i += TX_LOOKUP_CHUNK) {
-        const slice = chunkOrderIds.slice(i, i + TX_LOOKUP_CHUNK);
-        const { data: txRows } = await serviceClient
-          .from('audit_transactions')
-          .select('id, order_id')
-          .eq('job_id', jobId)
-          .in('order_id', slice);
-        if (txRows) {
-          for (const row of txRows) txIdMap.set(row.order_id, row.id);
-        }
-      }
-
-      const profileResult = await processProfilesForBatch(
-        scored,
-        merchantId,
-        jobId,
-        txIdMap,
-        serviceClient,
-        new Map(
-          Array.from(identityResultsByOrder.entries()).map(([orderId, identity]) => [
-            orderId,
-            {
-              grade: identity.grade,
-              signals: identity.signalsMatched,
-              clusterId: identity.clusterId,
-              matchStatus: identity.matchStatus,
-            },
-          ])
-        )
-      );
-
-      console.log(
-        `[worker] Entity resolution: ${profileResult.profilesCreated} created, ${profileResult.profilesUpdated} updated, ${profileResult.errors.length} errors`
-      );
-      // Auto-refresh last_seen_risk on watchlist entries for customers in batch
-      try {
-        const riskOrder = { low: 0, medium: 1, high: 2, critical: 3 } as const;
-        type RiskTier = 'low' | 'medium' | 'high' | 'critical';
-        const emailRiskMap = new Map<string, RiskTier>();
-        for (const s of scored) {
-          const hash = (s as any).emailHash as string | undefined;
-          if (!hash) continue;
-          const prev = emailRiskMap.get(hash);
-          if (!prev || riskOrder[s.riskTier] > riskOrder[prev]) {
-            emailRiskMap.set(hash, s.riskTier);
-          }
-        }
-        if (emailRiskMap.size > 0) {
-          const { data: watchlistRows } = await serviceClient
-            .from('watchlist_entries' as any)
-            .select('id, email_hash')
-            .eq('merchant_id', merchantId)
-            .in('email_hash', Array.from(emailRiskMap.keys()));
-          if (watchlistRows && watchlistRows.length > 0) {
-            const now = new Date().toISOString();
-            // Batch all watchlist updates into a single upsert — no serial loop
-            const watchlistUpdates = (watchlistRows as unknown as { id: string; email_hash: string }[]).map(
-              (row) => ({
-                id: row.id,
-                last_seen_risk: emailRiskMap.get(row.email_hash),
-                last_seen_at: now,
-              })
-            );
-            await serviceClient
-              .from('watchlist_entries' as any)
-              .upsert(watchlistUpdates, { onConflict: 'id', ignoreDuplicates: false });
-            console.log(`[worker] Refreshed last_seen_risk for ${watchlistRows.length} watchlist entries (bulk)`);
-          }
-        }
-      } catch (watchlistErr) {
-        console.error('[worker] Watchlist refresh failed (non-fatal):', watchlistErr);
-      }
-    } catch (err) {
-      console.error('[worker] processProfilesForBatch failed:', err);
-    }
-  }
 
   // -----------------------------------------------------------------------
   // 9. Log invalid rows as errors on the job record
@@ -871,20 +870,30 @@ async function writeFraudEntities(
     refund_this_batch:   t.refund_in_this_batch,
   }));
 
-  // --- Fast path: single bulk_upsert_fraud_entities RPC (migration 0023) ---
-  const { error: rpcError } = await serviceClient.rpc('bulk_upsert_fraud_entities' as any, {
-    p_entities: payload,
-  });
-
+  // --- Fast path: chunked bulk_upsert_fraud_entities RPC calls with backoff ---
+  const RPC_CHUNK = 2000;
+  let rpcError: { code: string; message: string } | null = null;
+  let rpcSucceeded = false;
+  for (let i = 0; i < payload.length; i += RPC_CHUNK) {
+    const chunk = payload.slice(i, i + RPC_CHUNK);
+    try {
+      await withRetry(async () => {
+        const { error } = await serviceClient.rpc('bulk_upsert_fraud_entities' as any, { p_entities: chunk });
+        if (error) throw error;
+      });
+    } catch (err: any) {
+      rpcError = err;
+      break;
+    }
+  }
   if (!rpcError) {
     console.log(`[worker] ${new Date().toISOString()} bulk_upsert_fraud_entities: ${payload.length} entities (RPC)`);
-    return;
+    rpcSucceeded = true;
   }
 
-  // RPC not deployed yet (PGRST202) — fall back to a single direct bulk upsert.
-  // We compute final values using the historical maps already fetched by buildFastContext,
-  // then do one INSERT … ON CONFLICT upsert for the whole batch.
-  if (rpcError.code !== 'PGRST202' && rpcError.code !== '42883') {
+  if (rpcSucceeded) return;
+
+  if (rpcError && rpcError.code !== 'PGRST202' && rpcError.code !== '42883') {
     console.error(`[worker] ${new Date().toISOString()} bulk_upsert_fraud_entities RPC failed: ${rpcError.message}`);
   }
 
@@ -1023,18 +1032,31 @@ async function writeCoOccurrences(
     count_delta: p.count,
   }));
 
-  // --- Fast path: single bulk_upsert_co_occurrences RPC (migration 0023) ---
-  const { error: rpcError } = await serviceClient.rpc('bulk_upsert_co_occurrences' as any, {
-    p_pairs: payload,
-  });
-
-  if (!rpcError) {
+  // --- Fast path: chunked bulk_upsert_co_occurrences RPC calls with backoff ---
+  const RPC_CHUNK = 2000;
+  let coRpcError: { code: string; message: string } | null = null;
+  let coRpcSucceeded = false;
+  for (let i = 0; i < payload.length; i += RPC_CHUNK) {
+    const chunk = payload.slice(i, i + RPC_CHUNK);
+    try {
+      await withRetry(async () => {
+        const { error } = await serviceClient.rpc('bulk_upsert_co_occurrences' as any, { p_pairs: chunk });
+        if (error) throw error;
+      });
+    } catch (err: any) {
+      coRpcError = err;
+      break;
+    }
+  }
+  if (!coRpcError) {
     console.log(`[worker] ${new Date().toISOString()} bulk_upsert_co_occurrences: ${payload.length} pairs (RPC)`);
-    return;
+    coRpcSucceeded = true;
   }
 
-  if (rpcError.code !== 'PGRST202' && rpcError.code !== '42883') {
-    console.error(`[worker] ${new Date().toISOString()} bulk_upsert_co_occurrences RPC failed: ${rpcError.message}`);
+  if (coRpcSucceeded) return;
+
+  if (coRpcError && coRpcError.code !== 'PGRST202' && coRpcError.code !== '42883') {
+    console.error(`[worker] ${new Date().toISOString()} bulk_upsert_co_occurrences RPC failed: ${coRpcError.message}`);
   }
 
   // Fallback: compute final counts using historicalCoOccurrenceMap and direct upsert.

@@ -37,13 +37,14 @@ export async function GET(
     return NextResponse.json({ error: 'Audit run not found' }, { status: 404 });
   }
 
-  // Count flagged transactions for completed jobs using identity confidence grade,
-  // not the legacy risk_level field which is no longer the source of truth.
+  // Count flagged transactions only when the job is done, and use 'planned'
+  // (Postgres planner estimate) to avoid locking during concurrent inserts.
+  // During processing we return 0 — the UI shows progress %, not a live count.
   let flaggedCount = 0;
   if (job.status === 'completed') {
     const { count } = await serviceClient
       .from('audit_transactions')
-      .select('*', { count: 'exact', head: true })
+      .select('*', { count: 'planned', head: true })
       .eq('job_id', runId)
       .not('identity_confidence_grade', 'is', null);
     flaggedCount = count ?? 0;
