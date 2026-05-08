@@ -17,6 +17,10 @@ async function globalSetup(config: FullConfig) {
   process.env.PLAYWRIGHT = '1'
   const baseURL = config.projects[0].use.baseURL ?? 'http://localhost:3000'
 
+  if (!baseURL || baseURL === '***') {
+    throw new Error('PLAYWRIGHT_BASE_URL is not set or invalid. Please configure this secret in GitHub Actions.')
+  }
+
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
