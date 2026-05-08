@@ -1,6 +1,6 @@
-# Playwright AI Audit Suite
+# Playwright Audit Suite
 
-This suite combines Playwright browser automation with Claude evaluation for merchant-facing user experience and content compliance checks.
+This suite combines Playwright browser automation with content compliance checks.
 
 ## Setup
 
@@ -18,7 +18,6 @@ PLAYWRIGHT=1
 PLAYWRIGHT_BASE_URL=http://localhost:3000
 NEXT_PUBLIC_SUPABASE_URL=...
 SUPABASE_SERVICE_ROLE_KEY=...
-ANTHROPIC_API_KEY=...
 ```
 
 `SUPABASE_SERVICE_ROLE_KEY` is used only by `tests/global-setup.ts` to create and delete isolated test accounts.
@@ -73,24 +72,18 @@ HTML report:
 npm run test:e2e:report
 ```
 
-## Interpreting AI failures
+## Content compliance
 
-- **80-100**: Strong merchant experience; only minor suggestions.
-- **65-79**: Understandable but needs copy or UX improvements.
-- **45-64**: Likely confusing to merchants; review before release.
-- **0-44**: Serious issue or hard-rule failure.
+The compliance tests check for:
+- Banned words (e.g., "fraud")
+- Technical jargon that shouldn't appear in merchant-facing text
+- Canonical confidence grade terminology
 
-Any occurrence of the word `fraud` in merchant-facing text is an automatic failure regardless of score.
+Any occurrence of the word `fraud` in merchant-facing text is an automatic failure.
 
 ## Updating content rules
 
 Update banned terms in:
 
 - `tests/compliance/no-fraud-language.spec.ts`
-- `tests/utils/ai-evaluator.ts`
-
-Keep hard rules deterministic in Playwright assertions wherever possible, and use AI evaluation for qualitative merchant comprehension.
-
-## Adding AI criteria
-
-Add criteria to the relevant `evaluateMerchantExperience` call. Criteria should be specific and phrased from the merchant’s point of view.
+- `tests/compliance/content-rules.spec.ts`
