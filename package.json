@@ -23,7 +23,7 @@
     "audit:csv": "ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/deployment-readiness/run-benchmarks.ts",
     "audit:identity": "node scripts/deployment-readiness/audit-identity.mjs",
     "audit:security": "node scripts/deployment-readiness/audit-security.mjs",
-    "test:critical": "playwright test --config=tests/playwright.config.ts --project=critical",
+    "test:critical": "playwright test --config=tests/playwright.config.ts --project=critical --project=mobile",
     "test:compliance": "playwright test --config=tests/playwright.config.ts tests/compliance",
     "test:e2e": "playwright test --config=tests/playwright.config.ts",
     "test:e2e:report": "playwright show-report tests/reports/html",

@@ -28,6 +28,7 @@ export default defineConfig({
     {
       name: 'desktop',
       testMatch: '**/*.spec.ts',
+      testIgnore: '**/audit/critical-path.spec.ts',
       use: { ...devices['Desktop Chrome'] }
     },
     {
