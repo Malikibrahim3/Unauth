@@ -76,8 +76,33 @@ async function globalSetup(config: FullConfig) {
 
   try {
     await page.goto(`${baseURL}/login`, { waitUntil: 'networkidle' })
-    await page.waitForSelector('#email', { timeout: 30000 })
-    await page.fill('#email', TEST_MERCHANT.email)
+    
+    // Debug: log page content to see what's actually there
+    const pageContent = await page.content()
+    console.log('[Playwright Setup] Login page HTML length:', pageContent.length)
+    console.log('[Playwright Setup] Page URL:', page.url())
+    
+    // Try multiple selectors
+    const selectors = ['#email', 'input[type="email"]', 'input[name="email"]']
+    let foundSelector = null
+    for (const selector of selectors) {
+      try {
+        await page.waitForSelector(selector, { timeout: 5000 })
+        foundSelector = selector
+        console.log('[Playwright Setup] Found selector:', selector)
+        break
+      } catch {
+        console.log('[Playwright Setup] Selector not found:', selector)
+      }
+    }
+    
+    if (!foundSelector) {
+      console.log('[Playwright Setup] No email input found, dumping page content')
+      console.log(pageContent.substring(0, 1000))
+      throw new Error('Email input not found on login page')
+    }
+    
+    await page.fill(foundSelector, TEST_MERCHANT.email)
     await page.fill('#password', TEST_MERCHANT.password)
     await page.click('button[type="submit"]')
 
