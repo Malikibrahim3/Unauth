@@ -76,9 +76,9 @@ async function globalSetup(config: FullConfig) {
 
   try {
     await page.goto(`${baseURL}/login`, { waitUntil: 'networkidle' })
-    await page.waitForSelector('input[type="email"]', { timeout: 30000 })
-    await page.fill('input[type="email"]', TEST_MERCHANT.email)
-    await page.fill('input[type="password"]', TEST_MERCHANT.password)
+    await page.waitForSelector('#email', { timeout: 30000 })
+    await page.fill('#email', TEST_MERCHANT.email)
+    await page.fill('#password', TEST_MERCHANT.password)
     await page.click('button[type="submit"]')
 
     try {
