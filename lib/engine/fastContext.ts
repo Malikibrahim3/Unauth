@@ -372,7 +372,7 @@ export async function buildFastContext(
             console.error(`[fastContext] co_occurrences ${entityType}/${side} fetch failed: ${error.message}`);
             return [] as CoOccurrence[];
           }
-          return (data as CoOccurrence[]) ?? [];
+          return (data as unknown as CoOccurrence[]) ?? [];
         })
       )
     );

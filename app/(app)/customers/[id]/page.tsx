@@ -202,7 +202,16 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
 // ── Auth + permission ──────────────────────────────────────────────────
   const svc = createServiceClient();
   const { denied, ctx } = await requirePermission(svc, user.id, PERMISSIONS.VIEW_CUSTOMERS);
-  if (denied) return denied as any;
+  if (denied) {
+    return (
+      <div className="p-8">
+        <h1 className="text-heading-lg">Access denied</h1>
+        <p className="text-body-sm mt-2" style={{ color: 'var(--text-muted)' }}>
+          You do not have permission to view this customer profile.
+        </p>
+      </div>
+    );
+  }
 
   const merchantId = ctx.merchantId;
   const { id } = resolvedParams;
