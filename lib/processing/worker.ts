@@ -38,6 +38,8 @@ import {
   expandSuspiciousClusters,
   type RowBehaviourFlags,
 } from './clusterExpansion';
+import { scoreClusterIdentity, type IdentityMatchResult } from '../identity/matchScorer';
+import { computeContextInsights } from '../identity/contextInsights';
 
 const BATCH_SIZE = 500;  // 500 rows per upsert — halves round-trips vs the old 200
 const DEFAULT_CONCURRENCY = 5;
@@ -50,7 +52,7 @@ function splitIntoBatches<T>(items: T[], size: number): T[][] {
   return batches;
 }
 
-type MatchStatus = 'none' | 'candidate' | 'probable' | 'definite';
+type MatchStatus = 'none' | 'candidate' | 'probable' | 'definite' | 'confirmed';
 
 /**
  * Maps a raw identity score to a product-level match_status using the
@@ -82,6 +84,13 @@ type PersistedIdentityResult = {
   candidateClusterId: string | null;
   /** Set ONLY for definite rows (score ≥ 75). */
   confirmedIdentityId: string | null;
+  // ── New pure-identity fields (product contract) ────────────────────────
+  /** Row-level identity result from the pure matchScorer. */
+  identityMatchResult: IdentityMatchResult | null;
+  /** Context flags (refund/dispute) — merchant decision support only. */
+  contextFlags: unknown[];
+  /** Plain-English context summary. */
+  contextSummary: string | null;
 };
 
 function rawIds(order: NormalisedOrder) {
@@ -167,6 +176,7 @@ function buildClusterIdentityResults(
   clusters: LinkedCluster[],
   clusterScores: ScoredCluster[],
   linkerInputs: LinkerOrderInput[],
+  ordersById?: Map<string, ScorerOrder>,
 ): Map<string, PersistedIdentityResult> {
   const scoresByCluster = new Map(clusterScores.map((score) => [score.cluster_id, score]));
   const inputByOrderId = new Map(linkerInputs.map((r) => [r.order_id, r]));
@@ -175,68 +185,66 @@ function buildClusterIdentityResults(
   for (const cluster of clusters) {
     const clusterScore = scoresByCluster.get(cluster.cluster_id);
 
-    // ── Grade resolution ──────────────────────────────────────────────────
-    // Priority 1: use the full scorer output (includes behavioural flags,
-    //             CE 3.0, hard caps, etc.)
-    // Priority 2: deterministic signal-weight fallback — ensures EVERY row
-    //             with a cluster_id + non-empty signals_matched receives a
-    //             grade, regardless of identity diversity within the cluster.
-    //
-    // The old `hasIdentityDiversity` gate used to force grade=null for any
-    // cluster where all orders shared the same email/card/phone/account.
-    // That was the root cause of the production bug: a repeat customer
-    // placing 11 orders with the same credentials would have
-    // hasIdentityDiversity=false, silently dropping the score/grade even
-    // though the scorer had already computed a correct DEFINITE grade.
+    // Pre-build cluster input array
+    const clusterInputs = cluster.order_ids
+      .map((id) => inputByOrderId.get(id))
+      .filter((r): r is LinkerOrderInput => r !== undefined);
+
+    // Pure identity scoring — product contract: no refund/dispute signals
+    const pureIdentityResult = scoreClusterIdentity(clusterInputs);
+
+    // Context insights — merchant decision support only
+    const clusterOrders = ordersById
+      ? cluster.order_ids
+          .map((id) => ordersById.get(id))
+          .filter((o): o is ScorerOrder => o !== undefined)
+      : [];
+    const contextResult = clusterOrders.length >= 2
+      ? computeContextInsights(cluster, clusterOrders)
+      : null;
+
+    // Legacy grade/score — backward compat so old DB columns still populate
     let grade: PersistedIdentityResult['grade'] = null;
     let identityScore: number | null = null;
     let recommendedAction: string | null = null;
 
-    // Core identity contract: the identity score must come from identity
-    // signals only. Contextual cluster scoring remains available elsewhere,
-    // but it must not influence the same-customer claim or confidence grade.
     const sig = scoreIdentityFromSignals(cluster.signals_matched);
     if (sig.identity_confidence_grade) {
       grade = sig.identity_confidence_grade;
       identityScore = sig.identity_score;
       recommendedAction = sig.recommended_action;
     } else if (clusterScore) {
-      // Keep a conservative compatibility fallback for clusters whose
-      // signal set is not enough to score as a surfaced identity match.
       grade = clusterScore.confidence_grade.toLowerCase() as PersistedIdentityResult['grade'];
     }
 
     const ce3OrderIds = Array.from(
       new Set(
-        (clusterScore?.ce3_qualifying_transactions ?? []).flatMap((pair) => [
+        (contextResult?.ce3_qualifying_transactions ?? clusterScore?.ce3_qualifying_transactions ?? []).flatMap((pair) => [
           pair.disputed_order_id,
           pair.prior_order_id,
         ])
       )
     );
 
-    // ── Product-level match status gate ───────────────────────────────────────
-    // Applies the two-tier spec thresholds on top of the scorer grade.
-    // Scores 25–34 are not graded by scorer.ts (POSSIBLE floor = 35) but the
-    // product spec still surfaces them as 'candidate' signals.
-    const matchStatus = scoreToMatchStatus(identityScore);
-    const isConfirmed  = matchStatus === 'definite';
-    const isProbable   = matchStatus === 'probable';
+    // Prefer new pure identity grade; fall back to legacy numeric threshold
+    const pureClusterGrade = pureIdentityResult.clusterGrade;
+    let matchStatus: MatchStatus;
+    if (pureClusterGrade !== 'none') {
+      matchStatus = pureClusterGrade as MatchStatus;
+    } else {
+      matchStatus = scoreToMatchStatus(identityScore);
+    }
 
-    // Pre-build the LinkerOrderInput array for all members in this cluster
-    // so we can compute per-row signals without repeated map lookups.
-    const clusterInputs = cluster.order_ids
-      .map((id) => inputByOrderId.get(id))
-      .filter((r): r is LinkerOrderInput => r !== undefined);
+    const isConfirmed = matchStatus === 'confirmed' || matchStatus === 'definite';
+    const isProbable  = matchStatus === 'probable';
 
     for (const orderId of cluster.order_ids) {
-      // Calculate signals_matched per-row: only signals present AND matched
-      // by at least one other order in the same cluster. This prevents blank-
-      // field rows from inheriting signals they don't actually contribute.
       const thisInput = inputByOrderId.get(orderId);
       const rowSignals = thisInput
         ? getRowMatchedSignals(thisInput, clusterInputs)
         : (cluster.signals_matched as string[]);
+
+      const rowPureResult = pureIdentityResult.byOrderId.get(orderId) ?? null;
 
       result.set(orderId, {
         grade,
@@ -245,13 +253,14 @@ function buildClusterIdentityResults(
         signalsMatched: rowSignals,
         behaviouralFlags: (clusterScore?.behavioural_flags ?? []).map((flag) => flag.flag),
         recommendedAction,
-        ce3Eligible: clusterScore?.ce3_eligible ?? false,
+        ce3Eligible: contextResult?.ce3_eligible ?? clusterScore?.ce3_eligible ?? false,
         ce3QualifyingTransactions: ce3OrderIds,
-        // clusterId kept ONLY for confirmed links — downstream consumers that
-        // haven't migrated yet can still read this field safely.
         clusterId: isConfirmed ? cluster.cluster_id : null,
         candidateClusterId: (isProbable || isConfirmed) ? cluster.cluster_id : null,
         confirmedIdentityId: isConfirmed ? cluster.cluster_id : null,
+        identityMatchResult: rowPureResult,
+        contextFlags: contextResult?.context_flags ?? [],
+        contextSummary: contextResult?.context_summary ?? null,
       });
     }
   }
@@ -270,6 +279,7 @@ function rowToFraudTransaction(
   jobId: string
 ): FraudTransactionInsert {
   const flags = scored.signals.filter((s) => s.fired).map((s) => s.name);
+  const imr = identity?.identityMatchResult;
 
   return {
     job_id: jobId,
@@ -303,6 +313,16 @@ function rowToFraudTransaction(
     candidate_cluster_id: identity?.candidateClusterId ?? null,
     confirmed_identity_id: identity?.confirmedIdentityId ?? null,
     false_positive_reported: false,
+    // ── New pure-identity contract fields ───────────────────────────────────────
+    identity_match_score: imr?.identity_match_score ?? null,
+    identity_match_grade: imr?.identity_match_grade ?? null,
+    identity_evidence: imr?.identity_evidence ?? [],
+    matched_datapoints: imr?.matched_datapoints ?? [],
+    changed_datapoints: imr?.changed_datapoints ?? [],
+    evidence_summary: imr?.evidence_summary ?? null,
+    // ── Context fields (merchant decision support only) ────────────────────
+    context_flags: identity?.contextFlags ?? [],
+    context_summary: identity?.contextSummary ?? null,
   };
 }
 
@@ -394,7 +414,7 @@ export async function processCsvJob(
   // 4. Score all rows synchronously (O(n) thanks to precomputed context)
   // -----------------------------------------------------------------------
   const scored = scoreBatch(normOrders, context, identityClusterMap);
-  const identityResultsByOrder = buildClusterIdentityResults(linkerResult.clusters, clusterScores, linkerInputs);
+  const identityResultsByOrder = buildClusterIdentityResults(linkerResult.clusters, clusterScores, linkerInputs, ordersById);
 
   // -----------------------------------------------------------------------
   // 3c. Second-stage graph expansion — cautious, false-positive-safe.
@@ -478,6 +498,7 @@ export async function processCsvJob(
       allExpansionClusters,
       clusterScores, // existing scores — promoted clusters get fallback grades
       linkerInputs,
+      ordersById,
     );
 
     // Apply expansion results only to rows that aren't already identity-scored

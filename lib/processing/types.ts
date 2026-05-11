@@ -54,10 +54,30 @@ export interface FraudTransactionInsert {
   ce3_qualifying_transactions?: string[];
   cluster_id?: string | null;
   /** Two-tier identity model — derived from identity_score via product thresholds. */
-  match_status?: 'none' | 'candidate' | 'probable' | 'definite';
+  match_status?: 'none' | 'candidate' | 'probable' | 'definite' | 'confirmed';
   /** Set for probable + definite rows (identity_score ≥ 50). */
   candidate_cluster_id?: string | null;
-  /** Set ONLY for definite rows (identity_score ≥ 75). */
+  /** Set ONLY for definite/confirmed rows (identity_score ≥ 75). */
   confirmed_identity_id?: string | null;
   false_positive_reported?: boolean;
+
+  // ── New identity-resolution contract fields ────────────────────────────
+  /** Pure identity match score (0–100). Never includes refund/dispute context. */
+  identity_match_score?: number | null;
+  /** Evidence-first identity match grade: none | candidate | probable | confirmed */
+  identity_match_grade?: 'none' | 'candidate' | 'probable' | 'confirmed' | null;
+  /** Structured identity evidence items that drove the score/grade. */
+  identity_evidence?: unknown[];
+  /** Human-readable labels of matched identifiers, e.g. "same phone number". */
+  matched_datapoints?: string[];
+  /** Human-readable labels of identifiers that changed from prior orders. */
+  changed_datapoints?: string[];
+  /** Plain-English explanation of the identity link. */
+  evidence_summary?: string | null;
+
+  // ── Context fields (merchant decision support only) ────────────────────
+  /** Refund/dispute/value context flags. Never used for identity scoring. */
+  context_flags?: unknown[];
+  /** Plain-English context summary for export. */
+  context_summary?: string | null;
 }

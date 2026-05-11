@@ -957,7 +957,26 @@ export function linkIdentities(input: LinkerOrderInput[]): LinkerResult {
   const candidatePairs: CandidatePair[] = [];
   const linkedPairs: { a: string; b: string; score: number; signals: LinkerSignal[]; evidence: string[] }[] = [];
 
+  // Pre-count for diagnostics.
+  let skippedByAnchor = 0;
+
   for (const acc of Array.from(pairs.values())) {
+    // Fast-path: if no strict personal signal (phone/device/account/email/card)
+    // is in the accumulated signal set, scorePair ALWAYS returns score=0 due to
+    // the anchor rule. These signals are always indexed — any pair sharing such
+    // a value has it in acc.signals already. Skipping saves >90% of scorePair
+    // calls on real-world data where most pairs share only name/postcode/ip.
+    if (
+      !acc.signals.has('card') &&
+      !acc.signals.has('phone') &&
+      !acc.signals.has('device') &&
+      !acc.signals.has('account') &&
+      !acc.signals.has('email')
+    ) {
+      skippedByAnchor++;
+      continue;
+    }
+
     const rawEmailA = rawEmailByOrderId.get(acc.order_id_a);
     const rawEmailB = rawEmailByOrderId.get(acc.order_id_b);
     if (rawEmailA && rawEmailB && rawEmailA === rawEmailB) continue;
@@ -1060,6 +1079,12 @@ export function linkIdentities(input: LinkerOrderInput[]): LinkerResult {
       );
     }
   }
+
+  console.error(
+    `[linker] step-4 scoring: ${pairs.size.toLocaleString()} total pairs, ` +
+    `${skippedByAnchor.toLocaleString()} skipped by anchor fast-path (no personal signal), ` +
+    `${(pairs.size - skippedByAnchor).toLocaleString()} actually scored`
+  );
 
   return { clusters, candidatePairs, diagnostics: allDiagnostics };
 }

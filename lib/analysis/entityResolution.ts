@@ -83,7 +83,7 @@ export interface ProfileIdentitySummary {
   signals: string[];
   clusterId: string | null;
   /** Two-tier product status; controls whether a profile is created/updated. */
-  matchStatus: 'none' | 'candidate' | 'probable' | 'definite';
+  matchStatus: 'none' | 'candidate' | 'probable' | 'definite' | 'confirmed';
 }
 
 interface ResolveResult {

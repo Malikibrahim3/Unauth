@@ -43,23 +43,31 @@
     "topSignalCombos": [
       {
         "signals": "account,phone",
-        "count": 30
+        "count": 18
       },
       {
-        "signals": "account,card,phone",
-        "count": 17
+        "signals": "account,card,ip,phone",
+        "count": 15
       },
       {
-        "signals": "device,phone",
+        "signals": "account,ip,phone",
         "count": 12
       },
       {
-        "signals": "account,device,phone",
+        "signals": "device,ip,phone",
+        "count": 12
+      },
+      {
+        "signals": "account,device,ip,phone",
         "count": 12
       },
       {
         "signals": "card,phone",
         "count": 12
+      },
+      {
+        "signals": "account,card,phone",
+        "count": 2
       }
     ],
     "scenarioOutcomes": {

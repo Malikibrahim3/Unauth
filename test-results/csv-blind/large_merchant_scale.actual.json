@@ -3,14 +3,14 @@
   "fileName": "large_merchant_scale.csv",
   "summary": {
     "definite": 16,
-    "probable": 54,
-    "possible": 40,
+    "probable": 78,
+    "possible": 16,
     "weak": 0,
     "flaggedTransactions": 110,
     "ungraded": 5290,
     "linkedClusters": 7,
     "valueAtRisk": 40326.43,
-    "estimatedExposure": 17103.65
+    "estimatedExposure": 24055.429999999997
   },
   "diagnostics": {
     "totalRows": 5400,
@@ -47,23 +47,27 @@
     "nullScoreWithCluster": [],
     "topSignalCombos": [
       {
-        "signals": "account,phone",
-        "count": 40
+        "signals": "account,ip,phone,postcode",
+        "count": 24
       },
       {
         "signals": "account,card,phone",
         "count": 22
       },
       {
-        "signals": "device,phone",
+        "signals": "account,ip,phone",
         "count": 16
       },
       {
-        "signals": "account,device,phone",
+        "signals": "device,ip,phone",
         "count": 16
       },
       {
-        "signals": "card,phone",
+        "signals": "account,device,ip,phone",
+        "count": 16
+      },
+      {
+        "signals": "card,ip,phone",
         "count": 16
       }
     ],

@@ -15,7 +15,7 @@
 // ---------------------------------------------------------------------------
 
 export const DISCLAIMER =
-  'ParcelClaim identifies likely same-customer matches from order and identity data. Merchant review should use the underlying evidence and context.';
+  'ParcelClaim identifies identity and order-pattern matches. Final decisions should be made by the merchant using the underlying evidence.';
 
 export const DISCLAIMER_SHORT =
   'Matches are indicative only. Merchant review required before action.';
@@ -27,7 +27,7 @@ export const DISCLAIMER_SHORT =
 export const COPY = {
   // Profile summary
   whyMatched: 'Why this profile was matched',
-  evidenceSignals: 'Matched datapoints',
+  evidenceSignals: 'Evidence signals',
   linkedOrders: 'Linked orders',
   confidenceLevel: 'Confidence level',
   recommendedAction: 'Recommended review action',
@@ -36,9 +36,9 @@ export const COPY = {
   // Status labels
   profilesForReview: 'Profiles for review',
   matchedProfiles: 'Matched profiles',
-  strongEvidenceSignals: 'Strong identity evidence',
+  strongEvidenceSignals: 'Strong evidence signals',
   identityMatchConfidence: 'Identity match confidence',
-  orderValueUnderReview: 'Order context under review',
+  orderValueUnderReview: 'Order value under review',
   reviewList: 'Review list',
 
   // Confidence grades (identity match, not guilt)
@@ -58,7 +58,7 @@ export const COPY = {
   matchedTransactions: 'Matched transactions',
   matchRate: 'Match rate',
   reviewWorthy: 'For review',
-  cleanOrders: 'No identity match',
+  cleanOrders: 'No signals',
 
   // Action labels (review-based, not accusatory)
   reviewBeforeRefund: 'Review before refund',
@@ -74,12 +74,12 @@ export const COPY = {
   allCustomers: 'All customers',
   flaggedForReview: 'Flagged for review',
   linkedAccounts: 'Linked accounts',
-  highRefundRate: 'High refund context',
+  highRefundRate: 'High refund rate',
   withMatchSignals: 'With match signals',
 
   // Page subtitles
   dashboardSubtitle: 'Monitor identity match signals and review evidence across all your uploads.',
-  uploadSubtitle: 'Upload a CSV export of your orders to detect identity matches and review supporting context.',
+  uploadSubtitle: 'Upload a CSV export of your orders to detect identity matches and repeated claim patterns.',
   historyDescription: 'Upload your first CSV to start reviewing identity match patterns.',
   watchlistDescription: "Profiles you're monitoring will appear here with their latest match confidence every time you upload new orders.",
 

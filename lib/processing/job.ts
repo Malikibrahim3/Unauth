@@ -123,13 +123,21 @@ export async function completeJob(
     update.flagged_count = flaggedCount;
   }
 
-  const { error } = await serviceClient
-    .from('processing_jobs')
-    .update(update as any)
-    .eq('id', jobId);
+  // Retry with exponential backoff. A transient Supabase error here leaves the
+  // job permanently stuck in 'processing', causing the UI to poll indefinitely.
+  // We try up to 5 times (delays: 1s, 2s, 4s, 8s) before giving up.
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const { error } = await serviceClient
+      .from('processing_jobs')
+      .update(update as any)
+      .eq('id', jobId);
 
-  if (error) {
-    console.error('Failed to complete job:', error);
+    if (!error) return;
+
+    console.error(`Failed to complete job (attempt ${attempt + 1}/5):`, error);
+    if (attempt < 4) {
+      await new Promise<void>((r) => setTimeout(r, 1000 * 2 ** attempt));
+    }
   }
 }
 

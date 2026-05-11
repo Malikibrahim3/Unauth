@@ -28,7 +28,7 @@ function isPhoneUserAgent(userAgent: string): boolean {
   return isPhone && !isTablet;
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   initSentryServer();
 
   const requestHeaders = new Headers(request.headers);
@@ -49,14 +49,14 @@ export async function middleware(request: NextRequest) {
   const isMobileUnsupportedRoute = pathname === '/mobile-unsupported';
 
   if (!isApiRoute && !isAssetRoute && !isMobileUnsupportedRoute) {
-      const userAgent = request.headers.get('user-agent') ?? '';
-      if (isPhoneUserAgent(userAgent)) {
-        const url = request.nextUrl.clone();
-        url.pathname = '/mobile-unsupported';
-        const response = NextResponse.redirect(url);
-        response.headers.set(requestIdHeader, requestHeaders.get(requestIdHeader)!);
-        return response;
-      }
+    const userAgent = request.headers.get('user-agent') ?? '';
+    if (isPhoneUserAgent(userAgent)) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/mobile-unsupported';
+      const response = NextResponse.redirect(url);
+      response.headers.set(requestIdHeader, requestHeaders.get(requestIdHeader)!);
+      return response;
+    }
   }
 
   const isAuthRoute =

@@ -75,6 +75,16 @@ async function GETHandler(
     signals_matched: unknown;
     customer_email: string | null;
     customer_name: string | null;
+    // New identity-resolution contract fields
+    identity_match_score: number | null;
+    identity_match_grade: string | null;
+    matched_datapoints: unknown;
+    changed_datapoints: unknown;
+    identity_evidence: unknown;
+    evidence_summary: string | null;
+    // Context fields (merchant decision support only)
+    context_flags: unknown;
+    context_summary: string | null;
   }> = [];
 
   // Determine total rows expected so we can detect truncation.
@@ -90,7 +100,7 @@ async function GETHandler(
     const { data, error: txError } = await serviceClient
       .from('audit_transactions')
       .select(
-        'order_id, processed_at, order_value, identity_score, identity_confidence_grade, cluster_id, match_status, candidate_cluster_id, confirmed_identity_id, signals_matched, customer_email, customer_name'
+        'order_id, processed_at, order_value, identity_score, identity_confidence_grade, cluster_id, match_status, candidate_cluster_id, confirmed_identity_id, signals_matched, customer_email, customer_name, identity_match_score, identity_match_grade, matched_datapoints, changed_datapoints, identity_evidence, evidence_summary, context_flags, context_summary'
       )
       .eq('job_id', runId)
       .order('id', { ascending: true })
@@ -107,38 +117,71 @@ async function GETHandler(
   // Sanity-check — warn in headers if we got fewer rows than expected.
   const rowsIncomplete = !(rows.length >= expectedTotalRows);
 
-  // Build CSV — all user-supplied values pass through escapeCsvCell to prevent
-  // formula injection when exported files are opened in Excel / Sheets.
   const headers = [
     'order_id',
     'processed_at',
     'order_value',
     'match_status',
-    'identity_score',
-    'identity_confidence_grade',
+    'identity_match_score',
+    'identity_match_grade',
     'cluster_id',
     'candidate_cluster_id',
     'confirmed_identity_id',
     'customer_email',
     'customer_name',
+    'matched_datapoints',
+    'changed_datapoints',
+    'evidence_summary',
+    'identity_evidence',
+    'context_flags',
+    'context_summary',
+    'recommended_review_reason',
+    // Legacy columns (kept for backward compat)
+    'identity_score',
+    'identity_confidence_grade',
     'signals_matched',
   ];
   const csvLines: string[] = [headers.join(',')];
 
   for (const row of rows) {
     const signals = Array.isArray(row.signals_matched) ? (row.signals_matched as string[]).join('; ') : '';
+    const matchedDp = Array.isArray(row.matched_datapoints) ? (row.matched_datapoints as string[]).join('; ') : '';
+    const changedDp = Array.isArray(row.changed_datapoints) ? (row.changed_datapoints as string[]).join('; ') : '';
+    const identityEvidenceStr = row.identity_evidence ? JSON.stringify(row.identity_evidence) : '';
+    const contextFlagsStr = Array.isArray(row.context_flags)
+      ? (row.context_flags as Array<{ flag?: string; detail?: string }>)
+          .map((f) => `${f.flag ?? ''}: ${f.detail ?? ''}`)
+          .join('; ')
+      : '';
+
+    // Build recommended_review_reason: identity first, context second
+    const reviewParts: string[] = [];
+    if (row.evidence_summary) reviewParts.push(row.evidence_summary);
+    if (row.context_summary)  reviewParts.push(row.context_summary);
+    const recommendedReviewReason = reviewParts.join(' ');
+
     const cells = [
       escapeCsvCell(row.order_id ?? ''),
       escapeCsvCell(row.processed_at ?? ''),
       row.order_value != null ? String(row.order_value) : '',
       escapeCsvCell(row.match_status ?? ''),
-      row.identity_score != null ? String(Math.round(row.identity_score)) : '',
-      escapeCsvCell(row.identity_confidence_grade ?? ''),
+      row.identity_match_score != null ? String(Math.round(row.identity_match_score)) : '',
+      escapeCsvCell(row.identity_match_grade ?? ''),
       escapeCsvCell(row.cluster_id ?? ''),
       escapeCsvCell(row.candidate_cluster_id ?? ''),
       escapeCsvCell(row.confirmed_identity_id ?? ''),
       escapeCsvCell(row.customer_email ?? ''),
       escapeCsvCell(row.customer_name ?? ''),
+      escapeCsvCell(matchedDp),
+      escapeCsvCell(changedDp),
+      escapeCsvCell(row.evidence_summary ?? ''),
+      escapeCsvCell(identityEvidenceStr),
+      escapeCsvCell(contextFlagsStr),
+      escapeCsvCell(row.context_summary ?? ''),
+      escapeCsvCell(recommendedReviewReason),
+      // Legacy columns
+      row.identity_score != null ? String(Math.round(row.identity_score)) : '',
+      escapeCsvCell(row.identity_confidence_grade ?? ''),
       escapeCsvCell(signals),
     ];
     csvLines.push(cells.join(','));
