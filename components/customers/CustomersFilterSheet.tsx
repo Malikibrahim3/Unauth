@@ -3,6 +3,7 @@
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useCallback, useTransition, useRef, useState } from 'react';
 import { ChevronDown, ChevronUp, X, SlidersHorizontal } from 'lucide-react';
+import { labelFor } from '@/lib/copy/labels';
 
 /* ─── Shared input style ─────────────────────────────────────────── */
 const inputCls =
@@ -86,7 +87,7 @@ export default function CustomersFilterSheet() {
         <input
           key={searchParams.get('q')}
           type="search"
-          placeholder="Search by email or name…"
+          placeholder={`Search by ${labelFor('email').toLowerCase()} or ${labelFor('name').toLowerCase()}…`}
           defaultValue={searchParams.get('q') ?? ''}
           onChange={(e) => makeDebounced('q', 2)(e.target.value)}
           className="flex-1 min-w-[200px] rounded-lg px-3 py-2 text-sm focus:outline-none"
@@ -241,10 +242,10 @@ export default function CustomersFilterSheet() {
                   <p className="text-xs font-medium mb-2 uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Identity</p>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {[
-                      { key: 'ip', placeholder: 'IP address', minLen: 4 },
+                      { key: 'ip', placeholder: labelFor('ip'), minLen: 4 },
                       { key: 'address', placeholder: 'Address (partial)', minLen: 4 },
-                      { key: 'card', placeholder: 'Card last 4', minLen: 2 },
-                      { key: 'phone', placeholder: 'Phone (partial)', minLen: 4 },
+                      { key: 'card', placeholder: `${labelFor('card')} ending`, minLen: 2 },
+                      { key: 'phone', placeholder: `${labelFor('phone')} (partial)`, minLen: 4 },
                     ].map(({ key, placeholder, minLen }) => (
                       <input
                         key={`${key}-${searchParams.get(key)}`}

@@ -26,7 +26,7 @@ export { FilterBar } from './FilterBar';
 export { Drawer } from './Drawer';
 export { Tabs } from './Tabs';
 export { EmptyState } from './EmptyState';
-export { Skeleton, LoadingState, Spinner } from './LoadingState';
+export { Skeleton, LoadingState, Spinner, ErrorBoundaryUI } from './LoadingState';
 export { Tooltip } from './Tooltip';
 export { EvidenceList } from './EvidenceList';
 export { LinkedIdentityList } from './LinkedIdentityList';

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { logAction } from '@/lib/permissions/audit';
+import { withRequestLogging } from '@/lib/log';
 
 const ALL_SIGNALS = [
   'refundRate',
@@ -34,7 +35,7 @@ function isValidBody(b: unknown): b is FeedbackBody {
   return true;
 }
 
-export async function POST(request: NextRequest) {
+async function POSTHandler(request: NextRequest) {
   let body: unknown;
   try {
     body = await request.json();
@@ -108,3 +109,5 @@ export async function POST(request: NextRequest) {
     signals_that_fired: Array.from(fired),
   });
 }
+
+export const POST = withRequestLogging('/api/fraud-feedback', POSTHandler);

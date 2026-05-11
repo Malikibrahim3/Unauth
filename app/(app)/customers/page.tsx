@@ -5,7 +5,9 @@ import CustomersFilterSheet from '@/components/customers/CustomersFilterSheet';
 import CustomersTableClient from '@/components/customers/CustomersTableClient';
 import PageSizeSelect from '@/components/common/PageSizeSelect';
 import { PageHeader } from '@/components/common/PageHeader';
+import { RISK_TIER_COPY } from '@/lib/copy/riskTiers';
 import { escapePostgrestFilterValue } from '@/lib/supabase/merchantHelpers';
+import { STATUS_LABELS } from '@/lib/utils/investigationStatus';
 
 // Helper: build a URL with one search param removed
 function buildRemoveHref(sp: Record<string, string | undefined>, key: string) {
@@ -341,8 +343,8 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
       {!noFilters && (
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-caption" style={{ color: 'var(--text-muted)' }}>Active filters:</span>
-          {riskFilter && <FilterChip label={`Risk: ${riskFilter}`} removeHref={buildRemoveHref(sp, 'risk')} />}
-          {statusFilter && <FilterChip label={`Status: ${statusFilter}`} removeHref={buildRemoveHref(sp, 'status')} />}
+          {riskFilter && <FilterChip label={`Match confidence: ${RISK_TIER_COPY[riskFilter as keyof typeof RISK_TIER_COPY]?.label ?? riskFilter}`} removeHref={buildRemoveHref(sp, 'risk')} />}
+          {statusFilter && <FilterChip label={`Status: ${STATUS_LABELS[statusFilter as keyof typeof STATUS_LABELS] ?? statusFilter}`} removeHref={buildRemoveHref(sp, 'status')} />}
           {hasRefunds && <FilterChip label="Has refunds" removeHref={buildRemoveHref(sp, 'hasRefunds')} />}
           {hasChargebacks && <FilterChip label="Has chargebacks" removeHref={buildRemoveHref(sp, 'hasChargebacks')} />}
           {watchlistedOnly && <FilterChip label="Watchlisted" removeHref={buildRemoveHref(sp, 'watchlisted')} />}

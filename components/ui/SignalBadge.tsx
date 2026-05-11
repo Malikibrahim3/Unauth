@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils';
+import { signalCopy } from '@/lib/copy/signals';
 import { Badge, type BadgeTone } from './Badge';
 
 export type SignalType =
@@ -19,24 +20,23 @@ export type SignalType =
 export type SignalStrength = 'weak' | 'moderate' | 'strong';
 
 interface SignalMeta {
-  label: string;
   tone: BadgeTone;
 }
 
 export const SIGNAL_META: Record<SignalType, SignalMeta> = {
-  shared_email:               { label: 'Shared email',          tone: 'info' },
-  shared_phone:               { label: 'Shared phone',          tone: 'info' },
-  shared_address:             { label: 'Shared address',        tone: 'info' },
-  shared_card:                { label: 'Shared card',           tone: 'warning' },
-  shared_account_id:          { label: 'Shared account',        tone: 'info' },
-  shared_ip:                  { label: 'Shared IP',             tone: 'info' },
-  shared_device:              { label: 'Shared device',         tone: 'warning' },
-  refund_velocity:            { label: 'Refund velocity',       tone: 'danger' },
-  chargeback_after_delivery:  { label: 'CB after delivery',     tone: 'critical' },
-  item_not_received_repeat:   { label: 'INR repeat',            tone: 'danger' },
-  address_mismatch:           { label: 'Address mismatch',      tone: 'warning' },
-  name_variant:               { label: 'Name variant',          tone: 'info' },
-  behavioral_anomaly:         { label: 'Behavioural anomaly',   tone: 'warning' },
+  shared_email:               { tone: 'info' },
+  shared_phone:               { tone: 'info' },
+  shared_address:             { tone: 'info' },
+  shared_card:                { tone: 'warning' },
+  shared_account_id:          { tone: 'info' },
+  shared_ip:                  { tone: 'info' },
+  shared_device:              { tone: 'warning' },
+  refund_velocity:            { tone: 'danger' },
+  chargeback_after_delivery:  { tone: 'critical' },
+  item_not_received_repeat:   { tone: 'danger' },
+  address_mismatch:           { tone: 'warning' },
+  name_variant:               { tone: 'info' },
+  behavioral_anomaly:         { tone: 'warning' },
 };
 
 interface SignalBadgeProps {
@@ -71,11 +71,12 @@ function StrengthBars({ strength }: { strength: SignalStrength }) {
 }
 
 export function SignalBadge({ signal, strength, size = 'md', className }: SignalBadgeProps) {
-  const meta = SIGNAL_META[signal] ?? { label: signal, tone: 'info' as BadgeTone };
+  const meta = SIGNAL_META[signal] ?? { tone: 'info' as BadgeTone };
+  const copy = signalCopy(signal);
 
   return (
     <Badge tone={meta.tone} variant="subtle" size={size} className={cn('whitespace-nowrap', className)}>
-      {meta.label}
+      {copy.badge ?? copy.short}
       {strength && <StrengthBars strength={strength} />}
     </Badge>
   );

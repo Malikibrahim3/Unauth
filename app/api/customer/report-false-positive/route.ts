@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createRequestLogger, withRequestLogging } from '@/lib/log';
+import { captureServerException } from '@/lib/sentry';
 
 /**
  * POST /api/customer/report-false-positive
@@ -15,7 +17,8 @@ import { createClient } from '@/lib/supabase/server';
  *
  * Body: { cluster_id: string; merchant_id?: string; notes?: string }
  */
-export async function POST(req: NextRequest) {
+async function POSTHandler(req: NextRequest) {
+  const logger = createRequestLogger(req, '/api/customer/report-false-positive');
   try {
     const body = await req.json();
     const { cluster_id, notes } = body as {
@@ -92,7 +95,7 @@ export async function POST(req: NextRequest) {
       });
 
     if (reportError) {
-      console.error('[report-false-positive] insert failed:', reportError.message);
+      logger.error('false_positive_report.insert_failed', { error: reportError, clusterId: cluster_id });
       return NextResponse.json(
         { error: 'Failed to submit report' },
         { status: 500 }
@@ -126,7 +129,14 @@ export async function POST(req: NextRequest) {
         'Report submitted. Our team will review the connection and follow up if needed. The link status is unchanged until the review is complete.',
     });
   } catch (err) {
-    console.error('[report-false-positive] unexpected error:', err);
+    captureServerException(err, {
+      requestId: req.headers.get('x-request-id'),
+      route: '/api/customer/report-false-positive',
+      method: req.method,
+    });
+    logger.error('false_positive_report.failed', { error: err });
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+
+export const POST = withRequestLogging('/api/customer/report-false-positive', POSTHandler);

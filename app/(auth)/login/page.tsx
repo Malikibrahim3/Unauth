@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
+import { UnauthLogo } from '@/components/ui/UnauthLogo';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -114,9 +115,8 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         <div className="rounded-lg p-8 border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)', boxShadow: 'var(--shadow-sm)' }}>
           <div className="mb-8">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="flex h-8 w-8 items-center justify-center rounded-md text-heading-sm font-bold" style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}>U</span>
-              <span className="text-heading-lg" style={{ color: 'var(--text)' }}>Unauth</span>
+            <div className="mb-4">
+              <UnauthLogo variant="wordmark-light" size={40} />
             </div>
             <p className="text-body-sm" style={{ color: 'var(--text-muted)' }}>Identity match review for ecommerce merchants</p>
           </div>

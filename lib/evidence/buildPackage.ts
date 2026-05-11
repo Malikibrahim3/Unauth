@@ -52,16 +52,17 @@ export async function buildEvidencePackage(
   merchantId: string,
   customerProfileId: string,
   disputedOrderId: string,
-  supabaseServiceRole: SupabaseClient
+  supabaseServiceRole: SupabaseClient,
+  legacyOwnerUserId?: string | null
 ): Promise<EvidencePackage> {
   // -------------------------------------------------------------------------
   // 1. Merchant name
   // -------------------------------------------------------------------------
   const { data: merchantRow } = await supabaseServiceRole
     .from('merchants')
-    .select('id, business_name, name')
+    .select('id, user_id, business_name, name')
     .eq('id', merchantId)
-    .single() as unknown as { data: { id: string; business_name?: string; name?: string } | null }
+    .single() as unknown as { data: { id: string; user_id?: string; business_name?: string; name?: string } | null }
 
   const merchantName =
     (merchantRow as any)?.business_name ??
@@ -74,7 +75,8 @@ export async function buildEvidencePackage(
   const profileRow = await fetchMerchantScopedCustomerProfile(
     supabaseServiceRole,
     merchantId,
-    customerProfileId
+    customerProfileId,
+    legacyOwnerUserId ?? merchantRow?.user_id ?? null
   )
   if (!profileRow) throw new Error(`Customer profile not found or not owned by merchant: ${customerProfileId}`)
 

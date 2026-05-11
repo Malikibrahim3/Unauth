@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { createScopedClient } from '@/lib/supabase/scoped';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { logAction } from '@/lib/permissions/audit';
 import { streamParseCsv, MAX_ROWS } from '@/lib/processing/streamParser';
 import { updateJobTotalRows, completeJob } from '@/lib/processing/job';
 import { processCsvJob } from '@/lib/processing/worker';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { createRequestLogger, withRequestLogging } from '@/lib/log';
+import { captureServerException } from '@/lib/sentry';
 
 // ---------------------------------------------------------------------------
 // Watchlist appearances — called after a job completes successfully
@@ -13,10 +16,10 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 async function checkWatchlistAppearances(
   merchantId: string,
   auditId: string,
-  supabase: SupabaseClient
+  scopedClient: SupabaseClient
 ) {
   // Fetch all customer profile IDs in this merchant's watchlist
-  const { data: watchlisted, error: watchlistErr } = await supabase
+  const { data: watchlisted, error: watchlistErr } = await scopedClient
     .from('watchlist_entries')
     .select('customer_profile_id')
     .eq('merchant_id', merchantId);
@@ -34,7 +37,7 @@ async function checkWatchlistAppearances(
 
   // Resolve watchlist appearances via profile appearance links, then map
   // appearance.transaction_id -> audit_transactions.identity_confidence_grade.
-  const { data: appearances, error: appearancesErr } = await supabase
+  const { data: appearances, error: appearancesErr } = await scopedClient
     .from('customer_profile_audit_appearances')
     .select('profile_id, transaction_id')
     .eq('audit_id', auditId)
@@ -58,7 +61,7 @@ async function checkWatchlistAppearances(
 
   const txGrade = new Map<string, string | null>();
   if (txIds.length > 0) {
-    const { data: txRows, error: txErr } = await supabase
+    const { data: txRows, error: txErr } = await scopedClient
       .from('audit_transactions')
       .select('id, identity_confidence_grade')
       .eq('job_id', auditId)
@@ -106,7 +109,7 @@ async function checkWatchlistAppearances(
     highest_grade: data.highestGrade,
   }));
 
-  const { error } = await supabase
+  const { error } = await scopedClient
     .from('watchlist_appearances')
     .upsert(rows, { onConflict: 'merchant_id,customer_profile_id,audit_id' });
 
@@ -118,7 +121,8 @@ async function checkWatchlistAppearances(
 // Allow up to 5 minutes for large CSV processing on Vercel/Next.js
 export const maxDuration = 300;
 
-export async function POST(request: NextRequest) {
+async function POSTHandler(request: NextRequest) {
+  const logger = createRequestLogger(request, '/api/process-csv-job');
   // Auth check — must be an authenticated merchant
   const userClient = createClient();
   const { data: { user } } = await userClient.auth.getUser();
@@ -127,25 +131,27 @@ export async function POST(request: NextRequest) {
   const serviceClient = createServiceClient();
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.UPLOAD_CSV);
   if (denied) return denied;
+  const scopedClient = createScopedClient(ctx.merchantId, serviceClient);
 
   const { jobId } = await request.json();
 
-  const routeLog = (msg: string) => console.log(`[process ${jobId}] ${new Date().toISOString()} ${msg}`);
+  const routeLog = (msg: string, extra?: Record<string, unknown>) =>
+    logger.info('process_csv_job.progress', { jobId, detail: msg, ...extra });
 
   // Verify the job belongs to this merchant before processing
-  const { data: jobOwner } = await serviceClient
+  const { data: jobOwner } = await scopedClient
     .from('processing_jobs')
     .select('merchant_id')
     .eq('id', jobId)
     .single();
-  if (!jobOwner || jobOwner.merchant_id !== ctx.merchantId) {
+  if (!jobOwner) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   logAction({ ctx, action: 'upload_csv', resourceType: 'job', resourceId: jobId });
 
   // Step 1: Query csv_upload_queue for the specific job
-  const { data: queueItem, error: queueError } = await serviceClient
+  const { data: queueItem, error: queueError } = await scopedClient
     .from('csv_upload_queue')
     .select('*')
     .eq('status', 'pending')
@@ -157,13 +163,13 @@ export async function POST(request: NextRequest) {
   }
 
   // Step 2: Immediately update to 'processing' and set started_at
-  const { error: updateError } = await serviceClient
+  const { error: updateError } = await scopedClient
     .from('csv_upload_queue')
     .update({ status: 'processing', started_at: new Date().toISOString() })
     .eq('id', queueItem.id);
 
   if (updateError) {
-    console.error('Failed to update queue status:', updateError);
+    logger.error('process_csv_job.claim_failed', { jobId, error: updateError });
     return NextResponse.json({ error: 'Failed to claim job' }, { status: 500 });
   }
 
@@ -194,8 +200,8 @@ export async function POST(request: NextRequest) {
     } catch (err) {
       const message = err instanceof Error ? err.message : 'CSV parse failed';
       routeLog(`CSV parse failed: ${message}`);
-      await completeJob(serviceClient, queueItem.job_id, false, [{ message }]);
-      await serviceClient
+      await completeJob(scopedClient, queueItem.job_id, false, [{ message }]);
+      await scopedClient
         .from('csv_upload_queue')
         .update({ status: 'failed', completed_at: new Date().toISOString() })
         .eq('id', queueItem.id);
@@ -203,10 +209,10 @@ export async function POST(request: NextRequest) {
     }
 
     if (!parseResult.valid) {
-      await completeJob(serviceClient, queueItem.job_id, false, [
+      await completeJob(scopedClient, queueItem.job_id, false, [
         { message: `Missing required columns: ${parseResult.missingRequired.join(', ')}` },
       ]);
-      await serviceClient
+      await scopedClient
         .from('csv_upload_queue')
         .update({ status: 'failed', completed_at: new Date().toISOString() })
         .eq('id', queueItem.id);
@@ -217,10 +223,10 @@ export async function POST(request: NextRequest) {
     }
 
     if (parseResult.rowCount > MAX_ROWS) {
-      await completeJob(serviceClient, queueItem.job_id, false, [
+      await completeJob(scopedClient, queueItem.job_id, false, [
         { message: `Row count ${parseResult.rowCount} exceeds limit of ${MAX_ROWS}` },
       ]);
-      await serviceClient
+      await scopedClient
         .from('csv_upload_queue')
         .update({ status: 'failed', completed_at: new Date().toISOString() })
         .eq('id', queueItem.id);
@@ -228,8 +234,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Update job with row count and mark as processing
-    await updateJobTotalRows(serviceClient, queueItem.job_id, parseResult.rowCount);
-    await serviceClient
+    await updateJobTotalRows(scopedClient, queueItem.job_id, parseResult.rowCount);
+    await scopedClient
       .from('processing_jobs')
       .update({ status: 'processing' })
       .eq('id', queueItem.job_id);
@@ -240,21 +246,22 @@ export async function POST(request: NextRequest) {
     const scored = await processCsvJob(parseResult.rows, queueItem.job_id, serviceClient, 5, queueItem.merchant_id);
     routeLog(`Processing pipeline finished in ${Date.now() - procStart}ms`);
     const flaggedCount = scored.filter((s) => s.flagged).length;
-    await completeJob(serviceClient, queueItem.job_id, true, undefined, flaggedCount);
+    await completeJob(scopedClient, queueItem.job_id, true, undefined, flaggedCount);
 
     // Check for watchlisted customers that appeared in this audit.
     // Surface failures in logs without failing the completed ingest pipeline.
     try {
-      await checkWatchlistAppearances(queueItem.merchant_id, queueItem.job_id, serviceClient);
+      await checkWatchlistAppearances(queueItem.merchant_id, queueItem.job_id, scopedClient);
     } catch (err) {
-      console.error(
-        '[watchlist_appearances] non-fatal sync error:',
-        err instanceof Error ? err.message : String(err)
-      );
+      logger.error('process_csv_job.watchlist_sync_failed', {
+        jobId: queueItem.job_id,
+        error: err,
+        nonFatal: true,
+      });
     }
 
     // Step 5: Update csv_upload_queue to 'completed'
-    await serviceClient
+    await scopedClient
       .from('csv_upload_queue')
       .update({ status: 'completed', completed_at: new Date().toISOString() })
       .eq('id', queueItem.id);
@@ -265,7 +272,7 @@ export async function POST(request: NextRequest) {
       .remove([queueItem.storage_path]);
 
     if (deleteError) {
-      console.error('Failed to delete file from storage:', deleteError);
+      logger.error('process_csv_job.storage_cleanup_failed', { jobId: queueItem.job_id, error: deleteError, nonFatal: true });
       // Non-fatal error, log but don't fail the job
     }
 
@@ -275,12 +282,18 @@ export async function POST(request: NextRequest) {
       rowsProcessed: parseResult.rowCount,
     });
   } catch (err) {
-    console.error('Processing error:', err);
+    captureServerException(err, {
+      requestId: request.headers.get('x-request-id'),
+      merchantId: ctx.merchantId,
+      route: '/api/process-csv-job',
+      method: request.method,
+    });
+    logger.error('process_csv_job.failed', { jobId, error: err });
     const message = err instanceof Error ? err.message : String(err);
     
     // Mark job as failed
-    await completeJob(serviceClient, queueItem.job_id, false, [{ message }]);
-    await serviceClient
+    await completeJob(scopedClient, queueItem.job_id, false, [{ message }]);
+    await scopedClient
       .from('csv_upload_queue')
       .update({ status: 'failed', completed_at: new Date().toISOString() })
       .eq('id', queueItem.id);
@@ -288,3 +301,5 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
+
+export const POST = withRequestLogging('/api/process-csv-job', POSTHandler);

@@ -1,0 +1,36 @@
+name: Seed Demo Merchant
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '15 2 * * *'
+
+concurrency:
+  group: seed-demo-merchant
+  cancel-in-progress: false
+
+jobs:
+  seed-demo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
+      NEXT_PUBLIC_DEMO_MERCHANT_ID: ${{ secrets.STAGING_DEMO_MERCHANT_ID }}
+      DEMO_MERCHANT_EMAIL: ${{ secrets.STAGING_DEMO_MERCHANT_EMAIL }}
+      DEMO_MERCHANT_NAME: ASOS Demo Merchant
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Seed demo merchant
+        run: npm run seed:demo

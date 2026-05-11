@@ -1,11 +1,12 @@
 import type { IdentityTimelineEntry } from '@/app/api/customers/[id]/route';
+import { labelFor } from '@/lib/copy/labels';
 
 const FIELD_LABELS: Record<IdentityTimelineEntry['field'], string> = {
-  email: 'Email',
-  name: 'Name',
-  address: 'Address',
-  ip: 'IP address',
-  card_last4: 'Card (last 4)',
+  email: labelFor('email'),
+  name: labelFor('name'),
+  address: labelFor('address'),
+  ip: labelFor('ip'),
+  card_last4: labelFor('card_last4'),
 };
 
 function formatDate(iso: string): string {

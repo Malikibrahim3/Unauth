@@ -14,7 +14,7 @@ export default defineConfig({
     ['list']
   ],
   use: {
-    baseURL: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
+    baseURL: process.env.PLAYWRIGHT_BASE_URL ?? process.env.STAGING_BASE_URL ?? 'http://localhost:3000',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
     trace: 'retain-on-failure',

@@ -15,13 +15,16 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServiceClient } from '@supabase/supabase-js';
+import { createScopedClient } from '@/lib/supabase/scoped';
+import { createRequestLogger, withRequestLogging } from '@/lib/log';
 
 export const dynamic = 'force-dynamic';
 
 // Whitelisted fields — no PII
 const DEMO_FIELDS = 'id, filename, total_rows, flagged_count, status, created_at';
 
-export async function GET(req: NextRequest) {
+async function GETHandler(req: NextRequest) {
+  const logger = createRequestLogger(req, '/api/demo/runs');
   // Only callable from server-side demo page fetch
   if (req.headers.get('x-internal-demo') !== '1') {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -41,18 +44,20 @@ export async function GET(req: NextRequest) {
   const supabase = createServiceClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
+  const scopedSupabase = createScopedClient(DEMO_MERCHANT_ID, supabase as any);
 
-  const { data, error } = await supabase
+  const { data, error } = await scopedSupabase
     .from('processing_jobs')
     .select(DEMO_FIELDS)
-    .eq('merchant_id', DEMO_MERCHANT_ID) // tightly scoped to demo merchant only
     .order('created_at', { ascending: false })
     .limit(10);
 
   if (error) {
-    console.error('[demo/runs] query error:', error.message);
+    logger.error('demo.runs.query_failed', { error });
     return NextResponse.json({ runs: [] });
   }
 
   return NextResponse.json({ runs: data ?? [] });
 }
+
+export const GET = withRequestLogging('/api/demo/runs', GETHandler);

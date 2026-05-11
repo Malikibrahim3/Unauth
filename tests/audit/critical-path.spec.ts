@@ -1,5 +1,12 @@
 import { test, expect } from '@playwright/test'
-import { signIn, extractPageText, waitForProcessing } from '../utils/test-fixtures'
+import {
+  extractPageText,
+  generateEvidencePackage,
+  getFirstCustomerId,
+  signIn,
+  uploadCSV,
+  waitForProcessing,
+} from '../utils/test-fixtures'
 import { evaluateMerchantExperience, assertEvaluation } from '../utils/ai-evaluator'
 import path from 'path'
 
@@ -83,6 +90,21 @@ test.describe('Critical path — merchant first use', () => {
       'Confidence grade uses only: Definite, Probable, Possible, or Weak',
     ])
     assertEvaluation(evaluation, 'Customer profile', 75)
+  })
+
+  test('upload to customers to evidence generation completes', async ({ page }) => {
+    const runId = await uploadCSV(page, 'rich', {
+      label: `Critical evidence flow ${Date.now()}`,
+    })
+    expect(runId).toBeTruthy()
+
+    const customerId = await getFirstCustomerId(page)
+    await page.goto(`/customers/${customerId}`)
+    await expect(page.getByRole('link', { name: /generate evidence/i }).first()).toBeVisible()
+
+    const packageId = await generateEvidencePackage(page, customerId)
+    expect(packageId).toBeTruthy()
+    await expect(page.getByText(/UNAUTH-/)).toBeVisible()
   })
 
   test('critical path works on mobile viewport', async ({ page }) => {

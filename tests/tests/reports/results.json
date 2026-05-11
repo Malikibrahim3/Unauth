@@ -35,7 +35,9 @@
         "id": "desktop",
         "name": "desktop",
         "testDir": "/Users/malikibrahim/Downloads/Unauth/tests",
-        "testIgnore": [],
+        "testIgnore": [
+          "**/audit/critical-path.spec.ts"
+        ],
         "testMatch": [
           "**/*.spec.ts"
         ],
@@ -90,19 +92,13 @@
   "suites": [],
   "errors": [
     {
-      "message": "Error: Failed to create merchant profile: Could not find the 'store_name' column of 'merchants' in the schema cache",
-      "stack": "Error: Failed to create merchant profile: Could not find the 'store_name' column of 'merchants' in the schema cache\n    at globalSetup (/Users/malikibrahim/Downloads/Unauth/tests/global-setup.ts:60:11)",
-      "location": {
-        "file": "/Users/malikibrahim/Downloads/Unauth/tests/global-setup.ts",
-        "column": 11,
-        "line": 60
-      },
-      "snippet": "\u001b[90m   at \u001b[39mglobal-setup.ts:60\n\n  58 |\n  59 |   if (merchantError) {\n> 60 |     throw new Error(`Failed to create merchant profile: ${merchantError.message}`)\n     |           ^\n  61 |   }\n  62 |\n  63 |   fs.writeFileSync(CREDENTIALS_PATH, JSON.stringify({"
+      "message": "Error: No tests found",
+      "stack": "Error: No tests found"
     }
   ],
   "stats": {
-    "startTime": "2026-05-05T00:57:11.128Z",
-    "duration": 956.475,
+    "startTime": "2026-05-11T01:08:02.459Z",
+    "duration": 186.87700000000007,
     "expected": 0,
     "skipped": 0,
     "unexpected": 0,

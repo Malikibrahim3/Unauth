@@ -384,7 +384,10 @@ const PROFILE_SELECT =
 export async function fetchMerchantScopedCustomerProfile(
   serviceClient: SupabaseClient,
   merchantId: string,
-  profileId: string
+  profileId: string,
+  // Legacy user_id fallback: merchant_ids stores both merchant UUIDs and owner
+  // user IDs for older rows. Providing this allows the query to match either.
+  _legacyUserId?: string | null
 ): Promise<Record<string, unknown> | null> {
   const { data } = await serviceClient
     .from('customer_profiles')
@@ -604,6 +607,8 @@ export const REVIEW_QUEUE_SELECT =
  * Pagination is handled by the caller via the `range` option, or by passing
  * `paginate: true` to fetch all rows without a hard cap.
  */
+export type ReviewQueueWindow = 'today' | 'week' | 'all';
+
 export async function fetchMerchantReviewQueueRows(
   serviceClient: SupabaseClient,
   merchantId: string,
@@ -612,6 +617,8 @@ export async function fetchMerchantReviewQueueRows(
     from?: number;
     to?: number;
     paginate?: boolean;
+    processedFrom?: string;
+    processedTo?: string;
   } = {}
 ): Promise<{ rows: Array<Record<string, unknown>>; ownedJobIds: string[] }> {
   const ownedJobIds = await getMerchantOwnedJobIds(serviceClient, merchantId);
@@ -619,8 +626,8 @@ export async function fetchMerchantReviewQueueRows(
 
   const select = options.select ?? REVIEW_QUEUE_SELECT;
 
-  const buildQuery = (from: number, to: number) =>
-    serviceClient
+  const buildQuery = (from: number, to: number) => {
+    let q = serviceClient
       .from('audit_transactions')
       .select(select)
       .in('job_id', ownedJobIds)
@@ -634,8 +641,13 @@ export async function fetchMerchantReviewQueueRows(
       // Exclude dismissed rows only
       .not('dismissed_by_merchant', 'is', true)
       .order('identity_score', { ascending: false })
-      .order('processed_at', { ascending: false })
-      .range(from, to) as unknown as Promise<{ data: Array<Record<string, unknown>> | null; error: unknown }>;
+      .order('processed_at', { ascending: false });
+
+    if (options.processedFrom) q = q.gte('processed_at', options.processedFrom) as typeof q;
+    if (options.processedTo) q = q.lte('processed_at', options.processedTo) as typeof q;
+
+    return q.range(from, to) as unknown as Promise<{ data: Array<Record<string, unknown>> | null; error: unknown }>;
+  };
 
   if (options.paginate) {
     const rows = await paginateAll(buildQuery);
@@ -647,4 +659,37 @@ export async function fetchMerchantReviewQueueRows(
   const { data, error } = await buildQuery(from, to);
   if (error) throw new Error(`fetchMerchantReviewQueueRows failed: ${inspect(error, { depth: null })}`);
   return { rows: data ?? [], ownedJobIds };
+}
+
+/**
+ * For a list of audit transaction IDs, returns a Map of transactionId → profileId
+ * by joining through customer_profile_audit_appearances.
+ * Scoped to merchant-owned job IDs for defence-in-depth.
+ */
+export async function fetchReviewQueueProfileIds(
+  serviceClient: SupabaseClient,
+  ownedJobIds: string[],
+  transactionIds: string[],
+): Promise<Map<string, string>> {
+  const result = new Map<string, string>();
+  if (transactionIds.length === 0 || ownedJobIds.length === 0) return result;
+
+  const { data, error } = await serviceClient
+    .from('customer_profile_audit_appearances')
+    .select('profile_id,transaction_id')
+    .in('audit_id', ownedJobIds)
+    .in('transaction_id', transactionIds) as unknown as {
+      data: Array<{ profile_id: string; transaction_id: string }> | null;
+      error: { message: string } | null;
+    };
+
+  if (error) throw new Error(`fetchReviewQueueProfileIds failed: ${error.message}`);
+
+  for (const row of data ?? []) {
+    if (row.transaction_id && row.profile_id) {
+      result.set(row.transaction_id, row.profile_id);
+    }
+  }
+
+  return result;
 }

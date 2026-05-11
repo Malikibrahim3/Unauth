@@ -109,6 +109,7 @@ export default function WatchlistStarButton({
           style={{ color: 'var(--text-muted)', borderColor: 'var(--border)', background: 'var(--bg-subtle)' }}>
           Removed in {undoCountdown}s
           <button
+            type="button"
             onClick={handleUndo}
             className="font-semibold underline transition-colors hover:opacity-80"
             style={{ color: 'var(--text)' }}
@@ -123,8 +124,11 @@ export default function WatchlistStarButton({
   return (
     <span className="inline-flex flex-col items-end gap-0.5">
       <button
+        type="button"
         onClick={toggle}
         disabled={loading}
+        aria-pressed={watchlisted}
+        aria-label={watchlisted ? 'Remove from watchlist' : 'Add to watchlist'}
         title={watchlisted ? 'Remove from watchlist' : 'Add to watchlist'}
         className="flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-sm transition-colors"
         style={watchlisted

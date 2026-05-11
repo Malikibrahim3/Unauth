@@ -89,6 +89,12 @@ interface DatasetSpec {
   maxLargestCluster: number;
 }
 
+export interface DemoSeedDataset {
+  name: string;
+  label: string;
+  orders: BlindOrder[];
+}
+
 const GENERATED_DIR = path.resolve(process.cwd(), 'tests/fixtures/generated');
 
 class Rng {
@@ -456,6 +462,51 @@ function buildAdversarial(): DatasetSpec {
   return spec('adversarial_fraud', orders.slice(0, 430), false, 0.35, 0.65, 220, 35);
 }
 
+function buildDemo200(): DemoSeedDataset {
+  const rng = new Rng(6101);
+  const orders: BlindOrder[] = [];
+  let idx = addClean(orders, rng, 1, 80);
+  idx = addRepeatBuyers(orders, rng, idx, 12, 3);
+  idx = addFraudRings(orders, rng, idx, 1);
+  idx = addFalsePositiveTraps(orders, rng, idx, 1);
+  idx = addClean(orders, rng, idx, 6);
+  return {
+    name: 'demo_asos_200',
+    label: 'ASOS Demo Sprint',
+    orders: orders.slice(0, 200),
+  };
+}
+
+function buildDemo1500(): DemoSeedDataset {
+  const rng = new Rng(6202);
+  const orders: BlindOrder[] = [];
+  let idx = addClean(orders, rng, 1, 900);
+  idx = addRepeatBuyers(orders, rng, idx, 120, 3);
+  idx = addFraudRings(orders, rng, idx, 2);
+  idx = addFalsePositiveTraps(orders, rng, idx, 3);
+  idx = addClean(orders, rng, idx, 40);
+  return {
+    name: 'demo_asos_1500',
+    label: 'ASOS Demo Daily Operations',
+    orders: orders.slice(0, 1500),
+  };
+}
+
+function buildDemo5400(): DemoSeedDataset {
+  const rng = new Rng(6303);
+  const orders: BlindOrder[] = [];
+  let idx = addClean(orders, rng, 1, 3600);
+  idx = addRepeatBuyers(orders, rng, idx, 450, 3);
+  idx = addFraudRings(orders, rng, idx, 4);
+  idx = addFalsePositiveTraps(orders, rng, idx, 7);
+  idx = addClean(orders, rng, idx, 12);
+  return {
+    name: 'demo_asos_5400',
+    label: 'ASOS Demo Peak Season',
+    orders: orders.slice(0, 5400),
+  };
+}
+
 function spec(name: string, orders: BlindOrder[], exactExpected: boolean, maxReviewRate: number, minRecall: number, minDistinctAddresses: number, maxLargestCluster: number): DatasetSpec {
   return { name, orders, exactExpected, maxReviewRate, minRecall, minDistinctAddresses, maxLargestCluster };
 }
@@ -625,6 +676,10 @@ export function generateBlindFixtures(): void {
     datasets: datasets.map((ds) => expectedSummary(ds)),
     headerChaosFormats: formats.map((f) => ({ suffix: f.suffix, delimiter: f.delimiter, bom: !!f.bom })),
   }, null, 2)}\n`);
+}
+
+export function buildDemoSeedDatasets(): DemoSeedDataset[] {
+  return [buildDemo200(), buildDemo1500(), buildDemo5400()];
 }
 
 if (require.main === module) {

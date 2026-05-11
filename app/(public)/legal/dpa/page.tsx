@@ -14,8 +14,8 @@ export default function DpaPage() {
   return (
     <div className="mx-auto max-w-3xl px-6 py-16">
       {/* Contact banner */}
-      <div className="mb-8 rounded-lg border border-blue-200 bg-blue-50 px-5 py-4">
-        <p className="text-sm font-semibold text-blue-800">
+      <div className="mb-8 rounded-lg border border-[var(--info-bd)] bg-[var(--info-bg)] px-5 py-4">
+        <p className="text-sm font-semibold text-[var(--info)]">
           Need a countersigned DPA for your procurement process? Contact{' '}
           <a href="mailto:dpa@unauth.io" className="underline">
             dpa@unauth.io
@@ -24,13 +24,13 @@ export default function DpaPage() {
         </p>
       </div>
 
-      <h1 className="mb-2 text-3xl font-bold text-gray-900">Data Processing Agreement</h1>
-      <p className="mb-10 text-sm text-gray-500">Last updated: May 2026</p>
+      <h1 className="mb-2 text-3xl font-bold text-[var(--text)]">Data Processing Agreement</h1>
+      <p className="mb-10 text-sm text-[var(--text-muted)]">Last updated: May 2026</p>
 
-      <div className="space-y-10 text-gray-700">
+      <div className="space-y-10 text-[var(--text-secondary)]">
 
         <section>
-          <h2 className="mb-2 text-xl font-semibold text-gray-900">1. Parties</h2>
+          <h2 className="mb-2 text-xl font-semibold text-[var(--text)]">1. Parties</h2>
           <p>
             This Data Processing Agreement (&ldquo;DPA&rdquo;) is entered into between the merchant
             entity that has accepted the Unauth Terms of Service (&ldquo;Data Controller&rdquo;) and
@@ -41,7 +41,7 @@ export default function DpaPage() {
         </section>
 
         <section>
-          <h2 className="mb-2 text-xl font-semibold text-gray-900">2. Subject matter and duration of processing</h2>
+          <h2 className="mb-2 text-xl font-semibold text-[var(--text)]">2. Subject matter and duration of processing</h2>
           <p>
             Unauth processes personal data provided by the Controller for the purposes set out in
             section 3 below. Processing commences on the date the Controller first uploads data to the
@@ -52,7 +52,7 @@ export default function DpaPage() {
         </section>
 
         <section>
-          <h2 className="mb-2 text-xl font-semibold text-gray-900">3. Nature and purpose of processing</h2>
+          <h2 className="mb-2 text-xl font-semibold text-[var(--text)]">3. Nature and purpose of processing</h2>
           <p>
             Unauth processes order and transaction data to provide identity-matching and refund-abuse
             detection services. Processing activities include normalisation of customer identifiers,
@@ -64,7 +64,7 @@ export default function DpaPage() {
         </section>
 
         <section>
-          <h2 className="mb-2 text-xl font-semibold text-gray-900">4. Type of personal data</h2>
+          <h2 className="mb-2 text-xl font-semibold text-[var(--text)]">4. Type of personal data</h2>
           <p>
             The following categories of personal data may be processed: order identifiers and values;
             customer name, email address, delivery address, and phone number (as uploaded by the
@@ -75,7 +75,7 @@ export default function DpaPage() {
         </section>
 
         <section>
-          <h2 className="mb-2 text-xl font-semibold text-gray-900">5. Obligations of the Processor (Unauth)</h2>
+          <h2 className="mb-2 text-xl font-semibold text-[var(--text)]">5. Obligations of the Processor (Unauth)</h2>
           <p>
             Unauth shall: process personal data only on documented instructions from the Controller;
             ensure that persons authorised to process the personal data are bound by appropriate
@@ -88,7 +88,7 @@ export default function DpaPage() {
         </section>
 
         <section>
-          <h2 className="mb-2 text-xl font-semibold text-gray-900">6. Sub-processors</h2>
+          <h2 className="mb-2 text-xl font-semibold text-[var(--text)]">6. Sub-processors</h2>
           <p>
             Unauth uses the following sub-processors: <strong>Supabase Inc.</strong> (database
             infrastructure and storage, hosted in the EU); <strong>Vercel Inc.</strong> (application
@@ -103,13 +103,13 @@ export default function DpaPage() {
         </section>
 
         <section>
-          <h2 className="mb-2 text-xl font-semibold text-gray-900">7. Data subject rights and deletion</h2>
+          <h2 className="mb-2 text-xl font-semibold text-[var(--text)]">7. Data subject rights and deletion</h2>
           <p>
             Unauth will assist the Controller in responding to data subject access, erasure, and
             portability requests within the Controller&rsquo;s statutory timeframe. Controllers may
             request deletion of all personal data associated with their account via the Settings page
             or by contacting{' '}
-            <a href="mailto:dpa@unauth.io" className="underline text-indigo-600">
+            <a href="mailto:dpa@unauth.io" className="underline text-[var(--accent)]">
               dpa@unauth.io
             </a>
             . Pseudonymous network-graph contributions (hashed identifiers and aggregate counts) are
@@ -119,7 +119,7 @@ export default function DpaPage() {
         </section>
 
         <section>
-          <h2 className="mb-2 text-xl font-semibold text-gray-900">8. Security measures</h2>
+          <h2 className="mb-2 text-xl font-semibold text-[var(--text)]">8. Security measures</h2>
           <p>
             Unauth implements the following technical and organisational measures: encryption of data
             at rest (AES-256) and in transit (TLS 1.3); row-level security enforced at the database
@@ -131,14 +131,14 @@ export default function DpaPage() {
         </section>
 
         <section>
-          <h2 className="mb-2 text-xl font-semibold text-gray-900">9. Data transfers</h2>
+          <h2 className="mb-2 text-xl font-semibold text-[var(--text)]">9. Data transfers</h2>
           <p>
             Where personal data is transferred outside the UK or EEA, Unauth relies on the
             International Data Transfer Agreement (IDTA) for transfers to the United States via
             sub-processors (Supabase and Vercel). Standard Contractual Clauses (Module 2, Processor
             to Processor) are executed with all relevant sub-processors. Copies are available on
             request to{' '}
-            <a href="mailto:dpa@unauth.io" className="underline text-indigo-600">
+            <a href="mailto:dpa@unauth.io" className="underline text-[var(--accent)]">
               dpa@unauth.io
             </a>
             .
@@ -146,17 +146,17 @@ export default function DpaPage() {
         </section>
 
         <section>
-          <h2 className="mb-2 text-xl font-semibold text-gray-900">10. Contact</h2>
+          <h2 className="mb-2 text-xl font-semibold text-[var(--text)]">10. Contact</h2>
           <p>
             For all data protection and DPA enquiries:{' '}
-            <a href="mailto:dpa@unauth.io" className="underline text-indigo-600">
+            <a href="mailto:dpa@unauth.io" className="underline text-[var(--accent)]">
               dpa@unauth.io
             </a>
           </p>
         </section>
       </div>
 
-      <div className="mt-12 flex gap-4 text-sm text-gray-500">
+      <div className="mt-12 flex gap-4 text-sm text-[var(--text-muted)]">
         <Link href="/legal/privacy" className="hover:underline">Privacy policy</Link>
         <Link href="/legal/data-handling" className="hover:underline">Data handling</Link>
       </div>

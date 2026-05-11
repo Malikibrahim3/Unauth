@@ -287,7 +287,7 @@ export default function OnboardingClient({ userId }: OnboardingClientProps) {
                   onClick={saveAndContinue}
                   disabled={loading || !storeName.trim() || !platform || !annualVolume || !primaryConcern}
                   className="px-5 py-2.5 rounded-md text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{ background: 'var(--accent)', color: '#fff' }}
+                  style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}
                 >
                   {loading ? 'Saving…' : 'Go to upload →'}
                 </button>
@@ -323,7 +323,7 @@ export default function OnboardingClient({ userId }: OnboardingClientProps) {
                   <Link
                     href="/upload"
                     className="mt-auto inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-semibold"
-                    style={{ background: 'var(--accent)', color: '#fff' }}
+                    style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}
                   >
                     Upload now
                   </Link>

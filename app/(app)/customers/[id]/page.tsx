@@ -32,6 +32,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Badge } from '@/components/ui/Badge';
 import InvestigationStatusSelect from '@/components/customers/InvestigationStatusSelect';
 import type { CustomerIntelligencePanel } from '@/app/api/customers/[id]/route';
+import { labelFor } from '@/lib/copy/labels';
 import { riskBadgeStyle, riskBarStyle, riskTok } from '@/lib/utils/riskStyles';
 import { formatCurrencyNullable, formatDate } from '@/lib/utils/format';
 
@@ -45,9 +46,7 @@ interface PageProps {
 const TX_SELECT = TX_SAFE_SELECT;
 
 function labelize(value: string) {
-  return value
-    .replace(/[_-]/g, ' ')
-    .replace(/\b\w/g, (m) => m.toUpperCase());
+  return labelFor(value);
 }
 
 function TimelineDetail({
@@ -137,8 +136,8 @@ function RoadmapOrderCard({ tx, isLast }: { tx: any; isLast: boolean }) {
           <TimelineDetail icon={Mail} label="Email used" value={tx.customer_email} mono />
           <TimelineDetail icon={UserRound} label="Name used" value={tx.customer_name} />
           <TimelineDetail icon={MapPin} label="Shipping address" value={tx.shipping_address} />
-          <TimelineDetail icon={CreditCard} label="Card" value={tx.card_last4 ? `•••• ${tx.card_last4}` : null} mono />
-          <TimelineDetail icon={GitBranch} label="Device IP" value={tx.device_ip} mono />
+          <TimelineDetail icon={CreditCard} label={labelFor('card')} value={tx.card_last4 ? `•••• ${tx.card_last4}` : null} mono />
+          <TimelineDetail icon={GitBranch} label={labelFor('device_ip')} value={tx.device_ip} mono />
           <TimelineDetail icon={ShieldCheck} label="Match score" value={tx.match_score != null ? `${Math.round(tx.match_score)} / 100` : null} />
           <TimelineDetail icon={ReceiptText} label="Processed timestamp" value={formatDate(tx.processed_at)} />
         </div>
@@ -310,7 +309,7 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
     }
     if (ipSet.size > 1) {
       linkedAccounts.push({
-        entityType: 'device_ip',
+        entityType: 'ip',
         entityValue: `${ipSet.size} IP addresses observed`,
         confidence: Math.min(75, 25 + ipSet.size * 8),
       });
@@ -502,28 +501,28 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
           <SectionCard title="Identity details">
             <dl className="space-y-4 text-body-sm">
               {profile.emails.length > 0 && (
-                <IdentityDatum label={`Email${profile.emails.length > 1 ? 's' : ''}`}>
+                <IdentityDatum label={profile.emails.length > 1 ? labelFor('emails') : labelFor('email')}>
                   {profile.emails.map((e: string, i: number) => (
                     <p key={i} className="font-mono text-caption break-all" style={{ color: 'var(--text)' }}>{e}</p>
                   ))}
                 </IdentityDatum>
               )}
               {profile.names.length > 0 && (
-                <IdentityDatum label={`Name${profile.names.length > 1 ? 's' : ''}`}>
+                <IdentityDatum label={profile.names.length > 1 ? labelFor('names') : labelFor('name')}>
                   {profile.names.map((n: string, i: number) => (
                     <p key={i} className="text-caption" style={{ color: 'var(--text)' }}>{n}</p>
                   ))}
                 </IdentityDatum>
               )}
               {profile.addresses.length > 0 && (
-                <IdentityDatum label={`Address${profile.addresses.length > 1 ? 'es' : ''}`}>
+                <IdentityDatum label={profile.addresses.length > 1 ? labelFor('addresses') : labelFor('address')}>
                   {profile.addresses.map((a: string, i: number) => (
                     <p key={i} className="text-caption" style={{ color: 'var(--text)' }}>{a}</p>
                   ))}
                 </IdentityDatum>
               )}
               {profile.card_last4s.length > 0 && (
-                <IdentityDatum label="Cards">
+                <IdentityDatum label={labelFor('cards')}>
                   <div className="flex flex-wrap gap-1.5">
                     {profile.card_last4s.map((c: string, i: number) => (
                       <span key={i} className="font-mono text-caption px-1.5 py-0.5 rounded border" style={{ background: 'var(--bg-subtle)', borderColor: 'var(--border-subtle)', color: 'var(--text-muted)' }}>
@@ -534,14 +533,14 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
                 </IdentityDatum>
               )}
               {profile.phones && profile.phones.length > 0 && (
-                <IdentityDatum label={`Phone${profile.phones.length > 1 ? 's' : ''}`}>
+                <IdentityDatum label={profile.phones.length > 1 ? labelFor('phones') : labelFor('phone')}>
                   {profile.phones.map((p: string, i: number) => (
                     <p key={i} className="font-mono text-caption" style={{ color: 'var(--text)' }}>{p}</p>
                   ))}
                 </IdentityDatum>
               )}
               {profile.ips && profile.ips.length > 0 && (
-                <IdentityDatum label={`IP${profile.ips.length > 1 ? 's' : ''}`}>
+                <IdentityDatum label={profile.ips.length > 1 ? labelFor('ips') : labelFor('ip')}>
                   {profile.ips.map((ip: string, i: number) => (
                     <p key={i} className="font-mono text-caption break-all" style={{ color: 'var(--text)' }}>{ip}</p>
                   ))}

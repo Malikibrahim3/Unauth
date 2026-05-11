@@ -339,7 +339,7 @@ export default function AccountSettingsPage() {
               onClick={handleDeleteAccount}
               disabled={deleteConfirm !== 'DELETE' || deleteLoading}
               className="px-4 py-2 rounded-md text-sm font-semibold disabled:opacity-30 disabled:cursor-not-allowed"
-              style={{ background: 'var(--risk-critical)', color: '#fff' }}
+              style={{ background: 'var(--risk-critical)', color: 'var(--text-inverse)' }}
             >
               {deleteLoading ? 'Deleting…' : 'Delete account'}
             </button>

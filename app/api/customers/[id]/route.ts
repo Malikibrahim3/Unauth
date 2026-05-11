@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { createScopedClient } from '@/lib/supabase/scoped';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { logAction } from '@/lib/permissions/audit';
 import { buildBehavioralNarrative } from '@/lib/customers/narrative';
+import { withRequestLogging } from '@/lib/log';
 
 export const dynamic = 'force-dynamic';
 
@@ -91,7 +93,7 @@ const TX_SELECT =
 // GET /api/customers/[id]
 // ---------------------------------------------------------------------------
 
-export async function GET(
+async function GETHandler(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -105,6 +107,7 @@ export async function GET(
   const serviceClient = createServiceClient();
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_CUSTOMERS);
   if (denied) return denied;
+  const scopedClient = createScopedClient(ctx.merchantId, serviceClient);
 
   const profileId = resolvedParams.id;
 
@@ -117,7 +120,7 @@ export async function GET(
   // -------------------------------------------------------------------------
   const merchantFilter = `merchant_ids.cs.${JSON.stringify([ctx.merchantId])},merchant_ids.cs.${JSON.stringify([ctx.userId])}`;
 
-  const { data: profileRow, error: profileError } = await serviceClient
+  const { data: profileRow, error: profileError } = await scopedClient
     .from('customer_profiles')
     .select('*')
     .eq('id', profileId)
@@ -133,11 +136,10 @@ export async function GET(
   // -------------------------------------------------------------------------
   // 2. Check watchlist status for this merchant
   // -------------------------------------------------------------------------
-  const { data: watchlistRow } = await serviceClient
+  const { data: watchlistRow } = await scopedClient
     .from('watchlist_entries')
     .select('id')
     .eq('customer_profile_id', profileId)
-    .eq('merchant_id', ctx.merchantId)
     .eq('removed_by_merchant', false)
     .maybeSingle() as unknown as { data: { id: string } | null };
 
@@ -146,7 +148,7 @@ export async function GET(
   //     ALL subsequent transaction queries. Service role bypasses RLS so
   //     we MUST enforce merchant scope at the application layer.
   // -------------------------------------------------------------------------
-  const { data: ownedJobs } = await serviceClient
+  const { data: ownedJobs } = await scopedClient
     .from('processing_jobs')
     .select('id')
     .eq('merchant_id', ctx.merchantId) as unknown as { data: { id: string }[] | null };
@@ -449,3 +451,5 @@ export async function GET(
 
   return NextResponse.json(panel);
 }
+
+export const GET = withRequestLogging('/api/customers/[id]', GETHandler);

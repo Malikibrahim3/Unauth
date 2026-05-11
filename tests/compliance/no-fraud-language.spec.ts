@@ -9,6 +9,7 @@ const MERCHANT_FACING_ROUTES = [
 
 const BANNED_EXACT_WORDS = ['fraud score', 'fraud risk', 'flagged for fraud', 'fraud detection', 'fraud alert']
 const BANNED_TECHNICAL_TERMS = ['entity resolution', 'signal weight', 'normalisation', 'heuristic', 'algorithm', 'hash', 'clustering threshold', 'k-anonymity']
+const BANNED_INTERNAL_LABELS = ['disputehistory', 'cluster_id', 'cluster id', 'signals_matched', 'elevated_refund_rate', 'value_escalation']
 
 test.describe('Content compliance — no fraud language', () => {
   test.beforeEach(async ({ page }) => {
@@ -29,6 +30,10 @@ test.describe('Content compliance — no fraud language', () => {
 
       for (const term of BANNED_TECHNICAL_TERMS) {
         expect(lowerText, `Found technical term "${term}" on ${route}`).not.toContain(term.toLowerCase())
+      }
+
+      for (const term of BANNED_INTERNAL_LABELS) {
+        expect(lowerText, `Found internal label "${term}" on ${route}`).not.toContain(term)
       }
 
       if (lowerText.includes('match') || lowerText.includes('confidence')) {

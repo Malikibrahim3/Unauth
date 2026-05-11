@@ -198,7 +198,33 @@ export async function resolveCallerContext(
     };
   }
 
-  // 3. No merchant + no team membership — auto-bootstrap a default merchant
+  // 3. Did the user just accept a magic-link team invite?
+  const { data: pendingMember } = await serviceClient
+    .from('merchant_members')
+    .select('id, merchant_id, role')
+    .eq('user_id', userId)
+    .eq('invite_status', 'pending')
+    .is('deleted_at', null)
+    .maybeSingle();
+
+  if (pendingMember) {
+    await serviceClient
+      .from('merchant_members')
+      .update({
+        invite_status: 'active',
+        accepted_at: new Date().toISOString(),
+      })
+      .eq('id', pendingMember.id);
+
+    return {
+      userId,
+      merchantId: pendingMember.merchant_id as string,
+      role: pendingMember.role as Role,
+      memberId: pendingMember.id as string,
+    };
+  }
+
+  // 4. No merchant + no team membership — auto-bootstrap a default merchant
   //    so the user can use the app. They land as 'owner'.
   const { data: created, error: createErr } = await serviceClient
     .from('merchants')

@@ -68,7 +68,7 @@ export default async function InternalEvalPage() {
         <div className="rounded-md border border-dashed p-8 text-center" style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}>
           <p className="text-sm">No eval runs recorded yet.</p>
           <p className="text-xs mt-1">
-            Run <code className="font-mono bg-gray-100 px-1 py-0.5 rounded">npm run eval -- test-data/realistic_fraud_dataset.csv</code> to generate one.
+            Run <code className="font-mono bg-[var(--bg-subtle)] px-1 py-0.5 rounded">npm run eval -- test-data/realistic_fraud_dataset.csv</code> to generate one.
           </p>
         </div>
       )}
@@ -99,7 +99,7 @@ export default async function InternalEvalPage() {
             </div>
             <div>
               <dt style={{ color: 'var(--text-muted)' }}>F1</dt>
-              <dd className={`font-semibold ${(latest.f1_score ?? 0) >= 0.70 ? 'text-green-600' : 'text-red-600'}`}>
+              <dd className={`font-semibold ${(latest.f1_score ?? 0) >= 0.70 ? 'text-[var(--success)]' : 'text-[var(--risk-critical)]'}`}>
                 {latest.f1_score != null ? latest.f1_score.toFixed(3) : '—'}
                 {(latest.f1_score ?? 0) >= 0.70 ? ' ✓' : ' ✗ below 0.70 floor'}
               </dd>
@@ -119,7 +119,7 @@ export default async function InternalEvalPage() {
               <summary className="text-xs cursor-pointer" style={{ color: 'var(--text-muted)' }}>
                 Full report JSON
               </summary>
-              <pre className="mt-2 text-xs overflow-auto p-3 rounded bg-gray-50 border" style={{ borderColor: 'var(--border)' }}>
+              <pre className="mt-2 text-xs overflow-auto p-3 rounded bg-[var(--bg-inset)] border" style={{ borderColor: 'var(--border)' }}>
                 {JSON.stringify(latest.full_report, null, 2)}
               </pre>
             </details>
@@ -146,7 +146,7 @@ export default async function InternalEvalPage() {
                   <td className="py-1.5 pr-4 text-xs" style={{ color: 'var(--text-muted)' }}>
                     {new Date(row.run_at).toLocaleDateString('en-GB')}
                   </td>
-                  <td className={`py-1.5 pr-4 font-mono ${(row.f1_score ?? 0) >= 0.70 ? 'text-green-600' : 'text-red-600'}`}>
+                  <td className={`py-1.5 pr-4 font-mono ${(row.f1_score ?? 0) >= 0.70 ? 'text-[var(--success)]' : 'text-[var(--risk-critical)]'}`}>
                     {row.f1_score?.toFixed(3) ?? '—'}
                   </td>
                   <td className="py-1.5 pr-4 font-mono">{row.precision_score?.toFixed(3) ?? '—'}</td>

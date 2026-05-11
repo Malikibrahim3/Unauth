@@ -33,6 +33,8 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 
 Generate a salt: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
 
+For a full Local + GitHub + Vercel setup checklist, see [ENV_SETUP.md](/Users/malikibrahim/Downloads/Unauth/ENV_SETUP.md).
+
 ### 3. Apply database migrations
 
 Run the SQL in `supabase/migrations/0001_initial.sql` against your Supabase project via the SQL editor or `supabase db push`.
@@ -63,22 +65,30 @@ Include `ground_truth_label` (fraud/legitimate) to get precision/recall metrics 
 
 ## Fraud signals
 
-| Signal | What it detects | Weight |
-|---|---|---|
-| `refundRate` | Customer refund rate vs population baseline | 20 |
-| `inrAbuse` | Repeated INR claims | 25 |
-| `velocity` | Burst ordering in 24h window | 10 |
-| `inrSpeed` | INR claim within 48h of order | 10 |
-| `emailPattern` | Disposable/aliased email | 8 |
-| `addressClustering` | Multiple emails to same address | 12 |
-| `valueAnomaly` | Order value far outside customer's norm | 5 |
-| `crossMerchant` | Cross-network refund/INR history (k-anon ≥3) | 30 |
-| `paymentChurn` | Many distinct payment methods | 5 |
+<!-- signals-table:start -->
+| Signal | Weight | What it detects |
+| --- | ---: | --- |
+| `refundRate` | 20 | Customer refund rate vs population baseline |
+| `inrAbuse` | 25 | Repeated INR claims |
+| `velocity` | 18 | Burst ordering across 1h / 24h / 7d windows |
+| `inrSpeed` | 10 | INR claim within 48h of order |
+| `emailPattern` | 8 | Disposable or aliased email patterns |
+| `addressClustering` | 9 | Multiple emails shipping to the same address |
+| `valueAnomaly` | 5 | Order value far outside the customer's norm |
+| `paymentChurn` | 15 | Tight-window payment-method churn |
+| `refundPattern` | 20 | Historical refund-pattern intelligence |
+| `crossMerchant` | 24 | Cross-network refund or INR history (k-anon >=3) |
+| `disputeHistory` | 40 | Prior disputes, refund requests, or return requests |
+| `addressMismatch` | 4 | Billing and shipping address mismatch |
+<!-- signals-table:end -->
+
+Phase 0.1 calibration decision: `lib/engine/weights.ts` is the source of truth for blend weights. The scoring tests assert raw 0-100 signal outputs; this table documents the relative weights used when fired signals are combined.
 
 ## Risk tiers
 
+- Scores below `FLAG_THRESHOLD` (default 45) are not flagged for the review queue.
 - **Low** (0–24): Not flagged
-- **Medium** (25–49): Flagged for review
+- **Medium** (25–49): Review tier
 - **High** (50–74): Flagged for review
 - **Critical** (75–100): Flagged, recommended action
 

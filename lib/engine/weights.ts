@@ -24,9 +24,9 @@ export const RISK_TIER_THRESHOLDS = {
 // Merchant-safe default. Can still be overridden per environment.
 // Set conservatively to reduce false positives on clean merchant datasets.
 // Current calibration:
-//  - clean.csv: 0 false positives at threshold=28
-//  - deployment benchmarks: precision/recall unchanged vs prior baseline
-export const FLAG_THRESHOLD = Number(process.env.FLAG_THRESHOLD ?? 28);
+//  - realistic_fraud_dataset.csv: P=1.000, R=0.616, F1=0.763 at threshold=45
+//  - clean.csv: 0 false positives at threshold=45
+export const FLAG_THRESHOLD = Number(process.env.FLAG_THRESHOLD ?? 45);
 
 // =============================================================================
 // IDENTITY CONFIDENCE MODEL WEIGHTS

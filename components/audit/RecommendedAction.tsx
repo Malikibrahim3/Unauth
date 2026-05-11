@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { signalLabel } from '@/lib/copy/signalLabels';
+import { signalCopy } from '@/lib/copy/signals';
 import { RISK_TIER_COPY, type RiskTier } from '@/lib/copy/riskTiers';
 
 interface RecommendedActionProps {
@@ -16,7 +16,7 @@ export default function RecommendedAction({ tier, topSignalName, runId, customer
     ? tier
     : 'low';
   const recommendation = topSignalName
-    ? signalLabel(topSignalName).recommended
+    ? signalCopy(topSignalName).recommended
     : RISK_TIER_COPY[safeTier].default;
 
   if (safeTier === 'low') return null;

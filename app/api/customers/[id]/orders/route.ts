@@ -1,3 +1,4 @@
+import { withRequestLogging } from '@/lib/log';
 // app/api/customers/[id]/orders/route.ts
 // GET /api/customers/[id]/orders
 // Returns order list for a customer profile (for evidence package creation).
@@ -13,7 +14,7 @@ import {
 
 export const dynamic = 'force-dynamic'
 
-export async function GET(
+async function GETHandler(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -43,3 +44,5 @@ export async function GET(
 
   return NextResponse.json({ orders: txRows })
 }
+
+export const GET = withRequestLogging('/api/customers/[id]/orders', GETHandler);

@@ -68,20 +68,20 @@ export function formatRelativeTime(date: Date | string): string {
 
 export function riskTierColour(tier: 'low' | 'medium' | 'high' | 'critical'): string {
   const map = {
-    low: 'text-green-600 bg-green-50 border-green-200',
-    medium: 'text-yellow-700 bg-yellow-50 border-yellow-200',
-    high: 'text-orange-600 bg-orange-50 border-orange-200',
-    critical: 'text-red-600 bg-red-50 border-red-200',
+    low: 'text-[var(--risk-low)] bg-[var(--risk-low-bg)] border-[var(--risk-low-bd)]',
+    medium: 'text-[var(--risk-medium)] bg-[var(--risk-medium-bg)] border-[var(--risk-medium-bd)]',
+    high: 'text-[var(--risk-high)] bg-[var(--risk-high-bg)] border-[var(--risk-high-bd)]',
+    critical: 'text-[var(--risk-critical)] bg-[var(--risk-critical-bg)] border-[var(--risk-critical-bd)]',
   };
   return map[tier];
 }
 
 export function riskTierBadge(tier: 'low' | 'medium' | 'high' | 'critical'): string {
   const map = {
-    low: 'bg-green-100 text-green-800',
-    medium: 'bg-yellow-100 text-yellow-800',
-    high: 'bg-orange-100 text-orange-800',
-    critical: 'bg-red-100 text-red-800',
+    low: 'bg-[var(--risk-low-bg)] text-[var(--risk-low)]',
+    medium: 'bg-[var(--risk-medium-bg)] text-[var(--risk-medium)]',
+    high: 'bg-[var(--risk-high-bg)] text-[var(--risk-high)]',
+    critical: 'bg-[var(--risk-critical-bg)] text-[var(--risk-critical)]',
   };
   return map[tier];
 }

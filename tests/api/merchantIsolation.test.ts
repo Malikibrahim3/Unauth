@@ -115,33 +115,35 @@ describe('getMerchantOwnedJobIds', () => {
 });
 
 // ---------------------------------------------------------------------------
-// fetchMerchantScopedCustomerProfile — must use contains on merchant_ids
+// fetchMerchantScopedCustomerProfile — must use canonical merchant_ids filter
 // ---------------------------------------------------------------------------
 describe('fetchMerchantScopedCustomerProfile', () => {
-  it('queries customer_profiles with merchant_id membership check', async () => {
-    const containsCalls: [string, string[]][] = [];
+  it('queries customer_profiles with merchant and legacy user membership checks', async () => {
+    const orCalls: string[] = [];
     const chain: any = {
       select: jest.fn().mockReturnThis(),
       eq: jest.fn().mockReturnThis(),
-      contains: jest.fn((col: string, val: string[]) => {
-        containsCalls.push([col, val]);
+      or: jest.fn((filter: string) => {
+        orCalls.push(filter);
         return chain;
       }),
       maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
     };
     const mock = { from: jest.fn().mockReturnValue(chain) };
 
-    await fetchMerchantScopedCustomerProfile(mock as any, 'merchant-xyz', 'profile-123');
+    await fetchMerchantScopedCustomerProfile(mock as any, 'merchant-xyz', 'profile-123', 'user-legacy');
 
     expect(mock.from).toHaveBeenCalledWith('customer_profiles');
-    expect(containsCalls).toContainEqual(['merchant_ids', ['merchant-xyz']]);
+    expect(orCalls).toHaveLength(1);
+    expect(orCalls[0]).toContain('merchant_ids.cs.["merchant-xyz"]');
+    expect(orCalls[0]).toContain('merchant_ids.cs.["user-legacy"]');
   });
 
   it('returns null when profile does not belong to merchant', async () => {
     const chain: any = {
       select: jest.fn().mockReturnThis(),
       eq: jest.fn().mockReturnThis(),
-      contains: jest.fn().mockReturnThis(),
+      or: jest.fn().mockReturnThis(),
       maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
     };
     const mock = { from: jest.fn().mockReturnValue(chain) };

@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { createScopedClient } from '@/lib/supabase/scoped';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { logAction } from '@/lib/permissions/audit';
+import { enforceRateLimit, limitFromEnv, rateLimitKey } from '@/lib/ratelimit';
+import { withRequestLogging } from '@/lib/log';
 
 // ---------------------------------------------------------------------------
 // CSV cell escaping — neutralizes formula injection (CVE-class: CSV injection).
@@ -23,7 +26,7 @@ function escapeCsvCell(value: string): string {
   return value;
 }
 
-export async function GET(
+async function GETHandler(
   req: NextRequest,
   { params }: { params: Promise<{ runId: string }> }
 ) {
@@ -40,9 +43,16 @@ export async function GET(
   const serviceClient = createServiceClient();
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.EXPORT_AUDIT);
   if (denied) return denied;
+  const scopedClient = createScopedClient(ctx.merchantId, serviceClient);
+
+  const limited = await enforceRateLimit(
+    rateLimitKey('audit', 'export', ctx.merchantId),
+    limitFromEnv('RL_AUDIT_EXPORT_PER_HOUR', 60, 3600, 'RL_AUDIT_EXPORT_WINDOW_SECONDS')
+  );
+  if (limited) return limited;
 
   // ── Verify ownership (must belong to this merchant) ──────────────────────
-  const { data: job, error: jobError } = await serviceClient
+  const { data: job, error: jobError } = await scopedClient
     .from('processing_jobs')
     .select('id, merchant_id')
     .eq('id', runId)
@@ -50,9 +60,6 @@ export async function GET(
 
   if (jobError || !job) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  }
-  if (job.merchant_id !== ctx.merchantId) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   const rows: Array<{
@@ -150,3 +157,5 @@ export async function GET(
     },
   });
 }
+
+export const GET = withRequestLogging('/api/audit/[runId]/export', GETHandler);

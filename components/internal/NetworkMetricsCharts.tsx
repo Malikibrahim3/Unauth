@@ -72,8 +72,8 @@ export default function NetworkMetricsCharts({ snapshots }: Props) {
             <YAxis tick={{ fontSize: 11 }} />
             <Tooltip />
             <Legend />
-            <Line type="monotone" dataKey="total" name="Total identities" stroke="var(--accent, #6366f1)" dot={false} />
-            <Line type="monotone" dataKey="kanon" name="k-anon satisfied (3+)" stroke="var(--success, #22c55e)" dot={false} />
+            <Line type="monotone" dataKey="total" name="Total identities" stroke="var(--accent, #2563EB)" dot={false} />
+            <Line type="monotone" dataKey="kanon" name="k-anon satisfied (3+)" stroke="var(--success, #067647)" dot={false} />
           </LineChart>
         </ResponsiveContainer>
       </div>
@@ -95,7 +95,7 @@ export default function NetworkMetricsCharts({ snapshots }: Props) {
             <YAxis unit="%" tick={{ fontSize: 11 }} />
             <Tooltip formatter={(v: number) => `${v}%`} />
             <Legend />
-            <Line type="monotone" dataKey="pct" name="Audits with cross-merchant signal %" stroke="var(--warning, #f59e0b)" dot={false} />
+            <Line type="monotone" dataKey="pct" name="Audits with cross-merchant signal %" stroke="var(--warning, #B54708)" dot={false} />
           </LineChart>
         </ResponsiveContainer>
       </div>
@@ -114,8 +114,8 @@ export default function NetworkMetricsCharts({ snapshots }: Props) {
             <YAxis tick={{ fontSize: 11 }} />
             <Tooltip />
             <Legend />
-            <Bar dataKey="merchants" name="Active merchants (30d)" fill="var(--accent, #6366f1)" />
-            <Bar dataKey="uploads" name="Uploads (30d)" fill="var(--info, #3b82f6)" />
+            <Bar dataKey="merchants" name="Active merchants (30d)" fill="var(--accent, #2563EB)" />
+            <Bar dataKey="uploads" name="Uploads (30d)" fill="var(--info, #2563EB)" />
           </BarChart>
         </ResponsiveContainer>
       </div>

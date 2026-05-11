@@ -14,12 +14,15 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { createScopedClient } from '@/lib/supabase/scoped';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { logAction } from '@/lib/permissions/audit';
+import { createRequestLogger, withRequestLogging } from '@/lib/log';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: NextRequest) {
+async function GETHandler(request: NextRequest) {
+  const logger = createRequestLogger(request, '/api/audit-trail');
   const userClient = createClient();
   const { data: { user } } = await userClient.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
@@ -27,6 +30,7 @@ export async function GET(request: NextRequest) {
   const service = createServiceClient();
   const { denied, ctx } = await requirePermission(service, user.id, PERMISSIONS.VIEW_AUDIT_TRAIL);
   if (denied) return denied;
+  const scopedService = createScopedClient(ctx.merchantId, service);
 
   const { searchParams } = new URL(request.url);
   const page         = Math.max(1, parseInt(searchParams.get('page')  ?? '1', 10));
@@ -40,10 +44,9 @@ export async function GET(request: NextRequest) {
   const from = (page - 1) * limit;
   const to   = from + limit - 1;
 
-  let query = service
+  let query = scopedService
     .from('user_action_log')
     .select('*', { count: 'exact' })
-    .eq('merchant_id', ctx.merchantId)
     .order('created_at', { ascending: false })
     .range(from, to);
 
@@ -56,7 +59,7 @@ export async function GET(request: NextRequest) {
   const { data: rows, count, error } = await query;
 
   if (error) {
-    console.error('[audit-trail] query error:', error.message);
+    logger.error('audit_trail.query_failed', { error });
     return NextResponse.json({ error: 'Failed to fetch audit trail' }, { status: 500 });
   }
 
@@ -71,3 +74,5 @@ export async function GET(request: NextRequest) {
     pages: Math.ceil((count ?? 0) / limit),
   });
 }
+
+export const GET = withRequestLogging('/api/audit-trail', GETHandler);

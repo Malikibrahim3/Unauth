@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { createScopedClient } from '@/lib/supabase/scoped';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { logAction } from '@/lib/permissions/audit';
+import { withRequestLogging } from '@/lib/log';
 
-export async function PATCH(
+async function PATCHHandler(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -17,6 +19,7 @@ export async function PATCH(
   const serviceClient = createServiceClient();
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.DISMISS_TRANSACTION);
   if (denied) return denied;
+  const scopedClient = createScopedClient(ctx.merchantId, serviceClient);
 
   // Confirm the transaction belongs to a job owned by this merchant before updating
   const { data: tx } = await serviceClient
@@ -28,13 +31,13 @@ export async function PATCH(
   if (!tx) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
   // Verify job ownership
-  const { data: job } = await serviceClient
+  const { data: job } = await scopedClient
     .from('processing_jobs')
     .select('merchant_id')
     .eq('id', tx.job_id)
     .single();
 
-  if (!job || job.merchant_id !== ctx.merchantId) {
+  if (!job) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
@@ -56,3 +59,5 @@ export async function PATCH(
   return NextResponse.json({ ok: true });
 
 }
+
+export const PATCH = withRequestLogging('/api/transactions/[id]/dismiss', PATCHHandler);

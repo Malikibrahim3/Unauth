@@ -1,180 +1,180 @@
 {
-  "generated_at": "2026-05-02T22:38:25.011Z",
+  "generated_at": "2026-05-09T23:55:17.160Z",
   "dataset": "test-data/realistic_fraud_dataset.csv",
   "rows": 2000,
   "positives": 73,
   "target_precision": 0.8,
   "recommendation": {
-    "flag_threshold": 5,
-    "f1": 0.9104477611940298,
+    "flag_threshold": 45,
+    "f1": 0.7627118644067796,
     "precision": 1,
-    "recall": 0.8356164383561644
+    "recall": 0.6164383561643836
   },
   "unconstrained_best": {
     "flag_threshold": 5,
-    "f1": 0.9104477611940298,
-    "precision": 1,
-    "recall": 0.8356164383561644
+    "f1": 0.8202247191011236,
+    "precision": 0.6952380952380952,
+    "recall": 1
   },
   "sweep": [
     {
       "threshold": 5,
-      "precision": 1,
-      "recall": 0.8356164383561644,
-      "f1": 0.9104477611940298,
-      "tp": 61,
-      "fp": 0,
-      "fn": 12,
-      "tn": 1927
+      "precision": 0.6952380952380952,
+      "recall": 1,
+      "f1": 0.8202247191011236,
+      "tp": 73,
+      "fp": 32,
+      "fn": 0,
+      "tn": 1895
     },
     {
       "threshold": 10,
-      "precision": 1,
-      "recall": 0.6164383561643836,
-      "f1": 0.7627118644067796,
-      "tp": 45,
-      "fp": 0,
-      "fn": 28,
-      "tn": 1927
+      "precision": 0.6952380952380952,
+      "recall": 1,
+      "f1": 0.8202247191011236,
+      "tp": 73,
+      "fp": 32,
+      "fn": 0,
+      "tn": 1895
     },
     {
       "threshold": 15,
-      "precision": 1,
-      "recall": 0.6164383561643836,
-      "f1": 0.7627118644067796,
-      "tp": 45,
-      "fp": 0,
-      "fn": 28,
-      "tn": 1927
+      "precision": 0.782051282051282,
+      "recall": 0.8356164383561644,
+      "f1": 0.8079470198675496,
+      "tp": 61,
+      "fp": 17,
+      "fn": 12,
+      "tn": 1910
     },
     {
       "threshold": 20,
-      "precision": 1,
+      "precision": 0.7258064516129032,
       "recall": 0.6164383561643836,
-      "f1": 0.7627118644067796,
+      "f1": 0.6666666666666667,
       "tp": 45,
-      "fp": 0,
+      "fp": 17,
       "fn": 28,
-      "tn": 1927
+      "tn": 1910
     },
     {
       "threshold": 25,
-      "precision": 1,
+      "precision": 0.7258064516129032,
       "recall": 0.6164383561643836,
-      "f1": 0.7627118644067796,
+      "f1": 0.6666666666666667,
       "tp": 45,
-      "fp": 0,
+      "fp": 17,
       "fn": 28,
-      "tn": 1927
+      "tn": 1910
     },
     {
       "threshold": 30,
-      "precision": 1,
+      "precision": 0.7258064516129032,
       "recall": 0.6164383561643836,
-      "f1": 0.7627118644067796,
+      "f1": 0.6666666666666667,
       "tp": 45,
-      "fp": 0,
+      "fp": 17,
       "fn": 28,
-      "tn": 1927
+      "tn": 1910
     },
     {
       "threshold": 35,
-      "precision": 1,
+      "precision": 0.7258064516129032,
       "recall": 0.6164383561643836,
-      "f1": 0.7627118644067796,
+      "f1": 0.6666666666666667,
       "tp": 45,
-      "fp": 0,
+      "fp": 17,
       "fn": 28,
-      "tn": 1927
+      "tn": 1910
     },
     {
       "threshold": 40,
+      "precision": 0.7258064516129032,
+      "recall": 0.6164383561643836,
+      "f1": 0.6666666666666667,
+      "tp": 45,
+      "fp": 17,
+      "fn": 28,
+      "tn": 1910
+    },
+    {
+      "threshold": 45,
       "precision": 1,
       "recall": 0.6164383561643836,
       "f1": 0.7627118644067796,
       "tp": 45,
       "fp": 0,
       "fn": 28,
-      "tn": 1927
-    },
-    {
-      "threshold": 45,
-      "precision": 0,
-      "recall": 0,
-      "f1": 0,
-      "tp": 0,
-      "fp": 0,
-      "fn": 73,
       "tn": 1927
     },
     {
       "threshold": 50,
-      "precision": 0,
-      "recall": 0,
-      "f1": 0,
-      "tp": 0,
+      "precision": 1,
+      "recall": 0.6164383561643836,
+      "f1": 0.7627118644067796,
+      "tp": 45,
       "fp": 0,
-      "fn": 73,
+      "fn": 28,
       "tn": 1927
     },
     {
       "threshold": 55,
-      "precision": 0,
-      "recall": 0,
-      "f1": 0,
-      "tp": 0,
+      "precision": 1,
+      "recall": 0.6164383561643836,
+      "f1": 0.7627118644067796,
+      "tp": 45,
       "fp": 0,
-      "fn": 73,
+      "fn": 28,
       "tn": 1927
     },
     {
       "threshold": 60,
-      "precision": 0,
-      "recall": 0,
-      "f1": 0,
-      "tp": 0,
+      "precision": 1,
+      "recall": 0.6164383561643836,
+      "f1": 0.7627118644067796,
+      "tp": 45,
       "fp": 0,
-      "fn": 73,
+      "fn": 28,
       "tn": 1927
     },
     {
       "threshold": 65,
-      "precision": 0,
-      "recall": 0,
-      "f1": 0,
-      "tp": 0,
+      "precision": 1,
+      "recall": 0.6164383561643836,
+      "f1": 0.7627118644067796,
+      "tp": 45,
       "fp": 0,
-      "fn": 73,
+      "fn": 28,
       "tn": 1927
     },
     {
       "threshold": 70,
-      "precision": 0,
-      "recall": 0,
-      "f1": 0,
-      "tp": 0,
+      "precision": 1,
+      "recall": 0.5753424657534246,
+      "f1": 0.7304347826086955,
+      "tp": 42,
       "fp": 0,
-      "fn": 73,
+      "fn": 31,
       "tn": 1927
     },
     {
       "threshold": 75,
-      "precision": 0,
-      "recall": 0,
-      "f1": 0,
-      "tp": 0,
+      "precision": 1,
+      "recall": 0.1232876712328767,
+      "f1": 0.2195121951219512,
+      "tp": 9,
       "fp": 0,
-      "fn": 73,
+      "fn": 64,
       "tn": 1927
     },
     {
       "threshold": 80,
-      "precision": 0,
-      "recall": 0,
-      "f1": 0,
-      "tp": 0,
+      "precision": 1,
+      "recall": 0.1232876712328767,
+      "f1": 0.2195121951219512,
+      "tp": 9,
       "fp": 0,
-      "fn": 73,
+      "fn": 64,
       "tn": 1927
     },
     {
@@ -238,6 +238,13 @@
       "f1": 0.7627118644067796
     },
     {
+      "signal": "disputeHistory",
+      "fires": 53,
+      "precision": 0.6792452830188679,
+      "recall": 0.4931506849315068,
+      "f1": 0.5714285714285714
+    },
+    {
       "signal": "refundRate",
       "fires": 0,
       "precision": 0,
@@ -260,6 +267,13 @@
     },
     {
       "signal": "valueAnomaly",
+      "fires": 0,
+      "precision": 0,
+      "recall": 0,
+      "f1": 0
+    },
+    {
+      "signal": "addressMismatch",
       "fires": 0,
       "precision": 0,
       "recall": 0,

@@ -16,9 +16,9 @@ import fs from 'fs';
 import { runEvalWithReport } from '@/lib/eval/runner';
 
 const DATASET_PATH = path.join(process.cwd(), 'test-data/realistic_fraud_dataset.csv');
-const PRECISION_FLOOR = 0.70;
+const PRECISION_FLOOR = 0.80;
 const RECALL_FLOOR = 0.60;
-const F1_FLOOR = 0.66;
+const F1_FLOOR = 0.70;
 
 describe('Engine regression — realistic_fraud_dataset.csv', () => {
   it('dataset exists at expected path', () => {

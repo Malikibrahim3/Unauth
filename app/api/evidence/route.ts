@@ -1,3 +1,5 @@
+import { createRequestLogger, withRequestLogging } from '@/lib/log';
+import { captureServerException } from '@/lib/sentry';
 // app/api/evidence/route.ts
 // POST /api/evidence
 // Generates a chargeback evidence package, renders it as PDF,
@@ -5,17 +7,20 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { createScopedClient } from '@/lib/supabase/scoped'
 import { requirePermission, PERMISSIONS } from '@/lib/permissions'
 import { logAction } from '@/lib/permissions/audit'
 import { writeActivityLog } from '@/lib/customers/activityLog'
 import { buildEvidencePackage } from '@/lib/evidence/buildPackage'
 import { buildNarrative } from '@/lib/evidence/narrative'
 import { renderEvidencePDF } from '@/lib/evidence/pdf'
+import { enforceRateLimit, limitFromEnv, rateLimitKey } from '@/lib/ratelimit'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
-export async function POST(request: NextRequest) {
+async function POSTHandler(request: NextRequest) {
+  const logger = createRequestLogger(request, '/api/evidence')
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown'
 
   // ── Auth + permission ─────────────────────────────────────────────────────
@@ -28,6 +33,13 @@ export async function POST(request: NextRequest) {
   const serviceRole = createServiceClient()
   const { denied, ctx } = await requirePermission(serviceRole, user.id, PERMISSIONS.GENERATE_EVIDENCE)
   if (denied) return denied
+  const scopedServiceRole = createScopedClient(ctx.merchantId, serviceRole)
+
+  const limited = await enforceRateLimit(
+    rateLimitKey('evidence', 'generate', ctx.merchantId),
+    limitFromEnv('RL_EVIDENCE_PER_HOUR', 60, 3600, 'RL_EVIDENCE_WINDOW_SECONDS')
+  )
+  if (limited) return limited
 
   // ── Validate body ─────────────────────────────────────────────────────────
   let body: { customerProfileId?: string; disputedOrderId?: string; notes?: string }
@@ -52,7 +64,8 @@ export async function POST(request: NextRequest) {
       ctx.merchantId,
       customerProfileId,
       disputedOrderId,
-      serviceRole as any
+      serviceRole as any,
+      ctx.userId
     )
     // Attach any merchant notes from the form
     if (notes?.trim()) {
@@ -61,7 +74,13 @@ export async function POST(request: NextRequest) {
         : notes.trim()
     }
   } catch (err) {
-    console.error('[evidence] buildEvidencePackage failed:', err)
+    captureServerException(err, {
+      requestId: request.headers.get('x-request-id'),
+      merchantId: ctx.merchantId,
+      route: '/api/evidence',
+      method: request.method,
+    })
+    logger.error('evidence.build_package_failed', { error: err, customerProfileId, disputedOrderId })
     return NextResponse.json(
       { error: 'Failed to build evidence package', detail: String(err) },
       { status: 500 }
@@ -76,7 +95,13 @@ export async function POST(request: NextRequest) {
   try {
     pdfBuffer = await renderEvidencePDF(pkg, narrative)
   } catch (err) {
-    console.error('[evidence] renderEvidencePDF failed:', err)
+    captureServerException(err, {
+      requestId: request.headers.get('x-request-id'),
+      merchantId: ctx.merchantId,
+      route: '/api/evidence',
+      method: request.method,
+    })
+    logger.error('evidence.render_pdf_failed', { error: err, referenceNumber: pkg.referenceNumber })
     return NextResponse.json(
       { error: 'Failed to render PDF', detail: String(err) },
       { status: 500 }
@@ -93,15 +118,14 @@ export async function POST(request: NextRequest) {
     })
 
   if (uploadError) {
-    console.error('[evidence] Storage upload failed:', uploadError)
+    logger.error('evidence.storage_upload_failed', { error: uploadError, referenceNumber: pkg.referenceNumber, nonFatal: true })
     // Non-fatal — continue and save the record without a PDF path
   }
 
   // 7. Insert to evidence_packages
-  const { data: inserted, error: insertError } = await serviceRole
+  const { data: inserted, error: insertError } = await scopedServiceRole
     .from('evidence_packages')
     .insert({
-      merchant_id:              ctx.merchantId,
       customer_profile_id:      customerProfileId,
       generated_for_order_id:   disputedOrderId,
       reference_number:         pkg.referenceNumber,
@@ -118,7 +142,7 @@ export async function POST(request: NextRequest) {
     .single()
 
   if (insertError) {
-    console.error('[evidence] DB insert failed:', insertError)
+    logger.error('evidence.db_insert_failed', { error: insertError, referenceNumber: pkg.referenceNumber })
     return NextResponse.json(
       { error: 'Failed to save evidence package', detail: insertError.message },
       { status: 500 }
@@ -135,7 +159,7 @@ export async function POST(request: NextRequest) {
   })
 
   await writeActivityLog({
-    supabase: serviceRole,
+    supabase: scopedServiceRole,
     profileId: customerProfileId,
     merchantId: ctx.merchantId,
     eventType: 'evidence_generated',
@@ -148,3 +172,5 @@ export async function POST(request: NextRequest) {
     ce3Eligible: pkg.ce3.eligible,
   })
 }
+
+export const POST = withRequestLogging('/api/evidence', POSTHandler);

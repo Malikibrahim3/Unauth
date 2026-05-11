@@ -86,7 +86,7 @@ export default function BulkDeleteClient() {
           onClick={handleDelete}
           disabled={loading}
           className="rounded px-3 py-2 font-semibold"
-          style={{ background: '#f87171', color: 'white' }}
+          style={{ background: 'var(--risk-critical)', color: 'white' }}
         >
           {loading ? 'Deleting…' : 'Delete'}
         </button>

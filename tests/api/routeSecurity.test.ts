@@ -18,6 +18,7 @@ import fs from 'fs';
 const { globSync } = require('glob');
 import {
   fetchMerchantReviewQueueRows,
+  fetchReviewQueueProfileIds,
 } from '../../lib/supabase/merchantHelpers';
 
 // ---------------------------------------------------------------------------
@@ -388,6 +389,70 @@ describe('Inbox page — review population semantics', () => {
     );
     expect(content).toContain('requirePermission');
     expect(content).toContain('createServiceClient');
+  });
+
+  it('inbox page renders Today, This week, and All open tabs', () => {
+    const content = fs.readFileSync(
+      path.join(process.cwd(), 'app/(app)/inbox/page.tsx'),
+      'utf-8'
+    );
+    expect(content).toContain("'today'");
+    expect(content).toContain("'week'");
+    expect(content).toContain("'all'");
+    expect(content).toContain('Today');
+    expect(content).toContain('This week');
+    expect(content).toContain('All open');
+  });
+
+  it('inbox client opens the customer drawer from row data', () => {
+    const content = fs.readFileSync(
+      path.join(process.cwd(), 'components/inbox/InboxClient.tsx'),
+      'utf-8'
+    );
+    expect(content).toContain('CustomerIntelligenceDrawer');
+    expect(content).toContain('selectedProfileId');
+    expect(content).toContain('customer_profile_id');
+    expect(content).toContain('setSelectedProfileId(tx.customer_profile_id');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// /api/inbox — query-backed inbox semantics
+// ---------------------------------------------------------------------------
+describe('/api/inbox — query-backed review queue', () => {
+  it('API route queries audit_transactions through the shared helper', () => {
+    const content = fs.readFileSync(
+      path.join(process.cwd(), 'app/api/inbox/route.ts'),
+      'utf-8'
+    );
+    expect(content).toContain('fetchMerchantReviewQueueRows');
+    expect(content).toContain('fetchReviewQueueProfileIds');
+    expect(content).toContain('requirePermission');
+    expect(content).not.toContain('inbox_items');
+    expect(content).not.toContain("from('inbox_items')");
+  });
+
+  it('profile lookup is scoped by owned audit/job ids', async () => {
+    const inCalls: [string, string[]][] = [];
+    const mock = {
+      from: jest.fn(() => ({
+        select: jest.fn().mockReturnThis(),
+        in: jest.fn((col: string, val: string[]) => {
+          inCalls.push([col, val]);
+          return {
+            in: jest.fn((col2: string, val2: string[]) => {
+              inCalls.push([col2, val2]);
+              return Promise.resolve({ data: [], error: null });
+            }),
+          };
+        }),
+      })),
+    };
+
+    await fetchReviewQueueProfileIds(mock as any, ['job-1'], ['tx-1']);
+
+    expect(inCalls).toContainEqual(['audit_id', ['job-1']]);
+    expect(inCalls).toContainEqual(['transaction_id', ['tx-1']]);
   });
 });
 

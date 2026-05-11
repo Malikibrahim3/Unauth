@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { createScopedClient } from '@/lib/supabase/scoped';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { escapePostgrestFilterValue } from '@/lib/supabase/merchantHelpers';
+import { withRequestLogging } from '@/lib/log';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,7 +23,7 @@ type CustomerSearchRow = {
  * Results are scoped to the caller's merchantId via merchant_ids array membership.
  * No unauthenticated access, no cross-merchant profile exposure.
  */
-export async function GET(req: NextRequest) {
+async function GETHandler(req: NextRequest) {
   // ── Auth ──────────────────────────────────────────────────────────────────
   const userClient = createClient();
   const { data: { user }, error: authError } = await userClient.auth.getUser();
@@ -32,6 +34,7 @@ export async function GET(req: NextRequest) {
   const serviceClient = createServiceClient();
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_CUSTOMERS);
   if (denied) return denied;
+  const scopedClient = createScopedClient(ctx.merchantId, serviceClient);
 
   // ── Input validation ──────────────────────────────────────────────────────
   const q = req.nextUrl.searchParams.get('q')?.trim() ?? '';
@@ -51,7 +54,7 @@ export async function GET(req: NextRequest) {
   // Use separate typed query methods instead of composing a raw .or() string
   // to eliminate PostgREST filter-string injection.
   //
-  const emailRes = await (serviceClient
+  const emailRes = await (scopedClient
     .from('customer_profiles')
     .select('id, names, primary_email, risk_level')
     .contains('merchant_ids', [ctx.merchantId])
@@ -80,7 +83,7 @@ export async function GET(req: NextRequest) {
   let scanned = 0;
   let namePoolError: { message: string } | null = null;
   for (let offset = 0; scanned < MAX_SCAN && merged.length < limit; offset += PAGE) {
-    const { data, error } = await (serviceClient
+    const { data, error } = await (scopedClient
       .from('customer_profiles')
       .select('id, names, primary_email, risk_level')
       .contains('merchant_ids', [ctx.merchantId])
@@ -113,7 +116,7 @@ export async function GET(req: NextRequest) {
 
   if (emailRes.error && namePoolError) {
     // Double fallback: email ilike only, already escaped above
-    const { data: fallback } = await serviceClient
+    const { data: fallback } = await scopedClient
       .from('customer_profiles')
       .select('id, names, primary_email, risk_level')
       .contains('merchant_ids', [ctx.merchantId])
@@ -139,3 +142,5 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({ results });
 }
+
+export const GET = withRequestLogging('/api/customers/search', GETHandler);

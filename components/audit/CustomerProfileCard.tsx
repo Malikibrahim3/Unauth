@@ -14,6 +14,7 @@ import { useState } from 'react';
 import type { CustomerProfile } from '@/lib/analysis/customerIntelligence';
 import WatchlistStarButton from './WatchlistStarButton';
 import CustomerNotes from './CustomerNotes';
+import { labelFor } from '@/lib/copy/labels';
 import { riskBadgeStyle, riskBarStyle, severityStyle } from '@/lib/utils/riskStyles';
 import { formatCurrencyNullable, formatDateShort } from '@/lib/utils/format';
 
@@ -29,82 +30,84 @@ export default function CustomerProfileCard({ profile }: { profile: CustomerProf
       <div className="h-1" style={riskBarStyle(profile.highestRisk)} />
 
       {/* Header — always visible */}
-      <div
-        role="button"
-        tabIndex={0}
-        onClick={() => setExpanded((v) => !v)}
-        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpanded((v) => !v); } }}
-        className="w-full text-left px-5 py-4 focus:outline-none cursor-pointer"
-        aria-expanded={expanded}
-      >
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 mb-1">
-              <span
-                className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase"
-                style={riskBadgeStyle(profile.highestRisk)}
-              >
-                {profile.highestRisk}
-              </span>
-              <WatchlistStarButton
-                displayEmail={primaryEmail}
-                lastSeenRisk={profile.highestRisk}
-              />
-              {profile.emails.length > 1 && (
+      <div className="flex items-start gap-3 px-5 py-4">
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="min-w-0 flex-1 text-left focus:outline-none cursor-pointer"
+          aria-expanded={expanded}
+        >
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 mb-1">
                 <span
-                  className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
-                  style={{ background: 'var(--watchlist-bg)', color: 'var(--watchlist)', border: '1px solid var(--watchlist-bd)' }}
+                  className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase"
+                  style={riskBadgeStyle(profile.highestRisk)}
                 >
-                  Linked accounts
+                  {profile.highestRisk}
                 </span>
-              )}
-            </div>
-
-            <h3 className="text-sm font-semibold truncate" style={{ color: 'var(--text)' }}>{primaryEmail}</h3>
-            {extraEmails > 0 && (
-              <p className="text-xs font-medium mt-0.5" style={{ color: 'var(--watchlist)' }}>
-                + {extraEmails} linked account{extraEmails > 1 ? 's' : ''}
-              </p>
-            )}
-
-            <div className="flex items-center gap-4 mt-2 text-xs" style={{ color: 'var(--text-muted)' }}>
-              <span><strong style={{ color: 'var(--text)' }}>{profile.orderCount}</strong> order{profile.orderCount !== 1 ? 's' : ''}</span>
-              <span><strong style={{ color: 'var(--text)' }}>{formatCurrencyNullable(profile.totalSpend)}</strong> spent</span>
-              {profile.refundCount > 0 && (
-                <span style={profile.refundRate > 0.5 ? { color: 'var(--risk-critical)', fontWeight: 600 } : {}}>
-                  <strong>{profile.refundCount}</strong> refund{profile.refundCount !== 1 ? 's' : ''} ({Math.round(profile.refundRate * 100)}%)
-                </span>
-              )}
-            </div>
-
-            {/* Inline flag pills */}
-            {profile.flags.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mt-2">
-                {profile.flags.map((f, i) => (
+                {profile.emails.length > 1 && (
                   <span
-                    key={i}
-                    className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border"
-                    style={severityStyle(f.severity)}
+                    className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
+                    style={{ background: 'var(--watchlist-bg)', color: 'var(--watchlist)', border: '1px solid var(--watchlist-bd)' }}
                   >
-                    {f.title}
+                    Linked accounts
                   </span>
-                ))}
+                )}
               </div>
-            )}
 
-            {/* Data coverage indicator */}
-            <DataCoverageRow profile={profile} />
+              <h3 className="text-sm font-semibold truncate" style={{ color: 'var(--text)' }}>{primaryEmail}</h3>
+              {extraEmails > 0 && (
+                <p className="text-xs font-medium mt-0.5" style={{ color: 'var(--watchlist)' }}>
+                  + {extraEmails} linked account{extraEmails > 1 ? 's' : ''}
+                </p>
+              )}
+
+              <div className="flex items-center gap-4 mt-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+                <span><strong style={{ color: 'var(--text)' }}>{profile.orderCount}</strong> order{profile.orderCount !== 1 ? 's' : ''}</span>
+                <span><strong style={{ color: 'var(--text)' }}>{formatCurrencyNullable(profile.totalSpend)}</strong> spent</span>
+                {profile.refundCount > 0 && (
+                  <span style={profile.refundRate > 0.5 ? { color: 'var(--risk-critical)', fontWeight: 600 } : {}}>
+                    <strong>{profile.refundCount}</strong> refund{profile.refundCount !== 1 ? 's' : ''} ({Math.round(profile.refundRate * 100)}%)
+                  </span>
+                )}
+              </div>
+
+              {/* Inline flag pills */}
+              {profile.flags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {profile.flags.map((f, i) => (
+                    <span
+                      key={i}
+                      className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border"
+                      style={severityStyle(f.severity)}
+                    >
+                      {f.title}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* Data coverage indicator */}
+              <DataCoverageRow profile={profile} />
+            </div>
+
+            {/* Expand chevron */}
+            <svg
+              className={`w-5 h-5 flex-shrink-0 transition-transform ${expanded ? 'rotate-180' : ''}`}
+              style={{ color: 'var(--icon-muted)' }}
+              fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"
+              aria-hidden="true"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+            </svg>
           </div>
+        </button>
 
-          {/* Expand chevron */}
-          <svg
-            className={`w-5 h-5 flex-shrink-0 transition-transform ${expanded ? 'rotate-180' : ''}`}
-            style={{ color: 'var(--icon-muted)' }}
-            fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-          </svg>
-        </div>
+        <WatchlistStarButton
+          displayEmail={primaryEmail}
+          lastSeenRisk={profile.highestRisk}
+        />
       </div>
 
       {/* Expanded detail */}
@@ -244,11 +247,11 @@ export default function CustomerProfileCard({ profile }: { profile: CustomerProf
  */
 function DataCoverageRow({ profile }: { profile: import('@/lib/analysis/customerIntelligence').CustomerProfile }) {
   const fields: Array<{ label: string; present: boolean; missingTip: string }> = [
-    { label: 'email',    present: profile.emails.length > 0,          missingTip: 'Email not found' },
-    { label: 'address',  present: profile.addresses.length > 0,       missingTip: 'Address not in export' },
-    { label: 'IP',       present: profile.ips.length > 0,             missingTip: 'IP address not in export. Learn how to add it.' },
-    { label: 'card',     present: profile.cards.length > 0,           missingTip: 'Card data not in export. Learn how to add it.' },
-    { label: 'payment',  present: profile.paymentMethods.length > 0,  missingTip: 'Payment method not in export' },
+    { label: labelFor('email'),   present: profile.emails.length > 0,          missingTip: 'Email not found' },
+    { label: labelFor('address'), present: profile.addresses.length > 0,       missingTip: 'Address not in export' },
+    { label: labelFor('ip'),      present: profile.ips.length > 0,             missingTip: 'IP address not in export. Learn how to add it.' },
+    { label: labelFor('card'),    present: profile.cards.length > 0,           missingTip: 'Card data not in export. Learn how to add it.' },
+    { label: labelFor('payment'), present: profile.paymentMethods.length > 0,  missingTip: 'Payment method not in export' },
   ];
 
   const anyMissing = fields.some((f) => !f.present);

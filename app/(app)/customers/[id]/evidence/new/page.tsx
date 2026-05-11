@@ -187,6 +187,7 @@ export default function EvidenceNewPage({ params }: PageProps) {
             </label>
             <select
               id="order-select"
+              data-testid="disputed-order-select"
               value={selectedOrderId}
               onChange={e => setSelectedOrderId(e.target.value)}
               className="w-full px-3 py-2 rounded-md text-sm"

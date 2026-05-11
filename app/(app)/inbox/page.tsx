@@ -39,17 +39,8 @@ export default async function InboxPage({ searchParams }: { searchParams?: Promi
 
   const serviceClient = createServiceClient();
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_INBOX);
-  // Permission denied: return an access denied page (App Router pages must return React nodes, not Response objects).
-  if (denied) {
-    return (
-      <div className="p-8">
-        <h1 className="text-heading-lg">Access denied</h1>
-        <p className="text-body-sm mt-2" style={{ color: 'var(--text-muted)' }}>
-          You do not have permission to view the inbox.
-        </p>
-      </div>
-    );
-  }
+  // Permission denied: redirect to dashboard rather than returning a NextResponse from a page component.
+  if (denied) redirect('/dashboard');
 
   let items: Array<{
     id: string;

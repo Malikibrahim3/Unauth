@@ -1,11 +1,14 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { createScopedClient } from '@/lib/supabase/scoped';
 import { scoreOrders } from '@/lib/engine';
 import { computeMetrics } from '@/lib/eval/metrics';
 import { createJob, completeJob } from '@/lib/processing/job';
 import { createHash } from 'crypto';
 import type { NormalisedOrder } from '@/lib/engine/types';
 import type { Database } from '@/lib/supabase/types';
+import { createRequestLogger, withRequestLogging } from '@/lib/log';
+import { captureServerException } from '@/lib/sentry';
 
 type MerchantRow = Database['public']['Tables']['merchants']['Row'];
 
@@ -237,7 +240,8 @@ function generateDemoOrders(): DemoOrder[] {
   return orders;
 }
 
-export async function POST(_request: NextRequest) {
+async function POSTHandler(_request: NextRequest) {
+  const logger = createRequestLogger(_request, '/api/demo');
   try {
     const supabase = createClient();
     const serviceClient = createServiceClient();
@@ -258,11 +262,11 @@ export async function POST(_request: NextRequest) {
     }
 
     const merchantData = merchant as unknown as MerchantRow;
+    const scopedServiceClient = createScopedClient(merchantData.id, serviceClient);
 
-    const { count } = await supabase
+    const { count } = await scopedServiceClient
       .from('processing_jobs')
       .select('id', { count: 'exact', head: true })
-      .eq('merchant_id', merchantData.id);
 
     if ((count ?? 0) > 0) {
       return NextResponse.json({ error: 'Demo is only available for accounts with no prior runs.' }, { status: 409 });
@@ -278,7 +282,7 @@ export async function POST(_request: NextRequest) {
     const _evalMetrics = computeMetrics(predicted, actual);
 
     // Create processing_jobs record (unified schema)
-    const jobId = await createJob(serviceClient, merchantData.id, 'sample_audit_3000_orders.csv');
+    const jobId = await createJob(scopedServiceClient, merchantData.id, 'sample_audit_3000_orders.csv');
 
     const txInserts = scored.map((s) => ({
       job_id: jobId,
@@ -304,17 +308,24 @@ export async function POST(_request: NextRequest) {
       await serviceClient.from('audit_transactions').insert(txInserts.slice(i, i + BATCH));
     }
 
-    await completeJob(serviceClient, jobId, true, undefined, flaggedCount);
+    await completeJob(scopedServiceClient, jobId, true, undefined, flaggedCount);
     // Attach eval metrics to the job record for reference
-    await serviceClient
+    await scopedServiceClient
       .from('processing_jobs')
       .update({ has_ground_truth: true } as any)
       .eq('id', jobId);
 
     return NextResponse.json({ runId: jobId, flaggedCount, rowCount: orders.length });
   } catch (err) {
-    console.error('[demo] Error:', err);
+    captureServerException(err, {
+      requestId: _request.headers.get('x-request-id'),
+      route: '/api/demo',
+      method: _request.method,
+    });
+    logger.error('demo.seed_failed', { error: err });
     const message = err instanceof Error ? err.message : String(err);
     return NextResponse.json({ error: `Server error: ${message}` }, { status: 500 });
   }
 }
+
+export const POST = withRequestLogging('/api/demo', POSTHandler);

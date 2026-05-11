@@ -1,10 +1,12 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { createScopedClient } from '@/lib/supabase/scoped';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { logAction } from '@/lib/permissions/audit';
 import { writeActivityLog } from '@/lib/customers/activityLog';
 import { NextRequest, NextResponse } from 'next/server';
+import { withRequestLogging } from '@/lib/log';
 
-export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+async function GETHandler(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
   const userClient = createClient();
   const { data: { user } } = await userClient.auth.getUser();
@@ -13,11 +15,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const serviceClient = createServiceClient();
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_CUSTOMERS);
   if (denied) return denied;
+  const scopedClient = createScopedClient(ctx.merchantId, serviceClient);
 
-  const { data, error } = await serviceClient
+  const { data, error } = await scopedClient
     .from('customer_notes')
     .select('*')
-    .eq('merchant_id', ctx.merchantId)
     .eq('customer_profile_id', resolvedParams.id)
     .eq('deleted_by_merchant', false)
     .order('created_at', { ascending: false });
@@ -26,7 +28,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   return NextResponse.json({ notes: data });
 }
 
-export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+async function POSTHandler(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown';
 
@@ -37,14 +39,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const serviceClient = createServiceClient();
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.ADD_CUSTOMER_NOTE);
   if (denied) return denied;
+  const scopedClient = createScopedClient(ctx.merchantId, serviceClient);
 
   const { body } = await req.json();
   if (!body?.trim()) return NextResponse.json({ error: 'Note body is required' }, { status: 400 });
   if (body.length > 2000) return NextResponse.json({ error: 'Note must be 2000 characters or fewer' }, { status: 400 });
 
-  const { data, error } = await serviceClient
+  const { data, error } = await scopedClient
     .from('customer_notes')
-    .insert({ merchant_id: ctx.merchantId, customer_profile_id: resolvedParams.id, body })
+    .insert({ customer_profile_id: resolvedParams.id, body })
     .select()
     .single();
 
@@ -60,7 +63,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   });
 
   await writeActivityLog({
-    supabase: serviceClient,
+    supabase: scopedClient,
     profileId: resolvedParams.id,
     merchantId: ctx.merchantId,
     eventType: 'note_added',
@@ -69,3 +72,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   return NextResponse.json({ note: data });
 }
+
+export const GET = withRequestLogging('/api/customers/[id]/notes', GETHandler);
+export const POST = withRequestLogging('/api/customers/[id]/notes', POSTHandler);

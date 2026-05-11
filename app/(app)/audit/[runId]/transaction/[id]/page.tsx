@@ -1,8 +1,10 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
-import { formatDate, formatCurrency } from '@/lib/utils/format';
-import { signalLabel } from '@/lib/copy/signalLabels';
+import { formatDate } from '@/lib/utils/format';
+import { formatCurrencyNullable } from '@/lib/utils/formatCurrency';
+import { labelFor } from '@/lib/copy/labels';
+import { signalCopy } from '@/lib/copy/signals';
 import { ConfidenceBadge, riskLevelToNewGrade } from '@/components/ui/ConfidenceBadge';
 import RecommendedAction from '@/components/audit/RecommendedAction';
 import type { Database } from '@/lib/supabase/types';
@@ -88,7 +90,7 @@ export default async function TransactionDetailPage({ params }: Props) {
         <div className="rounded-lg px-5 py-4 border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
           <div className="text-caption mb-1" style={{ color: 'var(--text-muted)' }}>Order total</div>
           <div className="text-display-sm font-bold" style={{ color: 'var(--text)' }}>
-            {txData.order_value != null ? formatCurrency(txData.order_value, (txData as any).currency) : '—'}
+            {formatCurrencyNullable(txData.order_value, (txData as any).currency)}
           </div>
         </div>
         <div className="rounded-lg px-5 py-4 border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
@@ -123,7 +125,7 @@ export default async function TransactionDetailPage({ params }: Props) {
           <div className="space-y-3">
             {signals.map((sig) => (
               <div key={sig} className="rounded-lg p-4 border" style={{ borderColor: 'var(--border-subtle)' }}>
-                <span className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{signalLabel(sig).title}</span>
+                <span className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{signalCopy(sig).title}</span>
               </div>
             ))}
           </div>
@@ -138,7 +140,7 @@ export default async function TransactionDetailPage({ params }: Props) {
           <div className="space-y-2">
             {flags.map((flag) => (
               <div key={flag} className="rounded-lg px-3 py-2 border" style={{ borderColor: 'var(--border-subtle)' }}>
-                <span className="text-sm" style={{ color: 'var(--text)' }}>{flag}</span>
+                <span className="text-sm" style={{ color: 'var(--text)' }}>{labelFor(flag)}</span>
               </div>
             ))}
           </div>

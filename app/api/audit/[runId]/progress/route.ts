@@ -9,9 +9,12 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { createScopedClient } from '@/lib/supabase/scoped';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
+import { enforceRateLimit, limitFromEnv, rateLimitKey } from '@/lib/ratelimit';
+import { withRequestLogging } from '@/lib/log';
 
-export async function GET(
+async function GETHandler(
   request: NextRequest,
   { params }: { params: Promise<{ runId: string }> }
 ) {
@@ -24,16 +27,24 @@ export async function GET(
   const serviceClient = createServiceClient();
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_AUDIT);
   if (denied) return denied;
+  const scopedClient = createScopedClient(ctx.merchantId, serviceClient);
+
+  const limited = await enforceRateLimit(
+    rateLimitKey('audit', 'progress', ctx.merchantId),
+    limitFromEnv('RL_AUDIT_PROGRESS_PER_MINUTE', 120, 60, 'RL_AUDIT_PROGRESS_WINDOW_SECONDS')
+  );
+  if (limited) return limited;
+
   const { runId } = resolvedParams;
 
-  const { data: job, error } = await serviceClient
+  const { data: job, error } = await scopedClient
     .from('processing_jobs')
     .select('status, total_rows, processed_rows, failed_rows, error_log, has_ground_truth, merchant_id')
     .eq('id', runId)
     .single();
 
   // Verify job belongs to the requesting merchant
-  if (error || !job || job.merchant_id !== ctx.merchantId) {
+  if (error || !job) {
     return NextResponse.json({ error: 'Audit run not found' }, { status: 404 });
   }
 
@@ -83,3 +94,5 @@ export async function GET(
     errorMessage: firstError,
   });
 }
+
+export const GET = withRequestLogging('/api/audit/[runId]/progress', GETHandler);

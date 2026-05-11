@@ -1,7 +1,9 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { createScopedClient } from '@/lib/supabase/scoped';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { logAction } from '@/lib/permissions/audit';
 import { NextRequest, NextResponse } from 'next/server';
+import { withRequestLogging } from '@/lib/log';
 
 type Body = {
   entity: string;
@@ -17,7 +19,7 @@ const ALLOWED: Record<string, string> = {
   processing_jobs: 'processing_jobs',
 };
 
-export async function POST(req: NextRequest) {
+async function POSTHandler(req: NextRequest) {
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown';
 
   const userClient = createClient();
@@ -27,6 +29,7 @@ export async function POST(req: NextRequest) {
   const serviceClient = createServiceClient();
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.BULK_DELETE);
   if (denied) return denied;
+  const scopedClient = createScopedClient(ctx.merchantId, serviceClient);
 
   let body: Body;
   try {
@@ -37,8 +40,6 @@ export async function POST(req: NextRequest) {
 
   const { entity, ids, confirm } = body;
   if (!confirm) return NextResponse.json({ error: 'Confirmation required' }, { status: 400 });
-
-  const merchantId = ctx.merchantId;
 
   // Soft-delete flag per table (we never hard-delete merchant-flagged signals)
   const SOFT_DELETE_FIELD: Record<string, string> = {
@@ -52,7 +53,7 @@ export async function POST(req: NextRequest) {
     for (const [, table] of Object.entries(ALLOWED)) {
       const field = SOFT_DELETE_FIELD[table];
       if (!field) continue;
-      const { error } = await serviceClient.from(table).update({ [field]: true } as any).eq('merchant_id', merchantId);
+      const { error } = await scopedClient.from(table).update({ [field]: true } as any);
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     }
     logAction({ ctx, action: 'bulk_delete', metadata: { entity: 'all' }, ip });
@@ -67,9 +68,9 @@ export async function POST(req: NextRequest) {
 
   let res;
   if (ids && Array.isArray(ids) && ids.length > 0) {
-    res = await serviceClient.from(table).update({ [softField]: true } as any).in('id', ids).eq('merchant_id', merchantId);
+    res = await scopedClient.from(table).update({ [softField]: true } as any).in('id', ids);
   } else {
-    res = await serviceClient.from(table).update({ [softField]: true } as any).eq('merchant_id', merchantId);
+    res = await scopedClient.from(table).update({ [softField]: true } as any);
   }
 
   if (res.error) return NextResponse.json({ error: res.error.message }, { status: 500 });
@@ -83,3 +84,5 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ ok: true });
 }
+
+export const POST = withRequestLogging('/api/settings/bulk-delete', POSTHandler);

@@ -25,19 +25,19 @@ import { CE3_SIGNAL_LABELS } from './ce3'
 
 const C = {
   text:        '#111827',
-  muted:       '#6B7280',
-  accent:      '#6366F1',
-  tableBg:     '#F9FAFB',
-  border:      '#E5E7EB',
-  green:       '#10B981',
-  amber:       '#F59E0B',
-  red:         '#E5484D',
-  ce3Bg:       '#EEF2FF',
-  ce3Border:   '#6366F1',
-  amberBg:     '#FEF3C7',
-  amberBorder: '#F59E0B',
-  subtleBg:    '#F9FAFB',
-  darkText:    '#374151',
+  muted:       '#667085',
+  accent:      '#2563EB',
+  tableBg:     '#F5F2EE',
+  border:      '#DED7CC',
+  green:       '#067647',
+  amber:       '#B54708',
+  red:         '#B42318',
+  ce3Bg:       '#EFF6FF',
+  ce3Border:   '#2563EB',
+  amberBg:     '#FFFAEB',
+  amberBorder: '#FEDF89',
+  subtleBg:    '#F5F2EE',
+  darkText:    '#344054',
 }
 
 // =============================================================================

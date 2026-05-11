@@ -15,16 +15,21 @@
  * ──────────────────────────────────────────────────────────────────────── */
 
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { createScopedClient } from '@/lib/supabase/scoped';
 import { requirePermission, PERMISSIONS, type CallerContext } from '@/lib/permissions';
 import { logAction } from '@/lib/permissions/audit';
 import { NextRequest, NextResponse } from 'next/server';
 import { streamParseCsv, MAX_ROWS } from '@/lib/processing/streamParser';
 import { createJob, updateJobTotalRows, completeJob } from '@/lib/processing/job';
+import { createRequestLogger, withRequestLogging } from '@/lib/log';
 import {
   uploadChunkRows,
   dispatchChunk,
   originFromRequest,
 } from '@/lib/processing/chunkedDispatch';
+import { sniffCsvMagicBytes } from '@/lib/csv/sniffMagicBytes';
+import { enforceRateLimit, limitFromEnv, rateLimitKey } from '@/lib/ratelimit';
+import { captureServerException } from '@/lib/sentry';
 
 // 500 MB cap — enough headroom for ~5M-row CSVs at typical per-row size.
 const MAX_FILE_SIZE_BYTES = 500 * 1024 * 1024;
@@ -33,10 +38,10 @@ const MAX_FILE_SIZE_BYTES = 500 * 1024 * 1024;
 // and stage chunk JSONs to Storage before the chain starts.
 export const maxDuration = 300;
 
-export async function POST(request: NextRequest) {
-  const reqId = Math.random().toString(36).slice(2, 8);
+async function POSTHandler(request: NextRequest) {
+  const logger = createRequestLogger(request, '/api/audit');
   const log = (msg: string, extra?: unknown) =>
-    console.log(`[audit ${reqId}] ${new Date().toISOString()} ${msg}`, extra ?? '');
+    logger.info('audit.upload', { detail: msg, extra });
   log('POST /api/audit start');
 
   try {
@@ -51,13 +56,24 @@ export async function POST(request: NextRequest) {
     const serviceClient = createServiceClient();
     const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.UPLOAD_CSV);
     if (denied) return denied;
+    const scopedClient = createScopedClient(ctx.merchantId, serviceClient);
     log(`permission ok merchant=${ctx.merchantId}`);
 
-    return await runAudit(request, ctx, serviceClient, ip, log);
+    const limited = await enforceRateLimit(
+      rateLimitKey('audit', 'upload', ctx.merchantId),
+      limitFromEnv('RL_AUDIT_PER_HOUR', 10, 3600, 'RL_AUDIT_WINDOW_SECONDS')
+    );
+    if (limited) return limited;
+
+    return await runAudit(request, ctx, scopedClient, ip, log);
   } catch (err) {
+    captureServerException(err, {
+      requestId: request.headers.get('x-request-id'),
+      route: '/api/audit',
+      method: request.method,
+    });
     const message = err instanceof Error ? err.message : String(err);
-    const stack = err instanceof Error ? err.stack : undefined;
-    console.error(`[audit ${reqId}] UNCAUGHT in POST:`, message, stack);
+    logger.error('audit.upload_uncaught', { error: err });
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
@@ -65,7 +81,7 @@ export async function POST(request: NextRequest) {
 async function runAudit(
   request: NextRequest,
   ctx: CallerContext,
-  serviceClient: ReturnType<typeof createServiceClient>,
+  scopedClient: ReturnType<typeof createServiceClient>,
   ip: string,
   log: (msg: string, extra?: unknown) => void
 ) {
@@ -103,10 +119,9 @@ async function runAudit(
   if (fileHash && !forceReupload) {
     // Cast to any because `label` and `file_hash` columns were added via migration
     // but Supabase types have not been regenerated yet.
-    const { data: existing } = await (serviceClient
+    const { data: existing } = await (scopedClient
       .from('processing_jobs')
       .select('id, filename, created_at, label, status')
-      .eq('merchant_id', ctx.merchantId)
       .eq('hidden_by_merchant' as any, false)
       .eq('file_hash' as any, fileHash)
       .neq('status', 'failed')
@@ -132,7 +147,7 @@ async function runAudit(
 
   // ── Download from Storage ─────────────────────────────────────────────────
   log(`downloading from storage path=${filePath}`);
-  const { data: fileData, error: downloadError } = await serviceClient.storage
+  const { data: fileData, error: downloadError } = await scopedClient.storage
     .from('merchant-csv-uploads-2')
     .download(filePath);
 
@@ -155,11 +170,20 @@ async function runAudit(
     );
   }
 
+  const magicBytes = await sniffCsvMagicBytes(file, fileName);
+  if (!magicBytes.valid) {
+    log(`magic-byte validation FAILED reason=${magicBytes.reason}`);
+    return NextResponse.json(
+      { error: magicBytes.message ?? 'Invalid CSV upload' },
+      { status: 400 }
+    );
+  }
+
   // ── Create job record ─────────────────────────────────────────────────────
   let jobId: string;
   const merchantId = ctx.merchantId;
   try {
-    jobId = await createJob(serviceClient, merchantId, {
+    jobId = await createJob(scopedClient, merchantId, {
       filename: file.name,
       label: uploadLabel,
       dateRangeStart,
@@ -181,18 +205,18 @@ async function runAudit(
   let parseResult: Awaited<ReturnType<typeof streamParseCsv>>;
   try {
     parseResult = await streamParseCsv(file, columnMap, async (chunkRows, chunkIdx) => {
-      await uploadChunkRows(serviceClient, jobId, chunkIdx, chunkRows);
+      await uploadChunkRows(scopedClient, jobId, chunkIdx, chunkRows);
     });
     log(`parse ok rows=${parseResult.rowCount} chunks=${parseResult.totalChunks}`);
   } catch (err) {
     log(`parse FAILED: ${err instanceof Error ? err.message : String(err)}`);
     const message = err instanceof Error ? err.message : 'CSV parse failed';
-    await completeJob(serviceClient, jobId, false, [{ message }]);
+    await completeJob(scopedClient, jobId, false, [{ message }]);
     return NextResponse.json({ error: message }, { status: 422 });
   }
 
   if (!parseResult.valid) {
-    await completeJob(serviceClient, jobId, false, [
+    await completeJob(scopedClient, jobId, false, [
       { message: `Missing required columns: ${parseResult.missingRequired.join(', ')}` },
     ]);
     return NextResponse.json(
@@ -202,14 +226,14 @@ async function runAudit(
   }
 
   if (parseResult.rowCount > MAX_ROWS) {
-    await completeJob(serviceClient, jobId, false, [
+    await completeJob(scopedClient, jobId, false, [
       { message: `Row count ${parseResult.rowCount} exceeds limit of ${MAX_ROWS}` },
     ]);
     return NextResponse.json({ error: `Row count exceeds limit of ${MAX_ROWS}` }, { status: 422 });
   }
 
   // Update job with row count and start processing
-  await updateJobTotalRows(serviceClient, jobId, parseResult.rowCount);
+  await updateJobTotalRows(scopedClient, jobId, parseResult.rowCount);
 
   // ── Audit log ─────────────────────────────────────────────────────────────
   logAction({
@@ -244,7 +268,7 @@ async function runAudit(
   } catch (dispatchErr) {
     const dispatchMsg = dispatchErr instanceof Error ? dispatchErr.message : String(dispatchErr);
     log(`chunk 0 dispatch FAILED: ${dispatchMsg}`);
-    await completeJob(serviceClient, jobId, false, [{ message: `Dispatch failed: ${dispatchMsg}` }]);
+    await completeJob(scopedClient, jobId, false, [{ message: `Dispatch failed: ${dispatchMsg}` }]);
     return NextResponse.json({ error: 'Failed to start processing. Please retry.' }, { status: 500 });
   }
 
@@ -260,3 +284,5 @@ async function runAudit(
       : {}),
   });
 }
+
+export const POST = withRequestLogging('/api/audit', POSTHandler);

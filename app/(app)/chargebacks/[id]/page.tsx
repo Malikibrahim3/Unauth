@@ -101,15 +101,15 @@ export default async function EvidenceDetailPage({ params }: Props) {
         <div
           className="rounded-lg p-4"
           style={{
-            background: '#EEF2FF',
-            borderLeft: '4px solid #6366F1',
-            border: '1px solid #6366F1',
+            background: 'var(--info-bg)',
+            borderLeft: '4px solid var(--info)',
+            border: '1px solid var(--info-bd)',
           }}
         >
-          <p className="text-sm font-bold mb-1" style={{ color: '#6366F1' }}>
+          <p className="text-sm font-bold mb-1" style={{ color: 'var(--info)' }}>
             VISA COMPELLING EVIDENCE 3.0 — ELIGIBLE
           </p>
-          <p className="text-sm" style={{ color: '#374151' }}>
+          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
             CE3.0 Eligible — Submit to your acquirer via Visa Resolve Online within 30 days of chargeback notification.
           </p>
         </div>
@@ -140,28 +140,28 @@ export default async function EvidenceDetailPage({ params }: Props) {
       {pkg.ce3_eligible && (ce3Signals.length > 0 || ce3Priors.length > 0) && (
         <section
           className="rounded-xl p-5 border"
-          style={{ background: '#EEF2FF', borderColor: '#6366F1' }}
+          style={{ background: 'var(--info-bg)', borderColor: 'var(--info-bd)' }}
         >
-          <h2 className="text-overline mb-3" style={{ color: '#6366F1' }}>CE3.0 Evidence Detail</h2>
+          <h2 className="text-overline mb-3" style={{ color: 'var(--info)' }}>CE3.0 Evidence Detail</h2>
           {ce3Signals.length > 0 && (
-            <p className="text-body-sm mb-2" style={{ color: '#374151' }}>
+            <p className="text-body-sm mb-2" style={{ color: 'var(--text-secondary)' }}>
               <span className="font-semibold">Qualifying signals:</span>{' '}
               {ce3Signals.join(', ')}
             </p>
           )}
           {ce3Priors.length > 0 && (
             <div className="space-y-1">
-              <p className="text-body-sm font-semibold" style={{ color: '#374151' }}>
+              <p className="text-body-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
                 Qualifying prior transactions:
               </p>
               {ce3Priors.map((p, i) => (
-                <p key={i} className="text-body-sm font-mono" style={{ color: '#374151' }}>
+                <p key={i} className="text-body-sm font-mono" style={{ color: 'var(--text-secondary)' }}>
                   {p.orderId} — {formatDate(p.orderDate)} ({p.daysPriorToDispute} days prior)
                 </p>
               ))}
             </div>
           )}
-          <p className="text-xs mt-3 font-semibold" style={{ color: '#374151' }}>
+          <p className="text-xs mt-3 font-semibold" style={{ color: 'var(--text-secondary)' }}>
             NEXT STEP: Download the PDF and submit to your acquirer via Visa Resolve Online (VROL) within 30 days of chargeback notification.
           </p>
         </section>

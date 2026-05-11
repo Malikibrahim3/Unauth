@@ -18,6 +18,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { UnauthLogo } from '@/components/ui/UnauthLogo';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -230,22 +231,15 @@ export default function Sidebar({
           collapsed ? 'justify-center px-0' : 'gap-2 px-3',
         )}
       >
-        <span
-          className={cn(
-            'flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md',
-            'bg-[var(--accent)] text-[var(--text-inverse)]',
-            'text-heading-sm font-bold select-none',
-          )}
-          aria-label="Unauth"
-        >
-          U
-        </span>
+        <div className="flex-shrink-0 flex items-center justify-center">
+          <UnauthLogo variant="mark" size={28} />
+        </div>
 
         {!collapsed && (
           <div className="min-w-0 flex-1">
-            <div className="text-heading-sm text-[var(--text)] truncate">Unauth</div>
+            <UnauthLogo variant="wordmark-light" size={20} />
             {merchantName && (
-              <div className="text-caption text-[var(--text-muted)] truncate">{merchantName}</div>
+              <div className="text-caption text-[var(--text-muted)] truncate mt-0.5">{merchantName}</div>
             )}
           </div>
         )}

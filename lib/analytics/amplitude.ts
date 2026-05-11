@@ -1,6 +1,20 @@
 import * as amplitude from '@amplitude/analytics-browser'
 
+/*
+ * Privacy contract:
+ * Only anonymised merchant identifiers and approved event-level metadata
+ * are transmitted to Amplitude.
+ * Never send PII, merchant business names, order-volume bands, or free-text concerns.
+ * `identify()` may set only:
+ * - merchantId (as the Amplitude user ID)
+ * - optional accountTier
+ */
+
 let initialised = false
+
+type IdentifyProperties = {
+  accountTier?: string
+}
 
 export function initAmplitude() {
   if (typeof window === 'undefined') return
@@ -11,12 +25,7 @@ export function initAmplitude() {
   initialised = true
 }
 
-export function identify(merchantId: string, properties?: {
-  storeName?: string
-  monthlyOrderVolume?: string
-  primaryConcern?: string
-  createdAt?: string
-}) {
+export function identify(merchantId: string, properties?: IdentifyProperties) {
   if (typeof window === 'undefined') return
   amplitude.setUserId(merchantId)
   if (properties) {

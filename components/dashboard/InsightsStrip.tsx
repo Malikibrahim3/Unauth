@@ -13,7 +13,7 @@ export default function InsightsStrip({ insights }: InsightsStripProps) {
   if (!insights.length) return null;
 
   function colorFor(level: Insight['level']) {
-    if (level === 'warn') return { bg: 'var(--warning-bg, #fffbeb)', border: 'var(--warning-bd, #fcd34d)', text: 'var(--warning, #92400e)', dot: '#f59e0b' };
+    if (level === 'warn') return { bg: 'var(--warning-bg, #FFFAEB)', border: 'var(--warning-bd, #FEDF89)', text: 'var(--warning, #B54708)', dot: 'var(--warning)' };
     if (level === 'positive') return { bg: 'var(--success-bg)', border: 'var(--success-bd)', text: 'var(--success)', dot: 'var(--success)' };
     return { bg: 'var(--info-bg)', border: 'var(--info-bd)', text: 'var(--info)', dot: 'var(--info)' };
   }
