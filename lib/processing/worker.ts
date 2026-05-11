@@ -12,7 +12,7 @@ import type { Database } from '../supabase/types';
 import type { ParsedCsvRow, FraudTransactionInsert } from './types';
 import { buildFastContext } from '../engine/fastContext';
 import { scoreBatch } from '../engine/fastScore';
-import { buildIdentityClusters } from '../engine/identityMatching';
+import { buildIdentityClusterMapFromLinkerResult } from '../engine/identityClusterBuilder';
 import { linkIdentities, type LinkedCluster, type LinkerOrderInput } from '../linker';
 import { scoreAllClusters, scoreIdentityFromSignals, type ScoredCluster, type ScorerOrder } from '../scorer';
 import { assessDataQuality } from '../csv/dataQuality';
@@ -101,6 +101,7 @@ function rawIds(order: NormalisedOrder) {
 function buildLinkerInput(orders: NormalisedOrder[]): LinkerOrderInput[] {
   return orders.map((order) => {
     const ids = rawIds(order);
+    const nameNorm = (order as NormalisedOrder & { customerNameNorm?: string | null }).customerNameNorm ?? null;
     return {
       order_id: order.orderId,
       email: ids._rawEmail || null,
@@ -112,6 +113,7 @@ function buildLinkerInput(orders: NormalisedOrder[]): LinkerOrderInput[] {
       card_bin: ids._rawCardBin || null,
       device_fingerprint: ids._rawDeviceId || null,
       account_id: ids._rawAccountId || null,
+      name: nameNorm,
     };
   });
 }
@@ -190,19 +192,18 @@ function buildClusterIdentityResults(
     let identityScore: number | null = null;
     let recommendedAction: string | null = null;
 
-    if (clusterScore) {
-      // Full scorer path — trust it entirely.
+    // Core identity contract: the identity score must come from identity
+    // signals only. Contextual cluster scoring remains available elsewhere,
+    // but it must not influence the same-customer claim or confidence grade.
+    const sig = scoreIdentityFromSignals(cluster.signals_matched);
+    if (sig.identity_confidence_grade) {
+      grade = sig.identity_confidence_grade;
+      identityScore = sig.identity_score;
+      recommendedAction = sig.recommended_action;
+    } else if (clusterScore) {
+      // Keep a conservative compatibility fallback for clusters whose
+      // signal set is not enough to score as a surfaced identity match.
       grade = clusterScore.confidence_grade.toLowerCase() as PersistedIdentityResult['grade'];
-      identityScore = clusterScore.review_priority_score;
-      recommendedAction = clusterScore.recommended_action;
-    } else if (cluster.signals_matched.length > 0) {
-      // Fallback: deterministic signal-weight scorer.
-      const sig = scoreIdentityFromSignals(cluster.signals_matched);
-      if (sig.identity_confidence_grade) {
-        grade = sig.identity_confidence_grade;
-        identityScore = sig.identity_score;
-        recommendedAction = sig.recommended_action;
-      }
     }
 
     const ce3OrderIds = Array.from(
@@ -367,20 +368,25 @@ export async function processCsvJob(
   }
 
   // -----------------------------------------------------------------------
-  // 3. Build scoring context once for the ENTIRE dataset (O(n))
-  //    This bulk-queries fraud_entities + co-occurrences + signal_performance.
+  // 3. Build scoring context (Supabase I/O) overlapped with the identity
+  //    linker (pure CPU). buildFastContext fires all Supabase queries into
+  //    the event loop immediately, then yields on each await. While those
+  //    round-trips are in-flight we run the synchronous linker — saving the
+  //    full buildFastContext wall-clock time (~15–60s per chunk).
   // -----------------------------------------------------------------------
-  const context = await buildFastContext(normOrders, serviceClient, merchantId);
-  jobLog(`buildFastContext completed in ${Date.now() - overallStart}ms — orders=${normOrders.length}`);
+  const contextPromise = buildFastContext(normOrders, serviceClient, merchantId);
 
-  // -----------------------------------------------------------------------
-  // 3b. Build identity cluster map AFTER context is built and BEFORE
-  //     scoreBatch is called (per spec). The same map is reused for both
-  //     scoring (identityAlerts) and persistence to fraud_identity_clusters.
-  // -----------------------------------------------------------------------
-  const identityClusterMap = await buildIdentityClusters(normOrders, context);
+  // Run the identity linker synchronously while Supabase I/O is in-flight.
+  // linkerInputs + linkIdentities are pure CPU — no awaits, no I/O.
   const linkerInputs = buildLinkerInput(normOrders);
   const linkerResult = linkIdentities(linkerInputs);
+
+  // Now collect the context (may already be resolved if linker was slower).
+  const context = await contextPromise;
+  jobLog(`buildFastContext completed in ${Date.now() - overallStart}ms — orders=${normOrders.length}`);
+
+  // Build the cluster map and order/cluster scores from the single linker run.
+  const identityClusterMap = buildIdentityClusterMapFromLinkerResult(normOrders, linkerResult);
   const ordersById = new Map(validPairs.map((pair) => [pair.parsed.order_id, rowToScorerOrder(pair.parsed)]))
   const clusterScores = scoreAllClusters(linkerResult.clusters, ordersById);
 
@@ -435,26 +441,37 @@ export async function processCsvJob(
     }
   }
 
+  // Pre-build O(1) lookup maps used in the expansion merge below.
+  // Without these, every .find()/.filter() inside the loop is O(n) against
+  // linkerInputs (50k entries) and linkerResult.clusters, making the merge
+  // O(n × expanded-rows) in the worst case.
+  const clusterById = new Map(linkerResult.clusters.map((c) => [c.cluster_id, c]));
+  const clusterMemberSet = new Map(
+    linkerResult.clusters.map((c) => [c.cluster_id, new Set(c.order_ids)])
+  );
+  const linkerInputById = new Map(linkerInputs.map((r) => [r.order_id, r]));
+
   // Merge expansion results: only update rows that aren't already in a cluster
   if (expansion.additionalClusterAssignments.size > 0 || expansion.promotedClusters.length > 0) {
     // Build cluster info for promoted clusters (no scorer grade available — use
     // signal-weight fallback, same logic as buildClusterIdentityResults phase 2).
+    const seenExpansionClusterIds = new Set<string>();
     const allExpansionClusters = [
       ...expansion.promotedClusters,
-      // For expanded rows in existing clusters, we synthesise minimal LinkedCluster
+      // For expanded rows in existing clusters, synthesise minimal LinkedCluster
       // objects so buildClusterIdentityResults can process them.
+      // Use clusterById O(1) instead of .find() O(n) per entry.
       ...Array.from(
-        new Map(
-          [...expansion.additionalClusterAssignments.entries()].map(([orderId, clusterId]) => [
-            clusterId,
-            orderId,
-          ])
-        ).entries()
-      ).map(([clusterId]) => {
-        const existing = linkerResult.clusters.find((c) => c.cluster_id === clusterId);
-        return existing;
-      }).filter((c): c is typeof linkerResult.clusters[0] => c !== undefined),
-    ];
+        new Set([...expansion.additionalClusterAssignments.values()])
+      ).flatMap((clusterId) => {
+        const existing = clusterById.get(clusterId);
+        return existing ? [existing] : [];
+      }),
+    ].filter((c) => {
+      if (seenExpansionClusterIds.has(c.cluster_id)) return false;
+      seenExpansionClusterIds.add(c.cluster_id);
+      return true;
+    });
 
     // Compute per-row identity results for newly included rows
     const expansionResults = buildClusterIdentityResults(
@@ -466,23 +483,23 @@ export async function processCsvJob(
     // Apply expansion results only to rows that aren't already identity-scored
     for (const [orderId, clusterId] of Array.from(expansion.additionalClusterAssignments.entries())) {
       if (!identityResultsByOrder.has(orderId)) {
+        // O(1) map lookup instead of O(n) Array.from(...).find()
+        const memberIds = clusterMemberSet.get(clusterId);
         const existingClusterResult = expansionResults.get(orderId) ??
-          // If not found in expansion results, look at the existing cluster members
-          // and inherit their grade/score
-          Array.from(identityResultsByOrder.entries())
-            .find(([id]) => {
-              const existingCluster = linkerResult.clusters.find((c) => c.cluster_id === clusterId);
-              return existingCluster?.order_ids.includes(id);
-            })?.[1];
+          // Inherit from an existing cluster member that already has a result
+          (memberIds
+            ? Array.from(memberIds).map((id) => identityResultsByOrder.get(id)).find(Boolean)
+            : undefined);
 
         if (existingClusterResult) {
-          // Use the existing cluster's grade/score; recompute per-row signals
-          const thisInput = linkerInputs.find((r) => r.order_id === orderId);
-          const clusterInputs = linkerInputs.filter((r) => {
-            const existingCluster = linkerResult.clusters.find((c) => c.cluster_id === clusterId);
-            return existingCluster?.order_ids.includes(r.order_id);
-          });
-          const rowSignals = thisInput ? getRowMatchedSignals(thisInput, [...clusterInputs, ...(thisInput ? [thisInput] : [])]) : [];
+          // Use the existing cluster's grade/score; recompute per-row signals.
+          // O(1) map lookups instead of .find() + .filter() on 50k-entry array.
+          const thisInput = linkerInputById.get(orderId);
+          const existingCluster = clusterById.get(clusterId);
+          const clusterInputs = existingCluster
+            ? existingCluster.order_ids.map((id) => linkerInputById.get(id)).filter((r): r is LinkerOrderInput => r !== undefined)
+            : [];
+          const rowSignals = thisInput ? getRowMatchedSignals(thisInput, [...clusterInputs, thisInput]) : [];
           identityResultsByOrder.set(orderId, {
             ...existingClusterResult,
             signalsMatched: rowSignals,
@@ -621,14 +638,23 @@ export async function processCsvJob(
           // rows from chunks 0..N-1, ballooning the payload as upload progresses.
           const chunkOrderIds = scored.map((s) => s.order.orderId);
           const txIdMap = new Map<string, string>();
+          // Parallel TX lookup — all chunks fire concurrently instead of sequentially.
+          // Simple indexed reads (job_id + order_id) with no write-conflict risk.
           const TX_LOOKUP_CHUNK = 500;
+          const txChunks: string[][] = [];
           for (let i = 0; i < chunkOrderIds.length; i += TX_LOOKUP_CHUNK) {
-            const slice = chunkOrderIds.slice(i, i + TX_LOOKUP_CHUNK);
-            const { data: txRows } = await serviceClient
-              .from('audit_transactions')
-              .select('id, order_id')
-              .eq('job_id', jobId)
-              .in('order_id', slice);
+            txChunks.push(chunkOrderIds.slice(i, i + TX_LOOKUP_CHUNK));
+          }
+          const txResults = await Promise.all(
+            txChunks.map((slice) =>
+              serviceClient
+                .from('audit_transactions')
+                .select('id, order_id')
+                .eq('job_id', jobId)
+                .in('order_id', slice)
+            )
+          );
+          for (const { data: txRows } of txResults) {
             if (txRows) {
               for (const row of txRows) txIdMap.set(row.order_id, row.id);
             }
@@ -1204,4 +1230,3 @@ async function upsertBatchNoProgress(
     throw new Error(`Supabase upsert failed: ${error.message}`);
   }
 }
-

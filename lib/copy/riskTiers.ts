@@ -9,12 +9,12 @@ export interface RiskTierCopy {
 export const RISK_TIER_COPY: Record<RiskTier, RiskTierCopy> = {
   low: {
     label: 'Low',
-    description: 'No strong identity match signals.',
+    description: 'No strong identity match.',
     default: 'No action needed.',
   },
   medium: {
     label: 'Medium',
-    description: 'Some identity signals present — worth monitoring.',
+    description: 'Some identity evidence present — worth monitoring.',
     default: 'Keep on review list for their next order.',
   },
   high: {

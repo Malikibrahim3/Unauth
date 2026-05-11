@@ -4,8 +4,6 @@
 //   2. CustomerIntelligenceDrawer — slide-out panel used everywhere else
 //   3. app/(app)/customers/[id]/page.tsx — full standalone page
 //
-// Phase 1 DONE: All local risk helpers and format functions have been replaced
-// with canonical imports from @/lib/utils/riskStyles and @/lib/utils/format.
 // Planned next: replace all three with a shared <CustomerProfilePanel> component.
 // See reports/ui-ux-audit/APP_COHESION_AUDIT.md — Issue D1.
 'use client';
@@ -68,7 +66,7 @@ export default function CustomerProfileCard({ profile }: { profile: CustomerProf
                 <span><strong style={{ color: 'var(--text)' }}>{formatCurrencyNullable(profile.totalSpend)}</strong> spent</span>
                 {profile.refundCount > 0 && (
                   <span style={profile.refundRate > 0.5 ? { color: 'var(--risk-critical)', fontWeight: 600 } : {}}>
-                    <strong>{profile.refundCount}</strong> refund{profile.refundCount !== 1 ? 's' : ''} ({Math.round(profile.refundRate * 100)}%)
+                    <strong>{profile.refundCount}</strong> refund{profile.refundCount !== 1 ? 's' : ''} ({Math.round(profile.refundRate * 100)}% context)
                   </span>
                 )}
               </div>
@@ -142,7 +140,7 @@ export default function CustomerProfileCard({ profile }: { profile: CustomerProf
           {/* Why we linked these (only if multi-email) */}
           {profile.links.length > 0 && profile.emails.length > 1 && (
             <div>
-              <h4 className="text-overline mb-2">Why we linked these accounts</h4>
+              <h4 className="text-overline mb-2">Why this customer was matched</h4>
               <div className="space-y-2">
                 {profile.links.map((link, i) => (
                   <div key={i} className="flex items-start gap-2 text-sm rounded-lg px-3 py-2" style={{ background: 'var(--watchlist-bg)', borderColor: 'var(--watchlist-bd)', color: 'var(--text)', border: '1px solid var(--watchlist-bd)' }}>
@@ -157,7 +155,7 @@ export default function CustomerProfileCard({ profile }: { profile: CustomerProf
           {/* Identity changes / flags */}
           {profile.flags.length > 0 && (
             <div>
-              <h4 className="text-overline mb-2">Evidence signals</h4>
+              <h4 className="text-overline mb-2">Matched datapoints</h4>
               <div className="space-y-2">
                 {profile.flags.map((flag, i) => (
                   <div key={i} className="rounded-lg border px-3 py-2" style={severityStyle(flag.severity)}>
@@ -189,7 +187,7 @@ export default function CustomerProfileCard({ profile }: { profile: CustomerProf
                     <th className="px-3 py-2 text-overline">Order ID</th>
                     <th className="px-3 py-2 text-overline text-right">Amount</th>
                     <th className="px-3 py-2 text-overline">Refund</th>
-                    <th className="px-3 py-2 text-overline">Score</th>
+                    <th className="px-3 py-2 text-overline">Identity</th>
                     {profile.emails.length > 1 && (
                       <th className="px-3 py-2 text-overline">Account</th>
                     )}

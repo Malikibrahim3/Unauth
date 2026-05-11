@@ -69,6 +69,9 @@ async function GETHandler(
     identity_score: number | null;
     identity_confidence_grade: string | null;
     cluster_id: string | null;
+    match_status: string | null;
+    candidate_cluster_id: string | null;
+    confirmed_identity_id: string | null;
     signals_matched: unknown;
     customer_email: string | null;
     customer_name: string | null;
@@ -87,7 +90,7 @@ async function GETHandler(
     const { data, error: txError } = await serviceClient
       .from('audit_transactions')
       .select(
-        'order_id, processed_at, order_value, identity_score, identity_confidence_grade, cluster_id, signals_matched, customer_email, customer_name'
+        'order_id, processed_at, order_value, identity_score, identity_confidence_grade, cluster_id, match_status, candidate_cluster_id, confirmed_identity_id, signals_matched, customer_email, customer_name'
       )
       .eq('job_id', runId)
       .order('id', { ascending: true })
@@ -110,9 +113,12 @@ async function GETHandler(
     'order_id',
     'processed_at',
     'order_value',
+    'match_status',
     'identity_score',
     'identity_confidence_grade',
     'cluster_id',
+    'candidate_cluster_id',
+    'confirmed_identity_id',
     'customer_email',
     'customer_name',
     'signals_matched',
@@ -125,9 +131,12 @@ async function GETHandler(
       escapeCsvCell(row.order_id ?? ''),
       escapeCsvCell(row.processed_at ?? ''),
       row.order_value != null ? String(row.order_value) : '',
+      escapeCsvCell(row.match_status ?? ''),
       row.identity_score != null ? String(Math.round(row.identity_score)) : '',
       escapeCsvCell(row.identity_confidence_grade ?? ''),
       escapeCsvCell(row.cluster_id ?? ''),
+      escapeCsvCell(row.candidate_cluster_id ?? ''),
+      escapeCsvCell(row.confirmed_identity_id ?? ''),
       escapeCsvCell(row.customer_email ?? ''),
       escapeCsvCell(row.customer_name ?? ''),
       escapeCsvCell(signals),

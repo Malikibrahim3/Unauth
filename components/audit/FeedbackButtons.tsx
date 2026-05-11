@@ -9,10 +9,10 @@ interface FeedbackButtonsProps {
 }
 
 export default function FeedbackButtons({ transactionId, signalsThatFired }: FeedbackButtonsProps) {
-  const [submitted, setSubmitted] = useState<'confirmed_fraud' | 'confirmed_legitimate' | null>(null);
+  const [submitted, setSubmitted] = useState<'same_customer' | 'different_customer' | null>(null);
   const [loading, setLoading] = useState(false);
 
-  async function submit(outcome: 'confirmed_fraud' | 'confirmed_legitimate') {
+  async function submit(outcome: 'same_customer' | 'different_customer') {
     if (submitted || loading) return;
     setLoading(true);
     try {
@@ -26,8 +26,7 @@ export default function FeedbackButtons({ transactionId, signalsThatFired }: Fee
         }),
       });
       setSubmitted(outcome);
-      // Note: never send 'fraud' in analytics — use outcome mapping
-      const analyticsOutcome = outcome === 'confirmed_fraud' ? 'confirmed_same' : 'confirmed_different';
+      const analyticsOutcome = outcome === 'same_customer' ? 'confirmed_same' : 'confirmed_different';
       track('Feedback Submitted', { outcome: analyticsOutcome });
     } finally {
       setLoading(false);
@@ -40,7 +39,7 @@ export default function FeedbackButtons({ transactionId, signalsThatFired }: Fee
         {submitted === null && (
           <>
             <button
-              onClick={() => submit('confirmed_fraud')}
+              onClick={() => submit('same_customer')}
               disabled={loading}
               className="text-[10px] px-1.5 py-0.5 rounded border disabled:opacity-50 transition-colors"
               style={{ borderColor: 'var(--risk-critical-bd)', color: 'var(--risk-critical)', background: 'transparent' }}
@@ -50,7 +49,7 @@ export default function FeedbackButtons({ transactionId, signalsThatFired }: Fee
               Same customer confirmed
             </button>
             <button
-              onClick={() => submit('confirmed_legitimate')}
+              onClick={() => submit('different_customer')}
               disabled={loading}
               className="text-[10px] px-1.5 py-0.5 rounded-sm border transition-colors disabled:opacity-50" style={{ borderColor: 'var(--border-subtle)', color: 'var(--text-muted)', background: 'transparent' }} onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-subtle)')} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
             >
@@ -58,12 +57,12 @@ export default function FeedbackButtons({ transactionId, signalsThatFired }: Fee
             </button>
           </>
         )}
-        {submitted === 'confirmed_fraud' && (
+        {submitted === 'same_customer' && (
           <span className="text-[10px] px-1.5 py-0.5 rounded border flex items-center gap-1" style={{ borderColor: 'var(--risk-critical-bd)', background: 'var(--risk-critical-bg)', color: 'var(--risk-critical)' }}>
             ✓ Saved
           </span>
         )}
-        {submitted === 'confirmed_legitimate' && (
+        {submitted === 'different_customer' && (
           <span className="text-[10px] px-1.5 py-0.5 rounded border flex items-center gap-1" style={{ borderColor: 'var(--border)', background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
             ✓ Saved
           </span>

@@ -17,9 +17,9 @@ type FilterMode = 'all' | 'with_signals' | 'linked' | 'refunders';
 
 const FILTERS: { key: FilterMode; label: string; description: string }[] = [
   { key: 'all', label: 'All customers', description: 'Every customer found in this upload, highest match confidence first.' },
-  { key: 'with_signals', label: 'With signals', description: 'Customers with at least one identity match signal (name changes, high refunds, linked accounts).' },
-  { key: 'linked', label: 'Linked accounts', description: 'Customers who used different emails but shared a delivery address or card.' },
-  { key: 'refunders', label: 'High refund rate', description: 'Customers who refunded more than 30% of their orders.' },
+  { key: 'with_signals', label: 'With signals', description: 'Customers with at least one identity match signal.' },
+  { key: 'linked', label: 'Linked accounts', description: 'Customers who used different identifiers but still appear to be the same person.' },
+  { key: 'refunders', label: 'High refund context', description: 'Customers with heavier refund context, shown separately from identity evidence.' },
 ];
 
 export default function CustomerList({ profiles }: { profiles: CustomerProfile[] }) {

@@ -50,7 +50,7 @@ export default function DataQualityBanner({ report, runId }: Props) {
           </p>
           <p className="text-sm" style={{ color: 'var(--risk-high)' }}>
             Only required fields were present in this upload. Email and address
-            patterns were checked but hardware-level identity matching was not
+            patterns were checked but stronger identity matching was not
             possible.
           </p>
           <Link

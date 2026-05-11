@@ -23,7 +23,6 @@ export default function AuditTabs({ tabs, panels, defaultTab }: AuditTabsProps) 
 
   return (
     <div>
-      {/* Tab bar */}
       <div
         className="flex gap-0 mb-6 border-b"
         style={{ borderColor: 'var(--border-subtle)' }}
@@ -50,7 +49,6 @@ export default function AuditTabs({ tabs, panels, defaultTab }: AuditTabsProps) 
         })}
       </div>
 
-      {/* Panel */}
       <div role="tabpanel">
         {panels[active]}
       </div>

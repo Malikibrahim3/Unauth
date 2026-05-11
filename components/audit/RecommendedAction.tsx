@@ -31,7 +31,7 @@ export default function RecommendedAction({ tier, topSignalName, runId, customer
           className="text-xs font-semibold uppercase tracking-wider mb-1"
           style={{ color: 'var(--risk-high)' }}
         >
-          Recommended action
+          Recommended review
         </h3>
         <p className="text-sm" style={{ color: 'var(--risk-high)' }}>{recommendation}</p>
       </div>

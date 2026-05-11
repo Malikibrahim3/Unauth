@@ -17,7 +17,7 @@ const ALL_SIGNALS = [
   'refundPattern',
 ] as const;
 
-type Outcome = 'confirmed_fraud' | 'confirmed_legitimate';
+type Outcome = 'same_customer' | 'different_customer';
 
 interface FeedbackBody {
   transaction_id: string;
@@ -29,7 +29,7 @@ function isValidBody(b: unknown): b is FeedbackBody {
   if (!b || typeof b !== 'object') return false;
   const x = b as Record<string, unknown>;
   if (typeof x.transaction_id !== 'string' || x.transaction_id.length === 0) return false;
-  if (x.outcome !== 'confirmed_fraud' && x.outcome !== 'confirmed_legitimate') return false;
+  if (x.outcome !== 'same_customer' && x.outcome !== 'different_customer') return false;
   if (!Array.isArray(x.signals_that_fired)) return false;
   if (!x.signals_that_fired.every((s) => typeof s === 'string')) return false;
   return true;
@@ -47,7 +47,7 @@ async function POSTHandler(request: NextRequest) {
     return NextResponse.json(
       {
         error:
-          'Body must be { transaction_id: string, outcome: "confirmed_fraud" | "confirmed_legitimate", signals_that_fired: string[] }',
+          'Body must be { transaction_id: string, outcome: "same_customer" | "different_customer", signals_that_fired: string[] }',
       },
       { status: 400 }
     );
