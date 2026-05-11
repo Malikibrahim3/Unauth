@@ -200,8 +200,8 @@ export default function TeamManagementClient() {
         <div
           className="rounded-md border px-3 py-2 text-sm"
           style={{
-            background: message.type === 'success' ? 'rgba(34, 197, 94, 0.10)' : 'rgba(248, 113, 113, 0.10)',
-            borderColor: message.type === 'success' ? 'rgba(34, 197, 94, 0.35)' : 'rgba(248, 113, 113, 0.35)',
+            background: message.type === 'success' ? 'rgba(47, 107, 67, 0.10)' : 'rgba(248, 113, 113, 0.10)',
+            borderColor: message.type === 'success' ? 'rgba(47, 107, 67, 0.30)' : 'rgba(248, 113, 113, 0.35)',
             color: 'var(--text)',
           }}
           role="status"
@@ -305,7 +305,7 @@ export default function TeamManagementClient() {
                           <Clock className="h-3 w-3" /> Pending
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs" style={{ background: 'rgba(34, 197, 94, 0.12)', color: 'var(--text)' }}>
+                        <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs" style={{ background: 'rgba(47, 107, 67, 0.10)', color: 'var(--text)' }}>
                           <Check className="h-3 w-3" /> {STATUS_LABELS[member.invite_status]}
                         </span>
                       )}

@@ -14,9 +14,9 @@ export const STATUS_OPTIONS: InvestigationStatus[] = [
 
 export function statusStyle(status: string): React.CSSProperties {
   switch (status) {
-    case 'under_review': return { background: 'var(--info-bg,#EFF6FF)', color: 'var(--info,#2563EB)', border: '1px solid var(--info-bd,#BFDBFE)' };
+    case 'under_review': return { background: 'var(--info-bg,#EEF3FE)', color: 'var(--info,#2563EB)', border: '1px solid var(--info-bd,#B6CCFB)' };
     case 'contacted':    return { background: 'var(--risk-high-bg)', color: 'var(--risk-high)', border: '1px solid var(--risk-high-bd)' };
-    case 'resolved':     return { background: 'var(--success-bg,#ECFDF3)', color: 'var(--success,#067647)', border: '1px solid var(--success-bd,#ABEFC6)' };
+    case 'resolved':     return { background: 'var(--success-bg,#E8F1E6)', color: 'var(--success,#2F6B43)', border: '1px solid var(--success-bd,#B5D2A8)' };
     case 'cleared':      return { background: 'var(--bg-subtle)', color: 'var(--text-muted)', border: '1px solid var(--border)' };
     default:             return { background: 'var(--bg-subtle)', color: 'var(--text-subtle)', border: '1px solid var(--border-subtle)' };
   }

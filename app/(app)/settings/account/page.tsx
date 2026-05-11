@@ -307,7 +307,7 @@ export default function AccountSettingsPage() {
       {/* Danger Zone */}
       <div
         className="rounded-lg border p-5 space-y-4"
-        style={{ background: 'var(--bg-surface)', borderColor: 'rgba(239,68,68,0.3)' }}
+        style={{ background: 'var(--bg-surface)', borderColor: 'rgba(159, 29, 29, 0.30)' }}
       >
         <div className="flex items-center gap-2">
           <AlertTriangle className="h-4 w-4" style={{ color: 'var(--risk-critical)' }} />

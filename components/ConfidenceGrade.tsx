@@ -16,25 +16,25 @@ const GRADE_CONFIG: Record<
 > = {
   definite: {
     dot:   'var(--risk-critical)',
-    bg:    'rgba(229, 72, 77, 0.12)',
+    bg:    'rgba(159, 29, 29, 0.10)',
     label: 'LINKED',
     text:  'var(--risk-critical)',
   },
   probable: {
     dot:   'var(--risk-high)',
-    bg:    'rgba(241, 161, 13, 0.12)',
+    bg:    'rgba(139, 106, 20, 0.10)',
     label: 'PROBABLE',
     text:  'var(--risk-high)',
   },
   possible: {
     dot:   'var(--risk-medium)',
-    bg:    'rgba(255, 230, 41, 0.12)',
+    bg:    'rgba(139, 106, 20, 0.10)',
     label: 'SIGNAL',
     text:  'var(--risk-medium)',
   },
   weak: {
     dot:   'var(--risk-none)',
-    bg:    'rgba(113, 113, 122, 0.12)',
+    bg:    'rgba(120, 136, 156, 0.10)',
     label: 'WEAK',
     text:  'var(--risk-none)',
   },
@@ -102,7 +102,7 @@ export default function ConfidenceGrade({
             alignItems:    'center',
             padding:       '4px 6px',
             borderRadius:  '4px',
-            background:    'rgba(113, 113, 122, 0.10)',
+            background:    'rgba(120, 136, 156, 0.08)',
             fontSize:      `${fontSize}px`,
             fontWeight:    500,
             letterSpacing: '0.05em',

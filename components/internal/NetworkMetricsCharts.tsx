@@ -73,7 +73,7 @@ export default function NetworkMetricsCharts({ snapshots }: Props) {
             <Tooltip />
             <Legend />
             <Line type="monotone" dataKey="total" name="Total identities" stroke="var(--accent, #2563EB)" dot={false} />
-            <Line type="monotone" dataKey="kanon" name="k-anon satisfied (3+)" stroke="var(--success, #067647)" dot={false} />
+            <Line type="monotone" dataKey="kanon" name="k-anon satisfied (3+)" stroke="var(--success, #2F6B43)" dot={false} />
           </LineChart>
         </ResponsiveContainer>
       </div>
@@ -95,7 +95,7 @@ export default function NetworkMetricsCharts({ snapshots }: Props) {
             <YAxis unit="%" tick={{ fontSize: 11 }} />
             <Tooltip formatter={(v: number) => `${v}%`} />
             <Legend />
-            <Line type="monotone" dataKey="pct" name="Audits with cross-merchant signal %" stroke="var(--warning, #B54708)" dot={false} />
+            <Line type="monotone" dataKey="pct" name="Audits with cross-merchant signal %" stroke="var(--warning, #8B6A14)" dot={false} />
           </LineChart>
         </ResponsiveContainer>
       </div>

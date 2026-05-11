@@ -18,14 +18,14 @@ export function UnauthLogo({ variant = 'wordmark-light', size = 28, className }:
         aria-label="Unauth"
         role="img"
       >
-        <path d="M18 14 H32 V74 H68 V14 H82 V88 H18 Z" fill="#111014" />
+        <path d="M18 14 H32 V74 H68 V14 H82 V88 H18 Z" fill="#141821" />
         <polygon points="92,88 102,88 108,14 98,14" fill="#2563EB" />
         <rect x="42" y="96" width="16" height="3" fill="#2563EB" />
       </svg>
     );
   }
 
-  const uFill = variant === 'wordmark-dark' ? '#F5F2EE' : '#111014';
+  const uFill = variant === 'wordmark-dark' ? '#FAF6EF' : '#141821';
   const width = Math.round(size * (120 / 100));
 
   return (

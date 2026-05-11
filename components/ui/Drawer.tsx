@@ -85,7 +85,7 @@ export function Drawer({
     >
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-[rgba(14,17,22,0.4)]"
+        className="absolute inset-0 bg-[rgba(20,24,33,0.45)]"
         style={{
           animation: `fadeIn var(--duration-fast) var(--ease-standard) both`,
         }}
