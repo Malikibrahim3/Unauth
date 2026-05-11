@@ -292,6 +292,9 @@ const SIGNAL_LABELS: Record<LinkerSignal, string> = {
   email: 'same email address',
   postcode: 'same postcode',
   ip: 'same IP address',
+  name: 'same customer name',
+  shipping_address: 'same shipping address',
+  billing_address: 'same billing address',
 };
 
 function buildSignalsSummary(cluster: LinkedCluster): string[] {

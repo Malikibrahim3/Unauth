@@ -135,7 +135,7 @@ function chooseAnchor(
  * generateIdentityAlert and the fraud_identity_clusters UI.
  */
 function reasonsFromSignals(signals: LinkerSignal[]): string[] {
-  const PHRASES: Record<LinkerSignal, string> = {
+  const PHRASES: Partial<Record<LinkerSignal, string>> = {
     card: 'Same payment card (BIN + last 4) shared across orders',
     phone: 'Same phone number shared across orders',
     device: 'Same device fingerprint shared across orders',
@@ -143,8 +143,11 @@ function reasonsFromSignals(signals: LinkerSignal[]): string[] {
     email: 'Same email base (dots/aliases ignored) shared across orders',
     postcode: 'Same postcode shared across orders',
     ip: 'Same IP address shared across orders (corroborating signal only)',
+    name: 'Same customer name shared across orders',
+    shipping_address: 'Same shipping address shared across orders',
+    billing_address: 'Same billing address shared across orders',
   };
-  return signals.map((s) => PHRASES[s]);
+  return signals.map((s) => PHRASES[s] ?? s);
 }
 
 /**
@@ -177,21 +180,24 @@ export async function buildIdentityClusters(
   // addresses.
   const linkerInput: LinkerOrderInput[] = orders.map((o) => {
     const ids = extractOrderRawIds(o);
-    const x = o as NormalisedOrder & { _rawCardBin?: string | null };
+    const x = o as NormalisedOrder & {
+      _rawCardBin?: string | null;
+      customerNameNorm?: string | null;
+    };
     return {
       order_id: o.orderId,
       email: ids.email || null,
       phone: ids.phone || null,
       address: ids.address || null,
-      // Extract postcode from the explicit column if present; otherwise try
-      // the trailing token of the address (UK postcodes conventionally sit
-      // at the end of the shipping_address string).
+      shipping_address: ids.address || null,
+      billing_address: ids.billingAddress || null,
       postcode: ids.postcode || postcodeFromAddress(ids.address) || null,
       ip: ids.ip || null,
       card_last4: ids.card || null,
       card_bin: x._rawCardBin ?? null,
       device_fingerprint: ids.device || null,
       account_id: ids.account || null,
+      name: x.customerNameNorm ?? null,
     };
   });
 

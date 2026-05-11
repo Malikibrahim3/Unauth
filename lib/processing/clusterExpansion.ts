@@ -345,6 +345,7 @@ function promoteCandidateGroups(
       order_ids: orderIds.sort(),
       confidence_score: maxScore,
       signals_matched: signalsSorted as LinkerSignal[],
+      evidence_summary: [],
     });
 
     // Generate debug reports for each member

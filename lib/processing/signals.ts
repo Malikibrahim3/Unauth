@@ -136,5 +136,42 @@ export function getRowMatchedSignals(
     }
   }
 
+  // ── name ─────────────────────────────────────────────────────────────────
+  if (hasValue((row as LinkerOrderInput & { name?: string | null }).name)) {
+    const myName = (row as LinkerOrderInput & { name?: string | null }).name!.trim().toLowerCase();
+    if (myName && others.some((o) => {
+      const oName = (o as LinkerOrderInput & { name?: string | null }).name;
+      return hasValue(oName) && oName!.trim().toLowerCase() === myName;
+    })) {
+      signals.push('name');
+    }
+  }
+
+  // ── shipping_address ─────────────────────────────────────────────────────
+  const shipA = (row as LinkerOrderInput & { shipping_address?: string | null }).shipping_address
+    ?? (row as LinkerOrderInput).address;
+  if (hasValue(shipA)) {
+    const myShip = shipA!.trim().toLowerCase();
+    if (myShip && others.some((o) => {
+      const oShip = (o as LinkerOrderInput & { shipping_address?: string | null }).shipping_address
+        ?? (o as LinkerOrderInput).address;
+      return hasValue(oShip) && oShip!.trim().toLowerCase() === myShip;
+    })) {
+      signals.push('shipping_address');
+    }
+  }
+
+  // ── billing_address ──────────────────────────────────────────────────────
+  const billA = (row as LinkerOrderInput & { billing_address?: string | null }).billing_address;
+  if (hasValue(billA)) {
+    const myBill = billA!.trim().toLowerCase();
+    if (myBill && others.some((o) => {
+      const oBill = (o as LinkerOrderInput & { billing_address?: string | null }).billing_address;
+      return hasValue(oBill) && oBill!.trim().toLowerCase() === myBill;
+    })) {
+      signals.push('billing_address');
+    }
+  }
+
   return signals;
 }
