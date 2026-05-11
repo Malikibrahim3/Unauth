@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { User, ArrowLeft, Save, AlertTriangle, Check, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
+import { Button } from '@/components/ui';
 
 interface MerchantData {
   id: string;
@@ -230,15 +231,9 @@ export default function AccountSettingsPage() {
         )}
 
         <div className="flex items-center gap-3">
-          <button
-            type="submit"
-            disabled={saving}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-semibold disabled:opacity-50"
-            style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}
-          >
-            <Save className="h-3.5 w-3.5" />
+          <Button type="submit" loading={saving} leadingIcon={<Save className="h-3.5 w-3.5" />}>
             {saving ? 'Saving…' : 'Save changes'}
-          </button>
+          </Button>
           {saveSuccess && (
             <span className="text-xs flex items-center gap-1" style={{ color: 'var(--success)' }}>
               <Check className="h-3.5 w-3.5" /> Saved
@@ -294,14 +289,9 @@ export default function AccountSettingsPage() {
           </p>
         )}
 
-        <button
-          type="submit"
-          disabled={passwordSaving || !newPassword}
-          className="px-4 py-2 rounded-md text-sm font-semibold disabled:opacity-50"
-          style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}
-        >
+        <Button type="submit" loading={passwordSaving} disabled={!newPassword}>
           {passwordSaving ? 'Updating…' : 'Update password'}
-        </button>
+        </Button>
       </form>
 
       {/* Danger Zone */}
@@ -334,15 +324,14 @@ export default function AccountSettingsPage() {
               className="px-3 py-2 rounded-md text-sm focus:outline-none w-40"
               style={{ background: 'var(--bg-inset)', border: '1px solid var(--border)', color: 'var(--text)' }}
             />
-            <button
-              type="button"
+            <Button
+              variant="danger"
               onClick={handleDeleteAccount}
               disabled={deleteConfirm !== 'DELETE' || deleteLoading}
-              className="px-4 py-2 rounded-md text-sm font-semibold disabled:opacity-30 disabled:cursor-not-allowed"
-              style={{ background: 'var(--risk-critical)', color: 'var(--text-inverse)' }}
+              loading={deleteLoading}
             >
               {deleteLoading ? 'Deleting…' : 'Delete account'}
-            </button>
+            </Button>
           </div>
         </div>
       </div>

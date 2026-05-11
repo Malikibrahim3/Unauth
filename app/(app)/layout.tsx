@@ -23,17 +23,24 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const isOnboarding = pathname.startsWith('/onboarding');
 
   if (!isOnboarding) {
-    const [{ count: jobCount }, { data: merchantRow }] = await Promise.all([
-      supabase.from('processing_jobs').select('*', { count: 'exact', head: true }).eq('is_demo', false),
-      supabase.from('merchants').select('setup_complete').eq('user_id', user.id).single(),
-    ]);
+    // Primary check: auth user_metadata — set at onboarding completion and
+    // survives any application-table (merchants, processing_jobs, etc.) deletions.
+    const metaComplete = (user as any).user_metadata?.setup_complete === true;
 
-    const needsOnboarding =
-      (jobCount === 0 || jobCount === null) &&
-      (!merchantRow || !(merchantRow as unknown as { setup_complete: boolean }).setup_complete);
+    if (!metaComplete) {
+      // Fallback for accounts created before metadata was introduced
+      const { data: merchantRow } = await supabase
+        .from('merchants')
+        .select('setup_complete')
+        .eq('user_id', user.id)
+        .maybeSingle();
 
-    if (needsOnboarding) {
-      redirect('/onboarding');
+      const merchantComplete =
+        !!(merchantRow as unknown as { setup_complete?: boolean } | null)?.setup_complete;
+
+      if (!merchantComplete) {
+        redirect('/onboarding');
+      }
     }
   }
 

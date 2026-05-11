@@ -4,7 +4,7 @@ import AuditHistoryTableClient from '@/components/audit/AuditHistoryTableClient'
 import type { Database } from '@/lib/supabase/types';
 import PageSizeSelect from '@/components/common/PageSizeSelect';
 import { PageHeader } from '@/components/common/PageHeader';
-import { EmptyState } from '@/components/ui/EmptyState';
+import { EmptyState, Button } from '@/components/ui';
 
 type RunRow = Database['public']['Tables']['processing_jobs']['Row'];
 
@@ -39,8 +39,8 @@ export default async function HistoryPage({ searchParams }: { searchParams?: { p
         title="Upload history"
         subtitle={`Showing ${total === 0 ? 0 : offset + 1}–${Math.min(offset + pageSize, total)} of ${total.toLocaleString()} audits`}
         actions={
-          <Link href="/upload" className="px-4 py-2 text-sm font-semibold rounded-md transition-colors" style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}>
-            New Audit
+          <Link href="/upload">
+            <Button size="sm">New Audit</Button>
           </Link>
         }
       />
@@ -50,21 +50,13 @@ export default async function HistoryPage({ searchParams }: { searchParams?: { p
           <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
             <span>Page {page} of {totalPages}</span>
             {page > 1 && (
-              <Link
-                href={`/history?${new URLSearchParams({ ...baseSearchParams, page: String(page - 1), pageSize: String(pageSize) }).toString()}`}
-                className="px-2 py-1 rounded border"
-                style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}
-              >
-                ← Prev
+              <Link href={`/history?${new URLSearchParams({ ...baseSearchParams, page: String(page - 1), pageSize: String(pageSize) }).toString()}`}>
+                <Button variant="secondary" size="sm">← Prev</Button>
               </Link>
             )}
             {page < totalPages && (
-              <Link
-                href={`/history?${new URLSearchParams({ ...baseSearchParams, page: String(page + 1), pageSize: String(pageSize) }).toString()}`}
-                className="px-2 py-1 rounded border"
-                style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}
-              >
-                Next →
+              <Link href={`/history?${new URLSearchParams({ ...baseSearchParams, page: String(page + 1), pageSize: String(pageSize) }).toString()}`}>
+                <Button variant="secondary" size="sm">Next →</Button>
               </Link>
             )}
           </div>
@@ -75,7 +67,7 @@ export default async function HistoryPage({ searchParams }: { searchParams?: { p
         <EmptyState
           title="No audits yet"
           description="Upload your first CSV to start reviewing identity match patterns."
-          action={<Link href="/upload" className="text-sm font-medium underline" style={{ color: 'var(--text)' }}>Upload your first CSV &rarr;</Link>}
+          action={<Link href="/upload"><Button variant="secondary" size="sm">Upload your first CSV →</Button></Link>}
         />
       ) : (
         <AuditHistoryTableClient rows={typedRuns} />

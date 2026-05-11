@@ -11,11 +11,12 @@ export default async function UploadPage({ searchParams }: UploadPageProps) {
   return (
     <div className="p-8 max-w-3xl">
       {isWelcome && (
-        <div className="mb-6 rounded-lg px-5 py-4 border" style={{ background: 'var(--success-bg)', borderColor: 'var(--success-bd)' }}>
-          <p className="text-sm font-semibold" style={{ color: 'var(--success)' }}>
-            Welcome to Unauth! Your account is set up.
-          </p>
-          <p className="text-xs mt-0.5" style={{ color: 'var(--success)' }}>
+        <div
+          className="mb-6 rounded-[var(--radius-3)] px-5 py-4"
+          style={{ background: 'var(--risk-low-bg)', border: '1px solid var(--risk-low-line)' }}
+        >
+          <p className="text-h3" style={{ color: 'var(--risk-low-fg)' }}>Welcome to Unauth — your account is set up.</p>
+          <p className="text-caption mt-0.5" style={{ color: 'var(--risk-low-fg)' }}>
             Upload your first order export below to run identity matching.
           </p>
         </div>

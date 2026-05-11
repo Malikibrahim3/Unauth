@@ -6,7 +6,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { formatDate } from '@/lib/utils/format'
 import { PageHeader } from '@/components/common/PageHeader'
-import { EmptyState } from '@/components/ui/EmptyState'
+import { EmptyState, Button } from '@/components/ui'
 
 export const metadata = {
   title: 'Evidence Packages — Unauth',
@@ -64,8 +64,8 @@ export default async function ChargebacksPage() {
         title="Evidence Packages"
         subtitle={`Chargeback representment documents generated for disputed orders.${pkgs.some(p => p.ce3_eligible) ? ' Where eligible, packages are formatted for Visa Compelling Evidence 3.0.' : ''}`}
         actions={
-          <Link href="/customers" className="text-xs font-semibold hover:underline shrink-0" style={{ color: 'var(--accent)' }}>
-            View customers →
+          <Link href="/customers">
+            <Button variant="ghost" size="sm">View customers →</Button>
           </Link>
         }
       />
@@ -75,8 +75,8 @@ export default async function ChargebacksPage() {
           title="No evidence packages yet."
           description="When a customer files a chargeback, generate an evidence package from their profile. Where eligible, packages are formatted for Visa Compelling Evidence 3.0 submission."
           action={
-            <Link href="/customers" className="inline-flex items-center gap-1 text-xs font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
-              View customers →
+            <Link href="/customers">
+              <Button variant="secondary" size="sm">View customers →</Button>
             </Link>
           }
         />
