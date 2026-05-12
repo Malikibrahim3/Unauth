@@ -536,13 +536,11 @@ export async function processProfilesForBatch(
   const profileIdForOrder   = new Map<string, string>(); // orderId → profileId (filled later)
 
   for (const od of orderDataList) {
-    // ── Two-tier gate ───────────────────────────────────────────────────────
-    // none (<25) and candidate (25–49) scores are surfaced as signals only.
-    // They must NOT create or update customer profiles.
-    if (od.identity &&
-        (od.identity.matchStatus === 'none' || od.identity.matchStatus === 'candidate')) {
-      continue;
-    }
+    // ── Two-tier gate removed ────────────────────────────────────────────────
+    // All orders — including low-confidence 'none' and 'candidate' — now create
+    // a skeleton customer_profile so that future appearances can be matched
+    // back to them retrospectively. profile_confidence reflects the initial
+    // certainty (25 for none, 50 for candidate, 100 for stronger signals).
 
     let matchedProfile: CustomerProfileRow | null = null;
     let confidence = 0;
@@ -583,7 +581,10 @@ export async function processProfilesForBatch(
       p.refund_rate   = p.total_orders > 0 ? p.total_refund_claims / p.total_orders : 0;
       p.risk_score    = p.risk_score * 0.6 + od.scoredOrder.totalScore * 0.4;
       p.risk_level    = getRiskLevel(p.risk_score);
-      p.profile_confidence = Math.min(p.profile_confidence, confidence);
+      // Use Math.max so a returning customer with a stronger signal (e.g. email
+      // match after a previous IP-only skeleton) upgrades the profile confidence
+      // rather than dragging it down.
+      p.profile_confidence = Math.max(p.profile_confidence, confidence);
       if (od.identity) {
         p.identity_confidence_grade = strongerGrade(p.identity_confidence_grade ?? null, od.identity.grade);
         p.identity_signals_summary = mergeStrings(p.identity_signals_summary ?? [], od.identity.signals);
@@ -594,7 +595,12 @@ export async function processProfilesForBatch(
           p.identity_status = 'confirmed';
         } else if (od.identity.matchStatus === 'probable' && p.identity_status !== 'confirmed') {
           p.identity_status = 'candidate';
+        } else if (od.identity.matchStatus === 'candidate' && p.identity_status == null) {
+          // Low-confidence returning visit — mark as candidate so analysts can
+          // review when stronger signals arrive.
+          p.identity_status = 'candidate';
         }
+        // 'none' matchStatus leaves identity_status unchanged (stays as-is or null)
       }
       p.last_seen     = new Date().toISOString();
       p.last_audit_id = auditId;
@@ -685,6 +691,18 @@ export async function processProfilesForBatch(
       }
     }
 
+    // Derive initial profile_confidence from the strongest identity matchStatus
+    // in the group. Skeleton profiles created from low-confidence orders start
+    // at a lower confidence so analysts and future matching can distinguish them.
+    const groupMatchStatuses = group.map((od) => od.identity?.matchStatus ?? 'none');
+    const initialConfidence =
+      groupMatchStatuses.some((s) => s === 'definite' || s === 'confirmed') ? 100 :
+      groupMatchStatuses.some((s) => s === 'probable')                      ?  85 :
+      groupMatchStatuses.some((s) => s === 'candidate')                     ?  50 :
+      group.some((od) => od.normEmail || (od.normCard && od.normCard.length === 4)) ? 100 :
+      // IP-only or fully anonymous new orders start at 25 (skeleton profile)
+      od.normIP ? 25 : 25;
+
     return {
       primary_email:           [...emails][0] ?? null,
       emails:                  [...emails],
@@ -704,7 +722,7 @@ export async function processProfilesForBatch(
       refund_timestamps:       refundTs,
       merchant_ids:            merchantId ? [merchantId] : ([] as string[]),
       last_audit_id:           auditId,
-      profile_confidence:      100,
+      profile_confidence:      initialConfidence,
       identity_confidence_grade: identityGrade,
       identity_signals_summary:  [...identitySignals],
       identity_cluster_id:       identityClusterId,
