@@ -48,7 +48,11 @@ This file is appended at the end of every implementation phase.
 
 **Deviations documented:**
 - Font: DM Sans retained (not replaced with Inter). DM Sans is humanist neutral, adequate for the Amplitude-adjacent target aesthetic.
-- Existing warm-neutral `--bg-canvas` (#FAFAF9) replaced with spec cool-tinted `#F7F8FB` in light mode. Minimal perceptible change.
-- Existing `--border-subtle` value updated from `#ECEAE6` (warm) to `#E5E7EC` (spec cool gray). Visual change is extremely subtle.
+- `--bg-canvas` is `#FAF6EF` (warm parchment), not the spec's cool-tinted `#F7F8FB`. The warm palette is intentional and consistent with the brand direction.
+- Existing `--border-subtle` value is `#E5DECE` (warm sand). No cool-gray override was applied.
+
+**Correction (Phase A audit, 2026-05-12):**
+- Previous entry incorrectly stated `--bg-canvas` was set to `#F7F8FB`. Actual value in `app/globals.css` is `#FAF6EF`.
+- Previous entry claimed a `.dark` block was added to `app/globals.css`. No `.dark` block exists in that file today; dark-mode tokens were never committed.
 
 ---

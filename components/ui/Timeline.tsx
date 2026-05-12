@@ -130,3 +130,135 @@ export function Timeline({ events, groupByDay = true, onEventClick, className }:
     </div>
   );
 }
+
+// ============================================================================
+// Phase E-3 — HorizontalTimeline
+// Feature-flagged by FLAG_RISK_TIMELINE (default-off).
+//
+// Renders orders + refunds + disputes as a horizontal swimlane on customer
+// detail. Extends this module rather than replacing it.
+// DOES NOT modify the existing Timeline component above.
+// ============================================================================
+
+export interface HorizontalTimelineEvent {
+  id: string;
+  timestamp: string; // ISO
+  type: 'order' | 'refund' | 'chargeback';
+  label: string;
+  amount?: number;
+  currency?: string;
+  severity?: TimelineEventSeverity;
+}
+
+interface HorizontalTimelineProps {
+  events: HorizontalTimelineEvent[];
+  onEventClick?: (id: string) => void;
+  className?: string;
+}
+
+const H_TYPE_ICON: Record<HorizontalTimelineEvent['type'], string> = {
+  order:      '↑',
+  refund:     '↩',
+  chargeback: '⚠',
+};
+
+const H_TYPE_COLOR: Record<HorizontalTimelineEvent['type'], { dot: string; label: string }> = {
+  order:      { dot: 'var(--accent-500)', label: 'var(--accent-600)' },
+  refund:     { dot: 'var(--risk-medium-line)', label: 'var(--risk-medium-fg)' },
+  chargeback: { dot: 'var(--risk-critical-line)', label: 'var(--risk-critical-fg)' },
+};
+
+function formatHorizontalDate(iso: string) {
+  try {
+    return new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short' }).format(new Date(iso));
+  } catch {
+    return iso.slice(0, 10);
+  }
+}
+
+/**
+ * HorizontalTimeline — phase E-3.
+ *
+ * Renders a horizontal scrollable swimlane of order/refund/chargeback events.
+ * Compose inside a SectionCard or standalone on the customer detail page.
+ */
+export function HorizontalTimeline({ events, onEventClick, className }: HorizontalTimelineProps) {
+  if (events.length === 0) {
+    return (
+      <p className={cn('text-small text-[var(--text-tertiary)]', className)}>
+        No timeline events available.
+      </p>
+    );
+  }
+
+  // Sort ascending so oldest is on the left
+  const sorted = [...events].sort(
+    (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+  );
+
+  return (
+    <div
+      className={cn('relative overflow-x-auto pb-[var(--space-3)]', className)}
+      role="list"
+      aria-label="Risk timeline"
+    >
+      {/* Horizontal rail */}
+      <div className="absolute left-0 right-0 top-[18px] h-px" style={{ background: 'var(--border-subtle)' }} aria-hidden="true" />
+
+      <ol className="relative flex items-start gap-[var(--space-6)] min-w-max px-[var(--space-2)]">
+        {sorted.map((ev) => {
+          const colors = H_TYPE_COLOR[ev.type];
+          return (
+            <li
+              key={ev.id}
+              role="listitem"
+              className={cn(
+                'flex flex-col items-center gap-[var(--space-2)] pt-0',
+                onEventClick && 'cursor-pointer group',
+              )}
+              onClick={onEventClick ? () => onEventClick(ev.id) : undefined}
+            >
+              {/* Dot on rail */}
+              <div
+                className="w-5 h-5 rounded-full flex items-center justify-center z-10 text-[10px] font-bold shrink-0 border-2 border-[var(--bg-surface)]"
+                style={{ background: colors.dot, color: 'var(--bg-surface)' }}
+                title={ev.label}
+                aria-hidden="true"
+              >
+                {H_TYPE_ICON[ev.type]}
+              </div>
+
+              {/* Label below dot */}
+              <div
+                className="flex flex-col items-center gap-[2px] mt-[var(--space-1)]"
+                style={{ minWidth: 60, maxWidth: 80 }}
+              >
+                <time
+                  dateTime={ev.timestamp}
+                  className="text-mono-sm num text-[var(--text-tertiary)] whitespace-nowrap"
+                >
+                  {formatHorizontalDate(ev.timestamp)}
+                </time>
+                <span
+                  className="text-meta text-center leading-tight"
+                  style={{ color: colors.label }}
+                >
+                  {ev.label}
+                </span>
+                {ev.amount != null && (
+                  <span className="text-meta num text-[var(--text-secondary)]">
+                    {new Intl.NumberFormat('en-GB', {
+                      style: 'currency',
+                      currency: ev.currency ?? 'GBP',
+                      maximumFractionDigits: 0,
+                    }).format(ev.amount)}
+                  </span>
+                )}
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+    </div>
+  );
+}

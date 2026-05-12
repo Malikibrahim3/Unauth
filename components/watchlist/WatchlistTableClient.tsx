@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { ConfidenceBadge, riskLevelToNewGrade } from '@/components/ui/ConfidenceBadge';
 import RemoveButton from '@/components/watchlist/RemoveButton';
 import CustomerIntelligenceDrawer from '@/components/customers/CustomerIntelligenceDrawer';
+import { RiskTrendBadge } from '@/components/ui/RiskTrendBadge';
 
 interface WatchlistEntry {
   id: string;
@@ -12,6 +13,8 @@ interface WatchlistEntry {
   display_email: string | null;
   last_seen_risk: string | null;
   added_at: string;
+  /** Last N risk scores in chronological order for trend calculation. */
+  risk_trend_scores?: number[];
 }
 
 interface WatchlistTableClientProps {
@@ -102,6 +105,7 @@ export default function WatchlistTableClient({ rows: initialRows }: WatchlistTab
               </th>
               <th className="text-left px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Customer</th>
               <th className="text-left px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Last risk</th>
+              <th className="text-left px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Trend</th>
               <th className="text-left px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Added</th>
               <th className="px-4 py-2.5" />
             </tr>
@@ -148,6 +152,13 @@ export default function WatchlistTableClient({ rows: initialRows }: WatchlistTab
                 <td className="px-4 py-3">
                   {entry.last_seen_risk ? (
                     <ConfidenceBadge grade={riskLevelToNewGrade(entry.last_seen_risk)} size="sm" />
+                  ) : (
+                    <span className="text-xs" style={{ color: 'var(--text-subtle)' }}>—</span>
+                  )}
+                </td>
+                <td className="px-4 py-3">
+                  {entry.risk_trend_scores && entry.risk_trend_scores.length >= 2 ? (
+                    <RiskTrendBadge scores={entry.risk_trend_scores} />
                   ) : (
                     <span className="text-xs" style={{ color: 'var(--text-subtle)' }}>—</span>
                   )}

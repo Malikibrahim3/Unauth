@@ -6,10 +6,12 @@ interface EmptyStateProps {
   title: string;
   description?: string;
   action?: ReactNode;
+  /** Optional extra content rendered below the action (e.g. a keyboard shortcuts legend). */
+  footer?: ReactNode;
   className?: string;
 }
 
-export function EmptyState({ icon, title, description, action, className }: EmptyStateProps) {
+export function EmptyState({ icon, title, description, action, footer, className }: EmptyStateProps) {
   return (
     <div
       className={cn(
@@ -32,6 +34,7 @@ export function EmptyState({ icon, title, description, action, className }: Empt
         </p>
       )}
       {action && <div className="mt-[var(--space-5)]">{action}</div>}
+      {footer && <div className="mt-[var(--space-5)] w-full">{footer}</div>}
     </div>
   );
 }

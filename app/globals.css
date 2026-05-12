@@ -206,6 +206,31 @@
     --font-display: var(--font-dm-sans), sans-serif;
     --font-mono:    var(--font-dm-mono), "SF Mono", Menlo, monospace;
 
+    /* ══════════════════════════════════════════════════════════════════════
+     * PHASE A — Semantic alias tokens (additive, no existing values changed)
+     * Evidence strength aliases — map to risk tier palette
+     * ═════════════════════════════════════════════════════════════════════ */
+
+    /* Evidence strength → risk-low (green = strong evidence) */
+    --evidence-strong-fg:   var(--risk-low-fg);
+    --evidence-strong-bg:   var(--risk-low-bg);
+    --evidence-strong-line: var(--risk-low-line);
+
+    /* Evidence moderate → risk-medium (amber = moderate evidence) */
+    --evidence-moderate-fg:   var(--risk-medium-fg);
+    --evidence-moderate-bg:   var(--risk-medium-bg);
+    --evidence-moderate-line: var(--risk-medium-line);
+
+    /* Evidence weak → risk-high (orange = weak evidence) */
+    --evidence-weak-fg:   var(--risk-high-fg);
+    --evidence-weak-bg:   var(--risk-high-bg);
+    --evidence-weak-line: var(--risk-high-line);
+
+    /* Watchlist trend direction */
+    --watchlist-trend-up:   var(--risk-critical-fg);
+    --watchlist-trend-down: var(--risk-low-fg);
+    --watchlist-trend-flat: var(--text-tertiary);
+
     /* ── Legacy shadcn compat aliases ── */
     --background:          var(--bg-canvas);
     --foreground:          var(--text);

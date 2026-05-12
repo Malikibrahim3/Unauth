@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { FLAG_COMMAND_CENTER } from '@/lib/flags';
 
 interface NavItem {
   label: string;
@@ -16,6 +17,16 @@ interface CustomerResult {
   name: string;
   email: string | null;
   risk_level: string;
+}
+
+/** Phase E-5 — unified search result (orders, evidence, customers) */
+interface UnifiedResult {
+  type: 'customer' | 'order' | 'evidence';
+  id: string;
+  label: string;
+  sublabel?: string;
+  href: string;
+  riskLevel?: string;
 }
 
 const NAV_ITEMS: NavItem[] = [
@@ -150,6 +161,7 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
   const [query, setQuery] = useState('');
   const [activeIdx, setActiveIdx] = useState(0);
   const [customerResults, setCustomerResults] = useState<CustomerResult[]>([]);
+  const [unifiedResults, setUnifiedResults] = useState<UnifiedResult[]>([]);
   const [searchingCustomers, setSearchingCustomers] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -165,16 +177,34 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
   useEffect(() => {
     if (!query.trim() || query.trim().length < 2) {
       setCustomerResults([]);
+      setUnifiedResults([]);
       return;
     }
     if (debounceRef.current) clearTimeout(debounceRef.current);
     setSearchingCustomers(true);
     debounceRef.current = setTimeout(() => {
-      fetch(`/api/customers/search?q=${encodeURIComponent(query.trim())}&limit=5`)
-        .then(r => r.ok ? r.json() : { results: [] })
-        .then((data: { results?: CustomerResult[] }) => setCustomerResults(data.results ?? []))
-        .catch(() => setCustomerResults([]))
-        .finally(() => setSearchingCustomers(false));
+      if (FLAG_COMMAND_CENTER) {
+        // Phase E-5: unified search across customers, orders, evidence
+        fetch(`/api/search?q=${encodeURIComponent(query.trim())}&limit=6`)
+          .then(r => r.ok ? r.json() : { results: [] })
+          .then((data: { results?: UnifiedResult[] }) => {
+            setUnifiedResults(data.results ?? []);
+            // Also populate customerResults for backward-compat keyboard nav
+            const customers = (data.results ?? [])
+              .filter((r) => r.type === 'customer')
+              .map((r) => ({ id: r.id, name: r.label, email: r.sublabel ?? null, risk_level: r.riskLevel ?? '' }));
+            setCustomerResults(customers);
+          })
+          .catch(() => { setUnifiedResults([]); setCustomerResults([]); })
+          .finally(() => setSearchingCustomers(false));
+      } else {
+        // Existing customer-only search
+        fetch(`/api/customers/search?q=${encodeURIComponent(query.trim())}&limit=5`)
+          .then(r => r.ok ? r.json() : { results: [] })
+          .then((data: { results?: CustomerResult[] }) => setCustomerResults(data.results ?? []))
+          .catch(() => setCustomerResults([]))
+          .finally(() => setSearchingCustomers(false));
+      }
     }, 250);
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [query]);
@@ -188,6 +218,7 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
       setQuery('');
       setActiveIdx(0);
       setCustomerResults([]);
+      setUnifiedResults([]);
       setTimeout(() => inputRef.current?.focus(), 30);
     }
   }, [isOpen]);
@@ -366,7 +397,9 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
           {/* Customer results */}
           {customerResults.length > 0 && (
             <>
-              <p className="px-4 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--text-subtle)' }}>Customers</p>
+              <p className="px-4 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--text-subtle)' }}>
+                {FLAG_COMMAND_CENTER ? 'Customers' : 'Customers'}
+              </p>
               {customerResults.map((c, i) => (
                 <button
                   key={c.id}
@@ -394,6 +427,45 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
                   </span>
                 </button>
               ))}
+            </>
+          )}
+
+          {/* Phase E-5 — Unified results (orders + evidence) when FLAG_COMMAND_CENTER */}
+          {FLAG_COMMAND_CENTER && unifiedResults.filter((r) => r.type !== 'customer').length > 0 && (
+            <>
+              {(['order', 'evidence'] as const).map((type) => {
+                const group = unifiedResults.filter((r) => r.type === type);
+                if (!group.length) return null;
+                const groupLabel = type === 'order' ? 'Orders' : 'Evidence packages';
+                const baseIdx = customerStartIdx + customerResults.length +
+                  unifiedResults.filter((r) => r.type !== 'customer').indexOf(group[0]);
+                return (
+                  <div key={type}>
+                    <p className="px-4 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--text-subtle)' }}>{groupLabel}</p>
+                    {group.map((item, i) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        className="flex w-full items-center gap-3 px-4 py-2 text-left transition-colors"
+                        style={{ background: activeIdx === baseIdx + i ? 'var(--bg-subtle)' : 'transparent' }}
+                        onMouseEnter={() => setActiveIdx(baseIdx + i)}
+                        onClick={() => { onClose(); router.push(item.href); }}
+                      >
+                        <span
+                          className="flex h-7 w-7 items-center justify-center rounded-md shrink-0 text-[10px]"
+                          style={{ background: 'var(--bg-subtle)', color: 'var(--icon-muted)' }}
+                        >
+                          {type === 'order' ? '#' : '📄'}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium truncate" style={{ color: 'var(--text)' }}>{item.label}</p>
+                          {item.sublabel && <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{item.sublabel}</p>}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                );
+              })}
             </>
           )}
 

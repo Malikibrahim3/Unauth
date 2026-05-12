@@ -14,6 +14,10 @@ interface MetricCardProps {
   hint?: string;
   icon?: ReactNode;
   density?: 'default' | 'compact';
+  /** Hero variant: large display value, --space-6 padding, optional inline microchart */
+  size?: 'hero';
+  /** Optional microchart rendered inline below the value (hero variant only) */
+  microchart?: ReactNode;
   className?: string;
 }
 
@@ -29,8 +33,13 @@ const ARROW: Record<DeltaProps['direction'], string> = {
   flat: '→',
 };
 
-export function MetricCard({ label, value, delta, hint, icon, density = 'default', className }: MetricCardProps) {
-  const padding = density === 'compact' ? 'p-[var(--space-4)]' : 'p-[var(--space-5)]';
+export function MetricCard({ label, value, delta, hint, icon, density = 'default', size, microchart, className }: MetricCardProps) {
+  const isHero = size === 'hero';
+  const padding = isHero
+    ? 'p-[var(--space-6)]'
+    : density === 'compact'
+    ? 'p-[var(--space-4)]'
+    : 'p-[var(--space-5)]';
 
   return (
     <div
@@ -45,7 +54,10 @@ export function MetricCard({ label, value, delta, hint, icon, density = 'default
         {icon && <span className="text-[var(--text-tertiary)] w-4 h-4 shrink-0">{icon}</span>}
       </div>
 
-      <div className="mt-[var(--space-1)] text-display num text-[var(--text-primary)] leading-tight">
+      <div className={cn(
+        'mt-[var(--space-1)] num text-[var(--text-primary)] leading-tight',
+        isHero ? 'text-display-xl' : 'text-display',
+      )}>
         {value}
       </div>
 
@@ -53,6 +65,12 @@ export function MetricCard({ label, value, delta, hint, icon, density = 'default
         <div className={cn('mt-[var(--space-1)] text-small flex items-center gap-1', TONE_COLOR[delta.tone])}>
           <span aria-hidden="true">{ARROW[delta.direction]}</span>
           <span>{delta.value > 0 ? '+' : ''}{delta.value}</span>
+        </div>
+      )}
+
+      {isHero && microchart && (
+        <div className="mt-[var(--space-3)]" aria-hidden="true">
+          {microchart}
         </div>
       )}
 

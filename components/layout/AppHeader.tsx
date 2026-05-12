@@ -6,6 +6,8 @@ import { useEffect, useState, useCallback } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import CommandPalette from './CommandPalette';
+import { MerchantEnvChip } from './MerchantEnvChip';
+import { AvatarMenu } from './AvatarMenu';
 
 export interface BreadcrumbSegment {
   label: string;
@@ -18,6 +20,12 @@ interface AppHeaderProps {
   actions?: React.ReactNode;
   onToggleSidebar?: () => void;
   sidebarCollapsed?: boolean;
+  /** Merchant name shown in the env chip left of search */
+  merchantName?: string | null;
+  /** Deployment environment, e.g. 'production' | 'sandbox' */
+  environment?: string;
+  /** Authenticated user email for the avatar menu */
+  userEmail?: string | null;
 }
 
 /**
@@ -29,6 +37,9 @@ export default function AppHeader({
   actions,
   onToggleSidebar,
   sidebarCollapsed,
+  merchantName,
+  environment,
+  userEmail,
 }: AppHeaderProps) {
   const pathname = usePathname();
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -131,6 +142,9 @@ export default function AppHeader({
         </div>
       )}
 
+      {/* MerchantEnvChip — left of search */}
+      <MerchantEnvChip merchantName={merchantName ?? null} environment={environment} />
+
       {/* ⌘K trigger */}
       <button
         type="button"
@@ -153,6 +167,9 @@ export default function AppHeader({
         <span className="hidden sm:inline">Search</span>
         <kbd className="hidden sm:inline font-mono text-[10px] opacity-60">⌘K</kbd>
       </button>
+
+      {/* AvatarMenu — right of search */}
+      <AvatarMenu email={userEmail} />
 
       <CommandPalette isOpen={paletteOpen} onClose={closePalette} />
     </header>

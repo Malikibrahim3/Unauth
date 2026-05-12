@@ -5,6 +5,9 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { formatDate } from '@/lib/utils/format'
+import { EvidenceStrengthMeter } from '@/components/evidence/EvidenceStrengthMeter'
+import { DisputeReadinessPanel } from '@/components/evidence/DisputeReadinessPanel'
+import { EvidencePackagePreview } from '@/components/evidence/EvidencePackagePreview'
 
 interface Props {
   params: Promise<{ id: string }>
@@ -53,6 +56,15 @@ export default async function EvidenceDetailPage({ params }: Props) {
 
   const ce3Signals = pkg.ce3_qualifying_signals ?? []
   const ce3Priors = pkg.ce3_prior_transactions ?? []
+
+  // Derive evidence strength from available signals
+  const signalCount = pkg.signal_snapshot?.length ?? 0
+  const evidenceStrength: 'weak' | 'moderate' | 'strong' =
+    pkg.ce3_eligible && signalCount >= 3 && ce3Priors.length >= 2
+      ? 'strong'
+      : signalCount >= 2 || pkg.narrative_summary
+      ? 'moderate'
+      : 'weak'
 
   return (
     <div className="p-8 max-w-4xl mx-auto space-y-6">
@@ -114,6 +126,25 @@ export default async function EvidenceDetailPage({ params }: Props) {
           </p>
         </div>
       )}
+
+      {/* ── PHASE C: EVIDENCE AMPLIFICATION ─────────────────────────── */}
+      {/* Evidence Strength Meter */}
+      <EvidenceStrengthMeter
+        strength={evidenceStrength}
+        label="Overall evidence strength"
+      />
+
+      {/* Dispute Readiness Checklist */}
+      <DisputeReadinessPanel pkg={pkg} />
+
+      {/* PDF Preview (only when a PDF has been generated) */}
+      {pkg.pdf_storage_path && (
+        <EvidencePackagePreview
+          packageId={pkg.id}
+          referenceNumber={pkg.reference_number}
+        />
+      )}
+      {/* ── END PHASE C ──────────────────────────────────────────────── */}
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">

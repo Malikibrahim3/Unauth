@@ -22,16 +22,14 @@ const ARTICLES = [
     title: 'Understanding confidence grades',
     description:
       'What definite, probable, possible, and weak confidence grades mean, and how to action each one.',
-    href: '/help/csv-export',
-    comingSoon: true,
+    href: '/help/confidence-grades',
   },
   {
     icon: HelpCircle,
     title: 'How identity matching works',
     description:
       'How Unauth links customers across orders using device IDs, IP addresses and card fingerprints.',
-    href: '/help/csv-export',
-    comingSoon: true,
+    href: '/help/identity-matching',
   },
 ];
 

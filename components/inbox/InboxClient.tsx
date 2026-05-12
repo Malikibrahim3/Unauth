@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { ChevronDown, Trash2 } from 'lucide-react';
+import { ChevronDown, Trash2, Keyboard } from 'lucide-react';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { FLAG_QUEUE_PRIORITISATION } from '@/lib/flags';
 
 interface InboxTransaction {
   id: string;
@@ -37,7 +39,16 @@ function formatInboxDate(iso: string): string {
 }
 
 export default function InboxClient({ initialItems }: Props) {
-  const [items, setItems] = useState<InboxTransaction[]>(initialItems);
+  // Phase E-6: sort by confidence × exposure when flag is on
+  const sortedInitial = FLAG_QUEUE_PRIORITISATION
+    ? [...initialItems].sort((a, b) => {
+        const scoreA = (a.identity_score ?? 0) * (a.order_value ?? 1);
+        const scoreB = (b.identity_score ?? 0) * (b.order_value ?? 1);
+        return scoreB - scoreA;
+      })
+    : initialItems;
+
+  const [items, setItems] = useState<InboxTransaction[]>(sortedInitial);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [pending, setPending] = useState<Record<string, boolean>>({});
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -54,6 +65,50 @@ export default function InboxClient({ initialItems }: Props) {
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
+
+  // Number-key shortcuts: 1–5 map to status actions on the first selected item
+  // (or the first item in the list when nothing is selected).
+  // Keys are ignored when any input / textarea / select / contenteditable is focused.
+  const statusShortcuts: Array<'under_review' | 'contacted' | 'resolved' | 'cleared' | '__dismiss__'> = [
+    'under_review',
+    'contacted',
+    'resolved',
+    'cleared',
+    '__dismiss__',
+  ];
+
+  const handleKeyboardShortcut = useCallback(
+    (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement).tagName;
+      const editable = (e.target as HTMLElement).isContentEditable;
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tag) || editable) return;
+
+      const digit = parseInt(e.key, 10);
+      if (digit < 1 || digit > 5) return;
+
+      // Target: first selected item, fall back to first list item
+      const targetId =
+        selectedIds.size > 0 ? Array.from(selectedIds)[0] : items[0]?.id;
+      if (!targetId) return;
+
+      const tx = items.find((t) => t.id === targetId);
+      if (!tx) return;
+
+      const action = statusShortcuts[digit - 1];
+      if (action === '__dismiss__') {
+        dismissItem(tx.id);
+      } else {
+        setStatusAndDismiss(tx, action);
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [items, selectedIds],
+  );
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyboardShortcut);
+    return () => document.removeEventListener('keydown', handleKeyboardShortcut);
+  }, [handleKeyboardShortcut]);
 
   async function dismissItem(txId: string) {
     // Optimistic remove
@@ -117,27 +172,68 @@ export default function InboxClient({ initialItems }: Props) {
   }
 
   if (items.length === 0) {
+    const inboxIcon = (
+      <svg className="h-8 w-8" style={{ color: 'var(--icon-muted)' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 13.5h3.86a2.25 2.25 0 0 1 2.012 1.244l.256.512a2.25 2.25 0 0 0 2.013 1.244h3.218a2.25 2.25 0 0 0 2.013-1.244l.256-.512a2.25 2.25 0 0 1 2.013-1.244h3.859m-19.5.338V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338a2.25 2.25 0 0 0-2.15-1.588H6.911a2.25 2.25 0 0 0-2.151 1.588L2.35 13.177a2.25 2.25 0 0 0-.1.661Z" />
+      </svg>
+    );
+
+    const shortcutsLegend = (
+      <div
+        className="rounded-md px-4 py-3 max-w-xs mx-auto text-left"
+        style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-subtle)' }}
+      >
+        <div className="flex items-center gap-1.5 mb-2" style={{ color: 'var(--text-muted)' }}>
+          <Keyboard className="h-3.5 w-3.5" />
+          <span className="text-xs font-semibold tracking-wide uppercase">Keyboard shortcuts</span>
+        </div>
+        <ul className="space-y-1">
+          {[
+            ['1', 'Mark as Under review'],
+            ['2', 'Mark as Contacted'],
+            ['3', 'Mark as Refund blocked'],
+            ['4', 'Mark as False alarm'],
+            ['5', 'Clear from inbox'],
+          ].map(([key, label]) => (
+            <li key={key} className="flex items-center gap-2">
+              <kbd
+                className="inline-flex items-center justify-center rounded text-xs font-mono px-1.5 py-0.5"
+                style={{
+                  background: 'var(--bg-surface)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text)',
+                  minWidth: '1.5rem',
+                }}
+              >
+                {key}
+              </kbd>
+              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{label}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+
     return (
       <div
-        className="rounded-lg p-12 flex flex-col items-center gap-3 text-center"
+        className="rounded-lg"
         style={{ border: '1.5px dashed var(--border)' }}
       >
-        <svg className="h-8 w-8" style={{ color: 'var(--icon-muted)' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 13.5h3.86a2.25 2.25 0 0 1 2.012 1.244l.256.512a2.25 2.25 0 0 0 2.013 1.244h3.218a2.25 2.25 0 0 0 2.013-1.244l.256-.512a2.25 2.25 0 0 1 2.013-1.244h3.859m-19.5.338V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338a2.25 2.25 0 0 0-2.15-1.588H6.911a2.25 2.25 0 0 0-2.151 1.588L2.35 13.177a2.25 2.25 0 0 0-.1.661Z" />
-        </svg>
-        <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
-          You&apos;re all caught up
-        </p>
-        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-          No identity-flagged transactions need review right now.
-        </p>
-        <Link
-          href="/upload"
-          className="mt-2 text-sm font-medium underline underline-offset-2"
-          style={{ color: 'var(--text-muted)' }}
-        >
-          Upload a CSV to get started →
-        </Link>
+        <EmptyState
+          icon={inboxIcon}
+          title="You're all caught up"
+          description="No identity-flagged transactions need review right now."
+          action={
+            <Link
+              href="/upload"
+              className="text-sm font-medium underline underline-offset-2"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              Upload a CSV to get started →
+            </Link>
+          }
+          footer={shortcutsLegend}
+        />
       </div>
     );
   }
@@ -194,31 +290,46 @@ export default function InboxClient({ initialItems }: Props) {
           </tr>
         </thead>
         <tbody>
-          {items.map((tx) => (
-            <tr
-              key={tx.id}
-              className="border-b transition-colors"
-              style={{
-                borderColor: 'var(--border-subtle)',
-                opacity: pending[tx.id] ? 0.5 : 1,
-              }}
-            >
-              <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                <input
-                  type="checkbox"
-                  checked={selectedIds.has(tx.id)}
-                  onChange={(e) => {
-                    const next = new Set(selectedIds);
-                    if (e.target.checked) next.add(tx.id);
-                    else next.delete(tx.id);
-                    setSelectedIds(next);
-                  }}
-                  aria-label={`Select order ${tx.order_id}`}
-                />
-              </td>
-              <td className="px-4 py-3 font-mono text-xs" style={{ color: 'var(--text-muted)' }}>
-                {tx.order_id}
-              </td>
+          {items.map((tx, rowIdx) => {
+            const isTopRow = rowIdx === 0 && FLAG_QUEUE_PRIORITISATION && items.length > 1;
+            const priorityScore = Math.round((tx.identity_score ?? 0) * (tx.order_value ?? 1));
+            return (
+              <tr
+                key={tx.id}
+                className="border-b transition-colors"
+                style={{
+                  borderColor: 'var(--border-subtle)',
+                  opacity: pending[tx.id] ? 0.5 : 1,
+                  background: isTopRow ? 'var(--accent-50, var(--bg-surface-alt))' : undefined,
+                }}
+              >
+                <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.has(tx.id)}
+                    onChange={(e) => {
+                      const next = new Set(selectedIds);
+                      if (e.target.checked) next.add(tx.id);
+                      else next.delete(tx.id);
+                      setSelectedIds(next);
+                    }}
+                    aria-label={`Select order ${tx.order_id}`}
+                  />
+                </td>
+                <td className="px-4 py-3 font-mono text-xs" style={{ color: 'var(--text-muted)' }}>
+                  <div>
+                    {tx.order_id}
+                    {isTopRow && (
+                      <div
+                        className="mt-0.5 text-[10px] font-medium"
+                        style={{ color: 'var(--accent-600, var(--accent))' }}
+                        title={`Priority score: confidence (${Math.round(tx.identity_score ?? 0)}) × order value (${tx.order_value != null ? '£' + tx.order_value.toFixed(0) : '—'}) = ${priorityScore}`}
+                      >
+                        ★ Why this is first: highest confidence × value (priority score {priorityScore})
+                      </div>
+                    )}
+                  </div>
+                </td>
               <td className="px-4 py-3">
                 <span
                   className="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm border text-xs font-medium"
@@ -320,10 +431,11 @@ export default function InboxClient({ initialItems }: Props) {
                       </div>
                     )}
                   </div>
-                </div>
-              </td>
-            </tr>
-          ))}
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
       </div>

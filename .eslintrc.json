@@ -15,5 +15,24 @@
     "react/no-unescaped-entities": "off",
     "@next/next/no-img-element": "off",
     "react-hooks/exhaustive-deps": "warn"
-  }
+  },
+  "overrides": [
+    {
+      "files": ["components/**/*.{ts,tsx}"],
+      "excludedFiles": ["components/internal/**/*.{ts,tsx}"],
+      "rules": {
+        "no-restricted-syntax": [
+          "error",
+          {
+            "selector": "JSXAttribute[name.name='className'] Literal[value=/\\b(?:text|bg|border|ring|fill|stroke|shadow|outline|decoration|accent|caret|divide|placeholder)-(?:red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|slate|gray|zinc|neutral|stone)-(?:[0-9]+|white|black)\\b/]",
+            "message": "Avoid raw Tailwind color classes (e.g. text-red-500, bg-blue-200) in components/**. Use design-token CSS variables via custom utility classes instead. Raw colors are allowed in components/internal/."
+          },
+          {
+            "selector": "JSXExpressionContainer TemplateLiteral > TemplateElement[value.raw=/\\b(?:text|bg|border|ring|fill|stroke|shadow|outline|decoration|accent|caret|divide|placeholder)-(?:red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|slate|gray|zinc|neutral|stone)-(?:[0-9]+|white|black)\\b/]",
+            "message": "Avoid raw Tailwind color classes in components/**. Use design-token CSS variables via custom utility classes instead."
+          }
+        ]
+      }
+    }
+  ]
 }

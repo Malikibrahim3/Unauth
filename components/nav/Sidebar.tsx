@@ -110,10 +110,11 @@ function SidebarItem({
         collapsed && 'justify-center',
       )}
     >
-      {/* Active indicator bar */}
+      {/* 2px left-edge accent rail for active item */}
       {active && (
         <span
-          className="absolute left-0 top-1 bottom-1 w-0.5 rounded-full bg-[var(--accent)]"
+          className="absolute left-0 top-0 bottom-0 w-0.5 rounded-r-full"
+          style={{ background: 'var(--accent-500)' }}
           aria-hidden="true"
         />
       )}
@@ -157,10 +158,15 @@ function SidebarItem({
 }
 
 function GroupLabel({ label, collapsed }: { label: string; collapsed: boolean }) {
-  if (collapsed) return <div className="my-1 h-px bg-[var(--border-subtle)]" />;
+  if (collapsed) return <div className="my-2 mx-3 h-px bg-[var(--border-subtle)]" />;
   return (
-    <div className="mt-4 mb-1 px-2">
-      <span className="text-overline text-[var(--text-subtle)]">{label}</span>
+    <div className="mt-5 mb-1 px-2">
+      <span
+        className="block text-[10px] font-semibold uppercase tracking-widest leading-none"
+        style={{ color: 'var(--text-subtle)' }}
+      >
+        {label}
+      </span>
     </div>
   );
 }

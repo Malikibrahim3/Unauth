@@ -21,6 +21,8 @@ import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { MoreHorizontal, X, Copy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCustomerIntelligence } from '@/lib/hooks/useCustomerIntelligence';
+import { FLAG_CROSS_MERCHANT_SIGNALS, FLAG_CONFIDENCE_PANEL } from '@/lib/flags';
+import { CrossMerchantSignalCard } from './CrossMerchantSignalCard';
 import {
   Drawer,
   Button,
@@ -197,7 +199,11 @@ export function CustomerDrawer({ profileId, onClose, onAction }: CustomerDrawerP
 
             {/* Right cluster */}
             <div className="flex items-center gap-[var(--space-2)] shrink-0">
-              <ConfidenceBadge grade={customer.confidence.grade} score={customer.confidence.score} />
+              <ConfidenceBadge
+                grade={customer.confidence.grade}
+                score={customer.confidence.score}
+                customerIntelligence={FLAG_CONFIDENCE_PANEL ? customer : undefined}
+              />
               <RiskScoreBadge score={customer.risk.score} level={customer.risk.level} />
               {/* Overflow menu */}
               <div className="relative">
@@ -334,6 +340,11 @@ export function CustomerDrawer({ profileId, onClose, onAction }: CustomerDrawerP
                 </ul>
               )}
             </SectionCard>
+
+            {/* Phase E-2 — Cross-Merchant Signal scope (feature-flagged) */}
+            {FLAG_CROSS_MERCHANT_SIGNALS && (
+              <CrossMerchantSignalCard profileId={customer.id} />)
+            }
 
           </div>
         </>

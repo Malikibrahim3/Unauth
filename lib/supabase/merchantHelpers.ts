@@ -693,3 +693,131 @@ export async function fetchReviewQueueProfileIds(
 
   return result;
 }
+
+// ---------------------------------------------------------------------------
+// Exposure-at-risk helper
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns the sum of `order_value` (NUMERIC) for review-worthy, non-dismissed
+ * audit_transactions that belong to the given merchant.
+ *
+ * DEFINITION of "review-worthy" (matches countReviewWorthyTransactions):
+ *   - identity_confidence_grade IS NOT NULL  OR
+ *   - match_status IN ('candidate', 'probable', 'definite')
+ *   AND dismissed_by_merchant IS NOT TRUE
+ *
+ * MERCHANT SCOPING:
+ * audit_transactions has no merchant_id column.  Ownership is proven by
+ * resolving job IDs through processing_jobs.merchant_id before any
+ * transaction query.  Zero cross-tenant data is ever returned.
+ *
+ * PRECISION: values are accumulated as JavaScript numbers (64-bit float).
+ * For amounts up to ~$10 billion this is exact to the cent when order_value
+ * carries at most 2 decimal places in the DB.  If you need arbitrary
+ * precision, replace the accumulator with a Decimal library.
+ *
+ * ERROR POLICY: returns null on any failure; never converts errors to 0.
+ *
+ * @param serviceClient  Service-role Supabase client (bypasses RLS).
+ * @param merchantId     The authenticated merchant's UUID.
+ * @returns Sum of order_value, or null if the query could not be completed.
+ */
+export async function getExposureAtRisk(
+  serviceClient: SupabaseClient,
+  merchantId: string,
+): Promise<number | null> {
+  try {
+    // Step 1: Resolve all job IDs owned by this merchant.
+    const ownedJobIds: string[] = [];
+    const JOB_BATCH = 1000;
+    let jobOffset = 0;
+    while (true) {
+      const { data: jobRows, error: jobErr } = await serviceClient
+        .from('processing_jobs')
+        .select('id')
+        .eq('merchant_id', merchantId)
+        .range(jobOffset, jobOffset + JOB_BATCH - 1);
+
+      if (jobErr) {
+        console.error('[getExposureAtRisk] job lookup failed:', jobErr.message);
+        return null;
+      }
+      if (!jobRows || jobRows.length === 0) break;
+      for (const r of jobRows) ownedJobIds.push(r.id as string);
+      if (jobRows.length < JOB_BATCH) break;
+      jobOffset += JOB_BATCH;
+    }
+
+    if (ownedJobIds.length === 0) return 0;
+
+    // Step 2: Paginate review-worthy transactions and sum order_value.
+    // We fetch two clause sets (graded + status-only) to mirror the canonical
+    // review-worthy definition without double-counting.
+    const TX_BATCH = 1000;
+    let total = 0;
+
+    async function sumClause(
+      extraFilter: (
+        q: ReturnType<typeof serviceClient.from>
+      ) => ReturnType<typeof serviceClient.from>,
+    ): Promise<number | null> {
+      let offset = 0;
+      let clauseSum = 0;
+      while (true) {
+        const base = serviceClient
+          .from('audit_transactions')
+          .select('order_value')
+          .in('job_id', ownedJobIds)
+          .not('dismissed_by_merchant', 'is', true)
+          .range(offset, offset + TX_BATCH - 1);
+
+        const { data, error } = (await extraFilter(base as unknown as ReturnType<typeof serviceClient.from>)) as unknown as {
+          data: Array<{ order_value: string | number | null }> | null;
+          error: { message: string } | null;
+        };
+
+        if (error) {
+          console.error('[getExposureAtRisk] transaction query failed:', error.message);
+          return null;
+        }
+        if (!data || data.length === 0) break;
+
+        for (const row of data) {
+          if (row.order_value !== null && row.order_value !== undefined) {
+            // Supabase may return NUMERIC as a string.
+            const v = typeof row.order_value === 'string'
+              ? parseFloat(row.order_value)
+              : (row.order_value as number);
+            if (!isNaN(v)) clauseSum += v;
+          }
+        }
+
+        if (data.length < TX_BATCH) break;
+        offset += TX_BATCH;
+      }
+      return clauseSum;
+    }
+
+    // Clause A: graded transactions (identity_confidence_grade IS NOT NULL)
+    const gradedSum = await sumClause((q) =>
+      (q as any).not('identity_confidence_grade', 'is', null),
+    );
+    if (gradedSum === null) return null;
+    total += gradedSum;
+
+    // Clause B: status-match only, grade IS NULL (avoids double-count with A)
+    const statusSum = await sumClause((q) =>
+      (q as any)
+        .in('match_status', ['candidate', 'probable', 'definite'])
+        .is('identity_confidence_grade', null),
+    );
+    if (statusSum === null) return null;
+    total += statusSum;
+
+    return total;
+  } catch (err) {
+    console.error('[getExposureAtRisk] unexpected error:', err);
+    return null;
+  }
+}

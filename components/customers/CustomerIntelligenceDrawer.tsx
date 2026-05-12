@@ -26,6 +26,8 @@ import type { CustomerIntelligencePanel, OrderHistoryEntry } from '@/app/api/cus
 import { STATUS_LABELS, STATUS_OPTIONS, statusStyle } from '@/lib/utils/investigationStatus';
 import { riskBadgeStyle, riskBarStyle, riskTok } from '@/lib/utils/riskStyles';
 import { formatCurrencyNullable, formatDate } from '@/lib/utils/format';
+import { Badge } from '@/components/ui/Badge';
+import type { BadgeTone } from '@/components/ui/Badge';
 
 function DrawerSkeleton() {
   return (
@@ -94,6 +96,44 @@ function flagLabel(flag: string) {
   return flag
     .replace(/[_-]/g, ' ')
     .replace(/\b\w/g, (m) => m.toUpperCase());
+}
+
+/** Derives a concise recommended action string from risk level. */
+function recommendedAction(riskLevel: string): { label: string; tone: BadgeTone } {
+  switch ((riskLevel ?? '').toLowerCase()) {
+    case 'critical':
+      return { label: 'Block & escalate', tone: 'critical' };
+    case 'high':
+      return { label: 'Hold for review', tone: 'danger' };
+    case 'medium':
+      return { label: 'Monitor closely', tone: 'warning' };
+    case 'low':
+      return { label: 'Clear to fulfil', tone: 'success' };
+    default:
+      return { label: 'Pending review', tone: 'neutral' };
+  }
+}
+
+/** One-line "why" from the narrative or fallback signals. */
+function triageWhySummary(
+  riskLevel: string,
+  riskScore: number,
+  claimCount: number,
+  variantCount: number,
+): string {
+  const level = (riskLevel ?? '').toLowerCase();
+  const parts: string[] = [];
+  if (riskScore >= 80) parts.push(`risk score ${Math.round(riskScore)}/100`);
+  if (claimCount > 0) parts.push(`${claimCount} claim${claimCount !== 1 ? 's' : ''}`);
+  if (variantCount > 0) parts.push(`${variantCount} identity variant${variantCount !== 1 ? 's' : ''}`);
+  if (parts.length === 0) return 'No critical signals detected at this time.';
+  const prefix =
+    level === 'critical' || level === 'high'
+      ? 'Flagged due to'
+      : level === 'medium'
+      ? 'Elevated risk from'
+      : 'Low risk —';
+  return `${prefix} ${parts.join(', ')}.`;
 }
 
 function lifecycleTitle(order: OrderHistoryEntry) {
@@ -340,9 +380,74 @@ function DrawerContent({
   }
 
   const isEligibleForEvidence = orderHistory.some((order) => order.refundRequested) || profile.total_chargebacks > 0;
+  const action = recommendedAction(profile.risk_level);
+  const whySummary = triageWhySummary(profile.risk_level, profile.risk_score, claimCount, variantCount);
 
   return (
     <div>
+      {/* ── TRIAGE ZONE ─────────────────────────────────────────────── */}
+      <div
+        className="rounded-xl border mb-4 overflow-hidden"
+        style={{ borderColor: 'var(--border)', background: 'var(--bg-inset)' }}
+      >
+        {/* Top stripe */}
+        <div
+          className="flex flex-wrap items-center gap-2 px-4 py-3"
+          style={{
+            background:
+              profile.risk_level?.toLowerCase() === 'critical'
+                ? 'var(--risk-critical-bg)'
+                : profile.risk_level?.toLowerCase() === 'high'
+                ? 'var(--risk-high-bg)'
+                : profile.risk_level?.toLowerCase() === 'medium'
+                ? 'var(--risk-medium-bg)'
+                : 'var(--risk-low-bg)',
+            borderBottom: '1px solid var(--border-subtle)',
+          }}
+        >
+          {/* Risk grade badge */}
+          <span
+            className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wide"
+            style={riskBadgeStyle(profile.risk_level)}
+          >
+            {profile.risk_level ?? 'Unknown'}
+          </span>
+
+          {/* Confidence badge */}
+          <ConfidenceBadge
+            grade={riskLevelToNewGrade(profile.risk_level)}
+            score={Math.round(profile.risk_score)}
+            size="sm"
+          />
+
+          {/* Spacer */}
+          <div className="flex-1" />
+
+          {/* Recommended action */}
+          <Badge tone={action.tone} variant="solid" size="sm">
+            {action.label}
+          </Badge>
+
+          {/* Watchlist toggle */}
+          <WatchlistStarButton
+            customerProfileId={profile.id}
+            displayName={profile.names[0] ?? undefined}
+            displayEmail={profile.primary_email ?? undefined}
+            lastSeenRisk={profile.risk_level}
+            initialWatchlisted={profile.on_watchlist}
+            watchlistEntryId={profile.watchlist_entry_id ?? null}
+          />
+        </div>
+
+        {/* One-line "why" summary */}
+        <div className="px-4 py-2.5">
+          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+            <span className="font-semibold" style={{ color: 'var(--text)' }}>Why flagged: </span>
+            {whySummary}
+          </p>
+        </div>
+      </div>
+      {/* ── END TRIAGE ZONE ─────────────────────────────────────────── */}
       <div className="rounded-lg border p-4" style={{ borderColor: 'var(--border)', background: 'var(--bg-inset)' }}>
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
@@ -354,14 +459,6 @@ function DrawerContent({
               <p className="mt-1 truncate text-sm" style={{ color: 'var(--text-muted)' }}>{profile.primary_email}</p>
             )}
           </div>
-          <WatchlistStarButton
-            customerProfileId={profile.id}
-            displayName={profile.names[0] ?? undefined}
-            displayEmail={profile.primary_email ?? undefined}
-            lastSeenRisk={profile.risk_level}
-            initialWatchlisted={profile.on_watchlist}
-            watchlistEntryId={profile.watchlist_entry_id ?? null}
-          />
         </div>
 
         <div className="mt-4">

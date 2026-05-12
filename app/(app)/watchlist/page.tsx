@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 import { ConfidenceBadge, riskLevelToNewGrade } from '@/components/ui/ConfidenceBadge';
 import WatchlistTableClient from '@/components/watchlist/WatchlistTableClient';
+import WatchlistSearchInput from '@/components/watchlist/WatchlistSearchInput';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { formatDate } from '@/lib/utils/format';
 import PageSizeSelect from '@/components/common/PageSizeSelect';
 import { PageHeader } from '@/components/common/PageHeader';
@@ -9,7 +11,7 @@ import { PageHeader } from '@/components/common/PageHeader';
 const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
 const DEFAULT_PAGE_SIZE = 25;
 
-export default async function WatchlistPage({ searchParams }: { searchParams?: { page?: string; pageSize?: string } }) {
+export default async function WatchlistPage({ searchParams }: { searchParams?: { page?: string; pageSize?: string; q?: string } }) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
@@ -27,15 +29,25 @@ export default async function WatchlistPage({ searchParams }: { searchParams?: {
     : DEFAULT_PAGE_SIZE;
   const offset = (page - 1) * pageSize;
   const querySearchParams = sp ?? {};
+  const searchQuery = (sp?.q ?? '').trim();
 
   const [{ data: entries, count }, { data: recentRaw }] = await Promise.all([
-    supabase
-      .from('watchlist_entries')
-      .select('*', { count: 'exact' })
-      .eq('merchant_id', user!.id)
-      .eq('removed_by_merchant', false)
-      .order('added_at', { ascending: false })
-      .range(offset, offset + pageSize - 1),
+    (() => {
+      let q = supabase
+        .from('watchlist_entries')
+        .select('*', { count: 'exact' })
+        .eq('merchant_id', user!.id)
+        .eq('removed_by_merchant', false)
+        .order('added_at', { ascending: false })
+        .range(offset, offset + pageSize - 1);
+      if (searchQuery) {
+        // Substring match on display_name or display_email (case-insensitive)
+        q = q.or(
+          `display_name.ilike.%${searchQuery}%,display_email.ilike.%${searchQuery}%`,
+        );
+      }
+      return q;
+    })(),
     supabase
       .from('customer_profile_audit_appearances')
       .select(`
@@ -78,6 +90,18 @@ export default async function WatchlistPage({ searchParams }: { searchParams?: {
   const recentAppearances = ((recentRaw ?? []) as unknown as RecentRow[]).filter(
     (r) => watchlistedProfileIds.has(r.profile_id)
   );
+
+  // Build per-profile score history map (oldest-first, up to 10 snapshots)
+  // Used to compute risk trend in the watchlist table.
+  const trendScoresMap = new Map<string, number[]>();
+  for (const r of ((recentRaw ?? []) as unknown as RecentRow[])) {
+    if (!watchlistedProfileIds.has(r.profile_id)) continue;
+    if (!trendScoresMap.has(r.profile_id)) trendScoresMap.set(r.profile_id, []);
+    trendScoresMap.get(r.profile_id)!.push(r.score_at_time);
+  }
+  // recentRaw is newest-first — reverse so scores are oldest-first for trend calc
+  trendScoresMap.forEach((scores, key) => trendScoresMap.set(key, scores.slice().reverse()));
+
   const total = count ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
@@ -132,20 +156,29 @@ export default async function WatchlistPage({ searchParams }: { searchParams?: {
       </div>
 
       {rows.length === 0 ? (
-        <div className="rounded-lg p-10 max-w-lg border" style={{ borderStyle: 'dashed', borderColor: 'var(--border)' }}>
-          <p className="text-body-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-            Your watchlist is empty. Star any customer on an audit to keep an eye on them &mdash;
-            they&apos;ll appear here with their latest match confidence every time you upload new orders.
-          </p>
-          <Link href="/upload" className="mt-4 inline-block text-body-sm font-semibold underline underline-offset-2" style={{ color: 'var(--text)' }}>
-            Upload an audit →
-          </Link>
+        <div className="rounded-lg border" style={{ borderStyle: 'dashed', borderColor: 'var(--border)' }}>
+          <EmptyState
+            title={searchQuery ? 'No results' : 'Your watchlist is empty'}
+            description={
+              searchQuery
+                ? `No watchlisted customers match "${searchQuery}".`
+                : "Star any customer on an audit to keep an eye on them — they'll appear here with their latest match confidence every time you upload new orders."
+            }
+            action={
+              !searchQuery ? (
+                <Link href="/upload" className="text-body-sm font-semibold underline underline-offset-2" style={{ color: 'var(--text)' }}>
+                  Upload an audit →
+                </Link>
+              ) : undefined
+            }
+          />
         </div>
       ) : (
         <div>
           <div className="mb-3 flex items-center justify-between gap-3 flex-wrap">
             <h2 className="text-body-sm font-semibold" style={{ color: 'var(--text)' }}>All watchlisted customers</h2>
             <div className="flex items-center gap-2 flex-wrap">
+              <WatchlistSearchInput defaultValue={searchQuery} />
               <PageSizeSelect pathname="/watchlist" searchParams={querySearchParams} pageSize={pageSize} />
               {totalPages > 1 && (
                 <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
@@ -172,7 +205,12 @@ export default async function WatchlistPage({ searchParams }: { searchParams?: {
               )}
             </div>
           </div>
-          <WatchlistTableClient rows={rows} />
+          <WatchlistTableClient rows={rows.map((r) => ({
+            ...r,
+            risk_trend_scores: r.customer_profile_id
+              ? (trendScoresMap.get(r.customer_profile_id) ?? [])
+              : [],
+          }))} />
         </div>
       )}
     </div>
