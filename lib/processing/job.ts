@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../supabase/types';
+import { isUpstreamDown } from '../engine/dbSemaphore';
 
 export type ServiceClient = SupabaseClient<Database>;
 
@@ -125,8 +126,15 @@ export async function completeJob(
 
   // Retry with exponential backoff. A transient Supabase error here leaves the
   // job permanently stuck in 'processing', causing the UI to poll indefinitely.
-  // We try up to 5 times (delays: 1s, 2s, 4s, 8s) before giving up.
-  for (let attempt = 0; attempt < 5; attempt++) {
+  // Two-phase retry strategy:
+  //   Phase 1 (fast) — 5 attempts with short delays (1s→2s→4s→8s): catches brief
+  //     network hiccups.
+  //   Phase 2 (patient) — 3 more attempts with 20s waits: recovers from the kind
+  //     of 30–90 second Supabase 520/521 outages seen in production. Only entered
+  //     when all Phase-1 failures indicate the DB is fully unreachable.
+  const delays = [1000, 2000, 4000, 8000, 20000, 20000, 20000];
+  let allUpstreamDown = true;
+  for (let attempt = 0; attempt < delays.length; attempt++) {
     const { error } = await serviceClient
       .from('processing_jobs')
       .update(update as any)
@@ -134,9 +142,17 @@ export async function completeJob(
 
     if (!error) return;
 
-    console.error(`Failed to complete job (attempt ${attempt + 1}/5):`, error);
-    if (attempt < 4) {
-      await new Promise<void>((r) => setTimeout(r, 1000 * 2 ** attempt));
+    const upstream = isUpstreamDown(error);
+    if (!upstream) allUpstreamDown = false;
+    console.error(`Failed to complete job (attempt ${attempt + 1}/${delays.length}):`, error);
+
+    const delay = delays[attempt];
+    // Only enter Phase 2 (20 s waits) when EVERY failure so far was upstream-down.
+    // If any failure was a DB logic error, long waits won't help.
+    if (attempt >= 4 && !allUpstreamDown) break;
+
+    if (attempt < delays.length - 1) {
+      await new Promise<void>((r) => setTimeout(r, delay));
     }
   }
 }

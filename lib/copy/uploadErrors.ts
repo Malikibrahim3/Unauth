@@ -45,6 +45,18 @@ export function friendlyUploadError(raw: string): FriendlyError {
   }
 
   if (
+    msg.includes('db unavailable during finalisation') ||
+    msg.includes('job timed out') ||
+    msg.includes('timed out — the processing server')
+  ) {
+    return {
+      headline: 'Database was briefly unavailable',
+      body: 'Your file was processed successfully but the final save step failed when Supabase went down. Your data is written — click "Recover" to finalise the audit without re-uploading.',
+      code: 'UA-601',
+    };
+  }
+
+  if (
     msg.includes('timeout') ||
     msg.includes('timed out') ||
     msg.includes('econnrefused') ||

@@ -17,7 +17,7 @@ import { friendlyUploadError, type FriendlyError } from '@/lib/copy/uploadErrors
 import { assessDataQualityFromMapping, type DataQualityReport } from '@/lib/csv/dataQuality';
 import { track } from '@/lib/analytics/amplitude';
 
-type UploadState = 'idle' | 'mapping' | 'context' | 'uploading' | 'processing' | 'complete' | 'error';
+type UploadState = 'idle' | 'mapping' | 'context' | 'uploading' | 'processing' | 'recovering' | 'complete' | 'error';
 type UploadType = 'standard' | 'historical' | 'investigation';
 
 const CSV_TEMPLATE_HEADERS =
@@ -79,6 +79,7 @@ export default function UploadClient() {
   const [friendlyError, setFriendlyError] = useState<FriendlyError | null>(null);
   const [rawErrorDetail, setRawErrorDetail] = useState<string | null>(null);
   const [showErrorDetail, setShowErrorDetail] = useState(false);
+  const [canRecover, setCanRecover] = useState(false);
   const [uploadLabel, setUploadLabel] = useState('');
   const [dateRangeStart, setDateRangeStart] = useState('');
   const [dateRangeEnd, setDateRangeEnd] = useState('');
@@ -276,6 +277,7 @@ export default function UploadClient() {
         if (job.status === 'failed') {
           const rawMsg = job.errorMessage ?? 'Processing failed.';
           console.error('[UploadClient] job failed:', rawMsg, job);
+          setCanRecover(job.canRecover === true);
           setState('error');
           setRawErrorDetail(rawMsg);
           setFriendlyError(friendlyUploadError(rawMsg));
@@ -317,7 +319,36 @@ export default function UploadClient() {
     localStorage.setItem('unauth.exportGuide.open', next ? '1' : '0');
   }
 
-  const isProcessing = state === 'uploading' || state === 'processing';
+  const isProcessing = state === 'uploading' || state === 'processing' || state === 'recovering';
+
+  async function attemptRecovery() {
+    if (!runId) return;
+    setState('recovering');
+    setStatusText('Recovering — finalising your audit…');
+    setFriendlyError(null);
+    setRawErrorDetail(null);
+    try {
+      const res = await fetch(`/api/audit/${runId}/recover`, { method: 'POST' });
+      const body = await res.json().catch(() => ({}));
+      if (res.ok && body.recovered) {
+        // Recovery succeeded — let the normal poll pick up the completed state.
+        setState('processing');
+        return;
+      }
+      // Recovery ran but job was not recoverable (partial data loss).
+      const msg = body.error ?? body.reason ?? 'Recovery failed — please re-upload.';
+      setState('error');
+      setRawErrorDetail(msg);
+      setFriendlyError(friendlyUploadError(msg));
+      setCanRecover(false);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setState('error');
+      setRawErrorDetail(msg);
+      setFriendlyError(friendlyUploadError(msg));
+      setCanRecover(false);
+    }
+  }
 
   function renderDataQualityPanel() {
     if (!dataQuality || !canSubmit) return null;
@@ -1082,6 +1113,23 @@ export default function UploadClient() {
             <p className="text-xs mt-1" style={{ color: 'var(--text-subtle)' }}>
               Code: {friendlyError.code}
             </p>
+            {canRecover && (
+              <div className="mt-3">
+                <button
+                  type="button"
+                  onClick={attemptRecovery}
+                  className="px-4 py-2 text-sm font-semibold rounded-md transition-colors"
+                  style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--accent-hover)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--accent)'; }}
+                >
+                  Recover audit →
+                </button>
+                <p className="text-xs mt-1" style={{ color: 'var(--text-subtle)' }}>
+                  All {totalRows.toLocaleString()} rows were written. Recovery will finalise the audit without re-uploading.
+                </p>
+              </div>
+            )}
             {rawErrorDetail && (
               <div className="mt-2">
                 <button
@@ -1106,8 +1154,20 @@ export default function UploadClient() {
         </div>
       )}
 
+      {/* Recovering status bar */}
+      {state === 'recovering' && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-xs" style={{ color: 'var(--text-muted)' }}>
+            <span>{statusText}</span>
+          </div>
+          <div className="w-full h-2 rounded-full overflow-hidden" style={{ background: 'var(--bg-muted)' }}>
+            <div className="h-full w-full animate-pulse" style={{ background: 'var(--accent)', opacity: 0.6 }} />
+          </div>
+        </div>
+      )}
+
       {/* Progress bar */}
-      {isProcessing && (
+      {(state === 'uploading' || state === 'processing') && (
         <div className="space-y-2">
           <div
             className="flex items-center justify-between text-xs"
@@ -1140,6 +1200,7 @@ export default function UploadClient() {
         </div>
       )}
 
+      {/* Idle / error action buttons — also show when recovering failed */}
       {/* Idle / error action buttons */}
       {(state === 'idle' || state === 'error') && (
         <div className="flex items-center gap-3">

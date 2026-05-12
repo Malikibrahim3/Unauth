@@ -39,7 +39,7 @@ async function GETHandler(
 
   const { data: job, error } = await scopedClient
     .from('processing_jobs')
-    .select('status, total_rows, processed_rows, failed_rows, error_log, has_ground_truth, merchant_id')
+    .select('status, total_rows, processed_rows, failed_rows, error_log, has_ground_truth, merchant_id, updated_at')
     .eq('id', runId)
     .single();
 
@@ -47,6 +47,21 @@ async function GETHandler(
   if (error || !job) {
     return NextResponse.json({ error: 'Audit run not found' }, { status: 404 });
   }
+
+  // Stale-job detection: if a job has been in processing/pending state without
+  // any DB update for longer than the maximum function budget (300 s) + 3 min
+  // buffer, the worker crashed or Supabase went down mid-job. Surface this as
+  // a failure so the UI doesn't poll indefinitely.
+  const STALE_THRESHOLD_MS = (300 + 180) * 1000; // 8 minutes
+  const isStuck =
+    (job.status === 'processing' || job.status === 'pending') &&
+    job.updated_at != null &&
+    Date.now() - new Date(job.updated_at).getTime() > STALE_THRESHOLD_MS;
+
+  // Recovery is possible when ALL rows were written but finalization failed.
+  const rowsDone = (job.processed_rows ?? 0) + (job.failed_rows ?? 0);
+  const canRecover =
+    isStuck && job.total_rows > 0 && rowsDone >= job.total_rows;
 
   // Count flagged transactions only when the job is done, and use 'planned'
   // (Postgres planner estimate) to avoid locking during concurrent inserts.
@@ -78,20 +93,29 @@ async function GETHandler(
       ? (job.error_log[0] as { message?: string }).message ?? 'Processing failed'
       : undefined;
 
+  // Override status when job is stale — emit failure so UI stops polling.
+  const effectiveStatus = isStuck ? 'failed' : (statusMap[job.status] ?? job.status);
+  const effectiveError = isStuck
+    ? (canRecover
+        ? 'DB unavailable during finalisation — all rows are written and can be recovered.'
+        : 'Job timed out — the processing server became unavailable. Please re-upload.')
+    : firstError;
+
   return NextResponse.json({
     runId,
-    status: statusMap[job.status] ?? job.status,
+    status: effectiveStatus,
     progressPercent,
     currentStage:
       job.status === 'completed'
         ? 'Complete'
-        : job.status === 'failed'
+        : isStuck || job.status === 'failed'
         ? 'Failed'
         : 'Processing…',
     rowCount: job.total_rows,
     flaggedCount,
     hasGroundTruth: job.has_ground_truth ?? false,
-    errorMessage: firstError,
+    errorMessage: effectiveError,
+    canRecover,
   });
 }
 
