@@ -217,13 +217,13 @@ describe('Positive identity fixtures: genuine links must surface', () => {
     expect(result.clusterGrade).toBe('probable');
   });
 
-  it('same email + same billing address → probable (two medium anchors)', () => {
+  it('same email + same billing address → candidate (no strong anchor)', () => {
     const cluster = [
       makeOrder('a', { email: 'customer@domain.com', billing_address: '100 Oxford St, London' }),
       makeOrder('b', { email: 'customer@domain.com', billing_address: '100 Oxford St, London' }),
     ];
     const result = scoreClusterIdentity(cluster);
-    expect(['probable', 'confirmed']).toContain(result.clusterGrade);
+    expect(result.clusterGrade).toBe('candidate');
   });
 
   it('matched_datapoints contains human-readable labels', () => {
@@ -264,6 +264,34 @@ describe('Positive identity fixtures: genuine links must surface', () => {
 // ---------------------------------------------------------------------------
 
 describe('Grade gate: numeric score cannot override evidence rules', () => {
+  it('probable requires at least one strong anchor', () => {
+    const cluster = [
+      makeOrder('a', { email: 'sam@example.com', postcode: 'W1 1AA', name: 'Sam Doe' }),
+      makeOrder('b', { email: 'sam@example.com', postcode: 'W1 1AA', name: 'Sam Doe' }),
+    ];
+    const result = scoreClusterIdentity(cluster);
+    expect(result.clusterGrade).toBe('candidate');
+  });
+
+  it('confirmed requires at least two strong anchors', () => {
+    const cluster = [
+      makeOrder('a', {
+        phone: '+447700910000',
+        shipping_address: '11 Strand, London WC2N 5HR',
+        postcode: 'WC2N 5HR',
+        name: 'Casey Brown',
+      }),
+      makeOrder('b', {
+        phone: '+447700910000',
+        shipping_address: '11 Strand, London WC2N 5HR',
+        postcode: 'WC2N 5HR',
+        name: 'Casey Brown',
+      }),
+    ];
+    const result = scoreClusterIdentity(cluster);
+    expect(result.clusterGrade).toBe('probable');
+  });
+
   it('corroborators alone never produce probable regardless of count', () => {
     // Many corroborators: name + postcode + ip — but no anchor
     const cluster = [

@@ -16,10 +16,9 @@
  *   - A pile of weak corroborators cannot outrank missing anchor evidence.
  *
  * Grade gates (evidence-first):
- *   confirmed  : Two independent strong anchors, OR one high-entropy anchor
- *                plus ≥ 2 corroborators.
- *   probable   : One strong anchor + one corroborator, OR two medium anchors.
- *   candidate  : One medium anchor, OR one weak anchor + multiple corroborators.
+ *   confirmed  : Two independent strong anchors.
+ *   probable   : At least one strong anchor, plus additional support.
+ *   candidate  : Medium-anchor evidence or weakly corroborated identity hints.
  *   none       : Single soft signal, name-only, postcode-only, IP-only,
  *                address-only, BIN+last4-only, or no anchor at all.
  */
@@ -163,12 +162,12 @@ function getRowValues(row: LinkerOrderInput): Map<IdentitySignalKind, string> {
  *   - name-only or postcode-only or ip-only or BIN+last4-only → grade = 'none'
  *   - postcode + name (no anchor) → grade = 'none' (large merchants)
  *   - IP + postcode (no anchor) → grade = 'candidate' at most
- *   - One medium anchor + ≥1 corroborator → 'probable'
- *   - Two medium anchors → 'probable'
+ *   - One medium anchor + corroborators (no strong anchor) → 'candidate'
+ *   - Two medium anchors (no strong anchor) → 'candidate'
  *   - One strong anchor + ≥1 corroborator → 'probable'
  *   - One strong anchor alone → 'candidate'
  *   - Two independent strong anchors → 'confirmed'
- *   - One high-entropy strong anchor + ≥2 corroborators → 'confirmed'
+ *   - One strong anchor + many corroborators still cannot reach 'confirmed'
  */
 function applyGateCaps(evidence: IdentityEvidence[]): MatchGrade {
   const strongAnchors   = evidence.filter((e) => e.tier === 'strong' && e.anchor);
@@ -183,9 +182,6 @@ function applyGateCaps(evidence: IdentityEvidence[]): MatchGrade {
   // Two independent strong anchors → confirmed
   if (strongAnchors.length >= 2) return 'confirmed';
 
-  // One strong anchor + ≥2 corroborators → confirmed
-  if (strongAnchors.length === 1 && corroborators.length >= 2) return 'confirmed';
-
   // One strong anchor + ≥1 medium anchor → probable
   if (strongAnchors.length === 1 && mediumAnchors.length >= 1) return 'probable';
 
@@ -195,11 +191,11 @@ function applyGateCaps(evidence: IdentityEvidence[]): MatchGrade {
   // One strong anchor alone → candidate
   if (strongAnchors.length === 1) return 'candidate';
 
-  // Two medium anchors → probable
-  if (mediumAnchors.length >= 2) return 'probable';
+  // Two medium anchors (still no strong anchor) → candidate
+  if (mediumAnchors.length >= 2) return 'candidate';
 
-  // One medium anchor + ≥1 corroborator → probable
-  if (mediumAnchors.length === 1 && corroborators.length >= 1) return 'probable';
+  // One medium anchor + ≥1 corroborator (still no strong anchor) → candidate
+  if (mediumAnchors.length === 1 && corroborators.length >= 1) return 'candidate';
 
   // One medium anchor alone → candidate
   if (mediumAnchors.length === 1) return 'candidate';

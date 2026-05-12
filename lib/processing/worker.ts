@@ -1233,17 +1233,51 @@ async function upsertBatchNoProgress(
   jobId: string,
   serviceClient: SupabaseClient<Database>
 ): Promise<void> {
-  const { error } = await serviceClient
-    .from('audit_transactions')
-    .upsert(inserts as any, { onConflict: 'job_id,order_id' });
-
-  if (error) {
-    await logBatchError(
-      serviceClient,
-      jobId,
-      inserts.map((r) => r.order_id),
-      `Supabase upsert failed: ${error.message}`
+  const isRetryableCoreUpsertError = (message: string): boolean => {
+    const msg = message.toLowerCase();
+    return (
+      msg.includes('fetch failed') ||
+      msg.includes('econnreset') ||
+      msg.includes('etimedout') ||
+      msg.includes('connection terminated') ||
+      msg.includes('connection reset') ||
+      msg.includes('429') ||
+      msg.includes('too many requests') ||
+      msg.includes('502') ||
+      msg.includes('503') ||
+      msg.includes('504') ||
+      msg.includes('gateway timeout') ||
+      msg.includes('temporarily unavailable')
     );
-    throw new Error(`Supabase upsert failed: ${error.message}`);
+  };
+
+  const MAX_ATTEMPTS = 4;
+  let lastMessage = 'unknown error';
+
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    const { error } = await serviceClient
+      .from('audit_transactions')
+      .upsert(inserts as any, { onConflict: 'job_id,order_id' });
+
+    if (!error) return;
+
+    lastMessage = error.message ?? 'unknown error';
+    const retryable = isRetryableCoreUpsertError(lastMessage);
+    if (!retryable || attempt === MAX_ATTEMPTS) {
+      const suffix = retryable ? ` after ${attempt} attempts` : '';
+      await logBatchError(
+        serviceClient,
+        jobId,
+        inserts.map((r) => r.order_id),
+        `Supabase upsert failed${suffix}: ${lastMessage}`
+      );
+      throw new Error(`Supabase upsert failed${suffix}: ${lastMessage}`);
+    }
+
+    // Core write hardening: brief exponential backoff for transient network/API
+    // failures so one blip doesn't zero-out an entire upload.
+    const jitter = Math.random() * 150;
+    const delayMs = 250 * 2 ** (attempt - 1) + jitter;
+    await new Promise<void>((resolve) => setTimeout(resolve, delayMs));
   }
 }
