@@ -6,7 +6,7 @@ import { formatCurrencyNullable } from '@/lib/utils/formatCurrency';
 import { labelFor } from '@/lib/copy/labels';
 import { signalCopy } from '@/lib/copy/signals';
 import { ConfidenceBadge } from '@/components/ui/ConfidenceBadge';
-import { riskLevelToNewGrade } from '@/lib/confidence';
+import { riskLevelToNewGrade, type ConfidenceGradeValue } from '@/lib/confidence';
 import RecommendedAction from '@/components/audit/RecommendedAction';
 import type { Database } from '@/lib/supabase/types';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
@@ -86,7 +86,16 @@ export default async function TransactionDetailPage({ params }: Props) {
         <div className="rounded-lg px-5 py-4 border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
           <div className="text-caption mb-1" style={{ color: 'var(--text-muted)' }}>Identity confidence</div>
           <div className="text-display-sm font-bold" style={{ color: 'var(--text)' }}>{Math.round((txData.identity_score ?? txData.match_score) ?? 0)} / 100</div>
-          <div className="mt-1"><ConfidenceBadge grade={riskLevelToNewGrade((txData as any).risk_level)} /></div>
+          {(() => {
+            const idGrade = txData.identity_confidence_grade as 'definite' | 'probable' | 'possible' | 'weak' | null | undefined;
+            const letter: ConfidenceGradeValue | null =
+              idGrade === 'definite' ? 'A'
+              : idGrade === 'probable' ? 'B'
+              : idGrade === 'possible' ? 'C'
+              : idGrade === 'weak' ? 'D'
+              : null;
+            return <div className="mt-1">{letter ? <ConfidenceBadge grade={letter} /> : <span className="text-xs" style={{ color: 'var(--text-subtle)' }}>Ungraded</span>}</div>;
+          })()}
         </div>
         <div className="rounded-lg px-5 py-4 border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
           <div className="text-caption mb-1" style={{ color: 'var(--text-muted)' }}>Order total</div>

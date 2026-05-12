@@ -6,7 +6,7 @@ import { formatDate, formatCurrency } from '@/lib/utils/format';
 import { scoreToGrade } from '@/lib/utils/riskStyles';
 import { signalLabel } from '@/lib/copy/signalLabels';
 import { ConfidenceBadge } from '@/components/ui/ConfidenceBadge';
-import { riskLevelToNewGrade } from '@/lib/confidence';
+import type { ConfidenceGradeValue } from '@/lib/confidence';
 import DismissTransactionButton from '@/components/audit/DismissTransactionButton';
 import FeedbackButtons from '@/components/audit/FeedbackButtons';
 import DataQualityBanner from '@/components/audit/DataQualityBanner';
@@ -450,6 +450,13 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
                         {((transactions ?? []) as unknown as TxRow[]).map((tx) => {
                           const flags = ((tx as any).signals_matched as string[]) ?? ((tx as any).identity_signals as string[]) ?? ((tx as any).fraud_flags as string[]) ?? [];
                           const topFlag = flags[0];
+                          const idGrade = (tx as any).identity_confidence_grade as 'definite' | 'probable' | 'possible' | 'weak' | null | undefined;
+                          const letterGrade: ConfidenceGradeValue | null =
+                            idGrade === 'definite' ? 'A'
+                            : idGrade === 'probable' ? 'B'
+                            : idGrade === 'possible' ? 'C'
+                            : idGrade === 'weak'     ? 'D'
+                            : null;
                           return (
                             <tr key={tx.id} className="border-b transition-colors hover-bg-subtle" style={{ borderColor: 'var(--border-subtle)' }}>
                               <td className="px-4 py-2.5 font-mono text-xs" style={{ color: 'var(--text-muted)' }}>{tx.order_id}</td>
@@ -457,8 +464,8 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
                               <td className="px-4 py-2.5 text-right font-mono" style={{ color: 'var(--text)' }}>{formatCurrency(tx.order_value ?? 0)}</td>
                               <td className="px-4 py-2.5 text-right font-mono font-semibold" style={{ color: 'var(--text)' }}>{Math.round((tx as any).identity_score ?? (tx as any).match_score ?? 0)}</td>
                               <td className="px-4 py-2.5">
-                                {(tx as any).identity_confidence_grade
-                                  ? <ConfidenceBadge grade={riskLevelToNewGrade((tx as any).risk_level)} size="sm" />
+                                {letterGrade
+                                  ? <ConfidenceBadge grade={letterGrade} size="sm" />
                                   : <span className="text-xs" style={{ color: 'var(--text-subtle)' }}>Ungraded</span>}
                               </td>
                               <td className="px-4 py-2.5 text-xs max-w-xs" style={{ color: 'var(--text-muted)' }}>

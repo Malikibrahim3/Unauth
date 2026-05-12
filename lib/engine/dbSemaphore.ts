@@ -61,3 +61,52 @@ export async function withRetry<T>(
   }
   throw lastErr;
 }
+
+// True upstream-down (server reported HTTP 521 / schema cache miss / etc.).
+// These don't recover by retrying — the DB itself is unreachable, and our
+// retries pile on. Distinguished from transport-level errors below.
+export function isHardUpstreamDown(err: any): boolean {
+  if (!err) return false;
+  const msg = String(err.message ?? err ?? '').toLowerCase();
+  return (
+    msg.includes('521') ||
+    msg.includes('web server is down') ||
+    msg.includes('cloudflare') ||
+    msg.includes('schema cache') ||
+    msg.includes('<!doctype html')
+  );
+}
+
+// Read-path retry. Unlike withRetry (which bails on any isUpstreamDown match,
+// including "fetch failed"), this DOES retry transport-level errors like
+// `TypeError: fetch failed`, ECONNRESET, ETIMEDOUT — under load these are
+// usually local socket exhaustion, not Supabase being down, and retrying with
+// backoff recovers. We still bail on hard upstream-down (Cloudflare 521 etc).
+//
+// Returns { value, retries, failed }. Callers can surface the counters in the
+// data-quality report without changing the success/failure contract.
+export async function withReadRetry<T>(
+  fn: () => Promise<T>,
+  attempts = 3,
+  baseDelayMs = 500
+): Promise<{ value: T | null; retries: number; failed: boolean; lastError: unknown }> {
+  let lastErr: unknown = null;
+  let retries = 0;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const value = await fn();
+      return { value, retries, failed: false, lastError: null };
+    } catch (err) {
+      lastErr = err;
+      if (isHardUpstreamDown(err)) {
+        return { value: null, retries, failed: true, lastError: err };
+      }
+      if (i < attempts - 1) {
+        retries++;
+        const jitter = Math.random() * 200;
+        await new Promise((r) => setTimeout(r, baseDelayMs * 2 ** i + jitter));
+      }
+    }
+  }
+  return { value: null, retries, failed: true, lastError: lastErr };
+}

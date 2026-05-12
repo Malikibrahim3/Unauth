@@ -13,6 +13,7 @@
 import type { NormalisedOrder } from './types';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { normaliseEmail, normaliseIP, normaliseAddress, normaliseCard } from '../identity/normalise';
+import { withReadRetry } from './dbSemaphore';
 
 // ── Concurrency limiter ────────────────────────────────────────────────────
 // Cap simultaneous Supabase requests to avoid saturating the Postgres
@@ -116,6 +117,13 @@ export interface FastScoringContext {
   crossMerchantProfiles?: CrossMerchantProfile[];
   // Audit log rows accumulated during scoreBatch; flushed by worker after scoring.
   pendingAuditLogs: PendingAuditLog[];
+  // Network-health counters. Surfaced in the run's data_quality_report so the
+  // user can tell when a job ran with partial history (silent fetch failures
+  // historically masked this — see ASOS 50k forensic audit, F2/F3/F4).
+  readHealth: {
+    fastContextReadRetries: number;
+    fastContextReadFailures: number;
+  };
 }
 
 /**
@@ -236,6 +244,14 @@ export async function buildFastContext(
   supabase: SupabaseClient,
   merchantId?: string
 ): Promise<FastScoringContext> {
+  // Counters shared by every fetch closure below. fetchEntityBatch /
+  // fetchCoBatch bump these on retry + permanent failure; worker.ts pipes them
+  // into processing_jobs.data_quality_report.
+  const readHealth = {
+    fastContextReadRetries: 0,
+    fastContextReadFailures: 0,
+  };
+
   const customerOrderHistory = new Map<string, NormalisedOrder[]>();
   const addressEmailMap = new Map<string, Set<string>>();
   const emailRawEmailsMap = new Map<string, string[]>();
@@ -330,16 +346,22 @@ export async function buildFastContext(
     const results = await Promise.all(
       chunks.map((chunk) =>
         fetchSemaphore(async () => {
-          const { data, error } = await supabase
-            .from('fraud_entities')
-            .select(FRAUD_ENTITY_COLS)
-            .eq('entity_type', entityType)
-            .in('entity_value', chunk);
-          if (error) {
-            console.error(`[fastContext] fraud_entities ${entityType} fetch failed: ${error.message}`);
+          const r = await withReadRetry(async () => {
+            const { data, error } = await supabase
+              .from('fraud_entities')
+              .select(FRAUD_ENTITY_COLS)
+              .eq('entity_type', entityType)
+              .in('entity_value', chunk);
+            if (error) throw new Error(error.message);
+            return (data as unknown as FraudEntity[]) ?? [];
+          });
+          readHealth.fastContextReadRetries += r.retries;
+          if (r.failed) {
+            readHealth.fastContextReadFailures++;
+            console.error(`[fastContext] fraud_entities ${entityType} fetch failed (after retries): ${String((r.lastError as Error)?.message ?? r.lastError)}`);
             return [] as FraudEntity[];
           }
-          return (data as unknown as FraudEntity[]) ?? [];
+          return r.value ?? [];
         })
       )
     );
@@ -363,16 +385,22 @@ export async function buildFastContext(
     const results = await Promise.all(
       chunks.map((chunk) =>
         fetchSemaphore(async () => {
-          const { data, error } = await supabase
-            .from('fraud_entity_co_occurrences')
-            .select(CO_OCC_COLS)
-            .eq(typeCol, entityType)
-            .in(valueCol, chunk);
-          if (error) {
-            console.error(`[fastContext] co_occurrences ${entityType}/${side} fetch failed: ${error.message}`);
+          const r = await withReadRetry(async () => {
+            const { data, error } = await supabase
+              .from('fraud_entity_co_occurrences')
+              .select(CO_OCC_COLS)
+              .eq(typeCol, entityType)
+              .in(valueCol, chunk);
+            if (error) throw new Error(error.message);
+            return (data as unknown as CoOccurrence[]) ?? [];
+          });
+          readHealth.fastContextReadRetries += r.retries;
+          if (r.failed) {
+            readHealth.fastContextReadFailures++;
+            console.error(`[fastContext] co_occurrences ${entityType}/${side} fetch failed (after retries): ${String((r.lastError as Error)?.message ?? r.lastError)}`);
             return [] as CoOccurrence[];
           }
-          return (data as unknown as CoOccurrence[]) ?? [];
+          return r.value ?? [];
         })
       )
     );
@@ -465,7 +493,8 @@ export async function buildFastContext(
 
   // Diagnostic: surface the historical hit rate so Phase 7 Check 3 is observable.
   // Shows both the query inputs and the matches so a 0 result is clearly
-  // attributable to either "no values in batch" or "no matches found".
+  // attributable to either "no values in batch", "no matches found", or
+  // (post-2026-05) "reads partially failed and we silently fell back to []".
   // eslint-disable-next-line no-console
   console.log(
     `[fastContext] inputs: emails=${allEmails.length} ips=${allIPs.length} addrs=${allAddresses.length} cards=${allCards.length} | ` +
@@ -473,7 +502,8 @@ export async function buildFastContext(
     `address=${historicalAddressMap.size} card=${historicalCardMap.size} ` +
     `coOcc=${seenCoIds.size} ` +
     `weightAdj=${Object.keys(signalWeightAdjustments).length} ` +
-    `crossMerchantProfiles=${(crossMerchantResult.data ?? []).length}`
+    `crossMerchantProfiles=${(crossMerchantResult.data ?? []).length} | ` +
+    `readRetries=${readHealth.fastContextReadRetries} readFailures=${readHealth.fastContextReadFailures}`
   );
 
   // Filter cross-merchant profiles to exclude those that include the requesting merchant.
@@ -501,5 +531,6 @@ export async function buildFastContext(
     requestingMerchantId: merchantId,
     crossMerchantProfiles,
     pendingAuditLogs: [],
+    readHealth,
   };
 }

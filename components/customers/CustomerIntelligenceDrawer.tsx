@@ -19,7 +19,8 @@ import {
   UserRound,
   X,
 } from 'lucide-react';
-import { ConfidenceBadge, riskLevelToNewGrade } from '@/components/ui/ConfidenceBadge';
+import { ConfidenceBadge } from '@/components/ui/ConfidenceBadge';
+import { riskLevelToNewGrade } from '@/lib/confidence';
 import WatchlistStarButton from '@/components/audit/WatchlistStarButton';
 import CustomerNotes from '@/components/audit/CustomerNotes';
 import type { CustomerIntelligencePanel, OrderHistoryEntry } from '@/app/api/customers/[id]/route';

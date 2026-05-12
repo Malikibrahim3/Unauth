@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { ConfidenceBadge, riskLevelToNewGrade } from '@/components/ui/ConfidenceBadge';
+import { ConfidenceBadge } from '@/components/ui/ConfidenceBadge';
+import { riskLevelToNewGrade } from '@/lib/confidence';
 import RemoveButton from '@/components/watchlist/RemoveButton';
 import CustomerIntelligenceDrawer from '@/components/customers/CustomerIntelligenceDrawer';
 import { RiskTrendBadge } from '@/components/ui/RiskTrendBadge';

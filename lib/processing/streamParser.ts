@@ -15,16 +15,18 @@ import { validateHeaders } from '../csv/validate';
 import { sniffHeaders } from '../csv/sniffer';
 import type { ParsedCsvRow } from './types';
 
-/** Hard cap on rows per upload. With CHUNK_SIZE=50k that's 100 chunks worst
+/** Hard cap on rows per upload. With CHUNK_SIZE=10k that's 500 chunks worst
  *  case — still bounded but covers all realistic merchant CSVs. */
 export const MAX_ROWS = 5_000_000;
 
-/** Rows per chunk. 50k gives the identity linker a larger cross-order context
- *  (better recall) while halving total chunk count vs the old 25k. A 50k chunk
- *  completes in ~60–90s on average, well inside the 300s Vercel function cap.
- *  Benchmarked 2026-05-11: 25k → 50k halved wall-clock time on 500k-row uploads
- *  with no accuracy regression. */
-export const CHUNK_SIZE = 50_000;
+/** Rows per chunk. Dropped from 50k → 10k on 2026-05-12 after the ASOS 50k
+ *  stress test exposed Supabase fetch failures (`TypeError: fetch failed`)
+ *  late in a 3.7-minute single-chunk run — socket pool exhaustion in
+ *  buildFastContext. With 10k chunks the per-chunk wall-clock is ~30-60s,
+ *  unique-identifier load on Supabase per chunk is bounded, and a transient
+ *  blip only loses one chunk instead of the whole job. The 645-row file still
+ *  runs as a single chunk. */
+export const CHUNK_SIZE = 10_000;
 
 export interface StreamParseResult {
   /** Parsed rows. When onChunk is provided, this will be empty (rows are flushed to Storage).

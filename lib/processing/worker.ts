@@ -92,7 +92,8 @@ type PersistedIdentityResult = {
   ce3QualifyingTransactions: string[];
   /** Only populated for definite (match_status='definite'). */
   clusterId: string | null;
-  /** Set for probable + definite rows (score ≥ 50). */
+  /** Set for candidate + probable + definite rows. Lets the UI group "possible"
+   *  matches by cluster even when the engine hasn't confirmed them. */
   candidateClusterId: string | null;
   /** Set ONLY for definite rows (score ≥ 75). */
   confirmedIdentityId: string | null;
@@ -238,6 +239,7 @@ function buildClusterIdentityResults(
       const recommendedAction = recommendedActionForPureGrade(grade);
       const isConfirmed = matchStatus === 'definite';
       const isProbable  = matchStatus === 'probable';
+      const isCandidate = matchStatus === 'candidate';
 
       result.set(orderId, {
         grade,
@@ -249,7 +251,7 @@ function buildClusterIdentityResults(
         ce3Eligible: contextResult?.ce3_eligible ?? clusterScore?.ce3_eligible ?? false,
         ce3QualifyingTransactions: ce3OrderIds,
         clusterId: isConfirmed ? cluster.cluster_id : null,
-        candidateClusterId: (isProbable || isConfirmed) ? cluster.cluster_id : null,
+        candidateClusterId: (isCandidate || isProbable || isConfirmed) ? cluster.cluster_id : null,
         confirmedIdentityId: isConfirmed ? cluster.cluster_id : null,
         identityMatchResult: rowPureResult,
         contextFlags: contextResult?.context_flags ?? [],

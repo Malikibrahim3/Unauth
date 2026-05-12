@@ -97,5 +97,4 @@ export function ConfidenceBadge({ grade, score, size = 'md', customerIntelligenc
   );
 }
 
-export { scoreToGrade, riskLevelToNewGrade };
 export type { ConfidenceGradeValue };
