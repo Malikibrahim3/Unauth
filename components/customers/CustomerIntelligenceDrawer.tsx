@@ -220,21 +220,33 @@ function OrderRoadmapCard({ order, isLast }: { order: OrderHistoryEntry; isLast:
 interface CustomerIntelligenceDrawerProps {
   profileId: string | null;
   onClose: () => void;
+  prefetchedPanel?: CustomerIntelligencePanel | null;
 }
 
 export default function CustomerIntelligenceDrawer({
   profileId,
   onClose,
+  prefetchedPanel = null,
 }: CustomerIntelligenceDrawerProps) {
-  const [panel, setPanel] = useState<CustomerIntelligencePanel | null>(null);
+  const [panel, setPanel] = useState<CustomerIntelligencePanel | null>(prefetchedPanel);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ordersExpanded, setOrdersExpanded] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
+  const isNotFoundError = error?.startsWith('HTTP 404');
 
   useEffect(() => {
+    if (prefetchedPanel) {
+      setPanel(prefetchedPanel);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
     if (!profileId) {
       setPanel(null);
+      setLoading(false);
+      setError(null);
       return;
     }
 
@@ -256,7 +268,7 @@ export default function CustomerIntelligenceDrawer({
         setError(err.message);
         setLoading(false);
       });
-  }, [profileId]);
+  }, [profileId, prefetchedPanel]);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -328,7 +340,9 @@ export default function CustomerIntelligenceDrawer({
 
           {error && (
             <div className="rounded-lg p-4 text-sm border" style={{ background: 'var(--risk-critical-bg)', borderColor: 'var(--risk-critical-bd)', color: 'var(--risk-critical)' }}>
-              Failed to load customer data. Please try again.
+              {isNotFoundError
+                ? 'Customer record could not be found for this merchant.'
+                : 'Failed to load customer data. Please try again.'}
             </div>
           )}
 

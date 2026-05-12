@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
-import { ConfidenceBadge, riskLevelToNewGrade } from '@/components/ui/ConfidenceBadge';
+import { ConfidenceBadge } from '@/components/ui/ConfidenceBadge';
+import { riskLevelToNewGrade } from '@/lib/confidence';
 import WatchlistTableClient from '@/components/watchlist/WatchlistTableClient';
 import WatchlistSearchInput from '@/components/watchlist/WatchlistSearchInput';
 import { EmptyState } from '@/components/ui/EmptyState';

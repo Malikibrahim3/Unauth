@@ -24,7 +24,8 @@ import {
 import { buildBehavioralNarrative } from '@/lib/customers/narrative';
 import WatchlistStarButton from '@/components/audit/WatchlistStarButton';
 import CustomerNotes from '@/components/audit/CustomerNotes';
-import { ConfidenceBadge, riskLevelToNewGrade } from '@/components/ui/ConfidenceBadge';
+import { ConfidenceBadge } from '@/components/ui/ConfidenceBadge';
+import { riskLevelToNewGrade } from '@/lib/confidence';
 import { RiskScoreBadge } from '@/components/ui/RiskScoreBadge';
 import { SectionCard } from '@/components/ui/SectionCard';
 import { MetricCard } from '@/components/ui/MetricCard';

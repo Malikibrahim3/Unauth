@@ -9,8 +9,9 @@ export type { ButtonVariant, ButtonSize } from './Button';
 export { Badge } from './Badge';
 export type { BadgeTone, BadgeVariant, BadgeSize } from './Badge';
 
-export { ConfidenceBadge, scoreToGrade, riskLevelToNewGrade } from './ConfidenceBadge';
-export type { ConfidenceGradeValue } from './ConfidenceBadge';
+export { ConfidenceBadge } from './ConfidenceBadge';
+export { scoreToGrade, riskLevelToNewGrade } from '@/lib/confidence';
+export type { ConfidenceGradeValue } from '@/lib/confidence';
 
 export { RiskScoreBadge, scoreToRiskLevel } from './RiskScoreBadge';
 export type { RiskLevel } from './RiskScoreBadge';

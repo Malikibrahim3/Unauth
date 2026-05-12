@@ -16,6 +16,7 @@ function legacyGradeToNew(g: 'definite' | 'probable' | 'possible' | 'weak' | nul
 }
 import Link from 'next/link';
 import CustomerIntelligenceDrawer from '@/components/customers/CustomerIntelligenceDrawer';
+import type { CustomerIntelligencePanel } from '@/app/api/customers/[id]/route';
 
 type CustomerRow = {
   email: string;
@@ -287,17 +288,35 @@ export default function AuditCustomersTableClient({
 }) {
   const [selectedEmail, setSelectedEmail] = useState<string | null>(null);
   const [upgradeProfileId, setUpgradeProfileId] = useState<string | null>(null);
+  const [upgradePanel, setUpgradePanel] = useState<CustomerIntelligencePanel | null>(null);
   const [search, setSearch] = useState('');
   const [gradeFilter, setGradeFilter] = useState<string>('');
 
   function openDrawerForEmail(email: string) {
     setSelectedEmail(email);
     setUpgradeProfileId(null);
+    setUpgradePanel(null);
   }
 
   function closeDrawer() {
     setSelectedEmail(null);
     setUpgradeProfileId(null);
+    setUpgradePanel(null);
+  }
+
+  async function handleProfileResolved(profileId: string) {
+    setUpgradeProfileId(profileId);
+    setUpgradePanel(null);
+
+    try {
+      const response = await fetch(`/api/customers/${encodeURIComponent(profileId)}`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const panel = (await response.json()) as CustomerIntelligencePanel;
+      setUpgradePanel(panel);
+      setSelectedEmail(null);
+    } catch {
+      setUpgradeProfileId(null);
+    }
   }
 
   // Resolve initialEmail on mount
@@ -449,13 +468,14 @@ export default function AuditCustomersTableClient({
       {/* AuditCustomerDrawer opens immediately; auto-hides when upgradeProfileId is set */}
       <AuditCustomerDrawer
         runId={runId}
-        email={upgradeProfileId ? null : selectedEmail}
+        email={upgradePanel ? null : selectedEmail}
         onClose={closeDrawer}
-        onProfileResolved={(id) => setUpgradeProfileId(id)}
+        onProfileResolved={handleProfileResolved}
       />
       {/* CustomerIntelligenceDrawer shows when a persistent profile is found */}
       <CustomerIntelligenceDrawer
         profileId={upgradeProfileId}
+        prefetchedPanel={upgradePanel}
         onClose={closeDrawer}
       />
     </>

@@ -9,7 +9,7 @@
  */
 
 import type { SignalType, SignalStrength } from '@/components/ui/SignalBadge';
-import type { ConfidenceGradeValue } from '@/components/ui/ConfidenceBadge';
+import type { ConfidenceGradeValue } from '@/lib/confidence';
 import type { RiskLevel } from '@/components/ui/RiskScoreBadge';
 import type { RecommendedActionKey } from '@/components/ui/RecommendedActionCard';
 import type { TimelineEventItem } from '@/components/ui/Timeline';

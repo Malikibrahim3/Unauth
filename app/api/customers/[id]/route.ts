@@ -4,6 +4,7 @@ import { createScopedClient } from '@/lib/supabase/scoped';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { logAction } from '@/lib/permissions/audit';
 import { buildBehavioralNarrative } from '@/lib/customers/narrative';
+import { scoreToRiskLevel } from '@/components/ui/RiskScoreBadge';
 import { withRequestLogging } from '@/lib/log';
 
 export const dynamic = 'force-dynamic';
@@ -127,11 +128,11 @@ async function GETHandler(
     .or(merchantFilter)
     .single() as unknown as { data: Record<string, unknown> | null; error: unknown };
 
-  if (profileError || !profileRow) {
+  if (profileError) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
-  const profile = profileRow as any;
+  let profile = profileRow as any | null;
 
   // -------------------------------------------------------------------------
   // 2. Check watchlist status for this merchant
@@ -179,9 +180,9 @@ async function GETHandler(
   //    Fallback path: direct identity query when appearances are missing/stale
   // -------------------------------------------------------------------------
   const transactions: Array<any> = [];
-  const profileEmails = profile.emails as string[];
-  const profileCards = profile.card_last4s as string[];
-  const profileIps = profile.ips as string[];
+  const profileEmails = Array.isArray(profile?.emails) ? profile.emails as string[] : [];
+  const profileCards = Array.isArray(profile?.card_last4s) ? profile.card_last4s as string[] : [];
+  const profileIps = Array.isArray(profile?.ips) ? profile.ips as string[] : [];
 
   async function fetchDirectIdentityRows() {
     // Scope by merchant-owned job IDs to prevent cross-merchant data leakage.
@@ -251,7 +252,7 @@ async function GETHandler(
     }
   }
 
-  if (transactions.length < (profile.total_orders ?? 0) && auditIds.length > 0) {
+  if (transactions.length < (profile?.total_orders ?? 0) && auditIds.length > 0) {
     const BATCH = 1000;
     for (let offset = 0; ; offset += BATCH) {
       let txQuery = serviceClient
@@ -282,6 +283,10 @@ async function GETHandler(
     pushRows(rows);
   }
 
+  if (!profile && transactions.length === 0) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
   // -------------------------------------------------------------------------
   // 5. Build order history
   // -------------------------------------------------------------------------
@@ -308,6 +313,43 @@ async function GETHandler(
     chargebackDate: tx.chargeback_date ?? null,
     chargebackReasonCode: tx.chargeback_reason_code ?? null,
   }));
+
+  if (!profile) {
+    const uniqueValues = (values: Array<string | null | undefined>) =>
+      Array.from(new Set(values.map((value) => value?.trim()).filter(Boolean) as string[]));
+    const scores = orderHistory.map((order) => order.fraudScore ?? 0);
+    const maxScore = scores.length > 0 ? Math.max(...scores) : 0;
+    const firstSeen = orderHistory.map((order) => order.processedAt).filter(Boolean).sort()[0] ?? new Date().toISOString();
+    const lastSeen = orderHistory.map((order) => order.processedAt).filter(Boolean).sort().slice(-1)[0] ?? firstSeen;
+
+    profile = {
+      id: profileId,
+      primary_email: uniqueValues(orderHistory.map((order) => order.email))[0] ?? null,
+      emails: uniqueValues(orderHistory.map((order) => order.email)),
+      names: uniqueValues(orderHistory.map((order) => order.name)),
+      addresses: uniqueValues(orderHistory.map((order) => order.address)),
+      ips: uniqueValues(orderHistory.map((order) => order.ip)),
+      card_last4s: uniqueValues(orderHistory.map((order) => order.cardLast4)),
+      phones: [],
+      risk_score: maxScore,
+      risk_level: scoreToRiskLevel(maxScore),
+      fraud_flags: uniqueValues(orderHistory.flatMap((order) => order.fraudFlags)),
+      total_orders: orderHistory.length,
+      total_refund_claims: orderHistory.filter((order) => order.refundRequested).length,
+      total_chargebacks: orderHistory.filter((order) => order.chargebackFiled).length,
+      total_merchants_seen_at: 1,
+      refund_rate: orderHistory.length > 0 ? orderHistory.filter((order) => order.refundRequested).length / orderHistory.length : 0,
+      fastest_claim_days: null,
+      avg_claim_days: null,
+      refund_acceleration_score: 0,
+      first_seen: firstSeen,
+      last_seen: lastSeen,
+      profile_confidence: maxScore,
+      manually_reviewed: false,
+      on_watchlist: !!watchlistRow,
+      watchlist_entry_id: watchlistRow?.id ?? null,
+    };
+  }
 
   // -------------------------------------------------------------------------
   // 6. Build identity timeline — derive first-seen value per field, mark variants
