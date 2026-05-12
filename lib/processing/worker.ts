@@ -52,21 +52,33 @@ function splitIntoBatches<T>(items: T[], size: number): T[][] {
   return batches;
 }
 
-type MatchStatus = 'none' | 'candidate' | 'probable' | 'definite' | 'confirmed';
+type MatchStatus = 'none' | 'candidate' | 'probable' | 'definite';
 
-/**
- * Maps a raw identity score to a product-level match_status using the
- * two-tier spec thresholds (independent of scorer.ts grade strings):
- *   < 25  → none      (nothing surfaced)
- *   25–49 → candidate (signal only, no profile merge)
- *   50–74 → probable  (profile created with identity_status='candidate')
- *   ≥ 75  → definite  (confirmed link, profile with identity_status='confirmed')
- */
-function scoreToMatchStatus(score: number | null): MatchStatus {
-  if (!score || score < 25) return 'none';
-  if (score < 50) return 'candidate';
-  if (score < 75) return 'probable';
-  return 'definite';
+function pureGradeToLegacyGrade(
+  grade: IdentityMatchResult['identity_match_grade'] | 'none' | null | undefined
+): PersistedIdentityResult['grade'] {
+  if (grade === 'confirmed') return 'definite';
+  if (grade === 'probable') return 'probable';
+  if (grade === 'candidate') return 'possible';
+  return null;
+}
+
+function pureGradeToMatchStatus(
+  grade: IdentityMatchResult['identity_match_grade'] | 'none' | null | undefined
+): MatchStatus {
+  if (grade === 'confirmed') return 'definite';
+  if (grade === 'probable') return 'probable';
+  if (grade === 'candidate') return 'candidate';
+  return 'none';
+}
+
+function recommendedActionForPureGrade(
+  grade: PersistedIdentityResult['grade']
+): string | null {
+  if (grade === 'definite') return 'Treat as the same customer identity.';
+  if (grade === 'probable') return 'Review as a likely same-customer match.';
+  if (grade === 'possible') return 'Review supporting identity evidence before action.';
+  return null;
 }
 
 type PersistedIdentityResult = {
@@ -203,20 +215,6 @@ function buildClusterIdentityResults(
       ? computeContextInsights(cluster, clusterOrders)
       : null;
 
-    // Legacy grade/score — backward compat so old DB columns still populate
-    let grade: PersistedIdentityResult['grade'] = null;
-    let identityScore: number | null = null;
-    let recommendedAction: string | null = null;
-
-    const sig = scoreIdentityFromSignals(cluster.signals_matched);
-    if (sig.identity_confidence_grade) {
-      grade = sig.identity_confidence_grade;
-      identityScore = sig.identity_score;
-      recommendedAction = sig.recommended_action;
-    } else if (clusterScore) {
-      grade = clusterScore.confidence_grade.toLowerCase() as PersistedIdentityResult['grade'];
-    }
-
     const ce3OrderIds = Array.from(
       new Set(
         (contextResult?.ce3_qualifying_transactions ?? clusterScore?.ce3_qualifying_transactions ?? []).flatMap((pair) => [
@@ -226,18 +224,6 @@ function buildClusterIdentityResults(
       )
     );
 
-    // Prefer new pure identity grade; fall back to legacy numeric threshold
-    const pureClusterGrade = pureIdentityResult.clusterGrade;
-    let matchStatus: MatchStatus;
-    if (pureClusterGrade !== 'none') {
-      matchStatus = pureClusterGrade as MatchStatus;
-    } else {
-      matchStatus = scoreToMatchStatus(identityScore);
-    }
-
-    const isConfirmed = matchStatus === 'confirmed' || matchStatus === 'definite';
-    const isProbable  = matchStatus === 'probable';
-
     for (const orderId of cluster.order_ids) {
       const thisInput = inputByOrderId.get(orderId);
       const rowSignals = thisInput
@@ -245,6 +231,13 @@ function buildClusterIdentityResults(
         : (cluster.signals_matched as string[]);
 
       const rowPureResult = pureIdentityResult.byOrderId.get(orderId) ?? null;
+      const pureGrade = rowPureResult?.identity_match_grade ?? 'none';
+      const grade = pureGradeToLegacyGrade(pureGrade);
+      const matchStatus = pureGradeToMatchStatus(pureGrade);
+      const identityScore = grade ? (rowPureResult?.identity_match_score ?? null) : null;
+      const recommendedAction = recommendedActionForPureGrade(grade);
+      const isConfirmed = matchStatus === 'definite';
+      const isProbable  = matchStatus === 'probable';
 
       result.set(orderId, {
         grade,
@@ -631,6 +624,9 @@ export async function processCsvJob(
             pendingProgressFailed += batch.length;
             rowsSinceLastFlush += batch.length;
             errors.push(err.message);
+            if (errors.length <= 3) {
+              jobLog(`audit_transactions upsert failed for batch of ${batch.length}: ${err.message}`);
+            }
             if (rowsSinceLastFlush >= PROGRESS_INTERVAL) {
               rowsSinceLastFlush = 0;
               await flushProgress();
