@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { UploadCloud, FileText, AlertCircle, CheckCircle, ChevronDown, ChevronRight, Calendar } from 'lucide-react';
+import { UploadCloud, FileText, AlertCircle, CheckCircle, ChevronDown, ChevronRight, Calendar, Plus, X, Layers } from 'lucide-react';
 import Link from 'next/link';
 import { formatDateShort } from '@/lib/utils/format';
 import { createClient } from '@/lib/supabase/client';
@@ -19,6 +19,18 @@ import { track } from '@/lib/analytics/amplitude';
 
 type UploadState = 'idle' | 'mapping' | 'context' | 'uploading' | 'processing' | 'recovering' | 'complete' | 'error';
 type UploadType = 'standard' | 'historical' | 'investigation';
+
+type BatchItemStatus = 'queued' | 'uploading' | 'processing' | 'complete' | 'error';
+interface BatchItem {
+  id: string;
+  file: File;
+  hash: string | null;
+  status: BatchItemStatus;
+  runId: string | null;
+  progress: number;
+  statusText: string;
+  error: string | null;
+}
 
 const CSV_TEMPLATE_HEADERS =
   'order_id,order_date,customer_email,customer_name,shipping_address,order_total,order_status,currency,customer_phone,billing_address,refund_status,refund_reason,refund_date,refund_amount,payment_method,ip_address,device_id,card_last4,card_bin,card_fingerprint,browser_fingerprint,cookie_id,user_agent,asn,account_id';
@@ -92,6 +104,10 @@ export default function UploadClient() {
     existingCreatedAt: string;
     existingStatus: string;
   } | null>(null);
+  // Batch upload queue — populated when user drops/selects multiple files
+  const [batchQueue, setBatchQueue] = useState<BatchItem[]>([]);
+  const [batchRunning, setBatchRunning] = useState(false);
+  const batchQueueRef = useRef<BatchItem[]>([]);
   const [exportGuideOpen, setExportGuideOpen] = useState(false);
   useEffect(() => {
     try {
@@ -108,8 +124,64 @@ export default function UploadClient() {
   const requiredUnmapped = REQUIRED_FIELDS.filter((f) => !columnMap[f]);
   const canSubmit = requiredUnmapped.length === 0;
 
+  // Compute SHA-256 hash for a file
+  async function hashFile(f: File): Promise<string> {
+    const buf = await f.arrayBuffer();
+    const hashBuf = await crypto.subtle.digest('SHA-256', buf);
+    return Array.from(new Uint8Array(hashBuf))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
+  }
+
+  // Handle multiple files — build batch queue, map headers from first file
+  const handleFiles = useCallback(async (files: File[]) => {
+    if (files.length === 0) return;
+    const csvFiles = files.filter((f) => f.name.endsWith('.csv') || f.type === 'text/csv');
+    if (csvFiles.length === 0) return;
+
+    if (csvFiles.length === 1) {
+      // Single-file path: classic flow
+      handleFile(csvFiles[0]);
+      return;
+    }
+
+    // Multi-file: build queue, sniff first file for column mapping
+    const items: BatchItem[] = csvFiles.map((f) => ({
+      id: `${Date.now()}_${Math.random().toString(36).slice(2)}`,
+      file: f,
+      hash: null,
+      status: 'queued' as BatchItemStatus,
+      runId: null,
+      progress: 0,
+      statusText: 'Queued',
+      error: null,
+    }));
+
+    // Pre-compute hashes in background
+    items.forEach(async (item) => {
+      const h = await hashFile(item.file);
+      setBatchQueue((q) => q.map((i) => i.id === item.id ? { ...i, hash: h } : i));
+    });
+
+    setBatchQueue(items);
+    batchQueueRef.current = items;
+
+    // Sniff first file for column mapping
+    const { headers, collisions } = await sniffFile(csvFiles[0]);
+    if (collisions.length > 0) console.warn('[UploadClient] batch header collisions:', collisions);
+    setCsvHeaders(headers);
+    const { exact, fuzzy } = autoMapHeaders(headers);
+    setColumnMap({ ...exact, ...fuzzy });
+    setFuzzyFields(new Set(Object.keys(fuzzy) as RequiredField[]));
+    setDataQuality(assessDataQualityFromMapping({ ...exact, ...fuzzy }));
+    setState('mapping');
+    // Set lead file for display
+    setFile(csvFiles[0]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleFile = useCallback((f: File) => {
     setFile(f);
+    setBatchQueue([]);
     setDuplicateWarning(null);
     // Compute SHA-256 for duplicate-upload detection
     f.arrayBuffer().then((buf) =>
@@ -143,10 +215,14 @@ export default function UploadClient() {
     (e: React.DragEvent) => {
       e.preventDefault();
       setDragOver(false);
-      const dropped = e.dataTransfer.files[0];
-      if (dropped) handleFile(dropped);
+      const dropped = Array.from(e.dataTransfer.files);
+      if (dropped.length > 1) {
+        handleFiles(dropped);
+      } else if (dropped[0]) {
+        handleFile(dropped[0]);
+      }
     },
-    [handleFile],
+    [handleFile, handleFiles],
   );
 
   useEffect(() => {
@@ -253,6 +329,96 @@ export default function UploadClient() {
       setRawErrorDetail(rawMsg);
       setFriendlyError(friendlyUploadError(rawMsg));
     }
+  }
+
+  // ── Batch upload: submit all queued files sequentially ─────────────────────
+  async function runBatchAudit() {
+    if (!canSubmit || batchQueue.length === 0) return;
+    setBatchRunning(true);
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setBatchRunning(false); return; }
+
+    const updateItem = (id: string, patch: Partial<BatchItem>) => {
+      setBatchQueue((q) => {
+        const updated = q.map((i) => i.id === id ? { ...i, ...patch } : i);
+        batchQueueRef.current = updated;
+        return updated;
+      });
+    };
+
+    const pollItem = async (id: string, rid: string): Promise<void> => {
+      const startTime = Date.now();
+      return new Promise((resolve) => {
+        const tick = async () => {
+          try {
+            const res = await fetch(`/api/audit/${rid}/progress`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const job = await res.json();
+            if (job.rowCount > 0) {
+              updateItem(id, { progress: job.progressPercent ?? 0 });
+            }
+            if (job.status === 'complete') {
+              updateItem(id, { status: 'complete', statusText: 'Complete', runId: rid });
+              return resolve();
+            }
+            if (job.status === 'failed') {
+              updateItem(id, { status: 'error', statusText: 'Failed', error: job.errorMessage ?? 'Processing failed' });
+              return resolve();
+            }
+            const processed = job.rowCount > 0 ? Math.round((job.progressPercent / 100) * job.rowCount) : 0;
+            updateItem(id, {
+              statusText: job.status === 'processing'
+                ? `Processing ${processed.toLocaleString()} of ${job.rowCount.toLocaleString()} rows`
+                : 'Queued…',
+            });
+          } catch { /* swallow */ }
+          if (Date.now() - startTime <= MAX_POLL_MS) setTimeout(tick, 5000);
+          else resolve();
+        };
+        tick();
+      });
+    };
+
+    for (const item of batchQueueRef.current) {
+      if (item.status !== 'queued') continue;
+      updateItem(item.id, { status: 'uploading', statusText: `Uploading ${(item.file.size / 1024 / 1024).toFixed(1)} MB…` });
+      try {
+        const filePath = `${user.id}/${Date.now()}_${item.file.name}`;
+        const { error: uploadError } = await supabase.storage
+          .from('merchant-csv-uploads-2')
+          .upload(filePath, item.file, { contentType: 'text/csv', upsert: false, cacheControl: '3600' });
+        if (uploadError) throw new Error((uploadError as any).message ?? JSON.stringify(uploadError));
+
+        const hash = item.hash ?? await hashFile(item.file);
+        const res = await fetch('/api/audit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            filePath,
+            columnMap,
+            label: uploadLabel.trim() || undefined,
+            dateRangeStart: dateRangeStart || undefined,
+            dateRangeEnd: dateRangeEnd || undefined,
+            uploadType,
+            fileHash: hash,
+            forceReupload: false,
+          }),
+        });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          throw new Error(body.error ?? `HTTP ${res.status}`);
+        }
+        const { runId: newRunId } = await res.json();
+        updateItem(item.id, { status: 'processing', statusText: 'Processing…', runId: newRunId });
+        track('CSV Uploaded', { uploadType, hasLabel: !!uploadLabel.trim(), hasDateRange: !!(dateRangeStart || dateRangeEnd), dataQualityGrade: dataQuality?.grade ?? null });
+        await pollItem(item.id, newRunId);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        updateItem(item.id, { status: 'error', statusText: 'Error', error: msg });
+      }
+    }
+    setBatchRunning(false);
   }
 
   useEffect(() => {
@@ -522,11 +688,16 @@ export default function UploadClient() {
             ref={fileInputRef}
             type="file"
             accept=".csv"
+            multiple
             disabled={isProcessing}
             className="hidden"
             onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) handleFile(f);
+              const files = Array.from(e.target.files ?? []);
+              if (files.length > 1) {
+                handleFiles(files);
+              } else if (files[0]) {
+                handleFile(files[0]);
+              }
             }}
           />
           <UploadCloud className="mx-auto h-10 w-10 mb-3" style={{ color: 'var(--icon-muted)' }} />
@@ -537,19 +708,21 @@ export default function UploadClient() {
                 style={{ color: 'var(--text)' }}
               >
                 <FileText className="h-4 w-4" />
-                {file.name}
+                {batchQueue.length > 1 ? `${batchQueue.length} files selected` : file.name}
               </div>
               <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                {(file.size / 1024).toFixed(0)} KB
+                {batchQueue.length > 1
+                  ? `${(batchQueue.reduce((s, i) => s + i.file.size, 0) / 1024 / 1024).toFixed(1)} MB total`
+                  : `${(file.size / 1024).toFixed(0)} KB`}
               </p>
             </div>
           ) : (
             <div>
               <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                Drop your CSV here or click to browse
+                Drop one or more CSVs here, or click to browse
               </p>
               <p className="text-xs mt-1" style={{ color: 'var(--text-subtle)' }}>
-                Max 500 MB · up to 5,000,000 rows
+                Batch upload supported · Max 500 MB per file · Up to 5,000,000 rows
               </p>
             </div>
           )}
@@ -563,6 +736,12 @@ export default function UploadClient() {
             <h3 className="text-sm font-semibold mb-0.5" style={{ color: 'var(--text)' }}>
               We found {csvHeaders.length} columns in your CSV. Match them:
             </h3>
+            {batchQueue.length > 1 && (
+              <div className="flex items-center gap-1.5 mb-1 text-xs px-2 py-1 rounded" style={{ background: 'var(--info-bg)', color: 'var(--info)' }}>
+                <Layers className="h-3.5 w-3.5 flex-shrink-0" />
+                This mapping will be applied to all {batchQueue.length} files in the batch.
+              </div>
+            )}
             <p className="text-xs" style={{ color: 'var(--text-subtle)' }}>
               Upload your existing order export. Unauth works with standard order, customer, payment and refund fields. Advanced integrations can add device, payment and delivery intelligence later.
             </p>
@@ -1080,6 +1259,19 @@ export default function UploadClient() {
               >
                 Run again anyway
               </button>
+            ) : batchQueue.length > 1 ? (
+              <button
+                data-testid="submit-upload"
+                onClick={runBatchAudit}
+                disabled={batchRunning}
+                className="flex items-center gap-2 px-5 py-2 text-sm font-semibold rounded-md transition-colors disabled:opacity-60"
+                style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}
+                onMouseEnter={(e) => { if (!e.currentTarget.disabled) e.currentTarget.style.background = 'var(--accent-hover)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--accent)'; }}
+              >
+                <Layers className="h-4 w-4" />
+                {batchRunning ? 'Running batch…' : `Run ${batchQueue.length} audits`}
+              </button>
             ) : (
               <button
                 data-testid="submit-upload"
@@ -1093,6 +1285,85 @@ export default function UploadClient() {
               </button>
             )}
           </div>
+        </div>
+      )}
+
+      {/* ── Batch queue status panel ────────────────────────────────── */}
+      {batchQueue.length > 1 && (batchRunning || batchQueue.some((i) => i.status !== 'queued')) && (
+        <div className="rounded-lg border overflow-hidden" style={{ borderColor: 'var(--border-subtle)' }}>
+          <div className="flex items-center justify-between px-4 py-2.5 border-b" style={{ background: 'var(--bg-subtle)', borderColor: 'var(--border-subtle)' }}>
+            <div className="flex items-center gap-2 text-sm font-semibold" style={{ color: 'var(--text)' }}>
+              <Layers className="h-4 w-4" style={{ color: 'var(--icon-muted)' }} />
+              Batch upload — {batchQueue.filter((i) => i.status === 'complete').length} / {batchQueue.length} complete
+            </div>
+            {!batchRunning && batchQueue.every((i) => i.status === 'complete') && (
+              <Link href="/history" className="text-xs font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
+                View all audits →
+              </Link>
+            )}
+          </div>
+          <div className="divide-y" style={{ borderColor: 'var(--border-subtle)' }}>
+            {batchQueue.map((item) => {
+              const statusColor =
+                item.status === 'complete' ? 'var(--success)' :
+                item.status === 'error' ? 'var(--risk-critical)' :
+                item.status === 'processing' || item.status === 'uploading' ? 'var(--accent)' :
+                'var(--text-muted)';
+              return (
+                <div key={item.id} className="flex items-center gap-3 px-4 py-2.5">
+                  <FileText className="h-4 w-4 flex-shrink-0" style={{ color: 'var(--icon-muted)' }} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium truncate" style={{ color: 'var(--text)' }}>{item.file.name}</p>
+                    <p className="text-xs" style={{ color: statusColor }}>{item.statusText}</p>
+                    {(item.status === 'uploading' || item.status === 'processing') && (
+                      <div className="mt-1 w-full h-1 rounded-full overflow-hidden" style={{ background: 'var(--bg-muted)' }}>
+                        {item.progress > 0 ? (
+                          <div className="h-full transition-all duration-500" style={{ width: `${item.progress}%`, background: 'var(--accent)' }} />
+                        ) : (
+                          <div className="h-full w-full animate-pulse" style={{ background: 'var(--accent)', opacity: 0.5 }} />
+                        )}
+                      </div>
+                    )}
+                    {item.error && (
+                      <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--risk-critical)' }}>{item.error}</p>
+                    )}
+                  </div>
+                  {item.status === 'complete' && item.runId && (
+                    <Link
+                      href={`/audit/${item.runId}`}
+                      className="text-xs font-semibold flex-shrink-0 hover:underline"
+                      style={{ color: 'var(--accent)' }}
+                    >
+                      View →
+                    </Link>
+                  )}
+                  {item.status === 'queued' && !batchRunning && (
+                    <button
+                      type="button"
+                      aria-label="Remove"
+                      onClick={() => setBatchQueue((q) => q.filter((i) => i.id !== item.id))}
+                      className="flex-shrink-0 opacity-50 hover:opacity-100 transition-opacity"
+                    >
+                      <X className="h-3.5 w-3.5" style={{ color: 'var(--text-muted)' }} />
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          {/* Add more files to batch */}
+          {!batchRunning && (
+            <div className="px-4 py-2 border-t" style={{ borderColor: 'var(--border-subtle)' }}>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex items-center gap-1.5 text-xs font-semibold hover:underline"
+                style={{ color: 'var(--text-muted)' }}
+              >
+                <Plus className="h-3.5 w-3.5" /> Add more files
+              </button>
+            </div>
+          )}
         </div>
       )}
 

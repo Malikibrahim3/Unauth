@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { formatDate } from '@/lib/utils/format';
 import DashboardCharts from '@/components/dashboard/DashboardCharts';
-import InsightsStrip from '@/components/dashboard/InsightsStrip';
+import InsightsStrip, { type Insight } from '@/components/dashboard/InsightsStrip';
 import EmptyDashboardHero from '@/components/EmptyDashboardHero';
 import TrackPageView from '@/components/common/TrackPageView';
 import { MetricCard } from '@/components/ui/MetricCard';
@@ -157,7 +157,7 @@ export default async function DashboardPage() {
     : null;
 
   // Build contextual insights
-  const insights: Array<{ text: string; level?: 'info' | 'warn' | 'positive' }> = [];
+  const insights: Insight[] = [];
 
   // Phase E-4 — ROI / SavingsCard data (feature-flagged, conservative methodology)
   let savingsData: SavingsCardData | null = null;
@@ -203,6 +203,8 @@ export default async function DashboardPage() {
     insights.push({
       text: `${unreviewedCount} watchlisted ${unreviewedCount === 1 ? 'customer' : 'customers'} appeared in your latest audit and need review.`,
       level: 'warn',
+      href: '/watchlist',
+      cta: 'Review watchlist',
     });
   }
   if (latestFlagRate !== null && prevFlagRate !== null) {
@@ -211,6 +213,8 @@ export default async function DashboardPage() {
       insights.push({
         text: `Match rate ${delta > 0 ? 'increased' : 'decreased'} from ${prevFlagRate.toFixed(1)}% to ${latestFlagRate.toFixed(1)}% in the latest upload.`,
         level: delta > 0 ? 'warn' : 'positive',
+        href: '/history',
+        cta: 'View history',
       });
     }
   }
@@ -218,16 +222,20 @@ export default async function DashboardPage() {
     insights.push({
       text: `${reviewQueue} high-confidence ${reviewQueue === 1 ? 'customer is' : 'customers are'} unresolved in the review queue.`,
       level: 'info',
+      href: '/customers?risk=high&status=new',
+      cta: 'Review now',
     });
   }
   if (ce3Packages > 0) {
     insights.push({
       text: `${ce3Packages} evidence ${ce3Packages === 1 ? 'package' : 'packages'} ${ce3Packages === 1 ? 'is' : 'are'} CE3.0 eligible and ready to submit.`,
       level: 'positive',
+      href: '/chargebacks',
+      cta: 'View packages',
     });
   }
   if (!isEmpty && typedRuns.length === 1) {
-    insights.push({ text: 'Upload a second dataset to compare flag rates over time.', level: 'info' });
+    insights.push({ text: 'Upload a second dataset to compare flag rates over time.', level: 'info', href: '/upload', cta: 'New audit' });
   }
 
   return (
@@ -317,15 +325,17 @@ export default async function DashboardPage() {
         ) : (
           <MetricCard label="Evidence packages" value="0" hint="None CE3.0 eligible" />
         )}
-        <MetricCard
-          label="Avg match rate"
-          value={avgFlagRate !== null ? `${avgFlagRate.toFixed(1)}%` : '—'}
-          hint={
-            avgFlagRate !== null && avgFlagRate >= 10 ? 'High — investigate upload'
-            : avgFlagRate !== null && avgFlagRate >= 4 ? 'Elevated'
-            : 'Normal range'
-          }
-        />
+        <Link href="/history" className="block">
+          <MetricCard
+            label="Avg match rate"
+            value={avgFlagRate !== null ? `${avgFlagRate.toFixed(1)}%` : '—'}
+            hint={
+              avgFlagRate !== null && avgFlagRate >= 10 ? 'High — investigate upload'
+              : avgFlagRate !== null && avgFlagRate >= 4 ? 'Elevated'
+              : 'Normal range'
+            }
+          />
+        </Link>
       </div>
 
       {isEmpty ? (

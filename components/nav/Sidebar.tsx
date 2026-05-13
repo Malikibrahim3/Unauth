@@ -187,6 +187,9 @@ export default function Sidebar({
 
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  // When the sidebar is collapsed and the user hovers, we temporarily expand it.
+  // "pinned" = user explicitly toggled; "hover" = transient expansion.
+  const [hoverExpanded, setHoverExpanded] = useState(false);
 
   useEffect(() => {
     try {
@@ -216,6 +219,9 @@ export default function Sidebar({
   const groups = buildGroups(inboxCount, watchlistCount);
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
 
+  // Effective collapsed state: collapsed only if pinned AND not hovering
+  const isCollapsed = collapsed && !hoverExpanded;
+
   const sidebarContent = (isMobile = false) => (
     <aside
       className={cn(
@@ -224,33 +230,33 @@ export default function Sidebar({
         isMobile
           ? 'w-72'
           : cn(
-              'transition-[width] duration-[var(--duration-base)] ease-[var(--ease-out)]',
+              'transition-[width] duration-[390ms] ease-[var(--ease-out)]',
               'overflow-hidden',
-              collapsed ? 'w-14' : 'w-60',
+              isCollapsed ? 'w-14' : 'w-60',
             ),
       )}
+      onMouseEnter={() => { if (collapsed) setHoverExpanded(true); }}
+      onMouseLeave={() => { if (collapsed) setHoverExpanded(false); }}
     >
       {/* Logo / merchant */}
       <div
         className={cn(
-          'flex h-14 flex-shrink-0 items-center border-b border-[var(--border-subtle)]',
-          collapsed ? 'justify-center px-0' : 'gap-2 px-3',
+          'flex h-14 flex-shrink-0 items-center gap-2 px-3 border-b border-[var(--border-subtle)]',
         )}
       >
-        <div className="flex-shrink-0 flex items-center justify-center">
-          <UnauthLogo variant="mark" size={28} />
+        <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center">
+          <UnauthLogo variant="mark" size={isCollapsed ? 28 : 34} />
         </div>
 
-        {!collapsed && (
+        {!isCollapsed && (
           <div className="min-w-0 flex-1">
-            <UnauthLogo variant="wordmark-light" size={20} />
             {merchantName && (
-              <div className="text-caption text-[var(--text-muted)] truncate mt-0.5">{merchantName}</div>
+              <div className="text-caption text-[var(--text-muted)] truncate leading-none">{merchantName}</div>
             )}
           </div>
         )}
 
-        {!collapsed && (
+        {!isCollapsed && (
           <button
             type="button"
             aria-label="Collapse sidebar"
@@ -269,18 +275,18 @@ export default function Sidebar({
 
       {/* Navigation */}
       <nav
-        className={cn('flex-1 overflow-y-auto overflow-x-hidden', collapsed ? 'px-2 py-3' : 'px-2 py-2')}
+        className={cn('flex-1 overflow-y-auto overflow-x-hidden', isCollapsed ? 'px-2 py-3' : 'px-2 py-2')}
         aria-label="Main navigation"
       >
         {groups.map((group) => (
           <div key={group.label}>
-            <GroupLabel label={group.label} collapsed={collapsed} />
+            <GroupLabel label={group.label} collapsed={isCollapsed} />
             <div className="space-y-0.5">
               {group.items.map((item) => (
                 <SidebarItem
                   key={item.href}
                   item={item}
-                  collapsed={collapsed}
+                  collapsed={isCollapsed}
                   active={isActive(item.href)}
                 />
               ))}
@@ -295,10 +301,10 @@ export default function Sidebar({
       <div
         className={cn(
           'flex flex-shrink-0 flex-col border-t border-[var(--border-subtle)]',
-          collapsed ? 'items-center gap-1 px-2 py-2' : 'gap-0.5 px-2 py-2',
+          isCollapsed ? 'items-center gap-1 px-2 py-2' : 'gap-0.5 px-2 py-2',
         )}
       >
-        {!collapsed && (
+        {!isCollapsed && (
           <div className="px-2 py-1 text-caption text-[var(--text-subtle)] truncate">
             {userEmail}
           </div>
@@ -306,52 +312,52 @@ export default function Sidebar({
 
         <Link
           href="/help"
-          title={collapsed ? 'Help' : undefined}
+          title={isCollapsed ? 'Help' : undefined}
           className={cn(
             'flex h-8 items-center gap-3 rounded-sm px-2',
             'text-body-sm text-[var(--text-muted)] hover:bg-[var(--bg-subtle)] hover:text-[var(--text)]',
             'transition-colors duration-[var(--duration-fast)]',
             'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] focus-visible:outline-offset-2',
-            collapsed && 'justify-center',
+            isCollapsed && 'justify-center',
           )}
         >
           <HelpCircle className="h-4 w-4 flex-shrink-0 text-[var(--icon-muted)]" aria-hidden="true" />
-          {!collapsed && <span>Help</span>}
+          {!isCollapsed && <span>Help</span>}
         </Link>
 
         <Link
           href="/settings"
-          title={collapsed ? 'Settings' : undefined}
+          title={isCollapsed ? 'Settings' : undefined}
           className={cn(
             'flex h-8 items-center gap-3 rounded-sm px-2',
             'text-body-sm text-[var(--text-muted)] hover:bg-[var(--bg-subtle)] hover:text-[var(--text)]',
             'transition-colors duration-[var(--duration-fast)]',
             'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] focus-visible:outline-offset-2',
-            collapsed && 'justify-center',
+            isCollapsed && 'justify-center',
           )}
         >
           <Settings className="h-4 w-4 flex-shrink-0 text-[var(--icon-muted)]" aria-hidden="true" />
-          {!collapsed && <span>Settings</span>}
+          {!isCollapsed && <span>Settings</span>}
         </Link>
 
         <button
           type="button"
           onClick={handleSignOut}
-          title={collapsed ? 'Sign out' : undefined}
+          title={isCollapsed ? 'Sign out' : undefined}
           className={cn(
             'flex h-8 w-full items-center gap-3 rounded-sm px-2',
             'text-body-sm text-[var(--text-muted)] hover:bg-[var(--bg-subtle)] hover:text-[var(--text)]',
             'transition-colors duration-[var(--duration-fast)]',
             'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] focus-visible:outline-offset-2',
-            collapsed && 'justify-center',
+            isCollapsed && 'justify-center',
           )}
         >
           <LogOut className="h-4 w-4 flex-shrink-0 text-[var(--icon-muted)]" aria-hidden="true" />
-          {!collapsed && <span>Sign out</span>}
+          {!isCollapsed && <span>Sign out</span>}
         </button>
 
         {/* Legal links — small muted text, visible only when expanded */}
-        {!collapsed && (
+        {!isCollapsed && (
           <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 px-2 pb-1">
             {[
               { href: '/legal/privacy', label: 'Privacy' },
@@ -370,7 +376,7 @@ export default function Sidebar({
         )}
 
         {/* Expand toggle when collapsed */}
-        {collapsed && (
+        {isCollapsed && (
           <button
             type="button"
             aria-label="Expand sidebar"

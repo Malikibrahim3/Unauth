@@ -185,18 +185,26 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
       {/* ── Audit summary hero ────────────────────────────────────────── */}
       <div className="rounded-xl p-5 border" style={{ background: 'var(--accent-soft)', borderColor: 'var(--border)' }}>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-          {[
-            { label: 'Orders analysed', value: runData.total_rows.toLocaleString() },
-            { label: 'Likely identity links', value: summary.flaggedTransactions.toLocaleString(), highlight: summary.flaggedTransactions > 0 ? 'var(--risk-high)' : null },
-            { label: 'Definite matches', value: gradeCounts.definite.toLocaleString(), highlight: gradeCounts.definite > 0 ? 'var(--risk-critical)' : null },
-            { label: 'Linked-order value', value: formatCurrency(estimatedExposure), title: 'Total order value for probable and definite same-person identity matches.' },
+          {([
+            { label: 'Orders analysed', value: runData.total_rows.toLocaleString(), href: `?tab=transactions` },
+            { label: 'Likely identity links', value: summary.flaggedTransactions.toLocaleString(), highlight: summary.flaggedTransactions > 0 ? 'var(--risk-high)' : null, href: `?tab=customers` },
+            { label: 'Definite matches', value: gradeCounts.definite.toLocaleString(), highlight: gradeCounts.definite > 0 ? 'var(--risk-critical)' : null, href: `?tab=customers&grade=definite` },
+            { label: 'Linked-order value', value: formatCurrency(estimatedExposure), title: 'Total order value for probable and definite same-person identity matches.', href: `?tab=customers` },
             { label: 'Completed', value: formatDate(runData.created_at) },
-          ].map(({ label, value, highlight, title }) => (
-            <div key={label} title={title}>
-              <p className="text-caption mb-0.5" style={{ color: 'var(--text-muted)' }}>{label}</p>
-              <p className="text-heading-sm font-mono" style={{ color: highlight ?? 'var(--text)' }}>{value}</p>
-            </div>
-          ))}
+          ] as Array<{ label: string; value: string; highlight?: string | null; title?: string; href?: string }>).map(({ label, value, highlight, title, href }) => {
+            const cell = (
+              <div key={label} title={title} className={href ? 'group cursor-pointer' : ''}>
+                <p className="text-caption mb-0.5" style={{ color: 'var(--text-muted)' }}>{label}</p>
+                <p className={`text-heading-sm font-mono ${href ? 'group-hover:underline' : ''}`} style={{ color: highlight ?? 'var(--text)' }}>{value}</p>
+                {href && <p className="text-[10px] mt-0.5 opacity-0 group-hover:opacity-60 transition-opacity" style={{ color: 'var(--text-muted)' }}>Click to drill down →</p>}
+              </div>
+            );
+            return href ? (
+              <Link key={label} href={`/audit/${jobId}${href}`}>{cell}</Link>
+            ) : (
+              <div key={label}>{cell}</div>
+            );
+          })}
         </div>
       </div>
 
@@ -225,11 +233,13 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
                   { grade: 'probable', tileLabel: 'Probable connections' },
                   { grade: 'definite', tileLabel: 'Linked accounts' },
                 ] as const).map(({ grade, tileLabel }) => (
-                  <div key={grade} className="rounded-lg px-4 py-3 border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
-                    <div className="mb-1"><ConfidenceBadge grade={({'weak':'D','possible':'C','probable':'B','definite':'A'} as const)[grade]} size="sm" /></div>
-                    <div className="text-heading-sm font-mono" style={{ color: 'var(--text)' }}>{gradeCounts[grade].toLocaleString()}</div>
-                    <div className="text-caption mt-0.5" style={{ color: 'var(--text-muted)' }}>{tileLabel}</div>
-                  </div>
+                  <Link key={grade} href={`/audit/${jobId}?tab=customers&grade=${grade}`}>
+                    <div className="rounded-lg px-4 py-3 border hover:shadow-md transition-shadow group" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
+                      <div className="mb-1"><ConfidenceBadge grade={({'weak':'D','possible':'C','probable':'B','definite':'A'} as const)[grade]} size="sm" /></div>
+                      <div className="text-heading-sm font-mono group-hover:underline" style={{ color: 'var(--text)' }}>{gradeCounts[grade].toLocaleString()}</div>
+                      <div className="text-caption mt-0.5" style={{ color: 'var(--text-muted)' }}>{tileLabel}</div>
+                    </div>
+                  </Link>
                 ))}
               </div>
 

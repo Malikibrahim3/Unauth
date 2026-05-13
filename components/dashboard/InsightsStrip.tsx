@@ -1,8 +1,13 @@
 'use client';
 
-interface Insight {
+import Link from 'next/link';
+import { ArrowRight } from 'lucide-react';
+
+export interface Insight {
   text: string;
   level?: 'info' | 'warn' | 'positive';
+  href?: string;
+  cta?: string;
 }
 
 interface InsightsStripProps {
@@ -22,15 +27,26 @@ export default function InsightsStrip({ insights }: InsightsStripProps) {
     <div className="mb-6 space-y-2">
       {insights.map((ins, i) => {
         const c = colorFor(ins.level);
-        return (
+        const inner = (
           <div
-            key={i}
-            className="flex items-start gap-2.5 px-4 py-2.5 rounded-lg border text-body-sm"
+            className={`flex items-start gap-2.5 px-4 py-2.5 rounded-lg border text-body-sm ${ins.href ? 'cursor-pointer hover:brightness-95 transition-[filter]' : ''}`}
             style={{ background: c.bg, borderColor: c.border, color: c.text }}
           >
             <span className="mt-1 h-1.5 w-1.5 rounded-full flex-shrink-0" style={{ background: c.dot }} />
-            {ins.text}
+            <span className="flex-1">{ins.text}</span>
+            {ins.href && (
+              <span className="flex items-center gap-0.5 text-xs font-semibold flex-shrink-0 opacity-70 hover:opacity-100">
+                {ins.cta ?? 'View'} <ArrowRight className="h-3 w-3" />
+              </span>
+            )}
           </div>
+        );
+        return ins.href ? (
+          <Link key={i} href={ins.href} className="block">
+            {inner}
+          </Link>
+        ) : (
+          <div key={i}>{inner}</div>
         );
       })}
     </div>
