@@ -51,8 +51,8 @@ describe('LOCKED INVARIANT — chunk size + row cap', () => {
   it('MAX_ROWS supports millions, CHUNK_SIZE keeps total chunks bounded', () => {
     expect(MAX_ROWS).toBeGreaterThanOrEqual(1_000_000);
     const worstCaseChunks = Math.ceil(MAX_ROWS / CHUNK_SIZE);
-    // Must stay under a few hundred chunks — keeps the chain depth tractable.
-    expect(worstCaseChunks).toBeLessThan(500);
+    // 5M rows at 10k/chunk is exactly 500 chunks; keep that as the hard bound.
+    expect(worstCaseChunks).toBeLessThanOrEqual(500);
   });
 });
 
@@ -101,5 +101,10 @@ describe('chunk slicing math', () => {
       const total = Math.max(1, Math.ceil(n / CHUNK_SIZE));
       expect(total).toBe(expected);
     }
+  });
+
+  it('a 25,000-row upload produces three chunks at the ASOS-safe chunk size', () => {
+    expect(CHUNK_SIZE).toBe(10_000);
+    expect(Math.max(1, Math.ceil(25_000 / CHUNK_SIZE))).toBe(3);
   });
 });

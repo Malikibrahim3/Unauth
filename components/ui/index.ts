@@ -10,7 +10,7 @@ export { Badge } from './Badge';
 export type { BadgeTone, BadgeVariant, BadgeSize } from './Badge';
 
 export { ConfidenceBadge } from './ConfidenceBadge';
-export { scoreToGrade, riskLevelToNewGrade } from '@/lib/confidence';
+export { scoreToGrade } from '@/lib/confidence';
 export type { ConfidenceGradeValue } from '@/lib/confidence';
 
 export { RiskScoreBadge, scoreToRiskLevel } from './RiskScoreBadge';

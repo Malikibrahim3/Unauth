@@ -92,6 +92,116 @@ interface ResolveResult {
   confidence: number;
 }
 
+function isRetryableWriteError(message: string): boolean {
+  const msg = message.toLowerCase();
+  return (
+    msg.includes('statement timeout') ||
+    msg.includes('canceling statement due to statement timeout') ||
+    msg.includes('57014') ||
+    msg.includes('fetch failed') ||
+    msg.includes('econnreset') ||
+    msg.includes('etimedout') ||
+    msg.includes('connection reset') ||
+    msg.includes('connection terminated') ||
+    msg.includes('429') ||
+    msg.includes('too many requests') ||
+    msg.includes('502') ||
+    msg.includes('503') ||
+    msg.includes('504') ||
+    msg.includes('gateway timeout')
+  );
+}
+
+async function upsertProfilesAdaptive(
+  serviceClient: ServiceClient,
+  rows: any[],
+  chunkSize = 80
+): Promise<void> {
+  if (rows.length === 0) return;
+  for (let i = 0; i < rows.length; i += chunkSize) {
+    const chunk = rows.slice(i, i + chunkSize);
+    try {
+      await withRetry(async () => {
+        const { error } = await (serviceClient as any)
+          .from('customer_profiles')
+          .upsert(chunk as any, { onConflict: 'id', ignoreDuplicates: false });
+        if (error) throw error;
+      });
+    } catch (err: any) {
+      const message = String(err?.message ?? err ?? 'unknown error');
+      if (chunk.length > 20 && isRetryableWriteError(message)) {
+        const mid = Math.floor(chunk.length / 2);
+        await upsertProfilesAdaptive(serviceClient, chunk.slice(0, mid), Math.max(10, Math.floor(chunkSize / 2)));
+        await upsertProfilesAdaptive(serviceClient, chunk.slice(mid), Math.max(10, Math.floor(chunkSize / 2)));
+        continue;
+      }
+      throw err;
+    }
+  }
+}
+
+async function insertProfilesAdaptive(
+  serviceClient: ServiceClient,
+  rows: any[],
+  chunkSize = 60
+): Promise<Array<{ id: string; emails: string[]; card_last4s: string[]; ips: string[] }>> {
+  if (rows.length === 0) return [];
+  const created: Array<{ id: string; emails: string[]; card_last4s: string[]; ips: string[] }> = [];
+  for (let i = 0; i < rows.length; i += chunkSize) {
+    const chunk = rows.slice(i, i + chunkSize);
+    try {
+      const data = await withRetry(async () => {
+        const { data, error } = await (serviceClient as any)
+          .from('customer_profiles')
+          .insert(chunk as any)
+          .select('id, emails, card_last4s, ips');
+        if (error) throw error;
+        return (data ?? []) as Array<{ id: string; emails: string[]; card_last4s: string[]; ips: string[] }>;
+      });
+      created.push(...data);
+    } catch (err: any) {
+      const message = String(err?.message ?? err ?? 'unknown error');
+      if (chunk.length > 20 && isRetryableWriteError(message)) {
+        const mid = Math.floor(chunk.length / 2);
+        const left = await insertProfilesAdaptive(serviceClient, chunk.slice(0, mid), Math.max(10, Math.floor(chunkSize / 2)));
+        const right = await insertProfilesAdaptive(serviceClient, chunk.slice(mid), Math.max(10, Math.floor(chunkSize / 2)));
+        created.push(...left, ...right);
+        continue;
+      }
+      throw err;
+    }
+  }
+  return created;
+}
+
+async function insertAppearancesAdaptive(
+  serviceClient: ServiceClient,
+  rows: any[],
+  chunkSize = 150
+): Promise<void> {
+  if (rows.length === 0) return;
+  for (let i = 0; i < rows.length; i += chunkSize) {
+    const chunk = rows.slice(i, i + chunkSize);
+    try {
+      await withRetry(async () => {
+        const { error } = await (serviceClient as any)
+          .from('customer_profile_audit_appearances')
+          .insert(chunk as any);
+        if (error) throw error;
+      });
+    } catch (err: any) {
+      const message = String(err?.message ?? err ?? 'unknown error');
+      if (chunk.length > 40 && isRetryableWriteError(message)) {
+        const mid = Math.floor(chunk.length / 2);
+        await insertAppearancesAdaptive(serviceClient, chunk.slice(0, mid), Math.max(20, Math.floor(chunkSize / 2)));
+        await insertAppearancesAdaptive(serviceClient, chunk.slice(mid), Math.max(20, Math.floor(chunkSize / 2)));
+        continue;
+      }
+      throw err;
+    }
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Risk level helper — mirrors fastScore.ts getRiskTier
 // ---------------------------------------------------------------------------
@@ -701,7 +811,7 @@ export async function processProfilesForBatch(
       groupMatchStatuses.some((s) => s === 'candidate')                     ?  50 :
       group.some((od) => od.normEmail || (od.normCard && od.normCard.length === 4)) ? 100 :
       // IP-only or fully anonymous new orders start at 25 (skeleton profile)
-      od.normIP ? 25 : 25;
+      25;
 
     return {
       primary_email:           [...emails][0] ?? null,
@@ -740,28 +850,18 @@ export async function processProfilesForBatch(
 
   await Promise.all([
     profileUpserts.length > 0
-      ? (serviceClient as any)
-          .from('customer_profiles')
-          .upsert(profileUpserts as any, { onConflict: 'id', ignoreDuplicates: false })
-          .then(({ error }: { error: any }) => {
-            if (error) errors.push(`Bulk profile update failed: ${error.message}`);
-            else profilesUpdated = profileUpserts.length;
+      ? upsertProfilesAdaptive(serviceClient, profileUpserts)
+          .then(() => { profilesUpdated = profileUpserts.length; })
+          .catch((err) => {
+            errors.push(`Bulk profile update failed: ${String((err as any)?.message ?? err)}`);
           })
       : Promise.resolve(),
-
     newProfileInserts.length > 0
-      ? (serviceClient as any)
-          .from('customer_profiles')
-          .insert(newProfileInserts as any)
-          .select('id, emails, card_last4s, ips')
-          .then(({ data, error }: { data: any; error: any }) => {
-            if (error) {
-              errors.push(`Bulk profile insert failed: ${error.message}`);
-              return;
-            }
-            profilesCreated = (data ?? []).length;
+      ? insertProfilesAdaptive(serviceClient, newProfileInserts)
+          .then((createdProfiles) => {
+            profilesCreated = createdProfiles.length;
             // Map new profile IDs back to each order in the group
-            for (const newP of (data ?? []) as { id: string; emails: string[]; card_last4s: string[]; ips: string[] }[]) {
+            for (const newP of createdProfiles) {
               for (const group of newProfileGroups.values()) {
                 for (const od of group) {
                   if (
@@ -774,6 +874,9 @@ export async function processProfilesForBatch(
                 }
               }
             }
+          })
+          .catch((err) => {
+            errors.push(`Bulk profile insert failed: ${String((err as any)?.message ?? err)}`);
           })
       : Promise.resolve(),
   ]);
@@ -796,10 +899,11 @@ export async function processProfilesForBatch(
     .filter(Boolean);
 
   if (appearanceInserts.length > 0) {
-    const { error } = await (serviceClient as any)
-      .from('customer_profile_audit_appearances')
-      .insert(appearanceInserts as any);
-    if (error) errors.push(`Bulk appearance link insert failed: ${error.message}`);
+    try {
+      await insertAppearancesAdaptive(serviceClient, appearanceInserts as any[]);
+    } catch (err) {
+      errors.push(`Bulk appearance link insert failed: ${String((err as any)?.message ?? err)}`);
+    }
   }
 
   console.log(

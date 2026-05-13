@@ -69,9 +69,10 @@ export function escapePostgrestFilterValue(raw: string): string {
 /**
  * Count review-worthy audit_transactions for a given job (and merchant).
  *
- * A transaction is review-worthy when:
- *   - identity_confidence_grade IS NOT NULL, OR
- *   - match_status IN ('candidate', 'probable', 'definite')
+ * A transaction is review-worthy when the platform has likely same-person
+ * identity evidence:
+ *   - identity_confidence_grade IN ('probable', 'definite'), OR
+ *   - match_status IN ('probable', 'definite')
  * AND it has NOT been dismissed by the merchant (dismissed_by_merchant IS NOT TRUE —
  * this includes rows where dismissed_by_merchant is false or null).
  *
@@ -117,8 +118,8 @@ export async function countReviewWorthyTransactions(
 
   // Step 2: Count review-worthy rows via two non-overlapping server-side counts.
   //
-  // Clause A: identity_confidence_grade IS NOT NULL (graded, any match_status)
-  // Clause B: match_status IN (candidate,probable,definite) AND grade IS NULL
+  // Clause A: identity_confidence_grade IN (probable,definite)
+  // Clause B: match_status IN (probable,definite) AND grade is not already likely
   //           — excludes rows already counted in Clause A (no double-count)
   //
   // Dismissed filter: .not('dismissed_by_merchant', 'is', true) — PostgREST
@@ -131,14 +132,14 @@ export async function countReviewWorthyTransactions(
       .from('audit_transactions')
       .select('id', { count: 'exact', head: true })
       .eq('job_id', jobId)
-      .not('identity_confidence_grade', 'is', null)
+      .in('identity_confidence_grade', ['probable', 'definite'])
       .not('dismissed_by_merchant', 'is', true),
     serviceClient
       .from('audit_transactions')
       .select('id', { count: 'exact', head: true })
       .eq('job_id', jobId)
-      .in('match_status', ['candidate', 'probable', 'definite'])
-      .is('identity_confidence_grade', null)  // avoid double-counting with Clause A
+      .in('match_status', ['probable', 'definite'])
+      .is('identity_confidence_grade', null)  // legacy fallback; avoid double-counting with Clause A
       .not('dismissed_by_merchant', 'is', true),
   ]);
 
@@ -168,7 +169,7 @@ export async function countReviewWorthyTransactions(
  *
  * DEFINITION (must match countReviewWorthyTransactions / fetchMerchantReviewQueueRows):
  *   - job_id IN merchant-owned job IDs
- *   - identity_confidence_grade IS NOT NULL  OR  match_status IN (candidate,probable,definite)
+ *   - identity_confidence_grade IN (probable,definite) OR match_status IN (probable,definite)
  *   - dismissed_by_merchant IS NOT TRUE  (includes false AND null)
  *
  * SCHEMA NOTE:
@@ -192,13 +193,13 @@ export async function countMerchantReviewQueueProfiles(
 
   const PAGE = 1000;
 
-  // Clause A: identity_confidence_grade IS NOT NULL
+  // Clause A: identity_confidence_grade IN (probable,definite)
   for (let offset = 0; ; offset += PAGE) {
     const { data, error } = await serviceClient
       .from('audit_transactions')
       .select('id')
       .in('job_id', ownedJobIds)
-      .not('identity_confidence_grade', 'is', null)
+      .in('identity_confidence_grade', ['probable', 'definite'])
       .not('dismissed_by_merchant', 'is', true)
       .range(offset, offset + PAGE - 1) as unknown as {
         data: Array<{ id: string }> | null;
@@ -213,13 +214,13 @@ export async function countMerchantReviewQueueProfiles(
     if (!data || data.length < PAGE) break;
   }
 
-  // Clause B: match_status IN (candidate,probable,definite) AND grade IS NULL
+  // Clause B: match_status IN (probable,definite) and grade not already likely
   for (let offset = 0; ; offset += PAGE) {
     const { data, error } = await serviceClient
       .from('audit_transactions')
       .select('id')
       .in('job_id', ownedJobIds)
-      .in('match_status', ['candidate', 'probable', 'definite'])
+      .in('match_status', ['probable', 'definite'])
       .is('identity_confidence_grade', null)
       .not('dismissed_by_merchant', 'is', true)
       .range(offset, offset + PAGE - 1) as unknown as {
@@ -599,7 +600,7 @@ export const REVIEW_QUEUE_SELECT =
  *
  * DEFINITION (shared by inbox page and export — must not drift):
  * - job_id IN merchant-owned job IDs
- * - identity_confidence_grade IS NOT NULL  OR  match_status IN (candidate, probable, definite)
+ * - identity_confidence_grade IN (probable, definite) OR match_status IN (probable, definite)
  * - dismissed_by_merchant IS NOT TRUE
  * - match_status != 'none'  (redundant with above but explicit for export safety)
  * - ordered by identity_score DESC, processed_at DESC
@@ -631,13 +632,13 @@ export async function fetchMerchantReviewQueueRows(
       .from('audit_transactions')
       .select(select)
       .in('job_id', ownedJobIds)
-      // Review-worthy: has identity grade OR confirmed match status.
+      // Review-worthy: likely/definite same-person evidence only.
       // IMPORTANT: do NOT add .not('match_status','eq','none') here — that
       // operator excludes NULL values in PostgREST and would silently drop
-      // legacy graded rows where identity_confidence_grade IS NOT NULL but
+      // legacy graded rows where identity_confidence_grade is set but
       // match_status has not been set. The .or() below already restricts
       // the population correctly without touching null match_status rows.
-      .or('identity_confidence_grade.not.is.null,match_status.in.(candidate,probable,definite)')
+      .or('identity_confidence_grade.in.(probable,definite),match_status.in.(probable,definite)')
       // Exclude dismissed rows only
       .not('dismissed_by_merchant', 'is', true)
       .order('identity_score', { ascending: false })
@@ -703,8 +704,8 @@ export async function fetchReviewQueueProfileIds(
  * audit_transactions that belong to the given merchant.
  *
  * DEFINITION of "review-worthy" (matches countReviewWorthyTransactions):
- *   - identity_confidence_grade IS NOT NULL  OR
- *   - match_status IN ('candidate', 'probable', 'definite')
+ *   - identity_confidence_grade IN ('probable', 'definite') OR
+ *   - match_status IN ('probable', 'definite')
  *   AND dismissed_by_merchant IS NOT TRUE
  *
  * MERCHANT SCOPING:
@@ -799,17 +800,17 @@ export async function getExposureAtRisk(
       return clauseSum;
     }
 
-    // Clause A: graded transactions (identity_confidence_grade IS NOT NULL)
+    // Clause A: likely identity-grade transactions
     const gradedSum = await sumClause((q) =>
-      (q as any).not('identity_confidence_grade', 'is', null),
+      (q as any).in('identity_confidence_grade', ['probable', 'definite']),
     );
     if (gradedSum === null) return null;
     total += gradedSum;
 
-    // Clause B: status-match only, grade IS NULL (avoids double-count with A)
+    // Clause B: status-match only, grade not already likely (avoids double-count with A)
     const statusSum = await sumClause((q) =>
       (q as any)
-        .in('match_status', ['candidate', 'probable', 'definite'])
+        .in('match_status', ['probable', 'definite'])
         .is('identity_confidence_grade', null),
     );
     if (statusSum === null) return null;

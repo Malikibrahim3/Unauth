@@ -6,6 +6,7 @@ import { logAction } from '@/lib/permissions/audit';
 import { streamParseCsv, MAX_ROWS } from '@/lib/processing/streamParser';
 import { updateJobTotalRows, completeJob } from '@/lib/processing/job';
 import { processCsvJob } from '@/lib/processing/worker';
+import { checkCsvUsageGuard } from '@/lib/processing/supabaseUsageGuard';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createRequestLogger, withRequestLogging } from '@/lib/log';
 import { captureServerException } from '@/lib/sentry';
@@ -240,11 +241,50 @@ async function POSTHandler(request: NextRequest) {
       .update({ status: 'processing' })
       .eq('id', queueItem.job_id);
 
+    const usageGuard = await checkCsvUsageGuard(serviceClient);
+    if (usageGuard.shouldStop) {
+      logger.warn('process_csv_job.usage_guard_tripped', {
+        jobId: queueItem.job_id,
+        reason: usageGuard.reason,
+      });
+      await completeJob(scopedClient, queueItem.job_id, false, [
+        { message: usageGuard.reason ?? 'Supabase usage guard stopped this run', code: 'SUPABASE_USAGE_GUARD' },
+      ]);
+      await scopedClient
+        .from('csv_upload_queue')
+        .update({ status: 'failed', completed_at: new Date().toISOString() })
+        .eq('id', queueItem.id);
+      return NextResponse.json(
+        { error: usageGuard.reason ?? 'Supabase usage guard stopped this run', usageGuard },
+        { status: 429 }
+      );
+    }
+
     // Process the CSV using existing pipeline
     routeLog(`Starting processing pipeline for ${parseResult.rowCount} rows`);
     const procStart = Date.now();
     const scored = await processCsvJob(parseResult.rows, queueItem.job_id, serviceClient, 5, queueItem.merchant_id);
     routeLog(`Processing pipeline finished in ${Date.now() - procStart}ms`);
+
+    const postProcessGuard = await checkCsvUsageGuard(serviceClient);
+    if (postProcessGuard.shouldStop) {
+      logger.warn('process_csv_job.post_process_usage_guard_tripped', {
+        jobId: queueItem.job_id,
+        reason: postProcessGuard.reason,
+      });
+      await completeJob(scopedClient, queueItem.job_id, false, [
+        { message: postProcessGuard.reason ?? 'Supabase usage guard stopped this run', code: 'SUPABASE_USAGE_GUARD' },
+      ]);
+      await scopedClient
+        .from('csv_upload_queue')
+        .update({ status: 'failed', completed_at: new Date().toISOString() })
+        .eq('id', queueItem.id);
+      return NextResponse.json(
+        { error: postProcessGuard.reason ?? 'Supabase usage guard stopped this run', usageGuard: postProcessGuard },
+        { status: 429 }
+      );
+    }
+
     const flaggedCount = scored.filter((s) => s.flagged).length;
     await completeJob(scopedClient, queueItem.job_id, true, undefined, flaggedCount);
 

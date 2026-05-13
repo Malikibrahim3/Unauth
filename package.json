@@ -9,6 +9,7 @@
     "lint": "next lint",
     "test": "jest --passWithNoTests",
     "eval": "ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/eval.ts",
+    "eval:audit": "ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/eval/auditCsvAgainstAnswer.ts",
     "snapshot-metrics": "ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/snapshot-network-metrics.ts",
     "test:watch": "jest --watch",
     "generate:blind-csvs": "ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/test-data/generateBlindMerchantCSVs.ts",

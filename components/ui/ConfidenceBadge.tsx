@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react';
 import { Badge } from './Badge';
 import { FLAG_CONFIDENCE_PANEL } from '@/lib/flags';
-import { riskLevelToNewGrade, scoreToGrade, type ConfidenceGradeValue } from '@/lib/confidence';
+import type { ConfidenceGradeValue } from '@/lib/confidence';
 import type { CustomerIntelligence } from '@/types/customer';
 
 // Lazy-load the panel so non-flag paths pay zero cost

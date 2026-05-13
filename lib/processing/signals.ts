@@ -64,11 +64,11 @@ export function getRowMatchedSignals(
   const signals: LinkerSignal[] = [];
 
   // ── card ────────────────────────────────────────────────────────────────
-  if (hasValue(row.card_last4)) {
-    const normCard = normaliseCard(row.card_last4, row.card_bin);
+  if (hasValue(row.card_fingerprint) || hasValue(row.card_last4)) {
+    const normCard = normaliseCard(row.card_last4, row.card_bin, row.card_fingerprint);
     if (
       normCard &&
-      others.some((o) => normaliseCard(o.card_last4, o.card_bin) === normCard)
+      others.some((o) => normaliseCard(o.card_last4, o.card_bin, o.card_fingerprint) === normCard)
     ) {
       signals.push('card');
     }

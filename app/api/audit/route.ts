@@ -27,6 +27,7 @@ import {
   dispatchChunk,
   originFromRequest,
 } from '@/lib/processing/chunkedDispatch';
+import { checkCsvUsageGuard } from '@/lib/processing/supabaseUsageGuard';
 import { sniffCsvMagicBytes } from '@/lib/csv/sniffMagicBytes';
 import { enforceRateLimit, limitFromEnv, rateLimitKey } from '@/lib/ratelimit';
 import { captureServerException } from '@/lib/sentry';
@@ -234,6 +235,21 @@ async function runAudit(
 
   // Update job with row count and start processing
   await updateJobTotalRows(scopedClient, jobId, parseResult.rowCount);
+
+  const usageGuard = await checkCsvUsageGuard(scopedClient);
+  if (usageGuard.shouldStop) {
+    log(`usage guard tripped before dispatch: ${usageGuard.reason}`);
+    await completeJob(scopedClient, jobId, false, [
+      { message: usageGuard.reason ?? 'Supabase usage guard stopped this run', code: 'SUPABASE_USAGE_GUARD' },
+    ]);
+    return NextResponse.json(
+      {
+        error: usageGuard.reason ?? 'Supabase usage guard stopped this run',
+        usageGuard,
+      },
+      { status: 429 }
+    );
+  }
 
   // ── Audit log ─────────────────────────────────────────────────────────────
   logAction({

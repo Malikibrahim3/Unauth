@@ -15,7 +15,7 @@ import { scoreBatch } from '../engine/fastScore';
 import { buildIdentityClusterMapFromLinkerResult } from '../engine/identityClusterBuilder';
 import { linkIdentities, type LinkedCluster, type LinkerOrderInput } from '../linker';
 import { scoreAllClusters, scoreIdentityFromSignals, type ScoredCluster, type ScorerOrder } from '../scorer';
-import { assessDataQuality } from '../csv/dataQuality';
+import { assessDataQuality, type DataQualityReport, type PipelineWarningCounters } from '../csv/dataQuality';
 import type { NormalisedOrder, ScoredOrder } from '../engine/types';
 import { normaliseRow } from '../csv/normalise';
 import { cleanRow } from '../csv/clean';
@@ -40,6 +40,7 @@ import {
 } from './clusterExpansion';
 import { scoreClusterIdentity, type IdentityMatchResult } from '../identity/matchScorer';
 import { computeContextInsights } from '../identity/contextInsights';
+import { classifyIdentityReview } from '../identity/reviewClassifier';
 
 const BATCH_SIZE = 500;  // 500 rows per upsert — halves round-trips vs the old 200
 const DEFAULT_CONCURRENCY = 5;
@@ -50,6 +51,37 @@ function splitIntoBatches<T>(items: T[], size: number): T[][] {
     batches.push(items.slice(i, i + size));
   }
   return batches;
+}
+
+function isTransientTransportError(err: unknown): boolean {
+  const msg = String((err as any)?.message ?? err ?? '').toLowerCase();
+  return (
+    msg.includes('fetch failed') ||
+    msg.includes('econnreset') ||
+    msg.includes('etimedout') ||
+    msg.includes('connection reset') ||
+    msg.includes('connection terminated')
+  );
+}
+
+async function withTransportRetry<T>(
+  fn: () => Promise<T>,
+  attempts = 3,
+  baseDelayMs = 300
+): Promise<T> {
+  let lastErr: unknown;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      if (!isTransientTransportError(err) || i === attempts - 1) break;
+      const jitter = Math.random() * 120;
+      const delay = baseDelayMs * 2 ** i + jitter;
+      await new Promise<void>((resolve) => setTimeout(resolve, delay));
+    }
+  }
+  throw lastErr;
 }
 
 type MatchStatus = 'none' | 'candidate' | 'probable' | 'definite';
@@ -106,6 +138,79 @@ type PersistedIdentityResult = {
   contextSummary: string | null;
 };
 
+function sanitizeIdentityResult(result: PersistedIdentityResult): PersistedIdentityResult {
+  const identityGrade = result.identityMatchResult?.identity_match_grade ?? 'none';
+  if (result.matchStatus !== 'none' && identityGrade !== 'none') {
+    return result;
+  }
+  return {
+    ...result,
+    grade: null,
+    matchStatus: 'none',
+    identityScore: null,
+    signalsMatched: [],
+    recommendedAction: null,
+    clusterId: null,
+    candidateClusterId: null,
+    confirmedIdentityId: null,
+  };
+}
+
+function hasPipelineWarnings(warnings: PipelineWarningCounters): boolean {
+  return Object.values(warnings).some((value) => value > 0);
+}
+
+async function mergePipelineWarnings(
+  serviceClient: SupabaseClient<Database>,
+  jobId: string,
+  warnings: PipelineWarningCounters,
+  jobLog: (msg: string) => void
+): Promise<void> {
+  if (!hasPipelineWarnings(warnings)) return;
+
+  const { data, error } = await serviceClient
+    .from('processing_jobs')
+    .select('data_quality')
+    .eq('id', jobId)
+    .single();
+
+  if (error) {
+    jobLog(`Failed to read data quality report for pipeline warnings: ${error.message}`);
+    return;
+  }
+
+  const current = ((data as unknown as { data_quality?: DataQualityReport | null })?.data_quality ?? {}) as Partial<DataQualityReport>;
+  const existing = current.pipelineWarnings ?? {
+    fastContextReadRetries: 0,
+    fastContextReadFailures: 0,
+    entityResolutionErrors: 0,
+    coOccurrenceUpstreamDown: 0,
+    transactionUpsertFailedRows: 0,
+  };
+
+  const next: Partial<DataQualityReport> = {
+    ...current,
+    pipelineWarnings: {
+      fastContextReadRetries: (existing.fastContextReadRetries ?? 0) + warnings.fastContextReadRetries,
+      fastContextReadFailures: (existing.fastContextReadFailures ?? 0) + warnings.fastContextReadFailures,
+      entityResolutionErrors: (existing.entityResolutionErrors ?? 0) + warnings.entityResolutionErrors,
+      coOccurrenceUpstreamDown: (existing.coOccurrenceUpstreamDown ?? 0) + warnings.coOccurrenceUpstreamDown,
+      transactionUpsertFailedRows: (existing.transactionUpsertFailedRows ?? 0) + warnings.transactionUpsertFailedRows,
+    },
+  };
+
+  const { error: updateError } = await serviceClient
+    .from('processing_jobs')
+    .update({ data_quality: next } as any)
+    .eq('id', jobId);
+
+  if (updateError) {
+    jobLog(`Failed to store pipeline warnings: ${updateError.message}`);
+  } else {
+    jobLog(`Pipeline warnings stored: ${JSON.stringify(next.pipelineWarnings)}`);
+  }
+}
+
 function rawIds(order: NormalisedOrder) {
   return order as NormalisedOrder & {
     _rawEmail?: string | null;
@@ -115,6 +220,7 @@ function rawIds(order: NormalisedOrder) {
     _rawAddress?: string | null;
     _rawCardLast4?: string | null;
     _rawCardBin?: string | null;
+    _rawCardFingerprint?: string | null;
     _rawDeviceId?: string | null;
     _rawAccountId?: string | null;
   };
@@ -133,6 +239,7 @@ function buildLinkerInput(orders: NormalisedOrder[]): LinkerOrderInput[] {
       ip: ids._rawIP || null,
       card_last4: ids._rawCardLast4 || null,
       card_bin: ids._rawCardBin || null,
+      card_fingerprint: ids._rawCardFingerprint || null,
       device_fingerprint: ids._rawDeviceId || null,
       account_id: ids._rawAccountId || null,
       name: nameNorm,
@@ -233,30 +340,37 @@ function buildClusterIdentityResults(
 
       const rowPureResult = pureIdentityResult.byOrderId.get(orderId) ?? null;
       const pureGrade = rowPureResult?.identity_match_grade ?? 'none';
-      const grade = pureGradeToLegacyGrade(pureGrade);
-      const matchStatus = pureGradeToMatchStatus(pureGrade);
+      const reviewDecision = thisInput
+        ? classifyIdentityReview(thisInput, clusterInputs, rowPureResult)
+        : { reviewWorthy: false, reason: 'missing_row_input' };
+
+      const resolvedPureGrade = reviewDecision.reviewWorthy ? pureGrade : 'none';
+      const grade = pureGradeToLegacyGrade(resolvedPureGrade);
+      const matchStatus = pureGradeToMatchStatus(resolvedPureGrade);
       const identityScore = grade ? (rowPureResult?.identity_match_score ?? null) : null;
       const recommendedAction = recommendedActionForPureGrade(grade);
       const isConfirmed = matchStatus === 'definite';
-      const isProbable  = matchStatus === 'probable';
+      const isProbable = matchStatus === 'probable';
       const isCandidate = matchStatus === 'candidate';
 
-      result.set(orderId, {
+      const persisted = {
         grade,
         matchStatus,
-        identityScore,
-        signalsMatched: rowSignals,
+        identityScore: reviewDecision.reviewWorthy ? identityScore : null,
+        signalsMatched: reviewDecision.reviewWorthy ? rowSignals : [],
         behaviouralFlags: (clusterScore?.behavioural_flags ?? []).map((flag) => flag.flag),
-        recommendedAction,
+        recommendedAction: reviewDecision.reviewWorthy ? recommendedAction : null,
         ce3Eligible: contextResult?.ce3_eligible ?? clusterScore?.ce3_eligible ?? false,
         ce3QualifyingTransactions: ce3OrderIds,
-        clusterId: isConfirmed ? cluster.cluster_id : null,
-        candidateClusterId: (isCandidate || isProbable || isConfirmed) ? cluster.cluster_id : null,
-        confirmedIdentityId: isConfirmed ? cluster.cluster_id : null,
+        clusterId: reviewDecision.reviewWorthy && isConfirmed ? cluster.cluster_id : null,
+        candidateClusterId: reviewDecision.reviewWorthy && (isCandidate || isProbable || isConfirmed) ? cluster.cluster_id : null,
+        confirmedIdentityId: reviewDecision.reviewWorthy && isConfirmed ? cluster.cluster_id : null,
         identityMatchResult: rowPureResult,
         contextFlags: contextResult?.context_flags ?? [],
         contextSummary: contextResult?.context_summary ?? null,
-      });
+      } satisfies PersistedIdentityResult;
+
+      result.set(orderId, sanitizeIdentityResult(persisted));
     }
   }
 
@@ -347,6 +461,13 @@ export async function processCsvJob(
 ): Promise<ScoredOrder[]> {
   const jobLog = (msg: string) => console.log(`[job ${jobId}] ${new Date().toISOString()} ${msg}`);
   const overallStart = Date.now();
+  const pipelineWarnings: PipelineWarningCounters = {
+    fastContextReadRetries: 0,
+    fastContextReadFailures: 0,
+    entityResolutionErrors: 0,
+    coOccurrenceUpstreamDown: 0,
+    transactionUpsertFailedRows: 0,
+  };
   // -----------------------------------------------------------------------
   // 1. Validate & clean all rows up front (fast, synchronous)
   // -----------------------------------------------------------------------
@@ -375,11 +496,15 @@ export async function processCsvJob(
   // -----------------------------------------------------------------------
   if (!chunkInfo || chunkInfo.isFirst) {
     const dataQuality = assessDataQuality(normOrders);
-    void serviceClient
+    const { error: dataQualityError } = await serviceClient
       .from('processing_jobs')
       .update({ data_quality: dataQuality } as any)
-      .eq('id', jobId)
-      .then(() => jobLog('Data quality report stored'));
+      .eq('id', jobId);
+    if (dataQualityError) {
+      jobLog(`Failed to store data quality report: ${dataQualityError.message}`);
+    } else {
+      jobLog('Data quality report stored');
+    }
   }
 
   // -----------------------------------------------------------------------
@@ -398,6 +523,8 @@ export async function processCsvJob(
 
   // Now collect the context (may already be resolved if linker was slower).
   const context = await contextPromise;
+  pipelineWarnings.fastContextReadRetries += context.readHealth?.fastContextReadRetries ?? 0;
+  pipelineWarnings.fastContextReadFailures += context.readHealth?.fastContextReadFailures ?? 0;
   jobLog(`buildFastContext completed in ${Date.now() - overallStart}ms — orders=${normOrders.length}`);
 
   // Build the cluster map and order/cluster scores from the single linker run.
@@ -522,6 +649,8 @@ export async function processCsvJob(
             clusterId: existingClusterResult.clusterId ?? null,
             candidateClusterId: existingClusterResult.candidateClusterId ?? clusterId,
           });
+          const current = identityResultsByOrder.get(orderId);
+          if (current) identityResultsByOrder.set(orderId, sanitizeIdentityResult(current));
         }
       }
     }
@@ -529,7 +658,7 @@ export async function processCsvJob(
     // Apply promoted cluster results
     for (const [orderId, result] of Array.from(expansionResults.entries())) {
       if (!identityResultsByOrder.has(orderId)) {
-        identityResultsByOrder.set(orderId, result);
+        identityResultsByOrder.set(orderId, sanitizeIdentityResult(result));
       }
     }
   }
@@ -649,6 +778,7 @@ export async function processCsvJob(
   // after upsertAllBatches, but runs concurrently with the fraud/co-occ/cluster writers.
   jobLog('Starting parallel pipeline: transactions + intelligence writes');
   await upsertAllBatches();
+  pipelineWarnings.transactionUpsertFailedRows += failedCount;
 
   const entityResolutionTask = merchantId
     ? (async () => {
@@ -701,6 +831,10 @@ export async function processCsvJob(
           console.log(
             `[worker] Entity resolution: ${profileResult.profilesCreated} created, ${profileResult.profilesUpdated} updated, ${profileResult.errors.length} errors`
           );
+          if (profileResult.errors.length > 0) {
+            console.error('[worker] entity resolution sample errors:', profileResult.errors.slice(0, 3));
+          }
+          pipelineWarnings.entityResolutionErrors += profileResult.errors.length;
           // Auto-refresh last_seen_risk on watchlist entries for customers in batch
           try {
             const riskOrder = { low: 0, medium: 1, high: 2, critical: 3 } as const;
@@ -739,6 +873,7 @@ export async function processCsvJob(
             console.error('[worker] Watchlist refresh failed (non-fatal):', watchlistErr);
           }
         } catch (err) {
+          pipelineWarnings.entityResolutionErrors++;
           console.error('[worker] processProfilesForBatch failed:', err);
         }
       })()
@@ -749,7 +884,9 @@ export async function processCsvJob(
     writeFraudEntities(scored, serviceClient, context).catch((err) =>
       console.error('[worker] writeFraudEntities failed:', err)
     ),
-    writeCoOccurrences(scored, serviceClient, context).catch((err) =>
+    writeCoOccurrences(scored, serviceClient, context).then((result) => {
+      if (result.upstreamDown) pipelineWarnings.coOccurrenceUpstreamDown++;
+    }).catch((err) =>
       console.error('[worker] writeCoOccurrences failed:', err)
     ),
     writeIdentityClusters(identityClusterMap, serviceClient).catch((err) =>
@@ -760,6 +897,7 @@ export async function processCsvJob(
   for (const r of parallelResults) {
     if (r.status === 'rejected') jobLog(`parallel task failed: ${String((r as PromiseRejectedResult).reason)}`);
   }
+  await mergePipelineWarnings(serviceClient, jobId, pipelineWarnings, jobLog);
 
   // Flush any remaining rows that didn't hit the PROGRESS_INTERVAL threshold.
   jobLog(`About to flush final progress: processed=${processedCount} failed=${failedCount}`);
@@ -922,10 +1060,12 @@ async function writeFraudEntities(
   for (let i = 0; i < payload.length; i += RPC_CHUNK) {
     const chunk = payload.slice(i, i + RPC_CHUNK);
     try {
-      await withRetry(async () => {
-        const { error } = await serviceClient.rpc('bulk_upsert_fraud_entities' as any, { p_entities: chunk });
-        if (error) throw error;
-      });
+      await withTransportRetry(() =>
+        withRetry(async () => {
+          const { error } = await serviceClient.rpc('bulk_upsert_fraud_entities' as any, { p_entities: chunk });
+          if (error) throw error;
+        })
+      );
     } catch (err: any) {
       rpcError = err;
       break;
@@ -1024,7 +1164,7 @@ async function writeCoOccurrences(
   scored: ScoredOrder[],
   serviceClient: SupabaseClient<Database>,
   context?: import('../engine/fastContext').FastScoringContext
-): Promise<void> {
+): Promise<{ upstreamDown: boolean }> {
   // Build deterministic, deduplicated co-occurrence pairs across the batch.
   // The pair key sorts (a,b) alphabetically by `${type}:${value}` so the
   // same pair always collapses to one row regardless of insertion order.
@@ -1079,7 +1219,7 @@ async function writeCoOccurrences(
     }
   }
 
-  if (pairCounts.size === 0) return;
+  if (pairCounts.size === 0) return { upstreamDown: false };
 
   const payload = Array.from(pairCounts.values()).map((p) => ({
     a_type:      p.entity_a_type,
@@ -1096,10 +1236,12 @@ async function writeCoOccurrences(
   for (let i = 0; i < payload.length; i += RPC_CHUNK) {
     const chunk = payload.slice(i, i + RPC_CHUNK);
     try {
-      await withRetry(async () => {
-        const { error } = await serviceClient.rpc('bulk_upsert_co_occurrences' as any, { p_pairs: chunk });
-        if (error) throw error;
-      });
+      await withTransportRetry(() =>
+        withRetry(async () => {
+          const { error } = await serviceClient.rpc('bulk_upsert_co_occurrences' as any, { p_pairs: chunk });
+          if (error) throw error;
+        })
+      );
     } catch (err: any) {
       coRpcError = err;
       break;
@@ -1110,14 +1252,14 @@ async function writeCoOccurrences(
     coRpcSucceeded = true;
   }
 
-  if (coRpcSucceeded) return;
+  if (coRpcSucceeded) return { upstreamDown: false };
 
   // Upstream down (Supabase 521 / schema cache). Skip the fallback loop — it
   // would do 100+ sequential failing 500-row upserts against a broken endpoint.
   // co_occurrences is best-effort intelligence.
   if (isUpstreamDown(coRpcError)) {
     console.warn(`[worker] ${new Date().toISOString()} writeCoOccurrences skipped: upstream unavailable (${(coRpcError as any)?.message ?? 'unknown'})`);
-    return;
+    return { upstreamDown: true };
   }
 
   if (coRpcError && coRpcError.code !== 'PGRST202' && coRpcError.code !== '42883') {
@@ -1161,12 +1303,13 @@ async function writeCoOccurrences(
     if (upsertError) {
       if (isUpstreamDown(upsertError)) {
         console.warn(`[worker] ${new Date().toISOString()} co_occurrences direct upsert: upstream down at chunk ${i}, aborting fallback`);
-        return;
+        return { upstreamDown: true };
       }
       console.error(`[worker] ${new Date().toISOString()} co_occurrences direct upsert failed (chunk ${i}): ${upsertError.message}`);
     }
   }
   console.log(`[worker] ${new Date().toISOString()} writeCoOccurrences: ${directRows.length} pairs (direct upsert fallback)`);
+  return { upstreamDown: false };
 }
 
 async function writeIdentityClusters(
@@ -1243,6 +1386,9 @@ async function upsertBatchNoProgress(
       msg.includes('etimedout') ||
       msg.includes('connection terminated') ||
       msg.includes('connection reset') ||
+      msg.includes('statement timeout') ||
+      msg.includes('canceling statement due to statement timeout') ||
+      msg.includes('57014') ||
       msg.includes('429') ||
       msg.includes('too many requests') ||
       msg.includes('502') ||
@@ -1266,6 +1412,16 @@ async function upsertBatchNoProgress(
     lastMessage = error.message ?? 'unknown error';
     const retryable = isRetryableCoreUpsertError(lastMessage);
     if (!retryable || attempt === MAX_ATTEMPTS) {
+      // If a large write keeps timing out, salvage progress by recursively
+      // splitting into smaller batches before declaring hard failure.
+      if (retryable && inserts.length > 100) {
+        const mid = Math.floor(inserts.length / 2);
+        const left = inserts.slice(0, mid);
+        const right = inserts.slice(mid);
+        await upsertBatchNoProgress(left, jobId, serviceClient);
+        await upsertBatchNoProgress(right, jobId, serviceClient);
+        return;
+      }
       const suffix = retryable ? ` after ${attempt} attempts` : '';
       await logBatchError(
         serviceClient,

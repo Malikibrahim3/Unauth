@@ -72,7 +72,8 @@ async function GETHandler(
       .from('audit_transactions')
       .select('*', { count: 'planned', head: true })
       .eq('job_id', runId)
-      .not('identity_confidence_grade', 'is', null);
+      .or('identity_confidence_grade.in.(probable,definite),match_status.in.(probable,definite)')
+      .not('dismissed_by_merchant', 'is', true);
     flaggedCount = count ?? 0;
   }
 

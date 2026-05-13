@@ -29,10 +29,11 @@ function buildResult(score: number | null, clusterId = 'cluster-abc') {
   const matchStatus = scoreToMatchStatus(score);
   const isConfirmed  = matchStatus === 'definite';
   const isProbable   = matchStatus === 'probable';
+  const isCandidate  = matchStatus === 'candidate';
   return {
     matchStatus,
     clusterId:          isConfirmed ? clusterId : null,
-    candidateClusterId: (isProbable || isConfirmed) ? clusterId : null,
+    candidateClusterId: (isCandidate || isProbable || isConfirmed) ? clusterId : null,
     confirmedIdentityId: isConfirmed ? clusterId : null,
   };
 }
@@ -103,12 +104,12 @@ describe('scoreToMatchStatus', () => {
 
 describe('PersistedIdentityResult cluster ID gates', () => {
   // Scenario 10: candidate rows must NOT have confirmedIdentityId or clusterId
-  it('S10: candidate (score=30) → no confirmed IDs, candidateClusterId=null', () => {
+  it('S10: candidate (score=30) → candidateClusterId set, no confirmed IDs', () => {
     const r = buildResult(30);
     expect(r.matchStatus).toBe('candidate');
     expect(r.confirmedIdentityId).toBeNull();
     expect(r.clusterId).toBeNull();
-    expect(r.candidateClusterId).toBeNull(); // 25-49 gets no candidate_cluster_id either per spec
+    expect(r.candidateClusterId).toBe('cluster-abc');
   });
 
   // Scenario 11: probable rows get candidateClusterId only

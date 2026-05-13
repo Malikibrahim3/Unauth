@@ -619,8 +619,8 @@ describe('fetchMerchantReviewQueueRows — null match_status regression', () => 
       'utf-8'
     );
     // Must include the correct PostgREST .or() expression
-    expect(helperContent).toContain('identity_confidence_grade.not.is.null');
-    expect(helperContent).toContain('match_status.in.(candidate,probable,definite)');
+    expect(helperContent).toContain('identity_confidence_grade.in.(probable,definite)');
+    expect(helperContent).toContain('match_status.in.(probable,definite)');
   });
 
   it('dismissed rows are excluded via .not(dismissed_by_merchant, is, true)', () => {

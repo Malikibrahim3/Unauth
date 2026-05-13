@@ -11,6 +11,7 @@ export interface NormalisedOrderWithRawEmail extends NormalisedOrder {
   _rawPostcode?: string | null;
   _rawCardLast4?: string | null;
   _rawCardBin?: string | null;
+  _rawCardFingerprint?: string | null;
   _rawDeviceId?: string | null;
   _rawAccountId?: string | null;
 }
@@ -126,6 +127,7 @@ export function normaliseRow(row: CsvRow): NormalisedOrderWithRawEmail {
     _rawPostcode: row.shipping_postcode?.trim() || row.postcode?.trim() || null,
     _rawCardLast4: normLast4,
     _rawCardBin: normBin,
+    _rawCardFingerprint: normCard,
     _rawDeviceId: normDevice,
     _rawAccountId: normAccountId,
   };

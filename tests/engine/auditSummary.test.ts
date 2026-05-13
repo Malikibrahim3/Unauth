@@ -1,7 +1,7 @@
 import { computeAuditSummary } from '@/lib/analysis/auditSummary';
 
-function row(grade: string | null, order_value = 100, cluster_id: string | null = null) {
-  return { identity_confidence_grade: grade, order_value, cluster_id };
+function row(grade: string | null, order_value = 100, cluster_id: string | null = null, match_status: string | null = null) {
+  return { identity_confidence_grade: grade, order_value, cluster_id, match_status };
 }
 
 describe('computeAuditSummary', () => {
@@ -20,7 +20,7 @@ describe('computeAuditSummary', () => {
     expect(s.ungraded).toBe(7);
   });
 
-  it('returns flaggedTransactions = graded rows only', () => {
+  it('returns flaggedTransactions = likely/definite identity rows only', () => {
     const rows = [
       ...Array(10).fill(null).map(() => row('definite')),
       ...Array(8).fill(null).map(() => row('probable')),
@@ -28,11 +28,11 @@ describe('computeAuditSummary', () => {
       ...Array(7).fill(null).map(() => row(null)),
     ];
     const s = computeAuditSummary(rows);
-    expect(s.flaggedTransactions).toBe(23);
+    expect(s.flaggedTransactions).toBe(18);
     expect(s.ungraded).toBe(7);
   });
 
-  it('sums valueAtRisk for all graded rows only', () => {
+  it('sums valueAtRisk for likely/definite identity rows only', () => {
     const rows = [
       row('definite', 100),
       row('probable', 50),
@@ -40,7 +40,7 @@ describe('computeAuditSummary', () => {
       row(null, 999), // should NOT be included
     ];
     const s = computeAuditSummary(rows);
-    expect(s.valueAtRisk).toBe(180);
+    expect(s.valueAtRisk).toBe(150);
   });
 
   it('sums estimatedExposure for probable + definite only', () => {
@@ -54,12 +54,12 @@ describe('computeAuditSummary', () => {
     expect(s.estimatedExposure).toBe(150);
   });
 
-  it('counts unique linkedClusters from graded rows', () => {
+  it('counts unique linkedClusters from likely/definite identity rows', () => {
     const rows = [
       row('definite', 100, 'cluster-A'),
       row('definite', 100, 'cluster-A'), // same cluster
       row('probable', 50,  'cluster-B'),
-      row('possible', 30,  null),         // null cluster_id — not counted
+      row('possible', 30,  'cluster-C'),  // possible evidence — not counted as linked
       row(null,       20,  'cluster-C'),  // ungraded — not counted
     ];
     const s = computeAuditSummary(rows);
@@ -99,12 +99,24 @@ describe('computeAuditSummary', () => {
     expect(s.ungraded).toBe(0);
   });
 
-  it('counts weak grade separately from ungraded', () => {
+  it('counts weak grade separately from ungraded without making it review-worthy', () => {
     const rows = [row('weak', 10, 'c1'), row(null, 10, null)];
     const s = computeAuditSummary(rows);
     expect(s.weak).toBe(1);
     expect(s.ungraded).toBe(1);
-    expect(s.flaggedTransactions).toBe(1);
-    expect(s.valueAtRisk).toBe(10); // only the weak row
+    expect(s.flaggedTransactions).toBe(0);
+    expect(s.valueAtRisk).toBe(0);
+  });
+
+  it('treats legacy probable/definite match_status rows as review-worthy', () => {
+    const rows = [
+      row(null, 30, 'legacy-probable', 'probable'),
+      row(null, 40, 'legacy-definite', 'definite'),
+      row(null, 50, 'legacy-candidate', 'candidate'),
+    ];
+    const s = computeAuditSummary(rows);
+    expect(s.flaggedTransactions).toBe(2);
+    expect(s.valueAtRisk).toBe(70);
+    expect(s.linkedClusters).toBe(2);
   });
 });

@@ -40,6 +40,10 @@ import {
   normaliseEmail,
   normalisePhone,
   normalisePostcode,
+  normaliseAddressFull,
+  addressTokenOverlap,
+  normaliseName,
+  levenshtein,
   type CandidatePair,
   type LinkedCluster,
   type LinkerOrderInput,
@@ -118,7 +122,7 @@ export interface ClusterExpansionResult {
 
 /** Normalise a card to its BIN-last4 fingerprint string, or null. */
 function cardKey(row: LinkerOrderInput): string | null {
-  return normaliseCard(row.card_last4 ?? null, row.card_bin ?? null);
+  return normaliseCard(row.card_last4 ?? null, row.card_bin ?? null, row.card_fingerprint ?? null);
 }
 
 /** Normalise an IP to trimmed string, or null if blank/placeholder. */
@@ -234,6 +238,47 @@ function countSharedSignals(
   }
 
   return { strong, medium };
+}
+
+function hasAddressNearMatch(
+  candidate: LinkerOrderInput,
+  clusterRows: LinkerOrderInput[],
+): boolean {
+  const cand = normaliseAddressFull(candidate.shipping_address ?? candidate.address ?? null);
+  if (!cand) return false;
+  return clusterRows.some((row) => {
+    const other = normaliseAddressFull(row.shipping_address ?? row.address ?? null);
+    return !!other && (other === cand || addressTokenOverlap(cand, other) >= 0.6);
+  });
+}
+
+function surnameAndInitial(name: string): { surname: string; initial: string } | null {
+  const tokens = name.split(/\s+/).filter(Boolean);
+  if (tokens.length < 2) return null;
+  const surname = tokens[tokens.length - 1];
+  const initial = tokens[0][0] ?? '';
+  if (!surname || !initial) return null;
+  return { surname, initial };
+}
+
+function isNameVariant(a: string, b: string): boolean {
+  if (a === b) return true;
+  if (levenshtein(a, b) <= 2) return true;
+  const aa = surnameAndInitial(a);
+  const bb = surnameAndInitial(b);
+  return !!aa && !!bb && aa.surname === bb.surname && aa.initial === bb.initial;
+}
+
+function hasNameVariantMatch(
+  candidateName: string | undefined,
+  clusterNames: string[],
+): boolean {
+  const cand = normaliseName(candidateName ?? null);
+  if (!cand) return false;
+  return clusterNames.some((name) => {
+    const other = normaliseName(name);
+    return !!other && isNameVariant(cand, other);
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -414,6 +459,9 @@ function expandFromSeedClusters(
       if (assignments.has(candId)) continue; // already assigned by a prior cluster
 
       const { strong, medium } = countSharedSignals(candidateRow, clusterInputs);
+      const sharedAddress = hasAddressNearMatch(candidateRow, clusterInputs);
+      const candName = candidateNames.get(candId);
+      const sharedNameVariant = hasNameVariantMatch(candName, clusterNames);
 
       // Identity-only expansion gate (product contract: no behaviour flags).
       //   ≥2 strong signals                     → merge (probable/confirmed)
@@ -421,7 +469,15 @@ function expandFromSeedClusters(
       //   1 strong alone                         → candidate only; skip merge
       //   medium-only or corroborator-only       → no merge
       //   name+postcode, IP+postcode, BIN+postcode → no merge
-      const safeToAdd = strong.length >= 2 || (strong.length >= 1 && medium.length >= 1);
+      const addressVariantPromotion =
+        strong.length === 0 &&
+        medium.includes('postcode') &&
+        sharedAddress &&
+        sharedNameVariant;
+      const safeToAdd =
+        strong.length >= 2 ||
+        (strong.length >= 1 && medium.length >= 1) ||
+        addressVariantPromotion;
 
       if (!safeToAdd) continue;
 
@@ -444,7 +500,6 @@ function expandFromSeedClusters(
 
       // Guard 3: likely shared household (postcode-only connection + same surname)
       const allSharedSignals = [...strong, ...medium];
-      const candName = candidateNames.get(candId);
       if (isLikelySharedHousehold(candName, clusterNames, allSharedSignals)) {
         continue;
       }
@@ -468,7 +523,8 @@ function expandFromSeedClusters(
         recommended_fix:
           `Expanded into cluster (identity evidence): ` +
           `${strong.length} strong signal(s) (${strong.join(', ')})` +
-          (medium.length > 0 ? ` + ${medium.length} medium signal(s) (${medium.join(', ')})` : ''),
+          (medium.length > 0 ? ` + ${medium.length} medium signal(s) (${medium.join(', ')})` : '') +
+          (addressVariantPromotion ? ' + address/name variant support' : ''),
       });
     }
   }

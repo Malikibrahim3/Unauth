@@ -21,16 +21,22 @@ export interface GradeCounts {
 }
 
 export interface AuditSummary extends GradeCounts {
-  /** Rows where identity_confidence_grade IS NOT NULL */
+  /** Rows with likely/definite same-person identity evidence */
   flaggedTransactions: number;
   /** Rows where identity_confidence_grade IS NULL */
   ungraded: number;
-  /** Unique cluster_ids across graded rows */
+  /** Unique confirmed/likely identity clusters */
   linkedClusters: number;
-  /** Sum of order_value for all graded rows */
+  /** Sum of order_value for likely/definite identity links */
   valueAtRisk: number;
   /** Sum of order_value for probable + definite rows */
   estimatedExposure: number;
+}
+
+export function isReviewableIdentityMatch(row: Pick<AuditRow, 'identity_confidence_grade' | 'match_status'>): boolean {
+  const grade = row.identity_confidence_grade?.toLowerCase() ?? null;
+  const status = row.match_status?.toLowerCase() ?? null;
+  return grade === 'definite' || grade === 'probable' || status === 'definite' || status === 'probable';
 }
 
 export function computeAuditSummary(rows: AuditRow[]): AuditSummary {
@@ -38,6 +44,7 @@ export function computeAuditSummary(rows: AuditRow[]): AuditSummary {
   let ungraded = 0;
   let valueAtRisk = 0;
   let estimatedExposure = 0;
+  let flaggedTransactions = 0;
   const clusters = new Set<string>();
 
   for (const row of rows) {
@@ -47,22 +54,20 @@ export function computeAuditSummary(rows: AuditRow[]): AuditSummary {
     else if (g === 'probable') counts.probable++;
     else if (g === 'possible') counts.possible++;
     else if (g === 'weak') counts.weak++;
-    else { ungraded++; continue; }
+    else ungraded++;
 
-    // Below here: row is graded
+    if (!isReviewableIdentityMatch(row)) continue;
+
+    flaggedTransactions++;
     valueAtRisk += row.order_value ?? 0;
-    if (g === 'probable' || g === 'definite') {
-      estimatedExposure += row.order_value ?? 0;
-    }
-    // Count unique cluster_ids from ALL graded rows (definite, probable, possible, weak).
-    // This represents all identity clusters surfaced for review — not just confirmed ones.
-    // Use confirmed_identity_id when available (two-tier model), otherwise fall back to cluster_id.
+    estimatedExposure += row.order_value ?? 0;
+
+    // Possible/candidate evidence is visible, but it is not treated as a
+    // linked identity for review counts. Use confirmed_identity_id when
+    // available, otherwise fall back to the cluster id for likely links.
     const clusterId = row.confirmed_identity_id ?? row.cluster_id;
     if (clusterId) clusters.add(clusterId);
   }
-
-  const flaggedTransactions =
-    counts.definite + counts.probable + counts.possible + counts.weak;
 
   return {
     ...counts,

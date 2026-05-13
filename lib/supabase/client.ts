@@ -9,6 +9,8 @@ function makeMissingEnvStub(name: string) {
   });
 }
 
+let browserClient: ReturnType<typeof createBrowserClient<Database>> | null = null;
+
 export function createClient(): any {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key =
@@ -19,8 +21,9 @@ export function createClient(): any {
     return makeMissingEnvStub('Supabase (browser)') as any;
   }
 
-  return createBrowserClient<Database>(
-    url,
-    key
-  );
+  if (!browserClient) {
+    browserClient = createBrowserClient<Database>(url, key);
+  }
+
+  return browserClient;
 }

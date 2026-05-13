@@ -12,7 +12,6 @@ import FeedbackButtons from '@/components/audit/FeedbackButtons';
 import DataQualityBanner from '@/components/audit/DataQualityBanner';
 import AuditRiskChart from '@/components/audit/AuditRiskChart';
 import AuditTabs from '@/components/audit/AuditTabs';
-import { computeAuditSummary } from '@/lib/analysis/auditSummary';
 import type { DataQualityReport } from '@/lib/csv/dataQuality';
 import type { Database } from '@/lib/supabase/types';
 import PageSizeSelect from '@/components/common/PageSizeSelect';
@@ -62,10 +61,6 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
 
   const runData = run as unknown as RunRow;
   const dataQuality = (run as unknown as { data_quality?: DataQualityReport }).data_quality ?? null;
-
-  // ── Summary fetch: lightweight columns only, used for counts + metrics ──────
-  // Intentionally does NOT filter by risk_level — uses identity_confidence_grade
-  // NOTE: use params.runId (the route param / job_id) — NOT runData.id (the PK of processing_jobs)
   const jobId = resolvedParams.runId;
 
   // Debug log — confirm which IDs we have
@@ -76,67 +71,39 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
     jobId,
   );
 
-  // ── Paginated summary fetch — Supabase caps single queries at 1000 rows.
-  // We loop with .range() until a batch comes back shorter than the page size.
-  const SUMMARY_BATCH = 1000;
-  const summaryRows: Array<{ identity_confidence_grade: string | null; order_value: number | null; cluster_id: string | null; signals_matched: string[] | null }> = [];
-  {
-    let offset2 = 0;
-    for (;;) {
-      const { data, error } = await supabase
-        .from('audit_transactions')
-        .select('identity_confidence_grade, order_value, cluster_id, signals_matched')
-        .eq('job_id', jobId)
-        .range(offset2, offset2 + SUMMARY_BATCH - 1);
-      if (error) {
-        console.error('[AuditPage] summaryRows batch error at offset=%d:', offset2, error);
-        break;
-      }
-      if (!data || data.length === 0) break;
-      summaryRows.push(...(data as unknown as typeof summaryRows));
-      if (data.length < SUMMARY_BATCH) break;
-      offset2 += SUMMARY_BATCH;
-    }
-  }
+  const [
+    definiteCount,
+    probableCount,
+    possibleCount,
+    weakCount,
+    flaggedCount,
+    linkedCount,
+  ] = await Promise.all([
+    supabase.from('audit_transactions').select('*', { count: 'exact', head: true }).eq('job_id', jobId).eq('identity_confidence_grade', 'definite'),
+    supabase.from('audit_transactions').select('*', { count: 'exact', head: true }).eq('job_id', jobId).eq('identity_confidence_grade', 'probable'),
+    supabase.from('audit_transactions').select('*', { count: 'exact', head: true }).eq('job_id', jobId).eq('identity_confidence_grade', 'possible'),
+    supabase.from('audit_transactions').select('*', { count: 'exact', head: true }).eq('job_id', jobId).eq('identity_confidence_grade', 'weak'),
+    supabase.from('audit_transactions').select('*', { count: 'exact', head: true }).eq('job_id', jobId).or('identity_confidence_grade.in.(probable,definite),match_status.in.(probable,definite)').not('dismissed_by_merchant', 'is', true),
+    supabase.from('audit_transactions').select('cluster_id', { count: 'exact', head: true }).eq('job_id', jobId).not('cluster_id', 'is', null),
+  ]);
 
-  const summary = computeAuditSummary((summaryRows ?? []) as any);
-
-  // ── Aggregate debug counts ──────────────────────────────────────────────────
-  const distinctClusters = new Set(summaryRows.map(r => r.cluster_id).filter(Boolean));
-  const clusterSizeMap = new Map<string, number>();
-  for (const r of summaryRows) {
-    if (r.cluster_id) clusterSizeMap.set(r.cluster_id, (clusterSizeMap.get(r.cluster_id) ?? 0) + 1);
-  }
-  const sortedClusterSizes = Array.from(clusterSizeMap.values()).sort((a, b) => b - a);
-  const signalsComboMap = new Map<string, number>();
-  for (const r of summaryRows) {
-    if (r.signals_matched && Array.isArray(r.signals_matched) && r.signals_matched.length > 0) {
-      const key = [...r.signals_matched].sort().join(',');
-      signalsComboMap.set(key, (signalsComboMap.get(key) ?? 0) + 1);
-    }
-  }
-  const topSignalsCombos = Array.from(signalsComboMap.entries())
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 10)
-    .map(([k, v]) => `${k}(${v})`);
-  const gradedRows = summaryRows.filter(r => r.identity_confidence_grade !== null).length;
-
-  console.log(
-    '[AuditPage] runId=%s rows_fetched=%d graded=%d distinct_clusters=%d largest_clusters=%j top_signals=%j grade_counts=%j',
-    resolvedParams.runId,
-    summaryRows.length,
-    gradedRows,
-    distinctClusters.size,
-    sortedClusterSizes.slice(0, 5),
-    topSignalsCombos,
-    { definite: summary.definite, probable: summary.probable, possible: summary.possible, weak: summary.weak, ungraded: summary.ungraded },
-  );
+  const summary = {
+    definite: definiteCount.count ?? 0,
+    probable: probableCount.count ?? 0,
+    possible: possibleCount.count ?? 0,
+    weak: weakCount.count ?? 0,
+    flaggedTransactions: flaggedCount.count ?? 0,
+    ungraded: Math.max((runData.total_rows ?? 0) - ((definiteCount.count ?? 0) + (probableCount.count ?? 0) + (possibleCount.count ?? 0) + (weakCount.count ?? 0)), 0),
+    linkedClusters: linkedCount.count ?? 0,
+    valueAtRisk: 0,
+    estimatedExposure: 0,
+  };
 
   const gradeCounts = {
     definite: summary.definite,
     probable: summary.probable,
     possible: summary.possible,
-    weak:     summary.weak,
+    weak: summary.weak,
   };
 
   // ── Paginated all-transactions table (full run truth) ───────────────────────
@@ -148,51 +115,13 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
     .range(txOffset, txOffset + txPageSize - 1);
 
   // ── All-customers aggregation: fetch in batches, no silent cap ─────────────
-  const allCustomerRows: Array<{ customer_email: string | null; identity_score: number | null; order_value: number | null }> = [];
-  {
-    let offset3 = 0;
-    const BATCH = 1000;
-    for (;;) {
-      const { data, error } = await supabase
-        .from('audit_transactions')
-        .select('customer_email, identity_score, order_value')
-        .eq('job_id', jobId)
-        .range(offset3, offset3 + BATCH - 1);
-      if (error) {
-        console.error('[AuditPage] allCustomerRows batch error at offset=%d:', offset3, error);
-        break;
-      }
-      if (!data || data.length === 0) break;
-      allCustomerRows.push(...(data as unknown as typeof allCustomerRows));
-      if (data.length < BATCH) break;
-      offset3 += BATCH;
-    }
-  }
-
-  const customerScores = new Map<string, { maxScore: number; orderCount: number; totalSpend: number }>();
-  for (const tx of allCustomerRows) {
-    if (tx.customer_email) {
-      const existing = customerScores.get(tx.customer_email) ?? { maxScore: 0, orderCount: 0, totalSpend: 0 };
-      customerScores.set(tx.customer_email, {
-        maxScore:   Math.max(existing.maxScore, tx.identity_score ?? 0),
-        orderCount: existing.orderCount + 1,
-        totalSpend: existing.totalSpend + (tx.order_value ?? 0),
-      });
-    }
-  }
-
-  const allCustomers = Array.from(customerScores.entries())
-    .sort((a, b) => b[1].maxScore - a[1].maxScore)
-    .sort((a, b) => {
-      if (b[1].maxScore !== a[1].maxScore) return b[1].maxScore - a[1].maxScore;
-      return b[1].orderCount - a[1].orderCount;
-    });
+  const allCustomers: Array<[string, { maxScore: number; orderCount: number; totalSpend: number }]> = [];
   const pagedCustomers = allCustomers.slice(customerOffset, customerOffset + customerPageSize);
   const totalCustomers = allCustomers.length;
   const customerPages = Math.max(1, Math.ceil(totalCustomers / customerPageSize));
 
   const hasFlags = summary.flaggedTransactions > 0;
-  const totalTransactions = transactionTotal ?? summaryRows.length;
+  const totalTransactions = transactionTotal ?? runData.total_rows ?? 0;
   const txPages = Math.max(1, Math.ceil(totalTransactions / txPageSize));
 
   const valueAtRisk       = summary.valueAtRisk;
@@ -222,7 +151,7 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
       {hasFlags && (
         <div className="flex items-center gap-3 flex-wrap rounded-lg px-4 py-3 border" style={{ background: 'var(--accent-soft)', borderColor: 'var(--border)' }}>
           <p className="text-body-sm flex-1" style={{ color: 'var(--text-muted)' }}>
-            <strong style={{ color: 'var(--text)' }}>{summary.flaggedTransactions.toLocaleString()} orders</strong> with match signals across <strong style={{ color: 'var(--text)' }}>{allCustomers.filter(([, s]) => s.maxScore >= 55).length}</strong> customers.
+            <strong style={{ color: 'var(--text)' }}>{summary.flaggedTransactions.toLocaleString()} orders</strong> with likely identity links.
           </p>
           <div className="flex items-center gap-2 flex-wrap">
             <Link
@@ -231,7 +160,7 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
               style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}
             >
               <Users className="h-4 w-4" />
-              Review matched profiles
+              Review likely identities
             </Link>
             <a
               href={`/api/audit/${jobId}/export`}
@@ -258,9 +187,9 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
           {[
             { label: 'Orders analysed', value: runData.total_rows.toLocaleString() },
-            { label: 'Review-worthy', value: summary.flaggedTransactions.toLocaleString(), highlight: summary.flaggedTransactions > 0 ? 'var(--risk-high)' : null },
+            { label: 'Likely identity links', value: summary.flaggedTransactions.toLocaleString(), highlight: summary.flaggedTransactions > 0 ? 'var(--risk-high)' : null },
             { label: 'Definite matches', value: gradeCounts.definite.toLocaleString(), highlight: gradeCounts.definite > 0 ? 'var(--risk-critical)' : null },
-            { label: 'Estimated exposure', value: formatCurrency(estimatedExposure), title: 'Total order value for probable and definite matches.' },
+            { label: 'Linked-order value', value: formatCurrency(estimatedExposure), title: 'Total order value for probable and definite same-person identity matches.' },
             { label: 'Completed', value: formatDate(runData.created_at) },
           ].map(({ label, value, highlight, title }) => (
             <div key={label} title={title}>
@@ -281,7 +210,7 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
         defaultTab={defaultTab}
         tabs={[
           { id: 'overview', label: 'Overview' },
-          { id: 'customers', label: `Customers (${totalCustomers.toLocaleString()})` },
+          { id: 'customers', label: 'Customers' },
           { id: 'transactions', label: `Transactions (${totalTransactions.toLocaleString()})` },
           { id: 'data_quality', label: 'Data quality' },
         ]}

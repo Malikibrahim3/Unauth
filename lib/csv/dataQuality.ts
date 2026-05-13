@@ -107,6 +107,15 @@ export interface DataQualityReport {
   partlyEmptyFields: string[];          // fields in header but coverage < 20%
   maxAchievableGrade: ConfidenceGrade;  // highest cluster grade the engine can produce
   recommendations: DataQualityRecommendation[];
+  pipelineWarnings?: PipelineWarningCounters;
+}
+
+export interface PipelineWarningCounters {
+  fastContextReadRetries: number;
+  fastContextReadFailures: number;
+  entityResolutionErrors: number;
+  coOccurrenceUpstreamDown: number;
+  transactionUpsertFailedRows: number;
 }
 
 export interface DataQualityRecommendation {

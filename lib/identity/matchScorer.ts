@@ -28,6 +28,10 @@ import {
   normalisePhone,
   normalisePostcode,
   normaliseCard,
+  normaliseAddressFull,
+  addressTokenOverlap,
+  normaliseName,
+  levenshtein,
   type LinkerOrderInput,
 } from '../linker';
 import { hasValue } from '../processing/signals';
@@ -109,6 +113,14 @@ const SIGNAL_DEFS: Record<
   name:             { tier: 'corroborator', points: 5,  anchor: false, label: 'same customer name',         changedLabel: 'different customer name' },
 };
 
+const CARD_FINGERPRINT_DEF = {
+  tier: 'strong' as const,
+  points: 30,
+  anchor: true,
+  label: 'same card fingerprint',
+  changedLabel: 'different card fingerprint',
+};
+
 // ---------------------------------------------------------------------------
 // Normalisation helpers
 // ---------------------------------------------------------------------------
@@ -126,14 +138,14 @@ function getRowValues(row: LinkerOrderInput): Map<IdentitySignalKind, string> {
     const n = normaliseEmail(row.email);
     if (n) m.set('email', n);
   }
-  const cardKey = normaliseCard(row.card_last4 ?? null, row.card_bin ?? null);
+  const cardKey = normaliseCard(row.card_last4 ?? null, row.card_bin ?? null, row.card_fingerprint ?? null);
   if (cardKey) m.set('card', cardKey);
   if (hasValue(row.shipping_address ?? row.address)) {
-    const addr = (row.shipping_address ?? row.address ?? '').trim().toLowerCase();
+    const addr = normaliseAddressFull(row.shipping_address ?? row.address ?? null);
     if (addr) m.set('shipping_address', addr);
   }
   if (hasValue(row.billing_address)) {
-    const addr = row.billing_address!.trim().toLowerCase();
+    const addr = normaliseAddressFull(row.billing_address);
     if (addr) m.set('billing_address', addr);
   }
   if (hasValue(row.postcode)) {
@@ -142,11 +154,34 @@ function getRowValues(row: LinkerOrderInput): Map<IdentitySignalKind, string> {
   }
   if (hasValue(row.ip)) m.set('ip', row.ip!.trim());
   if (hasValue((row as LinkerOrderInput & { name?: string | null }).name)) {
-    const n = (row as LinkerOrderInput & { name?: string | null }).name!.trim().toLowerCase();
+    const n = normaliseName((row as LinkerOrderInput & { name?: string | null }).name);
     if (n) m.set('name', n);
   }
 
   return m;
+}
+
+function surnameAndInitial(name: string): { surname: string; initial: string } | null {
+  const tokens = name.split(/\s+/).filter(Boolean);
+  if (tokens.length < 2) return null;
+  const surname = tokens[tokens.length - 1];
+  const initial = tokens[0][0] ?? '';
+  if (!surname || !initial) return null;
+  return { surname, initial };
+}
+
+function isNameVariantMatch(a: string, b: string): boolean {
+  if (a === b) return true;
+  if (levenshtein(a, b) <= 2) return true;
+
+  const aa = surnameAndInitial(a);
+  const bb = surnameAndInitial(b);
+  return !!aa && !!bb && aa.surname === bb.surname && aa.initial === bb.initial;
+}
+
+function isAddressVariantMatch(a: string, b: string): boolean {
+  if (a === b) return true;
+  return addressTokenOverlap(a, b) >= 0.6;
 }
 
 // ---------------------------------------------------------------------------
@@ -282,7 +317,9 @@ export function scoreIdentityMatch(
     const rowVal = rowValues.get(signal);
     if (!rowVal) continue;
 
-    const def = SIGNAL_DEFS[signal];
+    const def = signal === 'card' && rowVal.startsWith('fp:')
+      ? CARD_FINGERPRINT_DEF
+      : SIGNAL_DEFS[signal];
 
     // Check for exact match against any cluster member
     const matchingMember = others.find((o) => {
@@ -300,6 +337,44 @@ export function scoreIdentityMatch(
         anchor: def.anchor,
       });
       matchedSignals.add(signal);
+      continue;
+    }
+
+    if (signal === 'name') {
+      const fuzzyMember = others.find((o) => {
+        const otherVal = getRowValues(o).get('name');
+        return otherVal ? isNameVariantMatch(rowVal, otherVal) : false;
+      });
+      if (fuzzyMember) {
+        evidence.push({
+          signal,
+          tier: def.tier,
+          matchType: 'fuzzy',
+          matchedValueLabel: def.label,
+          points: def.points,
+          anchor: def.anchor,
+        });
+        matchedSignals.add(signal);
+        continue;
+      }
+    }
+
+    if (signal === 'shipping_address' || signal === 'billing_address') {
+      const partialMember = others.find((o) => {
+        const otherVal = getRowValues(o).get(signal);
+        return otherVal ? isAddressVariantMatch(rowVal, otherVal) : false;
+      });
+      if (partialMember) {
+        evidence.push({
+          signal,
+          tier: def.tier,
+          matchType: 'partial',
+          matchedValueLabel: def.label,
+          points: def.points,
+          anchor: def.anchor,
+        });
+        matchedSignals.add(signal);
+      }
     }
   }
 

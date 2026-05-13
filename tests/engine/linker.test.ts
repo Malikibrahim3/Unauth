@@ -91,6 +91,12 @@ describe('normaliseCard', () => {
     expect(normaliseCard('12', '411111')).toBeNull();
     expect(normaliseCard(null, '411111')).toBeNull();
   });
+  test('prefers PSP card fingerprint when present', () => {
+    const a = normaliseCard('1111', '411111', 'CARD-ABC');
+    const b = normaliseCard('9999', '555555', ' card-abc ');
+    expect(a).toBe(b);
+    expect(a).toMatch(/^fp:[a-f0-9]{64}$/);
+  });
 });
 
 describe('normaliseAddress', () => {
@@ -123,6 +129,17 @@ describe('linkIdentities', () => {
     ]);
     expect(result.clusters).toHaveLength(0);
     expect(result.candidatePairs).toHaveLength(0); // 12 < POSSIBLE_THRESHOLD 15
+  });
+
+  test('card fingerprint alone links as a strong payment identity signal', () => {
+    const result = linkIdentities([
+      mkOrder('A', { email: 'alice@example.com', card_fingerprint: 'CARD-FP-1' }),
+      mkOrder('B', { email: 'bob@example.com', card_fingerprint: 'card-fp-1' }),
+    ]);
+    expect(result.clusters).toHaveLength(1);
+    expect(result.clusters[0].order_ids).toEqual(['A', 'B']);
+    expect(result.clusters[0].signals_matched).toContain('card');
+    expect(result.clusters[0].evidence_summary).toContain('card:fingerprint');
   });
 
   test('same card (BIN+last4) + same phone with different emails → linked', () => {

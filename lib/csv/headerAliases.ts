@@ -210,7 +210,7 @@ export const HEADER_ALIASES: Record<RequiredField, string[]> = {
     'order_total', 'total',
     // General
     'amount', 'grand_total', 'grand total', 'order_amount', 'order amount',
-    'price', 'item-price', 'item price', 'order value', 'order_value',
+    'price', 'item-price', 'item price', 'order value', 'order_value', 'order_value_gbp', 'order value gbp',
     'revenue', 'net total', 'gross total', 'value',
   ],
 

@@ -236,6 +236,17 @@ describe('Positive identity fixtures: genuine links must surface', () => {
     expect(rowResult.matched_datapoints).toContain('same email address');
   });
 
+  it('card fingerprint is a strong payment identity anchor, unlike BIN+last4', () => {
+    const cluster = [
+      makeOrder('a', { card_fingerprint: 'CARD-FP-123' }),
+      makeOrder('b', { card_fingerprint: 'card-fp-123' }),
+    ];
+    const rowResult = scoreIdentityMatch(cluster[0], cluster);
+    expect(rowResult.identity_match_grade).toBe('candidate');
+    expect(rowResult.identity_match_score).toBeGreaterThanOrEqual(30);
+    expect(rowResult.matched_datapoints).toContain('same card fingerprint');
+  });
+
   it('changed_datapoints captures changed email', () => {
     const cluster = [
       makeOrder('a', { phone: '+447700900700', email: 'old@example.com' }),

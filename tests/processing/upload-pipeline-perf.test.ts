@@ -53,6 +53,54 @@ function makeRecordingClient() {
   return client as unknown as SupabaseClient & { _calls: typeof calls };
 }
 
+function makeReadRetryClient() {
+  let emailAttempts = 0;
+  const client = {
+    from: (table: string) => {
+      const state: { entityType?: string } = {};
+      const chain: any = {
+        select() { return chain; },
+        eq(col: string, val: unknown) {
+          if (col === 'entity_type') state.entityType = String(val);
+          return chain;
+        },
+        in() {
+          if (table === 'fraud_entities' && state.entityType === 'email') {
+            emailAttempts++;
+            if (emailAttempts === 1) {
+              return Promise.reject(new TypeError('fetch failed'));
+            }
+            return Promise.resolve({
+              data: [{
+                id: 'entity-1',
+                entity_type: 'email',
+                entity_value: 'user0@example.com',
+                first_seen: new Date().toISOString(),
+                last_seen: new Date().toISOString(),
+                total_orders: 2,
+                total_refund_claims: 1,
+                total_chargebacks: 0,
+                total_merchants: 1,
+                match_score_avg: 80,
+                flagged_count: 1,
+              }],
+              error: null,
+            });
+          }
+          return Promise.resolve({ data: [], error: null });
+        },
+        overlaps() { return Promise.resolve({ data: [], error: null }); },
+        or() { return Promise.resolve({ data: [], error: null }); },
+        limit() { return Promise.resolve({ data: [], error: null }); },
+        then(onF: any, onR: any) { return Promise.resolve({ data: [], error: null }).then(onF, onR); },
+      };
+      return chain;
+    },
+    get emailAttempts() { return emailAttempts; },
+  };
+  return client as unknown as SupabaseClient & { emailAttempts: number };
+}
+
 function makeOrder(i: number): NormalisedOrder {
   return {
     orderId: `ORD-${i}`,
@@ -136,6 +184,18 @@ describe('LOCKED INVARIANT — column projection', () => {
       expect(call.details.cols).not.toBe('*');
       expect(String(call.details.cols)).toContain('entity_value');
     }
+  });
+});
+
+describe('LOCKED INVARIANT — historical read retries', () => {
+  it('retries transient fetch failures and preserves historical hits', async () => {
+    const client = makeReadRetryClient();
+    const ctx = await buildFastContext([makeOrder(0)], client);
+
+    expect(client.emailAttempts).toBe(2);
+    expect(ctx.readHealth.fastContextReadRetries).toBe(1);
+    expect(ctx.readHealth.fastContextReadFailures).toBe(0);
+    expect(ctx.historicalEmailMap.get('user0@example.com')?.id).toBe('entity-1');
   });
 });
 

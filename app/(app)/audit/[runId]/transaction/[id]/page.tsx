@@ -6,7 +6,7 @@ import { formatCurrencyNullable } from '@/lib/utils/formatCurrency';
 import { labelFor } from '@/lib/copy/labels';
 import { signalCopy } from '@/lib/copy/signals';
 import { ConfidenceBadge } from '@/components/ui/ConfidenceBadge';
-import { riskLevelToNewGrade, type ConfidenceGradeValue } from '@/lib/confidence';
+import type { ConfidenceGradeValue } from '@/lib/confidence';
 import RecommendedAction from '@/components/audit/RecommendedAction';
 import type { Database } from '@/lib/supabase/types';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
@@ -53,9 +53,13 @@ export default async function TransactionDetailPage({ params }: Props) {
     identity_confidence_grade?: string | null;
     identity_score?: number | null;
     cluster_id?: string | null;
+    risk_level?: string | null;
   };
   const signals = Array.isArray(txData.signals_matched) ? txData.signals_matched : [];
   const flags = Array.isArray(txData.behavioural_flags) ? txData.behavioural_flags : [];
+  const riskTier = txData.risk_level === 'low' || txData.risk_level === 'medium' || txData.risk_level === 'high' || txData.risk_level === 'critical'
+    ? txData.risk_level
+    : 'low';
 
   return (
     <div className="p-8 max-w-4xl space-y-6">
@@ -158,7 +162,7 @@ export default async function TransactionDetailPage({ params }: Props) {
       </div>
 
       <RecommendedAction
-        tier={((txData.identity_confidence_grade ?? riskLevelToNewGrade((txData as any).risk_level)) as 'low' | 'medium' | 'high' | 'critical')}
+        tier={riskTier}
         topSignalName={signals[0]}
         customersHref={`/audit/${resolvedParams.runId}/customers`}
       />

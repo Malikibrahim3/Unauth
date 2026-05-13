@@ -53,6 +53,8 @@ export interface LinkerOrderInput {
   ip?: string | null;
   card_last4?: string | null;
   card_bin?: string | null;
+  /** PSP/card-network fingerprint. Prefer this over BIN+last4 when present. */
+  card_fingerprint?: string | null;
   device_fingerprint?: string | null;
   account_id?: string | null;
   name?: string | null;
@@ -219,8 +221,14 @@ export function normalisePostcode(raw: string | null | undefined): string {
  */
 export function normaliseCard(
   last4: string | null | undefined,
-  bin?: string | null | undefined
+  bin?: string | null | undefined,
+  fingerprint?: string | null | undefined
 ): string | null {
+  const fp = (fingerprint ?? '').trim().toLowerCase();
+  if (fp) {
+    const h = createHash('sha256').update(fp).digest('hex');
+    return `fp:${h}`;
+  }
   const digits4 = (last4 ?? '').replace(/\D/g, '').slice(-4);
   if (digits4.length !== 4) return null;
   const digitsBin = (bin ?? '').replace(/\D/g, '').slice(0, 8);
@@ -738,8 +746,8 @@ function scorePair(
 
   // card
   if (a.card && b.card && a.card === b.card) {
-    const tier = a.card.includes('-') ? 'full' : 'last4';
-    const weight = tier === 'full' ? 12 : 8;
+    const tier = a.card.startsWith('fp:') ? 'fingerprint' : (a.card.includes('-') ? 'full' : 'last4');
+    const weight = tier === 'fingerprint' ? 30 : (tier === 'full' ? 12 : 8);
     fired.push({ family: 'card', tier, weight });
   }
 
@@ -897,7 +905,7 @@ export function linkIdentities(input: LinkerOrderInput[]): LinkerResult {
       email_domain: row.email ? row.email.toLowerCase().split('@')[1]?.trim() ?? null : null,
       phone: normalisePhone(row.phone),
       phone_partial: phonePartial(normalisePhone(row.phone)),
-      card: normaliseCard(guardCardLast4(row.card_last4), row.card_bin),
+      card: normaliseCard(guardCardLast4(row.card_last4), row.card_bin, row.card_fingerprint),
       ip: guardIP(row.ip),
       ip_subnet: ipSubnet(guardIP(row.ip)),
       postcode: normalisePostcode(row.postcode),
