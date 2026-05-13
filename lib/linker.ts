@@ -628,6 +628,96 @@ function addWeakSignalPairsSelective(
   return diagnostics;
 }
 
+type IndependenceGroup = 'contact' | 'payment' | 'network_device' | 'location' | 'name';
+
+interface FiredSignal {
+  family: LinkerSignal;
+  tier: string;
+  weight: number;
+  independenceGroup: IndependenceGroup;
+  frequency: number;
+}
+
+const COMMON_WEAK_SIGNAL_LIMIT = 12;
+const VERY_COMMON_WEAK_SIGNAL_LIMIT = 40;
+
+function indexFrequency(idx: Map<string, string[]>, key: string | null | undefined): number {
+  if (!key) return 0;
+  return idx.get(key)?.length ?? 0;
+}
+
+function signalIndependenceGroup(family: LinkerSignal, tier: string): IndependenceGroup {
+  if (family === 'card') return 'payment';
+  if (family === 'device' || family === 'ip') return 'network_device';
+  if (family === 'shipping_address' || family === 'billing_address' || family === 'postcode') return 'location';
+  if (family === 'name') return 'name';
+  return 'contact';
+}
+
+function isWeakOrCollisionProneSignal(family: LinkerSignal, tier: string): boolean {
+  if (family === 'name' || family === 'postcode' || family === 'ip') return true;
+  if (family === 'shipping_address' || family === 'billing_address') return true;
+  if (family === 'email' && tier !== 'exact') return true;
+  if (family === 'phone' && tier !== 'exact') return true;
+  if (family === 'card' && tier !== 'fingerprint') return true;
+  return false;
+}
+
+function addFiredSignal(
+  fired: FiredSignal[],
+  family: LinkerSignal,
+  tier: string,
+  weight: number,
+  frequency: number,
+  applyFrequencyPenalty = true
+): void {
+  let adjustedWeight = weight;
+  if (applyFrequencyPenalty && isWeakOrCollisionProneSignal(family, tier)) {
+    if (frequency > VERY_COMMON_WEAK_SIGNAL_LIMIT) adjustedWeight = 0;
+    else if (frequency > COMMON_WEAK_SIGNAL_LIMIT) adjustedWeight = Math.floor(weight * 0.4);
+  }
+  if (adjustedWeight <= 0) return;
+  fired.push({
+    family,
+    tier,
+    weight: adjustedWeight,
+    independenceGroup: signalIndependenceGroup(family, tier),
+    frequency,
+  });
+}
+
+function isExactEmailSignal(f: FiredSignal): boolean {
+  return f.family === 'email' && f.tier === 'exact';
+}
+
+function isStrongPersonalAnchorSignal(f: FiredSignal): boolean {
+  if (f.family === 'phone' && f.tier === 'exact') return true;
+  if (f.family === 'device' && f.tier === 'exact') return true;
+  if (f.family === 'card' && f.tier === 'fingerprint') return true;
+  return isExactEmailSignal(f);
+}
+
+function hasCorroboratedAccountIdentity(fired: FiredSignal[]): boolean {
+  const evidence = new Set(fired.map((f) => `${f.family}:${f.tier}`));
+  if (!evidence.has('account:exact')) return false;
+  const hasName = evidence.has('name:exact') || evidence.has('name:fuzzy');
+  const hasCardFull = evidence.has('card:full');
+  const hasEmailUsername = evidence.has('email:username');
+  const hasPhonePartial = evidence.has('phone:partial');
+  const hasLocation =
+    evidence.has('shipping_address:exact') ||
+    evidence.has('shipping_address:partial') ||
+    evidence.has('billing_address:exact') ||
+    evidence.has('billing_address:partial') ||
+    evidence.has('billing_address:cross') ||
+    evidence.has('postcode:full');
+  const hasNetwork = evidence.has('ip:exact') || evidence.has('ip:subnet');
+  return (
+    (hasName && (hasCardFull || hasEmailUsername || hasPhonePartial || hasLocation || hasNetwork)) ||
+    (hasCardFull && hasEmailUsername)
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Step 4 — Scoring.
 //
@@ -643,9 +733,9 @@ const FAMILY_TIERS = {
   account:          { exact: 25 },
   shipping_address: { exact: 22, partial: 12 },
   billing_address:  { exact: 22, partial: 12 },
-  email:            { exact: 20, username: 15 },
+  email:            { exact: 35, username: 15 },
   name:             { exact: 18, fuzzy: 10 },
-  card:             { full: 12, last4: 8 },
+  card:             { fingerprint: 30, full: 12, last4: 8 },
   postcode:         { full: 10, outward: 5 },
   ip:               { exact: 8, subnet: 4 },
 } as const;
@@ -681,65 +771,68 @@ function jaccardTokens(a: string[], b: string[]): number {
 function scorePair(
   a: NormalisedOrder,
   b: NormalisedOrder,
-  bonusCrossAddress: boolean
+  bonusCrossAddress: boolean,
+  ix: Indexes,
+  options: { allowWeakOnly?: boolean; applyFrequencyPenalty?: boolean } = {}
 ): { score: number; signals: LinkerSignal[]; evidence: string[] } {
-  const fired: { family: LinkerSignal; tier: string; weight: number }[] = [];
+  const fired: FiredSignal[] = [];
+  const applyFrequencyPenalty = options.applyFrequencyPenalty ?? true;
 
   // phone
   if (a.phone && b.phone && a.phone === b.phone) {
-    fired.push({ family: 'phone', tier: 'exact', weight: 30 });
+    addFiredSignal(fired, 'phone', 'exact', 30, indexFrequency(ix.phone, a.phone), applyFrequencyPenalty);
   } else if (a.phone_partial && b.phone_partial && a.phone_partial === b.phone_partial) {
-    fired.push({ family: 'phone', tier: 'partial', weight: 15 });
+    addFiredSignal(fired, 'phone', 'partial', 15, indexFrequency(ix.phone_partial, a.phone_partial), applyFrequencyPenalty);
   }
 
   // device
   if (a.device && b.device && a.device === b.device) {
-    fired.push({ family: 'device', tier: 'exact', weight: 30 });
+    addFiredSignal(fired, 'device', 'exact', 30, indexFrequency(ix.device, a.device), applyFrequencyPenalty);
   }
 
   // account
   if (a.account && b.account && a.account === b.account) {
-    fired.push({ family: 'account', tier: 'exact', weight: 25 });
+    addFiredSignal(fired, 'account', 'exact', 25, indexFrequency(ix.account, a.account), applyFrequencyPenalty);
   }
 
   // shipping_address
   if (a.shipping_full && b.shipping_full && a.shipping_full === b.shipping_full) {
-    fired.push({ family: 'shipping_address', tier: 'exact', weight: 22 });
+    addFiredSignal(fired, 'shipping_address', 'exact', 22, indexFrequency(ix.shipping_full, a.shipping_full), applyFrequencyPenalty);
   } else if (a.shipping_tokens.length > 0 && b.shipping_tokens.length > 0) {
     const ov = jaccardTokens(a.shipping_tokens, b.shipping_tokens);
-    if (ov >= 0.75) fired.push({ family: 'shipping_address', tier: 'partial', weight: 12 });
+    if (ov >= 0.75) addFiredSignal(fired, 'shipping_address', 'partial', 12, 0, applyFrequencyPenalty);
   }
 
   // billing_address
   if (a.billing_full && b.billing_full && a.billing_full === b.billing_full) {
-    fired.push({ family: 'billing_address', tier: 'exact', weight: 22 });
+    addFiredSignal(fired, 'billing_address', 'exact', 22, indexFrequency(ix.billing_full, a.billing_full), applyFrequencyPenalty);
   } else if (a.billing_tokens.length > 0 && b.billing_tokens.length > 0) {
     const ov = jaccardTokens(a.billing_tokens, b.billing_tokens);
-    if (ov >= 0.75) fired.push({ family: 'billing_address', tier: 'partial', weight: 12 });
+    if (ov >= 0.75) addFiredSignal(fired, 'billing_address', 'partial', 12, 0, applyFrequencyPenalty);
   }
 
   // shipping↔billing cross-match bonus
   if (bonusCrossAddress) {
-    fired.push({ family: 'billing_address', tier: 'cross', weight: 18 });
+    addFiredSignal(fired, 'billing_address', 'cross', 18, 0, applyFrequencyPenalty);
   }
 
   // email
   if (a.email && b.email && a.email === b.email) {
-    fired.push({ family: 'email', tier: 'exact', weight: 20 });
+    addFiredSignal(fired, 'email', 'exact', 35, indexFrequency(ix.email, a.email), applyFrequencyPenalty);
   } else if (
     a.email_username && b.email_username && a.email_username === b.email_username &&
     a.email_domain && b.email_domain && a.email_domain !== b.email_domain
   ) {
-    fired.push({ family: 'email', tier: 'username', weight: 15 });
+    addFiredSignal(fired, 'email', 'username', 15, indexFrequency(ix.email_username, a.email_username), applyFrequencyPenalty);
   }
 
   // name
   if (a.name && b.name && a.name === b.name) {
-    fired.push({ family: 'name', tier: 'exact', weight: 18 });
+    addFiredSignal(fired, 'name', 'exact', 18, indexFrequency(ix.name, a.name), applyFrequencyPenalty);
   } else if (a.name && b.name && a.name.length >= 6 && b.name.length >= 6) {
     if (a.name_bucket && a.name_bucket === b.name_bucket) {
       if (levenshtein(a.name, b.name) <= 2) {
-        fired.push({ family: 'name', tier: 'fuzzy', weight: 10 });
+        addFiredSignal(fired, 'name', 'fuzzy', 10, indexFrequency(ix.name_bucket, a.name_bucket), applyFrequencyPenalty);
       }
     }
   }
@@ -748,39 +841,37 @@ function scorePair(
   if (a.card && b.card && a.card === b.card) {
     const tier = a.card.startsWith('fp:') ? 'fingerprint' : (a.card.includes('-') ? 'full' : 'last4');
     const weight = tier === 'fingerprint' ? 30 : (tier === 'full' ? 12 : 8);
-    fired.push({ family: 'card', tier, weight });
+    addFiredSignal(fired, 'card', tier, weight, indexFrequency(ix.card, a.card), applyFrequencyPenalty);
   }
 
   // postcode
   if (a.postcode && b.postcode && a.postcode === b.postcode) {
-    fired.push({ family: 'postcode', tier: 'full', weight: 10 });
+    addFiredSignal(fired, 'postcode', 'full', 10, indexFrequency(ix.postcode, a.postcode), applyFrequencyPenalty);
   } else if (a.postcode_outward && b.postcode_outward && a.postcode_outward === b.postcode_outward) {
-    fired.push({ family: 'postcode', tier: 'outward', weight: 5 });
+    addFiredSignal(fired, 'postcode', 'outward', 5, indexFrequency(ix.postcode_outward, a.postcode_outward), applyFrequencyPenalty);
   }
 
   // ip
   if (a.ip && b.ip && a.ip === b.ip) {
-    fired.push({ family: 'ip', tier: 'exact', weight: 8 });
+    addFiredSignal(fired, 'ip', 'exact', 8, indexFrequency(ix.ip, a.ip), applyFrequencyPenalty);
   } else if (a.ip_subnet && b.ip_subnet && a.ip_subnet === b.ip_subnet) {
-    fired.push({ family: 'ip', tier: 'subnet', weight: 4 });
+    addFiredSignal(fired, 'ip', 'subnet', 4, indexFrequency(ix.ip_subnet, a.ip_subnet), applyFrequencyPenalty);
   }
 
-  // Anchor rule: a pair must have at least one STRICTLY personal signal
-  // (phone, device, account, email, or card) to be counted. Location signals
-  // (postcode, ip, shipping_address, billing_address) and name can corroborate
-  // but cannot anchor alone — two people can share a name AND a corporate
-  // address without being the same person.
-  const strictPersonal = fired.filter(
-    (f) =>
-      f.family === 'phone' ||
-      f.family === 'device' ||
-      f.family === 'account' ||
-      f.family === 'email' ||
-      f.family === 'card'
-  );
-  if (strictPersonal.length === 0) return { score: 0, signals: [], evidence: [] };
+  const hasExactEmail = fired.some(isExactEmailSignal);
+  if (!hasExactEmail && !options.allowWeakOnly) {
+    if (!fired.some(isStrongPersonalAnchorSignal) && !hasCorroboratedAccountIdentity(fired)) {
+      return { score: 0, signals: [], evidence: [] };
+    }
 
-  const score = fired.reduce((s, f) => s + f.weight, 0);
+    const independentGroups = new Set(fired.map((f) => f.independenceGroup));
+    if (independentGroups.size < 2) {
+      return { score: 0, signals: [], evidence: [] };
+    }
+  }
+
+  const rawScore = fired.reduce((s, f) => s + f.weight, 0);
+  const score = hasExactEmail ? Math.max(rawScore, LINK_THRESHOLD) : rawScore;
   const signals = Array.from(new Set(fired.map((f) => f.family))).sort(
     (x, y) => familyMaxScore(y) - familyMaxScore(x)
   );
@@ -824,6 +915,114 @@ class UnionFind {
     if (ra < rb) this.parent.set(rb, ra);
     else this.parent.set(ra, rb);
   }
+}
+
+function hasStableIdentityConflict(
+  orderIds: string[],
+  byId: Map<string, NormalisedOrder>,
+  evidence: Set<string> = new Set()
+): boolean {
+  const allowsPhoneDrift =
+    (evidence.has('name:exact') || evidence.has('name:fuzzy')) &&
+    (evidence.has('card:full') || evidence.has('email:username') || evidence.has('email:exact')) &&
+    (
+      evidence.has('shipping_address:exact') ||
+      evidence.has('shipping_address:partial') ||
+      evidence.has('billing_address:exact') ||
+      evidence.has('billing_address:partial') ||
+      evidence.has('billing_address:cross') ||
+      evidence.has('postcode:full')
+    );
+
+  const families: Array<'phone' | 'device' | 'account'> = ['phone', 'device', 'account'];
+  for (const family of families) {
+    const values = new Set<string>();
+    for (const id of orderIds) {
+      const value = byId.get(id)?.[family];
+      if (value) values.add(value);
+      if (values.size > 1) {
+        if (family === 'phone' && allowsPhoneDrift) continue;
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+function bestEvidenceWeights(evidence: string[]): Map<LinkerSignal, number> {
+  const weights = new Map<LinkerSignal, number>();
+  for (const item of evidence) {
+    const [familyRaw, tierRaw] = item.split(':');
+    const family = familyRaw as LinkerSignal;
+    const tier = tierRaw as string;
+    const tiers = FAMILY_TIERS[family as keyof typeof FAMILY_TIERS] as Record<string, number> | undefined;
+    const weight = tiers?.[tier] ?? 0;
+    if (weight > (weights.get(family) ?? 0)) weights.set(family, weight);
+  }
+  return weights;
+}
+
+function isGraphChainEdgeEligible(score: number, evidence: string[]): boolean {
+  const evidenceSet = new Set(evidence);
+  const onlyNameAndEmailUsername = evidence.every(
+    (item) => item.startsWith('name:') || item === 'email:username'
+  ) && evidenceSet.has('email:username');
+  if (onlyNameAndEmailUsername) return false;
+  return score >= LINK_THRESHOLD - 2;
+}
+
+function hasAccountGraphCorroboration(evidence: Set<string>): boolean {
+  if (!evidence.has('account:exact')) return true;
+  if (
+    evidence.has('email:exact') ||
+    evidence.has('phone:exact') ||
+    evidence.has('device:exact') ||
+    evidence.has('card:fingerprint')
+  ) {
+    return true;
+  }
+  const hasName = evidence.has('name:exact') || evidence.has('name:fuzzy');
+  const hasCardFull = evidence.has('card:full');
+  const hasEmailUsername = evidence.has('email:username');
+  const hasLocation =
+    evidence.has('shipping_address:exact') ||
+    evidence.has('shipping_address:partial') ||
+    evidence.has('billing_address:exact') ||
+    evidence.has('billing_address:partial') ||
+    evidence.has('billing_address:cross') ||
+    evidence.has('postcode:full');
+  const hasNetwork = evidence.has('ip:exact') || evidence.has('ip:subnet');
+  return (
+    (hasName && (hasCardFull || hasEmailUsername || hasLocation || hasNetwork)) ||
+    (hasCardFull && hasEmailUsername)
+  );
+}
+
+function isHighConfidenceGraphEdge(evidence: string[], score: number): boolean {
+  if (score < 80) return false;
+  const set = new Set(evidence);
+  if (!hasAccountGraphCorroboration(set)) return false;
+  const hasLocation =
+    set.has('shipping_address:exact') ||
+    set.has('shipping_address:partial') ||
+    set.has('billing_address:exact') ||
+    set.has('billing_address:partial') ||
+    set.has('billing_address:cross') ||
+    set.has('postcode:full');
+  const hasNetwork = set.has('ip:exact') || set.has('ip:subnet');
+  const hasName = set.has('name:exact') || set.has('name:fuzzy');
+  const hasEmailUsername = set.has('email:username');
+  const hasCardFull = set.has('card:full');
+  const hasExactIdentity =
+    set.has('email:exact') ||
+    set.has('phone:exact') ||
+    set.has('device:exact') ||
+    set.has('card:fingerprint');
+
+  if (hasExactIdentity) return true;
+  if (hasCardFull && (hasName || hasEmailUsername || hasLocation || hasNetwork)) return true;
+  if (hasEmailUsername && (hasLocation || hasNetwork || hasName)) return true;
+  return false;
 }
 
 /**
@@ -888,10 +1087,6 @@ function guardCardLast4(raw: string | null | undefined): string | null {
 // ---------------------------------------------------------------------------
 
 export function linkIdentities(input: LinkerOrderInput[]): LinkerResult {
-  const rawEmailByOrderId = new Map(
-    input.map((row) => [row.order_id, row.email ? row.email.trim().toLowerCase() : null])
-  );
-
   // Step 1 — normalise. No comparisons yet.
   const normalised: NormalisedOrder[] = input.map((row) => {
     const ship = row.shipping_address ?? row.address ?? null;
@@ -935,15 +1130,15 @@ export function linkIdentities(input: LinkerOrderInput[]): LinkerResult {
   addSignalPairsFrom(ix.device,         'device',           pairs);
   addSignalPairsFrom(ix.account,        'account',          pairs);
   addSignalPairsFrom(ix.email,          'email',            pairs);
-  addSignalPairsFrom(ix.shipping_full,  'shipping_address', pairs);
-  addSignalPairsFrom(ix.billing_full,   'billing_address',  pairs);
-  addSignalPairsFrom(ix.name,           'name',             pairs);
-  addSignalPairsFrom(ix.email_username, 'email',            pairs); // same family as email
+  addSignalPairsFrom(ix.shipping_full,  'shipping_address', pairs, 200);
+  addSignalPairsFrom(ix.billing_full,   'billing_address',  pairs, 200);
 
   // Stage 2 — Weak signals: localized expansion around suspicious nodes.
   const diags = [
     ...addWeakSignalPairsSelective(ix.phone_partial,    'phone',    pairs, 50, 25),
+    ...addWeakSignalPairsSelective(ix.name,             'name',     pairs, 50, 25),
     ...addWeakSignalPairsSelective(ix.name_bucket,      'name',     pairs, 50, 25),
+    ...addWeakSignalPairsSelective(ix.email_username,   'email',    pairs, 50, 25),
     ...addWeakSignalPairsSelective(ix.postcode,         'postcode', pairs, 50, 25),
     ...addWeakSignalPairsSelective(ix.postcode_outward, 'postcode', pairs, 50, 25),
     ...addWeakSignalPairsSelective(ix.ip,               'ip',       pairs, 50, 25),
@@ -985,14 +1180,10 @@ export function linkIdentities(input: LinkerOrderInput[]): LinkerResult {
       continue;
     }
 
-    const rawEmailA = rawEmailByOrderId.get(acc.order_id_a);
-    const rawEmailB = rawEmailByOrderId.get(acc.order_id_b);
-    if (rawEmailA && rawEmailB && rawEmailA === rawEmailB) continue;
-
     const oa = byId.get(acc.order_id_a)!;
     const ob = byId.get(acc.order_id_b)!;
     const cross = isCrossAddressMatch(oa, ob);
-    const { score, signals, evidence } = scorePair(oa, ob, cross);
+    const { score, signals, evidence } = scorePair(oa, ob, cross, ix);
     if (score === 0) continue;
 
     if (score >= POSSIBLE_THRESHOLD) {
@@ -1020,6 +1211,158 @@ export function linkIdentities(input: LinkerOrderInput[]): LinkerResult {
   const uf = new UnionFind();
   for (const p of linkedPairs) {
     uf.union(p.a, p.b);
+  }
+
+  const directLinkedKeys = new Set(linkedPairs.map((p) => pairKey(p.a, p.b)));
+  const directRootMembers = new Map<string, string[]>();
+  for (const row of normalised) {
+    const root = uf.find(row.order_id);
+    const members = directRootMembers.get(root) ?? [];
+    members.push(row.order_id);
+    directRootMembers.set(root, members);
+  }
+
+  type ChainEdge = {
+    a: string;
+    b: string;
+    rootA: string;
+    rootB: string;
+    score: number;
+    signals: LinkerSignal[];
+    evidence: string[];
+  };
+
+  const chainEdges: ChainEdge[] = [];
+  for (const acc of Array.from(pairs.values())) {
+    if (directLinkedKeys.has(pairKey(acc.order_id_a, acc.order_id_b))) continue;
+
+    const rootA = uf.find(acc.order_id_a);
+    const rootB = uf.find(acc.order_id_b);
+    if (rootA === rootB) continue;
+
+    const oa = byId.get(acc.order_id_a)!;
+    const ob = byId.get(acc.order_id_b)!;
+    const cross = isCrossAddressMatch(oa, ob);
+    const chainScore = scorePair(oa, ob, cross, ix, {
+      allowWeakOnly: true,
+      applyFrequencyPenalty: false,
+    });
+    if (chainScore.score < POSSIBLE_THRESHOLD || chainScore.signals.length === 0) continue;
+
+    candidatePairs.push({
+      order_id_a: acc.order_id_a,
+      order_id_b: acc.order_id_b,
+      score: chainScore.score,
+      signals: chainScore.signals,
+      evidence: chainScore.evidence,
+    });
+    if (!isGraphChainEdgeEligible(chainScore.score, chainScore.evidence)) continue;
+
+    chainEdges.push({
+      a: acc.order_id_a,
+      b: acc.order_id_b,
+      rootA,
+      rootB,
+      score: chainScore.score,
+      signals: chainScore.signals,
+      evidence: chainScore.evidence,
+    });
+  }
+
+  if (chainEdges.length > 0) {
+    const chainUf = new UnionFind();
+    for (const edge of chainEdges) {
+      chainUf.union(edge.rootA, edge.rootB);
+    }
+
+    const chainComponents = new Map<string, { roots: Set<string>; edges: ChainEdge[] }>();
+    for (const edge of chainEdges) {
+      const root = chainUf.find(edge.rootA);
+      const component = chainComponents.get(root) ?? { roots: new Set<string>(), edges: [] };
+      component.roots.add(edge.rootA);
+      component.roots.add(edge.rootB);
+      component.edges.push(edge);
+      chainComponents.set(root, component);
+    }
+
+    let promotedChains = 0;
+    for (const component of chainComponents.values()) {
+      const memberOrderIds = Array.from(component.roots).flatMap((root) => directRootMembers.get(root) ?? [root]);
+
+      const familyWeights = new Map<LinkerSignal, number>();
+      const evidence = new Set<string>();
+      for (const edge of component.edges) {
+        for (const item of edge.evidence) evidence.add(item);
+        for (const [family, weight] of bestEvidenceWeights(edge.evidence)) {
+          if (weight > (familyWeights.get(family) ?? 0)) familyWeights.set(family, weight);
+        }
+      }
+
+      const aggregateScore = Array.from(familyWeights.values()).reduce((sum, weight) => sum + weight, 0);
+      if (!hasAccountGraphCorroboration(evidence)) continue;
+      if (aggregateScore < LINK_THRESHOLD) continue;
+      if (hasStableIdentityConflict(memberOrderIds, byId, evidence)) continue;
+
+      const roots = Array.from(component.roots).sort();
+      const signals = Array.from(familyWeights.keys()).sort((a, b) => familyMaxScore(b) - familyMaxScore(a));
+      const evidenceSummary = Array.from(evidence).sort();
+      for (let i = 1; i < roots.length; i++) {
+        linkedPairs.push({
+          a: roots[0],
+          b: roots[i],
+          score: aggregateScore,
+          signals,
+          evidence: evidenceSummary,
+        });
+        uf.union(roots[0], roots[i]);
+      }
+      promotedChains++;
+    }
+
+    if (promotedChains > 0) {
+      console.error(`[linker] graph-chain linking: promoted ${promotedChains} component(s) from ${chainEdges.length} weak candidate edge(s)`);
+    }
+
+    const rescueMembers = new Map<string, string[]>();
+    for (const row of normalised) {
+      const root = uf.find(row.order_id);
+      const members = rescueMembers.get(root) ?? [];
+      members.push(row.order_id);
+      rescueMembers.set(root, members);
+    }
+
+    let rescuedEdges = 0;
+    const rescueCandidates = chainEdges
+      .filter((edge) => isHighConfidenceGraphEdge(edge.evidence, edge.score))
+      .sort((a, b) => b.score - a.score);
+
+    for (const edge of rescueCandidates) {
+      const rootA = uf.find(edge.a);
+      const rootB = uf.find(edge.b);
+      if (rootA === rootB) continue;
+      const membersA = rescueMembers.get(rootA) ?? [rootA];
+      const membersB = rescueMembers.get(rootB) ?? [rootB];
+      const combinedMembers = [...membersA, ...membersB];
+      if (hasStableIdentityConflict(combinedMembers, byId, new Set(edge.evidence))) continue;
+
+      linkedPairs.push({
+        a: rootA,
+        b: rootB,
+        score: edge.score,
+        signals: edge.signals,
+        evidence: edge.evidence,
+      });
+      uf.union(rootA, rootB);
+      const newRoot = uf.find(rootA);
+      rescueMembers.delete(rootA);
+      rescueMembers.delete(rootB);
+      rescueMembers.set(newRoot, combinedMembers);
+      rescuedEdges++;
+    }
+
+    if (rescuedEdges > 0) {
+      console.error(`[linker] graph-edge rescue: promoted ${rescuedEdges} high-confidence edge(s)`);
+    }
   }
 
   // Group orders by root; also track per-cluster max score, signal union, evidence union.

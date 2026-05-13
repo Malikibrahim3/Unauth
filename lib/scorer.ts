@@ -552,13 +552,13 @@ export function scoreCluster(input: ScoreClusterInput): ScoredCluster {
  *    < 35 → null       below product threshold — do not surface
  */
 const IDENTITY_SIGNAL_WEIGHTS: Record<string, number> = {
-  card: 35,     // BIN+last4 when present in a confirmed cluster — strong physical signal
+  card: 30,     // payment signal, only trusted by the linker with corroboration
   phone: 30,    // requires a real SIM
   device: 30,   // device fingerprint
-  account: 30,  // merchant-namespace identifier
-  email: 25,    // normalised base (plus-alias stripped)
+  account: 25,  // merchant-namespace identifier
+  email: 35,    // exact normalised email is the only single-signal link exception
   postcode: 10, // corroborating only
-  ip: 10,       // weakest corroborating signal
+  ip: 8,        // weakest corroborating signal
 };
 
 export type IdentityGrade = 'definite' | 'probable' | 'possible';

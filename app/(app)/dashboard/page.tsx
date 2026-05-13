@@ -75,8 +75,8 @@ export default async function DashboardPage() {
   //
   // Uses the shared countMerchantReviewQueueProfiles() helper which:
   //   - scopes through processing_jobs.merchant_id (not loose profile status)
-  //   - applies the canonical review-worthy definition (likely/definite
-  //     same-person evidence only, excluding dismissed IS TRUE)
+  //   - applies the canonical review-worthy definition (grade IS NOT NULL OR
+  //     status IN candidate/probable/definite, excluding dismissed IS TRUE)
   //   - paginates in 1000-row batches — no Supabase default row cap
   //
   // IMPORTANT: this count is DIFFERENT from totalFlagged above.
@@ -118,19 +118,19 @@ export default async function DashboardPage() {
       .lt('created_at', prev30End);
     if (prevJobRows && prevJobRows.length > 0) {
       const prevJobIds = (prevJobRows as Array<{ id: string }>).map(r => r.id);
-      // Likely identity-grade clause
+      // Graded clause
       const { data: prevGraded } = await serviceClient
         .from('audit_transactions')
         .select('order_value')
         .in('job_id', prevJobIds)
-        .in('identity_confidence_grade', ['probable', 'definite'])
+        .not('identity_confidence_grade', 'is', null)
         .not('dismissed_by_merchant', 'is', true) as unknown as { data: Array<{ order_value: string | number | null }> | null };
       // Status-only clause
       const { data: prevStatus } = await serviceClient
         .from('audit_transactions')
         .select('order_value')
         .in('job_id', prevJobIds)
-        .in('match_status', ['probable', 'definite'])
+        .in('match_status', ['candidate', 'probable', 'definite'])
         .is('identity_confidence_grade', null)
         .not('dismissed_by_merchant', 'is', true) as unknown as { data: Array<{ order_value: string | number | null }> | null };
       const sum = (rows: Array<{ order_value: string | number | null }> | null) =>
@@ -282,7 +282,7 @@ export default async function DashboardPage() {
               hint={
                 exposureAtRisk === null
                   ? 'Could not be computed'
-                  : 'Sum of order value for open likely identity links'
+                  : 'Sum of order value for open, review-worthy transactions'
               }
             />
           </div>

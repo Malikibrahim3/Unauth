@@ -22,9 +22,9 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: { id: string } },
 ) {
-  const { id: profileId } = await params;
+  const profileId = params.id;
   if (!profileId) {
     return NextResponse.json({ error: 'Missing profile id' }, { status: 400 });
   }

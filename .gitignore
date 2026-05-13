@@ -12,3 +12,13 @@ tests/.test-credentials.json
 tests/reports/
 tests/utils/csv-fixtures/
 synthetic-lab/outputs/
+
+test-data/tune/
+test-results/
+*.jsonl
+*_orders.json
+*_records.json
+*_ground_truth.json
+report.json
+final-report.md
+

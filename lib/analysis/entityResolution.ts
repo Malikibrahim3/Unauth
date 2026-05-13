@@ -92,116 +92,6 @@ interface ResolveResult {
   confidence: number;
 }
 
-function isRetryableWriteError(message: string): boolean {
-  const msg = message.toLowerCase();
-  return (
-    msg.includes('statement timeout') ||
-    msg.includes('canceling statement due to statement timeout') ||
-    msg.includes('57014') ||
-    msg.includes('fetch failed') ||
-    msg.includes('econnreset') ||
-    msg.includes('etimedout') ||
-    msg.includes('connection reset') ||
-    msg.includes('connection terminated') ||
-    msg.includes('429') ||
-    msg.includes('too many requests') ||
-    msg.includes('502') ||
-    msg.includes('503') ||
-    msg.includes('504') ||
-    msg.includes('gateway timeout')
-  );
-}
-
-async function upsertProfilesAdaptive(
-  serviceClient: ServiceClient,
-  rows: any[],
-  chunkSize = 80
-): Promise<void> {
-  if (rows.length === 0) return;
-  for (let i = 0; i < rows.length; i += chunkSize) {
-    const chunk = rows.slice(i, i + chunkSize);
-    try {
-      await withRetry(async () => {
-        const { error } = await (serviceClient as any)
-          .from('customer_profiles')
-          .upsert(chunk as any, { onConflict: 'id', ignoreDuplicates: false });
-        if (error) throw error;
-      });
-    } catch (err: any) {
-      const message = String(err?.message ?? err ?? 'unknown error');
-      if (chunk.length > 20 && isRetryableWriteError(message)) {
-        const mid = Math.floor(chunk.length / 2);
-        await upsertProfilesAdaptive(serviceClient, chunk.slice(0, mid), Math.max(10, Math.floor(chunkSize / 2)));
-        await upsertProfilesAdaptive(serviceClient, chunk.slice(mid), Math.max(10, Math.floor(chunkSize / 2)));
-        continue;
-      }
-      throw err;
-    }
-  }
-}
-
-async function insertProfilesAdaptive(
-  serviceClient: ServiceClient,
-  rows: any[],
-  chunkSize = 60
-): Promise<Array<{ id: string; emails: string[]; card_last4s: string[]; ips: string[] }>> {
-  if (rows.length === 0) return [];
-  const created: Array<{ id: string; emails: string[]; card_last4s: string[]; ips: string[] }> = [];
-  for (let i = 0; i < rows.length; i += chunkSize) {
-    const chunk = rows.slice(i, i + chunkSize);
-    try {
-      const data = await withRetry(async () => {
-        const { data, error } = await (serviceClient as any)
-          .from('customer_profiles')
-          .insert(chunk as any)
-          .select('id, emails, card_last4s, ips');
-        if (error) throw error;
-        return (data ?? []) as Array<{ id: string; emails: string[]; card_last4s: string[]; ips: string[] }>;
-      });
-      created.push(...data);
-    } catch (err: any) {
-      const message = String(err?.message ?? err ?? 'unknown error');
-      if (chunk.length > 20 && isRetryableWriteError(message)) {
-        const mid = Math.floor(chunk.length / 2);
-        const left = await insertProfilesAdaptive(serviceClient, chunk.slice(0, mid), Math.max(10, Math.floor(chunkSize / 2)));
-        const right = await insertProfilesAdaptive(serviceClient, chunk.slice(mid), Math.max(10, Math.floor(chunkSize / 2)));
-        created.push(...left, ...right);
-        continue;
-      }
-      throw err;
-    }
-  }
-  return created;
-}
-
-async function insertAppearancesAdaptive(
-  serviceClient: ServiceClient,
-  rows: any[],
-  chunkSize = 150
-): Promise<void> {
-  if (rows.length === 0) return;
-  for (let i = 0; i < rows.length; i += chunkSize) {
-    const chunk = rows.slice(i, i + chunkSize);
-    try {
-      await withRetry(async () => {
-        const { error } = await (serviceClient as any)
-          .from('customer_profile_audit_appearances')
-          .insert(chunk as any);
-        if (error) throw error;
-      });
-    } catch (err: any) {
-      const message = String(err?.message ?? err ?? 'unknown error');
-      if (chunk.length > 40 && isRetryableWriteError(message)) {
-        const mid = Math.floor(chunk.length / 2);
-        await insertAppearancesAdaptive(serviceClient, chunk.slice(0, mid), Math.max(20, Math.floor(chunkSize / 2)));
-        await insertAppearancesAdaptive(serviceClient, chunk.slice(mid), Math.max(20, Math.floor(chunkSize / 2)));
-        continue;
-      }
-      throw err;
-    }
-  }
-}
-
 // ---------------------------------------------------------------------------
 // Risk level helper — mirrors fastScore.ts getRiskTier
 // ---------------------------------------------------------------------------
@@ -269,16 +159,30 @@ export async function resolveCustomerProfile(
     }
   }
 
-  // Priority 2: card match — very strong
-  if (normCard && normCard.length === 4) {
+  // Priority 2: card last4 plus corroboration. Last4 alone is not unique.
+  if (normCard && normCard.length === 4 && normAddr) {
     const { data } = await (serviceClient as any)
       .from('customer_profiles')
       .select('*')
       .contains('card_last4s', JSON.stringify([normCard]))
+      .contains('addresses', JSON.stringify([normAddr]))
       .limit(1)
       .single();
     if (data) {
-      return { profile: data as unknown as CustomerProfileRow, matchType: 'card', confidence: 90 };
+      return { profile: data as unknown as CustomerProfileRow, matchType: 'card', confidence: 85 };
+    }
+  }
+
+  if (normCard && normCard.length === 4 && normIP) {
+    const { data } = await (serviceClient as any)
+      .from('customer_profiles')
+      .select('*')
+      .contains('card_last4s', JSON.stringify([normCard]))
+      .contains('ips', JSON.stringify([normIP]))
+      .limit(1)
+      .single();
+    if (data) {
+      return { profile: data as unknown as CustomerProfileRow, matchType: 'card', confidence: 75 };
     }
   }
 
@@ -293,20 +197,6 @@ export async function resolveCustomerProfile(
       .single();
     if (data) {
       return { profile: data as unknown as CustomerProfileRow, matchType: 'ip_address', confidence: 85 };
-    }
-  }
-
-  // Priority 4: IP only — moderate, ONLY if existing profile is already suspicious
-  if (normIP) {
-    const { data } = await (serviceClient as any)
-      .from('customer_profiles')
-      .select('*')
-      .contains('ips', JSON.stringify([normIP]))
-      .gte('risk_score', 50)
-      .limit(1)
-      .single();
-    if (data) {
-      return { profile: data as unknown as CustomerProfileRow, matchType: 'ip_only', confidence: 60 };
     }
   }
 
@@ -645,6 +535,10 @@ export async function processProfilesForBatch(
 
   const profileIdForOrder   = new Map<string, string>(); // orderId → profileId (filled later)
 
+  function hasProfileValue(values: string[] | null | undefined, value: string | null): boolean {
+    return Boolean(value && Array.isArray(values) && values.includes(value));
+  }
+
   for (const od of orderDataList) {
     // ── Two-tier gate removed ────────────────────────────────────────────────
     // All orders — including low-confidence 'none' and 'candidate' — now create
@@ -659,11 +553,20 @@ export async function processProfilesForBatch(
       matchedProfile = profileByEmail.get(od.normEmail)!;
       confidence = 99;
     } else if (od.normCard && od.normCard.length === 4 && profileByCard.has(od.normCard)) {
-      matchedProfile = profileByCard.get(od.normCard)!;
-      confidence = 90;
-    } else if (od.normIP && profileByIP.has(od.normIP)) {
-      matchedProfile = profileByIP.get(od.normIP)!;
-      confidence = 60;
+      const candidate = profileByCard.get(od.normCard)!;
+      if (hasProfileValue(candidate.addresses, od.normAddr)) {
+        matchedProfile = candidate;
+        confidence = 85;
+      } else if (hasProfileValue(candidate.ips, od.normIP)) {
+        matchedProfile = candidate;
+        confidence = 75;
+      }
+    } else if (od.normIP && od.normAddr && profileByIP.has(od.normIP)) {
+      const candidate = profileByIP.get(od.normIP)!;
+      if (hasProfileValue(candidate.addresses, od.normAddr)) {
+        matchedProfile = candidate;
+        confidence = 70;
+      }
     }
 
     if (matchedProfile) {
@@ -722,8 +625,8 @@ export async function processProfilesForBatch(
       // twice in this batch only creates ONE new profile row.
       const primaryKey =
         od.normEmail          ? `email:${od.normEmail}` :
-        od.normCard.length === 4 ? `card:${od.normCard}`  :
-        od.normIP             ? `ip:${od.normIP}`         :
+        od.normCard.length === 4 && od.normAddr ? `card_addr:${od.normCard}:${od.normAddr}` :
+        od.normCard.length === 4 && od.normIP   ? `card_ip:${od.normCard}:${od.normIP}`     :
         `anon:${od.scoredOrder.order.orderId}`;
       const group = newProfileGroups.get(primaryKey) ?? [];
       group.push(od);
@@ -850,18 +753,28 @@ export async function processProfilesForBatch(
 
   await Promise.all([
     profileUpserts.length > 0
-      ? upsertProfilesAdaptive(serviceClient, profileUpserts)
-          .then(() => { profilesUpdated = profileUpserts.length; })
-          .catch((err) => {
-            errors.push(`Bulk profile update failed: ${String((err as any)?.message ?? err)}`);
+      ? (serviceClient as any)
+          .from('customer_profiles')
+          .upsert(profileUpserts as any, { onConflict: 'id', ignoreDuplicates: false })
+          .then(({ error }: { error: any }) => {
+            if (error) errors.push(`Bulk profile update failed: ${error.message}`);
+            else profilesUpdated = profileUpserts.length;
           })
       : Promise.resolve(),
+
     newProfileInserts.length > 0
-      ? insertProfilesAdaptive(serviceClient, newProfileInserts)
-          .then((createdProfiles) => {
-            profilesCreated = createdProfiles.length;
+      ? (serviceClient as any)
+          .from('customer_profiles')
+          .insert(newProfileInserts as any)
+          .select('id, emails, card_last4s, ips')
+          .then(({ data, error }: { data: any; error: any }) => {
+            if (error) {
+              errors.push(`Bulk profile insert failed: ${error.message}`);
+              return;
+            }
+            profilesCreated = (data ?? []).length;
             // Map new profile IDs back to each order in the group
-            for (const newP of createdProfiles) {
+            for (const newP of (data ?? []) as { id: string; emails: string[]; card_last4s: string[]; ips: string[] }[]) {
               for (const group of newProfileGroups.values()) {
                 for (const od of group) {
                   if (
@@ -874,9 +787,6 @@ export async function processProfilesForBatch(
                 }
               }
             }
-          })
-          .catch((err) => {
-            errors.push(`Bulk profile insert failed: ${String((err as any)?.message ?? err)}`);
           })
       : Promise.resolve(),
   ]);
@@ -899,11 +809,10 @@ export async function processProfilesForBatch(
     .filter(Boolean);
 
   if (appearanceInserts.length > 0) {
-    try {
-      await insertAppearancesAdaptive(serviceClient, appearanceInserts as any[]);
-    } catch (err) {
-      errors.push(`Bulk appearance link insert failed: ${String((err as any)?.message ?? err)}`);
-    }
+    const { error } = await (serviceClient as any)
+      .from('customer_profile_audit_appearances')
+      .insert(appearanceInserts as any);
+    if (error) errors.push(`Bulk appearance link insert failed: ${error.message}`);
   }
 
   console.log(

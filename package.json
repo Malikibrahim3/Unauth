@@ -31,7 +31,13 @@
     "test:e2e:report": "playwright show-report tests/reports/html",
     "test:fixtures": "ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' tests/utils/generate-fixtures.ts",
     "docs:generate": "node scripts/generate-signals-readme.mjs --write",
-    "docs:check": "node scripts/generate-signals-readme.mjs --check"
+    "docs:check": "node scripts/generate-signals-readme.mjs --check",
+    "tune:generate": "ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/tune/generateDatasets.ts",
+    "tune:run": "node --max-old-space-size=4096 node_modules/.bin/ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/tune/run.ts",
+    "tune:run:skip-generate": "node --max-old-space-size=4096 node_modules/.bin/ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/tune/run.ts --skip-generate",
+    "tune:run:resume": "node --max-old-space-size=4096 node_modules/.bin/ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/tune/run.ts --skip-generate --resume",
+    "tune:dashboard": "node scripts/tune/dashboard.mjs",
+    "tune:overnight": "node scripts/tune/start.mjs"
   },
   "dependencies": {
     "@amplitude/analytics-browser": "^2.42.0",
