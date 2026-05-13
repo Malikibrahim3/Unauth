@@ -922,17 +922,20 @@ function hasStableIdentityConflict(
   byId: Map<string, NormalisedOrder>,
   evidence: Set<string> = new Set()
 ): boolean {
+  const hasLocationContinuity =
+    evidence.has('shipping_address:exact') ||
+    evidence.has('shipping_address:partial') ||
+    evidence.has('billing_address:exact') ||
+    evidence.has('billing_address:partial') ||
+    evidence.has('billing_address:cross') ||
+    evidence.has('postcode:full');
+  const hasNetworkContinuity = evidence.has('ip:exact') || evidence.has('ip:subnet');
+  const hasStrongDriftContinuity = evidence.has('card:full') || evidence.has('email:exact');
+  const hasEmailUsernameDriftContinuity = evidence.has('email:username') && !hasNetworkContinuity;
   const allowsPhoneDrift =
     (evidence.has('name:exact') || evidence.has('name:fuzzy')) &&
-    (evidence.has('card:full') || evidence.has('email:username') || evidence.has('email:exact')) &&
-    (
-      evidence.has('shipping_address:exact') ||
-      evidence.has('shipping_address:partial') ||
-      evidence.has('billing_address:exact') ||
-      evidence.has('billing_address:partial') ||
-      evidence.has('billing_address:cross') ||
-      evidence.has('postcode:full')
-    );
+    (hasStrongDriftContinuity || hasEmailUsernameDriftContinuity) &&
+    hasLocationContinuity;
 
   const families: Array<'phone' | 'device' | 'account'> = ['phone', 'device', 'account'];
   for (const family of families) {
@@ -998,10 +1001,28 @@ function hasAccountGraphCorroboration(evidence: Set<string>): boolean {
   );
 }
 
+function hasGraphIdentityContinuity(evidence: Set<string>): boolean {
+  if (
+    evidence.has('email:exact') ||
+    evidence.has('phone:exact') ||
+    evidence.has('device:exact') ||
+    evidence.has('card:fingerprint')
+  ) {
+    return true;
+  }
+  return (
+    evidence.has('email:username') ||
+    evidence.has('phone:partial') ||
+    evidence.has('name:exact') ||
+    evidence.has('name:fuzzy')
+  );
+}
+
 function isHighConfidenceGraphEdge(evidence: string[], score: number): boolean {
   if (score < 80) return false;
   const set = new Set(evidence);
   if (!hasAccountGraphCorroboration(set)) return false;
+  if (!hasGraphIdentityContinuity(set)) return false;
   const hasLocation =
     set.has('shipping_address:exact') ||
     set.has('shipping_address:partial') ||
@@ -1020,7 +1041,7 @@ function isHighConfidenceGraphEdge(evidence: string[], score: number): boolean {
     set.has('card:fingerprint');
 
   if (hasExactIdentity) return true;
-  if (hasCardFull && (hasName || hasEmailUsername || hasLocation || hasNetwork)) return true;
+  if (hasCardFull && (hasName || hasEmailUsername)) return true;
   if (hasEmailUsername && (hasLocation || hasNetwork || hasName)) return true;
   return false;
 }
@@ -1300,6 +1321,7 @@ export function linkIdentities(input: LinkerOrderInput[]): LinkerResult {
 
       const aggregateScore = Array.from(familyWeights.values()).reduce((sum, weight) => sum + weight, 0);
       if (!hasAccountGraphCorroboration(evidence)) continue;
+      if (!hasGraphIdentityContinuity(evidence)) continue;
       if (aggregateScore < LINK_THRESHOLD) continue;
       if (hasStableIdentityConflict(memberOrderIds, byId, evidence)) continue;
 
