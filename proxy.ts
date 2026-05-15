@@ -107,6 +107,8 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const isPublicRoute =
+    pathname === '/' ||
+    pathname === '/landing' ||
     pathname === '/demo' ||
     pathname === '/mobile-unsupported' ||
     pathname === '/legal' ||
