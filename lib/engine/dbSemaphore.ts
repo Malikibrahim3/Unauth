@@ -87,7 +87,7 @@ export function isHardUpstreamDown(err: any): boolean {
 // data-quality report without changing the success/failure contract.
 export async function withReadRetry<T>(
   fn: () => Promise<T>,
-  attempts = 3,
+  attempts = 5,
   baseDelayMs = 500
 ): Promise<{ value: T | null; retries: number; failed: boolean; lastError: unknown }> {
   let lastErr: unknown = null;

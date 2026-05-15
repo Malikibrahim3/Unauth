@@ -128,7 +128,9 @@ async function GETHandler(
     .or(merchantFilter)
     .single() as unknown as { data: Record<string, unknown> | null; error: unknown };
 
-  if (profileError) {
+  // PGRST116 = "no rows found" — not a real DB error, continue to fallback.
+  // Any other error is unexpected and should surface as 404.
+  if (profileError && (profileError as any)?.code !== 'PGRST116') {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 

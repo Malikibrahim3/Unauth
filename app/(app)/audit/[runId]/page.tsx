@@ -114,8 +114,26 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
     .order('processed_at', { ascending: false, nullsFirst: false })
     .range(txOffset, txOffset + txPageSize - 1);
 
-  // ── All-customers aggregation: fetch in batches, no silent cap ─────────────
-  const allCustomers: Array<[string, { maxScore: number; orderCount: number; totalSpend: number }]> = [];
+  // ── All-customers aggregation ─────────────────────────────────────────────
+  const { data: customerRows } = await supabase
+    .from('audit_transactions')
+    .select('customer_email, match_score, order_value')
+    .eq('job_id', jobId)
+    .not('customer_email', 'is', null);
+
+  const customerMap = new Map<string, { maxScore: number; orderCount: number; totalSpend: number }>();
+  for (const row of customerRows ?? []) {
+    const email = row.customer_email!;
+    const existing = customerMap.get(email);
+    if (existing) {
+      existing.maxScore = Math.max(existing.maxScore, row.match_score ?? 0);
+      existing.orderCount += 1;
+      existing.totalSpend += row.order_value ?? 0;
+    } else {
+      customerMap.set(email, { maxScore: row.match_score ?? 0, orderCount: 1, totalSpend: row.order_value ?? 0 });
+    }
+  }
+  const allCustomers = Array.from(customerMap.entries()).sort((a, b) => b[1].maxScore - a[1].maxScore);
   const pagedCustomers = allCustomers.slice(customerOffset, customerOffset + customerPageSize);
   const totalCustomers = allCustomers.length;
   const customerPages = Math.max(1, Math.ceil(totalCustomers / customerPageSize));

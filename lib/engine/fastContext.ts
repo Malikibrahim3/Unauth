@@ -20,7 +20,7 @@ import { withReadRetry } from './dbSemaphore';
 // connection pool. A 25k-row upload produces ~875 chunks across all fetch
 // functions; without a semaphore these all fire in one Promise.all causing
 // upstream timeouts even when Supabase itself is healthy.
-const MAX_CONCURRENT_FETCHES = 20;
+const MAX_CONCURRENT_FETCHES = 8;
 
 function makeSemaphore(limit: number) {
   let active = 0;
