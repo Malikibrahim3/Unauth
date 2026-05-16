@@ -14,31 +14,42 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const BASE =
-  'inline-flex items-center justify-center gap-2 font-medium transition-colors focus-visible:outline-none disabled:opacity-50 disabled:cursor-not-allowed';
+  'inline-flex items-center justify-center gap-2 font-medium transition-colors focus-visible:outline-none disabled:opacity-50 disabled:cursor-not-allowed select-none';
 
-const VARIANTS: Record<ButtonVariant, string> = {
-  primary:
-    'bg-[var(--accent-500)] text-[var(--accent-fg-on-500)] hover:bg-[var(--accent-600)] active:bg-[var(--accent-700)] focus-visible:shadow-[var(--shadow-focus)]',
-  secondary:
-    'bg-[var(--bg-surface)] text-[var(--text-primary)] border border-[var(--border-default)] hover:bg-[var(--bg-hover)] focus-visible:shadow-[var(--shadow-focus)]',
-  ghost:
-    'bg-transparent text-[var(--text-primary)] hover:bg-[var(--bg-hover)] focus-visible:shadow-[var(--shadow-focus)]',
-  danger:
-    'bg-[var(--risk-critical-fg)] text-white hover:opacity-90 active:opacity-80 focus-visible:shadow-[var(--shadow-focus)]',
-  link: 'bg-transparent text-[var(--text-link)] underline-offset-4 hover:underline focus-visible:shadow-[var(--shadow-focus)] p-0 h-auto',
-};
-
-const SIZES: Record<ButtonSize, string> = {
-  sm: 'h-7 px-[10px] text-[13px] rounded-[var(--radius-2)]',
-  md: 'h-8 px-[14px] text-[14px] rounded-[var(--radius-2)]',
-  lg: 'h-10 px-[18px] text-[14px] rounded-[var(--radius-2)]',
+const SIZES: Record<ButtonSize, { height: number; px: string; fontSize: number }> = {
+  sm: { height: 28, px: '10px', fontSize: 12 },
+  md: { height: 32, px: '14px', fontSize: 13 },
+  lg: { height: 36, px: '18px', fontSize: 13 },
 };
 
 const ICON_SIZES: Record<ButtonSize, string> = {
-  sm: 'w-4 h-4',
+  sm: 'w-3.5 h-3.5',
   md: 'w-4 h-4',
-  lg: 'w-[18px] h-[18px]',
+  lg: 'w-4 h-4',
 };
+
+const VARIANT_CLASSES: Record<ButtonVariant, string> = {
+  primary:   'text-[#E8E4D8] hover:opacity-90 active:opacity-80',
+  secondary: 'hover:bg-[var(--bg-subtle)] active:bg-[var(--bg-hover)] transition-colors',
+  ghost:     'hover:bg-[var(--bg-subtle)] active:bg-[var(--bg-hover)] transition-colors',
+  danger:    'text-white hover:opacity-90 active:opacity-80',
+  link:      'underline-offset-4 hover:underline p-0',
+};
+
+function variantStyle(variant: ButtonVariant): React.CSSProperties {
+  switch (variant) {
+    case 'primary':
+      return { background: '#1A1814', color: '#E8E4D8' };
+    case 'secondary':
+      return { background: 'transparent', color: 'var(--text)', border: '1px solid var(--border-default)' };
+    case 'ghost':
+      return { background: 'transparent', color: 'var(--text-muted)' };
+    case 'danger':
+      return { background: '#7B2D26', color: '#FBEFEC' };
+    case 'link':
+      return { background: 'transparent', color: 'var(--text-muted)' };
+  }
+}
 
 const Spinner = ({ size }: { size: ButtonSize }) => (
   <svg
@@ -59,15 +70,27 @@ const Spinner = ({ size }: { size: ButtonSize }) => (
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   (
-    { variant = 'primary', size = 'md', loading = false, leadingIcon, className, children, disabled, ...props },
+    { variant = 'primary', size = 'md', loading = false, leadingIcon, className, children, disabled, style, ...props },
     ref,
   ) => {
     const isLink = variant === 'link';
+    const sz = SIZES[size];
+
     return (
       <button
         ref={ref}
         disabled={disabled || loading}
-        className={cn(BASE, isLink ? VARIANTS.link : cn(SIZES[size], VARIANTS[variant]), className)}
+        className={cn(BASE, VARIANT_CLASSES[variant], className)}
+        style={{
+          height: isLink ? undefined : sz.height,
+          paddingLeft: isLink ? undefined : sz.px,
+          paddingRight: isLink ? undefined : sz.px,
+          fontSize: sz.fontSize,
+          borderRadius: isLink ? undefined : 4,
+          letterSpacing: '0.01em',
+          ...variantStyle(variant),
+          ...style,
+        }}
         {...props}
       >
         {loading ? (

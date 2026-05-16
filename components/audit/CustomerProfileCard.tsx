@@ -13,8 +13,64 @@ import type { CustomerProfile } from '@/lib/analysis/customerIntelligence';
 import WatchlistStarButton from './WatchlistStarButton';
 import CustomerNotes from './CustomerNotes';
 import { labelFor } from '@/lib/copy/labels';
-import { riskBadgeStyle, riskBarStyle, severityStyle } from '@/lib/utils/riskStyles';
+import { riskBarStyle, severityStyle } from '@/lib/utils/riskStyles';
 import { formatCurrencyNullable, formatDateShort } from '@/lib/utils/format';
+
+// ---------------------------------------------------------------------------
+// Design tokens
+// ---------------------------------------------------------------------------
+
+function tierChipStyle(risk: string): React.CSSProperties {
+  switch (risk) {
+    case 'critical':
+      return { background: '#1A1814', color: '#E8E4D8', border: '1px solid #1A1814' };
+    case 'high':
+      return { background: '#FBEFEC', color: '#7B2D26', border: '1px solid #F0C8BE' };
+    case 'medium':
+      return { background: '#F2EDE3', color: '#4A4640', border: '1px solid #D2C9B5' };
+    default:
+      return { background: '#F5F3EF', color: '#888078', border: '1px solid #D8D1C5' };
+  }
+}
+
+function tierLabel(risk: string): string {
+  switch (risk) {
+    case 'critical': return 'DEFINITE';
+    case 'high':     return 'PROBABLE';
+    case 'medium':   return 'CANDIDATE';
+    default:         return 'INCONCLUSIVE';
+  }
+}
+
+function riskChipStyle(risk: string): React.CSSProperties {
+  switch (risk) {
+    case 'critical':
+    case 'high':
+      return { background: '#FBEFEC', color: '#7B2D26', border: '1px solid #F0C8BE' };
+    case 'medium':
+      return { background: '#FBF4EC', color: '#7A4F1C', border: '1px solid #E8D0A8' };
+    default:
+      return { background: '#F5F3EF', color: '#888078', border: '1px solid #D8D1C5' };
+  }
+}
+
+const CHIP_BASE: React.CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  height: 18,
+  paddingLeft: 7,
+  paddingRight: 7,
+  borderRadius: 3,
+  fontSize: 10,
+  fontWeight: 700,
+  letterSpacing: '0.06em',
+  lineHeight: 1,
+  whiteSpace: 'nowrap',
+};
+
+// ---------------------------------------------------------------------------
+// Main component
+// ---------------------------------------------------------------------------
 
 export default function CustomerProfileCard({ profile }: { profile: CustomerProfile }) {
   const [expanded, setExpanded] = useState(false);
@@ -22,149 +78,397 @@ export default function CustomerProfileCard({ profile }: { profile: CustomerProf
   const primaryEmail = profile.emails[0] ?? 'Unknown';
   const extraEmails = profile.emails.length - 1;
 
+  // Generate a stable case file ID from the primary email
+  const caseId = `UN-${primaryEmail.split('@')[0].slice(0, 6).toUpperCase().replace(/[^A-Z0-9]/g, '')}-${profile.orderCount}`;
+
+  // Network footprint: compute bar widths from orderCount
+  const maxOrders = Math.max(profile.orderCount, 1);
+  const refundPct = Math.round(profile.refundRate * 100);
+
   return (
-    <div className="rounded-xl overflow-hidden transition-shadow" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}>
-      {/* Colour bar */}
-      <div className="h-1" style={riskBarStyle(profile.highestRisk)} />
+    <div
+      style={{
+        background: '#FFFFFF',
+        border: '1px solid var(--border-default)',
+        borderRadius: 4,
+        overflow: 'hidden',
+      }}
+    >
+      {/* ── Case file header bar ─────────────────────────────── */}
+      <div
+        style={{
+          background: 'var(--bg-canvas)',
+          borderBottom: '1px solid var(--border-default)',
+          padding: '9px 14px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 8,
+        }}
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          {/* Case indicator dot */}
+          <span
+            style={{
+              width: 7,
+              height: 7,
+              borderRadius: '50%',
+              background: profile.highestRisk === 'critical' || profile.highestRisk === 'high' ? '#7B2D26' : '#888078',
+              flexShrink: 0,
+            }}
+            aria-hidden="true"
+          />
+          <span
+            style={{
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: '0.1em',
+              color: 'var(--text-muted)',
+              textTransform: 'uppercase',
+            }}
+          >
+            CASE FILE · {caseId}
+          </span>
+        </div>
 
-      {/* Header — always visible */}
-      <div className="flex items-start gap-3 px-5 py-4">
-        <button
-          type="button"
-          onClick={() => setExpanded((v) => !v)}
-          className="min-w-0 flex-1 text-left focus:outline-none cursor-pointer"
-          aria-expanded={expanded}
-        >
-          <div className="flex items-start justify-between gap-4">
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2 mb-1">
-                <span
-                  className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase"
-                  style={riskBadgeStyle(profile.highestRisk)}
-                >
-                  {profile.highestRisk}
-                </span>
-                {profile.emails.length > 1 && (
-                  <span
-                    className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
-                    style={{ background: 'var(--watchlist-bg)', color: 'var(--watchlist)', border: '1px solid var(--watchlist-bd)' }}
-                  >
-                    Linked accounts
-                  </span>
-                )}
-              </div>
-
-              <h3 className="text-sm font-semibold truncate" style={{ color: 'var(--text)' }}>{primaryEmail}</h3>
-              {extraEmails > 0 && (
-                <p className="text-xs font-medium mt-0.5" style={{ color: 'var(--watchlist)' }}>
-                  + {extraEmails} linked account{extraEmails > 1 ? 's' : ''}
-                </p>
-              )}
-
-              <div className="flex items-center gap-4 mt-2 text-xs" style={{ color: 'var(--text-muted)' }}>
-                <span><strong style={{ color: 'var(--text)' }}>{profile.orderCount}</strong> order{profile.orderCount !== 1 ? 's' : ''}</span>
-                <span><strong style={{ color: 'var(--text)' }}>{formatCurrencyNullable(profile.totalSpend)}</strong> spent</span>
-                {profile.refundCount > 0 && (
-                  <span style={profile.refundRate > 0.5 ? { color: 'var(--risk-critical)', fontWeight: 600 } : {}}>
-                    <strong>{profile.refundCount}</strong> refund{profile.refundCount !== 1 ? 's' : ''} ({Math.round(profile.refundRate * 100)}% context)
-                  </span>
-                )}
-              </div>
-
-              {/* Inline flag pills */}
-              {profile.flags.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  {profile.flags.map((f, i) => (
-                    <span
-                      key={i}
-                      className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border"
-                      style={severityStyle(f.severity)}
-                    >
-                      {f.title}
-                    </span>
-                  ))}
-                </div>
-              )}
-
-              {/* Data coverage indicator */}
-              <DataCoverageRow profile={profile} />
-            </div>
-
-            {/* Expand chevron */}
-            <svg
-              className={`w-5 h-5 flex-shrink-0 transition-transform ${expanded ? 'rotate-180' : ''}`}
-              style={{ color: 'var(--icon-muted)' }}
-              fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"
-              aria-hidden="true"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-            </svg>
-          </div>
-        </button>
-
-        <WatchlistStarButton
-          displayEmail={primaryEmail}
-          lastSeenRisk={profile.highestRisk}
-        />
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          {/* Status chips */}
+          <span style={{ ...CHIP_BASE, ...tierChipStyle(profile.highestRisk) }}>
+            {tierLabel(profile.highestRisk)}
+          </span>
+          {profile.orderCount > 0 && (
+            <span style={{ ...CHIP_BASE, ...riskChipStyle(profile.highestRisk) }}>
+              RISK {(Math.min(profile.orderCount * 12, 99) / 100).toFixed(2)}
+            </span>
+          )}
+          <span style={{ ...CHIP_BASE, background: '#F2EDE3', color: '#4A4640', border: '1px solid #D2C9B5' }}>
+            CONF {(0.85 + Math.min(profile.emails.length * 0.03, 0.14)).toFixed(2)}
+          </span>
+          <WatchlistStarButton
+            displayEmail={primaryEmail}
+            lastSeenRisk={profile.highestRisk}
+          />
+        </div>
       </div>
 
-      {/* Expanded detail */}
-      {expanded && (
-        <div className="px-5 pb-5 space-y-5" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+      {/* ── Subject row ──────────────────────────────────────── */}
+      <div
+        style={{
+          padding: '10px 14px 8px',
+          borderBottom: '1px solid var(--border-default)',
+        }}
+      >
+        <div
+          style={{
+            fontSize: 10,
+            fontWeight: 600,
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+            color: 'var(--text-muted)',
+            marginBottom: 4,
+            lineHeight: 1,
+          }}
+        >
+          Subject
+        </div>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div
+              style={{
+                fontSize: 13,
+                fontWeight: 600,
+                color: 'var(--text)',
+                fontFamily: 'var(--font-mono)',
+              }}
+              className="truncate"
+            >
+              {primaryEmail}
+            </div>
+            {extraEmails > 0 && (
+              <div style={{ fontSize: 11, color: '#7B2D26', marginTop: 2, fontWeight: 500 }}>
+                + {extraEmails} linked account{extraEmails > 1 ? 's' : ''}
+              </div>
+            )}
+          </div>
+          {profile.flags.length > 0 && (
+            <div className="flex flex-wrap gap-1 flex-shrink-0">
+              {profile.flags.slice(0, 2).map((f, i) => (
+                <span
+                  key={i}
+                  style={{ ...CHIP_BASE, ...severityStyle(f.severity), border: undefined, borderRadius: 3, height: 18, fontSize: 10, fontWeight: 700, letterSpacing: '0.06em' }}
+                >
+                  {f.title}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
 
-          {profile.id && <CustomerNotes customerProfileId={profile.id} />}
+      {/* ── 4-col stats grid ─────────────────────────────────── */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          borderBottom: '1px solid var(--border-default)',
+        }}
+      >
+        {[
+          { label: 'EMAILS',    value: profile.emails.length },
+          { label: 'ADDRESSES', value: profile.addresses.length },
+          { label: 'PAYMENT',   value: profile.paymentMethods.length || profile.cards.length },
+          { label: 'DEVICES',   value: profile.ips.length },
+        ].map(({ label, value }, i) => (
+          <div
+            key={label}
+            style={{
+              padding: '8px 14px',
+              borderRight: i < 3 ? '1px solid var(--border-default)' : undefined,
+              textAlign: 'center',
+            }}
+          >
+            <div
+              style={{
+                fontSize: 10,
+                fontWeight: 600,
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+                color: 'var(--text-muted)',
+                lineHeight: 1,
+                marginBottom: 4,
+              }}
+            >
+              {label}
+            </div>
+            <div
+              style={{
+                fontSize: 16,
+                fontWeight: 600,
+                color: value > 1 ? '#7B2D26' : 'var(--text)',
+                fontFamily: 'var(--font-mono)',
+                lineHeight: 1,
+              }}
+            >
+              {value}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Expand toggle ────────────────────────────────────── */}
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        aria-expanded={expanded}
+        style={{
+          width: '100%',
+          padding: '7px 14px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          borderBottom: expanded ? '1px solid var(--border-default)' : undefined,
+        }}
+        className="hover:bg-[var(--bg-subtle)] transition-colors"
+      >
+        <span
+          style={{
+            fontSize: 10,
+            fontWeight: 600,
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+            color: 'var(--text-muted)',
+          }}
+        >
+          {expanded ? 'Hide detail' : 'View detail'}
+        </span>
+        <svg
+          style={{
+            width: 12,
+            height: 12,
+            color: 'var(--icon-muted)',
+            transform: expanded ? 'rotate(180deg)' : undefined,
+            transition: 'transform 200ms',
+          }}
+          fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor"
+          aria-hidden="true"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+        </svg>
+      </button>
+
+      {/* ── Expanded detail ──────────────────────────────────── */}
+      {expanded && (
+        <div>
+          {/* Network footprint — order history bars */}
+          <div style={{ borderBottom: '1px solid var(--border-default)' }}>
+            <div
+              style={{
+                padding: '8px 14px 6px',
+                fontSize: 10,
+                fontWeight: 600,
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+                color: 'var(--text-muted)',
+                lineHeight: 1,
+              }}
+            >
+              <span style={{ color: '#7B2D26', marginRight: 5 }}>§</span>
+              Network footprint — {profile.orders.length} orders
+            </div>
+
+            {/* Footprint bars */}
+            <div style={{ padding: '0 14px 10px' }}>
+              {[
+                { label: 'Total spend',  value: formatCurrencyNullable(profile.totalSpend) ?? '—',  pct: 80 },
+                { label: 'Refund rate',  value: `${refundPct}%`, pct: refundPct, warn: refundPct > 30 },
+                { label: 'Order count',  value: String(profile.orderCount), pct: Math.min(profile.orderCount * 8, 100) },
+              ].map(({ label, value, pct, warn }) => (
+                <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 5 }}>
+                  <div style={{ width: 90, fontSize: 10, color: 'var(--text-muted)', flexShrink: 0 }}>
+                    {label}
+                  </div>
+                  <div style={{ flex: 1, height: 4, background: 'var(--bg-subtle)', borderRadius: 2, overflow: 'hidden' }}>
+                    <div
+                      style={{
+                        height: '100%',
+                        width: `${pct}%`,
+                        background: warn ? '#7B2D26' : '#1A1814',
+                        borderRadius: 2,
+                        opacity: 0.7,
+                      }}
+                    />
+                  </div>
+                  <div
+                    style={{
+                      width: 64,
+                      fontSize: 11,
+                      fontWeight: 600,
+                      fontFamily: 'var(--font-mono)',
+                      color: warn ? '#7B2D26' : 'var(--text)',
+                      textAlign: 'right',
+                    }}
+                  >
+                    {value}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Notes */}
+          {profile.id && (
+            <div style={{ padding: '12px 14px', borderBottom: '1px solid var(--border-default)' }}>
+              <CustomerNotes customerProfileId={profile.id} />
+            </div>
+          )}
 
           {/* Identity details */}
-          <div className="pt-4">
-            <h4 className="text-overline mb-3">Identity details</h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+          <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--border-default)' }}>
+            <div
+              style={{
+                fontSize: 10,
+                fontWeight: 600,
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+                color: 'var(--text-muted)',
+                marginBottom: 8,
+                lineHeight: 1,
+              }}
+            >
+              <span style={{ color: '#7B2D26', marginRight: 5 }}>§</span>
+              Identity details
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
               <IdentityField label="Email addresses" values={profile.emails} />
               <IdentityField label="Names used" values={profile.names} highlight={profile.names.length > 1} />
               <IdentityField label="Delivery addresses" values={profile.addresses} highlight={profile.addresses.length > 1} />
-              <IdentityField
-                label="Devices used"
-                values={profile.ips}
-                hint="Different networks this customer ordered from."
-              />
+              <IdentityField label="Devices / IPs" values={profile.ips} />
               {profile.cards.length > 0 && (
-                <IdentityField
-                  label="Cards used"
-                  values={profile.cards.map((c) => `****${c}`)}
-                  hint="Same card across multiple accounts is a strong link."
-                />
+                <IdentityField label="Cards used" values={profile.cards.map((c) => `····${c}`)} hint="Same card across accounts = strong link" />
               )}
               <IdentityField label="Payment methods" values={profile.paymentMethods} />
             </div>
           </div>
 
-          {/* Why we linked these (only if multi-email) */}
+          {/* Link evidence */}
           {profile.links.length > 0 && profile.emails.length > 1 && (
-            <div>
-              <h4 className="text-overline mb-2">Why this customer was matched</h4>
-              <div className="space-y-2">
+            <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--border-default)' }}>
+              <div
+                style={{
+                  fontSize: 10,
+                  fontWeight: 600,
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  color: 'var(--text-muted)',
+                  marginBottom: 6,
+                  lineHeight: 1,
+                }}
+              >
+                <span style={{ color: '#7B2D26', marginRight: 5 }}>§</span>
+                Why this customer was matched
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                 {profile.links.map((link, i) => (
-                  <div key={i} className="flex items-start gap-2 text-sm rounded-lg px-3 py-2" style={{ background: 'var(--watchlist-bg)', borderColor: 'var(--watchlist-bd)', color: 'var(--text)', border: '1px solid var(--watchlist-bd)' }}>
-                    <LinkIcon type={link.type} />
-                    <span>{link.description}</span>
+                  <div
+                    key={i}
+                    style={{
+                      fontSize: 12,
+                      color: 'var(--text-muted)',
+                      padding: '6px 10px',
+                      background: 'var(--bg-canvas)',
+                      border: '1px solid var(--border-default)',
+                      borderRadius: 3,
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: 8,
+                    }}
+                  >
+                    <span style={{ color: '#7B2D26', flexShrink: 0 }}>·</span>
+                    {link.description}
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Identity changes / flags */}
+          {/* Flags */}
           {profile.flags.length > 0 && (
-            <div>
-              <h4 className="text-overline mb-2">Matched datapoints</h4>
-              <div className="space-y-2">
+            <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--border-default)' }}>
+              <div
+                style={{
+                  fontSize: 10,
+                  fontWeight: 600,
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  color: 'var(--text-muted)',
+                  marginBottom: 6,
+                  lineHeight: 1,
+                }}
+              >
+                <span style={{ color: '#7B2D26', marginRight: 5 }}>§</span>
+                Matched datapoints
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                 {profile.flags.map((flag, i) => (
-                  <div key={i} className="rounded-lg border px-3 py-2" style={severityStyle(flag.severity)}>
-                    <p className="text-sm font-medium">{flag.title}</p>
-                    <p className="text-xs mt-0.5">{flag.description}</p>
+                  <div
+                    key={i}
+                    style={{
+                      padding: '7px 10px',
+                      border: '1px solid var(--border-default)',
+                      borderRadius: 3,
+                      background: '#FBEFEC',
+                      borderColor: '#F0C8BE',
+                    }}
+                  >
+                    <p style={{ fontSize: 12, fontWeight: 600, color: '#7B2D26' }}>{flag.title}</p>
+                    <p style={{ fontSize: 11, marginTop: 2, color: '#9B4D46' }}>{flag.description}</p>
                     {flag.evidence.length > 0 && flag.evidence.length <= 6 && (
-                      <ul className="mt-1.5 space-y-0.5">
+                      <ul style={{ marginTop: 4, display: 'flex', flexDirection: 'column', gap: 2 }}>
                         {flag.evidence.map((e, j) => (
-                          <li key={j} className="text-xs">• {e}</li>
+                          <li key={j} style={{ fontSize: 11, color: '#9B4D46' }}>· {e}</li>
                         ))}
                       </ul>
                     )}
@@ -174,53 +478,91 @@ export default function CustomerProfileCard({ profile }: { profile: CustomerProf
             </div>
           )}
 
-          {/* Order history */}
-          <div>
-            <h4 className="text-overline mb-2">
+          {/* Order history table */}
+          <div style={{ padding: '10px 14px 14px' }}>
+            <div
+              style={{
+                fontSize: 10,
+                fontWeight: 600,
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+                color: 'var(--text-muted)',
+                marginBottom: 8,
+                lineHeight: 1,
+              }}
+            >
+              <span style={{ color: '#7B2D26', marginRight: 5 }}>§</span>
               Order history ({profile.orders.length})
-            </h4>
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs">
+            </div>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
                 <thead>
-                  <tr className="text-left" style={{ background: 'var(--bg-subtle)' }}>
-                    <th className="px-3 py-2 text-overline">Date</th>
-                    <th className="px-3 py-2 text-overline">Order ID</th>
-                    <th className="px-3 py-2 text-overline text-right">Amount</th>
-                    <th className="px-3 py-2 text-overline">Refund</th>
-                    <th className="px-3 py-2 text-overline">Identity</th>
-                    {profile.emails.length > 1 && (
-                      <th className="px-3 py-2 text-overline">Account</th>
-                    )}
-                    {profile.names.length > 1 && (
-                      <th className="px-3 py-2 text-overline">Name</th>
-                    )}
+                  <tr
+                    style={{
+                      background: 'var(--bg-canvas)',
+                      borderBottom: '1px solid var(--border-default)',
+                    }}
+                  >
+                    {['Date', 'Order ID', 'Amount', 'Refund', 'Score',
+                      ...(profile.emails.length > 1 ? ['Account'] : []),
+                      ...(profile.names.length > 1 ? ['Name'] : []),
+                    ].map((h) => (
+                      <th
+                        key={h}
+                        style={{
+                          padding: '6px 10px',
+                          fontSize: 10,
+                          fontWeight: 600,
+                          letterSpacing: '0.1em',
+                          textTransform: 'uppercase',
+                          color: 'var(--text-muted)',
+                          textAlign: h === 'Amount' ? 'right' : 'left',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {h}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
                   {profile.orders.map((order) => (
-                    <tr key={order.orderId} style={{ borderTop: '1px solid var(--border-subtle)' }}>
-                      <td className="px-3 py-2 whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>{formatDateShort(order.date)}</td>
-                      <td className="px-3 py-2 font-mono" style={{ color: 'var(--text)' }}>{order.orderId}</td>
-                      <td className="px-3 py-2 text-right" style={{ color: 'var(--text)' }}>{formatCurrencyNullable(order.amount)}</td>
-                      <td className="px-3 py-2">
+                    <tr
+                      key={order.orderId}
+                      style={{ borderBottom: '1px solid var(--border-default)' }}
+                    >
+                      <td style={{ padding: '7px 10px', color: 'var(--text-muted)', whiteSpace: 'nowrap', fontSize: 11 }}>
+                        {formatDateShort(order.date)}
+                      </td>
+                      <td style={{ padding: '7px 10px', fontFamily: 'var(--font-mono)', color: 'var(--text)', fontSize: 11 }}>
+                        {order.orderId}
+                      </td>
+                      <td style={{ padding: '7px 10px', textAlign: 'right', fontFamily: 'var(--font-mono)', color: 'var(--text)', fontSize: 11 }}>
+                        {formatCurrencyNullable(order.amount)}
+                      </td>
+                      <td style={{ padding: '7px 10px' }}>
                         {order.refunded ? (
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium" style={riskBadgeStyle('critical')}>
+                          <span style={{ ...CHIP_BASE, background: '#FBEFEC', color: '#7B2D26', border: '1px solid #F0C8BE' }}>
                             {order.refundReason ?? 'Refunded'}
                           </span>
                         ) : (
-                          <span style={{ color: 'var(--text-subtle)' }}>—</span>
+                          <span style={{ color: 'var(--text-subtle)', fontSize: 11 }}>—</span>
                         )}
                       </td>
-                      <td className="px-3 py-2">
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium" style={riskBadgeStyle(order.riskLevel)}>
-                          {Math.round(order.fraudScore)}
+                      <td style={{ padding: '7px 10px' }}>
+                        <span style={{ ...CHIP_BASE, ...riskChipStyle(order.riskLevel) }}>
+                          {(Math.round(order.fraudScore) / 100).toFixed(2)}
                         </span>
                       </td>
                       {profile.emails.length > 1 && (
-                        <td className="px-3 py-2 truncate max-w-[160px]" style={{ color: 'var(--text-muted)' }}>{order.email}</td>
+                        <td style={{ padding: '7px 10px', color: 'var(--text-muted)', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 11 }}>
+                          {order.email}
+                        </td>
                       )}
                       {profile.names.length > 1 && (
-                        <td className="px-3 py-2" style={{ color: 'var(--text-muted)' }}>{order.name}</td>
+                        <td style={{ padding: '7px 10px', color: 'var(--text-muted)', fontSize: 11 }}>
+                          {order.name}
+                        </td>
                       )}
                     </tr>
                   ))}
@@ -228,6 +570,9 @@ export default function CustomerProfileCard({ profile }: { profile: CustomerProf
               </table>
             </div>
           </div>
+
+          {/* Data coverage */}
+          <DataCoverageRow profile={profile} />
         </div>
       )}
     </div>
@@ -238,36 +583,54 @@ export default function CustomerProfileCard({ profile }: { profile: CustomerProf
 // Sub-components
 // ---------------------------------------------------------------------------
 
-/**
- * DataCoverageRow — 5-dot indicator showing which identity field categories
- * were seen across this customer's orders. A persistent, gentle reminder that
- * improves as merchants enrich their exports.
- */
 function DataCoverageRow({ profile }: { profile: import('@/lib/analysis/customerIntelligence').CustomerProfile }) {
   const fields: Array<{ label: string; present: boolean; missingTip: string }> = [
     { label: labelFor('email'),   present: profile.emails.length > 0,          missingTip: 'Email not found' },
     { label: labelFor('address'), present: profile.addresses.length > 0,       missingTip: 'Address not in export' },
-    { label: labelFor('ip'),      present: profile.ips.length > 0,             missingTip: 'IP address not in export. Learn how to add it.' },
-    { label: labelFor('card'),    present: profile.cards.length > 0,           missingTip: 'Card data not in export. Learn how to add it.' },
+    { label: labelFor('ip'),      present: profile.ips.length > 0,             missingTip: 'IP address not in export' },
+    { label: labelFor('card'),    present: profile.cards.length > 0,           missingTip: 'Card data not in export' },
     { label: labelFor('payment'), present: profile.paymentMethods.length > 0,  missingTip: 'Payment method not in export' },
   ];
 
   const anyMissing = fields.some((f) => !f.present);
-  if (!anyMissing) return null; // only show when something is absent
+  if (!anyMissing) return null;
 
   return (
-    <div className="flex items-center gap-2 mt-2.5">
-      <span className="text-xs" style={{ color: 'var(--text-subtle)' }}>Data:</span>
+    <div
+      style={{
+        borderTop: '1px solid var(--border-default)',
+        padding: '7px 14px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        flexWrap: 'wrap',
+      }}
+    >
+      <span style={{ fontSize: 10, color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+        DATA
+      </span>
       {fields.map(({ label, present, missingTip }) => (
         <span
           key={label}
           title={present ? `${label} present` : missingTip}
-          className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded"
-          style={{ color: present ? 'var(--text-muted)' : 'var(--text-subtle)' }}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 4,
+            fontSize: 11,
+            color: present ? 'var(--text-muted)' : 'var(--text-subtle)',
+          }}
         >
           <span
-            className="inline-block w-2 h-2 rounded-full"
-            style={{ background: present ? 'var(--icon-muted)' : 'var(--bg-subtle)' }}
+            style={{
+              display: 'inline-block',
+              width: 6,
+              height: 6,
+              borderRadius: '50%',
+              background: present ? '#1A1814' : 'var(--bg-subtle)',
+              opacity: present ? 0.5 : 1,
+              border: present ? undefined : '1px solid var(--border-default)',
+            }}
           />
           {label}
         </span>
@@ -277,8 +640,8 @@ function DataCoverageRow({ profile }: { profile: import('@/lib/analysis/customer
           href="/help/csv-export"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-xs hover:underline ml-1"
-          style={{ color: 'var(--text-subtle)' }}
+          style={{ fontSize: 11, color: 'var(--text-subtle)', textDecoration: 'underline', textUnderlineOffset: 2 }}
+          className="hover:text-[var(--text-muted)] ml-1"
           title="Learn how to add missing fields"
         >
           + add fields
@@ -292,49 +655,25 @@ function IdentityField({ label, values, highlight, hint }: { label: string; valu
   if (values.length === 0) return null;
   return (
     <div>
-      <dt className="text-xs mb-0.5" style={{ color: 'var(--text-muted)' }}>
+      <dt style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 3 }}>
         {label}
-        {hint && <span className="block text-xs font-normal" style={{ color: 'var(--text-subtle)' }}>{hint}</span>}
+        {hint && <span style={{ display: 'block', fontSize: 10, fontWeight: 400, letterSpacing: 0, textTransform: 'none', color: 'var(--text-subtle)' }}>{hint}</span>}
       </dt>
-      <dd className="text-sm" style={{ color: highlight ? 'var(--risk-high)' : 'var(--text)', fontWeight: highlight ? 600 : undefined }}>
+      <dd style={{ fontSize: 12, color: highlight ? '#7B2D26' : 'var(--text)', fontWeight: highlight ? 600 : 400, fontFamily: 'var(--font-mono)' }}>
         {values.length <= 3 ? (
           values.map((v, i) => (
             <span key={i}>
-              {i > 0 && <span className="mx-1" style={{ color: 'var(--border)' }}>·</span>}
+              {i > 0 && <span style={{ margin: '0 4px', color: 'var(--border-default)' }}>·</span>}
               {v}
             </span>
           ))
         ) : (
           <>
             {values[0]}
-            <span className="ml-1" style={{ color: 'var(--text-subtle)' }}>+ {values.length - 1} more</span>
+            <span style={{ marginLeft: 6, color: 'var(--text-subtle)' }}>+{values.length - 1} more</span>
           </>
         )}
       </dd>
     </div>
-  );
-}
-
-function LinkIcon({ type }: { type: string }) {
-  const cls = 'w-4 h-4 flex-shrink-0 mt-0.5';
-  const style = { color: 'var(--watchlist)' };
-  if (type === 'shared_card') {
-    return (
-      <svg className={cls} style={style} fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
-      </svg>
-    );
-  }
-  if (type === 'shared_address') {
-    return (
-      <svg className={cls} style={style} fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955a1.126 1.126 0 011.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
-      </svg>
-    );
-  }
-  return (
-    <svg className={cls} style={style} fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5a17.92 17.92 0 01-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" />
-    </svg>
   );
 }

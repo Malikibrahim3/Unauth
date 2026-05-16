@@ -22,16 +22,21 @@ export function FilterBar({ search, rightActions, activeFilterChips, className }
 
   return (
     <div
-      className={cn(
-        'flex items-center gap-[var(--space-3)] h-12 px-[var(--space-5)] border-b border-[var(--border-subtle)] bg-[var(--bg-surface)]',
-        className,
-      )}
+      className={cn('flex items-center gap-3', className)}
+      style={{
+        height: 44,
+        paddingLeft: 14,
+        paddingRight: 14,
+        borderBottom: '1px solid var(--border-default)',
+        background: 'var(--bg-canvas)',
+      }}
     >
       {/* Search input */}
       {search && (
-        <div className="relative flex items-center" style={{ maxWidth: 320, width: '100%' }}>
+        <div className="relative flex items-center" style={{ maxWidth: 280, width: '100%' }}>
           <Search
-            className="absolute left-[var(--space-3)] w-4 h-4 text-[var(--text-tertiary)] pointer-events-none"
+            className="absolute pointer-events-none"
+            style={{ left: 10, width: 13, height: 13, color: 'var(--text-subtle)' }}
             aria-hidden="true"
           />
           <input
@@ -40,23 +45,35 @@ export function FilterBar({ search, rightActions, activeFilterChips, className }
             value={search.value}
             onChange={(e: ChangeEvent<HTMLInputElement>) => search.onChange(e.target.value)}
             placeholder={search.placeholder ?? 'Search…'}
-            className={cn(
-              'w-full pl-9 pr-9 h-8 rounded-[var(--radius-2)] border border-[var(--border-default)]',
-              'bg-[var(--bg-surface)] text-body text-[var(--text-primary)]',
-              'placeholder:text-[var(--text-tertiary)]',
-              'focus:outline-none focus:ring-0',
-              'focus-visible:border-[var(--accent-500)]',
-              'transition-colors',
-            )}
+            style={{
+              width: '100%',
+              paddingLeft: 30,
+              paddingRight: search.value ? 30 : 10,
+              height: 28,
+              borderRadius: 4,
+              border: '1px solid var(--border-default)',
+              background: '#FFFFFF',
+              fontSize: 12,
+              color: 'var(--text)',
+              outline: 'none',
+            }}
+            className="placeholder:text-[var(--text-subtle)] focus:border-[#7B2D26] transition-colors"
           />
           {search.value && (
             <button
               type="button"
               onClick={() => search.onChange('')}
-              className="absolute right-[var(--space-3)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"
               aria-label="Clear search"
+              style={{
+                position: 'absolute',
+                right: 8,
+                color: 'var(--text-subtle)',
+                display: 'flex',
+                alignItems: 'center',
+              }}
+              className="hover:text-[var(--text)] transition-colors"
             >
-              <X className="w-3.5 h-3.5" />
+              <X style={{ width: 12, height: 12 }} />
             </button>
           )}
         </div>
@@ -64,14 +81,14 @@ export function FilterBar({ search, rightActions, activeFilterChips, className }
 
       {/* Active filter chips */}
       {activeFilterChips && (
-        <div className="flex items-center gap-[var(--space-2)] flex-1 flex-wrap">
+        <div className="flex items-center gap-2 flex-1 flex-wrap">
           {activeFilterChips}
         </div>
       )}
 
       {/* Right actions */}
       {rightActions && (
-        <div className="ml-auto flex items-center gap-[var(--space-2)]">
+        <div className="ml-auto flex items-center gap-2">
           {rightActions}
         </div>
       )}

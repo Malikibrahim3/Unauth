@@ -29,22 +29,26 @@ interface DataTableProps<T> {
   emptyState?: ReactNode;
 }
 
-const ROW_HEIGHT: Record<TableDensity, string> = {
-  compact:  'h-10',
-  default:  'h-12',
-  relaxed:  'h-14',
+const ROW_HEIGHT: Record<TableDensity, number> = {
+  compact:  36,
+  default:  44,
+  relaxed:  52,
 };
 
 function SkeletonRows({ count = 6, cols }: { count?: number; cols: number }) {
   return (
     <>
       {Array.from({ length: count }).map((_, i) => (
-        <tr key={i} className="border-b border-[var(--border-subtle)]">
+        <tr key={i} style={{ borderBottom: '1px solid var(--border-default)' }}>
           {Array.from({ length: cols }).map((_, j) => (
-            <td key={j} className="px-[var(--space-4)] py-[var(--space-3)]">
+            <td key={j} style={{ padding: '10px 14px' }}>
               <div
-                className="h-4 rounded-[var(--radius-1)] skeleton"
-                style={{ width: j === 0 ? '60%' : j === 1 ? '80%' : '50%' }}
+                className="skeleton"
+                style={{
+                  height: 12,
+                  borderRadius: 2,
+                  width: j === 0 ? '60%' : j === 1 ? '80%' : '50%',
+                }}
               />
             </td>
           ))}
@@ -57,10 +61,11 @@ function SkeletonRows({ count = 6, cols }: { count?: number; cols: number }) {
 function SortIcon({ active, dir }: { active: boolean; dir?: 'asc' | 'desc' }) {
   return (
     <svg
-      className={cn('ml-1 w-3 h-3 inline-block shrink-0', active ? 'text-[var(--text-primary)]' : 'text-[var(--text-tertiary)]')}
+      className={cn('ml-1 w-3 h-3 inline-block shrink-0')}
       viewBox="0 0 10 12"
       fill="currentColor"
       aria-hidden="true"
+      style={{ opacity: active ? 1 : 0.35 }}
     >
       {(!active || dir === 'asc') && (
         <path d="M5 2L8 6H2L5 2Z" opacity={active && dir === 'asc' ? 1 : 0.4} />
@@ -90,20 +95,27 @@ export function DataTable<T>({
 
   return (
     <div className={cn('w-full overflow-x-auto', className)}>
-      <table className="w-full border-collapse text-body">
+      <table className="w-full border-collapse" style={{ fontSize: 13 }}>
         <thead>
-          <tr className="bg-[var(--bg-surface-alt)] border-b border-[var(--border-subtle)]">
+          <tr style={{ background: 'var(--bg-canvas)', borderBottom: '1px solid var(--border-default)' }}>
             {columns.map((col) => (
               <th
                 key={col.key}
                 scope="col"
-                style={{ width: col.width }}
-                className={cn(
-                  'h-10 px-[var(--space-4)] text-meta text-[var(--text-tertiary)] uppercase font-medium text-left whitespace-nowrap',
-                  col.align === 'right' && 'text-right',
-                  col.align === 'center' && 'text-center',
-                  col.sortable && onSort && 'cursor-pointer select-none hover:text-[var(--text-secondary)]',
-                )}
+                style={{
+                  width: col.width,
+                  fontSize: 10,
+                  fontWeight: 600,
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  color: 'var(--text-muted)',
+                  padding: '0 14px',
+                  height: 36,
+                  whiteSpace: 'nowrap',
+                  textAlign: col.align === 'right' ? 'right' : col.align === 'center' ? 'center' : 'left',
+                  cursor: col.sortable && onSort ? 'pointer' : undefined,
+                  userSelect: col.sortable && onSort ? 'none' : undefined,
+                }}
                 onClick={col.sortable && onSort ? () => onSort(col.key) : undefined}
               >
                 {col.header}
@@ -121,7 +133,10 @@ export function DataTable<T>({
             <tr>
               <td colSpan={columns.length}>
                 {emptyState ?? (
-                  <div className="h-[200px] flex items-center justify-center text-small text-[var(--text-tertiary)]">
+                  <div
+                    className="flex items-center justify-center"
+                    style={{ height: 200, fontSize: 12, color: 'var(--text-muted)' }}
+                  >
                     No results
                   </div>
                 )}
@@ -130,27 +145,29 @@ export function DataTable<T>({
           ) : (
             rows.map((row) => {
               const key = getRowKey(row);
+              const isSelected = selectedKey === key;
               return (
                 <tr
                   key={key}
                   onClick={onRowClick ? () => onRowClick(row) : undefined}
-                  className={cn(
-                    rowH,
-                    'border-b border-[var(--border-subtle)] transition-colors',
-                    onRowClick && 'cursor-pointer',
-                    selectedKey === key
-                      ? 'bg-[var(--bg-selected)]'
-                      : onRowClick && 'hover:bg-[var(--bg-hover)]',
-                  )}
+                  style={{
+                    height: rowH,
+                    borderBottom: '1px solid var(--border-default)',
+                    background: isSelected ? 'var(--bg-subtle)' : undefined,
+                    cursor: onRowClick ? 'pointer' : undefined,
+                    transition: 'background 120ms',
+                  }}
+                  className={onRowClick && !isSelected ? 'hover:bg-[var(--bg-subtle)]' : undefined}
                 >
                   {columns.map((col) => (
                     <td
                       key={col.key}
-                      className={cn(
-                        'px-[var(--space-4)] align-middle',
-                        col.align === 'right' && 'text-right num',
-                        col.align === 'center' && 'text-center',
-                      )}
+                      style={{
+                        padding: '0 14px',
+                        verticalAlign: 'middle',
+                        textAlign: col.align === 'right' ? 'right' : col.align === 'center' ? 'center' : 'left',
+                        color: 'var(--text)',
+                      }}
                     >
                       {col.render(row)}
                     </td>

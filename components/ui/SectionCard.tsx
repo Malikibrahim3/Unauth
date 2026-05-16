@@ -20,29 +20,54 @@ export function SectionCard({
   id,
   className,
 }: SectionCardProps) {
-  const bodyPadding = density === 'compact' ? 'p-[var(--space-4)]' : 'p-[var(--space-5)]';
+  const bodyPadding = density === 'compact' ? 'p-3' : 'p-4';
 
   return (
     <section
       id={id}
-      className={cn(
-        'rounded-[var(--radius-3)] border border-[var(--border-subtle)] bg-[var(--bg-surface)]',
-        className,
-      )}
+      className={cn('overflow-hidden', className)}
+      style={{
+        background: '#FFFFFF',
+        border: '1px solid var(--border-default)',
+        borderRadius: 4,
+      }}
     >
       {/* Header */}
-      <div className="flex items-start justify-between gap-[var(--space-4)] px-[var(--space-5)] pt-[var(--space-5)] pb-[var(--space-3)]">
+      <div
+        className="flex items-center justify-between gap-3"
+        style={{
+          background: 'var(--bg-canvas)',
+          borderBottom: '1px solid var(--border-default)',
+          padding: '9px 14px',
+        }}
+      >
         <div>
-          <h2 className="text-h2 text-[var(--text-primary)]">{title}</h2>
+          <div
+            style={{
+              fontSize: 10,
+              fontWeight: 600,
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              color: 'var(--text)',
+              lineHeight: 1,
+            }}
+          >
+            <span style={{ color: '#7B2D26', marginRight: 5 }}>§</span>
+            {title}
+          </div>
           {description && (
-            <p className="mt-[var(--space-1)] text-small text-[var(--text-tertiary)]">{description}</p>
+            <p
+              className="mt-1 truncate"
+              style={{ fontSize: 11, color: 'var(--text-muted)' }}
+            >
+              {description}
+            </p>
           )}
         </div>
-        {actions && <div className="flex items-center gap-[var(--space-2)] shrink-0">{actions}</div>}
+        {actions && (
+          <div className="flex items-center gap-2 shrink-0">{actions}</div>
+        )}
       </div>
-
-      {/* Divider */}
-      <div className="border-t border-[var(--border-subtle)]" />
 
       {/* Body */}
       <div className={bodyPadding}>{children}</div>

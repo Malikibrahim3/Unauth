@@ -22,49 +22,24 @@ interface BadgeProps {
   className?: string;
 }
 
-const TONE_SUBTLE: Record<BadgeTone, string> = {
-  neutral:  'bg-[var(--bg-surface-alt)] text-[var(--text-secondary)] border-[var(--border-subtle)]',
-  info:     'bg-[var(--info-bg)] text-[var(--info-fg)] border-[var(--info-line)]',
-  accent:   'bg-[var(--accent-50)] text-[var(--accent-700)] border-[var(--accent-200)]',
-  success:  'bg-[var(--risk-low-bg)] text-[var(--risk-low-fg)] border-[var(--risk-low-line)]',
-  warning:  'bg-[var(--risk-medium-bg)] text-[var(--risk-medium-fg)] border-[var(--risk-medium-line)]',
-  danger:   'bg-[var(--risk-high-bg)] text-[var(--risk-high-fg)] border-[var(--risk-high-line)]',
-  critical: 'bg-[var(--risk-critical-bg)] text-[var(--risk-critical-fg)] border-[var(--risk-critical-line)]',
+const CHIP_STYLES: Record<BadgeTone, { background: string; color: string; border: string }> = {
+  neutral:  { background: '#F2EDE3', color: '#4A4640', border: '#D2C9B5' },
+  info:     { background: '#EDF3FB', color: '#2D5A8E', border: '#BDD1ED' },
+  accent:   { background: '#EDF3FB', color: '#2D5A8E', border: '#BDD1ED' },
+  success:  { background: '#EDF5EC', color: '#2A6634', border: '#B8DDB8' },
+  warning:  { background: '#FBF4EC', color: '#7A4F1C', border: '#E8D0A8' },
+  danger:   { background: '#FBEFEC', color: '#7B2D26', border: '#F0C8BE' },
+  critical: { background: '#1A1814', color: '#E8E4D8', border: '#1A1814' },
 };
 
-const TONE_SOLID: Record<BadgeTone, string> = {
-  neutral:  'bg-[var(--text-secondary)] text-white border-transparent',
-  info:     'bg-[var(--info-fg)] text-white border-transparent',
-  accent:   'bg-[var(--accent-500)] text-white border-transparent',
-  success:  'bg-[var(--risk-low-fg)] text-white border-transparent',
-  warning:  'bg-[var(--risk-medium-fg)] text-white border-transparent',
-  danger:   'bg-[var(--risk-high-fg)] text-white border-transparent',
-  critical: 'bg-[var(--risk-critical-fg)] text-white border-transparent',
-};
-
-const TONE_OUTLINE: Record<BadgeTone, string> = {
-  neutral:  'bg-transparent text-[var(--text-secondary)] border-[var(--border-default)]',
-  info:     'bg-transparent text-[var(--info-fg)] border-[var(--info-line)]',
-  accent:   'bg-transparent text-[var(--accent-600)] border-[var(--accent-200)]',
-  success:  'bg-transparent text-[var(--risk-low-fg)] border-[var(--risk-low-line)]',
-  warning:  'bg-transparent text-[var(--risk-medium-fg)] border-[var(--risk-medium-line)]',
-  danger:   'bg-transparent text-[var(--risk-high-fg)] border-[var(--risk-high-line)]',
-  critical: 'bg-transparent text-[var(--risk-critical-fg)] border-[var(--risk-critical-line)]',
-};
-
-const DOT_COLOR: Record<BadgeTone, string> = {
-  neutral:  'bg-[var(--text-tertiary)]',
-  info:     'bg-[var(--info-fg)]',
-  accent:   'bg-[var(--accent-500)]',
-  success:  'bg-[var(--risk-low-fg)]',
-  warning:  'bg-[var(--risk-medium-fg)]',
-  danger:   'bg-[var(--risk-high-fg)]',
-  critical: 'bg-[var(--risk-critical-fg)]',
-};
-
-const SIZE_CLASSES: Record<BadgeSize, string> = {
-  sm: 'h-5 px-[6px] text-[11px]',
-  md: 'h-6 px-[8px] text-[12px]',
+const SOLID_STYLES: Record<BadgeTone, { background: string; color: string }> = {
+  neutral:  { background: '#4A4640', color: '#F2EDE3' },
+  info:     { background: '#2D5A8E', color: '#FFFFFF' },
+  accent:   { background: '#2D5A8E', color: '#FFFFFF' },
+  success:  { background: '#2A6634', color: '#FFFFFF' },
+  warning:  { background: '#7A4F1C', color: '#FFFFFF' },
+  danger:   { background: '#7B2D26', color: '#FBEFEC' },
+  critical: { background: '#1A1814', color: '#E8E4D8' },
 };
 
 export function Badge({
@@ -75,26 +50,40 @@ export function Badge({
   children,
   className,
 }: BadgeProps) {
-  const toneClass =
-    variant === 'solid'
-      ? TONE_SOLID[tone]
-      : variant === 'outline'
-      ? TONE_OUTLINE[tone]
-      : TONE_SUBTLE[tone];
+  const isSolid = variant === 'solid';
+  const solidStyle = SOLID_STYLES[tone];
+  const subtleStyle = CHIP_STYLES[tone];
+
+  const inlineStyle = isSolid
+    ? { background: solidStyle.background, color: solidStyle.color, border: `1px solid transparent` }
+    : variant === 'outline'
+    ? { background: 'transparent', color: subtleStyle.color, border: `1px solid ${subtleStyle.border}` }
+    : { background: subtleStyle.background, color: subtleStyle.color, border: `1px solid ${subtleStyle.border}` };
+
+  const height = size === 'sm' ? 16 : 18;
+  const px = size === 'sm' ? '5px' : '7px';
 
   return (
     <span
-      className={cn(
-        'inline-flex items-center gap-1 font-medium leading-none rounded-[var(--radius-1)] border',
-        SIZE_CLASSES[size],
-        toneClass,
-        className,
-      )}
+      className={cn('inline-flex items-center gap-1 leading-none', className)}
+      style={{
+        height,
+        paddingLeft: px,
+        paddingRight: px,
+        borderRadius: 3,
+        fontSize: 10,
+        fontWeight: 700,
+        letterSpacing: '0.06em',
+        textTransform: 'uppercase',
+        whiteSpace: 'nowrap',
+        ...inlineStyle,
+      }}
     >
       {dot && (
         <span
           aria-hidden="true"
-          className={cn('w-1.5 h-1.5 rounded-full shrink-0', DOT_COLOR[tone])}
+          className="w-1.5 h-1.5 rounded-full shrink-0"
+          style={{ background: 'currentColor', opacity: 0.6 }}
         />
       )}
       {children}

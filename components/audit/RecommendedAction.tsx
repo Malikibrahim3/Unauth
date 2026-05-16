@@ -21,33 +21,73 @@ export default function RecommendedAction({ tier, topSignalName, runId, customer
 
   if (safeTier === 'low') return null;
 
+  const isCritical = safeTier === 'critical';
+
   return (
     <div
-      className="border rounded-lg px-4 py-3 space-y-3"
-      style={{ background: 'var(--risk-high-bg)', borderColor: 'var(--risk-high-bd)' }}
+      style={{
+        background: isCritical ? '#1A1814' : '#FBEFEC',
+        border: `1px solid ${isCritical ? '#1A1814' : '#F0C8BE'}`,
+        borderRadius: 4,
+        padding: '10px 14px',
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: 10,
+      }}
     >
-      <div>
-        <h3
-          className="text-xs font-semibold uppercase tracking-wider mb-1"
-          style={{ color: 'var(--risk-high)' }}
+      {/* Dot indicator */}
+      <span
+        style={{
+          width: 7,
+          height: 7,
+          borderRadius: '50%',
+          background: isCritical ? '#E8E4D8' : '#7B2D26',
+          flexShrink: 0,
+          marginTop: 3,
+        }}
+        aria-hidden="true"
+      />
+
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div
+          style={{
+            fontSize: 10,
+            fontWeight: 700,
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+            color: isCritical ? '#E8E4D8' : '#7B2D26',
+            marginBottom: 4,
+            lineHeight: 1,
+          }}
         >
-          Recommended review
-        </h3>
-        <p className="text-sm" style={{ color: 'var(--risk-high)' }}>{recommendation}</p>
-      </div>
-      {(runId || customersHref) && (
-        <div className="flex gap-3">
-          {customersHref && (
-            <Link
-              href={customersHref}
-              className="text-xs font-medium underline"
-              style={{ color: 'var(--risk-high)' }}
-            >
-              Open customer profile &rarr;
-            </Link>
-          )}
+          Recommended action
         </div>
-      )}
+        <p
+          style={{
+            fontSize: 12,
+            color: isCritical ? '#C8C4BA' : '#7B2D26',
+            lineHeight: 1.5,
+          }}
+        >
+          {recommendation}
+        </p>
+        {customersHref && (
+          <Link
+            href={customersHref}
+            style={{
+              display: 'inline-block',
+              marginTop: 8,
+              fontSize: 11,
+              fontWeight: 600,
+              color: isCritical ? '#E8E4D8' : '#7B2D26',
+              textDecoration: 'underline',
+              textUnderlineOffset: 2,
+            }}
+          >
+            Open customer profile →
+          </Link>
+        )}
+      </div>
     </div>
   );
 }
