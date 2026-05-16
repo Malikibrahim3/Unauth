@@ -60,7 +60,7 @@ export default function LandingPage() {
               Sign in
             </a>
             <a
-              href="/login"
+              href="mailto:hello@unauth.app?subject=Unauth%20pilot%20request"
               style={{
                 fontFamily: 'var(--font-dm-sans, sans-serif)',
                 fontSize: '13px',
@@ -84,7 +84,7 @@ export default function LandingPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
           {/* Left — copy column */}
           <Reveal className="lg:col-span-5 xl:col-span-5 lg:sticky lg:top-24" delay={40}>
-            {/* Eyebrow */}
+            {/* Eyebrow — product category */}
             <p
               style={{
                 fontFamily: 'var(--font-dm-sans, sans-serif)',
@@ -94,23 +94,25 @@ export default function LandingPage() {
                 textTransform: 'uppercase',
                 color: '#4A4640',
                 marginBottom: '14px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                flexWrap: 'wrap',
               }}
             >
-              <span style={{ color: '#7B2D26' }}>§</span>{' '}
-              FRAUD INTELLIGENCE BRIEF — ISSUE 04
-            </p>
-
-            {/* Marginalia inline — date + read time */}
-            <p
-              style={{
-                fontFamily: 'var(--font-dm-mono, monospace)',
-                fontSize: '12px',
-                color: '#8A8472',
-                letterSpacing: '0.04em',
-                marginBottom: '28px',
-              }}
-            >
-              {todayLong} · 12 min read · filed under identity resolution
+              Cross-merchant fraud graph · ecommerce
+              <span
+                style={{
+                  fontFamily: 'var(--font-dm-mono, monospace)',
+                  fontSize: '10px',
+                  letterSpacing: '0.08em',
+                  color: '#8A8472',
+                  fontWeight: 400,
+                  textTransform: 'none',
+                }}
+              >
+                Issue 04 · {todayISO}
+              </span>
             </p>
 
             {/* Headline */}
@@ -147,7 +149,7 @@ export default function LandingPage() {
             {/* CTA row */}
             <div className="flex flex-wrap items-center gap-4">
               <a
-                href="/login"
+                href="mailto:hello@unauth.app?subject=Unauth%20pilot%20request"
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
@@ -166,11 +168,11 @@ export default function LandingPage() {
                 }}
                 className="hover:bg-[#2B2922]"
               >
-                Run a CSV pilot
+                Request a pilot
                 <span aria-hidden style={{ fontFamily: 'var(--font-dm-mono, monospace)' }}>→</span>
               </a>
               <a
-                href="#how-it-works"
+                href="#evidence"
                 style={{
                   fontFamily: 'var(--font-dm-sans, sans-serif)',
                   fontSize: '14px',
@@ -181,15 +183,44 @@ export default function LandingPage() {
                 }}
                 className="hover:border-b hover:border-[#4A4640]"
               >
-                See how it works ↓
+                View evidence packet ↓
               </a>
             </div>
 
-            {/* Trust strip */}
+            {/* Proof chips */}
+            <div
+              className="flex flex-wrap gap-2"
+              style={{ marginTop: '24px' }}
+            >
+              {[
+                'No checkout integration',
+                'CSV pilot · ~10 min',
+                'Client-side HMAC hashing',
+                'CE 3.0 evidence output',
+              ].map((chip) => (
+                <span
+                  key={chip}
+                  style={{
+                    fontFamily: 'var(--font-dm-mono, monospace)',
+                    fontSize: '10.5px',
+                    color: '#4A4640',
+                    background: '#F2EDE3',
+                    border: '1px solid #D8D0BD',
+                    padding: '4px 10px',
+                    letterSpacing: '0.04em',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {chip}
+                </span>
+              ))}
+            </div>
+
+            {/* Vertical fit: pilot categories */}
             <div
               style={{
-                marginTop: '36px',
-                paddingTop: '20px',
+                marginTop: '28px',
+                paddingTop: '18px',
                 borderTop: '1px solid #D8D0BD',
               }}
             >
@@ -200,17 +231,17 @@ export default function LandingPage() {
                   letterSpacing: '0.14em',
                   textTransform: 'uppercase',
                   color: '#8A8472',
-                  marginBottom: '14px',
+                  marginBottom: '10px',
                 }}
               >
-                In pilot with merchants across
+                Active pilots across
               </p>
               <div
-                className="flex flex-wrap items-center gap-x-7 gap-y-3"
+                className="flex flex-wrap items-center gap-x-5 gap-y-2"
                 style={{
                   fontFamily: 'var(--font-serif, serif)',
                   fontStyle: 'italic',
-                  fontSize: '14px',
+                  fontSize: '13px',
                   color: '#4A4640',
                 }}
               >
@@ -752,49 +783,74 @@ export default function LandingPage() {
                 </p>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
-                {[
-                  { merchant: 'HeyGlow Skincare',     email: 'noah.kessler@protonmail.com', addr: '4421 Larkspur Ln, Apt 3B',     card: '••4419', signal: 'good',  note: 'looks fine' },
-                  { merchant: 'Murmur Audio',         email: 'n.kessler@protonmail.com',    addr: '4421 Larspur Lane Apt 3B',     card: '••4419', signal: 'good',  note: 'looks fine' },
-                  { merchant: 'RidgePath Outfitters', email: 'noah_kessler@gmail.com',      addr: '4421 Larkspur Ln #3B',         card: '••4419', signal: 'good',  note: 'looks fine' },
-                  { merchant: 'Aster & Vale',         email: 'n.k@gmail.com',               addr: '4421 Larkspur Ln Apt 3B',      card: '••4419', signal: 'good',  note: 'looks fine' },
-                  { merchant: 'Northbound Goods',     email: 'noah.kessler@protonmail.com', addr: '4421 Larkspur Ln #3B',         card: '••4419', signal: 'good',  note: 'looks fine' },
-                  { merchant: 'Petalwood Co.',        email: 'n.kessler+1@protonmail.com',  addr: '4421 Larkspur Ln, Apt 3B',     card: '••4419', signal: 'good',  note: 'looks fine' },
-                  { merchant: 'Otterline',            email: 'noah.kessler@protonmail.com', addr: '4421 Larkspur Lane, Apt 3B',   card: '••4419', signal: 'good',  note: 'looks fine' },
-                ].map((row, i) => (
-                  <Reveal
-                    key={i}
-                    delay={220 + i * 70}
+              {/* Ledger: scrollable on mobile to prevent overflow */}
+              <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' as never, margin: '0 -4px' }}>
+                <div style={{ minWidth: '520px', padding: '0 4px' }}>
+                  {/* Column headers — desktop only */}
+                  <div
                     style={{
                       display: 'grid',
                       gridTemplateColumns: 'minmax(110px, 1fr) minmax(0, 1.5fr) minmax(0, 1.2fr) 60px 70px',
                       gap: '12px',
-                      alignItems: 'center',
                       fontFamily: 'var(--font-dm-mono, monospace)',
-                      fontSize: '11.5px',
-                      padding: '7px 0',
-                      borderBottom: i < 6 ? '1px dashed #ECE5D4' : 'none',
-                      color: '#4A4640',
+                      fontSize: '10px',
+                      color: '#8A8472',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.08em',
+                      padding: '0 0 6px 0',
+                      borderBottom: '1px solid #D8D0BD',
+                      marginBottom: '2px',
                     }}
                   >
-                    <span style={{ color: '#1A1814', fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '12px' }}>{row.merchant}</span>
-                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.email}</span>
-                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.addr}</span>
-                    <span>{row.card}</span>
-                    <span
+                    <span>Merchant</span>
+                    <span>Email</span>
+                    <span>Address</span>
+                    <span>Card</span>
+                    <span>Status</span>
+                  </div>
+                  {[
+                    { merchant: 'HeyGlow Skincare',     email: 'noah.kessler@protonmail.com', addr: '4421 Larkspur Ln, Apt 3B',     card: '••4419' },
+                    { merchant: 'Murmur Audio',         email: 'n.kessler@protonmail.com',    addr: '4421 Larspur Lane Apt 3B',     card: '••4419' },
+                    { merchant: 'RidgePath Outfitters', email: 'noah_kessler@gmail.com',      addr: '4421 Larkspur Ln #3B',         card: '••4419' },
+                    { merchant: 'Aster & Vale',         email: 'n.k@gmail.com',               addr: '4421 Larkspur Ln Apt 3B',      card: '••4419' },
+                    { merchant: 'Northbound Goods',     email: 'noah.kessler@protonmail.com', addr: '4421 Larkspur Ln #3B',         card: '••4419' },
+                    { merchant: 'Petalwood Co.',        email: 'n.kessler+1@protonmail.com',  addr: '4421 Larkspur Ln, Apt 3B',     card: '••4419' },
+                    { merchant: 'Otterline',            email: 'noah.kessler@protonmail.com', addr: '4421 Larkspur Lane, Apt 3B',   card: '••4419' },
+                  ].map((row, i) => (
+                    <Reveal
+                      key={i}
+                      delay={220 + i * 70}
                       style={{
-                        display: 'inline-flex',
+                        display: 'grid',
+                        gridTemplateColumns: 'minmax(110px, 1fr) minmax(0, 1.5fr) minmax(0, 1.2fr) 60px 70px',
+                        gap: '12px',
                         alignItems: 'center',
-                        gap: '5px',
-                        color: '#3D6F4A',
-                        fontSize: '10.5px',
+                        fontFamily: 'var(--font-dm-mono, monospace)',
+                        fontSize: '11.5px',
+                        padding: '7px 0',
+                        borderBottom: i < 6 ? '1px dashed #ECE5D4' : 'none',
+                        color: '#4A4640',
                       }}
                     >
-                      <span style={{ width: 5, height: 5, background: '#3D6F4A', borderRadius: '50%' }} />
-                      ok
-                    </span>
-                  </Reveal>
-                ))}
+                      <span style={{ color: '#1A1814', fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '12px' }}>{row.merchant}</span>
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.email}</span>
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.addr}</span>
+                      <span>{row.card}</span>
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '5px',
+                          color: '#3D6F4A',
+                          fontSize: '10.5px',
+                        }}
+                      >
+                        <span style={{ width: 5, height: 5, background: '#3D6F4A', borderRadius: '50%' }} />
+                        ok
+                      </span>
+                    </Reveal>
+                  ))}
+                </div>
               </div>
 
               {/* Resolution arrow */}
@@ -846,7 +902,7 @@ export default function LandingPage() {
       {/* ── §2 · Network observation (dark inversion) ───────────── */}
       <section
         id="network"
-        style={{ background: '#15140F', color: '#E8E4D8' }}
+        style={{ background: '#15140F', color: '#E8E4D8', scrollMarginTop: '72px' }}
         className="py-16 md:py-24"
       >
         <div className="mx-auto max-w-[1400px] px-6 md:px-10">
@@ -973,7 +1029,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── §3 · How it works ───────────────────────────────────── */}
-      <section id="how-it-works" className="mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-20 pb-12 md:pb-16">
+      <section id="how-it-works" style={{ scrollMarginTop: '72px' }} className="mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-20 pb-12 md:pb-16">
         <hr style={{ border: 0, borderTop: '1px solid #D8D0BD', marginBottom: '40px' }} />
 
         <div className="flex items-end justify-between flex-wrap gap-4 mb-10">
@@ -1365,7 +1421,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── Sample evidence packet · full case-file artifact ─────── */}
-      <section id="evidence" className="mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-20 pb-12 md:pb-16">
+      <section id="evidence" style={{ scrollMarginTop: '72px' }} className="mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-20 pb-12 md:pb-16">
         <hr style={{ border: 0, borderTop: '1px solid #D8D0BD', marginBottom: '40px' }} />
 
         <div className="flex items-end justify-between flex-wrap gap-4 mb-10">
@@ -1411,7 +1467,7 @@ export default function LandingPage() {
             </p>
           </div>
           <a
-            href="/login"
+            href="mailto:hello@unauth.app?subject=Unauth%20sample%20evidence%20packet"
             style={{
               fontFamily: 'var(--font-dm-mono, monospace)',
               fontSize: '11.5px',
@@ -1423,7 +1479,7 @@ export default function LandingPage() {
             }}
             className="hover:bg-[#1A1814] hover:text-[#F8F5EE]"
           >
-            DOWNLOAD SAMPLE PDF →
+            REQUEST SAMPLE PDF →
           </a>
         </div>
 
@@ -2087,7 +2143,7 @@ Northbound Goods         $890.00     2 orders     1 INR filed
       {/* ── §7 · Security & data handling (dark inversion) ─────── */}
       <section
         id="security"
-        style={{ background: '#15140F', color: '#E8E4D8' }}
+        style={{ background: '#15140F', color: '#E8E4D8', scrollMarginTop: '72px' }}
         className="py-16 md:py-24"
       >
         <div className="mx-auto max-w-[1400px] px-6 md:px-10">
@@ -2296,91 +2352,139 @@ Northbound Goods         $890.00     2 orders     1 INR filed
           </p>
         </div>
 
-        {/* Comparison matrix */}
-        <div style={{ border: '1px solid #D8D0BD', background: '#FDFBF6', overflow: 'hidden' }}>
-          {/* Header row */}
-          <div
-            className="grid grid-cols-[1.6fr_1fr_1fr_1fr]"
-            style={{
-              background: '#F8F5EE',
-              borderBottom: '1px solid #D8D0BD',
-            }}
-          >
-            <div style={{ padding: '14px 18px' }}>
-              <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10.5px', color: '#8A8472', textTransform: 'uppercase', letterSpacing: '0.14em' }}>
-                Capability
-              </span>
-            </div>
-            {[
-              { name: 'Blocklists', sub: 'email · IP · device' },
-              { name: 'Checkout scoring', sub: 'card testing · CNP' },
-              { name: 'Unauth', sub: 'post-purchase graph', highlight: true },
-            ].map((col) => (
-              <div
-                key={col.name}
-                style={{
-                  padding: '14px 16px',
-                  borderLeft: '1px solid #D8D0BD',
-                  background: col.highlight ? '#F4E8E5' : 'transparent',
-                }}
-              >
-                <p style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '14px', fontWeight: 600, color: col.highlight ? '#7B2D26' : '#1A1814', margin: 0 }}>
-                  {col.name}
-                </p>
-                <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10.5px', color: '#8A8472', margin: '2px 0 0 0', letterSpacing: '0.04em' }}>
-                  {col.sub}
-                </p>
-              </div>
-            ))}
-          </div>
+        {/* Comparison data */}
+        {(() => {
+          const rows = [
+            { cap: 'Resolves cross-merchant identity',       a: 'no',      b: 'no',      c: 'yes', note: '7+ stores observed per cluster' },
+            { cap: 'Catches friendly fraud / INR cycles',    a: 'no',      b: 'partial', c: 'yes', note: 'post-purchase patterns' },
+            { cap: 'Surfaces network-known abusers',         a: 'partial', b: 'no',      c: 'yes', note: 'k-anon gated at 3+ merchants' },
+            { cap: 'Explainable signals (no black box)',     a: 'yes',     b: 'no',      c: 'yes', note: 'every flag documented' },
+            { cap: 'Generates CE 3.0 evidence packet',       a: 'no',      b: 'no',      c: 'yes', note: 'representment-ready PDF' },
+            { cap: 'Requires checkout integration',          a: 'no',      b: 'yes',     c: 'no',  note: 'CSV is enough' },
+            { cap: 'Auto-declines orders for you',           a: 'yes',     b: 'yes',     c: 'no',  note: 'you keep the decision' },
+            { cap: 'PII leaves the merchant in clear text',  a: 'yes',     b: 'yes',     c: 'no',  note: 'client-side HMAC-SHA256' },
+          ];
+          const icon = (v: string) => v === 'yes'
+            ? <span style={{ color: '#3D6F4A', fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '14px' }}>●</span>
+            : v === 'partial'
+              ? <span style={{ color: '#B6512A', fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '14px' }}>◐</span>
+              : <span style={{ color: '#D8D0BD', fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '14px' }}>○</span>;
+          const iconLabel = (v: string) => v === 'yes' ? 'Supported' : v === 'partial' ? 'Partial' : 'Not supported';
 
-          {/* Body rows */}
-          {[
-            { cap: 'Resolves cross-merchant identity',          a: 'no',   b: 'no',   c: 'yes', note: '7+ stores observed per cluster' },
-            { cap: 'Catches friendly fraud / INR cycles',       a: 'no',   b: 'partial', c: 'yes', note: 'post-purchase patterns' },
-            { cap: 'Surfaces network-known abusers',            a: 'partial', b: 'no', c: 'yes', note: 'k-anon gated at 3+ merchants' },
-            { cap: 'Explainable signals (no black box)',        a: 'yes',  b: 'no',   c: 'yes', note: 'every flag documented' },
-            { cap: 'Generates CE 3.0 evidence packet',          a: 'no',   b: 'no',   c: 'yes', note: 'representment-ready PDF' },
-            { cap: 'Requires checkout integration',             a: 'no',   b: 'yes',  c: 'no',  note: 'CSV is enough' },
-            { cap: 'Auto-declines orders for you',              a: 'yes',  b: 'yes',  c: 'no',  note: 'you keep the decision' },
-            { cap: 'PII leaves the merchant in clear text',     a: 'yes',  b: 'yes',  c: 'no',  note: 'client-side HMAC-SHA256' },
-          ].map(({ cap, a, b, c, note }, i) => {
-            const icon = (v: string) => v === 'yes'
-              ? <span style={{ color: '#3D6F4A', fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '14px' }}>●</span>
-              : v === 'partial'
-                ? <span style={{ color: '#B6512A', fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '14px' }}>◐</span>
-                : <span style={{ color: '#D8D0BD', fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '14px' }}>○</span>;
-            return (
-              <Reveal
-                key={i}
-                delay={60 + i * 50}
-                className="grid grid-cols-[1.6fr_1fr_1fr_1fr]"
-                style={{
-                  borderBottom: i < 7 ? '1px solid #ECE5D4' : 'none',
-                  background: '#FDFBF6',
-                }}
-              >
-                <div style={{ padding: '14px 18px' }}>
-                  <p style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '14px', color: '#1A1814', margin: 0, fontWeight: 500 }}>
-                    {cap}
-                  </p>
-                  <p style={{ fontFamily: 'var(--font-serif, serif)', fontStyle: 'italic', fontSize: '12.5px', color: '#8A8472', margin: '2px 0 0 0' }}>
-                    {note}
-                  </p>
+          return (
+            <>
+              {/* ── Desktop / tablet grid (hidden below sm) ── */}
+              <div className="hidden sm:block" style={{ border: '1px solid #D8D0BD', background: '#FDFBF6', overflow: 'hidden' }}>
+                {/* Header row */}
+                <div
+                  className="grid grid-cols-[1.6fr_1fr_1fr_1fr]"
+                  style={{ background: '#F8F5EE', borderBottom: '1px solid #D8D0BD' }}
+                >
+                  <div style={{ padding: '14px 18px' }}>
+                    <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10.5px', color: '#8A8472', textTransform: 'uppercase', letterSpacing: '0.14em' }}>
+                      Capability
+                    </span>
+                  </div>
+                  {[
+                    { name: 'Blocklists', sub: 'email · IP · device' },
+                    { name: 'Checkout scoring', sub: 'card testing · CNP' },
+                    { name: 'Unauth', sub: 'post-purchase graph', highlight: true },
+                  ].map((col) => (
+                    <div
+                      key={col.name}
+                      style={{
+                        padding: '14px 16px',
+                        borderLeft: '1px solid #D8D0BD',
+                        background: col.highlight ? '#F4E8E5' : 'transparent',
+                      }}
+                    >
+                      <p style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '14px', fontWeight: 600, color: col.highlight ? '#7B2D26' : '#1A1814', margin: 0 }}>
+                        {col.name}
+                      </p>
+                      <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10.5px', color: '#8A8472', margin: '2px 0 0 0', letterSpacing: '0.04em' }}>
+                        {col.sub}
+                      </p>
+                    </div>
+                  ))}
                 </div>
-                <div style={{ padding: '14px 16px', borderLeft: '1px solid #ECE5D4', display: 'flex', alignItems: 'center' }}>
-                  {icon(a)}
-                </div>
-                <div style={{ padding: '14px 16px', borderLeft: '1px solid #ECE5D4', display: 'flex', alignItems: 'center' }}>
-                  {icon(b)}
-                </div>
-                <div style={{ padding: '14px 16px', borderLeft: '1px solid #ECE5D4', background: '#FBF4F2', display: 'flex', alignItems: 'center' }}>
-                  {icon(c)}
-                </div>
-              </Reveal>
-            );
-          })}
-        </div>
+                {/* Body rows */}
+                {rows.map(({ cap, a, b, c, note }, i) => (
+                  <Reveal
+                    key={i}
+                    delay={60 + i * 50}
+                    className="grid grid-cols-[1.6fr_1fr_1fr_1fr]"
+                    style={{ borderBottom: i < 7 ? '1px solid #ECE5D4' : 'none', background: '#FDFBF6' }}
+                  >
+                    <div style={{ padding: '14px 18px' }}>
+                      <p style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '14px', color: '#1A1814', margin: 0, fontWeight: 500 }}>
+                        {cap}
+                      </p>
+                      <p style={{ fontFamily: 'var(--font-serif, serif)', fontStyle: 'italic', fontSize: '12.5px', color: '#8A8472', margin: '2px 0 0 0' }}>
+                        {note}
+                      </p>
+                    </div>
+                    <div style={{ padding: '14px 16px', borderLeft: '1px solid #ECE5D4', display: 'flex', alignItems: 'center' }}>{icon(a)}</div>
+                    <div style={{ padding: '14px 16px', borderLeft: '1px solid #ECE5D4', display: 'flex', alignItems: 'center' }}>{icon(b)}</div>
+                    <div style={{ padding: '14px 16px', borderLeft: '1px solid #ECE5D4', background: '#FBF4F2', display: 'flex', alignItems: 'center' }}>{icon(c)}</div>
+                  </Reveal>
+                ))}
+              </div>
+
+              {/* ── Mobile stacked cards (hidden above sm) ── */}
+              <div className="sm:hidden" style={{ border: '1px solid #D8D0BD', background: '#FDFBF6' }}>
+                {rows.map(({ cap, a, b, c, note }, i) => (
+                  <Reveal
+                    key={`m-${i}`}
+                    delay={60 + i * 50}
+                    style={{
+                      padding: '16px 18px',
+                      borderBottom: i < 7 ? '1px solid #ECE5D4' : 'none',
+                    }}
+                  >
+                    <p style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '14px', color: '#1A1814', fontWeight: 500, marginBottom: '2px' }}>
+                      {cap}
+                    </p>
+                    <p style={{ fontFamily: 'var(--font-serif, serif)', fontStyle: 'italic', fontSize: '12px', color: '#8A8472', marginBottom: '12px' }}>
+                      {note}
+                    </p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {[
+                        { label: 'Blocklists', val: a },
+                        { label: 'Checkout scoring', val: b },
+                        { label: 'Unauth', val: c, highlight: true },
+                      ].map(({ label, val, highlight }) => (
+                        <div
+                          key={label}
+                          style={{
+                            display: 'grid',
+                            gridTemplateColumns: '1fr auto',
+                            alignItems: 'center',
+                            padding: '8px 12px',
+                            background: highlight ? '#FBF4F2' : '#F8F5EE',
+                            border: `1px solid ${highlight ? '#E3C9C3' : '#ECE5D4'}`,
+                          }}
+                        >
+                          <span style={{
+                            fontFamily: 'var(--font-dm-sans, sans-serif)',
+                            fontSize: '13px',
+                            fontWeight: highlight ? 600 : 400,
+                            color: highlight ? '#7B2D26' : '#4A4640',
+                          }}>
+                            {label}
+                          </span>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11px', color: '#4A4640' }}>
+                            {icon(val)}
+                            <span style={{ color: '#8A8472' }}>{iconLabel(val)}</span>
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </Reveal>
+                ))}
+              </div>
+            </>
+          );
+        })()}
 
         <div className="flex items-center gap-5 mt-5 flex-wrap" style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11px', color: '#8A8472' }}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
@@ -2463,7 +2567,7 @@ Northbound Goods         $890.00     2 orders     1 INR filed
                   Start a pilot — no card required
                 </p>
                 <a
-                  href="/login"
+                  href="mailto:hello@unauth.app?subject=Unauth%20pilot%20request"
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -2480,8 +2584,8 @@ Northbound Goods         $890.00     2 orders     1 INR filed
                   }}
                   className="hover:bg-white"
                 >
-                  Upload a CSV
-                  <span aria-hidden style={{ fontFamily: 'var(--font-dm-mono, monospace)' }}>↑</span>
+                  Request a pilot
+                  <span aria-hidden style={{ fontFamily: 'var(--font-dm-mono, monospace)' }}>→</span>
                 </a>
                 <a
                   href="mailto:hello@unauth.app"

@@ -15,6 +15,9 @@ type Props = {
   noFade?: boolean;
 };
 
+// Set on <html> once so CSS can safely hide reveals (no-JS fallback: class never added = content always visible)
+let motionReadySet = false;
+
 export default function Reveal({
   children,
   as = 'div',
@@ -28,6 +31,15 @@ export default function Reveal({
 }: Props) {
   const ref = useRef<HTMLElement | null>(null);
   const [visible, setVisible] = useState(false);
+
+  // Activate motion layer once per page (skipped if reduced-motion)
+  useEffect(() => {
+    if (motionReadySet) return;
+    if (typeof window === 'undefined') return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    document.documentElement.classList.add('ua-motion-ready');
+    motionReadySet = true;
+  }, []);
 
   useEffect(() => {
     const el = ref.current;

@@ -387,12 +387,19 @@
   100% { background-position: 200% 0; }
 }
 
+/* Default: always visible — no-JS / prerender / social-card safe */
 .ua-reveal {
+  opacity: 1;
+  transform: none;
+}
+
+/* Only collapse to hidden once JS motion layer is ready */
+.ua-motion-ready .ua-reveal:not(.is-visible) {
   opacity: 0;
   transform: translate3d(0, 14px, 0);
   will-change: opacity, transform;
 }
-.ua-reveal.is-visible {
+.ua-motion-ready .ua-reveal.is-visible {
   animation: ua-reveal 520ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
   animation-delay: var(--ua-reveal-delay, 0ms);
 }
@@ -493,8 +500,20 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ua-reveal,
-  .ua-bar,
+  /* Reveal: ensure hidden state never fires */
+  .ua-motion-ready .ua-reveal:not(.is-visible),
+  .ua-motion-ready .ua-reveal.is-visible {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+    will-change: auto !important;
+  }
+  /* Bars: jump to final state */
+  .ua-bar {
+    animation: none !important;
+    transform: scaleX(1) !important;
+  }
+  /* Other animated elements */
   .ua-pulse,
   .ua-caret,
   .ua-hover-lift,
@@ -503,8 +522,6 @@
   .ua-chart-draw .recharts-line-curve {
     animation: none !important;
     transform: none !important;
-    opacity: 1 !important;
     stroke-dashoffset: 0 !important;
   }
-  .ua-bar { transform: scaleX(var(--ua-bar-fill, 1)) !important; }
 }
