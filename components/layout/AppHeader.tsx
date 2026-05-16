@@ -66,10 +66,11 @@ export default function AppHeader({
       className={cn(
         'sticky top-0 z-40 flex h-14 items-center gap-3',
         'border-b px-4',
-        'bg-[var(--bg-surface)]',
-        'border-[var(--border-subtle)]',
       )}
-      style={{ borderBottomColor: 'var(--border-subtle)' }}
+      style={{
+        background: 'var(--bg-canvas)',
+        borderBottomColor: 'var(--border-default)',
+      }}
     >
       {/* Sidebar collapse toggle */}
       {onToggleSidebar && (
@@ -109,13 +110,21 @@ export default function AppHeader({
               {isLast || !seg.href ? (
                 <span
                   className={cn(
-                    'text-caption truncate',
+                    'truncate',
                     isLast
-                      ? 'font-medium text-[var(--text)]'
+                      ? 'font-semibold text-[var(--text)]'
                       : 'text-[var(--text-muted)]',
                   )}
+                  style={isLast ? {
+                    fontSize: '11px',
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                  } : { fontSize: '12px' }}
                   aria-current={isLast ? 'page' : undefined}
                 >
+                  {isLast && (
+                    <span style={{ color: '#7B2D26', marginRight: '5px', letterSpacing: 0 }}>§</span>
+                  )}
                   {seg.label}
                 </span>
               ) : (
@@ -152,13 +161,14 @@ export default function AppHeader({
         onClick={openPalette}
         className={cn(
           'flex h-7 items-center gap-1.5 rounded-md px-2',
-          'border border-[var(--border)] bg-[var(--bg-inset)]',
+          'border border-[var(--border-default)]',
           'text-caption text-[var(--text-subtle)]',
           'hover:border-[var(--border-strong)] hover:text-[var(--text)]',
           'transition-colors duration-[var(--duration-fast)]',
           'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] focus-visible:outline-offset-2',
           'flex-shrink-0',
         )}
+        style={{ background: 'var(--bg-surface-alt)' }}
       >
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
           <circle cx="5" cy="5" r="3.5" stroke="currentColor" strokeWidth="1.2" />

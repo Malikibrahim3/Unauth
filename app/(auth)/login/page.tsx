@@ -5,6 +5,376 @@ import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { UnauthLogo } from '@/components/ui/UnauthLogo';
 
+// ── Static decorative case file preview ──────────────────────────────────────
+
+function CaseFilePreview() {
+  const rows = [
+    { name: 'HeyGlow Skincare',     meta: '3 ord · 2 ref',  amt: '$340',    w: 24 },
+    { name: 'Murmur Audio',         meta: '3 ord · 2 INR',  amt: '$1,210',  w: 88 },
+    { name: 'RidgePath Outfitters', meta: '2 ord · 2 INR',  amt: '$613',    w: 44 },
+    { name: 'Aster & Vale',         meta: '1 ord · 1 ref',  amt: '$284',    w: 20 },
+  ];
+
+  return (
+    <div
+      style={{
+        background: '#FFFFFF',
+        border: '1px solid #D2C9B5',
+        borderRadius: '6px',
+        overflow: 'hidden',
+        width: '100%',
+        maxWidth: '500px',
+        boxShadow: '0 4px 24px rgba(26,24,20,0.08), 0 1px 4px rgba(26,24,20,0.05)',
+        fontFamily: 'var(--font-dm-sans, sans-serif)',
+      }}
+    >
+      {/* ── Header bar ── */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '9px 14px',
+          borderBottom: '1px solid #E5DECE',
+          background: '#FAF6EF',
+          flexWrap: 'wrap',
+          gap: '6px',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+          <span
+            style={{
+              width: '6px',
+              height: '6px',
+              borderRadius: '9999px',
+              background: '#7B2D26',
+              display: 'inline-block',
+              flexShrink: 0,
+            }}
+          />
+          <span
+            style={{
+              fontSize: '10px',
+              fontWeight: 600,
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              color: '#4A4640',
+            }}
+          >
+            CASE FILE · UN-2026-04-21-0083 · SYNTHETIC EXAMPLE
+          </span>
+        </div>
+        <div style={{ display: 'flex', gap: '4px' }}>
+          {[
+            { label: 'DEFINITE', bg: '#1A1814', fg: '#E8E4D8' },
+            { label: 'RISK 0.92', bg: '#FBEFEC', fg: '#7B2D26' },
+            { label: 'CONF 0.96', bg: '#F2EDE3', fg: '#4A4640' },
+          ].map(({ label, bg, fg }) => (
+            <span
+              key={label}
+              style={{
+                padding: '2px 7px',
+                background: bg,
+                color: fg,
+                fontSize: '10px',
+                fontWeight: 700,
+                letterSpacing: '0.06em',
+                borderRadius: '3px',
+              }}
+            >
+              {label}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Body ── */}
+      <div style={{ padding: '14px 14px 0' }}>
+        {/* Subject */}
+        <div style={{ marginBottom: '12px' }}>
+          <div
+            style={{
+              fontSize: '9px',
+              fontWeight: 600,
+              letterSpacing: '0.14em',
+              textTransform: 'uppercase',
+              color: '#78889C',
+              marginBottom: '4px',
+            }}
+          >
+            SUBJECT
+          </div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+            <span style={{ fontSize: '14px', fontWeight: 500, color: '#1A1814' }}>
+              Noah K████████
+            </span>
+            <span
+              style={{
+                fontSize: '12px',
+                color: '#4A4640',
+                fontFamily: 'var(--font-dm-mono, monospace)',
+              }}
+            >
+              → #u_kessler.07
+            </span>
+          </div>
+        </div>
+
+        {/* 4-column stats grid */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(4, 1fr)',
+            gap: '10px',
+            marginBottom: '12px',
+            paddingBottom: '12px',
+            borderBottom: '1px solid #E5DECE',
+          }}
+        >
+          {[
+            { label: 'EMAILS',    value: '3 variants', mono: false },
+            { label: 'ADDRESSES', value: '3 variants', mono: false },
+            { label: 'PAYMENT',   value: 'Chase ••4419', mono: true },
+            { label: 'DEVICES',   value: '2 prints', mono: false },
+          ].map(({ label, value, mono }) => (
+            <div key={label}>
+              <div
+                style={{
+                  fontSize: '9px',
+                  fontWeight: 600,
+                  letterSpacing: '0.14em',
+                  textTransform: 'uppercase',
+                  color: '#78889C',
+                  marginBottom: '3px',
+                }}
+              >
+                {label}
+              </div>
+              <div
+                style={{
+                  fontSize: '11px',
+                  color: '#1A1814',
+                  fontFamily: mono ? 'var(--font-dm-mono, monospace)' : 'inherit',
+                  fontWeight: 500,
+                }}
+              >
+                {value}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Network footprint */}
+        <div style={{ marginBottom: '12px' }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'baseline',
+              justifyContent: 'space-between',
+              marginBottom: '8px',
+            }}
+          >
+            <span
+              style={{
+                fontSize: '9px',
+                fontWeight: 600,
+                letterSpacing: '0.14em',
+                textTransform: 'uppercase',
+                color: '#78889C',
+              }}
+            >
+              NETWORK FOOTPRINT
+            </span>
+            <span
+              style={{
+                fontSize: '11px',
+                color: '#4A4640',
+                fontFamily: 'var(--font-dm-mono, monospace)',
+              }}
+            >
+              7 merchants · $3,337 lifetime
+            </span>
+          </div>
+
+          {rows.map((row) => (
+            <div
+              key={row.name}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                marginBottom: '5px',
+              }}
+            >
+              <span
+                style={{
+                  flex: 1,
+                  fontSize: '11px',
+                  color: '#2E3947',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  minWidth: 0,
+                }}
+              >
+                {row.name}
+              </span>
+              <span
+                style={{
+                  fontSize: '10px',
+                  color: '#78889C',
+                  fontFamily: 'var(--font-dm-mono, monospace)',
+                  flexShrink: 0,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {row.meta}
+              </span>
+              <div
+                style={{
+                  width: '48px',
+                  height: '2px',
+                  background: '#EAE3D4',
+                  borderRadius: '9999px',
+                  flexShrink: 0,
+                }}
+              >
+                <div
+                  style={{
+                    width: `${row.w}%`,
+                    height: '100%',
+                    background: '#7B2D26',
+                    borderRadius: '9999px',
+                  }}
+                />
+              </div>
+              <span
+                style={{
+                  fontSize: '11px',
+                  color: '#1A1814',
+                  fontFamily: 'var(--font-dm-mono, monospace)',
+                  width: '44px',
+                  textAlign: 'right',
+                  flexShrink: 0,
+                }}
+              >
+                {row.amt}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* Recommended action */}
+        <div
+          style={{
+            borderTop: '1px solid #E5DECE',
+            padding: '10px 0',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+          }}
+        >
+          <span
+            style={{
+              width: '4px',
+              height: '4px',
+              borderRadius: '9999px',
+              background: '#7B2D26',
+              flexShrink: 0,
+            }}
+          />
+          <span
+            style={{
+              fontSize: '10px',
+              fontWeight: 600,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              color: '#7B2D26',
+              flex: 1,
+              lineHeight: 1.4,
+            }}
+          >
+            DECLINE NEXT ORDER · ASSEMBLE CE 3.0 PACKET FOR 2 OPEN DISPUTES
+          </span>
+          <span
+            style={{
+              fontSize: '10px',
+              color: '#78889C',
+              background: '#F2EDE3',
+              padding: '2px 6px',
+              borderRadius: '3px',
+              fontFamily: 'var(--font-dm-mono, monospace)',
+              flexShrink: 0,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            packet.pdf · 2.4mb
+          </span>
+        </div>
+      </div>
+
+      {/* ── Metadata footer ── */}
+      <div
+        style={{
+          padding: '7px 14px',
+          borderTop: '1px solid #E5DECE',
+          background: '#FAF6EF',
+        }}
+      >
+        <span
+          style={{
+            fontSize: '10px',
+            color: '#78889C',
+            fontFamily: 'var(--font-dm-mono, monospace)',
+            letterSpacing: '0.02em',
+          }}
+        >
+          generated 2026-05-15 09:42 EST · pipeline latency 38ms · HMAC-SHA256 · per-tenant salt
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ── Form field input style ────────────────────────────────────────────────────
+
+const INPUT_BASE: React.CSSProperties = {
+  width: '100%',
+  padding: '8px 11px',
+  borderRadius: '4px',
+  fontSize: '13px',
+  lineHeight: '20px',
+  background: '#FAF6EF',
+  border: '1px solid #D2C9B5',
+  color: '#1A1814',
+  outline: 'none',
+  fontFamily: 'var(--font-dm-sans, sans-serif)',
+  transition: 'border-color 120ms, background 120ms',
+};
+
+const LABEL_STYLE: React.CSSProperties = {
+  display: 'block',
+  fontSize: '10px',
+  fontWeight: 600,
+  letterSpacing: '0.12em',
+  textTransform: 'uppercase',
+  color: '#78889C',
+  marginBottom: '6px',
+  fontFamily: 'var(--font-dm-sans, sans-serif)',
+};
+
+function onFocusInput(e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) {
+  e.target.style.borderColor = '#4A4640';
+  e.target.style.background = '#FFFFFF';
+}
+
+function onBlurInput(e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) {
+  e.target.style.borderColor = '#D2C9B5';
+  e.target.style.background = '#FAF6EF';
+}
+
+// ── Page component ────────────────────────────────────────────────────────────
+
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -12,7 +382,6 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Onboarding fields for sign-up
   const [storeName, setStoreName] = useState('');
   const [platform, setPlatform] = useState('');
   const [annualVolume, setAnnualVolume] = useState('');
@@ -33,10 +402,7 @@ export default function LoginPage() {
         return;
       }
 
-      const { error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-      });
+      const { error: signUpError } = await supabase.auth.signUp({ email, password });
 
       if (signUpError) {
         setError(signUpError.message);
@@ -44,24 +410,19 @@ export default function LoginPage() {
         return;
       }
 
-      // Try to sign in immediately (auto-confirm may be on)
       const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (signInError) {
-        // Email confirmation required — store data for later
-        localStorage.setItem('pendingMerchant', JSON.stringify({
-          storeName, platform, annualVolume, primaryConcern
-        }));
+        localStorage.setItem('pendingMerchant', JSON.stringify({ storeName, platform, annualVolume, primaryConcern }));
         setError('Account created! Check your email to confirm, then sign in.');
         setIsSignUp(false);
         setLoading(false);
         return;
       }
 
-      // Create merchant record
       const { error: merchantError } = await supabase.from('merchants').insert({
         user_id: signInData.user!.id,
         name: storeName.trim(),
@@ -71,11 +432,7 @@ export default function LoginPage() {
       });
 
       setLoading(false);
-      if (merchantError) {
-        setError(merchantError.message);
-        return;
-      }
-
+      if (merchantError) { setError(merchantError.message); return; }
       router.push('/dashboard');
       router.refresh();
     } else {
@@ -90,7 +447,6 @@ export default function LoginPage() {
         return;
       }
 
-      // Check for pending merchant data (from interrupted sign-up)
       const pending = localStorage.getItem('pendingMerchant');
       if (pending) {
         const { storeName, annualVolume, primaryConcern } = JSON.parse(pending);
@@ -110,85 +466,262 @@ export default function LoginPage() {
     }
   }
 
+  const isSubmitDisabled =
+    loading ||
+    !email ||
+    !password ||
+    (isSignUp && (!storeName.trim() || !platform || !annualVolume || !primaryConcern));
+
+  const isSuccess = error.includes('created') || error.includes('Check your email');
+
   return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-canvas)' }}>
-      <div className="w-full max-w-md">
-        <div className="rounded-lg p-8 border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)', boxShadow: 'var(--shadow-sm)' }}>
-          <div className="mb-8">
-            <div className="mb-4">
-              <UnauthLogo variant="wordmark-light" size={40} />
-            </div>
-            <p className="text-body-sm" style={{ color: 'var(--text-muted)' }}>Identity match review for ecommerce merchants</p>
+    <div
+      style={{
+        minHeight: '100vh',
+        background: '#F8F5EE',
+        display: 'flex',
+        fontFamily: 'var(--font-dm-sans, sans-serif)',
+      }}
+    >
+      {/* ══ Left editorial panel ══════════════════════════════════════════════ */}
+      <div
+        className="hidden lg:flex"
+        style={{
+          width: '56%',
+          minHeight: '100vh',
+          padding: '44px 48px',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          borderRight: '1px solid #D2C9B5',
+        }}
+      >
+        {/* Top section */}
+        <div>
+          <div style={{ marginBottom: '36px' }}>
+            <UnauthLogo variant="wordmark-light" size={26} />
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Overline */}
+          <p
+            style={{
+              fontSize: '11px',
+              fontWeight: 600,
+              letterSpacing: '0.14em',
+              textTransform: 'uppercase',
+              color: '#4A4640',
+              marginBottom: '18px',
+            }}
+          >
+            <span style={{ color: '#7B2D26' }}>§</span>{' '}
+            CROSS-MERCHANT FRAUD GRAPH · ECOMMERCE
+          </p>
+
+          {/* Headline */}
+          <h1
+            style={{
+              fontSize: 'clamp(30px, 2.8vw, 44px)',
+              fontWeight: 500,
+              letterSpacing: '-0.02em',
+              lineHeight: 1.08,
+              color: '#1A1814',
+              marginBottom: '20px',
+              maxWidth: '480px',
+            }}
+          >
+            Resolve the buyer your store has{' '}
+            <em style={{ fontStyle: 'italic' }}>never</em>{' '}
+            <em style={{ fontStyle: 'italic', color: '#7B2D26' }}>seen.</em>
+          </h1>
+
+          {/* Body prose */}
+          <p
+            style={{
+              fontFamily: 'var(--font-serif, Georgia, serif)',
+              fontSize: '16px',
+              color: '#4A4640',
+              lineHeight: 1.65,
+              maxWidth: '460px',
+              marginBottom: '32px',
+            }}
+          >
+            Upload order, refund, and delivery history. Unauth links repeat
+            abusers across the network, hashes PII before transmission, and
+            returns CE&nbsp;3.0 evidence packets before your chargeback window
+            closes.
+          </p>
+
+          {/* Case file preview */}
+          <CaseFilePreview />
+        </div>
+
+        {/* Bottom pilot stats */}
+        <div
+          style={{
+            marginTop: '32px',
+            paddingTop: '20px',
+            borderTop: '1px solid #D2C9B5',
+          }}
+        >
+          <div style={{ display: 'flex', gap: '36px' }}>
+            {[
+              { value: '312',   label: 'resolved this week' },
+              { value: '38ms',  label: 'median resolution' },
+              { value: 'CE 3.0', label: 'evidence output' },
+            ].map(({ value, label }) => (
+              <div key={label}>
+                <div
+                  style={{
+                    fontSize: '17px',
+                    fontWeight: 600,
+                    color: '#1A1814',
+                    fontFamily: 'var(--font-dm-mono, monospace)',
+                    lineHeight: 1,
+                  }}
+                >
+                  {value}
+                </div>
+                <div
+                  style={{
+                    fontSize: '11px',
+                    color: '#78889C',
+                    marginTop: '4px',
+                    letterSpacing: '0.02em',
+                  }}
+                >
+                  {label}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ══ Right form panel ═════════════════════════════════════════════════ */}
+      <div
+        style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '40px 32px',
+          overflowY: 'auto',
+        }}
+      >
+        {/* Logo — mobile only */}
+        <div className="lg:hidden" style={{ marginBottom: '32px' }}>
+          <UnauthLogo variant="wordmark-light" size={26} />
+        </div>
+
+        <div style={{ width: '100%', maxWidth: '340px' }}>
+          {/* Form header */}
+          <div style={{ marginBottom: '24px' }}>
+            <p
+              style={{
+                fontSize: '10px',
+                fontWeight: 600,
+                letterSpacing: '0.14em',
+                textTransform: 'uppercase',
+                color: '#78889C',
+                marginBottom: '8px',
+              }}
+            >
+              {isSignUp ? 'REQUEST ACCESS' : 'PILOT ACCESS'}
+            </p>
+            <h2
+              style={{
+                fontSize: '22px',
+                fontWeight: 500,
+                letterSpacing: '-0.01em',
+                color: '#1A1814',
+                lineHeight: 1.2,
+              }}
+            >
+              {isSignUp ? 'Create your account' : 'Sign in to your account'}
+            </h2>
+          </div>
+
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '13px' }}>
+            {/* Email */}
             <div>
-              <label htmlFor="email" className="block text-body-sm font-semibold mb-1" style={{ color: 'var(--text)' }}>
-                Email
-              </label>
+              <label style={LABEL_STYLE}>Email address</label>
               <input
-                id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 placeholder="you@company.com"
-                className="w-full px-3 py-2 rounded-md text-body-md focus:outline-none"
-                style={{ background: 'var(--bg-inset)', border: '1px solid var(--border)', color: 'var(--text)' }}
-                onFocus={e => { e.target.style.borderColor = 'var(--border-strong)'; e.target.style.background = 'var(--bg-surface)'; e.target.style.outline = '2px solid var(--focus-ring)'; e.target.style.outlineOffset = '2px'; }}
-                onBlur={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.background = 'var(--bg-inset)'; e.target.style.outline = 'none'; }}
+                style={INPUT_BASE}
+                onFocus={onFocusInput}
+                onBlur={onBlurInput}
               />
             </div>
+
+            {/* Password */}
             <div>
-              <label htmlFor="password" className="block text-body-sm font-semibold mb-1" style={{ color: 'var(--text)' }}>
-                Password
-              </label>
+              <label style={LABEL_STYLE}>Password</label>
               <input
-                id="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 placeholder="••••••••"
-                className="w-full px-3 py-2 rounded-md text-body-md focus:outline-none"
-                style={{ background: 'var(--bg-inset)', border: '1px solid var(--border)', color: 'var(--text)' }}
-                onFocus={e => { e.target.style.borderColor = 'var(--border-strong)'; e.target.style.background = 'var(--bg-surface)'; e.target.style.outline = '2px solid var(--focus-ring)'; e.target.style.outlineOffset = '2px'; }}
-                onBlur={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.background = 'var(--bg-inset)'; e.target.style.outline = 'none'; }}
+                style={INPUT_BASE}
+                onFocus={onFocusInput}
+                onBlur={onBlurInput}
               />
             </div>
 
+            {/* Sign-up extra fields */}
             {isSignUp && (
               <>
+                {/* Section divider */}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    margin: '3px 0',
+                  }}
+                >
+                  <div style={{ flex: 1, height: '1px', background: '#E5DECE' }} />
+                  <span
+                    style={{
+                      fontSize: '9px',
+                      fontWeight: 600,
+                      letterSpacing: '0.14em',
+                      textTransform: 'uppercase',
+                      color: '#78889C',
+                    }}
+                  >
+                    STORE DETAILS
+                  </span>
+                  <div style={{ flex: 1, height: '1px', background: '#E5DECE' }} />
+                </div>
+
                 <div>
-                  <label htmlFor="storeName" className="block text-body-sm font-semibold mb-1" style={{ color: 'var(--text)' }}>
-                    Store name
-                  </label>
+                  <label style={LABEL_STYLE}>Store name</label>
                   <input
-                    id="storeName"
                     type="text"
                     value={storeName}
                     onChange={(e) => setStoreName(e.target.value)}
-                    required={isSignUp}
+                    required
                     placeholder="Acme Commerce Ltd"
-                    className="w-full px-3 py-2 rounded-md text-body-md focus:outline-none"
-                    style={{ background: 'var(--bg-inset)', border: '1px solid var(--border)', color: 'var(--text)' }}
-                    onFocus={e => { e.target.style.borderColor = 'var(--border-strong)'; e.target.style.background = 'var(--bg-surface)'; e.target.style.outline = '2px solid var(--focus-ring)'; e.target.style.outlineOffset = '2px'; }}
-                    onBlur={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.background = 'var(--bg-inset)'; e.target.style.outline = 'none'; }}
+                    style={INPUT_BASE}
+                    onFocus={onFocusInput}
+                    onBlur={onBlurInput}
                   />
                 </div>
+
                 <div>
-                  <label htmlFor="platform" className="block text-body-sm font-semibold mb-1" style={{ color: 'var(--text)' }}>
-                    Platform
-                  </label>
+                  <label style={LABEL_STYLE}>Platform</label>
                   <select
-                    id="platform"
                     value={platform}
                     onChange={(e) => setPlatform(e.target.value)}
-                    required={isSignUp}
-                    className="w-full px-3 py-2 rounded-md text-body-md focus:outline-none"
-                    style={{ background: 'var(--bg-inset)', border: '1px solid var(--border)', color: 'var(--text)' }}
-                    onFocus={e => { e.target.style.borderColor = 'var(--border-strong)'; e.target.style.background = 'var(--bg-surface)'; e.target.style.outline = '2px solid var(--focus-ring)'; e.target.style.outlineOffset = '2px'; }}
-                    onBlur={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.background = 'var(--bg-inset)'; e.target.style.outline = 'none'; }}
+                    required
+                    style={INPUT_BASE}
+                    onFocus={onFocusInput}
+                    onBlur={onBlurInput}
                   >
                     <option value="">Select platform…</option>
                     <option value="shopify">Shopify</option>
@@ -199,19 +732,16 @@ export default function LoginPage() {
                     <option value="other">Other</option>
                   </select>
                 </div>
+
                 <div>
-                  <label htmlFor="annualVolume" className="block text-body-sm font-semibold mb-1" style={{ color: 'var(--text)' }}>
-                    Annual order volume
-                  </label>
+                  <label style={LABEL_STYLE}>Annual order volume</label>
                   <select
-                    id="annualVolume"
                     value={annualVolume}
                     onChange={(e) => setAnnualVolume(e.target.value)}
-                    required={isSignUp}
-                    className="w-full px-3 py-2 rounded-md text-body-md focus:outline-none"
-                    style={{ background: 'var(--bg-inset)', border: '1px solid var(--border)', color: 'var(--text)' }}
-                    onFocus={e => { e.target.style.borderColor = 'var(--border-strong)'; e.target.style.background = 'var(--bg-surface)'; e.target.style.outline = '2px solid var(--focus-ring)'; e.target.style.outlineOffset = '2px'; }}
-                    onBlur={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.background = 'var(--bg-inset)'; e.target.style.outline = 'none'; }}
+                    required
+                    style={INPUT_BASE}
+                    onFocus={onFocusInput}
+                    onBlur={onBlurInput}
                   >
                     <option value="">Select range…</option>
                     <option value="under_10k">Under 10,000</option>
@@ -220,19 +750,16 @@ export default function LoginPage() {
                     <option value="over_250k">Over 250,000</option>
                   </select>
                 </div>
+
                 <div>
-                  <label htmlFor="primaryConcern" className="block text-body-sm font-semibold mb-1" style={{ color: 'var(--text)' }}>
-                    Primary concern
-                  </label>
+                  <label style={LABEL_STYLE}>Primary concern</label>
                   <select
-                    id="primaryConcern"
                     value={primaryConcern}
                     onChange={(e) => setPrimaryConcern(e.target.value)}
-                    required={isSignUp}
-                    className="w-full px-3 py-2 rounded-md text-body-md focus:outline-none"
-                    style={{ background: 'var(--bg-inset)', border: '1px solid var(--border)', color: 'var(--text)' }}
-                    onFocus={e => { e.target.style.borderColor = 'var(--border-strong)'; e.target.style.background = 'var(--bg-surface)'; e.target.style.outline = '2px solid var(--focus-ring)'; e.target.style.outlineOffset = '2px'; }}
-                    onBlur={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.background = 'var(--bg-inset)'; e.target.style.outline = 'none'; }}
+                    required
+                    style={INPUT_BASE}
+                    onFocus={onFocusInput}
+                    onBlur={onBlurInput}
                   >
                     <option value="">Select your main concern…</option>
                     <option value="refund_abuse">Refund abuse</option>
@@ -244,32 +771,97 @@ export default function LoginPage() {
               </>
             )}
 
+            {/* Error / success message */}
             {error && (
-              <p className="text-sm" style={{ color: error.includes('created') || error.includes('Check your email') ? 'var(--success)' : 'var(--risk-critical)' }}>{error}</p>
+              <p
+                style={{
+                  fontSize: '12px',
+                  lineHeight: 1.5,
+                  color: isSuccess ? '#2F6B43' : '#7B2D26',
+                  padding: '8px 10px',
+                  background: isSuccess ? '#E8F1E6' : '#FBEFEC',
+                  borderRadius: '4px',
+                  border: `1px solid ${isSuccess ? '#B5D2A8' : '#D08B7E'}`,
+                }}
+              >
+                {error}
+              </p>
             )}
 
+            {/* Submit */}
             <button
               type="submit"
-              disabled={loading || !email || !password || (isSignUp && (!storeName.trim() || !platform || !annualVolume || !primaryConcern))}
-              className="w-full py-2.5 px-4 rounded-md text-body-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}
-              onMouseEnter={e => { if (!e.currentTarget.disabled) e.currentTarget.style.background = 'var(--accent-hover)'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'var(--accent)'; }}
+              disabled={isSubmitDisabled}
+              style={{
+                width: '100%',
+                padding: '10px 16px',
+                borderRadius: '4px',
+                background: isSubmitDisabled ? '#C8C0B0' : '#1A1814',
+                color: '#E8E4D8',
+                fontSize: '11px',
+                fontWeight: 700,
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                cursor: isSubmitDisabled ? 'not-allowed' : 'pointer',
+                border: 'none',
+                transition: 'background 120ms',
+                fontFamily: 'var(--font-dm-sans, sans-serif)',
+                marginTop: '4px',
+              }}
+              onMouseEnter={(e) => {
+                if (!isSubmitDisabled) e.currentTarget.style.background = '#7B2D26';
+              }}
+              onMouseLeave={(e) => {
+                if (!isSubmitDisabled) e.currentTarget.style.background = '#1A1814';
+              }}
             >
-              {loading ? 'Loading…' : (isSignUp ? 'Create account' : 'Sign in')}
+              {loading ? 'Processing…' : isSignUp ? 'Create account' : 'Sign in'}
             </button>
           </form>
 
-          <p className="mt-4 text-body-sm text-center" style={{ color: 'var(--text-muted)' }}>
+          {/* Toggle sign-in / sign-up */}
+          <p
+            style={{
+              marginTop: '20px',
+              fontSize: '13px',
+              color: '#78889C',
+              textAlign: 'center',
+              lineHeight: 1.5,
+            }}
+          >
             {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
             <button
               type="button"
               onClick={() => { setIsSignUp(!isSignUp); setError(''); }}
-              className="font-semibold underline-offset-2 hover:underline"
-              style={{ color: 'var(--text)' }}
+              style={{
+                color: '#1A1814',
+                fontWeight: 600,
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                textDecoration: 'underline',
+                textUnderlineOffset: '3px',
+                fontSize: '13px',
+                fontFamily: 'var(--font-dm-sans, sans-serif)',
+                padding: 0,
+              }}
             >
-              {isSignUp ? 'Sign in' : 'Create account'}
+              {isSignUp ? 'Sign in' : 'Request access'}
             </button>
+          </p>
+
+          {/* Footnote */}
+          <p
+            style={{
+              marginTop: '28px',
+              fontSize: '11px',
+              color: '#B9C2CF',
+              textAlign: 'center',
+              letterSpacing: '0.02em',
+              lineHeight: 1.5,
+            }}
+          >
+            Pilot access · No checkout integration required
           </p>
         </div>
       </div>

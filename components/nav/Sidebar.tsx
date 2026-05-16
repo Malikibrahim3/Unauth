@@ -114,7 +114,7 @@ function SidebarItem({
       {active && (
         <span
           className="absolute left-0 top-0 bottom-0 w-0.5 rounded-r-full"
-          style={{ background: 'var(--accent-500)' }}
+          style={{ background: '#7B2D26' }}
           aria-hidden="true"
         />
       )}
@@ -158,13 +158,14 @@ function SidebarItem({
 }
 
 function GroupLabel({ label, collapsed }: { label: string; collapsed: boolean }) {
-  if (collapsed) return <div className="my-2 mx-3 h-px bg-[var(--border-subtle)]" />;
+  if (collapsed) return <div className="my-2 mx-2 h-px bg-[var(--border-default)]" />;
   return (
     <div className="mt-5 mb-1 px-2">
       <span
-        className="block text-[10px] font-semibold uppercase tracking-widest leading-none"
-        style={{ color: 'var(--text-subtle)' }}
+        className="block text-[10px] font-semibold uppercase leading-none"
+        style={{ color: 'var(--text-subtle)', letterSpacing: '0.12em' }}
       >
+        <span style={{ color: '#7B2D26', marginRight: '5px' }}>§</span>
         {label}
       </span>
     </div>
@@ -226,7 +227,7 @@ export default function Sidebar({
     <aside
       className={cn(
         'relative flex h-full flex-shrink-0 flex-col',
-        'bg-[var(--bg-surface)] border-r border-[var(--border-subtle)]',
+        'border-r border-[var(--border-default)]',
         isMobile
           ? 'w-72'
           : cn(
@@ -235,13 +236,14 @@ export default function Sidebar({
               isCollapsed ? 'w-14' : 'w-60',
             ),
       )}
+      style={{ background: 'var(--bg-canvas)' }}
       onMouseEnter={() => { if (collapsed) setHoverExpanded(true); }}
       onMouseLeave={() => { if (collapsed) setHoverExpanded(false); }}
     >
       {/* Logo / merchant */}
       <div
         className={cn(
-          'flex h-14 flex-shrink-0 items-center gap-2 px-3 border-b border-[var(--border-subtle)]',
+          'flex h-14 flex-shrink-0 items-center gap-2 px-3 border-b border-[var(--border-default)]',
         )}
       >
         <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center">
@@ -300,7 +302,7 @@ export default function Sidebar({
       {/* Footer */}
       <div
         className={cn(
-          'flex flex-shrink-0 flex-col border-t border-[var(--border-subtle)]',
+          'flex flex-shrink-0 flex-col border-t border-[var(--border-default)]',
           isCollapsed ? 'items-center gap-1 px-2 py-2' : 'gap-0.5 px-2 py-2',
         )}
       >
