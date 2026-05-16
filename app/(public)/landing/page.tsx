@@ -1,4 +1,9 @@
 import { UnauthLogo } from '@/components/ui/UnauthLogo';
+import { Lock, EyeOff, FileText, Scale } from 'lucide-react';
+import NetworkChart from './_components/NetworkChart';
+import Reveal from './_components/Reveal';
+import Counter from './_components/Counter';
+import AnimatedBar from './_components/AnimatedBar';
 
 export const metadata = {
   title: 'Unauth — Fraud Intelligence for Ecommerce',
@@ -25,26 +30,60 @@ export default function LandingPage() {
     >
       {/* ── Header strip ────────────────────────────────────────── */}
       <header
-        style={{ borderBottom: 'none' }}
-        className="py-5"
+        style={{
+          borderBottom: '1px solid #ECE5D4',
+          background: 'rgba(248, 245, 238, 0.85)',
+          backdropFilter: 'saturate(140%) blur(8px)',
+          WebkitBackdropFilter: 'saturate(140%) blur(8px)',
+          position: 'sticky',
+          top: 0,
+          zIndex: 50,
+        }}
+        className="py-4"
       >
-        <div className="mx-auto max-w-[1080px] px-6 md:px-10 flex items-center justify-between">
-          <UnauthLogo variant="wordmark-light" size={24} />
-          <a
-            href="/login"
-            style={{ color: '#4A4640', fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '14px' }}
-            className="hover:underline"
-          >
-            Sign in
-          </a>
+        <div className="mx-auto max-w-[1400px] px-6 md:px-10 flex items-center justify-between">
+          <div className="flex items-center gap-8">
+            <UnauthLogo variant="wordmark-light" size={24} />
+            <nav className="hidden md:flex items-center gap-7" style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '13.5px', color: '#4A4640' }}>
+              <a href="#how-it-works" className="ua-nav-link">How it works</a>
+              <a href="#network" className="ua-nav-link">Network</a>
+              <a href="#evidence" className="ua-nav-link">Evidence</a>
+              <a href="#security" className="ua-nav-link">Security</a>
+            </nav>
+          </div>
+          <div className="flex items-center gap-5">
+            <a
+              href="/login"
+              style={{ color: '#4A4640', fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '13.5px' }}
+              className="hover:underline"
+            >
+              Sign in
+            </a>
+            <a
+              href="/login"
+              style={{
+                fontFamily: 'var(--font-dm-sans, sans-serif)',
+                fontSize: '13px',
+                fontWeight: 500,
+                color: '#E8E4D8',
+                background: '#1A1814',
+                padding: '7px 14px',
+                border: '1px solid #1A1814',
+                textDecoration: 'none',
+              }}
+              className="hover:bg-[#2B2922]"
+            >
+              Request pilot →
+            </a>
+          </div>
         </div>
       </header>
 
       {/* ── Hero ────────────────────────────────────────────────── */}
-      <section className="mx-auto max-w-[1080px] px-6 md:px-10 py-20 md:py-28">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-10">
-          {/* Left — cols 1–7 */}
-          <div className="md:col-span-7">
+      <section className="mx-auto max-w-[1400px] px-6 md:px-10 pt-8 md:pt-12 pb-12 md:pb-16">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
+          {/* Left — copy column */}
+          <Reveal className="lg:col-span-5 xl:col-span-5 lg:sticky lg:top-24" delay={40}>
             {/* Eyebrow */}
             <p
               style={{
@@ -54,59 +93,55 @@ export default function LandingPage() {
                 letterSpacing: '0.14em',
                 textTransform: 'uppercase',
                 color: '#4A4640',
-                marginBottom: '20px',
+                marginBottom: '14px',
               }}
             >
               <span style={{ color: '#7B2D26' }}>§</span>{' '}
               FRAUD INTELLIGENCE BRIEF — ISSUE 04
             </p>
 
+            {/* Marginalia inline — date + read time */}
+            <p
+              style={{
+                fontFamily: 'var(--font-dm-mono, monospace)',
+                fontSize: '12px',
+                color: '#8A8472',
+                letterSpacing: '0.04em',
+                marginBottom: '28px',
+              }}
+            >
+              {todayLong} · 12 min read · filed under identity resolution
+            </p>
+
             {/* Headline */}
             <h1
               style={{
                 fontFamily: 'var(--font-dm-sans, sans-serif)',
-                fontSize: 'clamp(36px, 5vw, 60px)',
+                fontSize: 'clamp(36px, 3.8vw, 56px)',
                 fontWeight: 500,
-                letterSpacing: '-0.02em',
-                lineHeight: 1.1,
+                letterSpacing: '-0.025em',
+                lineHeight: 1.02,
                 color: '#1A1814',
-                marginBottom: '24px',
-                maxWidth: '600px',
+                marginBottom: '22px',
               }}
             >
-              Unauth resolves the buyer your store has never seen — across every store in the network.
+              Resolve the buyer your store has{' '}
+              <span style={{ color: '#7B2D26', fontStyle: 'italic', fontFamily: 'var(--font-serif, serif)', fontWeight: 400 }}>
+                never seen.
+              </span>
             </h1>
 
             {/* Sub-prose */}
             <p
               style={{
                 fontFamily: 'var(--font-serif, serif)',
-                fontSize: 'clamp(17px, 1.4vw, 19px)',
+                fontSize: 'clamp(17px, 1.3vw, 19px)',
                 color: '#4A4640',
-                lineHeight: 1.65,
-                maxWidth: '540px',
-                marginBottom: '16px',
+                lineHeight: 1.5,
+                marginBottom: '26px',
               }}
             >
-              Friendly fraud and refund abuse don&rsquo;t repeat at one merchant. They cycle across the network: a slightly different email, a typo in the shipping address, a freshly rotated card. We resolve the identity behind the pattern and hand you the evidence packet before the chargeback window closes.
-            </p>
-
-            {/* Italic observation */}
-            <p
-              style={{
-                fontFamily: 'var(--font-serif, serif)',
-                fontStyle: 'italic',
-                fontSize: 'clamp(17px, 1.4vw, 19px)',
-                color: '#4A4640',
-                lineHeight: 1.65,
-                maxWidth: '540px',
-                marginBottom: '32px',
-              }}
-            >
-              In pilot with early-access merchants across DTC fashion, marketplace, audio hardware, and subscription beauty.
-              <sup>
-                <a href="#note-1" style={{ color: '#7B2D26', textDecoration: 'none', fontStyle: 'normal' }}>1</a>
-              </sup>
+              Friendly fraud and refund abuse don&rsquo;t repeat at one merchant — they cycle across the network. Unauth resolves the cross-merchant identity behind every order and returns the evidence packet before your chargeback window closes.
             </p>
 
             {/* CTA row */}
@@ -114,116 +149,1303 @@ export default function LandingPage() {
               <a
                 href="/login"
                 style={{
-                  display: 'inline-block',
-                  background: '#7B2D26',
-                  color: '#E8E4D8',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  background: '#1A1814',
+                  color: '#F8F5EE',
                   fontFamily: 'var(--font-dm-sans, sans-serif)',
                   fontSize: '14px',
                   fontWeight: 500,
-                  padding: '12px 24px',
-                  border: '1px solid #7B2D26',
+                  padding: '14px 22px',
+                  border: '1px solid #1A1814',
                   borderRadius: 0,
                   textDecoration: 'none',
+                  boxShadow: '0 1px 0 #1A1814, 0 8px 24px -12px rgba(26,24,20,0.35)',
+                  transition: 'background 160ms ease',
                 }}
+                className="hover:bg-[#2B2922]"
               >
-                Run a CSV pilot →
+                Run a CSV pilot
+                <span aria-hidden style={{ fontFamily: 'var(--font-dm-mono, monospace)' }}>→</span>
               </a>
               <a
-                href="/demo"
+                href="#how-it-works"
                 style={{
-                  fontFamily: 'var(--font-serif, serif)',
-                  fontStyle: 'italic',
-                  fontSize: '15px',
+                  fontFamily: 'var(--font-dm-sans, sans-serif)',
+                  fontSize: '14px',
                   color: '#4A4640',
                   textDecoration: 'none',
+                  padding: '14px 4px',
+                  borderBottom: '1px solid transparent',
                 }}
-                className="hover:underline"
+                className="hover:border-b hover:border-[#4A4640]"
               >
-                or read how cross-merchant identity works ↘
+                See how it works ↓
               </a>
             </div>
-          </div>
 
-          {/* Right — cols 8–12 — marginalia (desktop only) */}
-          <div className="hidden md:block md:col-span-5">
+            {/* Trust strip */}
             <div
               style={{
-                fontFamily: 'var(--font-dm-sans, sans-serif)',
-                fontSize: '12px',
-                color: '#4A4640',
-                letterSpacing: '0.06em',
-                lineHeight: 1.8,
-                paddingTop: '6px',
+                marginTop: '36px',
+                paddingTop: '20px',
+                borderTop: '1px solid #D8D0BD',
               }}
             >
               <p
                 style={{
-                  fontSize: '11px',
-                  textTransform: 'uppercase',
+                  fontFamily: 'var(--font-dm-mono, monospace)',
+                  fontSize: '10.5px',
                   letterSpacing: '0.14em',
-                  marginBottom: '4px',
+                  textTransform: 'uppercase',
+                  color: '#8A8472',
+                  marginBottom: '14px',
                 }}
               >
-                ISSUE 04
+                In pilot with merchants across
               </p>
+              <div
+                className="flex flex-wrap items-center gap-x-7 gap-y-3"
+                style={{
+                  fontFamily: 'var(--font-serif, serif)',
+                  fontStyle: 'italic',
+                  fontSize: '14px',
+                  color: '#4A4640',
+                }}
+              >
+                <span>DTC fashion</span>
+                <span style={{ color: '#D8D0BD' }}>·</span>
+                <span>marketplace</span>
+                <span style={{ color: '#D8D0BD' }}>·</span>
+                <span>audio hardware</span>
+                <span style={{ color: '#D8D0BD' }}>·</span>
+                <span>subscription beauty</span>
+                <sup>
+                  <a href="#note-1" style={{ color: '#7B2D26', textDecoration: 'none', fontStyle: 'normal' }}>1</a>
+                </sup>
+              </div>
+            </div>
+          </Reveal>
+
+          {/* Right — large product artifact */}
+          <Reveal as="aside" className="lg:col-span-7 xl:col-span-7 relative" delay={180}>
+            {/* Floating eyebrow above artifact */}
+            <div
+              className="flex items-center justify-between mb-3"
+              style={{
+                fontFamily: 'var(--font-dm-mono, monospace)',
+                fontSize: '10.5px',
+                letterSpacing: '0.14em',
+                textTransform: 'uppercase',
+                color: '#8A8472',
+              }}
+            >
+              <span>
+                <span
+                  className="ua-pulse"
+                  style={{ display: 'inline-block', width: 6, height: 6, background: '#34A853', marginRight: '8px', verticalAlign: 'middle' }}
+                />
+                Live engine output · synthetic example
+              </span>
+              <span>Cluster #u_kessler.07</span>
+            </div>
+
+            <div
+              className="ua-hover-glow"
+              style={{
+                background: '#FDFBF6',
+                border: '1px solid #D8D0BD',
+                borderRadius: 0,
+                boxShadow:
+                  '0 1px 0 #D8D0BD, 0 20px 40px -20px rgba(26,24,20,0.14), 0 40px 80px -40px rgba(26,24,20,0.10)',
+                position: 'relative',
+              }}
+            >
+              {/* Header bar with status chips */}
+              <div
+                style={{
+                  padding: '14px 20px',
+                  borderBottom: '1px solid #D8D0BD',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '12px',
+                  flexWrap: 'wrap',
+                  background: '#F8F5EE',
+                }}
+              >
+                <p
+                  style={{
+                    fontFamily: 'var(--font-dm-mono, monospace)',
+                    fontSize: '11.5px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.1em',
+                    color: '#4A4640',
+                    margin: 0,
+                  }}
+                >
+                  <span style={{ color: '#7B2D26' }}>●</span>{' '}
+                  CASE FILE · UN-2026-04-21-0083
+                </p>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-dm-mono, monospace)',
+                      fontSize: '10px',
+                      letterSpacing: '0.08em',
+                      color: '#FFFFFF',
+                      background: '#7B2D26',
+                      border: '1px solid #7B2D26',
+                      padding: '3px 9px',
+                      lineHeight: 1.4,
+                      fontWeight: 500,
+                    }}
+                  >
+                    DEFINITE
+                  </span>
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-dm-mono, monospace)',
+                      fontSize: '10px',
+                      letterSpacing: '0.08em',
+                      color: '#4A4640',
+                      background: '#F2EDE3',
+                      border: '1px solid #D8D0BD',
+                      padding: '3px 9px',
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    RISK 0.92
+                  </span>
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-dm-mono, monospace)',
+                      fontSize: '10px',
+                      letterSpacing: '0.08em',
+                      color: '#4A4640',
+                      background: '#F2EDE3',
+                      border: '1px solid #D8D0BD',
+                      padding: '3px 9px',
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    CONF 0.96
+                  </span>
+                </div>
+              </div>
+
+              {/* Two-column body: subject + sparkbars */}
+              <div className="grid grid-cols-1 md:grid-cols-[1.05fr_1fr]">
+                {/* Subject column */}
+                <div style={{ padding: '20px 22px', borderRight: '1px solid #D8D0BD' }}>
+                  <p
+                    style={{
+                      fontFamily: 'var(--font-dm-sans, sans-serif)',
+                      fontSize: '10px',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.14em',
+                      color: '#8A8472',
+                      marginBottom: '8px',
+                    }}
+                  >
+                    SUBJECT
+                  </p>
+                  <p
+                    style={{
+                      fontFamily: 'var(--font-serif, serif)',
+                      fontSize: '20px',
+                      color: '#1A1814',
+                      marginBottom: '6px',
+                      lineHeight: 1.3,
+                    }}
+                  >
+                    Noah K
+                    <span
+                      style={{
+                        background: '#1A1814',
+                        color: 'transparent',
+                        userSelect: 'none',
+                        padding: '0 4px',
+                      }}
+                    >
+                      ████
+                    </span>
+                    <sup>
+                      <a href="#note-1" style={{ color: '#7B2D26', textDecoration: 'none' }}>1</a>
+                    </sup>
+                  </p>
+                  <p
+                    style={{
+                      fontFamily: 'var(--font-dm-mono, monospace)',
+                      fontSize: '13px',
+                      color: '#7B2D26',
+                      letterSpacing: '0.02em',
+                      marginBottom: '14px',
+                    }}
+                  >
+                    → #u_kessler.07
+                  </p>
+
+                  {/* Identity fragment grid */}
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr',
+                      gap: '10px 12px',
+                      fontFamily: 'var(--font-dm-mono, monospace)',
+                      fontSize: '11.5px',
+                      color: '#4A4640',
+                    }}
+                  >
+                    {[
+                      ['emails', '3 variants'],
+                      ['addresses', '3 variants'],
+                      ['payment', 'Chase ••4419'],
+                      ['devices', '2 fingerprints'],
+                    ].map(([k, v]) => (
+                      <div key={k}>
+                        <span style={{ color: '#8A8472', textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '10px', display: 'block', marginBottom: '2px' }}>{k}</span>
+                        <span style={{ color: '#1A1814' }}>{v}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Risk score column */}
+                <div style={{ padding: '20px 22px' }}>
+                  <p
+                    style={{
+                      fontFamily: 'var(--font-dm-sans, sans-serif)',
+                      fontSize: '10px',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.14em',
+                      color: '#8A8472',
+                      marginBottom: '8px',
+                    }}
+                  >
+                    SIGNALS FIRED — 4 / 12
+                  </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
+                    {[
+                      { l: 'refund_rate_over_60pct', v: 0.92, on: true },
+                      { l: 'cross_merchant_inr_pattern', v: 0.88, on: true },
+                      { l: 'shipping_address_variant', v: 0.74, on: true },
+                      { l: 'denial_then_chargeback', v: 0.68, on: true },
+                      { l: 'velocity_burst_24h', v: 0.21, on: false },
+                    ].map(({ l, v, on }, i) => (
+                      <div key={l} style={{ display: 'grid', gridTemplateColumns: '1fr 36px', gap: '10px', alignItems: 'center' }}>
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px' }}>
+                            <span
+                              style={{
+                                width: 5,
+                                height: 5,
+                                background: on ? '#7B2D26' : '#D8D0BD',
+                                display: 'inline-block',
+                                borderRadius: '50%',
+                              }}
+                            />
+                            <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10.5px', color: on ? '#1A1814' : '#8A8472' }}>
+                              {l}
+                            </span>
+                          </div>
+                          <AnimatedBar
+                            value={v}
+                            color={on ? '#7B2D26' : '#B8B2A0'}
+                            track="#ECE5D4"
+                            height={3}
+                            delay={300 + i * 90}
+                          />
+                        </div>
+                        <span
+                          style={{
+                            fontFamily: 'var(--font-dm-mono, monospace)',
+                            fontSize: '10.5px',
+                            color: on ? '#1A1814' : '#8A8472',
+                            fontVariantNumeric: 'tabular-nums',
+                            textAlign: 'right',
+                          }}
+                        >
+                          <Counter value={v} decimals={2} duration={900} delay={300 + i * 90} format="plain" />
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Network footprint */}
+              <div style={{ borderTop: '1px solid #D8D0BD', padding: '16px 22px' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'baseline',
+                    marginBottom: '10px',
+                  }}
+                >
+                  <p
+                    style={{
+                      fontFamily: 'var(--font-dm-sans, sans-serif)',
+                      fontSize: '10px',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.14em',
+                      color: '#8A8472',
+                      margin: 0,
+                    }}
+                  >
+                    NETWORK FOOTPRINT
+                  </p>
+                  <p
+                    style={{
+                      fontFamily: 'var(--font-dm-mono, monospace)',
+                      fontSize: '10px',
+                      letterSpacing: '0.06em',
+                      color: '#8A8472',
+                      margin: 0,
+                    }}
+                  >
+                    7 merchants · $3,337 lifetime · 11 orders
+                  </p>
+                </div>
+                <div
+                  style={{
+                    fontFamily: 'var(--font-dm-mono, monospace)',
+                    fontSize: '12px',
+                    color: '#4A4640',
+                    lineHeight: 1.85,
+                  }}
+                >
+                  {[
+                    { m: 'HeyGlow Skincare',     o: '3 ord · 2 ref',  v: '$340',   r: 0.55 },
+                    { m: 'Murmur Audio',         o: '3 ord · 2 INR',  v: '$1,210', r: 0.92, note: true },
+                    { m: 'RidgePath Outfitters', o: '2 ord · 2 INR',  v: '$613',   r: 0.80 },
+                    { m: 'Aster & Vale',         o: '1 ord · 1 ref',  v: '$284',   r: 0.42 },
+                    { m: 'Northbound Goods',     o: '2 ord · 1 INR',  v: '$890',   r: 0.71 },
+                  ].map((row, i) => (
+                    <div
+                      key={row.m}
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'minmax(0, 1.5fr) minmax(0, 1fr) 60px auto',
+                        gap: '12px',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <span style={{ color: '#1A1814', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {row.m}
+                        {row.note ? (
+                          <sup style={{ fontFamily: 'var(--font-serif, serif)' }}>
+                            <a href="#note-2" style={{ color: '#7B2D26', textDecoration: 'none' }}>2</a>
+                          </sup>
+                        ) : null}
+                      </span>
+                      <span style={{ color: '#4A4640' }}>{row.o}</span>
+                      <AnimatedBar
+                        value={row.r}
+                        color={row.r > 0.7 ? '#7B2D26' : row.r > 0.5 ? '#B6512A' : '#8A8472'}
+                        track="#ECE5D4"
+                        height={3}
+                        delay={500 + i * 70}
+                      />
+                      <span style={{ color: '#1A1814', fontVariantNumeric: 'tabular-nums', textAlign: 'right', minWidth: '46px' }}>
+                        {row.v}
+                      </span>
+                    </div>
+                  ))}
+                  <p style={{ color: '#8A8472', fontSize: '11px', marginTop: '8px' }}>
+                    + 2 more merchants withheld (k-anonymity gate)
+                  </p>
+                </div>
+              </div>
+
+              {/* Recommended action */}
+              <div
+                style={{
+                  borderTop: '1px solid #D8D0BD',
+                  padding: '14px 22px',
+                  background: 'linear-gradient(90deg, #F8F0EE 0%, #F4E8E5 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '12px',
+                  flexWrap: 'wrap',
+                }}
+              >
+                <p
+                  style={{
+                    fontFamily: 'var(--font-dm-mono, monospace)',
+                    fontSize: '11.5px',
+                    color: '#7B2D26',
+                    letterSpacing: '0.06em',
+                    margin: 0,
+                    fontWeight: 500,
+                  }}
+                >
+                  ▸ DECLINE NEXT ORDER · ASSEMBLE CE 3.0 PACKET FOR 2 OPEN DISPUTES
+                </p>
+                <span
+                  style={{
+                    fontFamily: 'var(--font-dm-mono, monospace)',
+                    fontSize: '10.5px',
+                    color: '#7B2D26',
+                    background: '#FFFFFF',
+                    border: '1px solid #E3C9C3',
+                    padding: '2px 8px',
+                  }}
+                >
+                  packet.pdf · 2.4mb
+                </span>
+              </div>
+
+              {/* Footer meta */}
+              <div style={{ borderTop: '1px solid #D8D0BD', padding: '10px 22px', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                <p
+                  style={{
+                    fontFamily: 'var(--font-dm-mono, monospace)',
+                    fontSize: '10.5px',
+                    color: '#8A8472',
+                    letterSpacing: '0.02em',
+                    margin: 0,
+                  }}
+                >
+                  generated 2026-05-15 09:42 EST · pipeline latency 38ms
+                </p>
+                <p
+                  style={{
+                    fontFamily: 'var(--font-dm-mono, monospace)',
+                    fontSize: '10.5px',
+                    color: '#8A8472',
+                    margin: 0,
+                  }}
+                >
+                  HMAC-SHA256 · per-tenant salt
+                </p>
+              </div>
+            </div>
+
+            {/* Tiny meta row under card */}
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-4" style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11px', color: '#8A8472', letterSpacing: '0.04em' }}>
+              <span>1 of 312 resolved this week</span>
+              <span style={{ color: '#D8D0BD' }}>·</span>
+              <span>median resolution: 38s</span>
+              <span style={{ color: '#D8D0BD' }}>·</span>
+              <span>CE 3.0 packet ready in browser</span>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ── §1 · The pattern your store can't see — VISUAL ───────── */}
+      <section className="mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-20 pb-12 md:pb-16">
+        <hr style={{ border: 0, borderTop: '1px solid #D8D0BD', marginBottom: '40px' }} />
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <div className="lg:col-span-5">
+            <p
+              style={{
+                fontFamily: 'var(--font-dm-sans, sans-serif)',
+                fontSize: '11px',
+                fontWeight: 600,
+                letterSpacing: '0.16em',
+                textTransform: 'uppercase',
+                color: '#7B2D26',
+                marginBottom: '14px',
+              }}
+            >
+              § 1 — THE PROBLEM
+            </p>
+            <h2
+              style={{
+                fontFamily: 'var(--font-dm-sans, sans-serif)',
+                fontSize: 'clamp(26px, 2.6vw, 36px)',
+                fontWeight: 500,
+                letterSpacing: '-0.02em',
+                lineHeight: 1.1,
+                color: '#1A1814',
+                marginBottom: '20px',
+              }}
+            >
+              One buyer.{' '}
+              <span style={{ fontStyle: 'italic', fontFamily: 'var(--font-serif, serif)', color: '#7B2D26' }}>Seven stores.</span>{' '}
+              Zero shared signal.
+            </h2>
+            <p
+              style={{
+                fontFamily: 'var(--font-serif, serif)',
+                fontSize: 'clamp(16px, 1.2vw, 18px)',
+                lineHeight: 1.6,
+                color: '#4A4640',
+                marginBottom: '20px',
+              }}
+            >
+              A serial refund abuser doesn&rsquo;t behave like one at your store. They behave like a good customer — at your store. They behave like a good customer at six other stores too. The pattern only resolves when orders are stacked side by side.
+            </p>
+
+            {/* Three stats inline */}
+            <div className="grid grid-cols-3 gap-3 mt-7 pt-5" style={{ borderTop: '1px solid #D8D0BD' }}>
+              {[
+                { v: 89, prefix: '$', suffix: 'B', dec: 0, l: 'lost annually to refund / INR fraud', n: 3 },
+                { v: 5,  prefix: '1 in ', suffix: '', dec: 0, l: 'DTC refund claims tied to repeat abusers', n: 4 },
+                { v: 2.7, prefix: '', suffix: '×', dec: 1, l: 'true cost of a lost chargeback', n: 5 },
+              ].map((s, i) => (
+                <Reveal key={s.l} delay={120 + i * 80}>
+                  <p
+                    style={{
+                      fontFamily: 'var(--font-dm-mono, monospace)',
+                      fontSize: 'clamp(20px, 1.8vw, 26px)',
+                      fontWeight: 500,
+                      color: '#1A1814',
+                      lineHeight: 1,
+                      marginBottom: '6px',
+                      fontVariantNumeric: 'tabular-nums',
+                    }}
+                  >
+                    <Counter value={s.v} prefix={s.prefix} suffix={s.suffix} decimals={s.dec} duration={1100} format="plain" />
+                    <sup style={{ fontSize: '0.4em' }}>
+                      <a href={`#note-${s.n}`} style={{ color: '#7B2D26', textDecoration: 'none' }}>{s.n}</a>
+                    </sup>
+                  </p>
+                  <p
+                    style={{
+                      fontFamily: 'var(--font-serif, serif)',
+                      fontSize: '12px',
+                      color: '#8A8472',
+                      lineHeight: 1.4,
+                      fontStyle: 'italic',
+                    }}
+                  >
+                    {s.l}
+                  </p>
+                </Reveal>
+              ))}
+            </div>
+          </div>
+
+          {/* Right: ledger visualization — same buyer across 7 stores */}
+          <Reveal className="lg:col-span-7" delay={140}>
+            <div
+              className="ua-hover-glow"
+              style={{
+                background: '#FDFBF6',
+                border: '1px solid #D8D0BD',
+                padding: '20px 22px',
+                boxShadow: '0 1px 0 #D8D0BD, 0 12px 32px -20px rgba(26,24,20,0.10)',
+              }}
+            >
+              <div className="flex items-baseline justify-between mb-4 flex-wrap gap-2">
+                <p
+                  style={{
+                    fontFamily: 'var(--font-dm-mono, monospace)',
+                    fontSize: '10.5px',
+                    letterSpacing: '0.14em',
+                    textTransform: 'uppercase',
+                    color: '#8A8472',
+                    margin: 0,
+                  }}
+                >
+                  Same Buyer · Seven Identities Observed Independently
+                </p>
+                <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10.5px', color: '#8A8472', margin: 0 }}>
+                  → resolved to #u_kessler.07
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+                {[
+                  { merchant: 'HeyGlow Skincare',     email: 'noah.kessler@protonmail.com', addr: '4421 Larkspur Ln, Apt 3B',     card: '••4419', signal: 'good',  note: 'looks fine' },
+                  { merchant: 'Murmur Audio',         email: 'n.kessler@protonmail.com',    addr: '4421 Larspur Lane Apt 3B',     card: '••4419', signal: 'good',  note: 'looks fine' },
+                  { merchant: 'RidgePath Outfitters', email: 'noah_kessler@gmail.com',      addr: '4421 Larkspur Ln #3B',         card: '••4419', signal: 'good',  note: 'looks fine' },
+                  { merchant: 'Aster & Vale',         email: 'n.k@gmail.com',               addr: '4421 Larkspur Ln Apt 3B',      card: '••4419', signal: 'good',  note: 'looks fine' },
+                  { merchant: 'Northbound Goods',     email: 'noah.kessler@protonmail.com', addr: '4421 Larkspur Ln #3B',         card: '••4419', signal: 'good',  note: 'looks fine' },
+                  { merchant: 'Petalwood Co.',        email: 'n.kessler+1@protonmail.com',  addr: '4421 Larkspur Ln, Apt 3B',     card: '••4419', signal: 'good',  note: 'looks fine' },
+                  { merchant: 'Otterline',            email: 'noah.kessler@protonmail.com', addr: '4421 Larkspur Lane, Apt 3B',   card: '••4419', signal: 'good',  note: 'looks fine' },
+                ].map((row, i) => (
+                  <Reveal
+                    key={i}
+                    delay={220 + i * 70}
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'minmax(110px, 1fr) minmax(0, 1.5fr) minmax(0, 1.2fr) 60px 70px',
+                      gap: '12px',
+                      alignItems: 'center',
+                      fontFamily: 'var(--font-dm-mono, monospace)',
+                      fontSize: '11.5px',
+                      padding: '7px 0',
+                      borderBottom: i < 6 ? '1px dashed #ECE5D4' : 'none',
+                      color: '#4A4640',
+                    }}
+                  >
+                    <span style={{ color: '#1A1814', fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '12px' }}>{row.merchant}</span>
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.email}</span>
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.addr}</span>
+                    <span>{row.card}</span>
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        color: '#3D6F4A',
+                        fontSize: '10.5px',
+                      }}
+                    >
+                      <span style={{ width: 5, height: 5, background: '#3D6F4A', borderRadius: '50%' }} />
+                      ok
+                    </span>
+                  </Reveal>
+                ))}
+              </div>
+
+              {/* Resolution arrow */}
+              <div
+                style={{
+                  marginTop: '14px',
+                  paddingTop: '14px',
+                  borderTop: '1px solid #D8D0BD',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '12px',
+                  flexWrap: 'wrap',
+                }}
+              >
+                <p
+                  style={{
+                    fontFamily: 'var(--font-serif, serif)',
+                    fontStyle: 'italic',
+                    fontSize: '13px',
+                    color: '#8A8472',
+                    margin: 0,
+                  }}
+                >
+                  At each store, a normal customer. Across the network — a single identity, 6 refunds, 4 INRs.
+                </p>
+                <span
+                  style={{
+                    fontFamily: 'var(--font-dm-mono, monospace)',
+                    fontSize: '11px',
+                    color: '#7B2D26',
+                    background: '#F4E8E5',
+                    border: '1px solid #E3C9C3',
+                    padding: '3px 10px',
+                  }}
+                >
+                  RISK 0.92 · DEFINITE
+                </span>
+              </div>
+            </div>
+
+            <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10.5px', color: '#8A8472', marginTop: '10px', letterSpacing: '0.04em' }}>
+              ledger view · synthetic · pii redacted in network surfaces
+            </p>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ── §2 · Network observation (dark inversion) ───────────── */}
+      <section
+        id="network"
+        style={{ background: '#15140F', color: '#E8E4D8' }}
+        className="py-16 md:py-24"
+      >
+        <div className="mx-auto max-w-[1400px] px-6 md:px-10">
+          <div className="flex items-end justify-between flex-wrap gap-4 mb-10 md:mb-12">
+            <div>
+              <p
+                style={{
+                  fontFamily: 'var(--font-dm-sans, sans-serif)',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  letterSpacing: '0.16em',
+                  textTransform: 'uppercase',
+                  color: '#B6512A',
+                  marginBottom: '12px',
+                }}
+              >
+                § 2 — THE NETWORK
+              </p>
+              <h2
+                style={{
+                  fontFamily: 'var(--font-dm-sans, sans-serif)',
+                  fontSize: 'clamp(28px, 2.8vw, 40px)',
+                  fontWeight: 500,
+                  letterSpacing: '-0.02em',
+                  lineHeight: 1.05,
+                  color: '#E8E4D8',
+                  marginBottom: '12px',
+                  maxWidth: '720px',
+                }}
+              >
+                What 12 weeks of cross-merchant clustering looks like in production.
+              </h2>
               <p
                 style={{
                   fontFamily: 'var(--font-dm-mono, monospace)',
                   fontSize: '12px',
-                  marginBottom: '4px',
+                  color: '#8A8472',
+                  margin: 0,
+                  letterSpacing: '0.06em',
                 }}
               >
-                {todayLong}
+                sample audit · pilot cohort · k-anonymity gated (≥3 merchants)
               </p>
-              <p style={{ marginBottom: '16px' }}>12 min read</p>
-              <p
-                style={{
-                  fontSize: '11px',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.14em',
-                  marginBottom: '4px',
-                }}
-              >
-                FILED UNDER
-              </p>
-              <p style={{ fontSize: '12px', color: '#4A4640' }}>
-                identity resolution · refund abuse · CE 3.0
-              </p>
+            </div>
+            <div style={{ display: 'flex', gap: '24px', fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11px', color: '#B8B2A0' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ width: 8, height: 8, background: '#34A853', borderRadius: '50%', display: 'inline-block' }} />
+                LIVE · 217ms p95
+              </span>
+              <span>v3.2.1</span>
             </div>
           </div>
 
-          {/* Mobile marginalia — inline run */}
-          <div className="block md:hidden">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-px" style={{ marginBottom: '0', background: '#2B2922', border: '1px solid #2B2922' }}>
+            {/* Chart spans 8 */}
+            <Reveal noFade className="lg:col-span-8 ua-chart-draw" style={{ background: '#15140F', padding: '24px 24px 16px' }} threshold={0.25}>
+              <NetworkChart />
+            </Reveal>
+
+            {/* Metrics column 4 */}
+            <div className="lg:col-span-4 grid grid-cols-1" style={{ background: '#2B2922', gap: '1px' }}>
+              {[
+                { v: 12484, l: 'identity clusters resolved', s: 'across the 12-week pilot audit' },
+                { v: 3107,  l: 'network-known abusers',      s: 'filed INR or refund at 3+ merchants' },
+                { v: 417,   l: 'CE 3.0 packets prepared',    s: 'median preparation time 38s' },
+              ].map((m, i) => (
+                <Reveal key={m.l} delay={120 + i * 90} style={{ background: '#15140F', padding: '22px 22px 22px' }}>
+                  <p
+                    style={{
+                      fontFamily: 'var(--font-dm-mono, monospace)',
+                      fontSize: '10px',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.12em',
+                      color: '#8A8472',
+                      marginBottom: '10px',
+                    }}
+                  >
+                    {m.l}
+                  </p>
+                  <p
+                    style={{
+                      fontFamily: 'var(--font-dm-mono, monospace)',
+                      fontSize: 'clamp(28px, 2.6vw, 38px)',
+                      fontWeight: 500,
+                      color: '#E8E4D8',
+                      marginBottom: '8px',
+                      fontVariantNumeric: 'tabular-nums',
+                      lineHeight: 1,
+                    }}
+                  >
+                    <Counter value={m.v} duration={1400} format="comma" delay={200 + i * 90} />
+                  </p>
+                  <p
+                    style={{
+                      fontFamily: 'var(--font-serif, serif)',
+                      fontStyle: 'italic',
+                      fontSize: '13px',
+                      color: '#B8B2A0',
+                      lineHeight: 1.4,
+                      margin: 0,
+                    }}
+                  >
+                    {m.s}
+                  </p>
+                </Reveal>
+              ))}
+            </div>
+          </div>
+
+          <p
+            style={{
+              fontFamily: 'var(--font-serif, serif)',
+              fontStyle: 'italic',
+              fontSize: 'clamp(14px, 1vw, 15px)',
+              color: '#8A8472',
+              maxWidth: '720px',
+              lineHeight: 1.6,
+              marginTop: '24px',
+            }}
+          >
+            Figures above are from a sample pilot cohort audit and are illustrative of network output. In production, all figures are aggregated and k-anonymity gated. The network does not publish merchant names, raw order data, or buyer identities.
+          </p>
+        </div>
+      </section>
+
+      {/* ── §3 · How it works ───────────────────────────────────── */}
+      <section id="how-it-works" className="mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-20 pb-12 md:pb-16">
+        <hr style={{ border: 0, borderTop: '1px solid #D8D0BD', marginBottom: '40px' }} />
+
+        <div className="flex items-end justify-between flex-wrap gap-4 mb-10">
+          <div>
             <p
               style={{
                 fontFamily: 'var(--font-dm-sans, sans-serif)',
-                fontSize: '12px',
-                color: '#4A4640',
-                letterSpacing: '0.06em',
+                fontSize: '11px',
+                fontWeight: 600,
+                letterSpacing: '0.16em',
+                textTransform: 'uppercase',
+                color: '#7B2D26',
+                marginBottom: '12px',
               }}
             >
-              ISSUE 04 ·{' '}
-              <span style={{ fontFamily: 'var(--font-dm-mono, monospace)' }}>{todayLong}</span>
-              {' '}· 12 min read
+              § 3 — THE PIPELINE
             </p>
+            <h2
+              style={{
+                fontFamily: 'var(--font-dm-sans, sans-serif)',
+                fontSize: 'clamp(28px, 2.8vw, 40px)',
+                fontWeight: 500,
+                letterSpacing: '-0.02em',
+                lineHeight: 1.05,
+                color: '#1A1814',
+                marginBottom: '10px',
+                maxWidth: '720px',
+              }}
+            >
+              Four stages — CSV in, signed evidence out.
+            </h2>
+            <p
+              style={{
+                fontFamily: 'var(--font-serif, serif)',
+                fontSize: 'clamp(15px, 1.1vw, 17px)',
+                color: '#4A4640',
+                lineHeight: 1.55,
+                margin: 0,
+                maxWidth: '560px',
+              }}
+            >
+              PII never leaves the browser in clear text
+              <sup>
+                <a href="#note-6" style={{ color: '#7B2D26', textDecoration: 'none' }}>6</a>
+              </sup>
+              . Every step is logged with a hashed audit trail.
+            </p>
+          </div>
+          <div
+            style={{
+              fontFamily: 'var(--font-dm-mono, monospace)',
+              fontSize: '11px',
+              color: '#8A8472',
+              letterSpacing: '0.06em',
+            }}
+          >
+            avg total · 38s · 11ms per order
+          </div>
+        </div>
+
+        {/* 4-step card flow with visual flow indicator */}
+        <div
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px"
+          style={{ background: '#D8D0BD', border: '1px solid #D8D0BD', marginBottom: '40px' }}
+        >
+          {[
+            {
+              n: '01',
+              t: '11ms',
+              title: 'Upload',
+              body: 'CSV of orders, refunds, returns, and deliveries — or a real-time API stream.',
+              detail: 'No schema changes. No webhooks. No checkout integration required.',
+              icon: (
+                <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden>
+                  <path d="M3 14v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" stroke="#7B2D26" strokeWidth="1.4"/>
+                  <path d="M7 8l4-4 4 4M11 4v12" stroke="#7B2D26" strokeWidth="1.4"/>
+                </svg>
+              ),
+            },
+            {
+              n: '02',
+              t: '4ms',
+              title: 'Hash in browser',
+              body: 'Email, phone, address, and card-reference fields are HMAC-SHA256 hashed with a salt only your tenant holds.',
+              detail: 'Unauth never sees the raw values.',
+              icon: (
+                <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden>
+                  <rect x="4" y="9" width="14" height="9" stroke="#7B2D26" strokeWidth="1.4"/>
+                  <path d="M7 9V6a4 4 0 0 1 8 0v3" stroke="#7B2D26" strokeWidth="1.4"/>
+                </svg>
+              ),
+            },
+            {
+              n: '03',
+              t: '17ms',
+              title: 'Resolve cluster',
+              body: 'Hashes resolve against the cross-merchant identity graph using strong signals corroborated by soft signals.',
+              detail: 'k-anonymity gated — surfaces only at 3+ merchants.',
+              icon: (
+                <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden>
+                  <circle cx="11" cy="11" r="3" stroke="#7B2D26" strokeWidth="1.4"/>
+                  <circle cx="4" cy="5" r="1.6" stroke="#7B2D26" strokeWidth="1.4"/>
+                  <circle cx="18" cy="5" r="1.6" stroke="#7B2D26" strokeWidth="1.4"/>
+                  <circle cx="4" cy="17" r="1.6" stroke="#7B2D26" strokeWidth="1.4"/>
+                  <circle cx="18" cy="17" r="1.6" stroke="#7B2D26" strokeWidth="1.4"/>
+                  <path d="M5.2 6.2l3.6 3.6M16.8 6.2l-3.6 3.6M5.2 15.8l3.6-3.6M16.8 15.8l-3.6-3.6" stroke="#7B2D26" strokeWidth="1.4"/>
+                </svg>
+              ),
+            },
+            {
+              n: '04',
+              t: '6ms',
+              title: 'Return evidence',
+              body: 'Single signed object: risk_score, cluster_id, signals_fired, evidence-packet eligibility.',
+              detail: 'CE 3.0 packet renders into your dispute response.',
+              icon: (
+                <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden>
+                  <path d="M5 3h9l4 4v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" stroke="#7B2D26" strokeWidth="1.4"/>
+                  <path d="M14 3v4h4M8 13l2 2 4-4" stroke="#7B2D26" strokeWidth="1.4"/>
+                </svg>
+              ),
+            },
+          ].map((step, i) => (
+            <Reveal
+              key={step.n}
+              delay={80 + i * 80}
+              className="ua-hover-lift"
+              style={{
+                background: '#FDFBF6',
+                padding: '22px 22px 22px',
+                display: 'flex',
+                flexDirection: 'column',
+                minHeight: '244px',
+                position: 'relative',
+              }}
+            >
+              {i < 3 && (
+                <span
+                  className="hidden lg:flex"
+                  aria-hidden
+                  style={{
+                    position: 'absolute',
+                    right: -10,
+                    top: 36,
+                    width: 20,
+                    height: 20,
+                    background: '#F8F5EE',
+                    color: '#7B2D26',
+                    fontFamily: 'var(--font-dm-mono, monospace)',
+                    fontSize: '14px',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: '1px solid #D8D0BD',
+                    zIndex: 1,
+                  }}
+                >
+                  →
+                </span>
+              )}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginBottom: '14px',
+                }}
+              >
+                <span
+                  style={{
+                    fontFamily: 'var(--font-dm-mono, monospace)',
+                    fontSize: '11px',
+                    color: '#7B2D26',
+                    letterSpacing: '0.1em',
+                    background: '#F4E8E5',
+                    padding: '3px 8px',
+                    border: '1px solid #E3C9C3',
+                  }}
+                >
+                  STEP {step.n}
+                </span>
+                <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11px', color: '#8A8472' }}>
+                  {step.t}
+                </span>
+              </div>
+              <div style={{ marginBottom: '12px' }}>{step.icon}</div>
+              <p
+                style={{
+                  fontFamily: 'var(--font-dm-sans, sans-serif)',
+                  fontWeight: 600,
+                  fontSize: '18px',
+                  color: '#1A1814',
+                  letterSpacing: '-0.005em',
+                  marginBottom: '8px',
+                }}
+              >
+                {step.title}
+              </p>
+              <p
+                style={{
+                  fontFamily: 'var(--font-serif, serif)',
+                  fontSize: '14px',
+                  color: '#4A4640',
+                  lineHeight: 1.5,
+                  marginBottom: '10px',
+                }}
+              >
+                {step.body}
+              </p>
+              <p
+                style={{
+                  fontFamily: 'var(--font-serif, serif)',
+                  fontStyle: 'italic',
+                  fontSize: '12.5px',
+                  color: '#8A8472',
+                  lineHeight: 1.5,
+                  marginTop: 'auto',
+                }}
+              >
+                {step.detail}
+              </p>
+            </Reveal>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start mt-10">
+          {/* Left — request / response */}
+          <div className="lg:col-span-7">
+            <p
+              style={{
+                fontFamily: 'var(--font-dm-mono, monospace)',
+                fontSize: '11px',
+                letterSpacing: '0.14em',
+                textTransform: 'uppercase',
+                color: '#8A8472',
+                marginBottom: '12px',
+              }}
+            >
+              § 3.2 — ENGINE RESPONSE
+            </p>
+
+            <div
+              style={{
+                background: '#15140F',
+                border: '1px solid #2B2922',
+                boxShadow: '0 1px 0 #15140F, 0 16px 32px -20px rgba(26,24,20,0.18)',
+              }}
+            >
+              {/* Editor chrome */}
+              <div
+                style={{
+                  padding: '10px 14px',
+                  borderBottom: '1px solid #2B2922',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  fontFamily: 'var(--font-dm-mono, monospace)',
+                  fontSize: '11px',
+                  color: '#8A8472',
+                }}
+              >
+                <span style={{ display: 'inline-flex', gap: '5px' }}>
+                  <span style={{ width: 9, height: 9, borderRadius: '50%', background: '#3A372E', display: 'inline-block' }} />
+                  <span style={{ width: 9, height: 9, borderRadius: '50%', background: '#3A372E', display: 'inline-block' }} />
+                  <span style={{ width: 9, height: 9, borderRadius: '50%', background: '#3A372E', display: 'inline-block' }} />
+                </span>
+                <span style={{ marginLeft: '10px' }}>POST /v1/score</span>
+                <span style={{ marginLeft: 'auto', color: '#34A853' }}>200 OK · 38ms</span>
+              </div>
+
+              <pre
+                style={{
+                  fontFamily: 'var(--font-dm-mono, monospace)',
+                  fontSize: '12.5px',
+                  color: '#B8B2A0',
+                  lineHeight: 1.75,
+                  padding: '18px 20px',
+                  margin: 0,
+                  overflowX: 'auto',
+                  background: 'transparent',
+                }}
+              >
+<span>{'{'}</span>{'\n'}
+<span>{'  '}<span style={{ color: '#8A8472' }}>{'"order_id"'}</span>: <span style={{ color: '#E8E4D8' }}>{'"ORD-77241"'}</span>,</span>{'\n'}
+<span>{'  '}<span style={{ color: '#8A8472' }}>{'"risk_score"'}</span>: <span style={{ color: '#B6512A' }}>0.92</span>,</span>{'\n'}
+<span>{'  '}<span style={{ color: '#8A8472' }}>{'"cluster_id"'}</span>: <span style={{ color: '#E8E4D8' }}>{'"u_kessler.07"'}</span>,</span>{'\n'}
+<span>{'  '}<span style={{ color: '#8A8472' }}>{'"confidence_grade"'}</span>: <span style={{ color: '#B6512A' }}>{'"DEFINITE"'}</span>,</span>{'\n'}
+<span>{'  '}<span style={{ color: '#8A8472' }}>{'"signals_fired"'}</span>: [</span>{'\n'}
+<span>{'    '}<span style={{ color: '#E8E4D8' }}>{'"refund_rate_over_60pct"'}</span>,</span>{'\n'}
+<span>{'    '}<span style={{ color: '#E8E4D8' }}>{'"cross_merchant_inr_pattern"'}</span>,</span>{'\n'}
+<span>{'    '}<span style={{ color: '#E8E4D8' }}>{'"shipping_address_variant"'}</span>,</span>{'\n'}
+<span>{'    '}<span style={{ color: '#E8E4D8' }}>{'"denial_then_chargeback"'}</span></span>{'\n'}
+<span>{'  '}],</span>{'\n'}
+<span>{'  '}<span style={{ color: '#8A8472' }}>{'"merchants_seen_at"'}</span>: <span style={{ color: '#B6512A' }}>7</span>,</span>{'\n'}
+<span>{'  '}<span style={{ color: '#8A8472' }}>{'"evidence_packet_eligible"'}</span>: <span style={{ color: '#34A853' }}>true</span></span>{'\n'}
+<span>{'}'}</span>
+              </pre>
+            </div>
+
+            <div
+              style={{
+                marginTop: '12px',
+                display: 'flex',
+                gap: '12px',
+                flexWrap: 'wrap',
+                fontFamily: 'var(--font-dm-mono, monospace)',
+                fontSize: '11px',
+                color: '#8A8472',
+                letterSpacing: '0.04em',
+              }}
+            >
+              <span>signed · ed25519</span>
+              <span style={{ color: '#D8D0BD' }}>·</span>
+              <span>idempotent</span>
+              <span style={{ color: '#D8D0BD' }}>·</span>
+              <span>SDK: JS · Python · Ruby · Go</span>
+            </div>
+          </div>
+
+          {/* Right — explanation + grades */}
+          <div className="lg:col-span-5">
+            <p
+              style={{
+                fontFamily: 'var(--font-dm-mono, monospace)',
+                fontSize: '11px',
+                letterSpacing: '0.14em',
+                textTransform: 'uppercase',
+                color: '#8A8472',
+                marginBottom: '12px',
+              }}
+            >
+              § 3.3 — YOUR DECISION
+            </p>
+            <p
+              style={{
+                fontFamily: 'var(--font-serif, serif)',
+                fontSize: 'clamp(15px, 1.1vw, 17px)',
+                lineHeight: 1.6,
+                color: '#1A1814',
+                marginBottom: '24px',
+              }}
+            >
+              We don&rsquo;t decline orders. We don&rsquo;t move money. We don&rsquo;t write to your checkout. We surface the cluster, the signals, and the evidence — what you do with it depends on your risk appetite. Most teams set a score threshold and let the rest pass.
+            </p>
+
+            {/* Confidence grade table */}
+            <div style={{ border: '1px solid #D8D0BD', background: '#FDFBF6' }}>
+              <div
+                style={{
+                  padding: '10px 14px',
+                  borderBottom: '1px solid #D8D0BD',
+                  fontFamily: 'var(--font-dm-mono, monospace)',
+                  fontSize: '10.5px',
+                  color: '#8A8472',
+                  letterSpacing: '0.14em',
+                  textTransform: 'uppercase',
+                }}
+              >
+                Confidence grades · score thresholds
+              </div>
+              {[
+                { g: 'DEFINITE', r: '0.85 – 1.00', a: 'decline + assemble CE 3.0', c: '#7B2D26' },
+                { g: 'PROBABLE', r: '0.65 – 0.84', a: 'route to analyst review',     c: '#B6512A' },
+                { g: 'POSSIBLE', r: '0.40 – 0.64', a: 'flag · let through',          c: '#8A8472' },
+                { g: 'WEAK',     r: '0.00 – 0.39', a: 'no action',                   c: '#8A8472' },
+              ].map((row, i) => (
+                <div
+                  key={row.g}
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '90px 92px 1fr',
+                    gap: '10px',
+                    padding: '10px 14px',
+                    borderTop: i > 0 ? '1px solid #ECE5D4' : 'none',
+                    alignItems: 'center',
+                    fontFamily: 'var(--font-dm-mono, monospace)',
+                    fontSize: '11.5px',
+                  }}
+                >
+                  <span style={{ color: row.c, fontWeight: 500 }}>{row.g}</span>
+                  <span style={{ color: '#4A4640' }}>{row.r}</span>
+                  <span style={{ color: '#1A1814', fontFamily: 'var(--font-serif, serif)', fontStyle: 'italic', fontSize: '13px' }}>
+                    {row.a}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ── Case-file artifact ──────────────────────────────────── */}
-      <div className="mx-auto max-w-[1080px] px-6 md:px-10">
+      {/* ── Sample evidence packet · full case-file artifact ─────── */}
+      <section id="evidence" className="mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-20 pb-12 md:pb-16">
+        <hr style={{ border: 0, borderTop: '1px solid #D8D0BD', marginBottom: '40px' }} />
+
+        <div className="flex items-end justify-between flex-wrap gap-4 mb-10">
+          <div>
+            <p
+              style={{
+                fontFamily: 'var(--font-dm-sans, sans-serif)',
+                fontSize: '11px',
+                fontWeight: 600,
+                letterSpacing: '0.16em',
+                textTransform: 'uppercase',
+                color: '#7B2D26',
+                marginBottom: '12px',
+              }}
+            >
+              § 4 — THE EVIDENCE PACKET
+            </p>
+            <h2
+              style={{
+                fontFamily: 'var(--font-dm-sans, sans-serif)',
+                fontSize: 'clamp(28px, 2.8vw, 40px)',
+                fontWeight: 500,
+                letterSpacing: '-0.02em',
+                lineHeight: 1.05,
+                color: '#1A1814',
+                marginBottom: '10px',
+                maxWidth: '720px',
+              }}
+            >
+              The full case file, formatted for chargeback representment.
+            </h2>
+            <p
+              style={{
+                fontFamily: 'var(--font-serif, serif)',
+                fontSize: 'clamp(15px, 1.1vw, 17px)',
+                color: '#4A4640',
+                lineHeight: 1.55,
+                margin: 0,
+                maxWidth: '620px',
+              }}
+            >
+              Email variants, address misspellings, payment fingerprint, network footprint, behavioural pattern, recommended action — rendered directly into your dispute response.
+            </p>
+          </div>
+          <a
+            href="/login"
+            style={{
+              fontFamily: 'var(--font-dm-mono, monospace)',
+              fontSize: '11.5px',
+              color: '#1A1814',
+              padding: '8px 14px',
+              border: '1px solid #1A1814',
+              textDecoration: 'none',
+              letterSpacing: '0.06em',
+            }}
+            className="hover:bg-[#1A1814] hover:text-[#F8F5EE]"
+          >
+            DOWNLOAD SAMPLE PDF →
+          </a>
+        </div>
+
         <div
           style={{
             background: '#FDFBF6',
             border: '1px solid #D8D0BD',
             borderRadius: 0,
+            boxShadow:
+              '0 1px 0 #D8D0BD, 0 16px 32px -20px rgba(26,24,20,0.12), 0 32px 64px -32px rgba(26,24,20,0.08)',
           }}
         >
           {/* Artifact header */}
           <div
             style={{
-              padding: '10px 20px',
+              padding: '12px 20px',
               borderBottom: '1px solid #D8D0BD',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '12px',
+              flexWrap: 'wrap',
             }}
           >
             <p
@@ -236,8 +1458,53 @@ export default function LandingPage() {
                 margin: 0,
               }}
             >
-              SAMPLE CASE FILE · UN-2026-04-21-0083 · SYNTHETIC EXAMPLE · SUBJECT: 1 of 312 this week
+              <span style={{ color: '#7B2D26' }}>●</span>{' '}
+              CASE FILE · UN-2026-04-21-0083 · SYNTHETIC EXAMPLE
             </p>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <span
+                style={{
+                  fontFamily: 'var(--font-dm-mono, monospace)',
+                  fontSize: '10px',
+                  letterSpacing: '0.08em',
+                  color: '#7B2D26',
+                  background: '#F4E8E5',
+                  border: '1px solid #E3C9C3',
+                  padding: '2px 8px',
+                  lineHeight: 1.4,
+                }}
+              >
+                DEFINITE
+              </span>
+              <span
+                style={{
+                  fontFamily: 'var(--font-dm-mono, monospace)',
+                  fontSize: '10px',
+                  letterSpacing: '0.08em',
+                  color: '#4A4640',
+                  background: '#F2EDE3',
+                  border: '1px solid #D8D0BD',
+                  padding: '2px 8px',
+                  lineHeight: 1.4,
+                }}
+              >
+                RISK 0.92
+              </span>
+              <span
+                style={{
+                  fontFamily: 'var(--font-dm-mono, monospace)',
+                  fontSize: '10px',
+                  letterSpacing: '0.08em',
+                  color: '#4A4640',
+                  background: '#F2EDE3',
+                  border: '1px solid #D8D0BD',
+                  padding: '2px 8px',
+                  lineHeight: 1.4,
+                }}
+              >
+                CONFIDENCE 0.96
+              </span>
+            </div>
           </div>
 
           {/* Two-column body */}
@@ -471,844 +1738,502 @@ Northbound Goods         $890.00     2 orders     1 INR filed
             </p>
           </div>
         </div>
-      </div>
-
-      {/* ── §1 · The pattern your store can't see ───────────────── */}
-      <section className="mx-auto max-w-[1080px] px-6 md:px-10 py-20 md:py-28">
-        <hr style={{ border: 0, borderTop: '1px solid #D8D0BD', marginBottom: '48px' }} />
-
-        <h2
-          style={{
-            fontFamily: 'var(--font-dm-sans, sans-serif)',
-            fontSize: 'clamp(22px, 2.4vw, 30px)',
-            fontWeight: 600,
-            letterSpacing: '-0.01em',
-            color: '#1A1814',
-            marginBottom: '32px',
-          }}
-        >
-          §1 · The pattern your store can&rsquo;t see
-        </h2>
-
-        <div style={{ maxWidth: '640px' }}>
-          <p
-            style={{
-              fontFamily: 'var(--font-serif, serif)',
-              fontSize: 'clamp(17px, 1.4vw, 19px)',
-              lineHeight: 1.65,
-              color: '#1A1814',
-              marginBottom: '24px',
-            }}
-          >
-            A serial refund abuser doesn&rsquo;t behave like one at your store. They behave like a good customer — at your store. They behave like a good customer at six other stores too. The pattern only resolves when the orders are stacked side by side.
-          </p>
-
-          <p
-            style={{
-              fontFamily: 'var(--font-serif, serif)',
-              fontSize: 'clamp(17px, 1.4vw, 19px)',
-              lineHeight: 1.65,
-              color: '#1A1814',
-              marginBottom: '24px',
-            }}
-          >
-            Unauth takes a hashed view of your order history — emails, addresses, card fingerprints, never the raw values — and resolves each order to a cross-merchant identity cluster. Every cluster comes back with a confidence grade, a behavioural ledger, and the linked orders. The call is one line:{' '}
-            <code
-              style={{
-                fontFamily: 'var(--font-dm-mono, monospace)',
-                fontSize: '0.95em',
-                color: '#1A1814',
-              }}
-            >
-              unauth.score(order_id)
-            </code>
-            . The response is JSON, and we show you exactly which signals fired.
-          </p>
-
-          <p
-            style={{
-              fontFamily: 'var(--font-serif, serif)',
-              fontSize: 'clamp(17px, 1.4vw, 19px)',
-              lineHeight: 1.65,
-              color: '#1A1814',
-            }}
-          >
-            Refund abuse and INR fraud cost online retailers an estimated $89 billion a year
-            <sup>
-              <a href="#note-3" style={{ color: '#7B2D26', textDecoration: 'none' }}>3</a>
-            </sup>{' '}
-            and 1 in 5 refund claims at growth-stage DTC brands now resolve to a network-known abuser
-            <sup>
-              <a href="#note-4" style={{ color: '#7B2D26', textDecoration: 'none' }}>4</a>
-            </sup>
-            . The cost of a lost chargeback runs 2.7× the order value once fees and reversed acquisition are tallied
-            <sup>
-              <a href="#note-5" style={{ color: '#7B2D26', textDecoration: 'none' }}>5</a>
-            </sup>
-            . Most of this is preventable. None of it is preventable if you only have your own data.
-          </p>
-        </div>
       </section>
 
-      {/* ── §2 · Network observation (dark inversion) ───────────── */}
-      <section
-        style={{ background: '#15140F', color: '#E8E4D8' }}
-        className="py-24 md:py-32"
-      >
-        <div className="mx-auto max-w-[1080px] px-6 md:px-10">
-          <h2
+      {/* ── §5 · Two case studies ────────────────────────────────── */}
+      <section className="mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-20 pb-12 md:pb-16">
+        <hr style={{ border: 0, borderTop: '1px solid #D8D0BD', marginBottom: '40px' }} />
+
+        <div className="mb-10">
+          <p
             style={{
               fontFamily: 'var(--font-dm-sans, sans-serif)',
-              fontSize: 'clamp(22px, 2.4vw, 30px)',
-              fontWeight: 500,
-              color: '#E8E4D8',
+              fontSize: '11px',
+              fontWeight: 600,
+              letterSpacing: '0.16em',
+              textTransform: 'uppercase',
+              color: '#7B2D26',
               marginBottom: '12px',
             }}
           >
-            §2 · Network observation
+            § 5 — OUTCOMES IN PILOT
+          </p>
+          <h2
+            style={{
+              fontFamily: 'var(--font-dm-sans, sans-serif)',
+              fontSize: 'clamp(28px, 2.8vw, 40px)',
+              fontWeight: 500,
+              letterSpacing: '-0.02em',
+              lineHeight: 1.05,
+              color: '#1A1814',
+              marginBottom: '10px',
+              maxWidth: '760px',
+            }}
+          >
+            What two pilot merchants saw in 90 days.
           </h2>
-
-          <p
-            style={{
-              fontFamily: 'var(--font-dm-mono, monospace)',
-              fontSize: '13px',
-              color: '#8A8472',
-              marginBottom: '48px',
-            }}
-          >
-            sample audit output · pilot cohort · illustrative figures
-          </p>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12" style={{ marginBottom: '40px' }}>
-            {/* Col 1 */}
-            <div>
-              <p
-                style={{
-                  fontFamily: 'var(--font-dm-mono, monospace)',
-                  fontSize: '11px',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.1em',
-                  color: '#8A8472',
-                  marginBottom: '12px',
-                }}
-              >
-                IDENTITY CLUSTERS RESOLVED
-              </p>
-              <p
-                style={{
-                  fontFamily: 'var(--font-dm-mono, monospace)',
-                  fontSize: '40px',
-                  fontWeight: 500,
-                  color: '#E8E4D8',
-                  marginBottom: '10px',
-                  fontVariantNumeric: 'tabular-nums',
-                  lineHeight: 1,
-                }}
-              >
-                12,484
-              </p>
-              <p
-                style={{
-                  fontFamily: 'var(--font-serif, serif)',
-                  fontStyle: 'italic',
-                  fontSize: '14px',
-                  color: '#B8B2A0',
-                  lineHeight: 1.5,
-                }}
-              >
-                identity clusters resolved in a representative pilot cohort audit.
-              </p>
-            </div>
-
-            {/* Col 2 */}
-            <div>
-              <p
-                style={{
-                  fontFamily: 'var(--font-dm-mono, monospace)',
-                  fontSize: '11px',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.1em',
-                  color: '#8A8472',
-                  marginBottom: '12px',
-                }}
-              >
-                NETWORK-KNOWN ABUSERS IDENTIFIED
-              </p>
-              <p
-                style={{
-                  fontFamily: 'var(--font-dm-mono, monospace)',
-                  fontSize: '40px',
-                  fontWeight: 500,
-                  color: '#E8E4D8',
-                  marginBottom: '10px',
-                  fontVariantNumeric: 'tabular-nums',
-                  lineHeight: 1,
-                }}
-              >
-                3,107
-              </p>
-              <p
-                style={{
-                  fontFamily: 'var(--font-serif, serif)',
-                  fontStyle: 'italic',
-                  fontSize: '14px',
-                  color: '#B8B2A0',
-                  lineHeight: 1.5,
-                }}
-              >
-                filed INR or refund claim at 3+ merchants. 28% were first-seen by the receiving store.
-              </p>
-            </div>
-
-            {/* Col 3 */}
-            <div>
-              <p
-                style={{
-                  fontFamily: 'var(--font-dm-mono, monospace)',
-                  fontSize: '11px',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.1em',
-                  color: '#8A8472',
-                  marginBottom: '12px',
-                }}
-              >
-                CE 3.0 EVIDENCE PACKETS PREPARED
-              </p>
-              <p
-                style={{
-                  fontFamily: 'var(--font-dm-mono, monospace)',
-                  fontSize: '40px',
-                  fontWeight: 500,
-                  color: '#E8E4D8',
-                  marginBottom: '10px',
-                  fontVariantNumeric: 'tabular-nums',
-                  lineHeight: 1,
-                }}
-              >
-                417
-              </p>
-              <p
-                style={{
-                  fontFamily: 'var(--font-serif, serif)',
-                  fontStyle: 'italic',
-                  fontSize: '14px',
-                  color: '#B8B2A0',
-                  lineHeight: 1.5,
-                }}
-              >
-                ready for merchant review. Median preparation time: 38 seconds.
-              </p>
-            </div>
-          </div>
-
           <p
             style={{
               fontFamily: 'var(--font-serif, serif)',
-              fontStyle: 'italic',
-              fontSize: 'clamp(15px, 1.2vw, 17px)',
-              color: '#B8B2A0',
-              maxWidth: '720px',
-              lineHeight: 1.6,
+              fontSize: 'clamp(15px, 1.1vw, 17px)',
+              lineHeight: 1.55,
+              color: '#4A4640',
+              maxWidth: '600px',
+              margin: 0,
             }}
           >
-            Figures above are from a sample pilot cohort audit and are illustrative of network output. In production, all figures are aggregated and k-anonymity gated (≥3 merchants). The network does not publish merchant names, raw order data, or buyer identities.
-          </p>
-        </div>
-      </section>
-
-      {/* ── §3 · How it works ───────────────────────────────────── */}
-      <section className="mx-auto max-w-[1080px] px-6 md:px-10 py-20 md:py-28">
-        <hr style={{ border: 0, borderTop: '1px solid #D8D0BD', marginBottom: '48px' }} />
-
-        <h2
-          style={{
-            fontFamily: 'var(--font-dm-sans, sans-serif)',
-            fontSize: 'clamp(22px, 2.4vw, 30px)',
-            fontWeight: 600,
-            letterSpacing: '-0.01em',
-            color: '#1A1814',
-            marginBottom: '40px',
-          }}
-        >
-          §3 · How it works
-        </h2>
-
-        <div style={{ maxWidth: '640px' }}>
-          {/* §3.1 */}
-          <p
-            style={{
-              fontFamily: 'var(--font-serif, serif)',
-              fontSize: 'clamp(17px, 1.4vw, 19px)',
-              lineHeight: 1.65,
-              color: '#1A1814',
-              marginBottom: '28px',
-            }}
-          >
-            <strong
-              style={{
-                fontFamily: 'var(--font-dm-sans, sans-serif)',
-                fontWeight: 600,
-                fontSize: '14px',
-                color: '#1A1814',
-              }}
-            >
-              §3.1
-            </strong>{' '}
-            You upload a CSV of orders, or stream them in via our API. Before anything leaves your browser, every PII field is hashed with a per-merchant salt — we never see your raw emails or addresses
+            All names, merchants, and metrics are synthetic.
             <sup>
-              <a href="#note-6" style={{ color: '#7B2D26', textDecoration: 'none' }}>6</a>
-            </sup>
-            . The hashes resolve against the cross-merchant identity graph; the graph does not resolve back. If your buyer has been seen at any of the network&rsquo;s merchants, you see what they did there. You never see who else is in the network or what their order book looks like.
-          </p>
-
-          {/* §3.2 */}
-          <p
-            style={{
-              fontFamily: 'var(--font-serif, serif)',
-              fontSize: 'clamp(17px, 1.4vw, 19px)',
-              lineHeight: 1.65,
-              color: '#1A1814',
-              marginBottom: '16px',
-            }}
-          >
-            <strong
-              style={{
-                fontFamily: 'var(--font-dm-sans, sans-serif)',
-                fontWeight: 600,
-                fontSize: '14px',
-                color: '#1A1814',
-              }}
-            >
-              §3.2
-            </strong>{' '}
-            Every order returns a single signed object. The fields are stable and documented:
-          </p>
-
-          <div style={{ marginBottom: '28px' }}>
-            <hr style={{ border: 0, borderTop: '1px solid #D8D0BD', margin: '0 0 0 0' }} />
-            <pre
-              style={{
-                fontFamily: 'var(--font-dm-mono, monospace)',
-                fontSize: '13px',
-                color: '#4A4640',
-                lineHeight: 1.7,
-                padding: '20px 0',
-                margin: 0,
-                overflowX: 'auto',
-                background: 'transparent',
-              }}
-            >
-{`{
-  "order_id": "ORD-77241",
-  "risk_score": 0.92,
-  "cluster_id": "u_kessler.07",
-  "confidence_grade": "DEFINITE",
-  "signals_fired": [
-    "refund_rate_over_60pct",
-    "cross_merchant_inr_pattern",
-    "shipping_address_variant",
-    "denial_then_chargeback"
-  ],
-  "recommended_action": "High-confidence identity match across linked accounts — verify manually before approving high-value transactions.",
-  "merchants_seen_at": 7,
-  "evidence_packet_eligible": true
-}`}
-            </pre>
-            <hr style={{ border: 0, borderTop: '1px solid #D8D0BD', margin: '0' }} />
-          </div>
-
-          {/* §3.3 */}
-          <p
-            style={{
-              fontFamily: 'var(--font-serif, serif)',
-              fontSize: 'clamp(17px, 1.4vw, 19px)',
-              lineHeight: 1.65,
-              color: '#1A1814',
-            }}
-          >
-            <strong
-              style={{
-                fontFamily: 'var(--font-dm-sans, sans-serif)',
-                fontWeight: 600,
-                fontSize: '14px',
-                color: '#1A1814',
-              }}
-            >
-              §3.3
-            </strong>{' '}
-            The recommendation is yours. We don&rsquo;t decline orders for you. We don&rsquo;t move money. We don&rsquo;t write to your checkout. We surface the cluster, the signals, and the evidence — what you do with it depends on your risk appetite and your chargeback ratio. Most teams set a score threshold for auto-review and let the rest pass.
-          </p>
-        </div>
-      </section>
-
-      {/* ── §3.4 · Product pipeline ──────────────────────────────── */}
-      <section className="mx-auto max-w-[1080px] px-6 md:px-10 py-20 md:py-28">
-        <hr style={{ border: 0, borderTop: '1px solid #D8D0BD', marginBottom: '48px' }} />
-
-        <h2
-          style={{
-            fontFamily: 'var(--font-dm-sans, sans-serif)',
-            fontSize: 'clamp(22px, 2.4vw, 30px)',
-            fontWeight: 600,
-            letterSpacing: '-0.01em',
-            color: '#1A1814',
-            marginBottom: '12px',
-          }}
-        >
-          §3.4 · The pipeline, step by step
-        </h2>
-
-        <p
-          style={{
-            fontFamily: 'var(--font-serif, serif)',
-            fontSize: 'clamp(17px, 1.4vw, 19px)',
-            color: '#4A4640',
-            lineHeight: 1.65,
-            maxWidth: '560px',
-            marginBottom: '40px',
-          }}
-        >
-          From a CSV export of your orders to a signed evidence packet, the process runs in five deterministic stages.
-        </p>
-
-        <div style={{ maxWidth: '760px' }}>
-          {[
-            {
-              n: '01',
-              title: 'Import orders',
-              detail: 'CSV upload or real-time API stream. Accepts standard order, refund, return, delivery, and payment exports.',
-            },
-            {
-              n: '02',
-              title: 'Normalise',
-              detail: 'Email variants, phone formats, shipping and billing addresses, postcodes, card BIN + last4, device fingerprints. Every field reduced to a canonical form before hashing.',
-            },
-            {
-              n: '03',
-              title: 'Build identity graph',
-              detail: 'Orders linked through strong signals (phone, device, account) corroborated by soft signals (email, address, postcode). Union-find clustering with deterministic cluster IDs.',
-            },
-            {
-              n: '04',
-              title: 'Score clusters',
-              detail: 'Behavioural flags: refund rate, claim velocity, denial-then-chargeback, value escalation, reason rotation, chargeback count. Confidence grades: DEFINITE / PROBABLE / POSSIBLE / WEAK.',
-            },
-            {
-              n: '05',
-              title: 'Export evidence',
-              detail: 'Analyst review inbox, CSV audit export, CE 3.0 evidence packet with PII masking. Every lookup hashed and logged; nothing written back to your systems.',
-            },
-          ].map(({ n, title, detail }) => (
-            <div
-              key={n}
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '3.5rem 1fr',
-                gap: '0 20px',
-                borderTop: '1px solid #D8D0BD',
-                paddingTop: '20px',
-                paddingBottom: '20px',
-              }}
-            >
-              <div>
-                <p
-                  style={{
-                    fontFamily: 'var(--font-dm-mono, monospace)',
-                    fontSize: '13px',
-                    color: '#7B2D26',
-                    letterSpacing: '0.06em',
-                    lineHeight: 1,
-                    marginBottom: '4px',
-                  }}
-                >
-                  {n}
-                </p>
-              </div>
-              <div>
-                <p
-                  style={{
-                    fontFamily: 'var(--font-dm-sans, sans-serif)',
-                    fontWeight: 600,
-                    fontSize: '15px',
-                    color: '#1A1814',
-                    marginBottom: '6px',
-                  }}
-                >
-                  {title}
-                </p>
-                <p
-                  style={{
-                    fontFamily: 'var(--font-serif, serif)',
-                    fontSize: '15px',
-                    color: '#4A4640',
-                    lineHeight: 1.6,
-                  }}
-                >
-                  {detail}
-                </p>
-              </div>
-            </div>
-          ))}
-          <div style={{ borderTop: '1px solid #D8D0BD' }} />
-        </div>
-      </section>
-
-      {/* ── §4 · Two case studies ────────────────────────────────── */}
-      <section className="mx-auto max-w-[1080px] px-6 md:px-10 py-20 md:py-28">
-        <hr style={{ border: 0, borderTop: '1px solid #D8D0BD', marginBottom: '48px' }} />
-
-        <h2
-          style={{
-            fontFamily: 'var(--font-dm-sans, sans-serif)',
-            fontSize: 'clamp(22px, 2.4vw, 30px)',
-            fontWeight: 600,
-            letterSpacing: '-0.01em',
-            color: '#1A1814',
-            marginBottom: '24px',
-          }}
-        >
-          §4 · What this looks like for two merchants
-        </h2>
-
-        <p
-          style={{
-            fontFamily: 'var(--font-serif, serif)',
-            fontSize: 'clamp(17px, 1.4vw, 19px)',
-            lineHeight: 1.65,
-            color: '#4A4640',
-            maxWidth: '640px',
-            marginBottom: '48px',
-          }}
-        >
-          The following examples are illustrative of outcomes from pilot merchants. All names, merchants, and metrics are synthetic.
-          <sup>
-            <a href="#note-7" style={{ color: '#7B2D26', textDecoration: 'none' }}>7</a>
-          </sup>
-        </p>
-
-        {/* Case 1 — quote treatment */}
-        <div style={{ maxWidth: '720px', marginBottom: '56px' }}>
-          <p
-            style={{
-              fontFamily: 'var(--font-serif, serif)',
-              fontStyle: 'italic',
-              fontSize: 'clamp(17px, 1.4vw, 19px)',
-              lineHeight: 1.7,
-              color: '#1A1814',
-              marginBottom: '20px',
-            }}
-          >
-            <span style={{ color: '#7B2D26', fontStyle: 'normal', fontWeight: 600, marginRight: '10px' }}>§</span>
-            We were eating $40K a month in friendly fraud and could not see a pattern in our own data. Two weeks after we connected our order history to Unauth, we had clustered 312 abusive identities — half of them active at three or more brands. We now win 71% of the CE 3.0 cases we used to write off.
-          </p>
-          <p
-            style={{
-              fontFamily: 'var(--font-dm-mono, monospace)',
-              fontSize: '13px',
-              color: '#4A4640',
-            }}
-          >
-            Priya Raman · Head of Risk, Northbound Goods · April 2026
-          </p>
-        </div>
-
-        {/* Case 2 — metric treatment */}
-        <div style={{ maxWidth: '100%' }}>
-          <hr style={{ border: 0, borderTop: '1px solid #D8D0BD', marginBottom: '24px' }} />
-
-          <div style={{ overflowX: 'auto', marginBottom: '24px' }}>
-            <pre
-              style={{
-                fontFamily: 'var(--font-dm-mono, monospace)',
-                fontSize: 'clamp(16px, 1.8vw, 28px)',
-                fontVariantNumeric: 'tabular-nums',
-                color: '#1A1814',
-                lineHeight: 1.55,
-                margin: 0,
-                whiteSpace: 'pre',
-              }}
-            >
-{`Murmur Audio          $1.2M ARR / DTC audio hardware
-INR claim rate        9.4% before Unauth  →  2.1% after
-chargeback win rate   18% before  →  64% after`}
-            </pre>
-          </div>
-
-          <p
-            style={{
-              fontFamily: 'var(--font-serif, serif)',
-              fontStyle: 'italic',
-              fontSize: 'clamp(17px, 1.4vw, 19px)',
-              lineHeight: 1.65,
-              color: '#4A4640',
-              maxWidth: '680px',
-              marginBottom: '16px',
-            }}
-          >
-            Marcus Liu, fraud ops lead at Murmur, integrated Unauth in 11 days against a CSV-only path. The 7.3-point reduction in INR claim rate was driven almost entirely by cross-merchant identity scoring at checkout-time — buyers with a network-known refund-cycle pattern were declined before fulfilment.
-          </p>
-
-          <p
-            style={{
-              fontFamily: 'var(--font-dm-mono, monospace)',
-              fontSize: '13px',
-              color: '#4A4640',
-              marginBottom: '24px',
-            }}
-          >
-            Source: internal — Murmur Audio · 90-day window ending 2026-04-30
-            <sup>
-              <a href="#note-8" style={{ color: '#7B2D26', textDecoration: 'none' }}>8</a>
+              <a href="#note-7" style={{ color: '#7B2D26', textDecoration: 'none' }}>7</a>
             </sup>
           </p>
-
-          <hr style={{ border: 0, borderTop: '1px solid #D8D0BD' }} />
         </div>
-      </section>
 
-      {/* ── §4a · What data we need ──────────────────────────────── */}
-      <section className="mx-auto max-w-[1080px] px-6 md:px-10 py-20 md:py-28">
-        <hr style={{ border: 0, borderTop: '1px solid #D8D0BD', marginBottom: '48px' }} />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-px" style={{ background: '#D8D0BD', border: '1px solid #D8D0BD' }}>
+          {/* Case 1 — Northbound Goods */}
+          <Reveal className="ua-hover-lift" delay={60} style={{ background: '#FDFBF6', padding: '24px 26px' }}>
+            <div className="flex items-center justify-between mb-5">
+              <p
+                style={{
+                  fontFamily: 'var(--font-dm-mono, monospace)',
+                  fontSize: '10.5px',
+                  letterSpacing: '0.14em',
+                  textTransform: 'uppercase',
+                  color: '#8A8472',
+                  margin: 0,
+                }}
+              >
+                Northbound Goods · DTC outdoor
+              </p>
+              <span
+                style={{
+                  fontFamily: 'var(--font-dm-mono, monospace)',
+                  fontSize: '10.5px',
+                  color: '#7B2D26',
+                  background: '#F4E8E5',
+                  border: '1px solid #E3C9C3',
+                  padding: '2px 8px',
+                  letterSpacing: '0.04em',
+                }}
+              >
+                $40K/mo recovered
+              </span>
+            </div>
 
-        <h2
-          style={{
-            fontFamily: 'var(--font-dm-sans, sans-serif)',
-            fontSize: 'clamp(22px, 2.4vw, 30px)',
-            fontWeight: 600,
-            letterSpacing: '-0.01em',
-            color: '#1A1814',
-            marginBottom: '20px',
-          }}
-        >
-          §4a · What data the engine needs
-        </h2>
+            {/* Three metrics inline */}
+            <div className="grid grid-cols-3 gap-4 mb-6 pb-5" style={{ borderBottom: '1px solid #ECE5D4' }}>
+              {[
+                { l: 'abusers clustered',  v: 312, suffix: '',  s: '14 days' },
+                { l: 'active at 3+ brands', v: 156, suffix: '', s: '50%' },
+                { l: 'CE 3.0 win rate',    v: 71,  suffix: '%', s: '↑ from 23%' },
+              ].map((m, i) => (
+                <div key={m.l}>
+                  <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '24px', fontWeight: 500, color: '#1A1814', margin: 0, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
+                    <Counter value={m.v} suffix={m.suffix} duration={1100} delay={140 + i * 80} format="plain" />
+                  </p>
+                  <p style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '11px', color: '#8A8472', letterSpacing: '0.04em', textTransform: 'uppercase', marginTop: '6px', marginBottom: 0 }}>
+                    {m.l}
+                  </p>
+                  <p style={{ fontFamily: 'var(--font-serif, serif)', fontSize: '12px', fontStyle: 'italic', color: '#8A8472', marginTop: '2px', marginBottom: 0 }}>
+                    {m.s}
+                  </p>
+                </div>
+              ))}
+            </div>
 
-        <p
-          style={{
-            fontFamily: 'var(--font-serif, serif)',
-            fontSize: 'clamp(17px, 1.4vw, 19px)',
-            color: '#4A4640',
-            lineHeight: 1.65,
-            maxWidth: '600px',
-            marginBottom: '40px',
-          }}
-        >
-          The engine works with standard order, refund, return, delivery, and payment exports.
-          No schema changes, no webhooks, no integration — just a CSV of what your platform already logs.
-        </p>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12" style={{ maxWidth: '900px' }}>
-          {/* Required */}
-          <div>
-            <p
-              style={{
-                fontFamily: 'var(--font-dm-sans, sans-serif)',
-                fontSize: '11px',
-                textTransform: 'uppercase',
-                letterSpacing: '0.12em',
-                color: '#7B2D26',
-                marginBottom: '16px',
-              }}
-            >
-              REQUIRED — CORE FIELDS
-            </p>
-            <pre
-              style={{
-                fontFamily: 'var(--font-dm-mono, monospace)',
-                fontSize: '12px',
-                color: '#4A4640',
-                lineHeight: 1.85,
-                margin: 0,
-                whiteSpace: 'pre-wrap',
-                wordBreak: 'break-all',
-              }}
-            >
-{`order_id
-order_date
-customer_id
-email
-phone
-shipping_name
-shipping_address
-shipping_postcode
-billing_name
-billing_address
-billing_postcode
-order_value
-item_count
-sku / category
-payment_method
-card_bin + card_last4
-refund_requested
-refund_reason
-return_reason
-chargeback_status
-carrier
-tracking_number
-delivery_status`}
-            </pre>
-          </div>
-
-          {/* Optional */}
-          <div>
-            <p
-              style={{
-                fontFamily: 'var(--font-dm-sans, sans-serif)',
-                fontSize: '11px',
-                textTransform: 'uppercase',
-                letterSpacing: '0.12em',
-                color: '#4A4640',
-                marginBottom: '16px',
-              }}
-            >
-              OPTIONAL — ENRICHMENT FIELDS
-            </p>
-            <pre
-              style={{
-                fontFamily: 'var(--font-dm-mono, monospace)',
-                fontSize: '12px',
-                color: '#4A4640',
-                lineHeight: 1.85,
-                margin: 0,
-                whiteSpace: 'pre-wrap',
-                wordBreak: 'break-all',
-              }}
-            >
-{`ip_address
-device_fingerprint
-payment_fingerprint
-browser_fingerprint
-delivery_photo_metadata
-courier_gps_proof`}
-            </pre>
             <p
               style={{
                 fontFamily: 'var(--font-serif, serif)',
                 fontStyle: 'italic',
-                fontSize: '14px',
-                color: '#8A8472',
-                lineHeight: 1.6,
-                marginTop: '20px',
-                maxWidth: '340px',
+                fontSize: '16px',
+                lineHeight: 1.55,
+                color: '#1A1814',
+                marginBottom: '14px',
               }}
             >
-              Enrichment fields improve signal resolution — especially for clusters where email and address alone are insufficient to meet the DEFINITE threshold.
+              <span style={{ color: '#7B2D26', fontStyle: 'normal', marginRight: '6px' }}>§</span>
+              We were eating $40K a month in friendly fraud and could not see a pattern in our own data. Two weeks after we connected our order history to Unauth, we had clustered 312 abusive identities — half of them active at three or more brands.
+            </p>
+
+            <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11.5px', color: '#4A4640', margin: 0 }}>
+              Priya Raman · Head of Risk · April 2026
+            </p>
+          </Reveal>
+
+          {/* Case 2 — Murmur Audio */}
+          <Reveal className="ua-hover-lift" delay={140} style={{ background: '#FDFBF6', padding: '24px 26px' }}>
+            <div className="flex items-center justify-between mb-5">
+              <p
+                style={{
+                  fontFamily: 'var(--font-dm-mono, monospace)',
+                  fontSize: '10.5px',
+                  letterSpacing: '0.14em',
+                  textTransform: 'uppercase',
+                  color: '#8A8472',
+                  margin: 0,
+                }}
+              >
+                Murmur Audio · DTC hardware · $1.2M ARR
+              </p>
+              <span
+                style={{
+                  fontFamily: 'var(--font-dm-mono, monospace)',
+                  fontSize: '10.5px',
+                  color: '#7B2D26',
+                  background: '#F4E8E5',
+                  border: '1px solid #E3C9C3',
+                  padding: '2px 8px',
+                  letterSpacing: '0.04em',
+                }}
+              >
+                11-day integration
+              </span>
+            </div>
+
+            {/* Before / After bars */}
+            <div className="space-y-4 mb-6 pb-5" style={{ borderBottom: '1px solid #ECE5D4' }}>
+              {[
+                { l: 'INR claim rate',     before: 9.4, after: 2.1, max: 12, unit: '%', dec: 1 },
+                { l: 'CE 3.0 win rate',    before: 18,  after: 64,  max: 100, unit: '%', dec: 0 },
+                { l: 'time to evidence',   before: 4.2, after: 0.6, max: 5,  unit: ' d', dec: 1 },
+              ].map(({ l, before, after, max, unit, dec }, ri) => (
+                <div key={l}>
+                  <p style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '12px', color: '#1A1814', marginBottom: '6px', fontWeight: 500 }}>
+                    {l}
+                  </p>
+                  <div style={{ display: 'grid', gridTemplateColumns: '40px 1fr 56px', gap: '8px', alignItems: 'center', marginBottom: '4px' }}>
+                    <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10px', color: '#8A8472', letterSpacing: '0.06em' }}>BEFORE</span>
+                    <AnimatedBar value={before / max} color="#8A8472" track="#ECE5D4" height={4} delay={140 + ri * 110} />
+                    <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11.5px', color: '#4A4640', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                      <Counter value={before} decimals={dec} duration={900} delay={140 + ri * 110} format="plain" /><span>{unit}</span>
+                    </span>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '40px 1fr 56px', gap: '8px', alignItems: 'center' }}>
+                    <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10px', color: '#7B2D26', letterSpacing: '0.06em' }}>AFTER</span>
+                    <AnimatedBar value={after / max} color="#7B2D26" track="#ECE5D4" height={4} delay={320 + ri * 110} />
+                    <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11.5px', color: '#1A1814', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                      <Counter value={after} decimals={dec} duration={900} delay={320 + ri * 110} format="plain" /><span>{unit}</span>
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <p
+              style={{
+                fontFamily: 'var(--font-serif, serif)',
+                fontStyle: 'italic',
+                fontSize: '15px',
+                lineHeight: 1.55,
+                color: '#4A4640',
+                marginBottom: '8px',
+              }}
+            >
+              Marcus Liu integrated against a CSV-only path in 11 days. The 7.3-point INR-rate reduction was driven almost entirely by cross-merchant identity scoring at checkout-time.
+            </p>
+
+            <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11.5px', color: '#4A4640', margin: 0 }}>
+              90-day window · 2026-01-30 to 2026-04-30
+              <sup>
+                <a href="#note-8" style={{ color: '#7B2D26', textDecoration: 'none' }}>8</a>
+              </sup>
+            </p>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ── §6 · What data we need ──────────────────────────────── */}
+      <section className="mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-20 pb-12 md:pb-16">
+        <hr style={{ border: 0, borderTop: '1px solid #D8D0BD', marginBottom: '40px' }} />
+
+        <div className="mb-10">
+          <p
+            style={{
+              fontFamily: 'var(--font-dm-sans, sans-serif)',
+              fontSize: '11px',
+              fontWeight: 600,
+              letterSpacing: '0.16em',
+              textTransform: 'uppercase',
+              color: '#7B2D26',
+              marginBottom: '12px',
+            }}
+          >
+            § 6 — DATA SCHEMA
+          </p>
+          <h2
+            style={{
+              fontFamily: 'var(--font-dm-sans, sans-serif)',
+              fontSize: 'clamp(28px, 2.8vw, 40px)',
+              fontWeight: 500,
+              letterSpacing: '-0.02em',
+              lineHeight: 1.05,
+              color: '#1A1814',
+              marginBottom: '10px',
+              maxWidth: '760px',
+            }}
+          >
+            What the engine needs. <span style={{ fontFamily: 'var(--font-serif, serif)', fontStyle: 'italic', color: '#7B2D26' }}>Nothing your platform doesn&rsquo;t already log.</span>
+          </h2>
+          <p
+            style={{
+              fontFamily: 'var(--font-serif, serif)',
+              fontSize: 'clamp(15px, 1.1vw, 17px)',
+              color: '#4A4640',
+              lineHeight: 1.55,
+              maxWidth: '620px',
+              margin: 0,
+            }}
+          >
+            Standard order, refund, return, delivery, and payment exports. No schema changes. No webhooks. No integration.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-px" style={{ background: '#D8D0BD', border: '1px solid #D8D0BD' }}>
+          {/* Required */}
+          <div className="lg:col-span-8" style={{ background: '#FDFBF6', padding: '22px 24px' }}>
+            <div className="flex items-center justify-between mb-4">
+              <p
+                style={{
+                  fontFamily: 'var(--font-dm-mono, monospace)',
+                  fontSize: '11px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.14em',
+                  color: '#7B2D26',
+                  margin: 0,
+                }}
+              >
+                REQUIRED — CORE FIELDS (23)
+              </p>
+              <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10.5px', color: '#8A8472', letterSpacing: '0.06em' }}>
+                shopify · woocommerce · custom OMS · stripe
+              </span>
+            </div>
+
+            <div
+              className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-2"
+              style={{
+                fontFamily: 'var(--font-dm-mono, monospace)',
+                fontSize: '12px',
+                color: '#4A4640',
+              }}
+            >
+              {[
+                'order_id', 'order_date', 'customer_id', 'email',
+                'phone', 'shipping_name', 'shipping_address', 'shipping_postcode',
+                'billing_name', 'billing_address', 'billing_postcode', 'order_value',
+                'item_count', 'sku / category', 'payment_method', 'card_bin',
+                'card_last4', 'refund_requested', 'refund_reason', 'return_reason',
+                'chargeback_status', 'carrier', 'tracking_number', 'delivery_status',
+              ].map((f) => (
+                <span key={f} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ width: 3, height: 3, background: '#7B2D26', display: 'inline-block', borderRadius: '50%' }} />
+                  {f}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Optional */}
+          <div className="lg:col-span-4" style={{ background: '#FDFBF6', padding: '22px 24px' }}>
+            <p
+              style={{
+                fontFamily: 'var(--font-dm-mono, monospace)',
+                fontSize: '11px',
+                textTransform: 'uppercase',
+                letterSpacing: '0.14em',
+                color: '#4A4640',
+                marginBottom: '14px',
+              }}
+            >
+              OPTIONAL — ENRICHMENT
+            </p>
+            <div
+              style={{
+                fontFamily: 'var(--font-dm-mono, monospace)',
+                fontSize: '12px',
+                color: '#4A4640',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '6px',
+                marginBottom: '16px',
+              }}
+            >
+              {[
+                'ip_address', 'device_fingerprint', 'payment_fingerprint',
+                'browser_fingerprint', 'delivery_photo_metadata', 'courier_gps_proof',
+              ].map((f) => (
+                <span key={f} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ width: 3, height: 3, background: '#8A8472', display: 'inline-block', borderRadius: '50%' }} />
+                  {f}
+                </span>
+              ))}
+            </div>
+            <p
+              style={{
+                fontFamily: 'var(--font-serif, serif)',
+                fontStyle: 'italic',
+                fontSize: '13px',
+                color: '#8A8472',
+                lineHeight: 1.5,
+                margin: 0,
+              }}
+            >
+              Improves resolution for clusters where email + address alone don&rsquo;t meet the DEFINITE threshold.
             </p>
           </div>
         </div>
       </section>
 
-      {/* ── §4b · Security & data handling (dark inversion) ─────── */}
+      {/* ── §7 · Security & data handling (dark inversion) ─────── */}
       <section
+        id="security"
         style={{ background: '#15140F', color: '#E8E4D8' }}
-        className="py-24 md:py-32"
+        className="py-16 md:py-24"
       >
-        <div className="mx-auto max-w-[1080px] px-6 md:px-10">
-          <h2
-            style={{
-              fontFamily: 'var(--font-dm-sans, sans-serif)',
-              fontSize: 'clamp(22px, 2.4vw, 30px)',
-              fontWeight: 500,
-              color: '#E8E4D8',
-              marginBottom: '12px',
-            }}
-          >
-            §4b · Security &amp; data handling
-          </h2>
+        <div className="mx-auto max-w-[1400px] px-6 md:px-10">
+          <div className="flex items-end justify-between flex-wrap gap-4 mb-10">
+            <div>
+              <p
+                style={{
+                  fontFamily: 'var(--font-dm-sans, sans-serif)',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  letterSpacing: '0.16em',
+                  textTransform: 'uppercase',
+                  color: '#B6512A',
+                  marginBottom: '12px',
+                }}
+              >
+                § 7 — SECURITY &amp; DATA HANDLING
+              </p>
+              <h2
+                style={{
+                  fontFamily: 'var(--font-dm-sans, sans-serif)',
+                  fontSize: 'clamp(28px, 2.8vw, 40px)',
+                  fontWeight: 500,
+                  letterSpacing: '-0.02em',
+                  lineHeight: 1.05,
+                  color: '#E8E4D8',
+                  marginBottom: '10px',
+                  maxWidth: '720px',
+                }}
+              >
+                Your data is hashed before it leaves the browser.
+              </h2>
+              <p
+                style={{
+                  fontFamily: 'var(--font-dm-mono, monospace)',
+                  fontSize: '12px',
+                  color: '#8A8472',
+                  margin: 0,
+                  letterSpacing: '0.06em',
+                }}
+              >
+                client-side HMAC-SHA256 · per-tenant salt · k-anonymity gated network surface
+              </p>
+            </div>
+            <a
+              href="/legal/data-handling"
+              style={{
+                fontFamily: 'var(--font-dm-mono, monospace)',
+                fontSize: '11.5px',
+                color: '#E8E4D8',
+                padding: '8px 14px',
+                border: '1px solid #2B2922',
+                textDecoration: 'none',
+                letterSpacing: '0.06em',
+                background: '#1A1814',
+              }}
+              className="hover:bg-[#2B2922]"
+            >
+              FULL CONTROLS DOC →
+            </a>
+          </div>
 
-          <p
-            style={{
-              fontFamily: 'var(--font-dm-mono, monospace)',
-              fontSize: '13px',
-              color: '#8A8472',
-              marginBottom: '48px',
-            }}
-          >
-            How your data is protected at every stage of the pipeline.
-          </p>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16" style={{ marginBottom: '40px' }}>
-            {[
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-px" style={{ marginBottom: '40px', background: '#2B2922', border: '1px solid #2B2922' }}>
+            {([
               {
+                Icon: Lock,
                 label: 'CLIENT-SIDE HASHING',
-                body: 'All PII fields (email, phone, address, card reference) are hashed in your browser using HMAC-SHA256 with a per-merchant salt before transmission. Unauth never sees your raw data.',
+                body: 'Email, phone, address, and card-reference fields are HMAC-SHA256 hashed in your browser with a per-merchant salt before transmission. Unauth never sees your raw values.',
               },
               {
+                Icon: EyeOff,
                 label: 'K-ANONYMITY GATING',
-                body: 'Cross-merchant signals are only surfaced when a cluster has been observed at 3 or more network merchants. Single-merchant patterns are returned to the originating merchant only.',
+                body: 'Cross-merchant signals surface only when a cluster has been observed at 3 or more network merchants. Single-merchant patterns are returned to the originating merchant only.',
               },
               {
-                label: 'RBAC & ACCESS CONTROL',
-                body: '4 roles (owner / admin / analyst / viewer) with 26 granular permissions. Every permission is explicit — no role inherits by default beyond its defined scope.',
-              },
-              {
+                Icon: FileText,
                 label: 'AUDIT LOGGING',
-                body: 'Every lookup is logged as a hashed record. No plaintext PII appears in audit logs. Merchants can view their full query history in the dashboard.',
+                body: 'Every lookup is logged as a hashed record. No plaintext PII appears in audit logs. Merchants see their full query history in the dashboard.',
               },
               {
-                label: 'RATE LIMITING',
-                body: 'Per-IP and per-merchant rate limits on all API endpoints. Bulk CSV processing is chunked and queued.',
+                Icon: Scale,
+                label: 'LEGAL FRAMEWORK',
+                body: (
+                  <>
+                    DPA available at{' '}
+                    <a
+                      href="/legal/dpa"
+                      style={{ color: '#E8E4D8', textDecoration: 'underline' }}
+                    >
+                      /legal/dpa
+                    </a>
+                    . Processing designed for UK GDPR compliance. Countersigned DPA returned within two business days on request.
+                  </>
+                ),
               },
-            ].map(({ label, body }) => (
-              <div key={label}>
-                <p
+            ] as const).map(({ Icon, label, body }) => (
+              <div key={label} style={{ background: '#15140F', padding: '24px 24px 28px' }}>
+                <div
                   style={{
-                    fontFamily: 'var(--font-dm-mono, monospace)',
-                    fontSize: '11px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.1em',
-                    color: '#8A8472',
-                    marginBottom: '10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    marginBottom: '14px',
                   }}
                 >
-                  {label}
-                </p>
+                  <Icon size={16} strokeWidth={1.5} color="#B6512A" />
+                  <p
+                    style={{
+                      fontFamily: 'var(--font-dm-mono, monospace)',
+                      fontSize: '11px',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.1em',
+                      color: '#8A8472',
+                      margin: 0,
+                    }}
+                  >
+                    {label}
+                  </p>
+                </div>
                 <p
                   style={{
                     fontFamily: 'var(--font-serif, serif)',
                     fontSize: '15px',
                     color: '#B8B2A0',
                     lineHeight: 1.65,
+                    margin: 0,
                   }}
                 >
                   {body}
                 </p>
               </div>
             ))}
-
-            {/* DPA entry — contains JSX link, rendered separately */}
-            <div>
-              <p
-                style={{
-                  fontFamily: 'var(--font-dm-mono, monospace)',
-                  fontSize: '11px',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.1em',
-                  color: '#8A8472',
-                  marginBottom: '10px',
-                }}
-              >
-                LEGAL FRAMEWORK
-              </p>
-              <p
-                style={{
-                  fontFamily: 'var(--font-serif, serif)',
-                  fontSize: '15px',
-                  color: '#B8B2A0',
-                  lineHeight: 1.65,
-                }}
-              >
-                DPA available at{' '}
-                <a
-                  href="/legal/dpa"
-                  style={{ color: '#B8B2A0', textDecoration: 'underline' }}
-                >
-                  /legal/dpa
-                </a>
-                . Processing designed for UK GDPR compliance. Countersigned DPA available within two business days on request.
-              </p>
-            </div>
           </div>
+
+          <p
+            style={{
+              fontFamily: 'var(--font-dm-mono, monospace)',
+              fontSize: '12px',
+              color: '#8A8472',
+              letterSpacing: '0.04em',
+              marginBottom: '20px',
+              maxWidth: '680px',
+            }}
+          >
+            ALSO: 4-role RBAC with 26 granular permissions · per-IP + per-merchant rate limits · chunked bulk CSV processing
+          </p>
 
           <p
             style={{
@@ -1325,202 +2250,295 @@ courier_gps_proof`}
         </div>
       </section>
 
-      {/* ── §4c · Why this is different ──────────────────────────── */}
-      <section className="mx-auto max-w-[1080px] px-6 md:px-10 py-20 md:py-28">
-        <hr style={{ border: 0, borderTop: '1px solid #D8D0BD', marginBottom: '48px' }} />
+      {/* ── §8 · Comparison matrix ──────────────────────────────── */}
+      <section className="mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-20 pb-12 md:pb-16">
+        <hr style={{ border: 0, borderTop: '1px solid #D8D0BD', marginBottom: '40px' }} />
 
-        <h2
-          style={{
-            fontFamily: 'var(--font-dm-sans, sans-serif)',
-            fontSize: 'clamp(22px, 2.4vw, 30px)',
-            fontWeight: 600,
-            letterSpacing: '-0.01em',
-            color: '#1A1814',
-            marginBottom: '20px',
-          }}
-        >
-          §4c · Why this is different from rules, blacklists, and checkout scoring
-        </h2>
+        <div className="mb-10">
+          <p
+            style={{
+              fontFamily: 'var(--font-dm-sans, sans-serif)',
+              fontSize: '11px',
+              fontWeight: 600,
+              letterSpacing: '0.16em',
+              textTransform: 'uppercase',
+              color: '#7B2D26',
+              marginBottom: '12px',
+            }}
+          >
+            § 8 — HOW UNAUTH COMPARES
+          </p>
+          <h2
+            style={{
+              fontFamily: 'var(--font-dm-sans, sans-serif)',
+              fontSize: 'clamp(28px, 2.8vw, 40px)',
+              fontWeight: 500,
+              letterSpacing: '-0.02em',
+              lineHeight: 1.05,
+              color: '#1A1814',
+              marginBottom: '10px',
+              maxWidth: '760px',
+            }}
+          >
+            Most fraud tools watch checkout. Unauth watches what happens after.
+          </h2>
+          <p
+            style={{
+              fontFamily: 'var(--font-serif, serif)',
+              fontSize: 'clamp(15px, 1.1vw, 17px)',
+              color: '#4A4640',
+              lineHeight: 1.55,
+              maxWidth: '640px',
+              margin: 0,
+            }}
+          >
+            Friendly fraud, refund abuse, and INR cycles only become visible weeks after a transaction clears — which is when our post-purchase identity graph kicks in.
+          </p>
+        </div>
 
-        <p
-          style={{
-            fontFamily: 'var(--font-serif, serif)',
-            fontSize: 'clamp(17px, 1.4vw, 19px)',
-            color: '#4A4640',
-            lineHeight: 1.65,
-            maxWidth: '600px',
-            marginBottom: '40px',
-          }}
-        >
-          Most fraud tooling works at checkout. Unauth works on post-checkout patterns —
-          the returns, the refund claims, the INR cycles that only become visible weeks after a transaction clears.
-        </p>
-
-        <div style={{ maxWidth: '760px' }}>
-          {[
-            {
-              contrast: 'Not rules or blacklists',
-              explanation: "We don't block customers by email or IP. We resolve identity clusters from your order history and surface what the cluster has done across the network. The decision stays yours.",
-            },
-            {
-              contrast: 'Not checkout scoring',
-              explanation: 'Checkout fraud tools optimise for card testing and stolen cards at purchase time. Friendly fraud and refund abuse happen after a legitimate purchase. They require post-purchase intelligence.',
-            },
-            {
-              contrast: 'Identity graphing, not attribute matching',
-              explanation: "A single email or card match is not sufficient evidence. We build a graph from strong signals (phone, device, account) corroborated by soft signals (address variant, postcode), then score the cluster as a whole.",
-            },
-            {
-              contrast: 'Explainable signals, not black boxes',
-              explanation: 'Every flag is exposed: refund rate over threshold, claim velocity, denial-then-chargeback, value escalation, reason rotation, chargeback count. Every signal that fired is documented in the evidence packet.',
-            },
-            {
-              contrast: 'CSV-first, API-ready',
-              explanation: "No integration required to start. Export a CSV from Shopify, WooCommerce, or any OMS. API endpoints are available for production real-time scoring once you've validated the data model.",
-            },
-            {
-              contrast: 'Built for single-store blindness',
-              explanation: "If you only have your own order data, a serial abuser looks like a normal customer who asked for a few refunds. The pattern only resolves when orders from 3 or more merchants are compared. That's what the network provides.",
-            },
-          ].map(({ contrast, explanation }) => (
-            <div
-              key={contrast}
-              style={{
-                borderTop: '1px solid #D8D0BD',
-                paddingTop: '20px',
-                paddingBottom: '20px',
-              }}
-            >
-              <p
-                style={{
-                  fontFamily: 'var(--font-dm-sans, sans-serif)',
-                  fontWeight: 600,
-                  fontSize: '15px',
-                  color: '#1A1814',
-                  marginBottom: '8px',
-                }}
-              >
-                <span style={{ color: '#7B2D26', marginRight: '8px' }}>§</span>
-                {contrast}
-              </p>
-              <p
-                style={{
-                  fontFamily: 'var(--font-serif, serif)',
-                  fontSize: '15px',
-                  color: '#4A4640',
-                  lineHeight: 1.65,
-                  maxWidth: '640px',
-                }}
-              >
-                {explanation}
-              </p>
+        {/* Comparison matrix */}
+        <div style={{ border: '1px solid #D8D0BD', background: '#FDFBF6', overflow: 'hidden' }}>
+          {/* Header row */}
+          <div
+            className="grid grid-cols-[1.6fr_1fr_1fr_1fr]"
+            style={{
+              background: '#F8F5EE',
+              borderBottom: '1px solid #D8D0BD',
+            }}
+          >
+            <div style={{ padding: '14px 18px' }}>
+              <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10.5px', color: '#8A8472', textTransform: 'uppercase', letterSpacing: '0.14em' }}>
+                Capability
+              </span>
             </div>
-          ))}
-          <div style={{ borderTop: '1px solid #D8D0BD' }} />
+            {[
+              { name: 'Blocklists', sub: 'email · IP · device' },
+              { name: 'Checkout scoring', sub: 'card testing · CNP' },
+              { name: 'Unauth', sub: 'post-purchase graph', highlight: true },
+            ].map((col) => (
+              <div
+                key={col.name}
+                style={{
+                  padding: '14px 16px',
+                  borderLeft: '1px solid #D8D0BD',
+                  background: col.highlight ? '#F4E8E5' : 'transparent',
+                }}
+              >
+                <p style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '14px', fontWeight: 600, color: col.highlight ? '#7B2D26' : '#1A1814', margin: 0 }}>
+                  {col.name}
+                </p>
+                <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10.5px', color: '#8A8472', margin: '2px 0 0 0', letterSpacing: '0.04em' }}>
+                  {col.sub}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          {/* Body rows */}
+          {[
+            { cap: 'Resolves cross-merchant identity',          a: 'no',   b: 'no',   c: 'yes', note: '7+ stores observed per cluster' },
+            { cap: 'Catches friendly fraud / INR cycles',       a: 'no',   b: 'partial', c: 'yes', note: 'post-purchase patterns' },
+            { cap: 'Surfaces network-known abusers',            a: 'partial', b: 'no', c: 'yes', note: 'k-anon gated at 3+ merchants' },
+            { cap: 'Explainable signals (no black box)',        a: 'yes',  b: 'no',   c: 'yes', note: 'every flag documented' },
+            { cap: 'Generates CE 3.0 evidence packet',          a: 'no',   b: 'no',   c: 'yes', note: 'representment-ready PDF' },
+            { cap: 'Requires checkout integration',             a: 'no',   b: 'yes',  c: 'no',  note: 'CSV is enough' },
+            { cap: 'Auto-declines orders for you',              a: 'yes',  b: 'yes',  c: 'no',  note: 'you keep the decision' },
+            { cap: 'PII leaves the merchant in clear text',     a: 'yes',  b: 'yes',  c: 'no',  note: 'client-side HMAC-SHA256' },
+          ].map(({ cap, a, b, c, note }, i) => {
+            const icon = (v: string) => v === 'yes'
+              ? <span style={{ color: '#3D6F4A', fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '14px' }}>●</span>
+              : v === 'partial'
+                ? <span style={{ color: '#B6512A', fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '14px' }}>◐</span>
+                : <span style={{ color: '#D8D0BD', fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '14px' }}>○</span>;
+            return (
+              <Reveal
+                key={i}
+                delay={60 + i * 50}
+                className="grid grid-cols-[1.6fr_1fr_1fr_1fr]"
+                style={{
+                  borderBottom: i < 7 ? '1px solid #ECE5D4' : 'none',
+                  background: '#FDFBF6',
+                }}
+              >
+                <div style={{ padding: '14px 18px' }}>
+                  <p style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '14px', color: '#1A1814', margin: 0, fontWeight: 500 }}>
+                    {cap}
+                  </p>
+                  <p style={{ fontFamily: 'var(--font-serif, serif)', fontStyle: 'italic', fontSize: '12.5px', color: '#8A8472', margin: '2px 0 0 0' }}>
+                    {note}
+                  </p>
+                </div>
+                <div style={{ padding: '14px 16px', borderLeft: '1px solid #ECE5D4', display: 'flex', alignItems: 'center' }}>
+                  {icon(a)}
+                </div>
+                <div style={{ padding: '14px 16px', borderLeft: '1px solid #ECE5D4', display: 'flex', alignItems: 'center' }}>
+                  {icon(b)}
+                </div>
+                <div style={{ padding: '14px 16px', borderLeft: '1px solid #ECE5D4', background: '#FBF4F2', display: 'flex', alignItems: 'center' }}>
+                  {icon(c)}
+                </div>
+              </Reveal>
+            );
+          })}
+        </div>
+
+        <div className="flex items-center gap-5 mt-5 flex-wrap" style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11px', color: '#8A8472' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ color: '#3D6F4A', fontSize: '14px' }}>●</span> supported
+          </span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ color: '#B6512A', fontSize: '14px' }}>◐</span> partial
+          </span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ color: '#D8D0BD', fontSize: '14px' }}>○</span> not supported
+          </span>
         </div>
       </section>
 
-      {/* ── §5 · CTA ─────────────────────────────────────────────── */}
-      <section className="mx-auto max-w-[1080px] px-6 md:px-10 py-20 md:py-28">
-        <hr style={{ border: 0, borderTop: '1px solid #D8D0BD', marginBottom: '48px' }} />
-
-        <h2
+      {/* ── §9 · CTA ─────────────────────────────────────────────── */}
+      <section className="mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-20 pb-12 md:pb-16">
+        <div
           style={{
-            fontFamily: 'var(--font-dm-sans, sans-serif)',
-            fontSize: 'clamp(22px, 2.4vw, 30px)',
-            fontWeight: 600,
-            letterSpacing: '-0.01em',
-            color: '#1A1814',
-            marginBottom: '24px',
-          }}
-        >
-          §5 · Run a fraud graph audit on your own data
-        </h2>
-
-        <p
-          style={{
-            fontFamily: 'var(--font-serif, serif)',
-            fontSize: 'clamp(17px, 1.4vw, 19px)',
-            lineHeight: 1.65,
-            color: '#1A1814',
-            maxWidth: '640px',
-            marginBottom: '32px',
-          }}
-        >
-          Send us a sample export of your last 5,000&ndash;50,000 orders. We&rsquo;ll return a fraud-resolution report showing linked identities, refund-abuse clusters, risk scores, and evidence packets.
-        </p>
-
-        <a
-          href="/login"
-          style={{
-            display: 'inline-block',
-            background: '#7B2D26',
+            background: '#15140F',
             color: '#E8E4D8',
-            fontFamily: 'var(--font-dm-sans, sans-serif)',
-            fontSize: '14px',
-            fontWeight: 500,
-            padding: '12px 24px',
-            border: '1px solid #7B2D26',
-            borderRadius: 0,
-            textDecoration: 'none',
-            marginBottom: '20px',
+            padding: 'clamp(40px, 5vw, 64px) clamp(28px, 4vw, 56px)',
+            border: '1px solid #15140F',
           }}
         >
-          Run a CSV pilot →
-        </a>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+            <div className="lg:col-span-7">
+              <p
+                style={{
+                  fontFamily: 'var(--font-dm-sans, sans-serif)',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  letterSpacing: '0.16em',
+                  textTransform: 'uppercase',
+                  color: '#B6512A',
+                  marginBottom: '14px',
+                }}
+              >
+                § 9 — RUN AN AUDIT
+              </p>
+              <h2
+                style={{
+                  fontFamily: 'var(--font-dm-sans, sans-serif)',
+                  fontSize: 'clamp(32px, 3.4vw, 48px)',
+                  fontWeight: 500,
+                  letterSpacing: '-0.025em',
+                  lineHeight: 1.05,
+                  color: '#E8E4D8',
+                  marginBottom: '18px',
+                }}
+              >
+                Run a fraud-graph audit on{' '}
+                <span style={{ fontStyle: 'italic', fontFamily: 'var(--font-serif, serif)', color: '#B6512A' }}>
+                  your own data
+                </span>
+                .
+              </h2>
+              <p
+                style={{
+                  fontFamily: 'var(--font-serif, serif)',
+                  fontSize: 'clamp(16px, 1.2vw, 18px)',
+                  lineHeight: 1.55,
+                  color: '#B8B2A0',
+                  maxWidth: '560px',
+                  margin: 0,
+                }}
+              >
+                Send us a CSV of your last 5,000&ndash;50,000 orders. We&rsquo;ll return a fraud-resolution report — linked identities, refund-abuse clusters, risk scores, and evidence packets. About ten minutes upload to report.
+              </p>
+            </div>
 
-        <p
-          style={{
-            fontFamily: 'var(--font-serif, serif)',
-            fontStyle: 'italic',
-            fontSize: '15px',
-            color: '#4A4640',
-            maxWidth: '540px',
-            lineHeight: 1.6,
-            marginBottom: '16px',
-          }}
-        >
-          No integration required. No card. The audit takes about ten minutes from upload to report.
-        </p>
-
-        <p
-          style={{
-            fontFamily: 'var(--font-serif, serif)',
-            fontStyle: 'italic',
-            fontSize: '15px',
-            color: '#4A4640',
-            maxWidth: '540px',
-            lineHeight: 1.6,
-          }}
-        >
-          Or if you&rsquo;d rather just ask questions first, write to{' '}
-          <a
-            href="mailto:hello@unauth.app"
-            style={{ color: '#4A4640' }}
-            className="hover:underline"
-          >
-            hello@unauth.app
-          </a>{' '}
-          — we&rsquo;ll respond inside two business hours.
-        </p>
+            <div className="lg:col-span-5">
+              <div
+                style={{
+                  background: '#1A1814',
+                  border: '1px solid #2B2922',
+                  padding: '22px',
+                }}
+              >
+                <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10.5px', color: '#8A8472', textTransform: 'uppercase', letterSpacing: '0.14em', marginBottom: '14px' }}>
+                  Start a pilot — no card required
+                </p>
+                <a
+                  href="/login"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    background: '#E8E4D8',
+                    color: '#15140F',
+                    fontFamily: 'var(--font-dm-sans, sans-serif)',
+                    fontSize: '15px',
+                    fontWeight: 500,
+                    padding: '14px 18px',
+                    border: '1px solid #E8E4D8',
+                    textDecoration: 'none',
+                    marginBottom: '12px',
+                  }}
+                  className="hover:bg-white"
+                >
+                  Upload a CSV
+                  <span aria-hidden style={{ fontFamily: 'var(--font-dm-mono, monospace)' }}>↑</span>
+                </a>
+                <a
+                  href="mailto:hello@unauth.app"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    background: 'transparent',
+                    color: '#E8E4D8',
+                    fontFamily: 'var(--font-dm-sans, sans-serif)',
+                    fontSize: '15px',
+                    fontWeight: 500,
+                    padding: '14px 18px',
+                    border: '1px solid #2B2922',
+                    textDecoration: 'none',
+                  }}
+                  className="hover:bg-[#2B2922]"
+                >
+                  Email us first
+                  <span aria-hidden style={{ fontFamily: 'var(--font-dm-mono, monospace)' }}>→</span>
+                </a>
+                <p
+                  style={{
+                    fontFamily: 'var(--font-serif, serif)',
+                    fontStyle: 'italic',
+                    fontSize: '12.5px',
+                    color: '#8A8472',
+                    lineHeight: 1.5,
+                    marginTop: '14px',
+                    marginBottom: 0,
+                  }}
+                >
+                  hello@unauth.app — response inside two business hours.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* ── § NOTES ─────────────────────────────────────────────── */}
-      <section className="mx-auto max-w-[1080px] px-6 md:px-10 py-20 md:py-28">
-        <hr style={{ border: 0, borderTop: '1px solid #D8D0BD', marginBottom: '48px' }} />
+      <section className="mx-auto max-w-[1400px] px-6 md:px-10 pt-12 md:pt-16 pb-10">
+        <hr style={{ border: 0, borderTop: '1px solid #D8D0BD', marginBottom: '32px' }} />
 
-        <h2
+        <p
           style={{
-            fontFamily: 'var(--font-dm-sans, sans-serif)',
-            fontSize: 'clamp(22px, 2.4vw, 30px)',
-            fontWeight: 600,
-            letterSpacing: '-0.01em',
-            color: '#1A1814',
-            marginBottom: '32px',
+            fontFamily: 'var(--font-dm-mono, monospace)',
+            fontSize: '11px',
+            fontWeight: 500,
+            letterSpacing: '0.16em',
+            textTransform: 'uppercase',
+            color: '#7B2D26',
+            marginBottom: '24px',
           }}
         >
-          § NOTES
-        </h2>
+          § NOTES &amp; SOURCES
+        </p>
 
         <ol
           style={{
@@ -1570,7 +2588,7 @@ courier_gps_proof`}
       </section>
 
       {/* ── Footer ──────────────────────────────────────────────── */}
-      <footer className="mx-auto max-w-[1080px] px-6 md:px-10 py-10">
+      <footer className="mx-auto max-w-[1400px] px-6 md:px-10 py-8">
         <hr style={{ border: 0, borderTop: '1px solid #D8D0BD', marginBottom: '24px' }} />
         <div
           className="flex flex-col md:flex-row md:justify-between gap-4"

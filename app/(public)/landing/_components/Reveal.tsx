@@ -1,0 +1,68 @@
+'use client';
+
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+
+type Props = {
+  children: ReactNode;
+  as?: keyof JSX.IntrinsicElements;
+  delay?: number;
+  className?: string;
+  style?: CSSProperties;
+  once?: boolean;
+  threshold?: number;
+  rootMargin?: string;
+  /** Don't apply ua-reveal fade — just toggle is-visible for descendant animations. */
+  noFade?: boolean;
+};
+
+export default function Reveal({
+  children,
+  as = 'div',
+  delay = 0,
+  className = '',
+  style,
+  once = true,
+  threshold = 0.12,
+  rootMargin = '0px 0px -8% 0px',
+  noFade = false,
+}: Props) {
+  const ref = useRef<HTMLElement | null>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (typeof IntersectionObserver === 'undefined') {
+      setVisible(true);
+      return;
+    }
+    const obs = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) {
+            setVisible(true);
+            if (once) obs.disconnect();
+          } else if (!once) {
+            setVisible(false);
+          }
+        }
+      },
+      { threshold, rootMargin },
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [once, threshold, rootMargin]);
+
+  const Tag = as as unknown as 'div';
+  const cls = `${noFade ? '' : 'ua-reveal'} ${visible ? 'is-visible' : ''} ${className}`.trim();
+  const styleWithDelay: CSSProperties = {
+    ...style,
+    ...(delay ? ({ ['--ua-reveal-delay' as string]: `${delay}ms` } as CSSProperties) : {}),
+  };
+
+  return (
+    <Tag ref={ref as never} className={cls} style={styleWithDelay}>
+      {children}
+    </Tag>
+  );
+}
