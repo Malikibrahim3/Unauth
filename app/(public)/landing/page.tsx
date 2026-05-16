@@ -119,12 +119,12 @@ export default function LandingPage() {
             <h1
               style={{
                 fontFamily: 'var(--font-dm-sans, sans-serif)',
-                fontSize: 'clamp(36px, 3.8vw, 56px)',
+                fontSize: 'clamp(42px, 5.2vw, 76px)',
                 fontWeight: 500,
-                letterSpacing: '-0.025em',
-                lineHeight: 1.02,
+                letterSpacing: '-0.028em',
+                lineHeight: 0.98,
                 color: '#1A1814',
-                marginBottom: '22px',
+                marginBottom: '20px',
               }}
             >
               Resolve the buyer your store has{' '}
@@ -133,7 +133,7 @@ export default function LandingPage() {
               </span>
             </h1>
 
-            {/* Sub-prose */}
+            {/* Sub-prose — tighter, more product-led */}
             <p
               style={{
                 fontFamily: 'var(--font-serif, serif)',
@@ -141,9 +141,10 @@ export default function LandingPage() {
                 color: '#4A4640',
                 lineHeight: 1.5,
                 marginBottom: '26px',
+                maxWidth: '480px',
               }}
             >
-              Friendly fraud and refund abuse don&rsquo;t repeat at one merchant — they cycle across the network. Unauth resolves the cross-merchant identity behind every order and returns the evidence packet before your chargeback window closes.
+              Upload order, refund, and delivery history. Unauth links repeat abusers across the network, hashes PII before transmission, and returns CE 3.0 evidence packets before your chargeback window closes.
             </p>
 
             {/* CTA row */}
@@ -214,6 +215,91 @@ export default function LandingPage() {
                   {chip}
                 </span>
               ))}
+            </div>
+
+            {/* ── Mobile-only compact product proof strip ──
+               Keeps a product surface visible in the first viewport on small screens
+               where the full case-file artifact lives below the fold. */}
+            <div
+              className="lg:hidden"
+              style={{
+                marginTop: '24px',
+                background: '#FDFBF6',
+                border: '1px solid #D8D0BD',
+                boxShadow: '0 1px 0 #D8D0BD',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '10px 14px',
+                  borderBottom: '1px solid #D8D0BD',
+                  background: '#F8F5EE',
+                  fontFamily: 'var(--font-dm-mono, monospace)',
+                  fontSize: '10px',
+                  letterSpacing: '0.1em',
+                  textTransform: 'uppercase',
+                  color: '#4A4640',
+                  gap: '8px',
+                  flexWrap: 'wrap',
+                }}
+              >
+                <span>
+                  <span
+                    className="ua-pulse"
+                    style={{ display: 'inline-block', width: 5, height: 5, background: '#34A853', marginRight: '6px', verticalAlign: 'middle' }}
+                  />
+                  Live engine · sample
+                </span>
+                <span
+                  style={{
+                    color: '#FFFFFF',
+                    background: '#7B2D26',
+                    padding: '2px 8px',
+                    fontSize: '9.5px',
+                    letterSpacing: '0.06em',
+                    fontWeight: 500,
+                  }}
+                >
+                  DEFINITE · 0.92
+                </span>
+              </div>
+              <div style={{ padding: '12px 14px', fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11.5px', color: '#4A4640' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 12px' }}>
+                  <div>
+                    <p style={{ fontSize: '9.5px', color: '#8A8472', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 2px 0' }}>Cluster</p>
+                    <p style={{ color: '#7B2D26', margin: 0 }}>#u_kessler.07</p>
+                  </div>
+                  <div>
+                    <p style={{ fontSize: '9.5px', color: '#8A8472', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 2px 0' }}>Network</p>
+                    <p style={{ color: '#1A1814', margin: 0 }}>7 merchants</p>
+                  </div>
+                  <div>
+                    <p style={{ fontSize: '9.5px', color: '#8A8472', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 2px 0' }}>Signals</p>
+                    <p style={{ color: '#1A1814', margin: 0 }}>4 / 12 fired</p>
+                  </div>
+                  <div>
+                    <p style={{ fontSize: '9.5px', color: '#8A8472', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 2px 0' }}>Packet</p>
+                    <p style={{ color: '#3D6F4A', margin: 0 }}>● CE 3.0 ready</p>
+                  </div>
+                </div>
+              </div>
+              <div
+                style={{
+                  borderTop: '1px solid #D8D0BD',
+                  padding: '8px 14px',
+                  background: 'linear-gradient(90deg, #F8F0EE 0%, #F4E8E5 100%)',
+                  fontFamily: 'var(--font-dm-mono, monospace)',
+                  fontSize: '10px',
+                  color: '#7B2D26',
+                  letterSpacing: '0.06em',
+                  fontWeight: 500,
+                }}
+              >
+                ▸ DECLINE NEXT ORDER · ASSEMBLE PACKET
+              </div>
             </div>
 
             {/* Vertical fit: pilot categories */}
@@ -783,75 +869,104 @@ export default function LandingPage() {
                 </p>
               </div>
 
-              {/* Ledger: scrollable on mobile to prevent overflow */}
-              <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' as never, margin: '0 -4px' }}>
-                <div style={{ minWidth: '520px', padding: '0 4px' }}>
-                  {/* Column headers — desktop only */}
-                  <div
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: 'minmax(110px, 1fr) minmax(0, 1.5fr) minmax(0, 1.2fr) 60px 70px',
-                      gap: '12px',
-                      fontFamily: 'var(--font-dm-mono, monospace)',
-                      fontSize: '10px',
-                      color: '#8A8472',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.08em',
-                      padding: '0 0 6px 0',
-                      borderBottom: '1px solid #D8D0BD',
-                      marginBottom: '2px',
-                    }}
-                  >
-                    <span>Merchant</span>
-                    <span>Email</span>
-                    <span>Address</span>
-                    <span>Card</span>
-                    <span>Status</span>
-                  </div>
-                  {[
-                    { merchant: 'HeyGlow Skincare',     email: 'noah.kessler@protonmail.com', addr: '4421 Larkspur Ln, Apt 3B',     card: '••4419' },
-                    { merchant: 'Murmur Audio',         email: 'n.kessler@protonmail.com',    addr: '4421 Larspur Lane Apt 3B',     card: '••4419' },
-                    { merchant: 'RidgePath Outfitters', email: 'noah_kessler@gmail.com',      addr: '4421 Larkspur Ln #3B',         card: '••4419' },
-                    { merchant: 'Aster & Vale',         email: 'n.k@gmail.com',               addr: '4421 Larkspur Ln Apt 3B',      card: '••4419' },
-                    { merchant: 'Northbound Goods',     email: 'noah.kessler@protonmail.com', addr: '4421 Larkspur Ln #3B',         card: '••4419' },
-                    { merchant: 'Petalwood Co.',        email: 'n.kessler+1@protonmail.com',  addr: '4421 Larkspur Ln, Apt 3B',     card: '••4419' },
-                    { merchant: 'Otterline',            email: 'noah.kessler@protonmail.com', addr: '4421 Larkspur Lane, Apt 3B',   card: '••4419' },
-                  ].map((row, i) => (
-                    <Reveal
-                      key={i}
-                      delay={220 + i * 70}
-                      style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'minmax(110px, 1fr) minmax(0, 1.5fr) minmax(0, 1.2fr) 60px 70px',
-                        gap: '12px',
-                        alignItems: 'center',
-                        fontFamily: 'var(--font-dm-mono, monospace)',
-                        fontSize: '11.5px',
-                        padding: '7px 0',
-                        borderBottom: i < 6 ? '1px dashed #ECE5D4' : 'none',
-                        color: '#4A4640',
-                      }}
-                    >
-                      <span style={{ color: '#1A1814', fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '12px' }}>{row.merchant}</span>
-                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.email}</span>
-                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.addr}</span>
-                      <span>{row.card}</span>
-                      <span
+              {(() => {
+                const ledgerRows = [
+                  { merchant: 'HeyGlow Skincare',     email: 'noah.kessler@protonmail.com', addr: '4421 Larkspur Ln, Apt 3B',     card: '••4419' },
+                  { merchant: 'Murmur Audio',         email: 'n.kessler@protonmail.com',    addr: '4421 Larspur Lane Apt 3B',     card: '••4419' },
+                  { merchant: 'RidgePath Outfitters', email: 'noah_kessler@gmail.com',      addr: '4421 Larkspur Ln #3B',         card: '••4419' },
+                  { merchant: 'Aster & Vale',         email: 'n.k@gmail.com',               addr: '4421 Larkspur Ln Apt 3B',      card: '••4419' },
+                  { merchant: 'Northbound Goods',     email: 'noah.kessler@protonmail.com', addr: '4421 Larkspur Ln #3B',         card: '••4419' },
+                  { merchant: 'Petalwood Co.',        email: 'n.kessler+1@protonmail.com',  addr: '4421 Larkspur Ln, Apt 3B',     card: '••4419' },
+                  { merchant: 'Otterline',            email: 'noah.kessler@protonmail.com', addr: '4421 Larkspur Lane, Apt 3B',   card: '••4419' },
+                ];
+                return (
+                  <>
+                    {/* ── Desktop / tablet ledger grid (≥sm) ── */}
+                    <div className="hidden sm:block">
+                      <div
                         style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '5px',
-                          color: '#3D6F4A',
-                          fontSize: '10.5px',
+                          display: 'grid',
+                          gridTemplateColumns: 'minmax(110px, 1fr) minmax(0, 1.5fr) minmax(0, 1.2fr) 60px 70px',
+                          gap: '12px',
+                          fontFamily: 'var(--font-dm-mono, monospace)',
+                          fontSize: '10px',
+                          color: '#8A8472',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.08em',
+                          padding: '0 0 6px 0',
+                          borderBottom: '1px solid #D8D0BD',
+                          marginBottom: '2px',
                         }}
                       >
-                        <span style={{ width: 5, height: 5, background: '#3D6F4A', borderRadius: '50%' }} />
-                        ok
-                      </span>
-                    </Reveal>
-                  ))}
-                </div>
-              </div>
+                        <span>Merchant</span>
+                        <span>Email</span>
+                        <span>Address</span>
+                        <span>Card</span>
+                        <span>Status</span>
+                      </div>
+                      {ledgerRows.map((row, i) => (
+                        <Reveal
+                          key={i}
+                          delay={220 + i * 70}
+                          style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'minmax(110px, 1fr) minmax(0, 1.5fr) minmax(0, 1.2fr) 60px 70px',
+                            gap: '12px',
+                            alignItems: 'center',
+                            fontFamily: 'var(--font-dm-mono, monospace)',
+                            fontSize: '11.5px',
+                            padding: '7px 0',
+                            borderBottom: i < ledgerRows.length - 1 ? '1px dashed #ECE5D4' : 'none',
+                            color: '#4A4640',
+                          }}
+                        >
+                          <span style={{ color: '#1A1814', fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '12px' }}>{row.merchant}</span>
+                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.email}</span>
+                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.addr}</span>
+                          <span>{row.card}</span>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', color: '#3D6F4A', fontSize: '10.5px' }}>
+                            <span style={{ width: 5, height: 5, background: '#3D6F4A', borderRadius: '50%' }} />
+                            ok
+                          </span>
+                        </Reveal>
+                      ))}
+                    </div>
+
+                    {/* ── Mobile stacked identity cards (<sm) ── */}
+                    <div className="sm:hidden" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      {ledgerRows.map((row, i) => (
+                        <Reveal
+                          key={`m-${i}`}
+                          delay={220 + i * 70}
+                          style={{
+                            background: '#F8F5EE',
+                            border: '1px solid #ECE5D4',
+                            padding: '12px 14px',
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '8px', gap: '8px' }}>
+                            <span style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '13px', fontWeight: 600, color: '#1A1814' }}>
+                              {row.merchant}
+                            </span>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', color: '#3D6F4A', fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10px', letterSpacing: '0.04em' }}>
+                              <span style={{ width: 5, height: 5, background: '#3D6F4A', borderRadius: '50%' }} />
+                              ok
+                            </span>
+                          </div>
+                          <div style={{ display: 'grid', gridTemplateColumns: '60px 1fr', gap: '4px 10px', fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11px', color: '#4A4640' }}>
+                            <span style={{ color: '#8A8472', textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '9.5px' }}>email</span>
+                            <span style={{ wordBreak: 'break-all', color: '#1A1814' }}>{row.email}</span>
+                            <span style={{ color: '#8A8472', textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '9.5px' }}>address</span>
+                            <span style={{ color: '#1A1814' }}>{row.addr}</span>
+                            <span style={{ color: '#8A8472', textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '9.5px' }}>card</span>
+                            <span style={{ color: '#7B2D26' }}>{row.card}</span>
+                          </div>
+                        </Reveal>
+                      ))}
+                    </div>
+                  </>
+                );
+              })()}
 
               {/* Resolution arrow */}
               <div
@@ -1706,7 +1821,7 @@ n.k@gmail.com                  [observed 1 merchant, flagged synthetic]`}
               >
                 NETWORK FOOTPRINT
               </p>
-              <div style={{ overflowX: 'auto' }}>
+              <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' as never }}>
                 <pre
                   style={{
                     fontFamily: 'var(--font-dm-mono, monospace)',
@@ -1715,10 +1830,11 @@ n.k@gmail.com                  [observed 1 merchant, flagged synthetic]`}
                     lineHeight: 1.8,
                     margin: '0 0 20px 0',
                     whiteSpace: 'pre',
+                    minWidth: 0,
                   }}
                 >
 {`HeyGlow Skincare         $340.00     3 orders     2 refunds claimed
-Murmur Audio           $1,210.00     3 orders     2 INR filed`}<sup style={{ fontFamily: 'var(--font-serif, serif)' }}><a href="#note-2" style={{ color: '#7B2D26', textDecoration: 'none' }}>2</a></sup>{`
+Murmur Audio           $1,210.00     3 orders     2 INR filed [2]
 RidgePath Outfitters     $612.50     2 orders     2 INR filed
 Aster & Vale             $284.00     1 order      1 refund claimed
 Northbound Goods         $890.00     2 orders     1 INR filed
@@ -1812,7 +1928,7 @@ Northbound Goods         $890.00     2 orders     1 INR filed
               marginBottom: '12px',
             }}
           >
-            § 5 — OUTCOMES IN PILOT
+            § 5 — SAMPLE AUDIT OUTPUT
           </p>
           <h2
             style={{
@@ -1826,7 +1942,8 @@ Northbound Goods         $890.00     2 orders     1 INR filed
               maxWidth: '760px',
             }}
           >
-            What two pilot merchants saw in 90 days.
+            Two illustrative audits.{' '}
+            <span style={{ fontStyle: 'italic', fontFamily: 'var(--font-serif, serif)', color: '#7B2D26' }}>Modeled from pilot workflow.</span>
           </h2>
           <p
             style={{
@@ -1838,7 +1955,7 @@ Northbound Goods         $890.00     2 orders     1 INR filed
               margin: 0,
             }}
           >
-            All names, merchants, and metrics are synthetic.
+            Illustrative engine output for two anonymized merchant profiles. All metrics, merchants, and analysts are synthetic.
             <sup>
               <a href="#note-7" style={{ color: '#7B2D26', textDecoration: 'none' }}>7</a>
             </sup>
@@ -1859,7 +1976,7 @@ Northbound Goods         $890.00     2 orders     1 INR filed
                   margin: 0,
                 }}
               >
-                Northbound Goods · DTC outdoor
+                Profile A · DTC outdoor · sample
               </p>
               <span
                 style={{
@@ -1908,11 +2025,11 @@ Northbound Goods         $890.00     2 orders     1 INR filed
               }}
             >
               <span style={{ color: '#7B2D26', fontStyle: 'normal', marginRight: '6px' }}>§</span>
-              We were eating $40K a month in friendly fraud and could not see a pattern in our own data. Two weeks after we connected our order history to Unauth, we had clustered 312 abusive identities — half of them active at three or more brands.
+              Profile A entered the audit with an estimated $40K/mo loss to friendly fraud and no internal pattern detection. After 14 days of cross-merchant clustering, 312 abusive identities had been resolved — 50% active at three or more brands in the network.
             </p>
 
             <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11.5px', color: '#4A4640', margin: 0 }}>
-              Priya Raman · Head of Risk · April 2026
+              Synthetic audit · modeled from pilot workflow
             </p>
           </Reveal>
 
@@ -1929,7 +2046,7 @@ Northbound Goods         $890.00     2 orders     1 INR filed
                   margin: 0,
                 }}
               >
-                Murmur Audio · DTC hardware · $1.2M ARR
+                Profile B · DTC hardware · sample
               </p>
               <span
                 style={{
@@ -1985,11 +2102,11 @@ Northbound Goods         $890.00     2 orders     1 INR filed
                 marginBottom: '8px',
               }}
             >
-              Marcus Liu integrated against a CSV-only path in 11 days. The 7.3-point INR-rate reduction was driven almost entirely by cross-merchant identity scoring at checkout-time.
+              Profile B integrated against a CSV-only path in 11 days. The 7.3-point INR-rate reduction was driven almost entirely by cross-merchant identity scoring at checkout-time.
             </p>
 
             <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11.5px', color: '#4A4640', margin: 0 }}>
-              90-day window · 2026-01-30 to 2026-04-30
+              90-day modeled window
               <sup>
                 <a href="#note-8" style={{ color: '#7B2D26', textDecoration: 'none' }}>8</a>
               </sup>
@@ -2662,8 +2779,8 @@ Northbound Goods         $890.00     2 orders     1 INR filed
             [4, 'Internal estimate based on Unauth pilot network resolution rates, Jan–Apr 2026. Pilot network size is not disclosed; figures are illustrative of expected network detection rates at scale.'],
             [5, 'Mastercard Merchant Survey, 2024. True cost includes fulfilment, reversed acquisition spend, and dispute fees.'],
             [6, 'Hashing is performed client-side using a per-merchant salt that Unauth never sees. The hashed values are queried against the network; raw PII never leaves the merchant’s browser.'],
-            [7, 'The case studies in §4 are synthetic examples illustrating outcomes achievable with Unauth. Priya Raman, Marcus Liu, Northbound Goods, and Murmur Audio are fictional names created for illustrative purposes.'],
-            [8, 'Murmur Audio integrated Unauth on 2026-01-29. The 90-day comparison window is 2026-01-30 to 2026-04-30.'],
+            [7, 'The case studies in §5 are synthetic examples modeled from pilot workflow. They do not represent any real merchant, integration, or outcome. Metrics are illustrative of engine output, not customer claims.'],
+            [8, 'Modeled 90-day window. The reduction is consistent with engine response timing observed in internal pilot audits; the specific magnitude is illustrative.'],
           ].map(([n, text]) => (
             <li
               key={n}
