@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { UnauthLogo } from '@/components/ui/UnauthLogo';
 
 // ── Static decorative case file preview ──────────────────────────────────────
@@ -390,6 +390,8 @@ export default function LoginPage() {
 
   const supabase = createClient();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const nextPath = searchParams.get('next') || '/dashboard';
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -434,7 +436,7 @@ export default function LoginPage() {
 
       setLoading(false);
       if (merchantError) { setError(merchantError.message); return; }
-      router.push('/dashboard');
+      router.push(nextPath);
       router.refresh();
     } else {
       const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
@@ -462,7 +464,7 @@ export default function LoginPage() {
       }
 
       setLoading(false);
-      router.push('/dashboard');
+      router.push(nextPath);
       router.refresh();
     }
   }

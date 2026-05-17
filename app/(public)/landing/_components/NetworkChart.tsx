@@ -65,7 +65,7 @@ export default function NetworkChart() {
             margin: 0,
           }}
         >
-          CLUSTERS RESOLVED · 12-WEEK WINDOW
+          ILLUSTRATIVE · PROJECTED 12-WEEK WINDOW
         </p>
         <div
           style={{
@@ -73,7 +73,7 @@ export default function NetworkChart() {
             gap: '20px',
             fontFamily: 'var(--font-dm-mono, monospace)',
             fontSize: '11px',
-            color: '#B8B2A0',
+            color: '#A59F8E',
           }}
         >
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
@@ -125,20 +125,20 @@ export default function NetworkChart() {
           <Line
             type="monotone"
             dataKey="clusters"
-            stroke="#E8E4D8"
-            strokeWidth={1.5}
+            stroke="#D1C9B9"
+            strokeWidth={1.25}
             dot={false}
             isAnimationActive={false}
-            activeDot={{ r: 3, fill: '#E8E4D8', stroke: 'none' }}
+            activeDot={{ r: 3, fill: '#D1C9B9', stroke: 'none' }}
           />
           <Line
             type="monotone"
             dataKey="abusers"
-            stroke="#B6512A"
-            strokeWidth={1.5}
+            stroke="#A95B39"
+            strokeWidth={1.25}
             dot={false}
             isAnimationActive={false}
-            activeDot={{ r: 3, fill: '#B6512A', stroke: 'none' }}
+            activeDot={{ r: 3, fill: '#A95B39', stroke: 'none' }}
           />
         </LineChart>
       </ResponsiveContainer>

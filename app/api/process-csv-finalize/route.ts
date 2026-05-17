@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServiceClient } from '@/lib/supabase/server';
+import { createAdminClient, createServiceClient } from '@/lib/supabase/server';
 import { completeJob } from '@/lib/processing/job';
 import {
   CHUNK_BUCKET,
@@ -11,6 +11,9 @@ import { countReviewWorthyTransactions } from '@/lib/supabase/merchantHelpers';
 import { restitchAuditIdentityFromChunks } from '@/lib/processing/restitchAuditIdentity';
 import { checkCsvUsageGuard } from '@/lib/processing/supabaseUsageGuard';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { summarizeAuditResults } from '@/lib/audit/resultsSummary';
+import { sendEmail } from '@/lib/email/send';
+import { buildAuditResultsEmail } from '@/lib/email/templates';
 
 export const maxDuration = 300;
 
@@ -82,6 +85,115 @@ async function checkWatchlistAppearances(
   if (error) console.error('[watchlist_appearances] upsert error:', error.message);
 }
 
+async function maybeSendAuditResultsEmail(
+  supabase: SupabaseClient,
+  jobId: string,
+  merchantId: string
+): Promise<void> {
+  const { data: jobMeta } = await supabase
+    .from('processing_jobs')
+    .select('results_email_sent_at')
+    .eq('id', jobId)
+    .maybeSingle();
+
+  if ((jobMeta as { results_email_sent_at?: string | null } | null)?.results_email_sent_at) {
+    return;
+  }
+
+  const { data: publicAudit } = await supabase
+    .from('public_audits' as any)
+    .select('id, submitted_email')
+    .eq('processing_job_id', jobId)
+    .maybeSingle();
+
+  let recipientEmail: string | null = null;
+  if (publicAudit) {
+    recipientEmail = (publicAudit as { submitted_email: string }).submitted_email;
+  } else {
+    const { data: merchant } = await supabase
+      .from('merchants')
+      .select('name, user_id')
+      .eq('id', merchantId)
+      .maybeSingle();
+    const merchantRecord = merchant as { user_id?: string } | null;
+    if (!merchantRecord?.user_id) {
+      await supabase
+        .from('processing_jobs')
+        .update({ results_email_error: 'Missing merchant owner for audit email.' } as any)
+        .eq('id', jobId);
+      return;
+    }
+    const admin = createAdminClient();
+    const userResult = await admin.auth.admin.getUserById(merchantRecord.user_id);
+    recipientEmail = userResult.data.user?.email ?? null;
+  }
+
+  if (!recipientEmail) {
+    await supabase
+      .from('processing_jobs')
+      .update({ results_email_error: 'Missing recipient email for audit results.' } as any)
+      .eq('id', jobId);
+    return;
+  }
+
+  const { data: rows } = await supabase
+    .from('audit_transactions')
+    .select('cluster_id, order_value, fraud_flags, behavioural_flags, signals_matched, context_flags')
+    .eq('job_id', jobId)
+    .or('identity_confidence_grade.in.(probable,definite),match_status.in.(probable,definite)')
+    .not('dismissed_by_merchant', 'is', true)
+    .limit(5000);
+
+  const summary = summarizeAuditResults((rows ?? []) as Array<{
+    cluster_id: string | null;
+    order_value: number | string | null;
+    fraud_flags: unknown;
+    behavioural_flags: unknown;
+    signals_matched: unknown;
+    context_flags: unknown;
+  }>);
+
+  const content = buildAuditResultsEmail({
+    runId: jobId,
+    identitiesFlagged: summary.repeatIdentityClusters,
+    repeatIdentityClusters: summary.repeatIdentityClusters,
+    refundPatternOrders: summary.refundPatternOrders,
+    inrFlaggedAccounts: summary.inrFlaggedAccounts,
+    estimatedExposure: summary.estimatedExposure,
+  });
+
+  const emailResult = await sendEmail({
+    to: recipientEmail,
+    subject: `Your Unauth audit is ready — ${summary.repeatIdentityClusters} identities flagged`,
+    html: content.html,
+    text: content.text,
+  });
+
+  const emailUpdate = emailResult.ok
+    ? {
+        results_email_sent_at: new Date().toISOString(),
+        results_email_error: null,
+      }
+    : {
+        results_email_error: emailResult.error ?? 'Unknown audit results email error.',
+      };
+
+  await supabase
+    .from('processing_jobs')
+    .update(emailUpdate as any)
+    .eq('id', jobId);
+
+  if (publicAudit) {
+    await supabase
+      .from('public_audits' as any)
+      .update({
+        status: 'completed',
+        updated_at: new Date().toISOString(),
+      } as any)
+      .eq('id', (publicAudit as { id: string }).id);
+  }
+}
+
 export async function POST(request: NextRequest) {
   let body: ChunkDispatchPayload;
   try {
@@ -147,6 +259,17 @@ export async function POST(request: NextRequest) {
       }
     } else {
       log(`Identity restitch skipped inline for ${totalRows} rows (limit ${INLINE_RESTITCH_MAX_ROWS})`);
+    }
+
+    try {
+      await maybeSendAuditResultsEmail(sc, jobId, merchantId);
+    } catch (err) {
+      const emailMessage = formatError(err);
+      console.warn(`[finalize ${jobId}] results email non-fatal failure:`, emailMessage);
+      await sc
+        .from('processing_jobs')
+        .update({ results_email_error: emailMessage } as any)
+        .eq('id', jobId);
     }
 
     await deleteChunkArtifacts(sc, jobId, totalChunks);
