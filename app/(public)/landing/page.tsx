@@ -69,7 +69,7 @@ export default function LandingPage() {
                 background: '#1A1814',
                 padding: '7px 14px',
                 border: '1px solid #1A1814',
-                borderRadius: '6px',
+                borderRadius: '4px',
                 textDecoration: 'none',
               }}
               className="hover:bg-[#2B2922]"
@@ -165,7 +165,7 @@ export default function LandingPage() {
                 fontWeight: 500,
                 padding: '11px 20px',
                 border: '1px solid #1A1814',
-                borderRadius: '6px',
+                borderRadius: '4px',
                 textDecoration: 'none',
                 boxShadow: '0 1px 0 #1A1814, 0 8px 24px -12px rgba(26,24,20,0.35)',
                 transition: 'background 160ms ease',
@@ -220,7 +220,7 @@ export default function LandingPage() {
               style={{
                 background: '#FDFBF6',
                 border: '1px solid #D8D0BD',
-                borderRadius: '8px',
+                borderRadius: '6px',
                 boxShadow:
                   '0 1px 0 #D8D0BD, 0 20px 40px -20px rgba(26,24,20,0.14), 0 40px 80px -40px rgba(26,24,20,0.10)',
                 position: 'relative',
@@ -264,7 +264,7 @@ export default function LandingPage() {
                       padding: '3px 9px',
                       lineHeight: 1.4,
                       fontWeight: 500,
-                      borderRadius: '4px',
+                      borderRadius: '3px',
                     }}
                   >
                     DEFINITE
@@ -279,7 +279,7 @@ export default function LandingPage() {
                       border: '1px solid #D8D0BD',
                       padding: '3px 9px',
                       lineHeight: 1.4,
-                      borderRadius: '4px',
+                      borderRadius: '3px',
                     }}
                   >
                     RISK 0.92
@@ -294,7 +294,7 @@ export default function LandingPage() {
                       border: '1px solid #D8D0BD',
                       padding: '3px 9px',
                       lineHeight: 1.4,
-                      borderRadius: '4px',
+                      borderRadius: '3px',
                     }}
                   >
                     CONF 0.96
@@ -560,7 +560,6 @@ export default function LandingPage() {
                     background: '#FFFFFF',
                     border: '1px solid #E3C9C3',
                     padding: '2px 8px',
-                    borderRadius: '4px',
                   }}
                 >
                   packet.pdf · 2.4mb
@@ -618,7 +617,7 @@ export default function LandingPage() {
                     color: '#4A4640',
                     background: '#F2EDE3',
                     border: '1px solid #D8D0BD',
-                    borderRadius: '4px',
+                    borderRadius: '3px',
                     padding: '4px 10px',
                     letterSpacing: '0.04em',
                     whiteSpace: 'nowrap',
@@ -724,8 +723,6 @@ export default function LandingPage() {
               style={{
                 background: '#FDFBF6',
                 border: '1px solid #D8D0BD',
-                borderRadius: '8px',
-                overflow: 'hidden',
                 padding: '20px 22px',
                 boxShadow: '0 1px 0 #D8D0BD, 0 12px 32px -20px rgba(26,24,20,0.10)',
               }}
@@ -879,7 +876,6 @@ export default function LandingPage() {
                     background: '#F4E8E5',
                     border: '1px solid #E3C9C3',
                     padding: '3px 10px',
-                    borderRadius: '4px',
                   }}
                 >
                   RISK 0.92 · DEFINITE
@@ -951,7 +947,7 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-px" style={{ marginBottom: '0', background: '#2B2922', border: '1px solid #2B2922', borderRadius: '8px', overflow: 'hidden' }}>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-px" style={{ marginBottom: '0', background: '#2B2922', border: '1px solid #2B2922' }}>
             {/* Chart spans 8 */}
             <Reveal noFade className="lg:col-span-8 ua-chart-draw" style={{ background: '#15140F', padding: '24px 24px 16px' }} threshold={0.25}>
               <NetworkChart />
@@ -1088,7 +1084,7 @@ export default function LandingPage() {
         {/* 4-step card flow with visual flow indicator */}
         <div
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px"
-          style={{ background: '#D8D0BD', border: '1px solid #D8D0BD', borderRadius: '8px', overflow: 'hidden', marginBottom: '40px' }}
+          style={{ background: '#D8D0BD', border: '1px solid #D8D0BD', marginBottom: '40px' }}
         >
           {[
             {
@@ -1178,7 +1174,6 @@ export default function LandingPage() {
                     alignItems: 'center',
                     justifyContent: 'center',
                     border: '1px solid #D8D0BD',
-                    borderRadius: '4px',
                     zIndex: 1,
                   }}
                 >
@@ -1202,7 +1197,6 @@ export default function LandingPage() {
                     background: '#F4E8E5',
                     padding: '3px 8px',
                     border: '1px solid #E3C9C3',
-                    borderRadius: '4px',
                   }}
                 >
                   STEP {step.n}
@@ -1271,7 +1265,6 @@ export default function LandingPage() {
               style={{
                 background: '#15140F',
                 border: '1px solid #2B2922',
-                borderRadius: '8px',
                 boxShadow: '0 1px 0 #15140F, 0 16px 32px -20px rgba(26,24,20,0.18)',
               }}
             >
@@ -1373,7 +1366,7 @@ export default function LandingPage() {
             </p>
 
             {/* Confidence grade table */}
-            <div style={{ border: '1px solid #D8D0BD', background: '#FDFBF6', borderRadius: '8px', overflow: 'hidden' }}>
+            <div style={{ border: '1px solid #D8D0BD', background: '#FDFBF6' }}>
               <div
                 style={{
                   padding: '10px 14px',
@@ -1472,7 +1465,6 @@ export default function LandingPage() {
               color: '#1A1814',
               padding: '8px 14px',
               border: '1px solid #1A1814',
-              borderRadius: '6px',
               textDecoration: 'none',
               letterSpacing: '0.06em',
             }}
@@ -1486,7 +1478,7 @@ export default function LandingPage() {
           style={{
             background: '#FDFBF6',
             border: '1px solid #D8D0BD',
-            borderRadius: '8px',
+            borderRadius: '6px',
             boxShadow:
               '0 1px 0 #D8D0BD, 0 16px 32px -20px rgba(26,24,20,0.12), 0 32px 64px -32px rgba(26,24,20,0.08)',
           }}
@@ -1527,7 +1519,6 @@ export default function LandingPage() {
                   border: '1px solid #E3C9C3',
                   padding: '2px 8px',
                   lineHeight: 1.4,
-                  borderRadius: '4px',
                 }}
               >
                 DEFINITE
@@ -1542,7 +1533,6 @@ export default function LandingPage() {
                   border: '1px solid #D8D0BD',
                   padding: '2px 8px',
                   lineHeight: 1.4,
-                  borderRadius: '4px',
                 }}
               >
                 RISK 0.92
@@ -1557,7 +1547,6 @@ export default function LandingPage() {
                   border: '1px solid #D8D0BD',
                   padding: '2px 8px',
                   lineHeight: 1.4,
-                  borderRadius: '4px',
                 }}
               >
                 CONFIDENCE 0.96
@@ -1849,7 +1838,7 @@ Northbound Goods         $890.00     2 orders     1 INR filed
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-px" style={{ background: '#D8D0BD', border: '1px solid #D8D0BD', borderRadius: '8px', overflow: 'hidden' }}>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-px" style={{ background: '#D8D0BD', border: '1px solid #D8D0BD' }}>
           {/* Case 1 — Northbound Goods */}
           <Reveal className="ua-hover-lift" delay={60} style={{ background: '#FDFBF6', padding: '24px 26px' }}>
             <div className="flex items-center justify-between mb-5">
@@ -1874,7 +1863,6 @@ Northbound Goods         $890.00     2 orders     1 INR filed
                   border: '1px solid #E3C9C3',
                   padding: '2px 8px',
                   letterSpacing: '0.04em',
-                  borderRadius: '4px',
                 }}
               >
                 $40K/mo recovered
@@ -1945,7 +1933,6 @@ Northbound Goods         $890.00     2 orders     1 INR filed
                   border: '1px solid #E3C9C3',
                   padding: '2px 8px',
                   letterSpacing: '0.04em',
-                  borderRadius: '4px',
                 }}
               >
                 Illustrative workflow
@@ -2048,7 +2035,7 @@ Northbound Goods         $890.00     2 orders     1 INR filed
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-px" style={{ background: '#D8D0BD', border: '1px solid #D8D0BD', borderRadius: '8px', overflow: 'hidden' }}>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-px" style={{ background: '#D8D0BD', border: '1px solid #D8D0BD' }}>
           {/* Required */}
           <div className="lg:col-span-8" style={{ background: '#FDFBF6', padding: '22px 24px' }}>
             <div className="flex items-center justify-between mb-4">
@@ -2200,7 +2187,6 @@ Northbound Goods         $890.00     2 orders     1 INR filed
                 color: '#E8E4D8',
                 padding: '8px 14px',
                 border: '1px solid #2B2922',
-                borderRadius: '6px',
                 textDecoration: 'none',
                 letterSpacing: '0.06em',
                 background: '#1A1814',
@@ -2211,7 +2197,7 @@ Northbound Goods         $890.00     2 orders     1 INR filed
             </a>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-px" style={{ marginBottom: '40px', background: '#2B2922', border: '1px solid #2B2922', borderRadius: '8px', overflow: 'hidden' }}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-px" style={{ marginBottom: '40px', background: '#2B2922', border: '1px solid #2B2922' }}>
             {([
               {
                 Icon: Lock,
@@ -2379,7 +2365,7 @@ Northbound Goods         $890.00     2 orders     1 INR filed
           return (
             <>
               {/* ── Desktop / tablet grid (hidden below sm) ── */}
-              <div className="hidden sm:block" style={{ border: '1px solid #D8D0BD', background: '#FDFBF6', overflow: 'hidden', borderRadius: '8px' }}>
+              <div className="hidden sm:block" style={{ border: '1px solid #D8D0BD', background: '#FDFBF6', overflow: 'hidden' }}>
                 {/* Header row */}
                 <div
                   className="grid grid-cols-[1.6fr_1fr_1fr_1fr]"
@@ -2436,7 +2422,7 @@ Northbound Goods         $890.00     2 orders     1 INR filed
               </div>
 
               {/* ── Mobile stacked cards (hidden above sm) ── */}
-              <div className="sm:hidden" style={{ border: '1px solid #D8D0BD', background: '#FDFBF6', borderRadius: '8px' }}>
+              <div className="sm:hidden" style={{ border: '1px solid #D8D0BD', background: '#FDFBF6' }}>
                 {rows.map(({ cap, a, b, c, note }, i) => (
                   <Reveal
                     key={`m-${i}`}
@@ -2467,7 +2453,6 @@ Northbound Goods         $890.00     2 orders     1 INR filed
                             padding: '8px 12px',
                             background: highlight ? '#FBF4F2' : '#F8F5EE',
                             border: `1px solid ${highlight ? '#E3C9C3' : '#ECE5D4'}`,
-                            borderRadius: '4px',
                           }}
                         >
                           <span style={{
@@ -2513,7 +2498,6 @@ Northbound Goods         $890.00     2 orders     1 INR filed
             color: '#E8E4D8',
             padding: 'clamp(40px, 5vw, 64px) clamp(28px, 4vw, 56px)',
             border: '1px solid #15140F',
-            borderRadius: '8px',
           }}
         >
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
@@ -2567,7 +2551,6 @@ Northbound Goods         $890.00     2 orders     1 INR filed
                 style={{
                   background: '#1A1814',
                   border: '1px solid #2B2922',
-                  borderRadius: '8px',
                   padding: '22px',
                 }}
               >
@@ -2587,7 +2570,6 @@ Northbound Goods         $890.00     2 orders     1 INR filed
                     fontWeight: 500,
                     padding: '14px 18px',
                     border: '1px solid #E8E4D8',
-                    borderRadius: '6px',
                     textDecoration: 'none',
                     marginBottom: '12px',
                   }}
@@ -2609,7 +2591,6 @@ Northbound Goods         $890.00     2 orders     1 INR filed
                     fontWeight: 500,
                     padding: '14px 18px',
                     border: '1px solid #2B2922',
-                    borderRadius: '6px',
                     textDecoration: 'none',
                   }}
                   className="hover:bg-[#2B2922]"
