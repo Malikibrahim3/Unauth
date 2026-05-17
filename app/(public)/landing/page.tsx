@@ -69,6 +69,7 @@ export default function LandingPage() {
                 background: '#1A1814',
                 padding: '7px 14px',
                 border: '1px solid #1A1814',
+                borderRadius: '4px',
                 textDecoration: 'none',
               }}
               className="hover:bg-[#2B2922]"
@@ -164,7 +165,7 @@ export default function LandingPage() {
                 fontWeight: 500,
                 padding: '11px 20px',
                 border: '1px solid #1A1814',
-                borderRadius: 0,
+                borderRadius: '4px',
                 textDecoration: 'none',
                 boxShadow: '0 1px 0 #1A1814, 0 8px 24px -12px rgba(26,24,20,0.35)',
                 transition: 'background 160ms ease',
@@ -219,7 +220,7 @@ export default function LandingPage() {
               style={{
                 background: '#FDFBF6',
                 border: '1px solid #D8D0BD',
-                borderRadius: 0,
+                borderRadius: '6px',
                 boxShadow:
                   '0 1px 0 #D8D0BD, 0 20px 40px -20px rgba(26,24,20,0.14), 0 40px 80px -40px rgba(26,24,20,0.10)',
                 position: 'relative',
@@ -263,6 +264,7 @@ export default function LandingPage() {
                       padding: '3px 9px',
                       lineHeight: 1.4,
                       fontWeight: 500,
+                      borderRadius: '3px',
                     }}
                   >
                     DEFINITE
@@ -277,6 +279,7 @@ export default function LandingPage() {
                       border: '1px solid #D8D0BD',
                       padding: '3px 9px',
                       lineHeight: 1.4,
+                      borderRadius: '3px',
                     }}
                   >
                     RISK 0.92
@@ -291,6 +294,7 @@ export default function LandingPage() {
                       border: '1px solid #D8D0BD',
                       padding: '3px 9px',
                       lineHeight: 1.4,
+                      borderRadius: '3px',
                     }}
                   >
                     CONF 0.96
@@ -613,6 +617,7 @@ export default function LandingPage() {
                     color: '#4A4640',
                     background: '#F2EDE3',
                     border: '1px solid #D8D0BD',
+                    borderRadius: '3px',
                     padding: '4px 10px',
                     letterSpacing: '0.04em',
                     whiteSpace: 'nowrap',
@@ -1473,7 +1478,7 @@ export default function LandingPage() {
           style={{
             background: '#FDFBF6',
             border: '1px solid #D8D0BD',
-            borderRadius: 0,
+            borderRadius: '6px',
             boxShadow:
               '0 1px 0 #D8D0BD, 0 16px 32px -20px rgba(26,24,20,0.12), 0 32px 64px -32px rgba(26,24,20,0.08)',
           }}
