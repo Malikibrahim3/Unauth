@@ -247,7 +247,7 @@ export default function Sidebar({
         )}
       >
         <div className="flex min-w-0 flex-shrink-0 items-center justify-center">
-          <UnauthLogo variant="light" size={isCollapsed ? 25 : 30} />
+          <UnauthLogo variant="light" size={isCollapsed ? 22 : 28} />
         </div>
 
         {!isCollapsed && (

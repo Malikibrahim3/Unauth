@@ -513,7 +513,7 @@ export default function LoginPage() {
       >
         {/* Logo — mobile only */}
         <div className="lg:hidden" style={{ marginBottom: '32px' }}>
-          <UnauthLogo variant="wordmark-light" size={26} />
+          <UnauthLogo variant="wordmark-light" size={28} />
         </div>
 
         <div style={{ width: '100%', maxWidth: '340px' }}>

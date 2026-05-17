@@ -14,8 +14,8 @@ interface UnauthLogoProps {
 
 const SIZE_MAP = {
   nav: 22,
-  footer: 15,
-  display: 48,
+  footer: 12,
+  display: 156,
 } as const;
 
 export function UnauthLogo({ variant = 'light', size = 'nav', className }: UnauthLogoProps) {
