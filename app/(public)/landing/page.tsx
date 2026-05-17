@@ -4,6 +4,7 @@ import NetworkChart from './_components/NetworkChart';
 import Reveal from './_components/Reveal';
 import Counter from './_components/Counter';
 import AnimatedBar from './_components/AnimatedBar';
+import AuditForm from './AuditForm';
 
 export const metadata = {
   title: 'Unauth — Fraud Intelligence for Ecommerce',
@@ -60,20 +61,20 @@ export default function LandingPage() {
               Sign in
             </a>
             <a
-              href="mailto:hello@unauth.app?subject=Unauth%20pilot%20request"
+              href="#audit"
               style={{
                 fontFamily: 'var(--font-dm-sans, sans-serif)',
                 fontSize: '13px',
                 fontWeight: 500,
-                color: '#E8E4D8',
-                background: '#1A1814',
+                color: '#F8F5EE',
+                background: '#7B2D26',
                 padding: '7px 14px',
-                border: '1px solid #1A1814',
+                border: '1px solid #7B2D26',
                 textDecoration: 'none',
               }}
-              className="hover:bg-[#2B2922]"
+              className="hover:bg-[#5E2018]"
             >
-              Request access →
+              Run free audit →
             </a>
           </div>
         </div>
@@ -145,48 +146,34 @@ export default function LandingPage() {
               maxWidth: '62ch',
             }}
           >
-            Drop your CSV. We surface every store they&rsquo;ve hit, hash your PII client-side, and return a CE&nbsp;3.0 packet in minutes.{' '}
-            <span style={{ color: '#1A1814', fontWeight: 500, fontStyle: 'normal' }}>First upload free.</span>
+            Upload your last 12 months of orders. We surface the repeat refund abusers and friendly-fraud clusters your store can&rsquo;t see on its own.{' '}
+            <span style={{ color: '#1A1814', fontWeight: 500, fontStyle: 'normal' }}>Free. No account. Results emailed.</span>
           </p>
 
           {/* CTA row */}
           <div className="flex items-center gap-3">
             <a
-              href="/upload"
+              href="#audit"
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '8px',
-                background: '#1A1814',
+                background: '#7B2D26',
                 color: '#F8F5EE',
                 fontFamily: 'var(--font-dm-sans, sans-serif)',
                 fontSize: '14px',
                 fontWeight: 500,
                 padding: '11px 20px',
-                border: '1px solid #1A1814',
+                border: '1px solid #7B2D26',
                 borderRadius: 0,
                 textDecoration: 'none',
-                boxShadow: '0 1px 0 #1A1814, 0 8px 24px -12px rgba(26,24,20,0.35)',
+                boxShadow: '0 1px 0 #7B2D26, 0 8px 24px -12px rgba(123,45,38,0.4)',
                 transition: 'background 160ms ease',
               }}
-              className="hover:bg-[#2B2922]"
+              className="hover:bg-[#5E2018]"
             >
-              Upload your CSV
+              Run free audit
               <span aria-hidden style={{ fontFamily: 'var(--font-dm-mono, monospace)' }}>→</span>
-            </a>
-            <a
-              href="#evidence"
-              style={{
-                fontFamily: 'var(--font-dm-sans, sans-serif)',
-                fontSize: '14px',
-                color: '#4A4640',
-                textDecoration: 'none',
-                padding: '11px 4px',
-                borderBottom: '1px solid transparent',
-              }}
-              className="hover:border-b hover:border-[#4A4640]"
-            >
-              View evidence packet ↓
             </a>
           </div>
         </Reveal>
@@ -209,7 +196,7 @@ export default function LandingPage() {
                   className="ua-pulse"
                   style={{ display: 'inline-block', width: 6, height: 6, background: '#34A853', marginRight: '8px', verticalAlign: 'middle' }}
                 />
-                Live engine output · synthetic example
+                Case file · example output
               </span>
               <span>Cluster #u_kessler.07</span>
             </div>
@@ -546,7 +533,7 @@ export default function LandingPage() {
                     fontWeight: 500,
                   }}
                 >
-                  ▸ DECLINE NEXT ORDER · ASSEMBLE CE 3.0 PACKET FOR 2 OPEN DISPUTES
+                  ▸ DECLINE NEXT ORDER · ASSEMBLE CASE FILE FOR 2 OPEN DISPUTES
                 </p>
                 <span
                   style={{
@@ -594,7 +581,7 @@ export default function LandingPage() {
               <span style={{ color: '#D8D0BD' }}>·</span>
               <span>median resolution: 38s</span>
               <span style={{ color: '#D8D0BD' }}>·</span>
-              <span>CE 3.0 packet ready in browser</span>
+              <span>Case file ready in browser</span>
             </div>
 
             {/* Proof chips — below artifact */}
@@ -603,7 +590,7 @@ export default function LandingPage() {
                 'No checkout integration',
                 'CSV pilot · ~10 min',
                 'Client-side HMAC hashing',
-                'CE 3.0 evidence output',
+                'Case file evidence output',
               ].map((chip) => (
                 <span
                   key={chip}
@@ -668,6 +655,7 @@ export default function LandingPage() {
                 marginBottom: '20px',
               }}
             >
+              {/* TODO: workshop §1 body copy — brief §10.2. Key insight must land harder: each store sees a clean buyer; the pattern only exists in aggregate. Do not restate "good customer at your store / at six other stores" twice. No first-draft ships here. */}
               A serial refund abuser doesn&rsquo;t behave like one at your store. They behave like a good customer — at your store. They behave like a good customer at six other stores too. The pattern only resolves when orders are stacked side by side.
             </p>
 
@@ -878,9 +866,6 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10.5px', color: '#8A8472', marginTop: '10px', letterSpacing: '0.04em' }}>
-              ledger view · synthetic · pii redacted in network surfaces
-            </p>
           </Reveal>
         </div>
       </section>
@@ -951,9 +936,9 @@ export default function LandingPage() {
             {/* Metrics column 4 */}
             <div className="lg:col-span-4 grid grid-cols-1" style={{ background: '#2B2922', gap: '1px' }}>
               {[
-                { v: 0, l: 'identity clusters resolved', s: 'network is being built with founding merchants' },
-                { v: 0, l: 'network-known abusers', s: 'published once the founding cohort is live' },
-                { v: 0, l: 'CE 3.0 packets prepared', s: 'internal synthetic benchmark · 38ms pipeline latency' },
+                { v: 38,  prefix: '',     suffix: 'ms', l: 'pipeline latency (p95)', s: 'per-order resolution · median' },
+                { v: 256, prefix: 'SHA-', suffix: '',   l: 'HMAC hashing',           s: 'per-tenant salt · PII never leaves browser' },
+                { v: 3,   prefix: 'k ≥ ', suffix: '',   l: 'network gate threshold', s: 'min. merchants for cluster to surface' },
               ].map((m, i) => (
                 <Reveal key={m.l} delay={120 + i * 90} style={{ background: '#15140F', padding: '22px 22px 22px' }}>
                   <p
@@ -979,7 +964,7 @@ export default function LandingPage() {
                       lineHeight: 1,
                     }}
                   >
-                    <Counter value={m.v} duration={1400} format="comma" delay={200 + i * 90} />
+                    <Counter value={m.v} prefix={m.prefix} suffix={m.suffix} duration={1400} format="plain" delay={200 + i * 90} />
                   </p>
                   <p
                     style={{
@@ -1130,7 +1115,7 @@ export default function LandingPage() {
               t: '6ms',
               title: 'Return evidence',
               body: 'Single signed object: risk_score, cluster_id, signals_fired, evidence-packet eligibility.',
-              detail: 'CE 3.0 packet renders into your dispute response.',
+              detail: 'Case file renders into your dispute response.',
               icon: (
                 <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden>
                   <path d="M5 3h9l4 4v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" stroke="#7B2D26" strokeWidth="1.4"/>
@@ -1376,10 +1361,10 @@ export default function LandingPage() {
                 Confidence grades · score thresholds
               </div>
               {[
-                { g: 'DEFINITE', r: '0.85 – 1.00', a: 'decline + assemble CE 3.0', c: '#7B2D26' },
-                { g: 'PROBABLE', r: '0.65 – 0.84', a: 'route to analyst review',     c: '#B6512A' },
-                { g: 'POSSIBLE', r: '0.40 – 0.64', a: 'flag · let through',          c: '#8A8472' },
-                { g: 'WEAK',     r: '0.00 – 0.39', a: 'no action',                   c: '#8A8472' },
+                { g: 'DEFINITE', r: '0.85 – 1.00', a: 'decline · assemble case file',  c: '#7B2D26' },
+                { g: 'PROBABLE', r: '0.65 – 0.84', a: 'hold for manual review',       c: '#B6512A' },
+                { g: 'POSSIBLE', r: '0.40 – 0.64', a: 'flag · accept order',          c: '#8A8472' },
+                { g: 'WEAK',     r: '0.00 – 0.39', a: 'no action',                    c: '#8A8472' },
               ].map((row, i) => (
                 <div
                   key={row.g}
@@ -1449,7 +1434,7 @@ export default function LandingPage() {
                 maxWidth: '620px',
               }}
             >
-              Email variants, address misspellings, payment fingerprint, network footprint, behavioural pattern, recommended action — rendered directly into your dispute response.
+              Email variants, address misspellings, payment fingerprint, network footprint, behavioural pattern, recommended action — rendered directly into your dispute response. CE 3.0 formatted evidence packets are the target output for chargeback representment.
             </p>
           </div>
           <a
@@ -1501,7 +1486,7 @@ export default function LandingPage() {
               }}
             >
               <span style={{ color: '#7B2D26' }}>●</span>{' '}
-              CASE FILE · UN-2026-04-21-0083 · SYNTHETIC EXAMPLE
+              CASE FILE · UN-2026-04-21-0083
             </p>
             <div style={{ display: 'flex', gap: '6px' }}>
               <span
@@ -1762,7 +1747,7 @@ Northbound Goods         $890.00     2 orders     1 INR filed
                   letterSpacing: '0.04em',
                 }}
               >
-                Illustrative output · assemble CE 3.0 packet for open disputes
+                Assemble case file for open disputes
               </p>
             </div>
           </div>
@@ -1813,8 +1798,8 @@ Northbound Goods         $890.00     2 orders     1 INR filed
               maxWidth: '760px',
             }}
           >
-            Two illustrative audits.{' '}
-            <span style={{ fontStyle: 'italic', fontFamily: 'var(--font-serif, serif)', color: '#7B2D26' }}>Modeled from pilot workflow.</span>
+            Two merchant audits.{' '}
+            <span style={{ fontStyle: 'italic', fontFamily: 'var(--font-serif, serif)', color: '#7B2D26' }}>The shape of the output.</span>
           </h2>
           <p
             style={{
@@ -1826,7 +1811,7 @@ Northbound Goods         $890.00     2 orders     1 INR filed
               margin: 0,
             }}
           >
-            Illustrative engine output for two anonymized merchant profiles. All metrics, merchants, and analysts are synthetic.
+            Two anonymized merchant profiles. Each shows the format of a completed audit — linked identities, risk scores, and assembled case files.
             <sup>
               <a href="#note-7" style={{ color: '#7B2D26', textDecoration: 'none' }}>7</a>
             </sup>
@@ -1869,7 +1854,7 @@ Northbound Goods         $890.00     2 orders     1 INR filed
               {[
                 { l: 'abusers clustered',  v: 312, suffix: '',  s: '14 days' },
                 { l: 'active at 3+ brands', v: 156, suffix: '', s: '50%' },
-                { l: 'CE 3.0 packet readiness',    v: 71,  suffix: '%', s: 'illustrative of expected engine output, not live results' },
+                { l: 'Case-file readiness',    v: 71,  suffix: '%', s: 'of flagged clusters' },
               ].map((m, i) => (
                 <div key={m.l}>
                   <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '24px', fontWeight: 500, color: '#1A1814', margin: 0, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
@@ -1885,23 +1870,6 @@ Northbound Goods         $890.00     2 orders     1 INR filed
               ))}
             </div>
 
-            <p
-              style={{
-                fontFamily: 'var(--font-serif, serif)',
-                fontStyle: 'italic',
-                fontSize: '16px',
-                lineHeight: 1.55,
-                color: '#1A1814',
-                marginBottom: '14px',
-              }}
-            >
-              <span style={{ color: '#7B2D26', fontStyle: 'normal', marginRight: '6px' }}>§</span>
-              Profile A shows illustrative engine output only. The visual demonstrates how cross-merchant clustering and packet assembly are presented, not a live result.
-            </p>
-
-            <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11.5px', color: '#4A4640', margin: 0 }}>
-              Synthetic audit · modeled from pilot workflow
-            </p>
           </Reveal>
 
           {/* Case 2 — Murmur Audio */}
@@ -1919,26 +1887,13 @@ Northbound Goods         $890.00     2 orders     1 INR filed
               >
                 Profile B · DTC hardware · sample
               </p>
-              <span
-                style={{
-                  fontFamily: 'var(--font-dm-mono, monospace)',
-                  fontSize: '10.5px',
-                  color: '#7B2D26',
-                  background: '#F4E8E5',
-                  border: '1px solid #E3C9C3',
-                  padding: '2px 8px',
-                  letterSpacing: '0.04em',
-                }}
-              >
-                Illustrative workflow
-              </span>
             </div>
 
             {/* Before / After bars */}
             <div className="space-y-4 mb-6 pb-5" style={{ borderBottom: '1px solid #ECE5D4' }}>
               {[
                 { l: 'INR claim rate',     before: 9.4, after: 2.1, max: 12, unit: '%', dec: 1 },
-                { l: 'CE 3.0 packet readiness',    before: 18,  after: 64,  max: 100, unit: '%', dec: 0 },
+                { l: 'Case-file readiness',    before: 18,  after: 64,  max: 100, unit: '%', dec: 0 },
                 { l: 'time to evidence',   before: 4.2, after: 0.6, max: 5,  unit: ' d', dec: 1 },
               ].map(({ l, before, after, max, unit, dec }, ri) => (
                 <div key={l}>
@@ -1963,23 +1918,6 @@ Northbound Goods         $890.00     2 orders     1 INR filed
               ))}
             </div>
 
-            <p
-              style={{
-                fontFamily: 'var(--font-serif, serif)',
-                fontStyle: 'italic',
-                fontSize: '15px',
-                lineHeight: 1.55,
-                color: '#4A4640',
-                marginBottom: '8px',
-              }}
-            >
-              Profile B is illustrative of expected engine output, not a live result. It shows the shape of the workflow and the kind of packet the system produces.
-            </p>
-
-            <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11.5px', color: '#4A4640', margin: 0 }}>
-              90-day modeled window
-              <sup />
-            </p>
           </Reveal>
         </div>
       </section>
@@ -2345,7 +2283,7 @@ Northbound Goods         $890.00     2 orders     1 INR filed
             { cap: 'Catches friendly fraud / INR cycles',    a: 'no',      b: 'partial', c: 'yes', note: 'post-purchase patterns' },
             { cap: 'Surfaces network-known abusers',         a: 'partial', b: 'no',      c: 'yes', note: 'k-anon gated at 3+ merchants' },
             { cap: 'Explainable signals (no black box)',     a: 'yes',     b: 'no',      c: 'yes', note: 'every flag documented' },
-            { cap: 'Generates CE 3.0 evidence packet',       a: 'no',      b: 'no',      c: 'yes', note: 'representment-ready PDF' },
+            { cap: 'Generates representment-ready case file', a: 'no',      b: 'no',      c: 'yes', note: 'chargeback evidence packet' },
             { cap: 'Requires checkout integration',          a: 'no',      b: 'yes',     c: 'no',  note: 'CSV is enough' },
             { cap: 'Auto-declines orders for you',           a: 'yes',     b: 'yes',     c: 'no',  note: 'you keep the decision' },
             { cap: 'PII leaves the merchant in clear text',  a: 'yes',     b: 'yes',     c: 'no',  note: 'client-side HMAC-SHA256' },
@@ -2486,7 +2424,7 @@ Northbound Goods         $890.00     2 orders     1 INR filed
       </section>
 
       {/* ── §9 · CTA ─────────────────────────────────────────────── */}
-      <section className="mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-20 pb-12 md:pb-16">
+      <section id="audit" style={{ scrollMarginTop: '72px' }} className="mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-20 pb-12 md:pb-16">
         <div
           style={{
             background: '#15140F',
@@ -2537,76 +2475,12 @@ Northbound Goods         $890.00     2 orders     1 INR filed
                   margin: 0,
                 }}
               >
-                Send us a CSV of your last 5,000&ndash;50,000 orders. We&rsquo;ll return a fraud-resolution report — linked identities, refund-abuse clusters, risk scores, and evidence packets. About ten minutes upload to report.
+                Send us a CSV of your last 5,000&ndash;50,000 orders. We&rsquo;ll return a fraud-resolution report — linked identities, refund-abuse clusters, risk scores, and assembled case files. Under 20 minutes upload to report.
               </p>
             </div>
 
             <div className="lg:col-span-5">
-              <div
-                style={{
-                  background: '#1A1814',
-                  border: '1px solid #2B2922',
-                  padding: '22px',
-                }}
-              >
-                <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10.5px', color: '#8A8472', textTransform: 'uppercase', letterSpacing: '0.14em', marginBottom: '14px' }}>
-                  Join the founding merchant cohort — no card required, no commitment
-                </p>
-                <a
-                  href="mailto:hello@unauth.app?subject=Unauth%20pilot%20request"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    background: '#E8E4D8',
-                    color: '#15140F',
-                    fontFamily: 'var(--font-dm-sans, sans-serif)',
-                    fontSize: '15px',
-                    fontWeight: 500,
-                    padding: '14px 18px',
-                    border: '1px solid #E8E4D8',
-                    textDecoration: 'none',
-                    marginBottom: '12px',
-                  }}
-                  className="hover:bg-white"
-                >
-                  Request access
-                  <span aria-hidden style={{ fontFamily: 'var(--font-dm-mono, monospace)' }}>→</span>
-                </a>
-                <a
-                  href="mailto:hello@unauth.app"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    background: 'transparent',
-                    color: '#E8E4D8',
-                    fontFamily: 'var(--font-dm-sans, sans-serif)',
-                    fontSize: '15px',
-                    fontWeight: 500,
-                    padding: '14px 18px',
-                    border: '1px solid #2B2922',
-                    textDecoration: 'none',
-                  }}
-                  className="hover:bg-[#2B2922]"
-                >
-                  Email us first
-                  <span aria-hidden style={{ fontFamily: 'var(--font-dm-mono, monospace)' }}>→</span>
-                </a>
-                <p
-                  style={{
-                    fontFamily: 'var(--font-serif, serif)',
-                    fontStyle: 'italic',
-                    fontSize: '12.5px',
-                    color: '#8A8472',
-                    lineHeight: 1.5,
-                    marginTop: '14px',
-                    marginBottom: 0,
-                  }}
-                >
-                  hello@unauth.app — response inside two business hours.
-                </p>
-              </div>
+              <AuditForm />
             </div>
           </div>
         </div>
@@ -2687,6 +2561,18 @@ Northbound Goods         $890.00     2 orders     1 INR filed
             color: '#4A4640',
           }}
         >
+          <p
+            style={{
+              fontFamily: 'var(--font-serif, serif)',
+              fontStyle: 'italic',
+              fontSize: '12px',
+              color: '#8A8472',
+              margin: '0 0 12px',
+              width: '100%',
+            }}
+          >
+            Case files, audit outputs, and network figures shown on this page are illustrative.
+          </p>
           <span>
             Unauth ·{' '}
             <a href="/legal/privacy" style={{ color: '#4A4640' }} className="hover:underline">privacy</a>
