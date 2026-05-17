@@ -88,12 +88,12 @@ export default function LandingPage() {
           <p
             style={{
               fontFamily: 'var(--font-dm-sans, sans-serif)',
-              fontSize: '12px',
+              fontSize: '11px',
               fontWeight: 600,
               letterSpacing: '0.14em',
               textTransform: 'uppercase',
               color: '#4A4640',
-              marginBottom: '18px',
+              marginBottom: '10px',
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
@@ -115,17 +115,17 @@ export default function LandingPage() {
             </span>
           </p>
 
-          {/* Headline */}
+          {/* Headline — Ramp-scale */}
           <h1
             style={{
               fontFamily: 'var(--font-dm-sans, sans-serif)',
-              fontSize: 'clamp(44px, 5.6vw, 80px)',
+              fontSize: 'clamp(32px, 3.8vw, 54px)',
               fontWeight: 500,
-              letterSpacing: '-0.028em',
-              lineHeight: 0.97,
+              letterSpacing: '-0.026em',
+              lineHeight: 1.0,
               color: '#1A1814',
-              marginBottom: '22px',
-              maxWidth: '14ch',
+              marginBottom: '14px',
+              maxWidth: '18ch',
             }}
           >
             Resolve the buyer your store has{' '}
@@ -134,24 +134,25 @@ export default function LandingPage() {
             </span>
           </h1>
 
-          {/* Sub-prose */}
+          {/* Sub-prose — punchy, free upload CTA */}
           <p
             style={{
               fontFamily: 'var(--font-serif, serif)',
-              fontSize: 'clamp(16px, 1.2vw, 18px)',
+              fontSize: 'clamp(15px, 1.1vw, 17px)',
               color: '#4A4640',
-              lineHeight: 1.55,
-              marginBottom: '28px',
-              maxWidth: '52ch',
+              lineHeight: 1.5,
+              marginBottom: '18px',
+              maxWidth: '48ch',
             }}
           >
-            Upload your order and refund history. Unauth links repeat abusers across the network and returns CE&nbsp;3.0 evidence packets before your chargeback window closes.
+            Drop your CSV. We surface every store they&rsquo;ve hit, hash your PII client-side, and return a CE&nbsp;3.0 packet in minutes.{' '}
+            <span style={{ color: '#1A1814', fontWeight: 500, fontStyle: 'normal' }}>First upload free.</span>
           </p>
 
           {/* CTA row */}
-          <div className="flex flex-wrap items-center gap-4" style={{ marginBottom: '20px' }}>
+          <div className="flex flex-wrap items-center gap-3">
             <a
-              href="mailto:hello@unauth.app?subject=Unauth%20pilot%20request"
+              href="/upload"
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -161,7 +162,7 @@ export default function LandingPage() {
                 fontFamily: 'var(--font-dm-sans, sans-serif)',
                 fontSize: '14px',
                 fontWeight: 500,
-                padding: '14px 22px',
+                padding: '11px 20px',
                 border: '1px solid #1A1814',
                 borderRadius: 0,
                 textDecoration: 'none',
@@ -170,7 +171,7 @@ export default function LandingPage() {
               }}
               className="hover:bg-[#2B2922]"
             >
-              Request access
+              Upload your CSV
               <span aria-hidden style={{ fontFamily: 'var(--font-dm-mono, monospace)' }}>→</span>
             </a>
             <a
@@ -180,7 +181,7 @@ export default function LandingPage() {
                 fontSize: '14px',
                 color: '#4A4640',
                 textDecoration: 'none',
-                padding: '14px 4px',
+                padding: '11px 4px',
                 borderBottom: '1px solid transparent',
               }}
               className="hover:border-b hover:border-[#4A4640]"
@@ -188,36 +189,10 @@ export default function LandingPage() {
               View evidence packet ↓
             </a>
           </div>
-
-          {/* Proof chips */}
-          <div className="flex flex-wrap gap-2">
-            {[
-              'No checkout integration',
-              'CSV pilot · ~10 min',
-              'Client-side HMAC hashing',
-              'CE 3.0 evidence output',
-            ].map((chip) => (
-              <span
-                key={chip}
-                style={{
-                  fontFamily: 'var(--font-dm-mono, monospace)',
-                  fontSize: '10.5px',
-                  color: '#4A4640',
-                  background: '#F2EDE3',
-                  border: '1px solid #D8D0BD',
-                  padding: '4px 10px',
-                  letterSpacing: '0.04em',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {chip}
-              </span>
-            ))}
-          </div>
         </Reveal>
 
         {/* Bottom — large product artifact */}
-        <Reveal as="div" className="relative mt-14 md:mt-20" delay={180}>
+        <Reveal as="div" className="relative mt-10 md:mt-14" delay={180}>
             {/* Floating eyebrow above artifact */}
             <div
               className="flex items-center justify-between mb-3"
@@ -620,6 +595,32 @@ export default function LandingPage() {
               <span>median resolution: 38s</span>
               <span style={{ color: '#D8D0BD' }}>·</span>
               <span>CE 3.0 packet ready in browser</span>
+            </div>
+
+            {/* Proof chips — below artifact */}
+            <div className="flex flex-wrap gap-2 mt-5">
+              {[
+                'No checkout integration',
+                'CSV pilot · ~10 min',
+                'Client-side HMAC hashing',
+                'CE 3.0 evidence output',
+              ].map((chip) => (
+                <span
+                  key={chip}
+                  style={{
+                    fontFamily: 'var(--font-dm-mono, monospace)',
+                    fontSize: '10.5px',
+                    color: '#4A4640',
+                    background: '#F2EDE3',
+                    border: '1px solid #D8D0BD',
+                    padding: '4px 10px',
+                    letterSpacing: '0.04em',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {chip}
+                </span>
+              ))}
             </div>
           </Reveal>
       </section>
