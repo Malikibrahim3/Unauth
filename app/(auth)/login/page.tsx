@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { UnauthLogo } from '@/components/ui/UnauthLogo';
@@ -340,10 +341,10 @@ function CaseFilePreview() {
 
 const INPUT_BASE: React.CSSProperties = {
   width: '100%',
-  padding: '8px 11px',
+  padding: '10px 14px',
   borderRadius: '4px',
-  fontSize: '13px',
-  lineHeight: '20px',
+  fontSize: '15px',
+  lineHeight: '24px',
   background: '#FAF6EF',
   border: '1px solid #D2C9B5',
   color: '#1A1814',
@@ -354,12 +355,12 @@ const INPUT_BASE: React.CSSProperties = {
 
 const LABEL_STYLE: React.CSSProperties = {
   display: 'block',
-  fontSize: '10px',
+  fontSize: '12px',
   fontWeight: 600,
   letterSpacing: '0.12em',
   textTransform: 'uppercase',
   color: '#78889C',
-  marginBottom: '6px',
+  marginBottom: '7px',
   fontFamily: 'var(--font-dm-sans, sans-serif)',
 };
 
@@ -488,6 +489,7 @@ export default function LoginPage() {
         className="hidden lg:flex"
         style={{
           width: '50%',
+          flexShrink: 0,
           minHeight: '100vh',
           padding: '44px 48px',
           alignItems: 'center',
@@ -495,13 +497,16 @@ export default function LoginPage() {
           borderRight: '1px solid #D2C9B5',
         }}
       >
-        <UnauthLogo variant="wordmark-light" size={96} />
+        <Link href="/" style={{ textDecoration: 'none' }}>
+          <UnauthLogo variant="wordmark-light" size={125} />
+        </Link>
       </div>
 
       {/* ══ Right form panel ═════════════════════════════════════════════════ */}
       <div
         style={{
-          width: '100%',
+          width: '50%',
+          flexShrink: 0,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -509,31 +514,33 @@ export default function LoginPage() {
           padding: '40px 32px',
           overflowY: 'auto',
         }}
-        className="lg:w-1/2"
+        className="max-lg:w-full"
       >
         {/* Logo — mobile only */}
         <div className="lg:hidden" style={{ marginBottom: '32px' }}>
-          <UnauthLogo variant="wordmark-light" size={28} />
+          <Link href="/" style={{ textDecoration: 'none' }}>
+            <UnauthLogo variant="wordmark-light" size={22} />
+          </Link>
         </div>
 
-        <div style={{ width: '100%', maxWidth: '340px' }}>
+        <div style={{ width: '100%', maxWidth: '408px' }}>
           {/* Form header */}
-          <div style={{ marginBottom: '24px' }}>
+          <div style={{ marginBottom: '28px' }}>
             <p
               style={{
-                fontSize: '10px',
+                fontSize: '12px',
                 fontWeight: 600,
                 letterSpacing: '0.14em',
                 textTransform: 'uppercase',
                 color: '#78889C',
-                marginBottom: '8px',
+                marginBottom: '10px',
               }}
             >
               {isSignUp ? 'REQUEST ACCESS' : 'PILOT ACCESS'}
             </p>
             <h2
               style={{
-                fontSize: '22px',
+                fontSize: '26px',
                 fontWeight: 500,
                 letterSpacing: '-0.01em',
                 color: '#1A1814',
@@ -697,11 +704,11 @@ export default function LoginPage() {
               disabled={isSubmitDisabled}
               style={{
                 width: '100%',
-                padding: '10px 16px',
+                padding: '13px 20px',
                 borderRadius: '4px',
                 background: isSubmitDisabled ? '#C8C0B0' : '#1A1814',
                 color: '#E8E4D8',
-                fontSize: '11px',
+                fontSize: '13px',
                 fontWeight: 700,
                 letterSpacing: '0.1em',
                 textTransform: 'uppercase',
@@ -709,7 +716,7 @@ export default function LoginPage() {
                 border: 'none',
                 transition: 'background 120ms',
                 fontFamily: 'var(--font-dm-sans, sans-serif)',
-                marginTop: '4px',
+                marginTop: '6px',
               }}
               onMouseEnter={(e) => {
                 if (!isSubmitDisabled) e.currentTarget.style.background = '#7B2D26';
@@ -725,8 +732,8 @@ export default function LoginPage() {
           {/* Toggle sign-in / sign-up */}
           <p
             style={{
-              marginTop: '20px',
-              fontSize: '13px',
+              marginTop: '24px',
+              fontSize: '15px',
               color: '#78889C',
               textAlign: 'center',
               lineHeight: 1.5,
@@ -744,7 +751,7 @@ export default function LoginPage() {
                 cursor: 'pointer',
                 textDecoration: 'underline',
                 textUnderlineOffset: '3px',
-                fontSize: '13px',
+                fontSize: '15px',
                 fontFamily: 'var(--font-dm-sans, sans-serif)',
                 padding: 0,
               }}
@@ -756,8 +763,8 @@ export default function LoginPage() {
           {/* Footnote */}
           <p
             style={{
-              marginTop: '28px',
-              fontSize: '11px',
+              marginTop: '32px',
+              fontSize: '13px',
               color: '#B9C2CF',
               textAlign: 'center',
               letterSpacing: '0.02em',

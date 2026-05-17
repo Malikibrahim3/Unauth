@@ -36,7 +36,7 @@ export function UnauthLogo({ variant = 'light', size = 'nav', className }: Unaut
       className={['ua-mark', normalized, knownSizeClass, className].filter(Boolean).join(' ')}
       role="img"
       aria-label="Unauth"
-      style={knownSizeClass ? undefined : { fontSize: `${px}px` }}
+      style={knownSizeClass && knownSizeClass !== 'display' ? undefined : { fontSize: `${px}px` }}
     >
       <span className="word">Unauth</span>
       <span aria-hidden="true" className="dot" />
