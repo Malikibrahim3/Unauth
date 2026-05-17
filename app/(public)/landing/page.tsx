@@ -80,7 +80,7 @@ export default function LandingPage() {
       </header>
 
       {/* ── Hero ────────────────────────────────────────────────── */}
-      <section className="mx-auto max-w-[1400px] px-6 md:px-10 pt-12 md:pt-16 pb-0">
+      <section className="mx-auto max-w-[1400px] px-6 md:px-10 pt-6 md:pt-8 pb-0">
 
         {/* Top — copy block */}
         <Reveal delay={40}>
@@ -93,7 +93,7 @@ export default function LandingPage() {
               letterSpacing: '0.14em',
               textTransform: 'uppercase',
               color: '#4A4640',
-              marginBottom: '10px',
+              marginBottom: '6px',
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
@@ -124,7 +124,7 @@ export default function LandingPage() {
               letterSpacing: '-0.026em',
               lineHeight: 1.1,
               color: '#1A1814',
-              marginBottom: '14px',
+              marginBottom: '8px',
               maxWidth: '26ch',
             }}
           >
@@ -141,7 +141,7 @@ export default function LandingPage() {
               fontSize: 'clamp(15px, 1.1vw, 17px)',
               color: '#4A4640',
               lineHeight: 1.5,
-              marginBottom: '14px',
+              marginBottom: '10px',
               maxWidth: '62ch',
             }}
           >
@@ -192,7 +192,7 @@ export default function LandingPage() {
         </Reveal>
 
         {/* Bottom — large product artifact */}
-        <Reveal as="div" className="relative mt-10 md:mt-14" delay={180}>
+        <Reveal as="div" className="relative mt-6 md:mt-8" delay={180}>
             {/* Floating eyebrow above artifact */}
             <div
               className="flex items-center justify-between mb-3"
