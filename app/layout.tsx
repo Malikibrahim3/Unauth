@@ -21,7 +21,7 @@ const sourceSerif = Source_Serif_4({
   subsets: ['latin'],
   variable: '--font-serif',
   display: 'swap',
-  weight: ['400', '500', '600'],
+  axes: ['opsz'],
   style: ['normal', 'italic'],
 });
 
