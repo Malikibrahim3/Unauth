@@ -8,6 +8,7 @@ import { signalLabel } from '@/lib/copy/signalLabels';
 import PageSizeSelect from '@/components/common/PageSizeSelect';
 import { PageHeader } from '@/components/common/PageHeader';
 import { fetchMerchantReviewQueueRows } from '@/lib/supabase/merchantHelpers';
+import { MetricCard } from '@/components/ui/MetricCard';
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
 const DEFAULT_PAGE_SIZE = 25;
@@ -102,14 +103,11 @@ export default async function InboxPage({ searchParams }: { searchParams?: Promi
           </Link>
         </div>}
       />
-      <div className="rounded-lg px-4 py-3 border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
-        <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
-          {items.length.toLocaleString()} cases in queue
-        </p>
-        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-          Approximate order value under review: {new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(totalValueAtRisk)}
-        </p>
-      </div>
+      <MetricCard
+        label="Cases in queue"
+        value={items.length}
+        hint={`Approximate order value under review: ${new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(totalValueAtRisk)}`}
+      />
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <PageSizeSelect pathname="/inbox" searchParams={querySearchParams} pageSize={pageSize} />
         {totalPages > 1 && (
@@ -130,7 +128,7 @@ export default async function InboxPage({ searchParams }: { searchParams?: Promi
                 className="px-2 py-1 rounded border"
                 style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}
               >
-                Next →
+                Next ›
               </Link>
             )}
           </div>

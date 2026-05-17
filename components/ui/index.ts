@@ -5,6 +5,8 @@
 
 export { Button } from './Button';
 export type { ButtonVariant, ButtonSize } from './Button';
+export { Input } from './Input';
+export { Select } from './Select';
 
 export { Badge } from './Badge';
 export type { BadgeTone, BadgeVariant, BadgeSize } from './Badge';
@@ -29,6 +31,8 @@ export { Tabs } from './Tabs';
 export { EmptyState } from './EmptyState';
 export { Skeleton, LoadingState, Spinner, ErrorBoundaryUI } from './LoadingState';
 export { Tooltip } from './Tooltip';
+export { SparklineChip } from './SparklineChip';
+export { KbdHint } from './KbdHint';
 export { EvidenceList } from './EvidenceList';
 export { LinkedIdentityList } from './LinkedIdentityList';
 export { Timeline } from './Timeline';

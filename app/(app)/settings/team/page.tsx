@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Users, ArrowLeft } from 'lucide-react';
 import TeamManagementClient from '@/components/settings/TeamManagementClient';
+import { SectionCard } from '@/components/ui/SectionCard';
 
 export default function TeamSettingsPage() {
   return (
@@ -20,7 +21,9 @@ export default function TeamSettingsPage() {
         </p>
       </div>
 
-      <TeamManagementClient />
+      <SectionCard title="Team" description="Roles, invitations, and recent access changes">
+        <TeamManagementClient />
+      </SectionCard>
 
       <Link
         href="/settings"

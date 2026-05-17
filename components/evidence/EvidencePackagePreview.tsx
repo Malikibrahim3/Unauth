@@ -30,8 +30,8 @@ export function EvidencePackagePreview({ packageId, referenceNumber }: EvidenceP
 
   return (
     <div
-      className="rounded-xl border overflow-hidden"
-      style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
+      className="border overflow-hidden"
+      style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)', borderRadius: 4 }}
     >
       {/* Toolbar */}
       <div
@@ -41,12 +41,13 @@ export function EvidencePackagePreview({ packageId, referenceNumber }: EvidenceP
         <div className="flex items-center gap-2 min-w-0">
           <FileText className="h-4 w-4 shrink-0" style={{ color: 'var(--text-muted)' }} />
           <div className="min-w-0">
-            <p className="text-xs font-semibold truncate" style={{ color: 'var(--text)' }}>
-              Evidence Package PDF
+            <p className="text-[10px] font-semibold truncate uppercase tracking-[0.12em]" style={{ color: 'var(--text-muted)' }}>
+              <span style={{ color: '#7B2D26' }}>§ </span>
+              Evidence Package
             </p>
             {referenceNumber && (
               <p className="text-[11px] font-mono truncate" style={{ color: 'var(--text-muted)' }}>
-                {referenceNumber}
+                {referenceNumber} · Draft preview
               </p>
             )}
           </div>
@@ -73,6 +74,11 @@ export function EvidencePackagePreview({ packageId, referenceNumber }: EvidenceP
             Download
           </a>
         </div>
+      </div>
+
+      <div className="px-4 py-2 flex items-center justify-between text-[10px] uppercase tracking-[0.12em]" style={{ color: 'var(--text-muted)', borderBottom: '1px solid var(--border-subtle)' }}>
+        <span>Document preview</span>
+        <span>01 / 04</span>
       </div>
 
       {/* PDF frame — letter aspect ratio */}
@@ -126,6 +132,10 @@ export function EvidencePackagePreview({ packageId, referenceNumber }: EvidenceP
           onError={() => setErrored(true)}
           style={{ display: errored ? 'none' : 'block' }}
         />
+      </div>
+      <div className="px-4 py-2 flex items-center justify-between text-[10px] uppercase tracking-[0.12em]" style={{ color: 'var(--text-muted)', borderTop: '1px solid var(--border-subtle)', background: 'var(--bg-inset)' }}>
+        <span>Generated evidence package</span>
+        <span>{referenceNumber ?? 'Draft'}</span>
       </div>
     </div>
   );

@@ -14,6 +14,7 @@ import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { FLAG_SAVINGS_CARD } from '@/lib/flags';
 import { SavingsCard } from '@/components/dashboard/SavingsCard';
 import type { SavingsCardData } from '@/components/dashboard/SavingsCard';
+import { SparklineChip, SectionCard } from '@/components/ui';
 
 type RunRow = Database['public']['Tables']['processing_jobs']['Row'];
 
@@ -55,6 +56,7 @@ export default async function DashboardPage() {
   const totalFlagged = typedRuns.reduce((sum, r) => sum + (r.flagged_count ?? 0), 0);
   const avgFlagRate = totalTransactions > 0 ? (totalFlagged / totalTransactions) * 100 : null;
   const isEmpty = typedRuns.length === 0;
+  const sparklineData = typedRuns.slice(0, 7).reverse().map((run) => run.flagged_count ?? 0);
 
   // Evidence packages stats
   const { data: evidenceRows } = await supabase
@@ -247,6 +249,7 @@ export default async function DashboardPage() {
         <PageHeader
           title="Identity Review Overview"
           subtitle="Monitor identity match signals and review evidence across all your uploads."
+          eyebrow="Workspace overview"
           primaryAction={
             <Link href="/upload" className="btn-accent px-4 py-2 rounded-md text-body-sm font-semibold transition-colors">
               New Audit
@@ -287,6 +290,7 @@ export default async function DashboardPage() {
               label="Exposure at risk"
               value={exposureFormatted}
               delta={exposureDelta}
+              microchart={sparklineData.length > 1 ? <SparklineChip data={sparklineData} tone="negative" /> : undefined}
               hint={
                 exposureAtRisk === null
                   ? 'Could not be computed'
@@ -299,10 +303,10 @@ export default async function DashboardPage() {
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-[var(--space-3)] mb-[var(--space-5)]">
         {reviewQueue === null ? (
-          <MetricCard label="Customers to review" value="Unavailable" hint="Count could not be loaded" />
+            <MetricCard label="Customers to review" value="Unavailable" hint="Count could not be loaded" />
         ) : reviewQueue > 0 ? (
           <Link href="/customers?risk=high&status=new" className="block">
-            <MetricCard label="Customers to review" value={reviewQueue.toLocaleString()} hint="High-confidence, unresolved" />
+            <MetricCard label="Customers to review" value={reviewQueue} hint="High-confidence, unresolved" microchart={sparklineData.length > 1 ? <SparklineChip data={sparklineData} tone="negative" /> : undefined} />
           </Link>
         ) : (
           <MetricCard label="Customers to review" value="—" hint="All resolved" />
@@ -310,15 +314,16 @@ export default async function DashboardPage() {
         <Link href="/history" className="block">
           <MetricCard
             label="Transactions analysed"
-            value={totalTransactions.toLocaleString()}
+            value={totalTransactions}
             hint={`${typedRuns.length} audit ${typedRuns.length === 1 ? 'run' : 'runs'}`}
+            microchart={sparklineData.length > 1 ? <SparklineChip data={typedRuns.slice(0, 7).reverse().map((run) => run.total_rows)} tone="neutral" /> : undefined}
           />
         </Link>
         {totalPackages > 0 ? (
           <Link href="/chargebacks" className="block">
             <MetricCard
               label="Evidence packages"
-              value={totalPackages.toLocaleString()}
+              value={totalPackages}
               hint={ce3Packages > 0 ? `${ce3Packages} CE3.0 eligible` : 'None CE3.0 eligible'}
             />
           </Link>
@@ -346,8 +351,8 @@ export default async function DashboardPage() {
           {latestRun && (latestRun.status === 'completed' || latestRun.status === 'complete') && (
             <Link
               href={`/audit/${latestRun.id}`}
-              className="flex items-center justify-between rounded-lg px-5 py-5 mb-6 border-l-4 border border-l-[var(--accent-500)] hover:shadow-md transition-shadow group"
-              style={{ background: 'var(--accent-soft)', borderColor: 'var(--border-subtle)', borderLeftColor: 'var(--accent-500)' }}
+            className="flex items-center justify-between px-5 py-5 mb-6 border-l-2 border hover:shadow-md transition-shadow group"
+            style={{ background: 'var(--accent-soft)', borderColor: 'var(--border-subtle)', borderLeftColor: '#7B2D26', borderRadius: 4 }}
             >
               <div className="min-w-0 flex-1">
                 <p className="text-overline uppercase mb-1" style={{ color: 'var(--text-muted)' }}>Latest audit</p>
@@ -374,7 +379,8 @@ export default async function DashboardPage() {
           }))} />
 
           {/* ── Quick links row ─────────────────────────────────────── */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+          <SectionCard title="Recent Activity" description="Top flagged workflows and shortcuts" className="mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {[
               { href: '/customers?risk=high', label: 'High-confidence matches', desc: 'Review probable & definite matches' },
               { href: '/customers?hasRefunds=1', label: 'Refund claimants', desc: 'Customers with at least one refund claim' },
@@ -396,6 +402,7 @@ export default async function DashboardPage() {
               </Link>
             ))}
           </div>
+          </SectionCard>
 
           {/* Phase E-4 — ROI Savings card (feature-flagged) */}
           {FLAG_SAVINGS_CARD && (
@@ -404,7 +411,7 @@ export default async function DashboardPage() {
 
           <div className="flex justify-end">
             <Link href="/history" className="text-body-sm font-medium hover:underline" style={{ color: 'var(--accent)' }}>
-              View all audits →
+              View all audits ›
             </Link>
           </div>
         </>

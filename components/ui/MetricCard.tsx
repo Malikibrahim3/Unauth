@@ -1,5 +1,8 @@
+'use client';
+
 import { type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
+import { useCountUp } from '@/hooks/useCountUp';
 
 interface DeltaProps {
   value: number;
@@ -28,12 +31,15 @@ const TONE_COLOR: Record<DeltaProps['tone'], string> = {
 const ARROW: Record<DeltaProps['direction'], string> = {
   up: '↑',
   down: '↓',
-  flat: '→',
+  flat: '›',
 };
 
 export function MetricCard({ label, value, delta, hint, icon, density = 'default', size, microchart, className }: MetricCardProps) {
   const isHero = size === 'hero';
   const padding = isHero ? 20 : density === 'compact' ? 12 : 16;
+  const displayValue = typeof value === 'number'
+    ? useCountUp(value, { format: (next) => Math.round(next).toLocaleString('en-GB') })
+    : value;
 
   return (
     <div
@@ -72,9 +78,10 @@ export function MetricCard({ label, value, delta, hint, icon, density = 'default
           fontWeight: 600,
           color: 'var(--text)',
           letterSpacing: '-0.02em',
+          fontFamily: 'var(--font-mono)',
         }}
       >
-        {value}
+        {displayValue}
       </div>
 
       {delta && (

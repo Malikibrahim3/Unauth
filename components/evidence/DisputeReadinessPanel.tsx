@@ -10,7 +10,7 @@
 
 import { Badge } from '@/components/ui/Badge';
 import type { BadgeTone } from '@/components/ui/Badge';
-import { CheckCircle2, AlertTriangle, XCircle, Info } from 'lucide-react';
+import { Info } from 'lucide-react';
 
 export interface EvidencePackageRow {
   ce3_eligible: boolean;
@@ -41,10 +41,10 @@ function readinessTone(passed: boolean | 'warning'): BadgeTone {
   return 'critical';
 }
 
-function readinessIcon(passed: boolean | 'warning') {
-  if (passed === true) return <CheckCircle2 className="h-4 w-4 shrink-0" style={{ color: 'var(--risk-low-fg)' }} />;
-  if (passed === 'warning') return <AlertTriangle className="h-4 w-4 shrink-0" style={{ color: 'var(--risk-medium-fg)' }} />;
-  return <XCircle className="h-4 w-4 shrink-0" style={{ color: 'var(--risk-critical-fg)' }} />;
+function readinessMarker(passed: boolean | 'warning') {
+  if (passed === true) return { symbol: '●', color: '#1A1814' };
+  if (passed === 'warning') return { symbol: '◐', color: '#7A4F1C' };
+  return { symbol: '○', color: '#7B2D26' };
 }
 
 export function DisputeReadinessPanel({
@@ -102,11 +102,11 @@ export function DisputeReadinessPanel({
 
   return (
     <div
-      className="rounded-xl border p-5 space-y-3"
-      style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
+      className="border p-5 space-y-3"
+      style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)', borderRadius: 4 }}
     >
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-overline">Dispute Readiness</h2>
+        <h2 className="text-overline"><span style={{ color: '#7B2D26' }}>§ </span>Readiness</h2>
         <Badge tone={allPassed ? 'success' : passedCount >= 3 ? 'warning' : 'critical'} variant="subtle" size="sm">
           {passedCount}/{checks.length} checks passed
         </Badge>
@@ -116,7 +116,7 @@ export function DisputeReadinessPanel({
         {checks.map((check) => (
           <div
             key={check.label}
-            className="flex items-start gap-3 rounded-lg px-3 py-2.5"
+            className="flex items-start gap-3 px-3 py-2.5"
             style={{
               background:
                 check.passed === true
@@ -131,9 +131,12 @@ export function DisputeReadinessPanel({
                   ? 'var(--risk-medium-line)'
                   : 'var(--risk-critical-line)'
               }`,
+              borderRadius: 4,
             }}
           >
-            {readinessIcon(check.passed)}
+            <span className="mt-0.5 text-sm leading-none shrink-0" style={{ color: readinessMarker(check.passed).color }}>
+              {readinessMarker(check.passed).symbol}
+            </span>
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between gap-2">
                 <p className="text-xs font-semibold" style={{ color: 'var(--text)' }}>

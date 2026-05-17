@@ -19,6 +19,7 @@
  */
 
 import { cn } from '@/lib/utils';
+import { useCountUp } from '@/hooks/useCountUp';
 
 export interface SavingsCardData {
   confirmedFraudValue: number;   // sum over last 30d
@@ -43,6 +44,10 @@ function formatCurrency(value: number, currency: string) {
 }
 
 export function SavingsCard({ data, loading, className }: SavingsCardProps) {
+  const animatedValue = useCountUp(data?.confirmedFraudValue ?? 0, {
+    format: (value) => formatCurrency(value, data?.currency ?? 'GBP'),
+  });
+
   return (
     <div
       className={cn(
@@ -80,7 +85,7 @@ export function SavingsCard({ data, loading, className }: SavingsCardProps) {
         <div className="h-9 rounded animate-pulse" style={{ background: 'var(--bg-surface-sunk)', width: '60%' }} />
       ) : data ? (
         <p className="text-display-xl num leading-none text-[var(--text-primary)]">
-          {formatCurrency(data.confirmedFraudValue, data.currency)}
+          {animatedValue}
         </p>
       ) : (
         <p className="text-display num leading-none text-[var(--text-tertiary)]">—</p>

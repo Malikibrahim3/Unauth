@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { User, ArrowLeft, Save, AlertTriangle, Check, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
-import { Button } from '@/components/ui';
+import { Button, Input, Select, SectionCard } from '@/components/ui';
 
 interface MerchantData {
   id: string;
@@ -149,23 +149,21 @@ export default function AccountSettingsPage() {
       </div>
 
       {/* Profile / Store Details */}
+      <SectionCard title="Profile" description="Store details and review preferences">
       <form
         onSubmit={handleProfileSave}
-        className="rounded-lg border p-5 space-y-5"
-        style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
+        className="space-y-5"
       >
-        <h2 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Store details</h2>
 
         <div>
           <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text)' }}>
             Email address
           </label>
-          <input
+          <Input
             type="email"
             value={userEmail}
             disabled
-            className="w-full px-3 py-2 rounded-md text-sm opacity-50 cursor-not-allowed"
-            style={{ background: 'var(--bg-inset)', border: '1px solid var(--border)', color: 'var(--text)' }}
+            className="opacity-50 cursor-not-allowed"
           />
           <p className="mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>
             To change your email, contact{' '}
@@ -177,14 +175,12 @@ export default function AccountSettingsPage() {
           <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text)' }}>
             Store / business name <span style={{ color: 'var(--risk-critical)' }}>*</span>
           </label>
-          <input
+          <Input
             type="text"
             value={storeName}
             onChange={(e) => setStoreName(e.target.value)}
             required
             placeholder="Your store name"
-            className="w-full px-3 py-2 rounded-md text-sm focus:outline-none"
-            style={{ background: 'var(--bg-inset)', border: '1px solid var(--border)', color: 'var(--text)' }}
           />
         </div>
 
@@ -192,29 +188,25 @@ export default function AccountSettingsPage() {
           <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text)' }}>
             Monthly order volume
           </label>
-          <select
+          <Select
             value={monthlyVolume}
             onChange={(e) => setMonthlyVolume(e.target.value)}
-            className="w-full px-3 py-2 rounded-md text-sm focus:outline-none"
-            style={{ background: 'var(--bg-inset)', border: '1px solid var(--border)', color: 'var(--text)' }}
           >
             <option value="">Select a range…</option>
             <option value="under_500">Under 500</option>
             <option value="500_2000">500 – 2,000</option>
             <option value="2000_10000">2,000 – 10,000</option>
             <option value="10000_plus">10,000+</option>
-          </select>
+          </Select>
         </div>
 
         <div>
           <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text)' }}>
             Primary review focus
           </label>
-          <select
+          <Select
             value={fraudConcern}
             onChange={(e) => setFraudConcern(e.target.value)}
-            className="w-full px-3 py-2 rounded-md text-sm focus:outline-none"
-            style={{ background: 'var(--bg-inset)', border: '1px solid var(--border)', color: 'var(--text)' }}
           >
             <option value="">Select…</option>
             <option value="refund_abuse">Refund abuse / INR claims</option>
@@ -223,7 +215,7 @@ export default function AccountSettingsPage() {
             <option value="multi_accounting">Multi-accounting</option>
             <option value="promo_abuse">Promo / voucher abuse</option>
             <option value="all">All of the above</option>
-          </select>
+          </Select>
         </div>
 
         {saveError && (
@@ -241,12 +233,13 @@ export default function AccountSettingsPage() {
           )}
         </div>
       </form>
+      </SectionCard>
 
       {/* Password Change */}
+      <SectionCard title="Notifications" description="Password and access controls">
       <form
         onSubmit={handlePasswordChange}
-        className="rounded-lg border p-5 space-y-4"
-        style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
+        className="space-y-4"
       >
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Change password</h2>
@@ -268,13 +261,11 @@ export default function AccountSettingsPage() {
           ].map(({ label, value, setter, placeholder }) => (
             <div key={label}>
               <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text)' }}>{label}</label>
-              <input
+              <Input
                 type={showPasswords ? 'text' : 'password'}
                 value={value}
                 onChange={(e) => setter(e.target.value)}
                 placeholder={placeholder}
-                className="w-full px-3 py-2 rounded-md text-sm focus:outline-none"
-                style={{ background: 'var(--bg-inset)', border: '1px solid var(--border)', color: 'var(--text)' }}
               />
             </div>
           ))}
@@ -293,12 +284,15 @@ export default function AccountSettingsPage() {
           {passwordSaving ? 'Updating…' : 'Update password'}
         </Button>
       </form>
+      </SectionCard>
 
       {/* Danger Zone */}
-      <div
-        className="rounded-lg border p-5 space-y-4"
-        style={{ background: 'var(--bg-surface)', borderColor: 'rgba(159, 29, 29, 0.30)' }}
+      <SectionCard
+        title="Account"
+        description="Destructive actions"
+        className="border-[rgba(159,29,29,0.30)]"
       >
+      <div className="space-y-4">
         <div className="flex items-center gap-2">
           <AlertTriangle className="h-4 w-4" style={{ color: 'var(--risk-critical)' }} />
           <h2 className="text-sm font-semibold" style={{ color: 'var(--risk-critical)' }}>Danger zone</h2>
@@ -316,7 +310,7 @@ export default function AccountSettingsPage() {
             Type <span className="font-mono font-bold" style={{ color: 'var(--text)' }}>DELETE</span> to confirm
           </label>
           <div className="flex gap-2">
-            <input
+            <Input
               type="text"
               value={deleteConfirm}
               onChange={(e) => setDeleteConfirm(e.target.value)}
@@ -335,6 +329,7 @@ export default function AccountSettingsPage() {
           </div>
         </div>
       </div>
+      </SectionCard>
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { ChevronDown, Trash2, Keyboard } from 'lucide-react';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { KbdHint } from '@/components/ui/KbdHint';
 import { FLAG_QUEUE_PRIORITISATION } from '@/lib/flags';
 
 interface InboxTransaction {
@@ -215,10 +216,7 @@ export default function InboxClient({ initialItems }: Props) {
     );
 
     return (
-      <div
-        className="rounded-lg"
-        style={{ border: '1.5px dashed var(--border)' }}
-      >
+      <div className="rounded-[4px]" style={{ border: '1.5px dashed var(--border)' }}>
         <EmptyState
           icon={inboxIcon}
           title="You're all caught up"
@@ -229,7 +227,7 @@ export default function InboxClient({ initialItems }: Props) {
               className="text-sm font-medium underline underline-offset-2"
               style={{ color: 'var(--text-muted)' }}
             >
-              Upload a CSV to get started →
+              Upload a CSV to get started ›
             </Link>
           }
           footer={shortcutsLegend}
@@ -241,7 +239,7 @@ export default function InboxClient({ initialItems }: Props) {
   return (
     <div className="space-y-3">
       {selectedIds.size > 0 && (
-        <div className="flex items-center justify-between gap-3 rounded-lg px-3 py-2 border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
+        <div className="flex items-center justify-between gap-3 px-3 py-2 border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)', borderRadius: 4 }}>
           <div className="flex items-center gap-2">
             <Trash2 className="h-4 w-4" />
             <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{selectedIds.size} selected</span>
@@ -262,7 +260,7 @@ export default function InboxClient({ initialItems }: Props) {
         </div>
       )}
 
-      <div className="rounded-lg overflow-hidden border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
+      <div className="overflow-hidden border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)', borderRadius: 4 }}>
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b" style={{ background: 'var(--bg-subtle)', borderColor: 'var(--border-subtle)' }}>
@@ -301,6 +299,7 @@ export default function InboxClient({ initialItems }: Props) {
                   borderColor: 'var(--border-subtle)',
                   opacity: pending[tx.id] ? 0.5 : 1,
                   background: isTopRow ? 'var(--accent-50, var(--bg-surface-alt))' : undefined,
+                  borderLeft: isTopRow ? '2px solid #7B2D26' : undefined,
                 }}
               >
                 <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
@@ -438,6 +437,9 @@ export default function InboxClient({ initialItems }: Props) {
           })}
         </tbody>
       </table>
+      </div>
+      <div className="flex justify-end">
+        <KbdHint pairs={[['J/K', 'navigate'], ['↵', 'open'], ['S', 'watchlist']]} />
       </div>
     </div>
   );

@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { ClipboardList, ArrowLeft } from 'lucide-react';
+import { SectionCard } from '@/components/ui/SectionCard';
 
 export default function AuditTrailSettingsPage() {
   return (
@@ -13,9 +14,9 @@ export default function AuditTrailSettingsPage() {
         <h1 className="text-heading-lg" style={{ color: 'var(--text)' }}>Audit trail</h1>
       </div>
 
+      <SectionCard title="Audit Trail" description="Account activity and compliance exports">
       <div
-        className="rounded-xl p-8 border flex flex-col items-center text-center gap-4"
-        style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
+        className="p-8 flex flex-col items-center text-center gap-4"
       >
         <div
           className="flex h-14 w-14 items-center justify-center rounded-full"
@@ -38,6 +39,7 @@ export default function AuditTrailSettingsPage() {
           and we&apos;ll provide one.
         </p>
       </div>
+      </SectionCard>
 
       <Link
         href="/settings"

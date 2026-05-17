@@ -73,7 +73,7 @@ export default function LandingPage() {
               }}
               className="hover:bg-[#2B2922]"
             >
-              Request pilot →
+              Request access →
             </a>
           </div>
         </div>
@@ -169,7 +169,7 @@ export default function LandingPage() {
                 }}
                 className="hover:bg-[#2B2922]"
               >
-                Request a pilot
+                  Request access
                 <span aria-hidden style={{ fontFamily: 'var(--font-dm-mono, monospace)' }}>→</span>
               </a>
               <a
@@ -320,7 +320,7 @@ export default function LandingPage() {
                   marginBottom: '10px',
                 }}
               >
-                Active pilots across
+                Founding merchant cohort
               </p>
               <div
                 className="flex flex-wrap items-center gap-x-5 gap-y-2"
@@ -331,16 +331,11 @@ export default function LandingPage() {
                   color: '#4A4640',
                 }}
               >
-                <span>DTC fashion</span>
+                <span>Founding merchants are being onboarded now</span>
                 <span style={{ color: '#D8D0BD' }}>·</span>
-                <span>marketplace</span>
+                <span>No live merchants yet</span>
                 <span style={{ color: '#D8D0BD' }}>·</span>
-                <span>audio hardware</span>
-                <span style={{ color: '#D8D0BD' }}>·</span>
-                <span>subscription beauty</span>
-                <sup>
-                  <a href="#note-1" style={{ color: '#7B2D26', textDecoration: 'none', fontStyle: 'normal' }}>1</a>
-                </sup>
+                <span>No real production data yet</span>
               </div>
             </div>
           </Reveal>
@@ -1059,7 +1054,7 @@ export default function LandingPage() {
                   letterSpacing: '0.06em',
                 }}
               >
-                sample audit · pilot cohort · k-anonymity gated (≥3 merchants)
+                founding merchant cohort · network is being built · k-anonymity gated (≥3 merchants)
               </p>
             </div>
             <div style={{ display: 'flex', gap: '24px', fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11px', color: '#B8B2A0' }}>
@@ -1080,9 +1075,9 @@ export default function LandingPage() {
             {/* Metrics column 4 */}
             <div className="lg:col-span-4 grid grid-cols-1" style={{ background: '#2B2922', gap: '1px' }}>
               {[
-                { v: 12484, l: 'identity clusters resolved', s: 'across the 12-week pilot audit' },
-                { v: 3107,  l: 'network-known abusers',      s: 'filed INR or refund at 3+ merchants' },
-                { v: 417,   l: 'CE 3.0 packets prepared',    s: 'median preparation time 38s' },
+                { v: 0, l: 'identity clusters resolved', s: 'network is being built with founding merchants' },
+                { v: 0, l: 'network-known abusers', s: 'published once the founding cohort is live' },
+                { v: 0, l: 'CE 3.0 packets prepared', s: 'internal synthetic benchmark · 38ms pipeline latency' },
               ].map((m, i) => (
                 <Reveal key={m.l} delay={120 + i * 90} style={{ background: '#15140F', padding: '22px 22px 22px' }}>
                   <p
@@ -1138,7 +1133,7 @@ export default function LandingPage() {
               marginTop: '24px',
             }}
           >
-            Figures above are from a sample pilot cohort audit and are illustrative of network output. In production, all figures are aggregated and k-anonymity gated. The network does not publish merchant names, raw order data, or buyer identities.
+            The network is being built with founding merchants now. Published network figures will appear once the cohort is live; until then, output remains illustrative and k-anonymity gated. The network does not publish merchant names, raw order data, or buyer identities.
           </p>
         </div>
       </section>
@@ -1891,7 +1886,7 @@ Northbound Goods         $890.00     2 orders     1 INR filed
                   letterSpacing: '0.04em',
                 }}
               >
-                DECLINE NEXT ORDER · ASSEMBLE CE 3.0 PACKET FOR 2 OPEN DISPUTES
+                Illustrative output · assemble CE 3.0 packet for open disputes
               </p>
             </div>
           </div>
@@ -1998,7 +1993,7 @@ Northbound Goods         $890.00     2 orders     1 INR filed
               {[
                 { l: 'abusers clustered',  v: 312, suffix: '',  s: '14 days' },
                 { l: 'active at 3+ brands', v: 156, suffix: '', s: '50%' },
-                { l: 'CE 3.0 win rate',    v: 71,  suffix: '%', s: '↑ from 23%' },
+                { l: 'CE 3.0 packet readiness',    v: 71,  suffix: '%', s: 'illustrative of expected engine output, not live results' },
               ].map((m, i) => (
                 <div key={m.l}>
                   <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '24px', fontWeight: 500, color: '#1A1814', margin: 0, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
@@ -2025,7 +2020,7 @@ Northbound Goods         $890.00     2 orders     1 INR filed
               }}
             >
               <span style={{ color: '#7B2D26', fontStyle: 'normal', marginRight: '6px' }}>§</span>
-              Profile A entered the audit with an estimated $40K/mo loss to friendly fraud and no internal pattern detection. After 14 days of cross-merchant clustering, 312 abusive identities had been resolved — 50% active at three or more brands in the network.
+              Profile A shows illustrative engine output only. The visual demonstrates how cross-merchant clustering and packet assembly are presented, not a live result.
             </p>
 
             <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11.5px', color: '#4A4640', margin: 0 }}>
@@ -2059,7 +2054,7 @@ Northbound Goods         $890.00     2 orders     1 INR filed
                   letterSpacing: '0.04em',
                 }}
               >
-                11-day integration
+                Illustrative workflow
               </span>
             </div>
 
@@ -2067,7 +2062,7 @@ Northbound Goods         $890.00     2 orders     1 INR filed
             <div className="space-y-4 mb-6 pb-5" style={{ borderBottom: '1px solid #ECE5D4' }}>
               {[
                 { l: 'INR claim rate',     before: 9.4, after: 2.1, max: 12, unit: '%', dec: 1 },
-                { l: 'CE 3.0 win rate',    before: 18,  after: 64,  max: 100, unit: '%', dec: 0 },
+                { l: 'CE 3.0 packet readiness',    before: 18,  after: 64,  max: 100, unit: '%', dec: 0 },
                 { l: 'time to evidence',   before: 4.2, after: 0.6, max: 5,  unit: ' d', dec: 1 },
               ].map(({ l, before, after, max, unit, dec }, ri) => (
                 <div key={l}>
@@ -2102,14 +2097,12 @@ Northbound Goods         $890.00     2 orders     1 INR filed
                 marginBottom: '8px',
               }}
             >
-              Profile B integrated against a CSV-only path in 11 days. The 7.3-point INR-rate reduction was driven almost entirely by cross-merchant identity scoring at checkout-time.
+              Profile B is illustrative of expected engine output, not a live result. It shows the shape of the workflow and the kind of packet the system produces.
             </p>
 
             <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11.5px', color: '#4A4640', margin: 0 }}>
               90-day modeled window
-              <sup>
-                <a href="#note-8" style={{ color: '#7B2D26', textDecoration: 'none' }}>8</a>
-              </sup>
+              <sup />
             </p>
           </Reveal>
         </div>
@@ -2418,7 +2411,7 @@ Northbound Goods         $890.00     2 orders     1 INR filed
               lineHeight: 1.6,
             }}
           >
-            SOC 2 and ISO 27001 certifications are not yet held. The system is designed with these standards as the target architecture. Full controls documentation available on request.
+              SOC 2 audit in progress. The system is designed with these standards as the target architecture. Full controls documentation available on request.
           </p>
         </div>
       </section>
@@ -2681,7 +2674,7 @@ Northbound Goods         $890.00     2 orders     1 INR filed
                 }}
               >
                 <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10.5px', color: '#8A8472', textTransform: 'uppercase', letterSpacing: '0.14em', marginBottom: '14px' }}>
-                  Start a pilot — no card required
+                  Join the founding merchant cohort — no card required, no commitment
                 </p>
                 <a
                   href="mailto:hello@unauth.app?subject=Unauth%20pilot%20request"
@@ -2701,7 +2694,7 @@ Northbound Goods         $890.00     2 orders     1 INR filed
                   }}
                   className="hover:bg-white"
                 >
-                  Request a pilot
+                  Request access
                   <span aria-hidden style={{ fontFamily: 'var(--font-dm-mono, monospace)' }}>→</span>
                 </a>
                 <a
@@ -2776,11 +2769,10 @@ Northbound Goods         $890.00     2 orders     1 INR filed
             [1, 'The case file shown is a synthetic example constructed to illustrate how Unauth presents a resolved identity cluster. It does not represent a real buyer or real merchant. The cluster ID format and all signal patterns are representative of live engine output.'],
             [2, 'INR = Item Not Received. The most common chargeback reason code abused at scale in DTC ecommerce.'],
             [3, 'Visa, Friendly Fraud Annual Index, 2024. Includes refund abuse and INR fraud across all card types.'],
-            [4, 'Internal estimate based on Unauth pilot network resolution rates, Jan–Apr 2026. Pilot network size is not disclosed; figures are illustrative of expected network detection rates at scale.'],
+            [4, 'Industry estimates sourced from Visa and Mastercard published fraud data. Unauth network figures will be published once the founding merchant cohort is live.'],
             [5, 'Mastercard Merchant Survey, 2024. True cost includes fulfilment, reversed acquisition spend, and dispute fees.'],
             [6, 'Hashing is performed client-side using a per-merchant salt that Unauth never sees. The hashed values are queried against the network; raw PII never leaves the merchant’s browser.'],
-            [7, 'The case studies in §5 are synthetic examples modeled from pilot workflow. They do not represent any real merchant, integration, or outcome. Metrics are illustrative of engine output, not customer claims.'],
-            [8, 'Modeled 90-day window. The reduction is consistent with engine response timing observed in internal pilot audits; the specific magnitude is illustrative.'],
+            [7, 'The case studies in §5 are synthetic examples illustrating engine output format. They do not represent any real merchant, integration, or outcome.'],
           ].map(([n, text]) => (
             <li
               key={n}

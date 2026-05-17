@@ -53,6 +53,12 @@ export const FLAG_QUEUE_PRIORITISATION = boolFlag(
   'NEXT_PUBLIC_FLAG_QUEUE_PRIORITISATION',
 );
 
+/** E-8 Experience polish v1 — case-file interior system and delight layer */
+export const FLAG_EXPERIENCE_POLISH_V1 = boolFlag(
+  'NEXT_PUBLIC_FLAG_EXPERIENCE_POLISH_V1',
+  true,
+);
+
 /**
  * E-7  Identity Cluster Visualisation — HIGH risk, deferred.
  *

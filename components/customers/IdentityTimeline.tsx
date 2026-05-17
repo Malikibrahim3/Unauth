@@ -1,5 +1,6 @@
 import type { IdentityTimelineEntry } from '@/app/api/customers/[id]/route';
 import { labelFor } from '@/lib/copy/labels';
+import { formatDateMode } from '@/lib/utils/format';
 
 const FIELD_LABELS: Record<IdentityTimelineEntry['field'], string> = {
   email: labelFor('email'),
@@ -8,18 +9,6 @@ const FIELD_LABELS: Record<IdentityTimelineEntry['field'], string> = {
   ip: labelFor('ip'),
   card_last4: labelFor('card_last4'),
 };
-
-function formatDate(iso: string): string {
-  try {
-    return new Intl.DateTimeFormat('en-GB', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    }).format(new Date(iso));
-  } catch {
-    return iso;
-  }
-}
 
 interface IdentityTimelineProps {
   entries: IdentityTimelineEntry[];
@@ -33,41 +22,45 @@ export default function IdentityTimeline({ entries }: IdentityTimelineProps) {
   }
 
   return (
-    <ol className="relative space-y-0" style={{ borderLeft: '1px solid var(--border-subtle)' }}>
-      {entries.map((entry, idx) => (
-        <li key={idx} className="ml-4 pb-4 last:pb-0">
-          {/* Timeline dot */}
-          <span
-            className="absolute -left-[5px] mt-1.5 h-2.5 w-2.5 rounded-full"
-            style={{
-              background: entry.isVariant ? 'var(--risk-high)' : 'var(--icon-muted)',
-              border: '2px solid var(--bg-surface)',
-            }}
-          />
-
-          <div className="flex items-start gap-2">
-            <div className="min-w-0 flex-1">
-              <p className="text-xs mb-0.5" style={{ color: 'var(--text-subtle)' }}>{formatDate(entry.date)}</p>
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-medium shrink-0" style={{ color: 'var(--text-muted)' }}>
-                  {FIELD_LABELS[entry.field]}
-                </span>
+    <div className="overflow-x-auto">
+      <table className="w-full border-collapse" style={{ fontSize: 12 }}>
+        <thead>
+          <tr style={{ background: 'var(--bg-canvas)', borderBottom: '1px solid var(--border-default)' }}>
+            <th style={{ padding: '8px 10px', textAlign: 'left', fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>First Seen</th>
+            <th style={{ padding: '8px 10px', textAlign: 'left', fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Field</th>
+            <th style={{ padding: '8px 10px', textAlign: 'left', fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Value</th>
+            <th style={{ padding: '8px 10px', textAlign: 'left', fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Last Seen</th>
+          </tr>
+        </thead>
+        <tbody>
+          {entries.map((entry, idx) => (
+            <tr
+              key={idx}
+              style={{
+                borderBottom: '1px solid var(--border-default)',
+                borderLeft: entry.isVariant ? '2px solid #7B2D26' : '2px solid transparent',
+                background: entry.isVariant ? 'var(--bg-canvas)' : '#FFFFFF',
+              }}
+            >
+              <td className="num" style={{ padding: '10px', fontFamily: 'var(--font-mono)', color: '#4A4640' }}>{formatDateMode(entry.date, 'table')}</td>
+              <td style={{ padding: '10px' }}>
+                <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>{FIELD_LABELS[entry.field]}</div>
+              </td>
+              <td style={{ padding: '10px' }}>
+                <div className="font-mono break-all" style={{ color: '#1A1814' }}>{entry.value}</div>
                 {entry.isVariant && (
-                  <span
-                    title="Different from the first-seen value for this field"
-                    className="text-sm leading-none"
-                    style={{ color: 'var(--risk-high)' }}
-                    aria-label="Variant value"
-                  >
-                    ⚠
-                  </span>
+                  <div className="mt-1">
+                    <span style={{ display: 'inline-flex', height: 18, alignItems: 'center', padding: '0 7px', borderRadius: 3, background: '#FBEFEC', color: '#7B2D26', border: '1px solid #F0C8BE', fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                      ▲ Variant
+                    </span>
+                  </div>
                 )}
-              </div>
-              <p className="text-sm font-mono break-all" style={{ color: 'var(--text)' }}>{entry.value}</p>
-            </div>
-          </div>
-        </li>
-      ))}
-    </ol>
+              </td>
+              <td className="num" style={{ padding: '10px', fontFamily: 'var(--font-mono)', color: '#4A4640' }}>{formatDateMode(entry.date, 'table')}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }

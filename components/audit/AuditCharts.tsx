@@ -12,6 +12,7 @@ import {
   YAxis,
   CartesianGrid,
 } from 'recharts';
+import { SectionCard } from '@/components/ui/SectionCard';
 
 interface Props {
   counts: {
@@ -25,10 +26,10 @@ interface Props {
 }
 
 const TIERS = [
-  { key: 'definite', label: 'Definite', color: 'var(--risk-critical)' },
-  { key: 'probable', label: 'Probable', color: 'var(--risk-high)' },
-  { key: 'possible', label: 'Possible', color: 'var(--risk-medium)' },
-  { key: 'weak',     label: 'Weak',     color: 'var(--risk-low)' },
+  { key: 'definite', label: 'Definite', color: '#1A1814' },
+  { key: 'probable', label: 'Probable', color: '#7B2D26' },
+  { key: 'possible', label: 'Possible', color: '#4A4640' },
+  { key: 'weak',     label: 'Weak',     color: '#888078' },
 ] as const;
 
 const PieTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ name: string; value: number }> }) => {
@@ -36,9 +37,9 @@ const PieTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ n
     return (
       <div
         className="px-3 py-2 rounded-md border text-xs shadow-md"
-        style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
+        style={{ background: '#FFFFFF', borderColor: '#D2C9B5', color: 'var(--text)' }}
       >
-        <div className="font-medium">{payload[0].name}</div>
+        <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)' }}><span style={{ color: '#7B2D26', marginRight: 5 }}>§</span>{payload[0].name}</div>
         <div style={{ color: 'var(--text-muted)' }}>{payload[0].value.toLocaleString()} customers</div>
       </div>
     );
@@ -51,9 +52,9 @@ const BarTooltip = ({ active, payload, label }: { active?: boolean; payload?: Ar
     return (
       <div
         className="px-3 py-2 rounded-md border text-xs shadow-md"
-        style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)', color: 'var(--text)' }}
+        style={{ background: '#FFFFFF', borderColor: '#D2C9B5', color: 'var(--text)' }}
       >
-        <div className="font-medium mb-0.5">{label}</div>
+        <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)' }}><span style={{ color: '#7B2D26', marginRight: 5 }}>§</span>{label}</div>
         <div style={{ color: 'var(--text-muted)' }}>
           Customers: <span style={{ color: 'var(--text)' }}>{payload[0].value.toLocaleString()}</span>
         </div>
@@ -80,11 +81,7 @@ export default function AuditCharts({ counts, totalRows, totalFlagged }: Props) 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {/* Risk Distribution donut */}
-      <div
-        className="rounded-lg border px-5 pt-4 pb-3"
-        style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
-      >
-        <div className="text-overline mb-0.5" style={{ color: 'var(--text-muted)' }}>Match Distribution</div>
+      <SectionCard title="Match Distribution" description={`${totalTiered.toLocaleString()} ${totalTiered === 1 ? 'customer' : 'customers'} with match signals`}>
         <div className="text-caption mb-3" style={{ color: 'var(--text-subtle)' }}>
           {totalTiered.toLocaleString()} {totalTiered === 1 ? 'customer' : 'customers'} with match signals
         </div>
@@ -142,18 +139,13 @@ export default function AuditCharts({ counts, totalRows, totalFlagged }: Props) 
             </div>
           </div>
         )}
-      </div>
+      </SectionCard>
 
       {/* Tier counts horizontal bar chart */}
-      <div
-        className="rounded-lg border px-5 pt-4 pb-3"
-        style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
-      >
-        <div className="text-overline mb-0.5" style={{ color: 'var(--text-muted)' }}>Customers by Match Confidence</div>
-        <div className="text-caption mb-4" style={{ color: 'var(--text-subtle)' }}>Counts across all four confidence tiers</div>
+      <SectionCard title="Customers By Match Confidence" description="Counts across all four confidence tiers">
         <ResponsiveContainer width="100%" height={160}>
           <BarChart data={barData} margin={{ top: 0, right: 8, left: -12, bottom: 0 }} barSize={20}>
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" vertical={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#E5DECE" vertical={false} />
             <XAxis
               dataKey="name"
               tick={{ fontSize: 10, fill: 'var(--text-subtle)' }}
@@ -174,18 +166,14 @@ export default function AuditCharts({ counts, totalRows, totalFlagged }: Props) 
             </Bar>
           </BarChart>
         </ResponsiveContainer>
-      </div>
+      </SectionCard>
 
       {/* Overall composition — full width */}
-      <div
-        className="md:col-span-2 rounded-lg border px-5 py-4"
-        style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
-      >
+      <SectionCard title="Overall Composition" className="md:col-span-2">
         <div className="flex items-center justify-between mb-3">
-          <div className="text-overline" style={{ color: 'var(--text-muted)' }}>Overall Composition</div>
           <div className="flex items-center gap-4 text-caption" style={{ color: 'var(--text-subtle)' }}>
             <span className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-sm inline-block" style={{ background: 'var(--risk-high)' }} />
+              <span className="h-2 w-2 rounded-sm inline-block" style={{ background: '#7B2D26' }} />
               With signals {flaggedPct.toFixed(1)}%
             </span>
             <span className="flex items-center gap-1.5">
@@ -197,7 +185,7 @@ export default function AuditCharts({ counts, totalRows, totalFlagged }: Props) 
         <div className="h-2 w-full rounded-full overflow-hidden" style={{ background: 'var(--bg-muted, var(--bg-subtle))' }}>
           <div
             className="h-full rounded-full transition-all duration-500"
-            style={{ width: `${flaggedPct}%`, background: 'var(--risk-high)' }}
+            style={{ width: `${flaggedPct}%`, background: '#7B2D26' }}
           />
         </div>
         <div className="flex items-center justify-between mt-2">
@@ -208,7 +196,7 @@ export default function AuditCharts({ counts, totalRows, totalFlagged }: Props) 
             {(totalRows - totalFlagged).toLocaleString()} no signals
           </span>
         </div>
-      </div>
+      </SectionCard>
     </div>
   );
 }

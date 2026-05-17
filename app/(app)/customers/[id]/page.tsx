@@ -32,10 +32,15 @@ import { MetricCard } from '@/components/ui/MetricCard';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Badge } from '@/components/ui/Badge';
 import InvestigationStatusSelect from '@/components/customers/InvestigationStatusSelect';
+import IdentityTimeline from '@/components/customers/IdentityTimeline';
+import BehaviorRoadmap from '@/components/customers/BehaviorRoadmap';
+import CaseSummaryStrip from '@/components/customers/CaseSummaryStrip';
 import type { CustomerIntelligencePanel } from '@/app/api/customers/[id]/route';
 import { labelFor } from '@/lib/copy/labels';
 import { riskBadgeStyle, riskBarStyle, riskTok } from '@/lib/utils/riskStyles';
-import { formatCurrencyNullable, formatDate } from '@/lib/utils/format';
+import { formatCurrencyNullable, formatDate, formatDateMode } from '@/lib/utils/format';
+import { getEventStream } from '@/lib/analysis/customerIntelligence';
+import { FLAG_EXPERIENCE_POLISH_V1 } from '@/lib/flags';
 
 interface PageProps {
   params: Promise<{ id: string }> | { id: string };
@@ -358,6 +363,30 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
   const totalRefundedValue = 0;
   const claimCount = transactions.filter((tx: any) => tx.refund_claimed || tx.chargeback_filed).length;
   const identitySignals = ((profile as any).identity_signals ?? profile.fraud_flags ?? []) as string[];
+  const density = Array.from({ length: 12 }, () => 0);
+  for (const tx of transactions) {
+    const diffDays = Math.floor((Date.now() - new Date(tx.processed_at).getTime()) / 86400000);
+    const weekIndex = Math.min(11, Math.max(0, 11 - Math.floor(diffDays / 7)));
+    density[weekIndex] += 1;
+  }
+  const roadmapEvents = getEventStream({
+    orderHistory: transactions.map((tx: any) => ({
+      orderId: tx.order_id,
+      processedAt: tx.processed_at,
+      orderValue: Number(tx.order_value) || null,
+      riskLevel: tx.risk_level,
+      refundRequested: !!tx.refund_claimed,
+      refundReason: tx.refund_reason ?? null,
+      chargebackFiled: !!tx.chargeback_filed,
+      chargebackReasonCode: tx.chargeback_reason_code ?? null,
+      fraudFlags: Array.isArray(tx.fraud_flags) ? tx.fraud_flags : [],
+      address: tx.shipping_address,
+      email: tx.customer_email,
+      cardLast4: tx.card_last4,
+    })),
+    identityTimeline,
+    notes: [],
+  });
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
@@ -425,9 +454,22 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
         </div>
       </div>
 
+      {FLAG_EXPERIENCE_POLISH_V1 && (
+        <div className="mb-[var(--space-5)]">
+          <CaseSummaryStrip
+            flaggedAt={profile.first_seen}
+            orders={profile.total_orders}
+            exposure={totalOrderValue}
+            cadence={Math.min(5, Math.max(1, Math.ceil(profile.total_orders / 3)))}
+            lastSeen={profile.last_seen}
+            density={density}
+          />
+        </div>
+      )}
+
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-[var(--space-6)]">
         <div className="xl:col-span-8 space-y-[var(--space-5)]">
-          <SectionCard title="Customer roadmap" description="Chronological order, with the transaction and claim details a merchant needs to act on.">
+          <SectionCard title="Customer Roadmap" description="Chronological order, with the transaction and claim details a merchant needs to act on.">
             <div className="mb-[var(--space-5)] rounded-lg border p-[var(--space-4)]" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)' }}>
               <div className="flex items-start gap-3">
                 <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" style={{ color: 'var(--text-muted)' }} />
@@ -455,6 +497,8 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
 
             {transactions.length === 0 ? (
               <EmptyState title="No orders in dataset" description="No transactions found for this customer in the current dataset." />
+            ) : FLAG_EXPERIENCE_POLISH_V1 ? (
+              <BehaviorRoadmap events={roadmapEvents} />
             ) : (
               <ol>
                 {transactions.map((tx: any, index: number) => (
@@ -551,21 +595,8 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
           </SectionCard>
 
           {identityTimeline.length > 0 && (
-            <SectionCard title="Identity trail" description={variantCount > 0 ? `${variantCount} change${variantCount > 1 ? 's' : ''} detected` : undefined}>
-              <ol className="space-y-3">
-                {identityTimeline.map((entry, index) => (
-                  <li key={`${entry.field}-${entry.value}-${index}`} className="flex items-start gap-3 rounded-lg border p-3" style={{ borderColor: 'var(--border-subtle)', background: entry.isVariant ? 'var(--info-bg)' : 'var(--bg-inset)' }}>
-                    <GitBranch className="mt-0.5 h-4 w-4 shrink-0" style={{ color: entry.isVariant ? 'var(--info)' : 'var(--text-muted)' }} />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="text-caption font-semibold uppercase" style={{ color: 'var(--text-muted)' }}>{labelize(entry.field)}</p>
-                        <p className="text-caption shrink-0" style={{ color: 'var(--text-subtle)' }}>{formatDate(entry.date)}</p>
-                      </div>
-                      <p className="mt-1 text-caption break-words" style={{ color: 'var(--text)' }}>{entry.value}</p>
-                    </div>
-                  </li>
-                ))}
-              </ol>
+            <SectionCard title="Identity Trail" description={variantCount > 0 ? `${variantCount} change${variantCount > 1 ? 's' : ''} detected` : undefined}>
+              <IdentityTimeline entries={identityTimeline} />
             </SectionCard>
           )}
 
@@ -616,7 +647,7 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
                       <Activity className="mt-0.5 h-4 w-4 shrink-0" style={{ color: 'var(--text-muted)' }} />
                       <div className="min-w-0 flex-1">
                         <p className="text-body-sm" style={{ color: 'var(--text)' }}>{description}</p>
-                        <p className="text-caption" style={{ color: 'var(--text-subtle)' }}>{formatDate(entry.created_at)}</p>
+                        <p className="text-caption" style={{ color: 'var(--text-subtle)' }} title={formatDate(entry.created_at)}>{formatDateMode(entry.created_at, 'recent')}</p>
                       </div>
                     </li>
                   );

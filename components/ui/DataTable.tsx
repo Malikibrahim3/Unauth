@@ -154,6 +154,7 @@ export function DataTable<T>({
                     height: rowH,
                     borderBottom: '1px solid var(--border-default)',
                     background: isSelected ? 'var(--bg-subtle)' : undefined,
+                    borderLeft: isSelected ? '2px solid #7B2D26' : '2px solid transparent',
                     cursor: onRowClick ? 'pointer' : undefined,
                     transition: 'background 120ms',
                   }}

@@ -262,6 +262,8 @@
     background-color: var(--bg-canvas);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    scrollbar-color: #D2C9B5 transparent;
+    scrollbar-width: thin;
   }
 
   body {
@@ -270,6 +272,12 @@
     font-size: 14px;
     line-height: 20px;
     font-feature-settings: "kern" 1;
+  }
+
+  input,
+  textarea,
+  select {
+    caret-color: #7B2D26;
   }
 
   /* Tabular numerics for all mono content */
@@ -312,6 +320,20 @@
 
   /* Tabular-nums utility — apply to all numeric display */
   .num { font-feature-settings: "tnum" 1, "ss01" 1; font-variant-numeric: tabular-nums; }
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: #D2C9B5;
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 /* ── Hover utilities (safe for Server Components — no JS handlers needed) ── */

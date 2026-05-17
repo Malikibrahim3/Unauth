@@ -12,6 +12,7 @@ import {
   Line,
   CartesianGrid,
 } from 'recharts';
+import { SectionCard } from '@/components/ui/SectionCard';
 
 export interface RunChartData {
   id: string;
@@ -100,12 +101,7 @@ export default function DashboardCharts({ runs }: Props) {
   return (
     <div className="grid grid-cols-2 gap-4 mb-6">
       {/* Flag rate per run */}
-      <div
-        className="rounded-lg border px-5 pt-4 pb-3"
-        style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
-      >
-        <div className="text-overline mb-0.5" style={{ color: 'var(--text-muted)' }}>Match Rate by Run</div>
-        <div className="text-caption mb-4" style={{ color: 'var(--text-subtle)' }}>Last {rateData.length} audits</div>
+      <SectionCard title="Match Rate By Run" description={`Last ${rateData.length} audits`} className="h-full">
         <ResponsiveContainer width="100%" height={160}>
           <BarChart data={rateData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }} barSize={14}>
             <XAxis
@@ -132,15 +128,10 @@ export default function DashboardCharts({ runs }: Props) {
             </Bar>
           </BarChart>
         </ResponsiveContainer>
-      </div>
+      </SectionCard>
 
       {/* Flagged count trend */}
-      <div
-        className="rounded-lg border px-5 pt-4 pb-3"
-        style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
-      >
-        <div className="text-overline mb-0.5" style={{ color: 'var(--text-muted)' }}>Matched Transactions Over Time</div>
-        <div className="text-caption mb-4" style={{ color: 'var(--text-subtle)' }}>Per audit run</div>
+      <SectionCard title="Matched Transactions Over Time" description="Per audit run" className="h-full">
         <ResponsiveContainer width="100%" height={160}>
           <LineChart data={trendData} margin={{ top: 0, right: 4, left: -20, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" vertical={false} />
@@ -160,25 +151,21 @@ export default function DashboardCharts({ runs }: Props) {
             <Line
               type="monotone"
               dataKey="flagged"
-              stroke="var(--risk-high)"
+              stroke="#7B2D26"
               strokeWidth={2}
-              dot={{ fill: 'var(--risk-high)', r: 3, strokeWidth: 0 }}
+              dot={{ fill: '#7B2D26', r: 3, strokeWidth: 0 }}
               activeDot={{ r: 5, strokeWidth: 0 }}
             />
           </LineChart>
         </ResponsiveContainer>
-      </div>
+      </SectionCard>
 
       {/* Overall summary bar */}
-      <div
-        className="col-span-2 rounded-lg border px-5 py-4"
-        style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
-      >
+      <SectionCard title="Overall Composition" className="col-span-2">
         <div className="flex items-center justify-between mb-3">
-          <div className="text-overline" style={{ color: 'var(--text-muted)' }}>Overall Composition</div>
           <div className="flex items-center gap-4 text-caption" style={{ color: 'var(--text-subtle)' }}>
             <span className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-sm inline-block" style={{ background: 'var(--risk-high)' }} />
+              <span className="h-2 w-2 rounded-sm inline-block" style={{ background: '#7B2D26' }} />
               With signals {flaggedPct.toFixed(1)}%
             </span>
             <span className="flex items-center gap-1.5">
@@ -190,7 +177,7 @@ export default function DashboardCharts({ runs }: Props) {
         <div className="h-2 w-full rounded-full overflow-hidden" style={{ background: 'var(--bg-muted)' }}>
           <div
             className="h-full rounded-full transition-all duration-500"
-            style={{ width: `${flaggedPct}%`, background: 'var(--risk-high)' }}
+            style={{ width: `${flaggedPct}%`, background: '#7B2D26' }}
           />
         </div>
         <div className="flex items-center justify-between mt-2">
@@ -201,7 +188,7 @@ export default function DashboardCharts({ runs }: Props) {
             {(totalRows - totalFlagged).toLocaleString()} no signals
           </span>
         </div>
-      </div>
+      </SectionCard>
     </div>
   );
 }

@@ -310,7 +310,7 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
             >
               <p className="text-caption" style={{ color: 'var(--text-muted)' }}>{label}</p>
               <p className="text-heading-sm font-medium mt-0.5 group-hover:underline" style={{ color: highlight ? 'var(--accent)' : 'var(--text)' }}>
-                Filter →
+                Filter ›
               </p>
             </Link>
           ))}
@@ -360,7 +360,7 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
             Run an audit to populate this list. Customer profiles are built automatically from your uploaded transaction data.
           </p>
           <Link href="/upload" className="inline-block text-sm font-medium underline" style={{ color: 'var(--text)' }}>
-            Upload a CSV →
+            Upload a CSV ›
           </Link>
         </div>
       ) : (
@@ -387,7 +387,7 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
                     href={`/customers?${new URLSearchParams({ ...sp, page: String(page + 1), pageSize: String(PAGE_SIZE) }).toString()}`}
                     className="px-2 py-1 rounded border"
                     style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}
-                  >Next →</Link>
+                  >Next ›</Link>
                 )}
               </div>
             )}

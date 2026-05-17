@@ -6,6 +6,16 @@ export function formatCurrency(amount: number, currency = 'GBP'): string {
   }).format(amount);
 }
 
+export function formatCurrencyCompact(amount: number, currency = 'GBP'): string {
+  return new Intl.NumberFormat('en-GB', {
+    style: 'currency',
+    currency,
+    notation: 'compact',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: Math.abs(amount) >= 1000 ? 0 : 2,
+  }).format(amount);
+}
+
 /** Null-safe currency formatter — returns '—' for null/undefined values. */
 export function formatCurrencyNullable(amount: number | null | undefined, currency = 'GBP'): string {
   if (amount == null) return '—';
@@ -25,6 +35,47 @@ export function formatDate(date: Date | string): string {
 
   const lookup = Object.fromEntries(parts.map((part) => [part.type, part.value]));
   return `${lookup.day} ${lookup.month} ${lookup.year}, ${lookup.hour}:${lookup.minute}`;
+}
+
+export function formatDateMode(
+  date: Date | string,
+  mode: 'table' | 'prose' | 'recent' | 'timestamp' = 'timestamp',
+): string {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  if (Number.isNaN(d.getTime())) return String(date);
+
+  if (mode === 'table') {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      timeZone: 'Europe/London',
+    }).formatToParts(d);
+    const lookup = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+    return `${lookup.year}-${lookup.month}-${lookup.day}`;
+  }
+
+  if (mode === 'prose') {
+    return new Intl.DateTimeFormat('en-GB', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+      timeZone: 'Europe/London',
+    }).format(d);
+  }
+
+  if (mode === 'recent') {
+    const diffMs = Date.now() - d.getTime();
+    const diffMin = Math.floor(diffMs / 60000);
+    const diffHr = Math.floor(diffMin / 60);
+    const diffDay = Math.floor(diffHr / 24);
+    if (diffDay > 0) return `${diffDay}d ago`;
+    if (diffHr > 0) return `${diffHr}h ago`;
+    if (diffMin > 0) return `${diffMin}m ago`;
+    return 'just now';
+  }
+
+  return formatDate(d);
 }
 
 /** Short date format — day, month, year only. No time. */

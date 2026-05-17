@@ -85,6 +85,25 @@ export interface CustomerProfile {
   suspicionScore: number;
 }
 
+export interface CustomerEventStreamItem {
+  id: string;
+  type:
+    | 'order_placed'
+    | 'order_refunded'
+    | 'chargeback_filed'
+    | 'identity_change'
+    | 'watchlist_add'
+    | 'cross_merchant_signal'
+    | 'note_added';
+  date: string;
+  title: string;
+  subtitle?: string;
+  amount?: number | null;
+  tier?: string;
+  evidence?: string[];
+  detail?: string;
+}
+
 // ---------------------------------------------------------------------------
 // Union-Find
 // ---------------------------------------------------------------------------
@@ -445,4 +464,89 @@ export function buildCustomerProfiles(transactions: TransactionRow[]): CustomerP
   // Sort: highest suspicion first
   profiles.sort((a, b) => b.suspicionScore - a.suspicionScore);
   return profiles;
+}
+
+export function getEventStream(input: {
+  orderHistory?: Array<{
+    orderId: string;
+    processedAt: string;
+    orderValue?: number | null;
+    riskLevel?: string | null;
+    refundRequested?: boolean;
+    refundReason?: string | null;
+    chargebackFiled?: boolean;
+    chargebackReasonCode?: string | null;
+    fraudFlags?: string[];
+    address?: string | null;
+    email?: string | null;
+    cardLast4?: string | null;
+  }>;
+  identityTimeline?: Array<{
+    date: string;
+    field: string;
+    value: string;
+    isVariant: boolean;
+  }>;
+  linkedAccounts?: Array<{ entityType: string; entityValue: string; confidence: number }>;
+  notes?: Array<{ id: string; created_at: string; body?: string | null }>;
+}): CustomerEventStreamItem[] {
+  const events: CustomerEventStreamItem[] = [];
+
+  for (const order of input.orderHistory ?? []) {
+    events.push({
+      id: `order-${order.orderId}-${order.processedAt}`,
+      type: order.chargebackFiled ? 'chargeback_filed' : order.refundRequested ? 'order_refunded' : 'order_placed',
+      date: order.processedAt,
+      title: order.chargebackFiled
+        ? `Chargeback ${order.orderId}`
+        : order.refundRequested
+        ? `Refund ${order.orderId}`
+        : `Order ${order.orderId}`,
+      subtitle: order.chargebackFiled
+        ? order.chargebackReasonCode ?? 'Chargeback filed'
+        : order.refundRequested
+        ? order.refundReason ?? 'Refund requested'
+        : order.address ?? order.email ?? undefined,
+      amount: order.orderValue ?? null,
+      tier: order.riskLevel ?? undefined,
+      evidence: order.fraudFlags?.slice(0, 3) ?? [],
+      detail: order.cardLast4 ? `Payment ending ${order.cardLast4}` : undefined,
+    });
+  }
+
+  for (const change of input.identityTimeline ?? []) {
+    if (!change.isVariant) continue;
+    events.push({
+      id: `identity-${change.field}-${change.value}`,
+      type: 'identity_change',
+      date: change.date,
+      title: `New ${change.field}: ${change.value}`,
+      subtitle: 'Identity change observed',
+      evidence: [`Variant ${change.field}`],
+    });
+  }
+
+  for (const linked of input.linkedAccounts ?? []) {
+    events.push({
+      id: `linked-${linked.entityType}-${linked.entityValue}`,
+      type: 'cross_merchant_signal',
+      date: new Date().toISOString(),
+      title: `${linked.entityType.toUpperCase()} linked`,
+      subtitle: linked.entityValue,
+      tier: linked.confidence >= 80 ? 'high' : 'medium',
+      evidence: [`Confidence ${linked.confidence}%`],
+    });
+  }
+
+  for (const note of input.notes ?? []) {
+    events.push({
+      id: `note-${note.id}`,
+      type: 'note_added',
+      date: note.created_at,
+      title: 'Analyst note added',
+      subtitle: note.body?.slice(0, 80) ?? 'Case note recorded',
+    });
+  }
+
+  return events.sort((a, b) => b.date.localeCompare(a.date));
 }

@@ -17,6 +17,9 @@ import type { Database } from '@/lib/supabase/types';
 import PageSizeSelect from '@/components/common/PageSizeSelect';
 import AuditCustomersTableClient from '@/components/audit/AuditCustomersTableClient';
 import { PageHeader } from '@/components/common/PageHeader';
+import { SectionCard, MetricCard } from '@/components/ui';
+import { RiskDistributionStrip } from '@/components/audit/RiskDistributionStrip';
+import { formatDateMode } from '@/lib/utils/format';
 
 type RunRow = Database['public']['Tables']['processing_jobs']['Row'];
 type TxRow = Database['public']['Tables']['audit_transactions']['Row'];
@@ -149,7 +152,8 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
 
       {/* ── Action bar ───────────────────────────────────────────────── */}
       {hasFlags && (
-        <div className="flex items-center gap-3 flex-wrap rounded-lg px-4 py-3 border" style={{ background: 'var(--accent-soft)', borderColor: 'var(--border)' }}>
+        <SectionCard title="Status" className="border-[var(--border)]">
+        <div className="flex items-center gap-3 flex-wrap">
           <p className="text-body-sm flex-1" style={{ color: 'var(--text-muted)' }}>
             <strong style={{ color: 'var(--text)' }}>{summary.flaggedTransactions.toLocaleString()} orders</strong> with likely identity links.
           </p>
@@ -157,15 +161,15 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
             <Link
               href={`/audit/${jobId}?tab=customers`}
               className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-md transition-colors"
-              style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}
+              style={{ background: '#1A1814', color: '#E8E4D8' }}
             >
               <Users className="h-4 w-4" />
               Review likely identities
             </Link>
             <a
               href={`/api/audit/${jobId}/export`}
-              className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-md transition-colors border"
-              style={{ color: 'var(--text)', borderColor: 'var(--border)' }}
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-md transition-colors"
+              style={{ border: '1px solid var(--border-default)', color: 'var(--text)', background: 'transparent' }}
               download
             >
               <Download className="h-4 w-4" />
@@ -180,32 +184,19 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
             </Link>
           </div>
         </div>
+        </SectionCard>
       )}
 
       {/* ── Audit summary hero ────────────────────────────────────────── */}
-      <div className="rounded-xl p-5 border" style={{ background: 'var(--accent-soft)', borderColor: 'var(--border)' }}>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-          {([
-            { label: 'Orders analysed', value: runData.total_rows.toLocaleString(), href: `?tab=transactions` },
-            { label: 'Likely identity links', value: summary.flaggedTransactions.toLocaleString(), highlight: summary.flaggedTransactions > 0 ? 'var(--risk-high)' : null, href: `?tab=customers` },
-            { label: 'Definite matches', value: gradeCounts.definite.toLocaleString(), highlight: gradeCounts.definite > 0 ? 'var(--risk-critical)' : null, href: `?tab=customers&grade=definite` },
-            { label: 'Linked-order value', value: formatCurrency(estimatedExposure), title: 'Total order value for probable and definite same-person identity matches.', href: `?tab=customers` },
-            { label: 'Completed', value: formatDate(runData.created_at) },
-          ] as Array<{ label: string; value: string; highlight?: string | null; title?: string; href?: string }>).map(({ label, value, highlight, title, href }) => {
-            const cell = (
-              <div key={label} title={title} className={href ? 'group cursor-pointer' : ''}>
-                <p className="text-caption mb-0.5" style={{ color: 'var(--text-muted)' }}>{label}</p>
-                <p className={`text-heading-sm font-mono ${href ? 'group-hover:underline' : ''}`} style={{ color: highlight ?? 'var(--text)' }}>{value}</p>
-                {href && <p className="text-[10px] mt-0.5 opacity-0 group-hover:opacity-60 transition-opacity" style={{ color: 'var(--text-muted)' }}>Click to drill down →</p>}
-              </div>
-            );
-            return href ? (
-              <Link key={label} href={`/audit/${jobId}${href}`}>{cell}</Link>
-            ) : (
-              <div key={label}>{cell}</div>
-            );
-          })}
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <Link href={`/audit/${jobId}?tab=transactions`} className="block"><MetricCard label="Orders analysed" value={runData.total_rows} /></Link>
+        <div className="md:col-span-2">
+          <SectionCard title="Anchor Metric">
+            <RiskDistributionStrip definite={gradeCounts.definite} probable={gradeCounts.probable} candidate={gradeCounts.possible} weak={gradeCounts.weak} />
+          </SectionCard>
         </div>
+        <Link href={`/audit/${jobId}?tab=customers&grade=definite`} className="block"><MetricCard label="Definite matches" value={gradeCounts.definite} /></Link>
+        <MetricCard label="Completed" value={formatDateMode(runData.created_at, 'recent')} hint={formatDate(runData.created_at)} />
       </div>
 
       {/* ── Data quality banner ───────────────────────────────────────── */}
