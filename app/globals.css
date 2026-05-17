@@ -380,8 +380,8 @@
 }
 
 @keyframes ua-bar-fill {
-  0%   { transform: scaleX(0); }
-  100% { transform: scaleX(var(--ua-bar-fill, 1)); }
+  0%   { width: 0; }
+  100% { width: var(--ua-bar-width, 100%); }
 }
 
 @keyframes ua-pulse-dot {
@@ -409,6 +409,11 @@
   100% { background-position: 200% 0; }
 }
 
+@keyframes ua-type-clip {
+  0%   { clip-path: inset(0 100% 0 0); }
+  100% { clip-path: inset(0 -1px 0 0); }
+}
+
 /* Default: always visible — no-JS / prerender / social-card safe */
 .ua-reveal {
   opacity: 1;
@@ -428,11 +433,14 @@
 
 .ua-bar {
   transform-origin: left center;
-  transform: scaleX(0);
+  transform: none;
   will-change: transform;
 }
-.ua-bar.is-visible {
-  animation: ua-bar-fill 720ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+.ua-motion-ready .ua-bar:not(.is-visible) {
+  width: 0 !important;
+}
+.ua-motion-ready .ua-bar.is-visible {
+  animation: ua-bar-fill var(--ua-bar-duration, 720ms) cubic-bezier(0.22, 0.61, 0.36, 1) both;
   animation-delay: var(--ua-bar-delay, 0ms);
 }
 
@@ -446,6 +454,54 @@
 }
 
 .ua-caret { animation: ua-caret-blink 1.1s steps(1, end) infinite; }
+
+.ua-case-step,
+.ua-case-score {
+  opacity: 1;
+  clip-path: inset(0 0 0 0);
+}
+
+.ua-motion-ready .ua-case-card .ua-case-step,
+.ua-motion-ready .ua-case-card .ua-case-score {
+  opacity: 1;
+  clip-path: none;
+}
+
+.ua-motion-ready .ua-case-card .ua-case-step {
+  animation: none;
+}
+
+.ua-motion-ready .ua-case-card .ua-case-score {
+  display: inline-block;
+  max-width: none;
+  overflow: visible;
+  white-space: nowrap;
+}
+
+.ua-type-text {
+  display: inline-block;
+  max-width: none;
+  overflow: visible;
+  white-space: nowrap;
+  vertical-align: bottom;
+  clip-path: inset(0 -1px 0 0);
+}
+
+.ua-type-cursor {
+  display: inline-block;
+  width: 1px;
+  height: 1em;
+  margin-left: 1px;
+  background: #7B2D26;
+  vertical-align: -0.12em;
+  animation: ua-caret-blink 900ms steps(1, end) infinite;
+}
+
+.ua-motion-ready .ua-case-card .ua-case-signal-bar .ua-bar.is-visible {
+  animation: ua-bar-fill var(--ua-bar-duration, 400ms) cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  animation-delay: var(--ua-bar-delay, 0ms);
+  transform: none;
+}
 
 /* Subtle hover lifts for cards / chips */
 .ua-hover-lift {
@@ -614,7 +670,8 @@
   /* Bars: jump to final state */
   .ua-bar {
     animation: none !important;
-    transform: scaleX(1) !important;
+    transform: none !important;
+    width: var(--ua-bar-width, auto) !important;
   }
   /* Other animated elements */
   .ua-pulse,
@@ -622,8 +679,15 @@
   .ua-hover-lift,
   .ua-hover-glow,
   .ua-draw,
-  .ua-chart-draw .recharts-line-curve {
+  .ua-chart-draw .recharts-line-curve,
+  .ua-case-step,
+  .ua-case-score,
+  .ua-type-text {
     animation: none !important;
+    opacity: 1 !important;
+    max-width: none !important;
+    overflow: visible !important;
+    clip-path: inset(0 -1px 0 0) !important;
     transform: none !important;
     stroke-dashoffset: 0 !important;
   }

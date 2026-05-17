@@ -1,9 +1,11 @@
 import { UnauthLogo } from '@/components/ui/UnauthLogo';
 import { Lock, EyeOff, FileText, Scale } from 'lucide-react';
+import type { CSSProperties } from 'react';
 import NetworkChart from './_components/NetworkChart';
 import Reveal from './_components/Reveal';
 import Counter from './_components/Counter';
 import AnimatedBar from './_components/AnimatedBar';
+import TypedText from './_components/TypedText';
 import AuditForm from './AuditForm';
 
 export const metadata = {
@@ -20,6 +22,73 @@ export default function LandingPage() {
     day: 'numeric',
   });
   const todayISO = today.toISOString().slice(0, 10);
+  const heroSubjectFields = [
+    {
+      label: 'emails',
+      rows: [
+        ['noah.k*****@protonmail.com', 'primary · 4 merchants'],
+        ['n.ke*****@protonmail.com', '2 merchants'],
+        ['noah_k*****@gmail.com', '1 merchant'],
+        ['n.k*****@gmail.com', '1 merchant · low confidence'],
+      ],
+    },
+    {
+      label: 'addresses',
+      rows: [
+        ['4421 Larkspur Ln, Apt 3B, P*****', 'primary'],
+        ['4421 Larspur Lane Apt 3B, P*****', 'misspelt · conf 0.98'],
+        ['4421 Larkspur Ln #3B, P*****', 'normalised match'],
+      ],
+    },
+    {
+      label: 'payment',
+      rows: [
+        ['Chase Sapphire Reserve •••• 4419', 'primary'],
+      ],
+    },
+    {
+      label: 'devices',
+      rows: [
+        ['dev_hmac_71c2a8****', 'iPhone · Safari 17'],
+        ['dev_hmac_9f3b12****', 'iPhone · Chrome 124'],
+      ],
+    },
+    {
+      label: 'phone',
+      rows: [
+        ['+44 7*** ***1184', 'primary'],
+        ['+44 7*** ***2209', 'variant · 2 merchants'],
+      ],
+    },
+    {
+      label: 'ip / geo',
+      rows: [
+        ['82.***.***.114', 'LDN · AS15169'],
+        ['81.***.***.203', 'MAN · AS15169'],
+        ['91.***.***.77', 'LDN · AS15169'],
+      ],
+    },
+    {
+      label: 'browser',
+      rows: [
+        ['Safari 17 · iPhone', 'primary'],
+        ['Chrome 124 · iPhone', 'observed once'],
+      ],
+    },
+    {
+      label: 'delivery',
+      rows: [
+        ['DPD · photo proof requested x3', ''],
+        ['Royal Mail · no proof · 1 dispute'],
+      ],
+    },
+  ];
+  const heroSubjectRowDelay = (rowIndex: number) => `${220 + rowIndex * 58}ms`;
+  const heroSubjectRowCount = heroSubjectFields.reduce((count, field) => count + field.rows.length, 0);
+  const heroMatchedDelay = 220 + heroSubjectRowCount * 58 + 180;
+  const heroNetworkDelay = heroMatchedDelay + 170;
+  const heroActionDelay = heroNetworkDelay + 5 * 60 + 180;
+  const heroFooterDelay = heroActionDelay + 160;
 
   return (
     <div
@@ -179,7 +248,7 @@ export default function LandingPage() {
         </Reveal>
 
         {/* Bottom — large product artifact */}
-        <Reveal as="div" className="relative mt-6 md:mt-8" delay={180}>
+        <Reveal as="div" className="relative mt-6 md:mt-8" delay={180} noFade>
             {/* Floating eyebrow above artifact */}
             <div
               className="flex items-center justify-between mb-3"
@@ -194,7 +263,7 @@ export default function LandingPage() {
               <span>
                 <span
                   className="ua-pulse"
-                  style={{ display: 'inline-block', width: 6, height: 6, background: '#34A853', marginRight: '8px', verticalAlign: 'middle' }}
+                  style={{ display: 'inline-block', width: 6, height: 6, background: '#7B2D26', marginRight: '8px', verticalAlign: 'middle' }}
                 />
                 Case file · example output
               </span>
@@ -202,7 +271,7 @@ export default function LandingPage() {
             </div>
 
             <div
-              className="ua-hover-glow"
+              className="ua-hover-glow ua-case-card"
               style={{
                 background: '#FDFBF6',
                 border: '1px solid #D8D0BD',
@@ -286,7 +355,7 @@ export default function LandingPage() {
               </div>
 
               {/* Two-column body: subject + sparkbars */}
-              <div className="grid grid-cols-1 md:grid-cols-[1.05fr_1fr]">
+              <div className="grid grid-cols-1 md:grid-cols-[1.18fr_0.82fr]">
                 {/* Subject column */}
                 <div style={{ padding: '20px 22px', borderRight: '1px solid #D8D0BD' }}>
                   <p
@@ -302,39 +371,65 @@ export default function LandingPage() {
                     SUBJECT
                   </p>
                   <p
+                    className="ua-case-step"
                     style={{
                       fontFamily: 'var(--font-serif, serif)',
                       fontSize: '20px',
                       color: '#1A1814',
                       marginBottom: '6px',
                       lineHeight: 1.3,
-                    }}
+                      ['--ua-case-delay' as string]: '120ms',
+                      ['--ua-case-duration' as string]: '220ms',
+                      ['--ua-case-steps' as string]: 14,
+                      ['--ua-type-delay' as string]: '120ms',
+                      ['--ua-type-duration' as string]: '260ms',
+                      ['--ua-type-steps' as string]: 14,
+                      ['--ua-type-width' as string]: '14ch',
+                    } as CSSProperties}
                   >
-                    Noah K
-                    <span
-                      style={{
-                        background: '#1A1814',
-                        color: 'transparent',
-                        userSelect: 'none',
-                        padding: '0 4px',
-                      }}
-                    >
-                      ████
-                    </span>
+                    <TypedText text="Noah K████" delay={120} speed={18} />
                     <sup>
                       <a href="#note-1" style={{ color: '#7B2D26', textDecoration: 'none' }}>1</a>
                     </sup>
                   </p>
                   <p
+                    className="ua-case-step"
                     style={{
                       fontFamily: 'var(--font-dm-mono, monospace)',
                       fontSize: '13px',
                       color: '#7B2D26',
                       letterSpacing: '0.02em',
-                      marginBottom: '14px',
-                    }}
+                      marginBottom: '6px',
+                      ['--ua-case-delay' as string]: '180ms',
+                      ['--ua-case-duration' as string]: '180ms',
+                      ['--ua-case-steps' as string]: 12,
+                      ['--ua-type-delay' as string]: '220ms',
+                      ['--ua-type-duration' as string]: '220ms',
+                      ['--ua-type-steps' as string]: 13,
+                      ['--ua-type-width' as string]: '14ch',
+                    } as CSSProperties}
                   >
-                    → #u_kessler.07
+                    <TypedText text="→ #u_kessler.07" delay={260} speed={14} />
+                  </p>
+                  <p
+                    className="ua-case-step"
+                    style={{
+                      fontFamily: 'var(--font-serif, serif)',
+                      fontSize: '12px',
+                      fontStyle: 'italic',
+                      color: '#8A8472',
+                      lineHeight: 1.45,
+                      margin: '0 0 14px 0',
+                      ['--ua-case-delay' as string]: '220ms',
+                      ['--ua-case-duration' as string]: '300ms',
+                      ['--ua-case-steps' as string]: 42,
+                      ['--ua-type-delay' as string]: '340ms',
+                      ['--ua-type-duration' as string]: '520ms',
+                      ['--ua-type-steps' as string]: 58,
+                      ['--ua-type-width' as string]: '58ch',
+                    } as CSSProperties}
+                  >
+                    <TypedText text="Peer merchants anonymized · raw identifiers shown as hashes." delay={420} speed={9} />
                   </p>
 
                   {/* Identity fragment grid */}
@@ -342,23 +437,84 @@ export default function LandingPage() {
                     style={{
                       display: 'grid',
                       gridTemplateColumns: '1fr 1fr',
-                      gap: '10px 12px',
+                      gap: '12px 16px',
                       fontFamily: 'var(--font-dm-mono, monospace)',
-                      fontSize: '11.5px',
+                      fontSize: '11px',
                       color: '#4A4640',
                     }}
                   >
-                    {[
-                      ['emails', '3 variants'],
-                      ['addresses', '3 variants'],
-                      ['payment', 'Chase ••4419'],
-                      ['devices', '2 fingerprints'],
-                    ].map(([k, v]) => (
-                      <div key={k}>
-                        <span style={{ color: '#8A8472', textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '10px', display: 'block', marginBottom: '2px' }}>{k}</span>
-                        <span style={{ color: '#1A1814' }}>{v}</span>
+                    {heroSubjectFields.map((field) => {
+                      const previousRowCount = heroSubjectFields
+                        .slice(0, heroSubjectFields.findIndex((item) => item.label === field.label))
+                        .reduce((count, item) => count + item.rows.length, 0);
+
+                      return (
+                      <div key={field.label}>
+                        <span
+                          className="ua-case-step"
+                          style={{
+                            color: '#8A8472',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.06em',
+                            fontSize: '10px',
+                            display: 'block',
+                            marginBottom: '4px',
+                            ['--ua-case-delay' as string]: heroSubjectRowDelay(previousRowCount),
+                            ['--ua-case-duration' as string]: '90ms',
+                            ['--ua-case-steps' as string]: 8,
+                            ['--ua-type-delay' as string]: heroSubjectRowDelay(previousRowCount),
+                            ['--ua-type-duration' as string]: '120ms',
+                            ['--ua-type-steps' as string]: 9,
+                            ['--ua-type-width' as string]: '10ch',
+                          } as CSSProperties}
+                        >
+                          <TypedText text={field.label} delay={220 + previousRowCount * 58} speed={12} />
+                        </span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                          {field.rows.map(([value, note], rowIndex) => (
+                            <div
+                              key={`${field.label}-${value}`}
+                              className="ua-case-step"
+                              style={{
+                                display: 'grid',
+                                gridTemplateColumns: note ? 'minmax(0, 1fr) auto' : '1fr',
+                                gap: '8px',
+                                alignItems: 'baseline',
+                                ['--ua-case-delay' as string]: heroSubjectRowDelay(previousRowCount + rowIndex),
+                                ['--ua-case-duration' as string]: `${Math.min(360, Math.max(160, value.length * 10))}ms`,
+                                ['--ua-case-steps' as string]: Math.min(34, Math.max(12, value.length)),
+                              } as CSSProperties}
+                            >
+                              <TypedText
+                                text={value}
+                                delay={220 + (previousRowCount + rowIndex) * 58}
+                                speed={12}
+                                style={{
+                                  color: '#1A1814',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap',
+                                }}
+                              />
+                              {note ? (
+                                <TypedText
+                                  text={note}
+                                  delay={350 + (previousRowCount + rowIndex) * 58}
+                                  speed={13}
+                                  style={{
+                                    color: '#8A8472',
+                                    fontSize: '10px',
+                                    textAlign: 'right',
+                                    whiteSpace: 'nowrap',
+                                  }}
+                                />
+                              ) : null}
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -374,7 +530,7 @@ export default function LandingPage() {
                       marginBottom: '8px',
                     }}
                   >
-                    SIGNALS FIRED — 4 / 12
+                    SIGNALS FIRED — 8 / 12
                   </p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
                     {[
@@ -382,6 +538,9 @@ export default function LandingPage() {
                       { l: 'cross_merchant_inr_pattern', v: 0.88, on: true },
                       { l: 'shipping_address_variant', v: 0.74, on: true },
                       { l: 'denial_then_chargeback', v: 0.68, on: true },
+                      { l: 'payment_fingerprint_match', v: 0.64, on: true },
+                      { l: 'address_normalization_match', v: 0.58, on: true },
+                      { l: 'device_reuse_observed', v: 0.51, on: true },
                       { l: 'velocity_burst_24h', v: 0.21, on: false },
                     ].map(({ l, v, on }, i) => (
                       <div key={l} style={{ display: 'grid', gridTemplateColumns: '1fr 36px', gap: '10px', alignItems: 'center' }}>
@@ -396,28 +555,37 @@ export default function LandingPage() {
                                 borderRadius: '50%',
                               }}
                             />
-                            <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10.5px', color: on ? '#1A1814' : '#8A8472' }}>
-                              {l}
-                            </span>
+                            <TypedText
+                              text={l}
+                              delay={260 + i * 58}
+                              speed={10}
+                              style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10.5px', color: on ? '#1A1814' : '#8A8472' }}
+                            />
                           </div>
                           <AnimatedBar
+                            className="ua-case-signal-bar"
                             value={v}
                             color={on ? '#7B2D26' : '#B8B2A0'}
                             track="#ECE5D4"
                             height={3}
-                            delay={300 + i * 90}
+                            delay={520 + i * 130}
+                            duration={1050}
+                            initialVisible
+                            transitionWidth
                           />
                         </div>
                         <span
+                          className="ua-case-score"
                           style={{
                             fontFamily: 'var(--font-dm-mono, monospace)',
                             fontSize: '10.5px',
                             color: on ? '#1A1814' : '#8A8472',
                             fontVariantNumeric: 'tabular-nums',
                             textAlign: 'right',
-                          }}
+                            ['--ua-case-score-delay' as string]: `${1500 + i * 130}ms`,
+                          } as CSSProperties}
                         >
-                          <Counter value={v} decimals={2} duration={900} delay={300 + i * 90} format="plain" />
+                          <TypedText text={v.toFixed(2)} delay={1500 + i * 130} speed={28} />
                         </span>
                       </div>
                     ))}
@@ -425,13 +593,39 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              {/* Network footprint */}
+              {/* Tracked datapoints */}
               <div style={{ borderTop: '1px solid #D8D0BD', padding: '16px 22px' }}>
+                <p
+                  className="ua-case-step"
+                  style={{
+                    fontFamily: 'var(--font-dm-mono, monospace)',
+                    fontSize: '11px',
+                    letterSpacing: '0.06em',
+                    color: '#4A4640',
+                    margin: 0,
+                    lineHeight: 1.6,
+                    ['--ua-case-delay' as string]: `${heroMatchedDelay}ms`,
+                    ['--ua-case-duration' as string]: '520ms',
+                    ['--ua-case-steps' as string]: 58,
+                    ['--ua-type-delay' as string]: `${heroMatchedDelay}ms`,
+                    ['--ua-type-duration' as string]: '760ms',
+                    ['--ua-type-steps' as string]: 72,
+                    ['--ua-type-width' as string]: '92ch',
+                  } as CSSProperties}
+                >
+                  <TypedText text="MATCHED · email · phone · address · card · ip · device · browser · asn · INR · 13.1" delay={heroMatchedDelay} speed={10} />
+                </p>
+              </div>
+
+              {/* Network footprint */}
+              <div style={{ borderTop: '1px solid #D8D0BD', padding: '18px 22px', background: '#F8F5EE' }}>
                 <div
                   style={{
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'baseline',
+                    gap: '12px',
+                    flexWrap: 'wrap',
                     marginBottom: '10px',
                   }}
                 >
@@ -456,7 +650,7 @@ export default function LandingPage() {
                       margin: 0,
                     }}
                   >
-                    7 merchants · $3,337 lifetime · 11 orders
+                    7 merchants · aggregate only · 11 orders
                   </p>
                 </div>
                 <div
@@ -468,30 +662,36 @@ export default function LandingPage() {
                   }}
                 >
                   {[
-                    { m: 'HeyGlow Skincare',     o: '3 ord · 2 ref',  v: '$340',   r: 0.55 },
-                    { m: 'Murmur Audio',         o: '3 ord · 2 INR',  v: '$1,210', r: 0.92, note: true },
-                    { m: 'RidgePath Outfitters', o: '2 ord · 2 INR',  v: '$613',   r: 0.80 },
-                    { m: 'Aster & Vale',         o: '1 ord · 1 ref',  v: '$284',   r: 0.42 },
-                    { m: 'Northbound Goods',     o: '2 ord · 1 INR',  v: '$890',   r: 0.71 },
+                    { m: 'your_store',  o: '3 ord · 2 ref',  v: '$340',   r: 0.55 },
+                    { m: 'merchant_04', o: '3 ord · 2 INR',  v: '$1,210', r: 0.92, note: true },
+                    { m: 'merchant_02', o: '2 ord · 2 INR',  v: '$613',   r: 0.80 },
+                    { m: 'merchant_06', o: '1 ord · 1 ref',  v: '$284',   r: 0.42 },
+                    { m: 'merchant_03', o: '2 ord · 1 INR',  v: '$890',   r: 0.71 },
                   ].map((row, i) => (
                     <div
                       key={row.m}
+                      className="ua-case-step"
                       style={{
                         display: 'grid',
                         gridTemplateColumns: 'minmax(0, 1.5fr) minmax(0, 1fr) 60px auto',
                         gap: '12px',
                         alignItems: 'center',
-                      }}
+                        ['--ua-case-delay' as string]: `${heroNetworkDelay + i * 60}ms`,
+                        ['--ua-case-duration' as string]: '260ms',
+                        ['--ua-case-steps' as string]: 24,
+                        ['--ua-type-delay' as string]: `${heroNetworkDelay + i * 80}ms`,
+                        ['--ua-type-duration' as string]: '420ms',
+                        ['--ua-type-steps' as string]: 34,
+                        ['--ua-type-width' as string]: '62ch',
+                      } as CSSProperties}
                     >
-                      <span style={{ color: '#1A1814', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {row.m}
-                        {row.note ? (
-                          <sup style={{ fontFamily: 'var(--font-serif, serif)' }}>
-                            <a href="#note-2" style={{ color: '#7B2D26', textDecoration: 'none' }}>2</a>
-                          </sup>
-                        ) : null}
-                      </span>
-                      <span style={{ color: '#4A4640' }}>{row.o}</span>
+                      <TypedText
+                        text={row.note ? `${row.m}²` : row.m}
+                        delay={heroNetworkDelay + i * 80}
+                        speed={12}
+                        style={{ color: '#1A1814', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                      />
+                      <TypedText text={row.o} delay={heroNetworkDelay + i * 80 + 120} speed={13} style={{ color: '#4A4640' }} />
                       <AnimatedBar
                         value={row.r}
                         color={row.r > 0.7 ? '#7B2D26' : row.r > 0.5 ? '#B6512A' : '#8A8472'}
@@ -499,9 +699,7 @@ export default function LandingPage() {
                         height={3}
                         delay={500 + i * 70}
                       />
-                      <span style={{ color: '#1A1814', fontVariantNumeric: 'tabular-nums', textAlign: 'right', minWidth: '46px' }}>
-                        {row.v}
-                      </span>
+                      <TypedText text={row.v} delay={heroNetworkDelay + i * 80 + 220} speed={20} style={{ color: '#1A1814', fontVariantNumeric: 'tabular-nums', textAlign: 'right', minWidth: '46px' }} />
                     </div>
                   ))}
                   <p style={{ color: '#8A8472', fontSize: '11px', marginTop: '8px' }}>
@@ -512,6 +710,7 @@ export default function LandingPage() {
 
               {/* Recommended action */}
               <div
+                className="ua-case-step"
                 style={{
                   borderTop: '1px solid #D8D0BD',
                   padding: '14px 22px',
@@ -521,9 +720,16 @@ export default function LandingPage() {
                   justifyContent: 'space-between',
                   gap: '12px',
                   flexWrap: 'wrap',
-                }}
-              >
-                <p
+                  ['--ua-case-delay' as string]: `${heroActionDelay}ms`,
+                  ['--ua-case-duration' as string]: '320ms',
+                  ['--ua-case-steps' as string]: 36,
+                  ['--ua-type-delay' as string]: `${heroActionDelay}ms`,
+                  ['--ua-type-duration' as string]: '620ms',
+                  ['--ua-type-steps' as string]: 64,
+                  ['--ua-type-width' as string]: '92ch',
+                } as CSSProperties}
+                >
+                  <p
                   style={{
                     fontFamily: 'var(--font-dm-mono, monospace)',
                     fontSize: '11.5px',
@@ -532,8 +738,8 @@ export default function LandingPage() {
                     margin: 0,
                     fontWeight: 500,
                   }}
-                >
-                  ▸ DECLINE NEXT ORDER · ASSEMBLE CASE FILE FOR 2 OPEN DISPUTES
+                  >
+                  <TypedText text="▸ DECLINE NEXT ORDER · ASSEMBLE CASE FILE FOR 2 OPEN DISPUTES" delay={heroActionDelay} speed={10} />
                 </p>
                 <span
                   style={{
@@ -545,12 +751,29 @@ export default function LandingPage() {
                     padding: '2px 8px',
                   }}
                 >
-                  packet.pdf · 2.4mb
+                  <TypedText text="packet.pdf · 2.4mb" delay={heroActionDelay + 460} speed={14} />
                 </span>
               </div>
 
               {/* Footer meta */}
-              <div style={{ borderTop: '1px solid #D8D0BD', padding: '10px 22px', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+              <div
+                className="ua-case-step"
+                style={{
+                  borderTop: '1px solid #D8D0BD',
+                  padding: '10px 22px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: '8px',
+                  ['--ua-case-delay' as string]: `${heroFooterDelay}ms`,
+                  ['--ua-case-duration' as string]: '280ms',
+                  ['--ua-case-steps' as string]: 36,
+                  ['--ua-type-delay' as string]: `${heroFooterDelay}ms`,
+                  ['--ua-type-duration' as string]: '520ms',
+                  ['--ua-type-steps' as string]: 62,
+                  ['--ua-type-width' as string]: '96ch',
+                } as CSSProperties}
+              >
                 <p
                   style={{
                     fontFamily: 'var(--font-dm-mono, monospace)',
@@ -560,7 +783,7 @@ export default function LandingPage() {
                     margin: 0,
                   }}
                 >
-                  generated 2026-05-15 09:42 EST · pipeline latency 38ms
+                  <TypedText text="generated 2026-05-15 09:42 EST · pipeline latency 38ms" delay={heroFooterDelay} speed={10} />
                 </p>
                 <p
                   style={{
@@ -570,16 +793,16 @@ export default function LandingPage() {
                     margin: 0,
                   }}
                 >
-                  HMAC-SHA256 · per-tenant salt
+                  <TypedText text="HMAC-SHA256 · per-tenant salt" delay={heroFooterDelay + 360} speed={12} />
                 </p>
               </div>
             </div>
 
             {/* Tiny meta row under card */}
             <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-4" style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11px', color: '#8A8472', letterSpacing: '0.04em' }}>
-              <span>1 of 312 resolved this week</span>
+              <span>sample cluster · 11 orders analysed</span>
               <span style={{ color: '#D8D0BD' }}>·</span>
-              <span>median resolution: 38s</span>
+              <span>pipeline latency: 38ms</span>
               <span style={{ color: '#D8D0BD' }}>·</span>
               <span>Case file ready in browser</span>
             </div>
@@ -588,7 +811,7 @@ export default function LandingPage() {
             <div className="flex flex-wrap gap-2 mt-5">
               {[
                 'No checkout integration',
-                'CSV pilot · ~10 min',
+                'CSV audit · ~20 min',
                 'Client-side HMAC hashing',
                 'Case file evidence output',
               ].map((chip) => (
@@ -655,8 +878,7 @@ export default function LandingPage() {
                 marginBottom: '20px',
               }}
             >
-              {/* TODO: workshop §1 body copy — brief §10.2. Key insight must land harder: each store sees a clean buyer; the pattern only exists in aggregate. Do not restate "good customer at your store / at six other stores" twice. No first-draft ships here. */}
-              A serial refund abuser doesn&rsquo;t behave like one at your store. They behave like a good customer — at your store. They behave like a good customer at six other stores too. The pattern only resolves when orders are stacked side by side.
+              At one store, the buyer looks ordinary: a paid order, a refund request, a plausible address. Across seven stores, the same card, address variants, and INR pattern resolve into one identity.
             </p>
 
             {/* Three stats inline */}
@@ -730,13 +952,13 @@ export default function LandingPage() {
 
               {(() => {
                 const ledgerRows = [
-                  { merchant: 'HeyGlow Skincare',     email: 'noah.kessler@protonmail.com', addr: '4421 Larkspur Ln, Apt 3B',     card: '••4419' },
-                  { merchant: 'Murmur Audio',         email: 'n.kessler@protonmail.com',    addr: '4421 Larspur Lane Apt 3B',     card: '••4419' },
-                  { merchant: 'RidgePath Outfitters', email: 'noah_kessler@gmail.com',      addr: '4421 Larkspur Ln #3B',         card: '••4419' },
-                  { merchant: 'Aster & Vale',         email: 'n.k@gmail.com',               addr: '4421 Larkspur Ln Apt 3B',      card: '••4419' },
-                  { merchant: 'Northbound Goods',     email: 'noah.kessler@protonmail.com', addr: '4421 Larkspur Ln #3B',         card: '••4419' },
-                  { merchant: 'Petalwood Co.',        email: 'n.kessler+1@protonmail.com',  addr: '4421 Larkspur Ln, Apt 3B',     card: '••4419' },
-                  { merchant: 'Otterline',            email: 'noah.kessler@protonmail.com', addr: '4421 Larkspur Lane, Apt 3B',   card: '••4419' },
+                  { merchant: 'your_store',  email: 'n•••@merchant-domain', addr: 'addr_hash_91c2 · apt match',      card: '••4419' },
+                  { merchant: 'merchant_04', email: 'email_hmac_91b4',      addr: 'addr_hash_91c2 · variant',        card: '••4419' },
+                  { merchant: 'merchant_02', email: 'email_hmac_a802',      addr: 'addr_hash_91c2 · unit variant',   card: '••4419' },
+                  { merchant: 'merchant_06', email: 'email_hmac_77da',      addr: 'addr_hash_91c2 · normalized',     card: '••4419' },
+                  { merchant: 'merchant_03', email: 'email_hmac_91b4',      addr: 'addr_hash_91c2 · unit variant',   card: '••4419' },
+                  { merchant: 'merchant_05', email: 'email_hmac_3c19',      addr: 'addr_hash_91c2 · apt match',      card: '••4419' },
+                  { merchant: 'merchant_07', email: 'email_hmac_91b4',      addr: 'addr_hash_91c2 · spelling match', card: '••4419' },
                 ];
                 return (
                   <>
@@ -783,8 +1005,8 @@ export default function LandingPage() {
                           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.email}</span>
                           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.addr}</span>
                           <span>{row.card}</span>
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', color: '#3D6F4A', fontSize: '10.5px' }}>
-                            <span style={{ width: 5, height: 5, background: '#3D6F4A', borderRadius: '50%' }} />
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', color: '#4A4640', fontSize: '10.5px' }}>
+                            <span style={{ width: 5, height: 5, background: '#4A4640', borderRadius: '50%' }} />
                             ok
                           </span>
                         </Reveal>
@@ -807,8 +1029,8 @@ export default function LandingPage() {
                             <span style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '13px', fontWeight: 600, color: '#1A1814' }}>
                               {row.merchant}
                             </span>
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', color: '#3D6F4A', fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10px', letterSpacing: '0.04em' }}>
-                              <span style={{ width: 5, height: 5, background: '#3D6F4A', borderRadius: '50%' }} />
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', color: '#4A4640', fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10px', letterSpacing: '0.04em' }}>
+                              <span style={{ width: 5, height: 5, background: '#4A4640', borderRadius: '50%' }} />
                               ok
                             </span>
                           </div>
@@ -904,7 +1126,7 @@ export default function LandingPage() {
                   maxWidth: '720px',
                 }}
               >
-                What 12 weeks of cross-merchant clustering looks like in production.
+                The network layer is built around controls that exist today.
               </h2>
               <p
                 style={{
@@ -920,8 +1142,8 @@ export default function LandingPage() {
             </div>
             <div style={{ display: 'flex', gap: '24px', fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11px', color: '#B8B2A0' }}>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ width: 8, height: 8, background: '#34A853', borderRadius: '50%', display: 'inline-block' }} />
-                LIVE · 217ms p95
+                <span style={{ width: 8, height: 8, background: '#7B2D26', borderRadius: '50%', display: 'inline-block' }} />
+                AUDIT PIPELINE · 38ms p95
               </span>
               <span>v3.2.1</span>
             </div>
@@ -994,7 +1216,7 @@ export default function LandingPage() {
               marginTop: '24px',
             }}
           >
-            The network is being built with founding merchants now. Published network figures will appear once the cohort is live; until then, output remains illustrative and k-anonymity gated. The network does not publish merchant names, raw order data, or buyer identities.
+            The network is being built with founding merchants now. Published cross-merchant counts will appear once the cohort is live. Until then, k-anonymity controls determine what can surface, and the network does not publish merchant names, raw order data, or buyer identities.
           </p>
         </div>
       </section>
@@ -1267,7 +1489,7 @@ export default function LandingPage() {
                   <span style={{ width: 9, height: 9, borderRadius: '50%', background: '#3A372E', display: 'inline-block' }} />
                 </span>
                 <span style={{ marginLeft: '10px' }}>POST /v1/score</span>
-                <span style={{ marginLeft: 'auto', color: '#34A853' }}>200 OK · 38ms</span>
+                <span style={{ marginLeft: 'auto', color: '#8A8472' }}>200 OK · 38ms</span>
               </div>
 
               <pre
@@ -1294,7 +1516,7 @@ export default function LandingPage() {
 <span>{'    '}<span style={{ color: '#E8E4D8' }}>{'"denial_then_chargeback"'}</span></span>{'\n'}
 <span>{'  '}],</span>{'\n'}
 <span>{'  '}<span style={{ color: '#8A8472' }}>{'"merchants_seen_at"'}</span>: <span style={{ color: '#B6512A' }}>7</span>,</span>{'\n'}
-<span>{'  '}<span style={{ color: '#8A8472' }}>{'"evidence_packet_eligible"'}</span>: <span style={{ color: '#34A853' }}>true</span></span>{'\n'}
+<span>{'  '}<span style={{ color: '#8A8472' }}>{'"evidence_packet_eligible"'}</span>: <span style={{ color: '#E8E4D8' }}>true</span></span>{'\n'}
 <span>{'}'}</span>
               </pre>
             </div>
@@ -1437,21 +1659,18 @@ export default function LandingPage() {
               Email variants, address misspellings, payment fingerprint, network footprint, behavioural pattern, recommended action — rendered directly into your dispute response. CE 3.0 formatted evidence packets are the target output for chargeback representment.
             </p>
           </div>
-          <a
-            href="mailto:hello@unauth.app?subject=Unauth%20sample%20evidence%20packet"
+          <span
             style={{
               fontFamily: 'var(--font-dm-mono, monospace)',
               fontSize: '11.5px',
-              color: '#1A1814',
+              color: '#8A8472',
               padding: '8px 14px',
-              border: '1px solid #1A1814',
-              textDecoration: 'none',
+              border: '1px solid #D8D0BD',
               letterSpacing: '0.06em',
             }}
-            className="hover:bg-[#1A1814] hover:text-[#F8F5EE]"
           >
-            REQUEST SAMPLE PDF →
-          </a>
+            CASE FILE OUTPUT
+          </span>
         </div>
 
         <div
@@ -1602,10 +1821,10 @@ export default function LandingPage() {
                   wordBreak: 'break-all',
                 }}
               >
-{`noah.kessler@protonmail.com    [primary, observed 4 merchants]
-n.kessler@protonmail.com       [observed 2 merchants]
-noah_kessler@gmail.com         [observed 1 merchant]
-n.k@gmail.com                  [observed 1 merchant, flagged synthetic]`}
+{`n•••@your-store-customer       [your store record]
+email_hmac_91b4                [observed across 4 merchants]
+email_hmac_a802                [observed across 2 merchants]
+email_hmac_77da                [low confidence variant]`}
               </pre>
 
               <hr style={{ border: 0, borderTop: '1px solid #D8D0BD', margin: '0 0 16px 0' }} />
@@ -1633,9 +1852,9 @@ n.k@gmail.com                  [observed 1 merchant, flagged synthetic]`}
                   wordBreak: 'break-all',
                 }}
               >
-{`4421 Larkspur Ln, Apt 3B, Portland OR 97214
-4421 Larspur Lane Apt 3B, Portland OR 97214      [misspelt — confidence 0.98]
-4421 Larkspur Ln #3B, Portland, OR 97214         [normalised match]`}
+{`addr_hash_91c2     [your store record]
+addr_hash_91c2     [spelling variant — confidence 0.98]
+addr_hash_91c2     [unit variant — normalized match]`}
               </pre>
 
               <hr style={{ border: 0, borderTop: '1px solid #D8D0BD', margin: '0 0 16px 0' }} />
@@ -1659,7 +1878,7 @@ n.k@gmail.com                  [observed 1 merchant, flagged synthetic]`}
                   color: '#4A4640',
                 }}
               >
-                Chase Sapphire Reserve  ••••  4419
+                card_hash_8fd2 · last4 4419
               </p>
             </div>
 
@@ -1689,11 +1908,11 @@ n.k@gmail.com                  [observed 1 merchant, flagged synthetic]`}
                     minWidth: 0,
                   }}
                 >
-{`HeyGlow Skincare         $340.00     3 orders     2 refunds claimed
-Murmur Audio           $1,210.00     3 orders     2 INR filed [2]
-RidgePath Outfitters     $612.50     2 orders     2 INR filed
-Aster & Vale             $284.00     1 order      1 refund claimed
-Northbound Goods         $890.00     2 orders     1 INR filed
+{`your_store             $340.00     3 orders     2 refunds claimed
+merchant_04          $1,210.00     3 orders     2 INR filed [2]
+merchant_02            $612.50     2 orders     2 INR filed
+merchant_06            $284.00     1 order      1 refund claimed
+merchant_03            $890.00     2 orders     1 INR filed
 [2 more merchants withheld]`}
                 </pre>
               </div>
@@ -1722,7 +1941,7 @@ Northbound Goods         $890.00     2 orders     1 INR filed
                   marginBottom: '20px',
                 }}
               >
-                Files INR claim within 2.4 days of marked delivery, on average. 6 of 8 most recent orders disputed. First seen at HeyGlow Skincare on Feb 09, 2026. Most recent activity 4 days ago.
+                Files INR claim within 2.4 days of marked delivery, on average. 6 of 8 most recent orders disputed. First seen in the network on Feb 09, 2026. Most recent activity 4 days ago.
               </p>
 
               <hr style={{ border: 0, borderTop: '1px solid #D8D0BD', margin: '0 0 16px 0' }} />
@@ -1819,7 +2038,7 @@ Northbound Goods         $890.00     2 orders     1 INR filed
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-px" style={{ background: '#D8D0BD', border: '1px solid #D8D0BD' }}>
-          {/* Case 1 — Northbound Goods */}
+          {/* Case 1 */}
           <Reveal className="ua-hover-lift" delay={60} style={{ background: '#FDFBF6', padding: '24px 26px' }}>
             <div className="flex items-center justify-between mb-5">
               <p
@@ -1872,7 +2091,7 @@ Northbound Goods         $890.00     2 orders     1 INR filed
 
           </Reveal>
 
-          {/* Case 2 — Murmur Audio */}
+          {/* Case 2 */}
           <Reveal className="ua-hover-lift" delay={140} style={{ background: '#FDFBF6', padding: '24px 26px' }}>
             <div className="flex items-center justify-between mb-5">
               <p
@@ -1952,7 +2171,7 @@ Northbound Goods         $890.00     2 orders     1 INR filed
               maxWidth: '760px',
             }}
           >
-            What the engine needs. <span style={{ fontFamily: 'var(--font-serif, serif)', fontStyle: 'italic', color: '#7B2D26' }}>Nothing your platform doesn&rsquo;t already log.</span>
+            What the engine needs. <span style={{ fontFamily: 'var(--font-serif, serif)', fontStyle: 'italic', color: '#7B2D26' }}>Nothing your store doesn&rsquo;t already log.</span>
           </h2>
           <p
             style={{
@@ -2289,9 +2508,9 @@ Northbound Goods         $890.00     2 orders     1 INR filed
             { cap: 'PII leaves the merchant in clear text',  a: 'yes',     b: 'yes',     c: 'no',  note: 'client-side HMAC-SHA256' },
           ];
           const icon = (v: string) => v === 'yes'
-            ? <span style={{ color: '#3D6F4A', fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '14px' }}>●</span>
+            ? <span style={{ color: '#1A1814', fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '14px' }}>●</span>
             : v === 'partial'
-              ? <span style={{ color: '#B6512A', fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '14px' }}>◐</span>
+              ? <span style={{ color: '#8A8472', fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '14px' }}>◐</span>
               : <span style={{ color: '#D8D0BD', fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '14px' }}>○</span>;
           const iconLabel = (v: string) => v === 'yes' ? 'Supported' : v === 'partial' ? 'Partial' : 'Not supported';
 
@@ -2412,10 +2631,10 @@ Northbound Goods         $890.00     2 orders     1 INR filed
 
         <div className="flex items-center gap-5 mt-5 flex-wrap" style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11px', color: '#8A8472' }}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ color: '#3D6F4A', fontSize: '14px' }}>●</span> supported
+            <span style={{ color: '#1A1814', fontSize: '14px' }}>●</span> supported
           </span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ color: '#B6512A', fontSize: '14px' }}>◐</span> partial
+            <span style={{ color: '#8A8472', fontSize: '14px' }}>◐</span> partial
           </span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
             <span style={{ color: '#D8D0BD', fontSize: '14px' }}>○</span> not supported
@@ -2475,7 +2694,7 @@ Northbound Goods         $890.00     2 orders     1 INR filed
                   margin: 0,
                 }}
               >
-                Send us a CSV of your last 5,000&ndash;50,000 orders. We&rsquo;ll return a fraud-resolution report — linked identities, refund-abuse clusters, risk scores, and assembled case files. Under 20 minutes upload to report.
+                Send us a CSV of your last 5,000&ndash;50,000 orders. We&rsquo;ll return a fraud-resolution report — linked identities, refund-abuse clusters, risk scores, and assembled case files. ~20 minutes from upload to report.
               </p>
             </div>
 
@@ -2516,13 +2735,13 @@ Northbound Goods         $890.00     2 orders     1 INR filed
           }}
         >
           {[
-            [1, 'The case file shown is a synthetic example constructed to illustrate how Unauth presents a resolved identity cluster. It does not represent a real buyer or real merchant. The cluster ID format and all signal patterns are representative of live engine output.'],
+            [1, 'Names and identifiers are redacted. The cluster ID format, evidence hierarchy, and signal patterns match the case-file structure Unauth returns.'],
             [2, 'INR = Item Not Received. The most common chargeback reason code abused at scale in DTC ecommerce.'],
             [3, 'Visa, Friendly Fraud Annual Index, 2024. Includes refund abuse and INR fraud across all card types.'],
             [4, 'Industry estimates sourced from Visa and Mastercard published fraud data. Unauth network figures will be published once the founding merchant cohort is live.'],
             [5, 'Mastercard Merchant Survey, 2024. True cost includes fulfilment, reversed acquisition spend, and dispute fees.'],
             [6, 'Hashing is performed client-side using a per-merchant salt that Unauth never sees. The hashed values are queried against the network; raw PII never leaves the merchant’s browser.'],
-            [7, 'The case studies in §5 are synthetic examples illustrating engine output format. They do not represent any real merchant, integration, or outcome.'],
+            [7, 'The profiles in §5 show the audit output shape. Merchant names are omitted.'],
           ].map(([n, text]) => (
             <li
               key={n}
