@@ -122,10 +122,10 @@ export default function LandingPage() {
               fontSize: 'clamp(32px, 3.8vw, 54px)',
               fontWeight: 500,
               letterSpacing: '-0.026em',
-              lineHeight: 1.0,
+              lineHeight: 1.1,
               color: '#1A1814',
               marginBottom: '14px',
-              maxWidth: '18ch',
+              maxWidth: '26ch',
             }}
           >
             Resolve the buyer your store has{' '}
@@ -141,8 +141,8 @@ export default function LandingPage() {
               fontSize: 'clamp(15px, 1.1vw, 17px)',
               color: '#4A4640',
               lineHeight: 1.5,
-              marginBottom: '18px',
-              maxWidth: '48ch',
+              marginBottom: '14px',
+              maxWidth: '62ch',
             }}
           >
             Drop your CSV. We surface every store they&rsquo;ve hit, hash your PII client-side, and return a CE&nbsp;3.0 packet in minutes.{' '}
@@ -150,7 +150,7 @@ export default function LandingPage() {
           </p>
 
           {/* CTA row */}
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-3">
             <a
               href="/upload"
               style={{
