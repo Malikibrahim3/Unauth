@@ -129,7 +129,7 @@ export default function LandingPage() {
             }}
           >
             Resolve the buyer your store has{' '}
-            <span style={{ color: '#7B2D26', fontStyle: 'italic', fontFamily: 'var(--font-serif, serif)', fontWeight: 400 }}>
+            <span style={{ color: '#7B2D26', fontStyle: 'italic', fontFamily: 'var(--font-serif, serif)', fontWeight: 400, whiteSpace: 'nowrap' }}>
               never seen.
             </span>
           </h1>
