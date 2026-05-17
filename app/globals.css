@@ -490,6 +490,88 @@
 .ua-nav-link:hover { color: #1A1814; }
 .ua-nav-link:hover::after { transform: scaleX(1); }
 
+/* Direct copy of wordmark system from Unauth Wordmark-print.html */
+.ua-mark {
+  display: inline-flex;
+  align-items: baseline;
+  font-family: "Source Serif 4", Georgia, serif;
+  font-weight: 600;
+  color: #1c1612;
+  line-height: 1;
+  font-variation-settings: "opsz" 60;
+  white-space: nowrap;
+  letter-spacing: -0.020em;
+}
+.ua-mark .word {
+  display: inline-block;
+}
+.ua-mark .dot {
+  display: inline-block;
+  width: var(--dot, 0.063em);
+  height: var(--dot, 0.063em);
+  border-radius: 50%;
+  background: #8a2828;
+  margin-left: 0.15em;
+  vertical-align: baseline;
+  flex-shrink: 0;
+}
+.ua-mark.reversed {
+  color: #f4f0e8;
+}
+.ua-mark.reversed .dot {
+  background: #f4f0e8;
+}
+.ua-mark.mono-dark .dot {
+  background: #1c1612;
+}
+.ua-mark.mono-light .dot {
+  background: #f4f0e8;
+}
+.ua-mark.nav {
+  font-size: 22px;
+  letter-spacing: -0.020em;
+}
+.ua-mark.nav .dot {
+  --dot: 2.5px;
+  margin-left: 0.18em;
+}
+.ua-mark.s12 {
+  font-size: 12px;
+  letter-spacing: -0.018em;
+}
+.ua-mark.s12 .dot {
+  --dot: 1.5px;
+  margin-left: 0.20em;
+}
+.ua-mark.s18 {
+  font-size: 18px;
+  letter-spacing: -0.020em;
+}
+.ua-mark.s18 .dot {
+  --dot: 2px;
+  margin-left: 0.18em;
+}
+.ua-mark.s28 {
+  font-size: 28px;
+  letter-spacing: -0.022em;
+}
+.ua-mark.s28 .dot {
+  --dot: 2.5px;
+  margin-left: 0.17em;
+}
+.ua-mark.s48 {
+  font-size: 48px;
+  letter-spacing: -0.025em;
+}
+.ua-mark.s48 .dot {
+  --dot: 3.5px;
+  margin-left: 0.16em;
+}
+.ua-mark.display {
+  font-size: 156px;
+  letter-spacing: -0.030em;
+}
+
 /* SVG line draw — when parent has .is-visible */
 .ua-draw {
   stroke-dasharray: var(--ua-line-len, 1200);

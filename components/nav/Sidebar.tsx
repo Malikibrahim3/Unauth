@@ -99,7 +99,7 @@ function SidebarItem({
       title={collapsed ? item.label : undefined}
       className={cn(
         'group relative flex h-8 items-center gap-3 rounded-sm px-2',
-        'text-body-sm font-medium',
+        'text-[17px] font-medium',
         'transition-colors duration-[var(--duration-fast)]',
         'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] focus-visible:outline-offset-2',
         active
@@ -246,8 +246,8 @@ export default function Sidebar({
           'flex h-14 flex-shrink-0 items-center gap-2 px-3 border-b border-[var(--border-default)]',
         )}
       >
-        <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center">
-          <UnauthLogo variant="mark" size={isCollapsed ? 28 : 34} />
+        <div className="flex min-w-0 flex-shrink-0 items-center justify-center">
+          <UnauthLogo variant="light" size={isCollapsed ? 25 : 30} />
         </div>
 
         {!isCollapsed && (

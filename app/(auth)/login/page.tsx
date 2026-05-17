@@ -483,123 +483,25 @@ export default function LoginPage() {
         fontFamily: 'var(--font-dm-sans, sans-serif)',
       }}
     >
-      {/* ══ Left editorial panel ══════════════════════════════════════════════ */}
+      {/* ══ Left brand panel ════════════════════════════════════════════════ */}
       <div
         className="hidden lg:flex"
         style={{
-          width: '56%',
+          width: '50%',
           minHeight: '100vh',
           padding: '44px 48px',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
+          alignItems: 'center',
+          justifyContent: 'center',
           borderRight: '1px solid #D2C9B5',
         }}
       >
-        {/* Top section */}
-        <div>
-          <div style={{ marginBottom: '36px' }}>
-            <UnauthLogo variant="wordmark-light" size={26} />
-          </div>
-
-          {/* Overline */}
-          <p
-            style={{
-              fontSize: '11px',
-              fontWeight: 600,
-              letterSpacing: '0.14em',
-              textTransform: 'uppercase',
-              color: '#4A4640',
-              marginBottom: '18px',
-            }}
-          >
-            <span style={{ color: '#7B2D26' }}>§</span>{' '}
-            CROSS-MERCHANT FRAUD GRAPH · ECOMMERCE
-          </p>
-
-          {/* Headline */}
-          <h1
-            style={{
-              fontSize: 'clamp(30px, 2.8vw, 44px)',
-              fontWeight: 500,
-              letterSpacing: '-0.02em',
-              lineHeight: 1.08,
-              color: '#1A1814',
-              marginBottom: '20px',
-              maxWidth: '480px',
-            }}
-          >
-            Resolve the buyer your store has{' '}
-            <em style={{ fontStyle: 'italic' }}>never</em>{' '}
-            <em style={{ fontStyle: 'italic', color: '#7B2D26' }}>seen.</em>
-          </h1>
-
-          {/* Body prose */}
-          <p
-            style={{
-              fontFamily: 'var(--font-serif, Georgia, serif)',
-              fontSize: '16px',
-              color: '#4A4640',
-              lineHeight: 1.65,
-              maxWidth: '460px',
-              marginBottom: '32px',
-            }}
-          >
-            Upload order, refund, and delivery history. Unauth links repeat
-            abusers across the network, hashes PII before transmission, and
-            returns CE&nbsp;3.0 evidence packets before your chargeback window
-            closes.
-          </p>
-
-          {/* Case file preview */}
-          <CaseFilePreview />
-        </div>
-
-        {/* Bottom pilot stats */}
-        <div
-          style={{
-            marginTop: '32px',
-            paddingTop: '20px',
-            borderTop: '1px solid #D2C9B5',
-          }}
-        >
-          <div style={{ display: 'flex', gap: '36px' }}>
-            {[
-              { value: '312',   label: 'resolved this week' },
-              { value: '38ms',  label: 'median resolution' },
-              { value: 'CE 3.0', label: 'evidence output' },
-            ].map(({ value, label }) => (
-              <div key={label}>
-                <div
-                  style={{
-                    fontSize: '17px',
-                    fontWeight: 600,
-                    color: '#1A1814',
-                    fontFamily: 'var(--font-dm-mono, monospace)',
-                    lineHeight: 1,
-                  }}
-                >
-                  {value}
-                </div>
-                <div
-                  style={{
-                    fontSize: '11px',
-                    color: '#78889C',
-                    marginTop: '4px',
-                    letterSpacing: '0.02em',
-                  }}
-                >
-                  {label}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <UnauthLogo variant="wordmark-light" size={96} />
       </div>
 
       {/* ══ Right form panel ═════════════════════════════════════════════════ */}
       <div
         style={{
-          flex: 1,
+          width: '100%',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -607,6 +509,7 @@ export default function LoginPage() {
           padding: '40px 32px',
           overflowY: 'auto',
         }}
+        className="lg:w-1/2"
       >
         {/* Logo — mobile only */}
         <div className="lg:hidden" style={{ marginBottom: '32px' }}>

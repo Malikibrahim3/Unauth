@@ -43,8 +43,8 @@ export default function LandingPage() {
       >
         <div className="mx-auto max-w-[1400px] px-6 md:px-10 flex items-center justify-between">
           <div className="flex items-center gap-8">
-            <UnauthLogo variant="wordmark-light" size={24} />
-            <nav className="hidden md:flex items-center gap-7" style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '13.5px', color: '#4A4640' }}>
+            <UnauthLogo variant="wordmark-light" size={28} />
+            <nav className="hidden md:flex items-center gap-7" style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '15.5px', color: '#4A4640' }}>
               <a href="#how-it-works" className="ua-nav-link">How it works</a>
               <a href="#network" className="ua-nav-link">Network</a>
               <a href="#evidence" className="ua-nav-link">Evidence</a>
@@ -54,7 +54,7 @@ export default function LandingPage() {
           <div className="flex items-center gap-5">
             <a
               href="/login"
-              style={{ color: '#4A4640', fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '13.5px' }}
+              style={{ color: '#4A4640', fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '15.5px' }}
               className="hover:underline"
             >
               Sign in

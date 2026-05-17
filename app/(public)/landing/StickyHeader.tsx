@@ -42,7 +42,7 @@ export function StickyHeader() {
           height: '60px',
         }}
       >
-        <UnauthLogo variant="light" size="nav" />
+        <UnauthLogo variant="light" size={28} />
 
         <nav
           className="hidden md:flex"
@@ -59,7 +59,7 @@ export function StickyHeader() {
               onClick={() => scrollTo(id)}
               style={{
                 fontFamily: 'var(--font-dm-sans, sans-serif)',
-                fontSize: '13px',
+                fontSize: '15px',
                 color: '#4A4640',
                 background: 'none',
                 border: 'none',
@@ -81,7 +81,7 @@ export function StickyHeader() {
             href="/login"
             style={{
               fontFamily: 'var(--font-dm-sans, sans-serif)',
-              fontSize: '13px',
+              fontSize: '15px',
               color: '#4A4640',
               textDecoration: 'none',
             }}

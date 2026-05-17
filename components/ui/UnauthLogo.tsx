@@ -1,46 +1,45 @@
 interface UnauthLogoProps {
-  variant?: 'mark' | 'wordmark-light' | 'wordmark-dark';
-  size?: number;
+  variant?:
+    | 'light'
+    | 'dark'
+    | 'mono'
+    | 'mono-dark'
+    | 'mono-light'
+    | 'wordmark-light'
+    | 'wordmark-dark'
+    | 'mark';
+  size?: number | 'nav' | 'footer' | 'display';
   className?: string;
 }
 
-export function UnauthLogo({ variant = 'wordmark-light', size = 28, className }: UnauthLogoProps) {
-  if (variant === 'mark') {
-    const width = Math.round(size * (120 / 110));
-    return (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 120 110"
-        width={width}
-        height={size}
-        fill="none"
-        className={className}
-        aria-label="Unauth"
-        role="img"
-      >
-        <path d="M18 14 H32 V74 H68 V14 H82 V88 H18 Z" fill="#141821" />
-        <polygon points="92,88 102,88 108,14 98,14" fill="#2563EB" />
-        <rect x="42" y="96" width="16" height="3" fill="#2563EB" />
-      </svg>
-    );
-  }
+const SIZE_MAP = {
+  nav: 22,
+  footer: 15,
+  display: 48,
+} as const;
 
-  const uFill = variant === 'wordmark-dark' ? '#FAF6EF' : '#141821';
-  const width = Math.round(size * (120 / 100));
+export function UnauthLogo({ variant = 'light', size = 'nav', className }: UnauthLogoProps) {
+  const px = typeof size === 'number' ? size : SIZE_MAP[size];
+  const normalized = variant === 'wordmark-dark' || variant === 'dark' ? 'reversed' : variant === 'mono-dark' ? 'mono-dark' : variant === 'mono-light' ? 'mono-light' : '';
+
+  const knownSizeClass =
+    px === 12 ? 's12' :
+    px === 18 ? 's18' :
+    px === 22 ? 'nav' :
+    px === 28 ? 's28' :
+    px === 48 ? 's48' :
+    px >= 96 ? 'display' :
+    '';
 
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 120 100"
-      width={width}
-      height={size}
-      fill="none"
-      className={className}
-      aria-label="Unauth"
+    <span
+      className={['ua-mark', normalized, knownSizeClass, className].filter(Boolean).join(' ')}
       role="img"
+      aria-label="Unauth"
+      style={knownSizeClass ? undefined : { fontSize: `${px}px` }}
     >
-      <path d="M18 14 H32 V74 H68 V14 H82 V88 H18 Z" fill={uFill} />
-      <polygon points="92,88 102,88 108,14 98,14" fill="#2563EB" />
-    </svg>
+      <span className="word">Unauth</span>
+      <span aria-hidden="true" className="dot" />
+    </span>
   );
 }
