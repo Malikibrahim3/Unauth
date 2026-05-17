@@ -80,268 +80,144 @@ export default function LandingPage() {
       </header>
 
       {/* ── Hero ────────────────────────────────────────────────── */}
-      <section className="mx-auto max-w-[1400px] px-6 md:px-10 pt-8 md:pt-12 pb-12 md:pb-16">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
-          {/* Left — copy column */}
-          <Reveal className="lg:col-span-5 xl:col-span-5 lg:sticky lg:top-24" delay={40}>
-            {/* Eyebrow — product category */}
-            <p
+      <section className="mx-auto max-w-[1400px] px-6 md:px-10 pt-12 md:pt-16 pb-0">
+
+        {/* Top — copy block */}
+        <Reveal delay={40}>
+          {/* Eyebrow */}
+          <p
+            style={{
+              fontFamily: 'var(--font-dm-sans, sans-serif)',
+              fontSize: '12px',
+              fontWeight: 600,
+              letterSpacing: '0.14em',
+              textTransform: 'uppercase',
+              color: '#4A4640',
+              marginBottom: '18px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              flexWrap: 'wrap',
+            }}
+          >
+            Cross-merchant fraud graph · ecommerce
+            <span
               style={{
-                fontFamily: 'var(--font-dm-sans, sans-serif)',
-                fontSize: '12px',
-                fontWeight: 600,
-                letterSpacing: '0.14em',
-                textTransform: 'uppercase',
-                color: '#4A4640',
-                marginBottom: '14px',
-                display: 'flex',
+                fontFamily: 'var(--font-dm-mono, monospace)',
+                fontSize: '10px',
+                letterSpacing: '0.08em',
+                color: '#8A8472',
+                fontWeight: 400,
+                textTransform: 'none',
+              }}
+            >
+              Issue 04 · {todayISO}
+            </span>
+          </p>
+
+          {/* Headline */}
+          <h1
+            style={{
+              fontFamily: 'var(--font-dm-sans, sans-serif)',
+              fontSize: 'clamp(44px, 5.6vw, 80px)',
+              fontWeight: 500,
+              letterSpacing: '-0.028em',
+              lineHeight: 0.97,
+              color: '#1A1814',
+              marginBottom: '22px',
+              maxWidth: '14ch',
+            }}
+          >
+            Resolve the buyer your store has{' '}
+            <span style={{ color: '#7B2D26', fontStyle: 'italic', fontFamily: 'var(--font-serif, serif)', fontWeight: 400 }}>
+              never seen.
+            </span>
+          </h1>
+
+          {/* Sub-prose */}
+          <p
+            style={{
+              fontFamily: 'var(--font-serif, serif)',
+              fontSize: 'clamp(16px, 1.2vw, 18px)',
+              color: '#4A4640',
+              lineHeight: 1.55,
+              marginBottom: '28px',
+              maxWidth: '52ch',
+            }}
+          >
+            Upload your order and refund history. Unauth links repeat abusers across the network and returns CE&nbsp;3.0 evidence packets before your chargeback window closes.
+          </p>
+
+          {/* CTA row */}
+          <div className="flex flex-wrap items-center gap-4" style={{ marginBottom: '20px' }}>
+            <a
+              href="mailto:hello@unauth.app?subject=Unauth%20pilot%20request"
+              style={{
+                display: 'inline-flex',
                 alignItems: 'center',
                 gap: '8px',
-                flexWrap: 'wrap',
+                background: '#1A1814',
+                color: '#F8F5EE',
+                fontFamily: 'var(--font-dm-sans, sans-serif)',
+                fontSize: '14px',
+                fontWeight: 500,
+                padding: '14px 22px',
+                border: '1px solid #1A1814',
+                borderRadius: 0,
+                textDecoration: 'none',
+                boxShadow: '0 1px 0 #1A1814, 0 8px 24px -12px rgba(26,24,20,0.35)',
+                transition: 'background 160ms ease',
               }}
+              className="hover:bg-[#2B2922]"
             >
-              Cross-merchant fraud graph · ecommerce
-              <span
-                style={{
-                  fontFamily: 'var(--font-dm-mono, monospace)',
-                  fontSize: '10px',
-                  letterSpacing: '0.08em',
-                  color: '#8A8472',
-                  fontWeight: 400,
-                  textTransform: 'none',
-                }}
-              >
-                Issue 04 · {todayISO}
-              </span>
-            </p>
-
-            {/* Headline */}
-            <h1
+              Request access
+              <span aria-hidden style={{ fontFamily: 'var(--font-dm-mono, monospace)' }}>→</span>
+            </a>
+            <a
+              href="#evidence"
               style={{
                 fontFamily: 'var(--font-dm-sans, sans-serif)',
-                fontSize: 'clamp(42px, 5.2vw, 76px)',
-                fontWeight: 500,
-                letterSpacing: '-0.028em',
-                lineHeight: 0.98,
-                color: '#1A1814',
-                marginBottom: '20px',
-              }}
-            >
-              Resolve the buyer your store has{' '}
-              <span style={{ color: '#7B2D26', fontStyle: 'italic', fontFamily: 'var(--font-serif, serif)', fontWeight: 400 }}>
-                never seen.
-              </span>
-            </h1>
-
-            {/* Sub-prose — tighter, more product-led */}
-            <p
-              style={{
-                fontFamily: 'var(--font-serif, serif)',
-                fontSize: 'clamp(17px, 1.3vw, 19px)',
+                fontSize: '14px',
                 color: '#4A4640',
-                lineHeight: 1.5,
-                marginBottom: '26px',
-                maxWidth: '480px',
+                textDecoration: 'none',
+                padding: '14px 4px',
+                borderBottom: '1px solid transparent',
               }}
+              className="hover:border-b hover:border-[#4A4640]"
             >
-              Upload order, refund, and delivery history. Unauth links repeat abusers across the network, hashes PII before transmission, and returns CE 3.0 evidence packets before your chargeback window closes.
-            </p>
+              View evidence packet ↓
+            </a>
+          </div>
 
-            {/* CTA row */}
-            <div className="flex flex-wrap items-center gap-4">
-              <a
-                href="mailto:hello@unauth.app?subject=Unauth%20pilot%20request"
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  background: '#1A1814',
-                  color: '#F8F5EE',
-                  fontFamily: 'var(--font-dm-sans, sans-serif)',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  padding: '14px 22px',
-                  border: '1px solid #1A1814',
-                  borderRadius: 0,
-                  textDecoration: 'none',
-                  boxShadow: '0 1px 0 #1A1814, 0 8px 24px -12px rgba(26,24,20,0.35)',
-                  transition: 'background 160ms ease',
-                }}
-                className="hover:bg-[#2B2922]"
-              >
-                  Request access
-                <span aria-hidden style={{ fontFamily: 'var(--font-dm-mono, monospace)' }}>→</span>
-              </a>
-              <a
-                href="#evidence"
-                style={{
-                  fontFamily: 'var(--font-dm-sans, sans-serif)',
-                  fontSize: '14px',
-                  color: '#4A4640',
-                  textDecoration: 'none',
-                  padding: '14px 4px',
-                  borderBottom: '1px solid transparent',
-                }}
-                className="hover:border-b hover:border-[#4A4640]"
-              >
-                View evidence packet ↓
-              </a>
-            </div>
-
-            {/* Proof chips */}
-            <div
-              className="flex flex-wrap gap-2"
-              style={{ marginTop: '24px' }}
-            >
-              {[
-                'No checkout integration',
-                'CSV pilot · ~10 min',
-                'Client-side HMAC hashing',
-                'CE 3.0 evidence output',
-              ].map((chip) => (
-                <span
-                  key={chip}
-                  style={{
-                    fontFamily: 'var(--font-dm-mono, monospace)',
-                    fontSize: '10.5px',
-                    color: '#4A4640',
-                    background: '#F2EDE3',
-                    border: '1px solid #D8D0BD',
-                    padding: '4px 10px',
-                    letterSpacing: '0.04em',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {chip}
-                </span>
-              ))}
-            </div>
-
-            {/* ── Mobile-only compact product proof strip ──
-               Keeps a product surface visible in the first viewport on small screens
-               where the full case-file artifact lives below the fold. */}
-            <div
-              className="lg:hidden"
-              style={{
-                marginTop: '24px',
-                background: '#FDFBF6',
-                border: '1px solid #D8D0BD',
-                boxShadow: '0 1px 0 #D8D0BD',
-              }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '10px 14px',
-                  borderBottom: '1px solid #D8D0BD',
-                  background: '#F8F5EE',
-                  fontFamily: 'var(--font-dm-mono, monospace)',
-                  fontSize: '10px',
-                  letterSpacing: '0.1em',
-                  textTransform: 'uppercase',
-                  color: '#4A4640',
-                  gap: '8px',
-                  flexWrap: 'wrap',
-                }}
-              >
-                <span>
-                  <span
-                    className="ua-pulse"
-                    style={{ display: 'inline-block', width: 5, height: 5, background: '#34A853', marginRight: '6px', verticalAlign: 'middle' }}
-                  />
-                  Live engine · sample
-                </span>
-                <span
-                  style={{
-                    color: '#FFFFFF',
-                    background: '#7B2D26',
-                    padding: '2px 8px',
-                    fontSize: '9.5px',
-                    letterSpacing: '0.06em',
-                    fontWeight: 500,
-                  }}
-                >
-                  DEFINITE · 0.92
-                </span>
-              </div>
-              <div style={{ padding: '12px 14px', fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11.5px', color: '#4A4640' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 12px' }}>
-                  <div>
-                    <p style={{ fontSize: '9.5px', color: '#8A8472', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 2px 0' }}>Cluster</p>
-                    <p style={{ color: '#7B2D26', margin: 0 }}>#u_kessler.07</p>
-                  </div>
-                  <div>
-                    <p style={{ fontSize: '9.5px', color: '#8A8472', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 2px 0' }}>Network</p>
-                    <p style={{ color: '#1A1814', margin: 0 }}>7 merchants</p>
-                  </div>
-                  <div>
-                    <p style={{ fontSize: '9.5px', color: '#8A8472', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 2px 0' }}>Signals</p>
-                    <p style={{ color: '#1A1814', margin: 0 }}>4 / 12 fired</p>
-                  </div>
-                  <div>
-                    <p style={{ fontSize: '9.5px', color: '#8A8472', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 2px 0' }}>Packet</p>
-                    <p style={{ color: '#3D6F4A', margin: 0 }}>● CE 3.0 ready</p>
-                  </div>
-                </div>
-              </div>
-              <div
-                style={{
-                  borderTop: '1px solid #D8D0BD',
-                  padding: '8px 14px',
-                  background: 'linear-gradient(90deg, #F8F0EE 0%, #F4E8E5 100%)',
-                  fontFamily: 'var(--font-dm-mono, monospace)',
-                  fontSize: '10px',
-                  color: '#7B2D26',
-                  letterSpacing: '0.06em',
-                  fontWeight: 500,
-                }}
-              >
-                ▸ DECLINE NEXT ORDER · ASSEMBLE PACKET
-              </div>
-            </div>
-
-            {/* Vertical fit: pilot categories */}
-            <div
-              style={{
-                marginTop: '28px',
-                paddingTop: '18px',
-                borderTop: '1px solid #D8D0BD',
-              }}
-            >
-              <p
+          {/* Proof chips */}
+          <div className="flex flex-wrap gap-2">
+            {[
+              'No checkout integration',
+              'CSV pilot · ~10 min',
+              'Client-side HMAC hashing',
+              'CE 3.0 evidence output',
+            ].map((chip) => (
+              <span
+                key={chip}
                 style={{
                   fontFamily: 'var(--font-dm-mono, monospace)',
                   fontSize: '10.5px',
-                  letterSpacing: '0.14em',
-                  textTransform: 'uppercase',
-                  color: '#8A8472',
-                  marginBottom: '10px',
-                }}
-              >
-                Founding merchant cohort
-              </p>
-              <div
-                className="flex flex-wrap items-center gap-x-5 gap-y-2"
-                style={{
-                  fontFamily: 'var(--font-serif, serif)',
-                  fontStyle: 'italic',
-                  fontSize: '13px',
                   color: '#4A4640',
+                  background: '#F2EDE3',
+                  border: '1px solid #D8D0BD',
+                  padding: '4px 10px',
+                  letterSpacing: '0.04em',
+                  whiteSpace: 'nowrap',
                 }}
               >
-                <span>Founding merchants are being onboarded now</span>
-                <span style={{ color: '#D8D0BD' }}>·</span>
-                <span>No live merchants yet</span>
-                <span style={{ color: '#D8D0BD' }}>·</span>
-                <span>No real production data yet</span>
-              </div>
-            </div>
-          </Reveal>
+                {chip}
+              </span>
+            ))}
+          </div>
+        </Reveal>
 
-          {/* Right — large product artifact */}
-          <Reveal as="aside" className="lg:col-span-7 xl:col-span-7 relative" delay={180}>
+        {/* Bottom — large product artifact */}
+        <Reveal as="div" className="relative mt-14 md:mt-20" delay={180}>
             {/* Floating eyebrow above artifact */}
             <div
               className="flex items-center justify-between mb-3"
@@ -746,7 +622,6 @@ export default function LandingPage() {
               <span>CE 3.0 packet ready in browser</span>
             </div>
           </Reveal>
-        </div>
       </section>
 
       {/* ── §1 · The pattern your store can't see — VISUAL ───────── */}
