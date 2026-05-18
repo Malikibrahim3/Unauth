@@ -8,7 +8,7 @@
 --    Immutable audit trail for every sensitive action taken
 --    by any user in the system. Written via service role only.
 -- ---------------------------------------------------------
-CREATE TABLE user_action_log (
+CREATE TABLE IF NOT EXISTS user_action_log (
   id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   merchant_id     UUID        NOT NULL REFERENCES merchants(id) ON DELETE CASCADE,
   actor_user_id   UUID        NOT NULL,
@@ -44,7 +44,7 @@ GRANT ALL ON user_action_log TO service_role;
 --    Allows owners to delegate specific granular permissions
 --    to individual team members, beyond their base role.
 -- ---------------------------------------------------------
-CREATE TABLE user_permission_grants (
+CREATE TABLE IF NOT EXISTS user_permission_grants (
   id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   merchant_id     UUID        NOT NULL REFERENCES merchants(id) ON DELETE CASCADE,
   grantor_user_id UUID        NOT NULL,

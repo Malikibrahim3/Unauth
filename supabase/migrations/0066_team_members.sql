@@ -4,7 +4,7 @@
 -- with role-based access control.
 -- =========================================================
 
-CREATE TABLE merchant_members (
+CREATE TABLE IF NOT EXISTS merchant_members (
   id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   merchant_id    UUID NOT NULL REFERENCES merchants(id) ON DELETE CASCADE,
   user_id        UUID REFERENCES auth.users(id) ON DELETE SET NULL,   -- null until invite accepted

@@ -22,3 +22,9 @@ test-results/
 report.json
 final-report.md
 
+# Claude Code local settings (may contain secrets / permission tokens)
+.claude/
+
+# Supabase CLI temp files (project-specific, not portable)
+supabase/.temp/
+
