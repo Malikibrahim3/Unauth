@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
   // Fetch expired, unclaimed audits.
   const { data: expired, error: fetchError } = await sc
     .from('public_audits' as any)
-    .select('id')
+    .select('id, csv_path')
     .lt('deletion_scheduled_at', new Date().toISOString())
     .eq('account_created', false)
     .limit(500);
@@ -40,10 +40,25 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ deleted: 0 });
   }
 
-  const ids = (expired as { id: string }[]).map((r) => r.id);
+  const expiredAudits = expired as { id: string; csv_path: string | null }[];
+  const ids = expiredAudits.map((r) => r.id);
 
-  // Delete CSV files from storage. Each audit's files live under the audit id prefix.
+  // Delete the explicitly recorded CSV files first, then clean up any legacy files under the audit prefix.
   const storageErrors: string[] = [];
+  const explicitPaths = expiredAudits
+    .map((audit) => audit.csv_path)
+    .filter((path): path is string => typeof path === 'string' && path.length > 0);
+
+  if (explicitPaths.length > 0) {
+    const { error: removeExplicitError } = await sc.storage
+      .from('merchant-csv-uploads-2')
+      .remove(explicitPaths);
+
+    if (removeExplicitError) {
+      storageErrors.push(`explicit paths: ${removeExplicitError.message}`);
+    }
+  }
+
   for (const id of ids) {
     const { data: files } = await sc.storage
       .from('merchant-csv-uploads-2')

@@ -15,32 +15,29 @@ const muted = '#6B6455';
 
 export default function AuditPage() {
   return (
-    <div style={{ minHeight: '100vh', background: '#F8F5EE', color: '#1A1814' }}>
-      {/* LOGO BAR */}
-      <header style={{ padding: '20px 32px' }}>
+    <div
+      style={{
+        minHeight: '100vh',
+        background: '#F8F5EE',
+        color: '#1A1814',
+      }}
+    >
+      <header className="px-6 pt-5 md:px-10">
         <Link href="/" style={{ display: 'inline-block', textDecoration: 'none' }}>
           <UnauthLogo variant="wordmark-light" size={28} />
         </Link>
       </header>
 
-      {/* PAGE CONTENT */}
-      <main
-        style={{
-          maxWidth: '560px',
-          margin: '0 auto',
-          padding: '48px 24px 80px',
-        }}
-      >
-        {/* HEADLINE BLOCK */}
-        <div style={{ marginBottom: '36px' }}>
+      <main className="mx-auto max-w-[760px] px-6 pb-20 pt-10 md:px-10 md:pt-14">
+        <div className="max-w-[35rem]" style={{ marginBottom: '34px' }}>
           <p
             style={{
               ...mono,
               fontSize: '11px',
-              letterSpacing: '0.1em',
+              letterSpacing: '0.14em',
               color: muted,
               marginTop: 0,
-              marginBottom: '14px',
+              marginBottom: '10px',
             }}
           >
             FREE AUDIT · NO ACCOUNT REQUIRED
@@ -48,13 +45,13 @@ export default function AuditPage() {
           <h1
             style={{
               ...serif,
-              fontSize: 'clamp(32px, 5vw, 48px)',
+              fontSize: 'clamp(40px, 6vw, 64px)',
               fontWeight: 400,
-              lineHeight: 1.05,
-              letterSpacing: '-0.02em',
+              lineHeight: 0.98,
+              letterSpacing: '-0.03em',
               color: '#1A1814',
               marginTop: 0,
-              marginBottom: '16px',
+              marginBottom: '18px',
             }}
           >
             Find out who&apos;s been hitting you.
@@ -62,8 +59,8 @@ export default function AuditPage() {
           <p
             style={{
               ...sans,
-              fontSize: '16px',
-              lineHeight: 1.65,
+              fontSize: '18px',
+              lineHeight: 1.7,
               color: '#3A3530',
               marginTop: 0,
               marginBottom: 0,
@@ -75,10 +72,9 @@ export default function AuditPage() {
           </p>
         </div>
 
-        {/* TRUST STACK */}
         <div
           style={{
-            marginBottom: '40px',
+            marginBottom: '42px',
             display: 'flex',
             flexDirection: 'column',
             gap: '10px',
@@ -94,7 +90,7 @@ export default function AuditPage() {
                 ...sans,
                 fontSize: '13px',
                 color: muted,
-                lineHeight: 1.6,
+                lineHeight: 1.65,
                 margin: 0,
               }}
             >
@@ -106,7 +102,7 @@ export default function AuditPage() {
               ...sans,
               fontSize: '13px',
               color: muted,
-              lineHeight: 1.6,
+              lineHeight: 1.65,
               margin: 0,
             }}
           >
@@ -121,19 +117,17 @@ export default function AuditPage() {
           </p>
         </div>
 
-        {/* UPLOAD FORM */}
         <AuditUploadForm />
 
-        {/* BOTTOM TRUST LINE */}
         <p
           style={{
             ...mono,
             fontSize: '11px',
             color: '#9A9080',
             textAlign: 'center',
-            marginTop: '56px',
+            marginTop: '72px',
             marginBottom: 0,
-            letterSpacing: '0.04em',
+            letterSpacing: '0.08em',
           }}
         >
           HMAC-SHA256 · client-side hashing · k-anonymity gated · UK GDPR compliant

@@ -81,6 +81,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       linked_user_id: user.id,
       linked_merchant_id: merchantId,
       status: 'claimed',
+      account_created: true,
       updated_at: new Date().toISOString(),
     } as any)
     .eq('id', audit.id);

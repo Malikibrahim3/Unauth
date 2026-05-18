@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useCallback, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Papa from 'papaparse';
 import { autoMapHeaders, REQUIRED_FIELDS, type RequiredField } from '@/lib/csv/headerAliases';
 
@@ -116,6 +117,7 @@ const SCHEMA_OPTIONAL = [
 ];
 
 export default function AuditUploadForm() {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [emailError, setEmailError] = useState('');
   const [file, setFile] = useState<File | null>(null);
@@ -129,8 +131,9 @@ export default function AuditUploadForm() {
   const [schemaOpen, setSchemaOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  async function processFile(selected: File) {
+  const processFile = useCallback(async (selected: File) => {
     setFileError('');
+    setSubmitError('');
     setFile(selected);
     setRowCount(null);
     setColumnMap({});
@@ -150,7 +153,7 @@ export default function AuditUploadForm() {
       setFileError(err instanceof Error ? err.message : 'Could not prepare CSV.');
       setFile(null);
     }
-  }
+  }, []);
 
   const onDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -167,7 +170,7 @@ export default function AuditUploadForm() {
     setIsDragging(false);
     const dropped = e.dataTransfer.files[0];
     if (dropped) processFile(dropped);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [processFile]);
 
   function onFileInputChange(e: React.ChangeEvent<HTMLInputElement>) {
     const selected = e.target.files?.[0];
@@ -178,14 +181,19 @@ export default function AuditUploadForm() {
     e.preventDefault();
     setEmailError('');
     setSubmitError('');
+    setFileError((current) =>
+      current === 'Please upload your order export to continue.' ? '' : current
+    );
 
     let valid = true;
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setEmailError('We need your email to send you the results.');
       valid = false;
     }
-    if (!hashedFile) {
+    if (!file) {
       setFileError('Please upload your order export to continue.');
+      valid = false;
+    } else if (!hashedFile) {
       valid = false;
     }
     if (!valid) return;
@@ -204,25 +212,26 @@ export default function AuditUploadForm() {
     setLoading(false);
 
     if (!response.ok) {
-      setSubmitError(typeof body?.error === 'string' ? body.error : 'Something went wrong. Try again or email malik@unauth.co');
+      setSubmitError('Something went wrong. Try again or email malik@unauth.co');
       return;
     }
     const auditId = typeof body?.auditId === 'string' ? body.auditId : null;
     if (!auditId) {
-      setSubmitError('Audit submission failed.');
+      setSubmitError('Something went wrong. Try again or email malik@unauth.co');
       return;
     }
-    window.location.href = `/audit/${auditId}/submitted`;
+    router.push(`/audit/submitted?audit=${encodeURIComponent(auditId)}`);
   }
 
   const mono: React.CSSProperties = { fontFamily: 'var(--font-dm-mono, monospace)' };
   const sans: React.CSSProperties = { fontFamily: 'var(--font-dm-sans, sans-serif)' };
+  const serif: React.CSSProperties = { fontFamily: 'var(--font-serif, serif)' };
   const muted = '#6B6455';
+  const subtle = '#9A9080';
 
   return (
     <form onSubmit={onSubmit} noValidate style={{ width: '100%' }}>
-      {/* EMAIL */}
-      <div style={{ marginBottom: '24px' }}>
+      <div style={{ marginBottom: '26px' }}>
         <label
           htmlFor="audit-email"
           style={{ ...mono, display: 'block', fontSize: '11px', letterSpacing: '0.08em', color: muted, marginBottom: '6px' }}
@@ -236,15 +245,16 @@ export default function AuditUploadForm() {
           onChange={(e) => { setEmail(e.target.value); setEmailError(''); }}
           placeholder="your@store.com"
           style={{
-            ...sans,
+            ...serif,
             width: '100%',
-            background: '#F8F5EE',
-            border: `1px solid ${emailError ? '#9F1D1D' : '#C8C0AD'}`,
+            background: 'rgba(236, 229, 212, 0.48)',
+            border: 'none',
             color: '#1A1814',
-            padding: '12px 14px',
-            fontSize: '15px',
+            padding: '14px 16px',
+            fontSize: '18px',
             outline: 'none',
             boxSizing: 'border-box',
+            borderRadius: 0,
           }}
         />
         {emailError && (
@@ -254,7 +264,6 @@ export default function AuditUploadForm() {
         )}
       </div>
 
-      {/* CSV UPLOAD */}
       <div style={{ marginBottom: '24px' }}>
         <label
           style={{ ...mono, display: 'block', fontSize: '11px', letterSpacing: '0.08em', color: muted, marginBottom: '6px' }}
@@ -268,7 +277,7 @@ export default function AuditUploadForm() {
           onDrop={onDrop}
           style={{
             border: `1px dashed ${fileError ? '#9F1D1D' : isDragging ? '#1A1814' : '#9A9080'}`,
-            padding: '32px 24px',
+            padding: '34px 24px',
             cursor: 'pointer',
             textAlign: 'center',
             background: isDragging ? '#F0EDE4' : 'transparent',
@@ -283,27 +292,30 @@ export default function AuditUploadForm() {
           />
           {file && !fileError ? (
             <p style={{ ...mono, fontSize: '13px', color: '#1A1814', margin: 0 }}>
-              {file.name} · {rowCount !== null ? `${rowCount.toLocaleString()} rows detected` : 'preparing…'}
+              {file.name} · {rowCount !== null ? `${rowCount.toLocaleString()} rows detected` : 'preparing...'}
+            </p>
+          ) : fileError && fileError !== 'Please upload your order export to continue.' ? (
+            <p style={{ ...mono, fontSize: '13px', color: '#9F1D1D', margin: 0 }}>
+              {fileError}
             </p>
           ) : (
             <>
               <p style={{ ...mono, fontSize: '13px', color: muted, margin: '0 0 6px' }}>
                 Drop your CSV here, or click to browse
               </p>
-              <p style={{ ...mono, fontSize: '11px', color: '#9A9080', margin: 0 }}>
+              <p style={{ ...mono, fontSize: '11px', color: subtle, margin: 0 }}>
                 Shopify · WooCommerce · custom OMS · Stripe exports accepted
               </p>
             </>
           )}
         </div>
-        {fileError && (
+        {fileError === 'Please upload your order export to continue.' && (
           <p style={{ ...sans, fontSize: '13px', color: '#9F1D1D', marginTop: '6px', marginBottom: 0 }}>
             {fileError}
           </p>
         )}
       </div>
 
-      {/* SUBMIT */}
       <button
         type="submit"
         disabled={loading}
@@ -315,7 +327,7 @@ export default function AuditUploadForm() {
           color: '#FFFFFF',
           fontSize: '15px',
           fontWeight: 500,
-          padding: '14px 20px',
+          padding: '15px 20px',
           border: 'none',
           cursor: loading ? 'not-allowed' : 'pointer',
           letterSpacing: '0.01em',
@@ -323,21 +335,18 @@ export default function AuditUploadForm() {
         onMouseEnter={(e) => { if (!loading) (e.currentTarget as HTMLButtonElement).style.background = '#6A251F'; }}
         onMouseLeave={(e) => { if (!loading) (e.currentTarget as HTMLButtonElement).style.background = '#7B2D26'; }}
       >
-        {loading ? 'Uploading…' : 'Run free audit →'}
+        {loading ? 'Uploading...' : 'Run free audit →'}
       </button>
 
       {submitError && (
         <p style={{ ...sans, fontSize: '13px', color: '#9F1D1D', marginTop: '10px', marginBottom: 0 }}>
-          {submitError}{' '}
-          {submitError.includes('try again') || submitError.includes('went wrong') ? null : (
-            <>Try again or email{' '}
-              <a href="mailto:malik@unauth.co" style={{ color: '#9F1D1D' }}>malik@unauth.co</a>
-            </>
-          )}
+          Something went wrong. Try again or email{' '}
+          <a href="mailto:malik@unauth.co" style={{ color: '#9F1D1D', textDecoration: 'underline' }}>
+            malik@unauth.co
+          </a>
         </p>
       )}
 
-      {/* SCHEMA HINT */}
       <div style={{ marginTop: '28px' }}>
         <button
           type="button"
@@ -355,15 +364,14 @@ export default function AuditUploadForm() {
             gap: '6px',
           }}
         >
-          <span style={{ fontSize: '10px' }}>{schemaOpen ? '▲' : '▼'}</span>
           What fields do we need?
         </button>
 
         {schemaOpen && (
           <div style={{ marginTop: '16px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+            <div className="grid gap-6 md:grid-cols-2">
               <div>
-                <p style={{ ...mono, fontSize: '10px', letterSpacing: '0.1em', color: '#9A9080', marginTop: 0, marginBottom: '10px' }}>
+                <p style={{ ...mono, fontSize: '10px', letterSpacing: '0.1em', color: subtle, marginTop: 0, marginBottom: '10px' }}>
                   REQUIRED
                 </p>
                 <p style={{ ...mono, fontSize: '12px', color: muted, lineHeight: 1.8, margin: 0 }}>
@@ -371,7 +379,7 @@ export default function AuditUploadForm() {
                 </p>
               </div>
               <div>
-                <p style={{ ...mono, fontSize: '10px', letterSpacing: '0.1em', color: '#9A9080', marginTop: 0, marginBottom: '10px' }}>
+                <p style={{ ...mono, fontSize: '10px', letterSpacing: '0.1em', color: subtle, marginTop: 0, marginBottom: '10px' }}>
                   OPTIONAL — ENRICHMENT
                 </p>
                 <p style={{ ...mono, fontSize: '12px', color: muted, lineHeight: 1.8, margin: 0 }}>
@@ -379,7 +387,7 @@ export default function AuditUploadForm() {
                 </p>
               </div>
             </div>
-            <p style={{ ...sans, fontSize: '12px', color: '#9A9080', marginTop: '16px', marginBottom: 0 }}>
+            <p style={{ ...sans, fontSize: '12px', color: subtle, marginTop: '16px', marginBottom: 0 }}>
               Don&apos;t have every field? Upload what you have. The engine works with partial data.
             </p>
           </div>

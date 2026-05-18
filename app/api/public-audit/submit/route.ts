@@ -88,6 +88,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: uploadError.message }, { status: 500 });
   }
 
+  await sc
+    .from('public_audits' as any)
+    .update({
+      csv_path: filePath,
+      submitted_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    } as any)
+    .eq('id', auditId);
+
   const { data: fileData, error: downloadError } = await sc.storage
     .from('merchant-csv-uploads-2')
     .download(filePath);
