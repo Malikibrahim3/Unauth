@@ -387,7 +387,7 @@ async function main() {
     console.error('\nERROR: Required tables do not exist in Supabase.');
     console.error('Please apply the migration first:');
     console.error('  supabase/migrations/0006_and_0007_combined.sql');
-    console.error('Run it at: https://supabase.com/dashboard/project/saeueexkqmubnveacepr/sql/new');
+    console.error('Run it via: supabase db push --linked');
     process.exit(1);
   }
 
