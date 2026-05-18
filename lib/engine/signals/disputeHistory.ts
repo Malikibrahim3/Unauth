@@ -45,24 +45,50 @@ export const disputeHistory: Signal = (order: NormalisedOrder, context: ScoringC
       (o.returnRequested !== null && o.returnRequested !== undefined)
   );
 
+  // Tuning fix 1 — gate refund/return-request firing on rate, not raw count.
+  // US apparel/electronics has 20-30% legitimate return rates; firing on a
+  // single prior refund treats normal customers as fraud. We now require:
+  //   - chargebacks: always fire (rare and strongly fraud-correlated)
+  //   - refund/return requests: ≥2 events AND dispute rate above threshold
+  //   - rate >0.40 → full weight (score 60); 0.25-0.40 → half (score 30)
   let score = 0;
   const reasons: string[] = [];
 
+  const softDisputeEvents = priorRefundRequests + priorReturnRequests;
+  const softDisputeRate = prior.length > 0 ? softDisputeEvents / prior.length : 0;
+
   if (priorChargebacks > 0) {
+    // Chargebacks are unchanged — the strongest signal in the industry.
     score = Math.max(score, priorChargebacks >= 2 ? 100 : 95);
     reasons.push(`${priorChargebacks} prior chargeback${priorChargebacks > 1 ? 's' : ''}`);
   }
-  if (priorRefundRequests > 0) {
-    score = Math.max(score, priorRefundRequests >= 3 ? 80 : priorRefundRequests >= 2 ? 70 : 60);
-    reasons.push(`${priorRefundRequests} prior refund request${priorRefundRequests > 1 ? 's' : ''}`);
+
+  if (softDisputeEvents >= 2 && softDisputeRate > 0.40) {
+    score = Math.max(score, softDisputeEvents >= 4 ? 80 : 60);
+    reasons.push(
+      `${softDisputeEvents} prior dispute event${softDisputeEvents > 1 ? 's' : ''} ` +
+        `(${(softDisputeRate * 100).toFixed(0)}% of ${prior.length} prior orders)`,
+    );
+  } else if (softDisputeEvents >= 2 && softDisputeRate >= 0.25) {
+    score = Math.max(score, 30);
+    reasons.push(
+      `${softDisputeEvents} prior dispute event${softDisputeEvents > 1 ? 's' : ''} ` +
+        `(${(softDisputeRate * 100).toFixed(0)}% of ${prior.length} prior orders, below high-confidence threshold)`,
+    );
   }
-  if (priorReturnRequests > 0) {
-    score = Math.max(score, priorReturnRequests >= 3 ? 70 : priorReturnRequests >= 2 ? 60 : 50);
-    reasons.push(`${priorReturnRequests} prior return request${priorReturnRequests > 1 ? 's' : ''}`);
-  }
-  if (!hasExplicitFlags && priorActualRefunds > 0) {
-    score = Math.max(score, priorActualRefunds >= 2 ? 50 : 40);
-    reasons.push(`${priorActualRefunds} prior refund${priorActualRefunds > 1 ? 's' : ''} on record`);
+  // softDisputeRate below 0.25 or fewer than 2 events: do not fire.
+
+  // Fallback for merchants that don't supply explicit dispute flags but do
+  // record refund status on the order itself.
+  if (!hasExplicitFlags && priorActualRefunds >= 2) {
+    const actualRefundRate = priorActualRefunds / prior.length;
+    if (actualRefundRate > 0.40) {
+      score = Math.max(score, 50);
+      reasons.push(`${priorActualRefunds} prior refunds (${(actualRefundRate * 100).toFixed(0)}% rate, no explicit dispute flags)`);
+    } else if (actualRefundRate >= 0.25) {
+      score = Math.max(score, 25);
+      reasons.push(`${priorActualRefunds} prior refunds (${(actualRefundRate * 100).toFixed(0)}% rate, no explicit dispute flags)`);
+    }
   }
 
   if (score === 0) {

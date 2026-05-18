@@ -89,6 +89,25 @@ export type Signal = (
 export interface ScoringContext {
   allOrders: NormalisedOrder[];
   customerOrderHistory: Map<string, NormalisedOrder[]>;
+  /**
+   * Optional cross-merchant profiles built from a wider scope than this
+   * scoreOrders() call. When present, the `crossMerchant` signal will use them.
+   * In production these are fetched from Supabase customer_profiles in
+   * fastContext.ts; in eval mode they are synthesised from the union of all
+   * merchant orders by runEval.ts.
+   */
+  crossMerchantProfiles?: import('./fastContext').CrossMerchantProfile[];
+  /** The merchant currently being scored — used by crossMerchant to exclude self-matches. */
+  requestingMerchantId?: string;
+  /** Audit log buffer used by crossMerchant. Optional. */
+  pendingAuditLogs?: import('./fastContext').PendingAuditLog[];
+  /**
+   * Network-link map: any identifier hash (ip, browserFingerprint, cookie)
+   * present in a known prior fraudster cluster. Built before scoring by
+   * runEval.ts from the engine's OWN previously-flagged identities (not from
+   * ground-truth labels). Used by the networkDeviceLink signal.
+   */
+  networkFraudsterIdentifiers?: Set<string>;
 }
 
 // =============================================================================

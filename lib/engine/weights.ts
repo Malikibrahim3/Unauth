@@ -7,12 +7,15 @@ export const SIGNAL_WEIGHTS = {
   inrSpeed: 10,
   emailPattern: 8,
   addressClustering: 9,    // reduced to curb household/shared-address false positives
+  billingAddressClustering: 9, // Fix 4 — mirrors addressClustering for billing-address-anchored fraud
   valueAnomaly: 5,
   paymentChurn: 15,        // tight-window (24h/7d) — stronger than soft profile signals
   refundPattern: 20,
   crossMerchant: 24,       // keep strong, but avoid overwhelming other corroborating signals
   disputeHistory: 40,      // §1 — highest-precision industry signal (prior chargebacks / claims)
   addressMismatch: 4,      // §2 — cheap baseline; meaningful only when corroborated
+  networkDeviceLink: 15,        // Fix 5 — broad-overlap variant (penalty applies)
+  networkDeviceLinkActive: 25,  // Fix 5 — strong evidence variant when current order itself is active
 } as const;
 
 export const RISK_TIER_THRESHOLDS = {

@@ -1,4 +1,5 @@
 import type { NormalisedOrder, ScoredOrder, ScoringContext, SignalResult } from './types';
+import type { CrossMerchantProfile, PendingAuditLog } from './fastContext';
 import { SIGNAL_WEIGHTS, RISK_TIER_THRESHOLDS, FLAG_THRESHOLD } from './weights';
 import { refundRate } from './signals/refundRate';
 import { inrAbuse } from './signals/inrAbuse';
@@ -10,6 +11,10 @@ import { valueAnomaly } from './signals/valueAnomaly';
 import { paymentChurn } from './signals/paymentChurn';
 import { disputeHistory } from './signals/disputeHistory';
 import { addressMismatch } from './signals/addressMismatch';
+import { crossMerchant } from './signals/crossMerchantSignal';
+import { refundPattern } from './signals/refundPattern';
+import { billingAddressClustering } from './signals/billingAddressClustering';
+import { networkDeviceLink } from './signals/networkDeviceLink';
 
 const SIGNALS = [
   { fn: refundRate, key: 'refundRate' as const },
@@ -18,20 +23,38 @@ const SIGNALS = [
   { fn: inrSpeed, key: 'inrSpeed' as const },
   { fn: emailPattern, key: 'emailPattern' as const },
   { fn: addressClustering, key: 'addressClustering' as const },
+  { fn: billingAddressClustering, key: 'billingAddressClustering' as const },
   { fn: valueAnomaly, key: 'valueAnomaly' as const },
   { fn: paymentChurn, key: 'paymentChurn' as const },
   { fn: disputeHistory, key: 'disputeHistory' as const },
   { fn: addressMismatch, key: 'addressMismatch' as const },
+  { fn: crossMerchant, key: 'crossMerchant' as const },
+  { fn: refundPattern, key: 'refundPattern' as const },
+  { fn: networkDeviceLink, key: 'networkDeviceLink' as const },
 ];
 
-function buildContext(orders: NormalisedOrder[]): ScoringContext {
+export interface ScoreOrdersOptions {
+  crossMerchantProfiles?: CrossMerchantProfile[];
+  requestingMerchantId?: string;
+  pendingAuditLogs?: PendingAuditLog[];
+  networkFraudsterIdentifiers?: Set<string>;
+}
+
+function buildContext(orders: NormalisedOrder[], opts?: ScoreOrdersOptions): ScoringContext {
   const customerOrderHistory = new Map<string, NormalisedOrder[]>();
   for (const order of orders) {
     const arr = customerOrderHistory.get(order.emailHash) ?? [];
     arr.push(order);
     customerOrderHistory.set(order.emailHash, arr);
   }
-  return { allOrders: orders, customerOrderHistory };
+  return {
+    allOrders: orders,
+    customerOrderHistory,
+    crossMerchantProfiles: opts?.crossMerchantProfiles,
+    requestingMerchantId: opts?.requestingMerchantId,
+    pendingAuditLogs: opts?.pendingAuditLogs,
+    networkFraudsterIdentifiers: opts?.networkFraudsterIdentifiers,
+  };
 }
 
 function computeScore(signals: SignalResult[]): number {
@@ -44,10 +67,10 @@ function computeScore(signals: SignalResult[]): number {
     const weight = SIGNAL_WEIGHTS[signal.name as keyof typeof SIGNAL_WEIGHTS];
     if (weight === undefined) continue;
     if (!signal.fired) continue;
-    if (['addressClustering', 'emailPattern', 'crossMerchant', 'addressMismatch'].includes(signal.name)) {
+    if (['addressClustering', 'billingAddressClustering', 'emailPattern', 'crossMerchant', 'addressMismatch', 'networkDeviceLink'].includes(signal.name)) {
       hasBroadOverlap = true;
     }
-    if (['refundRate', 'inrAbuse', 'inrSpeed', 'paymentChurn', 'refundPattern', 'disputeHistory', 'valueAnomaly'].includes(signal.name)) {
+    if (['refundRate', 'inrAbuse', 'inrSpeed', 'paymentChurn', 'refundPattern', 'disputeHistory', 'valueAnomaly', 'networkDeviceLinkActive'].includes(signal.name)) {
       hasStrongFraudEvidence = true;
     }
     weightedSum += signal.score * weight;
@@ -68,9 +91,10 @@ function getRiskTier(score: number): 'low' | 'medium' | 'high' | 'critical' {
 }
 
 export function scoreOrders(
-  orders: NormalisedOrder[]
+  orders: NormalisedOrder[],
+  opts?: ScoreOrdersOptions,
 ): ScoredOrder[] {
-  const context: ScoringContext = buildContext(orders);
+  const context: ScoringContext = buildContext(orders, opts);
 
   return orders.map((order) => {
     const signals = SIGNALS.map(({ fn }) => fn(order, context));
