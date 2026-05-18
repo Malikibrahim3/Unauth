@@ -17,15 +17,13 @@ export default function TypedText({
   className = '',
   style,
 }: Props) {
-  const [count, setCount] = useState(0);
+  const [count, setCount] = useState(text.length);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      setCount(text.length);
       return;
     }
 
-    setCount(0);
     let frame = 0;
     const startedAt = window.performance.now() + delay;
     const tick = (now: number) => {
@@ -37,7 +35,10 @@ export default function TypedText({
       }
     };
 
-    frame = window.requestAnimationFrame(tick);
+    frame = window.requestAnimationFrame((now) => {
+      setCount(0);
+      tick(now);
+    });
 
     return () => {
       window.cancelAnimationFrame(frame);

@@ -48,7 +48,7 @@ export default function AuditForm() {
           marginBottom: '14px',
         }}
       >
-        Run free audit — no card required
+        Free audit · no card
       </p>
 
       {/* Email */}
@@ -170,7 +170,7 @@ export default function AuditForm() {
           marginBottom: 0,
         }}
       >
-        ~20 minutes. Results emailed to you. No account required.
+        About 20 minutes. No account required.
       </p>
     </form>
   );

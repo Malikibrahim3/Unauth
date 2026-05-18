@@ -1,15 +1,3 @@
-'use client';
-
-import {
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-} from 'recharts';
-
 const data = [
   { week: 'W01', clusters: 612,  abusers: 92  },
   { week: 'W02', clusters: 894,  abusers: 154 },
@@ -25,18 +13,41 @@ const data = [
   { week: 'W12', clusters: 12484, abusers: 3107 },
 ];
 
-const axisStyle = {
-  fontFamily: 'var(--font-dm-mono, monospace)',
-  fontSize: 11,
-  fill: '#8A8472',
+const chart = {
+  width: 920,
+  height: 260,
+  left: 58,
+  right: 24,
+  top: 24,
+  bottom: 38,
+  maxValue: 13000,
 };
 
-function fmt(n: number) {
-  if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
-  return String(n);
+function xPosition(index: number) {
+  const drawableWidth = chart.width - chart.left - chart.right;
+  return chart.left + (drawableWidth * index) / (data.length - 1);
+}
+
+function yPosition(value: number) {
+  const drawableHeight = chart.height - chart.top - chart.bottom;
+  return chart.top + drawableHeight - (value / chart.maxValue) * drawableHeight;
+}
+
+function linePath(key: 'clusters' | 'abusers') {
+  return data
+    .map((point, index) => `${index === 0 ? 'M' : 'L'} ${xPosition(index).toFixed(1)} ${yPosition(point[key]).toFixed(1)}`)
+    .join(' ');
+}
+
+function formatTick(value: number) {
+  return value >= 1000 ? `${Math.round(value / 1000)}k` : String(value);
 }
 
 export default function NetworkChart() {
+  const tickValues = [0, 3000, 6000, 9000, 12000];
+  const clusterPath = linePath('clusters');
+  const abuserPath = linePath('abusers');
+
   return (
     <div
       style={{
@@ -87,61 +98,61 @@ export default function NetworkChart() {
         </div>
       </div>
 
-      <ResponsiveContainer width="100%" height={240}>
-        <LineChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
-          <CartesianGrid stroke="#2B2922" strokeDasharray="0" vertical={false} />
-          <XAxis
-            dataKey="week"
-            tick={axisStyle}
-            tickLine={false}
-            axisLine={{ stroke: '#2B2922' }}
-            interval={1}
-          />
-          <YAxis
-            tick={axisStyle}
-            tickLine={false}
-            axisLine={false}
-            width={56}
-            tickFormatter={fmt}
-          />
-          <Tooltip
-            cursor={{ stroke: '#3A372E', strokeDasharray: '2 2' }}
-            contentStyle={{
-              background: '#15140F',
-              border: '1px solid #3A372E',
-              borderRadius: 0,
-              fontFamily: 'var(--font-dm-mono, monospace)',
-              fontSize: '12px',
-              color: '#E8E4D8',
-              padding: '8px 10px',
-            }}
-            labelStyle={{ color: '#8A8472', marginBottom: 4 }}
-            itemStyle={{ color: '#E8E4D8' }}
-            formatter={(value: number, name: string) => [
-              value.toLocaleString(),
-              name === 'clusters' ? 'identity clusters' : 'network-known abusers',
-            ]}
-          />
-          <Line
-            type="monotone"
-            dataKey="clusters"
-            stroke="#D1C9B9"
-            strokeWidth={1.25}
-            dot={false}
-            isAnimationActive={false}
-            activeDot={{ r: 3, fill: '#D1C9B9', stroke: 'none' }}
-          />
-          <Line
-            type="monotone"
-            dataKey="abusers"
-            stroke="#A95B39"
-            strokeWidth={1.25}
-            dot={false}
-            isAnimationActive={false}
-            activeDot={{ r: 3, fill: '#A95B39', stroke: 'none' }}
-          />
-        </LineChart>
-      </ResponsiveContainer>
+      <svg viewBox={`0 0 ${chart.width} ${chart.height}`} role="img" aria-label="Projected identity clusters and network-known abusers over 12 weeks" style={{ display: 'block', width: '100%', height: 240 }}>
+        <defs>
+          <linearGradient id="cluster-line" x1="0" x2="1" y1="0" y2="0">
+            <stop offset="0%" stopColor="#8A8472" />
+            <stop offset="100%" stopColor="#E8E4D8" />
+          </linearGradient>
+          <linearGradient id="abuser-line" x1="0" x2="1" y1="0" y2="0">
+            <stop offset="0%" stopColor="#7B2D26" />
+            <stop offset="100%" stopColor="#D67448" />
+          </linearGradient>
+          <linearGradient id="cluster-area" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stopColor="#E8E4D8" stopOpacity="0.14" />
+            <stop offset="100%" stopColor="#E8E4D8" stopOpacity="0" />
+          </linearGradient>
+          <linearGradient id="abuser-area" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stopColor="#B6512A" stopOpacity="0.22" />
+            <stop offset="100%" stopColor="#B6512A" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+
+        {tickValues.map((value) => {
+          const tickY = yPosition(value);
+          return (
+            <g key={value}>
+              <line x1={chart.left} x2={chart.width - chart.right} y1={tickY} y2={tickY} stroke="#2B2922" strokeWidth="1" />
+              <text x={chart.left - 12} y={tickY + 4} textAnchor="end" fill="#8A8472" fontFamily="var(--font-dm-mono, monospace)" fontSize="11">
+                {formatTick(value)}
+              </text>
+            </g>
+          );
+        })}
+
+        {data.filter((_, index) => index % 2 === 0).map((point, index) => {
+          const dataIndex = index * 2;
+          const tickX = xPosition(dataIndex);
+          return (
+            <text key={point.week} x={tickX} y={chart.height - 10} textAnchor="middle" fill="#8A8472" fontFamily="var(--font-dm-mono, monospace)" fontSize="11">
+              {point.week}
+            </text>
+          );
+        })}
+
+        <path d={`${clusterPath} L ${xPosition(data.length - 1).toFixed(1)} ${chart.height - chart.bottom} L ${chart.left} ${chart.height - chart.bottom} Z`} fill="url(#cluster-area)" />
+        <path d={`${abuserPath} L ${xPosition(data.length - 1).toFixed(1)} ${chart.height - chart.bottom} L ${chart.left} ${chart.height - chart.bottom} Z`} fill="url(#abuser-area)" />
+
+        <path className="ua-draw" d={clusterPath} fill="none" stroke="url(#cluster-line)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ ['--ua-line-len' as string]: 1200, ['--ua-draw-delay' as string]: '120ms' }} />
+        <path className="ua-draw" d={abuserPath} fill="none" stroke="url(#abuser-line)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ ['--ua-line-len' as string]: 1200, ['--ua-draw-delay' as string]: '260ms' }} />
+
+        {[data[4], data[8], data[11]].map((point) => (
+          <circle key={point.week} cx={xPosition(data.indexOf(point))} cy={yPosition(point.clusters)} r="3.5" fill="#E8E4D8" />
+        ))}
+        {[data[5], data[9], data[11]].map((point) => (
+          <circle key={point.week} cx={xPosition(data.indexOf(point))} cy={yPosition(point.abusers)} r="3.5" fill="#B6512A" />
+        ))}
+      </svg>
     </div>
   );
 }

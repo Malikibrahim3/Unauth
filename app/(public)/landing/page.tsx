@@ -6,21 +6,17 @@ import Reveal from './_components/Reveal';
 import Counter from './_components/Counter';
 import AnimatedBar from './_components/AnimatedBar';
 import TypedText from './_components/TypedText';
+import ParallaxController from './_components/ParallaxController';
 import AuditForm from './AuditForm';
 
 export const metadata = {
   title: 'Unauth — Fraud Intelligence for Ecommerce',
   description:
-    'Cross-merchant identity resolution. Friendly fraud, refund abuse, and INR-claim rings caught by linking identities across stores.',
+    'Find repeat refund abuse and INR rings hiding across stores. Upload a CSV and get a free fraud graph audit.',
 };
 
 export default function LandingPage() {
   const today = new Date();
-  const todayLong = today.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
   const todayISO = today.toISOString().slice(0, 10);
   const heroSubjectFields = [
     {
@@ -92,12 +88,14 @@ export default function LandingPage() {
 
   return (
     <div
+      className="ua-landing-shell"
       style={{
         background: '#F8F5EE',
         color: '#1A1814',
         minHeight: '100vh',
       }}
     >
+      <ParallaxController />
       {/* ── Header strip ────────────────────────────────────────── */}
       <header
         style={{
@@ -150,7 +148,7 @@ export default function LandingPage() {
       </header>
 
       {/* ── Hero ────────────────────────────────────────────────── */}
-      <section className="mx-auto max-w-[1400px] px-6 md:px-10 pt-6 md:pt-8 pb-0">
+      <section className="ua-hero-canvas ua-parallax-field mx-auto max-w-[1400px] px-6 md:px-10 pt-6 md:pt-8 pb-0" data-ua-parallax-depth="34">
 
         {/* Top — copy block */}
         <Reveal delay={40}>
@@ -198,9 +196,9 @@ export default function LandingPage() {
               maxWidth: '26ch',
             }}
           >
-            Resolve the buyer your store has{' '}
+            Find repeat abusers before they{' '}
             <span style={{ color: '#7B2D26', fontStyle: 'italic', fontFamily: 'var(--font-serif, serif)', fontWeight: 400, whiteSpace: 'nowrap' }}>
-              never seen.
+              strike again.
             </span>
           </h1>
 
@@ -215,8 +213,8 @@ export default function LandingPage() {
               maxWidth: '62ch',
             }}
           >
-            Upload your last 12 months of orders. We surface the repeat refund abusers and friendly-fraud clusters your store can&rsquo;t see on its own.{' '}
-            <span style={{ color: '#1A1814', fontWeight: 500, fontStyle: 'normal' }}>Free. No account. Results emailed.</span>
+            Upload orders. Unauth links refund abuse, INR claims, and friendly-fraud patterns across stores.{' '}
+            <span style={{ color: '#1A1814', fontWeight: 500, fontStyle: 'normal' }}>Free audit. No account. Results emailed.</span>
           </p>
 
           {/* CTA row */}
@@ -248,7 +246,7 @@ export default function LandingPage() {
         </Reveal>
 
         {/* Bottom — large product artifact */}
-        <Reveal as="div" className="relative mt-6 md:mt-8" delay={180} noFade>
+        <Reveal as="div" className="ua-hero-stage relative mt-6 md:mt-8" delay={180} noFade>
             {/* Floating eyebrow above artifact */}
             <div
               className="flex items-center justify-between mb-3"
@@ -271,14 +269,111 @@ export default function LandingPage() {
             </div>
 
             <div
-              className="ua-hover-glow ua-case-card"
+              className="hidden lg:block ua-hero-float ua-hero-float-a ua-parallax-layer"
+              data-ua-parallax-depth="30"
+              data-ua-parallax-x="-8"
+              aria-hidden
               style={{
-                background: '#FDFBF6',
+                position: 'absolute',
+                zIndex: 3,
+                right: 'clamp(1rem, 7vw, 7rem)',
+                top: '1.8rem',
+                width: 'clamp(190px, 17vw, 260px)',
+                padding: '14px 16px',
+                border: '1px solid rgba(216, 208, 189, 0.78)',
+                background:
+                  'linear-gradient(135deg, rgba(253,251,246,0.88), rgba(253,251,246,0.60)), radial-gradient(circle at 88% 0%, rgba(246,192,87,0.24), transparent 8rem)',
+                boxShadow: '0 24px 60px -36px rgba(26,24,20,0.34)',
+                backdropFilter: 'saturate(150%) blur(18px)',
+                WebkitBackdropFilter: 'saturate(150%) blur(18px)',
+              }}
+            >
+              <p
+                style={{
+                  fontFamily: 'var(--font-dm-mono, monospace)',
+                  fontSize: '10px',
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  color: '#8A8472',
+                  marginBottom: '10px',
+                }}
+              >
+                Network match
+              </p>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '16px' }}>
+                <span style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '34px', lineHeight: 1, letterSpacing: '-0.04em', color: '#1A1814' }}>
+                  96%
+                </span>
+                <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10px', color: '#7B2D26', letterSpacing: '0.08em' }}>
+                  DEFINITE
+                </span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '4px', marginTop: '12px' }}>
+                {[0.92, 0.88, 0.74].map((value, index) => (
+                  <span
+                    key={index}
+                    style={{
+                      height: 3,
+                      background: `linear-gradient(90deg, #7B2D26 ${value * 100}%, #ECE5D4 ${value * 100}%)`,
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div
+              className="hidden lg:block ua-hero-float ua-hero-float-b ua-parallax-layer"
+              data-ua-parallax-depth="-22"
+              data-ua-parallax-x="10"
+              aria-hidden
+              style={{
+                position: 'absolute',
+                zIndex: 3,
+                right: 'clamp(12rem, 25vw, 24rem)',
+                top: '8.8rem',
+                width: 'clamp(170px, 15vw, 224px)',
+                padding: '14px 16px',
+                border: '1px solid rgba(232, 228, 216, 0.18)',
+                color: '#E8E4D8',
+                background:
+                  'linear-gradient(135deg, rgba(21,20,15,0.92), rgba(43,41,34,0.76)), radial-gradient(circle at 80% 14%, rgba(182,81,42,0.32), transparent 8rem)',
+                boxShadow: '0 24px 60px -36px rgba(26,24,20,0.34)',
+                backdropFilter: 'saturate(150%) blur(18px)',
+                WebkitBackdropFilter: 'saturate(150%) blur(18px)',
+              }}
+            >
+              <p
+                style={{
+                  fontFamily: 'var(--font-dm-mono, monospace)',
+                  fontSize: '10px',
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  color: '#8A8472',
+                  marginBottom: '12px',
+                }}
+              >
+                Evidence packet
+              </p>
+              <p style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '16px', color: '#E8E4D8', marginBottom: '8px' }}>
+                2 disputes ready
+              </p>
+              <p style={{ fontFamily: 'var(--font-serif, serif)', fontStyle: 'italic', fontSize: '12px', color: '#B8B2A0', lineHeight: 1.45, margin: 0 }}>
+                card · address · INR pattern · delivery proof
+              </p>
+            </div>
+
+            <div
+              className="ua-hover-glow ua-case-card ua-premium-surface ua-parallax-layer"
+              data-ua-parallax-depth="-12"
+              style={{
+                background: 'rgba(253, 251, 246, 0.92)',
                 border: '1px solid #D8D0BD',
                 borderRadius: 0,
                 boxShadow:
-                  '0 1px 0 #D8D0BD, 0 20px 40px -20px rgba(26,24,20,0.14), 0 40px 80px -40px rgba(26,24,20,0.10)',
+                  '0 1px 0 #D8D0BD, 0 28px 68px -24px rgba(26,24,20,0.22), 0 62px 130px -54px rgba(123,45,38,0.30)',
                 position: 'relative',
+                backdropFilter: 'saturate(138%) blur(18px)',
+                WebkitBackdropFilter: 'saturate(138%) blur(18px)',
               }}
             >
               {/* Header bar with status chips */}
@@ -665,7 +760,6 @@ export default function LandingPage() {
                     { m: 'your_store',  o: '3 ord · 2 ref',  v: '$340',   r: 0.55 },
                     { m: 'merchant_04', o: '3 ord · 2 INR',  v: '$1,210', r: 0.92, note: true },
                     { m: 'merchant_02', o: '2 ord · 2 INR',  v: '$613',   r: 0.80 },
-                    { m: 'merchant_06', o: '1 ord · 1 ref',  v: '$284',   r: 0.42 },
                     { m: 'merchant_03', o: '2 ord · 1 INR',  v: '$890',   r: 0.71 },
                   ].map((row, i) => (
                     <div
@@ -703,7 +797,7 @@ export default function LandingPage() {
                     </div>
                   ))}
                   <p style={{ color: '#8A8472', fontSize: '11px', marginTop: '8px' }}>
-                    + 2 more merchants withheld (k-anonymity gate)
+                    + 3 more merchants withheld
                   </p>
                 </div>
               </div>
@@ -813,7 +907,7 @@ export default function LandingPage() {
                 'No checkout integration',
                 'CSV audit · ~20 min',
                 'Client-side HMAC hashing',
-                'Case file evidence output',
+                'Evidence-ready output',
               ].map((chip) => (
                 <span
                   key={chip}
@@ -836,7 +930,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── §1 · The pattern your store can't see — VISUAL ───────── */}
-      <section className="mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-20 pb-12 md:pb-16">
+      <section className="ua-section-prism ua-parallax-field mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-20 pb-12 md:pb-16" data-ua-parallax-depth="28">
         <hr style={{ border: 0, borderTop: '1px solid #D8D0BD', marginBottom: '40px' }} />
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -852,7 +946,7 @@ export default function LandingPage() {
                 marginBottom: '14px',
               }}
             >
-              § 1 — THE PROBLEM
+              § 1 — WHY IT MATTERS
             </p>
             <h2
               style={{
@@ -867,7 +961,7 @@ export default function LandingPage() {
             >
               One buyer.{' '}
               <span style={{ fontStyle: 'italic', fontFamily: 'var(--font-serif, serif)', color: '#7B2D26' }}>Seven stores.</span>{' '}
-              Zero shared signal.
+              One pattern.
             </h2>
             <p
               style={{
@@ -878,7 +972,7 @@ export default function LandingPage() {
                 marginBottom: '20px',
               }}
             >
-              At one store, the buyer looks ordinary: a paid order, a refund request, a plausible address. Across seven stores, the same card, address variants, and INR pattern resolve into one identity.
+              Alone, every order looks normal. Across the network, the same card, address variants, and INR pattern resolve into one identity.
             </p>
 
             {/* Three stats inline */}
@@ -924,12 +1018,15 @@ export default function LandingPage() {
           {/* Right: ledger visualization — same buyer across 7 stores */}
           <Reveal className="lg:col-span-7" delay={140}>
             <div
-              className="ua-hover-glow"
+              className="ua-hover-glow ua-orbit-card ua-glass-card ua-parallax-layer"
+              data-ua-parallax-depth="-10"
               style={{
-                background: '#FDFBF6',
+                background: 'rgba(253, 251, 246, 0.88)',
                 border: '1px solid #D8D0BD',
                 padding: '20px 22px',
-                boxShadow: '0 1px 0 #D8D0BD, 0 12px 32px -20px rgba(26,24,20,0.10)',
+                boxShadow: '0 1px 0 #D8D0BD, 0 18px 44px -24px rgba(26,24,20,0.16)',
+                backdropFilter: 'saturate(132%) blur(14px)',
+                WebkitBackdropFilter: 'saturate(132%) blur(14px)',
               }}
             >
               <div className="flex items-baseline justify-between mb-4 flex-wrap gap-2">
@@ -943,7 +1040,7 @@ export default function LandingPage() {
                     margin: 0,
                   }}
                 >
-                  Same Buyer · Seven Identities Observed Independently
+                  Same Buyer · 7 Identities
                 </p>
                 <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10.5px', color: '#8A8472', margin: 0 }}>
                   → resolved to #u_kessler.07
@@ -955,10 +1052,7 @@ export default function LandingPage() {
                   { merchant: 'your_store',  email: 'n•••@merchant-domain', addr: 'addr_hash_91c2 · apt match',      card: '••4419' },
                   { merchant: 'merchant_04', email: 'email_hmac_91b4',      addr: 'addr_hash_91c2 · variant',        card: '••4419' },
                   { merchant: 'merchant_02', email: 'email_hmac_a802',      addr: 'addr_hash_91c2 · unit variant',   card: '••4419' },
-                  { merchant: 'merchant_06', email: 'email_hmac_77da',      addr: 'addr_hash_91c2 · normalized',     card: '••4419' },
-                  { merchant: 'merchant_03', email: 'email_hmac_91b4',      addr: 'addr_hash_91c2 · unit variant',   card: '••4419' },
-                  { merchant: 'merchant_05', email: 'email_hmac_3c19',      addr: 'addr_hash_91c2 · apt match',      card: '••4419' },
-                  { merchant: 'merchant_07', email: 'email_hmac_91b4',      addr: 'addr_hash_91c2 · spelling match', card: '••4419' },
+                  { merchant: 'merchant_07', email: 'email_hmac_91b4',      addr: 'addr_hash_91c2 · spelling',       card: '••4419' },
                 ];
                 return (
                   <>
@@ -1071,7 +1165,7 @@ export default function LandingPage() {
                     margin: 0,
                   }}
                 >
-                  At each store, a normal customer. Across the network — a single identity, 6 refunds, 4 INRs.
+                  One customer view per store. One identity in the network.
                 </p>
                 <span
                   style={{
@@ -1096,7 +1190,8 @@ export default function LandingPage() {
       <section
         id="network"
         style={{ background: '#15140F', color: '#E8E4D8', scrollMarginTop: '72px' }}
-        className="py-16 md:py-24"
+        className="ua-network-canvas ua-parallax-field py-16 md:py-24"
+        data-ua-parallax-depth="32"
       >
         <div className="mx-auto max-w-[1400px] px-6 md:px-10">
           <div className="flex items-end justify-between flex-wrap gap-4 mb-10 md:mb-12">
@@ -1126,7 +1221,7 @@ export default function LandingPage() {
                   maxWidth: '720px',
                 }}
               >
-                The network layer is built around controls that exist today.
+                See the pattern your store cannot see alone.
               </h2>
               <p
                 style={{
@@ -1137,7 +1232,7 @@ export default function LandingPage() {
                   letterSpacing: '0.06em',
                 }}
               >
-                founding merchant cohort · network is being built · k-anonymity gated (≥3 merchants)
+                founding merchant cohort · k-anonymity gated · raw identities protected
               </p>
             </div>
             <div style={{ display: 'flex', gap: '24px', fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11px', color: '#B8B2A0' }}>
@@ -1151,7 +1246,7 @@ export default function LandingPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-px" style={{ marginBottom: '0', background: '#2B2922', border: '1px solid #2B2922' }}>
             {/* Chart spans 8 */}
-            <Reveal noFade className="lg:col-span-8 ua-chart-draw" style={{ background: '#15140F', padding: '24px 24px 16px' }} threshold={0.25}>
+            <Reveal noFade className="lg:col-span-8 ua-chart-draw ua-parallax-layer" data-ua-parallax-depth="-8" style={{ background: '#15140F', padding: '24px 24px 16px' }} threshold={0.25}>
               <NetworkChart />
             </Reveal>
 
@@ -1162,7 +1257,7 @@ export default function LandingPage() {
                 { v: 256, prefix: 'SHA-', suffix: '',   l: 'HMAC hashing',           s: 'per-tenant salt · PII never leaves browser' },
                 { v: 3,   prefix: 'k ≥ ', suffix: '',   l: 'network gate threshold', s: 'min. merchants for cluster to surface' },
               ].map((m, i) => (
-                <Reveal key={m.l} delay={120 + i * 90} style={{ background: '#15140F', padding: '22px 22px 22px' }}>
+                <Reveal key={m.l} delay={120 + i * 90} className="ua-dark-panel" style={{ background: '#15140F', padding: '22px 22px 22px' }}>
                   <p
                     style={{
                       fontFamily: 'var(--font-dm-mono, monospace)',
@@ -1216,13 +1311,13 @@ export default function LandingPage() {
               marginTop: '24px',
             }}
           >
-            The network is being built with founding merchants now. Published cross-merchant counts will appear once the cohort is live. Until then, k-anonymity controls determine what can surface, and the network does not publish merchant names, raw order data, or buyer identities.
+            Cross-merchant signals surface only when the evidence is strong enough to act on.
           </p>
         </div>
       </section>
 
       {/* ── §3 · How it works ───────────────────────────────────── */}
-      <section id="how-it-works" style={{ scrollMarginTop: '72px' }} className="mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-20 pb-12 md:pb-16">
+      <section id="how-it-works" style={{ scrollMarginTop: '72px' }} className="ua-section-flow ua-parallax-field mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-20 pb-12 md:pb-16" data-ua-parallax-depth="24">
         <hr style={{ border: 0, borderTop: '1px solid #D8D0BD', marginBottom: '40px' }} />
 
         <div className="flex items-end justify-between flex-wrap gap-4 mb-10">
@@ -1252,7 +1347,7 @@ export default function LandingPage() {
                 maxWidth: '720px',
               }}
             >
-              Four stages — CSV in, signed evidence out.
+              CSV in. Actionable cases out.
             </h2>
             <p
               style={{
@@ -1264,11 +1359,11 @@ export default function LandingPage() {
                 maxWidth: '560px',
               }}
             >
-              PII never leaves the browser in clear text
+              Hash sensitive fields in browser
               <sup>
                 <a href="#note-6" style={{ color: '#7B2D26', textDecoration: 'none' }}>6</a>
               </sup>
-              . Every step is logged with a hashed audit trail.
+              . Get scored clusters, signals, and case files back.
             </p>
           </div>
           <div
@@ -1279,22 +1374,26 @@ export default function LandingPage() {
               letterSpacing: '0.06em',
             }}
           >
-            avg total · 38s · 11ms per order
+            no checkout integration
           </div>
         </div>
 
         {/* 4-step card flow with visual flow indicator */}
         <div
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px"
-          style={{ background: '#D8D0BD', border: '1px solid #D8D0BD', marginBottom: '40px' }}
+          style={{
+            background: 'linear-gradient(90deg, #D8D0BD, rgba(246,184,79,0.70), rgba(185,110,245,0.52), #D8D0BD)',
+            border: '1px solid #D8D0BD',
+            marginBottom: '40px',
+          }}
         >
           {[
             {
               n: '01',
               t: '11ms',
               title: 'Upload',
-              body: 'CSV of orders, refunds, returns, and deliveries — or a real-time API stream.',
-              detail: 'No schema changes. No webhooks. No checkout integration required.',
+              body: 'Upload orders, refunds, returns, and deliveries.',
+              detail: 'No schema changes. No checkout work.',
               icon: (
                 <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden>
                   <path d="M3 14v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" stroke="#7B2D26" strokeWidth="1.4"/>
@@ -1306,8 +1405,8 @@ export default function LandingPage() {
               n: '02',
               t: '4ms',
               title: 'Hash in browser',
-              body: 'Email, phone, address, and card-reference fields are HMAC-SHA256 hashed with a salt only your tenant holds.',
-              detail: 'Unauth never sees the raw values.',
+              body: 'Email, phone, address, and card references are HMAC-SHA256 hashed.',
+              detail: 'Raw values stay out of Unauth.',
               icon: (
                 <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden>
                   <rect x="4" y="9" width="14" height="9" stroke="#7B2D26" strokeWidth="1.4"/>
@@ -1319,8 +1418,8 @@ export default function LandingPage() {
               n: '03',
               t: '17ms',
               title: 'Resolve cluster',
-              body: 'Hashes resolve against the cross-merchant identity graph using strong signals corroborated by soft signals.',
-              detail: 'k-anonymity gated — surfaces only at 3+ merchants.',
+              body: 'Signals resolve against the cross-merchant identity graph.',
+              detail: 'Only strong clusters surface.',
               icon: (
                 <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden>
                   <circle cx="11" cy="11" r="3" stroke="#7B2D26" strokeWidth="1.4"/>
@@ -1336,8 +1435,8 @@ export default function LandingPage() {
               n: '04',
               t: '6ms',
               title: 'Return evidence',
-              body: 'Single signed object: risk_score, cluster_id, signals_fired, evidence-packet eligibility.',
-              detail: 'Case file renders into your dispute response.',
+              body: 'Get risk score, cluster ID, fired signals, and evidence eligibility.',
+              detail: 'Ready for review or dispute response.',
               icon: (
                 <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden>
                   <path d="M5 3h9l4 4v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" stroke="#7B2D26" strokeWidth="1.4"/>
@@ -1349,14 +1448,16 @@ export default function LandingPage() {
             <Reveal
               key={step.n}
               delay={80 + i * 80}
-              className="ua-hover-lift"
+              className="ua-hover-lift ua-glass-card"
               style={{
-                background: '#FDFBF6',
+                background: 'rgba(253, 251, 246, 0.9)',
                 padding: '22px 22px 22px',
                 display: 'flex',
                 flexDirection: 'column',
                 minHeight: '244px',
                 position: 'relative',
+                backdropFilter: 'saturate(126%) blur(10px)',
+                WebkitBackdropFilter: 'saturate(126%) blur(10px)',
               }}
             >
               {i < 3 && (
@@ -1464,6 +1565,8 @@ export default function LandingPage() {
             </p>
 
             <div
+              className="ua-dark-panel ua-parallax-layer"
+              data-ua-parallax-depth="-7"
               style={{
                 background: '#15140F',
                 border: '1px solid #2B2922',
@@ -1564,7 +1667,7 @@ export default function LandingPage() {
                 marginBottom: '24px',
               }}
             >
-              We don&rsquo;t decline orders. We don&rsquo;t move money. We don&rsquo;t write to your checkout. We surface the cluster, the signals, and the evidence — what you do with it depends on your risk appetite. Most teams set a score threshold and let the rest pass.
+              Unauth surfaces the cluster, signals, and evidence. You choose the threshold and keep control of the decision.
             </p>
 
             {/* Confidence grade table */}
@@ -1614,7 +1717,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── Sample evidence packet · full case-file artifact ─────── */}
-      <section id="evidence" style={{ scrollMarginTop: '72px' }} className="mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-20 pb-12 md:pb-16">
+      <section id="evidence" style={{ scrollMarginTop: '72px' }} className="ua-section-evidence ua-parallax-field mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-20 pb-12 md:pb-16" data-ua-parallax-depth="30">
         <hr style={{ border: 0, borderTop: '1px solid #D8D0BD', marginBottom: '40px' }} />
 
         <div className="flex items-end justify-between flex-wrap gap-4 mb-10">
@@ -1644,7 +1747,7 @@ export default function LandingPage() {
                 maxWidth: '720px',
               }}
             >
-              The full case file, formatted for chargeback representment.
+              Evidence that is ready to use.
             </h2>
             <p
               style={{
@@ -1656,7 +1759,7 @@ export default function LandingPage() {
                 maxWidth: '620px',
               }}
             >
-              Email variants, address misspellings, payment fingerprint, network footprint, behavioural pattern, recommended action — rendered directly into your dispute response. CE 3.0 formatted evidence packets are the target output for chargeback representment.
+              Email variants, address matches, payment fingerprint, network footprint, pattern, and recommended action in one case file.
             </p>
           </div>
           <span
@@ -1674,12 +1777,16 @@ export default function LandingPage() {
         </div>
 
         <div
+          className="ua-glass-card ua-parallax-layer"
+          data-ua-parallax-depth="-8"
           style={{
-            background: '#FDFBF6',
+            background: 'rgba(253, 251, 246, 0.91)',
             border: '1px solid #D8D0BD',
             borderRadius: 0,
             boxShadow:
-              '0 1px 0 #D8D0BD, 0 16px 32px -20px rgba(26,24,20,0.12), 0 32px 64px -32px rgba(26,24,20,0.08)',
+              '0 1px 0 #D8D0BD, 0 22px 54px -26px rgba(26,24,20,0.18), 0 44px 96px -48px rgba(185,110,245,0.18)',
+            backdropFilter: 'saturate(132%) blur(12px)',
+            WebkitBackdropFilter: 'saturate(132%) blur(12px)',
           }}
         >
           {/* Artifact header */}
@@ -1988,7 +2095,7 @@ merchant_03            $890.00     2 orders     1 INR filed
       </section>
 
       {/* ── §5 · Two case studies ────────────────────────────────── */}
-      <section className="mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-20 pb-12 md:pb-16">
+      <section className="ua-section-quiet ua-parallax-field mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-20 pb-12 md:pb-16" data-ua-parallax-depth="22">
         <hr style={{ border: 0, borderTop: '1px solid #D8D0BD', marginBottom: '40px' }} />
 
         <div className="mb-10">
@@ -2017,8 +2124,8 @@ merchant_03            $890.00     2 orders     1 INR filed
               maxWidth: '760px',
             }}
           >
-            Two merchant audits.{' '}
-            <span style={{ fontStyle: 'italic', fontFamily: 'var(--font-serif, serif)', color: '#7B2D26' }}>The shape of the output.</span>
+            What a completed audit{' '}
+            <span style={{ fontStyle: 'italic', fontFamily: 'var(--font-serif, serif)', color: '#7B2D26' }}>shows.</span>
           </h2>
           <p
             style={{
@@ -2030,7 +2137,7 @@ merchant_03            $890.00     2 orders     1 INR filed
               margin: 0,
             }}
           >
-            Two anonymized merchant profiles. Each shows the format of a completed audit — linked identities, risk scores, and assembled case files.
+            Linked identities, risk scores, and case-file readiness from anonymized merchant profiles.
             <sup>
               <a href="#note-7" style={{ color: '#7B2D26', textDecoration: 'none' }}>7</a>
             </sup>
@@ -2039,7 +2146,7 @@ merchant_03            $890.00     2 orders     1 INR filed
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-px" style={{ background: '#D8D0BD', border: '1px solid #D8D0BD' }}>
           {/* Case 1 */}
-          <Reveal className="ua-hover-lift" delay={60} style={{ background: '#FDFBF6', padding: '24px 26px' }}>
+          <Reveal className="ua-hover-lift ua-glass-card" delay={60} style={{ background: 'rgba(253, 251, 246, 0.9)', padding: '24px 26px' }}>
             <div className="flex items-center justify-between mb-5">
               <p
                 style={{
@@ -2089,10 +2196,60 @@ merchant_03            $890.00     2 orders     1 INR filed
               ))}
             </div>
 
+            <div
+              className="grid grid-cols-1 sm:grid-cols-[1.2fr_0.8fr]"
+              style={{
+                gap: '18px',
+                alignItems: 'stretch',
+              }}
+            >
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {[
+                  { label: 'refund ring', value: 0.82, color: '#7B2D26' },
+                  { label: 'INR repeaters', value: 0.68, color: '#B6512A' },
+                  { label: 'address variants', value: 0.54, color: '#B96EF5' },
+                ].map((row) => (
+                  <div key={row.label}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', marginBottom: '4px' }}>
+                      <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10.5px', color: '#4A4640', letterSpacing: '0.06em' }}>
+                        {row.label}
+                      </span>
+                      <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10.5px', color: '#8A8472' }}>
+                        {Math.round(row.value * 100)}%
+                      </span>
+                    </div>
+                    <AnimatedBar value={row.value} color={row.color} track="#ECE5D4" height={5} delay={240} />
+                  </div>
+                ))}
+              </div>
+              <div
+                style={{
+                  border: '1px solid #E3C9C3',
+                  background:
+                    'linear-gradient(135deg, rgba(244,232,229,0.92), rgba(255,234,190,0.70), rgba(240,229,255,0.58))',
+                  padding: '14px 16px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  minHeight: 124,
+                }}
+              >
+                <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10px', color: '#7B2D26', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+                  flagged value
+                </span>
+                <span style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '34px', color: '#1A1814', letterSpacing: '-0.04em', lineHeight: 1 }}>
+                  $128K
+                </span>
+                <span style={{ fontFamily: 'var(--font-serif, serif)', fontStyle: 'italic', fontSize: '12px', color: '#8A8472', lineHeight: 1.45 }}>
+                  71% evidence-ready at review time
+                </span>
+              </div>
+            </div>
+
           </Reveal>
 
           {/* Case 2 */}
-          <Reveal className="ua-hover-lift" delay={140} style={{ background: '#FDFBF6', padding: '24px 26px' }}>
+          <Reveal className="ua-hover-lift ua-glass-card" delay={140} style={{ background: 'rgba(253, 251, 246, 0.9)', padding: '24px 26px' }}>
             <div className="flex items-center justify-between mb-5">
               <p
                 style={{
@@ -2142,7 +2299,7 @@ merchant_03            $890.00     2 orders     1 INR filed
       </section>
 
       {/* ── §6 · What data we need ──────────────────────────────── */}
-      <section className="mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-20 pb-12 md:pb-16">
+      <section className="ua-section-prism ua-parallax-field mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-20 pb-12 md:pb-16" data-ua-parallax-depth="26">
         <hr style={{ border: 0, borderTop: '1px solid #D8D0BD', marginBottom: '40px' }} />
 
         <div className="mb-10">
@@ -2171,7 +2328,7 @@ merchant_03            $890.00     2 orders     1 INR filed
               maxWidth: '760px',
             }}
           >
-            What the engine needs. <span style={{ fontFamily: 'var(--font-serif, serif)', fontStyle: 'italic', color: '#7B2D26' }}>Nothing your store doesn&rsquo;t already log.</span>
+            Use data you already have.
           </h2>
           <p
             style={{
@@ -2183,13 +2340,19 @@ merchant_03            $890.00     2 orders     1 INR filed
               margin: 0,
             }}
           >
-            Standard order, refund, return, delivery, and payment exports. No schema changes. No webhooks. No integration.
+            Standard order, refund, return, delivery, and payment exports. No integration required.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-px" style={{ background: '#D8D0BD', border: '1px solid #D8D0BD' }}>
+        <div
+          className="grid grid-cols-1 lg:grid-cols-12 gap-px"
+          style={{
+            background: 'linear-gradient(135deg, #D8D0BD, rgba(255,183,77,0.68), rgba(185,110,245,0.46), #D8D0BD)',
+            border: '1px solid #D8D0BD',
+          }}
+        >
           {/* Required */}
-          <div className="lg:col-span-8" style={{ background: '#FDFBF6', padding: '22px 24px' }}>
+          <div className="lg:col-span-8 ua-glass-card" style={{ background: 'rgba(253, 251, 246, 0.92)', padding: '22px 24px' }}>
             <div className="flex items-center justify-between mb-4">
               <p
                 style={{
@@ -2233,7 +2396,7 @@ merchant_03            $890.00     2 orders     1 INR filed
           </div>
 
           {/* Optional */}
-          <div className="lg:col-span-4" style={{ background: '#FDFBF6', padding: '22px 24px' }}>
+          <div className="lg:col-span-4 ua-glass-card" style={{ background: 'rgba(253, 251, 246, 0.92)', padding: '22px 24px' }}>
             <p
               style={{
                 fontFamily: 'var(--font-dm-mono, monospace)',
@@ -2287,7 +2450,8 @@ merchant_03            $890.00     2 orders     1 INR filed
       <section
         id="security"
         style={{ background: '#15140F', color: '#E8E4D8', scrollMarginTop: '72px' }}
-        className="py-16 md:py-24"
+        className="ua-network-canvas ua-parallax-field py-16 md:py-24"
+        data-ua-parallax-depth="28"
       >
         <div className="mx-auto max-w-[1400px] px-6 md:px-10">
           <div className="flex items-end justify-between flex-wrap gap-4 mb-10">
@@ -2317,7 +2481,7 @@ merchant_03            $890.00     2 orders     1 INR filed
                   maxWidth: '720px',
                 }}
               >
-                Your data is hashed before it leaves the browser.
+                Sensitive data is hashed in browser.
               </h2>
               <p
                 style={{
@@ -2328,7 +2492,7 @@ merchant_03            $890.00     2 orders     1 INR filed
                   letterSpacing: '0.06em',
                 }}
               >
-                client-side HMAC-SHA256 · per-tenant salt · k-anonymity gated network surface
+                HMAC-SHA256 · per-tenant salt · k-anonymity gated
               </p>
             </div>
             <a
@@ -2354,17 +2518,17 @@ merchant_03            $890.00     2 orders     1 INR filed
               {
                 Icon: Lock,
                 label: 'CLIENT-SIDE HASHING',
-                body: 'Email, phone, address, and card-reference fields are HMAC-SHA256 hashed in your browser with a per-merchant salt before transmission. Unauth never sees your raw values.',
+                body: 'Email, phone, address, and card references are hashed before transmission. Unauth never sees raw values.',
               },
               {
                 Icon: EyeOff,
                 label: 'K-ANONYMITY GATING',
-                body: 'Cross-merchant signals surface only when a cluster has been observed at 3 or more network merchants. Single-merchant patterns are returned to the originating merchant only.',
+                body: 'Cross-merchant signals surface only after a cluster clears the network threshold.',
               },
               {
                 Icon: FileText,
                 label: 'AUDIT LOGGING',
-                body: 'Every lookup is logged as a hashed record. No plaintext PII appears in audit logs. Merchants see their full query history in the dashboard.',
+                body: 'Every lookup is logged as a hashed record. No plaintext PII appears in audit logs.',
               },
               {
                 Icon: Scale,
@@ -2383,7 +2547,7 @@ merchant_03            $890.00     2 orders     1 INR filed
                 ),
               },
             ] as const).map(({ Icon, label, body }) => (
-              <div key={label} style={{ background: '#15140F', padding: '24px 24px 28px' }}>
+              <div key={label} className="ua-dark-panel" style={{ background: '#15140F', padding: '24px 24px 28px' }}>
                 <div
                   style={{
                     display: 'flex',
@@ -2431,7 +2595,7 @@ merchant_03            $890.00     2 orders     1 INR filed
               maxWidth: '680px',
             }}
           >
-            ALSO: 4-role RBAC with 26 granular permissions · per-IP + per-merchant rate limits · chunked bulk CSV processing
+            ALSO: RBAC · rate limits · chunked bulk CSV processing
           </p>
 
           <p
@@ -2444,13 +2608,13 @@ merchant_03            $890.00     2 orders     1 INR filed
               lineHeight: 1.6,
             }}
           >
-              SOC 2 audit in progress. The system is designed with these standards as the target architecture. Full controls documentation available on request.
+              SOC 2 audit in progress. Full controls documentation available on request.
           </p>
         </div>
       </section>
 
       {/* ── §8 · Comparison matrix ──────────────────────────────── */}
-      <section className="mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-20 pb-12 md:pb-16">
+      <section className="ua-section-flow ua-parallax-field mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-20 pb-12 md:pb-16" data-ua-parallax-depth="20">
         <hr style={{ border: 0, borderTop: '1px solid #D8D0BD', marginBottom: '40px' }} />
 
         <div className="mb-10">
@@ -2479,7 +2643,7 @@ merchant_03            $890.00     2 orders     1 INR filed
               maxWidth: '760px',
             }}
           >
-            Most fraud tools watch checkout. Unauth watches what happens after.
+            Checkout tools miss what happens after.
           </h2>
           <p
             style={{
@@ -2491,7 +2655,7 @@ merchant_03            $890.00     2 orders     1 INR filed
               margin: 0,
             }}
           >
-            Friendly fraud, refund abuse, and INR cycles only become visible weeks after a transaction clears — which is when our post-purchase identity graph kicks in.
+            Unauth finds refund abuse, friendly fraud, and INR cycles after the transaction clears.
           </p>
         </div>
 
@@ -2517,11 +2681,14 @@ merchant_03            $890.00     2 orders     1 INR filed
           return (
             <>
               {/* ── Desktop / tablet grid (hidden below sm) ── */}
-              <div className="hidden sm:block" style={{ border: '1px solid #D8D0BD', background: '#FDFBF6', overflow: 'hidden' }}>
+              <div className="hidden sm:block ua-glass-card ua-parallax-layer" data-ua-parallax-depth="-6" style={{ border: '1px solid #D8D0BD', background: 'rgba(253, 251, 246, 0.92)', overflow: 'hidden' }}>
                 {/* Header row */}
                 <div
                   className="grid grid-cols-[1.6fr_1fr_1fr_1fr]"
-                  style={{ background: '#F8F5EE', borderBottom: '1px solid #D8D0BD' }}
+                  style={{
+                    background: 'linear-gradient(90deg, rgba(248,245,238,0.96), rgba(255,234,190,0.62), rgba(244,232,229,0.94))',
+                    borderBottom: '1px solid #D8D0BD',
+                  }}
                 >
                   <div style={{ padding: '14px 18px' }}>
                     <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10.5px', color: '#8A8472', textTransform: 'uppercase', letterSpacing: '0.14em' }}>
@@ -2643,13 +2810,17 @@ merchant_03            $890.00     2 orders     1 INR filed
       </section>
 
       {/* ── §9 · CTA ─────────────────────────────────────────────── */}
-      <section id="audit" style={{ scrollMarginTop: '72px' }} className="mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-20 pb-12 md:pb-16">
+      <section id="audit" style={{ scrollMarginTop: '72px' }} className="ua-audit-canvas ua-parallax-field mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-20 pb-12 md:pb-16" data-ua-parallax-depth="30">
         <div
+          className="ua-dark-panel ua-parallax-layer"
+          data-ua-parallax-depth="-10"
           style={{
-            background: '#15140F',
+            background:
+              'radial-gradient(circle at 80% 16%, rgba(246,184,79,0.18), transparent 22rem), radial-gradient(circle at 28% 100%, rgba(185,110,245,0.12), transparent 22rem), #15140F',
             color: '#E8E4D8',
             padding: 'clamp(40px, 5vw, 64px) clamp(28px, 4vw, 56px)',
             border: '1px solid #15140F',
+            boxShadow: '0 34px 86px -46px rgba(26,24,20,0.42)',
           }}
         >
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
@@ -2678,7 +2849,7 @@ merchant_03            $890.00     2 orders     1 INR filed
                   marginBottom: '18px',
                 }}
               >
-                Run a fraud-graph audit on{' '}
+                Find hidden abuse in{' '}
                 <span style={{ fontStyle: 'italic', fontFamily: 'var(--font-serif, serif)', color: '#B6512A' }}>
                   your own data
                 </span>
@@ -2694,7 +2865,7 @@ merchant_03            $890.00     2 orders     1 INR filed
                   margin: 0,
                 }}
               >
-                Send us a CSV of your last 5,000&ndash;50,000 orders. We&rsquo;ll return a fraud-resolution report — linked identities, refund-abuse clusters, risk scores, and assembled case files. ~20 minutes from upload to report.
+                Upload a CSV. Get linked identities, risk scores, refund-abuse clusters, and case files in about 20 minutes.
               </p>
             </div>
 

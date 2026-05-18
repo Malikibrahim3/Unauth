@@ -13,6 +13,7 @@ type Props = {
   rootMargin?: string;
   /** Don't apply ua-reveal fade — just toggle is-visible for descendant animations. */
   noFade?: boolean;
+  [key: `data-${string}`]: string | number | undefined;
 };
 
 // Set on <html> once so CSS can safely hide reveals (no-JS fallback: class never added = content always visible)
@@ -28,6 +29,7 @@ export default function Reveal({
   threshold = 0.12,
   rootMargin = '0px 0px -8% 0px',
   noFade = false,
+  ...dataAttributes
 }: Props) {
   const ref = useRef<HTMLElement | null>(null);
   const [visible, setVisible] = useState(false);
@@ -45,8 +47,8 @@ export default function Reveal({
     const el = ref.current;
     if (!el) return;
     if (typeof IntersectionObserver === 'undefined') {
-      setVisible(true);
-      return;
+      const frame = window.requestAnimationFrame(() => setVisible(true));
+      return () => window.cancelAnimationFrame(frame);
     }
     const obs = new IntersectionObserver(
       (entries) => {
@@ -73,7 +75,7 @@ export default function Reveal({
   };
 
   return (
-    <Tag ref={ref as never} className={cls} style={styleWithDelay}>
+    <Tag ref={ref as never} className={cls} style={styleWithDelay} {...dataAttributes}>
       {children}
     </Tag>
   );

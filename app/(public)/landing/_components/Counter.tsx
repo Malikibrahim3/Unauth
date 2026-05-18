@@ -38,7 +38,7 @@ export default function Counter({
   delay = 0,
 }: Props) {
   const ref = useRef<HTMLSpanElement | null>(null);
-  const [display, setDisplay] = useState<number>(0);
+  const [display, setDisplay] = useState<number>(value);
   const startedRef = useRef(false);
 
   useEffect(() => {
@@ -48,7 +48,6 @@ export default function Counter({
     const reduced = typeof window !== 'undefined'
       && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (reduced) {
-      setDisplay(value);
       return;
     }
 
@@ -62,7 +61,10 @@ export default function Counter({
         setDisplay(value * ease(t));
         if (t < 1) requestAnimationFrame(tick);
       };
-      requestAnimationFrame(tick);
+      requestAnimationFrame((now) => {
+        setDisplay(0);
+        tick(now);
+      });
     };
 
     if (typeof IntersectionObserver === 'undefined') {
