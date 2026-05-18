@@ -48,7 +48,22 @@ export async function proxy(request: NextRequest) {
     pathname === '/favicon.ico';
   const isMobileUnsupportedRoute = pathname === '/mobile-unsupported';
 
-  if (!isApiRoute && !isAssetRoute && !isMobileUnsupportedRoute) {
+  // Public/marketing routes — always accessible on mobile.
+  // App routes (dashboard, upload, inbox, etc.) remain blocked.
+  const isMobileAllowedRoute =
+    pathname === '/' ||
+    pathname === '/landing' ||
+    pathname === '/demo' ||
+    pathname === '/apply' ||
+    pathname === '/signup' ||
+    pathname.startsWith('/audit') ||
+    pathname.startsWith('/legal') ||
+    pathname.startsWith('/login') ||
+    pathname.startsWith('/auth') ||
+    pathname.startsWith('/reset') ||
+    pathname.startsWith('/mobile-unsupported');
+
+  if (!isApiRoute && !isAssetRoute && !isMobileAllowedRoute) {
     const userAgent = request.headers.get('user-agent') ?? '';
     if (isPhoneUserAgent(userAgent)) {
       const url = request.nextUrl.clone();

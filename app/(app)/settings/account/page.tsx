@@ -119,7 +119,15 @@ export default function AccountSettingsPage() {
     if (deleteConfirm !== 'DELETE') return;
     setDeleteLoading(true);
     try {
-      // Sign out and redirect — actual deletion requires a support request for data safety
+      const res = await fetch('/api/account/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ confirm: 'DELETE' }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({})) as { error?: string };
+        throw new Error(body.error ?? 'Delete failed. Please try again.');
+      }
       await supabase.auth.signOut();
       window.location.href = '/login?deleted=1';
     } catch (e: unknown) {

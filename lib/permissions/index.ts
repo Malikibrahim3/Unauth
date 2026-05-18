@@ -224,28 +224,8 @@ export async function resolveCallerContext(
     };
   }
 
-  // 4. No merchant + no team membership — auto-bootstrap a default merchant
-  //    so the user can use the app. They land as 'owner'.
-  const { data: created, error: createErr } = await serviceClient
-    .from('merchants')
-    .insert({ user_id: userId, name: 'My Store', setup_complete: false })
-    .select('id')
-    .single();
-
-  if (createErr || !created) {
-    // Last-ditch: maybe a race created one between SELECT and INSERT.
-    const { data: retry } = await serviceClient
-      .from('merchants')
-      .select('id')
-      .eq('user_id', userId)
-      .maybeSingle();
-    if (retry) {
-      return { userId, merchantId: retry.id, role: 'owner', memberId: null };
-    }
-    return null;
-  }
-
-  return { userId, merchantId: created.id, role: 'owner', memberId: null };
+  // 4. No merchant + no team membership — onboarding is required.
+  return null;
 }
 
 /**

@@ -1,12 +1,13 @@
 /**
  * POST /api/cron/purge-expired-audits
  *
- * Deletes public_audits records (and their associated CSV files) where:
- *   - deletion_scheduled_at has passed, AND
- *   - account_created = false
+ * Full cascade delete for expired unclaimed public audits:
+ *   customer_profile_audit_appearances → watchlist_appearances →
+ *   audit_transactions → csv_upload_queue → processing_jobs →
+ *   storage files → public_audits
  *
- * Call this once per day from a cron job (Vercel cron, pg_cron, or external scheduler).
- * Secured by a shared secret in the Authorization header: "Bearer <CRON_SECRET>".
+ * Secured by Authorization: Bearer <CRON_SECRET>.
+ * Run once daily (see vercel.json cron config).
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -23,7 +24,7 @@ export async function POST(request: NextRequest) {
 
   const sc = createServiceClient();
 
-  // Fetch expired, unclaimed audits.
+  // 1. Fetch expired, unclaimed public_audits
   const { data: expired, error: fetchError } = await sc
     .from('public_audits' as any)
     .select('id, csv_path')
@@ -32,7 +33,7 @@ export async function POST(request: NextRequest) {
     .limit(500);
 
   if (fetchError) {
-    console.error('[purge-expired-audits] fetch error', fetchError);
+    console.error('[purge] fetch error', fetchError);
     return NextResponse.json({ error: fetchError.message }, { status: 500 });
   }
 
@@ -40,57 +41,84 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ deleted: 0 });
   }
 
-  const expiredAudits = expired as { id: string; csv_path: string | null }[];
-  const ids = expiredAudits.map((r) => r.id);
+  const audits = expired as { id: string; csv_path: string | null }[];
+  const auditIds = audits.map((r) => r.id);
 
-  // Delete the explicitly recorded CSV files first, then clean up any legacy files under the audit prefix.
-  const storageErrors: string[] = [];
-  const explicitPaths = expiredAudits
-    .map((audit) => audit.csv_path)
-    .filter((path): path is string => typeof path === 'string' && path.length > 0);
+  // 2. Find all processing_jobs linked to these public audits
+  const { data: jobs } = await sc
+    .from('processing_jobs')
+    .select('id')
+    .in('public_audit_id', auditIds);
 
-  if (explicitPaths.length > 0) {
-    const { error: removeExplicitError } = await sc.storage
-      .from('merchant-csv-uploads-2')
-      .remove(explicitPaths);
+  const jobIds = (jobs ?? []).map((j: { id: string }) => j.id);
 
-    if (removeExplicitError) {
-      storageErrors.push(`explicit paths: ${removeExplicitError.message}`);
-    }
-  }
+  // 3. Cascade delete downstream rows (order matters for FK constraints)
+  if (jobIds.length > 0) {
+    const tables: Array<{ table: string; column: string }> = [
+      { table: 'customer_profile_audit_appearances', column: 'audit_id' },
+      { table: 'watchlist_appearances', column: 'audit_id' },
+      { table: 'audit_transactions', column: 'job_id' },
+      { table: 'csv_upload_queue', column: 'job_id' },
+    ];
 
-  for (const id of ids) {
-    const { data: files } = await sc.storage
-      .from('merchant-csv-uploads-2')
-      .list(id);
-    if (files && files.length > 0) {
-      const paths = files.map((f: { name: string }) => `${id}/${f.name}`);
-      const { error: removeError } = await sc.storage
-        .from('merchant-csv-uploads-2')
-        .remove(paths);
-      if (removeError) {
-        storageErrors.push(`${id}: ${removeError.message}`);
+    for (const { table, column } of tables) {
+      const { error } = await sc
+        .from(table as any)
+        .delete()
+        .in(column, jobIds);
+      if (error) {
+        console.error(`[purge] delete ${table} error`, error);
       }
     }
+
+    // 4. Delete the processing_jobs themselves
+    const { error: jobsError } = await sc
+      .from('processing_jobs')
+      .delete()
+      .in('id', jobIds);
+    if (jobsError) {
+      console.error('[purge] delete processing_jobs error', jobsError);
+    }
   }
 
-  // Delete the audit rows.
+  // 5. Delete storage files
+  const storageErrors: string[] = [];
+  const explicitPaths = audits
+    .map((a) => a.csv_path)
+    .filter((p): p is string => typeof p === 'string' && p.length > 0);
+
+  if (explicitPaths.length > 0) {
+    const { error } = await sc.storage.from('merchant-csv-uploads-2').remove(explicitPaths);
+    if (error) storageErrors.push(`explicit paths: ${error.message}`);
+  }
+
+  for (const id of auditIds) {
+    const { data: files } = await sc.storage.from('merchant-csv-uploads-2').list(id);
+    if (files && files.length > 0) {
+      const paths = files.map((f: { name: string }) => `${id}/${f.name}`);
+      const { error } = await sc.storage.from('merchant-csv-uploads-2').remove(paths);
+      if (error) storageErrors.push(`${id}: ${error.message}`);
+    }
+  }
+
+  // 6. Delete the public_audit rows
   const { error: deleteError } = await sc
     .from('public_audits' as any)
     .delete()
-    .in('id', ids);
+    .in('id', auditIds);
 
   if (deleteError) {
-    console.error('[purge-expired-audits] delete error', deleteError);
+    console.error('[purge] delete public_audits error', deleteError);
     return NextResponse.json({ error: deleteError.message }, { status: 500 });
   }
 
   if (storageErrors.length > 0) {
-    console.warn('[purge-expired-audits] storage removal errors', storageErrors);
+    console.warn('[purge] storage removal errors', storageErrors);
   }
 
   return NextResponse.json({
-    deleted: ids.length,
+    deleted: auditIds.length,
+    jobsCleaned: jobIds.length,
     storageErrors: storageErrors.length > 0 ? storageErrors : undefined,
   });
 }

@@ -2,12 +2,12 @@
 // app/(app)/customers/[id]/evidence/new/page.tsx
 // Generate a chargeback evidence package for a customer.
 
-import { useState, useEffect } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
 interface PageProps {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 interface OrderOption {
@@ -18,10 +18,9 @@ interface OrderOption {
   refund_claimed: boolean
 }
 
-export default function EvidenceNewPage({ params }: PageProps) {
+function EvidenceNewForm({ profileId }: { profileId: string }) {
   const router = useRouter()
   const searchParamsHook = useSearchParams()
-  const profileId = params.id
   const preselectedOrder = searchParamsHook.get('disputedOrder') ?? ''
 
   const [orders, setOrders] = useState<OrderOption[]>([])
@@ -95,7 +94,6 @@ export default function EvidenceNewPage({ params }: PageProps) {
     }
   }
 
-  const _selectedOrder = orders.find(o => o.id === selectedOrderId)
   const hasEligibleOrders = orders.some(o => o.refund_claimed)
   const canSubmit = !!selectedOrderId && !loading && !loadingOrders
 
@@ -341,5 +339,14 @@ export default function EvidenceNewPage({ params }: PageProps) {
         </form>
       )}
     </div>
+  )
+}
+
+export default async function EvidenceNewPage({ params }: PageProps) {
+  const { id } = await params
+  return (
+    <Suspense fallback={<div className="p-8 text-sm" style={{ color: 'var(--text-muted)' }}>Loading…</div>}>
+      <EvidenceNewForm profileId={id} />
+    </Suspense>
   )
 }

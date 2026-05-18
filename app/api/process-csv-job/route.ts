@@ -289,16 +289,21 @@ async function POSTHandler(request: NextRequest) {
     await completeJob(scopedClient, queueItem.job_id, true, undefined, flaggedCount);
 
     // Check for watchlisted customers that appeared in this audit.
-    // Surface failures in logs without failing the completed ingest pipeline.
+    let watchlistSyncStatus: 'synced' | 'failed' = 'synced';
     try {
       await checkWatchlistAppearances(queueItem.merchant_id, queueItem.job_id, scopedClient);
     } catch (err) {
+      watchlistSyncStatus = 'failed';
       logger.error('process_csv_job.watchlist_sync_failed', {
         jobId: queueItem.job_id,
         error: err,
         nonFatal: true,
       });
     }
+    await scopedClient
+      .from('processing_jobs')
+      .update({ watchlist_sync_status: watchlistSyncStatus } as any)
+      .eq('id', queueItem.job_id);
 
     // Step 5: Update csv_upload_queue to 'completed'
     await scopedClient

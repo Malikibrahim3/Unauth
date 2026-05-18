@@ -24,11 +24,11 @@ export async function sendEmail(payload: EmailPayload): Promise<EmailSendResult>
   const apiKey = process.env.RESEND_API_KEY;
 
   if (!apiKey) {
-    return {
-      ok: false,
-      skipped: true,
-      error: 'RESEND_API_KEY is not configured.',
-    };
+    const isProduction = process.env.VERCEL_ENV === 'production';
+    if (isProduction) {
+      return { ok: false, skipped: false, error: 'RESEND_API_KEY is not configured.' };
+    }
+    return { ok: false, skipped: true, error: 'RESEND_API_KEY is not configured.' };
   }
 
   try {

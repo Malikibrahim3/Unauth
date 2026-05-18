@@ -86,11 +86,22 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     } as any)
     .eq('id', audit.id);
 
+  const intakeMerchantId = process.env.PUBLIC_INTAKE_MERCHANT_ID ?? '';
+
   if (audit.processing_job_id) {
     await service
       .from('processing_jobs')
       .update({ merchant_id: merchantId } as any)
       .eq('id', audit.processing_job_id);
+
+    // Re-tenant csv_upload_queue rows that were created under the intake merchant.
+    if (intakeMerchantId) {
+      await service
+        .from('csv_upload_queue')
+        .update({ merchant_id: merchantId } as any)
+        .eq('job_id', audit.processing_job_id)
+        .eq('merchant_id', intakeMerchantId);
+    }
   }
 
   return NextResponse.json({ ok: true });

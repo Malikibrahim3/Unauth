@@ -242,7 +242,17 @@ export async function POST(request: NextRequest) {
 
   try {
     log('Finalising job');
-    await checkWatchlistAppearances(merchantId, jobId, sc);
+    let watchlistSyncStatus: 'synced' | 'failed' = 'synced';
+    try {
+      await checkWatchlistAppearances(merchantId, jobId, sc);
+    } catch (err) {
+      watchlistSyncStatus = 'failed';
+      console.warn(`[finalize ${jobId}] watchlist sync non-fatal failure:`, formatError(err));
+    }
+    await sc
+      .from('processing_jobs')
+      .update({ watchlist_sync_status: watchlistSyncStatus } as any)
+      .eq('id', jobId);
     const flaggedCount = await countReviewWorthyTransactions(sc, jobId, merchantId);
     await completeJob(sc, jobId, true, undefined, flaggedCount);
     log(`Job marked completed: flaggedCount=${flaggedCount}`);

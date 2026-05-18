@@ -75,17 +75,22 @@ export default async function PublicAuditReportPage({ params }: ReportPageProps)
       user.email?.toLowerCase() === publicAudit.submitted_email.toLowerCase()
     );
 
-  const { data: reportRows } = await service
-    .from('audit_transactions')
-    .select('cluster_id, customer_email, shipping_address, identity_match_score, identity_confidence_grade, signals_matched, order_value')
-    .eq('job_id', publicAudit.processing_job_id)
-    .or('identity_confidence_grade.in.(probable,definite),match_status.in.(probable,definite)')
-    .not('dismissed_by_merchant', 'is', true)
-    .order('identity_match_score', { ascending: false, nullsFirst: false })
-    .limit(120);
+  let rows: ReportRow[] = [];
+  let summaryExposure = 0;
 
-  const rows = (reportRows ?? []) as ReportRow[];
-  const summaryExposure = rows.reduce((sum, row) => sum + (row.order_value ?? 0), 0);
+  if (canView) {
+    const { data: reportRows } = await service
+      .from('audit_transactions')
+      .select('cluster_id, customer_email, shipping_address, identity_match_score, identity_confidence_grade, signals_matched, order_value')
+      .eq('job_id', publicAudit.processing_job_id)
+      .or('identity_confidence_grade.in.(probable,definite),match_status.in.(probable,definite)')
+      .not('dismissed_by_merchant', 'is', true)
+      .order('identity_match_score', { ascending: false, nullsFirst: false })
+      .limit(120);
+
+    rows = (reportRows ?? []) as ReportRow[];
+    summaryExposure = rows.reduce((sum, row) => sum + (row.order_value ?? 0), 0);
+  }
 
   return (
     <div style={{ minHeight: '100vh', background: '#F8F5EE', color: '#1A1814' }} className="px-6 py-12 md:px-10">

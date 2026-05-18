@@ -417,7 +417,18 @@ function LoginPageInner() {
         return;
       }
 
-      const { error: signUpError } = await supabase.auth.signUp({ email, password });
+      const { error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            store_name: storeName.trim(),
+            platform,
+            monthly_order_volume: annualVolume,
+            primary_fraud_concern: primaryConcern,
+          },
+        },
+      });
 
       if (signUpError) {
         setError(signUpError.message);
@@ -431,16 +442,18 @@ function LoginPageInner() {
       });
 
       if (signInError) {
-        localStorage.setItem('pendingMerchant', JSON.stringify({ storeName, platform, annualVolume, primaryConcern }));
+        // Email confirmation required — callback will create the merchant row
         setError('Account created! Check your email to confirm, then sign in.');
         setIsSignUp(false);
         setLoading(false);
         return;
       }
 
+      // Auto-confirmed — create merchant row immediately
       const { error: merchantError } = await supabase.from('merchants').insert({
         user_id: signInData.user!.id,
         name: storeName.trim(),
+        platform,
         monthly_order_volume: annualVolume,
         primary_fraud_concern: primaryConcern,
         setup_complete: true,
@@ -451,7 +464,7 @@ function LoginPageInner() {
       router.push(nextPath);
       router.refresh();
     } else {
-      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+      const { error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -460,19 +473,6 @@ function LoginPageInner() {
         setError(signInError.message);
         setLoading(false);
         return;
-      }
-
-      const pending = localStorage.getItem('pendingMerchant');
-      if (pending) {
-        const { storeName, annualVolume, primaryConcern } = JSON.parse(pending);
-        await supabase.from('merchants').insert({
-          user_id: signInData.user!.id,
-          name: storeName.trim(),
-          monthly_order_volume: annualVolume,
-          primary_fraud_concern: primaryConcern,
-          setup_complete: true,
-        });
-        localStorage.removeItem('pendingMerchant');
       }
 
       setLoading(false);
@@ -595,6 +595,22 @@ function LoginPageInner() {
                 onBlur={onBlurInput}
               />
             </div>
+
+            {/* Forgot password — sign-in mode only */}
+            {!isSignUp && (
+              <div style={{ textAlign: 'right', marginTop: '-4px' }}>
+                <Link
+                  href="/reset"
+                  style={{
+                    fontSize: '12px',
+                    color: '#78889C',
+                    textDecoration: 'none',
+                  }}
+                >
+                  Forgot password?
+                </Link>
+              </div>
+            )}
 
             {/* Sign-up extra fields */}
             {isSignUp && (

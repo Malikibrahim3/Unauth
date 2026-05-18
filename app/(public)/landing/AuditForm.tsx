@@ -1,16 +1,17 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 
-type Status = 'idle' | 'submitting' | 'success' | 'error';
+type Status = 'idle' | 'submitting' | 'error';
 
 export default function AuditForm() {
   const [status, setStatus] = useState<Status>('idle');
   const [email, setEmail] = useState('');
   const [fileName, setFileName] = useState<string | null>(null);
-  const [submittedEmail, setSubmittedEmail] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -23,66 +24,9 @@ export default function AuditForm() {
     setStatus('submitting');
     setErrorMsg('');
 
-    const form = new FormData();
-    form.append('email', email);
-    form.append('file', file);
-
-    try {
-      const res = await fetch('/api/audit/start', { method: 'POST', body: form });
-      if (!res.ok) throw new Error();
-      setSubmittedEmail(email);
-      setStatus('success');
-    } catch {
-      setStatus('error');
-      setErrorMsg('Something went wrong. Email hello@unauth.app directly.');
-    }
-  }
-
-  if (status === 'success') {
-    return (
-      <div
-        style={{
-          background: '#1A1814',
-          border: '1px solid #2B2922',
-          padding: '22px',
-        }}
-      >
-        <p
-          style={{
-            fontFamily: 'var(--font-dm-mono, monospace)',
-            fontSize: '10.5px',
-            color: '#8A8472',
-            textTransform: 'uppercase',
-            letterSpacing: '0.14em',
-            marginBottom: '14px',
-          }}
-        >
-          Audit submitted
-        </p>
-        <p
-          style={{
-            fontFamily: 'var(--font-dm-sans, sans-serif)',
-            fontSize: '16px',
-            fontWeight: 500,
-            color: '#E8E4D8',
-            marginBottom: '8px',
-          }}
-        >
-          Your audit is running.
-        </p>
-        <p
-          style={{
-            fontFamily: 'var(--font-serif, serif)',
-            fontSize: '14px',
-            color: '#B8B2A0',
-            lineHeight: 1.55,
-            margin: 0,
-          }}
-        >
-          Results coming to {submittedEmail}. You can close this tab.
-        </p>
-      </div>
-    );
+    // Store email in sessionStorage so the /audit page can pre-fill it
+    sessionStorage.setItem('auditPrefillEmail', email);
+    router.push('/audit');
   }
 
   return (
@@ -185,19 +129,19 @@ export default function AuditForm() {
           alignItems: 'center',
           justifyContent: 'space-between',
           width: '100%',
-          background: status === 'submitting' ? '#5E2018' : '#7B2D26',
+          background: '#7B2D26',
           color: '#F8F5EE',
           fontFamily: 'var(--font-dm-sans, sans-serif)',
           fontSize: '15px',
           fontWeight: 500,
           padding: '14px 18px',
           border: 'none',
-          cursor: status === 'submitting' ? 'not-allowed' : 'pointer',
+          cursor: 'pointer',
           marginBottom: errorMsg ? '10px' : 0,
           transition: 'background 160ms ease',
         }}
       >
-        <span>{status === 'submitting' ? 'Submitting…' : 'Run free audit'}</span>
+        <span>{status === 'submitting' ? 'Loading…' : 'Run free audit'}</span>
         <span style={{ fontFamily: 'var(--font-dm-mono, monospace)' }}>→</span>
       </button>
 

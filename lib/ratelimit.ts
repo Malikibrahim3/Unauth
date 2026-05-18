@@ -111,9 +111,11 @@ export async function rateLimit(
   const upstash = getUpstashConfig();
 
   if (!upstash) {
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error('Upstash Redis rate limiting is not configured');
+    const vercelEnv = process.env.VERCEL_ENV;
+    if (vercelEnv === 'production' || vercelEnv === 'preview') {
+      throw new Error('Upstash Redis rate limiting is not configured — set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN');
     }
+    console.warn('[ratelimit] Upstash not configured — falling back to in-memory rate limiting (not suitable for production)');
     return inMemoryRateLimit(redisKey, max, retryAfter);
   }
 

@@ -154,17 +154,27 @@ describe('linkIdentities', () => {
     expect(result.clusters[0].confidence_score).toBeGreaterThanOrEqual(30);
   });
 
-  test('email base match via plus-alias and dot variation → linked', () => {
+  test('email base match via plus-alias and dot variation (Gmail) → linked', () => {
+    // Gmail ignores dots and plus-aliases: both normalise to jamesharrison@gmail.com.
+    // email:exact fires at weight 35 ≥ LINK_THRESHOLD(30) → linked.
     const result = linkIdentities([
       mkOrder('A', { email: 'James.Harrison@gmail.com' }),
       mkOrder('B', { email: 'jamesharrison+orders@gmail.com' }),
     ]);
-    // Email alone is 20 pts — below the 30 link threshold — so should NOT link.
-    // But must still surface as a candidate (POSSIBLE 15–29).
+    expect(result.clusters).toHaveLength(1);
+    expect(result.clusters[0].order_ids).toEqual(['A', 'B']);
+    expect(result.clusters[0].signals_matched).toContain('email');
+    expect(result.clusters[0].confidence_score).toBeGreaterThanOrEqual(30);
+  });
+
+  test('dot-variation on non-consumer domain → NOT linked (dots are significant)', () => {
+    // Corporate domain: john.doe@acmecorp.com ≠ johndoe@acmecorp.com
+    const result = linkIdentities([
+      mkOrder('A', { email: 'john.doe@acmecorp.com' }),
+      mkOrder('B', { email: 'johndoe@acmecorp.com' }),
+    ]);
     expect(result.clusters).toHaveLength(0);
-    expect(result.candidatePairs).toHaveLength(1);
-    expect(result.candidatePairs[0].signals).toEqual(['email']);
-    expect(result.candidatePairs[0].score).toBe(20);
+    expect(result.candidatePairs).toHaveLength(0);
   });
 
   test('email + postcode → linked (20 + 10 = 30)', () => {
@@ -195,16 +205,26 @@ describe('linkIdentities', () => {
     expect(result.candidatePairs).toHaveLength(0);
   });
 
-  test('IP + another weak signal (e.g. email base) DOES contribute', () => {
+  test('same Gmail (via alias) + same IP → linked (email:exact 35 ≥ threshold)', () => {
+    // Both normalise to jamesharrison@gmail.com (Gmail dot/alias rules).
+    // email:exact(35) + ip:exact(8) = 43, score = max(43, 30) = 43 → linked.
     const result = linkIdentities([
       mkOrder('A', { email: 'james.harrison@gmail.com', ip: '203.0.113.42' }),
       mkOrder('B', { email: 'jamesharrison+aliased@gmail.com', ip: '203.0.113.42' }),
     ]);
-    // email (20) + ip (8) = 28 — possible, not linked
+    expect(result.clusters).toHaveLength(1);
+    expect(result.clusters[0].order_ids).toEqual(['A', 'B']);
+    expect(result.clusters[0].signals_matched).toEqual(expect.arrayContaining(['email', 'ip']));
+    expect(result.clusters[0].confidence_score).toBeGreaterThanOrEqual(35);
+  });
+
+  test('different emails + same IP → NOT linked (IP alone has no anchor)', () => {
+    const result = linkIdentities([
+      mkOrder('A', { email: 'alice@example.com', ip: '203.0.113.42' }),
+      mkOrder('B', { email: 'bob@other.com', ip: '203.0.113.42' }),
+    ]);
     expect(result.clusters).toHaveLength(0);
-    expect(result.candidatePairs).toHaveLength(1);
-    expect(result.candidatePairs[0].score).toBe(28);
-    expect(result.candidatePairs[0].signals).toEqual(expect.arrayContaining(['email', 'ip']));
+    expect(result.candidatePairs).toHaveLength(0);
   });
 
   test('name differences are ignored entirely (no signal emitted)', () => {

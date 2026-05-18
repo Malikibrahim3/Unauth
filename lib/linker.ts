@@ -108,20 +108,37 @@ export interface LinkerResult {
 // ---------------------------------------------------------------------------
 
 /**
- * Email: remove dots before @, strip plus aliases, lowercase.
- *   "James.Harrison+orders@Gmail.com" → "jamesharrison@gmail.com"
+ * Consumer email providers that ignore dots in the local part. Only for these
+ * domains do we strip dots — for business/custom domains, dots distinguish
+ * different people (john.doe@acmecorp.com ≠ johndoe@acmecorp.com).
+ */
+const DOT_IGNORING_DOMAINS = new Set([
+  'gmail.com', 'googlemail.com',
+  'icloud.com', 'me.com', 'mac.com',
+  'proton.me', 'protonmail.com', 'pm.me',
+  'fastmail.com', 'fastmail.fm',
+  'outlook.com', 'hotmail.com', 'hotmail.co.uk', 'live.com', 'live.co.uk', 'msn.com',
+  'yahoo.com', 'yahoo.co.uk', 'ymail.com',
+]);
+
+/**
+ * Email: strip plus aliases, lowercase. Remove dots before @ only for
+ * consumer providers known to ignore them (Gmail, iCloud, Proton, etc.).
+ * For business/custom domains dots are significant — stripping them would
+ * create false-positive identity links between different employees.
  *
- * Dot-stripping is applied to ALL domains, not just Gmail, because the spec
- * instructs so. Plus-alias stripping is universal (RFC 5233 sub-addressing
- * is widely implemented — Gmail, Fastmail, ProtonMail, Apple iCloud).
+ * Plus-alias stripping is universal (RFC 5233 sub-addressing).
  */
 export function normaliseEmail(raw: string | null | undefined): string | null {
   if (!raw) return null;
   const lower = raw.trim().toLowerCase();
   const at = lower.indexOf('@');
   if (at < 1 || at === lower.length - 1) return null;
-  const localPart = lower.slice(0, at).split('+')[0].replace(/\./g, '');
+  const plusStripped = lower.slice(0, at).split('+')[0];
   const domain = lower.slice(at + 1);
+  const localPart = DOT_IGNORING_DOMAINS.has(domain)
+    ? plusStripped.replace(/\./g, '')
+    : plusStripped;
   if (!localPart) return null;
   return `${localPart}@${domain}`;
 }
@@ -1342,7 +1359,7 @@ export function linkIdentities(input: LinkerOrderInput[]): LinkerResult {
     }
 
     if (promotedChains > 0) {
-      console.error(`[linker] graph-chain linking: promoted ${promotedChains} component(s) from ${chainEdges.length} weak candidate edge(s)`);
+      console.log(`[linker] graph-chain linking: promoted ${promotedChains} component(s) from ${chainEdges.length} weak candidate edge(s)`);
     }
 
     const rescueMembers = new Map<string, string[]>();
@@ -1383,7 +1400,7 @@ export function linkIdentities(input: LinkerOrderInput[]): LinkerResult {
     }
 
     if (rescuedEdges > 0) {
-      console.error(`[linker] graph-edge rescue: promoted ${rescuedEdges} high-confidence edge(s)`);
+      console.log(`[linker] graph-edge rescue: promoted ${rescuedEdges} high-confidence edge(s)`);
     }
   }
 
@@ -1438,14 +1455,14 @@ export function linkIdentities(input: LinkerOrderInput[]): LinkerResult {
       },
       { totalSkippedCartesian: 0, totalEvaluated: 0, localizedGroups: 0, fullySkippedGroups: 0 }
     );
-    console.error(
+    console.log(
       `[linker] weak-signal expansion: ${allDiagnostics.length} large group(s) — ` +
       `${summary.localizedGroups} localized (${summary.totalEvaluated} pairs evaluated), ` +
       `${summary.fullySkippedGroups} fully skipped (no suspicious anchors), ` +
       `${summary.totalSkippedCartesian.toLocaleString()} Cartesian pairs avoided`
     );
     for (const d of allDiagnostics) {
-      console.error(
+      console.log(
         `[linker]   signal=${d.signal} groupSize=${d.groupSize} ` +
         `strategy=${d.strategy} evaluatedPairs=${d.evaluatedPairs} ` +
         `skippedCartesianPairs=${d.skippedCartesianPairs.toLocaleString()}`
@@ -1453,7 +1470,7 @@ export function linkIdentities(input: LinkerOrderInput[]): LinkerResult {
     }
   }
 
-  console.error(
+  console.log(
     `[linker] step-4 scoring: ${pairs.size.toLocaleString()} total pairs, ` +
     `${skippedByAnchor.toLocaleString()} skipped by anchor fast-path (no personal signal), ` +
     `${(pairs.size - skippedByAnchor).toLocaleString()} actually scored`

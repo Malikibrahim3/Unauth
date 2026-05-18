@@ -9,7 +9,7 @@ import { sniffCsvMagicBytes } from '@/lib/csv/sniffMagicBytes';
 import { enforceRateLimit, limitFromEnv, rateLimitKey } from '@/lib/ratelimit';
 import { createRequestLogger } from '@/lib/log';
 
-const MAX_FILE_SIZE_BYTES = 500 * 1024 * 1024;
+const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024;
 export const maxDuration = 300;
 
 export async function POST(request: NextRequest) {
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
 
   if (upload.size > MAX_FILE_SIZE_BYTES) {
     return NextResponse.json(
-      { error: `File exceeds the 500 MB limit (${(upload.size / 1024 / 1024).toFixed(1)} MB).` },
+      { error: `File exceeds the 50 MB limit (${(upload.size / 1024 / 1024).toFixed(1)} MB).` },
       { status: 400 }
     );
   }
@@ -54,7 +54,28 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid column map.' }, { status: 400 });
   }
 
+  const merchantId = process.env.PUBLIC_INTAKE_MERCHANT_ID ?? '';
+  if (!merchantId) {
+    return NextResponse.json({ error: 'Public audit intake is not configured.' }, { status: 503 });
+  }
+
   const sc = createServiceClient();
+
+  // Per-email daily cap: 3 submissions per calendar day (UTC).
+  const todayUtc = new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
+  const { count: todayCount } = await sc
+    .from('public_audits' as any)
+    .select('id', { count: 'exact', head: true })
+    .eq('submitted_email', email)
+    .gte('created_at', `${todayUtc}T00:00:00Z`)
+    .lte('created_at', `${todayUtc}T23:59:59Z`);
+
+  if ((todayCount ?? 0) >= 3) {
+    return NextResponse.json(
+      { error: 'You have already submitted 3 audits today. Try again tomorrow.' },
+      { status: 429 }
+    );
+  }
 
   const { data: publicAudit, error: insertPublicError } = await sc
     .from('public_audits' as any)
@@ -71,7 +92,6 @@ export async function POST(request: NextRequest) {
   }
 
   const auditId = (publicAudit as { id: string }).id;
-  const merchantId = auditId;
   const scopedClient = createScopedClient(merchantId, sc);
   const filePath = `${merchantId}/${Date.now()}_${upload.name}`;
 

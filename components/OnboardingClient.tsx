@@ -45,16 +45,13 @@ export default function OnboardingClient({ userId }: OnboardingClientProps) {
     setLoading(true);
     setError('');
 
-    // Note: `platform` is captured in the form for analytics but not yet
-    // a column on the merchants table — we omit it from the upsert to avoid
-    // a "column does not exist" failure that previously left users without
-    // a merchant row (and a 403 on /api/audit).
     const { error: upsertError } = await supabase
       .from('merchants')
       .upsert(
         {
           user_id: userId,
           name: storeName.trim(),
+          platform,
           monthly_order_volume: annualVolume,
           primary_fraud_concern: primaryConcern,
           setup_complete: true,

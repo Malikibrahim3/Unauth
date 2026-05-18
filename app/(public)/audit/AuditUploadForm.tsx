@@ -3,118 +3,49 @@
 import { useCallback, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Papa from 'papaparse';
-import { autoMapHeaders, REQUIRED_FIELDS, type RequiredField } from '@/lib/csv/headerAliases';
-
-type HashableField =
-  | 'customer_email'
-  | 'customer_name'
-  | 'shipping_address'
-  | 'billing_address'
-  | 'customer_phone'
-  | 'ip_address'
-  | 'device_id'
-  | 'browser_fingerprint'
-  | 'cookie_id'
-  | 'account_id'
-  | 'card_fingerprint';
-
-const HASHABLE_FIELDS = new Set<HashableField>([
-  'customer_email',
-  'customer_name',
-  'shipping_address',
-  'billing_address',
-  'customer_phone',
-  'ip_address',
-  'device_id',
-  'browser_fingerprint',
-  'cookie_id',
-  'account_id',
-  'card_fingerprint',
-]);
-
-function toCsvValue(value: unknown): string {
-  if (value === null || value === undefined) return '';
-  return String(value);
-}
-
-async function sha256Hex(value: string): Promise<string> {
-  const buffer = new TextEncoder().encode(value);
-  const digest = await crypto.subtle.digest('SHA-256', buffer);
-  return Array.from(new Uint8Array(digest))
-    .map((byte) => byte.toString(16).padStart(2, '0'))
-    .join('');
-}
-
-async function hashCsv(file: File): Promise<{
-  hashedFile: File;
-  rowCount: number;
-  columnMap: Partial<Record<RequiredField, string>>;
-}> {
-  const csvText = await file.text();
-  const parsed = Papa.parse<Record<string, string>>(csvText, {
-    header: true,
-    skipEmptyLines: true,
-    transformHeader: (header) => header.trim(),
-  });
-  if (parsed.errors.length > 0) {
-    throw new Error(parsed.errors[0]?.message ?? 'We could not read that CSV.');
-  }
-
-  const headers = parsed.meta.fields ?? [];
-  const { exact, fuzzy } = autoMapHeaders(headers);
-  const columnMap = { ...exact, ...fuzzy } as Partial<Record<RequiredField, string>>;
-  const missingRequired = REQUIRED_FIELDS.filter((field) => !columnMap[field]);
-  if (missingRequired.length > 0) {
-    throw new Error(`Missing required columns: ${missingRequired.join(', ')}`);
-  }
-
-  const headerToField = new Map<string, RequiredField>();
-  for (const [field, header] of Object.entries(columnMap)) {
-    if (header) headerToField.set(header, field as RequiredField);
-  }
-  const selectedHeaders = headers.filter((header) => headerToField.has(header));
-  const salt = crypto.randomUUID();
-
-  const rows = await Promise.all(
-    parsed.data.map(async (row) => {
-      const nextRow: Record<string, string> = {};
-      await Promise.all(
-        selectedHeaders.map(async (header) => {
-          const field = headerToField.get(header);
-          const raw = toCsvValue(row[header]).trim();
-          if (field && HASHABLE_FIELDS.has(field as HashableField) && raw) {
-            nextRow[header] = await sha256Hex(`${salt}:${field}:${raw.toLowerCase()}`);
-          } else {
-            nextRow[header] = raw;
-          }
-        })
-      );
-      return nextRow;
-    })
-  );
-
-  const hashedCsv = Papa.unparse(rows, { columns: selectedHeaders });
-  return {
-    hashedFile: new File([hashedCsv], file.name, { type: 'text/csv' }),
-    rowCount: rows.length,
-    columnMap,
-  };
-}
+import { autoMapHeaders, REQUIRED_FIELDS, type AutoMapResult } from '@/lib/csv/headerAliases';
 
 const SCHEMA_REQUIRED = [
-  'order_id', 'order_date', 'customer_id', 'email', 'phone',
-  'shipping_name', 'shipping_address', 'shipping_postcode',
-  'billing_name', 'billing_address', 'billing_postcode',
-  'order_value', 'item_count', 'sku / category', 'payment_method',
-  'card_bin', 'card_last4', 'refund_requested', 'refund_reason',
-  'return_reason', 'chargeback_status', 'carrier', 'tracking_number',
-  'delivery_status',
+  'order_id', 'customer_email', 'order_date', 'order_value',
+  'is_refund', 'is_inr',
 ];
 
 const SCHEMA_OPTIONAL = [
+  'customer_name', 'shipping_address', 'billing_address', 'customer_phone',
   'ip_address', 'device_fingerprint', 'payment_fingerprint',
   'browser_fingerprint', 'delivery_photo_metadata', 'courier_gps_proof',
 ];
+
+const MAX_FILE_BYTES = 50 * 1024 * 1024; // 50 MB
+
+function detectCsv(file: File): Promise<{ rowCount: number; columnMap: AutoMapResult }> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      const parsed = Papa.parse<Record<string, string>>(text, {
+        header: true,
+        skipEmptyLines: true,
+        transformHeader: (h) => h.trim(),
+        preview: 5,
+      });
+      if (parsed.errors.length > 0) {
+        reject(new Error(parsed.errors[0]?.message ?? 'We could not read that CSV.'));
+        return;
+      }
+      const headers = parsed.meta.fields ?? [];
+      const columnMap = autoMapHeaders(headers);
+      Papa.parse<Record<string, string>>(text, {
+        header: true,
+        skipEmptyLines: true,
+        complete: (full) => resolve({ rowCount: full.data.length, columnMap }),
+        error: (err: Error) => reject(new Error(err.message)),
+      });
+    };
+    reader.onerror = () => reject(new Error('Could not read file.'));
+    reader.readAsText(file);
+  });
+}
 
 export default function AuditUploadForm() {
   const router = useRouter();
@@ -123,8 +54,7 @@ export default function AuditUploadForm() {
   const [file, setFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState('');
   const [rowCount, setRowCount] = useState<number | null>(null);
-  const [columnMap, setColumnMap] = useState<Partial<Record<RequiredField, string>>>({});
-  const [hashedFile, setHashedFile] = useState<File | null>(null);
+  const [columnMap, setColumnMap] = useState<AutoMapResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [isDragging, setIsDragging] = useState(false);
@@ -134,37 +64,30 @@ export default function AuditUploadForm() {
   const processFile = useCallback(async (selected: File) => {
     setFileError('');
     setSubmitError('');
-    setFile(selected);
+    setFile(null);
     setRowCount(null);
-    setColumnMap({});
-    setHashedFile(null);
+    setColumnMap(null);
 
     if (!selected.name.toLowerCase().endsWith('.csv')) {
       setFileError('CSV files only. Export your orders as .csv and try again.');
-      setFile(null);
+      return;
+    }
+    if (selected.size > MAX_FILE_BYTES) {
+      setFileError('File too large. Maximum 50 MB. Split into smaller exports and try again.');
       return;
     }
     try {
-      const hashed = await hashCsv(selected);
-      setRowCount(hashed.rowCount);
-      setColumnMap(hashed.columnMap);
-      setHashedFile(hashed.hashedFile);
+      const { rowCount: rc, columnMap: cm } = await detectCsv(selected);
+      setFile(selected);
+      setRowCount(rc);
+      setColumnMap(cm);
     } catch (err) {
-      setFileError(err instanceof Error ? err.message : 'Could not prepare CSV.');
-      setFile(null);
+      setFileError(err instanceof Error ? err.message : 'Could not read CSV.');
     }
   }, []);
 
-  const onDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  }, []);
-
-  const onDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  }, []);
-
+  const onDragOver = useCallback((e: React.DragEvent) => { e.preventDefault(); setIsDragging(true); }, []);
+  const onDragLeave = useCallback((e: React.DragEvent) => { e.preventDefault(); setIsDragging(false); }, []);
   const onDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
@@ -181,9 +104,7 @@ export default function AuditUploadForm() {
     e.preventDefault();
     setEmailError('');
     setSubmitError('');
-    setFileError((current) =>
-      current === 'Please upload your order export to continue.' ? '' : current
-    );
+    setFileError((c) => c === 'Please upload your order export to continue.' ? '' : c);
 
     let valid = true;
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -193,31 +114,26 @@ export default function AuditUploadForm() {
     if (!file) {
       setFileError('Please upload your order export to continue.');
       valid = false;
-    } else if (!hashedFile) {
-      valid = false;
     }
     if (!valid) return;
 
     setLoading(true);
     const formData = new FormData();
     formData.append('email', email.trim());
-    formData.append('file', hashedFile!);
-    formData.append('columnMap', JSON.stringify(columnMap));
+    formData.append('file', file!);
+    formData.append('columnMap', JSON.stringify(columnMap ?? {}));
 
-    const response = await fetch('/api/public-audit/submit', {
-      method: 'POST',
-      body: formData,
-    });
+    const response = await fetch('/api/public-audit/submit', { method: 'POST', body: formData });
     const body = await response.json().catch(() => ({}));
     setLoading(false);
 
     if (!response.ok) {
-      setSubmitError('Something went wrong. Try again or email malik@unauth.co');
+      setSubmitError(body?.error ?? 'Something went wrong. Try again or email hello@unauth.app');
       return;
     }
     const auditId = typeof body?.auditId === 'string' ? body.auditId : null;
     if (!auditId) {
-      setSubmitError('Something went wrong. Try again or email malik@unauth.co');
+      setSubmitError('Something went wrong. Try again or email hello@unauth.app');
       return;
     }
     router.push(`/audit/submitted?audit=${encodeURIComponent(auditId)}`);
@@ -258,17 +174,17 @@ export default function AuditUploadForm() {
           }}
         />
         {emailError && (
-          <p style={{ ...sans, fontSize: '13px', color: '#9F1D1D', marginTop: '6px', marginBottom: 0 }}>
+          <p style={{ ...mono, fontSize: '12px', color: '#9F1D1D', marginTop: '6px', marginBottom: 0 }}>
             {emailError}
           </p>
         )}
       </div>
 
-      <div style={{ marginBottom: '24px' }}>
+      <div style={{ marginBottom: '20px' }}>
         <label
           style={{ ...mono, display: 'block', fontSize: '11px', letterSpacing: '0.08em', color: muted, marginBottom: '6px' }}
         >
-          ORDER EXPORT · CSV
+          ORDER EXPORT
         </label>
         <div
           onClick={() => fileInputRef.current?.click()}
@@ -276,11 +192,12 @@ export default function AuditUploadForm() {
           onDragLeave={onDragLeave}
           onDrop={onDrop}
           style={{
-            border: `1px dashed ${fileError ? '#9F1D1D' : isDragging ? '#1A1814' : '#9A9080'}`,
-            padding: '34px 24px',
+            border: `1px dashed ${isDragging ? '#7B2D26' : '#C8B89A'}`,
+            padding: '28px 20px',
             cursor: 'pointer',
             textAlign: 'center',
-            background: isDragging ? '#F0EDE4' : 'transparent',
+            background: isDragging ? 'rgba(123,45,38,0.04)' : 'transparent',
+            transition: 'border-color 0.15s, background 0.15s',
           }}
         >
           <input
@@ -290,9 +207,9 @@ export default function AuditUploadForm() {
             style={{ display: 'none' }}
             onChange={onFileInputChange}
           />
-          {file && !fileError ? (
+          {file && rowCount !== null ? (
             <p style={{ ...mono, fontSize: '13px', color: '#1A1814', margin: 0 }}>
-              {file.name} · {rowCount !== null ? `${rowCount.toLocaleString()} rows detected` : 'preparing...'}
+              {file.name} · {rowCount.toLocaleString()} rows detected
             </p>
           ) : fileError && fileError !== 'Please upload your order export to continue.' ? (
             <p style={{ ...mono, fontSize: '13px', color: '#9F1D1D', margin: 0 }}>
@@ -304,7 +221,7 @@ export default function AuditUploadForm() {
                 Drop your CSV here, or click to browse
               </p>
               <p style={{ ...mono, fontSize: '11px', color: subtle, margin: 0 }}>
-                Shopify · WooCommerce · custom OMS · Stripe exports accepted
+                Shopify · WooCommerce · custom OMS · Stripe exports accepted · max 50 MB
               </p>
             </>
           )}
@@ -340,10 +257,7 @@ export default function AuditUploadForm() {
 
       {submitError && (
         <p style={{ ...sans, fontSize: '13px', color: '#9F1D1D', marginTop: '10px', marginBottom: 0 }}>
-          Something went wrong. Try again or email{' '}
-          <a href="mailto:malik@unauth.co" style={{ color: '#9F1D1D', textDecoration: 'underline' }}>
-            malik@unauth.co
-          </a>
+          {submitError}
         </p>
       )}
 
