@@ -28,7 +28,7 @@ function isPhoneUserAgent(userAgent: string): boolean {
   return isPhone && !isTablet;
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   initSentryServer();
 
   const requestHeaders = new Headers(request.headers);
