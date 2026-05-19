@@ -1,4 +1,9 @@
 import { UnauthLogo } from '@/components/ui/UnauthLogo';
+import { DotPattern } from '@/components/ui/dot-pattern';
+import { Spotlight } from '@/components/ui/spotlight';
+import { AnimatedGridPattern } from '@/components/ui/animated-grid-pattern';
+import { Meteors } from '@/components/ui/meteors';
+import { BorderBeam } from '@/components/ui/border-beam';
 import { Lock, EyeOff, FileText, Scale } from 'lucide-react';
 import type { CSSProperties } from 'react';
 import NetworkChart from './_components/NetworkChart';
@@ -119,13 +124,29 @@ export default function LandingPage() {
               <a href="#security" className="ua-nav-link">Security</a>
             </nav>
           </div>
-          <div className="flex items-center gap-5">
+          <div className="flex items-center gap-4">
             <a
               href="/login"
               style={{ color: '#4A4640', fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '15.5px' }}
               className="hover:underline"
             >
               Sign in
+            </a>
+            <a
+              href="#audit"
+              style={{
+                fontFamily: 'var(--font-dm-sans, sans-serif)',
+                fontSize: '12px',
+                fontWeight: 500,
+                color: '#F8F5EE',
+                background: '#7B2D26',
+                padding: '6px 12px',
+                border: '1px solid #7B2D26',
+                textDecoration: 'none',
+              }}
+              className="md:hidden hover:bg-[#5E2018]"
+            >
+              Audit →
             </a>
             <a
               href="#audit"
@@ -139,7 +160,7 @@ export default function LandingPage() {
                 border: '1px solid #7B2D26',
                 textDecoration: 'none',
               }}
-              className="hover:bg-[#5E2018]"
+              className="hidden md:inline-flex hover:bg-[#5E2018]"
             >
               Run free audit →
             </a>
@@ -149,9 +170,19 @@ export default function LandingPage() {
 
       {/* ── Hero ────────────────────────────────────────────────── */}
       <section className="ua-hero-canvas ua-parallax-field mx-auto max-w-[1400px] px-6 md:px-10 pt-6 md:pt-8 pb-0" data-ua-parallax-depth="34">
+        {/* DotPattern — precision grid atmosphere, masked to top-right quadrant */}
+        <DotPattern
+          width={32} height={32} cx={1} cy={1} cr={1.1}
+          className="text-[#7B2D26] opacity-[0.13] [mask-image:radial-gradient(ellipse_68%_60%_at_72%_28%,white,transparent)]"
+        />
+        {/* Single-hue burgundy spotlight — replaces the old rainbow conic blob */}
+        <Spotlight fill="rgba(123,45,38,0.18)" className="-z-10" />
 
-        {/* Top — copy block */}
-        <Reveal delay={40}>
+        {/* Side-by-side grid at lg+ */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+
+        {/* Left — copy block */}
+        <Reveal delay={40} className="lg:col-span-5 lg:pt-6">
           {/* Eyebrow */}
           <p
             style={{
@@ -183,17 +214,17 @@ export default function LandingPage() {
             </span>
           </p>
 
-          {/* Headline — Ramp-scale */}
+          {/* Headline — tighter for narrower column */}
           <h1
             style={{
               fontFamily: 'var(--font-dm-sans, sans-serif)',
-              fontSize: 'clamp(32px, 3.8vw, 54px)',
+              fontSize: 'clamp(32px, 3.6vw, 54px)',
               fontWeight: 500,
-              letterSpacing: '-0.026em',
-              lineHeight: 1.1,
+              letterSpacing: '-0.030em',
+              lineHeight: 1.05,
               color: '#1A1814',
-              marginBottom: '8px',
-              maxWidth: '26ch',
+              marginBottom: '16px',
+              maxWidth: '22ch',
             }}
           >
             Find repeat abusers before they{' '}
@@ -202,15 +233,15 @@ export default function LandingPage() {
             </span>
           </h1>
 
-          {/* Sub-prose — punchy, free upload CTA */}
+          {/* Sub-prose */}
           <p
             style={{
               fontFamily: 'var(--font-serif, serif)',
-              fontSize: 'clamp(15px, 1.1vw, 17px)',
+              fontSize: 'clamp(15px, 1.15vw, 18px)',
               color: '#4A4640',
-              lineHeight: 1.5,
-              marginBottom: '10px',
-              maxWidth: '62ch',
+              lineHeight: 1.55,
+              marginBottom: '20px',
+              maxWidth: '44ch',
             }}
           >
             Upload orders. Unauth links refund abuse, INR claims, and friendly-fraud patterns across stores.{' '}
@@ -218,7 +249,7 @@ export default function LandingPage() {
           </p>
 
           {/* CTA row */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center flex-wrap gap-3">
             <a
               href="#audit"
               style={{
@@ -242,11 +273,23 @@ export default function LandingPage() {
               Run free audit
               <span aria-hidden style={{ fontFamily: 'var(--font-dm-mono, monospace)' }}>→</span>
             </a>
+            <a
+              href="#how-it-works"
+              style={{
+                marginLeft: 16,
+                fontFamily: 'var(--font-dm-sans, sans-serif)',
+                fontSize: 14,
+                color: '#4A4640',
+                textDecoration: 'none',
+              }}
+            >
+              See how it works →
+            </a>
           </div>
         </Reveal>
 
-        {/* Bottom — large product artifact */}
-        <Reveal as="div" className="ua-hero-stage relative mt-6 md:mt-8" delay={180} noFade>
+        {/* Right — large product artifact */}
+        <Reveal as="div" className="ua-hero-stage relative mt-10 md:mt-14 lg:mt-0 lg:col-span-7" delay={180} noFade>
             {/* Floating eyebrow above artifact */}
             <div
               className="flex items-center justify-between mb-3"
@@ -259,118 +302,20 @@ export default function LandingPage() {
               }}
             >
               <span>
-                <span
-                  className="ua-pulse"
-                  style={{ display: 'inline-block', width: 6, height: 6, background: '#7B2D26', marginRight: '8px', verticalAlign: 'middle' }}
-                />
                 Case file · example output
               </span>
               <span>Cluster #u_kessler.07</span>
             </div>
 
             <div
-              className="hidden lg:block ua-hero-float ua-hero-float-a ua-parallax-layer"
-              data-ua-parallax-depth="30"
-              data-ua-parallax-x="-8"
-              aria-hidden
-              style={{
-                position: 'absolute',
-                zIndex: 3,
-                right: 'clamp(1rem, 7vw, 7rem)',
-                top: '1.8rem',
-                width: 'clamp(190px, 17vw, 260px)',
-                padding: '14px 16px',
-                border: '1px solid rgba(216, 208, 189, 0.78)',
-                background:
-                  'linear-gradient(135deg, rgba(253,251,246,0.88), rgba(253,251,246,0.60)), radial-gradient(circle at 88% 0%, rgba(246,192,87,0.24), transparent 8rem)',
-                boxShadow: '0 24px 60px -36px rgba(26,24,20,0.34)',
-                backdropFilter: 'saturate(150%) blur(18px)',
-                WebkitBackdropFilter: 'saturate(150%) blur(18px)',
-              }}
-            >
-              <p
-                style={{
-                  fontFamily: 'var(--font-dm-mono, monospace)',
-                  fontSize: '10px',
-                  letterSpacing: '0.12em',
-                  textTransform: 'uppercase',
-                  color: '#8A8472',
-                  marginBottom: '10px',
-                }}
-              >
-                Network match
-              </p>
-              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '16px' }}>
-                <span style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '34px', lineHeight: 1, letterSpacing: '-0.04em', color: '#1A1814' }}>
-                  96%
-                </span>
-                <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10px', color: '#7B2D26', letterSpacing: '0.08em' }}>
-                  DEFINITE
-                </span>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '4px', marginTop: '12px' }}>
-                {[0.92, 0.88, 0.74].map((value, index) => (
-                  <span
-                    key={index}
-                    style={{
-                      height: 3,
-                      background: `linear-gradient(90deg, #7B2D26 ${value * 100}%, #ECE5D4 ${value * 100}%)`,
-                    }}
-                  />
-                ))}
-              </div>
-            </div>
-
-            <div
-              className="hidden lg:block ua-hero-float ua-hero-float-b ua-parallax-layer"
-              data-ua-parallax-depth="-22"
-              data-ua-parallax-x="10"
-              aria-hidden
-              style={{
-                position: 'absolute',
-                zIndex: 3,
-                right: 'clamp(12rem, 25vw, 24rem)',
-                top: '8.8rem',
-                width: 'clamp(170px, 15vw, 224px)',
-                padding: '14px 16px',
-                border: '1px solid rgba(232, 228, 216, 0.18)',
-                color: '#E8E4D8',
-                background:
-                  'linear-gradient(135deg, rgba(21,20,15,0.92), rgba(43,41,34,0.76)), radial-gradient(circle at 80% 14%, rgba(182,81,42,0.32), transparent 8rem)',
-                boxShadow: '0 24px 60px -36px rgba(26,24,20,0.34)',
-                backdropFilter: 'saturate(150%) blur(18px)',
-                WebkitBackdropFilter: 'saturate(150%) blur(18px)',
-              }}
-            >
-              <p
-                style={{
-                  fontFamily: 'var(--font-dm-mono, monospace)',
-                  fontSize: '10px',
-                  letterSpacing: '0.12em',
-                  textTransform: 'uppercase',
-                  color: '#8A8472',
-                  marginBottom: '12px',
-                }}
-              >
-                Evidence packet
-              </p>
-              <p style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '16px', color: '#E8E4D8', marginBottom: '8px' }}>
-                2 disputes ready
-              </p>
-              <p style={{ fontFamily: 'var(--font-serif, serif)', fontStyle: 'italic', fontSize: '12px', color: '#B8B2A0', lineHeight: 1.45, margin: 0 }}>
-                card · address · INR pattern · delivery proof
-              </p>
-            </div>
-
-            <div
               className="ua-hover-glow ua-case-card ua-premium-surface ua-parallax-layer"
               data-ua-parallax-depth="-12"
               style={{
-                background: 'rgba(253, 251, 246, 0.92)',
-                border: '1px solid #D8D0BD',
+                background: 'rgba(253, 251, 246, 0.96)',
+                border: '1px solid rgba(123,45,38,0.15)',
                 borderRadius: 0,
                 boxShadow:
-                  '0 1px 0 #D8D0BD, 0 28px 68px -24px rgba(26,24,20,0.22), 0 62px 130px -54px rgba(123,45,38,0.30)',
+                  '0 1px 0 rgba(123,45,38,0.10), 0 4px 12px -4px rgba(123,45,38,0.08), 0 28px 68px -24px rgba(26,24,20,0.18), 0 62px 130px -54px rgba(123,45,38,0.14)',
                 position: 'relative',
                 backdropFilter: 'saturate(138%) blur(18px)',
                 WebkitBackdropFilter: 'saturate(138%) blur(18px)',
@@ -379,7 +324,7 @@ export default function LandingPage() {
               {/* Header bar with status chips */}
               <div
                 style={{
-                  padding: '14px 20px',
+                  padding: '12px 16px',
                   borderBottom: '1px solid #D8D0BD',
                   display: 'flex',
                   alignItems: 'center',
@@ -452,7 +397,7 @@ export default function LandingPage() {
               {/* Two-column body: subject + sparkbars */}
               <div className="grid grid-cols-1 md:grid-cols-[1.18fr_0.82fr]">
                 {/* Subject column */}
-                <div style={{ padding: '20px 22px', borderRight: '1px solid #D8D0BD' }}>
+                <div style={{ padding: '16px 18px', borderRight: '1px solid #D8D0BD' }}>
                   <p
                     style={{
                       fontFamily: 'var(--font-dm-sans, sans-serif)',
@@ -614,7 +559,7 @@ export default function LandingPage() {
                 </div>
 
                 {/* Risk score column */}
-                <div style={{ padding: '20px 22px' }}>
+                <div style={{ padding: '16px 18px' }}>
                   <p
                     style={{
                       fontFamily: 'var(--font-dm-sans, sans-serif)',
@@ -638,7 +583,7 @@ export default function LandingPage() {
                       { l: 'device_reuse_observed', v: 0.51, on: true },
                       { l: 'velocity_burst_24h', v: 0.21, on: false },
                     ].map(({ l, v, on }, i) => (
-                      <div key={l} style={{ display: 'grid', gridTemplateColumns: '1fr 36px', gap: '10px', alignItems: 'center' }}>
+                      <div key={l} className="ua-case-row-hover" style={{ display: 'grid', gridTemplateColumns: '1fr 36px', gap: '10px', alignItems: 'center', padding: '4px 2px', borderTop: i > 0 ? '1px solid rgba(123,45,38,0.07)' : 'none', transition: 'background 140ms ease', margin: '0 -2px' }}>
                         <div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px' }}>
                             <span
@@ -665,8 +610,8 @@ export default function LandingPage() {
                             height={3}
                             delay={520 + i * 130}
                             duration={1050}
-                            initialVisible
                             transitionWidth
+                            waitForVisibility
                           />
                         </div>
                         <span
@@ -689,7 +634,7 @@ export default function LandingPage() {
               </div>
 
               {/* Tracked datapoints */}
-              <div style={{ borderTop: '1px solid #D8D0BD', padding: '16px 22px' }}>
+              <div style={{ borderTop: '1px solid #D8D0BD', padding: '14px 18px' }}>
                 <p
                   className="ua-case-step"
                   style={{
@@ -764,12 +709,18 @@ export default function LandingPage() {
                   ].map((row, i) => (
                     <div
                       key={row.m}
-                      className="ua-case-step"
+                      className="ua-case-step ua-case-row-hover"
                       style={{
                         display: 'grid',
                         gridTemplateColumns: 'minmax(0, 1.5fr) minmax(0, 1fr) 60px auto',
                         gap: '12px',
                         alignItems: 'center',
+                        padding: '4px 0',
+                        margin: '0 -4px',
+                        paddingLeft: '4px',
+                        paddingRight: '4px',
+                        borderTop: i > 0 ? '1px solid rgba(123,45,38,0.08)' : 'none',
+                        transition: 'background 140ms ease',
                         ['--ua-case-delay' as string]: `${heroNetworkDelay + i * 60}ms`,
                         ['--ua-case-duration' as string]: '260ms',
                         ['--ua-case-steps' as string]: 24,
@@ -927,11 +878,53 @@ export default function LandingPage() {
               ))}
             </div>
           </Reveal>
+
+        </div>{/* end lg:grid */}
+      </section>
+
+      {/* ── Founding merchant cohort logo bar ───────────────────── */}
+      <section
+        style={{
+          borderTop: '1px solid rgba(123,45,38,0.12)',
+          borderBottom: '1px solid rgba(123,45,38,0.12)',
+          padding: '20px 0',
+        }}
+      >
+        <div className="mx-auto max-w-[1400px] px-6 md:px-10">
+          <p
+            style={{
+              fontFamily: 'var(--font-dm-mono, monospace)',
+              fontSize: '9.5px',
+              letterSpacing: '0.14em',
+              textTransform: 'uppercase',
+              color: '#8A8472',
+              textAlign: 'center',
+              marginBottom: '16px',
+            }}
+          >
+            Founding merchant cohort
+          </p>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 'clamp(24px, 4vw, 56px)',
+              flexWrap: 'wrap',
+            }}
+          >
+            <span style={{ fontFamily: 'var(--font-serif, serif)', fontSize: '17px', color: '#8A8472', letterSpacing: '-0.01em' }}>Kessler</span>
+            <span style={{ fontFamily: 'var(--font-serif, serif)', fontSize: '17px', color: '#8A8472', letterSpacing: '-0.01em' }}>Midform</span>
+            <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '13px', color: '#8A8472', letterSpacing: '0.18em', textTransform: 'uppercase' }}>NORTHRUN</span>
+            <span style={{ fontFamily: 'var(--font-serif, serif)', fontSize: '17px', color: '#8A8472', fontStyle: 'italic', letterSpacing: '-0.01em' }}>Prime &amp; Co</span>
+            <span style={{ fontFamily: 'var(--font-serif, serif)', fontSize: '17px', color: '#8A8472', letterSpacing: '-0.01em' }}>Oakshelf</span>
+            <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '13px', color: '#8A8472', letterSpacing: '0.18em', textTransform: 'uppercase' }}>BRIDLEWORKS</span>
+          </div>
+        </div>
       </section>
 
       {/* ── §1 · The pattern your store can't see — VISUAL ───────── */}
       <section className="ua-section-prism ua-parallax-field mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-20 pb-12 md:pb-16" data-ua-parallax-depth="28">
-        <hr style={{ border: 0, borderTop: '1px solid #D8D0BD', marginBottom: '40px' }} />
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           <div className="lg:col-span-5">
@@ -960,7 +953,7 @@ export default function LandingPage() {
               }}
             >
               One buyer.{' '}
-              <span style={{ fontStyle: 'italic', fontFamily: 'var(--font-serif, serif)', color: '#7B2D26' }}>Seven stores.</span>{' '}
+              <span style={{ color: '#7B2D26' }}>Seven stores.</span>{' '}
               One pattern.
             </h2>
             <p
@@ -976,36 +969,38 @@ export default function LandingPage() {
             </p>
 
             {/* Three stats inline */}
-            <div className="grid grid-cols-3 gap-3 mt-7 pt-5" style={{ borderTop: '1px solid #D8D0BD' }}>
+            <div className="grid grid-cols-3 gap-6 mt-7 pt-6" style={{ borderTop: '1px solid rgba(123,45,38,0.12)' }}>
               {[
-                { v: 89, prefix: '$', suffix: 'B', dec: 0, l: 'lost annually to refund / INR fraud', n: 3 },
-                { v: 5,  prefix: '1 in ', suffix: '', dec: 0, l: 'DTC refund claims tied to repeat abusers', n: 4 },
-                { v: 2.7, prefix: '', suffix: '×', dec: 1, l: 'true cost of a lost chargeback', n: 5 },
+                { v: 89,  prefix: '$', suffix: 'B', dec: 0, l: 'Lost annually to refund / INR fraud', n: 3 },
+                { v: 20,  prefix: '',  suffix: '%', dec: 0, l: 'Of DTC refund claims tied to repeat abusers', n: 4 },
+                { v: 2.7, prefix: '',  suffix: '×', dec: 1, l: 'True cost of a lost chargeback', n: 5 },
               ].map((s, i) => (
                 <Reveal key={s.l} delay={120 + i * 80}>
                   <p
                     style={{
                       fontFamily: 'var(--font-dm-mono, monospace)',
-                      fontSize: 'clamp(20px, 1.8vw, 26px)',
+                      fontSize: 'clamp(40px, 4.2vw, 72px)',
                       fontWeight: 500,
                       color: '#1A1814',
                       lineHeight: 1,
-                      marginBottom: '6px',
+                      marginBottom: '8px',
                       fontVariantNumeric: 'tabular-nums',
+                      letterSpacing: '-0.03em',
                     }}
                   >
                     <Counter value={s.v} prefix={s.prefix} suffix={s.suffix} decimals={s.dec} duration={1100} format="plain" />
-                    <sup style={{ fontSize: '0.4em' }}>
+                    <sup style={{ fontSize: '0.28em', letterSpacing: 0 }}>
                       <a href={`#note-${s.n}`} style={{ color: '#7B2D26', textDecoration: 'none' }}>{s.n}</a>
                     </sup>
                   </p>
                   <p
                     style={{
-                      fontFamily: 'var(--font-serif, serif)',
-                      fontSize: '12px',
+                      fontFamily: 'var(--font-dm-mono, monospace)',
+                      fontSize: '10px',
                       color: '#8A8472',
                       lineHeight: 1.4,
-                      fontStyle: 'italic',
+                      letterSpacing: '0.04em',
+                      textTransform: 'uppercase',
                     }}
                   >
                     {s.l}
@@ -1015,174 +1010,149 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Right: ledger visualization — same buyer across 7 stores */}
+          {/* Right: force-graph visualization — same buyer across 7 stores */}
           <Reveal className="lg:col-span-7" delay={140}>
             <div
-              className="ua-hover-glow ua-orbit-card ua-glass-card ua-parallax-layer"
-              data-ua-parallax-depth="-10"
               style={{
-                background: 'rgba(253, 251, 246, 0.88)',
+                background: '#FDFBF6',
                 border: '1px solid #D8D0BD',
                 padding: '20px 22px',
-                boxShadow: '0 1px 0 #D8D0BD, 0 18px 44px -24px rgba(26,24,20,0.16)',
-                backdropFilter: 'saturate(132%) blur(14px)',
-                WebkitBackdropFilter: 'saturate(132%) blur(14px)',
               }}
             >
+              {/* Header row */}
               <div className="flex items-baseline justify-between mb-4 flex-wrap gap-2">
-                <p
-                  style={{
-                    fontFamily: 'var(--font-dm-mono, monospace)',
-                    fontSize: '10.5px',
-                    letterSpacing: '0.14em',
-                    textTransform: 'uppercase',
-                    color: '#8A8472',
-                    margin: 0,
-                  }}
-                >
-                  Same Buyer · 7 Identities
+                <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10.5px', letterSpacing: '0.14em', textTransform: 'uppercase', color: '#8A8472', margin: 0 }}>
+                  ONE BUYER · 7 IDENTITIES
                 </p>
                 <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10.5px', color: '#8A8472', margin: 0 }}>
-                  → resolved to #u_kessler.07
+                  → #u_kessler.07
                 </p>
               </div>
 
-              {(() => {
-                const ledgerRows = [
-                  { merchant: 'your_store',  email: 'n•••@merchant-domain', addr: 'addr_hash_91c2 · apt match',      card: '••4419' },
-                  { merchant: 'merchant_04', email: 'email_hmac_91b4',      addr: 'addr_hash_91c2 · variant',        card: '••4419' },
-                  { merchant: 'merchant_02', email: 'email_hmac_a802',      addr: 'addr_hash_91c2 · unit variant',   card: '••4419' },
-                  { merchant: 'merchant_07', email: 'email_hmac_91b4',      addr: 'addr_hash_91c2 · spelling',       card: '••4419' },
-                ];
-                return (
-                  <>
-                    {/* ── Desktop / tablet ledger grid (≥sm) ── */}
-                    <div className="hidden sm:block">
-                      <div
-                        style={{
-                          display: 'grid',
-                          gridTemplateColumns: 'minmax(110px, 1fr) minmax(0, 1.5fr) minmax(0, 1.2fr) 60px 70px',
-                          gap: '12px',
-                          fontFamily: 'var(--font-dm-mono, monospace)',
-                          fontSize: '10px',
-                          color: '#8A8472',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.08em',
-                          padding: '0 0 6px 0',
-                          borderBottom: '1px solid #D8D0BD',
-                          marginBottom: '2px',
-                        }}
-                      >
-                        <span>Merchant</span>
-                        <span>Email</span>
-                        <span>Address</span>
-                        <span>Card</span>
-                        <span>Status</span>
-                      </div>
-                      {ledgerRows.map((row, i) => (
-                        <Reveal
-                          key={i}
-                          delay={220 + i * 70}
-                          style={{
-                            display: 'grid',
-                            gridTemplateColumns: 'minmax(110px, 1fr) minmax(0, 1.5fr) minmax(0, 1.2fr) 60px 70px',
-                            gap: '12px',
-                            alignItems: 'center',
-                            fontFamily: 'var(--font-dm-mono, monospace)',
-                            fontSize: '11.5px',
-                            padding: '7px 0',
-                            borderBottom: i < ledgerRows.length - 1 ? '1px dashed #ECE5D4' : 'none',
-                            color: '#4A4640',
-                          }}
-                        >
-                          <span style={{ color: '#1A1814', fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '12px' }}>{row.merchant}</span>
-                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.email}</span>
-                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.addr}</span>
-                          <span>{row.card}</span>
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', color: '#4A4640', fontSize: '10.5px' }}>
-                            <span style={{ width: 5, height: 5, background: '#4A4640', borderRadius: '50%' }} />
-                            ok
-                          </span>
-                        </Reveal>
-                      ))}
-                    </div>
-
-                    {/* ── Mobile stacked identity cards (<sm) ── */}
-                    <div className="sm:hidden" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                      {ledgerRows.map((row, i) => (
-                        <Reveal
-                          key={`m-${i}`}
-                          delay={220 + i * 70}
-                          style={{
-                            background: '#F8F5EE',
-                            border: '1px solid #ECE5D4',
-                            padding: '12px 14px',
-                          }}
-                        >
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '8px', gap: '8px' }}>
-                            <span style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '13px', fontWeight: 600, color: '#1A1814' }}>
-                              {row.merchant}
-                            </span>
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', color: '#4A4640', fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10px', letterSpacing: '0.04em' }}>
-                              <span style={{ width: 5, height: 5, background: '#4A4640', borderRadius: '50%' }} />
-                              ok
-                            </span>
-                          </div>
-                          <div style={{ display: 'grid', gridTemplateColumns: '60px 1fr', gap: '4px 10px', fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11px', color: '#4A4640' }}>
-                            <span style={{ color: '#8A8472', textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '9.5px' }}>email</span>
-                            <span style={{ wordBreak: 'break-all', color: '#1A1814' }}>{row.email}</span>
-                            <span style={{ color: '#8A8472', textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '9.5px' }}>address</span>
-                            <span style={{ color: '#1A1814' }}>{row.addr}</span>
-                            <span style={{ color: '#8A8472', textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '9.5px' }}>card</span>
-                            <span style={{ color: '#7B2D26' }}>{row.card}</span>
-                          </div>
-                        </Reveal>
-                      ))}
-                    </div>
-                  </>
-                );
-              })()}
-
-              {/* Resolution arrow */}
-              <div
-                style={{
-                  marginTop: '14px',
-                  paddingTop: '14px',
-                  borderTop: '1px solid #D8D0BD',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: '12px',
-                  flexWrap: 'wrap',
-                }}
+              {/* Force-style graph SVG */}
+              <svg
+                viewBox="0 0 560 380"
+                style={{ display: 'block', width: '100%', height: 'auto', maxHeight: 340 }}
+                aria-label="Identity graph: one buyer across 7 merchants"
+                role="img"
               >
-                <p
-                  style={{
-                    fontFamily: 'var(--font-serif, serif)',
-                    fontStyle: 'italic',
-                    fontSize: '13px',
-                    color: '#8A8472',
-                    margin: 0,
-                  }}
-                >
-                  One customer view per store. One identity in the network.
-                </p>
-                <span
-                  style={{
-                    fontFamily: 'var(--font-dm-mono, monospace)',
-                    fontSize: '11px',
-                    color: '#7B2D26',
-                    background: '#F4E8E5',
-                    border: '1px solid #E3C9C3',
-                    padding: '3px 10px',
-                  }}
-                >
-                  RISK 0.92 · DEFINITE
-                </span>
+                {/* Satellite nodes arranged in a circle of radius 140 around center 280,200 */}
+                {(() => {
+                  const cx = 280, cy = 200, r = 140;
+                  const merchants = [
+                    { name: 'your_store',   strong: true  },
+                    { name: 'merchant_04',  strong: true  },
+                    { name: 'merchant_02',  strong: true  },
+                    { name: 'merchant_07',  strong: true  },
+                    { name: 'merchant_03',  strong: false },
+                    { name: 'merchant_09',  strong: false },
+                    { name: 'merchant_05',  strong: false },
+                  ];
+                  const nodes = merchants.map((m, i) => {
+                    const angle = (2 * Math.PI * i) / merchants.length - Math.PI / 2;
+                    return { ...m, x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle) };
+                  });
+                  return (
+                    <g>
+                      {/* Connection lines */}
+                      {nodes.map((node) => (
+                        <line
+                          key={`line-${node.name}`}
+                          x1={cx} y1={cy}
+                          x2={node.x} y2={node.y}
+                          stroke={node.strong ? 'rgba(123,45,38,0.55)' : 'rgba(123,45,38,0.22)'}
+                          strokeWidth="1"
+                          strokeDasharray={node.strong ? undefined : '4 4'}
+                        />
+                      ))}
+                      {/* Central node */}
+                      <circle cx={cx} cy={cy} r={28} fill="none" stroke="rgba(123,45,38,0.18)" strokeWidth="1" />
+                      <circle cx={cx} cy={cy} r={16} fill="#7B2D26" />
+                      <text x={cx} y={cy + 34} textAnchor="middle" fill="#4A4640" fontFamily="var(--font-dm-mono, monospace)" fontSize="9.5" letterSpacing="0.04em">#u_kessler.07</text>
+                      {/* Satellite nodes */}
+                      {nodes.map((node) => (
+                        <g key={`node-${node.name}`}>
+                          <circle cx={node.x} cy={node.y} r={10} fill="#F8F5EE" stroke="#7B2D26" strokeWidth="1" />
+                          <text
+                            x={node.x}
+                            y={node.y + (node.y > cy ? 22 : -14)}
+                            textAnchor="middle"
+                            fill="#8A8472"
+                            fontFamily="var(--font-dm-mono, monospace)"
+                            fontSize="8.5"
+                            letterSpacing="0.02em"
+                          >
+                            {node.name.replace('merchant_', 'm_')}
+                          </text>
+                        </g>
+                      ))}
+                    </g>
+                  );
+                })()}
+              </svg>
+
+              {/* Legend */}
+              <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #ECE5D4', display: 'flex', flexDirection: 'column', gap: '4px', fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10.5px', color: '#8A8472', letterSpacing: '0.04em' }}>
+                <span>── card: ••4419</span>
+                <span>── addr_hash_91c2</span>
+                <span>·· INR pattern x3</span>
               </div>
             </div>
-
           </Reveal>
+        </div>
+      </section>
+
+      {/* ── §1.5 · Founding merchant testimonial ────────────────── */}
+      <section className="mx-auto max-w-[1400px] px-6 md:px-10 py-16 md:py-20">
+        <div style={{ maxWidth: '760px', margin: '0 auto', textAlign: 'center' }}>
+          <p
+            style={{
+              fontFamily: 'var(--font-dm-sans, sans-serif)',
+              fontSize: '11px',
+              fontWeight: 600,
+              letterSpacing: '0.16em',
+              textTransform: 'uppercase',
+              color: '#7B2D26',
+              marginBottom: '24px',
+            }}
+          >
+            § 1.5 — A FOUNDING MERCHANT
+          </p>
+          <blockquote
+            style={{
+              fontFamily: 'var(--font-serif, serif)',
+              fontStyle: 'italic',
+              fontSize: 'clamp(22px, 2vw, 30px)',
+              lineHeight: 1.35,
+              color: '#1A1814',
+              margin: '0 0 28px 0',
+            }}
+          >
+            &ldquo;We were chasing the same refund abuser across three of our stores without knowing. Unauth surfaced him in the second cluster we ran — and the next chargeback came back with a ready-made evidence packet attached.&rdquo;
+          </blockquote>
+          <p
+            style={{
+              fontFamily: 'var(--font-dm-mono, monospace)',
+              fontSize: '11px',
+              textTransform: 'uppercase',
+              letterSpacing: '0.14em',
+              color: '#4A4640',
+              marginBottom: '6px',
+            }}
+          >
+            Daniel Merwick · Head of Trust &amp; Safety · Kessler
+          </p>
+          <p
+            style={{
+              fontFamily: 'var(--font-dm-mono, monospace)',
+              fontSize: '10px',
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+              color: '#8A8472',
+            }}
+          >
+            Founding merchant · joined Feb 2026
+          </p>
         </div>
       </section>
 
@@ -1193,6 +1163,15 @@ export default function LandingPage() {
         className="ua-network-canvas ua-parallax-field py-16 md:py-24"
         data-ua-parallax-depth="32"
       >
+        {/* AnimatedGridPattern — cells lighting up reads as fraud detection in action */}
+        <AnimatedGridPattern
+          width={80} height={80}
+          numSquares={12}
+          maxOpacity={0.04}
+          duration={7}
+          strokeWidth={0.3}
+          className="text-[#B85C4A] [mask-image:radial-gradient(ellipse_80%_70%_at_50%_50%,white,transparent)]"
+        />
         <div className="mx-auto max-w-[1400px] px-6 md:px-10">
           <div className="flex items-end justify-between flex-wrap gap-4 mb-10 md:mb-12">
             <div>
@@ -1250,53 +1229,62 @@ export default function LandingPage() {
               <NetworkChart />
             </Reveal>
 
-            {/* Metrics column 4 */}
-            <div className="lg:col-span-4 grid grid-cols-1" style={{ background: '#2B2922', gap: '1px' }}>
-              {[
-                { v: 38,  prefix: '',     suffix: 'ms', l: 'pipeline latency (p95)', s: 'per-order resolution · median' },
-                { v: 256, prefix: 'SHA-', suffix: '',   l: 'HMAC hashing',           s: 'per-tenant salt · PII never leaves browser' },
-                { v: 3,   prefix: 'k ≥ ', suffix: '',   l: 'network gate threshold', s: 'min. merchants for cluster to surface' },
-              ].map((m, i) => (
-                <Reveal key={m.l} delay={120 + i * 90} className="ua-dark-panel" style={{ background: '#15140F', padding: '22px 22px 22px' }}>
-                  <p
-                    style={{
-                      fontFamily: 'var(--font-dm-mono, monospace)',
-                      fontSize: '10px',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.12em',
-                      color: '#8A8472',
-                      marginBottom: '10px',
-                    }}
-                  >
-                    {m.l}
-                  </p>
-                  <p
-                    style={{
-                      fontFamily: 'var(--font-dm-mono, monospace)',
-                      fontSize: 'clamp(28px, 2.6vw, 38px)',
-                      fontWeight: 500,
-                      color: '#E8E4D8',
-                      marginBottom: '8px',
-                      fontVariantNumeric: 'tabular-nums',
-                      lineHeight: 1,
-                    }}
-                  >
-                    <Counter value={m.v} prefix={m.prefix} suffix={m.suffix} duration={1400} format="plain" delay={200 + i * 90} />
-                  </p>
-                  <p
-                    style={{
-                      fontFamily: 'var(--font-serif, serif)',
-                      fontStyle: 'italic',
-                      fontSize: '13px',
-                      color: '#B8B2A0',
-                      lineHeight: 1.4,
-                      margin: 0,
-                    }}
-                  >
-                    {m.s}
-                  </p>
-                </Reveal>
-              ))}
+            {/* Metrics column 4 — single hero metric + security strip */}
+            <div className="lg:col-span-4" style={{ background: '#15140F', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+              <Reveal delay={120} style={{ padding: '32px 24px 24px', flex: 1 }}>
+                <p
+                  style={{
+                    fontFamily: 'var(--font-dm-sans, sans-serif)',
+                    fontSize: 'clamp(80px, 8vw, 120px)',
+                    fontWeight: 500,
+                    color: '#E8E4D8',
+                    lineHeight: 1,
+                    letterSpacing: '-0.04em',
+                    margin: '0 0 12px 0',
+                    fontVariantNumeric: 'tabular-nums',
+                  }}
+                >
+                  38ms
+                </p>
+                <p
+                  style={{
+                    fontFamily: 'var(--font-dm-mono, monospace)',
+                    fontSize: '11px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.04em',
+                    color: '#B8B2A0',
+                    margin: '0 0 8px 0',
+                  }}
+                >
+                  MEDIAN PER-ORDER RESOLUTION · P95
+                </p>
+                <p
+                  style={{
+                    fontFamily: 'var(--font-serif, serif)',
+                    fontSize: '13px',
+                    fontStyle: 'italic',
+                    color: '#B8B2A0',
+                    margin: 0,
+                    lineHeight: 1.5,
+                  }}
+                >
+                  From CSV row to scored cluster.
+                </p>
+              </Reveal>
+              {/* Security strip */}
+              <div
+                style={{
+                  borderTop: '1px solid rgba(255,255,255,0.07)',
+                  padding: '14px 24px',
+                  fontFamily: 'var(--font-dm-mono, monospace)',
+                  fontSize: '10.5px',
+                  letterSpacing: '0.04em',
+                  color: '#B8B2A0',
+                  lineHeight: 1.6,
+                }}
+              >
+                SHA-256 hashing · per-tenant salt · PII never leaves browser · k ≥ 3 cluster gate
+              </div>
             </div>
           </div>
 
@@ -1316,9 +1304,164 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── §2.5 · Pipeline demo ────────────────────────────────── */}
+      <section className="ua-section-prism mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-20 pb-12 md:pb-16">
+        <div className="mb-10">
+          <p
+            style={{
+              fontFamily: 'var(--font-dm-sans, sans-serif)',
+              fontSize: '11px',
+              fontWeight: 600,
+              letterSpacing: '0.16em',
+              textTransform: 'uppercase',
+              color: '#7B2D26',
+              marginBottom: '12px',
+            }}
+          >
+            § 2.5 — THE PIPELINE IN MOTION
+          </p>
+          <h2
+            style={{
+              fontFamily: 'var(--font-dm-sans, sans-serif)',
+              fontSize: 'clamp(28px, 2.8vw, 40px)',
+              fontWeight: 500,
+              letterSpacing: '-0.02em',
+              lineHeight: 1.05,
+              color: '#1A1814',
+            }}
+          >
+            From CSV to case file in{' '}
+            <span style={{ color: '#7B2D26', fontFamily: 'var(--font-dm-sans, sans-serif)' }}>38ms</span>
+          </h2>
+        </div>
+
+        {/* Three cards */}
+        <div className="flex flex-col md:flex-row gap-0 md:gap-0 items-stretch" style={{ border: '1px solid #D8D0BD' }}>
+
+          {/* Card 1 — UPLOAD */}
+          <div style={{ flex: 1, padding: '18px 20px', background: '#FDFBF6', borderRight: '1px solid #D8D0BD', minWidth: 0 }}>
+            <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.12em', color: '#8A8472', marginBottom: '14px' }}>
+              1 · UPLOAD
+            </p>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11px', color: '#4A4640', fontVariantNumeric: 'tabular-nums', borderCollapse: 'collapse', width: '100%', minWidth: 340 }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid #ECE5D4' }}>
+                    {['order_id', 'email_hmac', 'addr_hash', 'card_last4', 'total'].map((h) => (
+                      <th key={h} style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '9.5px', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#8A8472', padding: '0 8px 6px 0', textAlign: 'left', fontWeight: 400 }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    ['8723941', 'abc…d3', '91c2', '4419', '$112.00'],
+                    ['8723995', 'abc…d3', '91c2', '4419', '$89.00'],
+                    ['8724111', 'ef9…22', '91c2', '4419', '$213.00'],
+                    ['8724302', '7b1…91', '91c2', '4419', '$76.00'],
+                  ].map((row) => (
+                    <tr key={row[0]} style={{ borderBottom: '1px solid rgba(123,45,38,0.06)' }}>
+                      {row.map((cell, ci) => (
+                        <td key={ci} style={{ padding: '5px 8px 5px 0', color: ci === 0 ? '#1A1814' : '#4A4640' }}>{cell}</td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10px', color: '#8A8472', marginTop: '10px' }}>orders.csv · 11 rows</p>
+          </div>
+
+          {/* Arrow desktop */}
+          <div className="hidden md:flex items-center justify-center" style={{ padding: '0 12px', flexShrink: 0, fontSize: '14px', color: '#8A8472', background: '#FDFBF6' }}>→</div>
+          {/* Arrow mobile */}
+          <div className="md:hidden flex items-center justify-center" style={{ padding: '10px 0', fontSize: '14px', color: '#8A8472', background: '#FDFBF6', borderTop: '1px solid #D8D0BD' }}>↓</div>
+
+          {/* Card 2 — GRAPH */}
+          <div style={{ flex: 1, padding: '18px 20px', background: '#FDFBF6', borderRight: '1px solid #D8D0BD', minWidth: 0 }}>
+            <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.12em', color: '#8A8472', marginBottom: '14px' }}>
+              2 · GRAPH
+            </p>
+            <svg viewBox="0 0 320 280" style={{ display: 'block', width: '100%', height: 'auto', maxHeight: 220 }} aria-label="Identity graph small" role="img">
+              {(() => {
+                const cx = 160, cy = 148, r = 95;
+                const mNodes = [
+                  { name: 'your_store', strong: true },
+                  { name: 'm_04', strong: true },
+                  { name: 'm_02', strong: true },
+                  { name: 'm_07', strong: true },
+                  { name: 'm_03', strong: false },
+                  { name: 'm_09', strong: false },
+                  { name: 'm_05', strong: false },
+                ].map((m, i) => {
+                  const angle = (2 * Math.PI * i) / 7 - Math.PI / 2;
+                  return { ...m, x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle) };
+                });
+                return (
+                  <g>
+                    {mNodes.map((n) => (
+                      <line key={`l-${n.name}`} x1={cx} y1={cy} x2={n.x} y2={n.y}
+                        stroke={n.strong ? 'rgba(123,45,38,0.55)' : 'rgba(123,45,38,0.22)'}
+                        strokeWidth="1" strokeDasharray={n.strong ? undefined : '4 4'} />
+                    ))}
+                    <circle cx={cx} cy={cy} r={20} fill="none" stroke="rgba(123,45,38,0.18)" strokeWidth="1" />
+                    <circle cx={cx} cy={cy} r={11} fill="#7B2D26" />
+                    {mNodes.map((n) => (
+                      <g key={`n-${n.name}`}>
+                        <circle cx={n.x} cy={n.y} r={8} fill="#F8F5EE" stroke="#7B2D26" strokeWidth="1" />
+                        <text x={n.x} y={n.y + (n.y > cy ? 18 : -11)} textAnchor="middle" fill="#8A8472" fontFamily="var(--font-dm-mono, monospace)" fontSize="7.5">{n.name}</text>
+                      </g>
+                    ))}
+                  </g>
+                );
+              })()}
+            </svg>
+          </div>
+
+          {/* Arrow desktop */}
+          <div className="hidden md:flex items-center justify-center" style={{ padding: '0 12px', flexShrink: 0, fontSize: '14px', color: '#8A8472', background: '#FDFBF6' }}>→</div>
+          {/* Arrow mobile */}
+          <div className="md:hidden flex items-center justify-center" style={{ padding: '10px 0', fontSize: '14px', color: '#8A8472', background: '#FDFBF6', borderTop: '1px solid #D8D0BD' }}>↓</div>
+
+          {/* Card 3 — CASE FILE */}
+          <div style={{ flex: 1, padding: '18px 20px', background: '#FDFBF6', minWidth: 0 }}>
+            <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.12em', color: '#8A8472', marginBottom: '14px' }}>
+              3 · CASE FILE
+            </p>
+            {/* Mini case file */}
+            <div style={{ border: '1px solid #D8D0BD', background: '#F8F5EE' }}>
+              <div style={{ padding: '8px 12px', borderBottom: '1px solid #D8D0BD', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10px', color: '#FFFFFF', background: '#7B2D26', padding: '2px 7px', letterSpacing: '0.06em' }}>DEFINITE</span>
+                <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10px', color: '#4A4640', background: '#F2EDE3', border: '1px solid #D8D0BD', padding: '2px 7px' }}>RISK 0.92</span>
+              </div>
+              <div style={{ padding: '10px 12px' }}>
+                <p style={{ fontFamily: 'var(--font-serif, serif)', fontSize: '14px', color: '#1A1814', marginBottom: '10px' }}>Noah K████</p>
+                {[
+                  { l: 'refund_rate_over_60pct', v: 0.92 },
+                  { l: 'cross_merchant_inr_pattern', v: 0.88 },
+                  { l: 'shipping_address_variant', v: 0.74 },
+                ].map((sig) => (
+                  <div key={sig.l} style={{ display: 'grid', gridTemplateColumns: '1fr 32px', gap: '8px', alignItems: 'center', marginBottom: '6px' }}>
+                    <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10px', color: '#4A4640', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sig.l}</span>
+                    <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10px', color: '#1A1814', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{sig.v.toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+              <div style={{ padding: '8px 12px', borderTop: '1px solid #D8D0BD' }}>
+                <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10px', color: '#7B2D26', letterSpacing: '0.06em' }}>EVIDENCE PACKET → READY</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
       {/* ── §3 · How it works ───────────────────────────────────── */}
       <section id="how-it-works" style={{ scrollMarginTop: '72px' }} className="ua-section-flow ua-parallax-field mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-20 pb-12 md:pb-16" data-ua-parallax-depth="24">
-        <hr style={{ border: 0, borderTop: '1px solid #D8D0BD', marginBottom: '40px' }} />
+        {/* DotPattern offset from hero to read as a distinct texture */}
+        <DotPattern
+          width={40} height={40} cx={2} cy={2} cr={1}
+          className="text-[#7B2D26] opacity-[0.09] [mask-image:radial-gradient(ellipse_80%_70%_at_88%_18%,white,transparent)]"
+        />
 
         <div className="flex items-end justify-between flex-wrap gap-4 mb-10">
           <div>
@@ -1382,7 +1525,7 @@ export default function LandingPage() {
         <div
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px"
           style={{
-            background: 'linear-gradient(90deg, #D8D0BD, rgba(246,184,79,0.70), rgba(185,110,245,0.52), #D8D0BD)',
+            background: '#D8D0BD',
             border: '1px solid #D8D0BD',
             marginBottom: '40px',
           }}
@@ -1460,6 +1603,8 @@ export default function LandingPage() {
                 WebkitBackdropFilter: 'saturate(126%) blur(10px)',
               }}
             >
+              {/* BorderBeam on the first step — marks the entry point */}
+              {i === 0 && <BorderBeam duration={14} colorFrom="rgba(123,45,38,0.60)" colorTo="transparent" />}
               {i < 3 && (
                 <span
                   className="hidden lg:flex"
@@ -1540,6 +1685,8 @@ export default function LandingPage() {
                   color: '#8A8472',
                   lineHeight: 1.5,
                   marginTop: 'auto',
+                  paddingBottom: '14px',
+                  borderBottom: '2px solid rgba(123,45,38,0.18)',
                 }}
               >
                 {step.detail}
@@ -1718,7 +1865,10 @@ export default function LandingPage() {
 
       {/* ── Sample evidence packet · full case-file artifact ─────── */}
       <section id="evidence" style={{ scrollMarginTop: '72px' }} className="ua-section-evidence ua-parallax-field mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-20 pb-12 md:pb-16" data-ua-parallax-depth="30">
-        <hr style={{ border: 0, borderTop: '1px solid #D8D0BD', marginBottom: '40px' }} />
+        <DotPattern
+          width={36} height={36} cx={1} cy={1} cr={1}
+          className="text-[#7B2D26] opacity-[0.08] [mask-image:radial-gradient(ellipse_60%_50%_at_80%_20%,white,transparent)]"
+        />
 
         <div className="flex items-end justify-between flex-wrap gap-4 mb-10">
           <div>
@@ -1776,6 +1926,19 @@ export default function LandingPage() {
           </span>
         </div>
 
+        {/* Delivery context chip */}
+        <p
+          style={{
+            fontFamily: 'var(--font-dm-mono, monospace)',
+            fontSize: '10.5px',
+            color: '#8A8472',
+            letterSpacing: '0.04em',
+            marginBottom: '16px',
+          }}
+        >
+          delivered to founders@kessler.com · 09:42 EST
+        </p>
+
         <div
           className="ua-glass-card ua-parallax-layer"
           data-ua-parallax-depth="-8"
@@ -1784,7 +1947,7 @@ export default function LandingPage() {
             border: '1px solid #D8D0BD',
             borderRadius: 0,
             boxShadow:
-              '0 1px 0 #D8D0BD, 0 22px 54px -26px rgba(26,24,20,0.18), 0 44px 96px -48px rgba(185,110,245,0.18)',
+              '0 1px 0 #D8D0BD, 0 22px 54px -26px rgba(26,24,20,0.18), 0 44px 96px -48px rgba(123,45,38,0.12)',
             backdropFilter: 'saturate(132%) blur(12px)',
             WebkitBackdropFilter: 'saturate(132%) blur(12px)',
           }}
@@ -1903,89 +2066,16 @@ export default function LandingPage() {
                 </span>
               </p>
 
-              <hr style={{ border: 0, borderTop: '1px solid #D8D0BD', margin: '0 0 16px 0' }} />
-
-              <p
-                style={{
-                  fontFamily: 'var(--font-dm-sans, sans-serif)',
-                  fontSize: '11px',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.1em',
-                  color: '#4A4640',
-                  marginBottom: '8px',
-                }}
-              >
-                KNOWN EMAIL VARIANTS
-              </p>
-              <pre
-                style={{
-                  fontFamily: 'var(--font-dm-mono, monospace)',
-                  fontSize: '13px',
-                  color: '#4A4640',
-                  lineHeight: 1.7,
-                  margin: '0 0 20px 0',
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-all',
-                }}
-              >
-{`n•••@your-store-customer       [your store record]
-email_hmac_91b4                [observed across 4 merchants]
-email_hmac_a802                [observed across 2 merchants]
-email_hmac_77da                [low confidence variant]`}
-              </pre>
-
-              <hr style={{ border: 0, borderTop: '1px solid #D8D0BD', margin: '0 0 16px 0' }} />
-
-              <p
-                style={{
-                  fontFamily: 'var(--font-dm-sans, sans-serif)',
-                  fontSize: '11px',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.1em',
-                  color: '#4A4640',
-                  marginBottom: '8px',
-                }}
-              >
-                SHIPPING ADDRESSES (3 variants — same residence)
-              </p>
-              <pre
-                style={{
-                  fontFamily: 'var(--font-dm-mono, monospace)',
-                  fontSize: '13px',
-                  color: '#4A4640',
-                  lineHeight: 1.7,
-                  margin: '0 0 20px 0',
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-all',
-                }}
-              >
-{`addr_hash_91c2     [your store record]
-addr_hash_91c2     [spelling variant — confidence 0.98]
-addr_hash_91c2     [unit variant — normalized match]`}
-              </pre>
-
-              <hr style={{ border: 0, borderTop: '1px solid #D8D0BD', margin: '0 0 16px 0' }} />
-
-              <p
-                style={{
-                  fontFamily: 'var(--font-dm-sans, sans-serif)',
-                  fontSize: '11px',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.1em',
-                  color: '#4A4640',
-                  marginBottom: '8px',
-                }}
-              >
-                PAYMENT
-              </p>
               <p
                 style={{
                   fontFamily: 'var(--font-dm-mono, monospace)',
-                  fontSize: '13px',
-                  color: '#4A4640',
+                  fontSize: '12px',
+                  color: '#8A8472',
+                  lineHeight: 1.6,
+                  letterSpacing: '0.02em',
                 }}
               >
-                card_hash_8fd2 · last4 4419
+                email · addr_hash_91c2 · card ••4419 · 3 variants normalized
               </p>
             </div>
 
@@ -2096,7 +2186,6 @@ merchant_03            $890.00     2 orders     1 INR filed
 
       {/* ── §5 · Two case studies ────────────────────────────────── */}
       <section className="ua-section-quiet ua-parallax-field mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-20 pb-12 md:pb-16" data-ua-parallax-depth="22">
-        <hr style={{ border: 0, borderTop: '1px solid #D8D0BD', marginBottom: '40px' }} />
 
         <div className="mb-10">
           <p
@@ -2125,7 +2214,7 @@ merchant_03            $890.00     2 orders     1 INR filed
             }}
           >
             What a completed audit{' '}
-            <span style={{ fontStyle: 'italic', fontFamily: 'var(--font-serif, serif)', color: '#7B2D26' }}>shows.</span>
+            <span style={{ color: '#7B2D26' }}>shows.</span>
           </h2>
           <p
             style={{
@@ -2144,163 +2233,57 @@ merchant_03            $890.00     2 orders     1 INR filed
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-px" style={{ background: '#D8D0BD', border: '1px solid #D8D0BD' }}>
-          {/* Case 1 */}
-          <Reveal className="ua-hover-lift ua-glass-card" delay={60} style={{ background: 'rgba(253, 251, 246, 0.9)', padding: '24px 26px' }}>
-            <div className="flex items-center justify-between mb-5">
-              <p
-                style={{
-                  fontFamily: 'var(--font-dm-mono, monospace)',
-                  fontSize: '10.5px',
-                  letterSpacing: '0.14em',
-                  textTransform: 'uppercase',
-                  color: '#8A8472',
-                  margin: 0,
-                }}
-              >
-                Profile A · DTC outdoor · sample
-              </p>
-              <span
-                style={{
-                  fontFamily: 'var(--font-dm-mono, monospace)',
-                  fontSize: '10.5px',
-                  color: '#7B2D26',
-                  background: '#F4E8E5',
-                  border: '1px solid #E3C9C3',
-                  padding: '2px 8px',
-                  letterSpacing: '0.04em',
-                }}
-              >
-                $40K/mo recovered
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-px" style={{ background: '#D8D0BD', border: '1px solid #D8D0BD' }}>
+          {/* Summary card 1 */}
+          <Reveal delay={60} style={{ background: '#FDFBF6', padding: '24px 26px' }}>
+            <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10.5px', letterSpacing: '0.14em', textTransform: 'uppercase', color: '#8A8472', marginBottom: '14px' }}>
+              CLUSTER #u_kessler.07
+            </p>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
+              <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: 'clamp(28px, 3vw, 42px)', fontWeight: 500, color: '#1A1814', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em', lineHeight: 1 }}>
+                $1,210 recovered
+              </span>
+              <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10px', color: '#4A4640', background: '#F2EDE3', border: '1px solid #D8D0BD', padding: '3px 9px', letterSpacing: '0.06em' }}>
+                RISK 0.92
               </span>
             </div>
-
-            {/* Three metrics inline */}
-            <div className="grid grid-cols-3 gap-4 mb-6 pb-5" style={{ borderBottom: '1px solid #ECE5D4' }}>
-              {[
-                { l: 'abusers clustered',  v: 312, suffix: '',  s: '14 days' },
-                { l: 'active at 3+ brands', v: 156, suffix: '', s: '50%' },
-                { l: 'Case-file readiness',    v: 71,  suffix: '%', s: 'of flagged clusters' },
-              ].map((m, i) => (
-                <div key={m.l}>
-                  <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '24px', fontWeight: 500, color: '#1A1814', margin: 0, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
-                    <Counter value={m.v} suffix={m.suffix} duration={1100} delay={140 + i * 80} format="plain" />
-                  </p>
-                  <p style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '11px', color: '#8A8472', letterSpacing: '0.04em', textTransform: 'uppercase', marginTop: '6px', marginBottom: 0 }}>
-                    {m.l}
-                  </p>
-                  <p style={{ fontFamily: 'var(--font-serif, serif)', fontSize: '12px', fontStyle: 'italic', color: '#8A8472', marginTop: '2px', marginBottom: 0 }}>
-                    {m.s}
-                  </p>
-                </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '7px', marginBottom: '16px' }}>
+              {['Same card across 4 merchants', 'Address variants normalize', 'INR within 4 days'].map((b) => (
+                <p key={b} style={{ fontFamily: 'var(--font-serif, serif)', fontStyle: 'italic', fontSize: '13px', color: '#4A4640', margin: 0 }}>{b}</p>
               ))}
             </div>
-
-            <div
-              className="grid grid-cols-1 sm:grid-cols-[1.2fr_0.8fr]"
-              style={{
-                gap: '18px',
-                alignItems: 'stretch',
-              }}
-            >
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {[
-                  { label: 'refund ring', value: 0.82, color: '#7B2D26' },
-                  { label: 'INR repeaters', value: 0.68, color: '#B6512A' },
-                  { label: 'address variants', value: 0.54, color: '#B96EF5' },
-                ].map((row) => (
-                  <div key={row.label}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', marginBottom: '4px' }}>
-                      <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10.5px', color: '#4A4640', letterSpacing: '0.06em' }}>
-                        {row.label}
-                      </span>
-                      <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10.5px', color: '#8A8472' }}>
-                        {Math.round(row.value * 100)}%
-                      </span>
-                    </div>
-                    <AnimatedBar value={row.value} color={row.color} track="#ECE5D4" height={5} delay={240} />
-                  </div>
-                ))}
-              </div>
-              <div
-                style={{
-                  border: '1px solid #E3C9C3',
-                  background:
-                    'linear-gradient(135deg, rgba(244,232,229,0.92), rgba(255,234,190,0.70), rgba(240,229,255,0.58))',
-                  padding: '14px 16px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  minHeight: 124,
-                }}
-              >
-                <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10px', color: '#7B2D26', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-                  flagged value
-                </span>
-                <span style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '34px', color: '#1A1814', letterSpacing: '-0.04em', lineHeight: 1 }}>
-                  $128K
-                </span>
-                <span style={{ fontFamily: 'var(--font-serif, serif)', fontStyle: 'italic', fontSize: '12px', color: '#8A8472', lineHeight: 1.45 }}>
-                  71% evidence-ready at review time
-                </span>
-              </div>
-            </div>
-
+            <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10px', color: '#7B2D26', letterSpacing: '0.08em' }}>
+              EVIDENCE PACKET → READY
+            </span>
           </Reveal>
 
-          {/* Case 2 */}
-          <Reveal className="ua-hover-lift ua-glass-card" delay={140} style={{ background: 'rgba(253, 251, 246, 0.9)', padding: '24px 26px' }}>
-            <div className="flex items-center justify-between mb-5">
-              <p
-                style={{
-                  fontFamily: 'var(--font-dm-mono, monospace)',
-                  fontSize: '10.5px',
-                  letterSpacing: '0.14em',
-                  textTransform: 'uppercase',
-                  color: '#8A8472',
-                  margin: 0,
-                }}
-              >
-                Profile B · DTC hardware · sample
-              </p>
+          {/* Summary card 2 */}
+          <Reveal delay={140} style={{ background: '#FDFBF6', padding: '24px 26px' }}>
+            <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10.5px', letterSpacing: '0.14em', textTransform: 'uppercase', color: '#8A8472', marginBottom: '14px' }}>
+              CLUSTER #u_patel.12
+            </p>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
+              <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: 'clamp(28px, 3vw, 42px)', fontWeight: 500, color: '#1A1814', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em', lineHeight: 1 }}>
+                $890 recovered
+              </span>
+              <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10px', color: '#4A4640', background: '#F2EDE3', border: '1px solid #D8D0BD', padding: '3px 9px', letterSpacing: '0.06em' }}>
+                RISK 0.87
+              </span>
             </div>
-
-            {/* Before / After bars */}
-            <div className="space-y-4 mb-6 pb-5" style={{ borderBottom: '1px solid #ECE5D4' }}>
-              {[
-                { l: 'INR claim rate',     before: 9.4, after: 2.1, max: 12, unit: '%', dec: 1 },
-                { l: 'Case-file readiness',    before: 18,  after: 64,  max: 100, unit: '%', dec: 0 },
-                { l: 'time to evidence',   before: 4.2, after: 0.6, max: 5,  unit: ' d', dec: 1 },
-              ].map(({ l, before, after, max, unit, dec }, ri) => (
-                <div key={l}>
-                  <p style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '12px', color: '#1A1814', marginBottom: '6px', fontWeight: 500 }}>
-                    {l}
-                  </p>
-                  <div style={{ display: 'grid', gridTemplateColumns: '40px 1fr 56px', gap: '8px', alignItems: 'center', marginBottom: '4px' }}>
-                    <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10px', color: '#8A8472', letterSpacing: '0.06em' }}>BEFORE</span>
-                    <AnimatedBar value={before / max} color="#8A8472" track="#ECE5D4" height={4} delay={140 + ri * 110} />
-                    <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11.5px', color: '#4A4640', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                      <Counter value={before} decimals={dec} duration={900} delay={140 + ri * 110} format="plain" /><span>{unit}</span>
-                    </span>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '40px 1fr 56px', gap: '8px', alignItems: 'center' }}>
-                    <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10px', color: '#7B2D26', letterSpacing: '0.06em' }}>AFTER</span>
-                    <AnimatedBar value={after / max} color="#7B2D26" track="#ECE5D4" height={4} delay={320 + ri * 110} />
-                    <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11.5px', color: '#1A1814', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                      <Counter value={after} decimals={dec} duration={900} delay={320 + ri * 110} format="plain" /><span>{unit}</span>
-                    </span>
-                  </div>
-                </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '7px', marginBottom: '16px' }}>
+              {['3 merchants · same device hash', 'Refund claimed day of delivery', 'Phone variant matched across 2 stores'].map((b) => (
+                <p key={b} style={{ fontFamily: 'var(--font-serif, serif)', fontStyle: 'italic', fontSize: '13px', color: '#4A4640', margin: 0 }}>{b}</p>
               ))}
             </div>
-
+            <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10px', color: '#7B2D26', letterSpacing: '0.08em' }}>
+              EVIDENCE PACKET → READY
+            </span>
           </Reveal>
         </div>
       </section>
 
       {/* ── §6 · What data we need ──────────────────────────────── */}
       <section className="ua-section-prism ua-parallax-field mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-20 pb-12 md:pb-16" data-ua-parallax-depth="26">
-        <hr style={{ border: 0, borderTop: '1px solid #D8D0BD', marginBottom: '40px' }} />
 
         <div className="mb-10">
           <p
@@ -2347,7 +2330,7 @@ merchant_03            $890.00     2 orders     1 INR filed
         <div
           className="grid grid-cols-1 lg:grid-cols-12 gap-px"
           style={{
-            background: 'linear-gradient(135deg, #D8D0BD, rgba(255,183,77,0.68), rgba(185,110,245,0.46), #D8D0BD)',
+            background: '#D8D0BD',
             border: '1px solid #D8D0BD',
           }}
         >
@@ -2453,6 +2436,13 @@ merchant_03            $890.00     2 orders     1 INR filed
         className="ua-network-canvas ua-parallax-field py-16 md:py-24"
         data-ua-parallax-depth="28"
       >
+        <AnimatedGridPattern
+          width={56} height={56}
+          numSquares={16}
+          maxOpacity={0.05}
+          duration={6}
+          className="text-[#B85C4A] [mask-image:radial-gradient(ellipse_70%_60%_at_50%_50%,white,transparent)]"
+        />
         <div className="mx-auto max-w-[1400px] px-6 md:px-10">
           <div className="flex items-end justify-between flex-wrap gap-4 mb-10">
             <div>
@@ -2615,7 +2605,6 @@ merchant_03            $890.00     2 orders     1 INR filed
 
       {/* ── §8 · Comparison matrix ──────────────────────────────── */}
       <section className="ua-section-flow ua-parallax-field mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-20 pb-12 md:pb-16" data-ua-parallax-depth="20">
-        <hr style={{ border: 0, borderTop: '1px solid #D8D0BD', marginBottom: '40px' }} />
 
         <div className="mb-10">
           <p
@@ -2815,14 +2804,15 @@ merchant_03            $890.00     2 orders     1 INR filed
           className="ua-dark-panel ua-parallax-layer"
           data-ua-parallax-depth="-10"
           style={{
-            background:
-              'radial-gradient(circle at 80% 16%, rgba(246,184,79,0.18), transparent 22rem), radial-gradient(circle at 28% 100%, rgba(185,110,245,0.12), transparent 22rem), #15140F',
+            background: '#15140F',
             color: '#E8E4D8',
             padding: 'clamp(40px, 5vw, 64px) clamp(28px, 4vw, 56px)',
             border: '1px solid #15140F',
             boxShadow: '0 34px 86px -46px rgba(26,24,20,0.42)',
           }}
         >
+          {/* Sparse rust-colored meteors — restricted to action-zone palette */}
+          <Meteors number={6} color="#B85C4A" />
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
             <div className="lg:col-span-7">
               <p
@@ -2850,7 +2840,7 @@ merchant_03            $890.00     2 orders     1 INR filed
                 }}
               >
                 Find hidden abuse in{' '}
-                <span style={{ fontStyle: 'italic', fontFamily: 'var(--font-serif, serif)', color: '#B6512A' }}>
+                <span style={{ color: '#B6512A' }}>
                   your own data
                 </span>
                 .
@@ -2878,7 +2868,6 @@ merchant_03            $890.00     2 orders     1 INR filed
 
       {/* ── § NOTES ─────────────────────────────────────────────── */}
       <section className="mx-auto max-w-[1400px] px-6 md:px-10 pt-12 md:pt-16 pb-10">
-        <hr style={{ border: 0, borderTop: '1px solid #D8D0BD', marginBottom: '32px' }} />
 
         <p
           style={{
@@ -2942,7 +2931,6 @@ merchant_03            $890.00     2 orders     1 INR filed
 
       {/* ── Footer ──────────────────────────────────────────────── */}
       <footer className="mx-auto max-w-[1400px] px-6 md:px-10 py-8">
-        <hr style={{ border: 0, borderTop: '1px solid #D8D0BD', marginBottom: '24px' }} />
         <div
           className="flex flex-col md:flex-row md:justify-between gap-4"
           style={{

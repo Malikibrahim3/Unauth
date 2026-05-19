@@ -11,6 +11,7 @@ type Props = {
   duration?: number;
   initialVisible?: boolean;
   transitionWidth?: boolean;
+  waitForVisibility?: boolean; // when true + transitionWidth, defer animation until in viewport
   className?: string;
   style?: CSSProperties;
 };
@@ -24,6 +25,7 @@ export default function AnimatedBar({
   duration = 720,
   initialVisible = false,
   transitionWidth = false,
+  waitForVisibility = false,
   className = '',
   style,
 }: Props) {
@@ -35,6 +37,8 @@ export default function AnimatedBar({
 
   useEffect(() => {
     if (!transitionWidth) return;
+    // If waitForVisibility, only start when visible flag is set by the IO below
+    if (waitForVisibility && !visible) return;
     setAnimatedValue(0);
     let frame = 0;
     const startedAt = window.performance.now() + delay;
@@ -47,14 +51,14 @@ export default function AnimatedBar({
     };
     frame = window.requestAnimationFrame(tick);
     return () => window.cancelAnimationFrame(frame);
-  }, [clamped, delay, duration, transitionWidth]);
+  }, [clamped, delay, duration, transitionWidth, visible, waitForVisibility]);
 
   useEffect(() => {
-    if (transitionWidth) {
+    if (transitionWidth && !waitForVisibility) {
       setVisible(true);
       return;
     }
-    if (initialVisible) return;
+    if (initialVisible && !waitForVisibility) return;
     const el = ref.current;
     if (!el) return;
     if (typeof IntersectionObserver === 'undefined') {
@@ -63,11 +67,11 @@ export default function AnimatedBar({
     }
     const obs = new IntersectionObserver(
       (entries) => entries.forEach((e) => { if (e.isIntersecting) { setVisible(true); obs.disconnect(); } }),
-      { threshold: 0.5, rootMargin: '0px 0px -10% 0px' },
+      { threshold: 0.3, rootMargin: '0px 0px -8% 0px' },
     );
     obs.observe(el);
     return () => obs.disconnect();
-  }, [initialVisible, transitionWidth]);
+  }, [initialVisible, transitionWidth, waitForVisibility]);
 
   return (
     <div

@@ -48,6 +48,11 @@ export default function NetworkChart() {
   const clusterPath = linePath('clusters');
   const abuserPath = linePath('abusers');
 
+  // k=3 threshold line at y=3000
+  const k3Y = yPosition(3000);
+  // Mid-X callout at index 5 (W06)
+  const midX = xPosition(5);
+
   return (
     <div
       style={{
@@ -78,6 +83,7 @@ export default function NetworkChart() {
         >
           ILLUSTRATIVE · PROJECTED 12-WEEK WINDOW
         </p>
+        {/* Legend — top-right */}
         <div
           style={{
             display: 'flex',
@@ -93,12 +99,12 @@ export default function NetworkChart() {
           </span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
             <span style={{ width: 10, height: 1, background: '#B6512A', display: 'inline-block' }} />
-            network-known abusers
+            network coverage
           </span>
         </div>
       </div>
 
-      <svg viewBox={`0 0 ${chart.width} ${chart.height}`} role="img" aria-label="Projected identity clusters and network-known abusers over 12 weeks" style={{ display: 'block', width: '100%', height: 240 }}>
+      <svg viewBox={`0 0 ${chart.width} ${chart.height}`} role="img" aria-label="Projected identity clusters and network coverage over 12 weeks" style={{ display: 'block', width: '100%', height: 240 }}>
         <defs>
           <linearGradient id="cluster-line" x1="0" x2="1" y1="0" y2="0">
             <stop offset="0%" stopColor="#8A8472" />
@@ -117,6 +123,20 @@ export default function NetworkChart() {
             <stop offset="100%" stopColor="#B6512A" stopOpacity="0" />
           </linearGradient>
         </defs>
+
+        {/* Left axis label "CLUSTERS" */}
+        <text
+          x={10}
+          y={chart.height / 2}
+          textAnchor="middle"
+          fill="rgba(184,178,160,0.6)"
+          fontFamily="var(--font-dm-mono, monospace)"
+          fontSize="9"
+          letterSpacing="0.08em"
+          transform={`rotate(-90, 10, ${chart.height / 2})`}
+        >
+          CLUSTERS
+        </text>
 
         {tickValues.map((value) => {
           const tickY = yPosition(value);
@@ -139,6 +159,64 @@ export default function NetworkChart() {
             </text>
           );
         })}
+
+        {/* Bottom axis label "MONTHS (illustrative)" */}
+        <text
+          x={(chart.left + chart.width - chart.right) / 2}
+          y={chart.height - 1}
+          textAnchor="middle"
+          fill="rgba(184,178,160,0.6)"
+          fontFamily="var(--font-dm-mono, monospace)"
+          fontSize="9"
+          letterSpacing="0.08em"
+        >
+          MONTHS (illustrative)
+        </text>
+
+        {/* k≥3 threshold dashed line */}
+        <line
+          x1={chart.left}
+          x2={chart.width - chart.right}
+          y1={k3Y}
+          y2={k3Y}
+          stroke="rgba(232,228,216,0.45)"
+          strokeWidth="1"
+          strokeDasharray="3 3"
+        />
+        <text
+          x={chart.width - chart.right - 2}
+          y={k3Y - 4}
+          textAnchor="end"
+          fill="rgba(232,228,216,0.45)"
+          fontFamily="var(--font-dm-mono, monospace)"
+          fontSize="9"
+          letterSpacing="0.04em"
+        >
+          k ≥ 3 threshold
+        </text>
+
+        {/* Mid-X vertical callout */}
+        <line
+          x1={midX}
+          x2={midX}
+          y1={chart.top}
+          y2={chart.height - chart.bottom}
+          stroke="#B6512A"
+          strokeWidth="1"
+          strokeDasharray="2 3"
+          opacity="0.7"
+        />
+        <circle cx={midX} cy={chart.top + 8} r="2.5" fill="#B6512A" opacity="0.7" />
+        <text
+          x={midX + 6}
+          y={chart.top + 11}
+          fill="#B6512A"
+          fontFamily="var(--font-dm-mono, monospace)"
+          fontSize="9.5"
+          letterSpacing="0.02em"
+        >
+          Mar · founding cohort
+        </text>
 
         <path d={`${clusterPath} L ${xPosition(data.length - 1).toFixed(1)} ${chart.height - chart.bottom} L ${chart.left} ${chart.height - chart.bottom} Z`} fill="url(#cluster-area)" />
         <path d={`${abuserPath} L ${xPosition(data.length - 1).toFixed(1)} ${chart.height - chart.bottom} L ${chart.left} ${chart.height - chart.bottom} Z`} fill="url(#abuser-area)" />
