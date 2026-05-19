@@ -12,6 +12,7 @@ import Counter from './_components/Counter';
 import AnimatedBar from './_components/AnimatedBar';
 import TypedText from './_components/TypedText';
 import ParallaxController from './_components/ParallaxController';
+import HeroNotificationArtifact from './_components/HeroNotificationArtifact';
 import AuditForm from './AuditForm';
 
 export const metadata = {
@@ -179,10 +180,10 @@ export default function LandingPage() {
         <Spotlight fill="rgba(123,45,38,0.18)" className="-z-10" />
 
         {/* Side-by-side grid at lg+ */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
 
         {/* Left — copy block */}
-        <Reveal delay={40} className="lg:col-span-5 lg:pt-6">
+        <Reveal delay={40} className="lg:col-span-4 lg:pt-6">
           {/* Eyebrow */}
           <p
             style={{
@@ -289,7 +290,7 @@ export default function LandingPage() {
         </Reveal>
 
         {/* Right — large product artifact */}
-        <Reveal as="div" className="ua-hero-stage relative mt-10 md:mt-14 lg:mt-0 lg:col-span-7" delay={180} noFade>
+        <Reveal as="div" className="ua-hero-stage relative mt-10 md:mt-14 lg:mt-0 lg:col-span-8 lg:-mr-[10vw]" delay={180} noFade>
             {/* Floating eyebrow above artifact */}
             <div
               className="flex items-center justify-between mb-3"
@@ -307,24 +308,25 @@ export default function LandingPage() {
               <span>Cluster #u_kessler.07</span>
             </div>
 
-            <div
-              className="ua-hover-glow ua-case-card ua-premium-surface ua-parallax-layer"
-              data-ua-parallax-depth="-12"
-              style={{
-                background: 'rgba(253, 251, 246, 0.96)',
-                border: '1px solid rgba(123,45,38,0.15)',
-                borderRadius: 0,
-                boxShadow:
-                  '0 1px 0 rgba(123,45,38,0.10), 0 4px 12px -4px rgba(123,45,38,0.08), 0 28px 68px -24px rgba(26,24,20,0.18), 0 62px 130px -54px rgba(123,45,38,0.14)',
-                position: 'relative',
-                backdropFilter: 'saturate(138%) blur(18px)',
-                WebkitBackdropFilter: 'saturate(138%) blur(18px)',
-              }}
-            >
+            <div className="lg:w-[138%] lg:max-h-[520px] overflow-hidden">
+              <div
+                className="ua-hover-glow ua-case-card ua-premium-surface ua-parallax-layer"
+                data-ua-parallax-depth="-12"
+                style={{
+                  background: 'rgba(253, 251, 246, 0.96)',
+                  border: '1px solid rgba(123,45,38,0.15)',
+                  borderRadius: 0,
+                  boxShadow:
+                    '0 1px 0 rgba(123,45,38,0.10), 0 4px 12px -4px rgba(123,45,38,0.08), 0 28px 68px -24px rgba(26,24,20,0.18), 0 62px 130px -54px rgba(123,45,38,0.14)',
+                  position: 'relative',
+                  backdropFilter: 'saturate(138%) blur(18px)',
+                  WebkitBackdropFilter: 'saturate(138%) blur(18px)',
+                }}
+              >
               {/* Header bar with status chips */}
               <div
                 style={{
-                  padding: '12px 16px',
+                  padding: '10px 14px',
                   borderBottom: '1px solid #D8D0BD',
                   display: 'flex',
                   alignItems: 'center',
@@ -397,7 +399,7 @@ export default function LandingPage() {
               {/* Two-column body: subject + sparkbars */}
               <div className="grid grid-cols-1 md:grid-cols-[1.18fr_0.82fr]">
                 {/* Subject column */}
-                <div style={{ padding: '16px 18px', borderRight: '1px solid #D8D0BD' }}>
+                <div style={{ padding: '12px 14px', borderRight: '1px solid #D8D0BD' }}>
                   <p
                     style={{
                       fontFamily: 'var(--font-dm-sans, sans-serif)',
@@ -414,9 +416,9 @@ export default function LandingPage() {
                     className="ua-case-step"
                     style={{
                       fontFamily: 'var(--font-serif, serif)',
-                      fontSize: '20px',
+                      fontSize: '18px',
                       color: '#1A1814',
-                      marginBottom: '6px',
+                      marginBottom: '4px',
                       lineHeight: 1.3,
                       ['--ua-case-delay' as string]: '120ms',
                       ['--ua-case-duration' as string]: '220ms',
@@ -436,10 +438,10 @@ export default function LandingPage() {
                     className="ua-case-step"
                     style={{
                       fontFamily: 'var(--font-dm-mono, monospace)',
-                      fontSize: '13px',
+                      fontSize: '12px',
                       color: '#7B2D26',
                       letterSpacing: '0.02em',
-                      marginBottom: '6px',
+                      marginBottom: '4px',
                       ['--ua-case-delay' as string]: '180ms',
                       ['--ua-case-duration' as string]: '180ms',
                       ['--ua-case-steps' as string]: 12,
@@ -455,11 +457,11 @@ export default function LandingPage() {
                     className="ua-case-step"
                     style={{
                       fontFamily: 'var(--font-serif, serif)',
-                      fontSize: '12px',
+                      fontSize: '11px',
                       fontStyle: 'italic',
                       color: '#8A8472',
                       lineHeight: 1.45,
-                      margin: '0 0 14px 0',
+                      margin: '0 0 10px 0',
                       ['--ua-case-delay' as string]: '220ms',
                       ['--ua-case-duration' as string]: '300ms',
                       ['--ua-case-steps' as string]: 42,
@@ -477,9 +479,9 @@ export default function LandingPage() {
                     style={{
                       display: 'grid',
                       gridTemplateColumns: '1fr 1fr',
-                      gap: '12px 16px',
+                      gap: '10px 14px',
                       fontFamily: 'var(--font-dm-mono, monospace)',
-                      fontSize: '11px',
+                      fontSize: '10px',
                       color: '#4A4640',
                     }}
                   >
@@ -510,7 +512,7 @@ export default function LandingPage() {
                         >
                           <TypedText text={field.label} delay={220 + previousRowCount * 58} speed={12} />
                         </span>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                           {field.rows.map(([value, note], rowIndex) => (
                             <div
                               key={`${field.label}-${value}`}
@@ -559,7 +561,7 @@ export default function LandingPage() {
                 </div>
 
                 {/* Risk score column */}
-                <div style={{ padding: '16px 18px' }}>
+                <div style={{ padding: '12px 14px' }}>
                   <p
                     style={{
                       fontFamily: 'var(--font-dm-sans, sans-serif)',
@@ -583,7 +585,7 @@ export default function LandingPage() {
                       { l: 'device_reuse_observed', v: 0.51, on: true },
                       { l: 'velocity_burst_24h', v: 0.21, on: false },
                     ].map(({ l, v, on }, i) => (
-                      <div key={l} className="ua-case-row-hover" style={{ display: 'grid', gridTemplateColumns: '1fr 36px', gap: '10px', alignItems: 'center', padding: '4px 2px', borderTop: i > 0 ? '1px solid rgba(123,45,38,0.07)' : 'none', transition: 'background 140ms ease', margin: '0 -2px' }}>
+                      <div key={l} className="ua-case-row-hover" style={{ display: 'grid', gridTemplateColumns: '1fr 36px', gap: '10px', alignItems: 'center', padding: '3px 2px', borderTop: i > 0 ? '1px solid rgba(123,45,38,0.07)' : 'none', transition: 'background 140ms ease', margin: '0 -2px' }}>
                         <div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px' }}>
                             <span
@@ -634,7 +636,7 @@ export default function LandingPage() {
               </div>
 
               {/* Tracked datapoints */}
-              <div style={{ borderTop: '1px solid #D8D0BD', padding: '14px 18px' }}>
+              <div style={{ borderTop: '1px solid #D8D0BD', padding: '10px 14px' }}>
                 <p
                   className="ua-case-step"
                   style={{
@@ -658,7 +660,7 @@ export default function LandingPage() {
               </div>
 
               {/* Network footprint */}
-              <div style={{ borderTop: '1px solid #D8D0BD', padding: '18px 22px', background: '#F8F5EE' }}>
+              <div style={{ borderTop: '1px solid #D8D0BD', padding: '14px 16px', background: '#F8F5EE' }}>
                 <div
                   style={{
                     display: 'flex',
@@ -696,9 +698,9 @@ export default function LandingPage() {
                 <div
                   style={{
                     fontFamily: 'var(--font-dm-mono, monospace)',
-                    fontSize: '12px',
+                    fontSize: '11px',
                     color: '#4A4640',
-                    lineHeight: 1.85,
+                    lineHeight: 1.65,
                   }}
                 >
                   {[
@@ -710,15 +712,16 @@ export default function LandingPage() {
                     <div
                       key={row.m}
                       className="ua-case-step ua-case-row-hover"
-                      style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'minmax(0, 1.5fr) minmax(0, 1fr) 60px auto',
-                        gap: '12px',
-                        alignItems: 'center',
-                        padding: '4px 0',
-                        margin: '0 -4px',
-                        paddingLeft: '4px',
-                        paddingRight: '4px',
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: 'minmax(0, 1.5fr) minmax(0, 1fr) 54px auto',
+                          gap: '12px',
+                          alignItems: 'center',
+                          paddingTop: '3px',
+                          paddingBottom: '3px',
+                          margin: '0 -4px',
+                          paddingLeft: '4px',
+                          paddingRight: '4px',
                         borderTop: i > 0 ? '1px solid rgba(123,45,38,0.08)' : 'none',
                         transition: 'background 140ms ease',
                         ['--ua-case-delay' as string]: `${heroNetworkDelay + i * 60}ms`,
@@ -747,7 +750,7 @@ export default function LandingPage() {
                       <TypedText text={row.v} delay={heroNetworkDelay + i * 80 + 220} speed={20} style={{ color: '#1A1814', fontVariantNumeric: 'tabular-nums', textAlign: 'right', minWidth: '46px' }} />
                     </div>
                   ))}
-                  <p style={{ color: '#8A8472', fontSize: '11px', marginTop: '8px' }}>
+                  <p style={{ color: '#8A8472', fontSize: '10px', marginTop: '6px' }}>
                     + 3 more merchants withheld
                   </p>
                 </div>
@@ -841,10 +844,11 @@ export default function LandingPage() {
                   <TypedText text="HMAC-SHA256 · per-tenant salt" delay={heroFooterDelay + 360} speed={12} />
                 </p>
               </div>
+              </div>
             </div>
 
             {/* Tiny meta row under card */}
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-4" style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11px', color: '#8A8472', letterSpacing: '0.04em' }}>
+            <div className="hidden flex-wrap items-center gap-x-5 gap-y-2 mt-4" style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11px', color: '#8A8472', letterSpacing: '0.04em' }}>
               <span>sample cluster · 11 orders analysed</span>
               <span style={{ color: '#D8D0BD' }}>·</span>
               <span>pipeline latency: 38ms</span>
@@ -853,7 +857,7 @@ export default function LandingPage() {
             </div>
 
             {/* Proof chips — below artifact */}
-            <div className="flex flex-wrap gap-2 mt-5">
+            <div className="hidden flex-wrap gap-2 mt-5">
               {[
                 'No checkout integration',
                 'CSV audit · ~20 min',
@@ -885,21 +889,31 @@ export default function LandingPage() {
       {/* ── Founding merchant cohort logo bar ───────────────────── */}
       <section
         style={{
-          borderTop: '1px solid rgba(123,45,38,0.12)',
-          borderBottom: '1px solid rgba(123,45,38,0.12)',
-          padding: '20px 0',
+          background: '#15140F',
+          borderTop: '1px solid rgba(248,245,238,0.08)',
+          borderBottom: '1px solid rgba(248,245,238,0.08)',
+          padding: '24px 0',
         }}
       >
-        <div className="mx-auto max-w-[1400px] px-6 md:px-10">
+        <div
+          className="mx-auto max-w-[1400px] px-6 md:px-10"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 'clamp(24px, 4vw, 56px)',
+            flexWrap: 'wrap',
+          }}
+        >
           <p
             style={{
               fontFamily: 'var(--font-dm-mono, monospace)',
               fontSize: '9.5px',
               letterSpacing: '0.14em',
               textTransform: 'uppercase',
-              color: '#8A8472',
-              textAlign: 'center',
-              marginBottom: '16px',
+              color: '#D4C7AF',
+              textAlign: 'left',
+              margin: 0,
+              maxWidth: '170px',
             }}
           >
             Founding merchant cohort
@@ -908,25 +922,28 @@ export default function LandingPage() {
             style={{
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
+              justifyContent: 'flex-start',
               gap: 'clamp(24px, 4vw, 56px)',
               flexWrap: 'wrap',
+              flex: 1,
             }}
           >
-            <span style={{ fontFamily: 'var(--font-serif, serif)', fontSize: '17px', color: '#8A8472', letterSpacing: '-0.01em' }}>Kessler</span>
-            <span style={{ fontFamily: 'var(--font-serif, serif)', fontSize: '17px', color: '#8A8472', letterSpacing: '-0.01em' }}>Midform</span>
-            <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '13px', color: '#8A8472', letterSpacing: '0.18em', textTransform: 'uppercase' }}>NORTHRUN</span>
-            <span style={{ fontFamily: 'var(--font-serif, serif)', fontSize: '17px', color: '#8A8472', fontStyle: 'italic', letterSpacing: '-0.01em' }}>Prime &amp; Co</span>
-            <span style={{ fontFamily: 'var(--font-serif, serif)', fontSize: '17px', color: '#8A8472', letterSpacing: '-0.01em' }}>Oakshelf</span>
-            <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '13px', color: '#8A8472', letterSpacing: '0.18em', textTransform: 'uppercase' }}>BRIDLEWORKS</span>
+            <span style={{ fontFamily: 'var(--font-serif, serif)', fontSize: '17px', color: '#F8F5EE', letterSpacing: '-0.01em' }}>Kessler</span>
+            <span style={{ fontFamily: 'var(--font-serif, serif)', fontSize: '17px', color: '#F8F5EE', letterSpacing: '-0.01em' }}>Midform</span>
+            <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '13px', color: '#F8F5EE', letterSpacing: '0.18em', textTransform: 'uppercase' }}>NORTHRUN</span>
+            <span style={{ fontFamily: 'var(--font-serif, serif)', fontSize: '17px', color: '#F8F5EE', fontStyle: 'italic', letterSpacing: '-0.01em' }}>Prime &amp; Co</span>
+            <span style={{ fontFamily: 'var(--font-serif, serif)', fontSize: '17px', color: '#F8F5EE', letterSpacing: '-0.01em' }}>Oakshelf</span>
+            <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '13px', color: '#F8F5EE', letterSpacing: '0.18em', textTransform: 'uppercase' }}>BRIDLEWORKS</span>
           </div>
         </div>
       </section>
 
       {/* ── §1 · The pattern your store can't see — VISUAL ───────── */}
-      <section className="ua-section-prism ua-parallax-field mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-20 pb-12 md:pb-16" data-ua-parallax-depth="28">
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <section
+        className="w-full pt-10 pb-16 md:pt-12 md:pb-20"
+        style={{ background: '#15140F' }}
+      >
+        <div className="mx-auto max-w-[1400px] px-6 md:px-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           <div className="lg:col-span-5">
             <p
               style={{
@@ -935,7 +952,7 @@ export default function LandingPage() {
                 fontWeight: 600,
                 letterSpacing: '0.16em',
                 textTransform: 'uppercase',
-                color: '#7B2D26',
+                color: '#B7A98D',
                 marginBottom: '14px',
               }}
             >
@@ -948,12 +965,12 @@ export default function LandingPage() {
                 fontWeight: 500,
                 letterSpacing: '-0.02em',
                 lineHeight: 1.1,
-                color: '#1A1814',
+                color: '#F8F5EE',
                 marginBottom: '20px',
               }}
             >
               One buyer.{' '}
-              <span style={{ color: '#7B2D26' }}>Seven stores.</span>{' '}
+              <span style={{ color: '#B6512A' }}>Seven stores.</span>{' '}
               One pattern.
             </h2>
             <p
@@ -961,7 +978,7 @@ export default function LandingPage() {
                 fontFamily: 'var(--font-serif, serif)',
                 fontSize: 'clamp(16px, 1.2vw, 18px)',
                 lineHeight: 1.6,
-                color: '#4A4640',
+                color: '#D4C7AF',
                 marginBottom: '20px',
               }}
             >
@@ -969,7 +986,7 @@ export default function LandingPage() {
             </p>
 
             {/* Three stats inline */}
-            <div className="grid grid-cols-3 gap-6 mt-7 pt-6" style={{ borderTop: '1px solid rgba(123,45,38,0.12)' }}>
+            <div className="grid grid-cols-3 gap-6 mt-7 pt-6" style={{ borderTop: '1px solid rgba(212,199,175,0.24)' }}>
               {[
                 { v: 89,  prefix: '$', suffix: 'B', dec: 0, l: 'Lost annually to refund / INR fraud', n: 3 },
                 { v: 20,  prefix: '',  suffix: '%', dec: 0, l: 'Of DTC refund claims tied to repeat abusers', n: 4 },
@@ -981,7 +998,7 @@ export default function LandingPage() {
                       fontFamily: 'var(--font-dm-mono, monospace)',
                       fontSize: 'clamp(40px, 4.2vw, 72px)',
                       fontWeight: 500,
-                      color: '#1A1814',
+                      color: '#F8F5EE',
                       lineHeight: 1,
                       marginBottom: '8px',
                       fontVariantNumeric: 'tabular-nums',
@@ -990,14 +1007,14 @@ export default function LandingPage() {
                   >
                     <Counter value={s.v} prefix={s.prefix} suffix={s.suffix} decimals={s.dec} duration={1100} format="plain" />
                     <sup style={{ fontSize: '0.28em', letterSpacing: 0 }}>
-                      <a href={`#note-${s.n}`} style={{ color: '#7B2D26', textDecoration: 'none' }}>{s.n}</a>
+                      <a href={`#note-${s.n}`} style={{ color: '#B6512A', textDecoration: 'none' }}>{s.n}</a>
                     </sup>
                   </p>
                   <p
                     style={{
                       fontFamily: 'var(--font-dm-mono, monospace)',
                       fontSize: '10px',
-                      color: '#8A8472',
+                      color: '#B7A98D',
                       lineHeight: 1.4,
                       letterSpacing: '0.04em',
                       textTransform: 'uppercase',
@@ -1010,94 +1027,9 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Right: force-graph visualization — same buyer across 7 stores */}
+          {/* Right: rolling notifications — same buyer across 7 stores */}
           <Reveal className="lg:col-span-7" delay={140}>
-            <div
-              style={{
-                background: '#FDFBF6',
-                border: '1px solid #D8D0BD',
-                padding: '20px 22px',
-              }}
-            >
-              {/* Header row */}
-              <div className="flex items-baseline justify-between mb-4 flex-wrap gap-2">
-                <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10.5px', letterSpacing: '0.14em', textTransform: 'uppercase', color: '#8A8472', margin: 0 }}>
-                  ONE BUYER · 7 IDENTITIES
-                </p>
-                <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10.5px', color: '#8A8472', margin: 0 }}>
-                  → #u_kessler.07
-                </p>
-              </div>
-
-              {/* Force-style graph SVG */}
-              <svg
-                viewBox="0 0 560 380"
-                style={{ display: 'block', width: '100%', height: 'auto', maxHeight: 340 }}
-                aria-label="Identity graph: one buyer across 7 merchants"
-                role="img"
-              >
-                {/* Satellite nodes arranged in a circle of radius 140 around center 280,200 */}
-                {(() => {
-                  const cx = 280, cy = 200, r = 140;
-                  const merchants = [
-                    { name: 'your_store',   strong: true  },
-                    { name: 'merchant_04',  strong: true  },
-                    { name: 'merchant_02',  strong: true  },
-                    { name: 'merchant_07',  strong: true  },
-                    { name: 'merchant_03',  strong: false },
-                    { name: 'merchant_09',  strong: false },
-                    { name: 'merchant_05',  strong: false },
-                  ];
-                  const nodes = merchants.map((m, i) => {
-                    const angle = (2 * Math.PI * i) / merchants.length - Math.PI / 2;
-                    return { ...m, x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle) };
-                  });
-                  return (
-                    <g>
-                      {/* Connection lines */}
-                      {nodes.map((node) => (
-                        <line
-                          key={`line-${node.name}`}
-                          x1={cx} y1={cy}
-                          x2={node.x} y2={node.y}
-                          stroke={node.strong ? 'rgba(123,45,38,0.55)' : 'rgba(123,45,38,0.22)'}
-                          strokeWidth="1"
-                          strokeDasharray={node.strong ? undefined : '4 4'}
-                        />
-                      ))}
-                      {/* Central node */}
-                      <circle cx={cx} cy={cy} r={28} fill="none" stroke="rgba(123,45,38,0.18)" strokeWidth="1" />
-                      <circle cx={cx} cy={cy} r={16} fill="#7B2D26" />
-                      <text x={cx} y={cy + 34} textAnchor="middle" fill="#4A4640" fontFamily="var(--font-dm-mono, monospace)" fontSize="9.5" letterSpacing="0.04em">#u_kessler.07</text>
-                      {/* Satellite nodes */}
-                      {nodes.map((node) => (
-                        <g key={`node-${node.name}`}>
-                          <circle cx={node.x} cy={node.y} r={10} fill="#F8F5EE" stroke="#7B2D26" strokeWidth="1" />
-                          <text
-                            x={node.x}
-                            y={node.y + (node.y > cy ? 22 : -14)}
-                            textAnchor="middle"
-                            fill="#8A8472"
-                            fontFamily="var(--font-dm-mono, monospace)"
-                            fontSize="8.5"
-                            letterSpacing="0.02em"
-                          >
-                            {node.name.replace('merchant_', 'm_')}
-                          </text>
-                        </g>
-                      ))}
-                    </g>
-                  );
-                })()}
-              </svg>
-
-              {/* Legend */}
-              <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #ECE5D4', display: 'flex', flexDirection: 'column', gap: '4px', fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10.5px', color: '#8A8472', letterSpacing: '0.04em' }}>
-                <span>── card: ••4419</span>
-                <span>── addr_hash_91c2</span>
-                <span>·· INR pattern x3</span>
-              </div>
-            </div>
+            <HeroNotificationArtifact />
           </Reveal>
         </div>
       </section>
