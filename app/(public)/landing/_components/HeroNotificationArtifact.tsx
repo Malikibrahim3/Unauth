@@ -1,126 +1,202 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-
 import { cn } from '@/lib/utils';
 
-const notifications = [
-  { store: 'Kessler', title: 'Parcel not received', body: 'Tracking shows delivered. Customer says nothing arrived at the door.', tone: 'new dispute', time: '2m ago' },
-  { store: 'Midform', title: 'Missing item claim', body: 'Buyer says two items were missing from the parcel and wants a partial refund.', tone: 'refund requested', time: '5m ago' },
-  { store: 'Northrun', title: 'Wrong item sent', body: 'Complaint says the item inside the box does not match the checkout order.', tone: 'support escalation', time: '9m ago' },
-  { store: 'Prime & Co', title: 'Unauthorized purchase', body: 'Cardholder denies placing the order and says the transaction should be reversed.', tone: 'chargeback risk', time: '12m ago' },
-  { store: 'Oakshelf', title: 'Damaged on arrival', body: 'Customer says the product arrived broken and unusable on first open.', tone: 'refund requested', time: '16m ago' },
-  { store: 'Bridleworks', title: 'Duplicate charge', body: 'Buyer reports being charged twice for a single checkout session.', tone: 'billing dispute', time: '21m ago' },
+const complaints = [
+  {
+    store: 'Kessler',
+    handle: '@kessler',
+    title: 'Parcel not received',
+    body: 'Tracking shows delivered. Customer says nothing arrived at the door.',
+    tone: 'New dispute',
+  },
+  {
+    store: 'Midform',
+    handle: '@midform',
+    title: 'Missing item claim',
+    body: 'Buyer says two items were missing from the parcel and wants a partial refund.',
+    tone: 'Refund requested',
+  },
+  {
+    store: 'Northrun',
+    handle: '@northrun',
+    title: 'Wrong item sent',
+    body: 'Complaint says the item inside the box does not match the checkout order.',
+    tone: 'Support escalation',
+  },
+  {
+    store: 'Prime & Co',
+    handle: '@primeco',
+    title: 'Unauthorized purchase',
+    body: 'Cardholder denies placing the order and says the transaction should be reversed.',
+    tone: 'Chargeback risk',
+  },
+  {
+    store: 'Oakshelf',
+    handle: '@oakshelf',
+    title: 'Damaged on arrival',
+    body: 'Customer says the product arrived broken and unusable on first open.',
+    tone: 'Refund requested',
+  },
+  {
+    store: 'Bridleworks',
+    handle: '@bridleworks',
+    title: 'Duplicate charge',
+    body: 'Buyer reports being charged twice for a single checkout session.',
+    tone: 'Billing dispute',
+  },
+  {
+    store: 'Northrun',
+    handle: '@northrun',
+    title: 'Box arrived empty',
+    body: 'Customer says the package was sealed but had no product inside.',
+    tone: 'Manual review',
+  },
+  {
+    store: 'Kessler',
+    handle: '@kessler',
+    title: 'Item never turned up',
+    body: 'Support ticket says the courier marked it complete but nothing was received.',
+    tone: 'New dispute',
+  },
 ];
 
-const visibleCount = 5;
-const cardHeight = 124;
-const cardStep = 140;
-const intervalMs = 1800;
+const columns = [
+  complaints.slice(0, 4),
+  complaints.slice(2, 6),
+  complaints.slice(4, 8),
+];
 
-export default function HeroNotificationArtifact() {
-  const nextId = useRef(visibleCount);
-  const [items, setItems] = useState(() =>
-    Array.from({ length: visibleCount }, (_, index) => ({
-      id: index,
-      noteIndex: (notifications.length - index) % notifications.length,
-    })),
-  );
-
-  useEffect(() => {
-    const advance = () => {
-      setItems((current) => {
-        const nextNoteIndex = (current[0].noteIndex + 1) % notifications.length;
-        const incoming = { id: nextId.current, noteIndex: nextNoteIndex };
-
-        nextId.current += 1;
-
-        return [incoming, ...current].slice(0, visibleCount);
-      });
-    };
-
-    let timer: number | undefined;
-    const starter = window.setTimeout(() => {
-      advance();
-      timer = window.setInterval(advance, intervalMs);
-    }, 650);
-
-    return () => {
-      window.clearTimeout(starter);
-      if (timer !== undefined) window.clearInterval(timer);
-    };
-  }, []);
+function ComplaintCard({
+  store,
+  handle,
+  title,
+  body,
+  tone,
+}: {
+  store: string;
+  handle: string;
+  title: string;
+  body: string;
+  tone: string;
+}) {
+  const initials = store
+    .split(' ')
+    .map((part) => part[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
 
   return (
-    <div className="relative min-h-[560px] overflow-hidden" data-notification-artifact="incoming-feed">
-      <style>{`
-        @keyframes ua-notification-arrive {
-          0% {
-            opacity: 0.58;
-            transform: translate3d(0, -18px, 0) scale(0.96);
-            box-shadow: 0 4px 20px -20px rgba(26,24,20,0.18);
-          }
-          62% {
-            opacity: 1;
-            transform: translate3d(0, 4px, 0) scale(1.025);
-          }
-          100% {
-            opacity: 1;
-            transform: translate3d(0, 0, 0) scale(1);
-            box-shadow: 0 18px 42px -24px rgba(26,24,20,0.55);
-          }
-        }
-
-        .ua-live-notification-card {
-          transition:
-            top 380ms cubic-bezier(0.22, 1, 0.36, 1),
-            opacity 420ms ease,
-            filter 420ms ease,
-            transform 220ms ease,
-            box-shadow 220ms ease,
-            background-color 220ms ease;
-          will-change: top, opacity;
-        }
-
-        .ua-live-notification-card.is-new {
-          animation: ua-notification-arrive 560ms cubic-bezier(0.22, 1, 0.36, 1);
-        }
-      `}</style>
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_52%_18%,rgba(142,51,42,0.10),transparent_42%)]" />
-      <div className="relative mx-auto h-[414px] w-full overflow-hidden [mask-image:linear-gradient(to_bottom,transparent,black_7%,black_90%,transparent)]">
-        <div className="absolute inset-x-0 top-4 mx-auto h-full w-full">
-          {items.map((item, index) => {
-            const note = notifications[item.noteIndex];
-
-            return (
-              <figure
-                key={item.id}
-                className={cn(
-                  'ua-live-notification-card absolute inset-x-0 mx-auto h-[124px] w-[min(92%,560px)] overflow-hidden rounded-xl border border-[#D8D0BD] bg-[#FDFBF6] p-4',
-                  'shadow-[0_18px_42px_-24px_rgba(26,24,20,0.55)] backdrop-blur-[2px]',
-                  'hover:z-20 hover:scale-[1.035] hover:bg-[#FFFDF8] hover:shadow-[0_24px_50px_-24px_rgba(26,24,20,0.62)]',
-                  index === 0 && 'is-new',
-                  index === visibleCount - 1 && 'opacity-35 blur-[0.35px]',
-                )}
-                style={{
-                  height: cardHeight,
-                  top: index * cardStep,
-                  zIndex: visibleCount - index,
-                }}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <figcaption className="text-sm font-medium text-[#1A1814]">{note.title}</figcaption>
-                    <p className="mt-1 text-[10.5px] uppercase tracking-[0.16em] text-[#8A8472]">{note.store} · {note.time}</p>
-                  </div>
-                  <span className="shrink-0 rounded-full bg-white px-2 py-1 text-[10px] uppercase tracking-[0.08em] text-[#7B2D26]">{note.tone}</span>
-                </div>
-                <blockquote className="mt-2 text-xs leading-5 text-[#5D574D]">{note.body}</blockquote>
-              </figure>
-            );
-          })}
+    <figure
+      className={cn(
+        'relative w-[208px] cursor-pointer overflow-hidden rounded-xl border px-4 py-4',
+        'border-[#D8D0BD] bg-[rgba(253,251,246,0.94)] shadow-[0_20px_44px_-26px_rgba(0,0,0,0.42)]',
+        'transition-transform duration-300 ease-out hover:scale-[1.05] hover:bg-[#FFFDF8]',
+      )}
+    >
+      <div className="flex items-center gap-2">
+        <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#7B2D26] text-[10px] font-medium uppercase tracking-[0.08em] text-[#F8F5EE]">
+          {initials}
+        </div>
+        <div className="min-w-0">
+          <figcaption className="truncate text-[13px] font-medium text-[#1A1814]">{store}</figcaption>
+          <p className="truncate text-[10px] uppercase tracking-[0.14em] text-[#8A8472]">{handle}</p>
         </div>
       </div>
+      <p className="mt-3 text-[15px] font-medium leading-5 text-[#1A1814]">{title}</p>
+      <blockquote className="mt-2 text-[12.5px] leading-6 text-[#5D574D]">{body}</blockquote>
+      <p className="mt-3 text-[10px] uppercase tracking-[0.14em] text-[#7B2D26]">{tone}</p>
+    </figure>
+  );
+}
+
+function MarqueeColumn({
+  items,
+  reverse = false,
+  duration = 22,
+}: {
+  items: typeof complaints;
+  reverse?: boolean;
+  duration?: number;
+}) {
+  const repeated = [...items, ...items];
+
+    return (
+    <div className="relative h-[396px] w-[208px] overflow-hidden">
+      <div
+        className={cn('ua-complaint-marquee flex flex-col gap-4', reverse && 'ua-complaint-marquee-reverse')}
+        style={{ ['--ua-duration' as string]: `${duration}s` }}
+      >
+        {repeated.map((item, index) => (
+          <ComplaintCard
+            key={`${item.store}-${item.title}-${index}`}
+            store={item.store}
+            handle={item.handle}
+            title={item.title}
+            body={item.body}
+            tone={item.tone}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default function HeroNotificationArtifact() {
+  return (
+    <div className="relative flex h-[500px] w-full items-center justify-end overflow-hidden [perspective:1400px]">
+      <style>{`
+        @keyframes ua-complaints-scroll {
+          from {
+            transform: translateY(0);
+          }
+          to {
+            transform: translateY(calc(-50% - 8px));
+          }
+        }
+
+        @keyframes ua-complaints-scroll-reverse {
+          from {
+            transform: translateY(calc(-50% - 8px));
+          }
+          to {
+            transform: translateY(0);
+          }
+        }
+
+        .ua-complaint-marquee {
+          animation: ua-complaints-scroll var(--ua-duration) linear infinite;
+          will-change: transform;
+        }
+
+        .ua-complaint-marquee:hover {
+          animation-play-state: paused;
+        }
+
+        .ua-complaint-marquee-reverse {
+          animation-name: ua-complaints-scroll-reverse;
+        }
+      `}</style>
+
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_62%_28%,rgba(182,81,42,0.18),transparent_38%)]" />
+      <div className="pointer-events-none absolute right-6 top-1/2 h-[392px] w-[720px] -translate-y-1/2 rounded-[28px] border border-[#2C2921] bg-[linear-gradient(180deg,rgba(32,30,25,0.42),rgba(18,17,14,0.12))]" />
+      <div
+        className="relative mr-4 flex flex-row items-start gap-5"
+        style={{
+          transform:
+            'translateX(-10px) translateY(34px) translateZ(0) rotateX(10deg) rotateY(-11deg) rotateZ(6deg)',
+        }}
+      >
+        <MarqueeColumn items={columns[0]} duration={30} />
+        <MarqueeColumn items={columns[1]} reverse duration={34} />
+        <MarqueeColumn items={columns[2]} duration={32} />
+      </div>
+
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-[#15140F] via-[#15140F]/54 to-transparent" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#15140F] via-[#15140F]/86 to-transparent" />
+      <div className="pointer-events-none absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-[#15140F] via-[#15140F]/78 to-transparent" />
+      <div className="pointer-events-none absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-[#15140F] via-[#15140F]/72 to-transparent" />
     </div>
   );
 }

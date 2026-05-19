@@ -170,7 +170,7 @@ export default function LandingPage() {
       </header>
 
       {/* ── Hero ────────────────────────────────────────────────── */}
-      <section className="ua-hero-canvas ua-parallax-field mx-auto max-w-[1400px] px-6 md:px-10 pt-6 md:pt-8 pb-0" data-ua-parallax-depth="34">
+      <section className="ua-hero-canvas ua-parallax-field w-full overflow-hidden px-6 md:px-10 lg:px-0 pt-6 md:pt-8 pb-0" data-ua-parallax-depth="34">
         {/* DotPattern — precision grid atmosphere, masked to top-right quadrant */}
         <DotPattern
           width={32} height={32} cx={1} cy={1} cr={1.1}
@@ -180,10 +180,10 @@ export default function LandingPage() {
         <Spotlight fill="rgba(123,45,38,0.18)" className="-z-10" />
 
         {/* Side-by-side grid at lg+ */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(430px,560px)_minmax(0,1fr)] gap-8 lg:gap-10 items-start lg:pl-[max(2.5rem,calc((100vw-1400px)/2+2.5rem))]">
 
         {/* Left — copy block */}
-        <Reveal delay={40} className="lg:col-span-4 lg:pt-6">
+        <Reveal delay={40} className="lg:pt-6">
           {/* Eyebrow */}
           <p
             style={{
@@ -290,7 +290,7 @@ export default function LandingPage() {
         </Reveal>
 
         {/* Right — large product artifact */}
-        <Reveal as="div" className="ua-hero-stage relative mt-10 md:mt-14 lg:mt-0 lg:col-span-8 lg:-mr-[10vw]" delay={180} noFade>
+        <Reveal as="div" className="ua-hero-stage relative mt-10 md:mt-14 lg:mt-0" delay={180} noFade>
             {/* Floating eyebrow above artifact */}
             <div
               className="flex items-center justify-between mb-3"
@@ -308,7 +308,7 @@ export default function LandingPage() {
               <span>Cluster #u_kessler.07</span>
             </div>
 
-            <div className="lg:w-[138%] lg:max-h-[520px] overflow-hidden">
+            <div className="lg:w-full lg:max-h-[520px] overflow-hidden">
               <div
                 className="ua-hover-glow ua-case-card ua-premium-surface ua-parallax-layer"
                 data-ua-parallax-depth="-12"
