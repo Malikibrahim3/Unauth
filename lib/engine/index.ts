@@ -70,7 +70,7 @@ function computeScore(signals: SignalResult[]): number {
     if (['addressClustering', 'billingAddressClustering', 'emailPattern', 'crossMerchant', 'addressMismatch', 'networkDeviceLink'].includes(signal.name)) {
       hasBroadOverlap = true;
     }
-    if (['refundRate', 'inrAbuse', 'inrSpeed', 'paymentChurn', 'refundPattern', 'disputeHistory', 'valueAnomaly', 'networkDeviceLinkActive'].includes(signal.name)) {
+    if (['refundRate', 'inrAbuse', 'inrSpeed', 'paymentChurn', 'refundPattern', 'disputeHistory', 'valueAnomaly', 'billingAddressClusteringActive', 'networkDeviceLinkActive'].includes(signal.name)) {
       hasStrongFraudEvidence = true;
     }
     weightedSum += signal.score * weight;

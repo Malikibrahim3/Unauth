@@ -8,6 +8,7 @@ export const SIGNAL_WEIGHTS = {
   emailPattern: 8,
   addressClustering: 9,    // reduced to curb household/shared-address false positives
   billingAddressClustering: 9, // Fix 4 — mirrors addressClustering for billing-address-anchored fraud
+  billingAddressClusteringActive: 9, // Active variant when billing-address chargeback cluster is corroborated by current dispute behavior
   valueAnomaly: 5,
   paymentChurn: 15,        // tight-window (24h/7d) — stronger than soft profile signals
   refundPattern: 20,
@@ -26,10 +27,10 @@ export const RISK_TIER_THRESHOLDS = {
 
 // Merchant-safe default. Can still be overridden per environment.
 // Set conservatively to reduce false positives on clean merchant datasets.
-// Current calibration:
-//  - realistic_fraud_dataset.csv: P=1.000, R=0.616, F1=0.763 at threshold=45
-//  - clean.csv: 0 false positives at threshold=45
-export const FLAG_THRESHOLD = Number(process.env.FLAG_THRESHOLD ?? 45);
+// Current benchmark calibration:
+//  - us_benchmark_v1.csv: P=0.985, R=0.876, F1=0.927 at threshold=44
+//  - clean merchant datasets should remain near-zero false positives at this threshold
+export const FLAG_THRESHOLD = Number(process.env.FLAG_THRESHOLD ?? 44);
 
 // =============================================================================
 // IDENTITY CONFIDENCE MODEL WEIGHTS

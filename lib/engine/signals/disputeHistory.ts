@@ -50,7 +50,7 @@ export const disputeHistory: Signal = (order: NormalisedOrder, context: ScoringC
   // single prior refund treats normal customers as fraud. We now require:
   //   - chargebacks: always fire (rare and strongly fraud-correlated)
   //   - refund/return requests: ≥2 events AND dispute rate above threshold
-  //   - rate >0.40 → full weight (score 60); 0.25-0.40 → half (score 30)
+  //   - rate >0.40 with ≥3 events → full weight (score 60); otherwise 0.25+ → half (score 30)
   let score = 0;
   const reasons: string[] = [];
 
@@ -63,7 +63,7 @@ export const disputeHistory: Signal = (order: NormalisedOrder, context: ScoringC
     reasons.push(`${priorChargebacks} prior chargeback${priorChargebacks > 1 ? 's' : ''}`);
   }
 
-  if (softDisputeEvents >= 2 && softDisputeRate > 0.40) {
+  if (softDisputeEvents >= 3 && softDisputeRate > 0.40) {
     score = Math.max(score, softDisputeEvents >= 4 ? 80 : 60);
     reasons.push(
       `${softDisputeEvents} prior dispute event${softDisputeEvents > 1 ? 's' : ''} ` +

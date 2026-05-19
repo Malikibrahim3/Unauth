@@ -10,6 +10,7 @@ export const SIGNAL_DESCRIPTIONS: Record<SignalName, string> = {
   emailPattern: "Disposable or aliased email patterns",
   addressClustering: "Multiple emails shipping to the same address",
   billingAddressClustering: "Multiple emails linked through billing-address dispute history",
+  billingAddressClusteringActive: "Billing-address chargeback cluster with current dispute behavior",
   valueAnomaly: "Order value far outside the customer's norm",
   paymentChurn: "Tight-window payment-method churn",
   refundPattern: "Historical refund-pattern intelligence",

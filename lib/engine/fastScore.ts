@@ -523,7 +523,7 @@ function disputeHistory(order: NormalisedOrder, ctx: FastScoringContext): Signal
     reasons.push(`${priorChargebacks} prior chargeback${priorChargebacks > 1 ? 's' : ''}`);
   }
 
-  if (softDisputeEvents >= 2 && softDisputeRate > 0.40) {
+  if (softDisputeEvents >= 3 && softDisputeRate > 0.40) {
     score = Math.max(score, softDisputeEvents >= 4 ? 80 : 60);
     reasons.push(
       `${softDisputeEvents} prior dispute event${softDisputeEvents > 1 ? 's' : ''} ` +

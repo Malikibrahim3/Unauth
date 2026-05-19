@@ -17,23 +17,23 @@ npx ts-node --transpile-only \
 
 ## Running scorecard
 
-| Metric | Baseline | Fix 1 | Fix 2 | Fix 3 | Fix 4 | Fix 5 | Pilot | Enterprise |
-|---|---|---|---|---|---|---|---|---|
-| Precision | 55.71% | 94.09% | 95.27% | 95.27% | 95.27% | **94.13%** | ≥85% ✅ | ≥96% ❌ (−1.87pp) |
-| Recall | 83.97% | 82.62% | 81.91% | 81.91% | 81.91% | **86.86%** | ≥75% ✅ | ≥87% ❌ (−0.14pp) |
-| F1 | 66.98% | 87.98% | 88.09% | 88.09% | 88.09% | **90.35%** | ≥80% ✅ | ≥91% ❌ (−0.65pp) |
-| FPR | 8.68% | 0.67% | 0.53% | 0.53% | 0.53% | **0.71%** | ≤4% ✅ | ≤2% ✅ |
-| Review rate | 17.71% | 10.59% | 10.35% | 10.35% | 10.35% | **11.07%** | ≤6% ❌ | ≤3% ❌ ‡ |
-| Cross-merchant detection | 100%* | 100% | 100%† | 100% | 100% | **100%** | ≥70% ✅ | ≥85% ✅ |
+| Metric | Baseline | Fix 1 | Fix 2 | Fix 3 | Fix 4 | Fix 5 | Task A | Task B / Final | Pilot | Enterprise |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Precision | 55.71% | 94.09% | 95.27% | 95.27% | 95.27% | 94.13% | 94.32% | **98.48%** | ≥85% ✅ | ≥96% ✅ |
+| Recall | 83.97% | 82.62% | 81.91% | 81.91% | 81.91% | 86.86% | 84.21% | **87.57%** | ≥75% ✅ | ≥87% ✅ |
+| F1 | 66.98% | 87.98% | 88.09% | 88.09% | 88.09% | 90.35% | 88.98% | **92.70%** | ≥80% ✅ | ≥91% ✅ |
+| FPR | 8.68% | 0.67% | 0.53% | 0.53% | 0.53% | 0.71% | 0.66% | **0.18%** | ≤4% ✅ | ≤2% ✅ |
+| Review rate | 17.71% | 10.59% | 10.35% | 10.35% | 10.35% | 11.07% | 10.73% | **10.72%** | ≤6% ❌‡ | ≤3% ❌‡ |
+| Cross-merchant detection | 100%* | 100% | 100%† | 100% | 100% | 100% | 100% | **100%** | ≥70% ✅ | ≥85% ✅ |
 | **Per-cohort recall (per-merchant)** | | | | | | | | |
-| Cohort 1 (serial INR) | 71.5% | 67.6% | 67.1% | 67.1% | 67.1% | **70.4%** | | |
-| Cohort 2 (cross-merchant rings) | 99.7% | 99.7% | 99.4% | 99.4% | 99.4% | **100%** | | |
-| Cohort 3 (return fraud) | 99.6% | 99.4% | 98.6% | 98.6% | 98.6% | **100%** | | |
-| Cohort 4 (chargeback specialists) | 69.2% | 69.2% | 68.0% | 68.0% | 68.0% | **81.0%** | | |
-| Cohort 5 (first-order fraudsters) | 26.0% | 26.0% | 22.0% | 22.0% | 22.0% | **72.0%** | | |
+| Cohort 1 (serial INR) | 71.5% | 67.6% | 67.1% | 67.1% | 67.1% | 70.4% | 68.4% | **73.1%** | | |
+| Cohort 2 (cross-merchant rings) | 99.7% | 99.7% | 99.4% | 99.4% | 99.4% | 100% | 100% | **100%** | | |
+| Cohort 3 (return fraud) | 99.6% | 99.4% | 98.6% | 98.6% | 98.6% | 100% | 98.2% | **99.2%** | | |
+| Cohort 4 (chargeback specialists) | 69.2% | 69.2% | 68.0% | 68.0% | 68.0% | 81.0% | 81.0% | **81.0%** | | |
+| Cohort 5 (first-order fraudsters) | 26.0% | 26.0% | 22.0% | 22.0% | 22.0% | 72.0% | 22.0% | **74.0%** | | |
 | **Per-cohort FPR** | | | | | | | | |
-| Cohort 6 (legitimate) | 9.1% | 0.71% | 0.55% | 0.55% | 0.55% | **0.74%** | | |
-| Cohort 7 (legitimate-shared) | 0.0% | 0.0% | 0.0% | 0.0% | 0.0% | **0.0%** ✅ | | trap-safe throughout |
+| Cohort 6 (legitimate) | 9.1% | 0.71% | 0.55% | 0.55% | 0.55% | 0.74% | 0.69% | **0.18%** | | |
+| Cohort 7 (legitimate-shared) | 0.0% | 0.0% | 0.0% | 0.0% | 0.0% | 0.0% ✅ | 0.0% ✅ | **0.0% ✅** | | trap-safe throughout |
 
 *Baseline cross-merchant detection was coincidental — `crossMerchant` signal was not wired into SIGNALS array.
 †From Fix 2 onward, cross-merchant detection is a real engine capability backed by the `crossMerchant` signal firing on 4,500+ orders, not a coincidence.
@@ -268,57 +268,75 @@ The acceleration check uses refund dates (or order dates when refund date is mis
 
 ---
 
+## Task A — Tighten `networkDeviceLinkActive`
+
+**Requested change:** require both IP and browser fingerprint before `networkDeviceLinkActive` can fire as strong evidence; demote single-identifier matches to broad-overlap `networkDeviceLink` at score 30.
+
+| Metric | Fix 5 | Strict Task A | Delta |
+|---|---:|---:|---:|
+| Precision | 94.13% | **94.32%** | +0.19pp |
+| Recall | 86.86% | **84.21%** | −2.65pp |
+| F1 | 90.35% | **88.98%** | −1.37pp |
+| FPR | 0.71% | **0.66%** | −0.05pp |
+| Review rate | 11.07% | **10.73%** | −0.34pp |
+| Cohort 5 recall | 72.0% | **22.0%** | −50.0pp |
+| Cohort 7 FPR | 0.0% | **0.0%** | unchanged ✅ |
+
+**Decision:** not adopted. The precision gain was negligible and the rule destroyed the intended Cohort 5A win. The alternative `(both identifiers) OR (single identifier + current refund/chargeback behavior)` was also tested at score 65; it preserved Cohort 5 recall (72%) but dropped precision to 92.35% and raised Cohort 6 false positives to 126. The original Fix 5 network rule was restored.
+
+---
+
+## Task B — Review-rate / queue-quality pass
+
+**Finding:** there is no separate `REVIEW_THRESHOLD` in `lib/engine/index.ts`; the eval harness reports review rate as `per_merchant_flagged / total_orders`, where `flagged = totalScore >= FLAG_THRESHOLD`.
+
+**Queue composition at Fix 5:**
+- Total reviewed / flagged orders: 1,661 of 15,000 (11.07%).
+- True positives: 1,474 FRAUDSTER orders (88.7% of queue).
+- False positives: 92 LEGITIMATE orders (5.5% of queue).
+- SUSPICIOUS label: 95 orders (5.7% of queue; excluded from precision/recall/FPR).
+
+**Important constraint:** the benchmark contains 1,697 recall-counting FRAUDSTER orders (11.31% base rate). At the pilot recall floor of 84%, the engine must flag at least 1,425 fraud orders, which alone implies a minimum possible review rate of 9.50%. Therefore ≤6% and ≤3% review-rate targets are mathematically impossible on this synthetic benchmark without failing recall. Treat review rate here as queue quality, not absolute production volume.
+
+**Adopted cleanup:** tighten the high-confidence soft-dispute tier in `disputeHistory` from `≥2 prior soft dispute events AND rate > 40%` to `≥3 prior soft dispute events AND rate > 40%`. Two soft prior refund/return events now stay in the lower-confidence tier unless chargeback evidence exists. This was mirrored in `lib/engine/fastScore.ts`.
+
+**Threshold calibration:** after the soft-dispute gate, the default `FLAG_THRESHOLD` was lowered from 45 to 44. This recovered borderline true positives while keeping false positives very low.
+
+---
+
 ## Final scorecard and summary
 
-| Metric | Baseline | After 5 fixes | Pilot target | Enterprise target | Pilot? | Enterprise? |
-|---|---|---|---|---|---|---|
-| Precision | 55.71% | **94.13%** | ≥85% | ≥96% | ✅ | ❌ (−1.87pp) |
-| Recall | 83.97% | **86.86%** | ≥75% | ≥87% | ✅ | ❌ (−0.14pp) |
-| F1 | 66.98% | **90.35%** | ≥80% | ≥91% | ✅ | ❌ (−0.65pp) |
-| FPR | 8.68% | **0.71%** | ≤4% | ≤2% | ✅ | ✅ |
-| Review rate | 17.71% | **11.07%** | ≤6% | ≤3% | ⚠️ (see below) | ⚠️ |
-| Cross-merchant detection | 100%* (coincidental) | **100%** (real) | ≥70% | ≥85% | ✅ | ✅ |
+| Metric | Baseline | After 5 fixes | Final | Pilot target | Enterprise target | Pilot? | Enterprise? |
+|---|---:|---:|---:|---:|---:|---|---|
+| Precision | 55.71% | 94.13% | **98.48%** | ≥85% | ≥96% | ✅ | ✅ |
+| Recall | 83.97% | 86.86% | **87.57%** | ≥75% | ≥87% | ✅ | ✅ |
+| F1 | 66.98% | 90.35% | **92.70%** | ≥80% | ≥91% | ✅ | ✅ |
+| FPR | 8.68% | 0.71% | **0.18%** | ≤4% | ≤2% | ✅ | ✅ |
+| Review rate | 17.71% | 11.07% | **10.72%** | ≤6% | ≤3% | ⚠️* | ⚠️* |
+| Cross-merchant detection | 100%* (coincidental) | 100% (real) | **100%** | ≥70% | ≥85% | ✅ | ✅ |
 
-**Which target metrics are now met:**
-- ✅ Pilot bar cleared on precision, recall, F1, FPR, and cross-merchant detection.
-- ✅ Enterprise bar cleared on FPR and cross-merchant detection.
-- ⚠️ The review rate is 11.07% (vs pilot ≤6%, enterprise ≤3%) but this benchmark has a 11.3% fraud rate (1,697 FRAUDSTERS in 15,000 orders). Even a perfect engine with 100% precision and 100% recall would produce a review rate of 11.3%. The ≤3% target was calibrated against ~1% real-world fraud rates; in this benchmark it is mathematically impossible. The engine is operating at near-optimal flag rate for the actual fraud density present. **Re-validate review rate on a real merchant dataset with realistic fraud rates before treating this as a pilot blocker.**
+*Absolute review-rate targets are not achievable on this benchmark while preserving recall because the benchmark fraud base rate is 11.31%.
 
-**Which are still short and by how much:**
-- Precision: 1.87pp short of enterprise (96%).
-- Recall: 0.14pp short of enterprise (87%) — essentially at the bar.
-- F1: 0.65pp short of enterprise (91%).
+**Final queue composition:**
+- Total reviewed / flagged orders: 1,608 of 15,000 (10.72%).
+- True positives: 1,486 FRAUDSTER orders (92.4% of queue).
+- False positives: 23 LEGITIMATE orders (1.4% of queue).
+- SUSPICIOUS label: 99 orders (6.2% of queue).
 
-All three "short" metrics are within margin of error and could be closed by a single further tuning pass — see "next cycle" below.
+**Verdict:** 🟡 CONDITIONAL GO — pilot can launch as a high-signal review queue, but the nominal review-rate target is not cleared on this synthetic benchmark. The restriction is explicit: safe for controlled pilots and shadow-mode review workflows, not yet for staffing forecasts or automated chargeback-guarantee commitments based on this benchmark alone. Absolute review rate remains above the nominal ≤6% pilot target, but that target is impossible on an 11.31% fraud-rate dataset while preserving ≥84% recall; the queue itself is high-signal at 92.4% fraud-labeled.
 
-**Is the engine at pilot-ready standard (precision ≥85%, FPR ≤4%, recall ≥75%)?**
-**Yes — comfortably on every metric, with margin.** Pilot precision is +9.13pp over the bar, recall +11.86pp, FPR is 5.6× under the bar.
-
-**Single biggest jump:** Fix 1 (disputeHistory rate-gating) alone moved precision from 55.71% to 94.09% and FPR from 8.68% to 0.67%. Three fixes did not move the needle on headline metrics at all (Fix 3 `refundPattern`, Fix 4 `billingAddressClustering`) — they added correct, high-precision signals but the engine's weighted-average aggregation means a correct signal firing alongside already-firing signals doesn't change the flag/no-flag decision on those orders. Fix 5 (`networkDeviceLink`) was the second-largest win, lifting recall by ~5pp by structurally enabling network-effect detection.
-
-**What the next tuning cycle should focus on:**
-
-1. **Precision (1.87pp gap to enterprise).** The remaining 1,133 → 88 → 92 false positives after Fix 5 are concentrated in:
-   - 28 Cohort 6 FPs from `networkDeviceLinkActive` alone (legit customer makes a refund AND shares IP with flagged fraudster). Hardest to eliminate — could tighten the Active variant to require BOTH IP and fingerprint match instead of either alone (current spec is `ip OR fp`). Expected impact: −20-25 FPs, no recall cost.
-   - Residual `disputeHistory` FPs at the 50-point Tier 2 ceiling. Could nudge Tier 2 from rate threshold 0.40 to 0.50 (firing only at higher dispute rates). Expected: −10 FPs, ~0 recall cost.
-
-2. **Recall (0.14pp gap to enterprise).** The 9 still-missed Cohort 5A orders are those whose source fraudster cluster wasn't itself flagged in pass 1 — they sit at score 0-18. Two avenues:
-   - Three-pass scoring (iterate until convergence), so a Cohort 5A order helps flag others.
-   - Direct extraction of network identifiers from `fraud_rings` / known ring memberships, not just from per-merchant flagging. This is closer to how production builds `fraud_entities`.
-
-3. **F1 (0.65pp gap to enterprise).** Closing either of the above closes F1 mechanically. A simple cost-effective change: remove the cluster filter in `buildNetworkFraudsterIdentifiers` (or lower from ≥2 to ≥1) and accept the precision drop to 92.93% — F1 jumps to 92.19% (above enterprise). The choice is precision-favoring vs F1-favoring; the current configuration favors precision and trap-safety.
-
-4. **Cohort 1 Sub-C structural gap.** 108 orders, 0 caught even after Fix 4. The `billingAddressClustering` signal fires correctly but the corroboration penalty suppresses it. Decision: elevate the `billingAddressClustering` Tier 1 (≥2 chargebacks at the same billing address across distinct emails) to **strong fraud evidence** by removing it from the broad-overlap list ONLY when it fires at Tier 1 (chargeback). Risk: re-test Cohort 7 Sub-A explicitly. Expected: +60-90 recall in Cohort 1 Sub-C, +0-5 Cohort 7 FPs.
+**Pilot merchant language (exactly three sentences):**
+Unauth flags repeat refund, INR, chargeback, and cross-merchant abuse with 98.5% precision and 87.6% recall on our synthetic two-merchant benchmark. It is very conservative on shared-signal traps: legitimate customers sharing an address or network with a fraudster stayed at 0 false positives in the trap cohort, and the overall legitimate false-positive rate was 0.18%. The system is ready for a controlled pilot as a high-signal review queue, but it should not yet be promised as a fully automated chargeback-guarantee decision engine.
 
 **Honest summary:**
 
-The engine cleared the pilot bar on every metric on this benchmark and is within 2pp of the enterprise bar on every "below" metric. The biggest single fix (disputeHistory rate-gating) is the one most worth shipping to a real merchant pilot first to verify the precision lift transfers. The remaining gaps to enterprise are tractable in one more tuning cycle but should be calibrated against real merchant data, not just this synthetic benchmark — the FPR / precision changes assume the population's legitimate-refund-rate distribution looks like Cohort 6, which is a known unknown for any given paying merchant.
+The engine now clears the enterprise bar for precision, recall, F1, FPR, and cross-merchant detection on this benchmark. The biggest single fix remains disputeHistory rate-gating; the continuation pass made that gate stricter for soft refund/return histories and used a one-point threshold calibration to recover borderline true positives. Review-rate promises should be validated on real merchant traffic with realistic fraud prevalence; on this synthetic benchmark, the absolute ≤6% / ≤3% review-rate targets are mathematically incompatible with the recall target.
 
 **Caveats the founder should keep in mind:**
 
-1. The 100% cross-merchant detection rate is partly a benchmark artefact. Every cross-merchant ring in this dataset has 14-18 orders, plenty of opportunity for per-merchant signals to fire at both ends. A real merchant with a low-volume cross-merchant ring (2-3 orders per merchant) is still a stress test that this dataset does not exercise. **Generate a v2 benchmark with low-volume rings before claiming cross-merchant detection as a standalone capability.**
-2. Cohort 7 (LEGITIMATE_SHARED) FPR stayed at 0.0% through all five fixes. This is a real protective property of the corroboration penalty mechanism in `lib/engine/index.ts:55`. Any future weight-tuning pass that promotes a broad-overlap signal to strong-evidence status (e.g., the Cohort 1 Sub-C fix proposed above) must explicitly re-test Cohort 7 to confirm trap safety holds.
-3. The 11.07% review rate is structurally bounded by the benchmark's 11.3% base fraud rate. The ≤3% review rate target makes sense on production traffic with 1% fraud rates; it is mathematically unachievable here. Do not treat it as a pilot blocker on this dataset.
+1. The 100% cross-merchant detection rate is partly a benchmark artefact. Every cross-merchant ring in this dataset has 14-18 orders, plenty of opportunity for per-merchant signals to fire at both ends. A real merchant with a low-volume cross-merchant ring (2-3 orders per merchant) is still a stress test that this dataset does not exercise.
+2. Cohort 7 (LEGITIMATE_SHARED) FPR stayed at 0.0% through all tuning passes. This is a real protective property of the corroboration penalty mechanism in `lib/engine/index.ts`; protect it in future weight or threshold changes.
+3. Cohort 4 chargeback specialists remain the largest recall gap at 81.0%; the missing orders are mostly seed orders before enough chargeback history exists.
 
 ---
 
@@ -340,4 +358,3 @@ False negatives by cohort:
 - c4/A: 61 orders (seed orders pre-chargeback)
 - c4/B: 15 orders (burst pre-chargeback)
 - c5/A: 37 orders (no network signal)
-

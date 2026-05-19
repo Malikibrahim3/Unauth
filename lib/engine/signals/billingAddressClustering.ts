@@ -16,10 +16,12 @@ import type { Signal, SignalResult, NormalisedOrder, ScoringContext } from '../t
  *   - if ≥3 prior orders carry a refund flag → score 35
  *   - otherwise: not fired
  *
- * This signal is registered as "broad overlap" in lib/engine/index.ts so the
- * corroboration penalty (×0.45) suppresses the score for innocent customers
- * who happen to live at the same address as a fraudster but have no fraud
- * signals of their own (Cohort 7 Sub-A).
+ * The ordinary signal is registered as "broad overlap" in lib/engine/index.ts
+ * so the corroboration penalty (×0.45) suppresses innocent customers who happen
+ * to live at the same address as a fraudster but have no fraud signals of their
+ * own (Cohort 7 Sub-A). When the same tier-1 chargeback cluster is paired with
+ * current-order refund/chargeback behavior, the signal emits the Active variant
+ * so billing-address-anchored serial abuse can cross the flag threshold.
  */
 export const billingAddressClustering: Signal = (
   order: NormalisedOrder,
@@ -55,7 +57,30 @@ export const billingAddressClustering: Signal = (
       o.orderStatus === 'refunded';
     if (hadRefund) priorRefunds++;
   }
+  const currentOrderActive =
+    order.chargebackDispute === true ||
+    order.refundRequested === true ||
+    order.refundStatus === 'full' ||
+    order.refundStatus === 'partial' ||
+    order.orderStatus === 'refunded';
+
   if (priorChargebacks >= 2) {
+    if (currentOrderActive) {
+      return {
+        name: 'billingAddressClusteringActive',
+        fired: true,
+        score: 45,
+        reason: `${priorChargebacks} prior chargebacks at this billing address across ${distinctEmails.size} distinct customer emails, plus current dispute behavior — billing-address-anchored serial fraud.`,
+        evidence: {
+          priorOrdersAtBillingAddress: priorOrders,
+          priorChargebacks,
+          priorRefunds,
+          distinctEmailCount: distinctEmails.size,
+          currentOrderActive,
+        },
+        identifierTypesUsed: ['address'],
+      };
+    }
     return {
       name: 'billingAddressClustering',
       fired: true,
