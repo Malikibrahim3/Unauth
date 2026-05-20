@@ -72,7 +72,7 @@ export default function NetworkMetricsCharts({ snapshots }: Props) {
             <YAxis tick={{ fontSize: 11 }} />
             <Tooltip />
             <Legend />
-            <Line type="monotone" dataKey="total" name="Total identities" stroke="var(--accent, #2563EB)" dot={false} />
+            <Line type="monotone" dataKey="total" name="Total identities" stroke="var(--accent, #7B2D26)" dot={false} />
             <Line type="monotone" dataKey="kanon" name="k-anon satisfied (3+)" stroke="var(--success, #2F6B43)" dot={false} />
           </LineChart>
         </ResponsiveContainer>
@@ -114,8 +114,8 @@ export default function NetworkMetricsCharts({ snapshots }: Props) {
             <YAxis tick={{ fontSize: 11 }} />
             <Tooltip />
             <Legend />
-            <Bar dataKey="merchants" name="Active merchants (30d)" fill="var(--accent, #2563EB)" />
-            <Bar dataKey="uploads" name="Uploads (30d)" fill="var(--info, #2563EB)" />
+            <Bar dataKey="merchants" name="Active merchants (30d)" fill="var(--accent, #7B2D26)" />
+            <Bar dataKey="uploads" name="Uploads (30d)" fill="var(--info, #415A72)" />
           </BarChart>
         </ResponsiveContainer>
       </div>

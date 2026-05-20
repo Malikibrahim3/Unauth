@@ -42,7 +42,7 @@ export function EvidencePackagePreview({ packageId, referenceNumber }: EvidenceP
           <FileText className="h-4 w-4 shrink-0" style={{ color: 'var(--text-muted)' }} />
           <div className="min-w-0">
             <p className="text-[10px] font-semibold truncate uppercase tracking-[0.12em]" style={{ color: 'var(--text-muted)' }}>
-              <span style={{ color: '#7B2D26' }}>§ </span>
+              <span aria-hidden="true" className="ua-section-dot" />
               Evidence Package
             </p>
             {referenceNumber && (

@@ -106,7 +106,7 @@ export function DisputeReadinessPanel({
       style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)', borderRadius: 4 }}
     >
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-overline"><span style={{ color: '#7B2D26' }}>§ </span>Readiness</h2>
+        <h2 className="text-overline"><span aria-hidden="true" className="ua-section-dot" />Readiness</h2>
         <Badge tone={allPassed ? 'success' : passedCount >= 3 ? 'warning' : 'critical'} variant="subtle" size="sm">
           {passedCount}/{checks.length} checks passed
         </Badge>

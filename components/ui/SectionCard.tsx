@@ -27,7 +27,7 @@ export function SectionCard({
       id={id}
       className={cn('overflow-hidden', className)}
       style={{
-        background: '#FFFFFF',
+        background: 'var(--bg-surface)',
         border: '1px solid var(--border-default)',
         borderRadius: 4,
       }}
@@ -36,7 +36,7 @@ export function SectionCard({
       <div
         className="flex items-center justify-between gap-3"
         style={{
-          background: 'var(--bg-canvas)',
+          background: 'var(--bg-surface-alt)',
           borderBottom: '1px solid var(--border-default)',
           padding: '9px 14px',
         }}
@@ -52,7 +52,18 @@ export function SectionCard({
               lineHeight: 1,
             }}
           >
-            <span style={{ color: '#7B2D26', marginRight: 5 }}>§</span>
+            <span
+              aria-hidden="true"
+              style={{
+                display: 'inline-block',
+                width: 5,
+                height: 5,
+                borderRadius: 999,
+                background: 'var(--accent)',
+                marginRight: 7,
+                verticalAlign: '1px',
+              }}
+            />
             {title}
           </div>
           {description && (

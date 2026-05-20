@@ -7,6 +7,8 @@ export { Button } from './Button';
 export type { ButtonVariant, ButtonSize } from './Button';
 export { Input } from './Input';
 export { Select } from './Select';
+export { FilterChip } from './FilterChip';
+export { Field, FieldInput, FieldSelect, FieldTextarea } from './Field';
 
 export { Badge } from './Badge';
 export type { BadgeTone, BadgeVariant, BadgeSize } from './Badge';
@@ -40,3 +42,11 @@ export type { TimelineEventItem, TimelineEventType, TimelineEventSeverity } from
 export { ActionBar } from './ActionBar';
 export { RecommendedActionCard } from './RecommendedActionCard';
 export type { RecommendedActionKey } from './RecommendedActionCard';
+export { WorkbenchPage } from '@/components/workbench/WorkbenchPage';
+export { WorkbenchNav } from '@/components/workbench/WorkbenchNav';
+export type { WorkbenchNavItem } from '@/components/workbench/WorkbenchNav';
+export { WorkbenchKpiStrip } from '@/components/workbench/WorkbenchKpiStrip';
+export type { WorkbenchKpiItem } from '@/components/workbench/WorkbenchKpiStrip';
+export { WorkbenchPanel } from '@/components/workbench/WorkbenchPanel';
+export { WorkbenchActionBar } from '@/components/workbench/WorkbenchActionBar';
+export { WorkbenchEmptyState } from '@/components/workbench/WorkbenchEmptyState';

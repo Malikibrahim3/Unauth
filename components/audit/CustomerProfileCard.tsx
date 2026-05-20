@@ -23,13 +23,13 @@ import { formatCurrencyNullable, formatDateShort } from '@/lib/utils/format';
 function tierChipStyle(risk: string): React.CSSProperties {
   switch (risk) {
     case 'critical':
-      return { background: '#1A1814', color: '#E8E4D8', border: '1px solid #1A1814' };
+      return { background: 'var(--brand-ink)', color: 'var(--text-inverse)', border: '1px solid var(--brand-ink)' };
     case 'high':
-      return { background: '#FBEFEC', color: '#7B2D26', border: '1px solid #F0C8BE' };
+      return { background: 'var(--risk-critical-bg)', color: 'var(--risk-critical-fg)', border: '1px solid var(--risk-critical-bd)' };
     case 'medium':
-      return { background: '#F2EDE3', color: '#4A4640', border: '1px solid #D2C9B5' };
+      return { background: 'var(--bg-surface-alt)', color: 'var(--text-muted)', border: '1px solid var(--border-default)' };
     default:
-      return { background: '#F5F3EF', color: '#888078', border: '1px solid #D8D1C5' };
+      return { background: 'var(--bg-surface-alt)', color: 'var(--text-subtle)', border: '1px solid var(--border-default)' };
   }
 }
 
@@ -46,11 +46,11 @@ function riskChipStyle(risk: string): React.CSSProperties {
   switch (risk) {
     case 'critical':
     case 'high':
-      return { background: '#FBEFEC', color: '#7B2D26', border: '1px solid #F0C8BE' };
+      return { background: 'var(--risk-critical-bg)', color: 'var(--risk-critical-fg)', border: '1px solid var(--risk-critical-bd)' };
     case 'medium':
-      return { background: '#FBF4EC', color: '#7A4F1C', border: '1px solid #E8D0A8' };
+      return { background: 'var(--risk-medium-bg)', color: 'var(--risk-medium-fg)', border: '1px solid var(--risk-medium-bd)' };
     default:
-      return { background: '#F5F3EF', color: '#888078', border: '1px solid #D8D1C5' };
+      return { background: 'var(--bg-surface-alt)', color: 'var(--text-subtle)', border: '1px solid var(--border-default)' };
   }
 }
 
@@ -88,7 +88,7 @@ export default function CustomerProfileCard({ profile }: { profile: CustomerProf
   return (
     <div
       style={{
-        background: '#FFFFFF',
+        background: 'var(--bg-surface)',
         border: '1px solid var(--border-default)',
         borderRadius: 4,
         overflow: 'hidden',
@@ -113,7 +113,7 @@ export default function CustomerProfileCard({ profile }: { profile: CustomerProf
               width: 7,
               height: 7,
               borderRadius: '50%',
-              background: profile.highestRisk === 'critical' || profile.highestRisk === 'high' ? '#7B2D26' : '#888078',
+              background: profile.highestRisk === 'critical' || profile.highestRisk === 'high' ? 'var(--accent)' : 'var(--text-subtle)',
               flexShrink: 0,
             }}
             aria-hidden="true"
@@ -141,7 +141,7 @@ export default function CustomerProfileCard({ profile }: { profile: CustomerProf
               RISK {(Math.min(profile.orderCount * 12, 99) / 100).toFixed(2)}
             </span>
           )}
-          <span style={{ ...CHIP_BASE, background: '#F2EDE3', color: '#4A4640', border: '1px solid #D2C9B5' }}>
+          <span style={{ ...CHIP_BASE, background: 'var(--bg-surface-alt)', color: 'var(--text-muted)', border: '1px solid var(--border-default)' }}>
             CONF {(0.85 + Math.min(profile.emails.length * 0.03, 0.14)).toFixed(2)}
           </span>
           <WatchlistStarButton
@@ -185,7 +185,7 @@ export default function CustomerProfileCard({ profile }: { profile: CustomerProf
               {primaryEmail}
             </div>
             {extraEmails > 0 && (
-              <div style={{ fontSize: 11, color: '#7B2D26', marginTop: 2, fontWeight: 500 }}>
+              <div style={{ fontSize: 11, color: 'var(--accent)', marginTop: 2, fontWeight: 500 }}>
                 + {extraEmails} linked account{extraEmails > 1 ? 's' : ''}
               </div>
             )}
@@ -244,7 +244,7 @@ export default function CustomerProfileCard({ profile }: { profile: CustomerProf
               style={{
                 fontSize: 16,
                 fontWeight: 600,
-                color: value > 1 ? '#7B2D26' : 'var(--text)',
+                color: value > 1 ? 'var(--accent)' : 'var(--text)',
                 fontFamily: 'var(--font-mono)',
                 lineHeight: 1,
               }}
@@ -315,7 +315,7 @@ export default function CustomerProfileCard({ profile }: { profile: CustomerProf
                 lineHeight: 1,
               }}
             >
-              <span style={{ color: '#7B2D26', marginRight: 5 }}>§</span>
+              <span aria-hidden="true" className="ua-section-dot" />
               Network footprint — {profile.orders.length} orders
             </div>
 
@@ -335,7 +335,7 @@ export default function CustomerProfileCard({ profile }: { profile: CustomerProf
                       style={{
                         height: '100%',
                         width: `${pct}%`,
-                        background: warn ? '#7B2D26' : '#1A1814',
+                        background: warn ? 'var(--accent)' : 'var(--brand-ink)',
                         borderRadius: 2,
                         opacity: 0.7,
                       }}
@@ -347,7 +347,7 @@ export default function CustomerProfileCard({ profile }: { profile: CustomerProf
                       fontSize: 11,
                       fontWeight: 600,
                       fontFamily: 'var(--font-mono)',
-                      color: warn ? '#7B2D26' : 'var(--text)',
+                      color: warn ? 'var(--accent)' : 'var(--text)',
                       textAlign: 'right',
                     }}
                   >
@@ -378,7 +378,7 @@ export default function CustomerProfileCard({ profile }: { profile: CustomerProf
                 lineHeight: 1,
               }}
             >
-              <span style={{ color: '#7B2D26', marginRight: 5 }}>§</span>
+              <span aria-hidden="true" className="ua-section-dot" />
               Identity details
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
@@ -407,7 +407,7 @@ export default function CustomerProfileCard({ profile }: { profile: CustomerProf
                   lineHeight: 1,
                 }}
               >
-                <span style={{ color: '#7B2D26', marginRight: 5 }}>§</span>
+                <span aria-hidden="true" className="ua-section-dot" />
                 Why this customer was matched
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -426,7 +426,7 @@ export default function CustomerProfileCard({ profile }: { profile: CustomerProf
                       gap: 8,
                     }}
                   >
-                    <span style={{ color: '#7B2D26', flexShrink: 0 }}>·</span>
+                    <span style={{ color: 'var(--accent)', flexShrink: 0 }}>·</span>
                     {link.description}
                   </div>
                 ))}
@@ -448,7 +448,7 @@ export default function CustomerProfileCard({ profile }: { profile: CustomerProf
                   lineHeight: 1,
                 }}
               >
-                <span style={{ color: '#7B2D26', marginRight: 5 }}>§</span>
+                <span aria-hidden="true" className="ua-section-dot" />
                 Matched datapoints
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -459,16 +459,16 @@ export default function CustomerProfileCard({ profile }: { profile: CustomerProf
                       padding: '7px 10px',
                       border: '1px solid var(--border-default)',
                       borderRadius: 3,
-                      background: '#FBEFEC',
-                      borderColor: '#F0C8BE',
+                      background: 'var(--risk-critical-bg)',
+                      borderColor: 'var(--risk-critical-bd)',
                     }}
                   >
-                    <p style={{ fontSize: 12, fontWeight: 600, color: '#7B2D26' }}>{flag.title}</p>
-                    <p style={{ fontSize: 11, marginTop: 2, color: '#9B4D46' }}>{flag.description}</p>
+                    <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--risk-critical-fg)' }}>{flag.title}</p>
+                    <p style={{ fontSize: 11, marginTop: 2, color: 'var(--risk-critical-fg)' }}>{flag.description}</p>
                     {flag.evidence.length > 0 && flag.evidence.length <= 6 && (
                       <ul style={{ marginTop: 4, display: 'flex', flexDirection: 'column', gap: 2 }}>
                         {flag.evidence.map((e, j) => (
-                          <li key={j} style={{ fontSize: 11, color: '#9B4D46' }}>· {e}</li>
+                          <li key={j} style={{ fontSize: 11, color: 'var(--risk-critical-fg)' }}>· {e}</li>
                         ))}
                       </ul>
                     )}
@@ -491,7 +491,7 @@ export default function CustomerProfileCard({ profile }: { profile: CustomerProf
                 lineHeight: 1,
               }}
             >
-              <span style={{ color: '#7B2D26', marginRight: 5 }}>§</span>
+              <span aria-hidden="true" className="ua-section-dot" />
               Order history ({profile.orders.length})
             </div>
             <div style={{ overflowX: 'auto' }}>
@@ -542,7 +542,7 @@ export default function CustomerProfileCard({ profile }: { profile: CustomerProf
                       </td>
                       <td style={{ padding: '7px 10px' }}>
                         {order.refunded ? (
-                          <span style={{ ...CHIP_BASE, background: '#FBEFEC', color: '#7B2D26', border: '1px solid #F0C8BE' }}>
+                          <span style={{ ...CHIP_BASE, background: 'var(--risk-critical-bg)', color: 'var(--risk-critical-fg)', border: '1px solid var(--risk-critical-bd)' }}>
                             {order.refundReason ?? 'Refunded'}
                           </span>
                         ) : (
@@ -627,7 +627,7 @@ function DataCoverageRow({ profile }: { profile: import('@/lib/analysis/customer
               width: 6,
               height: 6,
               borderRadius: '50%',
-              background: present ? '#1A1814' : 'var(--bg-subtle)',
+              background: present ? 'var(--brand-ink)' : 'var(--bg-surface-alt)',
               opacity: present ? 0.5 : 1,
               border: present ? undefined : '1px solid var(--border-default)',
             }}
@@ -659,7 +659,7 @@ function IdentityField({ label, values, highlight, hint }: { label: string; valu
         {label}
         {hint && <span style={{ display: 'block', fontSize: 10, fontWeight: 400, letterSpacing: 0, textTransform: 'none', color: 'var(--text-subtle)' }}>{hint}</span>}
       </dt>
-      <dd style={{ fontSize: 12, color: highlight ? '#7B2D26' : 'var(--text)', fontWeight: highlight ? 600 : 400, fontFamily: 'var(--font-mono)' }}>
+      <dd style={{ fontSize: 12, color: highlight ? 'var(--accent)' : 'var(--text)', fontWeight: highlight ? 600 : 400, fontFamily: 'var(--font-mono)' }}>
         {values.length <= 3 ? (
           values.map((v, i) => (
             <span key={i}>

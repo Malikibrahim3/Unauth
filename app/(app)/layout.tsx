@@ -70,7 +70,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       style={{ backgroundColor: 'var(--bg-canvas)' }}
     >
       {/* ── Sidebar ── */}
-      <Sidebar merchantName={null} userEmail={user.email ?? ''} />
+      <Sidebar merchantName={(merchantProfile as any)?.name ?? null} userEmail={user.email ?? ''} />
 
       {/* Amplitude — initialise after session confirmed */}
       <AmplitudeInit
@@ -83,7 +83,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       {/* ── Right column ── */}
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Sticky header */}
-        <AppHeader />
+        <AppHeader
+          merchantName={(merchantProfile as any)?.name ?? null}
+          userEmail={user.email ?? null}
+        />
 
         {/* Demo / data-quality banner (full-width, between header and page) */}
         {allDemo && (

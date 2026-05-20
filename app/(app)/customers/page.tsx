@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import CustomersFilterSheet from '@/components/customers/CustomersFilterSheet';
 import CustomersTableClient from '@/components/customers/CustomersTableClient';
 import PageSizeSelect from '@/components/common/PageSizeSelect';
-import { PageHeader } from '@/components/common/PageHeader';
+import { Button, WorkbenchActionBar, WorkbenchEmptyState, WorkbenchKpiStrip, WorkbenchPage } from '@/components/ui';
 import { RISK_TIER_COPY } from '@/lib/copy/riskTiers';
 import { escapePostgrestFilterValue } from '@/lib/supabase/merchantHelpers';
 import { STATUS_LABELS } from '@/lib/utils/investigationStatus';
@@ -279,16 +279,48 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
     !firstSeenFrom && !firstSeenTo && !lastSeenFrom && !lastSeenTo && !flagFilter && !statusFilter;
 
   return (
-    <div className="p-6 md:p-8 space-y-5">
-      <PageHeader
-        title="Customers"
-        subtitle="Segment, filter, and act on all customer risk profiles."
-        actions={
-          <Link href="/upload" className="btn-accent px-4 py-2 rounded-md text-body-sm font-semibold transition-colors">
-            New Audit
-          </Link>
-        }
-      />
+    <WorkbenchPage
+      title="Clusters"
+      subtitle="Segment, filter, and act on customer identity clusters."
+      navItems={[
+        { key: 'overview', label: 'Overview', href: '/dashboard' },
+        { key: 'cases', label: 'Cases', href: '/inbox' },
+        { key: 'clusters', label: 'Clusters', href: '/customers?merchantsMin=2' },
+        { key: 'audits', label: 'Audits', href: '/history' },
+        { key: 'reports', label: 'Reports', href: '/chargebacks' },
+      ]}
+      activeNavKey="clusters"
+      actions={<Link href="/upload"><Button size="sm">New Audit</Button></Link>}
+      kpiStrip={
+        <WorkbenchKpiStrip
+          items={[
+            { label: 'Profiles', value: total.toLocaleString(), hint: 'Filtered result set' },
+            { label: 'Watchlisted', value: rows.filter((r) => r.on_watchlist).length.toLocaleString(), hint: 'Current page' },
+            { label: 'New status', value: rows.filter((r) => r.investigation_status === 'new').length.toLocaleString(), hint: 'Current page' },
+            { label: 'Has refunds', value: rows.filter((r) => r.total_refund_claims > 0).length.toLocaleString(), hint: 'Current page' },
+            { label: 'Linked identities', value: rows.filter((r) => r.total_merchants_seen_at >= 2).length.toLocaleString(), hint: 'Current page' },
+          ]}
+        />
+      }
+      actionBar={
+        <WorkbenchActionBar
+          left={<CustomersFilterSheet />}
+          right={
+            <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+              <PageSizeSelect pathname="/customers" searchParams={sp} pageSize={PAGE_SIZE} />
+              {totalPages > 1 && (
+                <>
+                  <span>Page {page} of {totalPages}</span>
+                  {page > 1 && <Link href={`/customers?${new URLSearchParams({ ...sp, page: String(page - 1), pageSize: String(PAGE_SIZE) }).toString()}`}><Button variant="secondary" size="sm">Prev</Button></Link>}
+                  {page < totalPages && <Link href={`/customers?${new URLSearchParams({ ...sp, page: String(page + 1), pageSize: String(PAGE_SIZE) }).toString()}`}><Button variant="secondary" size="sm">Next</Button></Link>}
+                </>
+              )}
+            </div>
+          }
+        />
+      }
+      main={
+        <div className="p-4 space-y-4">
 
       {/* ── Cohort summary cards ──────────────────────────────────── */}
       {total > 0 && (
@@ -337,8 +369,6 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
         ))}
       </div>
 
-      <CustomersFilterSheet />
-
       {/* ── Active filter chips ───────────────────────────────────── */}
       {!noFilters && (
         <div className="flex items-center gap-2 flex-wrap">
@@ -354,15 +384,11 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
       )}
 
       {rows.length === 0 && noFilters ? (
-        <div className="rounded-lg p-10 text-center" style={{ border: '1.5px dashed var(--border)' }}>
-          <p className="text-body-sm font-semibold mb-1" style={{ color: 'var(--text)' }}>No customer profiles yet</p>
-          <p className="text-body-sm mb-4" style={{ color: 'var(--text-muted)' }}>
-            Run an audit to populate this list. Customer profiles are built automatically from your uploaded transaction data.
-          </p>
-          <Link href="/upload" className="inline-block text-sm font-medium underline" style={{ color: 'var(--text)' }}>
-            Upload a CSV ›
-          </Link>
-        </div>
+        <WorkbenchEmptyState
+          title="No customer profiles yet"
+          description="Run an audit to populate this list. Customer profiles are built from your uploaded transaction data."
+          action={<Link href="/upload" className="text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>Upload a CSV</Link>}
+        />
       ) : (
         <>
           <div className="flex items-center justify-between">
@@ -396,6 +422,8 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
           {rows.length > 0 && <CustomersTableClient rows={rows} />}
         </>
       )}
-    </div>
+        </div>
+      }
+    />
   );
 }

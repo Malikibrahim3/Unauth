@@ -30,10 +30,10 @@ export default function LandingPage() {
     {
       label: 'emails',
       rows: [
-        ['noah.k*****@protonmail.com', 'primary · 4 merchants'],
-        ['n.ke*****@protonmail.com', '2 merchants'],
-        ['noah_k*****@gmail.com', '1 merchant'],
-        ['n.k*****@gmail.com', '1 merchant · low confidence'],
+        ['customer.a*****@examplemail.com', 'primary · 4 merchants'],
+        ['c.a*****@examplemail.com', '2 merchants'],
+        ['customer_a*****@example.com', '1 merchant'],
+        ['c.a*****@example.com', '1 merchant · low confidence'],
       ],
     },
     {
@@ -1585,4 +1585,3 @@ export default function LandingPage() {
     </div>
   );
 }
-

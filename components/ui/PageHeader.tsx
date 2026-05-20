@@ -81,7 +81,18 @@ export function PageHeader({
             lineHeight: 1,
           }}
         >
-          <span style={{ color: '#7B2D26', marginRight: 5 }}>§</span>
+          <span
+            aria-hidden="true"
+            style={{
+              display: 'inline-block',
+              width: 5,
+              height: 5,
+              borderRadius: 999,
+              background: 'var(--accent)',
+              marginRight: 7,
+              verticalAlign: '1px',
+            }}
+          />
           {eyebrow}
         </div>
       )}

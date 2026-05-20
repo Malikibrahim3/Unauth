@@ -52,13 +52,13 @@ const TABS = [
 // ── Shared data ────────────────────────────────────────────────────────────────
 
 const ROWS = [
-  { id: '8723941', email: 'n.kessler@proton.me',  addr: '91c2…f4', card: '••4419', amt: '$112.00', type: 'order'  },
-  { id: '8723995', email: 'n.kessler@proton.me',  addr: '91c2…f4', card: '••4419', amt: '$89.00',  type: 'refund' },
-  { id: '8724002', email: 'nkessler91@yahoo.com', addr: '91c2…f4', card: '••4419', amt: '$67.00',  type: 'return' },
-  { id: '8724111', email: 'noah.k91@gmail.com',   addr: '91c2…f4', card: '••4419', amt: '$213.00', type: 'order'  },
-  { id: '8724302', email: 'nk.orders@pm.me',      addr: '91c2…f4', card: '••4419', amt: '$76.00',  type: 'order'  },
-  { id: '8724418', email: 'nk.orders@pm.me',      addr: '91c2…f4', card: '••6671', amt: '$44.00',  type: 'refund' },
-  { id: '8724501', email: 'n.kessler@proton.me',  addr: '7e19…b2', card: '••4419', amt: '$158.00', type: 'order'  },
+  { id: '8723941', email: 'customer.a@examplemail.com',  addr: '91c2…f4', card: '••4419', amt: '$112.00', type: 'order'  },
+  { id: '8723995', email: 'customer.a@examplemail.com',  addr: '91c2…f4', card: '••4419', amt: '$89.00',  type: 'refund' },
+  { id: '8724002', email: 'customera91@example.com',     addr: '91c2…f4', card: '••4419', amt: '$67.00',  type: 'return' },
+  { id: '8724111', email: 'customer.a91@example.com',    addr: '91c2…f4', card: '••4419', amt: '$213.00', type: 'order'  },
+  { id: '8724302', email: 'customer.orders@example.net', addr: '91c2…f4', card: '••4419', amt: '$76.00',  type: 'order'  },
+  { id: '8724418', email: 'customer.orders@example.net', addr: '91c2…f4', card: '••6671', amt: '$44.00',  type: 'refund' },
+  { id: '8724501', email: 'customer.a@examplemail.com',  addr: '7e19…b2', card: '••4419', amt: '$158.00', type: 'order'  },
 ];
 
 const HASHES = [
@@ -78,10 +78,10 @@ const SIGNALS = [
 ];
 
 const EMAIL_VARIANTS = [
-  { email: 'n.kessler@proton.me',  seen: '7×', flags: 'primary · 3 merchants' },
-  { email: 'noah.k91@gmail.com',   seen: '2×', flags: '2 merchants'           },
-  { email: 'nk.orders@pm.me',      seen: '3×', flags: '2 merchants'           },
-  { email: 'nkessler91@yahoo.com', seen: '1×', flags: 'variant'               },
+  { email: 'customer.a@examplemail.com',  seen: '7×', flags: 'primary · 3 merchants' },
+  { email: 'customer.a91@example.com',    seen: '2×', flags: '2 merchants'           },
+  { email: 'customer.orders@example.net', seen: '3×', flags: '2 merchants'           },
+  { email: 'customera91@example.com',     seen: '1×', flags: 'variant'               },
 ];
 
 const MERCHANTS = [

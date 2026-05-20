@@ -99,14 +99,14 @@ function SidebarItem({
       title={collapsed ? item.label : undefined}
       className={cn(
         'group relative flex h-8 items-center gap-3 rounded-sm px-2',
-        'text-[17px] font-medium',
+        'text-[14px] font-medium',
         'transition-colors duration-[var(--duration-fast)]',
         'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] focus-visible:outline-offset-2',
         active
-          ? 'bg-[var(--bg-subtle)] text-[var(--text)] font-semibold'
+          ? 'bg-[var(--bg-surface-alt)] text-[var(--text)] font-semibold'
           : item.isPrimary
-            ? 'border border-[var(--border)] text-[var(--text)] hover:bg-[var(--bg-subtle)]'
-            : 'text-[var(--text-muted)] hover:bg-[var(--bg-subtle)] hover:text-[var(--text)]',
+            ? 'border border-[var(--border-default)] bg-[var(--bg-surface)] text-[var(--text)] hover:bg-[var(--bg-hover)]'
+            : 'text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text)]',
         collapsed && 'justify-center',
       )}
     >
@@ -114,7 +114,7 @@ function SidebarItem({
       {active && (
         <span
           className="absolute left-0 top-0 bottom-0 w-0.5 rounded-r-full"
-          style={{ background: '#7B2D26' }}
+          style={{ background: 'var(--accent)' }}
           aria-hidden="true"
         />
       )}
@@ -165,7 +165,18 @@ function GroupLabel({ label, collapsed }: { label: string; collapsed: boolean })
         className="block text-[10px] font-semibold uppercase leading-none"
         style={{ color: 'var(--text-subtle)', letterSpacing: '0.12em' }}
       >
-        <span style={{ color: '#7B2D26', marginRight: '5px' }}>§</span>
+        <span
+          aria-hidden="true"
+          style={{
+            display: 'inline-block',
+            width: 4,
+            height: 4,
+            borderRadius: 999,
+            background: 'var(--accent)',
+            marginRight: 7,
+            verticalAlign: '2px',
+          }}
+        />
         {label}
       </span>
     </div>

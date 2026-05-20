@@ -81,7 +81,7 @@ function generateDemoOrders(): DemoOrder[] {
 
   // ── Cohort 1: INR abusers (10 customers × 4 orders = 40) ─────────────────
   for (let c = 0; c < 10; c++) {
-    const email = `inr.abuser${c}@gmail.com`;
+    const email = `inr.abuser${c}@examplemail.com`;
     const addr = `inr-addr-${c}`;
     for (let i = 0; i < 3; i++) {
       const total = rndTotal(40, 280);
@@ -104,7 +104,7 @@ function generateDemoOrders(): DemoOrder[] {
 
   // ── Cohort 2: High refund rate (10 customers × 5 orders = 50) ────────────
   for (let c = 0; c < 10; c++) {
-    const email = `refund.heavy${c}@outlook.com`;
+    const email = `refund.heavy${c}@examplemail.com`;
     const addr = `refund-addr-${c}`;
     for (let i = 0; i < 4; i++) {
       const total = rndTotal(25, 180);
@@ -127,7 +127,7 @@ function generateDemoOrders(): DemoOrder[] {
 
   // ── Cohort 3: Velocity bursts (10 customers × 6 orders on same day = 60) ─
   for (let c = 0; c < 10; c++) {
-    const email = `burst.buyer${c}@yahoo.com`;
+    const email = `burst.buyer${c}@examplemail.com`;
     const addr = `velocity-addr-${c}`;
     const burstDaysAgo = 20 + c * 3;
     for (let i = 0; i < 6; i++) {
@@ -139,7 +139,7 @@ function generateDemoOrders(): DemoOrder[] {
 
   // ── Cohort 4: INR speed (6 customers × 3 orders = 18) ────────────────────
   for (let c = 0; c < 6; c++) {
-    const email = `inr.speed${c}@hotmail.com`;
+    const email = `inr.speed${c}@examplemail.com`;
     const addr = `speed-addr-${c}`;
     for (let i = 0; i < 2; i++) {
       const total = rndTotal(60, 350);
@@ -182,7 +182,7 @@ function generateDemoOrders(): DemoOrder[] {
   for (let cluster = 0; cluster < 4; cluster++) {
     const addr = CLUSTER_ADDRS[cluster];
     for (let i = 0; i < 5; i++) {
-      const email = `cluster${cluster}.user${i}@gmail.com`;
+      const email = `cluster${cluster}.user${i}@examplemail.com`;
       orders.push(makeOrder(nextId(), email, email, addr, 15 + cluster * 8 + i * 2, rndTotal(40, 220), {
         addressHash: dh(addr),
         groundTruthLabel: 'fraud',
@@ -192,7 +192,7 @@ function generateDemoOrders(): DemoOrder[] {
 
   // ── Cohort 7: Payment churn (5 customers × 6 orders = 30) ────────────────
   for (let c = 0; c < 5; c++) {
-    const email = `churn.payer${c}@icloud.com`;
+    const email = `churn.payer${c}@examplemail.com`;
     const addr = `churn-addr-${c}`;
     PAYMENT_METHODS.forEach((method) => {
       orders.push(makeOrder(nextId(), email, email, addr, 25 + c * 5, rndTotal(50, 300), {

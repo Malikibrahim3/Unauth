@@ -102,8 +102,8 @@ export default function OnboardingClient({ userId }: OnboardingClientProps) {
           <div className="flex items-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 110" width="20" height="18" fill="none" aria-label="Unauth" role="img">
               <path d="M18 14 H32 V74 H68 V14 H82 V88 H18 Z" fill="var(--text-primary, var(--text))" />
-              <polygon points="92,88 102,88 108,14 98,14" fill="#2563EB" />
-              <rect x="42" y="96" width="16" height="3" fill="#2563EB" />
+              <polygon points="92,88 102,88 108,14 98,14" fill="var(--accent)" />
+              <rect x="42" y="96" width="16" height="3" fill="var(--accent)" />
             </svg>
             <span className="text-sm font-semibold tracking-tight" style={{ color: 'var(--text)' }}>Unauth</span>
           </div>

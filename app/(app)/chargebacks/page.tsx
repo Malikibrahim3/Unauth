@@ -5,8 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { formatDate } from '@/lib/utils/format'
-import { PageHeader } from '@/components/common/PageHeader'
-import { EmptyState, Button } from '@/components/ui'
+import { Badge, Button, DataTable, WorkbenchActionBar, WorkbenchEmptyState, WorkbenchKpiStrip, WorkbenchPage } from '@/components/ui'
 
 export const metadata = {
   title: 'Evidence Packages — Unauth',
@@ -59,112 +58,122 @@ export default async function ChargebacksPage() {
   }
 
   return (
-    <div className="p-8 max-w-5xl mx-auto">
-      <PageHeader
-        title="Evidence Packages"
-        subtitle={`Chargeback representment documents generated for disputed orders.${pkgs.some(p => p.ce3_eligible) ? ' Where eligible, packages are formatted for Visa Compelling Evidence 3.0.' : ''}`}
-        actions={
-          <Link href="/customers">
-            <Button variant="ghost" size="sm">View customers →</Button>
-          </Link>
-        }
-      />
-
-      {pkgs.length === 0 ? (
-        <EmptyState
-          title="No evidence packages yet."
-          description="When a customer files a chargeback, generate an evidence package from their profile. Where eligible, packages are formatted for Visa Compelling Evidence 3.0 submission."
-          action={
+    <WorkbenchPage
+      title="Reports"
+      subtitle="Evidence packages generated for disputed orders."
+      navItems={[
+        { key: 'overview', label: 'Overview', href: '/dashboard' },
+        { key: 'cases', label: 'Cases', href: '/inbox' },
+        { key: 'clusters', label: 'Clusters', href: '/customers?merchantsMin=2' },
+        { key: 'audits', label: 'Audits', href: '/history' },
+        { key: 'reports', label: 'Reports', href: '/chargebacks' },
+      ]}
+      activeNavKey="reports"
+      actions={
+        <Link href="/customers">
+          <Button variant="secondary" size="sm">View customers</Button>
+        </Link>
+      }
+      kpiStrip={
+        <WorkbenchKpiStrip
+          items={[
+            { label: 'Packages', value: pkgs.length.toLocaleString(), hint: 'Generated reports' },
+            { label: 'CE3 eligible', value: pkgs.filter((pkg) => pkg.ce3_eligible).length.toLocaleString(), hint: 'Ready for CE3.0' },
+            { label: 'Cross-merchant', value: pkgs.filter((pkg) => pkg.cross_merchant_indicator).length.toLocaleString(), hint: 'Network-linked evidence' },
+            { label: 'Latest', value: pkgs[0]?.generated_at ? new Date(pkgs[0].generated_at).toLocaleDateString('en-GB') : '-', hint: 'Most recent package' },
+            { label: 'Source', value: 'Customers', hint: 'Generated from customer profiles' },
+          ]}
+        />
+      }
+      actionBar={
+        <WorkbenchActionBar
+          right={
             <Link href="/customers">
-              <Button variant="secondary" size="sm">View customers →</Button>
+              <Button size="sm">Generate From Customer</Button>
             </Link>
           }
         />
+      }
+      main={
+      pkgs.length === 0 ? (
+        <WorkbenchEmptyState
+          title="No evidence packages yet"
+          description="Generate packages from customer profiles after a chargeback is filed. CE3.0 formatting is added when eligible."
+          action={<Link href="/customers" className="text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>View customers</Link>}
+        />
       ) : (
-        <div
-          className="rounded-lg overflow-hidden border"
-          style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
-        >
-          <table className="w-full text-sm">
-            <thead>
-              <tr
-                className="border-b"
-                style={{ background: 'var(--bg-subtle)', borderColor: 'var(--border-subtle)' }}
-              >
-                <th className="text-left px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>
-                  Reference
-                </th>
-                <th className="text-left px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>
-                  Customer
-                </th>
-                <th className="text-left px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>
-                  Generated
-                </th>
-                <th className="text-center px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>
-                  CE3.0
-                </th>
-                <th className="px-4 py-2.5" />
-              </tr>
-            </thead>
-            <tbody>
-              {pkgs.map(pkg => {
-                const customer = pkg.customer_profile_id
-                  ? profileMap[pkg.customer_profile_id]
-                  : null
-                return (
-                  <tr
-                    key={pkg.id}
-                    className="border-b transition-colors hover-bg-subtle"
-                    style={{ borderColor: 'var(--border-subtle)' }}
+        <DataTable
+          columns={[
+            {
+              key: 'reference_number',
+              header: 'Reference',
+              render: (pkg) => (
+                <span className="font-mono text-xs" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                  {pkg.reference_number}
+                </span>
+              ),
+            },
+            {
+              key: 'customer',
+              header: 'Customer',
+              render: (pkg) => (
+                <span className="text-xs" style={{ color: 'var(--text)' }}>
+                  {pkg.customer_profile_id ? (profileMap[pkg.customer_profile_id]?.maskedEmail ?? '—') : '—'}
+                </span>
+              ),
+            },
+            {
+              key: 'generated_at',
+              header: 'Generated',
+              render: (pkg) => (
+                <span className="text-xs font-mono" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                  {formatDate(pkg.generated_at)}
+                </span>
+              ),
+            },
+            {
+              key: 'ce3_eligible',
+              header: 'CE3.0',
+              render: (pkg) => pkg.ce3_eligible
+                ? <Badge tone="success" size="sm">CE3.0</Badge>
+                : <span className="text-caption" style={{ color: 'var(--text-subtle)' }}>—</span>,
+            },
+            {
+              key: 'cross_merchant_indicator',
+              header: 'Cross-merchant',
+              render: (pkg) => pkg.cross_merchant_indicator
+                ? <Badge tone="info" size="sm">Network</Badge>
+                : <span className="text-caption" style={{ color: 'var(--text-subtle)' }}>—</span>,
+            },
+            {
+              key: 'actions',
+              header: '',
+              render: (pkg) => (
+                <div className="flex items-center justify-end gap-3">
+                  <a
+                    href={`/api/evidence/${pkg.id}/pdf`}
+                    className="text-caption hover:underline"
+                    style={{ color: 'var(--text-muted)' }}
+                    download
                   >
-                    <td className="px-4 py-3 font-mono text-xs" style={{ color: 'var(--text-muted)' }}>
-                      {pkg.reference_number}
-                    </td>
-                    <td className="px-4 py-3 text-xs" style={{ color: 'var(--text)' }}>
-                      {customer?.maskedEmail ?? '—'}
-                    </td>
-                    <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-muted)' }}>
-                      {formatDate(pkg.generated_at)}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      {pkg.ce3_eligible ? (
-                        <span
-                          className="inline-flex items-center gap-1 text-xs font-semibold"
-                          style={{ color: 'var(--success)' }}
-                          title="This package meets Visa Compelling Evidence 3.0 requirements"
-                        >
-                          Eligible ✓
-                        </span>
-                      ) : (
-                        <span className="text-xs" style={{ color: 'var(--text-subtle)' }}>—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex items-center justify-end gap-3">
-                        <a
-                          href={`/api/evidence/${pkg.id}/pdf`}
-                          className="text-xs hover:underline"
-                          style={{ color: 'var(--text-muted)' }}
-                          download
-                        >
-                          ↓ Download
-                        </a>
-                        <Link
-                          href={`/chargebacks/${pkg.id}`}
-                          className="text-xs font-semibold hover:underline"
-                          style={{ color: 'var(--text)' }}
-                        >
-                          View →
-                        </Link>
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+                    Download
+                  </a>
+                  <Link
+                    href={`/chargebacks/${pkg.id}`}
+                    className="text-caption hover:underline"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
+                    Open
+                  </Link>
+                </div>
+              ),
+            },
+          ]}
+          rows={pkgs}
+          getRowKey={(pkg) => pkg.id}
+          density="default"
+        />
       )}
-    </div>
+    />
   )
 }

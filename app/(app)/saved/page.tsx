@@ -1,44 +1,47 @@
 import Link from 'next/link';
 import { BookMarked } from 'lucide-react';
+import { WorkbenchEmptyState, WorkbenchPage } from '@/components/ui';
 
 export default function SavedViewsPage() {
   return (
-    <div className="p-8 space-y-6 max-w-xl">
-      <div className="flex items-center gap-3">
-        <BookMarked className="h-5 w-5" style={{ color: 'var(--icon-muted)' }} />
-        <h1 className="text-heading-lg" style={{ color: 'var(--text)' }}>
-          Saved Views
-        </h1>
-      </div>
-
-      <div
-        className="rounded-lg p-10 flex flex-col items-center gap-3 text-center"
-        style={{ border: '1.5px dashed var(--border)' }}
-      >
-        <BookMarked className="h-8 w-8" style={{ color: 'var(--icon-muted)' }} />
-        <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
-          No saved views yet
-        </p>
-        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-          Save a filtered customer or transaction view and it will appear here.
-        </p>
-        <div className="mt-2 flex items-center gap-3">
-          <Link
-            href="/customers"
-            className="text-sm font-medium underline underline-offset-2"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            Browse customers →
-          </Link>
-          <Link
-            href="/watchlist"
-            className="text-sm font-medium underline underline-offset-2"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            View watchlist →
-          </Link>
+    <WorkbenchPage
+      title="Saved Views"
+      subtitle="Reusable filtered views across clusters, cases, and audits."
+      navItems={[
+        { key: 'overview', label: 'Overview', href: '/dashboard' },
+        { key: 'cases', label: 'Cases', href: '/inbox' },
+        { key: 'clusters', label: 'Clusters', href: '/customers?merchantsMin=2' },
+        { key: 'audits', label: 'Audits', href: '/history' },
+        { key: 'reports', label: 'Reports', href: '/chargebacks' },
+      ]}
+      activeNavKey="clusters"
+      main={
+        <div className="p-4">
+          <div className="rounded-lg border" style={{ borderStyle: 'dashed', borderColor: 'var(--border)' }}>
+            <WorkbenchEmptyState
+              title="No saved views yet"
+              description="Save a filtered customer, case, or audit view and it will appear here."
+              action={
+                <div className="flex items-center gap-3">
+                  <Link href="/customers" className="text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
+                    Browse customers
+                  </Link>
+                  <Link href="/inbox" className="text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
+                    Browse cases
+                  </Link>
+                  <Link href="/history" className="text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
+                    Browse audits
+                  </Link>
+                </div>
+              }
+            />
+          </div>
+          <div className="mt-4 flex items-center gap-2 text-caption" style={{ color: 'var(--text-subtle)' }}>
+            <BookMarked className="h-4 w-4" />
+            <span>Saved views are coming soon for cross-route query presets.</span>
+          </div>
         </div>
-      </div>
-    </div>
+      }
+    />
   );
 }

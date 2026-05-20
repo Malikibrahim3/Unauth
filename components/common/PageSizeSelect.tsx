@@ -30,7 +30,7 @@ export default async function PageSizeSelect({
   return (
     <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
       <span>{label}</span>
-      <div className="inline-flex rounded-md border overflow-hidden" style={{ borderColor: 'var(--border)' }}>
+      <div className="inline-flex rounded-[4px] border overflow-hidden" style={{ borderColor: 'var(--border-default)', background: 'var(--bg-surface)' }}>
         {PAGE_SIZES.map((size) => {
           const active = size === pageSize;
           return (
@@ -39,8 +39,9 @@ export default async function PageSizeSelect({
               href={buildHref(pathname, sp, size)}
               className="px-2.5 py-1.5 font-semibold transition-colors"
               style={{
-                background: active ? 'var(--text)' : 'var(--bg-surface)',
-                color: active ? 'var(--text-inverse)' : 'var(--text-muted)',
+                background: active ? 'var(--brand-ink)' : 'var(--bg-surface)',
+                color: active ? 'var(--brand-paper)' : 'var(--text-muted)',
+                boxShadow: active ? 'inset 0 0 0 1px rgba(26,24,20,0.08)' : undefined,
               }}
               aria-current={active ? 'page' : undefined}
             >

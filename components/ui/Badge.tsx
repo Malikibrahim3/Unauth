@@ -23,23 +23,23 @@ interface BadgeProps {
 }
 
 const CHIP_STYLES: Record<BadgeTone, { background: string; color: string; border: string }> = {
-  neutral:  { background: '#F2EDE3', color: '#4A4640', border: '#D2C9B5' },
-  info:     { background: '#EDF3FB', color: '#2D5A8E', border: '#BDD1ED' },
-  accent:   { background: '#EDF3FB', color: '#2D5A8E', border: '#BDD1ED' },
-  success:  { background: '#EDF5EC', color: '#2A6634', border: '#B8DDB8' },
-  warning:  { background: '#FBF4EC', color: '#7A4F1C', border: '#E8D0A8' },
-  danger:   { background: '#FBEFEC', color: '#7B2D26', border: '#F0C8BE' },
-  critical: { background: '#1A1814', color: '#E8E4D8', border: '#1A1814' },
+  neutral:  { background: 'var(--bg-surface-alt)',   color: 'var(--text-muted)',      border: 'var(--border-default)' },
+  info:     { background: 'var(--info-bg)',           color: 'var(--info-fg)',          border: 'var(--info-bd)' },
+  accent:   { background: 'var(--accent-soft)',       color: 'var(--accent)',           border: 'var(--accent-200)' },
+  success:  { background: 'var(--risk-low-bg)',       color: 'var(--risk-low-fg)',      border: 'var(--risk-low-bd)' },
+  warning:  { background: 'var(--risk-medium-bg)',    color: 'var(--risk-medium-fg)',   border: 'var(--risk-medium-bd)' },
+  danger:   { background: 'var(--risk-critical-bg)',  color: 'var(--risk-critical-fg)', border: 'var(--risk-critical-bd)' },
+  critical: { background: 'var(--brand-ink)',         color: 'var(--text-inverse)',     border: 'var(--brand-ink)' },
 };
 
 const SOLID_STYLES: Record<BadgeTone, { background: string; color: string }> = {
-  neutral:  { background: '#4A4640', color: '#F2EDE3' },
-  info:     { background: '#2D5A8E', color: '#FFFFFF' },
-  accent:   { background: '#2D5A8E', color: '#FFFFFF' },
-  success:  { background: '#2A6634', color: '#FFFFFF' },
-  warning:  { background: '#7A4F1C', color: '#FFFFFF' },
-  danger:   { background: '#7B2D26', color: '#FBEFEC' },
-  critical: { background: '#1A1814', color: '#E8E4D8' },
+  neutral:  { background: 'var(--text-muted)',        color: 'var(--bg-surface-alt)' },
+  info:     { background: 'var(--info-fg)',            color: 'var(--text-inverse)' },
+  accent:   { background: 'var(--accent)',             color: 'var(--text-inverse)' },
+  success:  { background: 'var(--risk-low-fg)',        color: 'var(--text-inverse)' },
+  warning:  { background: 'var(--risk-medium-fg)',     color: 'var(--text-inverse)' },
+  danger:   { background: 'var(--risk-critical-fg)',   color: 'var(--text-inverse)' },
+  critical: { background: 'var(--brand-ink)',          color: 'var(--text-inverse)' },
 };
 
 export function Badge({

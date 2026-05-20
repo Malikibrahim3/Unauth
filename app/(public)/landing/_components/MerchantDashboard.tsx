@@ -66,7 +66,7 @@ const CASES = [
     id: '#u_rashid.04', verdict: 'POSSIBLE', risk: 0.79, conf: 0.84,
     exposure: '$440', merchants: 3, k: 3, sigFired: 5, sigTotal: 12,
     card: '••3301', disputes: 1, lastSeen: '1w ago',
-    email: 'omar.r@yahoo.co…', deviceHash: 'a1c2..9f30',
+    email: 'customer.r@example.co…', deviceHash: 'a1c2..9f30',
     orders: [
       { id: 'ord_8002314', amount: '$220', store: 'Northrun', status: 'CB_RISK'       },
       { id: 'ord_7884120', amount: '$220', store: 'Oakshelf', status: 'REFUND_DENIED' },
@@ -84,7 +84,7 @@ const CASES = [
     id: '#u_chen.19', verdict: 'WATCH', risk: 0.61, conf: 0.72,
     exposure: '$220', merchants: 3, k: 3, sigFired: 3, sigTotal: 12,
     card: '••8812', disputes: 0, lastSeen: '10d ago',
-    email: 'w.chen88@gmail.c…', deviceHash: '8b44..1120',
+    email: 'w.chen88@example.c…', deviceHash: '8b44..1120',
     orders: [
       { id: 'ord_7612098', amount: '$220', store: 'Oakshelf', status: 'OPEN' },
     ],

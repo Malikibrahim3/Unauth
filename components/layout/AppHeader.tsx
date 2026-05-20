@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import CommandPalette from './CommandPalette';
 import { MerchantEnvChip } from './MerchantEnvChip';
@@ -68,8 +68,10 @@ export default function AppHeader({
         'border-b px-4',
       )}
       style={{
-        background: 'var(--bg-canvas)',
+        background: 'rgba(248, 245, 238, 0.92)',
         borderBottomColor: 'var(--border-default)',
+        backdropFilter: 'saturate(130%) blur(8px)',
+        WebkitBackdropFilter: 'saturate(130%) blur(8px)',
       }}
     >
       {/* Sidebar collapse toggle */}
@@ -112,18 +114,24 @@ export default function AppHeader({
                   className={cn(
                     'truncate',
                     isLast
-                      ? 'font-semibold text-[var(--text)]'
-                      : 'text-[var(--text-muted)]',
+                      ? 'text-overline font-semibold text-[var(--text)]'
+                      : 'text-caption text-[var(--text-muted)]',
                   )}
-                  style={isLast ? {
-                    fontSize: '11px',
-                    letterSpacing: '0.1em',
-                    textTransform: 'uppercase',
-                  } : { fontSize: '12px' }}
                   aria-current={isLast ? 'page' : undefined}
                 >
                   {isLast && (
-                    <span style={{ color: '#7B2D26', marginRight: '5px', letterSpacing: 0 }}>§</span>
+                    <span
+                      aria-hidden="true"
+                      style={{
+                        display: 'inline-block',
+                        width: 5,
+                        height: 5,
+                        borderRadius: 999,
+                        background: 'var(--accent)',
+                        marginRight: 7,
+                        verticalAlign: '1px',
+                      }}
+                    />
                   )}
                   {seg.label}
                 </span>
@@ -160,7 +168,7 @@ export default function AppHeader({
         aria-label="Search (⌘K)"
         onClick={openPalette}
         className={cn(
-          'flex h-7 items-center gap-1.5 rounded-md px-2',
+          'flex h-7 items-center gap-1.5 px-2',
           'border border-[var(--border-default)]',
           'text-caption text-[var(--text-subtle)]',
           'hover:border-[var(--border-strong)] hover:text-[var(--text)]',
@@ -168,12 +176,9 @@ export default function AppHeader({
           'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] focus-visible:outline-offset-2',
           'flex-shrink-0',
         )}
-        style={{ background: 'var(--bg-surface-alt)' }}
+        style={{ background: 'var(--bg-surface)', borderRadius: 6 }}
       >
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-          <circle cx="5" cy="5" r="3.5" stroke="currentColor" strokeWidth="1.2" />
-          <path d="M8 8L10.5 10.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-        </svg>
+        <Search size={14} aria-hidden="true" />
         <span className="hidden sm:inline">Search</span>
         <kbd className="hidden sm:inline font-mono text-[10px] opacity-60">⌘K</kbd>
       </button>
