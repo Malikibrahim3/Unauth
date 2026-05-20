@@ -98,7 +98,7 @@ export default function NetworkChart() {
             identity clusters
           </span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ width: 10, height: 1, background: '#B6512A', display: 'inline-block' }} />
+            <span style={{ width: 10, height: 1, background: '#7B2D26', display: 'inline-block' }} />
             network coverage
           </span>
         </div>
@@ -119,8 +119,8 @@ export default function NetworkChart() {
             <stop offset="100%" stopColor="#E8E4D8" stopOpacity="0" />
           </linearGradient>
           <linearGradient id="abuser-area" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stopColor="#B6512A" stopOpacity="0.22" />
-            <stop offset="100%" stopColor="#B6512A" stopOpacity="0" />
+            <stop offset="0%" stopColor="#7B2D26" stopOpacity="0.22" />
+            <stop offset="100%" stopColor="#7B2D26" stopOpacity="0" />
           </linearGradient>
         </defs>
 
@@ -201,16 +201,16 @@ export default function NetworkChart() {
           x2={midX}
           y1={chart.top}
           y2={chart.height - chart.bottom}
-          stroke="#B6512A"
+          stroke="#7B2D26"
           strokeWidth="1"
           strokeDasharray="2 3"
           opacity="0.7"
         />
-        <circle cx={midX} cy={chart.top + 8} r="2.5" fill="#B6512A" opacity="0.7" />
+        <circle cx={midX} cy={chart.top + 8} r="2.5" fill="#7B2D26" opacity="0.7" />
         <text
           x={midX + 6}
           y={chart.top + 11}
-          fill="#B6512A"
+          fill="#7B2D26"
           fontFamily="var(--font-dm-mono, monospace)"
           fontSize="9.5"
           letterSpacing="0.02em"
@@ -228,7 +228,7 @@ export default function NetworkChart() {
           <circle key={point.week} cx={xPosition(data.indexOf(point))} cy={yPosition(point.clusters)} r="3.5" fill="#E8E4D8" />
         ))}
         {[data[5], data[9], data[11]].map((point) => (
-          <circle key={point.week} cx={xPosition(data.indexOf(point))} cy={yPosition(point.abusers)} r="3.5" fill="#B6512A" />
+          <circle key={point.week} cx={xPosition(data.indexOf(point))} cy={yPosition(point.abusers)} r="3.5" fill="#7B2D26" />
         ))}
       </svg>
     </div>
