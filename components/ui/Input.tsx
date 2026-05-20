@@ -7,11 +7,15 @@ export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputE
   ({ className, style, ...props }, ref) => (
     <input
       ref={ref}
-      className={cn('w-full px-3 py-2 text-sm focus:outline-none', className)}
+      className={cn(
+        'w-full px-3 py-2 text-sm focus:outline-none transition-colors',
+        'focus:border-[var(--accent)] focus:ring-[var(--shadow-focus)]',
+        className,
+      )}
       style={{
-        background: '#FAF6EF',
-        border: '1px solid #D2C9B5',
-        borderRadius: 4,
+        background: 'var(--bg-surface)',
+        border: '1px solid var(--border-default)',
+        borderRadius: 6,
         color: 'var(--text)',
         ...style,
       }}

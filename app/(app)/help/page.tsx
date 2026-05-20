@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { BookOpen, FileText, HelpCircle, Info } from 'lucide-react';
+import { WorkbenchPage } from '@/components/ui';
 
 const ARTICLES = [
   {
@@ -35,17 +36,18 @@ const ARTICLES = [
 
 export default function HelpIndexPage() {
   return (
-    <div className="p-8 space-y-6 max-w-2xl">
-      <div>
-        <h1 className="text-heading-lg" style={{ color: 'var(--text)' }}>
-          Help &amp; Docs
-        </h1>
-        <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-          Guides to get the most out of Unauth.
-        </p>
-      </div>
-
-      <div className="space-y-3">
+    <WorkbenchPage
+      title="Help & Docs"
+      subtitle="Guides to get the most out of Unauth."
+      navItems={[
+        { key: 'overview', label: 'Overview', href: '/dashboard' },
+        { key: 'cases', label: 'Cases', href: '/inbox' },
+        { key: 'clusters', label: 'Clusters', href: '/customers?merchantsMin=2' },
+        { key: 'audits', label: 'Audits', href: '/history' },
+        { key: 'reports', label: 'Reports', href: '/chargebacks' },
+      ]}
+      activeNavKey="audits"
+      main={<div className="p-4 space-y-3">
         {ARTICLES.map(({ icon: Icon, title, description, href, comingSoon }) => (
           <div
             key={title}
@@ -95,8 +97,6 @@ export default function HelpIndexPage() {
             )}
           </div>
         ))}
-      </div>
-
       <div
         className="rounded-lg px-5 py-4 border"
         style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
@@ -116,6 +116,7 @@ export default function HelpIndexPage() {
           and we&apos;ll get back to you within one business day.
         </p>
       </div>
-    </div>
+      </div>}
+    />
   );
 }

@@ -4,20 +4,27 @@ import { ConfidenceBadge } from '@/components/ui/ConfidenceBadge';
 import { riskLevelToNewGrade } from '@/lib/confidence';
 import WatchlistTableClient from '@/components/watchlist/WatchlistTableClient';
 import WatchlistSearchInput from '@/components/watchlist/WatchlistSearchInput';
-import { EmptyState } from '@/components/ui/EmptyState';
 import { formatDate } from '@/lib/utils/format';
 import PageSizeSelect from '@/components/common/PageSizeSelect';
-import { PageHeader } from '@/components/common/PageHeader';
+import { Button, WorkbenchActionBar, WorkbenchEmptyState, WorkbenchKpiStrip, WorkbenchPage } from '@/components/ui';
+import { createServiceClient } from '@/lib/supabase/server';
+import { resolveCallerContext } from '@/lib/permissions';
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
 const DEFAULT_PAGE_SIZE = 25;
 
 export default async function WatchlistPage({ searchParams }: { searchParams?: { page?: string; pageSize?: string; q?: string } }) {
   const supabase = createClient();
+  const serviceClient = createServiceClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     const { redirect } = await import('next/navigation');
     redirect('/login');
+  }
+  const ctx = await resolveCallerContext(serviceClient, user.id);
+  if (!ctx) {
+    const { redirect } = await import('next/navigation');
+    redirect('/onboarding');
   }
 
   // Fetch watchlist entries and recent appearances in parallel
@@ -37,7 +44,7 @@ export default async function WatchlistPage({ searchParams }: { searchParams?: {
       let q = supabase
         .from('watchlist_entries')
         .select('*', { count: 'exact' })
-        .eq('merchant_id', user!.id)
+        .eq('merchant_id', ctx.merchantId)
         .eq('removed_by_merchant', false)
         .order('added_at', { ascending: false })
         .range(offset, offset + pageSize - 1);
@@ -107,8 +114,47 @@ export default async function WatchlistPage({ searchParams }: { searchParams?: {
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   return (
-    <div className="p-8 space-y-6">
-      <PageHeader title="Watchlist" subtitle="Customers you're monitoring across future audits." />
+    <WorkbenchPage
+      title="Watchlist"
+      subtitle="Customers you're monitoring across future audits."
+      navItems={[
+        { key: 'overview', label: 'Overview', href: '/dashboard' },
+        { key: 'cases', label: 'Cases', href: '/inbox' },
+        { key: 'clusters', label: 'Clusters', href: '/customers?merchantsMin=2' },
+        { key: 'audits', label: 'Audits', href: '/history' },
+        { key: 'reports', label: 'Reports', href: '/chargebacks' },
+      ]}
+      activeNavKey="clusters"
+      actions={<Link href="/customers"><Button size="sm">Browse Customers</Button></Link>}
+      kpiStrip={
+        <WorkbenchKpiStrip
+          items={[
+            { label: 'Watchlisted', value: total.toLocaleString(), hint: 'Total entries' },
+            { label: 'Appeared 30d', value: recentAppearances.length.toLocaleString(), hint: 'Recent audits' },
+            { label: 'Search', value: searchQuery ? 'On' : 'Off', hint: searchQuery || 'No query' },
+            { label: 'Page size', value: pageSize.toLocaleString(), hint: 'Rows per page' },
+            { label: 'Pages', value: totalPages.toLocaleString(), hint: 'Result pages' },
+          ]}
+        />
+      }
+      actionBar={
+        <WorkbenchActionBar
+          left={<WatchlistSearchInput defaultValue={searchQuery} />}
+          right={
+            <div className="flex items-center gap-2">
+              <PageSizeSelect pathname="/watchlist" searchParams={querySearchParams} pageSize={pageSize} />
+              {totalPages > 1 && (
+                <>
+                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Page {page} of {totalPages}</span>
+                  {page > 1 && <Link href={`/watchlist?${new URLSearchParams({ ...querySearchParams, page: String(page - 1), pageSize: String(pageSize) }).toString()}`}><Button variant="secondary" size="sm">Prev</Button></Link>}
+                  {page < totalPages && <Link href={`/watchlist?${new URLSearchParams({ ...querySearchParams, page: String(page + 1), pageSize: String(pageSize) }).toString()}`}><Button variant="secondary" size="sm">Next</Button></Link>}
+                </>
+              )}
+            </div>
+          }
+        />
+      }
+      main={<div className="p-4 space-y-6">
 
       {/* Recent appearances section */}
       <div>
@@ -158,7 +204,7 @@ export default async function WatchlistPage({ searchParams }: { searchParams?: {
 
       {rows.length === 0 ? (
         <div className="rounded-lg border" style={{ borderStyle: 'dashed', borderColor: 'var(--border)' }}>
-          <EmptyState
+          <WorkbenchEmptyState
             title={searchQuery ? 'No results' : 'Your watchlist is empty'}
             description={
               searchQuery
@@ -167,8 +213,8 @@ export default async function WatchlistPage({ searchParams }: { searchParams?: {
             }
             action={
               !searchQuery ? (
-                <Link href="/upload" className="text-body-sm font-semibold underline underline-offset-2" style={{ color: 'var(--text)' }}>
-                  Upload an audit →
+                <Link href="/upload" className="text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
+                  Upload an audit
                 </Link>
               ) : undefined
             }
@@ -179,8 +225,7 @@ export default async function WatchlistPage({ searchParams }: { searchParams?: {
           <div className="mb-3 flex items-center justify-between gap-3 flex-wrap">
             <h2 className="text-body-sm font-semibold" style={{ color: 'var(--text)' }}>All watchlisted customers</h2>
             <div className="flex items-center gap-2 flex-wrap">
-              <WatchlistSearchInput defaultValue={searchQuery} />
-              <PageSizeSelect pathname="/watchlist" searchParams={querySearchParams} pageSize={pageSize} />
+              <span className="text-caption" style={{ color: 'var(--text-muted)' }}>Paged and searchable watchlist.</span>
               {totalPages > 1 && (
                 <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
                   <span>Page {page} of {totalPages}</span>
@@ -214,6 +259,7 @@ export default async function WatchlistPage({ searchParams }: { searchParams?: {
           }))} />
         </div>
       )}
-    </div>
+      </div>}
+    />
   );
 }

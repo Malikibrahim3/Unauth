@@ -174,15 +174,15 @@ export default function CsvExportHelpPage() {
           <li>
             <strong>Email variants</strong> — the same person using{' '}
             <code className="text-xs px-1 rounded" style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
-              john@gmail.com
+              customer@example.com
             </code>{' '}
             and{' '}
             <code className="text-xs px-1 rounded" style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
-              john+refund@gmail.com
+              customer+refund@example.com
             </code>{' '}
             or{' '}
             <code className="text-xs px-1 rounded" style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
-              j.o.h.n@gmail.com
+              c.u.s.t.o.m.e.r@example.com
             </code>{' '}
             — caught by email variant detection.
           </li>
@@ -331,5 +331,4 @@ function FieldRow({
     </div>
   );
 }
-
 

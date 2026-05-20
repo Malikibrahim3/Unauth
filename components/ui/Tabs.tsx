@@ -36,13 +36,13 @@ export function Tabs({ tabs, activeKey, onChange, className }: TabsProps) {
               fontSize: 12,
               fontWeight: active ? 600 : 400,
               color: active ? 'var(--text)' : 'var(--text-muted)',
-              borderBottom: active ? '2px solid #7B2D26' : '2px solid transparent',
+              borderBottom: `2px solid ${active ? 'var(--accent)' : 'transparent'}`,
               transition: 'color 120ms',
               background: 'none',
               border: 'none',
               borderBottomStyle: 'solid',
               borderBottomWidth: 2,
-              borderBottomColor: active ? '#7B2D26' : 'transparent',
+              borderBottomColor: active ? 'var(--accent)' : 'transparent',
               cursor: 'pointer',
             }}
           >
@@ -58,8 +58,8 @@ export function Tabs({ tabs, activeKey, onChange, className }: TabsProps) {
                   borderRadius: 3,
                   fontSize: 10,
                   fontWeight: 700,
-                  background: active ? '#FBEFEC' : 'var(--bg-subtle)',
-                  color: active ? '#7B2D26' : 'var(--text-muted)',
+                  background: active ? 'var(--accent-soft)' : 'var(--bg-surface-alt)',
+                  color: active ? 'var(--accent)' : 'var(--text-muted)',
                 }}
               >
                 {tab.badge}

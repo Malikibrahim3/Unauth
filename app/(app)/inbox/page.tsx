@@ -6,9 +6,8 @@ import InboxClient from '@/components/inbox/InboxClient';
 import TrackPageView from '@/components/common/TrackPageView';
 import { signalLabel } from '@/lib/copy/signalLabels';
 import PageSizeSelect from '@/components/common/PageSizeSelect';
-import { PageHeader } from '@/components/common/PageHeader';
 import { fetchMerchantReviewQueueRows } from '@/lib/supabase/merchantHelpers';
-import { MetricCard } from '@/components/ui/MetricCard';
+import { Button, WorkbenchActionBar, WorkbenchEmptyState, WorkbenchKpiStrip, WorkbenchPage } from '@/components/ui';
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
 const DEFAULT_PAGE_SIZE = 25;
@@ -86,56 +85,55 @@ export default async function InboxPage({ searchParams }: { searchParams?: Promi
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   return (
-    <div className="p-8 space-y-6">
-      <PageHeader
-        title="Inbox"
-        subtitle="Identity-flagged transactions awaiting review"
-        actions={<div className="flex items-center gap-2">
-          <a
-            href="/api/inbox/export"
-            className="px-3 py-2 text-sm font-semibold rounded-md border transition-colors"
-            style={{ borderColor: 'var(--border)', color: 'var(--text)' }}
-          >
-            Export Review Queue
-          </a>
-          <Link href="/upload" className="btn-accent px-4 py-2 text-sm font-semibold rounded-md transition-colors">
-            New Audit
-          </Link>
-        </div>}
-      />
-      <MetricCard
-        label="Cases in queue"
-        value={items.length}
-        hint={`Approximate order value under review: ${new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(totalValueAtRisk)}`}
-      />
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <PageSizeSelect pathname="/inbox" searchParams={querySearchParams} pageSize={pageSize} />
-        {totalPages > 1 && (
-          <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
-            <span>Page {page} of {totalPages}</span>
-            {page > 1 && (
-              <Link
-                href={`/inbox?${new URLSearchParams({ ...querySearchParams, page: String(page - 1), pageSize: String(pageSize) }).toString()}`}
-                className="px-2 py-1 rounded border"
-                style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}
-              >
-                ← Prev
-              </Link>
-            )}
-            {page < totalPages && (
-              <Link
-                href={`/inbox?${new URLSearchParams({ ...querySearchParams, page: String(page + 1), pageSize: String(pageSize) }).toString()}`}
-                className="px-2 py-1 rounded border"
-                style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}
-              >
-                Next ›
-              </Link>
-            )}
-          </div>
-        )}
-      </div>
-      <InboxClient initialItems={items} />
-      <TrackPageView event="Inbox Viewed" properties={{ pendingCount: items.length }} />
-    </div>
+    <WorkbenchPage
+      title="Cases"
+      subtitle="Identity-flagged transactions awaiting review"
+      navItems={[
+        { key: 'overview', label: 'Overview', href: '/dashboard' },
+        { key: 'cases', label: 'Cases', href: '/inbox' },
+        { key: 'clusters', label: 'Clusters', href: '/customers?merchantsMin=2' },
+        { key: 'audits', label: 'Audits', href: '/history' },
+        { key: 'reports', label: 'Reports', href: '/chargebacks' },
+      ]}
+      activeNavKey="cases"
+      actions={
+        <div className="flex items-center gap-2">
+          <a href="/api/inbox/export"><Button variant="secondary" size="sm">Export Queue</Button></a>
+          <Link href="/upload"><Button size="sm">New Audit</Button></Link>
+        </div>
+      }
+      kpiStrip={
+        <WorkbenchKpiStrip
+          items={[
+            { label: 'Open cases', value: items.length.toLocaleString(), hint: 'Current page' },
+            { label: 'Value at risk', value: new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(totalValueAtRisk), hint: 'Current page estimate' },
+            { label: 'Definite', value: items.filter((i) => i.match_status === 'definite').length.toLocaleString(), hint: 'Queue' },
+            { label: 'Probable', value: items.filter((i) => i.match_status === 'probable').length.toLocaleString(), hint: 'Queue' },
+            { label: 'Total queue', value: total.toLocaleString(), hint: 'All pages' },
+          ]}
+        />
+      }
+      actionBar={
+        <WorkbenchActionBar
+          left={<PageSizeSelect pathname="/inbox" searchParams={querySearchParams} pageSize={pageSize} />}
+          right={totalPages > 1 ? (
+            <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+              <span>Page {page} of {totalPages}</span>
+              {page > 1 && <Link href={`/inbox?${new URLSearchParams({ ...querySearchParams, page: String(page - 1), pageSize: String(pageSize) }).toString()}`}><Button variant="secondary" size="sm">Prev</Button></Link>}
+              {page < totalPages && <Link href={`/inbox?${new URLSearchParams({ ...querySearchParams, page: String(page + 1), pageSize: String(pageSize) }).toString()}`}><Button variant="secondary" size="sm">Next</Button></Link>}
+            </div>
+          ) : null}
+        />
+      }
+      main={items.length === 0 ? (
+        <WorkbenchEmptyState
+          title="You're all caught up"
+          description="No high or critical transactions need review right now."
+          action={<Link href="/upload" className="text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>Upload a CSV to get started</Link>}
+        />
+      ) : (
+        <InboxClient initialItems={items} />
+      )}
+    />
   );
 }

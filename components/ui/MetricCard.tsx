@@ -23,8 +23,8 @@ interface MetricCardProps {
 }
 
 const TONE_COLOR: Record<DeltaProps['tone'], string> = {
-  positive: '#2A6634',
-  negative: '#7B2D26',
+  positive: 'var(--risk-low-fg)',
+  negative: 'var(--risk-critical-fg)',
   neutral:  'var(--text-muted)',
 };
 
@@ -45,7 +45,7 @@ export function MetricCard({ label, value, delta, hint, icon, density = 'default
     <div
       className={cn('group', className)}
       style={{
-        background: '#FFFFFF',
+        background: 'var(--bg-surface)',
         border: '1px solid var(--border-default)',
         borderRadius: 4,
         padding,

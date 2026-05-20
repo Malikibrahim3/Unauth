@@ -1,34 +1,103 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { formatDate } from '@/lib/utils/format';
-import DashboardCharts from '@/components/dashboard/DashboardCharts';
-import InsightsStrip, { type Insight } from '@/components/dashboard/InsightsStrip';
-import EmptyDashboardHero from '@/components/EmptyDashboardHero';
-import TrackPageView from '@/components/common/TrackPageView';
-import { MetricCard } from '@/components/ui/MetricCard';
-import { PageHeader } from '@/components/ui/PageHeader';
+import { formatDateMode } from '@/lib/utils/format';
+import { formatCurrencyNullable } from '@/lib/utils/formatCurrency';
 import type { Database } from '@/lib/supabase/types';
-import { countMerchantReviewQueueProfiles, getExposureAtRisk } from '@/lib/supabase/merchantHelpers';
+import {
+  countMerchantReviewQueueProfiles,
+  fetchMerchantReviewQueueRows,
+  fetchReviewQueueProfileIds,
+  getExposureAtRisk,
+} from '@/lib/supabase/merchantHelpers';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
-import { FLAG_SAVINGS_CARD } from '@/lib/flags';
-import { SavingsCard } from '@/components/dashboard/SavingsCard';
-import type { SavingsCardData } from '@/components/dashboard/SavingsCard';
-import { SparklineChip, SectionCard } from '@/components/ui';
+import TrackPageView from '@/components/common/TrackPageView';
+import { ConfidenceBadge } from '@/components/ui/ConfidenceBadge';
+import { Badge } from '@/components/ui/Badge';
+import { riskLevelToNewGrade } from '@/lib/confidence';
 
 type RunRow = Database['public']['Tables']['processing_jobs']['Row'];
+
+type QueueRow = {
+  id: string;
+  job_id: string;
+  order_id: string | null;
+  processed_at: string;
+  order_value: number | string | null;
+  identity_confidence_grade: string | null;
+  identity_score: number | null;
+  match_status: string | null;
+  customer_email: string | null;
+  customer_name: string | null;
+  signals_matched: string[] | null;
+};
+
+type ClusterRow = {
+  id: string;
+  names: string[] | null;
+  primary_email: string | null;
+  risk_level: string;
+  total_orders: number;
+  total_refund_claims: number;
+  total_merchants_seen_at: number;
+};
+
+type ActivityItem = {
+  type: string;
+  detail: string;
+  time: string;
+  href?: string;
+};
+
+const WORKBENCH_NAV = [
+  { label: 'Overview', href: '/dashboard' },
+  { label: 'Cases', href: '/customers?risk=high&status=new' },
+  { label: 'Clusters', href: '/customers?merchantsMin=2' },
+  { label: 'Audits', href: '/history' },
+  { label: 'Reports', href: '/chargebacks' },
+] as const;
+
+function toNumber(value: number | string | null | undefined): number {
+  if (value === null || value === undefined) return 0;
+  if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+  const parsed = Number.parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function signalList(row: QueueRow): string[] {
+  if (!Array.isArray(row.signals_matched)) return [];
+  return row.signals_matched.filter((s): s is string => typeof s === 'string' && s.length > 0);
+}
+
+function formatCompactMoney(value: number): string {
+  return new Intl.NumberFormat('en-GB', {
+    style: 'currency',
+    currency: 'GBP',
+    notation: 'compact',
+    maximumFractionDigits: 1,
+  }).format(value);
+}
+
+function gradeFromQueueRow(row: QueueRow): 'A' | 'B' | 'C' | 'D' | 'F' {
+  if (row.identity_confidence_grade) {
+    return riskLevelToNewGrade(row.identity_confidence_grade);
+  }
+  if (row.match_status === 'definite') return 'A';
+  if (row.match_status === 'probable') return 'B';
+  if (row.match_status === 'candidate') return 'C';
+  return 'F';
+}
 
 export default async function DashboardPage() {
   const supabase = createClient();
   const serviceClient = createServiceClient();
 
-  // Resolve authenticated user + merchant context.
-  // Dashboard only shows data for the calling merchant — no cross-tenant reads.
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_DASHBOARD);
-  // App Router pages must return React nodes (not Response objects).
   if (denied) {
     return (
       <div className="p-8">
@@ -46,376 +115,361 @@ export default async function DashboardPage() {
     .eq('hidden_by_merchant', false)
     .order('created_at', { ascending: false })
     .limit(50);
-
   const typedRuns = (runs ?? []) as unknown as RunRow[];
+  const latestRun = typedRuns[0] ?? null;
+  const isEmpty = typedRuns.length === 0;
 
   const totalTransactions = typedRuns.reduce((sum, r) => sum + r.total_rows, 0);
-  // NOTE: totalFlagged uses STORED processing_jobs.flagged_count — these are the
-  // values written by countReviewWorthyTransactions() at job finalisation and may
-  // reflect historical import state for older rows.
   const totalFlagged = typedRuns.reduce((sum, r) => sum + (r.flagged_count ?? 0), 0);
   const avgFlagRate = totalTransactions > 0 ? (totalFlagged / totalTransactions) * 100 : null;
-  const isEmpty = typedRuns.length === 0;
-  const sparklineData = typedRuns.slice(0, 7).reverse().map((run) => run.flagged_count ?? 0);
 
-  // Evidence packages stats
-  const { data: evidenceRows } = await supabase
-    .from('evidence_packages' as any)
-    .select('ce3_eligible');
+  const { data: evidenceRows } = await supabase.from('evidence_packages' as never).select('ce3_eligible');
   const totalPackages = evidenceRows?.length ?? 0;
-  const ce3Packages = (evidenceRows as Array<{ ce3_eligible: boolean }> | null)?.filter(p => p.ce3_eligible).length ?? 0;
+  const ce3Packages =
+    (evidenceRows as Array<{ ce3_eligible: boolean }> | null)?.filter((pkg) => pkg.ce3_eligible).length ?? 0;
 
-  // Unreviewed watchlist appearances
   const { count: unreviewedAppearances } = await supabase
-    .from('watchlist_appearances' as any)
+    .from('watchlist_appearances' as never)
     .select('id', { count: 'exact', head: true })
     .is('reviewed_at', null);
-  const unreviewedCount = unreviewedAppearances ?? 0;
+  const watchlistNeedReview = unreviewedAppearances ?? 0;
 
-  // LIVE identity review queue — distinct customer profiles with at least one
-  // review-worthy, non-dismissed transaction across ALL merchant-owned jobs.
-  //
-  // Uses the shared countMerchantReviewQueueProfiles() helper which:
-  //   - scopes through processing_jobs.merchant_id (not loose profile status)
-  //   - applies the canonical review-worthy definition (grade IS NOT NULL OR
-  //     status IN candidate/probable/definite, excluding dismissed IS TRUE)
-  //   - paginates in 1000-row batches — no Supabase default row cap
-  //
-  // IMPORTANT: this count is DIFFERENT from totalFlagged above.
-  //   totalFlagged  = sum of stored processing_jobs.flagged_count (historical)
-  //   reviewQueue   = live distinct customer count with open review signals
-  //
-  // NULL means the count could not be loaded (helper threw). Render as
-  // "Unavailable" — do NOT convert data-access failures into 0.
   let reviewQueue: number | null = null;
   try {
     reviewQueue = await countMerchantReviewQueueProfiles(serviceClient, ctx.merchantId);
   } catch {
-    // reviewQueue stays null — rendered as "Unavailable" in the KPI card.
+    reviewQueue = null;
   }
 
-  // Exposure at risk (sum of order_value for review-worthy, non-dismissed transactions)
-  // NULL means the helper failed; never converted to 0 (see error policy in merchantHelpers).
   let exposureAtRisk: number | null = null;
-  let exposurePrev30d: number | null = null;
   try {
     exposureAtRisk = await getExposureAtRisk(serviceClient, ctx.merchantId);
   } catch {
-    // exposureAtRisk stays null
+    exposureAtRisk = null;
   }
 
-  // Delta vs. previous 30-day window — query restricted to jobs created in [−60d, −30d).
-  // We approximate "previous period" by summing order_value for jobs in that window.
-  // The computation is best-effort; we never surface a delta if either window fails.
-  const now = new Date();
-  const prev30Start = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000).toISOString();
-  const prev30End   = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  let reviewRows: QueueRow[] = [];
+  let profileIdByTx = new Map<string, string>();
   try {
-    // Get job IDs for the previous 30-day window
-    const { data: prevJobRows } = await serviceClient
-      .from('processing_jobs')
-      .select('id')
-      .eq('merchant_id', ctx.merchantId)
-      .gte('created_at', prev30Start)
-      .lt('created_at', prev30End);
-    if (prevJobRows && prevJobRows.length > 0) {
-      const prevJobIds = (prevJobRows as Array<{ id: string }>).map(r => r.id);
-      // Graded clause
-      const { data: prevGraded } = await serviceClient
-        .from('audit_transactions')
-        .select('order_value')
-        .in('job_id', prevJobIds)
-        .not('identity_confidence_grade', 'is', null)
-        .not('dismissed_by_merchant', 'is', true) as unknown as { data: Array<{ order_value: string | number | null }> | null };
-      // Status-only clause
-      const { data: prevStatus } = await serviceClient
-        .from('audit_transactions')
-        .select('order_value')
-        .in('job_id', prevJobIds)
-        .in('match_status', ['candidate', 'probable', 'definite'])
-        .is('identity_confidence_grade', null)
-        .not('dismissed_by_merchant', 'is', true) as unknown as { data: Array<{ order_value: string | number | null }> | null };
-      const sum = (rows: Array<{ order_value: string | number | null }> | null) =>
-        (rows ?? []).reduce((acc, r) => {
-          const v = r.order_value === null || r.order_value === undefined ? 0
-            : typeof r.order_value === 'string' ? parseFloat(r.order_value)
-            : (r.order_value as number);
-          return acc + (isNaN(v) ? 0 : v);
-        }, 0);
-      exposurePrev30d = sum(prevGraded) + sum(prevStatus);
-    }
+    const queue = await fetchMerchantReviewQueueRows(serviceClient, ctx.merchantId, { from: 0, to: 5 });
+    reviewRows = (queue.rows as QueueRow[]) ?? [];
+    const txIds = reviewRows.map((r) => r.id).filter((id) => typeof id === 'string');
+    profileIdByTx = await fetchReviewQueueProfileIds(serviceClient, queue.ownedJobIds, txIds);
   } catch {
-    // exposurePrev30d stays null — delta will not be shown
+    reviewRows = [];
+    profileIdByTx = new Map<string, string>();
   }
 
-  // Estimated exposure from latest run
-  const latestRun = typedRuns[0] ?? null;
-  const latestFlagRate = latestRun && latestRun.total_rows > 0
-    ? ((latestRun.flagged_count ?? 0) / latestRun.total_rows) * 100
-    : null;
-  const prevRun = typedRuns[1] ?? null;
-  const prevFlagRate = prevRun && prevRun.total_rows > 0
-    ? ((prevRun.flagged_count ?? 0) / prevRun.total_rows) * 100
-    : null;
+  const merchantFilter = `merchant_ids.cs.${JSON.stringify([user.id])},merchant_ids.cs.${JSON.stringify([ctx.merchantId])}`;
+  let clusterRows: ClusterRow[] = [];
+  try {
+    const { data } = await serviceClient
+      .from('customer_profiles')
+      .select('id,names,primary_email,risk_level,total_orders,total_refund_claims,total_merchants_seen_at')
+      .or(merchantFilter)
+      .order('total_merchants_seen_at', { ascending: false })
+      .order('risk_score', { ascending: false })
+      .limit(6);
+    clusterRows = (data as ClusterRow[] | null) ?? [];
+  } catch {
+    clusterRows = [];
+  }
 
-  // Build contextual insights
-  const insights: Insight[] = [];
-
-  // Phase E-4 — ROI / SavingsCard data (feature-flagged, conservative methodology)
-  let savingsData: SavingsCardData | null = null;
-  if (FLAG_SAVINGS_CARD) {
-    try {
-      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-      const { data: confirmedRows } = await serviceClient
-        .from('audit_transactions' as any)
-        .select('order_value')
-        .in(
-          'job_id',
-          (
-            await serviceClient
-              .from('processing_jobs')
-              .select('id')
-              .eq('merchant_id', ctx.merchantId)
-              .gte('created_at', thirtyDaysAgo)
-          ).data?.map((r: { id: string }) => r.id) ?? [],
-        )
-        .or('match_status.eq.confirmed_fraud,match_status.eq.confirmed-fraud,merchant_feedback.eq.fraud');
-
-      const rows = (confirmedRows as Array<{ order_value: string | number | null }> | null) ?? [];
-      const confirmedFraudValue = rows.reduce((acc, r) => {
-        const v = r.order_value === null ? 0
-          : typeof r.order_value === 'string' ? parseFloat(r.order_value)
-          : (r.order_value as number);
-        return acc + (isNaN(v) ? 0 : v);
-      }, 0);
-
-      savingsData = {
-        confirmedFraudValue,
-        confirmedFraudCount: rows.length,
-        currency: 'GBP',
-        periodDays: 30,
-        lastUpdated: new Date().toISOString(),
-      };
-    } catch {
-      // savingsData stays null
+  const signalCounts = new Map<string, number>();
+  for (const row of reviewRows) {
+    for (const sig of signalList(row)) {
+      signalCounts.set(sig, (signalCounts.get(sig) ?? 0) + 1);
     }
   }
+  const topSignals = [...signalCounts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([name, count]) => ({ name, count }));
 
-  if (unreviewedCount > 0) {
-    insights.push({
-      text: `${unreviewedCount} watchlisted ${unreviewedCount === 1 ? 'customer' : 'customers'} appeared in your latest audit and need review.`,
-      level: 'warn',
-      href: '/watchlist',
-      cta: 'Review watchlist',
+  const activity: ActivityItem[] = [];
+  if (latestRun) {
+    activity.push({
+      type: 'AUDIT',
+      detail: `${latestRun.filename} · ${(latestRun.flagged_count ?? 0).toLocaleString()} matched`,
+      time: formatDateMode(latestRun.created_at, 'recent'),
+      href: `/audit/${latestRun.id}`,
     });
   }
-  if (latestFlagRate !== null && prevFlagRate !== null) {
-    const delta = latestFlagRate - prevFlagRate;
-    if (Math.abs(delta) >= 0.5) {
-      insights.push({
-        text: `Match rate ${delta > 0 ? 'increased' : 'decreased'} from ${prevFlagRate.toFixed(1)}% to ${latestFlagRate.toFixed(1)}% in the latest upload.`,
-        level: delta > 0 ? 'warn' : 'positive',
-        href: '/history',
-        cta: 'View history',
-      });
-    }
-  }
-  if (reviewQueue !== null && reviewQueue > 0) {
-    insights.push({
-      text: `${reviewQueue} high-confidence ${reviewQueue === 1 ? 'customer is' : 'customers are'} unresolved in the review queue.`,
-      level: 'info',
-      href: '/customers?risk=high&status=new',
-      cta: 'Review now',
+  if (reviewRows[0]) {
+    const row = reviewRows[0];
+    activity.push({
+      type: 'QUEUE',
+      detail: `${row.customer_name ?? row.customer_email ?? 'Unidentified'} · ${row.match_status ?? 'candidate'}`,
+      time: formatDateMode(row.processed_at, 'recent'),
+      href: profileIdByTx.get(row.id) ? `/customers/${profileIdByTx.get(row.id)}` : `/audit/${row.job_id}`,
     });
   }
   if (ce3Packages > 0) {
-    insights.push({
-      text: `${ce3Packages} evidence ${ce3Packages === 1 ? 'package' : 'packages'} ${ce3Packages === 1 ? 'is' : 'are'} CE3.0 eligible and ready to submit.`,
-      level: 'positive',
+    activity.push({
+      type: 'EVIDENCE',
+      detail: `${ce3Packages} CE3.0 eligible package${ce3Packages === 1 ? '' : 's'}`,
+      time: 'current',
       href: '/chargebacks',
-      cta: 'View packages',
     });
   }
-  if (!isEmpty && typedRuns.length === 1) {
-    insights.push({ text: 'Upload a second dataset to compare flag rates over time.', level: 'info', href: '/upload', cta: 'New audit' });
+  if (watchlistNeedReview > 0) {
+    activity.push({
+      type: 'WATCHLIST',
+      detail: `${watchlistNeedReview} watchlist appearance${watchlistNeedReview === 1 ? '' : 's'} pending`,
+      time: 'current',
+      href: '/watchlist',
+    });
   }
 
   return (
-    <div className="p-6 md:p-8">
+    <div className="p-4 md:p-6">
       <TrackPageView event="Dashboard Viewed" />
 
-      {/* ── Page header ──────────────────────────────────────────────── */}
-      <div className="mb-[var(--space-5)]">
-        <PageHeader
-          title="Identity Review Overview"
-          subtitle="Monitor identity match signals and review evidence across all your uploads."
-          eyebrow="Workspace overview"
-          primaryAction={
-            <Link href="/upload" className="btn-accent px-4 py-2 rounded-md text-body-sm font-semibold transition-colors">
-              New Audit
-            </Link>
-          }
-        />
-      </div>
+      <section
+        className="overflow-hidden border"
+        style={{ borderColor: 'var(--border-default)', background: 'var(--bg-surface)', borderRadius: 4 }}
+      >
+        <header className="border-b px-4 py-3" style={{ borderColor: 'var(--border-default)', background: 'var(--bg-surface)' }}>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <nav className="flex items-center gap-4" aria-label="Dashboard views">
+              {WORKBENCH_NAV.map((item, idx) => (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  className="text-body-sm border-b-2 pb-1"
+                  style={{
+                    color: idx === 0 ? 'var(--text)' : 'var(--text-muted)',
+                    borderBottomColor: idx === 0 ? 'var(--accent)' : 'transparent',
+                    fontWeight: idx === 0 ? 600 : 500,
+                  }}
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
 
-      {/* ── Insights strip ───────────────────────────────────────────── */}
-      <InsightsStrip insights={insights} />
-
-      {/* ── KPI row ─────────────────────────────────────────────────── */}
-      {/* ── Hero KPI: Exposure at risk ───────────────────────────────── */}
-      {(() => {
-        const exposureDelta: { value: number; direction: 'up' | 'down' | 'flat'; tone: 'positive' | 'negative' | 'neutral' } | undefined =
-          exposureAtRisk !== null && exposurePrev30d !== null
-            ? (() => {
-                const diff = exposureAtRisk - exposurePrev30d;
-                // Round to 2 dp to avoid floating-point noise
-                const rounded = Math.round(diff * 100) / 100;
-                return {
-                  value: rounded,
-                  direction: rounded > 0 ? 'up' : rounded < 0 ? 'down' : 'flat',
-                  tone: rounded > 0 ? 'negative' : rounded < 0 ? 'positive' : 'neutral',
-                };
-              })()
-            : undefined;
-        const exposureFormatted =
-          exposureAtRisk === null
-            ? 'Unavailable'
-            : exposureAtRisk === 0
-            ? '£0'
-            : `£${exposureAtRisk.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-        return (
-          <div className="col-span-2 md:col-span-4 mb-[var(--space-3)]">
-            <MetricCard
-              size="hero"
-              label="Exposure at risk"
-              value={exposureFormatted}
-              delta={exposureDelta}
-              microchart={sparklineData.length > 1 ? <SparklineChip data={sparklineData} tone="negative" /> : undefined}
-              hint={
-                exposureAtRisk === null
-                  ? 'Could not be computed'
-                  : 'Sum of order value for open, review-worthy transactions'
-              }
-            />
+            <div className="flex items-center gap-3">
+              <span className="text-caption flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
+                <span className="h-1.5 w-1.5 rounded-full" style={{ background: 'var(--risk-low)' }} />
+                Graph live
+              </span>
+              <span className="text-caption" style={{ color: 'var(--text-subtle)' }}>
+                {latestRun ? `Latest: ${formatDateMode(latestRun.created_at, 'table')}` : 'No audits yet'}
+              </span>
+              <Link href="/upload" className="btn-accent rounded-md px-3 py-1.5 text-caption font-semibold">
+                New Audit
+              </Link>
+            </div>
           </div>
-        );
-      })()}
+        </header>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-[var(--space-3)] mb-[var(--space-5)]">
-        {reviewQueue === null ? (
-            <MetricCard label="Customers to review" value="Unavailable" hint="Count could not be loaded" />
-        ) : reviewQueue > 0 ? (
-          <Link href="/customers?risk=high&status=new" className="block">
-            <MetricCard label="Customers to review" value={reviewQueue} hint="High-confidence, unresolved" microchart={sparklineData.length > 1 ? <SparklineChip data={sparklineData} tone="negative" /> : undefined} />
-          </Link>
-        ) : (
-          <MetricCard label="Customers to review" value="—" hint="All resolved" />
-        )}
-        <Link href="/history" className="block">
-          <MetricCard
-            label="Transactions analysed"
-            value={totalTransactions}
-            hint={`${typedRuns.length} audit ${typedRuns.length === 1 ? 'run' : 'runs'}`}
-            microchart={sparklineData.length > 1 ? <SparklineChip data={typedRuns.slice(0, 7).reverse().map((run) => run.total_rows)} tone="neutral" /> : undefined}
-          />
-        </Link>
-        {totalPackages > 0 ? (
-          <Link href="/chargebacks" className="block">
-            <MetricCard
-              label="Evidence packages"
-              value={totalPackages}
-              hint={ce3Packages > 0 ? `${ce3Packages} CE3.0 eligible` : 'None CE3.0 eligible'}
-            />
-          </Link>
-        ) : (
-          <MetricCard label="Evidence packages" value="0" hint="None CE3.0 eligible" />
-        )}
-        <Link href="/history" className="block">
-          <MetricCard
-            label="Avg match rate"
-            value={avgFlagRate !== null ? `${avgFlagRate.toFixed(1)}%` : '—'}
-            hint={
-              avgFlagRate !== null && avgFlagRate >= 10 ? 'High — investigate upload'
-              : avgFlagRate !== null && avgFlagRate >= 4 ? 'Elevated'
-              : 'Normal range'
-            }
-          />
-        </Link>
-      </div>
-
-      {isEmpty ? (
-        <EmptyDashboardHero />
-      ) : (
-        <>
-          {/* ── Latest audit quick-link ─────────────────────────────── */}
-          {latestRun && (latestRun.status === 'completed' || latestRun.status === 'complete') && (
-            <Link
-              href={`/audit/${latestRun.id}`}
-            className="flex items-center justify-between px-5 py-5 mb-6 border-l-2 border hover:shadow-md transition-shadow group"
-            style={{ background: 'var(--accent-soft)', borderColor: 'var(--border-subtle)', borderLeftColor: '#7B2D26', borderRadius: 4 }}
+        <div className="grid md:grid-cols-[1.35fr_repeat(4,minmax(0,1fr))] grid-cols-2 border-b" style={{ borderColor: 'var(--border-default)' }}>
+          {[
+            {
+              label: 'Exposure at risk',
+              value: exposureAtRisk === null ? 'Unavailable' : formatCurrencyNullable(exposureAtRisk),
+              hint: exposureAtRisk === null ? 'Could not be computed' : 'Open review-worthy value',
+            },
+            {
+              label: 'Customers to review',
+              value: reviewQueue === null ? 'Unavailable' : reviewQueue === 0 ? '—' : reviewQueue.toLocaleString(),
+              hint: reviewQueue === null ? 'Count could not be loaded' : 'High-confidence unresolved',
+            },
+            {
+              label: 'Transactions analysed',
+              value: totalTransactions.toLocaleString(),
+              hint: `${typedRuns.length} audit ${typedRuns.length === 1 ? 'run' : 'runs'}`,
+            },
+            {
+              label: 'Evidence ready',
+              value: totalPackages.toLocaleString(),
+              hint: ce3Packages > 0 ? `${ce3Packages} CE3.0 eligible` : 'No CE3.0 packages',
+            },
+            {
+              label: 'Avg match rate',
+              value: avgFlagRate === null ? '—' : `${avgFlagRate.toFixed(1)}%`,
+              hint: avgFlagRate === null ? 'Awaiting data' : avgFlagRate >= 10 ? 'High' : avgFlagRate >= 4 ? 'Elevated' : 'Normal',
+            },
+          ].map((metric, idx) => (
+            <div
+              key={metric.label}
+              className="px-3 py-3 md:px-4"
+              style={{
+                borderRightColor: 'var(--border-default)',
+                borderRightWidth: idx === 4 ? 0 : 1,
+                borderRightStyle: idx === 4 ? 'none' : 'solid',
+              }}
             >
-              <div className="min-w-0 flex-1">
-                <p className="text-overline uppercase mb-1" style={{ color: 'var(--text-muted)' }}>Latest audit</p>
-                <p className="text-display-md font-mono truncate" style={{ color: 'var(--text)' }}>{latestRun.filename}</p>
-                <p className="text-caption mt-1" style={{ color: 'var(--text-subtle)' }}>
-                  {latestRun.total_rows.toLocaleString()} transactions · {(latestRun.flagged_count ?? 0).toLocaleString()} matched
-                  {latestFlagRate !== null && <span> · {latestFlagRate.toFixed(1)}% flag rate</span>}
-                  <span> · {formatDate(latestRun.created_at)}</span>
+              <p className="text-overline" style={{ color: 'var(--text-muted)' }}>{metric.label}</p>
+              <p className="text-mono-lg mt-1 num" style={{ color: 'var(--text)' }}>{metric.value}</p>
+              <p className="text-caption mt-1" style={{ color: 'var(--text-subtle)' }}>{metric.hint}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <section className="border-r" style={{ borderColor: 'var(--border-default)' }}>
+            <div className="flex items-center justify-between border-b px-4 py-2" style={{ borderColor: 'var(--border-default)', background: 'var(--bg-surface-alt)' }}>
+              <div>
+                <p className="text-overline" style={{ color: 'var(--text-muted)' }}>Cases requiring attention</p>
+                <p className="text-caption" style={{ color: 'var(--text-subtle)' }}>
+                  {reviewRows.length} in immediate queue
                 </p>
               </div>
-              <svg className="w-7 h-7 group-hover:translate-x-1.5 transition-transform flex-shrink-0 ml-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ color: 'var(--accent-500)' }}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-              </svg>
-            </Link>
-          )}
-
-          {/* ── Charts ──────────────────────────────────────────────── */}
-          <DashboardCharts runs={typedRuns.map(r => ({
-            id: r.id,
-            filename: r.filename,
-            total_rows: r.total_rows,
-            flagged_count: r.flagged_count ?? 0,
-            created_at: r.created_at,
-          }))} />
-
-          {/* ── Quick links row ─────────────────────────────────────── */}
-          <SectionCard title="Recent Activity" description="Top flagged workflows and shortcuts" className="mb-6">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {[
-              { href: '/customers?risk=high', label: 'High-confidence matches', desc: 'Review probable & definite matches' },
-              { href: '/customers?hasRefunds=1', label: 'Refund claimants', desc: 'Customers with at least one refund claim' },
-              { href: '/chargebacks', label: 'Evidence packages', desc: 'View generated dispute packages' },
-            ].map(({ href, label, desc }) => (
-              <Link
-                key={href}
-                href={href}
-                className="rounded-lg px-4 py-3 border flex items-start justify-between gap-2 group hover:shadow-sm transition-shadow"
-                style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
-              >
-                <div>
-                  <p className="text-body-sm font-medium" style={{ color: 'var(--text)' }}>{label}</p>
-                  <p className="text-caption mt-0.5" style={{ color: 'var(--text-muted)' }}>{desc}</p>
-                </div>
-                <svg className="w-4 h-4 flex-shrink-0 mt-0.5 opacity-40 group-hover:opacity-70 transition-opacity" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                </svg>
+              <Link href="/customers?risk=high&status=new" className="text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
+                View all
               </Link>
-            ))}
-          </div>
-          </SectionCard>
+            </div>
 
-          {/* Phase E-4 — ROI Savings card (feature-flagged) */}
-          {FLAG_SAVINGS_CARD && (
-            <SavingsCard data={savingsData} className="mb-6" />
-          )}
+            {reviewRows.length === 0 ? (
+              <div className="px-4 py-8">
+                <p className="text-body-sm font-medium" style={{ color: 'var(--text)' }}>
+                  {isEmpty ? 'Run your first audit to populate the queue.' : 'No review cases in the queue right now.'}
+                </p>
+                <p className="text-caption mt-1" style={{ color: 'var(--text-muted)' }}>
+                  {isEmpty ? 'Upload a CSV to start generating cases, clusters, and evidence signals.' : 'Current high-confidence identities are resolved.'}
+                </p>
+                <Link href="/upload" className="mt-3 inline-block text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
+                  Upload a CSV
+                </Link>
+              </div>
+            ) : (
+              <div>
+                {reviewRows.map((row) => {
+                  const score = row.identity_score === null ? null : Math.round(row.identity_score);
+                  const profileId = profileIdByTx.get(row.id);
+                  const href = profileId ? `/customers/${profileId}` : `/audit/${row.job_id}/transaction/${row.id}`;
+                  const signalCount = signalList(row).length;
+                  return (
+                    <Link
+                      key={row.id}
+                      href={href}
+                      className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 border-b px-4 py-3 hover-bg-subtle"
+                      style={{ borderColor: 'var(--border-subtle)' }}
+                    >
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="text-body-sm truncate font-medium" style={{ color: 'var(--text)' }}>
+                            {row.customer_name ?? row.customer_email ?? 'Unidentified customer'}
+                          </p>
+                          <ConfidenceBadge grade={gradeFromQueueRow(row)} score={score ?? undefined} size="sm" />
+                          {row.match_status && <Badge size="sm" tone="warning">{row.match_status}</Badge>}
+                        </div>
+                        <p className="text-caption mt-1 font-mono" style={{ color: 'var(--text-muted)' }}>
+                          {row.order_id ?? row.id} · {formatCurrencyNullable(toNumber(row.order_value))}
+                        </p>
+                        <p className="text-caption mt-1" style={{ color: 'var(--text-subtle)' }}>
+                          {signalCount > 0 ? `${signalCount} signal${signalCount === 1 ? '' : 's'} matched` : 'No signal breakdown'} · {formatDateMode(row.processed_at, 'recent')}
+                        </p>
+                      </div>
+                      <span className="text-caption self-center font-semibold" style={{ color: 'var(--accent)' }}>
+                        Open
+                      </span>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </section>
 
-          <div className="flex justify-end">
-            <Link href="/history" className="text-body-sm font-medium hover:underline" style={{ color: 'var(--accent)' }}>
-              View all audits ›
-            </Link>
-          </div>
-        </>
-      )}
+          <aside>
+            <div className="border-b px-4 py-2" style={{ borderColor: 'var(--border-default)', background: 'var(--bg-surface-alt)' }}>
+              <p className="text-overline" style={{ color: 'var(--text-muted)' }}>Cluster exposure</p>
+            </div>
+            <div className="border-b px-4 py-2" style={{ borderColor: 'var(--border-subtle)' }}>
+              {clusterRows.length === 0 ? (
+                <p className="text-caption" style={{ color: 'var(--text-subtle)' }}>No linked profiles yet.</p>
+              ) : (
+                <div className="space-y-2">
+                  {clusterRows.map((profile) => (
+                    <div key={profile.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
+                      <div className="min-w-0">
+                        <p className="truncate text-caption font-medium" style={{ color: 'var(--text)' }}>
+                          {profile.names?.[0] ?? profile.primary_email ?? 'Unknown profile'}
+                        </p>
+                        <p className="truncate text-caption font-mono" style={{ color: 'var(--text-muted)' }}>
+                          {profile.total_merchants_seen_at} merchants · {profile.total_orders} orders · {profile.total_refund_claims} refunds
+                        </p>
+                      </div>
+                      <ConfidenceBadge grade={riskLevelToNewGrade(profile.risk_level)} size="sm" />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="border-b px-4 py-2" style={{ borderColor: 'var(--border-default)', background: 'var(--bg-surface-alt)' }}>
+              <p className="text-overline" style={{ color: 'var(--text-muted)' }}>Top signals</p>
+            </div>
+            <div className="border-b px-4 py-2" style={{ borderColor: 'var(--border-subtle)' }}>
+              {topSignals.length === 0 ? (
+                <p className="text-caption" style={{ color: 'var(--text-subtle)' }}>No signal breakdown yet.</p>
+              ) : (
+                <div className="space-y-2">
+                  {topSignals.map((sig) => (
+                    <div key={sig.name} className="grid grid-cols-[minmax(0,1fr)_26px] items-center gap-2">
+                      <p className="truncate text-caption font-mono" style={{ color: 'var(--text-muted)' }}>{sig.name}</p>
+                      <span className="text-caption text-right font-mono num" style={{ color: 'var(--text)' }}>{sig.count}x</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="border-b px-4 py-2" style={{ borderColor: 'var(--border-default)', background: 'var(--bg-surface-alt)' }}>
+              <p className="text-overline" style={{ color: 'var(--text-muted)' }}>Activity</p>
+            </div>
+            <div className="border-b px-4 py-2" style={{ borderColor: 'var(--border-subtle)' }}>
+              {activity.length === 0 ? (
+                <p className="text-caption" style={{ color: 'var(--text-subtle)' }}>No recent activity.</p>
+              ) : (
+                <div className="space-y-2">
+                  {activity.slice(0, 5).map((item, idx) => {
+                    const content = (
+                      <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] gap-2">
+                        <span className="text-overline" style={{ color: 'var(--text-subtle)' }}>{item.type}</span>
+                        <p className="truncate text-caption" style={{ color: 'var(--text)' }}>{item.detail}</p>
+                        <span className="text-caption font-mono" style={{ color: 'var(--text-subtle)' }}>{item.time}</span>
+                      </div>
+                    );
+                    return item.href ? (
+                      <Link key={`${item.type}-${idx}`} href={item.href} className="block hover:opacity-80">
+                        {content}
+                      </Link>
+                    ) : (
+                      <div key={`${item.type}-${idx}`}>{content}</div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="px-4 py-2">
+              <p className="text-caption" style={{ color: 'var(--text-subtle)' }}>
+                Trend · {avgFlagRate === null ? '—' : `${avgFlagRate.toFixed(1)}% match rate`} · {totalFlagged.toLocaleString()} matched
+              </p>
+              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full" style={{ background: 'var(--bg-surface-sunk)' }}>
+                <div
+                  className="h-full rounded-full"
+                  style={{
+                    width: `${Math.max(0, Math.min(100, avgFlagRate ?? 0))}%`,
+                    background: 'var(--risk-high-fg)',
+                  }}
+                />
+              </div>
+            </div>
+          </aside>
+        </div>
+
+        <footer className="flex flex-wrap items-center justify-between gap-2 border-t px-4 py-2" style={{ borderColor: 'var(--border-default)', background: 'var(--bg-surface-alt)' }}>
+          <span className="text-caption font-mono" style={{ color: 'var(--text-subtle)' }}>
+            {latestRun ? `Audit ${formatDateMode(latestRun.created_at, 'table')} · ${latestRun.total_rows.toLocaleString()} rows` : 'No completed audits'}
+          </span>
+          <span className="text-caption font-mono" style={{ color: 'var(--text-subtle)' }}>
+            k &gt;= 3 gate · HMAC-SHA256 · 0 PII fields stored
+          </span>
+        </footer>
+      </section>
     </div>
   );
 }

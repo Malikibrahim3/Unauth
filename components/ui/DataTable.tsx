@@ -39,7 +39,7 @@ function SkeletonRows({ count = 6, cols }: { count?: number; cols: number }) {
   return (
     <>
       {Array.from({ length: count }).map((_, i) => (
-        <tr key={i} style={{ borderBottom: '1px solid var(--border-default)' }}>
+        <tr key={i} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
           {Array.from({ length: cols }).map((_, j) => (
             <td key={j} style={{ padding: '10px 14px' }}>
               <div
@@ -95,9 +95,9 @@ export function DataTable<T>({
 
   return (
     <div className={cn('w-full overflow-x-auto', className)}>
-      <table className="w-full border-collapse" style={{ fontSize: 13 }}>
+      <table className="w-full border-collapse" style={{ fontSize: 13, background: 'var(--bg-surface)' }}>
         <thead>
-          <tr style={{ background: 'var(--bg-canvas)', borderBottom: '1px solid var(--border-default)' }}>
+          <tr style={{ background: 'var(--bg-surface-alt)', borderBottom: '1px solid var(--border-default)' }}>
             {columns.map((col) => (
               <th
                 key={col.key}
@@ -108,9 +108,9 @@ export function DataTable<T>({
                   fontWeight: 600,
                   letterSpacing: '0.12em',
                   textTransform: 'uppercase',
-                  color: 'var(--text-muted)',
+                  color: 'var(--text-tertiary)',
                   padding: '0 14px',
-                  height: 36,
+                  height: 34,
                   whiteSpace: 'nowrap',
                   textAlign: col.align === 'right' ? 'right' : col.align === 'center' ? 'center' : 'left',
                   cursor: col.sortable && onSort ? 'pointer' : undefined,
@@ -152,13 +152,13 @@ export function DataTable<T>({
                   onClick={onRowClick ? () => onRowClick(row) : undefined}
                   style={{
                     height: rowH,
-                    borderBottom: '1px solid var(--border-default)',
-                    background: isSelected ? 'var(--bg-subtle)' : undefined,
-                    borderLeft: isSelected ? '2px solid #7B2D26' : '2px solid transparent',
+                    borderBottom: '1px solid var(--border-subtle)',
+                    background: isSelected ? 'var(--bg-selected)' : undefined,
+                    borderLeft: isSelected ? '2px solid var(--accent)' : '2px solid transparent',
                     cursor: onRowClick ? 'pointer' : undefined,
                     transition: 'background 120ms',
                   }}
-                  className={onRowClick && !isSelected ? 'hover:bg-[var(--bg-subtle)]' : undefined}
+                  className={onRowClick && !isSelected ? 'hover:bg-[var(--bg-hover)]' : undefined}
                 >
                   {columns.map((col) => (
                     <td

@@ -106,12 +106,12 @@ export default function AuditPage() {
               margin: 0,
             }}
           >
-            Questions before uploading? Email Malik directly —{' '}
+            Questions before uploading? Email the team directly —{' '}
             <a
-              href="mailto:malik@unauth.co"
+              href="mailto:hello@unauth.app"
               style={{ color: muted, textDecoration: 'underline' }}
             >
-              malik@unauth.co
+              hello@unauth.app
             </a>{' '}
             — response within 2 hours.
           </p>

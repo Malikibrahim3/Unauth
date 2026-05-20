@@ -151,7 +151,7 @@ export default function AuditForm() {
             fontFamily: 'var(--font-serif, serif)',
             fontStyle: 'italic',
             fontSize: '12px',
-            color: '#B6512A',
+            color: '#7B2D26',
             margin: '0 0 10px',
           }}
         >

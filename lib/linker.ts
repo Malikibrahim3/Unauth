@@ -331,9 +331,9 @@ export function nameFuzzyBucket(name: string): string | null {
 /**
  * Strip everything non-alpha from the email local part.
  *
- *   "mike.brett830@gmail.com"  → "mikebrett"
- *   "mike_brett24@yahoo.co.uk" → "mikebrett"
- *   "j.harrison+orders@gmail.com" → "jharrison"
+ *   "customer.name830@example.com"  → "customername"
+ *   "customer_name24@example.co.uk" → "customername"
+ *   "c.name+orders@example.com"     → "cnameorders"
  *
  * Returns null when the resulting alpha-string is < 4 chars.
  */

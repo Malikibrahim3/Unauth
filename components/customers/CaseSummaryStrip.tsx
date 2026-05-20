@@ -29,7 +29,7 @@ export default function CaseSummaryStrip({
     <div style={{ background: '#FFFFFF', border: '1px solid var(--border-default)', borderRadius: 4 }}>
       <div style={{ background: 'var(--bg-canvas)', borderBottom: '1px solid var(--border-default)', padding: '10px 14px' }}>
         <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)', lineHeight: 1 }}>
-          <span style={{ color: '#7B2D26', marginRight: 5 }}>§</span>
+          <span aria-hidden="true" className="ua-section-dot" />
           Case At A Glance
         </div>
       </div>

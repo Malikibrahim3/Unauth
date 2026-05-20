@@ -1,126 +1,238 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-
 import { cn } from '@/lib/utils';
 
-const notifications = [
-  { store: 'Kessler', title: 'Parcel not received', body: 'Tracking shows delivered. Customer says nothing arrived at the door.', tone: 'new dispute', time: '2m ago' },
-  { store: 'Midform', title: 'Missing item claim', body: 'Buyer says two items were missing from the parcel and wants a partial refund.', tone: 'refund requested', time: '5m ago' },
-  { store: 'Northrun', title: 'Wrong item sent', body: 'Complaint says the item inside the box does not match the checkout order.', tone: 'support escalation', time: '9m ago' },
-  { store: 'Prime & Co', title: 'Unauthorized purchase', body: 'Cardholder denies placing the order and says the transaction should be reversed.', tone: 'chargeback risk', time: '12m ago' },
-  { store: 'Oakshelf', title: 'Damaged on arrival', body: 'Customer says the product arrived broken and unusable on first open.', tone: 'refund requested', time: '16m ago' },
-  { store: 'Bridleworks', title: 'Duplicate charge', body: 'Buyer reports being charged twice for a single checkout session.', tone: 'billing dispute', time: '21m ago' },
+const complaints = [
+  { store: 'Kessler', handle: '@kessler', title: 'I never received my package', body: 'Tracking shows delivered but nothing arrived at my address.', tone: 'New dispute' },
+  { store: 'Midform', handle: '@midform', title: 'The box arrived completely empty', body: 'Box was sealed but there was absolutely nothing inside.', tone: 'Refund requested' },
+  { store: 'Northrun', handle: '@northrun', title: 'This is not what I ordered', body: 'Item inside the box doesn\'t match what I checked out for.', tone: 'Support escalation' },
+  { store: 'Prime & Co', handle: '@primeco', title: 'My item was broken when I opened it', body: 'Arrived with huge damage and completely unusable from day one.', tone: 'Chargeback risk' },
+  { store: 'Oakshelf', handle: '@oakshelf', title: 'I was charged twice', body: 'Bank statement shows two identical charges on the same day.', tone: 'Billing dispute' },
+  { store: 'Bridleworks', handle: '@bridleworks', title: 'I don\'t recognise this charge on my card', body: 'Never made this purchase. Someone used my card without permission.', tone: 'Chargeback risk' },
+  { store: 'Kessler', handle: '@kessler', title: 'I never placed this order', body: 'This transaction appeared on my account. I have no record of it.', tone: 'Chargeback risk' },
+  { store: 'Midform', handle: '@midform', title: 'The tracking says delivered but I have nothing', body: 'Courier marked it delivered but package never arrived.', tone: 'New dispute' },
+  { store: 'Northrun', handle: '@northrun', title: 'Someone must have stolen it from my porch', body: 'Delivery was left outside. Package is now missing.', tone: 'New dispute' },
+  { store: 'Prime & Co', handle: '@primeco', title: 'I only received half my order', body: 'Multiple items were in the order but only some arrived.', tone: 'Refund requested' },
+  { store: 'Oakshelf', handle: '@oakshelf', title: 'This looks nothing like the photos on the website', body: 'Product appearance completely different from listing photos.', tone: 'Support escalation' },
+  { store: 'Bridleworks', handle: '@bridleworks', title: 'The size I received is completely different to what I ordered', body: 'Wrong size shipped. I ordered medium and got small.', tone: 'Refund requested' },
+  { store: 'Kessler', handle: '@kessler', title: 'It stopped working after two days', body: 'Broke immediately after arrival. Completely non-functional now.', tone: 'Escalated' },
+  { store: 'Midform', handle: '@midform', title: 'There was a huge scratch on it straight out of the box', body: 'Major cosmetic damage visible on unboxing.', tone: 'Support escalation' },
+  { store: 'Northrun', handle: '@northrun', title: 'I sent it back weeks ago and still haven\'t got my money', body: 'Returned item with your label three weeks ago. No refund yet.', tone: 'Escalated' },
+  { store: 'Prime & Co', handle: '@primeco', title: 'You charged me after I cancelled my subscription', body: 'Cancelled subscription but was charged in next billing cycle.', tone: 'Billing dispute' },
+  { store: 'Oakshelf', handle: '@oakshelf', title: 'The colour is completely different to what was listed', body: 'Product color doesn\'t match the website description at all.', tone: 'Support escalation' },
+  { store: 'Bridleworks', handle: '@bridleworks', title: 'I returned it with the label you sent me, where\'s my refund', body: 'Sent back with tracking. Still waiting for money back.', tone: 'Escalated' },
+  { store: 'Kessler', handle: '@kessler', title: 'My daughter used my card without my permission', body: 'Unauthorized purchase made by family member on my card.', tone: 'Chargeback risk' },
+  { store: 'Midform', handle: '@midform', title: 'I cancelled the order immediately but it still shipped', body: 'Cancelled same day but shipment still processed.', tone: 'Billing dispute' },
+  { store: 'Northrun', handle: '@northrun', title: 'The package was sealed but there was nothing inside it', body: 'Box sealed perfectly but completely empty inside.', tone: 'Refund requested' },
+  { store: 'Prime & Co', handle: '@primeco', title: 'I got store credit but I want my money back', body: 'Refunded as credit not real money. Want actual refund.', tone: 'Policy abuse' },
+  { store: 'Oakshelf', handle: '@oakshelf', title: 'The refund you sent was less than what I paid', body: 'Refund amount doesn\'t match original purchase price.', tone: 'Billing dispute' },
+  { store: 'Bridleworks', handle: '@bridleworks', title: 'It\'s clearly a fake, this isn\'t the real product', body: 'Product appears to be counterfeit based on packaging.', tone: 'Manual review' },
+  { store: 'Kessler', handle: '@kessler', title: 'My account was hacked, I didn\'t buy any of this', body: 'Multiple unauthorized purchases on my compromised account.', tone: 'Chargeback risk' },
+  { store: 'Midform', handle: '@midform', title: 'The gift I sent never reached the person I sent it to', body: 'Shipped as gift but recipient says they never got it.', tone: 'New dispute' },
+  { store: 'Northrun', handle: '@northrun', title: 'Three items were missing from the box', body: 'Order had five items but only two arrived.', tone: 'Refund requested' },
+  { store: 'Prime & Co', handle: '@primeco', title: 'You said the promo was applied but you charged me full price', body: 'Promo code accepted but invoice shows full price.', tone: 'Billing dispute' },
+  { store: 'Oakshelf', handle: '@oakshelf', title: 'The item inside the box wasn\'t what I checked out', body: 'Different product shipped than what I ordered.', tone: 'Support escalation' },
+  { store: 'Bridleworks', handle: '@bridleworks', title: 'I already disputed this and you still haven\'t resolved it', body: 'Opened dispute weeks ago and no resolution yet.', tone: 'Escalated' },
 ];
 
-const visibleCount = 5;
-const cardHeight = 124;
-const cardStep = 140;
-const intervalMs = 1800;
+const columns = [
+  complaints.filter((_, i) => i % 5 === 0),
+  complaints.filter((_, i) => i % 5 === 1),
+  complaints.filter((_, i) => i % 5 === 2),
+  complaints.filter((_, i) => i % 5 === 3),
+  complaints.filter((_, i) => i % 5 === 4),
+];
+
+function ComplaintCard({
+  store,
+  handle,
+  title,
+  body,
+  tone,
+}: {
+  store: string;
+  handle: string;
+  title: string;
+  body: string;
+  tone: string;
+}) {
+  return (
+    <figure
+      className="group relative w-[252px] cursor-pointer transition-colors duration-200"
+      style={{
+        background: 'rgba(22,21,16,0.92)',
+        border: '1px solid rgba(48,44,36,0.9)',
+        borderRadius: 0,
+        boxShadow: '0 1px 0 rgba(255,255,255,0.03) inset, 0 8px 24px -8px rgba(0,0,0,0.5)',
+      }}
+    >
+      {/* Header */}
+      <div
+        className="flex items-center justify-between px-3 py-2"
+        style={{ borderBottom: '1px solid rgba(48,44,36,0.7)', background: 'rgba(15,14,10,0.6)' }}
+      >
+        <span
+          style={{
+            fontFamily: 'var(--font-dm-mono, monospace)',
+            fontSize: '9.5px',
+            letterSpacing: '0.12em',
+            textTransform: 'uppercase',
+            color: '#5A5650',
+          }}
+        >
+          {handle}
+        </span>
+        <span
+          style={{
+            fontFamily: 'var(--font-dm-mono, monospace)',
+            fontSize: '9px',
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            color: '#7B2D26',
+            fontWeight: 600,
+          }}
+        >
+          {tone}
+        </span>
+      </div>
+
+      {/* Body */}
+      <div className="px-3 py-3">
+        <figcaption
+          style={{
+            fontFamily: 'var(--font-dm-sans, sans-serif)',
+            fontSize: '12.5px',
+            fontWeight: 500,
+            color: '#C8BAA4',
+            lineHeight: 1.4,
+            marginBottom: '6px',
+          }}
+        >
+          {title}
+        </figcaption>
+        <blockquote
+          style={{
+            fontFamily: 'var(--font-dm-mono, monospace)',
+            fontSize: '10.5px',
+            color: '#5A5650',
+            lineHeight: 1.6,
+            margin: 0,
+          }}
+        >
+          {body}
+        </blockquote>
+      </div>
+
+      {/* Footer */}
+      <div
+        className="px-3 py-2"
+        style={{ borderTop: '1px solid rgba(48,44,36,0.7)' }}
+      >
+        <span
+          style={{
+            fontFamily: 'var(--font-dm-mono, monospace)',
+            fontSize: '9.5px',
+            letterSpacing: '0.08em',
+            color: '#4A4640',
+          }}
+        >
+          {store}
+        </span>
+      </div>
+    </figure>
+  );
+}
+
+function MarqueeColumn({
+  items,
+  reverse = false,
+  duration = 22,
+}: {
+  items: typeof complaints;
+  reverse?: boolean;
+  duration?: number;
+}) {
+  const repeated = [...items, ...items];
+
+    return (
+    <div className="relative h-[740px] w-[252px] overflow-hidden">
+      <div
+        className={cn('ua-complaint-marquee flex flex-col gap-4', reverse && 'ua-complaint-marquee-reverse')}
+        style={{ ['--ua-duration' as string]: `${duration}s` }}
+      >
+        {repeated.map((item, index) => (
+          <ComplaintCard
+            key={`${item.store}-${item.title}-${index}`}
+            store={item.store}
+            handle={item.handle}
+            title={item.title}
+            body={item.body}
+            tone={item.tone}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function HeroNotificationArtifact() {
-  const nextId = useRef(visibleCount);
-  const [items, setItems] = useState(() =>
-    Array.from({ length: visibleCount }, (_, index) => ({
-      id: index,
-      noteIndex: (notifications.length - index) % notifications.length,
-    })),
-  );
-
-  useEffect(() => {
-    const advance = () => {
-      setItems((current) => {
-        const nextNoteIndex = (current[0].noteIndex + 1) % notifications.length;
-        const incoming = { id: nextId.current, noteIndex: nextNoteIndex };
-
-        nextId.current += 1;
-
-        return [incoming, ...current].slice(0, visibleCount);
-      });
-    };
-
-    let timer: number | undefined;
-    const starter = window.setTimeout(() => {
-      advance();
-      timer = window.setInterval(advance, intervalMs);
-    }, 650);
-
-    return () => {
-      window.clearTimeout(starter);
-      if (timer !== undefined) window.clearInterval(timer);
-    };
-  }, []);
-
   return (
-    <div className="relative min-h-[560px] overflow-hidden" data-notification-artifact="incoming-feed">
+    <div className="relative flex h-[900px] w-full items-center justify-end overflow-hidden [perspective:1800px]">
       <style>{`
-        @keyframes ua-notification-arrive {
-          0% {
-            opacity: 0.58;
-            transform: translate3d(0, -18px, 0) scale(0.96);
-            box-shadow: 0 4px 20px -20px rgba(26,24,20,0.18);
+        @keyframes ua-complaints-scroll {
+          from {
+            transform: translateY(0);
           }
-          62% {
-            opacity: 1;
-            transform: translate3d(0, 4px, 0) scale(1.025);
-          }
-          100% {
-            opacity: 1;
-            transform: translate3d(0, 0, 0) scale(1);
-            box-shadow: 0 18px 42px -24px rgba(26,24,20,0.55);
+          to {
+            transform: translateY(calc(-50% - 8px));
           }
         }
 
-        .ua-live-notification-card {
-          transition:
-            top 380ms cubic-bezier(0.22, 1, 0.36, 1),
-            opacity 420ms ease,
-            filter 420ms ease,
-            transform 220ms ease,
-            box-shadow 220ms ease,
-            background-color 220ms ease;
-          will-change: top, opacity;
+        @keyframes ua-complaints-scroll-reverse {
+          from {
+            transform: translateY(calc(-50% - 8px));
+          }
+          to {
+            transform: translateY(0);
+          }
         }
 
-        .ua-live-notification-card.is-new {
-          animation: ua-notification-arrive 560ms cubic-bezier(0.22, 1, 0.36, 1);
+        .ua-complaint-marquee {
+          animation: ua-complaints-scroll var(--ua-duration) linear infinite;
+          will-change: transform;
+        }
+
+        .ua-complaint-marquee:hover {
+          animation-play-state: paused;
+        }
+
+        .ua-complaint-marquee-reverse {
+          animation-name: ua-complaints-scroll-reverse;
         }
       `}</style>
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_52%_18%,rgba(142,51,42,0.10),transparent_42%)]" />
-      <div className="relative mx-auto h-[414px] w-full overflow-hidden [mask-image:linear-gradient(to_bottom,transparent,black_7%,black_90%,transparent)]">
-        <div className="absolute inset-x-0 top-4 mx-auto h-full w-full">
-          {items.map((item, index) => {
-            const note = notifications[item.noteIndex];
 
-            return (
-              <figure
-                key={item.id}
-                className={cn(
-                  'ua-live-notification-card absolute inset-x-0 mx-auto h-[124px] w-[min(92%,560px)] overflow-hidden rounded-xl border border-[#D8D0BD] bg-[#FDFBF6] p-4',
-                  'shadow-[0_18px_42px_-24px_rgba(26,24,20,0.55)] backdrop-blur-[2px]',
-                  'hover:z-20 hover:scale-[1.035] hover:bg-[#FFFDF8] hover:shadow-[0_24px_50px_-24px_rgba(26,24,20,0.62)]',
-                  index === 0 && 'is-new',
-                  index === visibleCount - 1 && 'opacity-35 blur-[0.35px]',
-                )}
-                style={{
-                  height: cardHeight,
-                  top: index * cardStep,
-                  zIndex: visibleCount - index,
-                }}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <figcaption className="text-sm font-medium text-[#1A1814]">{note.title}</figcaption>
-                    <p className="mt-1 text-[10.5px] uppercase tracking-[0.16em] text-[#8A8472]">{note.store} · {note.time}</p>
-                  </div>
-                  <span className="shrink-0 rounded-full bg-white px-2 py-1 text-[10px] uppercase tracking-[0.08em] text-[#7B2D26]">{note.tone}</span>
-                </div>
-                <blockquote className="mt-2 text-xs leading-5 text-[#5D574D]">{note.body}</blockquote>
-              </figure>
-            );
-          })}
-        </div>
+      {/* Warm glow anchor — grounds the columns against the dark bg */}
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_55%_52%,rgba(123,45,38,0.13),transparent_70%)]" />
+      {/* Secondary cool-dark vignette to push depth */}
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_80%_at_50%_50%,transparent_40%,rgba(15,14,10,0.55)_100%)]" />
+      <div
+        className="flex flex-row items-start gap-5"
+        style={{
+          transform:
+            'translateX(543px) translateY(30px) translateZ(0) rotateX(9deg) rotateY(-10deg) rotateZ(5deg)',
+        }}
+      >
+        <MarqueeColumn items={columns[0]} duration={30} />
+        <MarqueeColumn items={columns[1]} reverse duration={34} />
+        <MarqueeColumn items={columns[2]} duration={28} />
+        <MarqueeColumn items={columns[3]} reverse duration={36} />
+        <MarqueeColumn items={columns[4]} duration={32} />
       </div>
+
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-52 bg-gradient-to-b from-[#15140F] via-[#15140F]/55 to-transparent" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-[#15140F] via-[#15140F]/90 to-transparent" />
+      <div className="pointer-events-none absolute inset-y-0 left-0 w-64 bg-gradient-to-r from-[#15140F] via-[#15140F]/80 to-transparent" />
+      <div className="pointer-events-none absolute inset-y-0 right-0 w-36 bg-gradient-to-l from-[#15140F] via-[#15140F]/80 to-transparent" />
     </div>
   );
 }

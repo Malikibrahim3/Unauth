@@ -56,7 +56,7 @@ export default function BehaviorRoadmap({ events }: BehaviorRoadmapProps) {
       <div style={{ background: 'var(--bg-canvas)', borderBottom: '1px solid var(--border-default)', padding: '10px 14px' }}>
         <div className="flex items-center justify-between gap-3">
           <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)', lineHeight: 1 }}>
-            <span style={{ color: '#7B2D26', marginRight: 5 }}>§</span>
+            <span aria-hidden="true" className="ua-section-dot" />
             Behavior Roadmap
           </div>
           <div className="num" style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>{events.length} events</div>

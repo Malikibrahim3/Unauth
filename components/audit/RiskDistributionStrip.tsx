@@ -26,7 +26,7 @@ export function RiskDistributionStrip({ definite, probable, candidate, weak }: R
       <div className="flex items-start justify-between gap-3">
         <div>
           <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)', lineHeight: 1 }}>
-            <span style={{ color: '#7B2D26', marginRight: 5 }}>§</span>
+            <span aria-hidden="true" className="ua-section-dot" />
             Likely Identity Links
           </div>
           <div className="mt-2 num" style={{ fontSize: 28, fontWeight: 600, color: '#1A1814', lineHeight: 1 }}>

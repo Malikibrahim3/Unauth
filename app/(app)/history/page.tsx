@@ -3,8 +3,7 @@ import Link from 'next/link';
 import AuditHistoryTableClient from '@/components/audit/AuditHistoryTableClient';
 import type { Database } from '@/lib/supabase/types';
 import PageSizeSelect from '@/components/common/PageSizeSelect';
-import { PageHeader } from '@/components/common/PageHeader';
-import { EmptyState, Button } from '@/components/ui';
+import { Button, WorkbenchPage, WorkbenchActionBar, WorkbenchEmptyState, WorkbenchKpiStrip } from '@/components/ui';
 
 type RunRow = Database['public']['Tables']['processing_jobs']['Row'];
 
@@ -34,44 +33,66 @@ export default async function HistoryPage({ searchParams }: { searchParams?: { p
   const baseSearchParams = sp ?? {};
 
   return (
-    <div className="p-8 space-y-6">
-      <PageHeader
-        title="Upload history"
-        subtitle={`Showing ${total === 0 ? 0 : offset + 1}–${Math.min(offset + pageSize, total)} of ${total.toLocaleString()} audits`}
-        actions={
-          <Link href="/upload">
-            <Button size="sm">New Audit</Button>
-          </Link>
-        }
-      />
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <PageSizeSelect pathname="/history" searchParams={baseSearchParams} pageSize={pageSize} />
-        {totalPages > 1 && (
-          <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
-            <span>Page {page} of {totalPages}</span>
-            {page > 1 && (
-              <Link href={`/history?${new URLSearchParams({ ...baseSearchParams, page: String(page - 1), pageSize: String(pageSize) }).toString()}`}>
-                <Button variant="secondary" size="sm">← Prev</Button>
-              </Link>
-            )}
-            {page < totalPages && (
-              <Link href={`/history?${new URLSearchParams({ ...baseSearchParams, page: String(page + 1), pageSize: String(pageSize) }).toString()}`}>
-                <Button variant="secondary" size="sm">Next →</Button>
-              </Link>
-            )}
-          </div>
-        )}
-      </div>
-
-      {typedRuns.length === 0 ? (
-        <EmptyState
-          title="No audits yet"
-          description="Upload your first CSV to start reviewing identity match patterns."
-          action={<Link href="/upload"><Button variant="secondary" size="sm">Upload your first CSV →</Button></Link>}
+    <WorkbenchPage
+      title="Audits"
+      subtitle={`Showing ${total === 0 ? 0 : offset + 1}-${Math.min(offset + pageSize, total)} of ${total.toLocaleString()} runs`}
+      navItems={[
+        { key: 'overview', label: 'Overview', href: '/dashboard' },
+        { key: 'cases', label: 'Cases', href: '/inbox' },
+        { key: 'clusters', label: 'Clusters', href: '/customers?merchantsMin=2' },
+        { key: 'audits', label: 'Audits', href: '/history' },
+        { key: 'reports', label: 'Reports', href: '/chargebacks' },
+      ]}
+      activeNavKey="audits"
+      actions={
+        <Link href="/upload">
+          <Button size="sm">New Audit</Button>
+        </Link>
+      }
+      kpiStrip={
+        <WorkbenchKpiStrip
+          items={[
+            { label: 'Audits', value: total.toLocaleString(), hint: 'Visible runs' },
+            { label: 'Rows processed', value: typedRuns.reduce((sum, row) => sum + row.total_rows, 0).toLocaleString(), hint: 'Current page scope' },
+            { label: 'Matched', value: typedRuns.reduce((sum, row) => sum + (row.flagged_count ?? 0), 0).toLocaleString(), hint: 'Current page scope' },
+            { label: 'Last upload', value: typedRuns[0]?.created_at ? new Date(typedRuns[0].created_at).toLocaleDateString('en-GB') : '-', hint: 'Most recent run' },
+            { label: 'Failed', value: typedRuns.filter((row) => row.status === 'failed').length.toLocaleString(), hint: 'Current page scope' },
+          ]}
         />
-      ) : (
-        <AuditHistoryTableClient rows={typedRuns} />
-      )}
-    </div>
+      }
+      actionBar={
+        <WorkbenchActionBar
+          left={<PageSizeSelect pathname="/history" searchParams={baseSearchParams} pageSize={pageSize} />}
+          right={
+            totalPages > 1 ? (
+              <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+                <span>Page {page} of {totalPages}</span>
+                {page > 1 && (
+                  <Link href={`/history?${new URLSearchParams({ ...baseSearchParams, page: String(page - 1), pageSize: String(pageSize) }).toString()}`}>
+                    <Button variant="secondary" size="sm">Prev</Button>
+                  </Link>
+                )}
+                {page < totalPages && (
+                  <Link href={`/history?${new URLSearchParams({ ...baseSearchParams, page: String(page + 1), pageSize: String(pageSize) }).toString()}`}>
+                    <Button variant="secondary" size="sm">Next</Button>
+                  </Link>
+                )}
+              </div>
+            ) : null
+          }
+        />
+      }
+      main={
+        typedRuns.length === 0 ? (
+          <WorkbenchEmptyState
+            title="No audits yet"
+            description="Upload your first CSV to start reviewing identity match patterns."
+            action={<Link href="/upload" className="text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>Upload your first CSV</Link>}
+          />
+        ) : (
+          <AuditHistoryTableClient rows={typedRuns} />
+        )
+      }
+    />
   );
 }

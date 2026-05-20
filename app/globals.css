@@ -9,32 +9,43 @@
      * ═════════════════════════════════════════════════════════════════════ */
 
     /* Surfaces & lines */
-    --bg-canvas:        #FAF6EF;
-    --bg-surface:       #FFFFFF;
+    --brand-ink:        #1A1814;
+    --brand-rust:       #7B2D26;
+    --brand-rust-hover: #5E2018;
+    --brand-rust-soft:  #F4E6E0;
+    --brand-paper:      #F8F5EE;
+
+    --bg-canvas:        #F8F5EE;
+    --bg-surface:       #FEFCF7;
     --bg-surface-alt:   #F2EDE3;
-    --bg-surface-sunk:  #EAE3D4;
-    --bg-hover:         #EDE6D8;
-    --bg-selected:      #E4EDFC;
+    --bg-surface-sunk:  #E9E0D1;
+    --bg-hover:         #EFE8DA;
+    --bg-selected:      #F4E6E0;
 
     --border-subtle:    #E5DECE;
-    --border-default:   #D2C9B5;
-    --border-strong:    #8C97A8;
+    --border-default:   #D8D0BD;
+    --border-strong:    #8F816F;
 
-    /* Text */
-    --text-primary:     #141821;
-    --text-secondary:   #2E3947;
-    --text-tertiary:    #56657A;
+    /* Text — canonical names used throughout the app */
+    --text:             #1A1814;
+    --text-muted:       #6E7A8A;
+    --text-subtle:      #9AA5B4;
     --text-disabled:    #B9C2CF;
     --text-inverse:     #FFFFFF;
-    --text-link:        #2563EB;
+    --text-link:        #7B2D26;
 
-    /* Accent — primary action blue */
-    --accent-50:        #EEF3FE;
-    --accent-100:       #D9E5FD;
-    --accent-200:       #B6CCFB;
-    --accent-500:       #2563EB;
-    --accent-600:       #1D4ED8;
-    --accent-700:       #1E40AF;
+    /* Legacy aliases — retire usage over time */
+    --text-primary:     var(--text);
+    --text-secondary:   #3F3933;
+    --text-tertiary:    var(--text-muted);
+
+    /* Accent — Unauth rust */
+    --accent-50:        #FAF0EC;
+    --accent-100:       #F4E6E0;
+    --accent-200:       #EBCBC2;
+    --accent-500:       #7B2D26;
+    --accent-600:       #6B251F;
+    --accent-700:       #5E2018;
     --accent-fg-on-500: #FFFFFF;
 
     /* Risk / status palette */
@@ -54,9 +65,9 @@
     --risk-low-fg:        #2F6B43;
     --risk-low-line:      #8AB97A;
 
-    --info-bg:            #EEF3FE;
-    --info-fg:            #2563EB;
-    --info-line:          #B6CCFB;
+    --info-bg:            #EDF1F4;
+    --info-fg:            #415A72;
+    --info-line:          #BCC8D3;
 
     /* Spacing scale */
     --space-0:  0px;
@@ -85,11 +96,11 @@
 
     /* Shadows */
     --shadow-0:      0 0 0 1px var(--border-subtle);
-    --shadow-1:      0 1px 2px rgba(20,24,33,0.04), 0 1px 3px rgba(20,24,33,0.06);
-    --shadow-2:      0 2px 4px rgba(20,24,33,0.04), 0 4px 12px rgba(20,24,33,0.08);
+    --shadow-1:      0 1px 2px rgba(26,24,20,0.04), 0 1px 3px rgba(26,24,20,0.06);
+    --shadow-2:      0 2px 4px rgba(26,24,20,0.04), 0 12px 28px rgba(26,24,20,0.08);
     --shadow-drawer: -8px 0 24px rgba(20,24,33,0.10), -16px 0 48px rgba(20,24,33,0.08);
     --shadow-modal:  0 8px 24px rgba(20,24,33,0.12), 0 16px 48px rgba(20,24,33,0.14);
-    --shadow-focus:  0 0 0 3px rgba(37,99,235,0.28);
+    --shadow-focus:  0 0 0 3px rgba(123,45,38,0.24);
 
     /* Motion */
     --duration-fast:    120ms;
@@ -107,34 +118,25 @@
     --z-toast:    500;
     --z-tooltip:  600;
 
-    /* ── Existing tokens preserved below (backward compat) ── */
-    /* Surfaces ── */
-    --bg-surface:       #FFFFFF;
-    --bg-subtle:        #F2EDE3;
-    --bg-muted:         #EAE3D4;
-    --bg-inset:         #FAF6EF;
+    /* ── Backward-compat aliases (point to canonical tokens above) ── */
+    /* Surfaces */
+    --bg-subtle:        var(--bg-surface-alt);
+    --bg-muted:         var(--bg-surface-sunk);
+    --bg-inset:         var(--bg-canvas);
 
-    /* ── Borders ── */
-    --border-subtle:    #E5DECE;
-    --border:           #D2C9B5;
-    --border-strong:    #8C97A8;
-
-    /* ── Text ── */
-    --text:             #141821;
-    --text-muted:       #78889C;
-    --text-subtle:      #9CA8BB;
-    --text-disabled:    #B9C2CF;
-    --text-inverse:     #FFFFFF;
+    /* Borders */
+    --border:           var(--border-default);
 
     /* ── Icons ── */
     --icon:             #2E3947;
     --icon-muted:       #78889C;
 
     /* ── Brand accent (single) — primary action blue ── */
-    --accent:           #2563EB;
-    --accent-hover:     #1D4ED8;
-    --accent-soft:      #EEF3FE;
-    --accent-soft-hover:#D9E5FD;
+    --accent:           var(--brand-rust);
+    --accent-hover:     var(--brand-rust-hover);
+    --accent-soft:      var(--brand-rust-soft);
+    --accent-subtle:    var(--brand-rust-soft);
+    --accent-soft-hover:#EDD5CD;
 
     /* ── Risk tiers (only valid semantic use of red/amber/green) ── */
     --risk-critical:    #9F1D1D;
@@ -158,9 +160,9 @@
     --risk-none-bd:     #D2C9B5;
 
     /* ── Informational (status, not risk) ── */
-    --info:             #2563EB;
-    --info-bg:          #EEF3FE;
-    --info-bd:          #B6CCFB;
+    --info:             #415A72;
+    --info-bg:          #EDF1F4;
+    --info-bd:          #BCC8D3;
 
     --success:          #2F6B43;
     --success-bg:       #E8F1E6;
@@ -176,8 +178,8 @@
     --watchlist-bd:     #A9D5D2;
 
     /* ── Focus & shadow base ── */
-    --focus-ring:       #2563EB;
-    --shadow-color:     220 30% 12%;
+    --focus-ring:       var(--brand-rust);
+    --shadow-color:     28 14% 12%;
 
     /* ── Shadows ── */
     --shadow-xs: 0 1px 2px hsl(var(--shadow-color) / 0.04);
@@ -262,7 +264,7 @@
     background-color: var(--bg-canvas);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    scrollbar-color: #D2C9B5 transparent;
+    scrollbar-color: #D8D0BD transparent;
     scrollbar-width: thin;
   }
 
@@ -277,7 +279,7 @@
   input,
   textarea,
   select {
-    caret-color: #7B2D26;
+    caret-color: var(--brand-rust);
   }
 
   /* Tabular numerics for all mono content */
@@ -328,7 +330,7 @@
 }
 
 *::-webkit-scrollbar-thumb {
-  background: #D2C9B5;
+  background: #D8D0BD;
   border-radius: 999px;
 }
 
@@ -348,6 +350,16 @@
 .btn-outline:hover      { background: var(--bg-subtle); }
 .link-subtle            { color: var(--text-muted); }
 .link-subtle:hover      { color: var(--text); }
+
+.ua-section-dot {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin-right: 7px;
+  border-radius: 9999px;
+  background: var(--accent);
+  vertical-align: 1px;
+}
 
 /* ── Skeleton shimmer ── */
 @keyframes shimmer {
