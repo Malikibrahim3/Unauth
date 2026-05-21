@@ -751,6 +751,43 @@ export async function processProfilesForBatch(
   let profilesCreated = 0;
   let profilesUpdated = 0;
 
+  async function insertProfilesWithFallback(rows: Array<Record<string, unknown>>) {
+    const bulkResult = await (serviceClient as any)
+      .from('customer_profiles')
+      .insert(rows as any)
+      .select('id, emails, card_last4s, ips');
+
+    if (!bulkResult.error) {
+      return bulkResult;
+    }
+
+    const message = String(bulkResult.error.message ?? bulkResult.error);
+    if (!message.toLowerCase().includes('fetch failed')) {
+      return bulkResult;
+    }
+
+    const inserted: Array<{ id: string; emails: string[]; card_last4s: string[]; ips: string[] }> = [];
+    const FALLBACK_CHUNK = 250;
+    for (let i = 0; i < rows.length; i += FALLBACK_CHUNK) {
+      const chunk = rows.slice(i, i + FALLBACK_CHUNK);
+      const chunkResult = await (serviceClient as any)
+        .from('customer_profiles')
+        .insert(chunk as any)
+        .select('id, emails, card_last4s, ips');
+
+      if (chunkResult.error) {
+        return {
+          data: inserted,
+          error: new Error(`Bulk profile insert failed: ${message}; fallback chunk ${i / FALLBACK_CHUNK + 1} failed: ${chunkResult.error.message}`),
+        };
+      }
+
+      inserted.push(...(chunkResult.data ?? []));
+    }
+
+    return { data: inserted, error: null };
+  }
+
   await Promise.all([
     profileUpserts.length > 0
       ? (serviceClient as any)
@@ -763,13 +800,10 @@ export async function processProfilesForBatch(
       : Promise.resolve(),
 
     newProfileInserts.length > 0
-      ? (serviceClient as any)
-          .from('customer_profiles')
-          .insert(newProfileInserts as any)
-          .select('id, emails, card_last4s, ips')
+      ? insertProfilesWithFallback(newProfileInserts as Array<Record<string, unknown>>)
           .then(({ data, error }: { data: any; error: any }) => {
             if (error) {
-              errors.push(`Bulk profile insert failed: ${error.message}`);
+              errors.push(error instanceof Error ? error.message : `Bulk profile insert failed: ${String(error)}`);
               return;
             }
             profilesCreated = (data ?? []).length;

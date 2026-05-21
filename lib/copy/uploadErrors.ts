@@ -7,6 +7,22 @@ export interface FriendlyError {
 export function friendlyUploadError(raw: string): FriendlyError {
   const msg = raw.toLowerCase();
 
+  if (msg.includes('please upload a .csv file')) {
+    return {
+      headline: 'That file is not a CSV',
+      body: 'Upload a `.csv` export from your ecommerce platform so we can map the columns before processing.',
+      code: 'UA-103',
+    };
+  }
+
+  if (msg.includes('this csv is empty') || msg.includes('header row') || msg.includes('does not look like a csv')) {
+    return {
+      headline: "We couldn't read this file",
+      body: 'The upload is empty or is not a valid CSV export. Download the template or export a fresh CSV from your platform and try again.',
+      code: 'UA-202',
+    };
+  }
+
   if (msg.includes('row-level security') || msg.includes('rls') || msg.includes('permission denied')) {
     return {
       headline: 'Something went wrong',

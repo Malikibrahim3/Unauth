@@ -32,6 +32,11 @@ interface BatchItem {
   error: string | null;
 }
 
+type FilePreflightResult = {
+  ok: boolean;
+  message?: string;
+};
+
 const CSV_TEMPLATE_HEADERS =
   'order_id,order_date,customer_email,customer_name,shipping_address,order_total,order_status,currency,customer_phone,billing_address,refund_status,refund_reason,refund_date,refund_amount,payment_method,ip_address,device_id,card_last4,card_bin,card_fingerprint,browser_fingerprint,cookie_id,user_agent,asn,account_id';
 const EXAMPLE_ROW =
@@ -124,6 +129,40 @@ export default function UploadClient() {
   const requiredUnmapped = REQUIRED_FIELDS.filter((f) => !columnMap[f]);
   const canSubmit = requiredUnmapped.length === 0;
 
+  function failPreflight(message: string) {
+    setFile(null);
+    setBatchQueue([]);
+    setCsvHeaders([]);
+    setColumnMap({});
+    setFuzzyFields(new Set());
+    setDataQuality(null);
+    setState('error');
+    setCanRecover(false);
+    setRawErrorDetail(message);
+    setFriendlyError(friendlyUploadError(message));
+  }
+
+  function validateCsvFile(fileToCheck: File, headers: string[]): FilePreflightResult {
+    const lowerName = fileToCheck.name.toLowerCase();
+    const looksLikeCsv = lowerName.endsWith('.csv') || fileToCheck.type === 'text/csv' || fileToCheck.type === 'application/vnd.ms-excel';
+    if (!looksLikeCsv) {
+      return { ok: false, message: 'Please upload a .csv file.' };
+    }
+    if (fileToCheck.size === 0) {
+      return { ok: false, message: 'This CSV is empty. Please upload a file with a header row and at least one order.' };
+    }
+    const normalizedHeaders = headers
+      .map((header) => header.trim())
+      .filter((header) => header.length > 0);
+    if (normalizedHeaders.length === 0) {
+      return { ok: false, message: 'We could not find a header row in this CSV.' };
+    }
+    if (normalizedHeaders.length === 1 && !normalizedHeaders[0].includes(',')) {
+      return { ok: false, message: 'This file does not look like a CSV export. Please upload a comma-separated CSV.' };
+    }
+    return { ok: true };
+  }
+
   // Compute SHA-256 hash for a file
   async function hashFile(f: File): Promise<string> {
     const buf = await f.arrayBuffer();
@@ -133,11 +172,35 @@ export default function UploadClient() {
       .join('');
   }
 
+  function startProcessing(runIdToStart: string, totalChunks: number, storagePath: string) {
+    void fetch(`/api/audit/${runIdToStart}/start`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        totalChunks,
+        columnMap,
+        storagePath,
+      }),
+    }).catch((err) => {
+      console.error('[UploadClient] failed to start processing:', err);
+    });
+  }
+
   // Handle multiple files — build batch queue, map headers from first file
   const handleFiles = useCallback(async (files: File[]) => {
     if (files.length === 0) return;
-    const csvFiles = files.filter((f) => f.name.endsWith('.csv') || f.type === 'text/csv');
-    if (csvFiles.length === 0) return;
+    const csvFiles = files.filter((f) => {
+      const lowerName = f.name.toLowerCase();
+      return lowerName.endsWith('.csv') || f.type === 'text/csv' || f.type === 'application/vnd.ms-excel';
+    });
+    if (csvFiles.length === 0) {
+      failPreflight('Please upload one or more .csv files.');
+      return;
+    }
+    if (csvFiles.length !== files.length) {
+      failPreflight('Please upload only .csv files. Remove any PDFs, spreadsheets, or text files and try again.');
+      return;
+    }
 
     if (csvFiles.length === 1) {
       // Single-file path: classic flow
@@ -168,6 +231,11 @@ export default function UploadClient() {
 
     // Sniff first file for column mapping
     const { headers, collisions } = await sniffFile(csvFiles[0]);
+    const preflight = validateCsvFile(csvFiles[0], headers);
+    if (!preflight.ok) {
+      failPreflight(preflight.message ?? 'Invalid CSV upload.');
+      return;
+    }
     if (collisions.length > 0) console.warn('[UploadClient] batch header collisions:', collisions);
     setCsvHeaders(headers);
     const { exact, fuzzy } = autoMapHeaders(headers);
@@ -195,6 +263,11 @@ export default function UploadClient() {
     // Use sniffFile for robust BOM stripping, delimiter detection, and
     // quoted-field-aware header tokenisation (instead of a naive comma-split).
     sniffFile(f).then(({ headers, collisions }) => {
+      const preflight = validateCsvFile(f, headers);
+      if (!preflight.ok) {
+        failPreflight(preflight.message ?? 'Invalid CSV upload.');
+        return;
+      }
       if (collisions.length > 0) {
         console.warn(
           '[UploadClient] Header collisions detected:',
@@ -310,10 +383,11 @@ export default function UploadClient() {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error ?? `HTTP ${res.status} from /api/audit`);
       }
-      const { runId: newRunId } = await res.json();
+      const { runId: newRunId, totalChunks } = await res.json();
       setRunId(newRunId);
       setState('processing');
       setStatusText('Queued for processing…');
+      startProcessing(newRunId, totalChunks, filePath);
       track('CSV Uploaded', {
         uploadType,
         hasLabel: !!uploadLabel.trim(),
@@ -409,8 +483,9 @@ export default function UploadClient() {
           const body = await res.json().catch(() => ({}));
           throw new Error(body.error ?? `HTTP ${res.status}`);
         }
-        const { runId: newRunId } = await res.json();
+        const { runId: newRunId, totalChunks } = await res.json();
         updateItem(item.id, { status: 'processing', statusText: 'Processing…', runId: newRunId });
+        startProcessing(newRunId, totalChunks, filePath);
         track('CSV Uploaded', { uploadType, hasLabel: !!uploadLabel.trim(), hasDateRange: !!(dateRangeStart || dateRangeEnd), dataQualityGrade: dataQuality?.grade ?? null });
         await pollItem(item.id, newRunId);
       } catch (err) {

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Upload, Play, CheckCircle, Check } from 'lucide-react';
@@ -16,21 +15,31 @@ const STEPS = [
 
 interface OnboardingClientProps {
   userId: string;
+  initialStoreName?: string;
+  initialPlatform?: string;
+  initialAnnualVolume?: string;
+  initialPrimaryConcern?: string;
 }
 
-export default function OnboardingClient({ userId }: OnboardingClientProps) {
+export default function OnboardingClient({
+  userId,
+  initialStoreName = '',
+  initialPlatform = '',
+  initialAnnualVolume = '',
+  initialPrimaryConcern = '',
+}: OnboardingClientProps) {
+  void userId;
   const [step, setStep] = useState<Step>(1);
 
   // Step 2 fields
-  const [storeName, setStoreName] = useState('');
-  const [platform, setPlatform] = useState('');
-  const [annualVolume, setAnnualVolume] = useState('');
-  const [primaryConcern, setPrimaryConcern] = useState('');
+  const [storeName, setStoreName] = useState(initialStoreName);
+  const [platform, setPlatform] = useState(initialPlatform);
+  const [annualVolume, setAnnualVolume] = useState(initialAnnualVolume);
+  const [primaryConcern, setPrimaryConcern] = useState(initialPrimaryConcern);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const router = useRouter();
-  const supabase = createClient();
 
   // Lock body scroll while onboarding modal is open
   useEffect(() => {
@@ -45,29 +54,24 @@ export default function OnboardingClient({ userId }: OnboardingClientProps) {
     setLoading(true);
     setError('');
 
-    const { error: upsertError } = await supabase
-      .from('merchants')
-      .upsert(
-        {
-          user_id: userId,
-          name: storeName.trim(),
-          platform,
-          monthly_order_volume: annualVolume,
-          primary_fraud_concern: primaryConcern,
-          setup_complete: true,
-        },
-        { onConflict: 'user_id' }
-      );
+    const response = await fetch('/api/account/setup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        storeName: storeName.trim(),
+        platform,
+        monthlyOrderVolume: annualVolume,
+        primaryFraudConcern: primaryConcern,
+        setupComplete: true,
+      }),
+    });
+    const payload = await response.json().catch(() => ({}));
 
-    if (upsertError) {
+    if (!response.ok) {
       setLoading(false);
-      setError(upsertError.message);
+      setError(payload.error ?? 'Could not save your store details.');
       return;
     }
-
-    // Persist setup_complete in auth user metadata so it survives
-    // any application-table deletions (merchants row, etc.)
-    await supabase.auth.updateUser({ data: { setup_complete: true } });
 
     setLoading(false);
     router.push('/upload?welcome=1');

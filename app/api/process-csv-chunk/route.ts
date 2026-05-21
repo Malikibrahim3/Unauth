@@ -67,6 +67,70 @@ function formatError(err: unknown): string {
   return JSON.stringify(maybe);
 }
 
+async function processChunk(
+  origin: string,
+  body: ChunkDispatchPayload,
+): Promise<void> {
+  const { jobId, chunkIndex, totalChunks, merchantId, storagePath } = body;
+  const log = (msg: string) =>
+    console.log(`[chunk ${jobId} ${chunkIndex}/${totalChunks}] ${new Date().toISOString()} ${msg}`);
+  const sc = createServiceClient();
+
+  try {
+    const { data: latestJob } = await sc
+      .from('processing_jobs')
+      .select('status')
+      .eq('id', jobId)
+      .single();
+    if (latestJob?.status === 'completed' || latestJob?.status === 'failed') {
+      log('Job already terminal — skipping background work');
+      return;
+    }
+
+    log('Downloading chunk rows');
+    const rows = await downloadChunkRows(sc, jobId, chunkIndex);
+    log(`Downloaded ${rows.length} rows; running pipeline`);
+
+    const isLast = chunkIndex === totalChunks - 1;
+    await processCsvJob(rows, jobId, sc, 5, merchantId, {
+      index: chunkIndex,
+      totalChunks,
+      isFirst: chunkIndex === 0,
+      isLast,
+    });
+    log('Pipeline complete for this chunk');
+
+    const postChunkGuard = await checkCsvUsageGuard(sc);
+    if (postChunkGuard.shouldStop) {
+      log(`Usage guard tripped after processing chunk: ${postChunkGuard.reason}`);
+      await completeJob(sc, jobId, false, [
+        { message: postChunkGuard.reason ?? 'Supabase usage guard stopped this run', code: 'SUPABASE_USAGE_GUARD' },
+      ]);
+      return;
+    }
+
+    if (!isLast) {
+      await dispatchChunk(origin, {
+        jobId,
+        chunkIndex: chunkIndex + 1,
+        totalChunks,
+        merchantId,
+        columnMap: body.columnMap,
+        storagePath,
+      });
+      log(`Dispatched chunk ${chunkIndex + 1}`);
+      return;
+    }
+
+    log('Last chunk — dispatching finaliser');
+    await dispatchFinalize(origin, body);
+  } catch (err) {
+    const message = formatError(err);
+    console.error(`[chunk ${jobId} ${chunkIndex}] FAILED:`, message);
+    await completeJob(sc, jobId, false, [{ message: `Chunk ${chunkIndex}/${totalChunks}: ${message}` }]);
+  }
+}
+
 export async function POST(request: NextRequest) {
   let body: ChunkDispatchPayload;
   try {
@@ -110,51 +174,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ stopped: true, reason: preflightGuard.reason }, { status: 429 });
   }
 
-  try {
-    log('Downloading chunk rows');
-    const rows = await downloadChunkRows(sc, jobId, chunkIndex);
-    log(`Downloaded ${rows.length} rows; running pipeline`);
-
-    const isLast = chunkIndex === totalChunks - 1;
-    await processCsvJob(rows, jobId, sc, 5, merchantId, {
-      index: chunkIndex,
-      totalChunks,
-      isFirst: chunkIndex === 0,
-      isLast,
-    });
-    log('Pipeline complete for this chunk');
-
-    const postChunkGuard = await checkCsvUsageGuard(sc);
-    if (postChunkGuard.shouldStop) {
-      log(`Usage guard tripped after processing chunk: ${postChunkGuard.reason}`);
-      await completeJob(sc, jobId, false, [
-        { message: postChunkGuard.reason ?? 'Supabase usage guard stopped this run', code: 'SUPABASE_USAGE_GUARD' },
-      ]);
-      return NextResponse.json({ stopped: true, reason: postChunkGuard.reason }, { status: 429 });
-    }
-
-    if (!isLast) {
-      // Hand off to the next chunk fire-and-forget, then return immediately.
-      void dispatchChunk(originFromRequest(request), {
-        jobId,
-        chunkIndex: chunkIndex + 1,
-        totalChunks,
-        merchantId,
-        columnMap: body.columnMap,
-        storagePath,
-      });
-      log(`Dispatched chunk ${chunkIndex + 1} (fire-and-forget)`);
-      return NextResponse.json({ ok: true, dispatched: chunkIndex + 1 });
-    }
-
-    // ── Last chunk: hand finalisation to a fresh internal worker ────────────
-    log('Last chunk — dispatching finaliser');
-    void dispatchFinalize(originFromRequest(request), body);
-    return NextResponse.json({ ok: true, finalizerDispatched: true });
-  } catch (err) {
-    const message = formatError(err);
-    console.error(`[chunk ${jobId} ${chunkIndex}] FAILED:`, message);
-    await completeJob(sc, jobId, false, [{ message: `Chunk ${chunkIndex}/${totalChunks}: ${message}` }]);
-    return NextResponse.json({ error: message }, { status: 500 });
-  }
+  await processChunk(originFromRequest(request), body);
+  return NextResponse.json({ ok: true, chunkIndex, totalChunks });
 }

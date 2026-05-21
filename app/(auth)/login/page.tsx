@@ -405,6 +405,16 @@ function LoginPageInner() {
   const searchParams = useSearchParams();
   const nextPath = searchParams.get('next') || '/dashboard';
 
+  function formatAuthError(message: string): string {
+    if (message.toLowerCase().includes('invalid login credentials')) {
+      return 'Email or password is incorrect. Try again or reset your password.';
+    }
+    if (message.toLowerCase().includes('email not confirmed')) {
+      return 'Check your email to confirm your account, then sign in.';
+    }
+    return message;
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -431,7 +441,7 @@ function LoginPageInner() {
       });
 
       if (signUpError) {
-        setError(signUpError.message);
+        setError(formatAuthError(signUpError.message));
         setLoading(false);
         return;
       }
@@ -449,19 +459,26 @@ function LoginPageInner() {
         return;
       }
 
-      // Auto-confirmed — create merchant row immediately
-      const { error: merchantError } = await supabase.from('merchants').insert({
-        user_id: signInData.user!.id,
-        name: storeName.trim(),
-        platform,
-        monthly_order_volume: annualVolume,
-        primary_fraud_concern: primaryConcern,
-        setup_complete: true,
+      // Auto-confirmed accounts still need a server-side merchant bootstrap.
+      const bootstrapRes = await fetch('/api/account/setup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          storeName: storeName.trim(),
+          platform,
+          monthlyOrderVolume: annualVolume,
+          primaryFraudConcern: primaryConcern,
+          setupComplete: false,
+        }),
       });
+      const bootstrapBody = await bootstrapRes.json().catch(() => ({}));
 
       setLoading(false);
-      if (merchantError) { setError(merchantError.message); return; }
-      router.push(nextPath);
+      if (!bootstrapRes.ok) {
+        setError(bootstrapBody.error ?? 'Could not prepare your account. Please try again.');
+        return;
+      }
+      router.push('/onboarding');
       router.refresh();
     } else {
       const { error: signInError } = await supabase.auth.signInWithPassword({
@@ -470,7 +487,7 @@ function LoginPageInner() {
       });
 
       if (signInError) {
-        setError(signInError.message);
+        setError(formatAuthError(signInError.message));
         setLoading(false);
         return;
       }
