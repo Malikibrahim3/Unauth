@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { Download, Users, ArrowRight } from 'lucide-react';
 import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
@@ -20,6 +20,7 @@ import { PageHeader } from '@/components/common/PageHeader';
 import { SectionCard, MetricCard } from '@/components/ui';
 import { RiskDistributionStrip } from '@/components/audit/RiskDistributionStrip';
 import { formatDateMode } from '@/lib/utils/format';
+import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 
 type RunRow = Database['public']['Tables']['processing_jobs']['Row'];
 type TxRow = Database['public']['Tables']['audit_transactions']['Row'];
@@ -42,8 +43,11 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
   const resolvedParams = await params;
   const resolvedSearchParams = await searchParams;
   const supabase = createClient();
+  const serviceClient = createServiceClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
+  const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_AUDIT);
+  if (denied) redirect('/dashboard');
 
   const txPage = Math.max(1, parseInt(resolvedSearchParams.txPage ?? resolvedSearchParams.page ?? '1', 10));
   const txPageSize = normalizePageSize(resolvedSearchParams.txPageSize, TX_PAGE_SIZE);
@@ -54,10 +58,11 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
   const defaultTab = resolvedSearchParams.tab ?? 'overview';
   const selectedCustomerEmail = resolvedSearchParams.customerEmail ?? null;
 
-  const { data: run } = await supabase
+  const { data: run } = await serviceClient
     .from('processing_jobs')
     .select('*')
     .eq('id', resolvedParams.runId)
+    .eq('merchant_id', ctx.merchantId)
     .single();
 
   if (!run) notFound();
@@ -67,13 +72,6 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
   const jobId = resolvedParams.runId;
 
   // Debug log — confirm which IDs we have
-  console.log('[AuditPage] route runId=%s | runData.id=%s | runData.job_id=%s | querying job_id=%s',
-    resolvedParams.runId,
-    (runData as any).id,
-    (runData as any).job_id ?? '(none)',
-    jobId,
-  );
-
   const [
     definiteCount,
     probableCount,
@@ -82,12 +80,12 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
     flaggedCount,
     linkedCount,
   ] = await Promise.all([
-    supabase.from('audit_transactions').select('*', { count: 'exact', head: true }).eq('job_id', jobId).eq('identity_confidence_grade', 'definite'),
-    supabase.from('audit_transactions').select('*', { count: 'exact', head: true }).eq('job_id', jobId).eq('identity_confidence_grade', 'probable'),
-    supabase.from('audit_transactions').select('*', { count: 'exact', head: true }).eq('job_id', jobId).eq('identity_confidence_grade', 'possible'),
-    supabase.from('audit_transactions').select('*', { count: 'exact', head: true }).eq('job_id', jobId).eq('identity_confidence_grade', 'weak'),
-    supabase.from('audit_transactions').select('*', { count: 'exact', head: true }).eq('job_id', jobId).or('identity_confidence_grade.in.(probable,definite),match_status.in.(probable,definite)').not('dismissed_by_merchant', 'is', true),
-    supabase.from('audit_transactions').select('cluster_id', { count: 'exact', head: true }).eq('job_id', jobId).not('cluster_id', 'is', null),
+    serviceClient.from('audit_transactions').select('*', { count: 'exact', head: true }).eq('job_id', jobId).eq('identity_confidence_grade', 'definite'),
+    serviceClient.from('audit_transactions').select('*', { count: 'exact', head: true }).eq('job_id', jobId).eq('identity_confidence_grade', 'probable'),
+    serviceClient.from('audit_transactions').select('*', { count: 'exact', head: true }).eq('job_id', jobId).eq('identity_confidence_grade', 'possible'),
+    serviceClient.from('audit_transactions').select('*', { count: 'exact', head: true }).eq('job_id', jobId).eq('identity_confidence_grade', 'weak'),
+    serviceClient.from('audit_transactions').select('*', { count: 'exact', head: true }).eq('job_id', jobId).or('identity_confidence_grade.in.(probable,definite),match_status.in.(probable,definite)').not('dismissed_by_merchant', 'is', true),
+    serviceClient.from('audit_transactions').select('cluster_id', { count: 'exact', head: true }).eq('job_id', jobId).not('cluster_id', 'is', null),
   ]);
 
   const summary = {
@@ -110,15 +108,31 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
   };
 
   // ── Paginated all-transactions table (full run truth) ───────────────────────
-  const { data: transactions, count: transactionTotal } = await supabase
+  const { data: transactions, count: transactionTotal } = await serviceClient
     .from('audit_transactions')
     .select('*', { count: 'exact' })
     .eq('job_id', jobId)
     .order('processed_at', { ascending: false, nullsFirst: false })
     .range(txOffset, txOffset + txPageSize - 1);
 
-  // ── All-customers aggregation: fetch in batches, no silent cap ─────────────
-  const allCustomers: Array<[string, { maxScore: number; orderCount: number; totalSpend: number }]> = [];
+  // ── All-customers aggregation: derive customer rollups from the run itself ─
+  const customerAgg = new Map<string, { maxScore: number; orderCount: number; totalSpend: number }>();
+  const { data: customerRows } = await serviceClient
+    .from('audit_transactions')
+    .select('customer_email, customer_name, order_value, identity_score')
+    .eq('job_id', jobId)
+    .or('identity_confidence_grade.in.(probable,definite),match_status.in.(probable,definite)')
+    .not('dismissed_by_merchant', 'is', true)
+    .limit(5000);
+  for (const row of (customerRows ?? []) as Array<{ customer_email: string | null; customer_name: string | null; order_value: number | string | null; identity_score: number | null }>) {
+    const key = row.customer_email ?? row.customer_name ?? 'Unknown customer';
+    const current = customerAgg.get(key) ?? { maxScore: 0, orderCount: 0, totalSpend: 0 };
+    current.orderCount += 1;
+    current.totalSpend += typeof row.order_value === 'string' ? Number.parseFloat(row.order_value) || 0 : row.order_value ?? 0;
+    current.maxScore = Math.max(current.maxScore, row.identity_score ?? 0);
+    customerAgg.set(key, current);
+  }
+  const allCustomers = [...customerAgg.entries()].sort((a, b) => b[1].maxScore - a[1].maxScore || b[1].orderCount - a[1].orderCount);
   const pagedCustomers = allCustomers.slice(customerOffset, customerOffset + customerPageSize);
   const totalCustomers = allCustomers.length;
   const customerPages = Math.max(1, Math.ceil(totalCustomers / customerPageSize));

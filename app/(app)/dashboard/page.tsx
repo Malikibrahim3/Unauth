@@ -109,9 +109,10 @@ export default async function DashboardPage() {
     );
   }
 
-  const { data: runs } = await supabase
+  const { data: runs } = await serviceClient
     .from('processing_jobs')
     .select('*')
+    .eq('merchant_id', ctx.merchantId)
     .eq('hidden_by_merchant', false)
     .order('created_at', { ascending: false })
     .limit(50);
@@ -123,7 +124,10 @@ export default async function DashboardPage() {
   const totalFlagged = typedRuns.reduce((sum, r) => sum + (r.flagged_count ?? 0), 0);
   const avgFlagRate = totalTransactions > 0 ? (totalFlagged / totalTransactions) * 100 : null;
 
-  const { data: evidenceRows } = await supabase.from('evidence_packages' as never).select('ce3_eligible');
+  const { data: evidenceRows } = await serviceClient
+    .from('evidence_packages' as never)
+    .select('ce3_eligible')
+    .eq('merchant_id', ctx.merchantId);
   const totalPackages = evidenceRows?.length ?? 0;
   const ce3Packages =
     (evidenceRows as Array<{ ce3_eligible: boolean }> | null)?.filter((pkg) => pkg.ce3_eligible).length ?? 0;
@@ -190,7 +194,7 @@ export default async function DashboardPage() {
   if (latestRun) {
     activity.push({
       type: 'AUDIT',
-      detail: `${latestRun.filename} · ${(latestRun.flagged_count ?? 0).toLocaleString()} matched`,
+      detail: `${latestRun.filename} · ${(latestRun.flagged_count ?? 0).toLocaleString()} flagged`,
       time: formatDateMode(latestRun.created_at, 'recent'),
       href: `/audit/${latestRun.id}`,
     });
@@ -463,7 +467,7 @@ export default async function DashboardPage() {
 
         <footer className="flex flex-wrap items-center justify-between gap-2 border-t px-4 py-2" style={{ borderColor: 'var(--border-default)', background: 'var(--bg-surface-alt)' }}>
           <span className="text-caption font-mono" style={{ color: 'var(--text-subtle)' }}>
-            {latestRun ? `Audit ${formatDateMode(latestRun.created_at, 'table')} · ${latestRun.total_rows.toLocaleString()} rows` : 'No completed audits'}
+            {latestRun ? `Audit ${formatDateMode(latestRun.created_at, 'table')} · ${latestRun.total_rows.toLocaleString()} rows` : 'No audits yet'}
           </span>
           <span className="text-caption font-mono" style={{ color: 'var(--text-subtle)' }}>
             k &gt;= 3 gate · HMAC-SHA256 · 0 PII fields stored

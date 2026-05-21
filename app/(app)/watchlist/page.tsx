@@ -26,6 +26,7 @@ export default async function WatchlistPage({ searchParams }: { searchParams?: {
     const { redirect } = await import('next/navigation');
     redirect('/onboarding');
   }
+  const resolvedCtx = ctx!;
 
   // Fetch watchlist entries and recent appearances in parallel
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
@@ -44,7 +45,7 @@ export default async function WatchlistPage({ searchParams }: { searchParams?: {
       let q = supabase
         .from('watchlist_entries')
         .select('*', { count: 'exact' })
-        .eq('merchant_id', ctx.merchantId)
+        .eq('merchant_id', resolvedCtx.merchantId)
         .eq('removed_by_merchant', false)
         .order('added_at', { ascending: false })
         .range(offset, offset + pageSize - 1);
