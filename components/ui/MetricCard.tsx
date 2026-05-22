@@ -45,9 +45,9 @@ export function MetricCard({ label, value, delta, hint, icon, density = 'default
     <div
       className={cn('group', className)}
       style={{
-        background: 'var(--bg-surface)',
-        border: '1px solid var(--border-default)',
-        borderRadius: 4,
+        background: 'var(--surface-raised)',
+        border: '1px solid var(--surface-border)',
+        borderRadius: 'var(--radius-md)',
         padding,
       }}
     >
@@ -58,7 +58,7 @@ export function MetricCard({ label, value, delta, hint, icon, density = 'default
             fontWeight: 600,
             letterSpacing: '0.12em',
             textTransform: 'uppercase',
-            color: 'var(--text-muted)',
+            color: 'var(--ink-tertiary)',
             lineHeight: 1,
           }}
         >
@@ -76,7 +76,7 @@ export function MetricCard({ label, value, delta, hint, icon, density = 'default
         style={{
           fontSize: isHero ? 28 : 20,
           fontWeight: 600,
-          color: 'var(--text)',
+          color: String(value).includes('£') || String(value).includes('$') ? 'var(--data-currency)' : 'var(--data-score)',
           letterSpacing: '-0.02em',
           fontFamily: 'var(--font-mono)',
         }}
@@ -101,7 +101,7 @@ export function MetricCard({ label, value, delta, hint, icon, density = 'default
       )}
 
       {hint && (
-        <p className="mt-1" style={{ fontSize: 11, color: 'var(--text-subtle)' }}>{hint}</p>
+        <p className="mt-1" style={{ fontSize: 11, color: 'var(--ink-tertiary)' }}>{hint}</p>
       )}
     </div>
   );

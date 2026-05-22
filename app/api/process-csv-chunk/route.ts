@@ -174,6 +174,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ stopped: true, reason: preflightGuard.reason }, { status: 429 });
   }
 
-  await processChunk(originFromRequest(request), body);
-  return NextResponse.json({ ok: true, chunkIndex, totalChunks });
+  const origin = originFromRequest(request);
+  void processChunk(origin, body).catch((err) => {
+    console.error(`[chunk ${jobId} ${chunkIndex}] unhandled async failure:`, formatError(err));
+  });
+
+  return NextResponse.json({ accepted: true, chunkIndex, totalChunks }, { status: 202 });
 }

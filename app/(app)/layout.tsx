@@ -22,38 +22,30 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const pathname = headerList.get('x-pathname') ?? '';
   const isOnboarding = pathname.startsWith('/onboarding');
 
-  if (!isOnboarding) {
-    // Primary check: auth user_metadata — set at onboarding completion and
-    // survives any application-table (merchants, processing_jobs, etc.) deletions.
-    const metaComplete = (user as any).user_metadata?.setup_complete === true;
+  const merchantPromise = supabase
+    .from('merchants')
+    .select('id, name, monthly_order_volume, primary_fraud_concern, setup_complete')
+    .eq('user_id', user.id)
+    .maybeSingle();
 
-    if (!metaComplete) {
-      // Fallback for accounts created before metadata was introduced
-      const { data: merchantRow } = await supabase
-        .from('merchants')
-        .select('setup_complete')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      const merchantComplete =
-        !!(merchantRow as unknown as { setup_complete?: boolean } | null)?.setup_complete;
-
-      if (!merchantComplete) {
-        redirect('/onboarding');
-      }
-    }
-  }
-
-  const { data: jobs } = await supabase
+  const jobsPromise = supabase
     .from('processing_jobs')
     .select('is_demo')
     .limit(20);
 
-  const { data: merchantProfile } = await supabase
-    .from('merchants')
-    .select('id, name, monthly_order_volume, primary_fraud_concern')
-    .eq('user_id', user.id)
-    .maybeSingle();
+  const [{ data: merchantProfile }, { data: jobs }] = await Promise.all([merchantPromise, jobsPromise]);
+
+  if (!isOnboarding) {
+    // Primary check: auth user_metadata — set at onboarding completion and
+    // survives any application-table (merchants, processing_jobs, etc.) deletions.
+    const metaComplete = (user as any).user_metadata?.setup_complete === true;
+    const merchantComplete =
+      !!(merchantProfile as unknown as { setup_complete?: boolean } | null)?.setup_complete;
+
+    if (!metaComplete && !merchantComplete) {
+      redirect('/onboarding');
+    }
+  }
 
   const allDemo =
     (jobs ?? []).length > 0 &&

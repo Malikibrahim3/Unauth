@@ -93,7 +93,7 @@ export default async function InboxPage({ searchParams }: { searchParams?: Promi
         { key: 'cases', label: 'Cases', href: '/inbox' },
         { key: 'clusters', label: 'Clusters', href: '/customers?merchantsMin=2' },
         { key: 'audits', label: 'Audits', href: '/history' },
-        { key: 'reports', label: 'Reports', href: '/chargebacks' },
+        { key: 'reports', label: 'Reports', href: '/reports' },
       ]}
       activeNavKey="cases"
       actions={
@@ -115,7 +115,24 @@ export default async function InboxPage({ searchParams }: { searchParams?: Promi
       }
       actionBar={
         <WorkbenchActionBar
-          left={<PageSizeSelect pathname="/inbox" searchParams={querySearchParams} pageSize={pageSize} />}
+          left={
+            <nav className="flex flex-wrap items-center gap-x-4 gap-y-2" aria-label="Case status">
+              {['All', 'New', 'Review', 'Contacted', 'Resolved', 'Cleared'].map((tab, index) => (
+                <Link
+                  key={tab}
+                  href="/inbox"
+                  className="t-label border-b-2 pb-1"
+                  style={{
+                    color: index === 0 ? 'var(--ink-primary)' : 'var(--ink-tertiary)',
+                    borderBottomColor: index === 0 ? 'var(--copper-bright)' : 'transparent',
+                  }}
+                >
+                  {tab}
+                </Link>
+              ))}
+            </nav>
+          }
+          middle={<PageSizeSelect pathname="/inbox" searchParams={querySearchParams} pageSize={pageSize} />}
           right={totalPages > 1 ? (
             <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
               <span>Page {page} of {totalPages}</span>

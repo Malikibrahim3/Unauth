@@ -1,9 +1,8 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Badge } from './Badge';
 import { FLAG_CONFIDENCE_PANEL } from '@/lib/flags';
-import type { ConfidenceGradeValue } from '@/lib/confidence';
+import { CONFIDENCE_GRADE_COPY, type ConfidenceGradeValue } from '@/lib/confidence';
 import type { CustomerIntelligence } from '@/types/customer';
 
 // Lazy-load the panel so non-flag paths pay zero cost
@@ -17,6 +16,7 @@ interface ConfidenceBadgeProps {
   grade: ConfidenceGradeValue;
   score?: number;
   size?: 'sm' | 'md';
+  showLabel?: boolean;
   /**
    * Phase E-1: supply customer intelligence data to enable the clickable
    * ConfidenceExplanationPanel (only rendered when FLAG_CONFIDENCE_PANEL=true).
@@ -28,11 +28,36 @@ interface ConfidenceBadgeProps {
 }
 
 const GRADE_TONE = {
-  A: 'success',
-  B: 'success',
-  C: 'warning',
-  D: 'danger',
-  F: 'critical',
+  A: {
+    fg: 'var(--sev-definite)',
+    fill: 'var(--sev-definite-fill)',
+    label: 'DEFINITE',
+    dashed: false,
+  },
+  B: {
+    fg: 'var(--sev-probable)',
+    fill: 'var(--sev-probable-fill)',
+    label: 'PROBABLE',
+    dashed: false,
+  },
+  C: {
+    fg: 'var(--sev-neutral)',
+    fill: 'var(--sev-neutral-fill)',
+    label: 'POSSIBLE',
+    dashed: false,
+  },
+  D: {
+    fg: 'color-mix(in srgb, var(--sev-neutral) 60%, transparent)',
+    fill: 'var(--sev-neutral-fill)',
+    label: 'WEAK',
+    dashed: true,
+  },
+  F: {
+    fg: 'var(--ink-tertiary)',
+    fill: 'var(--surface-muted)',
+    label: 'WEAK',
+    dashed: true,
+  },
 } as const;
 
 const GRADE_LABEL = {
@@ -43,8 +68,15 @@ const GRADE_LABEL = {
   F: 'Grade F — insufficient signals',
 } as const;
 
-export function ConfidenceBadge({ grade, score, size = 'md', customerIntelligence }: ConfidenceBadgeProps) {
-  const tone = GRADE_TONE[grade] ?? 'neutral';
+export function ConfidenceBadge({
+  grade,
+  score,
+  size = 'md',
+  showLabel = true,
+  customerIntelligence,
+}: ConfidenceBadgeProps) {
+  const tone = GRADE_TONE[grade] ?? GRADE_TONE.F;
+  const copy = CONFIDENCE_GRADE_COPY[grade];
   const title = score != null
     ? `Confidence grade ${grade} — ${score}/100. ${GRADE_LABEL[grade]}`
     : GRADE_LABEL[grade];
@@ -54,19 +86,64 @@ export function ConfidenceBadge({ grade, score, size = 'md', customerIntelligenc
 
   const panelEnabled = FLAG_CONFIDENCE_PANEL && !!customerIntelligence;
 
+  const compact = size === 'sm' || !showLabel;
+  const label = tone.label;
   const badge = (
-    <Badge tone={tone as 'success' | 'warning' | 'danger' | 'critical'} variant="subtle" size={size}>
+    <span
+      title={panelEnabled ? undefined : title}
+      className="inline-flex items-center overflow-hidden font-mono uppercase tabular-nums"
+      style={{
+        width: compact ? 20 : score != null ? 108 : 80,
+        height: compact ? 20 : 22,
+        borderRadius: 'var(--radius-sm)',
+        background: tone.fill,
+        color: tone.fg,
+        border: `1px ${tone.dashed ? 'dashed' : 'solid'} color-mix(in srgb, ${tone.fg} 40%, transparent)`,
+        borderLeft: `3px solid ${tone.fg}`,
+        boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${tone.fg} 18%, transparent)`,
+      }}
+    >
       <span
-        title={panelEnabled ? undefined : title}
-        className="font-semibold num"
-        style={{ fontVariantNumeric: 'tabular-nums' }}
+        className="flex h-full items-center justify-center font-semibold"
+        style={{
+          width: compact ? 17 : 24,
+          fontSize: 11,
+          lineHeight: 1,
+        }}
       >
         {grade}
-        {score != null && (
-          <span className="ml-1 opacity-70 text-mono-sm">· {score}</span>
-        )}
       </span>
-    </Badge>
+      {!compact && (
+        <>
+          <span
+            className="flex-1 truncate font-sans"
+            style={{
+              color: 'var(--ink-secondary)',
+              fontSize: 10,
+              fontWeight: 600,
+              letterSpacing: '0.04em',
+              lineHeight: 1,
+            }}
+          >
+            {label}
+          </span>
+          {score != null && (
+            <span
+              className="px-1 text-right"
+              style={{
+                minWidth: 28,
+                color: tone.fg,
+                fontSize: 12,
+                fontWeight: 500,
+                lineHeight: 1,
+              }}
+            >
+              {score}
+            </span>
+          )}
+        </>
+      )}
+    </span>
   );
 
   if (!panelEnabled) return badge;

@@ -27,21 +27,21 @@ export function WorkbenchPage({
   footer,
 }: WorkbenchPageProps) {
   return (
-    <div className="p-4 md:p-6">
+    <div className="p-3 md:p-5">
       <section
         className="overflow-hidden border"
         style={{
-          borderColor: 'var(--border-default)',
-          borderRadius: 4,
-          background: 'var(--bg-surface)',
-          boxShadow: '0 1px 0 rgba(26,24,20,0.04), 0 20px 54px -42px rgba(26,24,20,0.35)',
+          borderColor: 'var(--surface-border)',
+          borderRadius: 'var(--radius-md)',
+          background: 'var(--surface-raised)',
+          boxShadow: 'var(--shadow-1)',
         }}
       >
         <header
           className="border-b px-4 py-3"
           style={{
-            borderColor: 'var(--border-default)',
-            background: 'linear-gradient(180deg, var(--bg-surface) 0%, #FCF9F2 100%)',
+            borderColor: 'var(--surface-border)',
+            background: 'var(--surface-raised)',
           }}
         >
           <div className="flex flex-wrap items-start justify-between gap-3">
@@ -50,12 +50,12 @@ export function WorkbenchPage({
                 ? (
                   <>
                     <WorkbenchNav items={navItems} activeKey={activeNavKey} />
-                    {subtitle && <p className="text-body-sm mt-2" style={{ color: 'var(--text-muted)', maxWidth: 720 }}>{subtitle}</p>}
+                    {subtitle && <p className="text-body-sm mt-2" style={{ color: 'var(--ink-secondary)', maxWidth: 720 }}>{subtitle}</p>}
                   </>
                 ) : (
                   <>
-                    <h1 className="text-heading-lg" style={{ color: 'var(--text)', fontFamily: 'var(--font-serif), Georgia, serif' }}>{title}</h1>
-                    {subtitle && <p className="text-body-sm mt-1" style={{ color: 'var(--text-muted)', maxWidth: 720 }}>{subtitle}</p>}
+                    <h1 className="t-heading" style={{ color: 'var(--ink-primary)' }}>{title}</h1>
+                    {subtitle && <p className="text-body-sm mt-1" style={{ color: 'var(--ink-secondary)', maxWidth: 720 }}>{subtitle}</p>}
                   </>
                 )
               }
@@ -69,14 +69,14 @@ export function WorkbenchPage({
 
         {rail ? (
           <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px]">
-            <div className="border-r" style={{ borderColor: 'var(--border-default)' }}>{main}</div>
+            <div className="border-r" style={{ borderColor: 'var(--surface-border)' }}>{main}</div>
             <aside>{rail}</aside>
           </div>
         ) : (
           <div>{main}</div>
         )}
 
-        {footer && <footer className="border-t px-4 py-2" style={{ borderColor: 'var(--border-default)', background: 'var(--bg-surface-alt)' }}>{footer}</footer>}
+        {footer && <footer className="border-t px-4 py-2" style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-overlay)' }}>{footer}</footer>}
       </section>
     </div>
   );

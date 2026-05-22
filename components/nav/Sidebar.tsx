@@ -16,6 +16,8 @@ import {
   Settings,
   ChevronRight,
   ShieldCheck,
+  GitBranch,
+  BarChart3,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { UnauthLogo } from '@/components/ui/UnauthLogo';
@@ -65,12 +67,14 @@ function buildGroups(inboxCount = 0, watchlistCount = 0): NavGroup[] {
       items: [
         { href: '/upload', label: 'New audit', icon: PlusSquare, isPrimary: true },
         { href: '/history', label: 'Audit history', icon: ListChecks },
+        { href: '/reports', label: 'Reports', icon: BarChart3 },
       ],
     },
     {
       label: 'Investigations',
       items: [
         { href: '/customers', label: 'Customers', icon: Users },
+        { href: '/global', label: 'Global graph', icon: GitBranch },
         { href: '/watchlist', label: 'Watchlist', icon: Star, badge: watchlistCount },
         { href: '/chargebacks', label: 'Evidence packages', icon: ShieldCheck },
       ],
@@ -98,23 +102,23 @@ function SidebarItem({
       href={item.href}
       title={collapsed ? item.label : undefined}
       className={cn(
-        'group relative flex h-8 items-center gap-3 rounded-sm px-2',
-        'text-[14px] font-medium',
+        'group relative flex h-8 items-center gap-3 rounded-none px-2',
+        'text-[13px] font-medium',
         'transition-colors duration-[var(--duration-fast)]',
         'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] focus-visible:outline-offset-2',
         active
-          ? 'bg-[var(--bg-surface-alt)] text-[var(--text)] font-semibold'
+          ? 'text-[var(--ink-primary)] font-semibold'
           : item.isPrimary
-            ? 'border border-[var(--border-default)] bg-[var(--bg-surface)] text-[var(--text)] hover:bg-[var(--bg-hover)]'
-            : 'text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text)]',
+            ? 'border border-[var(--surface-border)] bg-transparent text-[var(--ink-primary)] hover:text-[var(--copper-bright)]'
+            : 'text-[var(--ink-secondary)] hover:text-[var(--ink-primary)]',
         collapsed && 'justify-center',
       )}
     >
       {/* 2px left-edge accent rail for active item */}
       {active && (
         <span
-          className="absolute left-0 top-0 bottom-0 w-0.5 rounded-r-full"
-          style={{ background: 'var(--accent)' }}
+          className="absolute left-0 top-0 bottom-0 rounded-r-sm"
+          style={{ background: 'var(--copper-bright)', width: 3 }}
           aria-hidden="true"
         />
       )}
@@ -123,8 +127,8 @@ function SidebarItem({
         className={cn(
           'h-4 w-4 flex-shrink-0',
           active
-            ? 'text-[var(--icon)]'
-            : 'text-[var(--icon-muted)] group-hover:text-[var(--icon)]',
+            ? 'text-[var(--copper-bright)]'
+            : 'text-[var(--ink-tertiary)] group-hover:text-[var(--ink-secondary)]',
         )}
         aria-hidden="true"
       />
@@ -136,8 +140,8 @@ function SidebarItem({
             <span
               className={cn(
                 'inline-flex h-[18px] min-w-[18px] items-center justify-center',
-                'rounded-full px-1',
-                'bg-[var(--bg-subtle)] text-[var(--text-muted)]',
+                'rounded-sm px-1',
+                'bg-[var(--surface-muted)] text-[var(--ink-secondary)]',
                 'text-caption font-mono tabular-nums',
               )}
             >
@@ -149,7 +153,7 @@ function SidebarItem({
 
       {collapsed && !!item.badge && item.badge > 0 && (
         <span
-          className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-[var(--risk-critical)]"
+          className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-[var(--sev-definite)]"
           aria-label={`${item.badge} items`}
         />
       )}
@@ -158,12 +162,12 @@ function SidebarItem({
 }
 
 function GroupLabel({ label, collapsed }: { label: string; collapsed: boolean }) {
-  if (collapsed) return <div className="my-2 mx-2 h-px bg-[var(--border-default)]" />;
+  if (collapsed) return <div className="my-2 mx-2 h-px bg-[var(--surface-border)]" />;
   return (
     <div className="mt-5 mb-1 px-2">
       <span
         className="block text-[10px] font-semibold uppercase leading-none"
-        style={{ color: 'var(--text-subtle)', letterSpacing: '0.12em' }}
+        style={{ color: 'var(--ink-tertiary)', letterSpacing: '0.04em' }}
       >
         <span
           aria-hidden="true"
@@ -171,8 +175,8 @@ function GroupLabel({ label, collapsed }: { label: string; collapsed: boolean })
             display: 'inline-block',
             width: 4,
             height: 4,
-            borderRadius: 999,
-            background: 'var(--accent)',
+            borderRadius: 1,
+            background: 'var(--copper-bright)',
             marginRight: 7,
             verticalAlign: '2px',
           }}
@@ -238,7 +242,7 @@ export default function Sidebar({
     <aside
       className={cn(
         'relative flex h-full flex-shrink-0 flex-col',
-        'border-r border-[var(--border-default)]',
+        'border-r border-[var(--surface-border)]',
         isMobile
           ? 'w-72'
           : cn(
@@ -247,14 +251,14 @@ export default function Sidebar({
               isCollapsed ? 'w-14' : 'w-60',
             ),
       )}
-      style={{ background: 'var(--bg-canvas)' }}
+      style={{ background: 'var(--surface-base)' }}
       onMouseEnter={() => { if (collapsed) setHoverExpanded(true); }}
       onMouseLeave={() => { if (collapsed) setHoverExpanded(false); }}
     >
       {/* Logo / merchant */}
       <div
         className={cn(
-          'flex h-14 flex-shrink-0 items-center gap-2 px-3 border-b border-[var(--border-default)]',
+          'flex h-14 flex-shrink-0 items-center gap-2 px-3 border-b border-[var(--surface-border)]',
         )}
       >
         <div className="flex min-w-0 flex-shrink-0 items-center justify-center">
@@ -264,7 +268,7 @@ export default function Sidebar({
         {!isCollapsed && (
           <div className="min-w-0 flex-1">
             {merchantName && (
-              <div className="text-caption text-[var(--text-muted)] truncate leading-none">{merchantName}</div>
+              <div className="text-caption text-[var(--ink-tertiary)] truncate leading-none">{merchantName}</div>
             )}
           </div>
         )}
@@ -276,7 +280,7 @@ export default function Sidebar({
             onClick={toggleCollapse}
             className={cn(
               'flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-sm',
-              'text-[var(--icon-muted)] hover:bg-[var(--bg-subtle)] hover:text-[var(--icon)]',
+              'text-[var(--ink-tertiary)] hover:text-[var(--ink-secondary)]',
               'transition-colors duration-[var(--duration-fast)]',
               'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] focus-visible:outline-offset-2',
             )}
@@ -313,12 +317,12 @@ export default function Sidebar({
       {/* Footer */}
       <div
         className={cn(
-          'flex flex-shrink-0 flex-col border-t border-[var(--border-default)]',
+          'flex flex-shrink-0 flex-col border-t border-[var(--surface-border)]',
           isCollapsed ? 'items-center gap-1 px-2 py-2' : 'gap-0.5 px-2 py-2',
         )}
       >
         {!isCollapsed && (
-          <div className="px-2 py-1 text-caption text-[var(--text-subtle)] truncate">
+          <div className="px-2 py-1 text-caption text-[var(--ink-tertiary)] truncate">
             {userEmail}
           </div>
         )}
@@ -328,13 +332,13 @@ export default function Sidebar({
           title={isCollapsed ? 'Help' : undefined}
           className={cn(
             'flex h-8 items-center gap-3 rounded-sm px-2',
-            'text-body-sm text-[var(--text-muted)] hover:bg-[var(--bg-subtle)] hover:text-[var(--text)]',
+            'text-body-sm text-[var(--ink-secondary)] hover:text-[var(--ink-primary)]',
             'transition-colors duration-[var(--duration-fast)]',
             'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] focus-visible:outline-offset-2',
             isCollapsed && 'justify-center',
           )}
         >
-          <HelpCircle className="h-4 w-4 flex-shrink-0 text-[var(--icon-muted)]" aria-hidden="true" />
+          <HelpCircle className="h-4 w-4 flex-shrink-0 text-[var(--ink-tertiary)]" aria-hidden="true" />
           {!isCollapsed && <span>Help</span>}
         </Link>
 
@@ -343,13 +347,13 @@ export default function Sidebar({
           title={isCollapsed ? 'Settings' : undefined}
           className={cn(
             'flex h-8 items-center gap-3 rounded-sm px-2',
-            'text-body-sm text-[var(--text-muted)] hover:bg-[var(--bg-subtle)] hover:text-[var(--text)]',
+            'text-body-sm text-[var(--ink-secondary)] hover:text-[var(--ink-primary)]',
             'transition-colors duration-[var(--duration-fast)]',
             'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] focus-visible:outline-offset-2',
             isCollapsed && 'justify-center',
           )}
         >
-          <Settings className="h-4 w-4 flex-shrink-0 text-[var(--icon-muted)]" aria-hidden="true" />
+          <Settings className="h-4 w-4 flex-shrink-0 text-[var(--ink-tertiary)]" aria-hidden="true" />
           {!isCollapsed && <span>Settings</span>}
         </Link>
 
@@ -359,13 +363,13 @@ export default function Sidebar({
           title={isCollapsed ? 'Sign out' : undefined}
           className={cn(
             'flex h-8 w-full items-center gap-3 rounded-sm px-2',
-            'text-body-sm text-[var(--text-muted)] hover:bg-[var(--bg-subtle)] hover:text-[var(--text)]',
+            'text-body-sm text-[var(--ink-secondary)] hover:text-[var(--ink-primary)]',
             'transition-colors duration-[var(--duration-fast)]',
             'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] focus-visible:outline-offset-2',
             isCollapsed && 'justify-center',
           )}
         >
-          <LogOut className="h-4 w-4 flex-shrink-0 text-[var(--icon-muted)]" aria-hidden="true" />
+          <LogOut className="h-4 w-4 flex-shrink-0 text-[var(--ink-tertiary)]" aria-hidden="true" />
           {!isCollapsed && <span>Sign out</span>}
         </button>
 
@@ -380,7 +384,7 @@ export default function Sidebar({
               <Link
                 key={href}
                 href={href}
-                className="text-[11px] text-[var(--text-subtle)] hover:text-[var(--text-muted)] hover:underline transition-colors"
+                className="text-[11px] text-[var(--ink-tertiary)] hover:text-[var(--ink-secondary)] hover:underline transition-colors"
               >
                 {label}
               </Link>
@@ -396,7 +400,7 @@ export default function Sidebar({
             onClick={toggleCollapse}
             className={cn(
               'mt-1 flex h-7 w-7 items-center justify-center rounded-sm',
-              'text-[var(--icon-muted)] hover:bg-[var(--bg-subtle)] hover:text-[var(--icon)]',
+              'text-[var(--ink-tertiary)] hover:text-[var(--ink-secondary)]',
               'transition-colors duration-[var(--duration-fast)]',
               'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] focus-visible:outline-offset-2',
             )}

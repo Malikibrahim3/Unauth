@@ -3,24 +3,24 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
-import { UnauthLogo } from '@/components/ui/UnauthLogo';
 
 const LABEL_STYLE: React.CSSProperties = {
   display: 'block',
-  fontSize: '12px',
+  fontSize: '11px',
   fontWeight: 500,
-  color: '#5C6670',
+  color: 'var(--ink-tertiary)',
   marginBottom: '6px',
-  letterSpacing: '0.01em',
+  letterSpacing: '0.04em',
+  textTransform: 'uppercase',
 };
 
 const INPUT_BASE: React.CSSProperties = {
   width: '100%',
   padding: '10px 12px',
-  fontSize: '14px',
-  color: '#1A1814',
-  background: '#FDFAF4',
-  border: '1px solid #D2C9B5',
+  fontSize: '13px',
+  color: 'var(--ink-primary)',
+  background: 'var(--surface-input)',
+  border: '1px solid var(--surface-border)',
   borderRadius: '6px',
   outline: 'none',
   boxSizing: 'border-box',
@@ -56,56 +56,29 @@ export default function ResetPage() {
     <div
       style={{
         minHeight: '100vh',
-        background: '#F8F5EE',
+        background: 'var(--surface-base)',
         display: 'flex',
-        fontFamily: 'var(--font-dm-sans, sans-serif)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '32px',
+        fontFamily: 'var(--font-geist), var(--font-dm-sans), sans-serif',
       }}
     >
-      <div
-        className="hidden lg:flex"
-        style={{
-          width: '50%',
-          flexShrink: 0,
-          minHeight: '100vh',
-          padding: '44px 48px',
-          alignItems: 'center',
-          justifyContent: 'center',
-          borderRight: '1px solid #D2C9B5',
-        }}
-      >
-        <Link href="/" style={{ textDecoration: 'none' }}>
-          <UnauthLogo variant="wordmark-light" size={125} />
+      <div style={{ width: '100%', maxWidth: '400px' }}>
+        <Link href="/login" style={{ display: 'block', textAlign: 'center', textDecoration: 'none', marginBottom: 18 }}>
+          <span style={{ color: 'var(--ink-primary)', fontSize: 20, fontWeight: 600 }}>
+            Unauth<span style={{ color: 'var(--copper-bright)' }}>.</span>
+          </span>
         </Link>
-      </div>
-
-      <div
-        style={{
-          width: '50%',
-          flexShrink: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '40px 32px',
-          overflowY: 'auto',
-        }}
-        className="max-lg:w-full"
-      >
-        <div className="lg:hidden" style={{ marginBottom: '32px' }}>
-          <Link href="/" style={{ textDecoration: 'none' }}>
-            <UnauthLogo variant="wordmark-light" size={22} />
-          </Link>
-        </div>
-
-        <div style={{ width: '100%', maxWidth: '408px' }}>
+        <div style={{ background: 'var(--surface-raised)', border: '1px solid var(--surface-border)', borderRadius: 10, padding: 32 }}>
           <div style={{ marginBottom: '28px' }}>
             <p
               style={{
-                fontSize: '12px',
-                fontWeight: 600,
-                letterSpacing: '0.14em',
+                fontSize: '11px',
+                fontWeight: 500,
+                letterSpacing: '0.04em',
                 textTransform: 'uppercase',
-                color: '#78889C',
+                color: 'var(--ink-tertiary)',
                 marginBottom: '10px',
               }}
             >
@@ -113,10 +86,10 @@ export default function ResetPage() {
             </p>
             <h2
               style={{
-                fontSize: '26px',
-                fontWeight: 500,
-                letterSpacing: '-0.01em',
-                color: '#1A1814',
+                fontSize: '20px',
+                fontWeight: 600,
+                letterSpacing: 0,
+                color: 'var(--ink-primary)',
                 lineHeight: 1.2,
               }}
             >
@@ -128,18 +101,18 @@ export default function ResetPage() {
             <div
               style={{
                 padding: '16px',
-                background: '#F0F9F0',
-                border: '1px solid #B8DFB8',
+                background: 'var(--sev-clear-fill)',
+                border: '1px solid color-mix(in srgb, var(--sev-clear) 45%, transparent)',
                 borderRadius: '6px',
-                fontSize: '14px',
-                color: '#2D6A2D',
+                fontSize: '13px',
+                color: 'var(--ink-secondary)',
                 lineHeight: 1.5,
               }}
             >
               Check your inbox — we&apos;ve sent a reset link to <strong>{email}</strong>.
               <br />
               <br />
-              <Link href="/login" style={{ color: '#2D6A2D', fontWeight: 500 }}>
+              <Link href="/login" style={{ color: 'var(--sev-clear)', fontWeight: 500 }}>
                 Back to sign in
               </Link>
             </div>
@@ -158,7 +131,7 @@ export default function ResetPage() {
               </div>
 
               {error && (
-                <p style={{ fontSize: '13px', color: '#C0392B', margin: 0 }}>{error}</p>
+                <p style={{ fontSize: '12px', color: 'var(--sev-definite)', margin: 0 }}>{error}</p>
               )}
 
               <button
@@ -166,12 +139,14 @@ export default function ResetPage() {
                 disabled={loading || !email}
                 style={{
                   padding: '11px 20px',
-                  background: loading || !email ? '#C8C0B0' : '#1A1814',
-                  color: '#F8F5EE',
+                  background: loading || !email ? 'var(--surface-muted)' : 'var(--copper-bright)',
+                  color: loading || !email ? 'var(--ink-tertiary)' : 'var(--ink-inverse)',
                   border: 'none',
                   borderRadius: '6px',
-                  fontSize: '14px',
-                  fontWeight: 500,
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em',
                   cursor: loading || !email ? 'not-allowed' : 'pointer',
                   transition: 'background 0.15s',
                 }}
@@ -180,7 +155,7 @@ export default function ResetPage() {
               </button>
 
               <div style={{ textAlign: 'center' }}>
-                <Link href="/login" style={{ fontSize: '13px', color: '#78889C', textDecoration: 'none' }}>
+                <Link href="/login" style={{ fontSize: '13px', color: 'var(--ink-secondary)', textDecoration: 'none' }}>
                   Back to sign in
                 </Link>
               </div>

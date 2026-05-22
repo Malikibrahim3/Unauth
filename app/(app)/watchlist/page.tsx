@@ -123,7 +123,7 @@ export default async function WatchlistPage({ searchParams }: { searchParams?: {
         { key: 'cases', label: 'Cases', href: '/inbox' },
         { key: 'clusters', label: 'Clusters', href: '/customers?merchantsMin=2' },
         { key: 'audits', label: 'Audits', href: '/history' },
-        { key: 'reports', label: 'Reports', href: '/chargebacks' },
+        { key: 'reports', label: 'Reports', href: '/reports' },
       ]}
       activeNavKey="clusters"
       actions={<Link href="/customers"><Button size="sm">Browse Customers</Button></Link>}
@@ -210,12 +210,12 @@ export default async function WatchlistPage({ searchParams }: { searchParams?: {
             description={
               searchQuery
                 ? `No watchlisted customers match "${searchQuery}".`
-                : "Star any customer on an audit to keep an eye on them — they'll appear here with their latest match confidence every time you upload new orders."
+                : 'No customers on watchlist.'
             }
             action={
               !searchQuery ? (
-                <Link href="/upload" className="text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
-                  Upload an audit
+                <Link href="/customers" className="text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
+                  Browse clusters →
                 </Link>
               ) : undefined
             }

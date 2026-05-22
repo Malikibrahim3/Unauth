@@ -15,21 +15,21 @@ export function WorkbenchKpiStrip({ items, colsClassName = 'grid-cols-2 md:grid-
   return (
     <div
       className={`grid ${colsClassName} border-b`}
-      style={{ borderColor: 'var(--border-default)', background: 'var(--bg-surface)' }}
+      style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-raised)' }}
     >
       {items.map((item, idx) => (
         <div
           key={item.label}
           className="px-3 py-3 md:px-4"
           style={{
-            borderRightColor: 'var(--border-default)',
+            borderRightColor: 'var(--surface-border)',
             borderRightWidth: idx === items.length - 1 ? 0 : 1,
             borderRightStyle: idx === items.length - 1 ? 'none' : 'solid',
           }}
         >
-          <p className="text-overline" style={{ color: 'var(--text-tertiary)' }}>{item.label}</p>
-          <p className="text-mono-lg mt-1 num" style={{ color: 'var(--text)' }}>{item.value}</p>
-          {item.hint && <p className="text-caption mt-1" style={{ color: 'var(--text-subtle)' }}>{item.hint}</p>}
+          <p className="t-label" style={{ color: 'var(--ink-tertiary)' }}>{item.label}</p>
+          <p className="t-display mt-1 num" style={{ color: String(item.value).includes('£') || String(item.value).includes('$') ? 'var(--data-currency)' : 'var(--data-score)' }}>{item.value}</p>
+          {item.hint && <p className="t-caption mt-1" style={{ color: 'var(--ink-tertiary)' }}>{item.hint}</p>}
         </div>
       ))}
     </div>

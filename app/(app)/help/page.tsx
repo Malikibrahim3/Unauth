@@ -44,7 +44,7 @@ export default function HelpIndexPage() {
         { key: 'cases', label: 'Cases', href: '/inbox' },
         { key: 'clusters', label: 'Clusters', href: '/customers?merchantsMin=2' },
         { key: 'audits', label: 'Audits', href: '/history' },
-        { key: 'reports', label: 'Reports', href: '/chargebacks' },
+        { key: 'reports', label: 'Reports', href: '/reports' },
       ]}
       activeNavKey="audits"
       main={<div className="p-4 space-y-3">

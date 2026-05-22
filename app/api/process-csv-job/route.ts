@@ -5,7 +5,7 @@ import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { logAction } from '@/lib/permissions/audit';
 import { streamParseCsv, MAX_ROWS } from '@/lib/processing/streamParser';
 import { updateJobTotalRows, completeJob } from '@/lib/processing/job';
-import { processCsvJob } from '@/lib/processing/worker';
+import { uploadChunkRows, dispatchChunk, originFromRequest } from '@/lib/processing/chunkedDispatch';
 import { checkCsvUsageGuard } from '@/lib/processing/supabaseUsageGuard';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createRequestLogger, withRequestLogging } from '@/lib/log';
@@ -260,11 +260,13 @@ async function POSTHandler(request: NextRequest) {
       );
     }
 
-    // Process the CSV using existing pipeline
-    routeLog(`Starting processing pipeline for ${parseResult.rowCount} rows`);
-    const procStart = Date.now();
-    const scored = await processCsvJob(parseResult.rows, queueItem.job_id, serviceClient, 5, queueItem.merchant_id);
-    routeLog(`Processing pipeline finished in ${Date.now() - procStart}ms`);
+    // Stage chunks in Storage, then dispatch chunk worker chain.
+    routeLog(`Staging ${parseResult.totalChunks} chunks for async processing`);
+    const stageStart = Date.now();
+    await streamParseCsv(file, columnMap, async (chunkRows, chunkIdx) => {
+      await uploadChunkRows(scopedClient, queueItem.job_id, chunkIdx, chunkRows);
+    });
+    routeLog(`Chunk staging finished in ${Date.now() - stageStart}ms`);
 
     const postProcessGuard = await checkCsvUsageGuard(serviceClient);
     if (postProcessGuard.shouldStop) {
@@ -285,45 +287,19 @@ async function POSTHandler(request: NextRequest) {
       );
     }
 
-    const flaggedCount = scored.filter((s) => s.flagged).length;
-    await completeJob(scopedClient, queueItem.job_id, true, undefined, flaggedCount);
-
-    // Check for watchlisted customers that appeared in this audit.
-    let watchlistSyncStatus: 'synced' | 'failed' = 'synced';
-    try {
-      await checkWatchlistAppearances(queueItem.merchant_id, queueItem.job_id, scopedClient);
-    } catch (err) {
-      watchlistSyncStatus = 'failed';
-      logger.error('process_csv_job.watchlist_sync_failed', {
-        jobId: queueItem.job_id,
-        error: err,
-        nonFatal: true,
-      });
-    }
-    await scopedClient
-      .from('processing_jobs')
-      .update({ watchlist_sync_status: watchlistSyncStatus } as any)
-      .eq('id', queueItem.job_id);
-
-    // Step 5: Update csv_upload_queue to 'completed'
-    await scopedClient
-      .from('csv_upload_queue')
-      .update({ status: 'completed', completed_at: new Date().toISOString() })
-      .eq('id', queueItem.id);
-
-    // Step 6: Delete the file from Supabase Storage
-    const { error: deleteError } = await serviceClient.storage
-      .from('merchant-csv-uploads-2')
-      .remove([queueItem.storage_path]);
-
-    if (deleteError) {
-      logger.error('process_csv_job.storage_cleanup_failed', { jobId: queueItem.job_id, error: deleteError, nonFatal: true });
-      // Non-fatal error, log but don't fail the job
-    }
+    await dispatchChunk(originFromRequest(request), {
+      jobId: queueItem.job_id,
+      chunkIndex: 0,
+      totalChunks: parseResult.totalChunks,
+      merchantId: queueItem.merchant_id,
+      storagePath: queueItem.storage_path,
+      columnMap,
+    });
 
     return NextResponse.json({
       success: true,
       jobId: queueItem.job_id,
+      mode: 'chunked-dispatched',
       rowsProcessed: parseResult.rowCount,
     });
   } catch (err) {

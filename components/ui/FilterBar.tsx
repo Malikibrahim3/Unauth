@@ -27,8 +27,8 @@ export function FilterBar({ search, rightActions, activeFilterChips, className }
         height: 44,
         paddingLeft: 14,
         paddingRight: 14,
-        borderBottom: '1px solid var(--border-default)',
-        background: 'var(--bg-canvas)',
+        borderBottom: '1px solid var(--surface-border)',
+        background: 'var(--surface-base)',
       }}
     >
       {/* Search input */}
@@ -36,7 +36,7 @@ export function FilterBar({ search, rightActions, activeFilterChips, className }
         <div className="relative flex items-center" style={{ maxWidth: 280, width: '100%' }}>
           <Search
             className="absolute pointer-events-none"
-            style={{ left: 10, width: 13, height: 13, color: 'var(--text-subtle)' }}
+            style={{ left: 10, width: 13, height: 13, color: 'var(--ink-tertiary)' }}
             aria-hidden="true"
           />
           <input
@@ -51,13 +51,13 @@ export function FilterBar({ search, rightActions, activeFilterChips, className }
               paddingRight: search.value ? 30 : 10,
               height: 28,
               borderRadius: 4,
-              border: '1px solid var(--border-default)',
-              background: '#FFFFFF',
+              border: '1px solid var(--surface-border)',
+              background: 'var(--surface-input)',
               fontSize: 12,
-              color: 'var(--text)',
+              color: 'var(--ink-primary)',
               outline: 'none',
             }}
-            className="placeholder:text-[var(--text-subtle)] focus:border-[#7B2D26] transition-colors"
+            className="placeholder:text-[var(--ink-tertiary)] focus:border-[var(--copper-bright)] transition-colors"
           />
           {search.value && (
             <button
@@ -67,11 +67,11 @@ export function FilterBar({ search, rightActions, activeFilterChips, className }
               style={{
                 position: 'absolute',
                 right: 8,
-                color: 'var(--text-subtle)',
+                color: 'var(--ink-tertiary)',
                 display: 'flex',
                 alignItems: 'center',
               }}
-              className="hover:text-[var(--text)] transition-colors"
+              className="hover:text-[var(--ink-primary)] transition-colors"
             >
               <X style={{ width: 12, height: 12 }} />
             </button>

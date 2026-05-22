@@ -13,6 +13,8 @@
     "snapshot-metrics": "ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/snapshot-network-metrics.ts",
     "test:watch": "jest --watch",
     "generate:blind-csvs": "ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/test-data/generateBlindMerchantCSVs.ts",
+    "generate:multi-merchant-csvs": "ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/generate-multi-merchant-csvs.ts",
+    "report:multi-merchant-graph": "ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/report-multi-merchant-identity-graph.ts",
     "test:csv-blind": "npm run generate:blind-csvs && jest tests/identity --runInBand",
     "test:identity": "jest tests/identity --runInBand",
     "test:merchant-readiness": "npm run test:csv-blind",

@@ -25,9 +25,9 @@ const config: Config = {
     },
     extend: {
       fontFamily: {
-        sans:    ['var(--font-sans)', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
-        display: ['var(--font-display)', 'var(--font-sans)', 'sans-serif'],
-        mono:    ['var(--font-mono)', 'SF Mono', 'Menlo', 'monospace'],
+        sans:    ['var(--font-sans)', 'Geist', 'DM Sans', 'sans-serif'],
+        display: ['var(--font-sans)', 'Geist', 'DM Sans', 'sans-serif'],
+        mono:    ['var(--font-mono)', 'IBM Plex Mono', 'Fira Code', 'monospace'],
       },
       spacing: {
         's1':  'var(--space-1)',
@@ -43,6 +43,32 @@ const config: Config = {
         's11': 'var(--space-11)',
       },
       colors: {
+        /* Direction A canonical tokens */
+        'surface-base':    'var(--surface-base)',
+        'surface-raised':  'var(--surface-raised)',
+        'surface-overlay': 'var(--surface-overlay)',
+        'surface-border':  'var(--surface-border)',
+        'surface-muted':   'var(--surface-muted)',
+        'surface-input':   'var(--surface-input)',
+        'ink-primary':     'var(--ink-primary)',
+        'ink-secondary':   'var(--ink-secondary)',
+        'ink-tertiary':    'var(--ink-tertiary)',
+        'ink-inverse':     'var(--ink-inverse)',
+        'copper-bright':   'var(--copper-bright)',
+        'copper-mid':      'var(--copper-mid)',
+        'copper-dim':      'var(--copper-dim)',
+        'sev-definite':    'var(--sev-definite)',
+        'sev-probable':    'var(--sev-probable)',
+        'sev-neutral':     'var(--sev-neutral)',
+        'sev-clear':       'var(--sev-clear)',
+        'privacy-ink':     'var(--privacy-ink)',
+        'privacy-fill':    'var(--privacy-fill)',
+        'privacy-border':  'var(--privacy-border)',
+        'data-score':      'var(--data-score)',
+        'data-currency':   'var(--data-currency)',
+        'data-id':         'var(--data-id)',
+        'data-date':       'var(--data-date)',
+
         /* ── Spec token surface aliases ── */
         'surface-alt':  'var(--bg-surface-alt)',
         'surface-sunk': 'var(--bg-surface-sunk)',

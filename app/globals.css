@@ -251,6 +251,187 @@
     --input:               var(--border);
     --ring:                var(--focus-ring);
     --radius:              var(--radius-lg);
+
+    /* ══════════════════════════════════════════════════════════════════════
+     * Direction A — Espresso dark mode primary
+     * Canonical tokens from the redesign brief. The legacy aliases below
+     * intentionally point back to these values so old components inherit the
+     * new instrument palette while they are migrated.
+     * ═════════════════════════════════════════════════════════════════════ */
+
+    /* Surface */
+    --surface-base:    #0E0B08;
+    --surface-raised:  #171310;
+    --surface-overlay: #1F1B17;
+    --surface-border:  #2A2420;
+    --surface-muted:   #342E28;
+    --surface-input:   #1A1612;
+
+    /* Ink */
+    --ink-primary:   #F0EBE3;
+    --ink-secondary: #A89880;
+    --ink-tertiary:  #6B5E50;
+    --ink-inverse:   #0E0B08;
+
+    /* Copper */
+    --copper-bright: #C8763A;
+    --copper-mid:    #9E5A26;
+    --copper-dim:    #5C3418;
+    --copper-glow:   #C8763A26;
+
+    /* Severity */
+    --sev-definite:      #E8362A;
+    --sev-definite-fill: #3D0E0A;
+    --sev-probable:      #C8763A;
+    --sev-probable-fill: #3D2010;
+    --sev-neutral:       #4A6572;
+    --sev-neutral-fill:  #0E1D24;
+    --sev-clear:         #2D6A4F;
+    --sev-clear-fill:    #0A1F17;
+
+    /* Privacy / data */
+    --privacy-ink:    #7B9EA8;
+    --privacy-fill:   #0C1C22;
+    --privacy-border: #1E3A44;
+    --data-score:     #F0EBE3;
+    --data-currency:  #D4B896;
+    --data-id:        #8FA89B;
+    --data-date:      #8494A8;
+
+    /* Legacy aliases now map to Direction A */
+    --brand-ink:        var(--ink-primary);
+    --brand-rust:       var(--copper-bright);
+    --brand-rust-hover: var(--copper-mid);
+    --brand-rust-soft:  var(--copper-glow);
+    --brand-paper:      var(--surface-base);
+
+    --bg-canvas:        var(--surface-base);
+    --bg-surface:       var(--surface-raised);
+    --bg-surface-alt:   var(--surface-overlay);
+    --bg-surface-sunk:  var(--surface-muted);
+    --bg-hover:         var(--surface-overlay);
+    --bg-selected:      var(--copper-glow);
+    --bg-subtle:        var(--surface-overlay);
+    --bg-muted:         var(--surface-muted);
+    --bg-inset:         var(--surface-input);
+
+    --border-subtle:    var(--surface-border);
+    --border-default:   var(--surface-border);
+    --border-strong:    var(--copper-bright);
+    --border:           var(--surface-border);
+
+    --text:             var(--ink-primary);
+    --text-muted:       var(--ink-secondary);
+    --text-subtle:      var(--ink-tertiary);
+    --text-disabled:    var(--ink-tertiary);
+    --text-inverse:     var(--ink-inverse);
+    --text-link:        var(--copper-bright);
+    --text-primary:     var(--ink-primary);
+    --text-secondary:   var(--ink-secondary);
+    --text-tertiary:    var(--ink-tertiary);
+
+    --accent:           var(--copper-bright);
+    --accent-hover:     var(--copper-mid);
+    --accent-soft:      var(--copper-glow);
+    --accent-subtle:    var(--copper-glow);
+    --accent-soft-hover: color-mix(in srgb, var(--copper-bright) 22%, transparent);
+    --accent-50:        var(--copper-glow);
+    --accent-100:       var(--copper-glow);
+    --accent-200:       var(--copper-dim);
+    --accent-500:       var(--copper-bright);
+    --accent-600:       var(--copper-mid);
+    --accent-700:       var(--copper-dim);
+    --accent-fg-on-500: var(--ink-inverse);
+
+    --risk-critical:      var(--sev-definite);
+    --risk-critical-bg:   var(--sev-definite-fill);
+    --risk-critical-bd:   color-mix(in srgb, var(--sev-definite) 42%, transparent);
+    --risk-critical-fg:   var(--sev-definite);
+    --risk-critical-line: var(--sev-definite);
+
+    --risk-high:      var(--sev-probable);
+    --risk-high-bg:   var(--sev-probable-fill);
+    --risk-high-bd:   color-mix(in srgb, var(--sev-probable) 42%, transparent);
+    --risk-high-fg:   var(--sev-probable);
+    --risk-high-line: var(--sev-probable);
+
+    --risk-medium:      var(--sev-neutral);
+    --risk-medium-bg:   var(--sev-neutral-fill);
+    --risk-medium-bd:   color-mix(in srgb, var(--sev-neutral) 42%, transparent);
+    --risk-medium-fg:   var(--sev-neutral);
+    --risk-medium-line: var(--sev-neutral);
+
+    --risk-low:      var(--sev-clear);
+    --risk-low-bg:   var(--sev-clear-fill);
+    --risk-low-bd:   color-mix(in srgb, var(--sev-clear) 42%, transparent);
+    --risk-low-fg:   var(--sev-clear);
+    --risk-low-line: var(--sev-clear);
+
+    --risk-none:    var(--sev-neutral);
+    --risk-none-bg: var(--sev-neutral-fill);
+    --risk-none-bd: color-mix(in srgb, var(--sev-neutral) 30%, transparent);
+
+    --info:    var(--privacy-ink);
+    --info-bg: var(--privacy-fill);
+    --info-bd: var(--privacy-border);
+    --success:    var(--sev-clear);
+    --success-bg: var(--sev-clear-fill);
+    --success-bd: color-mix(in srgb, var(--sev-clear) 42%, transparent);
+    --warning:    var(--sev-probable);
+    --warning-bg: var(--sev-probable-fill);
+    --warning-bd: color-mix(in srgb, var(--sev-probable) 42%, transparent);
+    --watchlist:    var(--privacy-ink);
+    --watchlist-bg: var(--privacy-fill);
+    --watchlist-bd: var(--privacy-border);
+
+    --focus-ring: var(--copper-bright);
+    --icon:       var(--ink-secondary);
+    --icon-muted: var(--ink-tertiary);
+
+    --font-sans:    var(--font-geist), var(--font-dm-sans), sans-serif;
+    --font-display: var(--font-geist), var(--font-dm-sans), sans-serif;
+    --font-mono:    var(--font-ibm-plex-mono), "Fira Code", monospace;
+
+    --radius-xs:   3px;
+    --radius-sm:   3px;
+    --radius-md:   6px;
+    --radius-lg:   10px;
+    --radius-xl:   10px;
+    --radius-1:    3px;
+    --radius-2:    6px;
+    --radius-3:    10px;
+    --radius-4:    10px;
+    --radius-pill: 9999px;
+
+    --shadow-color: 24 30% 2%;
+    --shadow-xs: 0 1px 2px hsl(var(--shadow-color) / 0.45);
+    --shadow-sm: 0 2px 8px hsl(var(--shadow-color) / 0.35);
+    --shadow-md: 0 10px 24px hsl(var(--shadow-color) / 0.36);
+    --shadow-lg: 0 18px 44px hsl(var(--shadow-color) / 0.42);
+    --shadow-xl: 0 26px 70px hsl(var(--shadow-color) / 0.52);
+    --shadow-0: 0 0 0 1px var(--surface-border);
+    --shadow-1: 0 1px 0 rgba(240,235,227,0.03), 0 12px 28px rgba(0,0,0,0.28);
+    --shadow-2: 0 1px 0 rgba(240,235,227,0.04), 0 20px 60px rgba(0,0,0,0.36);
+    --shadow-drawer: -20px 0 60px rgba(0,0,0,0.46);
+    --shadow-modal: 0 24px 80px rgba(0,0,0,0.58);
+    --shadow-focus: 0 0 0 1px var(--copper-bright), 0 0 0 3px var(--copper-glow);
+
+    --background:          var(--surface-base);
+    --foreground:          var(--ink-primary);
+    --card:                var(--surface-raised);
+    --card-foreground:     var(--ink-primary);
+    --popover:             var(--surface-overlay);
+    --popover-foreground:  var(--ink-primary);
+    --primary:             var(--copper-bright);
+    --primary-foreground:  var(--ink-inverse);
+    --secondary:           var(--surface-overlay);
+    --secondary-foreground: var(--ink-primary);
+    --muted:               var(--surface-overlay);
+    --muted-foreground:    var(--ink-secondary);
+    --destructive:         var(--sev-definite);
+    --destructive-foreground: var(--ink-primary);
+    --input:               var(--surface-border);
+    --ring:                var(--copper-bright);
   }
 
 
@@ -264,22 +445,22 @@
     background-color: var(--bg-canvas);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    scrollbar-color: #D8D0BD transparent;
+    scrollbar-color: var(--surface-muted) transparent;
     scrollbar-width: thin;
   }
 
   body {
     background-color: var(--bg-canvas);
     color: var(--text);
-    font-size: 14px;
-    line-height: 20px;
+    font-size: 13px;
+    line-height: 19.5px;
     font-feature-settings: "kern" 1;
   }
 
   input,
   textarea,
   select {
-    caret-color: var(--brand-rust);
+    caret-color: var(--copper-bright);
   }
 
   /* Tabular numerics for all mono content */
@@ -295,10 +476,10 @@
   }
 
   /* Typography scale */
-  .text-display-xl  { font-size: 36px; line-height: 40px; font-weight: 600; letter-spacing: -0.02em; }
-  .text-display-lg  { font-size: 28px; line-height: 34px; font-weight: 600; letter-spacing: -0.015em; }
-  .text-display-md  { font-size: 22px; line-height: 28px; font-weight: 600; letter-spacing: -0.01em; }
-  .text-heading-lg  { font-size: 18px; line-height: 26px; font-weight: 600; letter-spacing: -0.005em; }
+  .text-display-xl  { font-size: 36px; line-height: 40px; font-weight: 600; letter-spacing: 0; }
+  .text-display-lg  { font-size: 28px; line-height: 34px; font-weight: 600; letter-spacing: 0; }
+  .text-display-md  { font-size: 22px; line-height: 28px; font-weight: 600; letter-spacing: 0; }
+  .text-heading-lg  { font-size: 18px; line-height: 26px; font-weight: 600; letter-spacing: 0; }
   .text-heading-md  { font-size: 16px; line-height: 24px; font-weight: 600; letter-spacing: 0; }
   .text-heading-sm  { font-size: 14px; line-height: 20px; font-weight: 600; letter-spacing: 0; }
   .text-body-md     { font-size: 14px; line-height: 20px; font-weight: 400; letter-spacing: 0; }
@@ -309,8 +490,8 @@
   .text-mono-lg     { font-size: 16px; line-height: 22px; font-weight: 500; font-family: var(--font-mono); font-feature-settings: "tnum" 1, "cv11" 1; }
 
   /* ══ SPEC type scale aliases (§5.5) ══════════════════════════════════════ */
-  .text-display    { font-size: 24px; line-height: 32px; font-weight: 600; letter-spacing: -0.01em; }
-  .text-h1         { font-size: 20px; line-height: 28px; font-weight: 600; letter-spacing: -0.005em; }
+  .text-display    { font-size: 28px; line-height: 32px; font-weight: 600; letter-spacing: 0; }
+  .text-h1         { font-size: 20px; line-height: 24px; font-weight: 600; letter-spacing: 0; }
   .text-h2         { font-size: 16px; line-height: 24px; font-weight: 600; letter-spacing: 0; }
   .text-h3         { font-size: 14px; line-height: 20px; font-weight: 600; letter-spacing: 0; }
   .text-body       { font-size: 14px; line-height: 20px; font-weight: 400; letter-spacing: 0; }
@@ -322,6 +503,16 @@
 
   /* Tabular-nums utility — apply to all numeric display */
   .num { font-feature-settings: "tnum" 1, "ss01" 1; font-variant-numeric: tabular-nums; }
+
+  .t-display { font-size: 1.75rem; line-height: 1.15; font-weight: 600; letter-spacing: 0; }
+  .t-heading { font-size: 1.25rem; line-height: 1.2; font-weight: 600; letter-spacing: 0; }
+  .t-subhead { font-size: 0.9375rem; line-height: 1.3; font-weight: 500; letter-spacing: 0; }
+  .t-body { font-size: 0.8125rem; line-height: 1.5; font-weight: 400; letter-spacing: 0; }
+  .t-label { font-size: 0.6875rem; line-height: 1.4; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; }
+  .t-caption { font-size: 0.625rem; line-height: 1.4; font-weight: 400; letter-spacing: 0.02em; }
+  .t-score { font-family: var(--font-mono); font-size: 1.375rem; line-height: 1; font-weight: 600; letter-spacing: 0; }
+  .t-mono { font-family: var(--font-mono); font-size: 0.75rem; line-height: 1.4; font-weight: 400; letter-spacing: 0.01em; }
+  .t-mono-md { font-family: var(--font-mono); font-size: 0.8125rem; line-height: 1.4; font-weight: 500; letter-spacing: 0; }
 }
 
 *::-webkit-scrollbar {
@@ -330,7 +521,7 @@
 }
 
 *::-webkit-scrollbar-thumb {
-  background: #D8D0BD;
+  background: var(--surface-muted);
   border-radius: 999px;
 }
 
@@ -342,7 +533,7 @@
 .hover-bg-subtle:hover  { background: var(--bg-subtle); }
 .hover-bg-canvas:hover  { background: var(--bg-canvas); }
 .hover-bg-watchlist:hover { background: color-mix(in srgb, var(--watchlist) 8%, transparent); }
-.btn-accent             { background: var(--accent); color: var(--text-inverse); }
+.btn-accent             { background: var(--accent); color: var(--ink-inverse); border: 1px solid var(--accent); }
 .btn-accent:hover       { background: var(--accent-hover); }
 .btn-ghost              { color: var(--text); }
 .btn-ghost:hover        { background: var(--bg-subtle); }
@@ -397,13 +588,13 @@
 }
 
 @keyframes ua-pulse-dot {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(52, 168, 83, 0.55); }
-  60%      { box-shadow: 0 0 0 6px rgba(52, 168, 83, 0); }
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.3); }
 }
 
 @keyframes ua-pulse-dot-rust {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(123, 45, 38, 0.50); }
-  60%      { box-shadow: 0 0 0 5px rgba(123, 45, 38, 0); }
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.3); }
 }
 
 @keyframes ua-draw-line {
@@ -562,81 +753,78 @@
 .ua-mark {
   display: inline-flex;
   align-items: baseline;
-  font-family: var(--font-serif), Georgia, serif;
+  font-family: var(--font-sans);
   font-weight: 600;
-  color: #1c1612;
+  color: var(--ink-primary);
   line-height: 1;
-  font-variation-settings: "opsz" 60;
   white-space: nowrap;
-  letter-spacing: -0.020em;
+  letter-spacing: 0;
 }
 .ua-mark .word {
   display: inline-block;
 }
 .ua-mark .dot {
   display: inline-block;
-  width: var(--dot, 0.063em);
-  height: var(--dot, 0.063em);
-  border-radius: 50%;
-  background: #8a2828;
-  margin-left: 0.15em;
+  color: var(--copper-bright);
+  background: transparent;
+  width: auto;
+  height: auto;
+  margin-left: 0;
   vertical-align: baseline;
   flex-shrink: 0;
 }
+.ua-mark .dot::before {
+  content: ".";
+}
 .ua-mark.reversed {
-  color: #f4f0e8;
+  color: var(--ink-primary);
 }
 .ua-mark.reversed .dot {
-  background: #f4f0e8;
+  color: var(--copper-bright);
 }
 .ua-mark.mono-dark .dot {
-  background: #1c1612;
+  color: var(--ink-primary);
 }
 .ua-mark.mono-light .dot {
-  background: #f4f0e8;
+  color: var(--ink-primary);
 }
 .ua-mark.nav {
-  font-size: 22px;
-  letter-spacing: -0.020em;
+  font-size: 20px;
+  letter-spacing: 0;
 }
 .ua-mark.nav .dot {
-  --dot: 2.5px;
-  margin-left: 0.18em;
+  margin-left: 0;
 }
 .ua-mark.s12 {
   font-size: 12px;
-  letter-spacing: -0.018em;
+  letter-spacing: 0;
 }
 .ua-mark.s12 .dot {
-  --dot: 1.5px;
-  margin-left: 0.20em;
+  margin-left: 0;
 }
 .ua-mark.s18 {
   font-size: 18px;
-  letter-spacing: -0.020em;
+  letter-spacing: 0;
 }
 .ua-mark.s18 .dot {
-  --dot: 2px;
-  margin-left: 0.18em;
+  margin-left: 0;
 }
 .ua-mark.s28 {
   font-size: 28px;
-  letter-spacing: -0.022em;
+  letter-spacing: 0;
 }
 .ua-mark.s28 .dot {
-  --dot: 2.5px;
-  margin-left: 0.17em;
+  margin-left: 0;
 }
 .ua-mark.s48 {
   font-size: 48px;
-  letter-spacing: -0.025em;
+  letter-spacing: 0;
 }
 .ua-mark.s48 .dot {
-  --dot: 3.5px;
-  margin-left: 0.16em;
+  margin-left: 0;
 }
 .ua-mark.display {
-  letter-spacing: -0.030em;
+  letter-spacing: 0;
 }
 
 /* SVG line draw — when parent has .is-visible */
@@ -651,7 +839,7 @@
 
 /* ── Case-file row hover states ── */
 .ua-case-row-hover:hover {
-  background: rgba(123,45,38,0.04);
+  background: var(--surface-overlay);
 }
 .ua-case-row-hover-dark:hover {
   background: rgba(255,255,255,0.04);

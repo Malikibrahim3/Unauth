@@ -195,10 +195,22 @@ function asStringArray(value: unknown): string[] {
 
 function humaniseFlag(flag: string): string {
   return flag
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
     .split('_')
     .filter(Boolean)
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(' ');
+}
+
+function identityFieldLabel(field: string): string {
+  const labels: Record<string, string> = {
+    email: 'email',
+    name: 'name',
+    address: 'address',
+    ip: 'IP address',
+    card_last4: 'card ending',
+  };
+  return labels[field] ?? humaniseFlag(field).toLowerCase();
 }
 
 // ---------------------------------------------------------------------------
@@ -516,13 +528,14 @@ export function getEventStream(input: {
 
   for (const change of input.identityTimeline ?? []) {
     if (!change.isVariant) continue;
+    const fieldLabel = identityFieldLabel(change.field);
     events.push({
       id: `identity-${change.field}-${change.value}`,
       type: 'identity_change',
       date: change.date,
-      title: `New ${change.field}: ${change.value}`,
+      title: `New ${fieldLabel}: ${change.value}`,
       subtitle: 'Identity change observed',
-      evidence: [`Variant ${change.field}`],
+      evidence: [`Variant ${fieldLabel}`],
     });
   }
 

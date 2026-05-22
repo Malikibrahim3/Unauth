@@ -7,12 +7,12 @@ export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSel
   ({ className, style, ...props }, ref) => (
     <select
       ref={ref}
-      className={cn('w-full px-3 py-2 text-sm focus:outline-none transition-colors focus:border-[var(--accent)]', className)}
+      className={cn('w-full px-3 py-2 text-sm focus:outline-none transition-colors duration-[120ms] focus:border-[var(--copper-bright)]', className)}
       style={{
-        background: 'var(--bg-surface)',
-        border: '1px solid var(--border-default)',
-        borderRadius: 6,
-        color: 'var(--text)',
+        background: 'var(--surface-input)',
+        border: '1px solid var(--surface-border)',
+        borderRadius: 'var(--radius-md)',
+        color: 'var(--ink-primary)',
         ...style,
       }}
       {...props}

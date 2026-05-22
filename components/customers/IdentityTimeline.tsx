@@ -17,7 +17,7 @@ interface IdentityTimelineProps {
 export default function IdentityTimeline({ entries }: IdentityTimelineProps) {
   if (entries.length === 0) {
     return (
-      <p className="text-body-sm italic" style={{ color: 'var(--text-muted)' }}>No identity history available.</p>
+      <p className="text-body-sm italic" style={{ color: 'var(--ink-secondary)' }}>No identity history available.</p>
     );
   }
 
@@ -25,11 +25,11 @@ export default function IdentityTimeline({ entries }: IdentityTimelineProps) {
     <div className="overflow-x-auto">
       <table className="w-full border-collapse" style={{ fontSize: 12 }}>
         <thead>
-          <tr style={{ background: 'var(--bg-canvas)', borderBottom: '1px solid var(--border-default)' }}>
-            <th style={{ padding: '8px 10px', textAlign: 'left', fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>First Seen</th>
-            <th style={{ padding: '8px 10px', textAlign: 'left', fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Field</th>
-            <th style={{ padding: '8px 10px', textAlign: 'left', fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Value</th>
-            <th style={{ padding: '8px 10px', textAlign: 'left', fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Last Seen</th>
+          <tr style={{ background: 'var(--surface-base)', borderBottom: '1px solid var(--surface-border)' }}>
+            <th style={{ padding: '8px 10px', textAlign: 'left', fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ink-tertiary)' }}>First Seen</th>
+            <th style={{ padding: '8px 10px', textAlign: 'left', fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ink-tertiary)' }}>Field</th>
+            <th style={{ padding: '8px 10px', textAlign: 'left', fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ink-tertiary)' }}>Value</th>
+            <th style={{ padding: '8px 10px', textAlign: 'left', fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ink-tertiary)' }}>Last Seen</th>
           </tr>
         </thead>
         <tbody>
@@ -37,26 +37,26 @@ export default function IdentityTimeline({ entries }: IdentityTimelineProps) {
             <tr
               key={idx}
               style={{
-                borderBottom: '1px solid var(--border-default)',
-                borderLeft: entry.isVariant ? '2px solid #7B2D26' : '2px solid transparent',
-                background: entry.isVariant ? 'var(--bg-canvas)' : '#FFFFFF',
+                borderBottom: '1px solid var(--surface-border)',
+                borderLeft: entry.isVariant ? '2px solid var(--sev-probable)' : '2px solid transparent',
+                background: entry.isVariant ? 'var(--sev-probable-fill)' : 'var(--surface-raised)',
               }}
             >
-              <td className="num" style={{ padding: '10px', fontFamily: 'var(--font-mono)', color: '#4A4640' }}>{formatDateMode(entry.date, 'table')}</td>
+              <td className="num" style={{ padding: '10px', fontFamily: 'var(--font-mono)', color: 'var(--data-date)' }}>{formatDateMode(entry.date, 'table')}</td>
               <td style={{ padding: '10px' }}>
-                <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>{FIELD_LABELS[entry.field]}</div>
+                <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ink-tertiary)' }}>{FIELD_LABELS[entry.field]}</div>
               </td>
               <td style={{ padding: '10px' }}>
-                <div className="font-mono break-all" style={{ color: '#1A1814' }}>{entry.value}</div>
+                <div className="font-mono break-all" style={{ color: 'var(--data-id)' }}>{entry.value}</div>
                 {entry.isVariant && (
                   <div className="mt-1">
-                    <span style={{ display: 'inline-flex', height: 18, alignItems: 'center', padding: '0 7px', borderRadius: 3, background: '#FBEFEC', color: '#7B2D26', border: '1px solid #F0C8BE', fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                    <span style={{ display: 'inline-flex', height: 18, alignItems: 'center', padding: '0 7px', borderRadius: 3, background: 'var(--sev-probable-fill)', color: 'var(--sev-probable)', border: '1px solid color-mix(in srgb, var(--sev-probable) 40%, transparent)', fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                       ▲ Variant
                     </span>
                   </div>
                 )}
               </td>
-              <td className="num" style={{ padding: '10px', fontFamily: 'var(--font-mono)', color: '#4A4640' }}>{formatDateMode(entry.date, 'table')}</td>
+              <td className="num" style={{ padding: '10px', fontFamily: 'var(--font-mono)', color: 'var(--data-date)' }}>{formatDateMode(entry.date, 'table')}</td>
             </tr>
           ))}
         </tbody>

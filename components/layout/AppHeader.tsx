@@ -61,15 +61,19 @@ export default function AppHeader({
   // Derive a simple breadcrumb from pathname when none is provided
   const segments: BreadcrumbSegment[] = breadcrumbs ?? deriveFromPathname(pathname);
 
+  if (pathname === '/dashboard') {
+    return null;
+  }
+
   return (
     <header
       className={cn(
         'sticky top-0 z-40 flex h-14 items-center gap-3',
-        'border-b px-4',
+        'border-b pl-14 pr-4 md:px-4',
       )}
       style={{
-        background: 'rgba(248, 245, 238, 0.92)',
-        borderBottomColor: 'var(--border-default)',
+        background: 'color-mix(in srgb, var(--surface-base) 92%, transparent)',
+        borderBottomColor: 'var(--surface-border)',
         backdropFilter: 'saturate(130%) blur(8px)',
         WebkitBackdropFilter: 'saturate(130%) blur(8px)',
       }}
@@ -82,7 +86,7 @@ export default function AppHeader({
           onClick={onToggleSidebar}
           className={cn(
             'flex h-7 w-7 items-center justify-center rounded-md',
-            'text-[var(--text-subtle)] hover:bg-[var(--bg-subtle)] hover:text-[var(--text)]',
+            'text-[var(--ink-tertiary)] hover:text-[var(--ink-primary)]',
             'transition-colors duration-[var(--duration-fast)]',
             'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] focus-visible:outline-offset-2',
             'flex-shrink-0',
@@ -105,7 +109,7 @@ export default function AppHeader({
             <span key={i} className="flex items-center gap-0">
               {i > 0 && (
                 <ChevronRight
-                  className="mx-1.5 h-3 w-3 flex-shrink-0 text-[var(--text-subtle)]"
+                  className="mx-1.5 h-3 w-3 flex-shrink-0 text-[var(--ink-tertiary)]"
                   aria-hidden="true"
                 />
               )}
@@ -114,8 +118,8 @@ export default function AppHeader({
                   className={cn(
                     'truncate',
                     isLast
-                      ? 'text-overline font-semibold text-[var(--text)]'
-                      : 'text-caption text-[var(--text-muted)]',
+                      ? 'text-overline font-semibold text-[var(--ink-primary)]'
+                      : 'text-caption text-[var(--ink-secondary)]',
                   )}
                   aria-current={isLast ? 'page' : undefined}
                 >
@@ -127,7 +131,7 @@ export default function AppHeader({
                         width: 5,
                         height: 5,
                         borderRadius: 999,
-                        background: 'var(--accent)',
+                        background: 'var(--copper-bright)',
                         marginRight: 7,
                         verticalAlign: '1px',
                       }}
@@ -139,8 +143,8 @@ export default function AppHeader({
                 <Link
                   href={seg.href}
                   className={cn(
-                    'text-caption truncate text-[var(--text-muted)]',
-                    'hover:text-[var(--text)] transition-colors duration-[var(--duration-fast)]',
+                    'text-caption truncate text-[var(--ink-secondary)]',
+                    'hover:text-[var(--ink-primary)] transition-colors duration-[var(--duration-fast)]',
                     'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] focus-visible:outline-offset-2 rounded-sm',
                   )}
                 >
@@ -169,14 +173,14 @@ export default function AppHeader({
         onClick={openPalette}
         className={cn(
           'flex h-7 items-center gap-1.5 px-2',
-          'border border-[var(--border-default)]',
-          'text-caption text-[var(--text-subtle)]',
-          'hover:border-[var(--border-strong)] hover:text-[var(--text)]',
+          'border border-[var(--surface-border)]',
+          'text-caption text-[var(--ink-tertiary)]',
+          'hover:border-[var(--copper-bright)] hover:text-[var(--ink-primary)]',
           'transition-colors duration-[var(--duration-fast)]',
           'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] focus-visible:outline-offset-2',
           'flex-shrink-0',
         )}
-        style={{ background: 'var(--bg-surface)', borderRadius: 6 }}
+        style={{ background: 'var(--surface-input)', borderRadius: 6 }}
       >
         <Search size={14} aria-hidden="true" />
         <span className="hidden sm:inline">Search</span>
@@ -213,13 +217,19 @@ function deriveFromPathname(pathname: string): BreadcrumbSegment[] {
     audit:       'Audit results',
     new:         'New Audit',
   };
+  const pathMap: Record<string, string> = {
+    'settings/audit-trail': 'Data & privacy',
+    global: 'Global graph',
+    chargebacks: 'Evidence packages',
+  };
 
   const parts = pathname.split('/').filter(Boolean);
   if (parts.length === 0) return [{ label: 'Home' }];
 
   return parts.map((part, i) => {
-    const label = segmentMap[part] ?? humanize(part);
-    const href = '/' + parts.slice(0, i + 1).join('/');
+    const pathKey = parts.slice(0, i + 1).join('/');
+    const label = pathMap[pathKey] ?? segmentMap[part] ?? humanize(part);
+    const href = '/' + pathKey;
     return { label, href };
   });
 }

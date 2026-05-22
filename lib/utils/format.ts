@@ -7,13 +7,19 @@ export function formatCurrency(amount: number, currency = 'GBP'): string {
 }
 
 export function formatCurrencyCompact(amount: number, currency = 'GBP'): string {
-  return new Intl.NumberFormat('en-GB', {
-    style: 'currency',
-    currency,
-    notation: 'compact',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: Math.abs(amount) >= 1000 ? 0 : 2,
-  }).format(amount);
+  // Deterministic compact formatting to avoid SSR/CSR hydration drift (e.g. "£4K" vs "£4k").
+  if (currency !== 'GBP') {
+    return formatCurrency(amount, currency);
+  }
+
+  const sign = amount < 0 ? '-' : '';
+  const abs = Math.abs(amount);
+
+  if (abs >= 1_000_000_000) return `${sign}£${Math.round(abs / 1_000_000_000)}B`;
+  if (abs >= 1_000_000) return `${sign}£${Math.round(abs / 1_000_000)}M`;
+  if (abs >= 1_000) return `${sign}£${Math.round(abs / 1_000)}k`;
+  if (abs >= 100) return `${sign}£${Math.round(abs)}`;
+  return `${sign}£${abs.toFixed(abs >= 10 ? 1 : 2).replace(/\.0+$/, '').replace(/(\.\d*[1-9])0+$/, '$1')}`;
 }
 
 /** Null-safe currency formatter — returns '—' for null/undefined values. */
@@ -40,6 +46,7 @@ export function formatDate(date: Date | string): string {
 export function formatDateMode(
   date: Date | string,
   mode: 'table' | 'prose' | 'recent' | 'timestamp' = 'timestamp',
+  now: Date | number = Date.now(),
 ): string {
   const d = typeof date === 'string' ? new Date(date) : date;
   if (Number.isNaN(d.getTime())) return String(date);
@@ -65,7 +72,8 @@ export function formatDateMode(
   }
 
   if (mode === 'recent') {
-    const diffMs = Date.now() - d.getTime();
+    const nowMs = now instanceof Date ? now.getTime() : now;
+    const diffMs = nowMs - d.getTime();
     const diffMin = Math.floor(diffMs / 60000);
     const diffHr = Math.floor(diffMin / 60);
     const diffDay = Math.floor(diffHr / 24);

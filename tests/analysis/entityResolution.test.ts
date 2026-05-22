@@ -31,6 +31,7 @@ function createMockSupabase(options?: {
   insertResult?: MockQueryResult;
   updateResult?: MockQueryResult;
   insertAppearanceError?: any;
+  insertAppearance?: (data: any) => MockQueryResult | Promise<MockQueryResult>;
 }) {
   const profiles = options?.profiles ?? [];
 
@@ -151,10 +152,13 @@ function createMockSupabase(options?: {
 
       if (table === 'customer_profile_audit_appearances') {
         return {
-          insert: (data: any) => {
+          insert: async (data: any) => {
             // Store first item for backward-compat assertions
             insertedAppearance = Array.isArray(data) ? data[0] : data;
             operations.push({ table, op: 'insert', params: data });
+            if (options?.insertAppearance) {
+              return options.insertAppearance(data);
+            }
             return Promise.resolve({
               data: null,
               error: (options as any)?.insertAppearanceError ?? null,
@@ -460,7 +464,7 @@ describe('Entity Resolution', () => {
       const result = await resolveCustomerProfile(order, mockClient as any);
 
       expect(result.matchType).toBe('card');
-      expect(result.confidence).toBe(90);
+      expect(result.confidence).toBe(85);
 
       // Now update and verify both emails appear
       const updated = await updateCustomerProfile(
@@ -797,6 +801,60 @@ describe('Entity Resolution', () => {
   // Test: processProfilesForBatch handles errors gracefully
   // -----------------------------------------------------------------------
   describe('Error handling', () => {
+    it('splits and retries a deadlocked appearance batch until all synthetic rows are written', async () => {
+      const orders = Array.from({ length: 100 }, (_, i) =>
+        makeScoredOrder({
+          orderId: `ORD-${String(i).padStart(3, '0')}`,
+          email: `customer-${i}@example.com`,
+        })
+      );
+      const profiles = orders.map((order, i) =>
+        makeExistingProfile({
+          id: `profile-${i}`,
+          primary_email: `customer-${i}@example.com`,
+          emails: [`customer-${i}@example.com`],
+          ips: [],
+          addresses: [],
+          card_last4s: [],
+        })
+      );
+      const txMap = new Map(orders.map((order, i) => [order.order.orderId, `tx-${i}`]));
+
+      let deadlockInjected = false;
+      let appearanceRowsWritten = 0;
+      const appearanceBatchSizes: number[] = [];
+      const mockClient = createMockSupabase({
+        profiles,
+        insertAppearance: (data: any) => {
+          const rows = Array.isArray(data) ? data : [data];
+          appearanceBatchSizes.push(rows.length);
+          if (!deadlockInjected && rows.length === 100) {
+            deadlockInjected = true;
+            return {
+              data: null,
+              error: { message: 'deadlock detected', code: '40P01' },
+            };
+          }
+          appearanceRowsWritten += rows.length;
+          return { data: null, error: null };
+        },
+      });
+
+      const result = await processProfilesForBatch(
+        orders,
+        'merchant-X',
+        'audit-deadlock-test',
+        txMap,
+        mockClient as any
+      );
+
+      expect(result.errors).toEqual([]);
+      expect(deadlockInjected).toBe(true);
+      expect(appearanceRowsWritten).toBe(100);
+      expect(appearanceBatchSizes).toContain(100);
+      expect(appearanceBatchSizes).toContain(50);
+    });
+
     it('reports errors and creates zero profiles when bulk insert fails', async () => {
       const order1 = makeScoredOrder({ orderId: 'ORD-001', email: 'a@example.com' });
       const order2 = makeScoredOrder({ orderId: 'ORD-002', email: 'b@example.com' });

@@ -6,6 +6,7 @@ import { logAction } from '@/lib/permissions/audit';
 import { buildBehavioralNarrative } from '@/lib/customers/narrative';
 import { scoreToRiskLevel } from '@/components/ui/RiskScoreBadge';
 import { withRequestLogging } from '@/lib/log';
+import { fetchMerchantScopedCustomerProfile } from '@/lib/supabase/merchantHelpers';
 
 export const dynamic = 'force-dynamic';
 
@@ -88,7 +89,7 @@ export interface CustomerIntelligencePanel {
 }
 
 const TX_SELECT =
-  'id,job_id,order_id,customer_email,customer_name,shipping_address,device_ip,card_last4,order_value,match_score,fraud_flags,risk_level,refund_claimed,refund_reason,chargeback_filed,chargeback_date,chargeback_reason_code,processed_at,cluster_id';
+  'id,job_id,order_id,customer_email,customer_name,shipping_address,device_ip,card_last4,order_value,match_score,fraud_flags,risk_level,refund_claimed,refund_reason,chargeback_filed,processed_at,cluster_id';
 
 // ---------------------------------------------------------------------------
 // GET /api/customers/[id]
@@ -119,22 +120,12 @@ async function GETHandler(
   //    after the merchants table was introduced. Older uploads stored the
   //    auth user UUID directly. Accept either to handle legacy data.
   // -------------------------------------------------------------------------
-  const merchantFilter = `merchant_ids.cs.${JSON.stringify([ctx.merchantId])},merchant_ids.cs.${JSON.stringify([ctx.userId])}`;
-
-  const { data: profileRow, error: profileError } = await scopedClient
-    .from('customer_profiles')
-    .select('*')
-    .eq('id', profileId)
-    .or(merchantFilter)
-    .single() as unknown as { data: Record<string, unknown> | null; error: unknown };
-
-  // PGRST116 = "no rows found" — not a real DB error, continue to fallback.
-  // Any other error is unexpected and should surface as 404.
-  if (profileError && (profileError as any)?.code !== 'PGRST116') {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  }
-
-  let profile = profileRow as any | null;
+  let profile = await fetchMerchantScopedCustomerProfile(
+    serviceClient,
+    ctx.merchantId,
+    profileId,
+    ctx.userId
+  ) as any | null;
 
   // -------------------------------------------------------------------------
   // 2. Check watchlist status for this merchant
@@ -312,8 +303,8 @@ async function GETHandler(
     refundAmount: null,
     returnRequested: false,
     chargebackFiled: !!tx.chargeback_filed,
-    chargebackDate: tx.chargeback_date ?? null,
-    chargebackReasonCode: tx.chargeback_reason_code ?? null,
+    chargebackDate: tx.chargeback_filed ? tx.processed_at : null,
+    chargebackReasonCode: null,
   }));
 
   if (!profile) {

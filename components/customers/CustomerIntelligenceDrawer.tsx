@@ -54,10 +54,10 @@ const CHIP: CSSProperties = {
 
 function tierChip(risk: string): CSSProperties {
   switch ((risk ?? '').toLowerCase()) {
-    case 'critical': return { ...CHIP, background: 'var(--brand-ink)',         color: 'var(--text-inverse)',     border: '1px solid var(--brand-ink)' };
-    case 'high':     return { ...CHIP, background: 'var(--risk-critical-bg)',   color: 'var(--risk-critical-fg)', border: '1px solid var(--risk-critical-bd)' };
-    case 'medium':   return { ...CHIP, background: 'var(--bg-surface-alt)',     color: 'var(--text-muted)',       border: '1px solid var(--border-default)' };
-    default:         return { ...CHIP, background: 'var(--bg-surface-alt)',     color: 'var(--text-subtle)',      border: '1px solid var(--border-default)' };
+    case 'critical': return { ...CHIP, background: 'var(--sev-definite-fill)', color: 'var(--sev-definite)', border: '1px solid color-mix(in srgb, var(--sev-definite) 40%, transparent)' };
+    case 'high':     return { ...CHIP, background: 'var(--sev-probable-fill)', color: 'var(--sev-probable)', border: '1px solid color-mix(in srgb, var(--sev-probable) 40%, transparent)' };
+    case 'medium':   return { ...CHIP, background: 'var(--sev-neutral-fill)',  color: 'var(--sev-neutral)',  border: '1px solid color-mix(in srgb, var(--sev-neutral) 40%, transparent)' };
+    default:         return { ...CHIP, background: 'var(--surface-muted)',      color: 'var(--ink-tertiary)', border: '1px solid var(--surface-border)' };
   }
 }
 
@@ -75,7 +75,7 @@ const OVERLINE: CSSProperties = {
   fontWeight: 600,
   letterSpacing: '0.12em',
   textTransform: 'uppercase',
-  color: 'var(--text-muted)',
+  color: 'var(--ink-tertiary)',
   lineHeight: 1,
 };
 
@@ -86,16 +86,16 @@ const OVERLINE: CSSProperties = {
 function DrawerSkeleton() {
   return (
     <div className="animate-pulse p-5 space-y-4">
-      <div style={{ height: 20, borderRadius: 3, width: '55%', background: 'var(--bg-subtle)' }} />
-      <div style={{ height: 14, borderRadius: 3, width: '35%', background: 'var(--bg-subtle)' }} />
+      <div style={{ height: 20, borderRadius: 3, width: '55%', background: 'var(--surface-muted)' }} />
+      <div style={{ height: 14, borderRadius: 3, width: '35%', background: 'var(--surface-muted)' }} />
       <div className="grid grid-cols-3 gap-2 mt-4">
         {[...Array(6)].map((_, i) => (
-          <div key={i} style={{ height: 60, borderRadius: 4, background: 'var(--bg-subtle)' }} />
+          <div key={i} style={{ height: 60, borderRadius: 4, background: 'var(--surface-muted)' }} />
         ))}
       </div>
       <div className="space-y-3 mt-4">
         {[...Array(3)].map((_, i) => (
-          <div key={i} style={{ height: 80, borderRadius: 4, background: 'var(--bg-subtle)' }} />
+          <div key={i} style={{ height: 80, borderRadius: 4, background: 'var(--surface-muted)' }} />
         ))}
       </div>
     </div>
@@ -108,14 +108,14 @@ function DrawerSkeleton() {
 
 function Section({ title, children, count }: { title: string; children: ReactNode; count?: number }) {
   return (
-    <div style={{ borderTop: '1px solid var(--border-default)', paddingTop: 14, marginTop: 14 }}>
+    <div style={{ borderTop: '1px solid var(--surface-border)', paddingTop: 14, marginTop: 14 }}>
       <div className="flex items-center justify-between mb-3">
         <div style={OVERLINE}>
           <span aria-hidden="true" className="ua-section-dot" />
           {title}
         </div>
         {count != null && (
-          <span style={{ ...CHIP, background: 'var(--bg-surface-alt)', color: 'var(--text-muted)', border: '1px solid var(--border-default)' }}>
+          <span style={{ ...CHIP, background: 'var(--surface-muted)', color: 'var(--ink-secondary)', border: '1px solid var(--surface-border)' }}>
             {count}
           </span>
         )}
@@ -132,14 +132,14 @@ function Section({ title, children, count }: { title: string; children: ReactNod
 function StatTile({ label, value, hint }: { label: string; value: ReactNode; hint?: string }) {
   return (
     <div style={{
-      background: 'var(--bg-surface)',
-      border: '1px solid var(--border-default)',
+      background: 'var(--surface-raised)',
+      border: '1px solid var(--surface-border)',
       borderRadius: 4,
       padding: '8px 10px',
     }}>
       <p style={{ ...OVERLINE, marginBottom: 4 }}>{label}</p>
-      <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)', fontFamily: 'var(--font-mono)', lineHeight: 1 }}>{value}</p>
-      {hint && <p style={{ fontSize: 10, color: 'var(--text-subtle)', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{hint}</p>}
+      <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink-primary)', fontFamily: 'var(--font-mono)', lineHeight: 1 }}>{value}</p>
+      {hint && <p style={{ fontSize: 10, color: 'var(--ink-tertiary)', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{hint}</p>}
     </div>
   );
 }
@@ -164,8 +164,8 @@ function DetailLine({
     <div className="flex items-start gap-2 min-w-0">
       <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0" style={{ color: 'var(--text-subtle)' }} />
       <div className="min-w-0">
-        <p style={{ fontSize: 10, color: 'var(--text-subtle)', lineHeight: 1.4 }}>{label}</p>
-        <p style={{ fontSize: 12, color: 'var(--text)', fontFamily: mono ? 'var(--font-mono)' : undefined, wordBreak: 'break-word' }}>
+        <p style={{ fontSize: 10, color: 'var(--ink-tertiary)', lineHeight: 1.4, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</p>
+        <p style={{ fontSize: 12, color: 'var(--ink-primary)', fontFamily: mono ? 'var(--font-mono)' : undefined, wordBreak: 'break-word' }}>
           {value}
         </p>
       </div>
@@ -204,7 +204,7 @@ function OrderRoadmapCard({ order, isLast }: { order: OrderHistoryEntry; isLast:
             top: 28,
             bottom: 0,
             width: 1,
-            background: 'var(--border-default)',
+            background: 'var(--surface-border)',
           }}
         />
       )}
@@ -222,9 +222,9 @@ function OrderRoadmapCard({ order, isLast }: { order: OrderHistoryEntry; isLast:
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: isCritical ? 'var(--risk-critical-bg)' : hasClaim ? 'var(--risk-medium-bg)' : '#FFFFFF',
-          border: `1px solid ${isCritical ? 'var(--risk-critical-bd)' : hasClaim ? 'var(--risk-medium-bd)' : 'var(--border-default)'}`,
-          color: isCritical ? 'var(--accent)' : hasClaim ? 'var(--risk-medium-fg)' : 'var(--text-muted)',
+          background: isCritical ? 'var(--sev-definite-fill)' : hasClaim ? 'var(--sev-probable-fill)' : 'var(--sev-neutral-fill)',
+          border: `1px solid ${isCritical ? 'color-mix(in srgb, var(--sev-definite) 40%, transparent)' : hasClaim ? 'color-mix(in srgb, var(--sev-probable) 40%, transparent)' : 'var(--surface-border)'}`,
+          color: isCritical ? 'var(--sev-definite)' : hasClaim ? 'var(--sev-probable)' : 'var(--sev-neutral)',
         }}
       >
         {order.chargebackFiled ? (
@@ -238,15 +238,15 @@ function OrderRoadmapCard({ order, isLast }: { order: OrderHistoryEntry; isLast:
 
       {/* Card body */}
       <article style={{
-        background: 'var(--bg-surface)',
-        border: `1px solid ${isCritical ? 'var(--risk-critical-bd)' : hasClaim ? 'var(--risk-medium-bd)' : 'var(--border-default)'}`,
+        background: 'var(--surface-raised)',
+        border: `1px solid ${isCritical ? 'color-mix(in srgb, var(--sev-definite) 40%, transparent)' : hasClaim ? 'color-mix(in srgb, var(--sev-probable) 40%, transparent)' : 'var(--surface-border)'}`,
         borderRadius: 4,
         padding: '8px 10px',
       }}>
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)' }}>{lifecycleTitle(order)}</p>
-            <p style={{ fontSize: 11, marginTop: 1, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink-primary)' }}>{lifecycleTitle(order)}</p>
+            <p style={{ fontSize: 11, marginTop: 1, color: 'var(--data-id)', fontFamily: 'var(--font-mono)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {order.orderId}
             </p>
           </div>
@@ -269,13 +269,13 @@ function OrderRoadmapCard({ order, isLast }: { order: OrderHistoryEntry; isLast:
             marginTop: 8,
             padding: '5px 8px',
             borderRadius: 3,
-            background: isCritical ? 'var(--risk-critical-bg)' : 'var(--risk-medium-bg)',
-            border: `1px solid ${isCritical ? 'var(--risk-critical-bd)' : 'var(--risk-medium-bd)'}`,
+            background: isCritical ? 'var(--sev-definite-fill)' : 'var(--sev-probable-fill)',
+            border: `1px solid ${isCritical ? 'color-mix(in srgb, var(--sev-definite) 40%, transparent)' : 'color-mix(in srgb, var(--sev-probable) 40%, transparent)'}`,
           }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: isCritical ? 'var(--accent)' : 'var(--risk-medium-fg)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: isCritical ? 'var(--sev-definite)' : 'var(--sev-probable)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
               {order.chargebackFiled ? 'Chargeback' : order.returnRequested ? 'Return' : 'Refund'}
             </p>
-            <p style={{ fontSize: 11, color: 'var(--text)', marginTop: 2 }}>
+            <p style={{ fontSize: 11, color: 'var(--ink-primary)', marginTop: 2 }}>
               {order.refundAmount != null && `${formatCurrencyNullable(order.refundAmount)} `}
               {order.refundReason || order.chargebackReasonCode || order.refundStatus || 'Claim recorded'}
             </p>
@@ -287,9 +287,9 @@ function OrderRoadmapCard({ order, isLast }: { order: OrderHistoryEntry; isLast:
             {order.fraudFlags.slice(0, 5).map((flag) => (
               <span key={flag} style={{
                 ...CHIP,
-                background: 'var(--bg-surface-alt)',
-                color: 'var(--text-muted)',
-                border: '1px solid #D2C9B5',
+                background: 'var(--surface-muted)',
+                color: 'var(--ink-secondary)',
+                border: '1px solid var(--surface-border)',
               }}>
                 {flagLabel(flag)}
               </span>
@@ -380,7 +380,7 @@ export default function CustomerIntelligenceDrawer({
         onClick={handleOverlayClick}
         style={{
           position: 'fixed', inset: 0, zIndex: 40,
-          background: 'rgba(26,24,20,0.35)',
+          background: 'rgba(14, 11, 8, 0.62)',
           transition: 'opacity 200ms',
           opacity: isOpen ? 1 : 0,
           pointerEvents: isOpen ? undefined : 'none',
@@ -394,12 +394,12 @@ export default function CustomerIntelligenceDrawer({
         aria-label="Customer case file"
         style={{
           position: 'fixed', top: 0, right: 0, zIndex: 50,
-          height: '100%', width: '100%', maxWidth: 640,
-          background: 'var(--bg-canvas)',
-          borderLeft: '1px solid var(--border-default)',
-          boxShadow: '-4px 0 32px rgba(26,24,20,0.12)',
+          height: '100%', width: '100%', maxWidth: 420,
+          background: 'var(--surface-raised)',
+          borderLeft: '1px solid var(--surface-border)',
+          boxShadow: '-16px 0 40px rgba(0,0,0,0.38)',
           transform: isOpen ? 'translateX(0)' : 'translateX(100%)',
-          transition: 'transform 300ms cubic-bezier(0.32,0,0.15,1)',
+          transition: 'transform 200ms ease-in-out',
           overflowY: 'auto',
           display: 'flex',
           flexDirection: 'column',
@@ -408,8 +408,8 @@ export default function CustomerIntelligenceDrawer({
         {/* ── Sticky header ─────────────────────────────────────────── */}
         <div style={{
           position: 'sticky', top: 0, zIndex: 10,
-          background: 'var(--bg-canvas)',
-          borderBottom: '1px solid var(--border-default)',
+          background: 'var(--surface-raised)',
+          borderBottom: '1px solid var(--surface-border)',
           padding: '10px 16px',
           display: 'flex',
           alignItems: 'center',
@@ -421,7 +421,7 @@ export default function CustomerIntelligenceDrawer({
               <span aria-hidden="true" className="ua-section-dot" />
               Customer case file
             </div>
-            <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
+            <p style={{ fontSize: 12, color: 'var(--ink-secondary)', marginTop: 2 }}>
               What happened, in order
             </p>
           </div>
@@ -433,13 +433,13 @@ export default function CustomerIntelligenceDrawer({
                 style={{
                   display: 'inline-flex', alignItems: 'center', gap: 5,
                   height: 28, paddingLeft: 10, paddingRight: 10,
-                  borderRadius: 4, border: '1px solid var(--border-default)',
-                  fontSize: 11, fontWeight: 600, color: 'var(--text)',
-                  background: 'var(--bg-surface)',
+                  borderRadius: 4, border: '1px solid var(--surface-border)',
+                  fontSize: 11, fontWeight: 600, color: 'var(--ink-primary)',
+                  background: 'var(--surface-overlay)',
                   textDecoration: 'none',
                   transition: 'background 120ms',
                 }}
-                className="hover:bg-[var(--bg-subtle)]"
+                className="hover:bg-[var(--surface-muted)]"
               >
                 Full profile <ExternalLink style={{ width: 11, height: 11 }} />
               </Link>
@@ -450,10 +450,10 @@ export default function CustomerIntelligenceDrawer({
               style={{
                 width: 28, height: 28, borderRadius: 4,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: 'var(--icon-muted)', background: 'none', border: 'none',
+                color: 'var(--ink-tertiary)', background: 'none', border: 'none',
                 cursor: 'pointer',
               }}
-              className="hover:bg-[var(--bg-subtle)] transition-colors"
+              className="hover:bg-[var(--surface-overlay)] transition-colors"
             >
               <X style={{ width: 16, height: 16 }} />
             </button>
@@ -467,7 +467,7 @@ export default function CustomerIntelligenceDrawer({
           {error && (
             <div style={{
               padding: '10px 14px', borderRadius: 4, fontSize: 12,
-              background: 'var(--risk-critical-bg)', border: '1px solid #F0C8BE', color: 'var(--accent)',
+              background: 'var(--sev-definite-fill)', border: '1px solid color-mix(in srgb, var(--sev-definite) 40%, transparent)', color: 'var(--sev-definite)',
             }}>
               {isNotFoundError
                 ? 'Customer record could not be found for this merchant.'
@@ -550,16 +550,16 @@ function DrawerContent({
     <div>
       {/* ── Case file header card ────────────────────────────────── */}
       <div style={{
-        background: 'var(--bg-surface)',
-        border: '1px solid var(--border-default)',
+        background: 'var(--surface-raised)',
+        border: '1px solid var(--surface-border)',
         borderRadius: 4,
         overflow: 'hidden',
         marginBottom: 12,
       }}>
         {/* Case ID bar */}
         <div style={{
-          background: 'var(--bg-canvas)',
-          borderBottom: '1px solid var(--border-default)',
+          background: 'var(--surface-base)',
+          borderBottom: '1px solid var(--surface-border)',
           padding: '8px 12px',
           display: 'flex',
           alignItems: 'center',
@@ -569,18 +569,18 @@ function DrawerContent({
           <div className="flex items-center gap-2">
             <span style={{
               width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
-              background: profile.risk_level === 'critical' || profile.risk_level === 'high' ? 'var(--accent)' : 'var(--text-subtle)',
+              background: profile.risk_level === 'critical' ? 'var(--sev-definite)' : profile.risk_level === 'high' ? 'var(--sev-probable)' : 'var(--ink-tertiary)',
             }} aria-hidden="true" />
-            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', color: 'var(--ink-secondary)', textTransform: 'uppercase' }}>
               CASE FILE · {caseId}
             </span>
           </div>
           <div className="flex items-center gap-1.5">
             <span style={tierChip(profile.risk_level)}>{tierLabel(profile.risk_level)}</span>
-            <span style={{ ...CHIP, background: 'var(--risk-critical-bg)', color: 'var(--accent)', border: '1px solid #F0C8BE' }}>
+            <span style={{ ...CHIP, background: 'var(--sev-definite-fill)', color: 'var(--sev-definite)', border: '1px solid color-mix(in srgb, var(--sev-definite) 40%, transparent)' }}>
               RISK {(Math.min(profile.risk_score, 100) / 100).toFixed(2)}
             </span>
-            <span style={{ ...CHIP, background: 'var(--bg-surface-alt)', color: 'var(--text-muted)', border: '1px solid #D2C9B5' }}>
+            <span style={{ ...CHIP, background: 'var(--surface-muted)', color: 'var(--ink-secondary)', border: '1px solid var(--surface-border)' }}>
               CONF {(profile.profile_confidence / 100).toFixed(2)}
             </span>
             <WatchlistStarButton
@@ -595,18 +595,18 @@ function DrawerContent({
         </div>
 
         {/* Subject row */}
-        <div style={{ padding: '10px 12px 8px', borderBottom: '1px solid var(--border-default)' }}>
+        <div style={{ padding: '10px 12px 8px', borderBottom: '1px solid var(--surface-border)' }}>
           <div style={{ ...OVERLINE, marginBottom: 4 }}>Subject</div>
-          <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', fontFamily: 'var(--font-mono)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-primary)', fontFamily: 'var(--font-mono)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {displayName}
           </p>
           {profile.primary_email && profile.names[0] && (
-            <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{profile.primary_email}</p>
+            <p style={{ fontSize: 11, color: 'var(--data-id)', marginTop: 2, fontFamily: 'var(--font-mono)' }}>{profile.primary_email}</p>
           )}
         </div>
 
         {/* Stats grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', borderBottom: '1px solid var(--border-default)' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', borderBottom: '1px solid var(--surface-border)' }}>
           {[
             { label: 'ORDERS',  value: profile.total_orders },
             { label: 'CLAIMS',  value: claimCount || profile.total_refund_claims },
@@ -615,11 +615,11 @@ function DrawerContent({
           ].map(({ label, value }, i) => (
             <div key={label} style={{
               padding: '7px 10px',
-              borderRight: i < 3 ? '1px solid var(--border-default)' : undefined,
+              borderRight: i < 3 ? '1px solid var(--surface-border)' : undefined,
               textAlign: 'center',
             }}>
               <div style={{ ...OVERLINE, marginBottom: 3 }}>{label}</div>
-              <div style={{ fontSize: 15, fontWeight: 600, color: value > 1 ? 'var(--accent)' : 'var(--text)', fontFamily: 'var(--font-mono)', lineHeight: 1 }}>
+              <div style={{ fontSize: 15, fontWeight: 600, color: value > 1 ? 'var(--copper-bright)' : 'var(--ink-primary)', fontFamily: 'var(--font-mono)', lineHeight: 1 }}>
                 {value}
               </div>
             </div>
@@ -630,21 +630,22 @@ function DrawerContent({
         <div style={{
           display: 'flex', alignItems: 'center', gap: 8,
           padding: '8px 12px',
-          background: profile.risk_level === 'critical' ? 'var(--brand-ink)' : 'var(--risk-critical-bg)',
+          background: profile.risk_level === 'critical' ? 'var(--sev-definite-fill)' : 'var(--sev-probable-fill)',
+          borderLeft: `3px solid ${profile.risk_level === 'critical' ? 'var(--sev-definite)' : 'var(--sev-probable)'}`,
         }}>
           <span style={{
             width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
-            background: profile.risk_level === 'critical' ? 'var(--text-inverse)' : 'var(--accent)',
+            background: profile.risk_level === 'critical' ? 'var(--sev-definite)' : 'var(--sev-probable)',
           }} aria-hidden="true" />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{
               fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase',
-              color: profile.risk_level === 'critical' ? 'var(--text-inverse)' : 'var(--accent)',
+              color: profile.risk_level === 'critical' ? 'var(--sev-definite)' : 'var(--sev-probable)',
               marginBottom: 1,
             }}>
               {action.label}
             </div>
-            <p style={{ fontSize: 11, color: profile.risk_level === 'critical' ? 'var(--text-inverse)' : 'var(--risk-critical-fg)' }}>
+            <p style={{ fontSize: 11, color: 'var(--ink-secondary)' }}>
               {whySummary}
             </p>
           </div>
@@ -655,12 +656,12 @@ function DrawerContent({
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
         padding: '8px 12px',
-        background: 'var(--bg-surface)',
-        border: '1px solid var(--border-default)',
+        background: 'var(--surface-raised)',
+        border: '1px solid var(--surface-border)',
         borderRadius: 4,
         marginBottom: 4,
       }}>
-        <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Investigation status</span>
+        <span style={{ fontSize: 11, color: 'var(--ink-secondary)' }}>Investigation status</span>
         <select
           value={status}
           onChange={(e) => handleStatusChange(e.target.value)}
@@ -673,7 +674,7 @@ function DrawerContent({
             fontWeight: 600,
             cursor: 'pointer',
             outline: 'none',
-            border: '1px solid var(--border-default)',
+            border: '1px solid var(--surface-border)',
           }}
         >
           {STATUS_OPTIONS.map((s) => (
@@ -692,19 +693,19 @@ function DrawerContent({
       {/* ── Narrative ────────────────────────────────────────────── */}
       <Section title="Roadmap summary">
         <div style={{
-          background: 'var(--bg-surface)',
-          border: '1px solid var(--border-default)',
+          background: 'var(--surface-raised)',
+          border: '1px solid var(--surface-border)',
           borderRadius: 4,
           padding: '10px 12px',
         }}>
           <div className="flex items-start gap-2">
-            <ShieldCheck style={{ marginTop: 1, width: 14, height: 14, flexShrink: 0, color: 'var(--text-muted)' }} />
-            <p style={{ fontSize: 12, color: 'var(--text)', lineHeight: 1.6 }}>{narrative}</p>
+            <ShieldCheck style={{ marginTop: 1, width: 14, height: 14, flexShrink: 0, color: 'var(--privacy-ink)' }} />
+            <p style={{ fontSize: 12, color: 'var(--ink-primary)', lineHeight: 1.6 }}>{narrative}</p>
           </div>
           {identitySignals.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-1">
               {identitySignals.map((flag) => (
-                <span key={flag} style={{ ...CHIP, background: 'var(--bg-surface-alt)', color: 'var(--text-muted)', border: '1px solid #D2C9B5' }}>
+                <span key={flag} style={{ ...CHIP, background: 'var(--surface-muted)', color: 'var(--ink-secondary)', border: '1px solid var(--surface-border)' }}>
                   {flagLabel(flag)}
                 </span>
               ))}
@@ -725,7 +726,7 @@ function DrawerContent({
       {/* ── Behavior roadmap ─────────────────────────────────────── */}
       <Section title={`Customer roadmap`} count={orderHistory.length}>
         {orderHistory.length === 0 ? (
-          <p style={{ fontSize: 12, color: 'var(--text-muted)', fontStyle: 'italic' }}>No orders in current dataset.</p>
+          <p style={{ fontSize: 12, color: 'var(--ink-secondary)', fontStyle: 'italic' }}>No orders in current dataset.</p>
         ) : (
           <>
             <BehaviorRoadmap events={(ordersExpanded ? roadmapEvents : roadmapEvents.slice(0, 6))} />
@@ -734,7 +735,7 @@ function DrawerContent({
                 onClick={onToggleOrders}
                 style={{
                   marginTop: 8, fontSize: 11, fontWeight: 600,
-                  color: 'var(--accent)', background: 'none', border: 'none',
+                  color: 'var(--copper-bright)', background: 'none', border: 'none',
                   cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 2,
                   padding: 0,
                 }}
@@ -755,19 +756,19 @@ function DrawerContent({
               <div key={`${acc.entityType}-${acc.entityValue}-${index}`} style={{
                 display: 'flex', alignItems: 'flex-start', gap: 10,
                 padding: '7px 10px',
-                background: 'var(--bg-surface-alt)',
-                border: '1px solid #D2C9B5',
+                background: 'var(--surface-overlay)',
+                border: '1px solid var(--surface-border)',
                 borderRadius: 3,
               }}>
-                <span style={{ width: 6, height: 6, borderRadius: '50%', marginTop: 5, flexShrink: 0, background: 'var(--text-muted)' }} />
+                <span style={{ width: 6, height: 6, borderRadius: '50%', marginTop: 5, flexShrink: 0, background: 'var(--privacy-ink)' }} />
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <div className="flex items-center justify-between gap-3">
-                    <p style={{ ...OVERLINE, color: 'var(--text-muted)' }}>{flagLabel(acc.entityType)}</p>
-                    <p style={{ fontSize: 10, color: 'var(--text-subtle)', flexShrink: 0 }}>{acc.confidence}% conf. · {formatDateMode(profile.last_seen, 'recent')}</p>
+                    <p style={{ ...OVERLINE, color: 'var(--privacy-ink)' }}>{flagLabel(acc.entityType)}</p>
+                    <p style={{ fontSize: 10, color: 'var(--ink-tertiary)', flexShrink: 0 }}>{acc.confidence}% conf. · {formatDateMode(profile.last_seen, 'recent')}</p>
                   </div>
-                  <p style={{ fontSize: 12, color: 'var(--text)', marginTop: 2, wordBreak: 'break-all', fontFamily: 'var(--font-mono)' }}>{acc.entityValue}</p>
+                  <p style={{ fontSize: 12, color: 'var(--data-id)', marginTop: 2, wordBreak: 'break-all', fontFamily: 'var(--font-mono)' }}>{acc.entityValue}</p>
                 </div>
-                <span style={{ ...CHIP, background: 'var(--bg-surface-alt)', color: 'var(--text-muted)', border: '1px solid #D2C9B5', flexShrink: 0 }}>LINKED</span>
+                <span style={{ ...CHIP, background: 'var(--privacy-fill)', color: 'var(--privacy-ink)', border: '1px solid var(--privacy-border)', flexShrink: 0 }}>LINKED</span>
               </div>
             ))}
           </div>
@@ -791,17 +792,17 @@ function DrawerContent({
       </Section>
 
       {/* ── Evidence CTA ─────────────────────────────────────────── */}
-      <div style={{ borderTop: '1px solid var(--border-default)', paddingTop: 12, marginTop: 12 }}>
+      <div style={{ borderTop: '1px solid var(--surface-border)', paddingTop: 12, marginTop: 12 }}>
         {isEligibleForEvidence ? (
           <Link
             href={`/customers/${profile.id}/evidence/new`}
             style={{
               display: 'flex', width: '100%', alignItems: 'center', justifyContent: 'center',
               gap: 7, height: 34, borderRadius: 4, fontSize: 12, fontWeight: 600,
-              background: 'var(--brand-ink)', color: 'var(--text-inverse)',
+              background: 'var(--copper-bright)', color: 'var(--ink-inverse)',
               textDecoration: 'none', transition: 'background 120ms',
             }}
-            className="hover:bg-[#7B2D26]"
+            className="hover:bg-[var(--copper-mid)]"
           >
             <FileText style={{ width: 14, height: 14 }} />
             Generate evidence package
@@ -811,8 +812,8 @@ function DrawerContent({
             style={{
               display: 'flex', width: '100%', alignItems: 'center', justifyContent: 'center',
               gap: 7, height: 34, borderRadius: 4, fontSize: 12, fontWeight: 600,
-              background: 'var(--bg-subtle)', color: 'var(--text-muted)',
-              border: '1px solid var(--border-default)', opacity: 0.5, cursor: 'not-allowed',
+              background: 'var(--surface-muted)', color: 'var(--ink-tertiary)',
+              border: '1px solid var(--surface-border)', opacity: 0.65, cursor: 'not-allowed',
             }}
             title="No eligible orders found — customer needs at least one refund claim or chargeback"
           >

@@ -1,13 +1,14 @@
 // app/(app)/chargebacks/[id]/page.tsx
 // Evidence package detail page.
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { formatDate } from '@/lib/utils/format'
 import { EvidenceStrengthMeter } from '@/components/evidence/EvidenceStrengthMeter'
 import { DisputeReadinessPanel } from '@/components/evidence/DisputeReadinessPanel'
 import { EvidencePackagePreview } from '@/components/evidence/EvidencePackagePreview'
+import { requirePermission, PERMISSIONS } from '@/lib/permissions'
 
 interface Props {
   params: Promise<{ id: string }>
@@ -18,11 +19,15 @@ export default async function EvidenceDetailPage({ params }: Props) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
+  const serviceClient = createServiceClient()
+  const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_CHARGEBACKS)
+  if (denied) redirect('/dashboard')
 
-  const { data: pkg } = await supabase
+  const { data: pkg } = await serviceClient
     .from('evidence_packages')
     .select('*')
     .eq('id', id)
+    .eq('merchant_id', ctx.merchantId)
     .single() as unknown as {
       data: {
         id: string
@@ -45,7 +50,7 @@ export default async function EvidenceDetailPage({ params }: Props) {
 
   let maskedEmail = '****'
   if (pkg.customer_profile_id) {
-    const { data: profile } = await supabase
+    const { data: profile } = await serviceClient
       .from('customer_profiles')
       .select('primary_email, emails, risk_level')
       .eq('id', pkg.customer_profile_id)
@@ -113,15 +118,15 @@ export default async function EvidenceDetailPage({ params }: Props) {
         <div
           className="rounded-lg p-4"
           style={{
-            background: 'var(--info-bg)',
-            borderLeft: '4px solid var(--info)',
-            border: '1px solid var(--info-bd)',
+            background: 'var(--sev-clear-fill)',
+            borderLeft: '4px solid var(--sev-clear)',
+            border: '1px solid var(--risk-low-bd)',
           }}
         >
-          <p className="text-sm font-bold mb-1" style={{ color: 'var(--info)' }}>
+          <p className="text-sm font-bold mb-1" style={{ color: 'var(--sev-clear)' }}>
             VISA COMPELLING EVIDENCE 3.0 — ELIGIBLE
           </p>
-          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+          <p className="text-sm" style={{ color: 'var(--ink-secondary)' }}>
             CE3.0 Eligible — Submit to your acquirer via Visa Resolve Online within 30 days of chargeback notification.
           </p>
         </div>
@@ -171,9 +176,9 @@ export default async function EvidenceDetailPage({ params }: Props) {
       {pkg.ce3_eligible && (ce3Signals.length > 0 || ce3Priors.length > 0) && (
         <section
           className="rounded-xl p-5 border"
-          style={{ background: 'var(--info-bg)', borderColor: 'var(--info-bd)' }}
+          style={{ background: 'var(--sev-clear-fill)', borderColor: 'var(--risk-low-bd)' }}
         >
-          <h2 className="text-overline mb-3" style={{ color: 'var(--info)' }}>CE3.0 Evidence Detail</h2>
+          <h2 className="text-overline mb-3" style={{ color: 'var(--sev-clear)' }}>CE3.0 Evidence Detail</h2>
           {ce3Signals.length > 0 && (
             <p className="text-body-sm mb-2" style={{ color: 'var(--text-secondary)' }}>
               <span className="font-semibold">Qualifying signals:</span>{' '}

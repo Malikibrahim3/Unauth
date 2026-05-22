@@ -6,6 +6,8 @@ import { ChevronDown, Trash2, Keyboard } from 'lucide-react';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { KbdHint } from '@/components/ui/KbdHint';
 import { FLAG_QUEUE_PRIORITISATION } from '@/lib/flags';
+import { ConfidenceBadge } from '@/components/ui/ConfidenceBadge';
+import { riskLevelToNewGrade } from '@/lib/confidence';
 
 interface InboxTransaction {
   id: string;
@@ -239,29 +241,29 @@ export default function InboxClient({ initialItems }: Props) {
   return (
     <div className="space-y-3">
       {selectedIds.size > 0 && (
-        <div className="flex items-center justify-between gap-3 px-3 py-2 border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)', borderRadius: 4 }}>
+        <div className="fixed inset-x-0 bottom-0 z-50 flex h-14 items-center justify-between gap-3 border-t px-6" style={{ background: 'var(--surface-raised)', borderColor: 'var(--surface-border)', boxShadow: 'var(--shadow-drawer)' }}>
           <div className="flex items-center gap-2">
             <Trash2 className="h-4 w-4" />
-            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{selectedIds.size} selected</span>
+            <span className="t-label" style={{ color: 'var(--ink-secondary)' }}>{selectedIds.size} selected</span>
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={bulkDismissSelected}
               disabled={bulkDismissing}
-              className="text-xs font-semibold rounded px-2 py-1 disabled:opacity-50"
-              style={{ background: 'var(--risk-critical-bg)', color: 'var(--risk-critical)', border: '1px solid var(--risk-critical-bd)' }}
+              className="rounded px-3 py-1.5 text-xs font-semibold uppercase disabled:opacity-50"
+              style={{ background: 'var(--sev-definite)', color: 'var(--ink-primary)', border: '1px solid var(--sev-definite)' }}
             >
               {bulkDismissing ? 'Dismissing…' : 'Dismiss selected'}
             </button>
-            <button onClick={() => setSelectedIds(new Set())} disabled={bulkDismissing} className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>
+            <button onClick={() => setSelectedIds(new Set())} disabled={bulkDismissing} className="text-xs font-semibold uppercase" style={{ color: 'var(--ink-secondary)' }}>
               Clear
             </button>
           </div>
         </div>
       )}
 
-      <div className="overflow-hidden border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)', borderRadius: 4 }}>
-      <table className="w-full text-sm">
+      <div className="overflow-x-auto border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)', borderRadius: 4 }}>
+      <table className="w-full min-w-[880px] text-sm">
         <thead>
           <tr className="border-b" style={{ background: 'var(--bg-subtle)', borderColor: 'var(--border-subtle)' }}>
             <th className="text-left px-4 py-2.5 text-overline" style={{ width: 44, color: 'var(--text-muted)' }}>
@@ -291,15 +293,16 @@ export default function InboxClient({ initialItems }: Props) {
           {items.map((tx, rowIdx) => {
             const isTopRow = rowIdx === 0 && FLAG_QUEUE_PRIORITISATION && items.length > 1;
             const priorityScore = Math.round((tx.identity_score ?? 0) * (tx.order_value ?? 1));
+            const isSelected = selectedIds.has(tx.id);
             return (
               <tr
                 key={tx.id}
-                className="border-b transition-colors"
+                className="group border-b transition-colors hover:bg-[var(--surface-overlay)]"
                 style={{
                   borderColor: 'var(--border-subtle)',
                   opacity: pending[tx.id] ? 0.5 : 1,
-                  background: isTopRow ? 'var(--accent-50, var(--bg-surface-alt))' : undefined,
-                  borderLeft: isTopRow ? '2px solid #7B2D26' : undefined,
+                  background: isSelected ? 'var(--copper-glow)' : isTopRow ? 'var(--accent-50, var(--bg-surface-alt))' : undefined,
+                  borderLeft: isSelected ? '3px solid var(--copper-bright)' : isTopRow ? '3px solid var(--copper-bright)' : undefined,
                 }}
               >
                 <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
@@ -330,17 +333,10 @@ export default function InboxClient({ initialItems }: Props) {
                   </div>
                 </td>
               <td className="px-4 py-3">
-                <span
-                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm border text-xs font-medium"
-                  style={{
-                    background: 'var(--risk-high-bg)',
-                    color: 'var(--risk-high)',
-                    borderColor: 'var(--risk-high-bd)',
-                  }}
-                >
-                  <span className="h-1.5 w-1.5 rounded-full flex-shrink-0" style={{ background: 'currentColor' }} />
-                  {tx.identity_confidence_grade ?? tx.match_status ?? 'review'}
-                </span>
+                <ConfidenceBadge
+                  grade={riskLevelToNewGrade(tx.identity_confidence_grade ?? tx.match_status)}
+                  size="sm"
+                />
               </td>
               <td className="px-4 py-3 text-right font-mono font-semibold" style={{ color: 'var(--text)' }}>
                 {tx.identity_score != null ? Math.round(tx.identity_score) : '—'}
@@ -367,7 +363,7 @@ export default function InboxClient({ initialItems }: Props) {
                     <button
                       type="button"
                       onClick={() => setOpenDropdown(openDropdown === tx.id ? null : tx.id)}
-                      className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border transition-colors"
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border opacity-0 transition-all group-hover:opacity-100 focus:opacity-100"
                       style={{
                         borderColor: 'var(--border)',
                         color: 'var(--text-muted)',

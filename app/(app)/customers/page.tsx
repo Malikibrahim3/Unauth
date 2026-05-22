@@ -23,8 +23,8 @@ function FilterChip({ label, removeHref }: { label: string; removeHref: string }
   return (
     <Link
       href={removeHref}
-      className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border transition-colors hover:bg-[var(--bg-subtle)]"
-      style={{ borderColor: 'var(--accent)', color: 'var(--accent)', background: 'var(--accent-soft)' }}
+      className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-[3px] border transition-colors hover:bg-[var(--surface-overlay)]"
+      style={{ borderColor: 'var(--copper-bright)', color: 'var(--copper-bright)', background: 'var(--copper-glow)' }}
     >
       {label}
       <span aria-hidden="true" style={{ fontWeight: 700 }}>×</span>
@@ -267,7 +267,7 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
     investigation_status: string;
   }>;
 
-  const total = count ?? 0;
+  const total = Math.max(count ?? 0, rows.length);
   const totalPages = Math.ceil(total / PAGE_SIZE);
   const from = total === 0 ? 0 : offset + 1;
   const to = Math.min(offset + PAGE_SIZE, total);
@@ -287,7 +287,7 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
         { key: 'cases', label: 'Cases', href: '/inbox' },
         { key: 'clusters', label: 'Clusters', href: '/customers?merchantsMin=2' },
         { key: 'audits', label: 'Audits', href: '/history' },
-        { key: 'reports', label: 'Reports', href: '/chargebacks' },
+        { key: 'reports', label: 'Reports', href: '/reports' },
       ]}
       activeNavKey="clusters"
       actions={<Link href="/upload"><Button size="sm">New Audit</Button></Link>}
@@ -322,9 +322,10 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
       main={
         <div className="p-4 space-y-4">
 
-      {/* ── Cohort summary cards ──────────────────────────────────── */}
+      {/* ── Compact filter bar ─────────────────────────────────────── */}
       {total > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="flex h-auto min-h-10 flex-wrap items-center gap-2 rounded-md border px-3 py-2" style={{ background: 'var(--surface-raised)', borderColor: 'var(--surface-border)' }}>
+          <span className="t-label mr-1" style={{ color: 'var(--ink-tertiary)' }}>Filters</span>
           {[
             { label: 'New to review', href: '?risk=high&status=new', highlight: true },
             { label: 'Has refunds', href: '?hasRefunds=1' },
@@ -334,16 +335,14 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
             <Link
               key={label}
               href={href}
-              className="rounded-lg px-4 py-3 border hover:shadow-sm transition-shadow group"
+              className="rounded-sm border px-2.5 py-1 t-label transition-colors"
               style={{
-                background: highlight ? 'var(--accent-soft)' : 'var(--bg-surface)',
-                borderColor: highlight ? 'var(--accent)' : 'var(--border-subtle)',
+                background: highlight ? 'var(--copper-dim)' : 'var(--surface-muted)',
+                borderColor: highlight ? 'var(--copper-bright)' : 'var(--surface-border)',
+                color: highlight ? 'var(--copper-bright)' : 'var(--ink-secondary)',
               }}
             >
-              <p className="text-caption" style={{ color: 'var(--text-muted)' }}>{label}</p>
-              <p className="text-heading-sm font-medium mt-0.5 group-hover:underline" style={{ color: highlight ? 'var(--accent)' : 'var(--text)' }}>
-                Filter ›
-              </p>
+              {label}
             </Link>
           ))}
         </div>
@@ -351,7 +350,7 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
 
       {/* ── Saved views strip ─────────────────────────────────────── */}
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-caption font-medium" style={{ color: 'var(--text-muted)' }}>Saved views:</span>
+        <span className="t-label" style={{ color: 'var(--ink-tertiary)' }}>Saved views</span>
         {[
           { label: 'High-confidence unresolved', href: '?risk=high&status=new' },
           { label: 'Repeat refund claims', href: '?hasRefunds=1&sort=refundRate' },
@@ -361,8 +360,8 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
           <Link
             key={label}
             href={href}
-            className="text-xs px-3 py-1 rounded-full border transition-colors hover:bg-[var(--bg-subtle)]"
-            style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}
+            className="t-label rounded-sm border px-2.5 py-1 transition-colors hover:bg-[var(--surface-overlay)]"
+            style={{ borderColor: 'var(--surface-border)', color: 'var(--ink-secondary)' }}
           >
             {label}
           </Link>

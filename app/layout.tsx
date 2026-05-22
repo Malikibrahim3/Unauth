@@ -1,7 +1,14 @@
 import type { Metadata } from 'next';
-import { DM_Sans, DM_Mono, Source_Serif_4 } from 'next/font/google';
+import { DM_Sans, Geist, IBM_Plex_Mono, Source_Serif_4 } from 'next/font/google';
 import SentryInit from '@/components/common/SentryInit';
 import './globals.css';
+
+const geist = Geist({
+  subsets: ['latin'],
+  variable: '--font-geist',
+  display: 'swap',
+  weight: ['400', '500', '600', '700'],
+});
 
 const dmSans = DM_Sans({
   subsets: ['latin'],
@@ -10,11 +17,11 @@ const dmSans = DM_Sans({
   weight: ['300', '400', '500', '600', '700'],
 });
 
-const dmMono = DM_Mono({
+const ibmPlexMono = IBM_Plex_Mono({
   subsets: ['latin'],
-  variable: '--font-dm-mono',
+  variable: '--font-ibm-plex-mono',
   display: 'swap',
-  weight: ['300', '400', '500'],
+  weight: ['400', '500', '600'],
 });
 
 const sourceSerif = Source_Serif_4({
@@ -37,7 +44,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`${dmSans.variable} ${dmMono.variable} ${sourceSerif.variable}`}
+      className={`${geist.variable} ${dmSans.variable} ${ibmPlexMono.variable} ${sourceSerif.variable}`}
     >
       <body className="font-sans antialiased">
         <SentryInit />

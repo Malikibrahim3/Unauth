@@ -107,6 +107,125 @@ function mergeStrings(a: string[], b: string[]): string[] {
   return Array.from(new Set([...(a ?? []), ...(b ?? [])].filter(Boolean)));
 }
 
+function splitIntoBatches<T>(items: T[], size: number): T[][] {
+  const batches: T[][] = [];
+  for (let i = 0; i < items.length; i += size) {
+    batches.push(items.slice(i, i + size));
+  }
+  return batches;
+}
+
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  concurrency: number,
+  worker: (item: T, index: number) => Promise<R>
+): Promise<R[]> {
+  const results: R[] = new Array(items.length);
+  let next = 0;
+  const workers = Array.from({ length: Math.min(concurrency, items.length) }, async () => {
+    while (next < items.length) {
+      const index = next++;
+      results[index] = await worker(items[index], index);
+    }
+  });
+  await Promise.all(workers);
+  return results;
+}
+
+function isRetryableWriteError(message: string): boolean {
+  const msg = message.toLowerCase();
+  return (
+    msg.includes('fetch failed') ||
+    msg.includes('econnreset') ||
+    msg.includes('etimedout') ||
+    msg.includes('connection terminated') ||
+    msg.includes('connection reset') ||
+    msg.includes('statement timeout') ||
+    msg.includes('canceling statement due to statement timeout') ||
+    msg.includes('57014') ||
+    msg.includes('deadlock detected') ||
+    msg.includes('40p01') ||
+    msg.includes('429') ||
+    msg.includes('too many requests') ||
+    msg.includes('502') ||
+    msg.includes('503') ||
+    msg.includes('504') ||
+    msg.includes('gateway timeout') ||
+    msg.includes('temporarily unavailable')
+  );
+}
+
+async function withWriteRetry<T>(
+  fn: () => Promise<T>,
+  attempts = 4,
+  baseDelayMs = 300
+): Promise<T> {
+  let lastErr: unknown;
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      const message = String((err as any)?.message ?? err ?? 'unknown error');
+      if (!isRetryableWriteError(message) || attempt === attempts) break;
+      const jitter = Math.random() * 150;
+      const delayMs = baseDelayMs * 2 ** (attempt - 1) + jitter;
+      await new Promise<void>((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+  throw lastErr;
+}
+
+function formatAppearanceRowForLog(row: unknown): string {
+  try {
+    return JSON.stringify(row);
+  } catch {
+    return String(row);
+  }
+}
+
+async function insertAppearanceBatchWithSplitRetry(
+  serviceClient: ServiceClient,
+  rows: unknown[],
+  errors: string[],
+  attempt = 1
+): Promise<number> {
+  try {
+    const result = await (serviceClient as any)
+      .from('customer_profile_audit_appearances')
+      .insert(rows as any);
+    if (result.error) throw new Error(result.error.message ?? 'appearance insert failed');
+    return rows.length;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    const retryable = isRetryableWriteError(message);
+
+    if (retryable && attempt < 3 && rows.length > 1) {
+      const jitter = Math.random() * 150;
+      const delayMs = 300 * 2 ** (attempt - 1) + jitter;
+      await new Promise<void>((resolve) => setTimeout(resolve, delayMs));
+
+      const mid = Math.ceil(rows.length / 2);
+      const [left, right] = [rows.slice(0, mid), rows.slice(mid)];
+      const results = await Promise.all([
+        insertAppearanceBatchWithSplitRetry(serviceClient, left, errors, attempt + 1),
+        right.length > 0
+          ? insertAppearanceBatchWithSplitRetry(serviceClient, right, errors, attempt + 1)
+          : Promise.resolve(0),
+      ]);
+      return results[0] + results[1];
+    }
+
+    const sample = rows.slice(0, 5).map(formatAppearanceRowForLog).join('; ');
+    const summary =
+      `Appearance insert failed after ${attempt} attempt(s) for ${rows.length} row(s): ${message}. ` +
+      `Sample failed rows: ${sample}`;
+    console.error(`[entityResolution] ${summary}`);
+    errors.push(summary);
+    return 0;
+  }
+}
+
 function strongerGrade(
   a: ProfileIdentitySummary['grade'],
   b: ProfileIdentitySummary['grade']
@@ -750,52 +869,67 @@ export async function processProfilesForBatch(
   // -------------------------------------------------------------------------
   let profilesCreated = 0;
   let profilesUpdated = 0;
+  const WRITE_CHUNK = 1000;
+  const WRITE_CONCURRENCY = 4;
+
+  const newProfileOrderIdsByIdentityValue = new Map<string, string[]>();
+  for (const group of newProfileGroups.values()) {
+    for (const od of group) {
+      const orderId = od.scoredOrder.order.orderId;
+      const keys = [
+        od.normEmail ? `email:${od.normEmail}` : null,
+        od.normCard ? `card:${od.normCard}` : null,
+        od.normIP ? `ip:${od.normIP}` : null,
+      ].filter(Boolean) as string[];
+      for (const key of keys) {
+        const existing = newProfileOrderIdsByIdentityValue.get(key);
+        if (existing) existing.push(orderId);
+        else newProfileOrderIdsByIdentityValue.set(key, [orderId]);
+      }
+    }
+  }
 
   async function insertProfilesWithFallback(rows: Array<Record<string, unknown>>) {
-    const bulkResult = await (serviceClient as any)
-      .from('customer_profiles')
-      .insert(rows as any)
-      .select('id, emails, card_last4s, ips');
-
-    if (!bulkResult.error) {
-      return bulkResult;
+    const chunks = splitIntoBatches(rows, WRITE_CHUNK);
+    try {
+      const results = await mapWithConcurrency(chunks, WRITE_CONCURRENCY, async (chunk) =>
+        withWriteRetry(async () => {
+          const result = await (serviceClient as any)
+            .from('customer_profiles')
+            .insert(chunk as any)
+            .select('id, emails, card_last4s, ips');
+          if (result.error) throw new Error(result.error.message ?? 'bulk insert failed');
+          return result;
+        })
+      );
+      return {
+        data: results.flatMap((result) => result.data ?? []),
+        error: null,
+      };
+    } catch (error) {
+      return {
+        data: [],
+        error,
+      };
     }
-
-    const message = String(bulkResult.error.message ?? bulkResult.error);
-    if (!message.toLowerCase().includes('fetch failed')) {
-      return bulkResult;
-    }
-
-    const inserted: Array<{ id: string; emails: string[]; card_last4s: string[]; ips: string[] }> = [];
-    const FALLBACK_CHUNK = 250;
-    for (let i = 0; i < rows.length; i += FALLBACK_CHUNK) {
-      const chunk = rows.slice(i, i + FALLBACK_CHUNK);
-      const chunkResult = await (serviceClient as any)
-        .from('customer_profiles')
-        .insert(chunk as any)
-        .select('id, emails, card_last4s, ips');
-
-      if (chunkResult.error) {
-        return {
-          data: inserted,
-          error: new Error(`Bulk profile insert failed: ${message}; fallback chunk ${i / FALLBACK_CHUNK + 1} failed: ${chunkResult.error.message}`),
-        };
-      }
-
-      inserted.push(...(chunkResult.data ?? []));
-    }
-
-    return { data: inserted, error: null };
   }
 
   await Promise.all([
     profileUpserts.length > 0
-      ? (serviceClient as any)
-          .from('customer_profiles')
-          .upsert(profileUpserts as any, { onConflict: 'id', ignoreDuplicates: false })
-          .then(({ error }: { error: any }) => {
-            if (error) errors.push(`Bulk profile update failed: ${error.message}`);
-            else profilesUpdated = profileUpserts.length;
+      ? mapWithConcurrency(splitIntoBatches(profileUpserts, WRITE_CHUNK), WRITE_CONCURRENCY, async (chunk) =>
+          withWriteRetry(async () => {
+            const result = await (serviceClient as any)
+              .from('customer_profiles')
+              .upsert(chunk as any, { onConflict: 'id', ignoreDuplicates: false });
+            if (result.error) throw new Error(result.error.message ?? 'bulk profile update failed');
+            return result;
+          })
+        ).then(() => {
+          profilesUpdated = profileUpserts.length;
+        })
+          .catch((error) => {
+            const msg = error instanceof Error ? error.message : String(error);
+            errors.push(`Bulk profile update failed: ${msg}`);
           })
       : Promise.resolve(),
 
@@ -809,17 +943,17 @@ export async function processProfilesForBatch(
             profilesCreated = (data ?? []).length;
             // Map new profile IDs back to each order in the group
             for (const newP of (data ?? []) as { id: string; emails: string[]; card_last4s: string[]; ips: string[] }[]) {
-              for (const group of newProfileGroups.values()) {
-                for (const od of group) {
-                  if (
-                    (od.normEmail && newP.emails.includes(od.normEmail)) ||
-                    (od.normCard && newP.card_last4s.includes(od.normCard)) ||
-                    (od.normIP   && newP.ips.includes(od.normIP))
-                  ) {
-                    profileIdForOrder.set(od.scoredOrder.order.orderId, newP.id);
-                  }
-                }
+              const orderIds = new Set<string>();
+              for (const email of newP.emails ?? []) {
+                for (const orderId of newProfileOrderIdsByIdentityValue.get(`email:${email}`) ?? []) orderIds.add(orderId);
               }
+              for (const card of newP.card_last4s ?? []) {
+                for (const orderId of newProfileOrderIdsByIdentityValue.get(`card:${card}`) ?? []) orderIds.add(orderId);
+              }
+              for (const ip of newP.ips ?? []) {
+                for (const orderId of newProfileOrderIdsByIdentityValue.get(`ip:${ip}`) ?? []) orderIds.add(orderId);
+              }
+              for (const orderId of orderIds) profileIdForOrder.set(orderId, newP.id);
             }
           })
       : Promise.resolve(),
@@ -843,10 +977,9 @@ export async function processProfilesForBatch(
     .filter(Boolean);
 
   if (appearanceInserts.length > 0) {
-    const { error } = await (serviceClient as any)
-      .from('customer_profile_audit_appearances')
-      .insert(appearanceInserts as any);
-    if (error) errors.push(`Bulk appearance link insert failed: ${error.message}`);
+    await mapWithConcurrency(splitIntoBatches(appearanceInserts, WRITE_CHUNK), WRITE_CONCURRENCY, async (chunk) =>
+      insertAppearanceBatchWithSplitRetry(serviceClient, chunk, errors)
+    );
   }
 
   console.log(

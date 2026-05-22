@@ -30,6 +30,8 @@ const remotePatterns = supabaseHostname
 
 const nextConfig = {
   serverExternalPackages: ['papaparse'],
+  devIndicators: false,
+  allowedDevOrigins: ['127.0.0.1'],
   // SECURITY: Explicit image optimizer allowlist — mitigates GHSA-9g9p-9gw9-jx7f.
   // Uses the exact Supabase project hostname derived from NEXT_PUBLIC_SUPABASE_URL.
   // No wildcard patterns. If NEXT_PUBLIC_SUPABASE_URL is unset, remotePatterns

@@ -1,5 +1,6 @@
 function humanizeKey(value: string): string {
   return value
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
     .replace(/[_-]+/g, ' ')
     .replace(/\b\w/g, (match) => match.toUpperCase());
 }
@@ -10,6 +11,9 @@ export const LABELS = {
   signals_matched: 'Review reasons',
   elevated_refund_rate: 'High refund claim rate',
   value_escalation: 'Unusually high order value',
+  crossMerchantSignal: 'Cross-merchant identity link',
+  networkDeviceLink: 'Network device link',
+  ipCluster: 'IP cluster',
 
   email: 'Email',
   emails: 'Emails',

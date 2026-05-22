@@ -20,6 +20,23 @@ export const CHUNK_BUCKET = 'merchant-csv-uploads-2';
 export const chunkPath = (jobId: string, index: number) => `_chunks/${jobId}/${index}.csv`;
 export const chunkPrefix = (jobId: string) => `_chunks/${jobId}`;
 const CHUNK_CONTENT_TYPE = 'text/csv';
+const DOWNLOAD_RETRY_ATTEMPTS = 3;
+const DOWNLOAD_RETRY_DELAY_MS = 5000;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isRetryableDownloadError(message: string): boolean {
+  const m = message.toLowerCase();
+  return (
+    m.includes('timed out') ||
+    m.includes('timeout') ||
+    m.includes('connection') ||
+    m.includes('econnreset') ||
+    m.includes('terminated')
+  );
+}
 
 /** Upload one chunk's parsed rows to Storage as JSON-in-a-csv-blob.
  *  Uses Buffer (not Blob) — supabase-js storage on Node handles Buffer most
@@ -50,12 +67,27 @@ export async function downloadChunkRows(
   jobId: string,
   index: number
 ): Promise<ParsedCsvRow[]> {
-  const { data, error } = await supabase.storage
-    .from(CHUNK_BUCKET)
-    .download(chunkPath(jobId, index));
-  if (error || !data) throw new Error(`downloadChunkRows ${index} failed: ${error?.message ?? 'no data'}`);
-  const text = await data.text();
-  return JSON.parse(text) as ParsedCsvRow[];
+  let lastError: string | null = null;
+  for (let attempt = 1; attempt <= DOWNLOAD_RETRY_ATTEMPTS; attempt++) {
+    const { data, error } = await supabase.storage
+      .from(CHUNK_BUCKET)
+      .download(chunkPath(jobId, index));
+    if (!error && data) {
+      const text = await data.text();
+      return JSON.parse(text) as ParsedCsvRow[];
+    }
+
+    const message = error?.message ?? 'no data';
+    lastError = message;
+    const retryable = isRetryableDownloadError(message);
+    if (!retryable || attempt === DOWNLOAD_RETRY_ATTEMPTS) break;
+    console.warn(
+      `[chunkedDispatch] downloadChunkRows retry chunk=${index} attempt=${attempt + 1}/${DOWNLOAD_RETRY_ATTEMPTS}: ${message}`
+    );
+    await sleep(DOWNLOAD_RETRY_DELAY_MS);
+  }
+
+  throw new Error(`downloadChunkRows ${index} failed: ${lastError ?? 'unknown error'}`);
 }
 
 /** Best-effort cleanup of all chunk JSON blobs for a job. */

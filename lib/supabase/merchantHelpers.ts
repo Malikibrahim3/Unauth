@@ -370,13 +370,7 @@ export async function assertMerchantOwnsJob(
 // Customer profile helpers
 // ---------------------------------------------------------------------------
 
-const PROFILE_SELECT =
-  'id, emails, names, phones, addresses, ips, card_last4s, merchant_ids, ' +
-  'primary_email, total_orders, total_refund_claims, refund_rate, ' +
-  'fastest_claim_days, avg_claim_days, refund_acceleration_score, ' +
-  'first_seen, last_seen, identity_signals, fraud_flags, ' +
-  'match_status, identity_confidence_grade, identity_score, ' +
-  'total_chargebacks, investigation_status, cluster_id';
+const PROFILE_SELECT = '*';
 
 /**
  * Fetches a customer profile, verifying it belongs to the caller's merchant.
@@ -390,15 +384,23 @@ export async function fetchMerchantScopedCustomerProfile(
   // user IDs for older rows. Providing this allows the query to match either.
   _legacyUserId?: string | null
 ): Promise<Record<string, unknown> | null> {
-  const { data } = await serviceClient
+  const filters = [
+    `merchant_ids.cs.${JSON.stringify([merchantId])}`,
+    _legacyUserId ? `merchant_ids.cs.${JSON.stringify([_legacyUserId])}` : null,
+  ].filter(Boolean).join(',');
+
+  const { data, error } = await serviceClient
     .from('customer_profiles')
     .select(PROFILE_SELECT)
     .eq('id', profileId)
-    // customer_profiles uses an array column merchant_ids; check both the
-    // merchant UUID and, as a legacy fallback, the owner user_id.
-    // We do NOT rely solely on this — we also cross-check via job ownership below.
-    .contains('merchant_ids', [merchantId])
-    .maybeSingle() as unknown as { data: Record<string, unknown> | null };
+    // customer_profiles uses an array column merchant_ids; support both
+    // current merchant UUID and legacy owner user UUID rows.
+    .or(filters)
+    .maybeSingle() as unknown as { data: Record<string, unknown> | null; error: { message: string } | null };
+
+  if (error) {
+    throw new Error(`fetchMerchantScopedCustomerProfile failed: ${error.message}`);
+  }
 
   return data ?? null;
 }
@@ -411,8 +413,8 @@ export const TX_SAFE_SELECT =
   'id,job_id,order_id,customer_email,customer_name,shipping_address,' +
   'device_ip,card_last4,order_value,match_score,fraud_flags,risk_level,' +
   'identity_confidence_grade,identity_score,match_status,' +
-  'refund_claimed,refund_reason,chargeback_filed,chargeback_date,' +
-  'chargeback_reason_code,processed_at,cluster_id,signals_matched,' +
+  'refund_claimed,refund_reason,chargeback_filed,' +
+  'processed_at,cluster_id,signals_matched,' +
   'dismissed_by_merchant';
 
 /**
@@ -551,6 +553,153 @@ export async function fetchMerchantScopedTransaction(
     .maybeSingle() as unknown as { data: Record<string, unknown> | null };
 
   return data ?? null;
+}
+
+// ---------------------------------------------------------------------------
+// Audit customer summaries
+// ---------------------------------------------------------------------------
+
+type AuditCustomerSummarySourceRow = {
+  customer_email: string | null;
+  customer_name: string | null;
+  order_value: number | string | null;
+  identity_score: number | null;
+  identity_confidence_grade: string | null;
+  cluster_id: string | null;
+  processed_at: string | null;
+};
+
+function gradeRank(grade: string | null | undefined): number {
+  switch (grade) {
+    case 'definite': return 4;
+    case 'probable': return 3;
+    case 'possible': return 2;
+    case 'weak': return 1;
+    default: return 0;
+  }
+}
+
+/**
+ * Refreshes persisted per-audit customer summaries. Production databases use
+ * the SQL RPC added in migration 0081; the fallback keeps older/local databases
+ * functional until that migration is applied.
+ */
+export async function refreshAuditCustomerSummaries(
+  serviceClient: SupabaseClient,
+  auditId: string,
+  merchantId: string,
+): Promise<number> {
+  const rpcResult = await serviceClient.rpc('refresh_audit_customer_summaries' as any, {
+    p_audit_id: auditId,
+    p_merchant_id: merchantId,
+  });
+
+  if (!rpcResult.error) {
+    return Number(rpcResult.data ?? 0);
+  }
+
+  if (rpcResult.error.code !== 'PGRST202' && rpcResult.error.code !== '42883') {
+    throw new Error(`refreshAuditCustomerSummaries RPC failed: ${rpcResult.error.message}`);
+  }
+
+  const { data: jobRow, error: jobError } = await serviceClient
+    .from('processing_jobs')
+    .select('id')
+    .eq('id', auditId)
+    .eq('merchant_id', merchantId)
+    .maybeSingle();
+  if (jobError) throw new Error(`refreshAuditCustomerSummaries ownership check failed: ${jobError.message}`);
+  if (!jobRow) throw new Error(`refreshAuditCustomerSummaries audit ${auditId} is not owned by merchant ${merchantId}`);
+
+  const summaries = new Map<string, {
+    customer_email: string | null;
+    customer_name: string | null;
+    order_count: number;
+    total_spend: number;
+    max_score: number;
+    first_seen: string | null;
+    last_seen: string | null;
+    highest_grade: string | null;
+  }>();
+
+  const rows = await paginateAll<AuditCustomerSummarySourceRow>((from, to) =>
+    serviceClient
+      .from('audit_transactions')
+      .select('customer_email,customer_name,order_value,identity_score,identity_confidence_grade,cluster_id,processed_at')
+      .eq('job_id', auditId)
+      .or('identity_confidence_grade.in.(probable,definite),match_status.in.(probable,definite)')
+      .not('dismissed_by_merchant', 'is', true)
+      .range(from, to) as unknown as Promise<{ data: AuditCustomerSummarySourceRow[] | null; error: unknown }>
+  );
+
+  for (const row of rows) {
+    const key = (row.customer_email?.trim().toLowerCase() || row.customer_name?.trim().toLowerCase() || 'unknown customer');
+    const existing = summaries.get(key) ?? {
+      customer_email: row.customer_email,
+      customer_name: row.customer_name,
+      order_count: 0,
+      total_spend: 0,
+      max_score: 0,
+      first_seen: row.processed_at,
+      last_seen: row.processed_at,
+      highest_grade: row.identity_confidence_grade,
+    };
+    existing.customer_email ||= row.customer_email;
+    existing.customer_name ||= row.customer_name;
+    existing.order_count += 1;
+    existing.total_spend += typeof row.order_value === 'string' ? Number.parseFloat(row.order_value) || 0 : row.order_value ?? 0;
+    existing.max_score = Math.max(existing.max_score, row.identity_score ?? 0);
+    if (row.processed_at && (!existing.first_seen || row.processed_at < existing.first_seen)) existing.first_seen = row.processed_at;
+    if (row.processed_at && (!existing.last_seen || row.processed_at > existing.last_seen)) existing.last_seen = row.processed_at;
+    if (gradeRank(row.identity_confidence_grade) > gradeRank(existing.highest_grade)) {
+      existing.highest_grade = row.identity_confidence_grade;
+    }
+    summaries.set(key, existing);
+  }
+
+  const { error: deleteError } = await serviceClient
+    .from('audit_customer_summaries' as any)
+    .delete()
+    .eq('audit_id', auditId)
+    .eq('merchant_id', merchantId);
+  if (deleteError) throw new Error(`refreshAuditCustomerSummaries delete failed: ${deleteError.message}`);
+
+  const summaryRows = [...summaries.entries()].map(([customerKey, row]) => ({
+    audit_id: auditId,
+    merchant_id: merchantId,
+    customer_key: customerKey,
+    ...row,
+  }));
+
+  for (let offset = 0; offset < summaryRows.length; offset += 1000) {
+    const { error } = await serviceClient
+      .from('audit_customer_summaries' as any)
+      .upsert(summaryRows.slice(offset, offset + 1000), { onConflict: 'audit_id,customer_key' });
+    if (error) throw new Error(`refreshAuditCustomerSummaries upsert failed: ${error.message}`);
+  }
+
+  const valueAtRisk = summaryRows.reduce((sum, row) => sum + row.total_spend, 0);
+  const linkedClusterCount = new Set(rows.map((row) => row.cluster_id).filter(Boolean)).size;
+  const { error: resultSummaryError } = await serviceClient
+    .from('audit_result_summaries' as any)
+    .upsert({
+      audit_id: auditId,
+      merchant_id: merchantId,
+      flagged_transactions: rows.length,
+      definite_count: rows.filter((row) => row.identity_confidence_grade === 'definite').length,
+      probable_count: rows.filter((row) => row.identity_confidence_grade === 'probable').length,
+      possible_count: rows.filter((row) => row.identity_confidence_grade === 'possible').length,
+      weak_count: rows.filter((row) => row.identity_confidence_grade === 'weak').length,
+      linked_cluster_count: linkedClusterCount,
+      customer_count: summaryRows.length,
+      value_at_risk: valueAtRisk,
+      estimated_exposure: valueAtRisk * 0.42,
+    }, { onConflict: 'audit_id' });
+  if (resultSummaryError) {
+    throw new Error(`refreshAuditCustomerSummaries result summary upsert failed: ${resultSummaryError.message}`);
+  }
+
+  return summaryRows.length;
 }
 
 // ---------------------------------------------------------------------------

@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { formatCurrencyNullable, formatDateMode } from '@/lib/utils/format';
+import { labelFor } from '@/lib/copy/labels';
 
 export type BehaviorRoadmapEventType =
   | 'order_placed'
@@ -29,104 +31,146 @@ interface BehaviorRoadmapProps {
   events: BehaviorRoadmapEvent[];
 }
 
-const GLYPHS: Record<BehaviorRoadmapEventType, { symbol: string; color: string }> = {
-  order_placed: { symbol: '▣', color: '#1A1814' },
-  order_refunded: { symbol: '▢', color: '#7B2D26' },
-  chargeback_filed: { symbol: '●', color: '#7B2D26' },
-  identity_change: { symbol: '▲', color: '#7B2D26' },
-  watchlist_add: { symbol: '★', color: '#7B2D26' },
-  cross_merchant_signal: { symbol: '◆', color: '#1A1814' },
-  note_added: { symbol: '-', color: '#888078' },
+const GLYPHS: Record<BehaviorRoadmapEventType, { symbol: string; color: string; tag?: string }> = {
+  order_placed: { symbol: '■', color: 'var(--sev-neutral)' },
+  order_refunded: { symbol: '●', color: 'var(--sev-definite)', tag: 'HIGH' },
+  chargeback_filed: { symbol: '✕', color: 'var(--sev-definite)', tag: 'HIGH' },
+  identity_change: { symbol: '◆', color: 'var(--sev-probable)' },
+  watchlist_add: { symbol: '✓', color: 'var(--sev-clear)' },
+  cross_merchant_signal: { symbol: '◆', color: 'color-mix(in srgb, var(--sev-neutral) 60%, transparent)' },
+  note_added: { symbol: '■', color: 'var(--ink-tertiary)' },
 };
+
+function DensitySvg({ events }: { events: BehaviorRoadmapEvent[] }) {
+  const buckets = useMemo(() => {
+    const next = Array.from({ length: 18 }, () => ({ total: 0, high: 0 }));
+    for (const event of events) {
+      const diffDays = Math.floor((Date.now() - new Date(event.date).getTime()) / 86400000);
+      const index = Math.min(17, Math.max(0, 17 - Math.floor(diffDays / 5)));
+      next[index].total += 1;
+      if (event.type === 'chargeback_filed' || event.type === 'order_refunded' || event.tier === 'critical' || event.tier === 'high') {
+        next[index].high += 1;
+      }
+    }
+    return next;
+  }, [events]);
+  const max = Math.max(1, ...buckets.map((bucket) => bucket.total));
+
+  return (
+    <svg className="h-5 w-full" viewBox="0 0 180 20" preserveAspectRatio="none" aria-hidden="true">
+      {buckets.map((bucket, index) => {
+        const height = Math.max(2, (bucket.total / max) * 18);
+        const fill = bucket.high > 0 ? 'var(--sev-definite)' : bucket.total > 1 ? 'var(--sev-probable)' : 'var(--sev-neutral)';
+        return (
+          <rect
+            key={index}
+            x={index * 10 + 1}
+            y={20 - height}
+            width="6"
+            height={height}
+            rx="1"
+            fill={fill}
+            opacity={bucket.total === 0 ? 0.18 : 0.9}
+          />
+        );
+      })}
+    </svg>
+  );
+}
 
 export default function BehaviorRoadmap({ events }: BehaviorRoadmapProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const density = Array.from({ length: 12 }, () => 0);
-
-  for (const event of events) {
-    const diffDays = Math.floor((Date.now() - new Date(event.date).getTime()) / 86400000);
-    const weekIndex = Math.min(11, Math.max(0, 11 - Math.floor(diffDays / 7)));
-    density[weekIndex] += 1;
-  }
-
-  const maxDensity = Math.max(...density, 1);
+  const patternTags = useMemo(() => {
+    const tags = new Set<string>();
+    for (const event of events) {
+      for (const evidence of event.evidence ?? []) {
+        const label = labelFor(evidence).toUpperCase();
+        if (label.includes('ADDRESS')) tags.add('ADDRESS CLUSTERING');
+        if (label.includes('MERCHANT') || label.includes('NETWORK')) tags.add('CROSS-MERCHANT IDENTITY LINK');
+        if (label.includes('DEVICE') || label.includes('IP')) tags.add('NETWORK DEVICE LINK');
+      }
+    }
+    return Array.from(tags).slice(0, 4);
+  }, [events]);
 
   return (
-    <div style={{ background: '#FFFFFF', border: '1px solid var(--border-default)', borderRadius: 4 }}>
-      <div style={{ background: 'var(--bg-canvas)', borderBottom: '1px solid var(--border-default)', padding: '10px 14px' }}>
+    <div className="overflow-hidden rounded-md border" style={{ background: 'var(--surface-raised)', borderColor: 'var(--surface-border)' }}>
+      <div className="border-b px-4 py-3" style={{ background: 'var(--surface-overlay)', borderColor: 'var(--surface-border)' }}>
         <div className="flex items-center justify-between gap-3">
-          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)', lineHeight: 1 }}>
-            <span aria-hidden="true" className="ua-section-dot" />
-            Behavior Roadmap
+          <p className="t-label" style={{ color: 'var(--ink-tertiary)' }}>BEHAVIOR ROADMAP</p>
+          <p className="t-mono" style={{ color: 'var(--ink-secondary)' }}>{events.length} EVENTS</p>
+        </div>
+        <div className="mt-2">
+          <DensitySvg events={events} />
+        </div>
+        {patternTags.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {patternTags.map((tag) => (
+              <span
+                key={tag}
+                className="rounded-sm border px-1.5 py-0.5 font-mono text-[10px] uppercase"
+                style={{ background: 'var(--surface-muted)', borderColor: 'var(--surface-border)', color: 'var(--ink-secondary)', letterSpacing: '0.04em' }}
+              >
+                {tag}
+              </span>
+            ))}
           </div>
-          <div className="num" style={{ fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>{events.length} events</div>
-        </div>
-        <div className="mt-3 flex gap-1">
-          {density.map((value, index) => (
-            <span
-              key={index}
-              style={{
-                flex: 1,
-                height: 10,
-                borderRadius: 2,
-                background: `rgba(123, 45, 38, ${0.15 + (value / maxDensity) * 0.85})`,
-              }}
-            />
-          ))}
-        </div>
+        )}
       </div>
 
-      <ol className="p-4 space-y-0">
+      <ol className="relative">
         {events.map((event, index) => {
           const glyph = GLYPHS[event.type];
           const expanded = expandedId === event.id;
+          const riskTag = glyph.tag ?? (event.tier === 'critical' || event.tier === 'high' ? 'HIGH' : event.tier === 'low' ? 'LOW' : null);
+
           return (
-            <li key={event.id} className="relative pl-8 pb-4 last:pb-0">
-              {index < events.length - 1 && (
-                <span aria-hidden="true" style={{ position: 'absolute', left: 8, top: 18, bottom: -2, width: 1, background: '#D2C9B5' }} />
-              )}
-              <span aria-hidden="true" style={{ position: 'absolute', left: 0, top: 0, color: glyph.color, fontSize: 16, lineHeight: 1 }}>
-                {glyph.symbol}
+            <li
+              key={event.id}
+              className="relative grid min-h-8 grid-cols-[60px_18px_minmax(0,1fr)_auto] items-start gap-2 border-b px-3 py-2 last:border-b-0"
+              style={{ borderColor: 'var(--surface-border)' }}
+            >
+              <time className="t-mono pt-0.5" style={{ color: 'var(--data-date)' }}>
+                {formatDateMode(event.date, 'table')}
+              </time>
+              <span aria-hidden="true" className="relative flex h-5 items-center justify-center">
+                {index < events.length - 1 && (
+                  <span className="absolute left-1/2 top-4 h-[calc(100%+16px)] w-px -translate-x-1/2" style={{ background: 'var(--surface-border)' }} />
+                )}
+                <span style={{ color: glyph.color, fontSize: 12, lineHeight: 1 }}>{glyph.symbol}</span>
               </span>
               <button
                 type="button"
                 onClick={() => setExpandedId(expanded ? null : event.id)}
-                className="w-full text-left rounded-sm"
-                style={{ background: 'transparent' }}
+                className="min-w-0 text-left focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-[var(--copper-bright)]"
               >
-                <div className="grid grid-cols-[92px_1fr_auto] gap-3 items-start">
-                  <div className="num" style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: '#4A4640' }}>
-                    {formatDateMode(event.date, 'table')}
-                  </div>
-                  <div className="min-w-0">
-                    <div style={{ fontSize: 12, fontWeight: 600, color: '#1A1814' }}>{event.title}</div>
-                    {event.subtitle && <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{event.subtitle}</div>}
-                    {!expanded && event.evidence?.length ? (
-                      <div style={{ fontSize: 10, color: 'var(--text-subtle)', marginTop: 3 }}>
-                        {event.evidence.slice(0, 3).join(' · ')}
-                      </div>
-                    ) : null}
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    {event.amount != null && (
-                      <span className="num" style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: '#1A1814' }}>
-                        {formatCurrencyNullable(event.amount)}
-                      </span>
-                    )}
-                    {event.tier && <Badge tone={event.tier === 'critical' ? 'critical' : event.tier === 'high' ? 'danger' : 'neutral'}>{event.tier}</Badge>}
-                  </div>
+                <div className="flex min-w-0 items-center gap-2">
+                  <span className="truncate t-body" style={{ color: 'var(--ink-primary)' }}>{event.title}</span>
+                  {event.amount != null && (
+                    <span className="t-mono shrink-0" style={{ color: 'var(--data-currency)' }}>
+                      {formatCurrencyNullable(event.amount)}
+                    </span>
+                  )}
                 </div>
+                {event.subtitle && (
+                  <p className="mt-0.5 truncate t-caption" style={{ color: 'var(--ink-tertiary)' }}>{event.subtitle}</p>
+                )}
                 {expanded && (
-                  <div style={{ marginTop: 8, padding: '8px 10px', border: '1px solid var(--border-default)', borderRadius: 3, background: 'var(--bg-canvas)' }}>
-                    {event.detail && <div style={{ fontSize: 11, color: '#1A1814' }}>{event.detail}</div>}
+                  <div className="mt-2 rounded-sm border px-3 py-2" style={{ background: 'var(--surface-input)', borderColor: 'var(--surface-border)' }}>
+                    {event.detail && <p className="t-body" style={{ color: 'var(--ink-secondary)' }}>{event.detail}</p>}
                     {event.evidence?.length ? (
-                      <div style={{ marginTop: event.detail ? 6 : 0, fontSize: 10, color: 'var(--text-muted)' }}>
-                        {event.evidence.join(' · ')}
-                      </div>
+                      <p className="mt-1 t-caption" style={{ color: 'var(--ink-tertiary)' }}>
+                        {event.evidence.map(labelFor).join(' · ')}
+                      </p>
                     ) : null}
                   </div>
                 )}
               </button>
+              <div className="flex items-center gap-2 pt-0.5">
+                {riskTag === 'HIGH' && <Badge tone="danger" size="sm">HIGH</Badge>}
+                {riskTag === 'LOW' && <span className="t-label" style={{ color: 'var(--ink-tertiary)' }}>LOW</span>}
+                {expanded ? <ChevronDown className="h-3.5 w-3.5" style={{ color: 'var(--ink-tertiary)' }} /> : <ChevronRight className="h-3.5 w-3.5" style={{ color: 'var(--ink-tertiary)' }} />}
+              </div>
             </li>
           );
         })}

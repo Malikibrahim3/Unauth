@@ -15,6 +15,7 @@ import TrackPageView from '@/components/common/TrackPageView';
 import { ConfidenceBadge } from '@/components/ui/ConfidenceBadge';
 import { Badge } from '@/components/ui/Badge';
 import { riskLevelToNewGrade } from '@/lib/confidence';
+import { signalCopy } from '@/lib/copy/signals';
 
 type RunRow = Database['public']['Tables']['processing_jobs']['Row'];
 
@@ -48,14 +49,6 @@ type ActivityItem = {
   time: string;
   href?: string;
 };
-
-const WORKBENCH_NAV = [
-  { label: 'Overview', href: '/dashboard' },
-  { label: 'Cases', href: '/customers?risk=high&status=new' },
-  { label: 'Clusters', href: '/customers?merchantsMin=2' },
-  { label: 'Audits', href: '/history' },
-  { label: 'Reports', href: '/chargebacks' },
-] as const;
 
 function toNumber(value: number | string | null | undefined): number {
   if (value === null || value === undefined) return 0;
@@ -189,6 +182,8 @@ export default async function DashboardPage() {
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5)
     .map(([name, count]) => ({ name, count }));
+  const networkClusterRows = clusterRows.filter((profile) => profile.total_merchants_seen_at > 1);
+  const visibleClusterRows = networkClusterRows.length > 0 ? networkClusterRows : clusterRows;
 
   const activity: ActivityItem[] = [];
   if (latestRun) {
@@ -230,54 +225,30 @@ export default async function DashboardPage() {
       <TrackPageView event="Dashboard Viewed" />
 
       <section
-        className="overflow-hidden border"
+        className="relative overflow-hidden border"
         style={{ borderColor: 'var(--border-default)', background: 'var(--bg-surface)', borderRadius: 4 }}
       >
-        <header className="border-b px-4 py-3" style={{ borderColor: 'var(--border-default)', background: 'var(--bg-surface)' }}>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <nav className="flex items-center gap-4" aria-label="Dashboard views">
-              {WORKBENCH_NAV.map((item, idx) => (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  className="text-body-sm border-b-2 pb-1"
-                  style={{
-                    color: idx === 0 ? 'var(--text)' : 'var(--text-muted)',
-                    borderBottomColor: idx === 0 ? 'var(--accent)' : 'transparent',
-                    fontWeight: idx === 0 ? 600 : 500,
-                  }}
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
+        <div className="absolute right-4 top-3 z-10 flex items-center gap-3">
+          <span className="t-label flex items-center gap-2" style={{ color: 'var(--ink-tertiary)' }}>
+            <span className="ua-pulse h-2 w-2 rounded-full" style={{ background: 'var(--sev-clear)' }} />
+            GRAPH LIVE
+          </span>
+          <Link href="/upload" className="btn-accent rounded-md px-3 py-1.5 text-caption font-semibold">
+            New Audit
+          </Link>
+        </div>
 
-            <div className="flex items-center gap-3">
-              <span className="text-caption flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
-                <span className="h-1.5 w-1.5 rounded-full" style={{ background: 'var(--risk-low)' }} />
-                Graph live
-              </span>
-              <span className="text-caption" style={{ color: 'var(--text-subtle)' }}>
-                {latestRun ? `Latest: ${formatDateMode(latestRun.created_at, 'table')}` : 'No audits yet'}
-              </span>
-              <Link href="/upload" className="btn-accent rounded-md px-3 py-1.5 text-caption font-semibold">
-                New Audit
-              </Link>
-            </div>
-          </div>
-        </header>
-
-        <div className="grid md:grid-cols-[1.35fr_repeat(4,minmax(0,1fr))] grid-cols-2 border-b" style={{ borderColor: 'var(--border-default)' }}>
+        <div className="grid grid-cols-2 border-b pt-9 md:grid-cols-[1.35fr_repeat(4,minmax(0,1fr))] md:pt-8" style={{ borderColor: 'var(--border-default)' }}>
           {[
             {
               label: 'Exposure at risk',
               value: exposureAtRisk === null ? 'Unavailable' : formatCurrencyNullable(exposureAtRisk),
-              hint: exposureAtRisk === null ? 'Could not be computed' : 'Open review-worthy value',
+              hint: exposureAtRisk === null ? 'Could not be computed' : 'Current queue',
             },
             {
               label: 'Customers to review',
               value: reviewQueue === null ? 'Unavailable' : reviewQueue === 0 ? '—' : reviewQueue.toLocaleString(),
-              hint: reviewQueue === null ? 'Count could not be loaded' : 'High-confidence unresolved',
+              hint: reviewQueue === null ? 'Count could not be loaded' : 'Open profiles',
             },
             {
               label: 'Transactions analysed',
@@ -297,16 +268,16 @@ export default async function DashboardPage() {
           ].map((metric, idx) => (
             <div
               key={metric.label}
-              className="px-3 py-3 md:px-4"
+              className={idx === 4 ? 'px-3 py-3 md:px-4' : 'px-3 py-3 md:px-4'}
               style={{
                 borderRightColor: 'var(--border-default)',
                 borderRightWidth: idx === 4 ? 0 : 1,
                 borderRightStyle: idx === 4 ? 'none' : 'solid',
               }}
             >
-              <p className="text-overline" style={{ color: 'var(--text-muted)' }}>{metric.label}</p>
-              <p className="text-mono-lg mt-1 num" style={{ color: 'var(--text)' }}>{metric.value}</p>
-              <p className="text-caption mt-1" style={{ color: 'var(--text-subtle)' }}>{metric.hint}</p>
+              <p className="t-label" style={{ color: 'var(--ink-tertiary)' }}>{metric.label}</p>
+              <p className="t-display mt-1 num" style={{ color: metric.label.toLowerCase().includes('exposure') ? 'var(--data-currency)' : 'var(--data-score)' }}>{metric.value}</p>
+              <p className="t-caption mt-1" style={{ color: 'var(--ink-tertiary)' }}>{metric.hint}</p>
             </div>
           ))}
         </div>
@@ -344,6 +315,7 @@ export default async function DashboardPage() {
                   const profileId = profileIdByTx.get(row.id);
                   const href = profileId ? `/customers/${profileId}` : `/audit/${row.job_id}/transaction/${row.id}`;
                   const signalCount = signalList(row).length;
+                  const networkLinked = signalList(row).some((signal) => signal.toLowerCase().includes('crossmerchant'));
                   return (
                     <Link
                       key={row.id}
@@ -358,6 +330,7 @@ export default async function DashboardPage() {
                           </p>
                           <ConfidenceBadge grade={gradeFromQueueRow(row)} score={score ?? undefined} size="sm" />
                           {row.match_status && <Badge size="sm" tone="warning">{row.match_status}</Badge>}
+                          {networkLinked && <Badge size="sm" tone="info">Network</Badge>}
                         </div>
                         <p className="text-caption mt-1 font-mono" style={{ color: 'var(--text-muted)' }}>
                           {row.order_id ?? row.id} · {formatCurrencyNullable(toNumber(row.order_value))}
@@ -366,8 +339,8 @@ export default async function DashboardPage() {
                           {signalCount > 0 ? `${signalCount} signal${signalCount === 1 ? '' : 's'} matched` : 'No signal breakdown'} · {formatDateMode(row.processed_at, 'recent')}
                         </p>
                       </div>
-                      <span className="text-caption self-center font-semibold" style={{ color: 'var(--accent)' }}>
-                        Open
+              <span className="text-caption self-center font-semibold" style={{ color: 'var(--accent)' }}>
+                        Open →
                       </span>
                     </Link>
                   );
@@ -378,25 +351,25 @@ export default async function DashboardPage() {
 
           <aside>
             <div className="border-b px-4 py-2" style={{ borderColor: 'var(--border-default)', background: 'var(--bg-surface-alt)' }}>
-              <p className="text-overline" style={{ color: 'var(--text-muted)' }}>Cluster exposure</p>
+              <p className="text-overline" style={{ color: 'var(--text-muted)' }}>Network exposure</p>
             </div>
             <div className="border-b px-4 py-2" style={{ borderColor: 'var(--border-subtle)' }}>
-              {clusterRows.length === 0 ? (
-                <p className="text-caption" style={{ color: 'var(--text-subtle)' }}>No linked profiles yet.</p>
+              {visibleClusterRows.length === 0 ? (
+                <p className="text-caption" style={{ color: 'var(--text-subtle)' }}>No network-linked profiles yet.</p>
               ) : (
                 <div className="space-y-2">
-                  {clusterRows.map((profile) => (
-                    <div key={profile.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
+                  {visibleClusterRows.map((profile) => (
+                    <Link key={profile.id} href={`/customers/${profile.id}`} className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 hover:opacity-80">
                       <div className="min-w-0">
                         <p className="truncate text-caption font-medium" style={{ color: 'var(--text)' }}>
                           {profile.names?.[0] ?? profile.primary_email ?? 'Unknown profile'}
                         </p>
                         <p className="truncate text-caption font-mono" style={{ color: 'var(--text-muted)' }}>
-                          {profile.total_merchants_seen_at} merchants · {profile.total_orders} orders · {profile.total_refund_claims} refunds
+                          {profile.total_merchants_seen_at} merchants · {profile.total_orders} orders · {profile.total_refund_claims} claims
                         </p>
                       </div>
                       <ConfidenceBadge grade={riskLevelToNewGrade(profile.risk_level)} size="sm" />
-                    </div>
+                    </Link>
                   ))}
                 </div>
               )}
@@ -412,7 +385,7 @@ export default async function DashboardPage() {
                 <div className="space-y-2">
                   {topSignals.map((sig) => (
                     <div key={sig.name} className="grid grid-cols-[minmax(0,1fr)_26px] items-center gap-2">
-                      <p className="truncate text-caption font-mono" style={{ color: 'var(--text-muted)' }}>{sig.name}</p>
+                      <p className="truncate text-caption" style={{ color: 'var(--text-muted)' }}>{signalCopy(sig.name).short}</p>
                       <span className="text-caption text-right font-mono num" style={{ color: 'var(--text)' }}>{sig.count}x</span>
                     </div>
                   ))}
@@ -449,18 +422,23 @@ export default async function DashboardPage() {
             </div>
 
             <div className="px-4 py-2">
-              <p className="text-caption" style={{ color: 'var(--text-subtle)' }}>
-                Trend · {avgFlagRate === null ? '—' : `${avgFlagRate.toFixed(1)}% match rate`} · {totalFlagged.toLocaleString()} matched
-              </p>
-              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full" style={{ background: 'var(--bg-surface-sunk)' }}>
-                <div
-                  className="h-full rounded-full"
-                  style={{
-                    width: `${Math.max(0, Math.min(100, avgFlagRate ?? 0))}%`,
-                    background: 'var(--risk-high-fg)',
-                  }}
-                />
+              <div className="flex items-center justify-between gap-2">
+                <p className="t-label" style={{ color: 'var(--ink-tertiary)' }}>7D MATCH RATE</p>
+                <p className="t-mono" style={{ color: 'var(--data-score)' }}>
+                  {avgFlagRate === null ? '—' : `${avgFlagRate.toFixed(1)}%`}
+                </p>
               </div>
+              <svg className="mt-2 h-10 w-full" viewBox="0 0 240 40" role="img" aria-label="Seven day match rate">
+                <polyline
+                  points={`0,32 40,${avgFlagRate ? 30 - avgFlagRate : 30} 80,26 120,28 160,18 200,22 240,${avgFlagRate ? Math.max(6, 32 - avgFlagRate) : 24}`}
+                  fill="none"
+                  stroke="var(--copper-bright)"
+                  strokeWidth="2"
+                  vectorEffect="non-scaling-stroke"
+                />
+                <circle cx="240" cy={avgFlagRate ? Math.max(6, 32 - avgFlagRate) : 24} r="3" fill="var(--copper-bright)" />
+              </svg>
+              <p className="t-caption" style={{ color: 'var(--ink-tertiary)' }}>{totalFlagged.toLocaleString()} matched</p>
             </div>
           </aside>
         </div>

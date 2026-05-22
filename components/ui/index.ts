@@ -16,6 +16,7 @@ export type { BadgeTone, BadgeVariant, BadgeSize } from './Badge';
 export { ConfidenceBadge } from './ConfidenceBadge';
 export { scoreToGrade } from '@/lib/confidence';
 export type { ConfidenceGradeValue } from '@/lib/confidence';
+export { PrivacyBadge } from './PrivacyBadge';
 
 export { RiskScoreBadge, scoreToRiskLevel } from './RiskScoreBadge';
 export type { RiskLevel } from './RiskScoreBadge';

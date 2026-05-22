@@ -6,9 +6,9 @@ interface SparklineChipProps {
 }
 
 const TONE_STROKE = {
-  negative: '#7B2D26',
-  positive: '#2A6634',
-  neutral: '#1A1814',
+  negative: 'var(--sev-definite)',
+  positive: 'var(--sev-clear)',
+  neutral: 'var(--ink-secondary)',
 } as const;
 
 export function SparklineChip({ data, tone = 'neutral' }: SparklineChipProps) {

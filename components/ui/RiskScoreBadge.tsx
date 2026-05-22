@@ -20,8 +20,8 @@ export function scoreToRiskLevel(score: number): RiskLevel {
 const LEVEL_STYLES: Record<RiskLevel, React.CSSProperties> = {
   low:      { background: 'var(--risk-low-bg)',      color: 'var(--risk-low-fg)',      border: '1px solid var(--risk-low-line)' },
   medium:   { background: 'var(--risk-medium-bg)',   color: 'var(--risk-medium-fg)',   border: '1px solid var(--risk-medium-line)' },
-  high:     { background: '#FBEFEC',                 color: '#7B2D26',                 border: '1px solid #F0C8BE' },
-  critical: { background: '#1A1814',                 color: '#E8E4D8',                 border: '1px solid #1A1814' },
+  high:     { background: 'var(--sev-probable-fill)', color: 'var(--sev-probable)', border: '1px solid var(--risk-high-bd)' },
+  critical: { background: 'var(--sev-definite-fill)', color: 'var(--sev-definite)', border: '1px solid var(--risk-critical-bd)' },
 };
 
 /** Formats score 0–100 as "0.92" */
@@ -62,10 +62,10 @@ export function RiskScoreBadge({ score, level, size = 'md', className }: RiskSco
 export type StatusTier = 'definite' | 'probable' | 'candidate' | 'inconclusive';
 
 const STATUS_STYLES: Record<StatusTier, React.CSSProperties> = {
-  definite:     { background: '#1A1814', color: '#E8E4D8', border: '1px solid #1A1814' },
-  probable:     { background: '#FBEFEC', color: '#7B2D26', border: '1px solid #F0C8BE' },
-  candidate:    { background: '#F2EDE3', color: '#4A4640', border: '1px solid #D2C9B5' },
-  inconclusive: { background: '#F5F3EF', color: '#888078', border: '1px solid #D8D1C5' },
+  definite:     { background: 'var(--sev-definite-fill)', color: 'var(--sev-definite)', border: '1px solid var(--risk-critical-bd)' },
+  probable:     { background: 'var(--sev-probable-fill)', color: 'var(--sev-probable)', border: '1px solid var(--risk-high-bd)' },
+  candidate:    { background: 'var(--sev-neutral-fill)', color: 'var(--sev-neutral)', border: '1px solid var(--risk-medium-bd)' },
+  inconclusive: { background: 'var(--surface-muted)', color: 'var(--ink-tertiary)', border: '1px solid var(--surface-border)' },
 };
 
 const STATUS_LABELS: Record<StatusTier, string> = {

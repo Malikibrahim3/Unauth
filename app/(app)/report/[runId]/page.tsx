@@ -83,7 +83,7 @@ export default async function ReportPage({ params }: ReportPageProps) {
       <div className="mx-auto max-w-6xl space-y-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: '#7B2D26' }}>
+            <p className="text-xs font-semibold uppercase tracking-[0.04em]" style={{ color: 'var(--copper-bright)' }}>
               Siloed audit
             </p>
             <h1 className="mt-2 text-3xl font-medium tracking-tight" style={{ color: 'var(--text)' }}>

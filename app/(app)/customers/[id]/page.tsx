@@ -19,6 +19,7 @@ import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import {
   fetchMerchantScopedCustomerProfile,
   fetchMerchantScopedCustomerTransactions,
+  getMerchantOwnedJobIds,
   TX_SAFE_SELECT,
 } from '@/lib/supabase/merchantHelpers';
 import { buildBehavioralNarrative } from '@/lib/customers/narrative';
@@ -31,6 +32,7 @@ import { SectionCard } from '@/components/ui/SectionCard';
 import { MetricCard } from '@/components/ui/MetricCard';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Badge } from '@/components/ui/Badge';
+import { PrivacyBadge } from '@/components/ui/PrivacyBadge';
 import InvestigationStatusSelect from '@/components/customers/InvestigationStatusSelect';
 import IdentityTimeline from '@/components/customers/IdentityTimeline';
 import BehaviorRoadmap from '@/components/customers/BehaviorRoadmap';
@@ -223,7 +225,7 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
   const profileId = id;
 
   // ── Fetch profile (merchant-scoped) ────────────────────────────────────
-  const profileRow = await fetchMerchantScopedCustomerProfile(svc, merchantId, profileId);
+  const profileRow = await fetchMerchantScopedCustomerProfile(svc, merchantId, profileId, ctx.userId);
   if (!profileRow) notFound();
 
   const profile = profileRow as any;
@@ -241,13 +243,27 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
   // fetchMerchantScopedCustomerTransactions scopes all reads through
   // merchant-owned processing_jobs.id and never falls back to unconstrained
   // email/card/IP queries.
-  const transactions: Array<any> = await fetchMerchantScopedCustomerTransactions(
+  let transactions: Array<any> = await fetchMerchantScopedCustomerTransactions(
     svc,
     merchantId,
     profileId,
     profile,
     { select: TX_SELECT }
   );
+
+  if (transactions.length === 0 && Array.isArray(profile.emails) && profile.emails.length > 0) {
+    const ownedJobIds = await getMerchantOwnedJobIds(svc, merchantId);
+    if (ownedJobIds.length > 0) {
+      const { data: fallbackRows } = await svc
+        .from('audit_transactions')
+        .select(TX_SELECT)
+        .in('job_id', ownedJobIds)
+        .in('customer_email', profile.emails)
+        .order('processed_at', { ascending: true })
+        .limit(200) as unknown as { data: Array<any> | null };
+      transactions = fallbackRows ?? [];
+    }
+  }
 
   // -------------------------------------------------------------------------
   // Build identity timeline
@@ -322,22 +338,6 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
     }
   }
 
-  // -------------------------------------------------------------------------
-  // Build narrative
-  // -------------------------------------------------------------------------
-  const narrative = buildBehavioralNarrative({
-    totalOrders: profile.total_orders,
-    totalRefundClaims: profile.total_refund_claims,
-    refundRate: profile.refund_rate,
-    fastestClaimDays: profile.fastest_claim_days,
-    avgClaimDays: profile.avg_claim_days,
-    refundAccelerationScore: profile.refund_acceleration_score,
-    firstSeen: profile.first_seen,
-    lastSeen: profile.last_seen,
-    fraudFlags: profile.identity_signals ?? profile.fraud_flags,
-    linkedAccountCount: 0,
-  });
-
   const displayName = profile.names[0] ?? profile.primary_email ?? 'Unknown Customer';
   const variantCount = identityTimeline.filter((e) => e.isVariant).length;
 
@@ -360,9 +360,18 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
   const refundRate = Math.round(profile.refund_rate * 100);
   const isEligibleForEvidence = transactions.some((tx: any) => tx.refund_claimed || tx.chargeback_filed) || profile.total_chargebacks > 0;
   const totalOrderValue = transactions.reduce((sum: number, tx: any) => sum + (Number(tx.order_value) || 0), 0);
-  const totalRefundedValue = 0;
+  const totalRefundedValue = transactions
+    .filter((tx: any) => tx.refund_claimed || tx.chargeback_filed)
+    .reduce((sum: number, tx: any) => sum + (Number(tx.order_value) || 0), 0);
   const claimCount = transactions.filter((tx: any) => tx.refund_claimed || tx.chargeback_filed).length;
+  const merchantOrderCount = transactions.length || profile.total_orders;
+  const merchantClaimCount = transactions.length > 0 ? claimCount : profile.total_refund_claims;
+  const merchantRefundRate = merchantOrderCount > 0 ? Math.round((merchantClaimCount / merchantOrderCount) * 100) : refundRate;
   const identitySignals = ((profile as any).identity_signals ?? profile.fraud_flags ?? []) as string[];
+  const networkSignalCount = transactions.filter((tx: any) => {
+    const signals = [...(Array.isArray(tx.signals_matched) ? tx.signals_matched : []), ...(Array.isArray(tx.fraud_flags) ? tx.fraud_flags : [])];
+    return signals.some((signal: string) => signal.toLowerCase().includes('crossmerchant'));
+  }).length;
   const density = Array.from({ length: 12 }, () => 0);
   for (const tx of transactions) {
     const diffDays = Math.floor((Date.now() - new Date(tx.processed_at).getTime()) / 86400000);
@@ -387,9 +396,23 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
     identityTimeline,
     notes: [],
   });
+  const merchantNarrative = buildBehavioralNarrative({
+    totalOrders: merchantOrderCount,
+    totalRefundClaims: merchantClaimCount,
+    refundRate: merchantOrderCount > 0 ? merchantClaimCount / merchantOrderCount : profile.refund_rate,
+    fastestClaimDays: profile.fastest_claim_days,
+    avgClaimDays: profile.avg_claim_days,
+    refundAccelerationScore: profile.refund_acceleration_score,
+    firstSeen: transactions[0]?.processed_at ?? profile.first_seen,
+    lastSeen: transactions[transactions.length - 1]?.processed_at ?? profile.last_seen,
+    fraudFlags: profile.identity_signals ?? profile.fraud_flags,
+    linkedAccountCount: 0,
+  });
+  const profileGrade = riskLevelToNewGrade(profile.risk_level);
+  const blockReady = profileGrade === 'A' && Math.round(profile.risk_score) >= 90;
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+    <div className="mx-auto max-w-7xl px-3 py-5 sm:px-5">
       {/* Back navigation — context-aware: returns to audit if ?audit=runId is set */}
       <div className="flex items-center gap-3 mb-6">
         <Link
@@ -412,55 +435,87 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
         <span className="text-sm font-medium truncate max-w-xs" style={{ color: 'var(--text)' }}>{displayName}</span>
       </div>
 
-      <div className="flex items-start justify-between gap-4 mb-8 flex-wrap">
-        <div>
-          <div className="flex items-center gap-[var(--space-3)] mb-2">
-            <h1 className="text-h1">{displayName}</h1>
-            <ConfidenceBadge grade={riskLevelToNewGrade(profile.risk_level)} />
-            <RiskScoreBadge score={Math.round(profile.risk_score)} level={profile.risk_level} />
+      <section className="mb-5 overflow-hidden rounded-md border" style={{ background: 'var(--surface-raised)', borderColor: 'var(--surface-border)' }}>
+        <div className="grid gap-4 p-6 lg:grid-cols-[minmax(0,1fr)_minmax(560px,0.9fr)]">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="t-heading truncate" style={{ color: 'var(--ink-primary)' }}>{displayName}</h1>
+              <ConfidenceBadge grade={profileGrade} />
+              <RiskScoreBadge score={Math.round(profile.risk_score)} level={profile.risk_level} />
+            </div>
+            <p className="mt-2 t-mono break-all" style={{ color: 'var(--data-id)' }}>
+              {profile.primary_email ?? profile.id}
+            </p>
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <InvestigationStatusSelect profileId={profile.id} initialStatus={(profile as any).investigation_status ?? 'new'} />
+              <WatchlistStarButton
+                customerProfileId={profile.id}
+                displayName={profile.names[0] ?? undefined}
+                displayEmail={profile.primary_email ?? undefined}
+                lastSeenRisk={profile.risk_level}
+                initialWatchlisted={!!watchlistRow}
+              />
+              {isEligibleForEvidence ? (
+                <Link
+                  href={`/customers/${profile.id}/evidence/new`}
+                  className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold uppercase transition-colors"
+                  style={{ background: blockReady ? 'var(--sev-definite)' : 'var(--copper-bright)', color: blockReady ? 'var(--ink-primary)' : 'var(--ink-inverse)' }}
+                >
+                  <FileText className="h-3.5 w-3.5" />
+                  {blockReady ? 'BLOCK & ESCALATE' : 'Generate evidence package'}
+                </Link>
+              ) : (
+                <span
+                  className="inline-flex cursor-not-allowed items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold uppercase opacity-50"
+                  title="No eligible orders for evidence generation"
+                  style={{ background: 'var(--surface-muted)', color: 'var(--ink-tertiary)', border: '1px solid var(--surface-border)' }}
+                >
+                  <FileText className="h-3.5 w-3.5" />
+                  Evidence unavailable
+                </span>
+              )}
+            </div>
           </div>
-          {profile.primary_email && profile.names[0] && (
-            <p className="text-body-sm mt-1" style={{ color: 'var(--text-muted)' }}>{profile.primary_email}</p>
-          )}
+
+          <div className="grid grid-cols-2 gap-px overflow-hidden rounded-md border md:grid-cols-4" style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-border)' }}>
+            {[
+              { label: 'Exposure', value: formatCurrencyNullable(totalOrderValue), color: 'var(--data-currency)' },
+              { label: 'Orders', value: merchantOrderCount.toLocaleString(), color: 'var(--data-score)' },
+              { label: 'Claims', value: merchantClaimCount.toLocaleString(), color: 'var(--data-score)' },
+              { label: 'Last seen', value: formatDateMode(profile.last_seen, 'table'), color: 'var(--data-date)', mono: true },
+            ].map((metric) => (
+              <div key={metric.label} className="p-4" style={{ background: 'var(--surface-raised)' }}>
+                <p className="t-label" style={{ color: 'var(--ink-tertiary)' }}>{metric.label}</p>
+                <p className={metric.mono ? 't-mono-md mt-2 num' : 't-display mt-1 num'} style={{ color: metric.color }}>
+                  {metric.value}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
-        <div className="flex items-center gap-3 shrink-0 flex-wrap justify-end">
-          <WatchlistStarButton
-            customerProfileId={profile.id}
-            displayName={profile.names[0] ?? undefined}
-            displayEmail={profile.primary_email ?? undefined}
-            lastSeenRisk={profile.risk_level}
-            initialWatchlisted={!!watchlistRow}
-          />
-          <InvestigationStatusSelect profileId={profile.id} initialStatus={(profile as any).investigation_status ?? 'new'} />
-          {isEligibleForEvidence ? (
-            <Link
-              href={`/customers/${profile.id}/evidence/new`}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors"
-              style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}
-            >
-              <FileText className="h-3.5 w-3.5" />
-              Generate evidence package
-            </Link>
-          ) : (
-            <span
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold opacity-40 cursor-not-allowed"
-              title="No eligible orders for evidence generation"
-              style={{ background: 'var(--bg-muted)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
-            >
-              <FileText className="h-3.5 w-3.5" />
-              Generate evidence package
-            </span>
-          )}
+        <div className="flex h-10 items-center gap-4 border-t px-4" style={{ background: 'var(--surface-border)', borderColor: 'var(--surface-border)' }}>
+          <div className="flex flex-1 gap-1">
+            {density.map((value, index) => (
+              <span
+                key={index}
+                className="h-2 flex-1 rounded-sm"
+                style={{ background: value > 0 ? 'var(--copper-bright)' : 'var(--surface-muted)', opacity: value > 0 ? 0.9 : 0.55 }}
+              />
+            ))}
+          </div>
+          <span className="t-mono whitespace-nowrap" style={{ color: 'var(--data-date)' }}>
+            LAST SEEN {formatDateMode(profile.last_seen, 'recent')}
+          </span>
         </div>
-      </div>
+      </section>
 
       {FLAG_EXPERIENCE_POLISH_V1 && (
         <div className="mb-[var(--space-5)]">
           <CaseSummaryStrip
             flaggedAt={profile.first_seen}
-            orders={profile.total_orders}
+            orders={merchantOrderCount}
             exposure={totalOrderValue}
-            cadence={Math.min(5, Math.max(1, Math.ceil(profile.total_orders / 3)))}
+            cadence={Math.min(5, Math.max(1, Math.ceil(merchantOrderCount / 3)))}
             lastSeen={profile.last_seen}
             density={density}
           />
@@ -473,7 +528,7 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
             <div className="mb-[var(--space-5)] rounded-lg border p-[var(--space-4)]" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)' }}>
               <div className="flex items-start gap-3">
                 <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" style={{ color: 'var(--text-muted)' }} />
-                <p className="text-body-sm leading-relaxed" style={{ color: 'var(--text)' }}>{narrative}</p>
+                <p className="text-body-sm leading-relaxed" style={{ color: 'var(--text)' }}>{merchantNarrative}</p>
               </div>
 
               <div className="mt-[var(--space-4)]">
@@ -512,8 +567,8 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
         <div className="xl:col-span-4 space-y-[var(--space-5)]">
           <SectionCard title="Merchant dossier">
             <div className="grid grid-cols-2 gap-[var(--space-3)] mb-[var(--space-4)]">
-              <MetricCard label="Orders" value={profile.total_orders} hint={formatCurrencyNullable(totalOrderValue)} density="compact" />
-              <MetricCard label="Claims" value={claimCount || profile.total_refund_claims} hint={`${refundRate}% refund rate`} density="compact" />
+              <MetricCard label="Merchant orders" value={merchantOrderCount} hint={formatCurrencyNullable(totalOrderValue)} density="compact" />
+              <MetricCard label="Merchant claims" value={merchantClaimCount} hint={`${merchantRefundRate}% refund rate`} density="compact" />
               <MetricCard label="Refunded" value={formatCurrencyNullable(totalRefundedValue)} density="compact" />
               <MetricCard label="Chargebacks" value={profile.total_chargebacks} density="compact" />
               <MetricCard label="Fastest claim" value={profile.fastest_claim_days != null ? `${profile.fastest_claim_days}d` : '—'} density="compact" />
@@ -541,6 +596,20 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
                 </div>
               </div>
             </div>
+          </SectionCard>
+
+          <SectionCard
+            title="Network footprint"
+            description={<span className="inline-flex items-center gap-2"><span>Privacy-safe cross-merchant context</span><PrivacyBadge value="k-safe" /></span>}
+          >
+            <div className="grid grid-cols-3 gap-3">
+              <MetricCard label="Merchants" value={profile.total_merchants_seen_at ?? 1} density="compact" />
+              <MetricCard label="Profile orders" value={profile.total_orders ?? merchantOrderCount} density="compact" />
+              <MetricCard label="Privacy" value="k-safe" density="compact" />
+            </div>
+            <p className="text-caption mt-3" style={{ color: 'var(--text-muted)' }}>
+              Other merchant names, customer IDs, and order IDs are hidden — only aggregate presence is shown.
+            </p>
           </SectionCard>
 
           <SectionCard title="Identity details">
@@ -606,12 +675,15 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
             ) : (
               <ul className="space-y-2">
                 {linkedAccounts.map((acc: any, index: number) => (
-                  <li key={index} className="rounded-lg border p-3" style={{ background: 'var(--watchlist-bg)', borderColor: 'var(--watchlist-bd)' }}>
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-caption font-semibold uppercase" style={{ color: 'var(--watchlist)' }}>{labelize(acc.entityType)}</span>
-                      <span className="text-caption" style={{ color: 'var(--text-muted)' }}>{acc.confidence}%</span>
+                  <li key={index} className="grid grid-cols-[minmax(0,1fr)_60px_36px] items-center gap-3">
+                    <div className="min-w-0">
+                      <p className="t-label" style={{ color: 'var(--ink-tertiary)' }}>{labelize(acc.entityType)}</p>
+                      <p className="t-caption truncate font-mono" style={{ color: 'var(--ink-secondary)' }}>{acc.entityValue}</p>
                     </div>
-                    <p className="mt-1 font-mono break-all text-caption" style={{ color: 'var(--text)' }}>{acc.entityValue}</p>
+                    <div className="h-0.5 overflow-hidden rounded-full" style={{ background: 'var(--surface-muted)' }}>
+                      <div className="h-full" style={{ width: `${acc.confidence}%`, background: 'var(--privacy-ink)' }} />
+                    </div>
+                    <span className="t-mono text-right" style={{ color: 'var(--ink-secondary)' }}>{acc.confidence}%</span>
                   </li>
                 ))}
               </ul>

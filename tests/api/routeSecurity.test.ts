@@ -121,12 +121,12 @@ describe('/api/customers/search — auth requirement', () => {
     expect(content).toContain('401');
   });
 
-  it('route file uses contains(merchant_ids) to scope results', () => {
+  it('route file uses createScopedClient to scope results', () => {
     const content = fs.readFileSync(
       path.join(process.cwd(), 'app/api/customers/search/route.ts'),
       'utf-8'
     );
-    expect(content).toContain("contains('merchant_ids'");
+    expect(content).toContain('createScopedClient');
     expect(content).toContain('ctx.merchantId');
   });
 
@@ -1378,12 +1378,12 @@ describe('/api/customers/search — partial name matching', () => {
     expect(content).not.toMatch(/ilike\s*\([^)]*\$\{q\}/);
   });
 
-  it('merchant scoping via contains("merchant_ids") is preserved', () => {
+  it('merchant scoping via createScopedClient is preserved', () => {
     const content = fs.readFileSync(
       path.join(process.cwd(), 'app/api/customers/search/route.ts'),
       'utf-8'
     );
-    expect(content).toContain("contains('merchant_ids'");
+    expect(content).toContain('createScopedClient');
     expect(content).toContain('ctx.merchantId');
   });
 });

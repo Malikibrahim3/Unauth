@@ -1,6 +1,6 @@
 'use client';
 
-import { Badge } from '@/components/ui/Badge';
+import type { ReactNode } from 'react';
 
 interface RiskDistributionStripProps {
   definite: number;
@@ -10,47 +10,54 @@ interface RiskDistributionStripProps {
 }
 
 const ROWS = [
-  { key: 'definite', label: 'Definite', color: '#1A1814' },
-  { key: 'probable', label: 'Probable', color: '#7B2D26' },
-  { key: 'candidate', label: 'Candidate', color: '#4A4640' },
-  { key: 'weak', label: 'Weak', color: '#C8C0AB' },
+  { key: 'definite', label: 'Definite', color: 'var(--sev-definite)' },
+  { key: 'probable', label: 'Probable', color: 'var(--sev-probable)' },
+  { key: 'candidate', label: 'Possible', color: 'var(--sev-neutral)' },
+  { key: 'weak', label: 'Weak', color: 'color-mix(in srgb, var(--sev-neutral) 45%, var(--surface-muted))' },
 ] as const;
 
 export function RiskDistributionStrip({ definite, probable, candidate, weak }: RiskDistributionStripProps) {
   const values = { definite, probable, candidate, weak };
   const total = definite + probable + candidate + weak;
-  const max = Math.max(definite, probable, candidate, weak, 1);
 
   return (
-    <div className="space-y-3">
+    <div>
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)', lineHeight: 1 }}>
+          <div className="t-label" style={{ color: 'var(--ink-tertiary)' }}>
             <span aria-hidden="true" className="ua-section-dot" />
-            Likely Identity Links
+            ANCHOR METRIC
           </div>
-          <div className="mt-2 num" style={{ fontSize: 28, fontWeight: 600, color: '#1A1814', lineHeight: 1 }}>
+          <div className="t-score mt-2 num" style={{ color: 'var(--data-score)' }}>
             {total.toLocaleString('en-GB')}
           </div>
         </div>
-        <Badge tone={total > 0 ? 'danger' : 'neutral'} variant="subtle">Anchor metric</Badge>
       </div>
 
-      <div className="space-y-2">
+      <svg className="mt-4 h-3 w-full overflow-visible" viewBox="0 0 100 12" preserveAspectRatio="none" aria-label="Confidence distribution">
+        <rect width="100" height="12" rx="1" fill="var(--surface-muted)" />
+        {ROWS.reduce<{ x: number; nodes: ReactNode[] }>((acc, row) => {
+          const value = values[row.key];
+          const width = total > 0 ? (value / total) * 100 : 0;
+          if (width > 0) {
+            acc.nodes.push(<rect key={row.key} x={acc.x} width={width} height="12" fill={row.color} />);
+          }
+          acc.x += width;
+          return acc;
+        }, { x: 0, nodes: [] }).nodes}
+      </svg>
+
+      <div className="mt-3 grid grid-cols-2 gap-2">
         {ROWS.map((row) => {
           const value = values[row.key];
-          const width = `${(value / max) * 100}%`;
+          const pct = total > 0 ? Math.round((value / total) * 100) : 0;
           return (
-            <div key={row.key} className="grid grid-cols-[1fr_auto] items-center gap-3">
-              <div className="flex items-center gap-2">
-                <div style={{ width: 120, background: '#F2EDE3', borderRadius: 2, overflow: 'hidden', height: 10 }}>
-                  <div style={{ width, maxWidth: '100%', height: '100%', background: row.color }} />
-                </div>
-                <span style={{ fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
-                  {row.label}
-                </span>
-              </div>
-              <span className="num" style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: '#1A1814' }}>{value}</span>
+            <div key={row.key} className="flex items-center justify-between gap-2">
+              <span className="flex min-w-0 items-center gap-1.5">
+                <span className="h-2 w-2 rounded-sm" style={{ background: row.color }} />
+                <span className="t-label truncate" style={{ color: 'var(--ink-secondary)' }}>{row.label}</span>
+              </span>
+              <span className="t-mono shrink-0" style={{ color: 'var(--ink-secondary)' }}>{value} · {pct}%</span>
             </div>
           );
         })}
