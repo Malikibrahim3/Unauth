@@ -28,7 +28,7 @@ async function GETHandler(
   if (denied) return denied
 
   // Verify profile belongs to this merchant
-  const profileRow = await fetchMerchantScopedCustomerProfile(service, ctx.merchantId, profileId)
+  const profileRow = await fetchMerchantScopedCustomerProfile(service, ctx.merchantId, profileId, ctx.userId)
   if (!profileRow) {
     return NextResponse.json({ orders: [] })
   }

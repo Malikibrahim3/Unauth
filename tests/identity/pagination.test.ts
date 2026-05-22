@@ -7,7 +7,7 @@ describe('blind pagination and export guards', () => {
     expect(source).toContain('SUMMARY_BATCH');
     expect(source).toContain('.range(offset2, offset2 + SUMMARY_BATCH - 1)');
     expect(source).toContain('summaryRows.push');
-    expect(source).toContain('params.runId');
+    expect(source).toContain('resolvedParams.runId');
   });
 
   test('audit export must not be capped or use stale risk fields', () => {

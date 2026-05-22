@@ -120,8 +120,12 @@ describe('getMerchantOwnedJobIds', () => {
 describe('fetchMerchantScopedCustomerProfile', () => {
   it('queries customer_profiles with merchant and legacy user membership checks', async () => {
     const orCalls: string[] = [];
+    const selectCalls: string[] = [];
     const chain: any = {
-      select: jest.fn().mockReturnThis(),
+      select: jest.fn((columns: string) => {
+        selectCalls.push(columns);
+        return chain;
+      }),
       eq: jest.fn().mockReturnThis(),
       or: jest.fn((filter: string) => {
         orCalls.push(filter);
@@ -134,9 +138,27 @@ describe('fetchMerchantScopedCustomerProfile', () => {
     await fetchMerchantScopedCustomerProfile(mock as any, 'merchant-xyz', 'profile-123', 'user-legacy');
 
     expect(mock.from).toHaveBeenCalledWith('customer_profiles');
+    expect(selectCalls).toEqual(['*']);
     expect(orCalls).toHaveLength(1);
     expect(orCalls[0]).toContain('merchant_ids.cs.["merchant-xyz"]');
     expect(orCalls[0]).toContain('merchant_ids.cs.["user-legacy"]');
+  });
+
+  it('surfaces customer profile query errors instead of pretending the profile is missing', async () => {
+    const chain: any = {
+      select: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      or: jest.fn().mockReturnThis(),
+      maybeSingle: jest.fn().mockResolvedValue({
+        data: null,
+        error: { message: 'column customer_profiles.identity_signals does not exist' },
+      }),
+    };
+    const mock = { from: jest.fn().mockReturnValue(chain) };
+
+    await expect(
+      fetchMerchantScopedCustomerProfile(mock as any, 'merchant-xyz', 'profile-123', 'user-legacy')
+    ).rejects.toThrow('fetchMerchantScopedCustomerProfile failed');
   });
 
   it('returns null when profile does not belong to merchant', async () => {

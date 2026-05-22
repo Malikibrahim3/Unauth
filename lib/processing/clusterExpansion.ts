@@ -281,6 +281,53 @@ function hasNameVariantMatch(
   });
 }
 
+function countSharedSignalsFromClusterKeys(
+  candidate: LinkerOrderInput,
+  clusterKeys: {
+    emails: Set<string>;
+    phones: Set<string>;
+    devices: Set<string>;
+    accounts: Set<string>;
+    cards: Set<string>;
+    ips: Set<string>;
+    postcodes: Set<string>;
+  },
+): { strong: LinkerSignal[]; medium: LinkerSignal[] } {
+  const strong: LinkerSignal[] = [];
+  const medium: LinkerSignal[] = [];
+
+  const candCard = cardKey(candidate);
+  if (candCard && clusterKeys.cards.has(candCard)) strong.push('card');
+
+  if (hasValue(candidate.phone)) {
+    const candPhone = normalisePhone(candidate.phone);
+    if (candPhone && clusterKeys.phones.has(candPhone)) strong.push('phone');
+  }
+
+  if (hasValue(candidate.device_fingerprint)) {
+    const dev = candidate.device_fingerprint!.trim();
+    if (dev && clusterKeys.devices.has(dev)) strong.push('device');
+  }
+
+  if (hasValue(candidate.account_id)) {
+    const acc = candidate.account_id!.trim();
+    if (acc && clusterKeys.accounts.has(acc)) strong.push('account');
+  }
+
+  if (hasValue(candidate.email)) {
+    const candEmail = normaliseEmail(candidate.email);
+    if (candEmail && clusterKeys.emails.has(candEmail)) strong.push('email');
+  }
+
+  const candIp = ipKey(candidate);
+  if (candIp && clusterKeys.ips.has(candIp)) medium.push('ip');
+
+  const candPostcode = postcodeKey(candidate);
+  if (candPostcode && clusterKeys.postcodes.has(candPostcode)) medium.push('postcode');
+
+  return { strong, medium };
+}
+
 // ---------------------------------------------------------------------------
 // Phase 1 — Candidate-group promotion
 // ---------------------------------------------------------------------------
@@ -335,19 +382,36 @@ function promoteCandidateGroups(
   // Group pairs by root
   const components = new Map<string, Set<string>>();
   const componentSignals = new Map<string, Set<LinkerSignal>>();
-  const componentPairScores = new Map<string, number[]>();
+  const componentMaxScore = new Map<string, number>();
+  const componentEdgesByOrder = new Map<string, string[]>();
 
+  let groupedPairs = 0;
   for (const p of strongCandidatePairs) {
+    groupedPairs++;
+    if (groupedPairs % 20000 === 0) {
+      console.log(
+        `[CHECKPOINT] expansion_run_processing | pairs=${groupedPairs} | batchOrStep=phase1_candidate_groups`
+      );
+    }
     const root = find(p.order_id_a);
     if (!components.has(root)) {
       components.set(root, new Set());
       componentSignals.set(root, new Set());
-      componentPairScores.set(root, []);
+      componentMaxScore.set(root, 0);
     }
     components.get(root)!.add(p.order_id_a);
     components.get(root)!.add(p.order_id_b);
     for (const s of p.signals) componentSignals.get(root)!.add(s);
-    componentPairScores.get(root)!.push(p.score);
+    componentMaxScore.set(root, Math.max(componentMaxScore.get(root) ?? 0, p.score));
+
+    const edgeA = `matched ${p.order_id_b} on ${p.signals.join('+')} (score=${p.score})`;
+    const edgeB = `matched ${p.order_id_a} on ${p.signals.join('+')} (score=${p.score})`;
+    const edgesA = componentEdgesByOrder.get(p.order_id_a);
+    if (edgesA) edgesA.push(edgeA);
+    else componentEdgesByOrder.set(p.order_id_a, [edgeA]);
+    const edgesB = componentEdgesByOrder.get(p.order_id_b);
+    if (edgesB) edgesB.push(edgeB);
+    else componentEdgesByOrder.set(p.order_id_b, [edgeB]);
   }
 
   const promoted: LinkedCluster[] = [];
@@ -370,7 +434,7 @@ function promoteCandidateGroups(
     if (!hasStrong) continue;
 
     const clusterId = deterministicClusterId(orderIds);
-    const maxScore = Math.max(...(componentPairScores.get(root) ?? [0]));
+    const maxScore = componentMaxScore.get(root) ?? 0;
     const signalsSorted = Array.from(sigs).sort();
 
     promoted.push({
@@ -383,20 +447,14 @@ function promoteCandidateGroups(
 
     // Generate debug reports for each member
     for (const orderId of orderIds) {
-      const peers = orderIds.filter((id) => id !== orderId);
-      const edges = strongCandidatePairs
-        .filter((p) => (p.order_id_a === orderId || p.order_id_b === orderId))
-        .map((p) => {
-          const peer = p.order_id_a === orderId ? p.order_id_b : p.order_id_a;
-          return `matched ${peer} on ${p.signals.join('+')} (score=${p.score})`;
-        });
+      const edges = componentEdgesByOrder.get(orderId) ?? [];
 
       reports.push({
         missed_order_id: orderId,
         nearest_cluster_id: clusterId,
         candidate_edges: edges,
         reason_not_flagged_before: [
-          `All pairs scored ${Math.max(...(componentPairScores.get(root) ?? [0]))} ` +
+          `All pairs scored ${maxScore} ` +
           `(below LINK_THRESHOLD=30); shared signals were candidate-only`,
         ],
         recommended_fix:
@@ -429,6 +487,7 @@ function expandFromSeedClusters(
 ): { assignments: Map<string, string>; reports: MissedOrderDebugReport[] } {
   const assignments = new Map<string, string>();
   const reports: MissedOrderDebugReport[] = [];
+  const started = Date.now();
 
   // Build a set of all order_ids already in a linked cluster
   const inCluster = new Set<string>(linkedClusters.flatMap((c) => c.order_ids));
@@ -442,8 +501,38 @@ function expandFromSeedClusters(
 
   // Build lookup: order_id → LinkerOrderInput
   const inputById = new Map(allInputs.map((r) => [r.order_id, r]));
+  const allInputById = new Map(allInputs.map((r) => [r.order_id, r]));
+
+  // Global inverted indexes so each cluster only checks likely candidates.
+  const emailToOrders = new Map<string, string[]>();
+  const phoneToOrders = new Map<string, string[]>();
+  const deviceToOrders = new Map<string, string[]>();
+  const accountToOrders = new Map<string, string[]>();
+  const cardToOrders = new Map<string, string[]>();
+  const ipToOrders = new Map<string, string[]>();
+  const postcodeToOrders = new Map<string, string[]>();
+  const push = (map: Map<string, string[]>, key: string | null | undefined, orderId: string) => {
+    if (!key) return;
+    const arr = map.get(key);
+    if (arr) arr.push(orderId);
+    else map.set(key, [orderId]);
+  };
+  for (const row of allInputs) {
+    const orderId = row.order_id;
+    push(emailToOrders, hasValue(row.email) ? normaliseEmail(row.email) : null, orderId);
+    push(phoneToOrders, hasValue(row.phone) ? normalisePhone(row.phone) : null, orderId);
+    push(deviceToOrders, hasValue(row.device_fingerprint) ? row.device_fingerprint!.trim() : null, orderId);
+    push(accountToOrders, hasValue(row.account_id) ? row.account_id!.trim() : null, orderId);
+    push(cardToOrders, cardKey(row), orderId);
+    push(ipToOrders, ipKey(row), orderId);
+    push(postcodeToOrders, postcodeKey(row), orderId);
+  }
+
+  let processedCandidates = 0;
+  let clusterStep = 0;
 
   for (const cluster of linkedClusters) {
+    clusterStep++;
     const clusterInputs = cluster.order_ids
       .map((id) => inputById.get(id))
       .filter((r): r is LinkerOrderInput => r !== undefined);
@@ -451,17 +540,69 @@ function expandFromSeedClusters(
     const clusterNames = cluster.order_ids
       .map((id) => candidateNames.get(id) ?? '')
       .filter(Boolean);
+    const clusterEmails = new Set<string>();
+    const clusterPhones = new Set<string>();
+    const clusterDevices = new Set<string>();
+    const clusterAccounts = new Set<string>();
+    const clusterCards = new Set<string>();
+    const clusterIps = new Set<string>();
+    const clusterPostcodes = new Set<string>();
+    for (const row of clusterInputs) {
+      const e = hasValue(row.email) ? normaliseEmail(row.email) : null;
+      const p = hasValue(row.phone) ? normalisePhone(row.phone) : null;
+      const d = hasValue(row.device_fingerprint) ? row.device_fingerprint!.trim() : null;
+      const a = hasValue(row.account_id) ? row.account_id!.trim() : null;
+      const c = cardKey(row);
+      const ip = ipKey(row);
+      const pc = postcodeKey(row);
+      if (e) clusterEmails.add(e);
+      if (p) clusterPhones.add(p);
+      if (d) clusterDevices.add(d);
+      if (a) clusterAccounts.add(a);
+      if (c) clusterCards.add(c);
+      if (ip) clusterIps.add(ip);
+      if (pc) clusterPostcodes.add(pc);
+    }
+    const clusterKeys = {
+      emails: clusterEmails,
+      phones: clusterPhones,
+      devices: clusterDevices,
+      accounts: clusterAccounts,
+      cards: clusterCards,
+      ips: clusterIps,
+      postcodes: clusterPostcodes,
+    };
 
-    // External rows = those NOT in any cluster
-    for (const candidateRow of allInputs) {
-      const candId = candidateRow.order_id;
+    // Candidate pool: only rows sharing at least one indexed identity key.
+    const candidateIds = new Set<string>();
+    const collect = (map: Map<string, string[]>, keys: Set<string>) => {
+      for (const key of keys) {
+        const ids = map.get(key);
+        if (!ids) continue;
+        for (const id of ids) candidateIds.add(id);
+      }
+    };
+    collect(emailToOrders, clusterEmails);
+    collect(phoneToOrders, clusterPhones);
+    collect(deviceToOrders, clusterDevices);
+    collect(accountToOrders, clusterAccounts);
+    collect(cardToOrders, clusterCards);
+    collect(ipToOrders, clusterIps);
+    collect(postcodeToOrders, clusterPostcodes);
+
+    for (const candId of candidateIds) {
       if (inCluster.has(candId)) continue;
-      if (assignments.has(candId)) continue; // already assigned by a prior cluster
+      if (assignments.has(candId)) continue;
+      const candidateRow = allInputById.get(candId);
+      if (!candidateRow) continue;
+      processedCandidates++;
+      if (processedCandidates % 50000 === 0) {
+        console.log(
+          `[CHECKPOINT] expansion_run_processing | pairs=${processedCandidates} | batchOrStep=cluster_${clusterStep}`
+        );
+      }
 
-      const { strong, medium } = countSharedSignals(candidateRow, clusterInputs);
-      const sharedAddress = hasAddressNearMatch(candidateRow, clusterInputs);
-      const candName = candidateNames.get(candId);
-      const sharedNameVariant = hasNameVariantMatch(candName, clusterNames);
+      const { strong, medium } = countSharedSignalsFromClusterKeys(candidateRow, clusterKeys);
 
       // Identity-only expansion gate (product contract: no behaviour flags).
       //   ≥2 strong signals                     → merge (probable/confirmed)
@@ -469,11 +610,15 @@ function expandFromSeedClusters(
       //   1 strong alone                         → candidate only; skip merge
       //   medium-only or corroborator-only       → no merge
       //   name+postcode, IP+postcode, BIN+postcode → no merge
-      const addressVariantPromotion =
-        strong.length === 0 &&
-        medium.includes('postcode') &&
-        sharedAddress &&
-        sharedNameVariant;
+      let addressVariantPromotion = false;
+      if (strong.length === 0 && medium.includes('postcode')) {
+        const sharedAddress = hasAddressNearMatch(candidateRow, clusterInputs);
+        if (sharedAddress) {
+          const candNameForVariant = candidateNames.get(candId);
+          addressVariantPromotion = hasNameVariantMatch(candNameForVariant, clusterNames);
+        }
+      }
+
       const safeToAdd =
         strong.length >= 2 ||
         (strong.length >= 1 && medium.length >= 1) ||
@@ -500,6 +645,7 @@ function expandFromSeedClusters(
 
       // Guard 3: likely shared household (postcode-only connection + same surname)
       const allSharedSignals = [...strong, ...medium];
+      const candName = candidateNames.get(candId);
       if (isLikelySharedHousehold(candName, clusterNames, allSharedSignals)) {
         continue;
       }
@@ -528,6 +674,10 @@ function expandFromSeedClusters(
       });
     }
   }
+
+  console.log(
+    `[CHECKPOINT] expansion_run | end | durationMs=${Date.now() - started} | expandedClusters=${assignments.size}`
+  );
 
   return { assignments, reports };
 }

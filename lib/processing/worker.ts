@@ -41,8 +41,9 @@ import {
 import { scoreClusterIdentity, type IdentityMatchResult } from '../identity/matchScorer';
 import { computeContextInsights } from '../identity/contextInsights';
 import { classifyIdentityReview } from '../identity/reviewClassifier';
+import { persistGlobalIdentityGraph } from '../identity/globalIdentityStore';
 
-const BATCH_SIZE = 500;  // 500 rows per upsert — halves round-trips vs the old 200
+const BATCH_SIZE = 1000;  // 1k rows per upsert keeps payloads reasonable while halving round-trips
 const DEFAULT_CONCURRENCY = 5;
 
 function splitIntoBatches<T>(items: T[], size: number): T[][] {
@@ -51,6 +52,21 @@ function splitIntoBatches<T>(items: T[], size: number): T[][] {
     batches.push(items.slice(i, i + size));
   }
   return batches;
+}
+
+async function mapWithConcurrency<T>(
+  items: T[],
+  concurrency: number,
+  worker: (item: T, index: number) => Promise<void>
+): Promise<void> {
+  let next = 0;
+  const workers = Array.from({ length: Math.min(concurrency, items.length) }, async () => {
+    while (next < items.length) {
+      const index = next++;
+      await worker(items[index], index);
+    }
+  });
+  await Promise.all(workers);
 }
 
 function isTransientTransportError(err: unknown): boolean {
@@ -85,6 +101,13 @@ async function withTransportRetry<T>(
 }
 
 type MatchStatus = 'none' | 'candidate' | 'probable' | 'definite';
+
+type CheckpointEnd = (stage: string, started: number, meta?: Record<string, unknown>) => void;
+type CheckpointLog = (
+  stage: string,
+  event: 'start' | 'end' | 'retry' | 'error',
+  meta?: Record<string, unknown>
+) => void;
 
 function pureGradeToLegacyGrade(
   grade: IdentityMatchResult['identity_match_grade'] | 'none' | null | undefined
@@ -460,6 +483,26 @@ export async function processCsvJob(
   chunkInfo?: ChunkInfo
 ): Promise<ScoredOrder[]> {
   const jobLog = (msg: string) => console.log(`[job ${jobId}] ${new Date().toISOString()} ${msg}`);
+  const checkpoint = (
+    stage: string,
+    event: 'start' | 'end' | 'retry' | 'error',
+    meta: Record<string, unknown> = {}
+  ) => {
+    const ts = new Date();
+    const time = ts.toISOString().split('T')[1]?.replace('Z', '') ?? ts.toISOString();
+    const kv = Object.entries(meta)
+      .map(([k, v]) => `${k}=${String(v)}`)
+      .join(' | ');
+    jobLog(`[CHECKPOINT] ${stage} | ${event}=${time}${kv ? ` | ${kv}` : ''}`);
+  };
+  const checkpointStart = (stage: string, meta: Record<string, unknown> = {}) => {
+    const started = Date.now();
+    checkpoint(stage, 'start', meta);
+    return started;
+  };
+  const checkpointEnd = (stage: string, started: number, meta: Record<string, unknown> = {}) => {
+    checkpoint(stage, 'end', { durationMs: Date.now() - started, ...meta });
+  };
   const overallStart = Date.now();
   const pipelineWarnings: PipelineWarningCounters = {
     fastContextReadRetries: 0,
@@ -471,6 +514,7 @@ export async function processCsvJob(
   // -----------------------------------------------------------------------
   // 1. Validate & clean all rows up front (fast, synchronous)
   // -----------------------------------------------------------------------
+  const validateStart = checkpointStart('validate_clean_rows', { inputRows: rows.length });
   const validPairs: { raw: ParsedCsvRow; parsed: CsvRow }[] = [];
   const invalidRows: ParsedCsvRow[] = [];
 
@@ -483,11 +527,17 @@ export async function processCsvJob(
       invalidRows.push(raw as ParsedCsvRow);
     }
   }
+  checkpointEnd(validateStart ? 'validate_clean_rows' : 'validate_clean_rows', validateStart, {
+    validRows: validPairs.length,
+    invalidRows: invalidRows.length,
+  });
 
   // -----------------------------------------------------------------------
   // 2. Normalise all valid rows (fast, synchronous)
   // -----------------------------------------------------------------------
+  const normaliseStart = checkpointStart('normalise_rows', { validRows: validPairs.length });
   const normOrders: NormalisedOrder[] = validPairs.map((p) => normaliseRow(p.parsed));
+  checkpointEnd('normalise_rows', normaliseStart, { normOrders: normOrders.length });
 
   // -----------------------------------------------------------------------
   // 2b. Assess data quality and persist to the job record (non-blocking).
@@ -495,16 +545,19 @@ export async function processCsvJob(
   //     re-assessing per chunk is wasted work.
   // -----------------------------------------------------------------------
   if (!chunkInfo || chunkInfo.isFirst) {
+    const dqStart = checkpointStart('data_quality_update', { rows: normOrders.length });
     const dataQuality = assessDataQuality(normOrders);
     const { error: dataQualityError } = await serviceClient
       .from('processing_jobs')
       .update({ data_quality: dataQuality } as any)
       .eq('id', jobId);
     if (dataQualityError) {
+      checkpoint('data_quality_update', 'error', { message: dataQualityError.message });
       jobLog(`Failed to store data quality report: ${dataQualityError.message}`);
     } else {
       jobLog('Data quality report stored');
     }
+    checkpointEnd('data_quality_update', dqStart, { ok: !dataQualityError });
   }
 
   // -----------------------------------------------------------------------
@@ -514,15 +567,25 @@ export async function processCsvJob(
   //    round-trips are in-flight we run the synchronous linker — saving the
   //    full buildFastContext wall-clock time (~15–60s per chunk).
   // -----------------------------------------------------------------------
+  const contextStart = checkpointStart('build_fast_context', { rows: normOrders.length });
   const contextPromise = buildFastContext(normOrders, serviceClient, merchantId);
 
   // Run the identity linker synchronously while Supabase I/O is in-flight.
   // linkerInputs + linkIdentities are pure CPU — no awaits, no I/O.
+  const linkerStart = checkpointStart('identity_linking_pass', { rows: normOrders.length });
   const linkerInputs = buildLinkerInput(normOrders);
   const linkerResult = linkIdentities(linkerInputs);
+  checkpointEnd('identity_linking_pass', linkerStart, {
+    clusters: linkerResult.clusters.length,
+    candidatePairs: linkerResult.candidatePairs.length,
+  });
 
   // Now collect the context (may already be resolved if linker was slower).
   const context = await contextPromise;
+  checkpointEnd('build_fast_context', contextStart, {
+    readRetries: context.readHealth?.fastContextReadRetries ?? 0,
+    readFailures: context.readHealth?.fastContextReadFailures ?? 0,
+  });
   pipelineWarnings.fastContextReadRetries += context.readHealth?.fastContextReadRetries ?? 0;
   pipelineWarnings.fastContextReadFailures += context.readHealth?.fastContextReadFailures ?? 0;
   jobLog(`buildFastContext completed in ${Date.now() - overallStart}ms — orders=${normOrders.length}`);
@@ -535,14 +598,21 @@ export async function processCsvJob(
   // -----------------------------------------------------------------------
   // 4. Score all rows synchronously (O(n) thanks to precomputed context)
   // -----------------------------------------------------------------------
+  const scoringStart = checkpointStart('scoring_pass', { rows: normOrders.length });
   const scored = scoreBatch(normOrders, context, identityClusterMap);
+  checkpointEnd('scoring_pass', scoringStart, { scoredRows: scored.length });
   const identityResultsByOrder = buildClusterIdentityResults(linkerResult.clusters, clusterScores, linkerInputs, ordersById);
+  checkpoint('identity_cluster_finalisation', 'end', {
+    identityResultsByOrder: identityResultsByOrder.size,
+    linkerClusters: linkerResult.clusters.length,
+  });
 
   // -----------------------------------------------------------------------
   // 3c. Second-stage graph expansion — cautious, false-positive-safe.
   //     Runs AFTER the core linker so it can only ADD rows to existing or
   //     promoted clusters; it never lowers the main linker thresholds.
   // -----------------------------------------------------------------------
+  const expansionPrepStart = checkpointStart('expansion_prep_maps', { rows: validPairs.length });
   const behaviourMap = new Map<string, RowBehaviourFlags>();
   for (const pair of validPairs) {
     const r = pair.parsed;
@@ -564,7 +634,15 @@ export async function processCsvJob(
   const nameMap = new Map<string, string>(
     validPairs.map((p) => [p.parsed.order_id, p.parsed.customer_name ?? ''])
   );
+  checkpointEnd('expansion_prep_maps', expansionPrepStart, {
+    behaviourMap: behaviourMap.size,
+    nameMap: nameMap.size,
+  });
 
+  const expansionRunStart = checkpointStart('expansion_run', {
+    baseClusters: linkerResult.clusters.length,
+    candidatePairs: linkerResult.candidatePairs.length,
+  });
   const expansion = expandSuspiciousClusters(
     linkerResult.clusters,
     linkerResult.candidatePairs,
@@ -572,14 +650,23 @@ export async function processCsvJob(
     behaviourMap,
     nameMap,
   );
+  checkpointEnd('expansion_run', expansionRunStart, {
+    promotedClusters: expansion.promotedClusters.length,
+    additionalAssignments: expansion.additionalClusterAssignments.size,
+    debugReports: expansion.debugReports.length,
+  });
 
   // Log any debug reports so they're visible in job logs
   if (expansion.debugReports.length > 0) {
     jobLog(`[expansion] ${expansion.promotedClusters.length} promoted clusters, ` +
       `${expansion.additionalClusterAssignments.size} expanded rows`);
-    for (const report of expansion.debugReports) {
+    const reportsToLog = expansion.debugReports.slice(0, 25);
+    for (const report of reportsToLog) {
       jobLog(`[expansion] ${report.missed_order_id} → cluster ${report.nearest_cluster_id}: ` +
         `${report.recommended_fix ?? 'no fix'}`);
+    }
+    if (expansion.debugReports.length > reportsToLog.length) {
+      jobLog(`[expansion] ${expansion.debugReports.length - reportsToLog.length} additional debug reports omitted from logs`);
     }
   }
 
@@ -587,14 +674,28 @@ export async function processCsvJob(
   // Without these, every .find()/.filter() inside the loop is O(n) against
   // linkerInputs (50k entries) and linkerResult.clusters, making the merge
   // O(n × expanded-rows) in the worst case.
+  const mergePrepStart = checkpointStart('identity_merge_prep', {
+    linkerClusters: linkerResult.clusters.length,
+    linkerInputs: linkerInputs.length,
+  });
   const clusterById = new Map(linkerResult.clusters.map((c) => [c.cluster_id, c]));
   const clusterMemberSet = new Map(
     linkerResult.clusters.map((c) => [c.cluster_id, new Set(c.order_ids)])
   );
   const linkerInputById = new Map(linkerInputs.map((r) => [r.order_id, r]));
+  checkpointEnd('identity_merge_prep', mergePrepStart, {
+    clusterById: clusterById.size,
+    clusterMemberSet: clusterMemberSet.size,
+    linkerInputById: linkerInputById.size,
+  });
 
   // Merge expansion results: only update rows that aren't already in a cluster
   if (expansion.additionalClusterAssignments.size > 0 || expansion.promotedClusters.length > 0) {
+    const mergeStart = checkpointStart('identity_merge_apply', {
+      existingIdentityResults: identityResultsByOrder.size,
+      promotedClusters: expansion.promotedClusters.length,
+      additionalAssignments: expansion.additionalClusterAssignments.size,
+    });
     // Build cluster info for promoted clusters (no scorer grade available — use
     // signal-weight fallback, same logic as buildClusterIdentityResults phase 2).
     const seenExpansionClusterIds = new Set<string>();
@@ -614,16 +715,28 @@ export async function processCsvJob(
       seenExpansionClusterIds.add(c.cluster_id);
       return true;
     });
+    checkpoint('identity_merge_apply', 'start', {
+      allExpansionClusters: allExpansionClusters.length,
+    });
 
     // Compute per-row identity results for newly included rows
+    const expansionResultStart = checkpointStart('identity_merge_build_results', {
+      allExpansionClusters: allExpansionClusters.length,
+    });
     const expansionResults = buildClusterIdentityResults(
       allExpansionClusters,
       clusterScores, // existing scores — promoted clusters get fallback grades
       linkerInputs,
       ordersById,
     );
+    checkpointEnd('identity_merge_build_results', expansionResultStart, {
+      expansionResults: expansionResults.size,
+    });
 
     // Apply expansion results only to rows that aren't already identity-scored
+    const applyAdditionalStart = checkpointStart('identity_merge_apply_additional_assignments', {
+      additionalAssignments: expansion.additionalClusterAssignments.size,
+    });
     for (const [orderId, clusterId] of Array.from(expansion.additionalClusterAssignments.entries())) {
       if (!identityResultsByOrder.has(orderId)) {
         // O(1) map lookup instead of O(n) Array.from(...).find()
@@ -654,13 +767,25 @@ export async function processCsvJob(
         }
       }
     }
+    checkpointEnd('identity_merge_apply_additional_assignments', applyAdditionalStart, {
+      identityResultsByOrder: identityResultsByOrder.size,
+    });
 
     // Apply promoted cluster results
+    const applyPromotedStart = checkpointStart('identity_merge_apply_promoted', {
+      expansionResults: expansionResults.size,
+    });
     for (const [orderId, result] of Array.from(expansionResults.entries())) {
       if (!identityResultsByOrder.has(orderId)) {
         identityResultsByOrder.set(orderId, sanitizeIdentityResult(result));
       }
     }
+    checkpointEnd('identity_merge_apply_promoted', applyPromotedStart, {
+      identityResultsByOrder: identityResultsByOrder.size,
+    });
+    checkpointEnd('identity_merge_apply', mergeStart, {
+      finalIdentityResults: identityResultsByOrder.size,
+    });
   }
 
   jobLog(`scoreBatch completed in ${Date.now() - overallStart}ms`);
@@ -724,6 +849,11 @@ export async function processCsvJob(
   };
 
   const upsertAllBatches = async () => {
+    const stageStart = checkpointStart('transaction_upserts', {
+      rows: allInserts.length,
+      batches: dbBatches.length,
+      batchSize: BATCH_SIZE,
+    });
     let active    = 0;
     let completed = 0;
     let rowsSinceLastFlush = 0;
@@ -739,18 +869,26 @@ export async function processCsvJob(
         const batch = batchQueue.shift()!;
         active++;
         upsertBatchNoProgress(batch, jobId, serviceClient)
-          .then(async () => {
-            processedCount += batch.length;
-            pendingProgressRows += batch.length;
+          .then(async (failedRows) => {
+            const failedInBatch = Math.max(0, Math.min(batch.length, failedRows));
+            const succeededRows = batch.length - failedInBatch;
+            processedCount += succeededRows;
+            failedCount += failedInBatch;
+            pendingProgressRows += succeededRows;
+            pendingProgressFailed += failedInBatch;
             rowsSinceLastFlush += batch.length;
             completed++;
             jobLog(`transactions upsert progress: batches ${completed}/${totalBatches}, processed ${processedCount}/${allInserts.length}`);
+            if (failedInBatch > 0 && errors.length <= 3) {
+              jobLog(`audit_transactions partial batch failure: ${failedInBatch}/${batch.length} rows failed after retries`);
+            }
             if (rowsSinceLastFlush >= PROGRESS_INTERVAL) {
               rowsSinceLastFlush = 0;
               await flushProgress();
             }
           })
           .catch(async (err: Error) => {
+            checkpoint('transaction_upserts', 'error', { message: err.message, batchRows: batch.length });
             failedCount += batch.length;
             pendingProgressFailed += batch.length;
             rowsSinceLastFlush += batch.length;
@@ -771,138 +909,45 @@ export async function processCsvJob(
       }
       startNext();
     });
+    checkpointEnd('transaction_upserts', stageStart, { processed: processedCount, failed: failedCount });
   };
 
-  // Run core upserts first, then in parallel: entity resolution + intelligence writes.
-  // Entity resolution needs audit_transactions to exist (for txIdMap) so it starts
-  // after upsertAllBatches, but runs concurrently with the fraud/co-occ/cluster writers.
-  jobLog('Starting parallel pipeline: transactions + intelligence writes');
+  // Critical path: write merchant-facing transaction rows first. Background
+  // intelligence writes are launched only after progress has been flushed.
+  jobLog('Starting critical transaction pipeline');
   await upsertAllBatches();
   pipelineWarnings.transactionUpsertFailedRows += failedCount;
 
-  const entityResolutionTask = merchantId
-    ? (async () => {
-        try {
-          // Scope the lookup to THIS chunk's order_ids — otherwise chunk N scans
-          // rows from chunks 0..N-1, ballooning the payload as upload progresses.
-          const chunkOrderIds = scored.map((s) => s.order.orderId);
-          const txIdMap = new Map<string, string>();
-          // Parallel TX lookup — all chunks fire concurrently instead of sequentially.
-          // Simple indexed reads (job_id + order_id) with no write-conflict risk.
-          const TX_LOOKUP_CHUNK = 500;
-          const txChunks: string[][] = [];
-          for (let i = 0; i < chunkOrderIds.length; i += TX_LOOKUP_CHUNK) {
-            txChunks.push(chunkOrderIds.slice(i, i + TX_LOOKUP_CHUNK));
-          }
-          const txResults = await Promise.all(
-            txChunks.map((slice) =>
-              serviceClient
-                .from('audit_transactions')
-                .select('id, order_id')
-                .eq('job_id', jobId)
-                .in('order_id', slice)
-            )
-          );
-          for (const { data: txRows } of txResults) {
-            if (txRows) {
-              for (const row of txRows) txIdMap.set(row.order_id, row.id);
-            }
-          }
+  // Flush rows immediately after critical writes. From this point the chunk is
+  // complete from the merchant-facing progress perspective.
+  jobLog(`About to flush final progress: processed=${processedCount} failed=${failedCount}`);
+  const progressStart = checkpointStart('increment_job_progress_flush', {
+    pendingRows: pendingProgressRows,
+    pendingFailed: pendingProgressFailed,
+  });
+  await flushProgress();
+  checkpointEnd('increment_job_progress_flush', progressStart);
+  jobLog('Job progress flushed');
 
-          const profileResult = await processProfilesForBatch(
-        scored,
-        merchantId,
-        jobId,
-        txIdMap,
-        serviceClient,
-        new Map(
-          Array.from(identityResultsByOrder.entries()).map(([orderId, identity]) => [
-            orderId,
-            {
-              grade: identity.grade,
-              signals: identity.signalsMatched,
-              clusterId: identity.clusterId,
-              matchStatus: identity.matchStatus,
-            },
-          ])
-        )
-      );
-
-          console.log(
-            `[worker] Entity resolution: ${profileResult.profilesCreated} created, ${profileResult.profilesUpdated} updated, ${profileResult.errors.length} errors`
-          );
-          if (profileResult.errors.length > 0) {
-            console.error('[worker] entity resolution sample errors:', profileResult.errors.slice(0, 3));
-          }
-          pipelineWarnings.entityResolutionErrors += profileResult.errors.length;
-          // Auto-refresh last_seen_risk on watchlist entries for customers in batch
-          try {
-            const riskOrder = { low: 0, medium: 1, high: 2, critical: 3 } as const;
-            type RiskTier = 'low' | 'medium' | 'high' | 'critical';
-            const emailRiskMap = new Map<string, RiskTier>();
-            for (const s of scored) {
-              const hash = (s as any).emailHash as string | undefined;
-              if (!hash) continue;
-              const prev = emailRiskMap.get(hash);
-              if (!prev || riskOrder[s.riskTier] > riskOrder[prev]) {
-                emailRiskMap.set(hash, s.riskTier);
-              }
-            }
-            if (emailRiskMap.size > 0) {
-              const { data: watchlistRows } = await serviceClient
-                .from('watchlist_entries' as any)
-                .select('id, email_hash')
-                .eq('merchant_id', merchantId)
-                .in('email_hash', Array.from(emailRiskMap.keys()));
-              if (watchlistRows && watchlistRows.length > 0) {
-                const now = new Date().toISOString();
-                const watchlistUpdates = (watchlistRows as unknown as { id: string; email_hash: string }[]).map(
-                  (row) => ({
-                    id: row.id,
-                    last_seen_risk: emailRiskMap.get(row.email_hash),
-                    last_seen_at: now,
-                  })
-                );
-                await serviceClient
-                  .from('watchlist_entries' as any)
-                  .upsert(watchlistUpdates, { onConflict: 'id', ignoreDuplicates: false });
-                console.log(`[worker] Refreshed last_seen_risk for ${watchlistRows.length} watchlist entries (bulk)`);
-              }
-            }
-          } catch (watchlistErr) {
-            console.error('[worker] Watchlist refresh failed (non-fatal):', watchlistErr);
-          }
-        } catch (err) {
-          pipelineWarnings.entityResolutionErrors++;
-          console.error('[worker] processProfilesForBatch failed:', err);
-        }
-      })()
-    : Promise.resolve();
-
-  const parallelResults = await Promise.allSettled([
-    entityResolutionTask,
-    writeFraudEntities(scored, serviceClient, context).catch((err) =>
-      console.error('[worker] writeFraudEntities failed:', err)
-    ),
-    writeCoOccurrences(scored, serviceClient, context).then((result) => {
-      if (result.upstreamDown) pipelineWarnings.coOccurrenceUpstreamDown++;
-    }).catch((err) =>
-      console.error('[worker] writeCoOccurrences failed:', err)
-    ),
-    writeIdentityClusters(identityClusterMap, serviceClient).catch((err) =>
-      console.error('[worker] writeIdentityClusters failed:', err)
-    ),
-  ]);
-  jobLog('Parallel pipeline complete');
-  for (const r of parallelResults) {
-    if (r.status === 'rejected') jobLog(`parallel task failed: ${String((r as PromiseRejectedResult).reason)}`);
-  }
   await mergePipelineWarnings(serviceClient, jobId, pipelineWarnings, jobLog);
 
-  // Flush any remaining rows that didn't hit the PROGRESS_INTERVAL threshold.
-  jobLog(`About to flush final progress: processed=${processedCount} failed=${failedCount}`);
-  await flushProgress();
-  jobLog('Job progress flushed');
+  const backgroundWrites = startBackgroundIntelligenceWrites({
+    scored,
+    serviceClient,
+    context,
+    merchantId,
+    jobId,
+    chunkIndex: chunkInfo?.index ?? 0,
+    identityResultsByOrder,
+    identityClusterMap,
+    checkpoint,
+    checkpointStart,
+    checkpointEnd,
+    jobLog,
+  });
+  if (process.env.SYNC_BACKGROUND_WRITES === '1') {
+    await backgroundWrites;
+  }
 
   jobLog(`processCsvJob finished: processed=${processedCount} failed=${failedCount} duration=${Date.now() - overallStart}ms`);
 
@@ -920,6 +965,224 @@ export async function processCsvJob(
   }
 
   return scored;
+}
+
+function startBackgroundIntelligenceWrites(args: {
+  scored: ScoredOrder[];
+  serviceClient: SupabaseClient<Database>;
+  context: import('../engine/fastContext').FastScoringContext;
+  merchantId?: string;
+  jobId: string;
+  chunkIndex: number;
+  identityResultsByOrder: Map<string, { grade: any; signalsMatched: string[]; clusterId: string | null; matchStatus: any }>;
+  identityClusterMap: Record<string, { clusterId: string; entityType: string; entityValue: string; confidence: number; matchReasons: string[]; firstSeen: string; lastSeen: string } | null>;
+  checkpoint: CheckpointLog;
+  checkpointStart: (stage: string, meta?: Record<string, unknown>) => number;
+  checkpointEnd: CheckpointEnd;
+  jobLog: (msg: string) => void;
+}): Promise<void> {
+  const {
+    scored,
+    serviceClient,
+    context,
+    merchantId,
+    jobId,
+    chunkIndex,
+    identityResultsByOrder,
+    identityClusterMap,
+    checkpoint,
+    checkpointStart,
+    checkpointEnd,
+  jobLog,
+  } = args;
+
+  return (async () => {
+    const bgStart = checkpointStart('background_intelligence_writes', {
+      rows: scored.length,
+      chunkIndex,
+    });
+    let backgroundJobId: string | null = null;
+
+    try {
+      const { data, error } = await (serviceClient as any)
+        .from('background_intelligence_jobs')
+        .insert({
+          job_id: jobId,
+          chunk_index: chunkIndex,
+          status: 'pending',
+          started_at: new Date().toISOString(),
+        })
+        .select('id')
+        .single();
+      if (error) console.error('[worker] background_intelligence_jobs insert failed:', error.message);
+      else backgroundJobId = data.id;
+    } catch (err) {
+      console.error('[worker] background_intelligence_jobs insert threw:', err);
+    }
+
+    const markBackground = async (status: 'completed' | 'failed', errorMessage?: string) => {
+      if (!backgroundJobId) return;
+      const { error } = await (serviceClient as any)
+        .from('background_intelligence_jobs')
+        .update({
+          status,
+          completed_at: new Date().toISOString(),
+          error: errorMessage ?? null,
+        })
+        .eq('id', backgroundJobId);
+      if (error) console.error('[worker] background_intelligence_jobs update failed:', error.message);
+    };
+
+    try {
+      const entityResolutionTask = merchantId
+        ? (async () => {
+            try {
+              const erLookupStart = checkpointStart('entity_resolution_bulk_lookups', { rows: scored.length });
+              const chunkOrderIds = scored.map((s) => s.order.orderId);
+              const txIdMap = new Map<string, string>();
+              const TX_LOOKUP_CHUNK = 500;
+              const txChunks: string[][] = [];
+              for (let i = 0; i < chunkOrderIds.length; i += TX_LOOKUP_CHUNK) {
+                txChunks.push(chunkOrderIds.slice(i, i + TX_LOOKUP_CHUNK));
+              }
+              const txResults = await Promise.all(
+                txChunks.map((slice) =>
+                  withTransportRetry(() =>
+                    withRetry(async () => {
+                      const { data, error } = await serviceClient
+                        .from('audit_transactions')
+                        .select('id, order_id')
+                        .eq('job_id', jobId)
+                        .in('order_id', slice);
+                      if (error) throw error;
+                      return data ?? [];
+                    })
+                  )
+                )
+              );
+              for (const txRows of txResults) {
+                for (const row of txRows) txIdMap.set(row.order_id, row.id);
+              }
+              checkpointEnd('entity_resolution_bulk_lookups', erLookupStart, {
+                txIdsResolved: txIdMap.size,
+                txLookupChunks: txChunks.length,
+              });
+
+              const erWriteStart = checkpointStart('entity_resolution_bulk_writes', { rows: scored.length });
+              const identitySummaryByOrder = new Map(
+                Array.from(identityResultsByOrder.entries()).map(([orderId, identity]) => [
+                  orderId,
+                  {
+                    grade: identity.grade,
+                    signals: identity.signalsMatched,
+                    clusterId: identity.clusterId,
+                    matchStatus: identity.matchStatus,
+                  },
+                ])
+              );
+              const profileResult = await processProfilesForBatch(
+                scored,
+                merchantId,
+                jobId,
+                txIdMap,
+                serviceClient,
+                identitySummaryByOrder
+              );
+              const graphResult = process.env.SKIP_OPTIONAL_BACKGROUND_WRITES === '1'
+                ? {
+                    attributesUpserted: 0,
+                    appearancesInserted: 0,
+                    crossMerchantAttributes: 0,
+                    errors: [] as string[],
+                  }
+                : await persistGlobalIdentityGraph({
+                    scored,
+                    merchantId,
+                    auditId: jobId,
+                    transactionIdMap: txIdMap,
+                    serviceClient,
+                    identityByOrder: identitySummaryByOrder,
+                  });
+              console.log(
+                `[worker] Entity resolution: ${profileResult.profilesCreated} created, ${profileResult.profilesUpdated} updated, ${profileResult.errors.length} errors`
+              );
+              console.log(
+                `[worker] Global identity graph: ${graphResult.attributesUpserted} attributes, ` +
+                `${graphResult.appearancesInserted} appearances, ${graphResult.crossMerchantAttributes} cross-merchant, ` +
+                `${graphResult.errors.length} errors`
+              );
+              if (profileResult.errors.length > 0) {
+                console.error('[worker] entity resolution sample errors:', profileResult.errors.slice(0, 3));
+              }
+              if (graphResult.errors.length > 0) {
+                console.error('[worker] global identity graph sample errors:', graphResult.errors.slice(0, 3));
+                throw new Error(`Global identity graph completed with ${graphResult.errors.length} error(s)`);
+              }
+              checkpointEnd('entity_resolution_bulk_writes', erWriteStart, {
+                profilesCreated: profileResult.profilesCreated,
+                profilesUpdated: profileResult.profilesUpdated,
+                profileErrors: profileResult.errors.length,
+                globalIdentityAttributes: graphResult.attributesUpserted,
+                globalIdentityAppearances: graphResult.appearancesInserted,
+                globalIdentityCrossMerchant: graphResult.crossMerchantAttributes,
+              });
+            } catch (err) {
+              checkpoint('entity_resolution_bulk_writes', 'error', {
+                message: String((err as Error)?.message ?? err),
+              });
+              console.error('[worker] processProfilesForBatch failed:', err);
+              throw err;
+            }
+          })()
+        : Promise.resolve();
+
+      const optionalEnrichmentTasks = process.env.SKIP_OPTIONAL_BACKGROUND_WRITES === '1'
+        ? []
+        : [
+        (async () => {
+          const feStart = checkpointStart('fraud_entities_writes', { rows: scored.length });
+          try {
+            await writeFraudEntities(scored, serviceClient, context);
+            checkpointEnd('fraud_entities_writes', feStart);
+          } catch (err) {
+            checkpoint('fraud_entities_writes', 'error', { message: String((err as Error)?.message ?? err) });
+            console.error('[worker] writeFraudEntities failed:', err);
+          }
+        })(),
+        (async () => {
+          const coStart = checkpointStart('co_occurrence_writes', { rows: scored.length });
+          try {
+            const result = await writeCoOccurrences(scored, serviceClient, context);
+            checkpointEnd('co_occurrence_writes', coStart, { upstreamDown: result.upstreamDown });
+          } catch (err) {
+            checkpoint('co_occurrence_writes', 'error', { message: String((err as Error)?.message ?? err) });
+            console.error('[worker] writeCoOccurrences failed:', err);
+          }
+        })(),
+        writeIdentityClusters(identityClusterMap, serviceClient).catch((err) =>
+          console.error('[worker] writeIdentityClusters failed:', err)
+        ),
+      ];
+
+      const backgroundResults = await Promise.allSettled([
+        entityResolutionTask,
+        ...optionalEnrichmentTasks,
+      ]);
+      const failedBackgroundTasks = backgroundResults.filter((result) => result.status === 'rejected');
+      if (failedBackgroundTasks.length > 0) {
+        throw new Error(`${failedBackgroundTasks.length} background intelligence task(s) failed`);
+      }
+
+      await markBackground('completed');
+      checkpointEnd('background_intelligence_writes', bgStart, { status: 'completed' });
+      jobLog(`Background intelligence writes complete for chunk ${chunkIndex}`);
+    } catch (err) {
+      const message = String((err as Error)?.message ?? err);
+      await markBackground('failed', message);
+      checkpoint('background_intelligence_writes', 'error', { message });
+      console.error('[worker] background intelligence writes failed:', err);
+    }
+  })();
 }
 
 // ---------------------------------------------------------------------------
@@ -1055,24 +1318,24 @@ async function writeFraudEntities(
 
   // --- Fast path: chunked bulk_upsert_fraud_entities RPC calls with backoff ---
   const RPC_CHUNK = 2000;
+  const RPC_CONCURRENCY = 4;
   let rpcError: { code: string; message: string } | null = null;
   let rpcSucceeded = false;
-  for (let i = 0; i < payload.length; i += RPC_CHUNK) {
-    const chunk = payload.slice(i, i + RPC_CHUNK);
-    try {
+  const rpcChunks = splitIntoBatches(payload, RPC_CHUNK);
+  try {
+    await mapWithConcurrency(rpcChunks, RPC_CONCURRENCY, async (chunk) => {
       await withTransportRetry(() =>
         withRetry(async () => {
           const { error } = await serviceClient.rpc('bulk_upsert_fraud_entities' as any, { p_entities: chunk });
           if (error) throw error;
         })
       );
-    } catch (err: any) {
-      rpcError = err;
-      break;
-    }
+    });
+  } catch (err: any) {
+    rpcError = err;
   }
   if (!rpcError) {
-    console.log(`[worker] ${new Date().toISOString()} bulk_upsert_fraud_entities: ${payload.length} entities (RPC)`);
+    console.log(`[worker] ${new Date().toISOString()} bulk_upsert_fraud_entities: ${payload.length} entities in ${rpcChunks.length} RPC chunk(s)`);
     rpcSucceeded = true;
   }
 
@@ -1142,21 +1405,22 @@ async function writeFraudEntities(
     };
   });
 
-  // Chunk into 500 per upsert to stay within PostgREST limits
-  const CHUNK = 500;
-  for (let i = 0; i < directRows.length; i += CHUNK) {
-    const chunk = directRows.slice(i, i + CHUNK);
+  // Chunk into 1k per upsert and run a few chunks concurrently to stay within
+  // PostgREST limits without serialising the entire fallback path.
+  const CHUNK = 1000;
+  const chunks = splitIntoBatches(directRows, CHUNK);
+  await mapWithConcurrency(chunks, 4, async (chunk, index) => {
     const { error: upsertError } = await (serviceClient as any)
       .from('fraud_entities')
       .upsert(chunk as any, { onConflict: 'entity_type,entity_value', ignoreDuplicates: false });
     if (upsertError) {
       if (isUpstreamDown(upsertError)) {
-        console.warn(`[worker] ${new Date().toISOString()} fraud_entities direct upsert: upstream down at chunk ${i}, aborting fallback`);
+        console.warn(`[worker] ${new Date().toISOString()} fraud_entities direct upsert: upstream down at chunk ${index}, aborting fallback`);
         return;
       }
-      console.error(`[worker] ${new Date().toISOString()} fraud_entities direct upsert failed (chunk ${i}): ${upsertError.message}`);
+      console.error(`[worker] ${new Date().toISOString()} fraud_entities direct upsert failed (chunk ${index}): ${upsertError.message}`);
     }
-  }
+  });
   console.log(`[worker] ${new Date().toISOString()} writeFraudEntities: ${directRows.length} entities (direct upsert fallback)`);
 }
 
@@ -1231,24 +1495,24 @@ async function writeCoOccurrences(
 
   // --- Fast path: chunked bulk_upsert_co_occurrences RPC calls with backoff ---
   const RPC_CHUNK = 2000;
+  const RPC_CONCURRENCY = 4;
   let coRpcError: { code: string; message: string } | null = null;
   let coRpcSucceeded = false;
-  for (let i = 0; i < payload.length; i += RPC_CHUNK) {
-    const chunk = payload.slice(i, i + RPC_CHUNK);
-    try {
+  const coRpcChunks = splitIntoBatches(payload, RPC_CHUNK);
+  try {
+    await mapWithConcurrency(coRpcChunks, RPC_CONCURRENCY, async (chunk) => {
       await withTransportRetry(() =>
         withRetry(async () => {
           const { error } = await serviceClient.rpc('bulk_upsert_co_occurrences' as any, { p_pairs: chunk });
           if (error) throw error;
         })
       );
-    } catch (err: any) {
-      coRpcError = err;
-      break;
-    }
+    });
+  } catch (err: any) {
+    coRpcError = err;
   }
   if (!coRpcError) {
-    console.log(`[worker] ${new Date().toISOString()} bulk_upsert_co_occurrences: ${payload.length} pairs (RPC)`);
+    console.log(`[worker] ${new Date().toISOString()} bulk_upsert_co_occurrences: ${payload.length} pairs in ${coRpcChunks.length} RPC chunk(s)`);
     coRpcSucceeded = true;
   }
 
@@ -1291,9 +1555,9 @@ async function writeCoOccurrences(
     };
   });
 
-  const CHUNK = 500;
-  for (let i = 0; i < directRows.length; i += CHUNK) {
-    const chunk = directRows.slice(i, i + CHUNK);
+  const CHUNK = 1000;
+  const chunks = splitIntoBatches(directRows, CHUNK);
+  await mapWithConcurrency(chunks, 4, async (chunk, index) => {
     const { error: upsertError } = await (serviceClient as any)
       .from('fraud_entity_co_occurrences')
       .upsert(chunk as any, {
@@ -1302,12 +1566,12 @@ async function writeCoOccurrences(
       });
     if (upsertError) {
       if (isUpstreamDown(upsertError)) {
-        console.warn(`[worker] ${new Date().toISOString()} co_occurrences direct upsert: upstream down at chunk ${i}, aborting fallback`);
-        return { upstreamDown: true };
+        console.warn(`[worker] ${new Date().toISOString()} co_occurrences direct upsert: upstream down at chunk ${index}, aborting fallback`);
+        return;
       }
-      console.error(`[worker] ${new Date().toISOString()} co_occurrences direct upsert failed (chunk ${i}): ${upsertError.message}`);
+      console.error(`[worker] ${new Date().toISOString()} co_occurrences direct upsert failed (chunk ${index}): ${upsertError.message}`);
     }
-  }
+  });
   console.log(`[worker] ${new Date().toISOString()} writeCoOccurrences: ${directRows.length} pairs (direct upsert fallback)`);
   return { upstreamDown: false };
 }
@@ -1377,7 +1641,7 @@ async function upsertBatchNoProgress(
   inserts: FraudTransactionInsert[],
   jobId: string,
   serviceClient: SupabaseClient<Database>
-): Promise<void> {
+): Promise<number> {
   const isRetryableCoreUpsertError = (message: string): boolean => {
     const msg = message.toLowerCase();
     return (
@@ -1391,6 +1655,9 @@ async function upsertBatchNoProgress(
       msg.includes('57014') ||
       msg.includes('429') ||
       msg.includes('too many requests') ||
+      msg.includes('520') ||
+      msg.includes('cloudflare') ||
+      msg.includes('web server is returning an unknown error') ||
       msg.includes('502') ||
       msg.includes('503') ||
       msg.includes('504') ||
@@ -1407,7 +1674,7 @@ async function upsertBatchNoProgress(
       .from('audit_transactions')
       .upsert(inserts as any, { onConflict: 'job_id,order_id' });
 
-    if (!error) return;
+    if (!error) return 0;
 
     lastMessage = error.message ?? 'unknown error';
     const retryable = isRetryableCoreUpsertError(lastMessage);
@@ -1418,9 +1685,11 @@ async function upsertBatchNoProgress(
         const mid = Math.floor(inserts.length / 2);
         const left = inserts.slice(0, mid);
         const right = inserts.slice(mid);
-        await upsertBatchNoProgress(left, jobId, serviceClient);
-        await upsertBatchNoProgress(right, jobId, serviceClient);
-        return;
+        const [leftFailed, rightFailed] = await Promise.all([
+          upsertBatchNoProgress(left, jobId, serviceClient),
+          upsertBatchNoProgress(right, jobId, serviceClient),
+        ]);
+        return leftFailed + rightFailed;
       }
       const suffix = retryable ? ` after ${attempt} attempts` : '';
       await logBatchError(
@@ -1429,7 +1698,7 @@ async function upsertBatchNoProgress(
         inserts.map((r) => r.order_id),
         `Supabase upsert failed${suffix}: ${lastMessage}`
       );
-      throw new Error(`Supabase upsert failed${suffix}: ${lastMessage}`);
+      return inserts.length;
     }
 
     // Core write hardening: brief exponential backoff for transient network/API
@@ -1438,4 +1707,6 @@ async function upsertBatchNoProgress(
     const delayMs = 250 * 2 ** (attempt - 1) + jitter;
     await new Promise<void>((resolve) => setTimeout(resolve, delayMs));
   }
+
+  return inserts.length;
 }

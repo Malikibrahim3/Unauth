@@ -151,9 +151,9 @@ export default function DashboardCharts({ runs }: Props) {
             <Line
               type="monotone"
               dataKey="flagged"
-              stroke="#7B2D26"
+              stroke="var(--copper-bright)"
               strokeWidth={2}
-              dot={{ fill: '#7B2D26', r: 3, strokeWidth: 0 }}
+              dot={{ fill: 'var(--copper-bright)', r: 3, strokeWidth: 0 }}
               activeDot={{ r: 5, strokeWidth: 0 }}
             />
           </LineChart>
@@ -165,7 +165,7 @@ export default function DashboardCharts({ runs }: Props) {
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-4 text-caption" style={{ color: 'var(--text-subtle)' }}>
             <span className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-sm inline-block" style={{ background: '#7B2D26' }} />
+              <span className="h-2 w-2 rounded-sm inline-block" style={{ background: 'var(--copper-bright)' }} />
               With signals {flaggedPct.toFixed(1)}%
             </span>
             <span className="flex items-center gap-1.5">
@@ -177,7 +177,7 @@ export default function DashboardCharts({ runs }: Props) {
         <div className="h-2 w-full rounded-full overflow-hidden" style={{ background: 'var(--bg-muted)' }}>
           <div
             className="h-full rounded-full transition-all duration-500"
-            style={{ width: `${flaggedPct}%`, background: '#7B2D26' }}
+            style={{ width: `${flaggedPct}%`, background: 'var(--copper-bright)' }}
           />
         </div>
         <div className="flex items-center justify-between mt-2">

@@ -107,7 +107,7 @@ function applyTenantFilter(builder: any, scope: TenantScope, merchantId: string)
     return builder.eq(scope.column, merchantId);
   }
   if (scope.kind === 'jsonb-array' && typeof builder.contains === 'function') {
-    return builder.contains(scope.column, [merchantId]);
+    return builder.or(`${scope.column}.cs.${JSON.stringify([merchantId])}`);
   }
   return builder;
 }

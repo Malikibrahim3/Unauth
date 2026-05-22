@@ -44,7 +44,7 @@ async function PATCHHandler(
     .from('merchant_members')
     .select('id, role, user_id, invite_status')
     .eq('id', resolvedParams.memberId)
-    .is('deleted_at', null)
+    .neq('invite_status', 'revoked')
     .maybeSingle();
   if (!target) return NextResponse.json({ error: 'Member not found.' }, { status: 404 });
 
@@ -94,14 +94,14 @@ async function DELETEHandler(
   const { data: target } = await scopedClient
     .from('merchant_members').select('id, role, invited_email')
     .eq('id', resolvedParams.memberId)
-    .is('deleted_at', null)
+    .neq('invite_status', 'revoked')
     .single();
   if (!target) return NextResponse.json({ error: 'Member not found.' }, { status: 404 });
   if ((target as any).role === 'owner') return NextResponse.json({ error: 'The owner cannot be removed.' }, { status: 403 });
 
   const { error } = await scopedClient
     .from('merchant_members')
-    .update({ deleted_at: new Date().toISOString() } as any)
+    .update({ invite_status: 'revoked' } as any)
     .eq('id', resolvedParams.memberId);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 

@@ -56,7 +56,14 @@ export async function updateJobTotalRows(
 ): Promise<void> {
   const { error } = await serviceClient
     .from('processing_jobs')
-    .update({ total_rows: totalRows, status: 'processing', updated_at: new Date().toISOString() })
+    .update({
+      total_rows: totalRows,
+      status: 'processing',
+      progress_pct: 0,
+      progress_message: totalRows > 0 ? `Queued 0 of ${totalRows.toLocaleString()} rows` : 'Queued for processing…',
+      started_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    } as any)
     .eq('id', jobId);
 
   if (error) {
@@ -85,7 +92,7 @@ export async function incrementJobProgress(
   if (error.code === 'PGRST202' || error.code === '42883') {
     const { data: job } = await serviceClient
       .from('processing_jobs')
-      .select('processed_rows, failed_rows')
+      .select('processed_rows, failed_rows, total_rows')
       .eq('id', jobId)
       .single();
     const { error: updateError } = await serviceClient
@@ -93,6 +100,14 @@ export async function incrementJobProgress(
       .update({
         processed_rows: (job?.processed_rows ?? 0) + processedDelta,
         failed_rows: (job?.failed_rows ?? 0) + failedDelta,
+        progress_pct:
+          (job?.total_rows ?? 0) > 0
+            ? Math.round((((job?.processed_rows ?? 0) + processedDelta + (job?.failed_rows ?? 0) + failedDelta) / (job?.total_rows ?? 1)) * 100)
+            : 0,
+        progress_message:
+          (job?.total_rows ?? 0) > 0
+            ? `Processed ${(((job?.processed_rows ?? 0) + processedDelta + (job?.failed_rows ?? 0) + failedDelta)).toLocaleString()} of ${(job?.total_rows ?? 0).toLocaleString()} rows`
+            : 'Processing…',
         updated_at: new Date().toISOString(),
       })
       .eq('id', jobId);
@@ -116,9 +131,13 @@ export async function completeJob(
     status: success ? 'completed' : 'failed',
     updated_at: new Date().toISOString(),
     error_log: (finalErrorLog ?? []) as any,
+    progress_message: success ? 'Complete' : 'Failed',
   };
   if (success) {
+    update.progress_pct = 100;
     update.completed_at = new Date().toISOString();
+  } else {
+    update.failed_at = new Date().toISOString();
   }
   if (typeof flaggedCount === 'number') {
     update.flagged_count = flaggedCount;

@@ -10,21 +10,21 @@ export const RISK_TIER_COPY: Record<RiskTier, RiskTierCopy> = {
   low: {
     label: 'Low',
     description: 'No strong identity match.',
-    default: 'No action needed.',
+    default: 'No strong identity evidence is present.',
   },
   medium: {
     label: 'Medium',
     description: 'Some identity evidence present — worth monitoring.',
-    default: 'Keep on review list for their next order.',
+    default: 'Some identity evidence is present and useful as context.',
   },
   high: {
     label: 'High',
     description: 'Probable identity match — review recommended.',
-    default: 'Review this refund claim manually before approving.',
+    default: 'The identity evidence is probable and should be read with the order timeline.',
   },
   critical: {
     label: 'Critical',
     description: 'Strong identity match detected — review required.',
-    default: 'Hold any pending refund and request additional verification.',
+    default: 'The identity evidence is strong and connects multiple order signals.',
   },
 } as const;

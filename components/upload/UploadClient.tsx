@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { UploadCloud, FileText, AlertCircle, CheckCircle, ChevronDown, ChevronRight, Calendar, Plus, X, Layers } from 'lucide-react';
+import { FileText, AlertCircle, CheckCircle, ChevronDown, ChevronRight, Calendar, Plus, X, Layers } from 'lucide-react';
 import Link from 'next/link';
 import { formatDateShort } from '@/lib/utils/format';
 import { createClient } from '@/lib/supabase/client';
@@ -32,11 +32,15 @@ interface BatchItem {
   error: string | null;
 }
 
+type FilePreflightResult = {
+  ok: boolean;
+  message?: string;
+};
+
 const CSV_TEMPLATE_HEADERS =
   'order_id,order_date,customer_email,customer_name,shipping_address,order_total,order_status,currency,customer_phone,billing_address,refund_status,refund_reason,refund_date,refund_amount,payment_method,ip_address,device_id,card_last4,card_bin,card_fingerprint,browser_fingerprint,cookie_id,user_agent,asn,account_id';
 const EXAMPLE_ROW =
   'ORD-001,2024-01-15,alice@example.com,Alice Smith,"123 Main St",99.99,paid,USD,+1-555-0100,"123 Main St",not_refunded,,,,Visa,203.0.113.42,device_abc,4242,411111,fp_abc,bf_xyz,ck_123,Mozilla/5.0,AS15169,acc_001';
-const MAX_POLL_MS = 30 * 60 * 1000;
 
 const FIELD_LABELS: Record<RequiredField, string> = {
   order_id: 'Order ID',
@@ -120,9 +124,44 @@ export default function UploadClient() {
   const [exportFieldsOpen, setExportFieldsOpen] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const autoRecoverAttemptedRef = useRef<Set<string>>(new Set());
 
   const requiredUnmapped = REQUIRED_FIELDS.filter((f) => !columnMap[f]);
   const canSubmit = requiredUnmapped.length === 0;
+
+  function failPreflight(message: string) {
+    setFile(null);
+    setBatchQueue([]);
+    setCsvHeaders([]);
+    setColumnMap({});
+    setFuzzyFields(new Set());
+    setDataQuality(null);
+    setState('error');
+    setCanRecover(false);
+    setRawErrorDetail(message);
+    setFriendlyError(friendlyUploadError(message));
+  }
+
+  function validateCsvFile(fileToCheck: File, headers: string[]): FilePreflightResult {
+    const lowerName = fileToCheck.name.toLowerCase();
+    const looksLikeCsv = lowerName.endsWith('.csv') || fileToCheck.type === 'text/csv' || fileToCheck.type === 'application/vnd.ms-excel';
+    if (!looksLikeCsv) {
+      return { ok: false, message: 'Please upload a .csv file.' };
+    }
+    if (fileToCheck.size === 0) {
+      return { ok: false, message: 'This CSV is empty. Please upload a file with a header row and at least one order.' };
+    }
+    const normalizedHeaders = headers
+      .map((header) => header.trim())
+      .filter((header) => header.length > 0);
+    if (normalizedHeaders.length === 0) {
+      return { ok: false, message: 'We could not find a header row in this CSV.' };
+    }
+    if (normalizedHeaders.length === 1 && !normalizedHeaders[0].includes(',')) {
+      return { ok: false, message: 'This file does not look like a CSV export. Please upload a comma-separated CSV.' };
+    }
+    return { ok: true };
+  }
 
   // Compute SHA-256 hash for a file
   async function hashFile(f: File): Promise<string> {
@@ -133,11 +172,35 @@ export default function UploadClient() {
       .join('');
   }
 
+  function startProcessing(runIdToStart: string, totalChunks: number, storagePath: string) {
+    void fetch(`/api/audit/${runIdToStart}/start`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        totalChunks,
+        columnMap,
+        storagePath,
+      }),
+    }).catch((err) => {
+      console.error('[UploadClient] failed to start processing:', err);
+    });
+  }
+
   // Handle multiple files — build batch queue, map headers from first file
   const handleFiles = useCallback(async (files: File[]) => {
     if (files.length === 0) return;
-    const csvFiles = files.filter((f) => f.name.endsWith('.csv') || f.type === 'text/csv');
-    if (csvFiles.length === 0) return;
+    const csvFiles = files.filter((f) => {
+      const lowerName = f.name.toLowerCase();
+      return lowerName.endsWith('.csv') || f.type === 'text/csv' || f.type === 'application/vnd.ms-excel';
+    });
+    if (csvFiles.length === 0) {
+      failPreflight('Please upload one or more .csv files.');
+      return;
+    }
+    if (csvFiles.length !== files.length) {
+      failPreflight('Please upload only .csv files. Remove any PDFs, spreadsheets, or text files and try again.');
+      return;
+    }
 
     if (csvFiles.length === 1) {
       // Single-file path: classic flow
@@ -168,6 +231,11 @@ export default function UploadClient() {
 
     // Sniff first file for column mapping
     const { headers, collisions } = await sniffFile(csvFiles[0]);
+    const preflight = validateCsvFile(csvFiles[0], headers);
+    if (!preflight.ok) {
+      failPreflight(preflight.message ?? 'Invalid CSV upload.');
+      return;
+    }
     if (collisions.length > 0) console.warn('[UploadClient] batch header collisions:', collisions);
     setCsvHeaders(headers);
     const { exact, fuzzy } = autoMapHeaders(headers);
@@ -195,6 +263,11 @@ export default function UploadClient() {
     // Use sniffFile for robust BOM stripping, delimiter detection, and
     // quoted-field-aware header tokenisation (instead of a naive comma-split).
     sniffFile(f).then(({ headers, collisions }) => {
+      const preflight = validateCsvFile(f, headers);
+      if (!preflight.ok) {
+        failPreflight(preflight.message ?? 'Invalid CSV upload.');
+        return;
+      }
       if (collisions.length > 0) {
         console.warn(
           '[UploadClient] Header collisions detected:',
@@ -310,10 +383,11 @@ export default function UploadClient() {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error ?? `HTTP ${res.status} from /api/audit`);
       }
-      const { runId: newRunId } = await res.json();
+      const { runId: newRunId, totalChunks } = await res.json();
       setRunId(newRunId);
       setState('processing');
       setStatusText('Queued for processing…');
+      startProcessing(newRunId, totalChunks, filePath);
       track('CSV Uploaded', {
         uploadType,
         hasLabel: !!uploadLabel.trim(),
@@ -348,11 +422,11 @@ export default function UploadClient() {
     };
 
     const pollItem = async (id: string, rid: string): Promise<void> => {
-      const startTime = Date.now();
+      let attemptedRecover = false;
       return new Promise((resolve) => {
         const tick = async () => {
           try {
-            const res = await fetch(`/api/audit/${rid}/progress`);
+            const res = await fetch(`/api/audit/${rid}/progress`, { cache: 'no-store' });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const job = await res.json();
             if (job.rowCount > 0) {
@@ -363,18 +437,33 @@ export default function UploadClient() {
               return resolve();
             }
             if (job.status === 'failed') {
+              if (job.canRecover === true && !attemptedRecover) {
+                attemptedRecover = true;
+                updateItem(id, { statusText: 'Recovering — finalising audit…' });
+                const recoverRes = await fetch(`/api/audit/${rid}/recover`, {
+                  method: 'POST',
+                  cache: 'no-store',
+                });
+                const recoverBody = await recoverRes.json().catch(() => ({}));
+                if (recoverRes.ok && recoverBody.recovered) {
+                  setTimeout(tick, 2000);
+                  return;
+                }
+              }
               updateItem(id, { status: 'error', statusText: 'Failed', error: job.errorMessage ?? 'Processing failed' });
               return resolve();
             }
             const processed = job.rowCount > 0 ? Math.round((job.progressPercent / 100) * job.rowCount) : 0;
             updateItem(id, {
-              statusText: job.status === 'processing'
-                ? `Processing ${processed.toLocaleString()} of ${job.rowCount.toLocaleString()} rows`
-                : 'Queued…',
+              statusText:
+                job.status === 'processing'
+                  ? job.stalled
+                    ? `Still processing in background… ${processed.toLocaleString()} of ${job.rowCount.toLocaleString()} rows`
+                    : `Processing ${processed.toLocaleString()} of ${job.rowCount.toLocaleString()} rows`
+                  : 'Queued…',
             });
           } catch { /* swallow */ }
-          if (Date.now() - startTime <= MAX_POLL_MS) setTimeout(tick, 5000);
-          else resolve();
+          setTimeout(tick, 5000);
         };
         tick();
       });
@@ -409,8 +498,9 @@ export default function UploadClient() {
           const body = await res.json().catch(() => ({}));
           throw new Error(body.error ?? `HTTP ${res.status}`);
         }
-        const { runId: newRunId } = await res.json();
+        const { runId: newRunId, totalChunks } = await res.json();
         updateItem(item.id, { status: 'processing', statusText: 'Processing…', runId: newRunId });
+        startProcessing(newRunId, totalChunks, filePath);
         track('CSV Uploaded', { uploadType, hasLabel: !!uploadLabel.trim(), hasDateRange: !!(dateRangeStart || dateRangeEnd), dataQualityGrade: dataQuality?.grade ?? null });
         await pollItem(item.id, newRunId);
       } catch (err) {
@@ -424,11 +514,10 @@ export default function UploadClient() {
   useEffect(() => {
     if (state !== 'processing' || !runId) return;
     let cancelled = false;
-    const startTime = Date.now();
     async function poll() {
       if (cancelled) return;
       try {
-        const res = await fetch(`/api/audit/${runId}/progress`);
+        const res = await fetch(`/api/audit/${runId}/progress`, { cache: 'no-store' });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const job = await res.json();
         if (job.rowCount > 0) {
@@ -441,6 +530,23 @@ export default function UploadClient() {
           return;
         }
         if (job.status === 'failed') {
+          const currentRunId = runId;
+          if (job.canRecover === true && currentRunId && !autoRecoverAttemptedRef.current.has(currentRunId)) {
+            autoRecoverAttemptedRef.current.add(currentRunId);
+            setState('recovering');
+            setStatusText('Recovering — finalising your audit…');
+            const recoverRes = await fetch(`/api/audit/${currentRunId}/recover`, {
+              method: 'POST',
+              cache: 'no-store',
+            });
+            const recoverBody = await recoverRes.json().catch(() => ({}));
+            if (recoverRes.ok && recoverBody.recovered) {
+              setState('processing');
+              setStatusText('Recovery complete — loading results…');
+              setTimeout(poll, 2000);
+              return;
+            }
+          }
           const rawMsg = job.errorMessage ?? 'Processing failed.';
           console.error('[UploadClient] job failed:', rawMsg, job);
           setCanRecover(job.canRecover === true);
@@ -454,13 +560,15 @@ export default function UploadClient() {
           : 0;
         setStatusText(
           job.status === 'processing'
-            ? `Processing ${processed.toLocaleString()} of ${job.rowCount.toLocaleString()} orders`
+            ? job.stalled
+              ? `Still processing in background… ${processed.toLocaleString()} of ${job.rowCount.toLocaleString()} orders`
+              : `Processing ${processed.toLocaleString()} of ${job.rowCount.toLocaleString()} orders`
             : 'Queued for processing…',
         );
       } catch {
         /* swallow poll errors */
       }
-      if (!cancelled && Date.now() - startTime <= MAX_POLL_MS) setTimeout(poll, 5000);
+      if (!cancelled) setTimeout(poll, 5000);
     }
     poll();
     return () => {
@@ -486,6 +594,7 @@ export default function UploadClient() {
   }
 
   const isProcessing = state === 'uploading' || state === 'processing' || state === 'recovering';
+  const stepIndex = state === 'mapping' ? 1 : state === 'context' || isProcessing || state === 'complete' ? 2 : 0;
 
   async function attemptRecovery() {
     if (!runId) return;
@@ -627,6 +736,27 @@ export default function UploadClient() {
 
   return (
     <div className="space-y-6">
+      <div className="space-y-2">
+        <div className="grid grid-cols-3 gap-2">
+          {['Upload', 'Map fields', 'Confirm & run'].map((label, index) => (
+            <div key={label}>
+              <div
+                className="h-1 rounded-sm"
+                style={{
+                  background:
+                    index < stepIndex ? 'var(--copper-bright)' :
+                    index === stepIndex ? 'var(--copper-dim)' :
+                    'var(--surface-muted)',
+                }}
+              />
+              <p className="t-label mt-2" style={{ color: index <= stepIndex ? 'var(--ink-secondary)' : 'var(--ink-tertiary)' }}>
+                {label}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Export guidance accordion */}
       <div className="rounded-lg overflow-hidden border" style={{ borderColor: 'var(--border-subtle)' }}>
         <button
@@ -676,12 +806,12 @@ export default function UploadClient() {
           }}
           onDragLeave={() => setDragOver(false)}
           onClick={() => !isProcessing && fileInputRef.current?.click()}
-          className="border-2 border-dashed rounded-lg p-10 text-center transition-colors"
+          className="flex min-h-[480px] flex-col items-center justify-center border-2 border-dashed rounded-md p-10 text-center transition-colors"
           style={{
             cursor: isProcessing ? 'default' : 'pointer',
             opacity: isProcessing ? 0.6 : 1,
-            borderColor: dragOver ? 'var(--border-strong)' : 'var(--border)',
-            background: dragOver ? 'var(--bg-subtle)' : 'transparent',
+            borderColor: dragOver ? 'var(--copper-bright)' : 'var(--surface-border)',
+            background: dragOver ? 'var(--copper-glow)' : 'var(--surface-raised)',
           }}
         >
           <input
@@ -700,7 +830,6 @@ export default function UploadClient() {
               }
             }}
           />
-          <UploadCloud className="mx-auto h-10 w-10 mb-3" style={{ color: 'var(--icon-muted)' }} />
           {file ? (
             <div>
               <div
@@ -718,15 +847,20 @@ export default function UploadClient() {
             </div>
           ) : (
             <div>
-              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+              <p className="t-subhead" style={{ color: 'var(--ink-primary)' }}>
                 Drop one or more CSVs here, or click to browse
               </p>
-              <p className="text-xs mt-1" style={{ color: 'var(--text-subtle)' }}>
-                Batch upload supported · Max 500 MB per file · Up to 5,000,000 rows
+              <p className="t-caption mt-2" style={{ color: 'var(--ink-tertiary)' }}>
+                Accepted formats: CSV. Batch upload supported. Max 500 MB per file.
               </p>
             </div>
           )}
         </div>
+      )}
+      {state === 'idle' && (
+        <p className="t-caption max-w-2xl" style={{ color: 'var(--ink-tertiary)' }}>
+          PII fields are hashed client-side before transmission where supported. Raw customer identifiers are not shared across merchants; network matches use aggregate k-safe presence.
+        </p>
       )}
 
       {/* Column mapping panel */}

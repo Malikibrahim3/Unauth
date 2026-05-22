@@ -45,7 +45,7 @@ export default async function ReportPage({ params }: ReportPageProps) {
 
   if (!user) redirect(`/login?next=/report/${runId}`);
 
-  const { denied } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_AUDIT);
+  const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_AUDIT);
   if (denied) {
     return (
       <div className="p-8">
@@ -57,15 +57,16 @@ export default async function ReportPage({ params }: ReportPageProps) {
     );
   }
 
-  const { data: run } = await supabase
+  const { data: run } = await serviceClient
     .from('processing_jobs')
     .select('id, filename, created_at, status')
     .eq('id', runId)
+    .eq('merchant_id', ctx.merchantId)
     .maybeSingle();
 
   if (!run) notFound();
 
-  const { data: rows } = await supabase
+  const { data: rows } = await serviceClient
     .from('audit_transactions')
     .select('id, customer_email, customer_name, cluster_id, order_value, identity_match_score, identity_confidence_grade, match_status, fraud_flags, behavioural_flags, signals_matched, context_flags')
     .eq('job_id', runId)
@@ -82,7 +83,7 @@ export default async function ReportPage({ params }: ReportPageProps) {
       <div className="mx-auto max-w-6xl space-y-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: '#7B2D26' }}>
+            <p className="text-xs font-semibold uppercase tracking-[0.04em]" style={{ color: 'var(--copper-bright)' }}>
               Siloed audit
             </p>
             <h1 className="mt-2 text-3xl font-medium tracking-tight" style={{ color: 'var(--text)' }}>

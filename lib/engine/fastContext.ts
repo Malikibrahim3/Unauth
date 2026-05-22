@@ -144,6 +144,10 @@ async function fetchCrossMerchantProfiles(
   addresses: string[],
   cards: string[]
 ): Promise<CrossMerchantProfile[]> {
+  if (process.env.SKIP_CROSS_MERCHANT_CONTEXT === '1') {
+    return [];
+  }
+
   const COLS =
     'id,emails,ips,addresses,card_last4s,phones,total_orders,total_refund_claims,total_merchants_seen_at,merchant_ids';
   const CHUNK = 100; // # of OR clauses per query — keeps URL well under limits

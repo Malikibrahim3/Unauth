@@ -22,11 +22,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { streamParseCsv, MAX_ROWS } from '@/lib/processing/streamParser';
 import { createJob, updateJobTotalRows, completeJob } from '@/lib/processing/job';
 import { createRequestLogger, withRequestLogging } from '@/lib/log';
-import {
-  uploadChunkRows,
-  dispatchChunk,
-  originFromRequest,
-} from '@/lib/processing/chunkedDispatch';
+import { dispatchChunk, originFromRequest, uploadChunkRows } from '@/lib/processing/chunkedDispatch';
 import { checkCsvUsageGuard } from '@/lib/processing/supabaseUsageGuard';
 import { sniffCsvMagicBytes } from '@/lib/csv/sniffMagicBytes';
 import { enforceRateLimit, limitFromEnv, rateLimitKey } from '@/lib/ratelimit';
@@ -266,26 +262,22 @@ async function runAudit(
   const totalChunks = parseResult.totalChunks;
   log(`chunks staged during parse: ${totalChunks} total`);
 
-  // ── Dispatch chunk 0 — await to ensure the first chunk is accepted before
-  // returning. In serverless runtimes, fire-and-forget work after response
-  // may be frozen before the fetch is sent. Awaiting the first dispatch
-  // guarantees the chain is started; subsequent chunks self-propagate.
-  log(`dispatching chunk 0 origin=${originFromRequest(request)}`);
-  try {
-    await dispatchChunk(originFromRequest(request), {
-      jobId,
-      chunkIndex: 0,
-      totalChunks,
-      merchantId,
-      columnMap,
-      storagePath: filePath,
-    });
-    log('chunk 0 dispatched successfully');
-  } catch (dispatchErr) {
-    const dispatchMsg = dispatchErr instanceof Error ? dispatchErr.message : String(dispatchErr);
-    log(`chunk 0 dispatch FAILED: ${dispatchMsg}`);
-    await completeJob(scopedClient, jobId, false, [{ message: `Dispatch failed: ${dispatchMsg}` }]);
-    return NextResponse.json({ error: 'Failed to start processing. Please retry.' }, { status: 500 });
+  if (totalChunks > 0) {
+    try {
+      await dispatchChunk(originFromRequest(request), {
+        jobId,
+        chunkIndex: 0,
+        totalChunks,
+        merchantId,
+        columnMap,
+        storagePath: filePath,
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      log(`Dispatch failed: ${message}`);
+      await completeJob(scopedClient, jobId, false, [{ message: `Dispatch failed: ${message}` }]);
+      return NextResponse.json({ error: 'Dispatch failed' }, { status: 500 });
+    }
   }
 
   return NextResponse.json({

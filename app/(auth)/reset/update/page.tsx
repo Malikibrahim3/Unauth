@@ -4,54 +4,160 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
-import { UnauthLogo } from '@/components/ui/UnauthLogo';
+
+const LABEL_STYLE: React.CSSProperties = {
+  display: 'block',
+  fontSize: '11px',
+  fontWeight: 500,
+  color: 'var(--ink-tertiary)',
+  marginBottom: '6px',
+  letterSpacing: '0.04em',
+  textTransform: 'uppercase',
+};
+
+const INPUT_BASE: React.CSSProperties = {
+  width: '100%',
+  padding: '10px 12px',
+  fontSize: '13px',
+  color: 'var(--ink-primary)',
+  background: 'var(--surface-input)',
+  border: '1px solid var(--surface-border)',
+  borderRadius: '6px',
+  outline: 'none',
+  boxSizing: 'border-box',
+};
 
 export default function UpdatePasswordPage() {
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
   const supabase = createClient();
   const router = useRouter();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (password !== confirm) return setError('Passwords do not match.');
-    if (password.length < 8) return setError('Password must be at least 8 characters.');
+
+    if (password !== confirm) {
+      setError('Passwords do not match.');
+      return;
+    }
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters.');
+      return;
+    }
+
     setLoading(true);
     setError('');
+
     const { error: updateError } = await supabase.auth.updateUser({ password });
+
     setLoading(false);
-    if (updateError) setError(updateError.message);
-    else router.push('/dashboard');
+
+    if (updateError) {
+      setError(updateError.message);
+    } else {
+      router.push('/dashboard');
+    }
   }
 
   return (
-    <div className="min-h-screen bg-[var(--surface-base)] text-[var(--ink-primary)] lg:grid lg:grid-cols-2">
-      <section className="hidden border-r border-[var(--surface-border)] lg:flex lg:items-center lg:justify-center">
-        <UnauthLogo variant="dark" size={128} />
-      </section>
-      <section className="flex items-center justify-center p-6 lg:p-10">
-        <div className="w-full max-w-md espresso-panel p-6 lg:p-8">
-          <p className="t-label text-[var(--ink-tertiary)]">ACCOUNT RECOVERY</p>
-          <h1 className="mt-2 t-heading">Choose a new password</h1>
-          <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-            <label className="block">
-              <span className="mb-2 block t-label text-[var(--ink-tertiary)]">New password</span>
-              <input className="w-full espresso-input px-4 py-3 outline-none focus-ring" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 8 characters" required />
-            </label>
-            <label className="block">
-              <span className="mb-2 block t-label text-[var(--ink-tertiary)]">Confirm password</span>
-              <input className="w-full espresso-input px-4 py-3 outline-none focus-ring" type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="••••••••" required />
-            </label>
-            {error && <p className="t-body text-[var(--sev-probable)]">{error}</p>}
-            <button type="submit" disabled={loading || !password || !confirm} className="w-full rounded-sm bg-[var(--copper-bright)] px-4 py-3 t-label text-[var(--ink-inverse)] disabled:opacity-50">
-              {loading ? 'Updating...' : 'Update password'}
+    <div
+      style={{
+        minHeight: '100vh',
+        background: 'var(--surface-base)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '32px',
+        fontFamily: 'var(--font-geist), var(--font-dm-sans), sans-serif',
+      }}
+    >
+      <div style={{ width: '100%', maxWidth: '400px' }}>
+        <Link href="/login" style={{ display: 'block', textAlign: 'center', textDecoration: 'none', marginBottom: 18 }}>
+          <span style={{ color: 'var(--ink-primary)', fontSize: 20, fontWeight: 600 }}>
+            Unauth<span style={{ color: 'var(--copper-bright)' }}>.</span>
+          </span>
+        </Link>
+        <div style={{ background: 'var(--surface-raised)', border: '1px solid var(--surface-border)', borderRadius: 10, padding: 32 }}>
+          <div style={{ marginBottom: '28px' }}>
+            <p
+              style={{
+                fontSize: '11px',
+                fontWeight: 500,
+                letterSpacing: '0.04em',
+                textTransform: 'uppercase',
+                color: 'var(--ink-tertiary)',
+                marginBottom: '10px',
+              }}
+            >
+              ACCOUNT RECOVERY
+            </p>
+            <h2
+              style={{
+                fontSize: '20px',
+                fontWeight: 600,
+                letterSpacing: 0,
+                color: 'var(--ink-primary)',
+                lineHeight: 1.2,
+              }}
+            >
+              Choose a new password
+            </h2>
+          </div>
+
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '13px' }}>
+            <div>
+              <label style={LABEL_STYLE}>New password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                placeholder="At least 8 characters"
+                style={INPUT_BASE}
+              />
+            </div>
+
+            <div>
+              <label style={LABEL_STYLE}>Confirm password</label>
+              <input
+                type="password"
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+                required
+                placeholder="••••••••"
+                style={INPUT_BASE}
+              />
+            </div>
+
+            {error && (
+              <p style={{ fontSize: '12px', color: 'var(--sev-definite)', margin: 0 }}>{error}</p>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading || !password || !confirm}
+              style={{
+                padding: '11px 20px',
+                background: loading || !password || !confirm ? 'var(--surface-muted)' : 'var(--copper-bright)',
+                color: loading || !password || !confirm ? 'var(--ink-tertiary)' : 'var(--ink-inverse)',
+                border: 'none',
+                borderRadius: '6px',
+                fontSize: '12px',
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+                cursor: loading || !password || !confirm ? 'not-allowed' : 'pointer',
+                transition: 'background 0.15s',
+              }}
+            >
+              {loading ? 'Updating…' : 'Update password'}
             </button>
-            <div className="text-center"><Link href="/login" className="t-caption text-[var(--ink-tertiary)] hover:text-[var(--ink-primary)]">Back to sign in</Link></div>
           </form>
         </div>
-      </section>
+      </div>
     </div>
   );
 }

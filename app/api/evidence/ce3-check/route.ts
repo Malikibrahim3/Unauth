@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
   }
 
   // Fetch profile via merchant-scoped helper (verifies merchant_ids membership)
-  const profile = await fetchMerchantScopedCustomerProfile(service, ctx.merchantId, profileId)
+  const profile = await fetchMerchantScopedCustomerProfile(service, ctx.merchantId, profileId, ctx.userId)
   if (!profile) return NextResponse.json({ eligible: false, reason: 'Profile not found or not owned by merchant' })
 
   // Fetch transactions via merchant-scoped helper (verifies job ownership)

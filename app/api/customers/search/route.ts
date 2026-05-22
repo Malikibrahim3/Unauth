@@ -57,7 +57,6 @@ async function GETHandler(req: NextRequest) {
   const emailRes = await (scopedClient
     .from('customer_profiles')
     .select('id, names, primary_email, risk_level')
-    .contains('merchant_ids', [ctx.merchantId])
     .ilike('primary_email', safeLike)
     .order('risk_score', { ascending: false })
     .limit(limit) as unknown as Promise<{
@@ -86,7 +85,6 @@ async function GETHandler(req: NextRequest) {
     const { data, error } = await (scopedClient
       .from('customer_profiles')
       .select('id, names, primary_email, risk_level')
-      .contains('merchant_ids', [ctx.merchantId])
       .order('last_seen', { ascending: false })
       .range(offset, offset + PAGE - 1) as unknown as Promise<{
       data: CustomerSearchRow[] | null;
@@ -119,7 +117,6 @@ async function GETHandler(req: NextRequest) {
     const { data: fallback } = await scopedClient
       .from('customer_profiles')
       .select('id, names, primary_email, risk_level')
-      .contains('merchant_ids', [ctx.merchantId])
       .ilike('primary_email', safeLike)
       .order('risk_score', { ascending: false })
       .limit(limit) as unknown as { data: CustomerSearchRow[] | null };

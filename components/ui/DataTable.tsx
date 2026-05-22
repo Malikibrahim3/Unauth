@@ -95,9 +95,9 @@ export function DataTable<T>({
 
   return (
     <div className={cn('w-full overflow-x-auto', className)}>
-      <table className="w-full border-collapse" style={{ fontSize: 13, background: 'var(--bg-surface)' }}>
+      <table className="w-full border-collapse" style={{ fontSize: 13, background: 'var(--surface-raised)' }}>
         <thead>
-          <tr style={{ background: 'var(--bg-surface-alt)', borderBottom: '1px solid var(--border-default)' }}>
+          <tr style={{ background: 'var(--surface-overlay)', borderBottom: '1px solid var(--surface-border)' }}>
             {columns.map((col) => (
               <th
                 key={col.key}
@@ -108,7 +108,7 @@ export function DataTable<T>({
                   fontWeight: 600,
                   letterSpacing: '0.12em',
                   textTransform: 'uppercase',
-                  color: 'var(--text-tertiary)',
+                  color: 'var(--ink-tertiary)',
                   padding: '0 14px',
                   height: 34,
                   whiteSpace: 'nowrap',
@@ -152,13 +152,13 @@ export function DataTable<T>({
                   onClick={onRowClick ? () => onRowClick(row) : undefined}
                   style={{
                     height: rowH,
-                    borderBottom: '1px solid var(--border-subtle)',
-                    background: isSelected ? 'var(--bg-selected)' : undefined,
-                    borderLeft: isSelected ? '2px solid var(--accent)' : '2px solid transparent',
+                    borderBottom: '1px solid var(--surface-border)',
+                    background: isSelected ? 'var(--copper-glow)' : undefined,
+                    borderLeft: isSelected ? '3px solid var(--copper-bright)' : '3px solid transparent',
                     cursor: onRowClick ? 'pointer' : undefined,
                     transition: 'background 120ms',
                   }}
-                  className={onRowClick && !isSelected ? 'hover:bg-[var(--bg-hover)]' : undefined}
+                  className={onRowClick && !isSelected ? 'hover:bg-[var(--surface-overlay)]' : undefined}
                 >
                   {columns.map((col) => (
                     <td
@@ -167,7 +167,7 @@ export function DataTable<T>({
                         padding: '0 14px',
                         verticalAlign: 'middle',
                         textAlign: col.align === 'right' ? 'right' : col.align === 'center' ? 'center' : 'left',
-                        color: 'var(--text)',
+                        color: 'var(--ink-primary)',
                       }}
                     >
                       {col.render(row)}

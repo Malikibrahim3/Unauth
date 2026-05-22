@@ -14,6 +14,7 @@ interface CustomerRow {
   risk_level: string;
   total_orders: number;
   total_refund_claims: number;
+  total_merchants_seen_at: number;
   refund_rate: number;
   primary_email: string | null;
   names: string[] | null;
@@ -46,14 +47,31 @@ export default function CustomersTableClient({ rows }: CustomersTableClientProps
     },
     {
       key: 'risk',
-      header: 'Risk',
+      header: 'Confidence',
       render: (p: CustomerRow) => <ConfidenceBadge grade={riskLevelToNewGrade(p.risk_level)} size="sm" />,
     },
     {
       key: 'score',
       header: 'Score',
       align: 'right' as const,
-      render: (p: CustomerRow) => <span className="num" style={{ fontFamily: 'var(--font-mono)' }}>{Math.round(p.risk_score) / 100}</span>,
+      render: (p: CustomerRow) => <span className="num" style={{ fontFamily: 'var(--font-mono)' }}>{Math.round(p.risk_score)}</span>,
+    },
+    {
+      key: 'network',
+      header: 'Network',
+      align: 'right' as const,
+      render: (p: CustomerRow) => (
+        <span
+          className="num"
+          style={{
+            fontFamily: 'var(--font-mono)',
+            color: p.total_merchants_seen_at > 1 ? 'var(--accent)' : 'var(--text-muted)',
+            fontWeight: p.total_merchants_seen_at > 1 ? 700 : 500,
+          }}
+        >
+          {p.total_merchants_seen_at}
+        </span>
+      ),
     },
     {
       key: 'orders',
@@ -71,7 +89,7 @@ export default function CustomersTableClient({ rows }: CustomersTableClientProps
       key: 'open',
       header: '',
       align: 'right' as const,
-      render: () => <span style={{ fontSize: 12, fontWeight: 600, color: '#1A1814' }}>View ›</span>,
+      render: () => <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--copper-bright)' }}>Review →</span>,
     },
   ];
 
@@ -111,6 +129,8 @@ export default function CustomersTableClient({ rows }: CustomersTableClientProps
             </div>
             <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--text-muted)' }}>
               <span><span className="font-semibold font-mono" style={{ color: 'var(--text)' }}>{Math.round(p.risk_score)}</span> score</span>
+              <span style={{ color: 'var(--border)' }}>·</span>
+              <span><span className="font-semibold font-mono" style={{ color: p.total_merchants_seen_at > 1 ? 'var(--accent)' : 'var(--text)' }}>{p.total_merchants_seen_at}</span> merchants</span>
               <span style={{ color: 'var(--border)' }}>·</span>
               <span><span className="font-semibold font-mono" style={{ color: 'var(--text)' }}>{p.total_orders}</span> orders</span>
               <span style={{ color: 'var(--border)' }}>·</span>

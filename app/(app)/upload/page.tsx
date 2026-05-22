@@ -18,7 +18,7 @@ export default async function UploadPage({ searchParams }: UploadPageProps) {
         { key: 'cases', label: 'Cases', href: '/inbox' },
         { key: 'clusters', label: 'Clusters', href: '/customers?merchantsMin=2' },
         { key: 'audits', label: 'Audits', href: '/history' },
-        { key: 'reports', label: 'Reports', href: '/chargebacks' },
+        { key: 'reports', label: 'Reports', href: '/reports' },
       ]}
       activeNavKey="audits"
       actions={<Link href="/history"><Button variant="secondary" size="sm">View History</Button></Link>}

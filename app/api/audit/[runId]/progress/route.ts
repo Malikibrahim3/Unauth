@@ -14,6 +14,12 @@ import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { enforceRateLimit, limitFromEnv, rateLimitKey } from '@/lib/ratelimit';
 import { withRequestLogging } from '@/lib/log';
 
+const NO_STORE_HEADERS = {
+  'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+  Pragma: 'no-cache',
+  Expires: '0',
+} as const;
+
 async function GETHandler(
   request: NextRequest,
   { params }: { params: Promise<{ runId: string }> }
@@ -57,6 +63,11 @@ async function GETHandler(
     (job.status === 'processing' || job.status === 'pending') &&
     job.updated_at != null &&
     Date.now() - new Date(job.updated_at).getTime() > STALE_THRESHOLD_MS;
+  const isLikelyStalled =
+    !isStuck &&
+    (job.status === 'processing' || job.status === 'pending') &&
+    job.updated_at != null &&
+    Date.now() - new Date(job.updated_at).getTime() > 120_000;
 
   // Recovery is possible when ALL rows were written but finalization failed.
   const rowsDone = (job.processed_rows ?? 0) + (job.failed_rows ?? 0);
@@ -102,22 +113,26 @@ async function GETHandler(
         : 'Job timed out — the processing server became unavailable. Please re-upload.')
     : firstError;
 
-  return NextResponse.json({
-    runId,
-    status: effectiveStatus,
-    progressPercent,
-    currentStage:
-      job.status === 'completed'
-        ? 'Complete'
-        : isStuck || job.status === 'failed'
-        ? 'Failed'
-        : 'Processing…',
-    rowCount: job.total_rows,
-    flaggedCount,
-    hasGroundTruth: job.has_ground_truth ?? false,
-    errorMessage: effectiveError,
-    canRecover,
-  });
+  return NextResponse.json(
+    {
+      runId,
+      status: effectiveStatus,
+      progressPercent,
+      currentStage:
+        job.status === 'completed'
+          ? 'Complete'
+          : isStuck || job.status === 'failed'
+          ? 'Failed'
+          : 'Processing…',
+      rowCount: job.total_rows,
+      flaggedCount,
+      hasGroundTruth: job.has_ground_truth ?? false,
+      errorMessage: effectiveError,
+      canRecover,
+      stalled: isLikelyStalled,
+    },
+    { headers: NO_STORE_HEADERS }
+  );
 }
 
 export const GET = withRequestLogging('/api/audit/[runId]/progress', GETHandler);

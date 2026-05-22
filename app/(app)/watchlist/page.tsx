@@ -22,11 +22,11 @@ export default async function WatchlistPage({ searchParams }: { searchParams?: {
     redirect('/login');
   }
   const ctx = await resolveCallerContext(serviceClient, user.id);
-  const merchantId = ctx?.merchantId;
-  if (!merchantId) {
+  if (!ctx) {
     const { redirect } = await import('next/navigation');
     redirect('/onboarding');
   }
+  const resolvedCtx = ctx!;
 
   // Fetch watchlist entries and recent appearances in parallel
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
@@ -45,7 +45,7 @@ export default async function WatchlistPage({ searchParams }: { searchParams?: {
       let q = supabase
         .from('watchlist_entries')
         .select('*', { count: 'exact' })
-        .eq('merchant_id', merchantId)
+        .eq('merchant_id', resolvedCtx.merchantId)
         .eq('removed_by_merchant', false)
         .order('added_at', { ascending: false })
         .range(offset, offset + pageSize - 1);
@@ -123,7 +123,7 @@ export default async function WatchlistPage({ searchParams }: { searchParams?: {
         { key: 'cases', label: 'Cases', href: '/inbox' },
         { key: 'clusters', label: 'Clusters', href: '/customers?merchantsMin=2' },
         { key: 'audits', label: 'Audits', href: '/history' },
-        { key: 'reports', label: 'Reports', href: '/chargebacks' },
+        { key: 'reports', label: 'Reports', href: '/reports' },
       ]}
       activeNavKey="clusters"
       actions={<Link href="/customers"><Button size="sm">Browse Customers</Button></Link>}
@@ -210,12 +210,12 @@ export default async function WatchlistPage({ searchParams }: { searchParams?: {
             description={
               searchQuery
                 ? `No watchlisted customers match "${searchQuery}".`
-                : "Star any customer on an audit to keep an eye on them — they'll appear here with their latest match confidence every time you upload new orders."
+                : 'No customers on watchlist.'
             }
             action={
               !searchQuery ? (
-                <Link href="/upload" className="text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
-                  Upload an audit
+                <Link href="/customers" className="text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
+                  Browse clusters →
                 </Link>
               ) : undefined
             }

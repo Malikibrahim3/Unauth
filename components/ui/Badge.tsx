@@ -23,23 +23,23 @@ interface BadgeProps {
 }
 
 const CHIP_STYLES: Record<BadgeTone, { background: string; color: string; border: string }> = {
-  neutral:  { background: 'var(--bg-surface-alt)',   color: 'var(--text-muted)',      border: 'var(--border-default)' },
-  info:     { background: 'var(--info-bg)',           color: 'var(--info-fg)',          border: 'var(--info-bd)' },
-  accent:   { background: 'var(--accent-soft)',       color: 'var(--accent)',           border: 'var(--accent-200)' },
-  success:  { background: 'var(--risk-low-bg)',       color: 'var(--risk-low-fg)',      border: 'var(--risk-low-bd)' },
-  warning:  { background: 'var(--risk-medium-bg)',    color: 'var(--risk-medium-fg)',   border: 'var(--risk-medium-bd)' },
-  danger:   { background: 'var(--risk-critical-bg)',  color: 'var(--risk-critical-fg)', border: 'var(--risk-critical-bd)' },
-  critical: { background: 'var(--brand-ink)',         color: 'var(--text-inverse)',     border: 'var(--brand-ink)' },
+  neutral:  { background: 'var(--surface-muted)',       color: 'var(--ink-secondary)',   border: 'var(--surface-border)' },
+  info:     { background: 'var(--privacy-fill)',        color: 'var(--privacy-ink)',     border: 'var(--privacy-border)' },
+  accent:   { background: 'var(--copper-glow)',         color: 'var(--copper-bright)',   border: 'var(--copper-dim)' },
+  success:  { background: 'var(--sev-clear-fill)',      color: 'var(--sev-clear)',       border: 'var(--risk-low-bd)' },
+  warning:  { background: 'var(--sev-probable-fill)',   color: 'var(--sev-probable)',    border: 'var(--risk-high-bd)' },
+  danger:   { background: 'var(--sev-definite-fill)',   color: 'var(--sev-definite)',    border: 'var(--risk-critical-bd)' },
+  critical: { background: 'var(--sev-definite-fill)',   color: 'var(--sev-definite)',    border: 'var(--sev-definite)' },
 };
 
 const SOLID_STYLES: Record<BadgeTone, { background: string; color: string }> = {
-  neutral:  { background: 'var(--text-muted)',        color: 'var(--bg-surface-alt)' },
-  info:     { background: 'var(--info-fg)',            color: 'var(--text-inverse)' },
-  accent:   { background: 'var(--accent)',             color: 'var(--text-inverse)' },
-  success:  { background: 'var(--risk-low-fg)',        color: 'var(--text-inverse)' },
-  warning:  { background: 'var(--risk-medium-fg)',     color: 'var(--text-inverse)' },
-  danger:   { background: 'var(--risk-critical-fg)',   color: 'var(--text-inverse)' },
-  critical: { background: 'var(--brand-ink)',          color: 'var(--text-inverse)' },
+  neutral:  { background: 'var(--surface-muted)',    color: 'var(--ink-primary)' },
+  info:     { background: 'var(--privacy-ink)',      color: 'var(--ink-inverse)' },
+  accent:   { background: 'var(--copper-bright)',    color: 'var(--ink-inverse)' },
+  success:  { background: 'var(--sev-clear)',        color: 'var(--ink-primary)' },
+  warning:  { background: 'var(--sev-probable)',     color: 'var(--ink-inverse)' },
+  danger:   { background: 'var(--sev-definite)',     color: 'var(--ink-primary)' },
+  critical: { background: 'var(--sev-definite)',     color: 'var(--ink-primary)' },
 };
 
 export function Badge({

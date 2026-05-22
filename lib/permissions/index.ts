@@ -204,7 +204,6 @@ export async function resolveCallerContext(
     .select('id, merchant_id, role')
     .eq('user_id', userId)
     .eq('invite_status', 'pending')
-    .is('deleted_at', null)
     .maybeSingle();
 
   if (pendingMember) {

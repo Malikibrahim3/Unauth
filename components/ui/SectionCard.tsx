@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 
 interface SectionCardProps {
   title: string;
-  description?: string;
+  description?: ReactNode;
   actions?: ReactNode;
   children: ReactNode;
   density?: 'default' | 'compact';
@@ -27,17 +27,17 @@ export function SectionCard({
       id={id}
       className={cn('overflow-hidden', className)}
       style={{
-        background: 'var(--bg-surface)',
-        border: '1px solid var(--border-default)',
-        borderRadius: 4,
+        background: 'var(--surface-raised)',
+        border: '1px solid var(--surface-border)',
+        borderRadius: 'var(--radius-md)',
       }}
     >
       {/* Header */}
       <div
         className="flex items-center justify-between gap-3"
         style={{
-          background: 'var(--bg-surface-alt)',
-          borderBottom: '1px solid var(--border-default)',
+          background: 'var(--surface-overlay)',
+          borderBottom: '1px solid var(--surface-border)',
           padding: '9px 14px',
         }}
       >
@@ -48,7 +48,7 @@ export function SectionCard({
               fontWeight: 600,
               letterSpacing: '0.12em',
               textTransform: 'uppercase',
-              color: 'var(--text)',
+              color: 'var(--ink-primary)',
               lineHeight: 1,
             }}
           >
@@ -58,8 +58,8 @@ export function SectionCard({
                 display: 'inline-block',
                 width: 5,
                 height: 5,
-                borderRadius: 999,
-                background: 'var(--accent)',
+                borderRadius: 1,
+                background: 'var(--copper-bright)',
                 marginRight: 7,
                 verticalAlign: '1px',
               }}
@@ -67,9 +67,9 @@ export function SectionCard({
             {title}
           </div>
           {description && (
-            <p
+              <p
               className="mt-1 truncate"
-              style={{ fontSize: 11, color: 'var(--text-muted)' }}
+              style={{ fontSize: 11, color: 'var(--ink-secondary)' }}
             >
               {description}
             </p>

@@ -14,7 +14,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const BASE =
-  'inline-flex items-center justify-center gap-2 font-medium transition-colors focus-visible:outline-none disabled:opacity-50 disabled:cursor-not-allowed select-none';
+  'inline-flex items-center justify-center gap-2 font-medium uppercase transition-colors duration-[120ms] focus-visible:outline-none disabled:opacity-50 disabled:cursor-not-allowed select-none';
 
 const SIZES: Record<ButtonSize, { height: number; px: string; fontSize: number }> = {
   sm: { height: 28, px: '10px', fontSize: 12 },
@@ -40,17 +40,17 @@ function variantStyle(variant: ButtonVariant): React.CSSProperties {
   switch (variant) {
     case 'primary':
       return {
-        background: 'var(--accent)',
-        color: 'var(--accent-fg-on-500)',
-        border: '1px solid var(--accent)',
-        boxShadow: '0 1px 0 rgba(94,32,24,0.18)',
+        background: 'var(--copper-bright)',
+        color: 'var(--ink-inverse)',
+        border: '1px solid var(--copper-bright)',
+        boxShadow: 'inset 0 1px 0 rgba(240,235,227,0.18)',
       };
     case 'secondary':
-      return { background: 'var(--bg-surface)', color: 'var(--text)', border: '1px solid var(--border-default)' };
+      return { background: 'transparent', color: 'var(--ink-secondary)', border: '1px solid var(--surface-border)' };
     case 'ghost':
-      return { background: 'transparent', color: 'var(--text-muted)' };
+      return { background: 'transparent', color: 'var(--ink-secondary)' };
     case 'danger':
-      return { background: 'var(--risk-critical-fg)', color: '#FBEFEC', border: '1px solid var(--risk-critical-fg)' };
+      return { background: 'var(--sev-definite)', color: 'var(--ink-primary)', border: '1px solid var(--sev-definite)' };
     case 'link':
       return { background: 'transparent', color: 'var(--text-muted)' };
   }
@@ -92,7 +92,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           paddingRight: isLink ? undefined : sz.px,
           fontSize: sz.fontSize,
           borderRadius: isLink ? undefined : 4,
-          letterSpacing: '0.01em',
+          letterSpacing: '0.04em',
           ...variantStyle(variant),
           ...style,
         }}

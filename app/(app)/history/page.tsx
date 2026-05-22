@@ -1,9 +1,11 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 import AuditHistoryTableClient from '@/components/audit/AuditHistoryTableClient';
 import type { Database } from '@/lib/supabase/types';
 import PageSizeSelect from '@/components/common/PageSizeSelect';
 import { Button, WorkbenchPage, WorkbenchActionBar, WorkbenchEmptyState, WorkbenchKpiStrip } from '@/components/ui';
+import { requirePermission, PERMISSIONS } from '@/lib/permissions';
+import { redirect } from 'next/navigation';
 
 type RunRow = Database['public']['Tables']['processing_jobs']['Row'];
 
@@ -12,6 +14,15 @@ const DEFAULT_PAGE_SIZE = 25;
 
 export default async function HistoryPage({ searchParams }: { searchParams?: { page?: string; pageSize?: string } }) {
   const supabase = createClient();
+  const serviceClient = createServiceClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    redirect('/login');
+  }
+  const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_HISTORY);
+  if (denied) {
+    redirect('/dashboard');
+  }
   const sp = (await Promise.resolve(searchParams)) ?? {};
   const page = Math.max(1, parseInt(sp?.page ?? '1', 10));
   const requestedPageSize = parseInt(sp?.pageSize ?? String(DEFAULT_PAGE_SIZE), 10);
@@ -20,9 +31,10 @@ export default async function HistoryPage({ searchParams }: { searchParams?: { p
     : DEFAULT_PAGE_SIZE;
   const offset = (page - 1) * pageSize;
 
-  const { data: runs, count } = await supabase
+  const { data: runs, count } = await serviceClient
     .from('processing_jobs')
     .select('*', { count: 'exact' })
+    .eq('merchant_id', ctx.merchantId)
     .eq('hidden_by_merchant', false)
     .order('created_at', { ascending: false })
     .range(offset, offset + pageSize - 1);
@@ -41,7 +53,7 @@ export default async function HistoryPage({ searchParams }: { searchParams?: { p
         { key: 'cases', label: 'Cases', href: '/inbox' },
         { key: 'clusters', label: 'Clusters', href: '/customers?merchantsMin=2' },
         { key: 'audits', label: 'Audits', href: '/history' },
-        { key: 'reports', label: 'Reports', href: '/chargebacks' },
+        { key: 'reports', label: 'Reports', href: '/reports' },
       ]}
       activeNavKey="audits"
       actions={

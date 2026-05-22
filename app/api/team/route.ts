@@ -35,7 +35,7 @@ async function GETHandler(req: NextRequest) {
 
   const { data: members, error } = await scopedClient
     .from('merchant_members').select('*')
-    .is('deleted_at', null)
+    .neq('invite_status', 'revoked')
     .order('created_at', { ascending: true });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -113,7 +113,7 @@ async function POSTHandler(req: NextRequest) {
 
   const { data: existing } = await scopedClient
     .from('merchant_members')
-    .select('id, invite_status, deleted_at')
+    .select('id, invite_status')
     .eq('invited_email', email)
     .maybeSingle();
   if (existing) {
@@ -131,7 +131,6 @@ async function POSTHandler(req: NextRequest) {
         invite_status: 'pending',
         invited_by: user.id,
         accepted_at: null,
-        deleted_at: null,
       } as any)
       .eq('id', (existing as any).id)
       .select()
@@ -158,7 +157,7 @@ async function POSTHandler(req: NextRequest) {
     if (inviteError) {
       await scopedClient
         .from('merchant_members')
-        .update({ invite_status: 'revoked', deleted_at: new Date().toISOString() } as any)
+        .update({ invite_status: 'revoked' } as any)
         .eq('id', member.id);
       return NextResponse.json({ error: inviteError.message }, { status: 502 });
     }
@@ -175,7 +174,7 @@ async function POSTHandler(req: NextRequest) {
   } catch (err) {
     await scopedClient
       .from('merchant_members')
-      .update({ invite_status: 'revoked', deleted_at: new Date().toISOString() } as any)
+      .update({ invite_status: 'revoked' } as any)
       .eq('id', member.id);
     return NextResponse.json(
       { error: err instanceof Error ? err.message : 'Failed to send invite.' },

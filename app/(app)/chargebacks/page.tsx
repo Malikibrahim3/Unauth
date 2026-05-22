@@ -1,11 +1,12 @@
 // app/(app)/chargebacks/page.tsx
 // Evidence packages list — shows all generated packages for this merchant.
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { formatDate } from '@/lib/utils/format'
-import { Badge, Button, DataTable, WorkbenchActionBar, WorkbenchEmptyState, WorkbenchKpiStrip, WorkbenchPage } from '@/components/ui'
+import { Badge, Button, WorkbenchActionBar, WorkbenchEmptyState, WorkbenchKpiStrip, WorkbenchPage } from '@/components/ui'
+import { requirePermission, PERMISSIONS } from '@/lib/permissions'
 
 export const metadata = {
   title: 'Evidence Packages — Unauth',
@@ -15,12 +16,16 @@ export default async function ChargebacksPage() {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
+  const serviceClient = createServiceClient()
+  const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_CHARGEBACKS)
+  if (denied) redirect('/dashboard')
 
-  const { data: packages } = await supabase
+  const { data: packages } = await serviceClient
     .from('evidence_packages')
     .select(
       'id, reference_number, customer_profile_id, generated_for_order_id, generated_at, ce3_eligible, cross_merchant_indicator, narrative_summary'
     )
+    .eq('merchant_id', ctx.merchantId)
     .order('generated_at', { ascending: false })
     .limit(100) as unknown as {
       data: Array<{
@@ -41,7 +46,7 @@ export default async function ChargebacksPage() {
   const profileIds = [...new Set(pkgs.map(p => p.customer_profile_id).filter(Boolean))]
   const profileMap: Record<string, { maskedEmail: string }> = {}
   if (profileIds.length > 0) {
-    const { data: profiles } = await supabase
+    const { data: profiles } = await serviceClient
       .from('customer_profiles')
       .select('id, primary_email, emails')
       .in('id', profileIds as string[]) as unknown as {
@@ -59,14 +64,14 @@ export default async function ChargebacksPage() {
 
   return (
     <WorkbenchPage
-      title="Reports"
+      title="Evidence Packages"
       subtitle="Evidence packages generated for disputed orders."
       navItems={[
         { key: 'overview', label: 'Overview', href: '/dashboard' },
         { key: 'cases', label: 'Cases', href: '/inbox' },
         { key: 'clusters', label: 'Clusters', href: '/customers?merchantsMin=2' },
         { key: 'audits', label: 'Audits', href: '/history' },
-        { key: 'reports', label: 'Reports', href: '/chargebacks' },
+        { key: 'reports', label: 'Reports', href: '/reports' },
       ]}
       activeNavKey="reports"
       actions={
@@ -102,77 +107,69 @@ export default async function ChargebacksPage() {
           action={<Link href="/customers" className="text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>View customers</Link>}
         />
       ) : (
-        <DataTable
-          columns={[
-            {
-              key: 'reference_number',
-              header: 'Reference',
-              render: (pkg) => (
-                <span className="font-mono text-xs" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                  {pkg.reference_number}
-                </span>
-              ),
-            },
-            {
-              key: 'customer',
-              header: 'Customer',
-              render: (pkg) => (
-                <span className="text-xs" style={{ color: 'var(--text)' }}>
-                  {pkg.customer_profile_id ? (profileMap[pkg.customer_profile_id]?.maskedEmail ?? '—') : '—'}
-                </span>
-              ),
-            },
-            {
-              key: 'generated_at',
-              header: 'Generated',
-              render: (pkg) => (
-                <span className="text-xs font-mono" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                  {formatDate(pkg.generated_at)}
-                </span>
-              ),
-            },
-            {
-              key: 'ce3_eligible',
-              header: 'CE3.0',
-              render: (pkg) => pkg.ce3_eligible
-                ? <Badge tone="success" size="sm">CE3.0</Badge>
-                : <span className="text-caption" style={{ color: 'var(--text-subtle)' }}>—</span>,
-            },
-            {
-              key: 'cross_merchant_indicator',
-              header: 'Cross-merchant',
-              render: (pkg) => pkg.cross_merchant_indicator
-                ? <Badge tone="info" size="sm">Network</Badge>
-                : <span className="text-caption" style={{ color: 'var(--text-subtle)' }}>—</span>,
-            },
-            {
-              key: 'actions',
-              header: '',
-              render: (pkg) => (
-                <div className="flex items-center justify-end gap-3">
-                  <a
-                    href={`/api/evidence/${pkg.id}/pdf`}
-                    className="text-caption hover:underline"
-                    style={{ color: 'var(--text-muted)' }}
-                    download
-                  >
-                    Download
-                  </a>
-                  <Link
-                    href={`/chargebacks/${pkg.id}`}
-                    className="text-caption hover:underline"
-                    style={{ color: 'var(--text-muted)' }}
-                  >
-                    Open
-                  </Link>
-                </div>
-              ),
-            },
-          ]}
-          rows={pkgs}
-          getRowKey={(pkg) => pkg.id}
-          density="default"
-        />
+        <div className="w-full overflow-x-auto">
+          <table className="w-full border-collapse text-sm" style={{ background: 'var(--bg-surface)' }}>
+            <thead>
+              <tr className="border-b" style={{ background: 'var(--bg-surface-alt)', borderColor: 'var(--border-default)' }}>
+                {['Reference', 'Customer', 'Generated', 'CE3.0', 'Cross-merchant', ''].map((header) => (
+                  <th key={header} className="px-4 py-2.5 text-left text-overline" style={{ color: 'var(--text-muted)' }}>
+                    {header}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {pkgs.map((pkg) => (
+                <tr key={pkg.id} className="border-b" style={{ borderColor: 'var(--border-subtle)' }}>
+                  <td className="px-4 py-3">
+                    <span className="font-mono text-xs" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                      {pkg.reference_number}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="text-xs" style={{ color: 'var(--text)' }}>
+                      {pkg.customer_profile_id ? (profileMap[pkg.customer_profile_id]?.maskedEmail ?? '—') : '—'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="text-xs font-mono" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                      {formatDate(pkg.generated_at)}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    {pkg.ce3_eligible
+                      ? <Badge tone="success" size="sm">CE3.0</Badge>
+                      : <span className="text-caption" style={{ color: 'var(--text-subtle)' }}>—</span>}
+                  </td>
+                  <td className="px-4 py-3">
+                    {pkg.cross_merchant_indicator
+                      ? <Badge tone="info" size="sm">Network</Badge>
+                      : <span className="text-caption" style={{ color: 'var(--text-subtle)' }}>—</span>}
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <div className="flex items-center justify-end gap-3">
+                      <a
+                        href={`/api/evidence/${pkg.id}/pdf`}
+                        className="text-caption hover:underline"
+                        style={{ color: 'var(--text-muted)' }}
+                        download
+                      >
+                        Download
+                      </a>
+                      <Link
+                        href={`/chargebacks/${pkg.id}`}
+                        className="text-caption hover:underline"
+                        style={{ color: 'var(--text-muted)' }}
+                      >
+                        Open
+                      </Link>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     />
   )

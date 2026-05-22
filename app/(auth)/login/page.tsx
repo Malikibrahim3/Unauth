@@ -2,22 +2,20 @@
 
 import { Suspense, useState } from 'react';
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase/client';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
 import { UnauthLogo } from '@/components/ui/UnauthLogo';
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label className="block">
-      <span className="mb-2 block t-label text-[var(--ink-tertiary)]">{label}</span>
-      {children}
-    </label>
-  );
+function formatAuthError(message: string): string {
+  const lower = message.toLowerCase();
+  if (lower.includes('invalid login credentials')) return 'Email or password is incorrect.';
+  if (lower.includes('email not confirmed')) return 'Check your email to confirm your account, then sign in.';
+  return message;
 }
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[var(--surface-base)]" />}>
+    <Suspense fallback={<div className="min-h-screen" style={{ background: 'var(--surface-base)' }} />}>
       <LoginPageInner />
     </Suspense>
   );
@@ -27,17 +25,23 @@ function LoginPageInner() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
   const [storeName, setStoreName] = useState('');
   const [platform, setPlatform] = useState('');
   const [annualVolume, setAnnualVolume] = useState('');
   const [primaryConcern, setPrimaryConcern] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const supabase = createClient();
   const router = useRouter();
   const searchParams = useSearchParams();
   const nextPath = searchParams.get('next') || '/dashboard';
+  const isSubmitDisabled =
+    loading ||
+    !email ||
+    !password ||
+    (isSignUp && (!storeName.trim() || !platform || !annualVolume || !primaryConcern));
+  const isSuccess = error.includes('created') || error.includes('Check your email');
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -46,7 +50,7 @@ function LoginPageInner() {
 
     if (isSignUp) {
       if (!storeName.trim() || !platform || !annualVolume || !primaryConcern) {
-        setError('Please fill in all company details.');
+        setError('Please fill in all store details.');
         setLoading(false);
         return;
       }
@@ -54,11 +58,18 @@ function LoginPageInner() {
       const { error: signUpError } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { store_name: storeName.trim(), platform, monthly_order_volume: annualVolume, primary_fraud_concern: primaryConcern } },
+        options: {
+          data: {
+            store_name: storeName.trim(),
+            platform,
+            monthly_order_volume: annualVolume,
+            primary_fraud_concern: primaryConcern,
+          },
+        },
       });
 
       if (signUpError) {
-        setError(signUpError.message);
+        setError(formatAuthError(signUpError.message));
         setLoading(false);
         return;
       }
@@ -70,91 +81,177 @@ function LoginPageInner() {
         setLoading(false);
         return;
       }
-    } else {
-      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-      if (signInError) {
-        setError(signInError.message);
-        setLoading(false);
+
+      const bootstrapRes = await fetch('/api/account/setup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          storeName: storeName.trim(),
+          platform,
+          monthlyOrderVolume: annualVolume,
+          primaryFraudConcern: primaryConcern,
+          setupComplete: false,
+        }),
+      });
+      const bootstrapBody = await bootstrapRes.json().catch(() => ({}));
+      setLoading(false);
+      if (!bootstrapRes.ok) {
+        setError(bootstrapBody.error ?? 'Could not prepare your account.');
         return;
       }
+      router.push('/onboarding');
+      router.refresh();
+      return;
     }
 
+    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
+    if (signInError) {
+      setError(formatAuthError(signInError.message));
+      return;
+    }
     router.push(nextPath);
     router.refresh();
   }
 
   return (
-    <div className="min-h-screen bg-[var(--surface-base)] text-[var(--ink-primary)] lg:grid lg:grid-cols-2">
-      <section className="hidden border-r border-[var(--surface-border)] lg:flex lg:flex-col lg:justify-between lg:p-10">
-        <div>
-          <Link href="/" className="inline-flex items-center">
-            <UnauthLogo variant="dark" size={128} />
-          </Link>
-          <div className="mt-10 max-w-md">
-            <p className="t-label text-[var(--ink-tertiary)]">PILOT ACCESS</p>
-            <h1 className="mt-3 t-display">Unauth.</h1>
-            <p className="mt-4 t-subhead text-[var(--ink-secondary)]">Instrument-grade fraud review for merchant teams.</p>
-          </div>
-        </div>
-        <div className="t-caption text-[var(--ink-tertiary)]">Secure sign-in for merchant accounts.</div>
-      </section>
+    <main className="flex min-h-screen items-center justify-center px-4 py-8" style={{ background: 'var(--surface-base)' }}>
+      <div className="w-full max-w-[400px]">
+        <Link href="/" className="mb-6 flex justify-center">
+          <UnauthLogo variant="light" size={28} />
+        </Link>
 
-      <section className="flex items-center justify-center p-6 lg:p-10">
-        <div className="w-full max-w-md">
-          <div className="mb-8 lg:hidden">
-            <Link href="/" className="inline-flex items-center">
-              <UnauthLogo variant="dark" size={28} />
-            </Link>
-          </div>
-
-          <div className="espresso-panel p-6 lg:p-8">
-            <div className="mb-6">
-              <p className="t-label text-[var(--ink-tertiary)]">{isSignUp ? 'REQUEST ACCESS' : 'SIGN IN'}</p>
-              <h2 className="mt-2 t-heading">{isSignUp ? 'Create your merchant account' : 'Sign in to your account'}</h2>
+        <section className="rounded-lg border p-8" style={{ background: 'var(--surface-raised)', borderColor: 'var(--surface-border)' }}>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="t-label mb-2 block" style={{ color: 'var(--ink-tertiary)' }}>Email address</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                placeholder="you@company.com"
+                className="w-full rounded-md border px-3 py-2 text-sm outline-none"
+                style={{ background: 'var(--surface-input)', borderColor: 'var(--surface-border)', color: 'var(--ink-primary)' }}
+              />
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <Field label="Email address">
-                <input className="w-full espresso-input px-4 py-3 outline-none focus-ring" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@company.com" required />
-              </Field>
-              <Field label="Password">
-                <input className="w-full espresso-input px-4 py-3 outline-none focus-ring" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required />
-              </Field>
-
-              {isSignUp && (
-                <>
-                  <Field label="Company name">
-                    <input className="w-full espresso-input px-4 py-3 outline-none focus-ring" value={storeName} onChange={(e) => setStoreName(e.target.value)} placeholder="ASOS Demo Merchant" required />
-                  </Field>
-                  <Field label="Platform">
-                    <input className="w-full espresso-input px-4 py-3 outline-none focus-ring" value={platform} onChange={(e) => setPlatform(e.target.value)} placeholder="Shopify, Magento, custom..." required />
-                  </Field>
-                  <Field label="Annual volume">
-                    <input className="w-full espresso-input px-4 py-3 outline-none focus-ring" value={annualVolume} onChange={(e) => setAnnualVolume(e.target.value)} placeholder="100000" required />
-                  </Field>
-                  <Field label="Primary concern">
-                    <input className="w-full espresso-input px-4 py-3 outline-none focus-ring" value={primaryConcern} onChange={(e) => setPrimaryConcern(e.target.value)} placeholder="Refund fraud" required />
-                  </Field>
-                </>
-              )}
-
-              {error && <p className="t-body text-[var(--sev-probable)]">{error}</p>}
-
-              <button type="submit" disabled={loading || !email || !password || (isSignUp && (!storeName || !platform || !annualVolume || !primaryConcern))} className="w-full rounded-sm bg-[var(--copper-bright)] px-4 py-3 t-label text-[var(--ink-inverse)] disabled:opacity-50">
-                {loading ? 'Working...' : isSignUp ? 'Create account' : 'Sign in'}
-              </button>
-            </form>
-
-            <div className="mt-5 flex items-center justify-between text-[var(--ink-tertiary)]">
-              <Link href="/reset" className="t-caption hover:text-[var(--ink-primary)]">Forgot password?</Link>
-              <button type="button" onClick={() => setIsSignUp((v) => !v)} className="t-caption hover:text-[var(--ink-primary)]">
-                {isSignUp ? 'Back to sign in' : 'Need an account?'}
-              </button>
+            <div>
+              <label className="t-label mb-2 block" style={{ color: 'var(--ink-tertiary)' }}>Password</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                placeholder="••••••••"
+                className="w-full rounded-md border px-3 py-2 text-sm outline-none"
+                style={{ background: 'var(--surface-input)', borderColor: 'var(--surface-border)', color: 'var(--ink-primary)' }}
+              />
             </div>
-          </div>
-        </div>
-      </section>
-    </div>
+
+            {!isSignUp && (
+              <div className="text-right">
+                <Link href="/reset" className="t-caption hover:underline" style={{ color: 'var(--ink-tertiary)' }}>
+                  Forgot password?
+                </Link>
+              </div>
+            )}
+
+            {isSignUp && (
+              <div className="space-y-4 border-t pt-4" style={{ borderColor: 'var(--surface-border)' }}>
+                <p className="t-label" style={{ color: 'var(--ink-tertiary)' }}>Store details</p>
+                <input
+                  type="text"
+                  value={storeName}
+                  onChange={(e) => setStoreName(e.target.value)}
+                  required
+                  placeholder="Store name"
+                  className="w-full rounded-md border px-3 py-2 text-sm outline-none"
+                  style={{ background: 'var(--surface-input)', borderColor: 'var(--surface-border)', color: 'var(--ink-primary)' }}
+                />
+                <select
+                  value={platform}
+                  onChange={(e) => setPlatform(e.target.value)}
+                  required
+                  className="w-full rounded-md border px-3 py-2 text-sm outline-none"
+                  style={{ background: 'var(--surface-input)', borderColor: 'var(--surface-border)', color: platform ? 'var(--ink-primary)' : 'var(--ink-tertiary)' }}
+                >
+                  <option value="">Select platform...</option>
+                  <option value="shopify">Shopify</option>
+                  <option value="woocommerce">WooCommerce</option>
+                  <option value="magento">Magento</option>
+                  <option value="bigcommerce">BigCommerce</option>
+                  <option value="custom">Custom</option>
+                  <option value="other">Other</option>
+                </select>
+                <select
+                  value={annualVolume}
+                  onChange={(e) => setAnnualVolume(e.target.value)}
+                  required
+                  className="w-full rounded-md border px-3 py-2 text-sm outline-none"
+                  style={{ background: 'var(--surface-input)', borderColor: 'var(--surface-border)', color: annualVolume ? 'var(--ink-primary)' : 'var(--ink-tertiary)' }}
+                >
+                  <option value="">Annual order volume...</option>
+                  <option value="under_10k">Under 10,000</option>
+                  <option value="10k_50k">10,000-50,000</option>
+                  <option value="50k_250k">50,000-250,000</option>
+                  <option value="over_250k">Over 250,000</option>
+                </select>
+                <select
+                  value={primaryConcern}
+                  onChange={(e) => setPrimaryConcern(e.target.value)}
+                  required
+                  className="w-full rounded-md border px-3 py-2 text-sm outline-none"
+                  style={{ background: 'var(--surface-input)', borderColor: 'var(--surface-border)', color: primaryConcern ? 'var(--ink-primary)' : 'var(--ink-tertiary)' }}
+                >
+                  <option value="">Primary concern...</option>
+                  <option value="refund_abuse">Refund abuse</option>
+                  <option value="inr_claims">INR claims</option>
+                  <option value="chargebacks">Chargebacks</option>
+                  <option value="all">All of the above</option>
+                </select>
+              </div>
+            )}
+
+            {error && (
+              <p
+                className="t-caption rounded-sm border px-3 py-2"
+                style={{
+                  background: isSuccess ? 'var(--sev-clear-fill)' : 'var(--sev-definite-fill)',
+                  borderColor: isSuccess ? 'var(--sev-clear)' : 'var(--sev-definite)',
+                  color: isSuccess ? 'var(--sev-clear)' : 'var(--sev-definite)',
+                }}
+              >
+                {error}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              disabled={isSubmitDisabled}
+              className="h-10 w-full rounded-md text-xs font-semibold uppercase tracking-[0.04em] disabled:cursor-not-allowed disabled:opacity-50"
+              style={{ background: 'var(--copper-bright)', color: 'var(--ink-inverse)' }}
+            >
+              {loading ? 'Processing...' : isSignUp ? 'Create account' : 'Sign in'}
+            </button>
+          </form>
+
+          <p className="mt-5 text-center t-caption" style={{ color: 'var(--ink-tertiary)' }}>
+            {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
+            <button
+              type="button"
+              onClick={() => { setIsSignUp((value) => !value); setError(''); }}
+              className="font-semibold underline underline-offset-2"
+              style={{ color: 'var(--copper-bright)' }}
+            >
+              {isSignUp ? 'Sign in' : 'Request access'}
+            </button>
+          </p>
+          <p className="mt-4 text-center t-caption" style={{ color: 'var(--ink-tertiary)' }}>
+            By signing in, you agree to use Unauth for authorised investigations only.
+          </p>
+        </section>
+      </div>
+    </main>
   );
 }

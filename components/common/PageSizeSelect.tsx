@@ -29,8 +29,8 @@ export default async function PageSizeSelect({
 
   return (
     <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
-      <span>{label}</span>
-      <div className="inline-flex rounded-[4px] border overflow-hidden" style={{ borderColor: 'var(--border-default)', background: 'var(--bg-surface)' }}>
+      <span className="shrink-0">{label}</span>
+      <div className="inline-flex shrink-0 overflow-hidden rounded-[4px] border" style={{ borderColor: 'var(--border-default)', background: 'var(--bg-surface)' }}>
         {PAGE_SIZES.map((size) => {
           const active = size === pageSize;
           return (

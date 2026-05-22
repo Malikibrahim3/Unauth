@@ -7,7 +7,7 @@ import {
   type ChunkDispatchPayload,
 } from '@/lib/processing/chunkedDispatch';
 import { verifyChunkToken, INTERNAL_CHUNK_TOKEN_HEADER } from '@/lib/processing/internalAuth';
-import { countReviewWorthyTransactions } from '@/lib/supabase/merchantHelpers';
+import { countReviewWorthyTransactions, paginateAll, refreshAuditCustomerSummaries } from '@/lib/supabase/merchantHelpers';
 import { restitchAuditIdentityFromChunks } from '@/lib/processing/restitchAuditIdentity';
 import { checkCsvUsageGuard } from '@/lib/processing/supabaseUsageGuard';
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -136,15 +136,34 @@ async function maybeSendAuditResultsEmail(
     return;
   }
 
-  const { data: rows } = await supabase
-    .from('audit_transactions')
-    .select('cluster_id, order_value, fraud_flags, behavioural_flags, signals_matched, context_flags')
-    .eq('job_id', jobId)
-    .or('identity_confidence_grade.in.(probable,definite),match_status.in.(probable,definite)')
-    .not('dismissed_by_merchant', 'is', true)
-    .limit(5000);
+  const rows = await paginateAll<{
+    cluster_id: string | null;
+    order_value: number | string | null;
+    fraud_flags: unknown;
+    behavioural_flags: unknown;
+    signals_matched: unknown;
+    context_flags: unknown;
+  }>((from, to) =>
+    supabase
+      .from('audit_transactions')
+      .select('cluster_id, order_value, fraud_flags, behavioural_flags, signals_matched, context_flags')
+      .eq('job_id', jobId)
+      .or('identity_confidence_grade.in.(probable,definite),match_status.in.(probable,definite)')
+      .not('dismissed_by_merchant', 'is', true)
+      .range(from, to) as unknown as Promise<{
+        data: Array<{
+          cluster_id: string | null;
+          order_value: number | string | null;
+          fraud_flags: unknown;
+          behavioural_flags: unknown;
+          signals_matched: unknown;
+          context_flags: unknown;
+        }> | null;
+        error: unknown;
+      }>
+  );
 
-  const summary = summarizeAuditResults((rows ?? []) as Array<{
+  const summary = summarizeAuditResults(rows as Array<{
     cluster_id: string | null;
     order_value: number | string | null;
     fraud_flags: unknown;
@@ -194,6 +213,78 @@ async function maybeSendAuditResultsEmail(
   }
 }
 
+async function finalizeJob(
+  jobId: string,
+  totalChunks: number,
+  merchantId: string,
+  storagePath: string,
+  totalRows: number
+): Promise<void> {
+  const log = (msg: string) =>
+    console.log(`[finalize ${jobId}] ${new Date().toISOString()} ${msg}`);
+  const sc = createServiceClient();
+
+  try {
+    log('Finalising job');
+    let watchlistSyncStatus: 'synced' | 'failed' = 'synced';
+    try {
+      await checkWatchlistAppearances(merchantId, jobId, sc);
+    } catch (err) {
+      watchlistSyncStatus = 'failed';
+      console.warn(`[finalize ${jobId}] watchlist sync non-fatal failure:`, formatError(err));
+    }
+    await sc
+      .from('processing_jobs')
+      .update({ watchlist_sync_status: watchlistSyncStatus } as any)
+      .eq('id', jobId);
+    const flaggedCount = await countReviewWorthyTransactions(sc, jobId, merchantId);
+    try {
+      const summaryRows = await refreshAuditCustomerSummaries(sc, jobId, merchantId);
+      log(`Customer summaries refreshed: ${summaryRows}`);
+    } catch (err) {
+      console.warn(`[finalize ${jobId}] customer summary refresh non-fatal failure:`, formatError(err));
+    }
+    await completeJob(sc, jobId, true, undefined, flaggedCount);
+    log(`Job marked completed: flaggedCount=${flaggedCount}`);
+
+    if (totalRows > 0 && totalRows <= INLINE_RESTITCH_MAX_ROWS) {
+      try {
+        const restitch = await restitchAuditIdentityFromChunks(sc, jobId, totalChunks);
+        log(`Identity restitch complete: updated ${restitch.updated}/${restitch.linkedRows} linked rows`);
+      } catch (err) {
+        const restitchMessage = formatError(err);
+        console.warn(`[finalize ${jobId}] identity restitch non-fatal failure:`, restitchMessage);
+        log(`Identity restitch skipped after failure: ${restitchMessage}`);
+      }
+    } else {
+      log(`Identity restitch skipped inline for ${totalRows} rows (limit ${INLINE_RESTITCH_MAX_ROWS})`);
+    }
+
+    try {
+      await maybeSendAuditResultsEmail(sc, jobId, merchantId);
+    } catch (err) {
+      const emailMessage = formatError(err);
+      console.warn(`[finalize ${jobId}] results email non-fatal failure:`, emailMessage);
+      await sc
+        .from('processing_jobs')
+        .update({ results_email_error: emailMessage } as any)
+        .eq('id', jobId);
+    }
+
+    await deleteChunkArtifacts(sc, jobId, totalChunks);
+    if (storagePath) {
+      const { error: rmErr } = await sc.storage.from(CHUNK_BUCKET).remove([storagePath]);
+      if (rmErr) console.warn('[finalize] CSV cleanup non-fatal error:', rmErr.message);
+    }
+
+    log(`Job finalised: flaggedCount=${flaggedCount}`);
+  } catch (err) {
+    const message = formatError(err);
+    console.error(`[finalize ${jobId}] FAILED:`, message);
+    await completeJob(sc, jobId, false, [{ message: `Finalisation failed: ${message}` }]);
+  }
+}
+
 export async function POST(request: NextRequest) {
   let body: ChunkDispatchPayload;
   try {
@@ -240,60 +331,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Job rows are not fully processed yet' }, { status: 409 });
   }
 
-  try {
-    log('Finalising job');
-    let watchlistSyncStatus: 'synced' | 'failed' = 'synced';
-    try {
-      await checkWatchlistAppearances(merchantId, jobId, sc);
-    } catch (err) {
-      watchlistSyncStatus = 'failed';
-      console.warn(`[finalize ${jobId}] watchlist sync non-fatal failure:`, formatError(err));
-    }
-    await sc
-      .from('processing_jobs')
-      .update({ watchlist_sync_status: watchlistSyncStatus } as any)
-      .eq('id', jobId);
-    const flaggedCount = await countReviewWorthyTransactions(sc, jobId, merchantId);
-    await completeJob(sc, jobId, true, undefined, flaggedCount);
-    log(`Job marked completed: flaggedCount=${flaggedCount}`);
+  void finalizeJob(jobId, totalChunks, merchantId, storagePath, job.total_rows ?? 0).catch((err) => {
+    console.error(`[finalize ${jobId}] unhandled async failure:`, formatError(err));
+  });
 
-    const totalRows = job.total_rows ?? 0;
-    if (totalRows > 0 && totalRows <= INLINE_RESTITCH_MAX_ROWS) {
-      try {
-        const restitch = await restitchAuditIdentityFromChunks(sc, jobId, totalChunks);
-        log(`Identity restitch complete: updated ${restitch.updated}/${restitch.linkedRows} linked rows`);
-      } catch (err) {
-        const restitchMessage = formatError(err);
-        console.warn(`[finalize ${jobId}] identity restitch non-fatal failure:`, restitchMessage);
-        log(`Identity restitch skipped after failure: ${restitchMessage}`);
-      }
-    } else {
-      log(`Identity restitch skipped inline for ${totalRows} rows (limit ${INLINE_RESTITCH_MAX_ROWS})`);
-    }
-
-    try {
-      await maybeSendAuditResultsEmail(sc, jobId, merchantId);
-    } catch (err) {
-      const emailMessage = formatError(err);
-      console.warn(`[finalize ${jobId}] results email non-fatal failure:`, emailMessage);
-      await sc
-        .from('processing_jobs')
-        .update({ results_email_error: emailMessage } as any)
-        .eq('id', jobId);
-    }
-
-    await deleteChunkArtifacts(sc, jobId, totalChunks);
-    if (storagePath) {
-      const { error: rmErr } = await sc.storage.from(CHUNK_BUCKET).remove([storagePath]);
-      if (rmErr) console.warn('[finalize] CSV cleanup non-fatal error:', rmErr.message);
-    }
-
-    log(`Job finalised: flaggedCount=${flaggedCount}`);
-    return NextResponse.json({ ok: true, finalised: true, flaggedCount });
-  } catch (err) {
-    const message = formatError(err);
-    console.error(`[finalize ${jobId}] FAILED:`, message);
-    await completeJob(sc, jobId, false, [{ message: `Finalisation failed: ${message}` }]);
-    return NextResponse.json({ error: message }, { status: 500 });
-  }
+  return NextResponse.json({ accepted: true, finalising: true }, { status: 202 });
 }
