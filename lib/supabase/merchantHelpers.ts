@@ -390,14 +390,15 @@ export async function fetchMerchantScopedCustomerProfile(
   // user IDs for older rows. Providing this allows the query to match either.
   _legacyUserId?: string | null
 ): Promise<Record<string, unknown> | null> {
+  const merchantFilter = _legacyUserId
+    ? `merchant_ids.cs.${JSON.stringify([merchantId])},merchant_ids.cs.${JSON.stringify([_legacyUserId])}`
+    : `merchant_ids.cs.${JSON.stringify([merchantId])}`;
+
   const { data } = await serviceClient
     .from('customer_profiles')
     .select(PROFILE_SELECT)
     .eq('id', profileId)
-    // customer_profiles uses an array column merchant_ids; check both the
-    // merchant UUID and, as a legacy fallback, the owner user_id.
-    // We do NOT rely solely on this — we also cross-check via job ownership below.
-    .contains('merchant_ids', [merchantId])
+    .or(merchantFilter)
     .maybeSingle() as unknown as { data: Record<string, unknown> | null };
 
   return data ?? null;

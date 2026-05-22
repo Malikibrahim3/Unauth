@@ -22,7 +22,8 @@ export default async function WatchlistPage({ searchParams }: { searchParams?: {
     redirect('/login');
   }
   const ctx = await resolveCallerContext(serviceClient, user.id);
-  if (!ctx) {
+  const merchantId = ctx?.merchantId;
+  if (!merchantId) {
     const { redirect } = await import('next/navigation');
     redirect('/onboarding');
   }
@@ -44,7 +45,7 @@ export default async function WatchlistPage({ searchParams }: { searchParams?: {
       let q = supabase
         .from('watchlist_entries')
         .select('*', { count: 'exact' })
-        .eq('merchant_id', ctx.merchantId)
+        .eq('merchant_id', merchantId)
         .eq('removed_by_merchant', false)
         .order('added_at', { ascending: false })
         .range(offset, offset + pageSize - 1);

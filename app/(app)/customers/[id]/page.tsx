@@ -348,7 +348,7 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
     .from('customer_activity_log' as any)
     .select('id, event_type, event_data, created_at')
     .eq('profile_id', profileId)
-    .eq('merchant_id', merchantId ?? user.id)
+    .eq('merchant_id', merchantId)
     .order('created_at', { ascending: false })
     .limit(20) as unknown as { data: Array<{ id: string; event_type: string; event_data: Record<string, unknown>; created_at: string }> | null };
 

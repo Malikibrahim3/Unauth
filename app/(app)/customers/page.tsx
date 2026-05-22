@@ -1,6 +1,7 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import CustomersFilterSheet from '@/components/customers/CustomersFilterSheet';
 import CustomersTableClient from '@/components/customers/CustomersTableClient';
 import PageSizeSelect from '@/components/common/PageSizeSelect';
@@ -81,15 +82,9 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  // Resolve the merchants-table UUID so we can filter profiles from both
-  // legacy uploads (stored with auth user UUID) and current uploads.
   const svc = createServiceClient();
-  const { data: merchantRow } = await svc
-    .from('merchants')
-    .select('id')
-    .eq('user_id', user.id)
-    .maybeSingle();
-  const merchantId = merchantRow?.id ?? null;
+  const { denied, ctx } = await requirePermission(svc, user.id, PERMISSIONS.VIEW_CUSTOMERS);
+  if (denied) return redirect('/dashboard');
   // `searchParams` may be a Promise in newer Next.js versions — await to normalize.
   const sp = (await Promise.resolve(searchParams)) ?? {};
 
@@ -142,9 +137,7 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
 
   // Scope to profiles this merchant owns — accepts both the auth-user UUID
   // (legacy, pre-merchants-table uploads) and the merchants-table UUID (current).
-  const merchantFilter = merchantId
-    ? `merchant_ids.cs.${JSON.stringify([user.id])},merchant_ids.cs.${JSON.stringify([merchantId])}`
-    : `merchant_ids.cs.${JSON.stringify([user.id])}`;
+  const merchantFilter = `merchant_ids.cs.${JSON.stringify([ctx.merchantId])}`;
 
   let query = svc
     .from('customer_profiles')

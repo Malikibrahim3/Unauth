@@ -112,6 +112,8 @@ export default async function DashboardPage() {
   const { data: runs } = await supabase
     .from('processing_jobs')
     .select('*')
+    .eq('merchant_id', ctx.merchantId)
+    .eq('status', 'completed')
     .eq('hidden_by_merchant', false)
     .order('created_at', { ascending: false })
     .limit(50);
@@ -160,7 +162,7 @@ export default async function DashboardPage() {
     profileIdByTx = new Map<string, string>();
   }
 
-  const merchantFilter = `merchant_ids.cs.${JSON.stringify([user.id])},merchant_ids.cs.${JSON.stringify([ctx.merchantId])}`;
+  const merchantFilter = `merchant_ids.cs.${JSON.stringify([ctx.merchantId])}`;
   let clusterRows: ClusterRow[] = [];
   try {
     const { data } = await serviceClient
