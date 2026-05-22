@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
-import { escapePostgrestFilterValue } from '@/lib/supabase/merchantHelpers';
 
 type AuditTx = {
   id: string;
@@ -34,8 +33,8 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ runId: string }> }
 ) {
-  const email = req.nextUrl.searchParams.get('email')?.trim().toLowerCase();
-  if (!email) return NextResponse.json({ error: 'Missing email' }, { status: 400 });
+  const profileId = req.nextUrl.searchParams.get('profile_id')?.trim();
+  if (!profileId) return NextResponse.json({ error: 'Missing profile_id' }, { status: 400 });
 
   const userClient = createClient();
   const { data: { user } } = await userClient.auth.getUser();
@@ -57,11 +56,26 @@ export async function GET(
     return NextResponse.json({ error: 'Audit run not found' }, { status: 404 });
   }
 
+  const { data: summaryRow } = await serviceClient
+    .from('audit_customer_summaries')
+    .select('profile_id,customer_email,customer_name')
+    .eq('audit_id', runId)
+    .eq('profile_id', profileId)
+    .maybeSingle();
+  if (!summaryRow) return NextResponse.json({ error: 'Customer not found in audit' }, { status: 404 });
+
+  const { data: appearanceRows } = await serviceClient
+    .from('customer_profile_audit_appearances')
+    .select('transaction_id')
+    .eq('audit_id', runId)
+    .eq('profile_id', profileId);
+  const txIds = (appearanceRows ?? []).map((r: any) => r.transaction_id).filter(Boolean);
+
   const { data: directRows, error: directError } = await serviceClient
     .from('audit_transactions')
     .select('*')
     .eq('job_id', runId)
-    .eq('customer_email', email)
+    .in('id', txIds.length > 0 ? txIds : ['00000000-0000-0000-0000-000000000000'])
     .order('processed_at', { ascending: true });
 
   if (directError) {
@@ -71,19 +85,6 @@ export async function GET(
   const direct = (directRows ?? []) as unknown as AuditTx[];
   const clusterIds = uniq(direct.map((row) => row.cluster_id));
   let rows = direct;
-
-  const merchantFilter = `merchant_ids.cs.${JSON.stringify([ctx.userId])},merchant_ids.cs.${JSON.stringify([ctx.merchantId])}`;
-  // Escape email before using in PostgREST .or() filter string to prevent
-  // special characters from breaking filter parsing.
-  const safeEmail = escapePostgrestFilterValue(email);
-  const { data: profileRows } = await serviceClient
-    .from('customer_profiles')
-    .select('id')
-    .or(merchantFilter)
-    .or(`primary_email.ilike.${safeEmail},emails.cs.["${safeEmail}"]`)
-    .limit(1) as unknown as { data: Array<{ id: string }> | null };
-
-  const profileId = profileRows?.[0]?.id ?? null;
 
   if (clusterIds.length > 0) {
     const { data: clusterRows } = await serviceClient
@@ -108,7 +109,7 @@ export async function GET(
   return NextResponse.json({
     customer: {
       id: profileId,
-      email,
+      email: summaryRow.customer_email,
       names: uniq(rows.map((row) => row.customer_name)),
       emails: uniq(rows.map((row) => row.customer_email)),
       addresses: uniq(rows.flatMap((row) => [row.shipping_address, row.billing_address])),

@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { Download, Users, ArrowRight } from 'lucide-react';
 import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
@@ -20,6 +20,7 @@ import { PageHeader } from '@/components/common/PageHeader';
 import { SectionCard, MetricCard } from '@/components/ui';
 import { RiskDistributionStrip } from '@/components/audit/RiskDistributionStrip';
 import { formatDateMode } from '@/lib/utils/format';
+import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 
 type RunRow = Database['public']['Tables']['processing_jobs']['Row'];
 type TxRow = Database['public']['Tables']['audit_transactions']['Row'];
@@ -42,8 +43,11 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
   const resolvedParams = await params;
   const resolvedSearchParams = await searchParams;
   const supabase = createClient();
+  const serviceClient = createServiceClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
+  const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_AUDIT);
+  if (denied) redirect('/dashboard');
 
   const txPage = Math.max(1, parseInt(resolvedSearchParams.txPage ?? resolvedSearchParams.page ?? '1', 10));
   const txPageSize = normalizePageSize(resolvedSearchParams.txPageSize, TX_PAGE_SIZE);
@@ -58,6 +62,7 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
     .from('processing_jobs')
     .select('*')
     .eq('id', resolvedParams.runId)
+    .eq('merchant_id', ctx.merchantId)
     .single();
 
   if (!run) notFound();
@@ -109,6 +114,18 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
     weak: summary.weak,
   };
 
+  const [
+    { count: merchantJobCount },
+    { count: auditSummaryCount },
+    { count: appearanceCount },
+    { count: auditTxCount },
+  ] = await Promise.all([
+    supabase.from('processing_jobs').select('id', { count: 'exact', head: true }).eq('merchant_id', ctx.merchantId),
+    supabase.from('audit_customer_summaries').select('profile_id', { count: 'exact', head: true }).eq('audit_id', jobId),
+    supabase.from('customer_profile_audit_appearances').select('id', { count: 'exact', head: true }).eq('audit_id', jobId),
+    supabase.from('audit_transactions').select('id', { count: 'exact', head: true }).eq('job_id', jobId),
+  ]);
+
   // ── Paginated all-transactions table (full run truth) ───────────────────────
   const { data: transactions, count: transactionTotal } = await supabase
     .from('audit_transactions')
@@ -117,8 +134,20 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
     .order('processed_at', { ascending: false, nullsFirst: false })
     .range(txOffset, txOffset + txPageSize - 1);
 
-  // ── All-customers aggregation: fetch in batches, no silent cap ─────────────
-  const allCustomers: Array<[string, { maxScore: number; orderCount: number; totalSpend: number }]> = [];
+  // ── All-customers aggregation from canonical summary table ─────────────────
+  const { data: customerSummaryRows } = await supabase
+    .from('audit_customer_summaries')
+    .select('profile_id,customer_email,customer_name,order_count,total_spend,max_score')
+    .eq('audit_id', jobId)
+    .order('max_score', { ascending: false });
+  const allCustomers: Array<[string, { maxScore: number; orderCount: number; totalSpend: number }]> = (customerSummaryRows ?? []).map((row: any) => [
+    row.customer_email ?? row.customer_name ?? row.profile_id,
+    {
+      maxScore: Number(row.max_score ?? 0),
+      orderCount: Number(row.order_count ?? 0),
+      totalSpend: Number(row.total_spend ?? 0),
+    },
+  ]);
   const pagedCustomers = allCustomers.slice(customerOffset, customerOffset + customerPageSize);
   const totalCustomers = allCustomers.length;
   const customerPages = Math.max(1, Math.ceil(totalCustomers / customerPageSize));
@@ -143,6 +172,9 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
 
   return (
     <div className="p-6 md:p-8 space-y-6">
+      <div className="rounded-md border px-3 py-2 text-xs font-mono" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)' }}>
+        auth_user_id={user.id} | active_merchant_id={ctx.merchantId} | selected_job_id={jobId} | processing_jobs_count={merchantJobCount ?? 0} | audit_customer_summaries_count={auditSummaryCount ?? 0} | customer_profile_audit_appearances_count={appearanceCount ?? 0} | audit_transactions_count={auditTxCount ?? 0}
+      </div>
       <PageHeader
         title="Audit Results"
         subtitle={`${runData.filename} · ${formatDate(runData.created_at)}`}

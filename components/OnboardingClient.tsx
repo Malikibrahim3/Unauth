@@ -18,6 +18,17 @@ interface OnboardingClientProps {
   userId: string;
 }
 
+const PERSONAL_EMAIL_DOMAINS = new Set([
+  'gmail.com',
+  'yahoo.com',
+  'hotmail.com',
+  'outlook.com',
+  'icloud.com',
+  'aol.com',
+  'proton.me',
+  'protonmail.com',
+]);
+
 export default function OnboardingClient({ userId }: OnboardingClientProps) {
   const [step, setStep] = useState<Step>(1);
 
@@ -28,6 +39,7 @@ export default function OnboardingClient({ userId }: OnboardingClientProps) {
   const [primaryConcern, setPrimaryConcern] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [domainError, setDomainError] = useState('');
 
   const router = useRouter();
   const supabase = createClient();
@@ -44,6 +56,16 @@ export default function OnboardingClient({ userId }: OnboardingClientProps) {
     if (!storeName.trim() || !platform || !annualVolume || !primaryConcern) return;
     setLoading(true);
     setError('');
+
+    const { data: authData } = await supabase.auth.getUser();
+    const email = authData.user?.email?.toLowerCase() ?? '';
+    const isDemo = Boolean((authData.user?.user_metadata as Record<string, unknown> | undefined)?.is_demo);
+    const domain = email.split('@')[1] ?? '';
+    if (!isDemo && (!domain || PERSONAL_EMAIL_DOMAINS.has(domain))) {
+      setLoading(false);
+      setDomainError('Use a company email domain to complete merchant verification.');
+      return;
+    }
 
     const { error: upsertError } = await supabase
       .from('merchants')
@@ -64,6 +86,7 @@ export default function OnboardingClient({ userId }: OnboardingClientProps) {
       setError(upsertError.message);
       return;
     }
+    setDomainError('');
 
     // Persist setup_complete in auth user metadata so it survives
     // any application-table deletions (merchants row, etc.)
@@ -309,6 +332,12 @@ export default function OnboardingClient({ userId }: OnboardingClientProps) {
                   </select>
                 </Field>
               </div>
+
+              {domainError && (
+                <div className="rounded-lg px-3 py-2 text-sm" style={{ background: 'var(--risk-high-bg)', color: 'var(--risk-high)', border: '1px solid var(--risk-high-bd)' }}>
+                  {domainError}
+                </div>
+              )}
 
               {error && (
                 <p
