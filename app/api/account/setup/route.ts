@@ -10,6 +10,17 @@ interface SetupBody {
   setupComplete?: boolean;
 }
 
+const PERSONAL_EMAIL_DOMAINS = new Set([
+  'gmail.com',
+  'yahoo.com',
+  'hotmail.com',
+  'outlook.com',
+  'icloud.com',
+  'aol.com',
+  'proton.me',
+  'protonmail.com',
+]);
+
 export async function POST(request: NextRequest) {
   const supabase = createClient();
   const {
@@ -25,6 +36,16 @@ export async function POST(request: NextRequest) {
   const adminClient = createAdminClient();
 
   try {
+    const email = user.email?.toLowerCase() ?? '';
+    const domain = email.split('@')[1] ?? '';
+    const isDemo = Boolean((user.user_metadata as Record<string, unknown> | undefined)?.is_demo);
+    if (!isDemo && (!domain || PERSONAL_EMAIL_DOMAINS.has(domain))) {
+      return NextResponse.json(
+        { error: 'Use a company email domain to complete merchant verification.' },
+        { status: 403 }
+      );
+    }
+
     const merchant = await upsertMerchantForUser(serviceClient, {
       userId: user.id,
       email: user.email,
