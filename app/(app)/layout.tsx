@@ -66,8 +66,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
      * Only the page body scrolls — sidebar and header are fixed to the viewport.
      */
     <div
-      className="flex h-screen overflow-hidden"
-      style={{ backgroundColor: 'var(--bg-canvas)' }}
+      className="flex h-screen overflow-hidden bg-[var(--surface-base)] text-[var(--ink-primary)]"
     >
       {/* ── Sidebar ── */}
       <Sidebar merchantName={(merchantProfile as any)?.name ?? null} userEmail={user.email ?? ''} />

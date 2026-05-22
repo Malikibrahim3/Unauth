@@ -14,69 +14,39 @@ interface WorkbenchPageProps {
   footer?: ReactNode;
 }
 
-export function WorkbenchPage({
-  title,
-  subtitle,
-  navItems,
-  activeNavKey,
-  actions,
-  kpiStrip,
-  actionBar,
-  main,
-  rail,
-  footer,
-}: WorkbenchPageProps) {
+export function WorkbenchPage({ title, subtitle, navItems, activeNavKey, actions, kpiStrip, actionBar, main, rail, footer }: WorkbenchPageProps) {
   return (
     <div className="p-4 md:p-6">
-      <section
-        className="overflow-hidden border"
-        style={{
-          borderColor: 'var(--border-default)',
-          borderRadius: 4,
-          background: 'var(--bg-surface)',
-          boxShadow: '0 1px 0 rgba(26,24,20,0.04), 0 20px 54px -42px rgba(26,24,20,0.35)',
-        }}
-      >
-        <header
-          className="border-b px-4 py-3"
-          style={{
-            borderColor: 'var(--border-default)',
-            background: 'linear-gradient(180deg, var(--bg-surface) 0%, #FCF9F2 100%)',
-          }}
-        >
+      <section className="overflow-hidden rounded-md border border-[var(--surface-border)] bg-[var(--surface-raised)]">
+        <header className="border-b border-[var(--surface-border)] px-4 py-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
-              {navItems && activeNavKey
-                ? (
-                  <>
-                    <WorkbenchNav items={navItems} activeKey={activeNavKey} />
-                    {subtitle && <p className="text-body-sm mt-2" style={{ color: 'var(--text-muted)', maxWidth: 720 }}>{subtitle}</p>}
-                  </>
-                ) : (
-                  <>
-                    <h1 className="text-heading-lg" style={{ color: 'var(--text)', fontFamily: 'var(--font-serif), Georgia, serif' }}>{title}</h1>
-                    {subtitle && <p className="text-body-sm mt-1" style={{ color: 'var(--text-muted)', maxWidth: 720 }}>{subtitle}</p>}
-                  </>
-                )
-              }
+              {navItems && activeNavKey ? (
+                <>
+                  <WorkbenchNav items={navItems} activeKey={activeNavKey} />
+                  {subtitle && <p className="mt-2 max-w-3xl t-body text-[var(--ink-secondary)]">{subtitle}</p>}
+                </>
+              ) : (
+                <>
+                  <h1 className="t-heading text-[var(--ink-primary)]">{title}</h1>
+                  {subtitle && <p className="mt-1 max-w-3xl t-body text-[var(--ink-secondary)]">{subtitle}</p>}
+                </>
+              )}
             </div>
             {actions && <div className="flex items-center gap-2">{actions}</div>}
           </div>
         </header>
-
         {kpiStrip}
         {actionBar}
-
         {rail ? (
           <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px]">
-            <div className="border-r" style={{ borderColor: 'var(--border-default)' }}>{main}</div>
+            <div className="border-r border-[var(--surface-border)]">{main}</div>
             <aside>{rail}</aside>
           </div>
         ) : (
           <div>{main}</div>
         )}
-
-        {footer && <footer className="border-t px-4 py-2" style={{ borderColor: 'var(--border-default)', background: 'var(--bg-surface-alt)' }}>{footer}</footer>}
+        {footer && <footer className="border-t border-[var(--surface-border)] bg-[var(--surface-overlay)] px-4 py-2">{footer}</footer>}
       </section>
     </div>
   );

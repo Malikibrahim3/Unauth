@@ -1,28 +1,20 @@
 import type { Metadata } from 'next';
-import { DM_Sans, DM_Mono, Source_Serif_4 } from 'next/font/google';
+import { Geist, Geist_Mono } from 'next/font/google';
 import SentryInit from '@/components/common/SentryInit';
 import './globals.css';
 
-const dmSans = DM_Sans({
+const geist = Geist({
   subsets: ['latin'],
-  variable: '--font-dm-sans',
+  variable: '--font-geist',
   display: 'swap',
   weight: ['300', '400', '500', '600', '700'],
 });
 
-const dmMono = DM_Mono({
+const geistMono = Geist_Mono({
   subsets: ['latin'],
-  variable: '--font-dm-mono',
+  variable: '--font-ibm-plex-mono',
   display: 'swap',
   weight: ['300', '400', '500'],
-});
-
-const sourceSerif = Source_Serif_4({
-  subsets: ['latin'],
-  variable: '--font-serif',
-  display: 'swap',
-  axes: ['opsz'],
-  style: ['normal', 'italic'],
 });
 
 export const metadata: Metadata = {
@@ -37,9 +29,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`${dmSans.variable} ${dmMono.variable} ${sourceSerif.variable}`}
+      className={`${geist.variable} ${geistMono.variable}`}
     >
-      <body className="font-sans antialiased">
+      <body className="font-sans antialiased bg-[var(--surface-base)] text-[var(--ink-primary)]">
         <SentryInit />
         {children}
       </body>
