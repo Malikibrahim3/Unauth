@@ -26,6 +26,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../supabase/types';
+import { TABLES } from '../supabase/tables';
 import type { ScoredOrder } from '../engine/types';
 import {
   normaliseEmail,
@@ -268,7 +269,7 @@ export async function resolveCustomerProfile(
   // Priority 1: exact email match — strongest signal
   if (normEmail) {
     const { data } = await (serviceClient as any)
-      .from('customer_profiles')
+      .from(TABLES.CUSTOMER_PROFILES)
       .select('*')
       .contains('emails', JSON.stringify([normEmail]))
       .limit(1)
@@ -281,7 +282,7 @@ export async function resolveCustomerProfile(
   // Priority 2: card last4 plus corroboration. Last4 alone is not unique.
   if (normCard && normCard.length === 4 && normAddr) {
     const { data } = await (serviceClient as any)
-      .from('customer_profiles')
+      .from(TABLES.CUSTOMER_PROFILES)
       .select('*')
       .contains('card_last4s', JSON.stringify([normCard]))
       .contains('addresses', JSON.stringify([normAddr]))
@@ -294,7 +295,7 @@ export async function resolveCustomerProfile(
 
   if (normCard && normCard.length === 4 && normIP) {
     const { data } = await (serviceClient as any)
-      .from('customer_profiles')
+      .from(TABLES.CUSTOMER_PROFILES)
       .select('*')
       .contains('card_last4s', JSON.stringify([normCard]))
       .contains('ips', JSON.stringify([normIP]))
@@ -308,7 +309,7 @@ export async function resolveCustomerProfile(
   // Priority 3: IP + address match — strong
   if (normIP && normAddr) {
     const { data } = await (serviceClient as any)
-      .from('customer_profiles')
+      .from(TABLES.CUSTOMER_PROFILES)
       .select('*')
       .contains('ips', JSON.stringify([normIP]))
       .contains('addresses', JSON.stringify([normAddr]))
@@ -353,7 +354,7 @@ export async function createCustomerProfile(
   const refundDate = rawOrder.refundDate?.toISOString() ?? null;
 
   const { data, error } = await (serviceClient as any)
-    .from('customer_profiles')
+    .from(TABLES.CUSTOMER_PROFILES)
     .insert({
       primary_email: normEmail || null,
       emails: normEmail ? [normEmail] : [],
@@ -442,7 +443,7 @@ export async function updateCustomerProfile(
   const newConfidence = Math.min(existingProfile.profile_confidence, matchConfidence);
 
   const { data, error } = await (serviceClient as any)
-    .from('customer_profiles')
+    .from(TABLES.CUSTOMER_PROFILES)
     .update({
       emails: mergedEmails,
       ips: mergedIPs,
@@ -594,7 +595,7 @@ export async function processProfilesForBatch(
         dbSlot(() =>
           withRetry(async () => {
             const orExpr = chunk.map((v) => `${col}.cs.${JSON.stringify([v])}`).join(',');
-            let q: any = (serviceClient as any).from('customer_profiles').select(PROFILE_COLS).or(orExpr);
+            let q: any = (serviceClient as any).from(TABLES.CUSTOMER_PROFILES).select(PROFILE_COLS).or(orExpr);
             if (extraFilter) q = extraFilter(q);
             const { data, error } = await q;
             if (error) {
@@ -895,7 +896,7 @@ export async function processProfilesForBatch(
       const results = await mapWithConcurrency(chunks, WRITE_CONCURRENCY, async (chunk) =>
         withWriteRetry(async () => {
           const result = await (serviceClient as any)
-            .from('customer_profiles')
+            .from(TABLES.CUSTOMER_PROFILES)
             .insert(chunk as any)
             .select('id, emails, card_last4s, ips');
           if (result.error) throw new Error(result.error.message ?? 'bulk insert failed');
@@ -919,7 +920,7 @@ export async function processProfilesForBatch(
       ? mapWithConcurrency(splitIntoBatches(profileUpserts, WRITE_CHUNK), WRITE_CONCURRENCY, async (chunk) =>
           withWriteRetry(async () => {
             const result = await (serviceClient as any)
-              .from('customer_profiles')
+              .from(TABLES.CUSTOMER_PROFILES)
               .upsert(chunk as any, { onConflict: 'id', ignoreDuplicates: false });
             if (result.error) throw new Error(result.error.message ?? 'bulk profile update failed');
             return result;

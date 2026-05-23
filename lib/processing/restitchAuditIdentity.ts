@@ -1,16 +1,16 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../supabase/types';
+import { TABLES } from '../supabase/tables';
 import { cleanRow } from '../csv/clean';
 import { csvRowSchema } from '../csv/schema';
 import type { NormalisedOrder } from '../engine/types';
 import { normaliseRows } from '../csv/normalise';
+import { normaliseEmail, normaliseAddress as normaliseAddressFull } from '@/lib/identity/normalise';
 import {
   addressTokenOverlap,
   deterministicClusterId,
   linkIdentities,
-  normaliseAddressFull,
   normaliseCard,
-  normaliseEmail,
   normaliseName,
   normalisePhone,
   normalisePostcode,
@@ -281,7 +281,7 @@ async function fetchExistingAuditRows(
   for (let from = 0; ; from += pageSize) {
     const read = await withReadRetry(async () => {
       const { data, error } = await serviceClient
-        .from('audit_transactions')
+        .from(TABLES.AUDIT_TRANSACTIONS)
         .select('id, job_id, order_id, identity_confidence_grade, match_status, cluster_id, candidate_cluster_id, identity_match_grade')
         .eq('job_id', jobId)
         .range(from, from + pageSize - 1);
@@ -342,7 +342,7 @@ async function upsertAuditTransactionsAdaptive(
 
   const flush = async (chunk: any[]): Promise<void> => {
     const { error } = await (serviceClient as any)
-      .from('audit_transactions')
+      .from(TABLES.AUDIT_TRANSACTIONS)
       .upsert(chunk, { onConflict: 'id', ignoreDuplicates: false });
     if (!error) return;
 

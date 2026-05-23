@@ -15,6 +15,7 @@ import {
   UserRound,
 } from 'lucide-react';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { TABLES } from '@/lib/supabase/tables';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import {
   fetchMerchantScopedCustomerProfile,
@@ -232,7 +233,7 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
 
   // ── Watchlist check ────────────────────────────────────────────────────
   const { data: watchlistRow } = await svc
-    .from('watchlist_entries')
+    .from(TABLES.WATCHLIST_ENTRIES)
     .select('id')
     .eq('customer_profile_id', profileId)
     .eq('merchant_id', user.id)
@@ -255,7 +256,7 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
     const ownedJobIds = await getMerchantOwnedJobIds(svc, merchantId);
     if (ownedJobIds.length > 0) {
       const { data: fallbackRows } = await svc
-        .from('audit_transactions')
+        .from(TABLES.AUDIT_TRANSACTIONS)
         .select(TX_SELECT)
         .in('job_id', ownedJobIds)
         .in('customer_email', profile.emails)

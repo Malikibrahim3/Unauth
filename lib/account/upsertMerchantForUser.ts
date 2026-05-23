@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/lib/supabase/types';
+import { TABLES } from '@/lib/supabase/tables';
 
 type ServiceClient = SupabaseClient<Database>;
 
@@ -24,7 +25,7 @@ export async function upsertMerchantForUser(
   input: MerchantSetupInput
 ): Promise<{ id: string; setup_complete: boolean }> {
   const existingResult = await serviceClient
-    .from('merchants')
+    .from(TABLES.MERCHANTS)
     .select('id, name, platform, monthly_order_volume, primary_fraud_concern, setup_complete')
     .eq('user_id', input.userId)
     .maybeSingle();
@@ -52,7 +53,7 @@ export async function upsertMerchantForUser(
     Boolean((existingResult.data as { setup_complete?: boolean } | null)?.setup_complete);
 
   const upsertResult = await serviceClient
-    .from('merchants')
+    .from(TABLES.MERCHANTS)
     .upsert(
       {
         user_id: input.userId,

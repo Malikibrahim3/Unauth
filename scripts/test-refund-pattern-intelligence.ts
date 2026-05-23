@@ -6,7 +6,7 @@ import { csvRowSchema } from '../lib/csv/schema';
 import { normaliseRow } from '../lib/csv/normalise';
 import { buildFastContext } from '../lib/engine/fastContext';
 import { scoreBatch } from '../lib/engine/fastScore';
-import { normaliseAddress } from '../lib/identity/hash';
+import { normaliseAddress } from '../lib/identity/normalise';
 
 // Load environment variables from .env.local
 const envPath = join(__dirname, '../.env.local');

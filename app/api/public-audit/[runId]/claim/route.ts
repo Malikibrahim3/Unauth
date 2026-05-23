@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient, createClient, createServiceClient } from '@/lib/supabase/server';
+import { TABLES } from '@/lib/supabase/tables';
+import { env } from '@/lib/utils/env';
 
 interface ClaimBody {
   storeName?: string;
@@ -37,7 +39,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   let merchantId: string;
   const { data: merchant } = await service
-    .from('merchants')
+    .from(TABLES.MERCHANTS)
     .select('id')
     .eq('user_id', user.id)
     .maybeSingle();
@@ -46,13 +48,13 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     merchantId = (merchant as { id: string }).id;
     if (storeName) {
       await service
-        .from('merchants')
+        .from(TABLES.MERCHANTS)
         .update({ name: storeName, setup_complete: true } as any)
         .eq('id', merchantId);
     }
   } else {
     const created = await service
-      .from('merchants')
+      .from(TABLES.MERCHANTS)
       .insert({
         user_id: user.id,
         name: storeName || 'My Store',
@@ -86,18 +88,18 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     } as any)
     .eq('id', audit.id);
 
-  const intakeMerchantId = process.env.PUBLIC_INTAKE_MERCHANT_ID ?? '';
+  const intakeMerchantId = env.PUBLIC_INTAKE_MERCHANT_ID ?? '';
 
   if (audit.processing_job_id) {
     await service
-      .from('processing_jobs')
+      .from(TABLES.PROCESSING_JOBS)
       .update({ merchant_id: merchantId } as any)
       .eq('id', audit.processing_job_id);
 
     // Re-tenant csv_upload_queue rows that were created under the intake merchant.
     if (intakeMerchantId) {
       await service
-        .from('csv_upload_queue')
+        .from(TABLES.CSV_UPLOAD_QUEUE)
         .update({ merchant_id: merchantId } as any)
         .eq('job_id', audit.processing_job_id)
         .eq('merchant_id', intakeMerchantId);

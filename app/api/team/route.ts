@@ -1,4 +1,5 @@
 import { createClient, createAdminClient, createServiceClient } from '@/lib/supabase/server';
+import { TABLES } from '@/lib/supabase/tables';
 import { createScopedClient } from '@/lib/supabase/scoped';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { logAction } from '@/lib/permissions/audit';
@@ -31,10 +32,10 @@ async function GETHandler(req: NextRequest) {
   const includeOwner = req ? new URL(req.url).searchParams.get('includeOwner') === 'true' : false;
 
   const { data: merchant } = await serviceClient
-    .from('merchants').select('id, name, user_id').eq('id', ctx.merchantId).single();
+    .from(TABLES.MERCHANTS).select('id, name, user_id').eq('id', ctx.merchantId).single();
 
   const { data: members, error } = await scopedClient
-    .from('merchant_members').select('*')
+    .from(TABLES.MERCHANT_MEMBERS).select('*')
     .neq('invite_status', 'revoked')
     .order('created_at', { ascending: true });
 
@@ -112,7 +113,7 @@ async function POSTHandler(req: NextRequest) {
   const { email, role } = parsed.data;
 
   const { data: existing } = await scopedClient
-    .from('merchant_members')
+    .from(TABLES.MERCHANT_MEMBERS)
     .select('id, invite_status')
     .eq('invited_email', email)
     .maybeSingle();
@@ -124,7 +125,7 @@ async function POSTHandler(req: NextRequest) {
   let member: any;
   if (existing) {
     const { data: updated, error: updateError } = await scopedClient
-      .from('merchant_members')
+      .from(TABLES.MERCHANT_MEMBERS)
       .update({
         invited_email: email,
         role,
@@ -139,7 +140,7 @@ async function POSTHandler(req: NextRequest) {
     member = updated;
   } else {
     const { data: inserted, error: insertError } = await scopedClient
-      .from('merchant_members')
+      .from(TABLES.MERCHANT_MEMBERS)
       .insert({ invited_email: email, role, invite_status: 'pending', invited_by: user.id })
       .select()
       .single();
@@ -156,7 +157,7 @@ async function POSTHandler(req: NextRequest) {
     });
     if (inviteError) {
       await scopedClient
-        .from('merchant_members')
+        .from(TABLES.MERCHANT_MEMBERS)
         .update({ invite_status: 'revoked' } as any)
         .eq('id', member.id);
       return NextResponse.json({ error: inviteError.message }, { status: 502 });
@@ -164,7 +165,7 @@ async function POSTHandler(req: NextRequest) {
     const invitedUserId = inviteData?.user?.id;
     if (invitedUserId) {
       const { data: updatedMember } = await scopedClient
-        .from('merchant_members')
+        .from(TABLES.MERCHANT_MEMBERS)
         .update({ user_id: invitedUserId } as any)
         .eq('id', member.id)
         .select()
@@ -173,7 +174,7 @@ async function POSTHandler(req: NextRequest) {
     }
   } catch (err) {
     await scopedClient
-      .from('merchant_members')
+      .from(TABLES.MERCHANT_MEMBERS)
       .update({ invite_status: 'revoked' } as any)
       .eq('id', member.id);
     return NextResponse.json(

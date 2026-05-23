@@ -1,11 +1,12 @@
 import { createServiceClient } from '@/lib/supabase/server';
+import { TABLES } from '../lib/supabase/tables';
 import { paginateAll, refreshAuditCustomerSummaries } from '@/lib/supabase/merchantHelpers';
 
 async function main() {
   const supabase = createServiceClient();
   const jobs = await paginateAll<{ id: string; merchant_id: string }>((from, to) =>
     supabase
-      .from('processing_jobs')
+      .from(TABLES.PROCESSING_JOBS)
       .select('id,merchant_id')
       .eq('status', 'completed')
       .not('merchant_id', 'is', null)

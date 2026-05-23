@@ -1,3 +1,5 @@
+import { env } from '@/lib/utils/env';
+
 const RESEND_API_URL = 'https://api.resend.com/emails';
 
 export interface EmailPayload {
@@ -21,7 +23,7 @@ function asArray(value: string | string[]): string[] {
 }
 
 export async function sendEmail(payload: EmailPayload): Promise<EmailSendResult> {
-  const apiKey = process.env.RESEND_API_KEY;
+  const apiKey = env.RESEND_API_KEY;
 
   if (!apiKey) {
     const isProduction = process.env.VERCEL_ENV === 'production';
@@ -39,7 +41,7 @@ export async function sendEmail(payload: EmailPayload): Promise<EmailSendResult>
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: payload.from ?? process.env.AUDIT_EMAIL_FROM ?? 'Unauth <hello@unauth.app>',
+        from: payload.from ?? env.AUDIT_EMAIL_FROM ?? 'Unauth <hello@unauth.app>',
         to: asArray(payload.to),
         subject: payload.subject,
         html: payload.html,

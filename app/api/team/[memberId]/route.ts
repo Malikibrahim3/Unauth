@@ -1,4 +1,5 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { TABLES } from '@/lib/supabase/tables';
 import { createScopedClient } from '@/lib/supabase/scoped';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { logAction } from '@/lib/permissions/audit';
@@ -41,7 +42,7 @@ async function PATCHHandler(
   const { role } = parsed.data;
 
   const { data: target } = await scopedClient
-    .from('merchant_members')
+    .from(TABLES.MERCHANT_MEMBERS)
     .select('id, role, user_id, invite_status')
     .eq('id', resolvedParams.memberId)
     .neq('invite_status', 'revoked')
@@ -59,7 +60,7 @@ async function PATCHHandler(
   if (targetRole === role) return NextResponse.json({ member: target });
 
   const { data: updated, error } = await scopedClient
-    .from('merchant_members').update({ role }).eq('id', resolvedParams.memberId).select().single();
+    .from(TABLES.MERCHANT_MEMBERS).update({ role }).eq('id', resolvedParams.memberId).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   logAction({ ctx, action: 'update_team_member_role', resourceType: 'merchant_member', resourceId: resolvedParams.memberId, metadata: { newRole: role, previousRole: targetRole }, ip });
@@ -92,7 +93,7 @@ async function DELETEHandler(
   if (limited) return limited;
 
   const { data: target } = await scopedClient
-    .from('merchant_members').select('id, role, invited_email')
+    .from(TABLES.MERCHANT_MEMBERS).select('id, role, invited_email')
     .eq('id', resolvedParams.memberId)
     .neq('invite_status', 'revoked')
     .single();
@@ -100,7 +101,7 @@ async function DELETEHandler(
   if ((target as any).role === 'owner') return NextResponse.json({ error: 'The owner cannot be removed.' }, { status: 403 });
 
   const { error } = await scopedClient
-    .from('merchant_members')
+    .from(TABLES.MERCHANT_MEMBERS)
     .update({ invite_status: 'revoked' } as any)
     .eq('id', resolvedParams.memberId);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

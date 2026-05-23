@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../supabase/types';
+import { TABLES } from '../supabase/tables';
 import { isUpstreamDown } from '../engine/dbSemaphore';
 
 export type ServiceClient = SupabaseClient<Database>;
@@ -24,7 +25,7 @@ export async function createJob(
       : (filenameOrOptions ?? {});
 
   const { data, error } = await serviceClient
-    .from('processing_jobs')
+    .from(TABLES.PROCESSING_JOBS)
     .insert({
       status: 'pending',
       merchant_id: merchantId,
@@ -55,7 +56,7 @@ export async function updateJobTotalRows(
   totalRows: number
 ): Promise<void> {
   const { error } = await serviceClient
-    .from('processing_jobs')
+    .from(TABLES.PROCESSING_JOBS)
     .update({
       total_rows: totalRows,
       status: 'processing',
@@ -91,12 +92,12 @@ export async function incrementJobProgress(
   // where slight inaccuracies are acceptable.
   if (error.code === 'PGRST202' || error.code === '42883') {
     const { data: job } = await serviceClient
-      .from('processing_jobs')
+      .from(TABLES.PROCESSING_JOBS)
       .select('processed_rows, failed_rows, total_rows')
       .eq('id', jobId)
       .single();
     const { error: updateError } = await serviceClient
-      .from('processing_jobs')
+      .from(TABLES.PROCESSING_JOBS)
       .update({
         processed_rows: (job?.processed_rows ?? 0) + processedDelta,
         failed_rows: (job?.failed_rows ?? 0) + failedDelta,
@@ -155,7 +156,7 @@ export async function completeJob(
   let allUpstreamDown = true;
   for (let attempt = 0; attempt < delays.length; attempt++) {
     const { error } = await serviceClient
-      .from('processing_jobs')
+      .from(TABLES.PROCESSING_JOBS)
       .update(update as any)
       .eq('id', jobId);
 
@@ -183,7 +184,7 @@ export async function logBatchError(
   errorMessage: string
 ): Promise<void> {
   const { data: job } = await serviceClient
-    .from('processing_jobs')
+    .from(TABLES.PROCESSING_JOBS)
     .select('error_log')
     .eq('id', jobId)
     .single();
@@ -199,7 +200,7 @@ export async function logBatchError(
   ];
 
   const { error } = await serviceClient
-    .from('processing_jobs')
+    .from(TABLES.PROCESSING_JOBS)
     .update({ error_log: updated as any, updated_at: new Date().toISOString() })
     .eq('id', jobId);
 

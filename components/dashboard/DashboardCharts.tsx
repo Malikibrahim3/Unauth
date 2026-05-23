@@ -19,6 +19,7 @@ import {
 } from 'recharts';
 import { SectionCard } from '@/components/ui/SectionCard';
 import { cn } from '@/lib/utils';
+import { CONFIDENCE_THRESHOLDS } from '@/lib/engine/weights';
 
 export interface RunChartData {
   id: string;
@@ -93,7 +94,7 @@ function compactDate(label: string) {
 
 function isFlagged(tx: TransactionChartData) {
   const grade = tx.identity_confidence_grade ?? tx.match_status ?? '';
-  return ['definite', 'probable'].includes(grade) || ['critical', 'high'].includes(tx.risk_level ?? '') || numberValue(tx.identity_score ?? tx.match_score) >= 72;
+  return ['definite', 'probable'].includes(grade) || ['critical', 'high'].includes(tx.risk_level ?? '') || numberValue(tx.identity_score ?? tx.match_score) >= CONFIDENCE_THRESHOLDS.PROBABLE;
 }
 
 function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: any[]; label?: string }) {

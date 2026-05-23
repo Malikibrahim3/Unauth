@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
+import { TABLES, STORAGE_BUCKETS } from '@/lib/supabase/tables';
 import { createScopedClient } from '@/lib/supabase/scoped';
 import { streamParseCsv, MAX_ROWS } from '@/lib/processing/streamParser';
 import { createJob, updateJobTotalRows, completeJob } from '@/lib/processing/job';
@@ -8,6 +9,7 @@ import { checkCsvUsageGuard } from '@/lib/processing/supabaseUsageGuard';
 import { sniffCsvMagicBytes } from '@/lib/csv/sniffMagicBytes';
 import { enforceRateLimit, limitFromEnv, rateLimitKey } from '@/lib/ratelimit';
 import { createRequestLogger } from '@/lib/log';
+import { env } from '@/lib/utils/env';
 
 const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024;
 export const maxDuration = 300;
@@ -54,7 +56,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid column map.' }, { status: 400 });
   }
 
-  const merchantId = process.env.PUBLIC_INTAKE_MERCHANT_ID ?? '';
+  const merchantId = env.PUBLIC_INTAKE_MERCHANT_ID ?? '';
   if (!merchantId) {
     return NextResponse.json({ error: 'Public audit intake is not configured.' }, { status: 503 });
   }
@@ -96,7 +98,7 @@ export async function POST(request: NextRequest) {
   const filePath = `${merchantId}/${Date.now()}_${upload.name}`;
 
   const { error: uploadError } = await sc.storage
-    .from('merchant-csv-uploads-2')
+    .from(STORAGE_BUCKETS.MERCHANT_CSV_UPLOADS)
     .upload(filePath, upload, {
       contentType: 'text/csv',
       upsert: false,
@@ -118,7 +120,7 @@ export async function POST(request: NextRequest) {
     .eq('id', auditId);
 
   const { data: fileData, error: downloadError } = await sc.storage
-    .from('merchant-csv-uploads-2')
+    .from(STORAGE_BUCKETS.MERCHANT_CSV_UPLOADS)
     .download(filePath);
   if (downloadError || !fileData) {
     await sc.from('public_audits' as any).update({ status: 'failed' } as any).eq('id', auditId);
@@ -144,7 +146,7 @@ export async function POST(request: NextRequest) {
   }
 
   await sc
-    .from('processing_jobs')
+    .from(TABLES.PROCESSING_JOBS)
     .update({ public_audit_id: auditId } as any)
     .eq('id', jobId);
 

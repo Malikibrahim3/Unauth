@@ -17,6 +17,8 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { inspect } from 'util';
 import { resolveCallerContext } from '@/lib/permissions';
 import type { CallerContext } from '@/lib/permissions';
+import { buildReviewableFilter } from '@/lib/supabase/filters';
+import { TABLES } from '@/lib/supabase/tables';
 
 // ---------------------------------------------------------------------------
 // Re-export CallerContext so callers don't need to import from two places
@@ -95,7 +97,7 @@ export async function countReviewWorthyTransactions(
   // Step 1: Verify the job belongs to this merchant.
   // audit_transactions has no merchant_id — ownership is via processing_jobs.
   const { data: jobRows, error: jobErr } = await serviceClient
-    .from('processing_jobs')
+    .from(TABLES.PROCESSING_JOBS)
     .select('id')
     .eq('id', jobId)
     .eq('merchant_id', merchantId);
@@ -129,13 +131,13 @@ export async function countReviewWorthyTransactions(
   // We use head:true so no row data is transferred, only the count.
   const [gradedRes, statusRes] = await Promise.all([
     serviceClient
-      .from('audit_transactions')
+      .from(TABLES.AUDIT_TRANSACTIONS)
       .select('id', { count: 'exact', head: true })
       .eq('job_id', jobId)
       .in('identity_confidence_grade', ['probable', 'definite'])
       .not('dismissed_by_merchant', 'is', true),
     serviceClient
-      .from('audit_transactions')
+      .from(TABLES.AUDIT_TRANSACTIONS)
       .select('id', { count: 'exact', head: true })
       .eq('job_id', jobId)
       .in('match_status', ['probable', 'definite'])
@@ -196,7 +198,7 @@ export async function countMerchantReviewQueueProfiles(
   // Clause A: identity_confidence_grade IN (probable,definite)
   for (let offset = 0; ; offset += PAGE) {
     const { data, error } = await serviceClient
-      .from('audit_transactions')
+      .from(TABLES.AUDIT_TRANSACTIONS)
       .select('id')
       .in('job_id', ownedJobIds)
       .in('identity_confidence_grade', ['probable', 'definite'])
@@ -217,7 +219,7 @@ export async function countMerchantReviewQueueProfiles(
   // Clause B: match_status IN (probable,definite) and grade not already likely
   for (let offset = 0; ; offset += PAGE) {
     const { data, error } = await serviceClient
-      .from('audit_transactions')
+      .from(TABLES.AUDIT_TRANSACTIONS)
       .select('id')
       .in('job_id', ownedJobIds)
       .in('match_status', ['probable', 'definite'])
@@ -330,7 +332,7 @@ export async function getMerchantOwnedJobIds(
   const allIds: string[] = [];
   for (let offset = 0; ; offset += PAGE) {
     const { data, error } = await serviceClient
-      .from('processing_jobs')
+      .from(TABLES.PROCESSING_JOBS)
       .select('id')
       .eq('merchant_id', merchantId)
       .range(offset, offset + PAGE - 1);
@@ -351,7 +353,7 @@ export async function assertMerchantOwnsJob(
   jobId: string
 ): Promise<void> {
   const { data, error } = await serviceClient
-    .from('processing_jobs')
+    .from(TABLES.PROCESSING_JOBS)
     .select('id')
     .eq('id', jobId)
     .eq('merchant_id', merchantId)
@@ -390,7 +392,7 @@ export async function fetchMerchantScopedCustomerProfile(
   ].filter(Boolean).join(',');
 
   const { data, error } = await serviceClient
-    .from('customer_profiles')
+    .from(TABLES.CUSTOMER_PROFILES)
     .select(PROFILE_SELECT)
     .eq('id', profileId)
     // customer_profiles uses an array column merchant_ids; support both
@@ -474,7 +476,7 @@ export async function fetchMerchantScopedCustomerTransactions(
     const PAGE = 1000;
     while (true) {
       const { data: page } = await serviceClient
-        .from('audit_transactions')
+        .from(TABLES.AUDIT_TRANSACTIONS)
         .select(select)
         .in('id', linkedTxIds)
         .in('job_id', ownedJobIds)
@@ -507,7 +509,7 @@ export async function fetchMerchantScopedCustomerTransactions(
     const PAGE = 1000;
     while (true) {
       const { data: page } = await (serviceClient
-        .from('audit_transactions')
+        .from(TABLES.AUDIT_TRANSACTIONS)
         .select(select)
         .in('job_id', ownedJobIds)
         .in(primaryIdentifier.field, primaryIdentifier.values)
@@ -537,7 +539,7 @@ export async function fetchMerchantScopedTransaction(
 ): Promise<Record<string, unknown> | null> {
   // First prove job ownership
   const { data: jobRow } = await serviceClient
-    .from('processing_jobs')
+    .from(TABLES.PROCESSING_JOBS)
     .select('id')
     .eq('id', jobId)
     .eq('merchant_id', merchantId)
@@ -546,7 +548,7 @@ export async function fetchMerchantScopedTransaction(
   if (!jobRow) return null;
 
   const { data } = await serviceClient
-    .from('audit_transactions')
+    .from(TABLES.AUDIT_TRANSACTIONS)
     .select(select)
     .eq('id', transactionId)
     .eq('job_id', jobId)
@@ -603,7 +605,7 @@ export async function refreshAuditCustomerSummaries(
   }
 
   const { data: jobRow, error: jobError } = await serviceClient
-    .from('processing_jobs')
+    .from(TABLES.PROCESSING_JOBS)
     .select('id')
     .eq('id', auditId)
     .eq('merchant_id', merchantId)
@@ -624,10 +626,10 @@ export async function refreshAuditCustomerSummaries(
 
   const rows = await paginateAll<AuditCustomerSummarySourceRow>((from, to) =>
     serviceClient
-      .from('audit_transactions')
+      .from(TABLES.AUDIT_TRANSACTIONS)
       .select('customer_email,customer_name,order_value,identity_score,identity_confidence_grade,cluster_id,processed_at')
       .eq('job_id', auditId)
-      .or('identity_confidence_grade.in.(probable,definite),match_status.in.(probable,definite)')
+      .or(buildReviewableFilter())
       .not('dismissed_by_merchant', 'is', true)
       .range(from, to) as unknown as Promise<{ data: AuditCustomerSummarySourceRow[] | null; error: unknown }>
   );
@@ -712,7 +714,7 @@ export async function refreshAuditCustomerSummaries(
  *
  * @example
  * const rows = await paginateAll((from, to) =>
- *   serviceClient.from('audit_transactions').select('*')
+ *   serviceClient.from(TABLES.AUDIT_TRANSACTIONS).select('*')
  *     .in('job_id', jobIds).range(from, to)
  * );
  */
@@ -778,7 +780,7 @@ export async function fetchMerchantReviewQueueRows(
 
   const buildQuery = (from: number, to: number) => {
     let q = serviceClient
-      .from('audit_transactions')
+      .from(TABLES.AUDIT_TRANSACTIONS)
       .select(select)
       .in('job_id', ownedJobIds)
       // Review-worthy: likely/definite same-person evidence only.
@@ -787,7 +789,7 @@ export async function fetchMerchantReviewQueueRows(
       // legacy graded rows where identity_confidence_grade is set but
       // match_status has not been set. The .or() below already restricts
       // the population correctly without touching null match_status rows.
-      .or('identity_confidence_grade.in.(probable,definite),match_status.in.(probable,definite)')
+      .or(buildReviewableFilter())
       // Exclude dismissed rows only
       .not('dismissed_by_merchant', 'is', true)
       .order('identity_score', { ascending: false })
@@ -884,7 +886,7 @@ export async function getExposureAtRisk(
     let jobOffset = 0;
     while (true) {
       const { data: jobRows, error: jobErr } = await serviceClient
-        .from('processing_jobs')
+        .from(TABLES.PROCESSING_JOBS)
         .select('id')
         .eq('merchant_id', merchantId)
         .range(jobOffset, jobOffset + JOB_BATCH - 1);
@@ -916,7 +918,7 @@ export async function getExposureAtRisk(
       let clauseSum = 0;
       while (true) {
         const base = serviceClient
-          .from('audit_transactions')
+          .from(TABLES.AUDIT_TRANSACTIONS)
           .select('order_value')
           .in('job_id', ownedJobIds)
           .not('dismissed_by_merchant', 'is', true)

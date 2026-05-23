@@ -1,8 +1,9 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { TABLES } from '@/lib/supabase/tables';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { formatDateMode } from '@/lib/utils/format';
-import { formatCurrencyNullable } from '@/lib/utils/formatCurrency';
+import { formatCurrencyNullable } from '@/lib/utils/format';
 import type { Database } from '@/lib/supabase/types';
 import {
   countMerchantReviewQueueProfiles,
@@ -104,7 +105,7 @@ export default async function DashboardPage() {
   }
 
   const { data: runs } = await serviceClient
-    .from('processing_jobs')
+    .from(TABLES.PROCESSING_JOBS)
     .select('*')
     .eq('merchant_id', ctx.merchantId)
     .eq('hidden_by_merchant', false)
@@ -122,7 +123,7 @@ export default async function DashboardPage() {
   let chartTransactions: TransactionChartData[] = [];
   if (jobIds.length > 0) {
     const { data } = await serviceClient
-      .from('audit_transactions')
+      .from(TABLES.AUDIT_TRANSACTIONS)
       .select('id,job_id,processed_at,order_value,refund_claimed,chargeback_filed,risk_level,identity_confidence_grade,match_status,identity_score,match_score,signals_matched,fraud_flags')
       .in('job_id', jobIds)
       .order('processed_at', { ascending: true });
@@ -173,7 +174,7 @@ export default async function DashboardPage() {
   let clusterRows: ClusterRow[] = [];
   try {
     const { data } = await serviceClient
-      .from('customer_profiles')
+      .from(TABLES.CUSTOMER_PROFILES)
       .select('id,names,primary_email,risk_level,total_orders,total_refund_claims,total_merchants_seen_at')
       .or(merchantFilter)
       .order('total_merchants_seen_at', { ascending: false })

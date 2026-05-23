@@ -16,8 +16,9 @@
  */
 
 import type { NormalisedOrder } from '@/lib/engine/types';
+import type { ConfidenceGrade } from '@/lib/engine/weights';
 
-export type ConfidenceGrade = 'definite' | 'probable' | 'possible' | 'weak';
+export type { ConfidenceGrade }; // re-export for backwards compatibility
 export type DataQualityGrade = 'rich' | 'adequate' | 'sparse' | 'minimal';
 
 // ---------------------------------------------------------------------------

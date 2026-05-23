@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient, createClient, createServiceClient } from '@/lib/supabase/server';
+import { TABLES } from '@/lib/supabase/tables';
 import { enforceRateLimit, limitFromEnv, rateLimitKey, getClientIp } from '@/lib/ratelimit';
 
 export async function POST(request: NextRequest) {
@@ -24,7 +25,7 @@ export async function POST(request: NextRequest) {
 
   // Resolve the merchant owned by this user.
   const { data: merchant } = await service
-    .from('merchants')
+    .from(TABLES.MERCHANTS)
     .select('id')
     .eq('user_id', user.id)
     .maybeSingle();
@@ -59,7 +60,7 @@ export async function POST(request: NextRequest) {
     // Delete customer profiles where this is the only merchant.
     await service.rpc('delete_orphan_customer_profiles' as any, { p_merchant_id: merchantId }).maybeSingle();
 
-    await service.from('merchants').delete().eq('id', merchantId);
+    await service.from(TABLES.MERCHANTS).delete().eq('id', merchantId);
   }
 
   // Delete the auth user last — this invalidates all sessions.

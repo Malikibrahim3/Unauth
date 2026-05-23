@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { TABLES } from '@/lib/supabase/tables';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { summarizeAuditResults } from '@/lib/audit/resultsSummary';
 import { formatCurrency, formatDate } from '@/lib/utils/format';
@@ -58,7 +59,7 @@ export default async function ReportPage({ params }: ReportPageProps) {
   }
 
   const { data: run } = await serviceClient
-    .from('processing_jobs')
+    .from(TABLES.PROCESSING_JOBS)
     .select('id, filename, created_at, status')
     .eq('id', runId)
     .eq('merchant_id', ctx.merchantId)
@@ -67,7 +68,7 @@ export default async function ReportPage({ params }: ReportPageProps) {
   if (!run) notFound();
 
   const { data: rows } = await serviceClient
-    .from('audit_transactions')
+    .from(TABLES.AUDIT_TRANSACTIONS)
     .select('id, customer_email, customer_name, cluster_id, order_value, identity_match_score, identity_confidence_grade, match_status, fraud_flags, behavioural_flags, signals_matched, context_flags')
     .eq('job_id', runId)
     .or('identity_confidence_grade.in.(probable,definite),match_status.in.(probable,definite)')

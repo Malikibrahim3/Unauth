@@ -13,6 +13,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
+import { TABLES } from '@/lib/supabase/tables';
 import { processCsvJob } from '@/lib/processing/worker';
 import { completeJob } from '@/lib/processing/job';
 import {
@@ -78,7 +79,7 @@ async function processChunk(
 
   try {
     const { data: latestJob } = await sc
-      .from('processing_jobs')
+      .from(TABLES.PROCESSING_JOBS)
       .select('status')
       .eq('id', jobId)
       .single();
@@ -153,7 +154,7 @@ export async function POST(request: NextRequest) {
 
   // Verify the job exists and merchant matches (defence in depth).
   const { data: job } = await sc
-    .from('processing_jobs')
+    .from(TABLES.PROCESSING_JOBS)
     .select('merchant_id, status')
     .eq('id', jobId)
     .single();

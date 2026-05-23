@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { TABLES } from '@/lib/supabase/tables';
 import { createScopedClient } from '@/lib/supabase/scoped';
 import { requirePermission, PERMISSIONS, DELEGATABLE_PERMISSIONS } from '@/lib/permissions';
 import { logAction } from '@/lib/permissions/audit';
@@ -30,7 +31,7 @@ async function GETHandler(
 
   // Verify the member belongs to this merchant
   const { data: member } = await scopedService
-    .from('merchant_members')
+    .from(TABLES.MERCHANT_MEMBERS)
     .select('id, user_id')
     .eq('id', memberId)
     .eq('invite_status', 'active')
@@ -75,7 +76,7 @@ async function POSTHandler(
 
   // Verify member belongs to this merchant
   const { data: member } = await scopedService
-    .from('merchant_members')
+    .from(TABLES.MERCHANT_MEMBERS)
     .select('id, user_id')
     .eq('id', memberId)
     .eq('invite_status', 'active')
@@ -136,7 +137,7 @@ async function DELETEHandler(
   if (!permission) return NextResponse.json({ error: 'permission required' }, { status: 400 });
 
   const { data: member } = await scopedService
-    .from('merchant_members')
+    .from(TABLES.MERCHANT_MEMBERS)
     .select('id, user_id')
     .eq('id', memberId)
     .eq('invite_status', 'active')

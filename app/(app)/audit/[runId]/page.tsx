@@ -3,7 +3,7 @@ import { Download, Users, ArrowRight } from 'lucide-react';
 import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
 import { formatDate, formatCurrency } from '@/lib/utils/format';
-import { scoreToGrade } from '@/lib/utils/riskStyles';
+import { scoreToGrade, gradeToLetter, type ConfidenceGrade, ESTIMATED_CHARGEBACK_RATE, CONFIDENCE_THRESHOLDS } from '@/lib/engine/weights';
 import { signalLabel } from '@/lib/copy/signalLabels';
 import { ConfidenceBadge } from '@/components/ui/ConfidenceBadge';
 import type { ConfidenceGradeValue } from '@/lib/confidence';
@@ -21,6 +21,8 @@ import { SectionCard, MetricCard } from '@/components/ui';
 import { RiskDistributionStrip } from '@/components/audit/RiskDistributionStrip';
 import { formatDateMode } from '@/lib/utils/format';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
+import { buildReviewableFilter } from '@/lib/supabase/filters';
+import { TABLES } from '@/lib/supabase/tables';
 
 type RunRow = Database['public']['Tables']['processing_jobs']['Row'];
 type TxRow = Database['public']['Tables']['audit_transactions']['Row'];
@@ -113,7 +115,7 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
   const selectedCustomerEmail = resolvedSearchParams.customerEmail ?? null;
 
   const { data: run } = await serviceClient
-    .from('processing_jobs')
+    .from(TABLES.PROCESSING_JOBS)
     .select('id,status,filename,total_rows,processed_rows,created_at,data_quality')
     .eq('id', resolvedParams.runId)
     .eq('merchant_id', ctx.merchantId)
@@ -149,12 +151,12 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
         { count: persistedMetrics.linked_cluster_count },
       ]
     : await Promise.all([
-        serviceClient.from('audit_transactions').select('id', { count: 'exact', head: true }).eq('job_id', jobId).eq('identity_confidence_grade', 'definite'),
-        serviceClient.from('audit_transactions').select('id', { count: 'exact', head: true }).eq('job_id', jobId).eq('identity_confidence_grade', 'probable'),
-        serviceClient.from('audit_transactions').select('id', { count: 'exact', head: true }).eq('job_id', jobId).eq('identity_confidence_grade', 'possible'),
-        serviceClient.from('audit_transactions').select('id', { count: 'exact', head: true }).eq('job_id', jobId).eq('identity_confidence_grade', 'weak'),
-        serviceClient.from('audit_transactions').select('id', { count: 'exact', head: true }).eq('job_id', jobId).or('identity_confidence_grade.in.(probable,definite),match_status.in.(probable,definite)').not('dismissed_by_merchant', 'is', true),
-        serviceClient.from('audit_transactions').select('cluster_id', { count: 'exact', head: true }).eq('job_id', jobId).not('cluster_id', 'is', null),
+        serviceClient.from(TABLES.AUDIT_TRANSACTIONS).select('id', { count: 'exact', head: true }).eq('job_id', jobId).eq('identity_confidence_grade', 'definite'),
+        serviceClient.from(TABLES.AUDIT_TRANSACTIONS).select('id', { count: 'exact', head: true }).eq('job_id', jobId).eq('identity_confidence_grade', 'probable'),
+        serviceClient.from(TABLES.AUDIT_TRANSACTIONS).select('id', { count: 'exact', head: true }).eq('job_id', jobId).eq('identity_confidence_grade', 'possible'),
+        serviceClient.from(TABLES.AUDIT_TRANSACTIONS).select('id', { count: 'exact', head: true }).eq('job_id', jobId).eq('identity_confidence_grade', 'weak'),
+        serviceClient.from(TABLES.AUDIT_TRANSACTIONS).select('id', { count: 'exact', head: true }).eq('job_id', jobId).or(buildReviewableFilter()).not('dismissed_by_merchant', 'is', true),
+        serviceClient.from(TABLES.AUDIT_TRANSACTIONS).select('cluster_id', { count: 'exact', head: true }).eq('job_id', jobId).not('cluster_id', 'is', null),
       ]);
 
   const summary = {
@@ -178,7 +180,7 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
 
   // ── Paginated all-transactions table (full run truth) ───────────────────────
   const { data: transactions } = await serviceClient
-    .from('audit_transactions')
+    .from(TABLES.AUDIT_TRANSACTIONS)
     .select(TX_TABLE_SELECT)
     .eq('job_id', jobId)
     .order('processed_at', { ascending: false, nullsFirst: false })
@@ -195,7 +197,7 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
     const profileIds = Array.from(new Set(((appearanceRows ?? []) as Array<{ profile_id: string }>).map((row) => row.profile_id)));
     if (profileIds.length > 0) {
       const { data: profileRows } = await (serviceClient as any)
-        .from('customer_profiles')
+        .from(TABLES.CUSTOMER_PROFILES)
         .select('id,total_merchants_seen_at')
         .in('id', profileIds);
       const crossProfiles = new Set(
@@ -256,10 +258,10 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
 
       for (let offset2 = 0; offset2 < maxRows; offset2 += SUMMARY_BATCH) {
         const { data: batch } = await serviceClient
-          .from('audit_transactions')
+          .from(TABLES.AUDIT_TRANSACTIONS)
           .select('customer_email, customer_name, order_value, identity_score')
           .eq('job_id', jobId)
-          .or('identity_confidence_grade.in.(probable,definite),match_status.in.(probable,definite)')
+          .or(buildReviewableFilter())
           .not('dismissed_by_merchant', 'is', true)
           .order('identity_score', { ascending: false, nullsFirst: false })
           .range(offset2, offset2 + SUMMARY_BATCH - 1) as unknown as { data: CustomerSummaryRow[] | null };
@@ -276,7 +278,7 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
 
       allCustomers = sortCustomerRollups(customerAgg);
       totalCustomers = needsFullCustomerSummary ? customerAgg.size : Math.min(customerAgg.size, summary.flaggedTransactions);
-      estimatedExposure = reviewOrderValue * 0.42;
+      estimatedExposure = reviewOrderValue * ESTIMATED_CHARGEBACK_RATE;
     }
   }
 
@@ -397,7 +399,7 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
                         }`,
                       }}
                     >
-                      <div className="mb-1"><ConfidenceBadge grade={({'weak':'D','possible':'C','probable':'B','definite':'A'} as const)[grade]} size="sm" /></div>
+                      <div className="mb-1"><ConfidenceBadge grade={gradeToLetter(grade as ConfidenceGrade)} size="sm" /></div>
                       <div className="text-heading-sm font-mono group-hover:underline" style={{ color: 'var(--text)' }}>{gradeCounts[grade].toLocaleString()}</div>
                       <div className="text-caption mt-0.5" style={{ color: 'var(--text-muted)' }}>{tileLabel}</div>
                     </div>
@@ -552,11 +554,8 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
                           const flags = ((tx as any).signals_matched as string[]) ?? ((tx as any).identity_signals as string[]) ?? ((tx as any).fraud_flags as string[]) ?? [];
                           const topFlag = flags[0];
                           const idGrade = (tx as any).identity_confidence_grade as 'definite' | 'probable' | 'possible' | 'weak' | null | undefined;
-                          const letterGrade: ConfidenceGradeValue | null =
-                            idGrade === 'definite' ? 'A'
-                            : idGrade === 'probable' ? 'B'
-                            : idGrade === 'possible' ? 'C'
-                            : idGrade === 'weak'     ? 'D'
+                          const letterGrade: ConfidenceGradeValue | null = idGrade
+                            ? gradeToLetter(idGrade as ConfidenceGrade)
                             : null;
                           return (
                             <tr key={tx.id} className="border-b transition-colors hover-bg-subtle" style={{ borderColor: 'var(--border-subtle)' }}>

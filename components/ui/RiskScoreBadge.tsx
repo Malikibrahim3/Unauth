@@ -1,20 +1,15 @@
 import { cn } from '@/lib/utils';
+import { scoreToRiskLevel, type RiskLevel } from '@/lib/utils/riskUtils';
 
-export type RiskLevel = 'low' | 'medium' | 'high' | 'critical';
+// Re-export for backwards compatibility
+export type { RiskLevel };
+export { scoreToRiskLevel };
 
 interface RiskScoreBadgeProps {
   score: number;
   level: RiskLevel;
   size?: 'sm' | 'md';
   className?: string;
-}
-
-/** Maps a numeric score to a risk level */
-export function scoreToRiskLevel(score: number): RiskLevel {
-  if (score >= 85) return 'critical';
-  if (score >= 70) return 'high';
-  if (score >= 50) return 'medium';
-  return 'low';
 }
 
 const LEVEL_STYLES: Record<RiskLevel, React.CSSProperties> = {

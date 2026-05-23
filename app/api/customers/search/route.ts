@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { TABLES } from '@/lib/supabase/tables';
 import { createScopedClient } from '@/lib/supabase/scoped';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { escapePostgrestFilterValue } from '@/lib/supabase/merchantHelpers';
@@ -55,7 +56,7 @@ async function GETHandler(req: NextRequest) {
   // to eliminate PostgREST filter-string injection.
   //
   const emailRes = await (scopedClient
-    .from('customer_profiles')
+    .from(TABLES.CUSTOMER_PROFILES)
     .select('id, names, primary_email, risk_level')
     .ilike('primary_email', safeLike)
     .order('risk_score', { ascending: false })
@@ -83,7 +84,7 @@ async function GETHandler(req: NextRequest) {
   let namePoolError: { message: string } | null = null;
   for (let offset = 0; scanned < MAX_SCAN && merged.length < limit; offset += PAGE) {
     const { data, error } = await (scopedClient
-      .from('customer_profiles')
+      .from(TABLES.CUSTOMER_PROFILES)
       .select('id, names, primary_email, risk_level')
       .order('last_seen', { ascending: false })
       .range(offset, offset + PAGE - 1) as unknown as Promise<{
@@ -115,7 +116,7 @@ async function GETHandler(req: NextRequest) {
   if (emailRes.error && namePoolError) {
     // Double fallback: email ilike only, already escaped above
     const { data: fallback } = await scopedClient
-      .from('customer_profiles')
+      .from(TABLES.CUSTOMER_PROFILES)
       .select('id, names, primary_email, risk_level')
       .ilike('primary_email', safeLike)
       .order('risk_score', { ascending: false })

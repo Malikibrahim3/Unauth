@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import { streamParseCsv } from '@/lib/processing/streamParser';
 import { processCsvJob } from '@/lib/processing/worker';
 import { createJob, updateJobTotalRows, completeJob } from '@/lib/processing/job';
+import { TABLES } from '../lib/supabase/tables';
 
 function loadEnvLocal(): void {
   const envPath = path.join(process.cwd(), '.env.local');
@@ -63,7 +64,7 @@ async function run(): Promise<void> {
     success = true;
 
     const { data: jobRow, error: jobErr } = await supabase
-      .from('processing_jobs')
+      .from(TABLES.PROCESSING_JOBS)
       .select('id,status,total_rows,processed_rows,failed_rows,flagged_count,updated_at')
       .eq('id', jobId)
       .single();
@@ -74,7 +75,7 @@ async function run(): Promise<void> {
     let from = 0;
     while (true) {
       const { data: pageRows, error: txErr } = await supabase
-        .from('audit_transactions')
+        .from(TABLES.AUDIT_TRANSACTIONS)
         .select('identity_match_grade,match_status')
         .eq('job_id', jobId)
         .range(from, from + PAGE_SIZE - 1);

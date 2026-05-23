@@ -1,12 +1,12 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
-import { formatDate } from '@/lib/utils/format';
-import { formatCurrencyNullable } from '@/lib/utils/formatCurrency';
+import { formatDate, formatCurrencyNullable } from '@/lib/utils/format';
 import { labelFor } from '@/lib/copy/labels';
 import { signalCopy } from '@/lib/copy/signals';
 import { ConfidenceBadge } from '@/components/ui/ConfidenceBadge';
 import type { ConfidenceGradeValue } from '@/lib/confidence';
+import { gradeToLetter, type ConfidenceGrade } from '@/lib/engine/weights';
 import RecommendedAction from '@/components/audit/RecommendedAction';
 import type { Database } from '@/lib/supabase/types';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
@@ -92,11 +92,8 @@ export default async function TransactionDetailPage({ params }: Props) {
           <div className="text-display-sm font-bold" style={{ color: 'var(--text)' }}>{Math.round((txData.identity_score ?? txData.match_score) ?? 0)} / 100</div>
           {(() => {
             const idGrade = txData.identity_confidence_grade as 'definite' | 'probable' | 'possible' | 'weak' | null | undefined;
-            const letter: ConfidenceGradeValue | null =
-              idGrade === 'definite' ? 'A'
-              : idGrade === 'probable' ? 'B'
-              : idGrade === 'possible' ? 'C'
-              : idGrade === 'weak' ? 'D'
+            const letter: ConfidenceGradeValue | null = idGrade
+              ? gradeToLetter(idGrade as ConfidenceGrade)
               : null;
             return <div className="mt-1">{letter ? <ConfidenceBadge grade={letter} /> : <span className="text-xs" style={{ color: 'var(--text-subtle)' }}>Ungraded</span>}</div>;
           })()}

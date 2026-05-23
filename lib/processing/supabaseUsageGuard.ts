@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../supabase/types';
+import { env } from '../utils/env';
 
 export const DEFAULT_FREE_DATABASE_LIMIT_MB = 500;
 export const DEFAULT_USAGE_HEADROOM_MB = 40;
@@ -23,14 +24,14 @@ function parsePositiveNumber(value: string | undefined, fallback: number): numbe
 }
 
 function getGuardConfig() {
-  const limitMb = parsePositiveNumber(
-    process.env.SUPABASE_DB_USAGE_LIMIT_MB,
-    DEFAULT_FREE_DATABASE_LIMIT_MB
-  );
-  const headroomMb = parsePositiveNumber(
-    process.env.SUPABASE_DB_USAGE_HEADROOM_MB,
-    DEFAULT_USAGE_HEADROOM_MB
-  );
+  const limitMb =
+    env.SUPABASE_DB_USAGE_LIMIT_MB !== undefined && env.SUPABASE_DB_USAGE_LIMIT_MB > 0
+      ? env.SUPABASE_DB_USAGE_LIMIT_MB
+      : DEFAULT_FREE_DATABASE_LIMIT_MB;
+  const headroomMb =
+    env.SUPABASE_DB_USAGE_HEADROOM_MB !== undefined && env.SUPABASE_DB_USAGE_HEADROOM_MB > 0
+      ? env.SUPABASE_DB_USAGE_HEADROOM_MB
+      : DEFAULT_USAGE_HEADROOM_MB;
 
   const limitBytes = Math.round(limitMb * 1024 * 1024);
   const headroomBytes = Math.round(Math.min(headroomMb, limitMb) * 1024 * 1024);

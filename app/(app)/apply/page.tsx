@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { TABLES } from '@/lib/supabase/tables';
 import FoundingMerchantApplicationForm from '@/components/apply/FoundingMerchantApplicationForm';
 
 export default async function ApplyPage() {
@@ -11,7 +12,7 @@ export default async function ApplyPage() {
   if (!user) notFound();
 
   const { data: merchant } = await supabase
-    .from('merchants')
+    .from(TABLES.MERCHANTS)
     .select('id, name')
     .eq('user_id', user.id)
     .maybeSingle();
@@ -19,7 +20,7 @@ export default async function ApplyPage() {
   if (!merchant) notFound();
 
   const { data: completedAudit } = await supabase
-    .from('processing_jobs')
+    .from(TABLES.PROCESSING_JOBS)
     .select('id')
     .eq('merchant_id', (merchant as { id: string }).id)
     .eq('status', 'completed')

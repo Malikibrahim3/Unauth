@@ -8,11 +8,12 @@
  * ──────────────────────────────────────────────────────────────────────── */
 
 import { createHmac, timingSafeEqual } from 'crypto';
+import { env } from '@/lib/utils/env';
 
 const HEADER = 'x-internal-chunk-token';
 
 function secret(): string {
-  const k = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const k = env.SUPABASE_SERVICE_ROLE_KEY;
   if (!k) throw new Error('SUPABASE_SERVICE_ROLE_KEY not set — cannot sign internal chunk requests');
   return k;
 }

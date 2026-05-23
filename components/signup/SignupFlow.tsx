@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { createClient } from '@/lib/supabase/client';
+import { TABLES, STORAGE_BUCKETS } from '@/lib/supabase/tables';
 import { autoMapHeaders, REQUIRED_FIELDS, type RequiredField } from '@/lib/csv/headerAliases';
 
 type Step = 'account' | 'upload';
@@ -193,7 +194,7 @@ export default function SignupFlow() {
       };
 
       const { error: merchantError } = await supabase
-        .from('merchants')
+        .from(TABLES.MERCHANTS)
         .upsert(merchantPayload as never, { onConflict: 'user_id' });
 
       if (merchantError) {
@@ -256,7 +257,7 @@ export default function SignupFlow() {
 
     const filePath = `${user.id}/${Date.now()}_${hashedFile.name}`;
     const { error: uploadError } = await supabase.storage
-      .from('merchant-csv-uploads-2')
+      .from(STORAGE_BUCKETS.MERCHANT_CSV_UPLOADS)
       .upload(filePath, hashedFile, {
         contentType: 'text/csv',
         upsert: false,

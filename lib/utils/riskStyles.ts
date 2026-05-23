@@ -65,13 +65,16 @@ export function severityStyle(severity: string | null | undefined): CSSPropertie
   };
 }
 
+// scoreToGrade is now exported from @/lib/engine/weights (single source of truth)
+export { scoreToGrade } from '@/lib/engine/weights';
+
 /**
- * Converts a numeric risk score (0–100) to a grade string.
- * Used on audit pages where only a numeric score is available.
+ * Maps risk level strings to their canonical CSS variable colours.
+ * Use this instead of defining inline color maps in components.
  */
-export function scoreToGrade(score: number): 'definite' | 'probable' | 'possible' | 'weak' {
-  if (score >= 85) return 'definite';
-  if (score >= 70) return 'probable';
-  if (score >= 55) return 'possible';
-  return 'weak';
-}
+export const RISK_LEVEL_COLORS: Record<RiskLevel, string> = {
+  critical: 'var(--risk-critical)',
+  high: 'var(--risk-high)',
+  medium: 'var(--risk-medium)',
+  low: 'var(--risk-low)',
+};

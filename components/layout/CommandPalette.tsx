@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { FLAG_COMMAND_CENTER } from '@/lib/flags';
+import { RISK_LEVEL_COLORS } from '@/lib/utils/riskStyles';
 
 interface NavItem {
   label: string;
@@ -143,12 +144,7 @@ const NAV_ITEMS: NavItem[] = [
   },
 ];
 
-const RISK_LEVEL_COLORS: Record<string, string> = {
-  critical: 'var(--risk-critical)',
-  high: 'var(--risk-high)',
-  medium: 'var(--risk-medium)',
-  low: 'var(--risk-low)',
-};
+// RISK_LEVEL_COLORS is imported from @/lib/utils/riskStyles (single source of truth)
 
 interface CommandPaletteProps {
   isOpen: boolean;

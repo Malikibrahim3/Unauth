@@ -1,4 +1,5 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { TABLES } from '@/lib/supabase/tables';
 import Link from 'next/link';
 import AuditHistoryTableClient from '@/components/audit/AuditHistoryTableClient';
 import type { Database } from '@/lib/supabase/types';
@@ -32,7 +33,7 @@ export default async function HistoryPage({ searchParams }: { searchParams?: { p
   const offset = (page - 1) * pageSize;
 
   const { data: runs, count } = await serviceClient
-    .from('processing_jobs')
+    .from(TABLES.PROCESSING_JOBS)
     .select('*', { count: 'exact' })
     .eq('merchant_id', ctx.merchantId)
     .eq('hidden_by_merchant', false)

@@ -9,6 +9,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
+import { TABLES } from '../lib/supabase/tables';
 import { readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { randomUUID } from 'crypto';
@@ -116,7 +117,7 @@ async function importPipeline() {
 
 async function cleanupJob(jobId: string) {
   await supabase.from('fraud_transactions').delete().eq('job_id', jobId);
-  await supabase.from('processing_jobs').delete().eq('id', jobId);
+  await supabase.from(TABLES.PROCESSING_JOBS).delete().eq('id', jobId);
 }
 
 async function runJob(file: File): Promise<string> {
@@ -140,7 +141,7 @@ async function waitForJobComplete(jobId: string, timeoutMs = 120_000): Promise<v
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
     const { data } = await supabase
-      .from('processing_jobs')
+      .from(TABLES.PROCESSING_JOBS)
       .select('status, processed_rows, total_rows')
       .eq('id', jobId)
       .single();
@@ -278,7 +279,7 @@ async function test4_ProgressTracking(): Promise<boolean> {
   while (Date.now() - pollStart < 120_000) {
     await sleep(5000);
     const { data } = await supabase
-      .from('processing_jobs')
+      .from(TABLES.PROCESSING_JOBS)
       .select('processed_rows')
       .eq('id', jobId)
       .single();
@@ -316,7 +317,7 @@ async function test5_BadData(): Promise<boolean> {
     .eq('job_id', jobId);
 
   const { data: job } = await supabase
-    .from('processing_jobs')
+    .from(TABLES.PROCESSING_JOBS)
     .select('failed_rows, error_log')
     .eq('id', jobId)
     .single();
@@ -365,7 +366,7 @@ async function test6_SupabasePersistence(): Promise<boolean> {
 
 async function checkTables(): Promise<boolean> {
   try {
-    await supabase.from('processing_jobs').select('id').limit(0);
+    await supabase.from(TABLES.PROCESSING_JOBS).select('id').limit(0);
     await supabase.from('fraud_transactions').select('id').limit(0);
     return true;
   } catch {

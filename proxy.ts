@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
+import { TABLES } from './lib/supabase/tables';
 import { enforceRateLimit, getClientIp, limitFromEnv, rateLimitKey } from '@/lib/ratelimit';
 import { createRequestId, merchantIdHeader, requestIdHeader } from '@/lib/log';
 import { captureServerException, initSentryServer } from '@/lib/sentry';
@@ -153,7 +154,7 @@ export async function proxy(request: NextRequest) {
   if (user && isApiRoute) {
     try {
       const { data: merchant } = await supabase
-        .from('merchants')
+        .from(TABLES.MERCHANTS)
         .select('id')
         .eq('user_id', user.id)
         .maybeSingle();
@@ -178,7 +179,7 @@ export async function proxy(request: NextRequest) {
 
   if (user && isInternalRoute) {
     const { data: merchant } = await supabase
-      .from('merchants')
+      .from(TABLES.MERCHANTS)
       .select('is_internal')
       .eq('user_id', user.id)
       .single();

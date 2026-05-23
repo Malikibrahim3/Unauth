@@ -2,6 +2,7 @@
 // Assembles the full EvidencePackage from Supabase data.
 
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { TABLES } from '@/lib/supabase/tables'
 import type { EvidencePackage } from './types'
 import { assessCE3Eligibility } from './ce3'
 import type { IdentitySignalResult } from '@/lib/engine/types'
@@ -59,7 +60,7 @@ export async function buildEvidencePackage(
   // 1. Merchant name
   // -------------------------------------------------------------------------
   const { data: merchantRow } = await supabaseServiceRole
-    .from('merchants')
+    .from(TABLES.MERCHANTS)
     .select('id, user_id, business_name, name')
     .eq('id', merchantId)
     .single() as unknown as { data: { id: string; user_id?: string; business_name?: string; name?: string } | null }

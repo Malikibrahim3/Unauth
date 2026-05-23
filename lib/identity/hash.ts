@@ -1,41 +1,12 @@
 import { createHmac } from 'node:crypto';
+import { normaliseEmail, normaliseAddress } from './normalise';
+import { env } from '@/lib/utils/env';
+
+// Re-export so existing imports of normaliseEmail/normaliseAddress from this file keep working.
+export { normaliseEmail, normaliseAddress };
 
 export function hashIdentifier(value: string): string {
-  const salt = process.env.IDENTITY_SALT;
-  if (!salt) throw new Error('IDENTITY_SALT environment variable is not set');
-  return createHmac('sha256', salt).update(value).digest('hex');
-}
-
-export function normaliseEmail(email: string): string {
-  const lower = email.toLowerCase().trim();
-  const [local, domain] = lower.split('@');
-  if (!local || !domain) return lower;
-
-  let normLocal = local;
-
-  if (domain === 'gmail.com') {
-    normLocal = normLocal.replace(/\./g, '');
-  }
-
-  normLocal = normLocal.split('+')[0];
-
-  return `${normLocal}@${domain}`;
-}
-
-export function normaliseAddress(address: string): string {
-  return address
-    .toLowerCase()
-    .replace(/[^\w\s]/g, ' ')
-    .replace(/\bst\b/g, 'street')
-    .replace(/\brd\b/g, 'road')
-    .replace(/\bave?\b/g, 'avenue')
-    .replace(/\bdr\b/g, 'drive')
-    .replace(/\bln\b/g, 'lane')
-    .replace(/\bct\b/g, 'court')
-    .replace(/\bbl?v?d\b/g, 'boulevard')
-    .replace(/\bpl\b/g, 'place')
-    .replace(/\s+/g, ' ')
-    .trim();
+  return createHmac('sha256', env.IDENTITY_SALT).update(value).digest('hex');
 }
 
 export function normalisePhone(phone: string): string | null {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { TABLES, STORAGE_BUCKETS } from '@/lib/supabase/tables';
 import { createScopedClient } from '@/lib/supabase/scoped';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { logAction } from '@/lib/permissions/audit';
@@ -20,7 +21,7 @@ async function checkWatchlistAppearances(
   scopedClient: SupabaseClient
 ) {
   const { data: merchant } = await scopedClient
-    .from('merchants')
+    .from(TABLES.MERCHANTS)
     .select('user_id')
     .eq('id', merchantId)
     .maybeSingle();
@@ -28,7 +29,7 @@ async function checkWatchlistAppearances(
 
   // Fetch all customer profile IDs in this merchant's watchlist
   const { data: watchlisted, error: watchlistErr } = await scopedClient
-    .from('watchlist_entries')
+    .from(TABLES.WATCHLIST_ENTRIES)
     .select('customer_profile_id')
     .or(`merchant_id.eq.${ownerUserId},merchant_id.eq.${merchantId}`)
     .eq('removed_by_merchant', false);
@@ -71,7 +72,7 @@ async function checkWatchlistAppearances(
   const txGrade = new Map<string, string | null>();
   if (txIds.length > 0) {
     const { data: txRows, error: txErr } = await scopedClient
-      .from('audit_transactions')
+      .from(TABLES.AUDIT_TRANSACTIONS)
       .select('id, identity_confidence_grade')
       .eq('job_id', auditId)
       .in('id', txIds) as unknown as {
@@ -149,7 +150,7 @@ async function POSTHandler(request: NextRequest) {
 
   // Verify the job belongs to this merchant before processing
   const { data: jobOwner } = await scopedClient
-    .from('processing_jobs')
+    .from(TABLES.PROCESSING_JOBS)
     .select('merchant_id')
     .eq('id', jobId)
     .single();
@@ -161,7 +162,7 @@ async function POSTHandler(request: NextRequest) {
 
   // Step 1: Query csv_upload_queue for the specific job
   const { data: queueItem, error: queueError } = await scopedClient
-    .from('csv_upload_queue')
+    .from(TABLES.CSV_UPLOAD_QUEUE)
     .select('*')
     .eq('status', 'pending')
     .eq('job_id', jobId)
@@ -173,7 +174,7 @@ async function POSTHandler(request: NextRequest) {
 
   // Step 2: Immediately update to 'processing' and set started_at
   const { error: updateError } = await scopedClient
-    .from('csv_upload_queue')
+    .from(TABLES.CSV_UPLOAD_QUEUE)
     .update({ status: 'processing', started_at: new Date().toISOString() })
     .eq('id', queueItem.id);
 
@@ -186,7 +187,7 @@ async function POSTHandler(request: NextRequest) {
     routeLog('Claimed job; downloading file from storage');
     // Step 3: Download the file from Supabase Storage
     const { data: fileData, error: downloadError } = await serviceClient.storage
-      .from('merchant-csv-uploads-2')
+      .from(STORAGE_BUCKETS.MERCHANT_CSV_UPLOADS)
       .download(queueItem.storage_path);
 
     if (downloadError || !fileData) {
@@ -211,7 +212,7 @@ async function POSTHandler(request: NextRequest) {
       routeLog(`CSV parse failed: ${message}`);
       await completeJob(scopedClient, queueItem.job_id, false, [{ message }]);
       await scopedClient
-        .from('csv_upload_queue')
+        .from(TABLES.CSV_UPLOAD_QUEUE)
         .update({ status: 'failed', completed_at: new Date().toISOString() })
         .eq('id', queueItem.id);
       throw new Error(message);
@@ -222,7 +223,7 @@ async function POSTHandler(request: NextRequest) {
         { message: `Missing required columns: ${parseResult.missingRequired.join(', ')}` },
       ]);
       await scopedClient
-        .from('csv_upload_queue')
+        .from(TABLES.CSV_UPLOAD_QUEUE)
         .update({ status: 'failed', completed_at: new Date().toISOString() })
         .eq('id', queueItem.id);
       return NextResponse.json(
@@ -236,7 +237,7 @@ async function POSTHandler(request: NextRequest) {
         { message: `Row count ${parseResult.rowCount} exceeds limit of ${MAX_ROWS}` },
       ]);
       await scopedClient
-        .from('csv_upload_queue')
+        .from(TABLES.CSV_UPLOAD_QUEUE)
         .update({ status: 'failed', completed_at: new Date().toISOString() })
         .eq('id', queueItem.id);
       return NextResponse.json({ error: `Row count exceeds limit of ${MAX_ROWS}` }, { status: 422 });
@@ -245,7 +246,7 @@ async function POSTHandler(request: NextRequest) {
     // Update job with row count and mark as processing
     await updateJobTotalRows(scopedClient, queueItem.job_id, parseResult.rowCount);
     await scopedClient
-      .from('processing_jobs')
+      .from(TABLES.PROCESSING_JOBS)
       .update({ status: 'processing' })
       .eq('id', queueItem.job_id);
 
@@ -259,7 +260,7 @@ async function POSTHandler(request: NextRequest) {
         { message: usageGuard.reason ?? 'Supabase usage guard stopped this run', code: 'SUPABASE_USAGE_GUARD' },
       ]);
       await scopedClient
-        .from('csv_upload_queue')
+        .from(TABLES.CSV_UPLOAD_QUEUE)
         .update({ status: 'failed', completed_at: new Date().toISOString() })
         .eq('id', queueItem.id);
       return NextResponse.json(
@@ -286,7 +287,7 @@ async function POSTHandler(request: NextRequest) {
         { message: postProcessGuard.reason ?? 'Supabase usage guard stopped this run', code: 'SUPABASE_USAGE_GUARD' },
       ]);
       await scopedClient
-        .from('csv_upload_queue')
+        .from(TABLES.CSV_UPLOAD_QUEUE)
         .update({ status: 'failed', completed_at: new Date().toISOString() })
         .eq('id', queueItem.id);
       return NextResponse.json(
@@ -323,7 +324,7 @@ async function POSTHandler(request: NextRequest) {
     // Mark job as failed
     await completeJob(scopedClient, queueItem.job_id, false, [{ message }]);
     await scopedClient
-      .from('csv_upload_queue')
+      .from(TABLES.CSV_UPLOAD_QUEUE)
       .update({ status: 'failed', completed_at: new Date().toISOString() })
       .eq('id', queueItem.id);
 

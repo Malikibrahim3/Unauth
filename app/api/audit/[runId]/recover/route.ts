@@ -16,6 +16,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { TABLES } from '@/lib/supabase/tables';
 import { createScopedClient } from '@/lib/supabase/scoped';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { countReviewWorthyTransactions } from '@/lib/supabase/merchantHelpers';
@@ -52,7 +53,7 @@ async function POSTHandler(
   const scopedClient = createScopedClient(ctx.merchantId, serviceClient);
 
   const { data: job, error } = await scopedClient
-    .from('processing_jobs')
+    .from(TABLES.PROCESSING_JOBS)
     .select('status, total_rows, processed_rows, failed_rows, merchant_id, updated_at')
     .eq('id', runId)
     .single();

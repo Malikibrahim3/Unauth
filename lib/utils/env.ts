@@ -15,6 +15,17 @@ const envSchema = z.object({
   INTERNAL_HMAC_SECRET: z.string().min(32).optional(),
   PUBLIC_INTAKE_MERCHANT_ID: z.string().uuid().optional(),
   VERCEL_ENV: z.string().optional(),
+  FLAG_THRESHOLD: z.coerce.number().default(44),
+  INLINE_RESTITCH_MAX_ROWS: z.coerce.number().optional(),
+  KV_REST_API_URL: z.string().url().optional(),
+  KV_REST_API_TOKEN: z.string().min(1).optional(),
+  SYNC_BACKGROUND_WRITES: z.string().optional(),
+  SKIP_OPTIONAL_BACKGROUND_WRITES: z.string().optional(),
+  VERCEL_URL: z.string().optional(),
+  SKIP_CROSS_MERCHANT_CONTEXT: z.string().optional(),
+  SUPABASE_DB_USAGE_LIMIT_MB: z.coerce.number().optional(),
+  SUPABASE_DB_USAGE_HEADROOM_MB: z.coerce.number().optional(),
+  AUDIT_EMAIL_FROM: z.string().optional(),
 }).superRefine((env, ctx) => {
   if (!env.NEXT_PUBLIC_SUPABASE_ANON_KEY && !env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) {
     ctx.addIssue({

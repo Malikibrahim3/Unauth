@@ -12,13 +12,14 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
+import { TABLES, STORAGE_BUCKETS } from '@/lib/supabase/tables';
+import { env } from '@/lib/utils/env';
 
 export const maxDuration = 60;
 
 export async function POST(request: NextRequest) {
   const authHeader = request.headers.get('authorization');
-  const secret = process.env.CRON_SECRET;
-  if (!secret || authHeader !== `Bearer ${secret}`) {
+  if (!env.CRON_SECRET || authHeader !== `Bearer ${env.CRON_SECRET}`) {
     return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
   }
 
@@ -46,7 +47,7 @@ export async function POST(request: NextRequest) {
 
   // 2. Find all processing_jobs linked to these public audits
   const { data: jobs } = await sc
-    .from('processing_jobs')
+    .from(TABLES.PROCESSING_JOBS)
     .select('id')
     .in('public_audit_id', auditIds);
 
@@ -73,7 +74,7 @@ export async function POST(request: NextRequest) {
 
     // 4. Delete the processing_jobs themselves
     const { error: jobsError } = await sc
-      .from('processing_jobs')
+      .from(TABLES.PROCESSING_JOBS)
       .delete()
       .in('id', jobIds);
     if (jobsError) {
@@ -88,15 +89,15 @@ export async function POST(request: NextRequest) {
     .filter((p): p is string => typeof p === 'string' && p.length > 0);
 
   if (explicitPaths.length > 0) {
-    const { error } = await sc.storage.from('merchant-csv-uploads-2').remove(explicitPaths);
+    const { error } = await sc.storage.from(STORAGE_BUCKETS.MERCHANT_CSV_UPLOADS).remove(explicitPaths);
     if (error) storageErrors.push(`explicit paths: ${error.message}`);
   }
 
   for (const id of auditIds) {
-    const { data: files } = await sc.storage.from('merchant-csv-uploads-2').list(id);
+    const { data: files } = await sc.storage.from(STORAGE_BUCKETS.MERCHANT_CSV_UPLOADS).list(id);
     if (files && files.length > 0) {
       const paths = files.map((f: { name: string }) => `${id}/${f.name}`);
-      const { error } = await sc.storage.from('merchant-csv-uploads-2').remove(paths);
+      const { error } = await sc.storage.from(STORAGE_BUCKETS.MERCHANT_CSV_UPLOADS).remove(paths);
       if (error) storageErrors.push(`${id}: ${error.message}`);
     }
   }

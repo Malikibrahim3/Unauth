@@ -1,3 +1,5 @@
+import { scoreToGrade as scoreToWordGrade, gradeToLetter } from '@/lib/engine/weights';
+
 export type ConfidenceGradeValue = 'A' | 'B' | 'C' | 'D' | 'F';
 
 export const CONFIDENCE_GRADE_COPY: Record<
@@ -31,12 +33,14 @@ export const CONFIDENCE_GRADE_COPY: Record<
   },
 };
 
+/**
+ * Converts a numeric score to a letter grade (A/B/C/D/F).
+ * Thresholds are canonical from lib/engine/weights.ts::CONFIDENCE_THRESHOLDS.
+ * Returns 'F' only when score is 0 (no signal); otherwise delegates to gradeToLetter(scoreToGrade()).
+ */
 export function scoreToGrade(score: number): ConfidenceGradeValue {
-  if (score >= 90) return 'A';
-  if (score >= 75) return 'B';
-  if (score >= 60) return 'C';
-  if (score >= 45) return 'D';
-  return 'F';
+  if (score === 0) return 'F';
+  return gradeToLetter(scoreToWordGrade(score));
 }
 
 export function riskLevelToNewGrade(level: string | null | undefined): ConfidenceGradeValue {

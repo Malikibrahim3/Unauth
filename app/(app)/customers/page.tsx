@@ -1,4 +1,5 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { TABLES } from '@/lib/supabase/tables';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
@@ -140,7 +141,7 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
   const merchantFilter = `merchant_ids.cs.${JSON.stringify([ctx.merchantId])}`;
 
   let query = svc
-    .from('customer_profiles')
+    .from(TABLES.CUSTOMER_PROFILES)
     .select(
       'id, risk_score, risk_level, total_orders, total_refund_claims, total_chargebacks, refund_rate, refund_acceleration_score, total_merchants_seen_at, fastest_claim_days, primary_email, names, on_watchlist, manually_reviewed, last_seen, first_seen, profile_confidence, investigation_status',
       { count: 'exact' }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { TABLES } from '@/lib/supabase/tables';
 import { createScopedClient } from '@/lib/supabase/scoped';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { logAction } from '@/lib/permissions/audit';
@@ -131,7 +132,7 @@ async function GETHandler(
   // 2. Check watchlist status for this merchant
   // -------------------------------------------------------------------------
   const { data: watchlistRow } = await serviceClient
-    .from('watchlist_entries')
+    .from(TABLES.WATCHLIST_ENTRIES)
     .select('id')
     .eq('merchant_id', user.id)
     .eq('customer_profile_id', profileId)
@@ -144,7 +145,7 @@ async function GETHandler(
   //     we MUST enforce merchant scope at the application layer.
   // -------------------------------------------------------------------------
   const { data: ownedJobs } = await scopedClient
-    .from('processing_jobs')
+    .from(TABLES.PROCESSING_JOBS)
     .select('id')
     .eq('merchant_id', ctx.merchantId) as unknown as { data: { id: string }[] | null };
 
@@ -205,7 +206,7 @@ async function GETHandler(
     const PAGE = 1000;
     for (let offset = 0; ; offset += PAGE) {
       const { data: page } = await (serviceClient
-        .from('audit_transactions')
+        .from(TABLES.AUDIT_TRANSACTIONS)
         .select(TX_SELECT)
         .in('job_id', ownedJobIds)
         .in(identityField, identityValues)
@@ -233,7 +234,7 @@ async function GETHandler(
     const BATCH = 1000;
     for (let offset = 0; ; offset += BATCH) {
       const { data: txByAppearance } = await serviceClient
-        .from('audit_transactions')
+        .from(TABLES.AUDIT_TRANSACTIONS)
         .select(TX_SELECT)
         .in('id', transactionIds)
         .in('job_id', ownedJobIds)
@@ -250,7 +251,7 @@ async function GETHandler(
     const BATCH = 1000;
     for (let offset = 0; ; offset += BATCH) {
       let txQuery = serviceClient
-        .from('audit_transactions')
+        .from(TABLES.AUDIT_TRANSACTIONS)
         .select(TX_SELECT)
         .in('job_id', auditIds)
         .order('processed_at', { ascending: true })

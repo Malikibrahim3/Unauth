@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { TABLES } from '../../lib/supabase/tables';
 
 async function main() {
   const jobId = process.argv[2];
@@ -17,8 +18,8 @@ async function main() {
   const serviceClient = createClient(url, service);
 
   const [serviceCount, anonCount] = await Promise.all([
-    serviceClient.from('audit_transactions').select('*', { count: 'exact', head: true }).eq('job_id', jobId),
-    anonClient.from('audit_transactions').select('*', { count: 'exact', head: true }).eq('job_id', jobId),
+    serviceClient.from(TABLES.AUDIT_TRANSACTIONS).select('*', { count: 'exact', head: true }).eq('job_id', jobId),
+    anonClient.from(TABLES.AUDIT_TRANSACTIONS).select('*', { count: 'exact', head: true }).eq('job_id', jobId),
   ]);
 
   console.log(JSON.stringify({

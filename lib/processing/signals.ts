@@ -10,8 +10,8 @@
  * (which is the union of all signals across all pairs in the cluster).
  */
 
+import { normaliseEmail } from '@/lib/identity/normalise';
 import {
-  normaliseEmail,
   normalisePhone,
   normalisePostcode,
   normaliseCard,

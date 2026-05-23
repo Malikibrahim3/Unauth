@@ -9,6 +9,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
+import { TABLES } from '@/lib/supabase/tables';
 
 interface EvalHistoryRow {
   id: string;
@@ -31,7 +32,7 @@ export default async function InternalEvalPage() {
 
   // Gate: only is_internal merchants may access this page.
   const { data: merchant } = await supabase
-    .from('merchants')
+    .from(TABLES.MERCHANTS)
     .select('id, is_internal')
     .eq('user_id', user.id)
     .single();

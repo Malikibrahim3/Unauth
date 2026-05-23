@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { env } from '@/lib/utils/env';
 import { createAdminClient, createServiceClient } from '@/lib/supabase/server';
+import { TABLES } from '@/lib/supabase/tables';
 import { completeJob } from '@/lib/processing/job';
 import {
   CHUNK_BUCKET,
@@ -13,11 +15,13 @@ import { checkCsvUsageGuard } from '@/lib/processing/supabaseUsageGuard';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { summarizeAuditResults } from '@/lib/audit/resultsSummary';
 import { sendEmail } from '@/lib/email/send';
+import { GRADE_ORDER } from '@/lib/engine/weights';
+import { TABLES } from '@/lib/supabase/tables';
 import { buildAuditResultsEmail } from '@/lib/email/templates';
 
 export const maxDuration = 300;
 
-const INLINE_RESTITCH_MAX_ROWS = Number(process.env.INLINE_RESTITCH_MAX_ROWS ?? 30000);
+const INLINE_RESTITCH_MAX_ROWS = env.INLINE_RESTITCH_MAX_ROWS ?? 30000;
 
 function formatError(err: unknown): string {
   if (err instanceof Error) return err.message;
@@ -41,14 +45,14 @@ async function checkWatchlistAppearances(
   supabase: SupabaseClient
 ): Promise<void> {
   const { data: merchant } = await supabase
-    .from('merchants')
+    .from(TABLES.MERCHANTS)
     .select('user_id')
     .eq('id', merchantId)
     .maybeSingle();
   const ownerUserId = (merchant as { user_id?: string | null } | null)?.user_id ?? merchantId;
 
   const { data: watchlisted } = await supabase
-    .from('watchlist_entries')
+    .from(TABLES.WATCHLIST_ENTRIES)
     .select('customer_profile_id')
     .or(`merchant_id.eq.${ownerUserId},merchant_id.eq.${merchantId}`)
     .eq('removed_by_merchant', false);
@@ -59,14 +63,14 @@ async function checkWatchlistAppearances(
   if (ids.length === 0) return;
 
   const { data: appearances } = await supabase
-    .from('audit_transactions')
+    .from(TABLES.AUDIT_TRANSACTIONS)
     .select('customer_profile_id, identity_confidence_grade')
     .eq('job_id', auditId)
     .eq('merchant_id', merchantId)
     .in('customer_profile_id', ids);
   if (!appearances || appearances.length === 0) return;
 
-  const gradeOrder: Record<string, number> = { definite: 4, probable: 3, possible: 2, weak: 1 };
+  const gradeOrder = GRADE_ORDER;
   const grouped = new Map<string, { count: number; highestGrade: string }>();
   for (const row of appearances as Array<{ customer_profile_id: string; identity_confidence_grade: string }>) {
     const ex = grouped.get(row.customer_profile_id);
@@ -99,7 +103,7 @@ async function maybeSendAuditResultsEmail(
   merchantId: string
 ): Promise<void> {
   const { data: jobMeta } = await supabase
-    .from('processing_jobs')
+    .from(TABLES.PROCESSING_JOBS)
     .select('results_email_sent_at')
     .eq('id', jobId)
     .maybeSingle();
@@ -109,7 +113,7 @@ async function maybeSendAuditResultsEmail(
   }
 
   const { data: publicAudit } = await supabase
-    .from('public_audits' as any)
+    .from(TABLES.PUBLIC_AUDITS) // TODO: add public_audits to Supabase generated types
     .select('id, submitted_email')
     .eq('processing_job_id', jobId)
     .maybeSingle();
@@ -119,14 +123,14 @@ async function maybeSendAuditResultsEmail(
     recipientEmail = (publicAudit as { submitted_email: string }).submitted_email;
   } else {
     const { data: merchant } = await supabase
-      .from('merchants')
+      .from(TABLES.MERCHANTS)
       .select('name, user_id')
       .eq('id', merchantId)
       .maybeSingle();
     const merchantRecord = merchant as { user_id?: string } | null;
     if (!merchantRecord?.user_id) {
       await supabase
-        .from('processing_jobs')
+        .from(TABLES.PROCESSING_JOBS)
         .update({ results_email_error: 'Missing merchant owner for audit email.' } as any)
         .eq('id', jobId);
       return;
@@ -138,7 +142,7 @@ async function maybeSendAuditResultsEmail(
 
   if (!recipientEmail) {
     await supabase
-      .from('processing_jobs')
+      .from(TABLES.PROCESSING_JOBS)
       .update({ results_email_error: 'Missing recipient email for audit results.' } as any)
       .eq('id', jobId);
     return;
@@ -153,7 +157,7 @@ async function maybeSendAuditResultsEmail(
     context_flags: unknown;
   }>((from, to) =>
     supabase
-      .from('audit_transactions')
+      .from(TABLES.AUDIT_TRANSACTIONS)
       .select('cluster_id, order_value, fraud_flags, behavioural_flags, signals_matched, context_flags')
       .eq('job_id', jobId)
       .or('identity_confidence_grade.in.(probable,definite),match_status.in.(probable,definite)')
@@ -206,13 +210,13 @@ async function maybeSendAuditResultsEmail(
       };
 
   await supabase
-    .from('processing_jobs')
+    .from(TABLES.PROCESSING_JOBS)
     .update(emailUpdate as any)
     .eq('id', jobId);
 
   if (publicAudit) {
     await supabase
-      .from('public_audits' as any)
+      .from(TABLES.PUBLIC_AUDITS) // TODO: add public_audits to Supabase generated types
       .update({
         status: 'completed',
         updated_at: new Date().toISOString(),
@@ -242,7 +246,7 @@ async function finalizeJob(
       console.warn(`[finalize ${jobId}] watchlist sync non-fatal failure:`, formatError(err));
     }
     await sc
-      .from('processing_jobs')
+      .from(TABLES.PROCESSING_JOBS)
       .update({ watchlist_sync_status: watchlistSyncStatus } as any)
       .eq('id', jobId);
     const flaggedCount = await countReviewWorthyTransactions(sc, jobId, merchantId);
@@ -274,7 +278,7 @@ async function finalizeJob(
       const emailMessage = formatError(err);
       console.warn(`[finalize ${jobId}] results email non-fatal failure:`, emailMessage);
       await sc
-        .from('processing_jobs')
+        .from(TABLES.PROCESSING_JOBS)
         .update({ results_email_error: emailMessage } as any)
         .eq('id', jobId);
     }
@@ -312,7 +316,7 @@ export async function POST(request: NextRequest) {
 
   const sc = createServiceClient();
   const { data: job } = await sc
-    .from('processing_jobs')
+    .from(TABLES.PROCESSING_JOBS)
     .select('merchant_id, status, total_rows, processed_rows, failed_rows')
     .eq('id', jobId)
     .single();
