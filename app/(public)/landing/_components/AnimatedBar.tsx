@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { t } from '../_tokens';
 
 type Props = {
   value: number;       // 0..1
@@ -18,8 +19,8 @@ type Props = {
 
 export default function AnimatedBar({
   value,
-  color = '#7B2D26',
-  track = '#ECE5D4',
+  color = t.accent,
+  track = t.cream2,
   height = 3,
   delay = 0,
   duration = 720,

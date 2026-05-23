@@ -1,6 +1,7 @@
 'use client';
 
 import { cn } from '@/lib/utils';
+import { t } from '../_tokens';
 
 const complaints = [
   { store: 'Kessler', handle: '@kessler', title: 'I never received my package', body: 'Tracking shows delivered but nothing arrived at my address.', tone: 'New dispute' },
@@ -46,13 +47,11 @@ const columns = [
 function ComplaintCard({
   store,
   handle,
-  title,
   body,
   tone,
 }: {
   store: string;
   handle: string;
-  title: string;
   body: string;
   tone: string;
 }) {
@@ -62,8 +61,11 @@ function ComplaintCard({
       style={{
         background: 'rgba(22,21,16,0.92)',
         border: '1px solid rgba(48,44,36,0.9)',
-        borderRadius: 0,
+        borderRadius: t.radius,
         boxShadow: '0 1px 0 rgba(255,255,255,0.03) inset, 0 8px 24px -8px rgba(0,0,0,0.5)',
+        backfaceVisibility: 'hidden',
+        transform: 'translateZ(0)',
+        WebkitFontSmoothing: 'antialiased',
       }}
     >
       {/* Header */}
@@ -77,7 +79,7 @@ function ComplaintCard({
             fontSize: '9.5px',
             letterSpacing: '0.12em',
             textTransform: 'uppercase',
-            color: '#5A5650',
+            color: t.darkLabel,
           }}
         >
           {handle}
@@ -88,7 +90,7 @@ function ComplaintCard({
             fontSize: '9px',
             letterSpacing: '0.1em',
             textTransform: 'uppercase',
-            color: '#7B2D26',
+            color: t.accent,
             fontWeight: 600,
           }}
         >
@@ -100,27 +102,16 @@ function ComplaintCard({
       <div className="px-3 py-3">
         <figcaption
           style={{
-            fontFamily: 'var(--font-dm-sans, sans-serif)',
-            fontSize: '12.5px',
-            fontWeight: 500,
-            color: '#C8BAA4',
-            lineHeight: 1.4,
-            marginBottom: '6px',
-          }}
-        >
-          {title}
-        </figcaption>
-        <blockquote
-          style={{
             fontFamily: 'var(--font-dm-mono, monospace)',
-            fontSize: '10.5px',
-            color: '#5A5650',
-            lineHeight: 1.6,
+            fontSize: '11px',
+            color: t.bg,
+            lineHeight: 1.65,
             margin: 0,
+            letterSpacing: '0.01em',
           }}
         >
           {body}
-        </blockquote>
+        </figcaption>
       </div>
 
       {/* Footer */}
@@ -133,7 +124,7 @@ function ComplaintCard({
             fontFamily: 'var(--font-dm-mono, monospace)',
             fontSize: '9.5px',
             letterSpacing: '0.08em',
-            color: '#4A4640',
+            color: t.darkLabel,
           }}
         >
           {store}
@@ -165,7 +156,6 @@ function MarqueeColumn({
             key={`${item.store}-${item.title}-${index}`}
             store={item.store}
             handle={item.handle}
-            title={item.title}
             body={item.body}
             tone={item.tone}
           />
@@ -177,7 +167,7 @@ function MarqueeColumn({
 
 export default function HeroNotificationArtifact() {
   return (
-    <div className="relative flex h-[900px] w-full items-center justify-end overflow-hidden [perspective:1800px]">
+    <div className="relative flex h-[810px] w-full items-center justify-end overflow-hidden [perspective:1800px]">
       <style>{`
         @keyframes ua-complaints-scroll {
           from {
@@ -200,6 +190,8 @@ export default function HeroNotificationArtifact() {
         .ua-complaint-marquee {
           animation: ua-complaints-scroll var(--ua-duration) linear infinite;
           will-change: transform;
+          backface-visibility: hidden;
+          transform: translateZ(0);
         }
 
         .ua-complaint-marquee:hover {
@@ -229,10 +221,10 @@ export default function HeroNotificationArtifact() {
         <MarqueeColumn items={columns[4]} duration={32} />
       </div>
 
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-52 bg-gradient-to-b from-[#15140F] via-[#15140F]/55 to-transparent" />
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-[#15140F] via-[#15140F]/90 to-transparent" />
-      <div className="pointer-events-none absolute inset-y-0 left-0 w-64 bg-gradient-to-r from-[#15140F] via-[#15140F]/80 to-transparent" />
-      <div className="pointer-events-none absolute inset-y-0 right-0 w-36 bg-gradient-to-l from-[#15140F] via-[#15140F]/80 to-transparent" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-52 bg-gradient-to-b from-[var(--landing-dark-bg)] via-[var(--landing-dark-bg)]/55 to-transparent" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-[var(--landing-dark-bg)] via-[var(--landing-dark-bg)]/90 to-transparent" />
+      <div className="pointer-events-none absolute inset-y-0 left-0 w-64 bg-gradient-to-r from-[var(--landing-dark-bg)] via-[var(--landing-dark-bg)]/80 to-transparent" />
+      <div className="pointer-events-none absolute inset-y-0 right-0 w-36 bg-gradient-to-l from-[var(--landing-dark-bg)] via-[var(--landing-dark-bg)]/80 to-transparent" />
     </div>
   );
 }

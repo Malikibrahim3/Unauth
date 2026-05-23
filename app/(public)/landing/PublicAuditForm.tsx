@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Papa from 'papaparse';
+import { t } from './_tokens';
 import { autoMapHeaders, REQUIRED_FIELDS, type RequiredField } from '@/lib/csv/headerAliases';
 
 type HashableField =
@@ -170,9 +171,9 @@ export default function PublicAuditForm() {
           placeholder="your@store.com"
           style={{
             width: '100%',
-            background: '#F8F5EE',
-            border: '1px solid #D8D0BD',
-            color: '#1A1814',
+            background: t.bg,
+            border: `1px solid ${t.border}`,
+            color: t.ink,
             padding: '12px 14px',
             fontFamily: 'var(--font-dm-sans, sans-serif)',
             fontSize: '14px',
@@ -182,8 +183,8 @@ export default function PublicAuditForm() {
         <label
           style={{
             display: 'block',
-            border: '1px dashed #5A5548',
-            background: '#15140F',
+            border: `1px dashed ${t.darkBorder2}`,
+            background: t.darkBg,
             padding: '16px',
             cursor: 'pointer',
           }}
@@ -197,11 +198,11 @@ export default function PublicAuditForm() {
           <p style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '14px', margin: 0 }}>
             Drag and drop your CSV or click to choose
           </p>
-          <p style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '12px', color: '#8A8472', marginTop: '6px', marginBottom: 0 }}>
+          <p style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '12px', color: t.inkTertiary, marginTop: '6px', marginBottom: 0 }}>
             .csv only
           </p>
           {file ? (
-            <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11px', color: '#B8B2A0', marginTop: '10px', marginBottom: 0 }}>
+            <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11px', color: t.darkMuted, marginTop: '10px', marginBottom: 0 }}>
               {file.name} · {rowCount !== null ? `${rowCount.toLocaleString()} rows` : 'preparing...'}
             </p>
           ) : null}
@@ -214,13 +215,13 @@ export default function PublicAuditForm() {
             display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: '#E8E4D8',
-            color: '#15140F',
+            background: t.darkBright,
+            color: t.darkBg,
             fontFamily: 'var(--font-dm-sans, sans-serif)',
             fontSize: '15px',
             fontWeight: 500,
             padding: '12px 16px',
-            border: '1px solid #E8E4D8',
+            border: `1px solid ${t.darkBright}`,
             opacity: loading || !hashedFile ? 0.7 : 1,
           }}
         >
@@ -229,7 +230,7 @@ export default function PublicAuditForm() {
       </div>
 
       {error ? (
-        <p style={{ color: '#F3A89C', fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '13px', marginTop: '10px', marginBottom: 0 }}>
+        <p style={{ color: t.errorFg, fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '13px', marginTop: '10px', marginBottom: 0 }}>
           {error}
         </p>
       ) : null}

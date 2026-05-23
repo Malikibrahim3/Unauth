@@ -54,6 +54,8 @@ export async function proxy(request: NextRequest) {
   const isMobileAllowedRoute =
     pathname === '/' ||
     pathname === '/landing' ||
+    pathname === '/audit-demo' ||
+    pathname.startsWith('/audit-demo/') ||
     pathname === '/demo' ||
     pathname === '/apply' ||
     pathname === '/signup' ||
@@ -125,6 +127,9 @@ export async function proxy(request: NextRequest) {
   const isPublicRoute =
     pathname === '/' ||
     pathname === '/landing' ||
+    pathname.startsWith('/landing/') ||
+    pathname === '/audit-demo' ||
+    pathname.startsWith('/audit-demo/') ||
     pathname === '/demo' ||
     pathname === '/mobile-unsupported' ||
     pathname === '/legal' ||

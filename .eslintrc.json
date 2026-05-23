@@ -18,6 +18,22 @@
   },
   "overrides": [
     {
+      "files": ["app/(public)/landing/**/*.{ts,tsx}"],
+      "rules": {
+        "no-restricted-syntax": [
+          "error",
+          {
+            "selector": "Property[key.name=/^(color|background|backgroundColor|borderColor|fill|stroke|outlineColor)$/] > Literal[value=/^#[0-9a-fA-F]{3,8}$/]",
+            "message": "Raw hex colours are not allowed in landing page inline styles. Define the value in globals.css as a --landing-* custom property, add it to app/(public)/landing/_tokens.ts, then reference it via t.* from _tokens."
+          },
+          {
+            "selector": "JSXAttribute[name.name='className'] Literal[value=/#[0-9a-fA-F]{3,8}/]",
+            "message": "Raw hex in Tailwind className (e.g. text-[#7B2D26]). Use var(--landing-*) instead: text-[var(--landing-accent)]."
+          }
+        ]
+      }
+    },
+    {
       "files": ["components/**/*.{ts,tsx}"],
       "excludedFiles": ["components/internal/**/*.{ts,tsx}"],
       "rules": {

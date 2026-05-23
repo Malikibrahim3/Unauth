@@ -2,21 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { DotPattern } from '@/components/ui/dot-pattern';
-
-const SANS  = 'var(--font-dm-sans, sans-serif)';
-const MONO  = 'var(--font-dm-mono, monospace)';
-const SERIF = 'var(--font-serif, serif)';
-
-const ACCENT     = '#7B2D26';
-const ACCENT_FG  = '#F8F5EE';
-const INK        = '#1A1814';
-const INK_MUTED  = '#6B655C';
-const INK_FAINT  = '#A09889';
-const CREAM      = '#F5F1EA';
-const CREAM_2    = '#EBE5D8';
-const PAPER      = '#FFFFFF';
-const LINE       = '#E5DFCF';
-const LINE_FAINT = '#EFEADD';
+import { t } from '../_tokens';
 
 const DWELL = 4200;
 
@@ -51,24 +37,20 @@ const TABS = [
 
 const SCREENSHOT_ARTIFACTS = [
   {
-    src: '/screenshots/dashboard.png',
-    label: 'Merchant dashboard',
-    alt: 'Live Unauth dashboard showing transaction intelligence charts and review cases',
+    src: '/screenshots/upload.png',
+    alt: 'Unauth new audit upload page — drag and drop CSV export with step-by-step format guidance',
   },
   {
-    src: '/screenshots/watchlist.png',
-    label: 'Watchlist',
-    alt: 'Live Unauth watchlist with monitored customers and recent appearances',
+    src: '/screenshots/hash-demo.png',
+    alt: 'Unauth new audit hash step — email and phone fields transforming to HMAC-SHA256 hashes before transmission',
   },
   {
-    src: '/screenshots/global-graph.png',
-    label: 'Global graph',
-    alt: 'Live Unauth global identity graph with weighted identity connections',
+    src: '/screenshots/customers-clusters.png',
+    alt: 'Unauth customers clusters view with cross-merchant identity matches, confidence grades, and network links',
   },
   {
-    src: '/screenshots/evidence-packages.png',
-    label: 'Evidence packages',
-    alt: 'Live Unauth evidence package queue for chargeback and dispute review',
+    src: '/screenshots/identity-detail.png',
+    alt: 'Unauth customer case file showing DEFINITE verdict, risk score, signal summary, and behaviour roadmap',
   },
 ] as const;
 
@@ -124,14 +106,14 @@ function ArtifactChrome({ left, right, accent = false }: { left: React.ReactNode
     <div style={{
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       padding: '14px 20px',
-      background: accent ? 'rgba(123,45,38,0.06)' : CREAM,
-      borderBottom: `1px solid ${LINE}`,
+      background: accent ? 'rgba(123,45,38,0.06)' : t.cream,
+      borderBottom: `1px solid ${t.line}`,
       flexShrink: 0,
     }}>
-      <span style={{ fontFamily: MONO, fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase', color: INK_MUTED }}>
+      <span style={{ fontFamily: t.mono, fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase', color: t.inkMuted }}>
         {left}
       </span>
-      <span style={{ fontFamily: MONO, fontSize: '10.5px', letterSpacing: '0.08em', textTransform: 'uppercase', color: accent ? ACCENT : INK_FAINT }}>
+      <span style={{ fontFamily: t.mono, fontSize: '10.5px', letterSpacing: '0.08em', textTransform: 'uppercase', color: accent ? t.accent : t.inkFaint }}>
         {right}
       </span>
     </div>
@@ -140,7 +122,7 @@ function ArtifactChrome({ left, right, accent = false }: { left: React.ReactNode
 
 function ArtifactFooter({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ padding: '12px 20px', background: CREAM, borderTop: `1px solid ${LINE}`, flexShrink: 0 }}>
+    <div style={{ padding: '12px 20px', background: t.cream, borderTop: `1px solid ${t.line}`, flexShrink: 0 }}>
       {children}
     </div>
   );
@@ -148,79 +130,38 @@ function ArtifactFooter({ children }: { children: React.ReactNode }) {
 
 function ScreenshotArtifact({ artifact }: { artifact: typeof SCREENSHOT_ARTIFACTS[number] }) {
   return (
-    <div
-      style={{
-        position: 'relative',
-        minHeight: '540px',
-        padding: '22px',
-        display: 'flex',
-        alignItems: 'center',
-        background:
-          'radial-gradient(circle at 64% 28%, rgba(123,45,38,0.14), transparent 22rem), linear-gradient(135deg, #FDFBF6, #F4F0E8)',
-      }}
-    >
-      <div
-        aria-hidden
-        style={{
-          position: 'absolute',
-          inset: '10% 8% auto',
-          height: '38%',
-          borderRadius: '999px',
-          background: 'radial-gradient(ellipse at center, rgba(123,45,38,0.22), transparent 68%)',
-          filter: 'blur(18px)',
-        }}
+    <div style={{ position: 'relative', flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+      <img
+        src={artifact.src}
+        alt={artifact.alt}
+        loading="lazy"
+        width={2880}
+        height={1800}
+        style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top left' }}
       />
-      <figure
-        style={{
-          position: 'relative',
-          margin: 0,
-          overflow: 'hidden',
-          borderRadius: 8,
-          border: '1px solid #D8D0BD',
-          background: '#FDFBF6',
-          boxShadow: '0 34px 90px -46px rgba(26,24,20,0.52), 0 1px 0 rgba(255,255,255,0.78) inset',
-          transform: 'perspective(1400px) rotateX(4deg) rotateY(-4deg)',
-          transformOrigin: '50% 70%',
-        }}
-      >
-        <div
-          style={{
-            height: 34,
-            padding: '0 12px',
-            borderBottom: '1px solid #ECE5D4',
-            background: '#F4F0E8',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <div style={{ display: 'flex', gap: 6 }}>
-            {['#8A2828', '#C07838', '#8A8472'].map((color) => (
-              <span key={color} style={{ width: 7, height: 7, borderRadius: '50%', background: color }} />
-            ))}
-          </div>
-          <span style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: INK_FAINT }}>
-            {artifact.label}
-          </span>
-        </div>
-        <img src={artifact.src} alt={artifact.alt} loading="lazy" style={{ display: 'block', width: '100%', height: 'auto' }} />
-      </figure>
+      {/* Bottom fade — blends into panel */}
+      <div style={{
+        position: 'absolute', bottom: 0, left: 0, right: 0,
+        height: '25%',
+        background: `linear-gradient(to bottom, transparent, ${t.screenshotBg})`,
+        pointerEvents: 'none',
+      }} />
     </div>
   );
 }
 
 function Pill({ children, variant = 'default' }: { children: React.ReactNode; variant?: 'default' | 'accent' | 'faint' | 'green' | 'warn' }) {
   const styles: Record<string, React.CSSProperties> = {
-    default: { background: CREAM_2,              color: INK_MUTED,  border: `1px solid ${LINE}`                    },
-    accent:  { background: ACCENT,               color: ACCENT_FG,  border: 'none'                                  },
-    faint:   { background: 'transparent',         color: INK_FAINT,  border: `1px solid ${LINE}`                    },
-    green:   { background: 'rgba(40,100,60,0.08)',color: '#2A5E3A',  border: '1px solid rgba(40,100,60,0.2)'        },
-    warn:    { background: 'rgba(160,80,30,0.08)',color: '#8A4010',  border: '1px solid rgba(160,80,30,0.25)'       },
+    default: { background: t.cream2,   color: t.inkMuted,  border: `1px solid ${t.line}`                    },
+    accent:  { background: t.accent,   color: t.accentFg,  border: 'none'                                    },
+    faint:   { background: 'transparent', color: t.inkFaint, border: `1px solid ${t.line}`                   },
+    green:   { background: t.greenBg,  color: t.greenFg,   border: '1px solid rgba(40,100,60,0.2)'          },
+    warn:    { background: t.warnBg,   color: t.warnFg,    border: '1px solid rgba(160,80,30,0.25)'         },
   };
   return (
     <span style={{
       display: 'inline-flex', alignItems: 'center',
-      fontFamily: MONO, fontSize: '9.5px', letterSpacing: '0.08em', textTransform: 'uppercase',
+      fontFamily: t.mono, fontSize: '9.5px', letterSpacing: '0.08em', textTransform: 'uppercase',
       padding: '3px 8px', ...styles[variant],
     }}>
       {children}
@@ -229,9 +170,9 @@ function Pill({ children, variant = 'default' }: { children: React.ReactNode; va
 }
 
 function TypeBadge({ type }: { type: string }) {
-  const color = type === 'refund' ? ACCENT : type === 'return' ? '#6B655C' : 'rgba(40,100,60,0.8)';
+  const color = type === 'refund' ? t.accent : type === 'return' ? t.inkMuted : 'rgba(40,100,60,0.8)';
   return (
-    <span style={{ fontFamily: MONO, fontSize: '9px', color, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+    <span style={{ fontFamily: t.mono, fontSize: '9px', color, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
       {type}
     </span>
   );
@@ -241,7 +182,7 @@ function TypeBadge({ type }: { type: string }) {
 
 function DataTable({ hashP }: { hashP: number }) {
   return (
-    <table style={{ fontFamily: MONO, fontSize: '11.5px', borderCollapse: 'collapse', width: '100%', tableLayout: 'fixed' }}>
+    <table style={{ fontFamily: t.mono, fontSize: '11.5px', borderCollapse: 'collapse', width: '100%', tableLayout: 'fixed' }}>
       <colgroup>
         <col style={{ width: '13%' }} />
         <col style={{ width: '8%'  }} />
@@ -251,7 +192,7 @@ function DataTable({ hashP }: { hashP: number }) {
         <col style={{ width: '20%' }} />
       </colgroup>
       <thead>
-        <tr style={{ background: CREAM }}>
+        <tr style={{ background: t.cream }}>
           {[
             { l: 'order_id',        sens: false },
             { l: 'type',            sens: false },
@@ -261,17 +202,17 @@ function DataTable({ hashP }: { hashP: number }) {
             { l: 'total',           sens: false },
           ].map((h, ci) => (
             <th key={ci} style={{
-              fontFamily: MONO, fontSize: '9px', textTransform: 'uppercase',
+              fontFamily: t.mono, fontSize: '9px', textTransform: 'uppercase',
               letterSpacing: '0.1em', fontWeight: 400, textAlign: 'left',
               padding: h.sens ? '11px 12px 11px 14px' : '11px 8px',
-              color: h.sens ? ACCENT : INK_FAINT,
-              borderLeft: h.sens ? `3px solid ${ACCENT}` : 'none',
-              borderBottom: `1px solid ${LINE}`,
+              color: h.sens ? t.accent : t.inkFaint,
+              borderLeft: h.sens ? `3px solid ${t.accent}` : 'none',
+              borderBottom: `1px solid ${t.line}`,
               whiteSpace: 'nowrap',
             }}>
               {h.l}
               {h.sens && (
-                <span style={{ marginLeft: '6px', fontSize: '8px', background: 'rgba(123,45,38,0.08)', color: ACCENT, padding: '2px 5px' }}>
+                <span style={{ marginLeft: '6px', fontSize: '8px', background: 'rgba(123,45,38,0.08)', color: t.accent, padding: '2px 5px' }}>
                   SENSITIVE
                 </span>
               )}
@@ -287,25 +228,25 @@ function DataTable({ hashP }: { hashP: number }) {
           const hashing   = hashP > 0;
           return (
             <tr key={row.id} style={{
-              borderBottom: `1px solid ${LINE_FAINT}`,
+              borderBottom: `1px solid ${t.lineFaint}`,
               background: isHashed && hashing ? 'rgba(123,45,38,0.025)' : 'transparent',
               transition: 'background 400ms',
             }}>
-              <td style={{ padding: '12px 8px', color: INK_MUTED, fontVariantNumeric: 'tabular-nums', fontSize: '11px' }}>{row.id}</td>
+              <td style={{ padding: '12px 8px', color: t.inkMuted, fontVariantNumeric: 'tabular-nums', fontSize: '11px' }}>{row.id}</td>
               <td style={{ padding: '12px 8px' }}><TypeBadge type={row.type} /></td>
               <td style={{
                 padding: '12px 14px',
-                borderLeft: `3px solid ${isHashed && hashing ? ACCENT : 'rgba(123,45,38,0.15)'}`,
-                color: isHashed && hashing ? ACCENT : isActive ? '#A85040' : INK,
+                borderLeft: `3px solid ${isHashed && hashing ? t.accent : 'rgba(123,45,38,0.15)'}`,
+                color: isHashed && hashing ? t.accent : isActive ? t.accentDark : t.ink,
                 fontSize: '11px',
                 transition: 'color 350ms, border-color 350ms',
                 overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
               }}>
                 {isHashed && hashing ? HASHES[ri] : isActive ? '· · · · · · ·' : row.email}
               </td>
-              <td style={{ padding: '12px 8px', color: INK_MUTED, fontSize: '11px' }}>{row.addr}</td>
-              <td style={{ padding: '12px 8px', color: INK_MUTED, fontSize: '11px' }}>{row.card}</td>
-              <td style={{ padding: '12px 8px', color: INK, fontVariantNumeric: 'tabular-nums', fontSize: '11px' }}>{row.amt}</td>
+              <td style={{ padding: '12px 8px', color: t.inkMuted, fontSize: '11px' }}>{row.addr}</td>
+              <td style={{ padding: '12px 8px', color: t.inkMuted, fontSize: '11px' }}>{row.card}</td>
+              <td style={{ padding: '12px 8px', color: t.ink, fontVariantNumeric: 'tabular-nums', fontSize: '11px' }}>{row.amt}</td>
             </tr>
           );
         })}
@@ -327,7 +268,7 @@ function UploadArtifact() {
       {/* File stats bar */}
       <div style={{
         display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
-        borderBottom: `1px solid ${LINE_FAINT}`,
+        borderBottom: `1px solid ${t.lineFaint}`,
         background: 'rgba(245,241,234,0.5)',
       }}>
         {[
@@ -338,12 +279,12 @@ function UploadArtifact() {
         ].map((s, i) => (
           <div key={i} style={{
             padding: '10px 16px',
-            borderRight: i < 3 ? `1px solid ${LINE_FAINT}` : 'none',
+            borderRight: i < 3 ? `1px solid ${t.lineFaint}` : 'none',
           }}>
-            <div style={{ fontFamily: SANS, fontSize: '15px', fontWeight: 500, color: INK, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
+            <div style={{ fontFamily: t.sans, fontSize: '15px', fontWeight: 500, color: t.ink, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
               {s.v}
             </div>
-            <div style={{ fontFamily: MONO, fontSize: '9px', letterSpacing: '0.08em', textTransform: 'uppercase', color: INK_FAINT, marginTop: '3px' }}>
+            <div style={{ fontFamily: t.mono, fontSize: '9px', letterSpacing: '0.08em', textTransform: 'uppercase', color: t.inkFaint, marginTop: '3px' }}>
               {s.l}
             </div>
           </div>
@@ -356,10 +297,10 @@ function UploadArtifact() {
 
       <ArtifactFooter>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontFamily: MONO, fontSize: '10px', color: INK_MUTED }}>
+          <span style={{ fontFamily: t.mono, fontSize: '10px', color: t.inkMuted }}>
             2 PII fields identified (email, addr) · ready to hash
           </span>
-          <span style={{ fontFamily: MONO, fontSize: '10px', color: INK_FAINT, letterSpacing: '0.06em' }}>
+          <span style={{ fontFamily: t.mono, fontSize: '10px', color: t.inkFaint, letterSpacing: '0.06em' }}>
             NO DATA TRANSMITTED
           </span>
         </div>
@@ -388,12 +329,12 @@ function HashArtifact({ progress }: { progress: number }) {
       />
 
       {/* Scan progress bar */}
-      <div style={{ height: '3px', background: LINE_FAINT, flexShrink: 0, position: 'relative', overflow: 'hidden' }}>
+      <div style={{ height: '3px', background: t.lineFaint, flexShrink: 0, position: 'relative', overflow: 'hidden' }}>
         {progress > 0 && (
           <div style={{
             position: 'absolute', left: 0, top: 0, bottom: 0,
             width: `${progress * 100}%`,
-            background: done ? 'rgba(40,100,60,0.6)' : ACCENT,
+            background: done ? 'rgba(40,100,60,0.6)' : t.accent,
             transition: 'background 600ms',
           }} />
         )}
@@ -402,7 +343,7 @@ function HashArtifact({ progress }: { progress: number }) {
       {/* Hash stats bar */}
       <div style={{
         display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
-        borderBottom: `1px solid ${LINE_FAINT}`,
+        borderBottom: `1px solid ${t.lineFaint}`,
         background: 'rgba(245,241,234,0.5)',
       }}>
         {[
@@ -413,17 +354,17 @@ function HashArtifact({ progress }: { progress: number }) {
         ].map((s, i) => (
           <div key={i} style={{
             padding: '10px 16px',
-            borderRight: i < 3 ? `1px solid ${LINE_FAINT}` : 'none',
+            borderRight: i < 3 ? `1px solid ${t.lineFaint}` : 'none',
           }}>
             <div style={{
-              fontFamily: SANS, fontSize: '15px', fontWeight: 500,
-              color: i === 2 ? (done ? '#2A5E3A' : INK) : INK,
+              fontFamily: t.sans, fontSize: '15px', fontWeight: 500,
+              color: i === 2 ? (done ? t.greenFg : t.ink) : t.ink,
               letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums', lineHeight: 1,
               transition: 'color 400ms',
             }}>
               {s.v}
             </div>
-            <div style={{ fontFamily: MONO, fontSize: '9px', letterSpacing: '0.08em', textTransform: 'uppercase', color: INK_FAINT, marginTop: '3px' }}>
+            <div style={{ fontFamily: t.mono, fontSize: '9px', letterSpacing: '0.08em', textTransform: 'uppercase', color: t.inkFaint, marginTop: '3px' }}>
               {s.l}
             </div>
           </div>
@@ -436,14 +377,14 @@ function HashArtifact({ progress }: { progress: number }) {
 
       <ArtifactFooter>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontFamily: MONO, fontSize: '10px', color: INK_MUTED }}>
+          <span style={{ fontFamily: t.mono, fontSize: '10px', color: t.inkMuted }}>
             {done
               ? `${counted}/${ROWS.length} rows hashed · 0 bytes of PII transmitted`
               : hashing
               ? `hashing row ${counted + 1} of ${ROWS.length}…`
               : 'awaiting hash pass'}
           </span>
-          <span style={{ fontFamily: MONO, fontSize: '10px', color: done ? '#2A5E3A' : INK_FAINT, letterSpacing: '0.06em', transition: 'color 400ms' }}>
+          <span style={{ fontFamily: t.mono, fontSize: '10px', color: done ? t.greenFg : t.inkFaint, letterSpacing: '0.06em', transition: 'color 400ms' }}>
             {done ? '0 PII FIELDS SENT' : 'HMAC-SHA256'}
           </span>
         </div>
@@ -501,7 +442,7 @@ function ResolveArtifact() {
       {/* Cluster stats bar */}
       <div style={{
         display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
-        borderBottom: `1px solid ${LINE_FAINT}`,
+        borderBottom: `1px solid ${t.lineFaint}`,
         background: 'rgba(245,241,234,0.5)',
       }}>
         {[
@@ -512,13 +453,13 @@ function ResolveArtifact() {
         ].map((s, i) => (
           <div key={i} style={{
             padding: '10px 16px',
-            borderRight: i < 3 ? `1px solid ${LINE_FAINT}` : 'none',
+            borderRight: i < 3 ? `1px solid ${t.lineFaint}` : 'none',
             transition: 'opacity 300ms',
           }}>
-            <div style={{ fontFamily: SANS, fontSize: '15px', fontWeight: 500, color: resolved ? INK : INK_FAINT, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums', lineHeight: 1, transition: 'color 400ms' }}>
+            <div style={{ fontFamily: t.sans, fontSize: '15px', fontWeight: 500, color: resolved ? t.ink : t.inkFaint, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums', lineHeight: 1, transition: 'color 400ms' }}>
               {s.v}
             </div>
-            <div style={{ fontFamily: MONO, fontSize: '9px', letterSpacing: '0.08em', textTransform: 'uppercase', color: INK_FAINT, marginTop: '3px' }}>
+            <div style={{ fontFamily: t.mono, fontSize: '9px', letterSpacing: '0.08em', textTransform: 'uppercase', color: t.inkFaint, marginTop: '3px' }}>
               {s.l}
             </div>
           </div>
@@ -526,7 +467,7 @@ function ResolveArtifact() {
       </div>
 
       {/* SVG graph */}
-      <div style={{ flex: 1, position: 'relative', background: CREAM, overflow: 'hidden' }}>
+      <div style={{ flex: 1, position: 'relative', background: t.cream, overflow: 'hidden' }}>
         <svg
           viewBox="0 0 680 370"
           style={{ display: 'block', width: '100%', height: '100%' }}
@@ -569,7 +510,7 @@ function ResolveArtifact() {
               <line
                 key={n.id}
                 x1={x1} y1={y1} x2={x2} y2={y2}
-                stroke={ACCENT}
+                stroke={t.accent}
                 strokeWidth="1.25"
                 strokeDasharray="5 3"
                 strokeOpacity={visible ? 0.55 : 0}
@@ -586,13 +527,13 @@ function ResolveArtifact() {
               <g key={n.id} style={{ opacity: visible ? 1 : 0, transition: 'opacity 350ms' }}>
                 <rect
                   x={n.cx - 55} y={n.cy - 18} width={110} height={36}
-                  fill={PAPER} stroke={LINE} strokeWidth="1"
+                  fill={t.paper} stroke={t.line} strokeWidth="1"
                 />
                 <text
                   x={n.cx} y={n.cy - 3}
                   textAnchor="middle"
-                  fill={INK_FAINT}
-                  fontFamily={MONO}
+                  fill={t.inkFaint}
+                  fontFamily={t.mono}
                   fontSize="8.5"
                   letterSpacing="0.08em"
                   style={{ textTransform: 'uppercase' }}
@@ -602,8 +543,8 @@ function ResolveArtifact() {
                 <text
                   x={n.cx} y={n.cy + 10}
                   textAnchor="middle"
-                  fill={INK}
-                  fontFamily={MONO}
+                  fill={t.ink}
+                  fontFamily={t.mono}
                   fontSize="11"
                   letterSpacing="0.02em"
                 >
@@ -618,28 +559,28 @@ function ResolveArtifact() {
             {resolved && (
               <rect
                 x={SVG_CX - 82} y={SVG_CY - 44} width={164} height={88}
-                fill="none" stroke={ACCENT} strokeWidth="1"
+                fill="none" stroke={t.accent} strokeWidth="1"
                 strokeOpacity="0.2"
               />
             )}
             <rect
               x={SVG_CX - 75} y={SVG_CY - 38} width={150} height={76}
-              fill={ACCENT}
+              fill={t.accent}
               style={{
                 filter: resolved ? 'drop-shadow(0 0 12px rgba(123,45,38,0.25))' : 'none',
                 transition: 'filter 600ms',
               }}
             />
-            <text x={SVG_CX} y={SVG_CY - 16} textAnchor="middle" fill="rgba(248,245,238,0.65)" fontFamily={MONO} fontSize="9" letterSpacing="0.1em">
+            <text x={SVG_CX} y={SVG_CY - 16} textAnchor="middle" fill="rgba(248,245,238,0.65)" fontFamily={t.mono} fontSize="9" letterSpacing="0.1em">
               IDENTITY
             </text>
-            <text x={SVG_CX} y={SVG_CY + 3} textAnchor="middle" fill={ACCENT_FG} fontFamily={MONO} fontSize="13" fontWeight="600" letterSpacing="0.02em">
+            <text x={SVG_CX} y={SVG_CY + 3} textAnchor="middle" fill={t.accentFg} fontFamily={t.mono} fontSize="13" fontWeight="600" letterSpacing="0.02em">
               #u_kessler.07
             </text>
             {resolved && (
               <>
                 <line x1={SVG_CX - 44} y1={SVG_CY + 12} x2={SVG_CX + 44} y2={SVG_CY + 12} stroke="rgba(248,245,238,0.25)" strokeWidth="1" />
-                <text x={SVG_CX} y={SVG_CY + 28} textAnchor="middle" fill="rgba(248,245,238,0.75)" fontFamily={MONO} fontSize="10" letterSpacing="0.04em">
+                <text x={SVG_CX} y={SVG_CY + 28} textAnchor="middle" fill="rgba(248,245,238,0.75)" fontFamily={t.mono} fontSize="10" letterSpacing="0.04em">
                   7 merchants seen
                 </text>
               </>
@@ -649,15 +590,15 @@ function ResolveArtifact() {
           {/* DEFINITE verdict chip (appears after resolve) */}
           {resolved && (
             <g>
-              <rect x={502} y={300} width={162} height={50} fill={PAPER} stroke={LINE} strokeWidth="1" />
-              <rect x={502} y={300} width={3} height={50} fill={ACCENT} />
-              <text x={514} y={320} fill={ACCENT} fontFamily={MONO} fontSize="9.5" fontWeight="600" letterSpacing="0.1em">
+              <rect x={502} y={300} width={162} height={50} fill={t.paper} stroke={t.line} strokeWidth="1" />
+              <rect x={502} y={300} width={3} height={50} fill={t.accent} />
+              <text x={514} y={320} fill={t.accent} fontFamily={t.mono} fontSize="9.5" fontWeight="600" letterSpacing="0.1em">
                 DEFINITE
               </text>
-              <text x={514} y={336} fill={INK_FAINT} fontFamily={MONO} fontSize="9" letterSpacing="0.06em">
-                CONF 0.92 · SIG 0.96
+              <text x={514} y={336} fill={t.inkFaint} fontFamily={t.mono} fontSize="9" letterSpacing="0.06em">
+                RISK 0.92 · CONF 0.96
               </text>
-              <text x={514} y={344} fill={INK_FAINT} fontFamily={MONO} fontSize="8" letterSpacing="0.04em">
+              <text x={514} y={344} fill={t.inkFaint} fontFamily={t.mono} fontSize="8" letterSpacing="0.04em">
                 k = 7 · gate cleared
               </text>
             </g>
@@ -667,10 +608,10 @@ function ResolveArtifact() {
 
       <ArtifactFooter>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontFamily: MONO, fontSize: '10px', color: resolved ? INK_MUTED : INK_FAINT, transition: 'color 400ms' }}>
+          <span style={{ fontFamily: t.mono, fontSize: '10px', color: resolved ? t.inkMuted : t.inkFaint, transition: 'color 400ms' }}>
             {resolved ? '#u_kessler.07 · k = 7 · cleared k ≥ 3 threshold' : `resolving ${visNodes.length > 1 ? visNodes.length - 1 : 0} / ${SVG_NODES.length} merchants…`}
           </span>
-          <span style={{ fontFamily: MONO, fontSize: '10px', color: INK_FAINT, letterSpacing: '0.06em' }}>17ms</span>
+          <span style={{ fontFamily: t.mono, fontSize: '10px', color: t.inkFaint, letterSpacing: '0.06em' }}>17ms</span>
         </div>
       </ArtifactFooter>
     </div>
@@ -690,60 +631,60 @@ function CaseArtifact() {
 
       <div style={{ flex: 1, overflowY: 'auto' }}>
         {/* Verdict header */}
-        <div style={{ padding: '18px 20px', borderBottom: `1px solid ${LINE}`, display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
+        <div style={{ padding: '18px 20px', borderBottom: `1px solid ${t.line}`, display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
           <span style={{
-            fontFamily: MONO, fontSize: '10.5px', letterSpacing: '0.12em',
-            background: ACCENT, color: ACCENT_FG, padding: '6px 12px',
+            fontFamily: t.mono, fontSize: '10.5px', letterSpacing: '0.12em',
+            background: t.accent, color: t.accentFg, padding: '6px 12px',
             flexShrink: 0, alignSelf: 'flex-start',
           }}>DEFINITE</span>
           <div style={{ flex: 1 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', flexWrap: 'wrap' }}>
-              <span style={{ fontFamily: SANS, fontSize: '14px', fontWeight: 600, color: INK, letterSpacing: '-0.01em' }}>
+              <span style={{ fontFamily: t.sans, fontSize: '14px', fontWeight: 600, color: t.ink, letterSpacing: '-0.01em' }}>
                 Noah K████
               </span>
-              <span style={{ fontFamily: MONO, fontSize: '9.5px', color: INK_FAINT, letterSpacing: '0.06em' }}>→ #u_kessler.07</span>
+              <span style={{ fontFamily: t.mono, fontSize: '9.5px', color: t.inkFaint, letterSpacing: '0.06em' }}>→ #u_kessler.07</span>
             </div>
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-              <Pill variant="faint">CONF 0.92</Pill>
+              <Pill variant="faint">RISK 0.92</Pill>
               <Pill variant="faint">CONF 0.96</Pill>
               <Pill variant="faint">k = 7</Pill>
               <Pill variant="warn">8 / 12 signals</Pill>
             </div>
           </div>
           <div style={{ textAlign: 'right', flexShrink: 0 }}>
-            <div style={{ fontFamily: MONO, fontSize: '9px', letterSpacing: '0.06em', color: INK_FAINT }}>generated</div>
-            <div style={{ fontFamily: MONO, fontSize: '10px', color: INK_MUTED }}>09:42 EST</div>
+            <div style={{ fontFamily: t.mono, fontSize: '9px', letterSpacing: '0.06em', color: t.inkFaint }}>generated</div>
+            <div style={{ fontFamily: t.mono, fontSize: '10px', color: t.inkMuted }}>09:42 EST</div>
           </div>
         </div>
 
         {/* Two-column: Signals + Email variants */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderBottom: `1px solid ${LINE}` }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderBottom: `1px solid ${t.line}` }}>
           {/* Signals */}
-          <div style={{ padding: '16px 20px', borderRight: `1px solid ${LINE}` }}>
-            <p style={{ fontFamily: MONO, fontSize: '9px', letterSpacing: '0.12em', color: INK_FAINT, textTransform: 'uppercase', marginBottom: '12px' }}>
+          <div style={{ padding: '16px 20px', borderRight: `1px solid ${t.line}` }}>
+            <p style={{ fontFamily: t.mono, fontSize: '9px', letterSpacing: '0.12em', color: t.inkFaint, textTransform: 'uppercase', marginBottom: '12px' }}>
               Signals fired — 8 / 12
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '9px' }}>
               {SIGNALS.map((s, i) => (
                 <div key={s.l} style={{ display: 'grid', gridTemplateColumns: '1fr 72px 32px', gap: '8px', alignItems: 'center' }}>
                   <span style={{
-                    fontFamily: MONO, fontSize: '10px', color: s.hi ? INK : INK_MUTED,
+                    fontFamily: t.mono, fontSize: '10px', color: s.hi ? t.ink : t.inkMuted,
                     whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                   }}>
                     {s.l}
                   </span>
-                  <div style={{ height: '3px', background: CREAM_2, position: 'relative' }}>
+                  <div style={{ height: '3px', background: t.cream2, position: 'relative' }}>
                     <div
                       className="ua-signal-bar"
                       style={{
                         position: 'absolute', left: 0, top: 0, bottom: 0,
                         width: `${s.v * 100}%`,
-                        background: s.hi ? ACCENT : 'rgba(123,45,38,0.3)',
+                        background: s.hi ? t.accent : 'rgba(123,45,38,0.3)',
                         animationDelay: `${i * 80}ms`,
                       }}
                     />
                   </div>
-                  <span style={{ fontFamily: MONO, fontSize: '10px', textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: s.hi ? INK : INK_MUTED }}>
+                  <span style={{ fontFamily: t.mono, fontSize: '10px', textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: s.hi ? t.ink : t.inkMuted }}>
                     {s.v.toFixed(2)}
                   </span>
                 </div>
@@ -754,17 +695,17 @@ function CaseArtifact() {
           {/* Right column: email variants + merchants */}
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             {/* Email variants */}
-            <div style={{ padding: '16px 20px', borderBottom: `1px solid ${LINE}` }}>
-              <p style={{ fontFamily: MONO, fontSize: '9px', letterSpacing: '0.12em', color: INK_FAINT, textTransform: 'uppercase', marginBottom: '10px' }}>
+            <div style={{ padding: '16px 20px', borderBottom: `1px solid ${t.line}` }}>
+              <p style={{ fontFamily: t.mono, fontSize: '9px', letterSpacing: '0.12em', color: t.inkFaint, textTransform: 'uppercase', marginBottom: '10px' }}>
                 Email variants — 4 seen
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {EMAIL_VARIANTS.map((e) => (
                   <div key={e.email} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontFamily: MONO, fontSize: '9.5px', color: INK, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <span style={{ fontFamily: t.mono, fontSize: '9.5px', color: t.ink, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {e.email}
                     </span>
-                    <span style={{ fontFamily: MONO, fontSize: '9px', color: INK_FAINT, flexShrink: 0 }}>{e.seen}</span>
+                    <span style={{ fontFamily: t.mono, fontSize: '9px', color: t.inkFaint, flexShrink: 0 }}>{e.seen}</span>
                   </div>
                 ))}
               </div>
@@ -772,28 +713,28 @@ function CaseArtifact() {
 
             {/* Network footprint mini-table */}
             <div style={{ padding: '14px 20px', flex: 1 }}>
-              <p style={{ fontFamily: MONO, fontSize: '9px', letterSpacing: '0.12em', color: INK_FAINT, textTransform: 'uppercase', marginBottom: '10px' }}>
+              <p style={{ fontFamily: t.mono, fontSize: '9px', letterSpacing: '0.12em', color: t.inkFaint, textTransform: 'uppercase', marginBottom: '10px' }}>
                 Merchant exposure
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 {MERCHANTS.slice(0, 5).map((m) => (
                   <div key={m.short} style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: '10px', alignItems: 'center' }}>
-                    <span style={{ fontFamily: MONO, fontSize: '10px', color: INK_MUTED }}>{m.name}</span>
-                    <span style={{ fontFamily: MONO, fontSize: '9.5px', color: INK_FAINT }}>{m.orders} orders</span>
+                    <span style={{ fontFamily: t.mono, fontSize: '10px', color: t.inkMuted }}>{m.name}</span>
+                    <span style={{ fontFamily: t.mono, fontSize: '9.5px', color: t.inkFaint }}>{m.orders} orders</span>
                     <span style={{
-                      fontFamily: MONO, fontSize: '8.5px', letterSpacing: '0.06em',
-                      color: m.risk === 'HIGH' ? ACCENT : m.risk === 'MED' ? '#8A4010' : INK_FAINT,
+                      fontFamily: t.mono, fontSize: '8.5px', letterSpacing: '0.06em',
+                      color: m.risk === 'HIGH' ? t.accent : m.risk === 'MED' ? t.warnFg : t.inkFaint,
                     }}>{m.risk}</span>
                   </div>
                 ))}
-                <span style={{ fontFamily: MONO, fontSize: '9px', color: INK_FAINT }}>+2 more merchants</span>
+                <span style={{ fontFamily: t.mono, fontSize: '9px', color: t.inkFaint }}>+2 more merchants</span>
               </div>
             </div>
           </div>
         </div>
 
         {/* Network footprint stats */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', borderBottom: `1px solid ${LINE}` }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', borderBottom: `1px solid ${t.line}` }}>
           {[
             { l: 'merchants', v: '7' },
             { l: 'cards seen', v: '4' },
@@ -802,12 +743,12 @@ function CaseArtifact() {
           ].map((item, i) => (
             <div key={item.l} style={{
               padding: '14px 16px',
-              borderRight: i < 3 ? `1px solid ${LINE}` : 'none',
+              borderRight: i < 3 ? `1px solid ${t.line}` : 'none',
             }}>
-              <div style={{ fontFamily: SANS, fontSize: '20px', fontWeight: 500, color: INK, letterSpacing: '-0.03em', lineHeight: 1, marginBottom: '4px', fontVariantNumeric: 'tabular-nums' }}>
+              <div style={{ fontFamily: t.sans, fontSize: '20px', fontWeight: 500, color: t.ink, letterSpacing: '-0.03em', lineHeight: 1, marginBottom: '4px', fontVariantNumeric: 'tabular-nums' }}>
                 {item.v}
               </div>
-              <div style={{ fontFamily: MONO, fontSize: '9px', letterSpacing: '0.08em', textTransform: 'uppercase', color: INK_FAINT }}>
+              <div style={{ fontFamily: t.mono, fontSize: '9px', letterSpacing: '0.08em', textTransform: 'uppercase', color: t.inkFaint }}>
                 {item.l}
               </div>
             </div>
@@ -823,13 +764,13 @@ function CaseArtifact() {
         flexShrink: 0,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
-        <span style={{ fontFamily: MONO, fontSize: '10.5px', color: ACCENT, letterSpacing: '0.08em' }}>
+        <span style={{ fontFamily: t.mono, fontSize: '10.5px', color: t.accent, letterSpacing: '0.08em' }}>
           EVIDENCE PACKET → READY
         </span>
         <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-          <span style={{ fontFamily: MONO, fontSize: '10px', color: INK_FAINT }}>packet.pdf · 2.4 mb</span>
-          <span style={{ fontFamily: MONO, fontSize: '10px', color: INK_FAINT }}>·</span>
-          <span style={{ fontFamily: MONO, fontSize: '10px', color: INK_FAINT }}>sent to founders@kessler.com</span>
+          <span style={{ fontFamily: t.mono, fontSize: '10px', color: t.inkFaint }}>packet.pdf · 2.4 mb</span>
+          <span style={{ fontFamily: t.mono, fontSize: '10px', color: t.inkFaint }}>·</span>
+          <span style={{ fontFamily: t.mono, fontSize: '10px', color: t.inkFaint }}>sent to founders@kessler.com</span>
         </div>
       </div>
     </div>
@@ -887,40 +828,40 @@ export default function PipelineTabs() {
   const hashP = active === 1 ? progress : active > 1 ? 1 : 0;
 
   return (
-    <section id="how-it-works" style={{ scrollMarginTop: '72px', background: CREAM, position: 'relative', overflow: 'hidden' }} className="ua-section-flow">
+    <section id="how-it-works" style={{ scrollMarginTop: '72px', background: t.cream, position: 'relative', overflow: 'hidden' }} className="ua-section-flow">
       <DotPattern
         width={36} height={36} cx={1} cy={1} cr={1}
-        className="text-[#7B2D26] opacity-[0.07] [mask-image:radial-gradient(ellipse_70%_60%_at_80%_15%,white,transparent)]"
+        className="text-[var(--landing-accent)] opacity-[0.07] [mask-image:radial-gradient(ellipse_70%_60%_at_80%_15%,white,transparent)]"
       />
       <DotPattern
         width={36} height={36} cx={1} cy={1} cr={1}
-        className="text-[#7B2D26] opacity-[0.05] [mask-image:radial-gradient(ellipse_60%_50%_at_15%_90%,white,transparent)]"
+        className="text-[var(--landing-accent)] opacity-[0.05] [mask-image:radial-gradient(ellipse_60%_50%_at_15%_90%,white,transparent)]"
       />
-      <div className="relative mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-24 pb-16 md:pb-24">
+      <div className="relative mx-auto max-w-[1400px] px-6 md:px-10 pb-16 md:pb-24" style={{ paddingTop: 'clamp(80px, 10vw, 128px)' }}>
 
         {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '48px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <p style={{
-            fontFamily: MONO, fontSize: '11px', fontWeight: 600,
+            fontFamily: t.mono, fontSize: '11px', fontWeight: 600,
             letterSpacing: '0.18em', textTransform: 'uppercase',
-            color: ACCENT, marginBottom: '20px',
+            color: t.accent, marginBottom: '20px',
           }}>
             § 2 — The Pipeline
           </p>
           <h2 style={{
-            fontFamily: SANS, fontSize: 'clamp(36px, 4vw, 56px)',
+            fontFamily: t.sans, fontSize: 'clamp(36px, 4vw, 56px)',
             fontWeight: 500, letterSpacing: '-0.028em', lineHeight: 1.05,
-            color: INK, marginBottom: '18px', maxWidth: '780px',
+            color: t.ink, marginBottom: '18px', maxWidth: '780px',
             marginLeft: 'auto', marginRight: 'auto',
           }}>
             CSV in.{' '}
-            <span style={{ fontFamily: SERIF, fontStyle: 'italic', fontWeight: 400, color: INK_MUTED }}>
+            <span style={{ fontFamily: t.serif, fontStyle: 'italic', fontWeight: 400, color: t.inkMuted }}>
               Actionable cases out.
             </span>
           </h2>
           <p style={{
-            fontFamily: SERIF, fontSize: 'clamp(15px, 1.15vw, 18px)',
-            color: INK_MUTED, lineHeight: 1.55, margin: 0,
+            fontFamily: t.serif, fontSize: 'clamp(15px, 1.15vw, 18px)',
+            color: t.inkMuted, lineHeight: 1.55, margin: 0,
             maxWidth: '560px', marginLeft: 'auto', marginRight: 'auto',
           }}>
             Hash sensitive fields in the browser. Get scored clusters, signals, and case files back — in 38ms, end-to-end.
@@ -930,17 +871,18 @@ export default function PipelineTabs() {
         {/* Tab bar */}
         <div style={{
           display: 'flex', alignItems: 'stretch',
-          background: CREAM_2, padding: '4px',
+          background: t.cream2, padding: '0',
           marginBottom: '0',
-          border: `1px solid ${LINE}`, borderBottom: 'none',
+          borderTop: `1px solid ${t.line}`, borderLeft: `1px solid ${t.line}`, borderRight: `1px solid ${t.line}`, borderBottom: 'none',
+          borderRadius: '6px 6px 0 0',
         }}>
           <button
             onClick={() => setPaused((p) => !p)}
             aria-label={paused ? 'Resume' : 'Pause'}
             style={{
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              width: '40px', flexShrink: 0,
-              background: 'transparent', border: 'none', cursor: 'pointer', color: INK_MUTED,
+              width: '44px', flexShrink: 0,
+              background: 'transparent', borderTop: 'none', borderLeft: 'none', borderBottom: 'none', borderRight: `1px solid ${t.line}`, cursor: 'pointer', color: t.inkFaint,
             }}
           >
             {paused ? (
@@ -950,37 +892,38 @@ export default function PipelineTabs() {
             )}
           </button>
 
-          {TABS.map((t, i) => {
+          {TABS.map((tab, i) => {
             const on = active === i;
             return (
               <button
-                key={t.n}
+                key={tab.n}
                 onClick={() => jumpTo(i as TabId)}
                 style={{
                   position: 'relative', flex: 1,
                   display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center',
-                  gap: '2px', padding: '14px 18px',
-                  background: on ? PAPER : 'transparent',
-                  border: 'none', cursor: 'pointer', textAlign: 'left',
+                  gap: '3px', padding: '18px 22px',
+                  background: on ? t.paper : 'transparent',
+                  borderTop: 'none', borderLeft: 'none', borderBottom: 'none', borderRight: i < 3 ? `1px solid ${t.line}` : 'none',
+                  cursor: 'pointer', textAlign: 'left',
                   transition: 'background 200ms', overflow: 'hidden',
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', width: '100%' }}>
-                  <span style={{ fontFamily: MONO, fontSize: '10px', color: on ? ACCENT : INK_FAINT, letterSpacing: '0.06em' }}>
-                    {t.n}
+                  <span style={{ fontFamily: t.mono, fontSize: '10px', color: on ? t.accent : t.inkFaint, letterSpacing: '0.08em' }}>
+                    {tab.n}
                   </span>
-                  <span style={{ fontFamily: SANS, fontSize: '14px', fontWeight: on ? 600 : 500, color: on ? INK : INK_MUTED, letterSpacing: '-0.005em' }}>
-                    {t.label}
+                  <span style={{ fontFamily: t.sans, fontSize: '15px', fontWeight: on ? 600 : 500, color: on ? t.ink : t.inkMuted, letterSpacing: '-0.01em' }}>
+                    {tab.label}
                   </span>
-                  <span style={{ marginLeft: 'auto', fontFamily: MONO, fontSize: '10px', color: on ? INK_MUTED : INK_FAINT, fontVariantNumeric: 'tabular-nums' }}>
-                    {t.t}
+                  <span style={{ marginLeft: 'auto', fontFamily: t.mono, fontSize: '10px', color: on ? t.inkFaint : t.inkFaint, fontVariantNumeric: 'tabular-nums' }}>
+                    {tab.t}
                   </span>
                 </div>
                 {on && !paused && (
                   <div style={{
                     position: 'absolute', bottom: 0, left: 0,
                     height: '3px', width: `${progress * 100}%`,
-                    background: ACCENT, transition: 'none',
+                    background: t.accent, transition: 'none',
                   }} />
                 )}
               </button>
@@ -990,15 +933,16 @@ export default function PipelineTabs() {
 
         {/* Panel */}
         <div
-          className="ua-glass-card"
           style={{
-            background: 'rgba(253, 251, 246, 0.91)',
-            border: '1px solid #D8D0BD',
-            padding: '48px',
-            minHeight: '640px',
-            boxShadow: '0 1px 0 #D8D0BD, 0 22px 54px -26px rgba(26,24,20,0.18), 0 44px 96px -48px rgba(123,45,38,0.12)',
-            backdropFilter: 'saturate(132%) blur(12px)',
-            WebkitBackdropFilter: 'saturate(132%) blur(12px)',
+            background: t.paper,
+            borderTop: 'none',
+            borderRight: `1px solid ${t.line}`,
+            borderBottom: `1px solid ${t.line}`,
+            borderLeft: `1px solid ${t.line}`,
+            borderRadius: '0 0 6px 6px',
+            minHeight: '680px',
+            boxShadow: '0 22px 54px -26px rgba(26,24,20,0.18), 0 44px 96px -48px rgba(123,45,38,0.10)',
+            overflow: 'hidden',
           }}
         >
           <div
@@ -1006,44 +950,43 @@ export default function PipelineTabs() {
               opacity: fade ? 1 : 0,
               transition: 'opacity 140ms',
               display: 'grid',
-              gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1.55fr)',
-              gap: '64px',
+              gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 2fr)',
               alignItems: 'stretch',
-              minHeight: '540px',
+              minHeight: '680px',
             }}
             className="ua-pipeline-grid"
           >
-            {/* LEFT */}
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', marginBottom: '12px' }}>
+            {/* LEFT — copy, padded */}
+            <div style={{ display: 'flex', flexDirection: 'column', padding: '44px 40px', borderRight: `1px solid ${t.line}` }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', marginBottom: '10px' }}>
                 <span style={{
-                  fontFamily: SANS, fontSize: 'clamp(56px, 6.5vw, 92px)',
+                  fontFamily: t.sans, fontSize: 'clamp(52px, 6vw, 84px)',
                   fontWeight: 500, letterSpacing: '-0.045em',
-                  color: INK, lineHeight: 0.95, fontVariantNumeric: 'tabular-nums',
+                  color: t.ink, lineHeight: 0.95, fontVariantNumeric: 'tabular-nums',
                 }}>
                   {tab.stat}
                 </span>
-                <span style={{ fontFamily: SANS, fontSize: '18px', fontWeight: 400, color: INK_MUTED, letterSpacing: '-0.01em' }}>
+                <span style={{ fontFamily: t.sans, fontSize: '18px', fontWeight: 400, color: t.inkMuted, letterSpacing: '-0.01em' }}>
                   {tab.unit}
                 </span>
               </div>
-              <p style={{ fontFamily: MONO, fontSize: '11px', color: INK_FAINT, letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '24px' }}>
+              <p style={{ fontFamily: t.mono, fontSize: '10.5px', color: t.inkFaint, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '28px' }}>
                 {tab.statSub}
               </p>
-              <div style={{ height: '1px', background: LINE, marginBottom: '24px' }} />
-              <h3 style={{ fontFamily: SANS, fontSize: 'clamp(22px, 2vw, 28px)', fontWeight: 500, letterSpacing: '-0.018em', lineHeight: 1.15, color: INK, marginBottom: '16px' }}>
+              <div style={{ height: '1px', background: t.line, marginBottom: '28px' }} />
+              <h3 style={{ fontFamily: t.sans, fontSize: 'clamp(20px, 1.8vw, 26px)', fontWeight: 500, letterSpacing: '-0.018em', lineHeight: 1.2, color: t.ink, marginBottom: '14px' }}>
                 {tab.headline}
               </h3>
-              <p style={{ fontFamily: SERIF, fontSize: '16px', lineHeight: 1.6, color: INK_MUTED, marginBottom: '24px', maxWidth: '460px' }}>
+              <p style={{ fontFamily: t.serif, fontSize: '15.5px', lineHeight: 1.65, color: t.inkMuted, marginBottom: '0' }}>
                 {tab.body}
               </p>
-              <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <span style={{ fontFamily: MONO, fontSize: '10px', color: INK_FAINT, letterSpacing: '0.1em' }}>STEP {tab.n} / 04</span>
+              <div style={{ marginTop: 'auto', paddingTop: '32px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span style={{ fontFamily: t.mono, fontSize: '10px', color: t.inkFaint, letterSpacing: '0.1em' }}>STEP {tab.n} / 04</span>
                 <div style={{ display: 'inline-flex', gap: '4px' }}>
                   {TABS.map((_, i) => (
                     <span key={i} style={{
                       width: i === active ? '20px' : '8px', height: '2px',
-                      background: i === active ? ACCENT : LINE,
+                      background: i === active ? t.accent : t.line,
                       transition: 'width 250ms, background 250ms',
                     }} />
                   ))}
@@ -1051,18 +994,15 @@ export default function PipelineTabs() {
               </div>
             </div>
 
-            {/* RIGHT — artifact */}
+            {/* RIGHT — screenshot, flush */}
             <div
               key={active}
               className="ua-artifact-enter"
               style={{
-                background: PAPER,
-                border: '1px solid #D8D0BD',
                 overflow: 'hidden',
                 display: 'flex',
                 flexDirection: 'column',
-                minHeight: '540px',
-                boxShadow: '0 1px 0 rgba(216,208,189,0.6), 0 12px 30px -18px rgba(26,24,20,0.18)',
+                background: t.screenshotBg,
               }}
             >
               <ScreenshotArtifact artifact={SCREENSHOT_ARTIFACTS[active]} />
@@ -1074,44 +1014,44 @@ export default function PipelineTabs() {
         <div style={{ marginTop: '64px' }}>
           <div style={{ marginBottom: '28px' }}>
             <p style={{
-              fontFamily: MONO, fontSize: '11px', fontWeight: 600,
+              fontFamily: t.mono, fontSize: '11px', fontWeight: 600,
               letterSpacing: '0.16em', textTransform: 'uppercase',
-              color: ACCENT, marginBottom: '12px',
+              color: t.accent, marginBottom: '12px',
             }}>
               § 6 — Data Schema
             </p>
             <h2 style={{
-              fontFamily: SANS, fontSize: 'clamp(24px, 2.4vw, 36px)',
+              fontFamily: t.sans, fontSize: 'clamp(24px, 2.4vw, 36px)',
               fontWeight: 500, letterSpacing: '-0.02em', lineHeight: 1.05,
-              color: INK, marginBottom: '10px', maxWidth: '760px',
+              color: t.ink, marginBottom: '10px', maxWidth: '760px',
             }}>
               Use data you already have.
             </h2>
             <p style={{
-              fontFamily: SERIF, fontSize: 'clamp(14px, 1.05vw, 16px)',
-              color: INK_MUTED, lineHeight: 1.55, maxWidth: '560px', margin: 0,
+              fontFamily: t.serif, fontSize: 'clamp(14px, 1.05vw, 16px)',
+              color: t.inkMuted, lineHeight: 1.55, maxWidth: '560px', margin: 0,
             }}>
               Standard order, refund, return, delivery, and payment exports. No integration required.
             </p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1px', background: '#D8D0BD', border: '1px solid #D8D0BD' }} className="ua-schema-grid">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1px', borderRadius: t.radius, overflow: 'hidden' }} className="ua-schema-grid">
             {/* Required fields */}
             <div
               className="ua-glass-card ua-schema-required"
-              style={{ background: 'rgba(253, 251, 246, 0.92)', padding: '22px 24px' }}
+              style={{ background: t.darkCard, padding: '22px 24px', boxShadow: 'none', border: `1px solid ${t.darkBorder}` }}
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
-                <p style={{ fontFamily: MONO, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.14em', color: ACCENT, margin: 0 }}>
+                <p style={{ fontFamily: t.mono, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.14em', color: '#E8E4D8', margin: 0 }}>
                   REQUIRED — CORE FIELDS (24)
                 </p>
-                <span style={{ fontFamily: MONO, fontSize: '10.5px', color: INK_FAINT, letterSpacing: '0.06em' }}>
+                <span style={{ fontFamily: t.mono, fontSize: '10.5px', color: '#E8E4D8', letterSpacing: '0.06em' }}>
                   shopify · woocommerce · custom OMS · stripe
                 </span>
               </div>
               <div
                 className="ua-schema-fields"
-                style={{ fontFamily: MONO, fontSize: '12px', color: INK_MUTED, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px 16px' }}
+                style={{ fontFamily: t.mono, fontSize: '12px', color: '#E8E4D8', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px 16px' }}
               >
                 {[
                   'order_id', 'order_date', 'customer_id', 'email',
@@ -1122,7 +1062,7 @@ export default function PipelineTabs() {
                   'chargeback_status', 'carrier', 'tracking_number', 'delivery_status',
                 ].map((f) => (
                   <span key={f} style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
-                    <span style={{ width: 3, height: 3, background: ACCENT, display: 'inline-block', borderRadius: '50%', flexShrink: 0 }} />
+                    <span style={{ width: 3, height: 3, background: t.accent, display: 'inline-block', borderRadius: '50%', flexShrink: 0 }} />
                     {f}
                   </span>
                 ))}
@@ -1131,24 +1071,24 @@ export default function PipelineTabs() {
 
             {/* Optional fields */}
             <div
-              className="ua-glass-card"
-              style={{ background: 'rgba(253, 251, 246, 0.92)', padding: '22px 24px' }}
+              className="ua-glass-card ua-schema-optional"
+              style={{ background: t.darkCard, padding: '22px 24px', boxShadow: 'none', border: `1px solid ${t.darkBorder}` }}
             >
-              <p style={{ fontFamily: MONO, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.14em', color: INK_MUTED, marginBottom: '14px' }}>
+              <p style={{ fontFamily: t.mono, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.14em', color: '#E8E4D8', marginBottom: '14px' }}>
                 OPTIONAL — ENRICHMENT
               </p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px 16px', fontFamily: MONO, fontSize: '12px', color: INK_MUTED, marginBottom: '16px' }} className="ua-schema-opt-fields">
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px 16px', fontFamily: t.mono, fontSize: '12px', color: '#E8E4D8', marginBottom: '16px' }} className="ua-schema-opt-fields">
                 {[
                   'ip_address', 'device_fingerprint', 'payment_fingerprint',
                   'browser_fingerprint', 'delivery_photo_metadata', 'courier_gps_proof',
                 ].map((f) => (
                   <span key={f} style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
-                    <span style={{ width: 3, height: 3, background: INK_FAINT, display: 'inline-block', borderRadius: '50%', flexShrink: 0 }} />
+                    <span style={{ width: 3, height: 3, background: t.accent, display: 'inline-block', borderRadius: '50%', flexShrink: 0 }} />
                     {f}
                   </span>
                 ))}
               </div>
-              <p style={{ fontFamily: SERIF, fontStyle: 'italic', fontSize: '13px', color: INK_FAINT, lineHeight: 1.5, margin: 0 }}>
+              <p style={{ fontFamily: t.serif, fontStyle: 'italic', fontSize: '13px', color: '#E8E4D8', lineHeight: 1.5, margin: 0 }}>
                 Improves resolution for clusters where email + address alone don&rsquo;t meet the DEFINITE threshold.
               </p>
             </div>
@@ -1173,6 +1113,12 @@ export default function PipelineTabs() {
         }
         .ua-artifact-enter {
           animation: ua-artifact-enter 360ms cubic-bezier(0.2, 0.7, 0.2, 1);
+        }
+        .ua-schema-required::before,
+        .ua-schema-required::after,
+        .ua-schema-optional::before,
+        .ua-schema-optional::after {
+          display: none !important;
         }
         @keyframes ua-bar-grow {
           from { transform: scaleX(0); }

@@ -1,6 +1,7 @@
 'use client';
 
 import type React from 'react';
+import { t } from '../_tokens';
 
 type Grade = 'DEFINITE' | 'PROBABLE' | 'POSSIBLE' | 'WEAK';
 type Action = 'block' | 'review' | 'watch' | 'allow';
@@ -40,23 +41,24 @@ const mono: React.CSSProperties = {
   fontFamily: 'var(--font-dm-mono, monospace)',
   fontSize: '12px',
   letterSpacing: '0.07em',
-  color: '#C8BAA4',
+  color: '#E8E4D8',
+  textShadow: '0 1px 0 rgba(0,0,0,0.35)',
 };
 
 function VerdictChip({ id, grade, score, signals, action }: VerdictEntry) {
   return (
     <span className="inline-flex shrink-0 items-center gap-[6px]" style={mono}>
-      <span>{id}</span>
-      <span style={{ opacity: 0.3 }}>·</span>
-      <span>{grade}</span>
-      <span style={{ opacity: 0.3 }}>·</span>
-      <span style={{ fontVariantNumeric: 'tabular-nums' }}>{score.toFixed(2)}</span>
-      <span style={{ opacity: 0.3 }}>·</span>
+      <span style={{ color: '#E8E4D8' }}>{id}</span>
+      <span style={{ opacity: 0.55 }}>·</span>
+      <span style={{ color: '#E8E4D8' }}>{grade}</span>
+      <span style={{ opacity: 0.55 }}>·</span>
+      <span style={{ color: '#E8E4D8', fontVariantNumeric: 'tabular-nums' }}>{score.toFixed(2)}</span>
+      <span style={{ opacity: 0.55 }}>·</span>
       {signals.map((s, i) => (
-        <span key={s}>{s}{i < signals.length - 1 ? ' ' : ''}</span>
+        <span key={s} style={{ color: '#E8E4D8' }}>{s}{i < signals.length - 1 ? ' ' : ''}</span>
       ))}
-      <span style={{ opacity: 0.3 }}>·</span>
-      <span>{action.toUpperCase()}</span>
+      <span style={{ opacity: 0.55 }}>·</span>
+      <span style={{ color: '#E8E4D8' }}>{action.toUpperCase()}</span>
     </span>
   );
 }
@@ -65,7 +67,7 @@ export default function VerdictTicker() {
   const doubled = [...verdicts, ...verdicts];
 
   return (
-    <div className="relative w-full overflow-hidden" style={{ background: '#15140F', borderTop: '1px solid rgba(248,245,238,0.08)', borderBottom: '1px solid rgba(248,245,238,0.08)' }}>
+    <div className="relative w-full overflow-hidden" style={{ background: t.darkBg, borderTop: '1px solid rgba(248,245,238,0.08)', borderBottom: '1px solid rgba(248,245,238,0.08)' }}>
       <style>{`
         @keyframes ua-verdict-scroll {
           from { transform: translateX(0); }
@@ -87,8 +89,8 @@ export default function VerdictTicker() {
       </div>
 
       {/* Edge fades */}
-      <div className="pointer-events-none absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-[#15140F] to-transparent" />
-      <div className="pointer-events-none absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-[#15140F] to-transparent" />
+      <div className="pointer-events-none absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-[var(--landing-dark-bg)] to-transparent" />
+      <div className="pointer-events-none absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-[var(--landing-dark-bg)] to-transparent" />
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import React, { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { t } from './_tokens';
 
 type Status = 'idle' | 'submitting' | 'error';
 
@@ -33,16 +34,16 @@ export default function AuditForm() {
     <form
       onSubmit={handleSubmit}
       style={{
-        background: '#1A1814',
-        border: '1px solid #2B2922',
+        background: t.ink,
+        border: `1px solid ${t.darkBorder}`,
         padding: '22px',
       }}
     >
       <p
         style={{
-          fontFamily: 'var(--font-dm-mono, monospace)',
+          fontFamily: t.mono,
           fontSize: '10.5px',
-          color: '#8A8472',
+          color: t.inkTertiary,
           textTransform: 'uppercase',
           letterSpacing: '0.14em',
           marginBottom: '14px',
@@ -62,17 +63,17 @@ export default function AuditForm() {
           style={{
             display: 'block',
             width: '100%',
-            background: '#15140F',
-            border: '1px solid #2B2922',
-            color: '#E8E4D8',
-            fontFamily: 'var(--font-dm-sans, sans-serif)',
+            background: t.darkBg,
+            border: `1px solid ${t.darkBorder}`,
+            color: t.darkBright,
+            fontFamily: t.sans,
             fontSize: '14px',
             padding: '11px 14px',
             outline: 'none',
             boxSizing: 'border-box',
           }}
-          onFocus={e => { e.currentTarget.style.borderColor = '#7B2D26'; }}
-          onBlur={e => { e.currentTarget.style.borderColor = '#2B2922'; }}
+          onFocus={e => { e.currentTarget.style.borderColor = t.accent; }}
+          onBlur={e => { e.currentTarget.style.borderColor = t.darkBorder; }}
         />
       </div>
 
@@ -80,17 +81,17 @@ export default function AuditForm() {
       <div
         style={{
           marginBottom: '12px',
-          border: '1px dashed #2B2922',
+          border: `1px dashed ${t.darkBorder}`,
           padding: '16px',
           cursor: 'pointer',
           textAlign: 'center',
         }}
         onClick={() => fileRef.current?.click()}
-        onDragOver={e => { e.preventDefault(); e.currentTarget.style.borderColor = '#7B2D26'; }}
-        onDragLeave={e => { e.currentTarget.style.borderColor = '#2B2922'; }}
+        onDragOver={e => { e.preventDefault(); e.currentTarget.style.borderColor = t.accent; }}
+        onDragLeave={e => { e.currentTarget.style.borderColor = t.darkBorder; }}
         onDrop={e => {
           e.preventDefault();
-          e.currentTarget.style.borderColor = '#2B2922';
+          e.currentTarget.style.borderColor = t.darkBorder;
           const dropped = e.dataTransfer.files?.[0];
           if (dropped && fileRef.current) {
             const dt = new DataTransfer();
@@ -109,9 +110,9 @@ export default function AuditForm() {
         />
         <p
           style={{
-            fontFamily: 'var(--font-dm-mono, monospace)',
+            fontFamily: t.mono,
             fontSize: '11px',
-            color: fileName ? '#E8E4D8' : '#8A8472',
+            color: fileName ? t.darkBright : t.inkTertiary,
             margin: 0,
             letterSpacing: '0.06em',
           }}
@@ -129,9 +130,9 @@ export default function AuditForm() {
           alignItems: 'center',
           justifyContent: 'space-between',
           width: '100%',
-          background: '#7B2D26',
-          color: '#F8F5EE',
-          fontFamily: 'var(--font-dm-sans, sans-serif)',
+          background: t.accent,
+          color: t.accentFg,
+          fontFamily: t.sans,
           fontSize: '15px',
           fontWeight: 500,
           padding: '14px 18px',
@@ -142,16 +143,16 @@ export default function AuditForm() {
         }}
       >
         <span>{status === 'submitting' ? 'Loading…' : 'Run free audit'}</span>
-        <span style={{ fontFamily: 'var(--font-dm-mono, monospace)' }}>→</span>
+        <span style={{ fontFamily: t.mono }}>→</span>
       </button>
 
       {errorMsg && (
         <p
           style={{
-            fontFamily: 'var(--font-serif, serif)',
+            fontFamily: t.serif,
             fontStyle: 'italic',
             fontSize: '12px',
-            color: '#7B2D26',
+            color: t.accent,
             margin: '0 0 10px',
           }}
         >
@@ -161,10 +162,10 @@ export default function AuditForm() {
 
       <p
         style={{
-          fontFamily: 'var(--font-serif, serif)',
+          fontFamily: t.serif,
           fontStyle: 'italic',
           fontSize: '12.5px',
-          color: '#8A8472',
+          color: t.inkTertiary,
           lineHeight: 1.5,
           marginTop: '12px',
           marginBottom: 0,

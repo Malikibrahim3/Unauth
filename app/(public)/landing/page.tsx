@@ -1,10 +1,6 @@
 import { UnauthLogo } from '@/components/ui/UnauthLogo';
 import { DotPattern } from '@/components/ui/dot-pattern';
 import { Spotlight } from '@/components/ui/spotlight';
-import { AnimatedGridPattern } from '@/components/ui/animated-grid-pattern';
-import { Meteors } from '@/components/ui/meteors';
-import { BorderBeam } from '@/components/ui/border-beam';
-import { EyeOff, FileText, Fingerprint, Lock, ShieldCheck } from 'lucide-react';
 import type { CSSProperties } from 'react';
 import PipelineTabs from './_components/PipelineTabs';
 import LandingScreenshotFrame from './_components/LandingScreenshotFrame';
@@ -14,7 +10,9 @@ import AnimatedBar from './_components/AnimatedBar';
 import TypedText from './_components/TypedText';
 import HeroNotificationArtifact from './_components/HeroNotificationArtifact';
 import VerdictTicker from './_components/VerdictTicker';
-import AuditForm from './AuditForm';
+import HeroAuditCta from './_components/HeroAuditCta';
+import { t } from './_tokens';
+import { SectionCard } from '@/components/ui';
 
 export const metadata = {
   title: 'Unauth — Fraud Intelligence for Ecommerce',
@@ -25,6 +23,66 @@ export const metadata = {
 export default function LandingPage() {
   const today = new Date();
   const todayISO = today.toISOString().slice(0, 10);
+  const faqFeatured = [
+    {
+      q: 'What exactly is Unauth?',
+      a: 'Unauth is a cross-merchant identity resolution platform. We take your order and transaction data, link identities across signals — email, device, address, card, phone — and tell you which customers have a history of refund abuse, INR claims, or chargebacks at other stores. We do not block orders. We give you the intelligence to make better decisions yourself.',
+    },
+    {
+      q: 'How do you get data from other merchants?',
+      a: "Every merchant who runs an audit contributes anonymised, hashed identity signals to the shared graph. No raw customer data, no PII in clear text — everything is hashed client-side before it leaves your system. You benefit from every other merchant's history, and they benefit from yours. The network gets more valuable with every participant.",
+    },
+    {
+      q: "Can you see my customers' data?",
+      a: "No. PII is hashed on your side before upload using HMAC-SHA256. We receive hashed signals, not names, emails, or addresses in readable form. We cannot reverse the hash, we cannot read your customer list, and we cannot sell or expose it. The audit report you receive shows you the patterns — not the underlying data of other merchants.",
+    },
+    {
+      q: 'Is this GDPR compliant?',
+      a: 'Yes. Because PII is hashed client-side before upload and we never store raw customer data, we are not a data processor of personal information under GDPR. The hashed signals we store cannot be used to identify any individual. We recommend reviewing our data processing documentation with your legal team if you operate in the EU.',
+    },
+    {
+      q: 'Do I need to integrate anything?',
+      a: 'No. You export a CSV from your store — Shopify, WooCommerce, Magento, or any platform — and upload it. No API keys, no developer, no checkout plugin. If you can export an order report you can run an audit.',
+    },
+    {
+      q: 'How long does an audit take?',
+      a: "Around 20 minutes for most datasets. Larger files with 50,000+ orders may take slightly longer. You do not need to stay on the page — we'll have the results ready when you come back.",
+    },
+  ];
+  const faqMore = [
+    {
+      q: 'How is this different from a blocklist?',
+      a: "Blocklists flag signals you've already seen — an email or device that caused you a problem before. That only catches repeat offenders at your store. Unauth links identities across multiple merchants, so we can surface a customer who has never defrauded you but has hit five other stores in the last 90 days. You catch them before they cost you anything.",
+    },
+    {
+      q: 'What does a confidence grade actually mean?',
+      a: 'Every identity cluster gets a grade — Definite, Probable, Possible, or Weak — based on how many signals match and how strong those matches are. Definite means we have high certainty this is the same person across multiple merchants with a documented abuse pattern. Weak means there is a partial signal worth watching but not worth acting on yet. You decide what threshold you act on.',
+    },
+    {
+      q: 'What do I actually get at the end?',
+      a: 'A full audit report showing every identity cluster we found, their confidence grade, the signals that linked them, their abuse history across the network, and a representment-ready case file for any cluster you want to dispute. You can export the report and the case files directly.',
+    },
+    {
+      q: 'What is a representment-ready case file?',
+      a: "If you want to dispute a chargeback, card networks require documented evidence that the order was legitimate and the customer has a pattern of abuse. Unauth generates that evidence packet automatically — transaction history, linked identity signals, cross-merchant abuse pattern, confidence grade. It's formatted to meet Visa's Compelling Evidence 3.0 requirements.",
+    },
+    {
+      q: 'Does Unauth block orders automatically?',
+      a: 'No, and deliberately so. We believe merchants should keep the decline decision. We surface the intelligence, you decide what to do with it. This also means we never create false positives that cost you a legitimate sale — that is your call to make, not ours.',
+    },
+    {
+      q: 'How does pricing work?',
+      a: 'Pricing is based on order volume processed. The first audit is free with no card required. Paid plans are available for merchants who want ongoing monitoring, API access, and automatic flagging on new orders. Get in touch for a quote based on your volume.',
+    },
+    {
+      q: 'Who is Unauth for?',
+      a: "Primarily US ecommerce merchants processing more than 1,000 orders a month who are seeing refund abuse, INR fraud, or chargeback rates they cannot explain with their current tools. If you're a small merchant just starting out, a free audit is still worth running — you might be surprised what is already in your data.",
+    },
+    {
+      q: 'How do I get started?',
+      a: 'Run a free audit — no account, no card, no integration required. Export your order history as a CSV and upload it. You will have a full report in about 20 minutes.',
+    },
+  ];
   const heroSubjectFields = [
     {
       label: 'emails',
@@ -97,15 +155,15 @@ export default function LandingPage() {
     <div
       className="ua-landing-shell"
       style={{
-        background: '#F8F5EE',
-        color: '#1A1814',
+        background: t.bg,
+        color: t.ink,
         minHeight: '100vh',
       }}
     >
       {/* ── Header strip ────────────────────────────────────────── */}
       <header
         style={{
-          borderBottom: '1px solid #ECE5D4',
+          borderBottom: `1px solid ${t.border}`,
           background: 'rgba(248, 245, 238, 0.85)',
           backdropFilter: 'saturate(140%) blur(8px)',
           WebkitBackdropFilter: 'saturate(140%) blur(8px)',
@@ -118,7 +176,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-[1400px] px-6 md:px-10 flex items-center justify-between">
           <div className="flex items-center gap-8">
             <UnauthLogo variant="wordmark-light" size={28} />
-            <nav className="hidden md:flex items-center gap-7" style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '15.5px', color: '#4A4640' }}>
+            <nav className="hidden md:flex items-center gap-7" style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '15.5px', color: t.inkSecondary }}>
               <a href="#how-it-works" className="ua-nav-link">How it works</a>
               <a href="#network" className="ua-nav-link">Network</a>
               <a href="#evidence" className="ua-nav-link">Evidence</a>
@@ -128,40 +186,40 @@ export default function LandingPage() {
           <div className="flex items-center gap-4">
             <a
               href="/login"
-              style={{ color: '#4A4640', fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '15.5px' }}
+              style={{ color: t.inkSecondary, fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '15.5px' }}
               className="hover:underline"
             >
               Sign in
             </a>
             <a
-              href="#audit"
+              href="/audit-demo"
               style={{
                 fontFamily: 'var(--font-dm-sans, sans-serif)',
                 fontSize: '12px',
                 fontWeight: 500,
-                color: '#F8F5EE',
-                background: '#7B2D26',
+                color: t.bg,
+                background: t.accent,
                 padding: '6px 12px',
-                border: '1px solid #7B2D26',
+                border: `1px solid ${t.accent}`,
                 textDecoration: 'none',
               }}
-              className="md:hidden hover:bg-[#5E2018]"
+              className="md:hidden hover:bg-[var(--landing-accent-hover)]"
             >
               Audit →
             </a>
             <a
-              href="#audit"
+              href="/audit-demo"
               style={{
                 fontFamily: 'var(--font-dm-sans, sans-serif)',
                 fontSize: '13px',
                 fontWeight: 500,
-                color: '#F8F5EE',
-                background: '#7B2D26',
+                color: t.bg,
+                background: t.accent,
                 padding: '7px 14px',
-                border: '1px solid #7B2D26',
+                border: `1px solid ${t.accent}`,
                 textDecoration: 'none',
               }}
-              className="hidden md:inline-flex hover:bg-[#5E2018]"
+              className="hidden md:inline-flex hover:bg-[var(--landing-accent-hover)]"
             >
               Run free audit →
             </a>
@@ -174,7 +232,7 @@ export default function LandingPage() {
         {/* DotPattern — precision grid atmosphere, masked to top-right quadrant */}
         <DotPattern
           width={32} height={32} cx={1} cy={1} cr={1.1}
-          className="text-[#7B2D26] opacity-[0.13] [mask-image:radial-gradient(ellipse_68%_60%_at_72%_28%,white,transparent)]"
+          className="text-[var(--landing-accent)] opacity-[0.13] [mask-image:radial-gradient(ellipse_68%_60%_at_72%_28%,white,transparent)]"
         />
         {/* Single-hue burgundy spotlight — replaces the old rainbow conic blob */}
         <Spotlight fill="rgba(123,45,38,0.18)" className="-z-10" />
@@ -192,7 +250,7 @@ export default function LandingPage() {
               fontWeight: 600,
               letterSpacing: '0.14em',
               textTransform: 'uppercase',
-              color: '#4A4640',
+              color: t.inkSecondary,
               marginBottom: '6px',
               display: 'flex',
               alignItems: 'center',
@@ -206,7 +264,7 @@ export default function LandingPage() {
                 fontFamily: 'var(--font-dm-mono, monospace)',
                 fontSize: '10px',
                 letterSpacing: '0.08em',
-                color: '#8A8472',
+                color: t.inkTertiary,
                 fontWeight: 400,
                 textTransform: 'none',
               }}
@@ -223,13 +281,13 @@ export default function LandingPage() {
               fontWeight: 500,
               letterSpacing: '-0.030em',
               lineHeight: 1.05,
-              color: '#1A1814',
+              color: t.ink,
               marginBottom: '16px',
               maxWidth: '22ch',
             }}
           >
             Find repeat abusers before they{' '}
-            <span style={{ color: '#7B2D26', fontStyle: 'italic', fontFamily: 'var(--font-serif, serif)', fontWeight: 400, whiteSpace: 'nowrap' }}>
+            <span style={{ color: t.accent, fontStyle: 'italic', fontFamily: 'var(--font-serif, serif)', fontWeight: 400, whiteSpace: 'nowrap' }}>
               strike again.
             </span>
           </h1>
@@ -239,48 +297,25 @@ export default function LandingPage() {
             style={{
               fontFamily: 'var(--font-serif, serif)',
               fontSize: 'clamp(15px, 1.15vw, 18px)',
-              color: '#4A4640',
+              color: t.inkSecondary,
               lineHeight: 1.55,
               marginBottom: '20px',
               maxWidth: '44ch',
             }}
           >
             Upload orders. Unauth links refund abuse, INR claims, and friendly-fraud patterns across stores.{' '}
-            <span style={{ color: '#1A1814', fontWeight: 500, fontStyle: 'normal' }}>Free audit. No account. Results emailed.</span>
+            <span style={{ color: t.ink, fontWeight: 500, fontStyle: 'normal' }}>Free audit. No account. Results emailed.</span>
           </p>
 
           {/* CTA row */}
-          <div className="flex items-center flex-wrap gap-3">
-            <a
-              href="#audit"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                background: '#7B2D26',
-                color: '#F8F5EE',
-                fontFamily: 'var(--font-dm-sans, sans-serif)',
-                fontSize: '14px',
-                fontWeight: 500,
-                padding: '11px 20px',
-                border: '1px solid #7B2D26',
-                borderRadius: 0,
-                textDecoration: 'none',
-                boxShadow: '0 1px 0 #7B2D26, 0 8px 24px -12px rgba(123,45,38,0.4)',
-                transition: 'background 160ms ease',
-              }}
-              className="hover:bg-[#5E2018]"
-            >
-              Run free audit
-              <span aria-hidden style={{ fontFamily: 'var(--font-dm-mono, monospace)' }}>→</span>
-            </a>
+          <div className="flex w-full flex-col gap-3">
+            <HeroAuditCta />
             <a
               href="#how-it-works"
               style={{
-                marginLeft: 16,
                 fontFamily: 'var(--font-dm-sans, sans-serif)',
                 fontSize: 14,
-                color: '#4A4640',
+                color: t.inkSecondary,
                 textDecoration: 'none',
               }}
             >
@@ -299,16 +334,19 @@ export default function LandingPage() {
                 fontSize: '10.5px',
                 letterSpacing: '0.14em',
                 textTransform: 'uppercase',
-                color: '#8A8472',
+                color: t.inkTertiary,
               }}
             >
-              <span>
-                Case file · example output
-              </span>
-              <span>Cluster #u_kessler.07</span>
+              <span>Inbox · identity-flagged cases</span>
+              <span>25 open · £5,192 at risk</span>
             </div>
 
-            <div className="lg:w-full lg:max-h-[720px] overflow-hidden">
+            <LandingScreenshotFrame
+              src="/screenshots/inbox.png"
+              alt="Unauth inbox showing 25 open identity-flagged cases with risk scores, values, and crossmerchant signals"
+            />
+
+            <div className="hidden lg:w-full lg:max-h-[720px] overflow-hidden">
               <div
                 className="ua-hover-glow ua-case-card ua-premium-surface"
                
@@ -316,7 +354,7 @@ export default function LandingPage() {
                 style={{
                   background: 'rgba(253, 251, 246, 0.96)',
                   border: '1px solid rgba(123,45,38,0.15)',
-                  borderRadius: 0,
+                  borderRadius: 6,
                   boxShadow:
                     '0 1px 0 rgba(123,45,38,0.10), 0 4px 12px -4px rgba(123,45,38,0.08), 0 28px 68px -24px rgba(26,24,20,0.18), 0 62px 130px -54px rgba(123,45,38,0.14)',
                   position: 'relative',
@@ -328,13 +366,13 @@ export default function LandingPage() {
               <div
                 style={{
                   padding: '10px 14px',
-                  borderBottom: '1px solid #D8D0BD',
+                  borderBottom: `1px solid ${t.border}`,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   gap: '12px',
                   flexWrap: 'wrap',
-                  background: '#F8F5EE',
+                  background: t.bg,
                 }}
               >
                 <p
@@ -343,11 +381,11 @@ export default function LandingPage() {
                     fontSize: '11.5px',
                     textTransform: 'uppercase',
                     letterSpacing: '0.1em',
-                    color: '#4A4640',
+                    color: t.inkSecondary,
                     margin: 0,
                   }}
                 >
-                  <span style={{ color: '#7B2D26' }}>●</span>{' '}
+                  <span style={{ color: t.accent }}>●</span>{' '}
                   CASE FILE · UN-2026-04-21-0083
                 </p>
                 <div style={{ display: 'flex', gap: '6px' }}>
@@ -356,9 +394,9 @@ export default function LandingPage() {
                       fontFamily: 'var(--font-dm-mono, monospace)',
                       fontSize: '10px',
                       letterSpacing: '0.08em',
-                      color: '#FFFFFF',
-                      background: '#7B2D26',
-                      border: '1px solid #7B2D26',
+                      color: t.paper,
+                      background: t.accent,
+                      border: `1px solid ${t.accent}`,
                       padding: '3px 9px',
                       lineHeight: 1.4,
                       fontWeight: 500,
@@ -371,23 +409,23 @@ export default function LandingPage() {
                       fontFamily: 'var(--font-dm-mono, monospace)',
                       fontSize: '10px',
                       letterSpacing: '0.08em',
-                      color: '#4A4640',
-                      background: '#F2EDE3',
-                      border: '1px solid #D8D0BD',
+                      color: t.inkSecondary,
+                      background: t.surfaceAlt,
+                      border: `1px solid ${t.border}`,
                       padding: '3px 9px',
                       lineHeight: 1.4,
                     }}
                   >
-                    CONF 0.92
+                    RISK 0.92
                   </span>
                   <span
                     style={{
                       fontFamily: 'var(--font-dm-mono, monospace)',
                       fontSize: '10px',
                       letterSpacing: '0.08em',
-                      color: '#4A4640',
-                      background: '#F2EDE3',
-                      border: '1px solid #D8D0BD',
+                      color: t.inkSecondary,
+                      background: t.surfaceAlt,
+                      border: `1px solid ${t.border}`,
                       padding: '3px 9px',
                       lineHeight: 1.4,
                     }}
@@ -400,14 +438,14 @@ export default function LandingPage() {
               {/* Two-column body: subject + sparkbars */}
               <div className="grid grid-cols-1 md:grid-cols-[1.18fr_0.82fr]">
                 {/* Subject column */}
-                <div style={{ padding: '12px 14px', borderRight: '1px solid #D8D0BD' }}>
+                <div style={{ padding: '12px 14px', borderRight: `1px solid ${t.border}` }}>
                   <p
                     style={{
                       fontFamily: 'var(--font-dm-sans, sans-serif)',
                       fontSize: '10px',
                       textTransform: 'uppercase',
                       letterSpacing: '0.14em',
-                      color: '#8A8472',
+                      color: t.inkTertiary,
                       marginBottom: '8px',
                     }}
                   >
@@ -418,7 +456,7 @@ export default function LandingPage() {
                     style={{
                       fontFamily: 'var(--font-serif, serif)',
                       fontSize: '18px',
-                      color: '#1A1814',
+                      color: t.ink,
                       marginBottom: '4px',
                       lineHeight: 1.3,
                       ['--ua-case-delay' as string]: '120ms',
@@ -432,7 +470,7 @@ export default function LandingPage() {
                   >
                     <TypedText text="Noah K████" delay={120} speed={18} />
                     <sup>
-                      <a href="#note-1" style={{ color: '#7B2D26', textDecoration: 'none' }}>1</a>
+                      <a href="#note-1" style={{ color: t.accent, textDecoration: 'none' }}>1</a>
                     </sup>
                   </p>
                   <p
@@ -440,7 +478,7 @@ export default function LandingPage() {
                     style={{
                       fontFamily: 'var(--font-dm-mono, monospace)',
                       fontSize: '12px',
-                      color: '#7B2D26',
+                      color: t.accent,
                       letterSpacing: '0.02em',
                       marginBottom: '4px',
                       ['--ua-case-delay' as string]: '180ms',
@@ -460,7 +498,7 @@ export default function LandingPage() {
                       fontFamily: 'var(--font-serif, serif)',
                       fontSize: '11px',
                       fontStyle: 'italic',
-                      color: '#8A8472',
+                      color: t.inkTertiary,
                       lineHeight: 1.45,
                       margin: '0 0 10px 0',
                       ['--ua-case-delay' as string]: '220ms',
@@ -483,7 +521,7 @@ export default function LandingPage() {
                       gap: '10px 14px',
                       fontFamily: 'var(--font-dm-mono, monospace)',
                       fontSize: '10px',
-                      color: '#4A4640',
+                      color: t.inkSecondary,
                     }}
                   >
                     {heroSubjectFields.map((field) => {
@@ -496,7 +534,7 @@ export default function LandingPage() {
                         <span
                           className="ua-case-step"
                           style={{
-                            color: '#8A8472',
+                            color: t.inkTertiary,
                             textTransform: 'uppercase',
                             letterSpacing: '0.06em',
                             fontSize: '10px',
@@ -533,7 +571,7 @@ export default function LandingPage() {
                                 delay={220 + (previousRowCount + rowIndex) * 58}
                                 speed={12}
                                 style={{
-                                  color: '#1A1814',
+                                  color: t.ink,
                                   overflow: 'hidden',
                                   textOverflow: 'ellipsis',
                                   whiteSpace: 'nowrap',
@@ -545,7 +583,7 @@ export default function LandingPage() {
                                   delay={350 + (previousRowCount + rowIndex) * 58}
                                   speed={13}
                                   style={{
-                                    color: '#8A8472',
+                                    color: t.inkTertiary,
                                     fontSize: '10px',
                                     textAlign: 'right',
                                     whiteSpace: 'nowrap',
@@ -569,7 +607,7 @@ export default function LandingPage() {
                       fontSize: '10px',
                       textTransform: 'uppercase',
                       letterSpacing: '0.14em',
-                      color: '#8A8472',
+                      color: t.inkTertiary,
                       marginBottom: '8px',
                     }}
                   >
@@ -593,7 +631,7 @@ export default function LandingPage() {
                               style={{
                                 width: 5,
                                 height: 5,
-                                background: on ? '#7B2D26' : '#D8D0BD',
+                                background: on ? t.accent : t.border,
                                 display: 'inline-block',
                                 borderRadius: '50%',
                               }}
@@ -602,14 +640,14 @@ export default function LandingPage() {
                               text={l}
                               delay={260 + i * 58}
                               speed={10}
-                              style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10.5px', color: on ? '#1A1814' : '#8A8472' }}
+                              style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10.5px', color: on ? t.ink : t.inkTertiary }}
                             />
                           </div>
                           <AnimatedBar
                             className="ua-case-signal-bar"
                             value={v}
-                            color={on ? '#7B2D26' : '#B8B2A0'}
-                            track="#ECE5D4"
+                            color={on ? t.accent : t.darkMuted}
+                            track={t.border}
                             height={3}
                             delay={520 + i * 130}
                             duration={1050}
@@ -622,7 +660,7 @@ export default function LandingPage() {
                           style={{
                             fontFamily: 'var(--font-dm-mono, monospace)',
                             fontSize: '10.5px',
-                            color: on ? '#1A1814' : '#8A8472',
+                            color: on ? t.ink : t.inkTertiary,
                             fontVariantNumeric: 'tabular-nums',
                             textAlign: 'right',
                             ['--ua-case-score-delay' as string]: `${1500 + i * 130}ms`,
@@ -637,14 +675,14 @@ export default function LandingPage() {
               </div>
 
               {/* Tracked datapoints */}
-              <div style={{ borderTop: '1px solid #D8D0BD', padding: '10px 14px' }}>
+              <div style={{ borderTop: `1px solid ${t.border}`, padding: '10px 14px' }}>
                 <p
                   className="ua-case-step"
                   style={{
                     fontFamily: 'var(--font-dm-mono, monospace)',
                     fontSize: '11px',
                     letterSpacing: '0.06em',
-                    color: '#4A4640',
+                    color: t.inkSecondary,
                     margin: 0,
                     lineHeight: 1.6,
                     ['--ua-case-delay' as string]: `${heroMatchedDelay}ms`,
@@ -661,7 +699,7 @@ export default function LandingPage() {
               </div>
 
               {/* Network footprint */}
-              <div style={{ borderTop: '1px solid #D8D0BD', padding: '14px 16px', background: '#F8F5EE' }}>
+              <div style={{ borderTop: `1px solid ${t.border}`, padding: '14px 16px', background: t.bg }}>
                 <div
                   style={{
                     display: 'flex',
@@ -678,7 +716,7 @@ export default function LandingPage() {
                       fontSize: '10px',
                       textTransform: 'uppercase',
                       letterSpacing: '0.14em',
-                      color: '#8A8472',
+                      color: t.inkTertiary,
                       margin: 0,
                     }}
                   >
@@ -689,7 +727,7 @@ export default function LandingPage() {
                       fontFamily: 'var(--font-dm-mono, monospace)',
                       fontSize: '10px',
                       letterSpacing: '0.06em',
-                      color: '#8A8472',
+                      color: t.inkTertiary,
                       margin: 0,
                     }}
                   >
@@ -700,7 +738,7 @@ export default function LandingPage() {
                   style={{
                     fontFamily: 'var(--font-dm-mono, monospace)',
                     fontSize: '11px',
-                    color: '#4A4640',
+                    color: t.inkSecondary,
                     lineHeight: 1.65,
                   }}
                 >
@@ -738,20 +776,20 @@ export default function LandingPage() {
                         text={row.note ? `${row.m}²` : row.m}
                         delay={heroNetworkDelay + i * 80}
                         speed={12}
-                        style={{ color: '#1A1814', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                        style={{ color: t.ink, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
                       />
-                      <TypedText text={row.o} delay={heroNetworkDelay + i * 80 + 120} speed={13} style={{ color: '#4A4640' }} />
+                      <TypedText text={row.o} delay={heroNetworkDelay + i * 80 + 120} speed={13} style={{ color: t.inkSecondary }} />
                       <AnimatedBar
                         value={row.r}
-                        color={row.r > 0.7 ? '#7B2D26' : row.r > 0.5 ? '#7B2D26' : '#8A8472'}
-                        track="#ECE5D4"
+                        color={row.r > 0.7 ? t.accent : row.r > 0.5 ? t.accent : t.inkTertiary}
+                        track={t.border}
                         height={3}
                         delay={500 + i * 70}
                       />
-                      <TypedText text={row.v} delay={heroNetworkDelay + i * 80 + 220} speed={20} style={{ color: '#1A1814', fontVariantNumeric: 'tabular-nums', textAlign: 'right', minWidth: '46px' }} />
+                      <TypedText text={row.v} delay={heroNetworkDelay + i * 80 + 220} speed={20} style={{ color: t.ink, fontVariantNumeric: 'tabular-nums', textAlign: 'right', minWidth: '46px' }} />
                     </div>
                   ))}
-                  <p style={{ color: '#8A8472', fontSize: '10px', marginTop: '6px' }}>
+                  <p style={{ color: t.inkTertiary, fontSize: '10px', marginTop: '6px' }}>
                     + 3 more merchants withheld
                   </p>
                 </div>
@@ -761,9 +799,9 @@ export default function LandingPage() {
               <div
                 className="ua-case-step"
                 style={{
-                  borderTop: '1px solid #D8D0BD',
+                  borderTop: `1px solid ${t.border}`,
                   padding: '14px 22px',
-                  background: 'linear-gradient(90deg, #F8F0EE 0%, #F4E8E5 100%)',
+                  background: `linear-gradient(90deg, ${t.surfacePink} 0%, ${t.surfacePink2} 100%)`,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
@@ -782,7 +820,7 @@ export default function LandingPage() {
                   style={{
                     fontFamily: 'var(--font-dm-mono, monospace)',
                     fontSize: '11.5px',
-                    color: '#7B2D26',
+                    color: t.accent,
                     letterSpacing: '0.06em',
                     margin: 0,
                     fontWeight: 500,
@@ -794,9 +832,9 @@ export default function LandingPage() {
                   style={{
                     fontFamily: 'var(--font-dm-mono, monospace)',
                     fontSize: '10.5px',
-                    color: '#7B2D26',
-                    background: '#FFFFFF',
-                    border: '1px solid #E3C9C3',
+                    color: t.accent,
+                    background: t.paper,
+                    border: `1px solid ${t.borderWarm}`,
                     padding: '2px 8px',
                   }}
                 >
@@ -808,7 +846,7 @@ export default function LandingPage() {
               <div
                 className="ua-case-step"
                 style={{
-                  borderTop: '1px solid #D8D0BD',
+                  borderTop: `1px solid ${t.border}`,
                   padding: '10px 22px',
                   display: 'flex',
                   justifyContent: 'space-between',
@@ -827,7 +865,7 @@ export default function LandingPage() {
                   style={{
                     fontFamily: 'var(--font-dm-mono, monospace)',
                     fontSize: '10.5px',
-                    color: '#8A8472',
+                    color: t.inkTertiary,
                     letterSpacing: '0.02em',
                     margin: 0,
                   }}
@@ -838,7 +876,7 @@ export default function LandingPage() {
                   style={{
                     fontFamily: 'var(--font-dm-mono, monospace)',
                     fontSize: '10.5px',
-                    color: '#8A8472',
+                    color: t.inkTertiary,
                     margin: 0,
                   }}
                 >
@@ -849,11 +887,11 @@ export default function LandingPage() {
             </div>
 
             {/* Tiny meta row under card */}
-            <div className="hidden flex-wrap items-center gap-x-5 gap-y-2 mt-4" style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11px', color: '#8A8472', letterSpacing: '0.04em' }}>
+            <div className="hidden flex-wrap items-center gap-x-5 gap-y-2 mt-4" style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11px', color: t.inkTertiary, letterSpacing: '0.04em' }}>
               <span>sample cluster · 11 orders analysed</span>
-              <span style={{ color: '#D8D0BD' }}>·</span>
+              <span style={{ color: t.border }}>·</span>
               <span>pipeline latency: 38ms</span>
-              <span style={{ color: '#D8D0BD' }}>·</span>
+              <span style={{ color: t.border }}>·</span>
               <span>Case file ready in browser</span>
             </div>
 
@@ -863,6 +901,9 @@ export default function LandingPage() {
                 'No checkout integration',
                 'CSV audit · ~20 min',
                 'Client-side HMAC hashing',
+                'k-anonymity privacy gating',
+                'Tenant-scoped salts',
+                'Hashed audit trail',
                 'Evidence-ready output',
               ].map((chip) => (
                 <span
@@ -870,9 +911,9 @@ export default function LandingPage() {
                   style={{
                     fontFamily: 'var(--font-dm-mono, monospace)',
                     fontSize: '10.5px',
-                    color: '#4A4640',
-                    background: '#F2EDE3',
-                    border: '1px solid #D8D0BD',
+                    color: t.inkSecondary,
+                    background: t.surfaceAlt,
+                    border: `1px solid ${t.border}`,
                     padding: '4px 10px',
                     letterSpacing: '0.04em',
                     whiteSpace: 'nowrap',
@@ -889,8 +930,8 @@ export default function LandingPage() {
 
       {/* ── §1 · The pattern your store can't see — VISUAL ───────── */}
       <section
-        className="w-full -mt-[20vh] pb-16 md:pb-20"
-        style={{ background: '#15140F', position: 'relative', zIndex: 1 }}
+        className="w-full -mt-[0vh] pb-16 md:pb-20"
+        style={{ background: t.darkBg, position: 'relative', zIndex: 1 }}
       >
         <VerdictTicker />
         <div className="mx-auto max-w-[1400px] px-2 md:px-4 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center mt-10 md:mt-14" style={{ transform: 'translateY(-5vh)' }}>
@@ -902,7 +943,7 @@ export default function LandingPage() {
                 fontWeight: 600,
                 letterSpacing: '0.16em',
                 textTransform: 'uppercase',
-                color: '#B7A98D',
+                color: t.darkLabel,
                 marginBottom: '14px',
               }}
             >
@@ -915,12 +956,12 @@ export default function LandingPage() {
                 fontWeight: 500,
                 letterSpacing: '-0.030em',
                 lineHeight: 1.05,
-                color: '#F8F5EE',
+                color: t.bg,
                 marginBottom: '20px',
               }}
             >
               One buyer.{' '}
-              <span style={{ color: '#7B2D26', fontStyle: 'italic', fontFamily: 'var(--font-serif, serif)', fontWeight: 400, whiteSpace: 'nowrap' }}>Seven stores.</span>{' '}
+              <span style={{ color: t.accent, fontStyle: 'italic', fontFamily: 'var(--font-serif, serif)', fontWeight: 400, whiteSpace: 'nowrap' }}>Seven stores.</span>{' '}
               One pattern.
             </h2>
             <p
@@ -928,7 +969,7 @@ export default function LandingPage() {
                 fontFamily: 'var(--font-serif, serif)',
                 fontSize: 'clamp(15px, 1.15vw, 18px)',
                 lineHeight: 1.55,
-                color: '#D4C7AF',
+                color: t.darkText,
                 marginBottom: '20px',
               }}
             >
@@ -946,9 +987,9 @@ export default function LandingPage() {
                   <p
                     style={{
                       fontFamily: 'var(--font-dm-mono, monospace)',
-                      fontSize: 'clamp(40px, 4.2vw, 72px)',
+                      fontSize: 'clamp(22px, 1.8vw, 32px)',
                       fontWeight: 500,
-                      color: '#F8F5EE',
+                      color: t.bg,
                       lineHeight: 1,
                       marginBottom: '8px',
                       fontVariantNumeric: 'tabular-nums',
@@ -957,14 +998,14 @@ export default function LandingPage() {
                   >
                     <Counter value={s.v} prefix={s.prefix} suffix={s.suffix} decimals={s.dec} duration={1100} format="plain" />
                     <sup style={{ fontSize: '0.28em', letterSpacing: 0 }}>
-                      <a href={`#note-${s.n}`} style={{ color: '#7B2D26', textDecoration: 'none' }}>{s.n}</a>
+                      <a href={`#note-${s.n}`} style={{ color: t.accent, textDecoration: 'none' }}>{s.n}</a>
                     </sup>
                   </p>
                   <p
                     style={{
                       fontFamily: 'var(--font-dm-mono, monospace)',
                       fontSize: '10px',
-                      color: '#B7A98D',
+                      color: t.darkLabel,
                       lineHeight: 1.4,
                       letterSpacing: '0.04em',
                       textTransform: 'uppercase',
@@ -998,7 +1039,7 @@ export default function LandingPage() {
               fontWeight: 600,
               letterSpacing: '0.16em',
               textTransform: 'uppercase',
-              color: '#7B2D26',
+              color: t.accent,
               marginBottom: '12px',
             }}
           >
@@ -1011,20 +1052,20 @@ export default function LandingPage() {
               fontWeight: 500,
               letterSpacing: '-0.02em',
               lineHeight: 1.05,
-              color: '#1A1814',
+              color: t.ink,
               marginBottom: '10px',
               maxWidth: '760px',
             }}
           >
             Everything you need.{' '}
-            <span style={{ fontFamily: 'var(--font-serif, serif)', fontStyle: 'italic', fontWeight: 400, color: '#6B655C' }}>Nothing you don&rsquo;t.</span>
+            <span style={{ fontFamily: 'var(--font-serif, serif)', fontStyle: 'italic', fontWeight: 400, color: t.inkMuted }}>Nothing you don&rsquo;t.</span>
           </h2>
           <p
             style={{
               fontFamily: 'var(--font-serif, serif)',
               fontSize: 'clamp(15px, 1.1vw, 17px)',
               lineHeight: 1.55,
-              color: '#4A4640',
+              color: t.inkSecondary,
               maxWidth: '600px',
               margin: 0,
             }}
@@ -1034,310 +1075,8 @@ export default function LandingPage() {
         </div>
         <LandingScreenshotFrame
           src="/screenshots/dashboard.png"
-          alt="Unauth merchant dashboard with fraud rate, transaction volume, chargeback trend, and watchlist signals"
-          label="Live seeded dashboard"
-          tilt="right"
+          alt="Unauth merchant dashboard showing fraud rate, transaction volume, chargeback trend, and identity match breakdown"
         />
-      </section>
-
-      {/* ── §7 · Security & data handling (dark inversion) ─────── */}
-      <section
-        id="security"
-        style={{
-          background:
-            'radial-gradient(circle at 12% 18%, rgba(184, 92, 74, 0.16), transparent 30rem), linear-gradient(135deg, #17150F 0%, #10100C 52%, #1D1912 100%)',
-          color: '#E8E4D8',
-          scrollMarginTop: '72px',
-        }}
-        className="ua-network-canvas py-16 md:py-24"
-       
-        suppressHydrationWarning
-      >
-        <AnimatedGridPattern
-          width={56} height={56}
-          numSquares={16}
-          maxOpacity={0.05}
-          duration={6}
-          className="text-[#B85C4A] [mask-image:radial-gradient(ellipse_70%_60%_at_50%_50%,white,transparent)]"
-        />
-        <div className="mx-auto max-w-[1400px] px-6 md:px-10">
-          <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-end mb-10 md:mb-14">
-            <div>
-              <p
-                style={{
-                  fontFamily: 'var(--font-dm-sans, sans-serif)',
-                  fontSize: '11px',
-                  fontWeight: 600,
-                  letterSpacing: '0.16em',
-                  textTransform: 'uppercase',
-                  color: '#D9795F',
-                  marginBottom: '12px',
-                }}
-              >
-                § 7 — SECURITY &amp; DATA HANDLING
-              </p>
-              <h2
-                style={{
-                  fontFamily: 'var(--font-dm-sans, sans-serif)',
-                  fontSize: 'clamp(28px, 2.8vw, 40px)',
-                  fontWeight: 500,
-                  letterSpacing: '-0.02em',
-                  lineHeight: 1.05,
-                  color: '#E8E4D8',
-                  marginBottom: '10px',
-                  maxWidth: '760px',
-                }}
-              >
-                Built so raw customer data does not become the product.
-              </h2>
-              <p
-                style={{
-                  fontFamily: 'var(--font-serif, serif)',
-                  fontSize: 'clamp(15px, 1.15vw, 18px)',
-                  lineHeight: 1.6,
-                  color: '#BDB6A3',
-                  maxWidth: '650px',
-                  margin: 0,
-                }}
-              >
-                Unauth is designed around minimisation: sensitive identifiers are transformed before analysis, network signals stay threshold-gated, and every access leaves an auditable trail.
-              </p>
-            </div>
-
-            <div
-              className="ua-dark-panel"
-              style={{
-                border: '1px solid rgba(232, 228, 216, 0.12)',
-                background: 'rgba(21, 20, 15, 0.72)',
-                boxShadow: '0 28px 80px rgba(0,0,0,0.28)',
-                padding: '20px',
-              }}
-            >
-              <div className="flex flex-wrap items-center justify-between gap-4">
-                <div>
-                  <p
-                    style={{
-                      fontFamily: 'var(--font-dm-mono, monospace)',
-                      fontSize: '11px',
-                      color: '#D9795F',
-                      letterSpacing: '0.12em',
-                      textTransform: 'uppercase',
-                      margin: '0 0 8px',
-                    }}
-                  >
-                    Privacy boundary
-                  </p>
-                  <p
-                    style={{
-                      fontFamily: 'var(--font-dm-mono, monospace)',
-                      fontSize: '12px',
-                      color: '#8A8472',
-                      margin: 0,
-                      letterSpacing: '0.04em',
-                    }}
-                  >
-                    HMAC-SHA256 · per-tenant salt · k-anonymity gated
-                  </p>
-                </div>
-                <a
-                  href="/legal/data-handling"
-                  style={{
-                    fontFamily: 'var(--font-dm-mono, monospace)',
-                    fontSize: '11.5px',
-                    color: '#10100C',
-                    padding: '9px 14px',
-                    border: '1px solid #D9795F',
-                    textDecoration: 'none',
-                    letterSpacing: '0.06em',
-                    background: '#D9795F',
-                  }}
-                  className="hover:bg-[#E8E4D8] hover:border-[#E8E4D8]"
-                >
-                  FULL CONTROLS DOC →
-                </a>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid gap-4 lg:grid-cols-[0.84fr_1.16fr]" style={{ marginBottom: '34px' }}>
-            <div
-              className="ua-dark-panel"
-              style={{
-                border: '1px solid rgba(232, 228, 216, 0.14)',
-                background: 'linear-gradient(180deg, rgba(232,228,216,0.07), rgba(232,228,216,0.025))',
-                padding: '28px',
-              }}
-            >
-              <div
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '10px',
-                  color: '#E8E4D8',
-                  marginBottom: '28px',
-                  fontFamily: 'var(--font-dm-mono, monospace)',
-                  fontSize: '11px',
-                  letterSpacing: '0.12em',
-                  textTransform: 'uppercase',
-                }}
-              >
-                <ShieldCheck size={16} strokeWidth={1.6} color="#D9795F" />
-                Security posture
-              </div>
-              <div className="space-y-5">
-                {[
-                  ['01', 'Raw identifiers stay outside the network graph.'],
-                  ['02', 'Signals appear only when anonymity thresholds are met.'],
-                  ['03', 'Operator actions are recorded for review and export.'],
-                ].map(([step, copy]) => (
-                  <div key={step} className="grid grid-cols-[44px_1fr] gap-4 items-start">
-                    <span
-                      style={{
-                        display: 'grid',
-                        placeItems: 'center',
-                        width: '36px',
-                        height: '36px',
-                        border: '1px solid rgba(217, 121, 95, 0.38)',
-                        color: '#D9795F',
-                        fontFamily: 'var(--font-dm-mono, monospace)',
-                        fontSize: '11px',
-                        background: 'rgba(217, 121, 95, 0.08)',
-                      }}
-                    >
-                      {step}
-                    </span>
-                    <p
-                      style={{
-                        fontFamily: 'var(--font-serif, serif)',
-                        fontSize: 'clamp(17px, 1.35vw, 21px)',
-                        lineHeight: 1.18,
-                        color: '#E8E4D8',
-                        margin: 0,
-                      }}
-                    >
-                      {copy}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {([
-                {
-                  Icon: Lock,
-                  label: 'Client-side hashing',
-                  body: 'Email, phone, address, and card references are transformed before transmission.',
-                },
-                {
-                  Icon: EyeOff,
-                  label: 'Thresholded network signals',
-                  body: 'Cross-merchant intelligence surfaces only after a cluster clears the privacy gate.',
-                },
-                {
-                  Icon: Fingerprint,
-                  label: 'Tenant-scoped secrets',
-                  body: 'Per-tenant salts keep each merchant boundary explicit and reduce reusable identifiers.',
-                },
-                {
-                  Icon: FileText,
-                  label: 'Plaintext-free audit logs',
-                  body: 'Every lookup is logged as a hashed record, with no raw customer values in access history.',
-                },
-              ] as const).map(({ Icon, label, body }) => (
-                <div
-                  key={label}
-                  className="ua-dark-panel"
-                  style={{
-                    background: 'rgba(21, 20, 15, 0.68)',
-                    border: '1px solid rgba(232, 228, 216, 0.1)',
-                    padding: '24px 24px 26px',
-                  }}
-                >
-                  <div
-                    style={{
-                      width: '38px',
-                      height: '38px',
-                      display: 'grid',
-                      placeItems: 'center',
-                      border: '1px solid rgba(217, 121, 95, 0.28)',
-                      background: 'rgba(217, 121, 95, 0.08)',
-                      marginBottom: '18px',
-                    }}
-                  >
-                    <Icon size={17} strokeWidth={1.6} color="#D9795F" />
-                  </div>
-                  <p
-                    style={{
-                      fontFamily: 'var(--font-dm-mono, monospace)',
-                      fontSize: '11px',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.1em',
-                      color: '#AFA792',
-                      margin: '0 0 10px',
-                    }}
-                  >
-                    {label}
-                  </p>
-                  <p
-                    style={{
-                      fontFamily: 'var(--font-serif, serif)',
-                      fontSize: '15px',
-                      color: '#B8B2A0',
-                      lineHeight: 1.65,
-                      margin: 0,
-                    }}
-                  >
-                    {body}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div
-            className="flex flex-wrap items-center justify-between gap-4"
-            style={{
-              borderTop: '1px solid rgba(232, 228, 216, 0.12)',
-              paddingTop: '22px',
-            }}
-          >
-            <div className="flex flex-wrap gap-2">
-              {['RBAC', 'Rate limits', 'Chunked CSV processing', 'SOC 2 audit in progress'].map((item) => (
-                <span
-                  key={item}
-                  style={{
-                    fontFamily: 'var(--font-dm-mono, monospace)',
-                    fontSize: '11px',
-                    color: '#B8B2A0',
-                    letterSpacing: '0.06em',
-                    border: '1px solid rgba(232, 228, 216, 0.12)',
-                    background: 'rgba(232, 228, 216, 0.045)',
-                    padding: '7px 10px',
-                  }}
-                >
-                  {item}
-                </span>
-              ))}
-            </div>
-            <p
-              style={{
-                fontFamily: 'var(--font-serif, serif)',
-                fontStyle: 'italic',
-                fontSize: '15px',
-                color: '#8A8472',
-                lineHeight: 1.5,
-                margin: 0,
-              }}
-            >
-              DPA available at{' '}
-              <a href="/legal/dpa" style={{ color: '#E8E4D8', textDecoration: 'underline' }}>
-                /legal/dpa
-              </a>
-              . Countersigned copy returned within two business days.
-            </p>
-          </div>
-        </div>
       </section>
 
       {/* ── §8 · Comparison matrix ──────────────────────────────── */}
@@ -1351,7 +1090,7 @@ export default function LandingPage() {
               fontWeight: 600,
               letterSpacing: '0.16em',
               textTransform: 'uppercase',
-              color: '#7B2D26',
+              color: t.accent,
               marginBottom: '12px',
             }}
           >
@@ -1364,7 +1103,7 @@ export default function LandingPage() {
               fontWeight: 500,
               letterSpacing: '-0.02em',
               lineHeight: 1.05,
-              color: '#1A1814',
+              color: t.ink,
               marginBottom: '10px',
               maxWidth: '760px',
             }}
@@ -1375,7 +1114,7 @@ export default function LandingPage() {
             style={{
               fontFamily: 'var(--font-serif, serif)',
               fontSize: 'clamp(15px, 1.1vw, 17px)',
-              color: '#4A4640',
+              color: t.inkSecondary,
               lineHeight: 1.55,
               maxWidth: '640px',
               margin: 0,
@@ -1391,53 +1130,134 @@ export default function LandingPage() {
             { cap: 'Resolves cross-merchant identity',       a: 'no',      b: 'no',      c: 'yes', note: '7+ stores observed per cluster' },
             { cap: 'Catches friendly fraud / INR cycles',    a: 'no',      b: 'partial', c: 'yes', note: 'post-purchase patterns' },
             { cap: 'Surfaces network-known abusers',         a: 'partial', b: 'no',      c: 'yes', note: 'k-anon gated at 3+ merchants' },
-            { cap: 'Explainable signals (no black box)',     a: 'yes',     b: 'no',      c: 'yes', note: 'every flag documented' },
+            { cap: 'Explainable signals (no black box)',     a: 'partial', b: 'no',      c: 'yes', note: 'every flag documented' },
             { cap: 'Generates representment-ready case file', a: 'no',      b: 'no',      c: 'yes', note: 'chargeback evidence packet' },
-            { cap: 'Requires checkout integration',          a: 'no',      b: 'yes',     c: 'no',  note: 'CSV is enough' },
-            { cap: 'Auto-declines orders for you',           a: 'yes',     b: 'yes',     c: 'no',  note: 'you keep the decision' },
-            { cap: 'PII leaves the merchant in clear text',  a: 'yes',     b: 'yes',     c: 'no',  note: 'client-side HMAC-SHA256' },
+            { cap: 'Works from CSV upload — no code required', a: 'no',    b: 'no',      c: 'yes', note: 'start with exports you already have' },
+            { cap: 'You keep the decline decision — no black box blocks', a: 'no', b: 'no', c: 'yes', note: 'advises, never auto-blocks' },
+            { cap: 'PII stays encrypted — never exposed in transit', a: 'no', b: 'no', c: 'yes', note: 'client-side HMAC-SHA256' },
           ];
-          const icon = (v: string) => v === 'yes'
-            ? <span style={{ color: '#1A1814', fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '14px' }}>●</span>
-            : v === 'partial'
-              ? <span style={{ color: '#8A8472', fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '14px' }}>◐</span>
-              : <span style={{ color: '#D8D0BD', fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '14px' }}>○</span>;
-          const iconLabel = (v: string) => v === 'yes' ? 'Supported' : v === 'partial' ? 'Partial' : 'Not supported';
+          const indicator = (v: string, highlight = false) => {
+            const baseStyle: CSSProperties = {
+              width: '18px',
+              height: '18px',
+              borderRadius: '999px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontFamily: 'var(--font-dm-mono, monospace)',
+              fontSize: '11px',
+              lineHeight: 1,
+              flexShrink: 0,
+            };
+
+            if (v === 'yes') {
+              return (
+                <span
+                  aria-hidden="true"
+                  style={{
+                    ...baseStyle,
+                    background: highlight ? t.accent : t.ink,
+                    border: `1px solid ${highlight ? t.accent : t.ink}`,
+                    color: t.bg,
+                  }}
+                >
+                  ●
+                </span>
+              );
+            }
+
+            if (v === 'partial') {
+              return (
+                <span
+                  aria-hidden="true"
+                  style={{
+                    ...baseStyle,
+                    width: '20px',
+                    height: '20px',
+                    background: t.surfacePink2,
+                    border: `1.5px solid ${t.accent}`,
+                    color: t.accent,
+                    fontSize: '15px',
+                    fontWeight: 700,
+                  }}
+                >
+                  −
+                </span>
+              );
+            }
+
+            return (
+              <span
+                aria-hidden="true"
+                style={{
+                  ...baseStyle,
+                  background: 'transparent',
+                  border: `1px solid ${t.border}`,
+                  color: t.border,
+                }}
+              >
+                ○
+              </span>
+            );
+          };
+          const iconLabel = (v: string) => v === 'yes' ? 'Included' : v === 'partial' ? 'Partial coverage' : 'Not included';
 
           return (
             <>
               {/* ── Desktop / tablet grid (hidden below sm) ── */}
-              <div className="hidden sm:block ua-glass-card" suppressHydrationWarning style={{ border: '1px solid #D8D0BD', background: 'rgba(253, 251, 246, 0.92)', overflow: 'hidden' }}>
+              <div className="hidden sm:block ua-glass-card" suppressHydrationWarning style={{ border: `1px solid ${t.border}`, background: 'rgba(253, 251, 246, 0.92)', overflow: 'hidden' }}>
                 {/* Header row */}
                 <div
                   className="grid grid-cols-[1.6fr_1fr_1fr_1fr]"
                   style={{
                     background: 'linear-gradient(90deg, rgba(248,245,238,0.96), rgba(255,234,190,0.62), rgba(244,232,229,0.94))',
-                    borderBottom: '1px solid #D8D0BD',
+                    borderBottom: `1px solid ${t.border}`,
                   }}
                 >
                   <div style={{ padding: '14px 18px' }}>
-                    <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10.5px', color: '#8A8472', textTransform: 'uppercase', letterSpacing: '0.14em' }}>
-                      Capability
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '14px', flexWrap: 'wrap' }}>
+                      <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10.5px', color: t.inkTertiary, textTransform: 'uppercase', letterSpacing: '0.14em' }}>
+                        Capability
+                      </span>
+                      <div className="flex items-center gap-4 flex-wrap" style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10.5px', color: t.inkTertiary }}>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                          {indicator('yes', true)}
+                          Included
+                        </span>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                          {indicator('partial')}
+                          Partial
+                        </span>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                          {indicator('no')}
+                          Not included
+                        </span>
+                      </div>
+                    </div>
                   </div>
                   {[
-                    { name: 'Blocklists', sub: 'email · IP · device' },
-                    { name: 'Checkout scoring', sub: 'card testing · CNP' },
-                    { name: 'Unauth', sub: 'post-purchase graph', highlight: true },
+                    { name: 'Blocklists', sub: 'Flags repeat emails, IPs, or devices you have already seen' },
+                    { name: 'Checkout scoring', sub: 'Scores orders at checkout to catch payment fraud before approval' },
+                    { name: 'Unauth', sub: 'Finds post-purchase abuse patterns across refunds, INR, and linked stores', highlight: true, logo: true },
                   ].map((col) => (
                     <div
                       key={col.name}
                       style={{
                         padding: '14px 16px',
-                        borderLeft: '1px solid #D8D0BD',
-                        background: col.highlight ? '#F4E8E5' : 'transparent',
+                        borderLeft: `1px solid ${t.border}`,
+                        background: col.highlight ? 'linear-gradient(180deg, rgba(123,45,38,0.10), rgba(123,45,38,0.04))' : 'transparent',
                       }}
                     >
-                      <p style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '14px', fontWeight: 600, color: col.highlight ? '#7B2D26' : '#1A1814', margin: 0 }}>
-                        {col.name}
-                      </p>
-                      <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10.5px', color: '#8A8472', margin: '2px 0 0 0', letterSpacing: '0.04em' }}>
+                      {col.logo ? (
+                        <div style={{ marginBottom: '2px' }}>
+                          <UnauthLogo className="h-[16px] w-auto" />
+                        </div>
+                      ) : (
+                        <p style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '14px', fontWeight: 600, color: col.highlight ? t.accent : t.ink, margin: 0 }}>
+                          {col.name}
+                        </p>
+                      )}
+                      <p style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '11.5px', color: t.inkSecondary, margin: '4px 0 0 0', lineHeight: 1.45 }}>
                         {col.sub}
                       </p>
                     </div>
@@ -1449,45 +1269,50 @@ export default function LandingPage() {
                     key={i}
                     delay={60 + i * 50}
                     className="grid grid-cols-[1.6fr_1fr_1fr_1fr]"
-                    style={{ borderBottom: i < 7 ? '1px solid #ECE5D4' : 'none', background: '#FDFBF6' }}
+                    style={{ borderBottom: i < 7 ? `1px solid ${t.border}` : 'none', background: t.surfaceWarm }}
                   >
                     <div style={{ padding: '14px 18px' }}>
-                      <p style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '14px', color: '#1A1814', margin: 0, fontWeight: 500 }}>
+                      <p style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '14px', color: t.ink, margin: 0, fontWeight: 500 }}>
                         {cap}
                       </p>
-                      <p style={{ fontFamily: 'var(--font-serif, serif)', fontStyle: 'italic', fontSize: '12.5px', color: '#8A8472', margin: '2px 0 0 0' }}>
+                      <p style={{ fontFamily: 'var(--font-serif, serif)', fontStyle: 'italic', fontSize: '12.5px', color: t.inkTertiary, margin: '2px 0 0 0' }}>
                         {note}
                       </p>
                     </div>
-                    <div style={{ padding: '14px 16px', borderLeft: '1px solid #ECE5D4', display: 'flex', alignItems: 'center' }}>{icon(a)}</div>
-                    <div style={{ padding: '14px 16px', borderLeft: '1px solid #ECE5D4', display: 'flex', alignItems: 'center' }}>{icon(b)}</div>
-                    <div style={{ padding: '14px 16px', borderLeft: '1px solid #ECE5D4', background: '#FBF4F2', display: 'flex', alignItems: 'center' }}>{icon(c)}</div>
+                    <div style={{ padding: '14px 16px', borderLeft: `1px solid ${t.border}`, display: 'flex', alignItems: 'center' }}>{indicator(a)}</div>
+                    <div style={{ padding: '14px 16px', borderLeft: `1px solid ${t.border}`, display: 'flex', alignItems: 'center' }}>{indicator(b)}</div>
+                    <div style={{ padding: '14px 16px', borderLeft: `1px solid ${t.border}`, background: 'linear-gradient(180deg, rgba(123,45,38,0.08), rgba(123,45,38,0.03))', display: 'flex', alignItems: 'center' }}>{indicator(c, true)}</div>
                   </Reveal>
                 ))}
               </div>
 
               {/* ── Mobile stacked cards (hidden above sm) ── */}
-              <div className="sm:hidden" style={{ border: '1px solid #D8D0BD', background: '#FDFBF6' }}>
+              <div className="sm:hidden" style={{ border: `1px solid ${t.border}`, background: t.surfaceWarm }}>
+                <div style={{ padding: '14px 18px', borderBottom: `1px solid ${t.border}`, display: 'flex', gap: '10px', flexWrap: 'wrap', fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10.5px', color: t.inkTertiary }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>{indicator('yes', true)} Included</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>{indicator('partial')} Partial</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>{indicator('no')} Not included</span>
+                </div>
                 {rows.map(({ cap, a, b, c, note }, i) => (
                   <Reveal
                     key={`m-${i}`}
                     delay={60 + i * 50}
                     style={{
                       padding: '16px 18px',
-                      borderBottom: i < 7 ? '1px solid #ECE5D4' : 'none',
+                      borderBottom: i < 7 ? `1px solid ${t.border}` : 'none',
                     }}
                   >
-                    <p style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '14px', color: '#1A1814', fontWeight: 500, marginBottom: '2px' }}>
+                    <p style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '14px', color: t.ink, fontWeight: 500, marginBottom: '2px' }}>
                       {cap}
                     </p>
-                    <p style={{ fontFamily: 'var(--font-serif, serif)', fontStyle: 'italic', fontSize: '12px', color: '#8A8472', marginBottom: '12px' }}>
+                    <p style={{ fontFamily: 'var(--font-serif, serif)', fontStyle: 'italic', fontSize: '12px', color: t.inkTertiary, marginBottom: '12px' }}>
                       {note}
                     </p>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       {[
-                        { label: 'Blocklists', val: a },
-                        { label: 'Checkout scoring', val: b },
-                        { label: 'Unauth', val: c, highlight: true },
+                        { label: 'Blocklists', val: a, sub: 'Flags known emails, IPs, or devices' },
+                        { label: 'Checkout scoring', val: b, sub: 'Scores orders before approval' },
+                        { label: 'Unauth', val: c, sub: 'Finds post-purchase abuse across stores', highlight: true },
                       ].map(({ label, val, highlight }) => (
                         <div
                           key={label}
@@ -1496,21 +1321,26 @@ export default function LandingPage() {
                             gridTemplateColumns: '1fr auto',
                             alignItems: 'center',
                             padding: '8px 12px',
-                            background: highlight ? '#FBF4F2' : '#F8F5EE',
-                            border: `1px solid ${highlight ? '#E3C9C3' : '#ECE5D4'}`,
+                            background: highlight ? t.surfaceWarm2 : t.bg,
+                            border: `1px solid ${highlight ? t.borderWarm : t.border}`,
                           }}
                         >
-                          <span style={{
-                            fontFamily: 'var(--font-dm-sans, sans-serif)',
-                            fontSize: '13px',
-                            fontWeight: highlight ? 600 : 400,
-                            color: highlight ? '#7B2D26' : '#4A4640',
-                          }}>
-                            {label}
-                          </span>
-                          <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11px', color: '#4A4640' }}>
-                            {icon(val)}
-                            <span style={{ color: '#8A8472' }}>{iconLabel(val)}</span>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                            <span style={{
+                              fontFamily: 'var(--font-dm-sans, sans-serif)',
+                              fontSize: '13px',
+                              fontWeight: highlight ? 600 : 400,
+                              color: highlight ? t.accent : t.inkSecondary,
+                            }}>
+                              {label}
+                            </span>
+                            <span style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '11.5px', color: t.inkTertiary, lineHeight: 1.4 }}>
+                              {label === 'Blocklists' ? 'Flags known emails, IPs, or devices' : label === 'Checkout scoring' ? 'Scores orders before approval' : 'Finds post-purchase abuse across stores'}
+                            </span>
+                          </div>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11px', color: t.inkSecondary }}>
+                            {indicator(val, Boolean(highlight))}
+                            <span style={{ color: t.inkTertiary }}>{iconLabel(val)}</span>
                           </span>
                         </div>
                       ))}
@@ -1521,92 +1351,10 @@ export default function LandingPage() {
             </>
           );
         })()}
-
-        <div className="flex items-center gap-5 mt-5 flex-wrap" style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11px', color: '#8A8472' }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ color: '#1A1814', fontSize: '14px' }}>●</span> supported
-          </span>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ color: '#8A8472', fontSize: '14px' }}>◐</span> partial
-          </span>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ color: '#D8D0BD', fontSize: '14px' }}>○</span> not supported
-          </span>
-        </div>
       </section>
 
-      {/* ── §9 · CTA ─────────────────────────────────────────────── */}
-      <section id="audit" style={{ scrollMarginTop: '72px' }} className="ua-audit-canvas mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-20 pb-12 md:pb-16" suppressHydrationWarning>
-        <div
-          className="ua-dark-panel"
-         
-          suppressHydrationWarning
-          style={{
-            background: '#15140F',
-            color: '#E8E4D8',
-            padding: 'clamp(40px, 5vw, 64px) clamp(28px, 4vw, 56px)',
-            border: '1px solid #15140F',
-            boxShadow: '0 34px 86px -46px rgba(26,24,20,0.42)',
-          }}
-        >
-          {/* Sparse rust-colored meteors — restricted to action-zone palette */}
-          <Meteors number={6} color="#B85C4A" />
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-            <div className="lg:col-span-7">
-              <p
-                style={{
-                  fontFamily: 'var(--font-dm-sans, sans-serif)',
-                  fontSize: '11px',
-                  fontWeight: 600,
-                  letterSpacing: '0.16em',
-                  textTransform: 'uppercase',
-                  color: '#7B2D26',
-                  marginBottom: '14px',
-                }}
-              >
-                § 9 — RUN AN AUDIT
-              </p>
-              <h2
-                style={{
-                  fontFamily: 'var(--font-dm-sans, sans-serif)',
-                  fontSize: 'clamp(32px, 3.4vw, 48px)',
-                  fontWeight: 500,
-                  letterSpacing: '-0.025em',
-                  lineHeight: 1.05,
-                  color: '#E8E4D8',
-                  marginBottom: '18px',
-                }}
-              >
-                Find hidden abuse in{' '}
-                <span style={{ color: '#7B2D26' }}>
-                  your own data
-                </span>
-                .
-              </h2>
-              <p
-                style={{
-                  fontFamily: 'var(--font-serif, serif)',
-                  fontSize: 'clamp(16px, 1.2vw, 18px)',
-                  lineHeight: 1.55,
-                  color: '#B8B2A0',
-                  maxWidth: '560px',
-                  margin: 0,
-                }}
-              >
-                Upload a CSV. Get linked identities, risk scores, refund-abuse clusters, and case files in about 20 minutes.
-              </p>
-            </div>
-
-            <div className="lg:col-span-5">
-              <AuditForm />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── § NOTES ─────────────────────────────────────────────── */}
-      <section className="mx-auto max-w-[1400px] px-6 md:px-10 pt-12 md:pt-16 pb-10">
-
+      {/* ── FAQ ─────────────────────────────────────────────────── */}
+      <section className="mx-auto max-w-[1400px] px-6 md:px-10 pt-12 md:pt-16 pb-4">
         <p
           style={{
             fontFamily: 'var(--font-dm-mono, monospace)',
@@ -1614,57 +1362,78 @@ export default function LandingPage() {
             fontWeight: 500,
             letterSpacing: '0.16em',
             textTransform: 'uppercase',
-            color: '#7B2D26',
-            marginBottom: '24px',
+            color: t.accent,
+            marginBottom: '20px',
           }}
         >
-          § NOTES &amp; SOURCES
+          § FREQUENT QUESTIONS
         </p>
 
-        <ol
-          style={{
-            listStyle: 'none',
-            padding: 0,
-            margin: 0,
-            fontFamily: 'var(--font-serif, serif)',
-            fontSize: '14px',
-            color: '#4A4640',
-            lineHeight: 1.65,
-          }}
+        <SectionCard
+          title="Merchant FAQ"
+          description="Direct answers on data, privacy, and rollout"
+          className="overflow-hidden"
         >
-          {[
-            [1, 'Names and identifiers are redacted. The cluster ID format, evidence hierarchy, and signal patterns match the case-file structure Unauth returns.'],
-            [2, 'INR = Item Not Received. The most common chargeback reason code abused at scale in DTC ecommerce.'],
-            [3, 'Visa, Friendly Fraud Annual Index, 2024. Includes refund abuse and INR fraud across all card types.'],
-            [4, 'Industry estimates sourced from Visa and Mastercard published fraud data. Unauth network figures will be published once the founding merchant cohort is live.'],
-            [5, 'Mastercard Merchant Survey, 2024. True cost includes fulfilment, reversed acquisition spend, and dispute fees.'],
-            [6, 'Hashing is performed client-side using a per-merchant salt that Unauth never sees. The hashed values are queried against the network; raw PII never leaves the merchant’s browser.'],
-            [7, 'The profiles in §5 show the audit output shape. Merchant names are omitted.'],
-          ].map(([n, text]) => (
-            <li
-              key={n}
-              id={`note-${n}`}
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '1.8rem 1fr',
-                gap: '0 8px',
-                marginBottom: '16px',
-              }}
-            >
-              <span
+          <div
+            className="grid grid-cols-1 gap-3"
+            style={{
+              background: t.darkBg,
+              padding: '10px',
+              borderRadius: '6px',
+            }}
+          >
+            {[...faqFeatured, ...faqMore].map((item) => (
+              <details
+                key={item.q}
                 style={{
-                  fontFamily: 'var(--font-dm-mono, monospace)',
-                  fontSize: '13px',
-                  color: '#7B2D26',
-                  paddingTop: '2px',
+                  background: t.darkShell2,
+                  border: `1px solid ${t.darkBorder}`,
+                  padding: '14px 16px',
+                  color: '#E8E4D8',
                 }}
               >
-                {n}
-              </span>
-              <span>{text as string}</span>
-            </li>
-          ))}
-        </ol>
+                <summary
+                  style={{
+                    cursor: 'pointer',
+                    listStyle: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '12px',
+                    fontFamily: 'var(--font-dm-sans, sans-serif)',
+                    fontSize: '15px',
+                    fontWeight: 500,
+                    color: '#E8E4D8',
+                  }}
+                >
+                  <span>{item.q}</span>
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      fontFamily: 'var(--font-dm-mono, monospace)',
+                      fontSize: '13px',
+                      color: '#B8B2A0',
+                      flexShrink: 0,
+                    }}
+                  >
+                    +
+                  </span>
+                </summary>
+                <p
+                  style={{
+                    margin: '10px 0 0',
+                    fontFamily: 'var(--font-serif, serif)',
+                    fontSize: '14px',
+                    lineHeight: 1.6,
+                    color: '#CFC7B6',
+                  }}
+                >
+                  {item.a}
+                </p>
+              </details>
+            ))}
+          </div>
+        </SectionCard>
       </section>
 
       {/* ── Footer ──────────────────────────────────────────────── */}
@@ -1674,7 +1443,7 @@ export default function LandingPage() {
           style={{
             fontFamily: 'var(--font-dm-sans, sans-serif)',
             fontSize: '12px',
-            color: '#4A4640',
+            color: t.inkSecondary,
           }}
         >
           <p
@@ -1682,7 +1451,7 @@ export default function LandingPage() {
               fontFamily: 'var(--font-serif, serif)',
               fontStyle: 'italic',
               fontSize: '12px',
-              color: '#8A8472',
+              color: t.inkTertiary,
               margin: '0 0 12px',
               width: '100%',
             }}
@@ -1691,15 +1460,15 @@ export default function LandingPage() {
           </p>
           <span>
             Unauth ·{' '}
-            <a href="/legal/privacy" style={{ color: '#4A4640' }} className="hover:underline">privacy</a>
+            <a href="/legal/privacy" style={{ color: t.inkSecondary }} className="hover:underline">privacy</a>
             {' · '}
-            <a href="/legal/dpa" style={{ color: '#4A4640' }} className="hover:underline">DPA</a>
+            <a href="/legal/dpa" style={{ color: t.inkSecondary }} className="hover:underline">DPA</a>
             {' · '}
-            <a href="/legal/data-handling" style={{ color: '#4A4640' }} className="hover:underline">data handling</a>
+            <a href="/legal/data-handling" style={{ color: t.inkSecondary }} className="hover:underline">data handling</a>
           </span>
           <a
             href="mailto:hello@unauth.app"
-            style={{ color: '#4A4640' }}
+            style={{ color: t.inkSecondary }}
             className="hover:underline"
           >
             hello@unauth.app

@@ -291,6 +291,97 @@
     --logo-dot: #8A2828;
 
     /* ══════════════════════════════════════════════════════════════════════
+     * LANDING PAGE TOKENS
+     * Single source of truth for all landing-specific design values.
+     * Referenced via _tokens.ts — never hardcode these values in components.
+     * ═════════════════════════════════════════════════════════════════════ */
+
+    /* Ink — warm grey scale (distinct from app's --text-* blue-grey scale) */
+    --landing-ink:           var(--brand-ink);   /* #1A1814 */
+    --landing-ink-secondary: #4A4640;
+    --landing-ink-tertiary:  #8A8472;
+    --landing-ink-muted:     #6B655C;
+    --landing-ink-faint:     #A09889;
+
+    /* Surfaces */
+    --landing-bg:      var(--brand-paper);       /* #F8F5EE — page canvas */
+    --landing-paper:   #FFFFFF;                  /* pure white panels */
+    --landing-cream:   #F5F1EA;                  /* subtle warm cream */
+    --landing-cream-2: #EBE5D8;                  /* tab bar bg, cream darker */
+
+    /* Lines / borders */
+    --landing-line:        #E5DFCF;
+    --landing-line-faint:  #EFEADD;
+    --landing-border:      var(--border-default); /* #D8D0BD */
+
+    /* Accent — burgundy (aliases of brand tokens) */
+    --landing-accent:       var(--brand-rust);       /* #7B2D26 */
+    --landing-accent-hover: var(--brand-rust-hover); /* #5E2018 */
+    --landing-accent-fg:    var(--brand-paper);      /* text/icon on accent bg */
+
+    /* Dark section (§1 + audit form) */
+    --landing-dark-bg:     #15140F;
+    --landing-dark-card:   #1C1612;
+    --landing-dark-border: #2B2922;
+    --landing-dark-border-2: #5A5548; /* slightly lighter dark border */
+    --landing-dark-text:   #D4C7AF;
+    --landing-dark-label:  #B7A98D;
+    --landing-dark-subtle: #5A5650;   /* very dark muted text */
+    --landing-dark-bright: #E8E4D8;   /* near-white on dark inputs */
+    --landing-dark-warm:   #C8BAA4;   /* ticker / notification text */
+    --landing-dark-muted:  #B8B2A0;   /* mid-muted warm text on dark */
+    --landing-dark-dim:    #BDB6A3;   /* dimmer warm text */
+    --landing-dark-faint:  #AFA792;   /* faintest warm text */
+
+    /* Security section (§7 — deepest dark) */
+    --landing-security-bg:       #10100C;   /* near-black base */
+    --landing-security-bg-2:     #17150F;   /* gradient mid */
+    --landing-security-bg-3:     #1D1912;   /* gradient highlight */
+    --landing-security-accent:   #D9795F;   /* copper/rust highlight */
+    --landing-security-accent-2: #B85C4A;   /* darker copper */
+
+    /* Warm surfaces (comparison table, feature rows) */
+    --landing-surface-warm:    #FDFBF6;   /* near-white warm */
+    --landing-surface-warm-2:  #FBF4F2;   /* warm pink-tinted white */
+    --landing-surface-pink:    #F8F0EE;   /* gradient start */
+    --landing-surface-pink-2:  #F4E8E5;   /* gradient end / highlight */
+    --landing-border-warm:     #E3C9C3;   /* warm pink border */
+
+    /* Form error */
+    --landing-error-fg: #F3A89C;   /* error text on dark bg */
+
+    /* Extended dark palette (MerchantDashboard, NetworkChart) */
+    --landing-dark-shell-2:   #1A1914;         /* shell variant, slightly warmer than dark-card */
+    --landing-dark-bg-deep:   #0F0E0B;         /* deepest near-black (NetworkChart bg) */
+    --landing-dark-mid:       #A59F8E;         /* mid-warm label (NetworkChart axis text) */
+    --landing-amber:          #C07838;         /* amber/orange warning */
+    --landing-orange:         #D67448;         /* orange trend indicator */
+    --landing-green-bright:   #3A7A40;         /* bright green status dot */
+    --landing-accent-dark:    #A85040;         /* darker rust (hashing active state) */
+    /* Card surface overlays — rgba so opacity is preserved */
+    --landing-card-bg:        rgba(22,21,16,0.96);   /* glass card background */
+    --landing-card-hd:        rgba(15,14,10,0.65);   /* card header tint */
+    --landing-card-bd:        rgba(48,44,36,0.9);    /* card border alpha */
+    --landing-card-hb:        rgba(48,44,36,0.7);    /* card header border alpha */
+
+    /* Semantic fills */
+    --landing-surface-alt:   var(--bg-surface-alt);  /* #F2EDE3 */
+    --landing-screenshot-bg: #F0EBE0;
+    --landing-green-fg:      #2A5E3A;
+    --landing-green-bg:      rgba(40, 100, 60, 0.08);
+    --landing-warn-fg:       #8A4010;
+    --landing-warn-bg:       rgba(160, 80, 30, 0.08);
+
+    /* Radius — canonical card radius used across landing */
+    --landing-radius: var(--radius-md);              /* 6px */
+
+    /* Shadows — landing-specific depth levels */
+    --landing-shadow-card:  0 2px 4px rgba(26,24,20,0.04), 0 8px 24px rgba(26,24,20,0.08), 0 24px 48px rgba(26,24,20,0.08);
+    --landing-shadow-panel: 0 22px 54px -26px rgba(26,24,20,0.18), 0 44px 96px -48px rgba(123,45,38,0.10);
+    --landing-shadow-hero:  0 1px 0 rgba(123,45,38,0.10), 0 4px 12px -4px rgba(123,45,38,0.08), 0 28px 68px -24px rgba(26,24,20,0.18), 0 62px 130px -54px rgba(123,45,38,0.14);
+    --landing-shadow-cta:   0 1px 0 #7B2D26, 0 8px 24px -12px rgba(123,45,38,0.40);
+
+    /* ══════════════════════════════════════════════════════════════════════
      * Direction A — Espresso dark mode primary
      * Canonical tokens from the redesign brief. The legacy aliases below
      * intentionally point back to these values so old components inherit the
@@ -1153,6 +1244,7 @@
 .ua-dark-panel {
   position: relative;
   overflow: hidden;
+  border-radius: 6px;
 }
 
 .ua-glass-card::before {

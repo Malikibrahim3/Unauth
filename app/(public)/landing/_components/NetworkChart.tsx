@@ -1,3 +1,5 @@
+import { t } from '../_tokens';
+
 const data = [
   { week: 'W01', clusters: 612,  abusers: 92  },
   { week: 'W02', clusters: 894,  abusers: 154 },
@@ -56,8 +58,8 @@ export default function NetworkChart() {
   return (
     <div
       style={{
-        border: '1px solid #2B2922',
-        background: '#0F0E0B',
+        border: `1px solid ${t.darkBorder}`,
+        background: t.darkBgDeep,
         padding: '20px 16px 8px',
       }}
     >
@@ -77,7 +79,7 @@ export default function NetworkChart() {
             fontSize: '11px',
             letterSpacing: '0.1em',
             textTransform: 'uppercase',
-            color: '#8A8472',
+            color: t.inkTertiary,
             margin: 0,
           }}
         >
@@ -90,15 +92,15 @@ export default function NetworkChart() {
             gap: '20px',
             fontFamily: 'var(--font-dm-mono, monospace)',
             fontSize: '11px',
-            color: '#A59F8E',
+            color: t.darkMid,
           }}
         >
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ width: 10, height: 1, background: '#E8E4D8', display: 'inline-block' }} />
+            <span style={{ width: 10, height: 1, background: t.darkBright, display: 'inline-block' }} />
             identity clusters
           </span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ width: 10, height: 1, background: '#7B2D26', display: 'inline-block' }} />
+            <span style={{ width: 10, height: 1, background: t.accent, display: 'inline-block' }} />
             network coverage
           </span>
         </div>
@@ -107,20 +109,20 @@ export default function NetworkChart() {
       <svg viewBox={`0 0 ${chart.width} ${chart.height}`} role="img" aria-label="Projected identity clusters and network coverage over 12 weeks" style={{ display: 'block', width: '100%', height: 240 }}>
         <defs>
           <linearGradient id="cluster-line" x1="0" x2="1" y1="0" y2="0">
-            <stop offset="0%" stopColor="#8A8472" />
-            <stop offset="100%" stopColor="#E8E4D8" />
+            <stop offset="0%" stopColor="var(--landing-ink-tertiary)" />
+            <stop offset="100%" stopColor="var(--landing-dark-bright)" />
           </linearGradient>
           <linearGradient id="abuser-line" x1="0" x2="1" y1="0" y2="0">
-            <stop offset="0%" stopColor="#7B2D26" />
-            <stop offset="100%" stopColor="#D67448" />
+            <stop offset="0%" stopColor="var(--landing-accent)" />
+            <stop offset="100%" stopColor="var(--landing-orange)" />
           </linearGradient>
           <linearGradient id="cluster-area" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stopColor="#E8E4D8" stopOpacity="0.14" />
-            <stop offset="100%" stopColor="#E8E4D8" stopOpacity="0" />
+            <stop offset="0%" stopColor="var(--landing-dark-bright)" stopOpacity="0.14" />
+            <stop offset="100%" stopColor="var(--landing-dark-bright)" stopOpacity="0" />
           </linearGradient>
           <linearGradient id="abuser-area" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stopColor="#7B2D26" stopOpacity="0.22" />
-            <stop offset="100%" stopColor="#7B2D26" stopOpacity="0" />
+            <stop offset="0%" stopColor="var(--landing-accent)" stopOpacity="0.22" />
+            <stop offset="100%" stopColor="var(--landing-accent)" stopOpacity="0" />
           </linearGradient>
         </defs>
 
@@ -142,8 +144,8 @@ export default function NetworkChart() {
           const tickY = yPosition(value);
           return (
             <g key={value}>
-              <line x1={chart.left} x2={chart.width - chart.right} y1={tickY} y2={tickY} stroke="#2B2922" strokeWidth="1" />
-              <text x={chart.left - 12} y={tickY + 4} textAnchor="end" fill="#8A8472" fontFamily="var(--font-dm-mono, monospace)" fontSize="11">
+              <line x1={chart.left} x2={chart.width - chart.right} y1={tickY} y2={tickY} stroke="var(--landing-dark-border)" strokeWidth="1" />
+              <text x={chart.left - 12} y={tickY + 4} textAnchor="end" fill="var(--landing-ink-tertiary)" fontFamily="var(--font-dm-mono, monospace)" fontSize="11">
                 {formatTick(value)}
               </text>
             </g>
@@ -154,7 +156,7 @@ export default function NetworkChart() {
           const dataIndex = index * 2;
           const tickX = xPosition(dataIndex);
           return (
-            <text key={point.week} x={tickX} y={chart.height - 10} textAnchor="middle" fill="#8A8472" fontFamily="var(--font-dm-mono, monospace)" fontSize="11">
+            <text key={point.week} x={tickX} y={chart.height - 10} textAnchor="middle" fill="var(--landing-ink-tertiary)" fontFamily="var(--font-dm-mono, monospace)" fontSize="11">
               {point.week}
             </text>
           );
@@ -201,16 +203,16 @@ export default function NetworkChart() {
           x2={midX}
           y1={chart.top}
           y2={chart.height - chart.bottom}
-          stroke="#7B2D26"
+          stroke="var(--landing-accent)"
           strokeWidth="1"
           strokeDasharray="2 3"
           opacity="0.7"
         />
-        <circle cx={midX} cy={chart.top + 8} r="2.5" fill="#7B2D26" opacity="0.7" />
+        <circle cx={midX} cy={chart.top + 8} r="2.5" fill="var(--landing-accent)" opacity="0.7" />
         <text
           x={midX + 6}
           y={chart.top + 11}
-          fill="#7B2D26"
+          fill="var(--landing-accent)"
           fontFamily="var(--font-dm-mono, monospace)"
           fontSize="9.5"
           letterSpacing="0.02em"
@@ -225,10 +227,10 @@ export default function NetworkChart() {
         <path className="ua-draw" d={abuserPath} fill="none" stroke="url(#abuser-line)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ ['--ua-line-len' as string]: 1200, ['--ua-draw-delay' as string]: '260ms' }} />
 
         {[data[4], data[8], data[11]].map((point) => (
-          <circle key={point.week} cx={xPosition(data.indexOf(point))} cy={yPosition(point.clusters)} r="3.5" fill="#E8E4D8" />
+          <circle key={point.week} cx={xPosition(data.indexOf(point))} cy={yPosition(point.clusters)} r="3.5" fill="var(--landing-dark-bright)" />
         ))}
         {[data[5], data[9], data[11]].map((point) => (
-          <circle key={point.week} cx={xPosition(data.indexOf(point))} cy={yPosition(point.abusers)} r="3.5" fill="#7B2D26" />
+          <circle key={point.week} cx={xPosition(data.indexOf(point))} cy={yPosition(point.abusers)} r="3.5" fill="var(--landing-accent)" />
         ))}
       </svg>
     </div>
