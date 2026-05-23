@@ -12,7 +12,7 @@ import HeroNotificationArtifact from './_components/HeroNotificationArtifact';
 import VerdictTicker from './_components/VerdictTicker';
 import HeroAuditCta from './_components/HeroAuditCta';
 import { t } from './_tokens';
-import { SectionCard } from '@/components/ui';
+import { SectionCard } from '@/components/ui/SectionCard';
 
 export const metadata = {
   title: 'Unauth — Fraud Intelligence for Ecommerce',
