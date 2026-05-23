@@ -40,10 +40,18 @@ async function checkWatchlistAppearances(
   auditId: string,
   supabase: SupabaseClient
 ): Promise<void> {
+  const { data: merchant } = await supabase
+    .from('merchants')
+    .select('user_id')
+    .eq('id', merchantId)
+    .maybeSingle();
+  const ownerUserId = (merchant as { user_id?: string | null } | null)?.user_id ?? merchantId;
+
   const { data: watchlisted } = await supabase
     .from('watchlist_entries')
     .select('customer_profile_id')
-    .eq('merchant_id', merchantId);
+    .or(`merchant_id.eq.${ownerUserId},merchant_id.eq.${merchantId}`)
+    .eq('removed_by_merchant', false);
   if (!watchlisted || watchlisted.length === 0) return;
   const ids = (watchlisted as { customer_profile_id: string | null }[])
     .map((w) => w.customer_profile_id)

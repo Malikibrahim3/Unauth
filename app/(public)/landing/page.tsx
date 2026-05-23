@@ -4,10 +4,10 @@ import { Spotlight } from '@/components/ui/spotlight';
 import { AnimatedGridPattern } from '@/components/ui/animated-grid-pattern';
 import { Meteors } from '@/components/ui/meteors';
 import { BorderBeam } from '@/components/ui/border-beam';
-import { Lock, EyeOff, FileText, Scale } from 'lucide-react';
+import { EyeOff, FileText, Fingerprint, Lock, ShieldCheck } from 'lucide-react';
 import type { CSSProperties } from 'react';
 import PipelineTabs from './_components/PipelineTabs';
-import MerchantDashboard from './_components/MerchantDashboard';
+import LandingScreenshotFrame from './_components/LandingScreenshotFrame';
 import Reveal from './_components/Reveal';
 import Counter from './_components/Counter';
 import AnimatedBar from './_components/AnimatedBar';
@@ -1034,13 +1034,23 @@ export default function LandingPage() {
             Flagged identities, risk scores, evidence packets, and network exposure — all in one audit view.
           </p>
         </div>
-        <MerchantDashboard />
+        <LandingScreenshotFrame
+          src="/screenshots/dashboard.png"
+          alt="Unauth merchant dashboard with fraud rate, transaction volume, chargeback trend, and watchlist signals"
+          label="Live seeded dashboard"
+          tilt="right"
+        />
       </section>
 
       {/* ── §7 · Security & data handling (dark inversion) ─────── */}
       <section
         id="security"
-        style={{ background: '#15140F', color: '#E8E4D8', scrollMarginTop: '72px' }}
+        style={{
+          background:
+            'radial-gradient(circle at 12% 18%, rgba(184, 92, 74, 0.16), transparent 30rem), linear-gradient(135deg, #17150F 0%, #10100C 52%, #1D1912 100%)',
+          color: '#E8E4D8',
+          scrollMarginTop: '72px',
+        }}
         className="ua-network-canvas ua-parallax-field py-16 md:py-24"
         data-ua-parallax-depth="28"
         suppressHydrationWarning
@@ -1053,7 +1063,7 @@ export default function LandingPage() {
           className="text-[#B85C4A] [mask-image:radial-gradient(ellipse_70%_60%_at_50%_50%,white,transparent)]"
         />
         <div className="mx-auto max-w-[1400px] px-6 md:px-10">
-          <div className="flex items-end justify-between flex-wrap gap-4 mb-10">
+          <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-end mb-10 md:mb-14">
             <div>
               <p
                 style={{
@@ -1062,7 +1072,7 @@ export default function LandingPage() {
                   fontWeight: 600,
                   letterSpacing: '0.16em',
                   textTransform: 'uppercase',
-                  color: '#7B2D26',
+                  color: '#D9795F',
                   marginBottom: '12px',
                 }}
               >
@@ -1077,138 +1087,258 @@ export default function LandingPage() {
                   lineHeight: 1.05,
                   color: '#E8E4D8',
                   marginBottom: '10px',
-                  maxWidth: '720px',
+                  maxWidth: '760px',
                 }}
               >
-                Sensitive data is hashed in browser.
+                Built so raw customer data does not become the product.
               </h2>
               <p
                 style={{
-                  fontFamily: 'var(--font-dm-mono, monospace)',
-                  fontSize: '12px',
-                  color: '#8A8472',
+                  fontFamily: 'var(--font-serif, serif)',
+                  fontSize: 'clamp(15px, 1.15vw, 18px)',
+                  lineHeight: 1.6,
+                  color: '#BDB6A3',
+                  maxWidth: '650px',
                   margin: 0,
-                  letterSpacing: '0.06em',
                 }}
               >
-                HMAC-SHA256 · per-tenant salt · k-anonymity gated
+                Unauth is designed around minimisation: sensitive identifiers are transformed before analysis, network signals stay threshold-gated, and every access leaves an auditable trail.
               </p>
             </div>
-            <a
-              href="/legal/data-handling"
+
+            <div
+              className="ua-dark-panel"
               style={{
-                fontFamily: 'var(--font-dm-mono, monospace)',
-                fontSize: '11.5px',
-                color: '#E8E4D8',
-                padding: '8px 14px',
-                border: '1px solid #2B2922',
-                textDecoration: 'none',
-                letterSpacing: '0.06em',
-                background: '#1A1814',
+                border: '1px solid rgba(232, 228, 216, 0.12)',
+                background: 'rgba(21, 20, 15, 0.72)',
+                boxShadow: '0 28px 80px rgba(0,0,0,0.28)',
+                padding: '20px',
               }}
-              className="hover:bg-[#2B2922]"
             >
-              FULL CONTROLS DOC →
-            </a>
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <p
+                    style={{
+                      fontFamily: 'var(--font-dm-mono, monospace)',
+                      fontSize: '11px',
+                      color: '#D9795F',
+                      letterSpacing: '0.12em',
+                      textTransform: 'uppercase',
+                      margin: '0 0 8px',
+                    }}
+                  >
+                    Privacy boundary
+                  </p>
+                  <p
+                    style={{
+                      fontFamily: 'var(--font-dm-mono, monospace)',
+                      fontSize: '12px',
+                      color: '#8A8472',
+                      margin: 0,
+                      letterSpacing: '0.04em',
+                    }}
+                  >
+                    HMAC-SHA256 · per-tenant salt · k-anonymity gated
+                  </p>
+                </div>
+                <a
+                  href="/legal/data-handling"
+                  style={{
+                    fontFamily: 'var(--font-dm-mono, monospace)',
+                    fontSize: '11.5px',
+                    color: '#10100C',
+                    padding: '9px 14px',
+                    border: '1px solid #D9795F',
+                    textDecoration: 'none',
+                    letterSpacing: '0.06em',
+                    background: '#D9795F',
+                  }}
+                  className="hover:bg-[#E8E4D8] hover:border-[#E8E4D8]"
+                >
+                  FULL CONTROLS DOC →
+                </a>
+              </div>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-px" style={{ marginBottom: '40px', background: '#2B2922', border: '1px solid #2B2922' }}>
-            {([
-              {
-                Icon: Lock,
-                label: 'CLIENT-SIDE HASHING',
-                body: 'Email, phone, address, and card references are hashed before transmission. Unauth never sees raw values.',
-              },
-              {
-                Icon: EyeOff,
-                label: 'K-ANONYMITY GATING',
-                body: 'Cross-merchant signals surface only after a cluster clears the network threshold.',
-              },
-              {
-                Icon: FileText,
-                label: 'AUDIT LOGGING',
-                body: 'Every lookup is logged as a hashed record. No plaintext PII appears in audit logs.',
-              },
-              {
-                Icon: Scale,
-                label: 'LEGAL FRAMEWORK',
-                body: (
-                  <>
-                    DPA available at{' '}
-                    <a
-                      href="/legal/dpa"
-                      style={{ color: '#E8E4D8', textDecoration: 'underline' }}
+          <div className="grid gap-4 lg:grid-cols-[0.84fr_1.16fr]" style={{ marginBottom: '34px' }}>
+            <div
+              className="ua-dark-panel"
+              style={{
+                border: '1px solid rgba(232, 228, 216, 0.14)',
+                background: 'linear-gradient(180deg, rgba(232,228,216,0.07), rgba(232,228,216,0.025))',
+                padding: '28px',
+              }}
+            >
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  color: '#E8E4D8',
+                  marginBottom: '28px',
+                  fontFamily: 'var(--font-dm-mono, monospace)',
+                  fontSize: '11px',
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                }}
+              >
+                <ShieldCheck size={16} strokeWidth={1.6} color="#D9795F" />
+                Security posture
+              </div>
+              <div className="space-y-5">
+                {[
+                  ['01', 'Raw identifiers stay outside the network graph.'],
+                  ['02', 'Signals appear only when anonymity thresholds are met.'],
+                  ['03', 'Operator actions are recorded for review and export.'],
+                ].map(([step, copy]) => (
+                  <div key={step} className="grid grid-cols-[44px_1fr] gap-4 items-start">
+                    <span
+                      style={{
+                        display: 'grid',
+                        placeItems: 'center',
+                        width: '36px',
+                        height: '36px',
+                        border: '1px solid rgba(217, 121, 95, 0.38)',
+                        color: '#D9795F',
+                        fontFamily: 'var(--font-dm-mono, monospace)',
+                        fontSize: '11px',
+                        background: 'rgba(217, 121, 95, 0.08)',
+                      }}
                     >
-                      /legal/dpa
-                    </a>
-                    . Processing designed for UK GDPR compliance. Countersigned DPA returned within two business days on request.
-                  </>
-                ),
-              },
-            ] as const).map(({ Icon, label, body }) => (
-              <div key={label} className="ua-dark-panel" style={{ background: '#15140F', padding: '24px 24px 28px' }}>
+                      {step}
+                    </span>
+                    <p
+                      style={{
+                        fontFamily: 'var(--font-serif, serif)',
+                        fontSize: 'clamp(17px, 1.35vw, 21px)',
+                        lineHeight: 1.18,
+                        color: '#E8E4D8',
+                        margin: 0,
+                      }}
+                    >
+                      {copy}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {([
+                {
+                  Icon: Lock,
+                  label: 'Client-side hashing',
+                  body: 'Email, phone, address, and card references are transformed before transmission.',
+                },
+                {
+                  Icon: EyeOff,
+                  label: 'Thresholded network signals',
+                  body: 'Cross-merchant intelligence surfaces only after a cluster clears the privacy gate.',
+                },
+                {
+                  Icon: Fingerprint,
+                  label: 'Tenant-scoped secrets',
+                  body: 'Per-tenant salts keep each merchant boundary explicit and reduce reusable identifiers.',
+                },
+                {
+                  Icon: FileText,
+                  label: 'Plaintext-free audit logs',
+                  body: 'Every lookup is logged as a hashed record, with no raw customer values in access history.',
+                },
+              ] as const).map(({ Icon, label, body }) => (
                 <div
+                  key={label}
+                  className="ua-dark-panel"
                   style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    marginBottom: '14px',
+                    background: 'rgba(21, 20, 15, 0.68)',
+                    border: '1px solid rgba(232, 228, 216, 0.1)',
+                    padding: '24px 24px 26px',
                   }}
                 >
-                  <Icon size={16} strokeWidth={1.5} color="#7B2D26" />
+                  <div
+                    style={{
+                      width: '38px',
+                      height: '38px',
+                      display: 'grid',
+                      placeItems: 'center',
+                      border: '1px solid rgba(217, 121, 95, 0.28)',
+                      background: 'rgba(217, 121, 95, 0.08)',
+                      marginBottom: '18px',
+                    }}
+                  >
+                    <Icon size={17} strokeWidth={1.6} color="#D9795F" />
+                  </div>
                   <p
                     style={{
                       fontFamily: 'var(--font-dm-mono, monospace)',
                       fontSize: '11px',
                       textTransform: 'uppercase',
                       letterSpacing: '0.1em',
-                      color: '#8A8472',
-                      margin: 0,
+                      color: '#AFA792',
+                      margin: '0 0 10px',
                     }}
                   >
                     {label}
                   </p>
+                  <p
+                    style={{
+                      fontFamily: 'var(--font-serif, serif)',
+                      fontSize: '15px',
+                      color: '#B8B2A0',
+                      lineHeight: 1.65,
+                      margin: 0,
+                    }}
+                  >
+                    {body}
+                  </p>
                 </div>
-                <p
-                  style={{
-                    fontFamily: 'var(--font-serif, serif)',
-                    fontSize: '15px',
-                    color: '#B8B2A0',
-                    lineHeight: 1.65,
-                    margin: 0,
-                  }}
-                >
-                  {body}
-                </p>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
 
-          <p
+          <div
+            className="flex flex-wrap items-center justify-between gap-4"
             style={{
-              fontFamily: 'var(--font-dm-mono, monospace)',
-              fontSize: '12px',
-              color: '#8A8472',
-              letterSpacing: '0.04em',
-              marginBottom: '20px',
-              maxWidth: '680px',
+              borderTop: '1px solid rgba(232, 228, 216, 0.12)',
+              paddingTop: '22px',
             }}
           >
-            ALSO: RBAC · rate limits · chunked bulk CSV processing
-          </p>
-
-          <p
-            style={{
-              fontFamily: 'var(--font-serif, serif)',
-              fontStyle: 'italic',
-              fontSize: 'clamp(15px, 1.2vw, 17px)',
-              color: '#8A8472',
-              maxWidth: '680px',
-              lineHeight: 1.6,
-            }}
-          >
-              SOC 2 audit in progress. Full controls documentation available on request.
-          </p>
+            <div className="flex flex-wrap gap-2">
+              {['RBAC', 'Rate limits', 'Chunked CSV processing', 'SOC 2 audit in progress'].map((item) => (
+                <span
+                  key={item}
+                  style={{
+                    fontFamily: 'var(--font-dm-mono, monospace)',
+                    fontSize: '11px',
+                    color: '#B8B2A0',
+                    letterSpacing: '0.06em',
+                    border: '1px solid rgba(232, 228, 216, 0.12)',
+                    background: 'rgba(232, 228, 216, 0.045)',
+                    padding: '7px 10px',
+                  }}
+                >
+                  {item}
+                </span>
+              ))}
+            </div>
+            <p
+              style={{
+                fontFamily: 'var(--font-serif, serif)',
+                fontStyle: 'italic',
+                fontSize: '15px',
+                color: '#8A8472',
+                lineHeight: 1.5,
+                margin: 0,
+              }}
+            >
+              DPA available at{' '}
+              <a href="/legal/dpa" style={{ color: '#E8E4D8', textDecoration: 'underline' }}>
+                /legal/dpa
+              </a>
+              . Countersigned copy returned within two business days.
+            </p>
+          </div>
         </div>
       </section>
 

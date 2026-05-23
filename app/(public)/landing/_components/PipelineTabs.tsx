@@ -49,6 +49,29 @@ const TABS = [
   },
 ] as const;
 
+const SCREENSHOT_ARTIFACTS = [
+  {
+    src: '/screenshots/dashboard.png',
+    label: 'Merchant dashboard',
+    alt: 'Live Unauth dashboard showing transaction intelligence charts and review cases',
+  },
+  {
+    src: '/screenshots/watchlist.png',
+    label: 'Watchlist',
+    alt: 'Live Unauth watchlist with monitored customers and recent appearances',
+  },
+  {
+    src: '/screenshots/global-graph.png',
+    label: 'Global graph',
+    alt: 'Live Unauth global identity graph with weighted identity connections',
+  },
+  {
+    src: '/screenshots/evidence-packages.png',
+    label: 'Evidence packages',
+    alt: 'Live Unauth evidence package queue for chargeback and dispute review',
+  },
+] as const;
+
 // ── Shared data ────────────────────────────────────────────────────────────────
 
 const ROWS = [
@@ -119,6 +142,69 @@ function ArtifactFooter({ children }: { children: React.ReactNode }) {
   return (
     <div style={{ padding: '12px 20px', background: CREAM, borderTop: `1px solid ${LINE}`, flexShrink: 0 }}>
       {children}
+    </div>
+  );
+}
+
+function ScreenshotArtifact({ artifact }: { artifact: typeof SCREENSHOT_ARTIFACTS[number] }) {
+  return (
+    <div
+      style={{
+        position: 'relative',
+        minHeight: '540px',
+        padding: '22px',
+        display: 'flex',
+        alignItems: 'center',
+        background:
+          'radial-gradient(circle at 64% 28%, rgba(123,45,38,0.14), transparent 22rem), linear-gradient(135deg, #FDFBF6, #F4F0E8)',
+      }}
+    >
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute',
+          inset: '10% 8% auto',
+          height: '38%',
+          borderRadius: '999px',
+          background: 'radial-gradient(ellipse at center, rgba(123,45,38,0.22), transparent 68%)',
+          filter: 'blur(18px)',
+        }}
+      />
+      <figure
+        style={{
+          position: 'relative',
+          margin: 0,
+          overflow: 'hidden',
+          borderRadius: 8,
+          border: '1px solid #D8D0BD',
+          background: '#FDFBF6',
+          boxShadow: '0 34px 90px -46px rgba(26,24,20,0.52), 0 1px 0 rgba(255,255,255,0.78) inset',
+          transform: 'perspective(1400px) rotateX(4deg) rotateY(-4deg)',
+          transformOrigin: '50% 70%',
+        }}
+      >
+        <div
+          style={{
+            height: 34,
+            padding: '0 12px',
+            borderBottom: '1px solid #ECE5D4',
+            background: '#F4F0E8',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <div style={{ display: 'flex', gap: 6 }}>
+            {['#8A2828', '#C07838', '#8A8472'].map((color) => (
+              <span key={color} style={{ width: 7, height: 7, borderRadius: '50%', background: color }} />
+            ))}
+          </div>
+          <span style={{ fontFamily: MONO, fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: INK_FAINT }}>
+            {artifact.label}
+          </span>
+        </div>
+        <img src={artifact.src} alt={artifact.alt} loading="lazy" style={{ display: 'block', width: '100%', height: 'auto' }} />
+      </figure>
     </div>
   );
 }
@@ -979,10 +1065,7 @@ export default function PipelineTabs() {
                 boxShadow: '0 1px 0 rgba(216,208,189,0.6), 0 12px 30px -18px rgba(26,24,20,0.18)',
               }}
             >
-              {active === 0 && <UploadArtifact />}
-              {active === 1 && <HashArtifact progress={hashP} />}
-              {active === 2 && <ResolveArtifact />}
-              {active === 3 && <CaseArtifact />}
+              <ScreenshotArtifact artifact={SCREENSHOT_ARTIFACTS[active]} />
             </div>
           </div>
         </div>

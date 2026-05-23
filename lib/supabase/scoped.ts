@@ -23,7 +23,6 @@ export const TENANT_TABLES = [
   'user_action_log',
   'user_permission_grants',
   'watchlist_appearances',
-  'watchlist_entries',
 ] as const;
 
 export type TenantTable = (typeof TENANT_TABLES)[number];
@@ -46,7 +45,6 @@ const TENANT_SCOPES: Record<TenantTable, TenantScope> = {
   user_action_log: { kind: 'column', column: 'merchant_id' },
   user_permission_grants: { kind: 'column', column: 'merchant_id' },
   watchlist_appearances: { kind: 'column', column: 'merchant_id' },
-  watchlist_entries: { kind: 'column', column: 'merchant_id' },
 };
 
 export type ScopedSupabaseClient = SupabaseClient & {

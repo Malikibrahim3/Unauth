@@ -41,18 +41,13 @@ export default function AccountSettingsPage() {
 
   useEffect(() => {
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) setUserEmail(user.email ?? '');
+      const res = await fetch('/api/account/setup');
+      if (!res.ok) return;
+      const data = await res.json() as { user?: { email?: string }; merchant?: MerchantData | null };
+      setUserEmail(data.user?.email ?? '');
 
-      const { data } = await supabase
-        .from('merchants')
-        .select('id, name, monthly_order_volume, primary_fraud_concern, setup_complete')
-        .eq('user_id', user?.id ?? '')
-        .single();
-
-      if (data) {
-        // Cast through unknown because generated types don't include newer columns yet
-        const raw = data as unknown as MerchantData;
+      if (data.merchant) {
+        const raw = data.merchant;
         setMerchant(raw);
         setStoreName(raw.name ?? '');
         setMonthlyVolume(raw.monthly_order_volume ?? '');
@@ -60,7 +55,7 @@ export default function AccountSettingsPage() {
       }
     }
     load();
-  }, [supabase]);
+  }, []);
 
   async function handleProfileSave(e: React.FormEvent) {
     e.preventDefault();
@@ -69,15 +64,21 @@ export default function AccountSettingsPage() {
     setSaveSuccess(false);
     try {
       if (!merchant) throw new Error('Merchant not loaded');
-      const { error } = await supabase
-        .from('merchants')
-        .update({
-          name: storeName.trim(),
-          monthly_order_volume: monthlyVolume || null,
-          primary_fraud_concern: fraudConcern || null,
-        })
-        .eq('id', merchant.id);
-      if (error) throw error;
+      const res = await fetch('/api/account/setup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          storeName: storeName.trim(),
+          monthlyOrderVolume: monthlyVolume || null,
+          primaryFraudConcern: fraudConcern || null,
+          setupComplete: merchant.setup_complete,
+        }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({})) as { error?: string };
+        throw new Error(body.error ?? 'Could not save merchant profile.');
+      }
+      setMerchant({ ...merchant, name: storeName.trim(), monthly_order_volume: monthlyVolume || null, primary_fraud_concern: fraudConcern || null });
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 4000);
     } catch (e: unknown) {

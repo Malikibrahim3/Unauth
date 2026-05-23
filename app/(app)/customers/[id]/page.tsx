@@ -235,7 +235,7 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
     .from('watchlist_entries')
     .select('id')
     .eq('customer_profile_id', profileId)
-    .eq('merchant_id', merchantId)
+    .eq('merchant_id', user.id)
     .eq('removed_by_merchant', false)
     .maybeSingle() as unknown as { data: { id: string } | null };
 

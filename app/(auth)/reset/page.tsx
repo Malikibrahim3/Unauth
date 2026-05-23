@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
+import { UnauthLogo } from '@/components/ui/UnauthLogo';
 
 const LABEL_STYLE: React.CSSProperties = {
   display: 'block',
@@ -61,14 +62,12 @@ export default function ResetPage() {
         alignItems: 'center',
         justifyContent: 'center',
         padding: '32px',
-        fontFamily: 'var(--font-geist), var(--font-dm-sans), sans-serif',
+        fontFamily: 'var(--font-sans), var(--font-dm-sans), sans-serif',
       }}
     >
       <div style={{ width: '100%', maxWidth: '400px' }}>
         <Link href="/login" style={{ display: 'block', textAlign: 'center', textDecoration: 'none', marginBottom: 18 }}>
-          <span style={{ color: 'var(--ink-primary)', fontSize: 20, fontWeight: 600 }}>
-            Unauth<span style={{ color: 'var(--copper-bright)' }}>.</span>
-          </span>
+          <UnauthLogo variant="auto" size={26} />
         </Link>
         <div style={{ background: 'var(--surface-raised)', border: '1px solid var(--surface-border)', borderRadius: 10, padding: 32 }}>
           <div style={{ marginBottom: '28px' }}>

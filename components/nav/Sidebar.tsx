@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { UnauthLogo } from '@/components/ui/UnauthLogo';
+import ThemeToggle from '@/components/common/ThemeToggle';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -262,7 +263,7 @@ export default function Sidebar({
         )}
       >
         <div className="flex min-w-0 flex-shrink-0 items-center justify-center">
-          <UnauthLogo variant="light" size={isCollapsed ? 22 : 28} />
+          <UnauthLogo variant="auto" size={isCollapsed ? 22 : 28} />
         </div>
 
         {!isCollapsed && (
@@ -356,6 +357,10 @@ export default function Sidebar({
           <Settings className="h-4 w-4 flex-shrink-0 text-[var(--ink-tertiary)]" aria-hidden="true" />
           {!isCollapsed && <span>Settings</span>}
         </Link>
+
+        <div className={cn('px-2 py-1', isCollapsed && 'flex justify-center px-0')}>
+          <ThemeToggle className={isCollapsed ? 'h-8 w-8' : undefined} />
+        </div>
 
         <button
           type="button"

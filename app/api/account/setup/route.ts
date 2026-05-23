@@ -86,3 +86,30 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
+
+export async function GET() {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
+  }
+
+  const serviceClient = createServiceClient();
+  const { data: merchant, error } = await serviceClient
+    .from('merchants')
+    .select('id, name, monthly_order_volume, primary_fraud_concern, setup_complete')
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({
+    user: { email: user.email ?? '' },
+    merchant,
+  });
+}

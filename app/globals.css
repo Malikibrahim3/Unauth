@@ -252,12 +252,54 @@
     --ring:                var(--focus-ring);
     --radius:              var(--radius-lg);
 
+    /* ── Unauth light workbench palette (default for new users) ── */
+    --surface-base:    #FAF9F7;
+    --surface-raised:  #FFFFFF;
+    --surface-overlay: #F5F1EB;
+    --surface-border:  #E8E3DC;
+    --surface-muted:   #EDE6DC;
+    --surface-input:   #FFFDFC;
+
+    --ink-primary:   #1A1612;
+    --ink-secondary: #7A6F65;
+    --ink-tertiary:  #A6998D;
+    --ink-inverse:   #FFFFFF;
+
+    --copper-bright: #8A2828;
+    --copper-mid:    #7B2D26;
+    --copper-dim:    #EAD8D2;
+    --copper-glow:   #8A28281F;
+
+    --sev-definite:      #B42318;
+    --sev-definite-fill: #FBEDEA;
+    --sev-probable:      #A85D24;
+    --sev-probable-fill: #F9EFE5;
+    --sev-neutral:       #5F7483;
+    --sev-neutral-fill:  #EEF3F5;
+    --sev-clear:         #2F6B43;
+    --sev-clear-fill:    #E8F1E6;
+
+    --privacy-ink:    #416F77;
+    --privacy-fill:   #E8F3F2;
+    --privacy-border: #B8D5D2;
+    --data-score:     #1A1612;
+    --data-currency:  #7B2D26;
+    --data-id:        #557267;
+    --data-date:      #68798A;
+
+    --logo-ink: #1C1612;
+    --logo-dot: #8A2828;
+
     /* ══════════════════════════════════════════════════════════════════════
      * Direction A — Espresso dark mode primary
      * Canonical tokens from the redesign brief. The legacy aliases below
      * intentionally point back to these values so old components inherit the
      * new instrument palette while they are migrated.
      * ═════════════════════════════════════════════════════════════════════ */
+  }
+
+  :root[data-theme="dark"] {
+    color-scheme: dark;
 
     /* Surface */
     --surface-base:    #0E0B08;
@@ -388,9 +430,9 @@
     --icon:       var(--ink-secondary);
     --icon-muted: var(--ink-tertiary);
 
-    --font-sans:    var(--font-geist), var(--font-dm-sans), sans-serif;
-    --font-display: var(--font-geist), var(--font-dm-sans), sans-serif;
-    --font-mono:    var(--font-ibm-plex-mono), "Fira Code", monospace;
+    --font-sans:    var(--font-dm-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --font-display: var(--font-dm-sans), sans-serif;
+    --font-mono:    var(--font-dm-mono), "SF Mono", Menlo, monospace;
 
     --radius-xs:   3px;
     --radius-sm:   3px;
@@ -432,6 +474,8 @@
     --destructive-foreground: var(--ink-primary);
     --input:               var(--surface-border);
     --ring:                var(--copper-bright);
+    --logo-ink: #F4F0E8;
+    --logo-dot: #F4F0E8;
   }
 
 
@@ -443,6 +487,7 @@
     font-family: var(--font-sans);
     color: var(--text);
     background-color: var(--bg-canvas);
+    color-scheme: light;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     scrollbar-color: var(--surface-muted) transparent;
@@ -750,82 +795,84 @@
 .ua-nav-link:hover::after { transform: scaleX(1); }
 
 /* Direct copy of wordmark system from Unauth Wordmark-print.html */
-.ua-mark {
-  display: inline-flex;
-  align-items: baseline;
-  font-family: var(--font-sans);
-  font-weight: 600;
-  color: var(--ink-primary);
-  line-height: 1;
-  white-space: nowrap;
-  letter-spacing: 0;
-}
-.ua-mark .word {
-  display: inline-block;
-}
-.ua-mark .dot {
-  display: inline-block;
-  color: var(--copper-bright);
-  background: transparent;
-  width: auto;
-  height: auto;
-  margin-left: 0;
-  vertical-align: baseline;
-  flex-shrink: 0;
-}
-.ua-mark .dot::before {
-  content: ".";
-}
-.ua-mark.reversed {
-  color: var(--ink-primary);
-}
-.ua-mark.reversed .dot {
-  color: var(--copper-bright);
-}
-.ua-mark.mono-dark .dot {
-  color: var(--ink-primary);
-}
-.ua-mark.mono-light .dot {
-  color: var(--ink-primary);
-}
-.ua-mark.nav {
-  font-size: 20px;
-  letter-spacing: 0;
-}
-.ua-mark.nav .dot {
-  margin-left: 0;
-}
-.ua-mark.s12 {
-  font-size: 12px;
-  letter-spacing: 0;
-}
-.ua-mark.s12 .dot {
-  margin-left: 0;
-}
-.ua-mark.s18 {
-  font-size: 18px;
-  letter-spacing: 0;
-}
-.ua-mark.s18 .dot {
-  margin-left: 0;
-}
-.ua-mark.s28 {
-  font-size: 28px;
-  letter-spacing: 0;
-}
-.ua-mark.s28 .dot {
-  margin-left: 0;
-}
-.ua-mark.s48 {
-  font-size: 48px;
-  letter-spacing: 0;
-}
-.ua-mark.s48 .dot {
-  margin-left: 0;
-}
-.ua-mark.display {
-  letter-spacing: 0;
-}
+  .ua-mark {
+    --ua-logo-ink: var(--logo-ink);
+    --ua-logo-dot: var(--logo-dot);
+    --ua-logo-dot-size: 2.5px;
+    --ua-logo-dot-gap: 0.18em;
+    display: inline-flex;
+    align-items: baseline;
+    font-family: var(--font-serif);
+    font-weight: 600;
+    color: var(--ua-logo-ink);
+    line-height: 1;
+    white-space: nowrap;
+    letter-spacing: -0.02em;
+    font-variation-settings: "opsz" 32;
+  }
+  .ua-mark .word {
+    display: inline-block;
+  }
+  .ua-mark .dot {
+    display: inline-block;
+    width: var(--ua-logo-dot-size);
+    height: var(--ua-logo-dot-size);
+    margin-left: var(--ua-logo-dot-gap);
+    flex-shrink: 0;
+    border-radius: 9999px;
+    background: var(--ua-logo-dot);
+    transform: translateY(-0.08em);
+  }
+  .ua-mark.primary {
+    --ua-logo-ink: #1C1612;
+    --ua-logo-dot: #8A2828;
+  }
+  .ua-mark.reversed {
+    --ua-logo-ink: #F4F0E8;
+    --ua-logo-dot: #F4F0E8;
+  }
+  .ua-mark.mono-dark {
+    --ua-logo-ink: #1C1612;
+    --ua-logo-dot: #1C1612;
+  }
+  .ua-mark.mono-light {
+    --ua-logo-ink: #F4F0E8;
+    --ua-logo-dot: #F4F0E8;
+  }
+  .ua-mark.nav {
+    --ua-logo-dot-size: 2.5px;
+    --ua-logo-dot-gap: 0.18em;
+    font-size: 22px;
+  }
+  .ua-mark.s12 {
+    --ua-logo-dot-size: 1.5px;
+    --ua-logo-dot-gap: 0.20em;
+    font-size: 12px;
+    letter-spacing: -0.012em;
+  }
+  .ua-mark.s18 {
+    --ua-logo-dot-size: 2px;
+    --ua-logo-dot-gap: 0.18em;
+    font-size: 18px;
+  }
+  .ua-mark.s28 {
+    --ua-logo-dot-size: 2.5px;
+    --ua-logo-dot-gap: 0.17em;
+    font-size: 28px;
+  }
+  .ua-mark.s48 {
+    --ua-logo-dot-size: 3.5px;
+    --ua-logo-dot-gap: 0.16em;
+    font-size: 48px;
+    letter-spacing: -0.028em;
+    font-variation-settings: "opsz" 48;
+  }
+  .ua-mark.display {
+    --ua-logo-dot-size: 0.09em;
+    --ua-logo-dot-gap: 0.15em;
+    letter-spacing: -0.03em;
+    font-variation-settings: "opsz" 60;
+  }
 
 /* SVG line draw — when parent has .is-visible */
 .ua-draw {
@@ -1158,6 +1205,38 @@
 .ua-audit-canvas::before {
   background:
     radial-gradient(circle at 74% 20%, rgba(123, 45, 38, 0.05), transparent 20rem);
+}
+
+.react-flow {
+  color: var(--ink-primary);
+  --xy-edge-stroke-default: var(--surface-muted);
+  --xy-node-boxshadow-default: var(--shadow-1);
+}
+
+.react-flow__node {
+  font-family: var(--font-sans);
+}
+
+.react-flow__controls {
+  box-shadow: var(--shadow-1);
+}
+
+.react-flow__controls-button {
+  background: var(--surface-raised);
+  border-color: var(--surface-border);
+  color: var(--ink-primary);
+}
+
+.react-flow__controls-button:hover {
+  background: var(--surface-overlay);
+}
+
+.react-flow__controls-button svg {
+  fill: currentColor;
+}
+
+.react-flow__minimap {
+  box-shadow: var(--shadow-1);
 }
 
 @media (prefers-reduced-motion: reduce) {

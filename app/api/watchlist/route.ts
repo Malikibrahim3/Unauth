@@ -15,7 +15,6 @@ async function GETHandler(_req: NextRequest) {
   const serviceClient = createServiceClient();
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_WATCHLIST);
   if (denied) return denied;
-  const scopedClient = createScopedClient(ctx.merchantId, serviceClient);
 
   const limited = await enforceRateLimit(
     rateLimitKey('watchlist', 'read', ctx.merchantId),
@@ -23,9 +22,10 @@ async function GETHandler(_req: NextRequest) {
   );
   if (limited) return limited;
 
-  const { data, error } = await scopedClient
+  const { data, error } = await serviceClient
     .from('watchlist_entries')
     .select('*')
+    .eq('merchant_id', user.id)
     .eq('removed_by_merchant', false)
     .order('added_at', { ascending: false });
 
@@ -54,9 +54,10 @@ async function POSTHandler(req: NextRequest) {
   const body = await req.json();
   const { customerProfileId, emailHash, displayName, displayEmail, lastSeenRisk } = body;
 
-  const { data, error } = await scopedClient
+  const { data, error } = await serviceClient
     .from('watchlist_entries')
     .upsert({
+      merchant_id: user.id,
       customer_profile_id: customerProfileId ?? null,
       email_hash: emailHash ?? null,
       display_name: displayName ?? null,

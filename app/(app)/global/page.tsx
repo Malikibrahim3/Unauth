@@ -6,8 +6,8 @@ import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { formatDateMode } from '@/lib/utils/format';
 import { MetricCard, SectionCard } from '@/components/ui';
 import { ConfidenceBadge } from '@/components/ui/ConfidenceBadge';
-import { riskLevelToNewGrade } from '@/lib/confidence';
 import { signalCopy } from '@/lib/copy/signals';
+import GlobalIdentityGraphClient from '@/components/global/GlobalIdentityGraphClient';
 
 type RunRow = {
   id: string;
@@ -30,6 +30,13 @@ type ProfileRow = {
   identity_confidence_grade: string | null;
   identity_signals_summary: string[] | null;
 };
+
+function gradeFromIdentityGrade(grade: string | null): 'A' | 'B' | 'C' | 'D' {
+  if (grade === 'definite') return 'A';
+  if (grade === 'probable') return 'B';
+  if (grade === 'possible') return 'C';
+  return 'D';
+}
 
 export default async function GlobalGraphPage() {
   const supabase = createClient();
@@ -111,72 +118,7 @@ export default async function GlobalGraphPage() {
         <MetricCard label="Widest footprint" value={maxMerchantSpan ? `${maxMerchantSpan} merchants` : '—'} hint="Names and order IDs hidden" />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[240px_minmax(0,1fr)]">
-        <aside className="rounded-md border p-4" style={{ background: 'var(--surface-raised)', borderColor: 'var(--surface-border)' }}>
-          <p className="t-label" style={{ color: 'var(--ink-tertiary)' }}>Controls</p>
-          <div className="mt-4 space-y-4">
-            {['Grade tier', 'Merchant count', 'Date range'].map((label) => (
-              <label key={label} className="block">
-                <span className="t-label mb-2 block" style={{ color: 'var(--ink-tertiary)' }}>{label}</span>
-                <select className="w-full rounded-md border px-3 py-2 text-sm" style={{ background: 'var(--surface-input)', borderColor: 'var(--surface-border)', color: 'var(--ink-primary)' }}>
-                  <option>All</option>
-                  <option>Definite</option>
-                  <option>Probable</option>
-                </select>
-              </label>
-            ))}
-          </div>
-        </aside>
-        <section className="relative min-h-[440px] overflow-hidden rounded-md border" style={{ background: 'var(--surface-base)', borderColor: 'var(--surface-border)' }}>
-          <svg className="absolute inset-0 h-full w-full" viewBox="0 0 900 440" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Cross-merchant identity graph">
-            <defs>
-              <filter id="nodePulse">
-                <feDropShadow dx="0" dy="0" stdDeviation="4" floodColor="var(--copper-bright)" floodOpacity="0.35" />
-              </filter>
-            </defs>
-            {clusterRows.slice(0, 12).map((cluster, index) => {
-              const angle = (Math.PI * 2 * index) / Math.max(1, Math.min(clusterRows.length, 12));
-              const x = 450 + Math.cos(angle) * (135 + (index % 3) * 38);
-              const y = 220 + Math.sin(angle) * (100 + (index % 2) * 46);
-              const width = Math.max(1.5, Math.min(7, cluster.risk_score / 18));
-              return (
-                <line
-                  key={`edge-${cluster.id}`}
-                  x1="450"
-                  y1="220"
-                  x2={x}
-                  y2={y}
-                  stroke="var(--surface-muted)"
-                  strokeWidth={width}
-                  opacity="0.55"
-                />
-              );
-            })}
-            <circle cx="450" cy="220" r="34" fill="var(--copper-dim)" stroke="var(--copper-bright)" strokeWidth="2" filter="url(#nodePulse)" />
-            <text x="450" y="224" textAnchor="middle" fontSize="11" fontFamily="var(--font-mono)" fill="var(--ink-primary)">GRAPH</text>
-            {clusterRows.slice(0, 12).map((cluster, index) => {
-              const angle = (Math.PI * 2 * index) / Math.max(1, Math.min(clusterRows.length, 12));
-              const x = 450 + Math.cos(angle) * (135 + (index % 3) * 38);
-              const y = 220 + Math.sin(angle) * (100 + (index % 2) * 46);
-              const fill =
-                riskLevelToNewGrade(cluster.risk_level) === 'A' ? 'var(--sev-definite)' :
-                riskLevelToNewGrade(cluster.risk_level) === 'B' ? 'var(--sev-probable)' :
-                'var(--sev-neutral)';
-              const r = Math.max(10, Math.min(26, cluster.total_orders + cluster.risk_score / 8));
-              return (
-                <g key={cluster.id}>
-                  <circle cx={x} cy={y} r={r} fill={fill} opacity="0.92" />
-                  <circle cx={x} cy={y} r={r + 5} fill="none" stroke="var(--copper-bright)" strokeWidth={index === 0 ? 2 : 0} opacity="0.85" />
-                </g>
-              );
-            })}
-          </svg>
-          <div className="absolute bottom-4 left-4 rounded-md border px-3 py-2" style={{ background: 'var(--surface-overlay)', borderColor: 'var(--surface-border)' }}>
-            <p className="t-label" style={{ color: 'var(--ink-tertiary)' }}>Selected node</p>
-            <p className="t-body mt-1" style={{ color: 'var(--ink-primary)' }}>{clusterRows[0]?.primary_email ?? 'No node selected'}</p>
-          </div>
-        </section>
-      </div>
+      <GlobalIdentityGraphClient profiles={clusterRows} />
 
       <SectionCard title="Confidence breakdown">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -253,7 +195,7 @@ export default async function GlobalGraphPage() {
                         <p className="truncate text-body-sm font-semibold" style={{ color: 'var(--text)' }}>
                           {cluster.primary_email ?? `Cluster ${cluster.id.slice(0, 8)}`}
                         </p>
-                        <ConfidenceBadge grade={riskLevelToNewGrade(cluster.risk_level)} size="sm" />
+                        <ConfidenceBadge grade={gradeFromIdentityGrade(cluster.identity_confidence_grade)} size="sm" />
                       </div>
                       <p className="text-caption mt-1" style={{ color: 'var(--text-muted)' }}>
                         Network footprint: {cluster.total_merchants_seen_at} merchants · {cluster.total_orders} orders · {cluster.total_refund_claims} claims

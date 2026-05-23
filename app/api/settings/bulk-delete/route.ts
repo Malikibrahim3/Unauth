@@ -53,7 +53,10 @@ async function POSTHandler(req: NextRequest) {
     for (const [, table] of Object.entries(ALLOWED)) {
       const field = SOFT_DELETE_FIELD[table];
       if (!field) continue;
-      const { error } = await scopedClient.from(table).update({ [field]: true } as any);
+      const query = table === 'watchlist_entries'
+        ? serviceClient.from(table).update({ [field]: true } as any).eq('merchant_id', user.id)
+        : scopedClient.from(table).update({ [field]: true } as any);
+      const { error } = await query;
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     }
     logAction({ ctx, action: 'bulk_delete', metadata: { entity: 'all' }, ip });
@@ -68,9 +71,13 @@ async function POSTHandler(req: NextRequest) {
 
   let res;
   if (ids && Array.isArray(ids) && ids.length > 0) {
-    res = await scopedClient.from(table).update({ [softField]: true } as any).in('id', ids);
+    res = table === 'watchlist_entries'
+      ? await serviceClient.from(table).update({ [softField]: true } as any).eq('merchant_id', user.id).in('id', ids)
+      : await scopedClient.from(table).update({ [softField]: true } as any).in('id', ids);
   } else {
-    res = await scopedClient.from(table).update({ [softField]: true } as any);
+    res = table === 'watchlist_entries'
+      ? await serviceClient.from(table).update({ [softField]: true } as any).eq('merchant_id', user.id)
+      : await scopedClient.from(table).update({ [softField]: true } as any);
   }
 
   if (res.error) return NextResponse.json({ error: res.error.message }, { status: 500 });

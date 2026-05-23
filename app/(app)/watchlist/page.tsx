@@ -42,10 +42,10 @@ export default async function WatchlistPage({ searchParams }: { searchParams?: {
 
   const [{ data: entries, count }, { data: recentRaw }] = await Promise.all([
     (() => {
-      let q = supabase
+      let q = serviceClient
         .from('watchlist_entries')
         .select('*', { count: 'exact' })
-        .eq('merchant_id', resolvedCtx.merchantId)
+        .eq('merchant_id', user.id)
         .eq('removed_by_merchant', false)
         .order('added_at', { ascending: false })
         .range(offset, offset + pageSize - 1);
@@ -57,7 +57,7 @@ export default async function WatchlistPage({ searchParams }: { searchParams?: {
       }
       return q;
     })(),
-    supabase
+    serviceClient
       .from('customer_profile_audit_appearances')
       .select(`
         id,

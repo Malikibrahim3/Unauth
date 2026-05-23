@@ -1,5 +1,6 @@
 interface UnauthLogoProps {
   variant?:
+    | 'auto'
     | 'light'
     | 'dark'
     | 'mono'
@@ -20,7 +21,12 @@ const SIZE_MAP = {
 
 export function UnauthLogo({ variant = 'light', size = 'nav', className }: UnauthLogoProps) {
   const px = typeof size === 'number' ? size : SIZE_MAP[size];
-  const normalized = variant === 'wordmark-dark' || variant === 'dark' ? 'reversed' : variant === 'mono-dark' ? 'mono-dark' : variant === 'mono-light' ? 'mono-light' : '';
+  const normalized =
+    variant === 'auto' ? '' :
+    variant === 'wordmark-dark' || variant === 'dark' ? 'reversed' :
+    variant === 'mono-dark' ? 'mono-dark' :
+    variant === 'mono-light' || variant === 'mono' ? 'mono-light' :
+    'primary';
 
   const knownSizeClass =
     px === 12 ? 's12' :
@@ -35,7 +41,7 @@ export function UnauthLogo({ variant = 'light', size = 'nav', className }: Unaut
     <span
       className={['ua-mark', normalized, knownSizeClass, className].filter(Boolean).join(' ')}
       role="img"
-      aria-label="Unauth"
+      aria-label="Unauth."
       style={knownSizeClass && knownSizeClass !== 'display' ? undefined : { fontSize: `${px}px` }}
     >
       <span className="word">Unauth</span>

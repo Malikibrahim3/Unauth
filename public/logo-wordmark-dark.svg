@@ -1,4 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 100" fill="none">
-  <path d="M18 14 H32 V74 H68 V14 H82 V88 H18 Z" fill="#F5F2EE"/>
-  <polygon points="92,88 102,88 108,14 98,14" fill="#B6512A"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 212" role="img" aria-label="Unauth.">
+  <style>
+    text { font-family: "Source Serif 4", Georgia, serif; font-weight: 600; font-variation-settings: "opsz" 60; letter-spacing: -0.03em; }
+  </style>
+  <text x="24" y="154" font-size="156" fill="#F4F0E8">Unauth</text>
+  <circle cx="635" cy="154" r="14" fill="#F4F0E8"/>
 </svg>

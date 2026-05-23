@@ -130,9 +130,10 @@ async function GETHandler(
   // -------------------------------------------------------------------------
   // 2. Check watchlist status for this merchant
   // -------------------------------------------------------------------------
-  const { data: watchlistRow } = await scopedClient
+  const { data: watchlistRow } = await serviceClient
     .from('watchlist_entries')
     .select('id')
+    .eq('merchant_id', user.id)
     .eq('customer_profile_id', profileId)
     .eq('removed_by_merchant', false)
     .maybeSingle() as unknown as { data: { id: string } | null };

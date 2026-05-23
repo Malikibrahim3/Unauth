@@ -148,6 +148,23 @@ async function fetchCrossMerchantProfiles(
     return [];
   }
 
+  const rpc = await supabase.rpc('search_cross_merchant_profiles' as any, {
+    p_emails: emails,
+    p_ips: ips,
+    p_addresses: addresses,
+    p_cards: cards,
+    p_min_merchants: 3,
+    p_limit: 10000,
+  });
+
+  if (!rpc.error && Array.isArray(rpc.data)) {
+    return rpc.data as unknown as CrossMerchantProfile[];
+  }
+
+  if (rpc.error) {
+    console.warn(`[fastContext] RPC search_cross_merchant_profiles failed, falling back: ${rpc.error.message}`);
+  }
+
   const COLS =
     'id,emails,ips,addresses,card_last4s,phones,total_orders,total_refund_claims,total_merchants_seen_at,merchant_ids';
   const CHUNK = 100; // # of OR clauses per query — keeps URL well under limits

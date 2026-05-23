@@ -118,7 +118,7 @@ function LoginPageInner() {
     <main className="flex min-h-screen items-center justify-center px-4 py-8" style={{ background: 'var(--surface-base)' }}>
       <div className="w-full max-w-[400px]">
         <Link href="/" className="mb-6 flex justify-center">
-          <UnauthLogo variant="light" size={28} />
+          <UnauthLogo variant="auto" size={28} />
         </Link>
 
         <section className="rounded-lg border p-8" style={{ background: 'var(--surface-raised)', borderColor: 'var(--surface-border)' }}>

@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import CommandPalette from './CommandPalette';
 import { MerchantEnvChip } from './MerchantEnvChip';
 import { AvatarMenu } from './AvatarMenu';
+import ThemeToggle from '@/components/common/ThemeToggle';
 
 export interface BreadcrumbSegment {
   label: string;
@@ -188,6 +189,7 @@ export default function AppHeader({
       </button>
 
       {/* AvatarMenu — right of search */}
+      <ThemeToggle />
       <AvatarMenu email={userEmail} />
 
       <CommandPalette isOpen={paletteOpen} onClose={closePalette} />

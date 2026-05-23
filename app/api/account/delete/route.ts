@@ -48,10 +48,11 @@ export async function POST(request: NextRequest) {
       'normalisation_learning',
     ];
     for (const table of tables) {
+      const ownerColumnValue = table === 'watchlist_entries' ? user.id : merchantId;
       const { error } = await service
         .from(table as any)
         .delete()
-        .eq('merchant_id', merchantId);
+        .eq('merchant_id', ownerColumnValue);
       if (error) console.warn(`[account-delete] non-fatal: ${table}:`, error.message);
     }
 

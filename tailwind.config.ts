@@ -25,9 +25,9 @@ const config: Config = {
     },
     extend: {
       fontFamily: {
-        sans:    ['var(--font-sans)', 'Geist', 'DM Sans', 'sans-serif'],
-        display: ['var(--font-sans)', 'Geist', 'DM Sans', 'sans-serif'],
-        mono:    ['var(--font-mono)', 'IBM Plex Mono', 'Fira Code', 'monospace'],
+        sans:    ['var(--font-sans)', 'DM Sans', 'sans-serif'],
+        display: ['var(--font-sans)', 'DM Sans', 'sans-serif'],
+        mono:    ['var(--font-mono)', 'DM Mono', 'monospace'],
       },
       spacing: {
         's1':  'var(--space-1)',

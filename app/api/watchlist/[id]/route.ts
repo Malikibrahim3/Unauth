@@ -27,16 +27,18 @@ async function DELETEHandler(req: NextRequest, { params }: { params: Promise<{ i
   if (limited) return limited;
 
   // Fetch the entry before removing to get the profile_id for activity log
-  const { data: entryRow } = await scopedClient
+  const { data: entryRow } = await serviceClient
     .from('watchlist_entries')
     .select('id, customer_profile_id')
     .eq('id', resolvedParams.id)
+    .eq('merchant_id', user.id)
     .maybeSingle();
 
-  const { error } = await scopedClient
+  const { error } = await serviceClient
     .from('watchlist_entries')
     .update({ removed_by_merchant: true } as any)
-    .eq('id', resolvedParams.id);
+    .eq('id', resolvedParams.id)
+    .eq('merchant_id', user.id);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 

@@ -12,6 +12,7 @@ import {
 } from '@/lib/supabase/merchantHelpers';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import TrackPageView from '@/components/common/TrackPageView';
+import DashboardCharts, { type TransactionChartData } from '@/components/dashboard/DashboardCharts';
 import { ConfidenceBadge } from '@/components/ui/ConfidenceBadge';
 import { Badge } from '@/components/ui/Badge';
 import { riskLevelToNewGrade } from '@/lib/confidence';
@@ -116,6 +117,17 @@ export default async function DashboardPage() {
   const totalTransactions = typedRuns.reduce((sum, r) => sum + r.total_rows, 0);
   const totalFlagged = typedRuns.reduce((sum, r) => sum + (r.flagged_count ?? 0), 0);
   const avgFlagRate = totalTransactions > 0 ? (totalFlagged / totalTransactions) * 100 : null;
+  const jobIds = typedRuns.map((run) => run.id);
+
+  let chartTransactions: TransactionChartData[] = [];
+  if (jobIds.length > 0) {
+    const { data } = await serviceClient
+      .from('audit_transactions')
+      .select('id,job_id,processed_at,order_value,refund_claimed,chargeback_filed,risk_level,identity_confidence_grade,match_status,identity_score,match_score,signals_matched,fraud_flags')
+      .in('job_id', jobIds)
+      .order('processed_at', { ascending: true });
+    chartTransactions = (data ?? []) as unknown as TransactionChartData[];
+  }
 
   const { data: evidenceRows } = await serviceClient
     .from('evidence_packages' as never)
@@ -281,6 +293,17 @@ export default async function DashboardPage() {
             </div>
           ))}
         </div>
+
+        <DashboardCharts
+          runs={typedRuns.map((run) => ({
+            id: run.id,
+            filename: run.filename,
+            total_rows: run.total_rows,
+            flagged_count: run.flagged_count ?? 0,
+            created_at: run.created_at,
+          }))}
+          transactions={chartTransactions}
+        />
 
         <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px]">
           <section className="border-r" style={{ borderColor: 'var(--border-default)' }}>

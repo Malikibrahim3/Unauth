@@ -19,11 +19,19 @@ async function checkWatchlistAppearances(
   auditId: string,
   scopedClient: SupabaseClient
 ) {
+  const { data: merchant } = await scopedClient
+    .from('merchants')
+    .select('user_id')
+    .eq('id', merchantId)
+    .maybeSingle();
+  const ownerUserId = (merchant as { user_id?: string | null } | null)?.user_id ?? merchantId;
+
   // Fetch all customer profile IDs in this merchant's watchlist
   const { data: watchlisted, error: watchlistErr } = await scopedClient
     .from('watchlist_entries')
     .select('customer_profile_id')
-    .eq('merchant_id', merchantId);
+    .or(`merchant_id.eq.${ownerUserId},merchant_id.eq.${merchantId}`)
+    .eq('removed_by_merchant', false);
   if (watchlistErr) {
     throw new Error(`[watchlist_appearances] watchlist fetch failed: ${watchlistErr.message}`);
   }
