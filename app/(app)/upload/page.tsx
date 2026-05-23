@@ -26,8 +26,8 @@ export default async function UploadPage({ searchParams }: UploadPageProps) {
         <WorkbenchKpiStrip
           items={[
             { label: 'Step', value: '01 Upload', hint: 'Start with source CSV' },
-            { label: 'Max file', value: '50 MB', hint: 'Current limit' },
-            { label: 'Max rows', value: '100k', hint: 'Per file' },
+            { label: 'Max file', value: '200 MB', hint: 'Current limit' },
+            { label: 'Max rows', value: '500k', hint: 'Per file' },
             { label: 'Flow', value: 'Map -> Process', hint: 'Column mapping included' },
             { label: 'Output', value: 'Audit run', hint: 'Creates review queue' },
           ]}

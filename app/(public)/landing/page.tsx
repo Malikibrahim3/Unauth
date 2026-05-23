@@ -12,7 +12,6 @@ import Reveal from './_components/Reveal';
 import Counter from './_components/Counter';
 import AnimatedBar from './_components/AnimatedBar';
 import TypedText from './_components/TypedText';
-import ParallaxController from './_components/ParallaxController';
 import HeroNotificationArtifact from './_components/HeroNotificationArtifact';
 import VerdictTicker from './_components/VerdictTicker';
 import AuditForm from './AuditForm';
@@ -103,7 +102,6 @@ export default function LandingPage() {
         minHeight: '100vh',
       }}
     >
-      <ParallaxController />
       {/* ── Header strip ────────────────────────────────────────── */}
       <header
         style={{
@@ -172,7 +170,7 @@ export default function LandingPage() {
       </header>
 
       {/* ── Hero ────────────────────────────────────────────────── */}
-      <section className="ua-hero-canvas ua-parallax-field w-full overflow-hidden px-6 md:px-10 lg:px-0 pt-6 md:pt-8 pb-0" data-ua-parallax-depth="34" suppressHydrationWarning>
+      <section className="ua-hero-canvas w-full overflow-hidden px-6 md:px-10 lg:px-0 pt-6 md:pt-8 pb-0" suppressHydrationWarning>
         {/* DotPattern — precision grid atmosphere, masked to top-right quadrant */}
         <DotPattern
           width={32} height={32} cx={1} cy={1} cr={1.1}
@@ -312,8 +310,8 @@ export default function LandingPage() {
 
             <div className="lg:w-full lg:max-h-[720px] overflow-hidden">
               <div
-                className="ua-hover-glow ua-case-card ua-premium-surface ua-parallax-layer"
-                data-ua-parallax-depth="-12"
+                className="ua-hover-glow ua-case-card ua-premium-surface"
+               
                 suppressHydrationWarning
                 style={{
                   background: 'rgba(253, 251, 246, 0.96)',
@@ -991,7 +989,7 @@ export default function LandingPage() {
 
 
       {/* ── §4 · Merchant dashboard ────────────────────────────────── */}
-      <section className="ua-section-quiet ua-parallax-field mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-20 pb-12 md:pb-16" data-ua-parallax-depth="22" suppressHydrationWarning>
+      <section className="ua-section-quiet mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-20 pb-12 md:pb-16" suppressHydrationWarning>
         <div className="mb-10">
           <p
             style={{
@@ -1051,8 +1049,8 @@ export default function LandingPage() {
           color: '#E8E4D8',
           scrollMarginTop: '72px',
         }}
-        className="ua-network-canvas ua-parallax-field py-16 md:py-24"
-        data-ua-parallax-depth="28"
+        className="ua-network-canvas py-16 md:py-24"
+       
         suppressHydrationWarning
       >
         <AnimatedGridPattern
@@ -1343,7 +1341,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── §8 · Comparison matrix ──────────────────────────────── */}
-      <section className="ua-section-flow ua-parallax-field mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-20 pb-12 md:pb-16" data-ua-parallax-depth="20" suppressHydrationWarning>
+      <section className="ua-section-flow mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-20 pb-12 md:pb-16" suppressHydrationWarning>
 
         <div className="mb-10">
           <p
@@ -1409,7 +1407,7 @@ export default function LandingPage() {
           return (
             <>
               {/* ── Desktop / tablet grid (hidden below sm) ── */}
-              <div className="hidden sm:block ua-glass-card ua-parallax-layer" data-ua-parallax-depth="-6" suppressHydrationWarning style={{ border: '1px solid #D8D0BD', background: 'rgba(253, 251, 246, 0.92)', overflow: 'hidden' }}>
+              <div className="hidden sm:block ua-glass-card" suppressHydrationWarning style={{ border: '1px solid #D8D0BD', background: 'rgba(253, 251, 246, 0.92)', overflow: 'hidden' }}>
                 {/* Header row */}
                 <div
                   className="grid grid-cols-[1.6fr_1fr_1fr_1fr]"
@@ -1538,10 +1536,10 @@ export default function LandingPage() {
       </section>
 
       {/* ── §9 · CTA ─────────────────────────────────────────────── */}
-      <section id="audit" style={{ scrollMarginTop: '72px' }} className="ua-audit-canvas ua-parallax-field mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-20 pb-12 md:pb-16" data-ua-parallax-depth="30" suppressHydrationWarning>
+      <section id="audit" style={{ scrollMarginTop: '72px' }} className="ua-audit-canvas mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-20 pb-12 md:pb-16" suppressHydrationWarning>
         <div
-          className="ua-dark-panel ua-parallax-layer"
-          data-ua-parallax-depth="-10"
+          className="ua-dark-panel"
+         
           suppressHydrationWarning
           style={{
             background: '#15140F',

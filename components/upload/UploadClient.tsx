@@ -851,7 +851,7 @@ export default function UploadClient() {
                 Drop one or more CSVs here, or click to browse
               </p>
               <p className="t-caption mt-2" style={{ color: 'var(--ink-tertiary)' }}>
-                Accepted formats: CSV. Batch upload supported. Max 500 MB per file.
+                Accepted formats: CSV. Batch upload supported. Max 200 MB per file.
               </p>
             </div>
           )}
@@ -859,7 +859,7 @@ export default function UploadClient() {
       )}
       {state === 'idle' && (
         <p className="t-caption max-w-2xl" style={{ color: 'var(--ink-tertiary)' }}>
-          PII fields are hashed client-side before transmission where supported. Raw customer identifiers are not shared across merchants; network matches use aggregate k-safe presence.
+          Your uploaded data is processed to identify patterns within your own order history. Data handling details are available in your merchant agreement.
         </p>
       )}
 
