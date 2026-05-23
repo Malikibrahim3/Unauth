@@ -41,7 +41,7 @@ function GradeRow({ grade, color, meaning, signals, action }: GradeRowProps) {
           {signals}
         </p>
         <p>
-          <span className="font-medium" style={{ color: 'var(--text)' }}>Recommended action: </span>
+          <span className="font-medium" style={{ color: 'var(--text)' }}>Review context: </span>
           {action}
         </p>
       </div>
@@ -87,21 +87,21 @@ export default function ConfidenceGradesPage() {
             color="var(--risk-critical)"
             meaning="We are highly confident that two or more accounts belong to the same underlying person. The evidence is convergent across multiple independent signal types."
             signals="Card fingerprint match + device ID match + overlapping IP address, or card fingerprint match + same shipping address used under different names/emails."
-            action="Act on this. Review the order set, check for pattern of chargeback history, and consider holding pending orders. This grade is the primary driver for CE3.0 evidence package generation."
+            action="Strongest signal overlap. Review the full order set and chargeback history. Where refund claims or chargebacks are present, this grade is the basis for compiling CE3.0 signal data."
           />
           <GradeRow
             grade="Probable"
             color="var(--risk-high)"
             meaning="Strong evidence exists but falls short of convergent multi-signal proof. One high-quality signal (e.g. card match) combined with soft corroboration (e.g. similar name pattern, shared postcode)."
             signals="Card last 4 + billing postcode match across different emails, or device ID reuse across accounts with different card numbers."
-            action="Prioritise for manual review. The pattern is suspicious enough to warrant investigation before fulfilment on high-value orders. Not sufficient alone for CE3.0 but supports narrative evidence."
+            action="Strong signal overlap that merits closer review, particularly on high-value orders. The pattern may support a narrative when compiling signal data for a dispute response."
           />
           <GradeRow
             grade="Possible"
             color="var(--risk-medium)"
             meaning="Overlapping signals exist but are individually explainable. The pattern is worth noting; it should not be acted on in isolation."
             signals="Shared IP address without card or device corroboration, or email address variation (e.g. firstname.lastname vs. f.lastname) without stronger linking signals."
-            action="Flag for awareness. Do not block orders on this grade alone. Use it to build context when a customer later escalates to Probable or Definite, or when a chargeback arrives."
+            action="Partial signal overlap worth noting for context. Use it to track patterns over time — particularly if the same customer later appears with stronger signal overlap."
           />
           <GradeRow
             grade="Weak"
@@ -145,11 +145,11 @@ export default function ConfidenceGradesPage() {
           Grades and CE3.0 eligibility
         </h2>
         <p className="text-body-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-          Visa CE3.0 chargeback dispute eligibility requires evidence that meets a specific burden of proof.
-          Unauth automatically marks evidence packages as CE3.0 eligible when the underlying customer has a
-          Definite confidence grade and the evidence includes at least two independent corroborating signal types.
-          Probable-grade customers may qualify for narrative evidence supporting dispute but are not automatically
-          flagged as CE3.0 eligible.
+          Visa CE3.0 requires merchants to demonstrate that a disputed transaction matches a customer&apos;s established
+          prior purchase history. Unauth surfaces prior matching transactions and identity signals from your own records
+          that may be relevant when preparing a dispute response. CE3.0 signal detection is strongest at Definite grade,
+          where multiple independent signal types align. Whether that data meets Visa&apos;s current CE3.0 criteria is a
+          question for your acquirer or payment processor — Visa&apos;s rules can change.
         </p>
       </section>
 

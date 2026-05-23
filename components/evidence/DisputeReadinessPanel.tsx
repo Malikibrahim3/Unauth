@@ -57,11 +57,11 @@ export function DisputeReadinessPanel({
 
   const checks: CheckItem[] = [
     {
-      label: 'CE3.0 eligible',
+      label: 'CE3.0 signals present',
       passed: pkg.ce3_eligible ? true : false,
       detail: pkg.ce3_eligible
-        ? 'Package qualifies for Visa Compelling Evidence 3.0'
-        : 'Package does not meet CE3.0 criteria',
+        ? 'Prior transactions with matching identity signals found in this record'
+        : 'No prior transactions with matching CE3.0 signals detected',
     },
     {
       label: 'Narrative summary present',
@@ -106,7 +106,7 @@ export function DisputeReadinessPanel({
       style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)', borderRadius: 4 }}
     >
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-overline"><span aria-hidden="true" className="ua-section-dot" />Readiness</h2>
+        <h2 className="text-overline"><span aria-hidden="true" className="ua-section-dot" />Signal checklist</h2>
         <Badge tone={allPassed ? 'success' : passedCount >= 3 ? 'warning' : 'critical'} variant="subtle" size="sm">
           {passedCount}/{checks.length} checks passed
         </Badge>
@@ -162,8 +162,7 @@ export function DisputeReadinessPanel({
       >
         <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" style={{ color: 'var(--text-subtle)' }} />
         <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-          Read-only checklist. To update signals or narrative, re-generate the evidence package.
-          CE3.0 eligibility is determined automatically and cannot be overridden here.
+          Read-only checklist based on signal data in your records. CE3.0 signal detection reflects matching transaction patterns — consult your acquirer or processor to confirm whether this data meets CE 3.0 submission requirements.
         </p>
       </div>
     </div>

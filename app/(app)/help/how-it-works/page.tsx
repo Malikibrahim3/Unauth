@@ -74,18 +74,21 @@ export default function HowItWorksPage() {
             respond with evidence. Without evidence, banks almost always side with the customer.
           </p>
           <p>
-            Unauth generates a professional evidence document from your order history that you can submit to your
-            payment processor or acquirer. The document shows the customer&apos;s order pattern, the identity
-            signals linking their accounts, and — where your data qualifies — a submission formatted for Visa&apos;s
-            Compelling Evidence 3.0 framework.
+            Unauth organises signal data from your order history into a structured report you can share with your
+            payment processor or acquirer. The report shows the customer&apos;s order pattern and the identity
+            signals observed across their records.
           </p>
           <p>
-            CE3.0 is a formal Visa policy, active since October 2025, that allows merchants to prove a disputed
-            transaction is consistent with a customer&apos;s established purchase history. When your data qualifies,
-            Unauth labels the evidence package as CE3.0 eligible and tells you exactly how to submit it.
+            CE3.0 is a formal Visa policy, active since October 2025, that allows merchants to counter certain
+            disputes by showing the cardholder previously completed similar non-disputed transactions. Unauth
+            surfaces prior matching transactions and identity signals from your own records that may be relevant
+            when preparing a CE3.0 response. Where prior matching transactions are detected, this is noted in
+            the signal report.
           </p>
           <p>
-            We do not guarantee dispute outcomes. We give you the best possible evidence to present.
+            Whether your data meets Visa&apos;s current CE3.0 criteria is determined by your acquirer or payment
+            processor, not by Unauth. Visa&apos;s rules on qualifying evidence can change. We do not guarantee
+            dispute outcomes.
           </p>
         </div>
       </section>

@@ -26,8 +26,6 @@ import type { CustomerIntelligencePanel, OrderHistoryEntry } from '@/app/api/cus
 import { STATUS_LABELS, STATUS_OPTIONS, statusStyle } from '@/lib/utils/investigationStatus';
 import { riskTok } from '@/lib/utils/riskStyles';
 import { formatCurrencyNullable, formatDate } from '@/lib/utils/format';
-import { Badge } from '@/components/ui/Badge';
-import type { BadgeTone } from '@/components/ui/Badge';
 import IdentityTimeline from '@/components/customers/IdentityTimeline';
 import BehaviorRoadmap from '@/components/customers/BehaviorRoadmap';
 import CaseSummaryStrip from '@/components/customers/CaseSummaryStrip';
@@ -305,28 +303,16 @@ function OrderRoadmapCard({ order, isLast }: { order: OrderHistoryEntry; isLast:
 }
 
 // ---------------------------------------------------------------------------
-// Recommended action strip
+// Signal summary
 // ---------------------------------------------------------------------------
 
-function recommendedAction(riskLevel: string): { label: string; tone: BadgeTone } {
-  switch ((riskLevel ?? '').toLowerCase()) {
-    case 'critical': return { label: 'Block & escalate', tone: 'critical' };
-    case 'high':     return { label: 'Hold for review', tone: 'danger' };
-    case 'medium':   return { label: 'Monitor closely', tone: 'warning' };
-    case 'low':      return { label: 'Clear to fulfil', tone: 'success' };
-    default:         return { label: 'Pending review', tone: 'neutral' };
-  }
-}
-
-function triageWhySummary(riskLevel: string, riskScore: number, claimCount: number, variantCount: number): string {
-  const level = (riskLevel ?? '').toLowerCase();
+function signalSummary(riskScore: number, claimCount: number, variantCount: number): string {
   const parts: string[] = [];
-  if (riskScore >= 80) parts.push(`risk score ${Math.round(riskScore)}/100`);
-  if (claimCount > 0) parts.push(`${claimCount} claim${claimCount !== 1 ? 's' : ''}`);
-  if (variantCount > 0) parts.push(`${variantCount} identity variant${variantCount !== 1 ? 's' : ''}`);
-  if (parts.length === 0) return 'No critical signals detected at this time.';
-  const prefix = level === 'critical' || level === 'high' ? 'Flagged due to' : level === 'medium' ? 'Elevated risk from' : 'Low risk —';
-  return `${prefix} ${parts.join(', ')}.`;
+  if (riskScore >= 80) parts.push(`confidence score ${Math.round(riskScore)}/100`);
+  if (claimCount > 0) parts.push(`${claimCount} claim${claimCount !== 1 ? 's' : ''} on record`);
+  if (variantCount > 0) parts.push(`${variantCount} identity variant${variantCount !== 1 ? 's' : ''} observed`);
+  if (parts.length === 0) return 'No overlapping signals detected in this dataset.';
+  return `Signals include: ${parts.join(', ')}.`;
 }
 
 // ---------------------------------------------------------------------------
@@ -394,7 +380,7 @@ export default function CustomerIntelligenceDrawer({
         aria-label="Customer case file"
         style={{
           position: 'fixed', top: 0, right: 0, zIndex: 50,
-          height: '100%', width: '100%', maxWidth: 420,
+          height: '100%', width: '100%', maxWidth: 629,
           background: 'var(--surface-raised)',
           borderLeft: '1px solid var(--surface-border)',
           boxShadow: '-16px 0 40px rgba(0,0,0,0.38)',
@@ -509,8 +495,7 @@ function DrawerContent({
   const totalRefundValue = orderHistory.reduce((sum, o) => sum + (o.refundAmount ?? 0), 0);
   const claimCount = orderHistory.filter((o) => o.refundRequested || o.returnRequested || o.chargebackFiled).length;
   const displayName = profile.names[0] ?? profile.primary_email ?? 'Unknown customer';
-  const action = recommendedAction(profile.risk_level);
-  const whySummary = triageWhySummary(profile.risk_level, profile.risk_score, claimCount, variantCount);
+  const summary = signalSummary(profile.risk_score, claimCount, variantCount);
   const isEligibleForEvidence = orderHistory.some((o) => o.refundRequested) || profile.total_chargebacks > 0;
   const density = Array.from({ length: 12 }, () => 0);
   for (const order of orderHistory) {
@@ -577,8 +562,8 @@ function DrawerContent({
           </div>
           <div className="flex items-center gap-1.5">
             <span style={tierChip(profile.risk_level)}>{tierLabel(profile.risk_level)}</span>
-            <span style={{ ...CHIP, background: 'var(--sev-definite-fill)', color: 'var(--sev-definite)', border: '1px solid color-mix(in srgb, var(--sev-definite) 40%, transparent)' }}>
-              RISK {(Math.min(profile.risk_score, 100) / 100).toFixed(2)}
+            <span style={{ ...CHIP, background: 'var(--surface-muted)', color: 'var(--ink-secondary)', border: '1px solid var(--surface-border)' }}>
+              CONF {(Math.min(profile.risk_score, 100) / 100).toFixed(2)}
             </span>
             <span style={{ ...CHIP, background: 'var(--surface-muted)', color: 'var(--ink-secondary)', border: '1px solid var(--surface-border)' }}>
               CONF {(profile.profile_confidence / 100).toFixed(2)}
@@ -626,27 +611,23 @@ function DrawerContent({
           ))}
         </div>
 
-        {/* Recommended action strip */}
+        {/* Signal summary strip */}
         <div style={{
           display: 'flex', alignItems: 'center', gap: 8,
           padding: '8px 12px',
-          background: profile.risk_level === 'critical' ? 'var(--sev-definite-fill)' : 'var(--sev-probable-fill)',
-          borderLeft: `3px solid ${profile.risk_level === 'critical' ? 'var(--sev-definite)' : 'var(--sev-probable)'}`,
+          background: 'var(--surface-overlay)',
+          borderLeft: '3px solid var(--surface-border)',
         }}>
-          <span style={{
-            width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
-            background: profile.risk_level === 'critical' ? 'var(--sev-definite)' : 'var(--sev-probable)',
-          }} aria-hidden="true" />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{
               fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase',
-              color: profile.risk_level === 'critical' ? 'var(--sev-definite)' : 'var(--sev-probable)',
+              color: 'var(--ink-tertiary)',
               marginBottom: 1,
             }}>
-              {action.label}
+              Signal summary
             </div>
             <p style={{ fontSize: 11, color: 'var(--ink-secondary)' }}>
-              {whySummary}
+              {summary}
             </p>
           </div>
         </div>
@@ -791,7 +772,7 @@ function DrawerContent({
         <CustomerNotes customerProfileId={profile.id} />
       </Section>
 
-      {/* ── Evidence CTA ─────────────────────────────────────────── */}
+      {/* ── Signal data CTA ─────────────────────────────────────── */}
       <div style={{ borderTop: '1px solid var(--surface-border)', paddingTop: 12, marginTop: 12 }}>
         {isEligibleForEvidence ? (
           <Link
@@ -805,7 +786,7 @@ function DrawerContent({
             className="hover:bg-[var(--copper-mid)]"
           >
             <FileText style={{ width: 14, height: 14 }} />
-            Generate evidence package
+            Compile signal data
           </Link>
         ) : (
           <span
@@ -815,12 +796,15 @@ function DrawerContent({
               background: 'var(--surface-muted)', color: 'var(--ink-tertiary)',
               border: '1px solid var(--surface-border)', opacity: 0.65, cursor: 'not-allowed',
             }}
-            title="No eligible orders found — customer needs at least one refund claim or chargeback"
+            title="No refund claims or chargebacks on record for this customer"
           >
             <FileText style={{ width: 14, height: 14 }} />
-            Generate evidence package
+            Compile signal data
           </span>
         )}
+        <p style={{ fontSize: 10, color: 'var(--ink-tertiary)', marginTop: 6, lineHeight: 1.5 }}>
+          Signal data may be relevant when preparing a dispute response. Verify CE 3.0 requirements with your acquirer or payment processor.
+        </p>
       </div>
     </div>
   );

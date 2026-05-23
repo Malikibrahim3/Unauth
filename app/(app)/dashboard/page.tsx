@@ -218,7 +218,7 @@ export default async function DashboardPage() {
   if (ce3Packages > 0) {
     activity.push({
       type: 'EVIDENCE',
-      detail: `${ce3Packages} CE3.0 eligible package${ce3Packages === 1 ? '' : 's'}`,
+      detail: `${ce3Packages} signal report${ce3Packages === 1 ? '' : 's'} with CE3.0 signals detected`,
       time: 'current',
       href: '/chargebacks',
     });
@@ -270,7 +270,7 @@ export default async function DashboardPage() {
             {
               label: 'Evidence ready',
               value: totalPackages.toLocaleString(),
-              hint: ce3Packages > 0 ? `${ce3Packages} CE3.0 eligible` : 'No CE3.0 packages',
+              hint: ce3Packages > 0 ? `${ce3Packages} with CE3.0 signals` : 'No CE3.0 signals detected',
             },
             {
               label: 'Avg match rate',

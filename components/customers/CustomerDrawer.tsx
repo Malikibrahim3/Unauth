@@ -113,7 +113,7 @@ export function CustomerDrawer({ profileId, onClose, onAction }: CustomerDrawerP
     onClose();
   }, [onClose, pathname, router, searchParams]);
 
-  // -------- Recommended action CTA label --------
+  // -------- Primary CTA label --------
   const primaryCTALabel =
     customer?.recommendation.action === 'block' ? 'Escalate for review'
     : customer?.recommendation.action === 'watch' ? 'Add to review list'
@@ -221,7 +221,7 @@ export function CustomerDrawer({ profileId, onClose, onAction }: CustomerDrawerP
           {/* Body sections */}
           <div className="p-[var(--space-5)] space-y-[var(--space-5)]">
 
-            {/* §9.3 — Recommended action */}
+            {/* §9.3 — Signal assessment */}
             <RecommendedActionCard
               action={customer.recommendation.action}
               confidence={customer.recommendation.confidence}

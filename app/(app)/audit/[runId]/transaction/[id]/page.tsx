@@ -120,7 +120,7 @@ export default async function TransactionDetailPage({ params }: Props) {
             { label: 'Order ID', value: txData.order_id },
             { label: 'Customer', value: txData.customer_email ?? '—' },
             { label: 'Identity confidence grade', value: txData.identity_confidence_grade ?? '—' },
-            { label: 'Recommended action', value: txData.recommended_action ?? '—' },
+            { label: 'Signal grade', value: txData.recommended_action ?? '—' },
             { label: 'Refund reason', value: txData.refund_reason ?? '—' },
           ].map(({ label, value }) => (
             <div key={label} className="flex justify-between py-1.5" style={{ borderBottom: '1px solid var(--border-subtle)' }}>

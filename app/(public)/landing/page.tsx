@@ -380,7 +380,7 @@ export default function LandingPage() {
                       lineHeight: 1.4,
                     }}
                   >
-                    RISK 0.92
+                    CONF 0.92
                   </span>
                   <span
                     style={{
@@ -759,7 +759,7 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              {/* Recommended action */}
+              {/* Signal summary */}
               <div
                 className="ua-case-step"
                 style={{
@@ -790,7 +790,7 @@ export default function LandingPage() {
                     fontWeight: 500,
                   }}
                   >
-                  <TypedText text="▸ DECLINE NEXT ORDER · ASSEMBLE CASE FILE FOR 2 OPEN DISPUTES" delay={heroActionDelay} speed={10} />
+                  <TypedText text="▸ SIGNAL PATTERN DETECTED · COMPILE SIGNAL DATA FOR 2 OPEN DISPUTES" delay={heroActionDelay} speed={10} />
                 </p>
                 <span
                   style={{

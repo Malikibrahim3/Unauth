@@ -655,7 +655,7 @@ function ResolveArtifact() {
                 DEFINITE
               </text>
               <text x={514} y={336} fill={INK_FAINT} fontFamily={MONO} fontSize="9" letterSpacing="0.06em">
-                RISK 0.92 · CONF 0.96
+                CONF 0.92 · SIG 0.96
               </text>
               <text x={514} y={344} fill={INK_FAINT} fontFamily={MONO} fontSize="8" letterSpacing="0.04em">
                 k = 7 · gate cleared
@@ -704,7 +704,7 @@ function CaseArtifact() {
               <span style={{ fontFamily: MONO, fontSize: '9.5px', color: INK_FAINT, letterSpacing: '0.06em' }}>→ #u_kessler.07</span>
             </div>
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-              <Pill variant="faint">RISK 0.92</Pill>
+              <Pill variant="faint">CONF 0.92</Pill>
               <Pill variant="faint">CONF 0.96</Pill>
               <Pill variant="faint">k = 7</Pill>
               <Pill variant="warn">8 / 12 signals</Pill>

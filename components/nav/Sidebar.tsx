@@ -16,7 +16,6 @@ import {
   Settings,
   ChevronRight,
   ShieldCheck,
-  GitBranch,
   BarChart3,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -75,7 +74,6 @@ function buildGroups(inboxCount = 0, watchlistCount = 0): NavGroup[] {
       label: 'Investigations',
       items: [
         { href: '/customers', label: 'Customers', icon: Users },
-        { href: '/global', label: 'Global graph', icon: GitBranch },
         { href: '/watchlist', label: 'Watchlist', icon: Star, badge: watchlistCount },
         { href: '/chargebacks', label: 'Evidence packages', icon: ShieldCheck },
       ],

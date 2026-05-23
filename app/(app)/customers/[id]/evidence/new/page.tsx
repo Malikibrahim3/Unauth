@@ -82,13 +82,13 @@ function EvidenceNewForm({ profileId }: { profileId: string }) {
       })
       if (!res.ok) {
         const body = await res.json()
-        setError(body.error ?? 'Failed to generate evidence package')
+        setError(body.error ?? 'Failed to compile signal data')
         return
       }
       const { packageId } = await res.json()
       router.push(`/chargebacks/${packageId}`)
     } catch {
-      setError('Failed to generate evidence package. Please try again.')
+      setError('Failed to compile signal data. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -101,8 +101,8 @@ function EvidenceNewForm({ profileId }: { profileId: string }) {
   const packageIncludes = [
     { label: 'Customer identity record', available: true },
     { label: 'Order history (all known orders)', available: true },
-    { label: 'Identity signals & risk flags', available: true },
-    { label: 'CE3.0 qualifying prior transactions', available: ce3Preview === 'likely', pending: ce3Preview === 'unknown' },
+    { label: 'Identity signals observed', available: true },
+    { label: 'Prior matching transactions (if any)', available: ce3Preview === 'likely', pending: ce3Preview === 'unknown' },
     { label: 'Merchant notes', available: !!notes.trim(), optional: true },
   ]
 
@@ -123,14 +123,17 @@ function EvidenceNewForm({ profileId }: { profileId: string }) {
         <span style={{ color: 'var(--border)' }}>/</span>
         <Link href="/customers" className="text-sm hover:opacity-80 transition-colors" style={{ color: 'var(--text-muted)' }}>Customers</Link>
         <span style={{ color: 'var(--border)' }}>/</span>
-        <span className="text-sm" style={{ color: 'var(--text)' }}>Generate evidence</span>
+        <span className="text-sm" style={{ color: 'var(--text)' }}>Compile signal data</span>
       </div>
 
       <h1 className="text-heading-lg mb-1" style={{ color: 'var(--text)' }}>
-        Generate chargeback evidence
+        Compile signal data
       </h1>
-      <p className="text-body-sm mb-8" style={{ color: 'var(--text-muted)' }}>
-        Creates a submission-ready document for your payment processor. Where eligible, the package is automatically formatted for Visa Compelling Evidence 3.0.
+      <p className="text-body-sm mb-2" style={{ color: 'var(--text-muted)' }}>
+        Organises identity signal data from your records that may be relevant when preparing a chargeback response. Unauth surfaces the signal history — your payment processor or acquirer determines what qualifies as valid dispute evidence.
+      </p>
+      <p className="text-caption mb-8 rounded-md border px-3 py-2" style={{ color: 'var(--text-subtle)', borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)' }}>
+        Visa CE 3.0 requirements can change. Verify eligibility and submission requirements with your acquirer or processor before use.
       </p>
 
       {/* Loading state */}
@@ -165,7 +168,7 @@ function EvidenceNewForm({ profileId }: { profileId: string }) {
           <div>
             <p className="text-sm font-semibold mb-0.5" style={{ color: 'var(--text)' }}>No refund claims or chargebacks on record</p>
             <p className="text-caption" style={{ color: 'var(--text-muted)' }}>
-              Evidence packages are most effective when defending a disputed order with a refund claim. You can still generate a package, but it may carry less weight.
+              Signal data is most complete when a refund claim is on record. You can still compile a signal report for any order.
             </p>
           </div>
         </div>
@@ -224,9 +227,9 @@ function EvidenceNewForm({ profileId }: { profileId: string }) {
                 <div className="rounded-lg p-3 flex items-start gap-2.5" style={{ background: 'var(--success-bg)', border: '1px solid var(--success-bd)' }}>
                   <span style={{ color: 'var(--success)' }}>✓</span>
                   <div>
-                    <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>CE3.0 eligible</p>
+                    <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Prior matching transactions found</p>
                     <p className="text-caption mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                      A qualifying prior transaction history was found. The package will be formatted for Visa Compelling Evidence 3.0.
+                      This customer has matching prior transactions in your records that may be relevant to a CE 3.0 response. Verify requirements with your acquirer or processor before submission.
                     </p>
                   </div>
                 </div>
@@ -234,9 +237,9 @@ function EvidenceNewForm({ profileId }: { profileId: string }) {
                 <div className="rounded-lg p-3 flex items-start gap-2.5" style={{ background: 'var(--warning-bg)', border: '1px solid var(--warning-bd)' }}>
                   <span style={{ color: 'var(--warning)' }}>⚠</span>
                   <div>
-                    <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>CE3.0 requirements may not be met</p>
+                    <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>No prior matching transactions detected</p>
                     <p className="text-caption mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                      No qualifying prior transactions detected. The package will use standard representment format instead.
+                      No prior transactions with matching signals were found in your records for this customer.
                     </p>
                   </div>
                 </div>
@@ -327,7 +330,7 @@ function EvidenceNewForm({ profileId }: { profileId: string }) {
                 className="px-5 py-2.5 rounded-md text-sm font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}
               >
-                {loading ? 'Generating package…' : 'Generate evidence package'}
+                {loading ? 'Compiling…' : 'Compile signal data'}
               </button>
               {!selectedOrderId && (
                 <p className="text-[11px]" style={{ color: 'var(--text-subtle)' }}>

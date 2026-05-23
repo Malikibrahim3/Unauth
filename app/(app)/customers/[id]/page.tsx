@@ -409,7 +409,6 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
     linkedAccountCount: 0,
   });
   const profileGrade = riskLevelToNewGrade(profile.risk_level);
-  const blockReady = profileGrade === 'A' && Math.round(profile.risk_score) >= 90;
 
   return (
     <div className="mx-auto max-w-7xl px-3 py-5 sm:px-5">
@@ -459,19 +458,19 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
                 <Link
                   href={`/customers/${profile.id}/evidence/new`}
                   className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold uppercase transition-colors"
-                  style={{ background: blockReady ? 'var(--sev-definite)' : 'var(--copper-bright)', color: blockReady ? 'var(--ink-primary)' : 'var(--ink-inverse)' }}
+                  style={{ background: 'var(--copper-bright)', color: 'var(--ink-inverse)' }}
                 >
                   <FileText className="h-3.5 w-3.5" />
-                  {blockReady ? 'BLOCK & ESCALATE' : 'Generate evidence package'}
+                  Compile signal data
                 </Link>
               ) : (
                 <span
                   className="inline-flex cursor-not-allowed items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold uppercase opacity-50"
-                  title="No eligible orders for evidence generation"
+                  title="No refund claims or chargebacks on record for this customer"
                   style={{ background: 'var(--surface-muted)', color: 'var(--ink-tertiary)', border: '1px solid var(--surface-border)' }}
                 >
                   <FileText className="h-3.5 w-3.5" />
-                  Evidence unavailable
+                  Signal data unavailable
                 </span>
               )}
             </div>
@@ -533,7 +532,7 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
 
               <div className="mt-[var(--space-4)]">
                 <div className="flex items-center justify-between text-caption mb-1" style={{ color: 'var(--text-muted)' }}>
-                  <span>Review priority</span>
+                  <span>Signal strength</span>
                   <span className="font-semibold" style={{ color: 'var(--text)' }}>{Math.round(profile.risk_score)} / 100</span>
                 </div>
                 <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--bg-subtle)' }}>

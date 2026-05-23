@@ -113,21 +113,20 @@ export default async function EvidenceDetailPage({ params }: Props) {
         </div>
       </div>
 
-      {/* CE3 banner */}
+      {/* CE3 signals banner */}
       {pkg.ce3_eligible && (
         <div
           className="rounded-lg p-4"
           style={{
-            background: 'var(--sev-clear-fill)',
-            borderLeft: '4px solid var(--sev-clear)',
-            border: '1px solid var(--risk-low-bd)',
+            background: 'var(--bg-inset)',
+            border: '1px solid var(--border-subtle)',
           }}
         >
-          <p className="text-sm font-bold mb-1" style={{ color: 'var(--sev-clear)' }}>
-            VISA COMPELLING EVIDENCE 3.0 — ELIGIBLE
+          <p className="text-sm font-bold mb-1" style={{ color: 'var(--text)' }}>
+            CE3.0 Signals
           </p>
-          <p className="text-sm" style={{ color: 'var(--ink-secondary)' }}>
-            CE3.0 Eligible — Submit to your acquirer via Visa Resolve Online within 30 days of chargeback notification.
+          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+            This record contains prior transactions with matching identity signals that may be relevant to a CE 3.0 dispute response. Consult your acquirer or payment processor to determine eligibility before submission.
           </p>
         </div>
       )}
@@ -157,9 +156,8 @@ export default async function EvidenceDetailPage({ params }: Props) {
         <Card label="Customer" value={maskedEmail} />
         <Card label="Generated" value={formatDate(pkg.generated_at)} />
         <Card
-          label="CE3.0 Status"
-          value={pkg.ce3_eligible ? 'Eligible' : 'Not eligible'}
-          valueColor={pkg.ce3_eligible ? 'var(--success)' : 'var(--text-muted)'}
+          label="CE3.0 Signals"
+          value={pkg.ce3_eligible ? 'Detected' : 'Not detected'}
         />
         <Card
           label="Cross-merchant indicator"
@@ -178,17 +176,17 @@ export default async function EvidenceDetailPage({ params }: Props) {
           className="rounded-xl p-5 border"
           style={{ background: 'var(--sev-clear-fill)', borderColor: 'var(--risk-low-bd)' }}
         >
-          <h2 className="text-overline mb-3" style={{ color: 'var(--sev-clear)' }}>CE3.0 Evidence Detail</h2>
+          <h2 className="text-overline mb-3" style={{ color: 'var(--text-muted)' }}>CE3.0 Signal Detail</h2>
           {ce3Signals.length > 0 && (
             <p className="text-body-sm mb-2" style={{ color: 'var(--text-secondary)' }}>
-              <span className="font-semibold">Qualifying signals:</span>{' '}
+              <span className="font-semibold">Matching signals:</span>{' '}
               {ce3Signals.join(', ')}
             </p>
           )}
           {ce3Priors.length > 0 && (
             <div className="space-y-1">
               <p className="text-body-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
-                Qualifying prior transactions:
+                Prior matching transactions:
               </p>
               {ce3Priors.map((p, i) => (
                 <p key={i} className="text-body-sm font-mono" style={{ color: 'var(--text-secondary)' }}>
@@ -197,8 +195,8 @@ export default async function EvidenceDetailPage({ params }: Props) {
               ))}
             </div>
           )}
-          <p className="text-xs mt-3 font-semibold" style={{ color: 'var(--text-secondary)' }}>
-            NEXT STEP: Download the PDF and submit to your acquirer via Visa Resolve Online (VROL) within 30 days of chargeback notification.
+          <p className="text-xs mt-3" style={{ color: 'var(--text-muted)' }}>
+            Consult your acquirer or payment processor to determine whether this signal data meets CE 3.0 submission requirements. Visa's rules on qualifying evidence can change.
           </p>
         </section>
       )}
@@ -242,8 +240,12 @@ export default async function EvidenceDetailPage({ params }: Props) {
                   </span>
                 </div>
                 {ev.ce3Accepted && (
-                  <span className="text-xs font-semibold" style={{ color: 'var(--success)' }}>
-                    CE3.0 ✓
+                  <span
+                    className="text-xs font-semibold px-1.5 py-0.5 rounded"
+                    style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)', border: '1px solid var(--border-subtle)' }}
+                    title="This signal type matches CE 3.0 criteria. Consult your acquirer to confirm eligibility."
+                  >
+                    CE3.0
                   </span>
                 )}
               </div>
@@ -266,7 +268,7 @@ export default async function EvidenceDetailPage({ params }: Props) {
       )}
 
       <p className="text-xs" style={{ color: 'var(--text-subtle)' }}>
-        Download the PDF to submit to your acquirer. For CE3.0 submissions, present via Visa Resolve Online (VROL). Your acquirer can advise on the submission process.
+        This signal data may be relevant when preparing a dispute response. Your acquirer or payment processor can advise on submission requirements and whether this data meets CE 3.0 criteria.
       </p>
     </div>
   )

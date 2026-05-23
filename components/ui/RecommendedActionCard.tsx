@@ -88,7 +88,7 @@ export function RecommendedActionCard({
       <div className="-mx-[var(--space-5)] -mt-[var(--space-5)]">
         {/* Label row */}
         <div className="flex items-center justify-between px-[var(--space-5)] pt-[var(--space-5)] pb-[var(--space-3)]">
-          <span className="text-overline text-[var(--text-tertiary)]">Recommended action</span>
+          <span className="text-overline text-[var(--text-tertiary)]">Signal assessment</span>
           <ConfidenceBadge grade={confidence} size="sm" />
         </div>
 
@@ -162,7 +162,7 @@ export function RecommendedActionCard({
         {/* Disclaimer */}
         <div className="px-[var(--space-5)] py-[var(--space-3)] border-t border-[var(--border-subtle)]">
           <p className="text-[11px] leading-relaxed" style={{ color: 'var(--text-tertiary)' }}>
-            ParcelClaim identifies identity and order-pattern matches. Final decisions should be made by the merchant using the underlying evidence.
+            Unauth surfaces identity and order-pattern signals from your data. All decisions remain with the merchant.
           </p>
         </div>
       </div>

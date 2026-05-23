@@ -221,7 +221,6 @@ function deriveFromPathname(pathname: string): BreadcrumbSegment[] {
   };
   const pathMap: Record<string, string> = {
     'settings/audit-trail': 'Data & privacy',
-    global: 'Global graph',
     chargebacks: 'Evidence packages',
   };
 
