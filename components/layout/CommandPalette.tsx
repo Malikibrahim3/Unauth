@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { FLAG_COMMAND_CENTER } from '@/lib/flags';
 import { RISK_LEVEL_COLORS } from '@/lib/utils/riskStyles';
+import type { RiskLevel } from '@/lib/utils/riskStyles';
 
 interface NavItem {
   label: string;
@@ -417,7 +418,7 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
                   </div>
                   <span
                     className="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded shrink-0"
-                    style={{ color: RISK_LEVEL_COLORS[c.risk_level] ?? 'var(--text-muted)', background: 'var(--bg-subtle)' }}
+                    style={{ color: RISK_LEVEL_COLORS[c.risk_level as RiskLevel] ?? 'var(--text-muted)', background: 'var(--bg-subtle)' }}
                   >
                     {c.risk_level}
                   </span>
@@ -526,4 +527,3 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
     </>
   );
 }
-

@@ -15,8 +15,7 @@ import { checkCsvUsageGuard } from '@/lib/processing/supabaseUsageGuard';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { summarizeAuditResults } from '@/lib/audit/resultsSummary';
 import { sendEmail } from '@/lib/email/send';
-import { GRADE_ORDER } from '@/lib/engine/weights';
-import { TABLES } from '@/lib/supabase/tables';
+import { GRADE_ORDER, type ConfidenceGrade } from '@/lib/engine/weights';
 import { buildAuditResultsEmail } from '@/lib/email/templates';
 
 export const maxDuration = 300;
@@ -71,8 +70,8 @@ async function checkWatchlistAppearances(
   if (!appearances || appearances.length === 0) return;
 
   const gradeOrder = GRADE_ORDER;
-  const grouped = new Map<string, { count: number; highestGrade: string }>();
-  for (const row of appearances as Array<{ customer_profile_id: string; identity_confidence_grade: string }>) {
+  const grouped = new Map<string, { count: number; highestGrade: ConfidenceGrade }>();
+  for (const row of appearances as Array<{ customer_profile_id: string; identity_confidence_grade: ConfidenceGrade }>) {
     const ex = grouped.get(row.customer_profile_id);
     const rank = gradeOrder[row.identity_confidence_grade] ?? 0;
     if (!ex) {

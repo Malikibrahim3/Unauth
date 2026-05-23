@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { DM_Mono, DM_Sans, Source_Serif_4 } from 'next/font/google';
 import SentryInit from '@/components/common/SentryInit';
+import ThemeBootstrap from '@/components/common/ThemeBootstrap';
 import 'reactflow/dist/style.css';
 import './globals.css';
 
@@ -53,11 +54,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       suppressHydrationWarning
     >
       <body className="font-sans antialiased">
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `try{var t=localStorage.getItem('unauth.theme');if(t==='dark'||t==='light')document.documentElement.dataset.theme=t;}catch(e){}`,
-          }}
-        />
+        <ThemeBootstrap />
         <SentryInit />
         {children}
       </body>
