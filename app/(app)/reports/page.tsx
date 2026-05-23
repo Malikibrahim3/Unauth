@@ -1,8 +1,9 @@
 import { redirect } from 'next/navigation';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { TABLES } from '@/lib/supabase/tables';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { getExposureAtRisk } from '@/lib/supabase/merchantHelpers';
-import { formatCurrencyNullable } from '@/lib/utils/formatCurrency';
+import { formatCurrencyNullable } from '@/lib/utils/format';
 import { Button, MetricCard, SectionCard, WorkbenchPage } from '@/components/ui';
 
 type RunSummary = {
@@ -64,7 +65,7 @@ export default async function ReportsPage() {
 
   const [{ data: runs }, exposureAtRisk] = await Promise.all([
     serviceClient
-      .from('processing_jobs')
+      .from(TABLES.PROCESSING_JOBS)
       .select('id,created_at,total_rows,flagged_count')
       .eq('merchant_id', ctx.merchantId)
       .eq('hidden_by_merchant', false)
@@ -77,7 +78,7 @@ export default async function ReportsPage() {
   const jobIds = rows.map((row) => row.id);
   const { data: txRows } = jobIds.length > 0
     ? await serviceClient
-      .from('audit_transactions')
+      .from(TABLES.AUDIT_TRANSACTIONS)
       .select('identity_confidence_grade,match_status')
       .in('job_id', jobIds)
       .not('dismissed_by_merchant', 'is', true)

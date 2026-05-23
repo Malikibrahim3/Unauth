@@ -1,4 +1,15 @@
+/**
+ * SINGLE SOURCE OF TRUTH — Engine constants, weights, and thresholds
+ *
+ * All canonical engine constants are defined here and only here.
+ * Do not define, redefine, or duplicate these constants anywhere else.
+ * Do not import weights or thresholds from any other file.
+ *
+ * See ARCHITECTURE.md and CLAUDE.md for the full rules.
+ */
+
 import type { IdentitySignalName } from './types';
+import { env } from '@/lib/utils/env';
 
 export const SIGNAL_WEIGHTS = {
   refundRate: 20,
@@ -30,7 +41,7 @@ export const RISK_TIER_THRESHOLDS = {
 // Current benchmark calibration:
 //  - us_benchmark_v1.csv: P=0.985, R=0.876, F1=0.927 at threshold=44
 //  - clean merchant datasets should remain near-zero false positives at this threshold
-export const FLAG_THRESHOLD = Number(process.env.FLAG_THRESHOLD ?? 44);
+export const FLAG_THRESHOLD = env.FLAG_THRESHOLD;
 
 // =============================================================================
 // IDENTITY CONFIDENCE MODEL WEIGHTS
@@ -46,7 +57,12 @@ export const FLAG_THRESHOLD = Number(process.env.FLAG_THRESHOLD ?? 44);
  * THRESHOLDS during eval harness tuning. Weights control relative importance;
  * thresholds control sensitivity.
  */
-export const IDENTITY_SIGNAL_WEIGHTS: Record<IdentitySignalName, number> = {
+/**
+ * Per-signal weights keyed by IdentitySignalName (the 8-way pair comparison signals).
+ * Used by identityCluster.ts to compute pair-level confidence scores.
+ * Named separately from the canonical IDENTITY_SIGNAL_WEIGHTS to avoid collision.
+ */
+export const IDENTITY_PAIR_SIGNAL_WEIGHTS: Record<IdentitySignalName, number> = {
   deviceMatch: 35,    // card_fingerprint + browser_fingerprint + cookie_id + device_id
   cardMatch: 30,      // card_fingerprint alone: 30 | last4+bin: 18 | last4 alone: 8
   accountLink: 25,    // same account_id — merchant controls this namespace
@@ -69,3 +85,84 @@ export const CONFIDENCE_GRADES = {
   possible: 35,  // 1 hardware + 1 soft, or 3 soft signals
   weak: 0,       // single soft signal only — informational
 } as const;
+
+// =============================================================================
+// CANONICAL SIGNAL WEIGHTS — SINGLE SOURCE OF TRUTH
+// =============================================================================
+
+/**
+ * SINGLE SOURCE OF TRUTH — Identity signal weights
+ * Do not define signal weights anywhere else.
+ *
+ * NOTE: lib/scorer.ts uses a separate internal scoring table with different
+ * values because it was calibrated independently. Do NOT modify scorer.ts weights
+ * without explicit instruction — they affect scoring output.
+ */
+export const IDENTITY_SIGNAL_WEIGHTS = {
+  device: 35,
+  card: 30,
+  phone: 20,
+  email: 12,
+  ip: 8,
+  shipping_address: 15,
+} as const;
+
+export type IdentitySignalKey = keyof typeof IDENTITY_SIGNAL_WEIGHTS;
+
+// =============================================================================
+// CONFIDENCE THRESHOLDS AND GRADE FUNCTIONS — SINGLE SOURCE OF TRUTH
+// =============================================================================
+
+/**
+ * SINGLE SOURCE OF TRUTH — Confidence score thresholds and grade conversion
+ * Do not define thresholds or scoreToGrade anywhere else.
+ *
+ * NOTE: lib/scorer.ts uses internal thresholds (GRADE_THRESHOLDS) with different
+ * values calibrated for its specific scoring algorithm. Do NOT replace scorer.ts
+ * thresholds with these without explicit instruction.
+ */
+export const CONFIDENCE_THRESHOLDS = {
+  DEFINITE: 85,
+  PROBABLE: 65,
+  POSSIBLE: 45,
+} as const;
+
+export type ConfidenceGrade = 'definite' | 'probable' | 'possible' | 'weak';
+
+export function scoreToGrade(score: number): ConfidenceGrade {
+  if (score >= CONFIDENCE_THRESHOLDS.DEFINITE) return 'definite';
+  if (score >= CONFIDENCE_THRESHOLDS.PROBABLE) return 'probable';
+  if (score >= CONFIDENCE_THRESHOLDS.POSSIBLE) return 'possible';
+  return 'weak';
+}
+
+// =============================================================================
+// GRADE-TO-LETTER CONVERSION — SINGLE SOURCE OF TRUTH
+// =============================================================================
+
+export type ConfidenceLetterGrade = 'A' | 'B' | 'C' | 'D';
+
+export function gradeToLetter(grade: ConfidenceGrade): ConfidenceLetterGrade {
+  const map: Record<ConfidenceGrade, ConfidenceLetterGrade> = {
+    definite: 'A',
+    probable: 'B',
+    possible: 'C',
+    weak: 'D',
+  };
+  return map[grade];
+}
+
+// =============================================================================
+// NAMED MAGIC CONSTANTS
+// =============================================================================
+
+export const ESTIMATED_CHARGEBACK_RATE = 0.42;
+export const K_ANONYMITY_MIN = 3;
+export const CE3_PRIOR_ORDER_WINDOW_DAYS = 120;
+export const ADDRESS_TOKEN_OVERLAP_THRESHOLD = 0.6;
+export const GRADE_ORDER: Record<ConfidenceGrade, number> = {
+  definite: 4,
+  probable: 3,
+  possible: 2,
+  weak: 1,
+};

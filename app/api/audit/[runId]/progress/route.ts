@@ -9,6 +9,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { TABLES } from '@/lib/supabase/tables';
 import { createScopedClient } from '@/lib/supabase/scoped';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { enforceRateLimit, limitFromEnv, rateLimitKey } from '@/lib/ratelimit';
@@ -44,7 +45,7 @@ async function GETHandler(
   const { runId } = resolvedParams;
 
   const { data: job, error } = await scopedClient
-    .from('processing_jobs')
+    .from(TABLES.PROCESSING_JOBS)
     .select('status, total_rows, processed_rows, failed_rows, error_log, has_ground_truth, merchant_id, updated_at')
     .eq('id', runId)
     .single();
@@ -80,7 +81,7 @@ async function GETHandler(
   let flaggedCount = 0;
   if (job.status === 'completed') {
     const { count } = await serviceClient
-      .from('audit_transactions')
+      .from(TABLES.AUDIT_TRANSACTIONS)
       .select('*', { count: 'planned', head: true })
       .eq('job_id', runId)
       .or('identity_confidence_grade.in.(probable,definite),match_status.in.(probable,definite)')

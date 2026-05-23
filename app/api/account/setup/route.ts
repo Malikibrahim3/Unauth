@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient, createClient, createServiceClient } from '@/lib/supabase/server';
+import { TABLES } from '@/lib/supabase/tables';
 import { upsertMerchantForUser } from '@/lib/account/upsertMerchantForUser';
 
 interface SetupBody {
@@ -99,7 +100,7 @@ export async function GET() {
 
   const serviceClient = createServiceClient();
   const { data: merchant, error } = await serviceClient
-    .from('merchants')
+    .from(TABLES.MERCHANTS)
     .select('id, name, monthly_order_volume, primary_fraud_concern, setup_complete')
     .eq('user_id', user.id)
     .maybeSingle();

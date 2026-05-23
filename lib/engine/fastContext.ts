@@ -12,8 +12,10 @@
 
 import type { NormalisedOrder } from './types';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { TABLES } from '../supabase/tables';
 import { normaliseEmail, normaliseIP, normaliseAddress, normaliseCard } from '../identity/normalise';
 import { withReadRetry } from './dbSemaphore';
+import { env } from '../utils/env';
 
 // ── Concurrency limiter ────────────────────────────────────────────────────
 // Cap simultaneous Supabase requests to avoid saturating the Postgres
@@ -144,7 +146,7 @@ async function fetchCrossMerchantProfiles(
   addresses: string[],
   cards: string[]
 ): Promise<CrossMerchantProfile[]> {
-  if (process.env.SKIP_CROSS_MERCHANT_CONTEXT === '1') {
+  if (env.SKIP_CROSS_MERCHANT_CONTEXT === '1') {
     return [];
   }
 
@@ -178,7 +180,7 @@ async function fetchCrossMerchantProfiles(
         fetchSemaphore(async () => {
           const orExpr = chunk.map((v) => `${col}.cs.${JSON.stringify([v])}`).join(',');
           const { data, error } = await supabase
-            .from('customer_profiles')
+            .from(TABLES.CUSTOMER_PROFILES)
             .select(COLS)
             .gte('total_merchants_seen_at', 3)
             .or(orExpr);

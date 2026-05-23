@@ -41,6 +41,33 @@ module.exports = [
     },
   },
 
+  // Phase 4A — no-restricted-imports: prevent bypassing SSOT constants
+  // Blocks direct imports of scoring/weight constants from non-canonical locations.
+  {
+    files: ["**/*.{ts,tsx}"],
+    ignores: ["lib/engine/weights.ts", "lib/scorer.ts", "scripts/**", "tests/**"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "@/lib/utils/riskStyles",
+              importNames: ["scoreToGrade"],
+              message: "Import scoreToGrade from @/lib/engine/weights instead.",
+            },
+            {
+              name: "@/lib/utils/confidenceStyles",
+              importNames: ["CONFIDENCE_THRESHOLDS", "CONFIDENCE_GRADES"],
+              message: "Import CONFIDENCE_THRESHOLDS from @/lib/engine/weights instead.",
+            },
+          ],
+          patterns: [],
+        },
+      ],
+    },
+  },
+
   // Phase A — disallow raw Tailwind color classes in components/**
   // (except components/internal/*)
   {

@@ -1,4 +1,4 @@
-import { formatCurrencyNullable } from '@/lib/utils/formatCurrency';
+import { formatCurrencyNullable } from '@/lib/utils/format';
 
 describe('formatCurrencyNullable', () => {
   it('returns an em dash for null values', () => {

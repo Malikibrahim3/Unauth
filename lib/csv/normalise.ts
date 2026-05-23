@@ -1,6 +1,8 @@
 import type { CsvRow } from './schema';
 import type { NormalisedOrder } from '../engine/types';
-import { hashIdentifier, normaliseEmail, normaliseAddress, normalisePhone } from '../identity/hash';
+import { hashIdentifier } from '../identity/hash';
+import { normaliseEmail, normaliseAddress } from '../identity/normalise';
+import { normalisePhone } from '../linker';
 import { cleanOrderStatus, cleanRefundStatus, cleanRefundReason, cleanCurrency, cleanGroundTruth, cleanBoolean } from './clean';
 
 export interface NormalisedOrderWithRawEmail extends NormalisedOrder {
@@ -17,7 +19,7 @@ export interface NormalisedOrderWithRawEmail extends NormalisedOrder {
 }
 
 export function normaliseRow(row: CsvRow): NormalisedOrderWithRawEmail {
-  const normEmail = normaliseEmail(row.customer_email ?? '');
+  const normEmail = normaliseEmail(row.customer_email ?? '') ?? '';
   const emailHash = hashIdentifier(normEmail);
 
   const normAddress = row.shipping_address ? normaliseAddress(row.shipping_address) : null;

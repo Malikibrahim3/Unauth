@@ -7,6 +7,7 @@ jest.mock('@/lib/supabase/server', () => ({
 }));
 
 import { TENANT_TABLES, createScopedClient } from '@/lib/supabase/scoped';
+import { TABLES } from '../../lib/supabase/tables';
 
 function makeBuilder() {
   const builder: any = {
@@ -33,7 +34,7 @@ describe('createScopedClient', () => {
     const base = { from: jest.fn(() => builder) };
     const scoped = createScopedClient('merchant-1', base as any);
 
-    scoped.from('processing_jobs').select('id');
+    scoped.from(TABLES.PROCESSING_JOBS).select('id');
 
     expect(base.from).toHaveBeenCalledWith('processing_jobs');
     expect(builder.eq).toHaveBeenCalledWith('merchant_id', 'merchant-1');
@@ -44,7 +45,7 @@ describe('createScopedClient', () => {
     const base = { from: jest.fn(() => builder) };
     const scoped = createScopedClient('merchant-1', base as any);
 
-    scoped.from('customer_profiles').select('id');
+    scoped.from(TABLES.CUSTOMER_PROFILES).select('id');
 
     expect(builder.contains).toHaveBeenCalledWith('merchant_ids', ['merchant-1']);
   });
@@ -54,13 +55,13 @@ describe('createScopedClient', () => {
     const base = { from: jest.fn(() => builder) };
     const scoped = createScopedClient('merchant-1', base as any);
 
-    scoped.from('watchlist_entries').insert({ customer_profile_id: 'profile-1' });
+    scoped.from(TABLES.WATCHLIST_ENTRIES).insert({ customer_profile_id: 'profile-1' });
     expect(builder.insert).toHaveBeenCalledWith(
       { customer_profile_id: 'profile-1', merchant_id: 'merchant-1' }
     );
 
     expect(() =>
-      scoped.from('watchlist_entries').insert({
+      scoped.from(TABLES.WATCHLIST_ENTRIES).insert({
         customer_profile_id: 'profile-1',
         merchant_id: 'merchant-2',
       })
@@ -72,7 +73,7 @@ describe('createScopedClient', () => {
     const base = { from: jest.fn(() => builder) };
     const scoped = createScopedClient('merchant-1', base as any);
 
-    scoped.from('merchants').select('id');
+    scoped.from(TABLES.MERCHANTS).select('id');
 
     expect(builder.select).toHaveBeenCalledWith('id');
     expect(builder.eq).not.toHaveBeenCalled();

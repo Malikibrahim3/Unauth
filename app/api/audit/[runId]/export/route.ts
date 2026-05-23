@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { TABLES } from '@/lib/supabase/tables';
 import { createScopedClient } from '@/lib/supabase/scoped';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { logAction } from '@/lib/permissions/audit';
@@ -53,7 +54,7 @@ async function GETHandler(
 
   // ── Verify ownership (must belong to this merchant) ──────────────────────
   const { data: job, error: jobError } = await scopedClient
-    .from('processing_jobs')
+    .from(TABLES.PROCESSING_JOBS)
     .select('id, merchant_id')
     .eq('id', runId)
     .single();
@@ -89,7 +90,7 @@ async function GETHandler(
 
   // Determine total rows expected so we can detect truncation.
   const { count: totalCount } = await serviceClient
-    .from('audit_transactions')
+    .from(TABLES.AUDIT_TRANSACTIONS)
     .select('*', { count: 'exact', head: true })
     .eq('job_id', runId);
 
@@ -98,7 +99,7 @@ async function GETHandler(
   const PAGE_SIZE = 1000;
   for (let offset = 0; ; offset += PAGE_SIZE) {
     const { data, error: txError } = await serviceClient
-      .from('audit_transactions')
+      .from(TABLES.AUDIT_TRANSACTIONS)
       .select(
         'order_id, processed_at, order_value, identity_score, identity_confidence_grade, cluster_id, match_status, candidate_cluster_id, confirmed_identity_id, signals_matched, customer_email, customer_name, identity_match_score, identity_match_grade, matched_datapoints, changed_datapoints, identity_evidence, evidence_summary, context_flags, context_summary'
       )

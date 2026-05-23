@@ -2,6 +2,7 @@
 // Evidence package detail page.
 
 import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { TABLES } from '@/lib/supabase/tables'
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { formatDate } from '@/lib/utils/format'
@@ -24,7 +25,7 @@ export default async function EvidenceDetailPage({ params }: Props) {
   if (denied) redirect('/dashboard')
 
   const { data: pkg } = await serviceClient
-    .from('evidence_packages')
+    .from(TABLES.EVIDENCE_PACKAGES)
     .select('*')
     .eq('id', id)
     .eq('merchant_id', ctx.merchantId)
@@ -51,7 +52,7 @@ export default async function EvidenceDetailPage({ params }: Props) {
   let maskedEmail = '****'
   if (pkg.customer_profile_id) {
     const { data: profile } = await serviceClient
-      .from('customer_profiles')
+      .from(TABLES.CUSTOMER_PROFILES)
       .select('primary_email, emails, risk_level')
       .eq('id', pkg.customer_profile_id)
       .single() as unknown as { data: { primary_email: string | null; emails: string[]; risk_level: string } | null }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { TABLES } from '@/lib/supabase/tables';
 import { sendEmail } from '@/lib/email/send';
 import { buildFoundingMerchantApplicationNotification } from '@/lib/email/templates';
 
@@ -29,7 +30,7 @@ export async function POST(request: NextRequest) {
   }
 
   const { data: merchant } = await supabase
-    .from('merchants')
+    .from(TABLES.MERCHANTS)
     .select('id, name')
     .eq('user_id', user.id)
     .maybeSingle();
@@ -39,7 +40,7 @@ export async function POST(request: NextRequest) {
   }
 
   const { data: completedAudit } = await serviceClient
-    .from('processing_jobs')
+    .from(TABLES.PROCESSING_JOBS)
     .select('id')
     .eq('merchant_id', (merchant as { id: string }).id)
     .eq('status', 'completed')

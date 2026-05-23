@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { TABLES } from '@/lib/supabase/tables';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { logAction } from '@/lib/permissions/audit';
 import { withRequestLogging } from '@/lib/log';
@@ -67,7 +68,7 @@ async function POSTHandler(request: NextRequest) {
 
   // Verify the transaction belongs to a job owned by this merchant
   const { data: txCheck } = await supabase
-    .from('audit_transactions')
+    .from(TABLES.AUDIT_TRANSACTIONS)
     .select('job_id, processing_jobs!inner(merchant_id)')
     .eq('id', transaction_id)
     .single();

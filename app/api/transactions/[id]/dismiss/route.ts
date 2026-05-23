@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { TABLES } from '@/lib/supabase/tables';
 import { createScopedClient } from '@/lib/supabase/scoped';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { logAction } from '@/lib/permissions/audit';
@@ -23,7 +24,7 @@ async function PATCHHandler(
 
   // Confirm the transaction belongs to a job owned by this merchant before updating
   const { data: tx } = await serviceClient
-    .from('audit_transactions')
+    .from(TABLES.AUDIT_TRANSACTIONS)
     .select('id, job_id')
     .eq('id', resolvedParams.id)
     .single();
@@ -32,7 +33,7 @@ async function PATCHHandler(
 
   // Verify job ownership
   const { data: job } = await scopedClient
-    .from('processing_jobs')
+    .from(TABLES.PROCESSING_JOBS)
     .select('merchant_id')
     .eq('id', tx.job_id)
     .single();
@@ -42,7 +43,7 @@ async function PATCHHandler(
   }
 
   const { error } = await serviceClient
-    .from('audit_transactions')
+    .from(TABLES.AUDIT_TRANSACTIONS)
     .update({ dismissed_by_merchant: true } as any)
     .eq('id', resolvedParams.id);
 

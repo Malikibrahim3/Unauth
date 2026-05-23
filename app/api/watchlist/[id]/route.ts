@@ -1,4 +1,5 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { TABLES } from '@/lib/supabase/tables';
 import { createScopedClient } from '@/lib/supabase/scoped';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { logAction } from '@/lib/permissions/audit';
@@ -28,14 +29,14 @@ async function DELETEHandler(req: NextRequest, { params }: { params: Promise<{ i
 
   // Fetch the entry before removing to get the profile_id for activity log
   const { data: entryRow } = await serviceClient
-    .from('watchlist_entries')
+    .from(TABLES.WATCHLIST_ENTRIES)
     .select('id, customer_profile_id')
     .eq('id', resolvedParams.id)
     .eq('merchant_id', user.id)
     .maybeSingle();
 
   const { error } = await serviceClient
-    .from('watchlist_entries')
+    .from(TABLES.WATCHLIST_ENTRIES)
     .update({ removed_by_merchant: true } as any)
     .eq('id', resolvedParams.id)
     .eq('merchant_id', user.id);

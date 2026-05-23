@@ -7,6 +7,7 @@ import { captureServerException } from '@/lib/sentry';
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { TABLES, STORAGE_BUCKETS } from '@/lib/supabase/tables'
 import { createScopedClient } from '@/lib/supabase/scoped'
 import { requirePermission, PERMISSIONS } from '@/lib/permissions'
 import { logAction } from '@/lib/permissions/audit'
@@ -111,7 +112,7 @@ async function POSTHandler(request: NextRequest) {
   // 6. Upload PDF to Storage
   const storagePath = `${user.id}/${pkg.referenceNumber}.pdf`
   const { error: uploadError } = await serviceRole.storage
-    .from('evidence-packages')
+    .from(STORAGE_BUCKETS.EVIDENCE_PACKAGES)
     .upload(storagePath, pdfBuffer, {
       contentType: 'application/pdf',
       upsert: true,
@@ -124,7 +125,7 @@ async function POSTHandler(request: NextRequest) {
 
   // 7. Insert to evidence_packages
   const { data: inserted, error: insertError } = await scopedServiceRole
-    .from('evidence_packages')
+    .from(TABLES.EVIDENCE_PACKAGES)
     .insert({
       customer_profile_id:      customerProfileId,
       generated_for_order_id:   disputedOrderId,

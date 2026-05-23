@@ -25,7 +25,7 @@ import type {
   MerchantDisplay,
 } from './types';
 import type { FastScoringContext } from './fastContext';
-import { CONFIDENCE_GRADES } from './weights';
+import { CONFIDENCE_GRADES, type ConfidenceGrade } from './weights';
 import {
   deviceMatch,
   cardMatch,
@@ -138,7 +138,7 @@ function computeDataCompleteness(a: NormalisedOrder, b: NormalisedOrder): number
 // GRADE COMPUTATION WITH CAPS
 // =============================================================================
 
-type ConfidenceGrade = 'definite' | 'probable' | 'possible' | 'weak';
+// ConfidenceGrade is imported from ./weights (single source of truth)
 
 function gradeFromScore(score: number): ConfidenceGrade {
   if (score >= CONFIDENCE_GRADES.definite) return 'definite';

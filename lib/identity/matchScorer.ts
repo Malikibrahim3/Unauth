@@ -23,18 +23,18 @@
  *                address-only, BIN+last4-only, or no anchor at all.
  */
 
+import { normaliseEmail, normaliseAddress as normaliseAddressFull } from '@/lib/identity/normalise';
 import {
-  normaliseEmail,
   normalisePhone,
   normalisePostcode,
   normaliseCard,
-  normaliseAddressFull,
   addressTokenOverlap,
   normaliseName,
   levenshtein,
   type LinkerOrderInput,
 } from '../linker';
 import { hasValue } from '../processing/signals';
+import { ADDRESS_TOKEN_OVERLAP_THRESHOLD } from '@/lib/engine/weights';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -181,7 +181,7 @@ function isNameVariantMatch(a: string, b: string): boolean {
 
 function isAddressVariantMatch(a: string, b: string): boolean {
   if (a === b) return true;
-  return addressTokenOverlap(a, b) >= 0.6;
+  return addressTokenOverlap(a, b) >= ADDRESS_TOKEN_OVERLAP_THRESHOLD;
 }
 
 // ---------------------------------------------------------------------------

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { TABLES } from '@/lib/supabase/tables';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 
 type AuditTx = {
@@ -47,7 +48,7 @@ export async function GET(
   const { runId } = await params;
 
   const { data: job } = await serviceClient
-    .from('processing_jobs')
+    .from(TABLES.PROCESSING_JOBS)
     .select('id, merchant_id')
     .eq('id', runId)
     .single();
@@ -72,7 +73,7 @@ export async function GET(
   const txIds = (appearanceRows ?? []).map((r: any) => r.transaction_id).filter(Boolean);
 
   const { data: directRows, error: directError } = await serviceClient
-    .from('audit_transactions')
+    .from(TABLES.AUDIT_TRANSACTIONS)
     .select('*')
     .eq('job_id', runId)
     .in('id', txIds.length > 0 ? txIds : ['00000000-0000-0000-0000-000000000000'])
@@ -88,7 +89,7 @@ export async function GET(
 
   if (clusterIds.length > 0) {
     const { data: clusterRows } = await serviceClient
-      .from('audit_transactions')
+      .from(TABLES.AUDIT_TRANSACTIONS)
       .select('*')
       .eq('job_id', runId)
       .in('cluster_id', clusterIds)

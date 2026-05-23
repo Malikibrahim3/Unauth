@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { TABLES } from '@/lib/supabase/tables';
 import ClaimGate from './ClaimGate';
 import { formatCurrency } from '@/lib/utils/format';
 
@@ -80,7 +81,7 @@ export default async function PublicAuditReportPage({ params }: ReportPageProps)
 
   if (canView) {
     const { data: reportRows } = await service
-      .from('audit_transactions')
+      .from(TABLES.AUDIT_TRANSACTIONS)
       .select('cluster_id, customer_email, shipping_address, identity_match_score, identity_confidence_grade, signals_matched, order_value')
       .eq('job_id', publicAudit.processing_job_id)
       .or('identity_confidence_grade.in.(probable,definite),match_status.in.(probable,definite)')

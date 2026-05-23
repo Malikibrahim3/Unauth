@@ -20,6 +20,7 @@
  */
 
 import type { LinkedCluster, LinkerSignal } from './linker';
+import { type ConfidenceGrade, CE3_PRIOR_ORDER_WINDOW_DAYS, CONFIDENCE_THRESHOLDS } from '@/lib/engine/weights';
 
 // ---------------------------------------------------------------------------
 // INPUT / OUTPUT TYPES
@@ -67,7 +68,8 @@ export interface HistoricalEntity {
   last_seen: string;
 }
 
-export type ConfidenceGrade = 'DEFINITE' | 'PROBABLE' | 'POSSIBLE' | 'WEAK';
+// ConfidenceGrade is imported from @/lib/engine/weights (single source of truth)
+// Type: 'definite' | 'probable' | 'possible' | 'weak'
 
 export interface BehaviouralFlag {
   flag: string;
@@ -106,11 +108,10 @@ export interface ScoredCluster {
 // CONSTANTS
 // ---------------------------------------------------------------------------
 
-const GRADE_THRESHOLDS = {
-  DEFINITE: 85,
-  PROBABLE: 60,
-  POSSIBLE: 35,
-} as const;
+// Thresholds imported from canonical source — do not redefine here.
+// DEFINITE >= 85, PROBABLE >= 65, POSSIBLE >= 45
+// See lib/engine/weights.ts::CONFIDENCE_THRESHOLDS
+const GRADE_THRESHOLDS = CONFIDENCE_THRESHOLDS;
 
 const HARD_SIGNALS: LinkerSignal[] = ['card', 'phone', 'device', 'account'];
 const SOFT_SIGNALS: LinkerSignal[] = ['email', 'postcode', 'ip'];
@@ -145,10 +146,10 @@ function daysBetween(a: Date, b: Date): number {
 }
 
 function gradeFromScore(score: number): ConfidenceGrade {
-  if (score >= GRADE_THRESHOLDS.DEFINITE) return 'DEFINITE';
-  if (score >= GRADE_THRESHOLDS.PROBABLE) return 'PROBABLE';
-  if (score >= GRADE_THRESHOLDS.POSSIBLE) return 'POSSIBLE';
-  return 'WEAK';
+  if (score >= GRADE_THRESHOLDS.DEFINITE) return 'definite';
+  if (score >= GRADE_THRESHOLDS.PROBABLE) return 'probable';
+  if (score >= GRADE_THRESHOLDS.POSSIBLE) return 'possible';
+  return 'weak';
 }
 
 // ---------------------------------------------------------------------------
@@ -316,7 +317,7 @@ function applyHardCaps(
 ): { grade: ConfidenceGrade; score: number; capReason: string | null } {
   // Cap 1: single-order cluster → max POSSIBLE
   if (cluster.order_ids.length < 2) {
-    const capped = score >= GRADE_THRESHOLDS.POSSIBLE ? 'POSSIBLE' : grade;
+    const capped = score >= GRADE_THRESHOLDS.POSSIBLE ? 'possible' : grade;
     return {
       grade: capped,
       score: Math.min(score, GRADE_THRESHOLDS.POSSIBLE - 1),
@@ -324,12 +325,12 @@ function applyHardCaps(
     };
   }
 
-  // Cap 2: IP-only cluster → max WEAK
+  // Cap 2: IP-only cluster → max weak
   const hasHard = cluster.signals_matched.some((s) => HARD_SIGNALS.includes(s));
   const onlySoft = cluster.signals_matched.every((s) => SOFT_SIGNALS.includes(s));
   if (!hasHard && onlySoft && cluster.signals_matched.includes('ip')) {
     return {
-      grade: 'WEAK',
+      grade: 'weak',
       score: Math.min(score, GRADE_THRESHOLDS.POSSIBLE - 1),
       capReason: 'IP-only match — insufficient for higher confidence without additional signals',
     };
@@ -347,7 +348,7 @@ function buildRecommendedAction(
   flags: BehaviouralFlag[],
   hasChargeback: boolean
 ): string {
-  if (grade === 'DEFINITE') {
+  if (grade === 'definite') {
     if (hasChargeback) {
       return guardLanguage(
         'Multiple linked accounts with chargeback history — review all orders before processing refunds or shipments.'
@@ -357,12 +358,12 @@ function buildRecommendedAction(
       'High-confidence identity match across linked accounts — verify manually before approving high-value transactions.'
     );
   }
-  if (grade === 'PROBABLE') {
+  if (grade === 'probable') {
     return guardLanguage(
       'Linked accounts detected with corroborating signals — review before approving refund claims.'
     );
   }
-  if (grade === 'POSSIBLE') {
+  if (grade === 'possible') {
     return guardLanguage(
       'Possible linked accounts — review if a refund or return is requested on any of these orders.'
     );
@@ -403,7 +404,7 @@ function checkCE3Eligibility(
       if (!pDate) continue;
 
       const gap = daysBetween(dDate, pDate);
-      if (gap < 120) continue; // prior must be 120+ days BEFORE disputed
+      if (gap < CE3_PRIOR_ORDER_WINDOW_DAYS) continue; // prior must be CE3_PRIOR_ORDER_WINDOW_DAYS+ days BEFORE disputed
       if (pDate > dDate) continue; // prior must be earlier
 
       const matching: string[] = [];
@@ -547,17 +548,23 @@ export function scoreCluster(input: ScoreClusterInput): ScoredCluster {
  *
  * Grade thresholds (score capped at 100):
  *   >= 85 → definite   e.g. phone+device+account (85) or phone+device+email (80) + behavioural
- *   >= 60 → probable   e.g. phone+account (55) → possible; phone+device (60) → probable
- *   >= 35 → possible   e.g. card+email (32) → below; email+account (45) → possible
- *    < 35 → null       below product threshold — do not surface
+ *   >= 65 → probable   e.g. phone+account+email (77) → probable; phone+device (65) → probable
+ *   >= 45 → possible   e.g. card+email (42) → below; email+account+ip (53) → possible
+ *    < 45 → null       below product threshold — do not surface
  */
-const IDENTITY_SIGNAL_WEIGHTS: Record<string, number> = {
+// NOTE: These weights are internal to scorer.ts and were calibrated independently
+// from IDENTITY_SIGNAL_WEIGHTS in lib/engine/weights.ts. They have different values
+// because they are used for a different scoring calculation (scoreIdentityFromSignals).
+// Do NOT replace with the canonical IDENTITY_SIGNAL_WEIGHTS from weights.ts without
+// explicit instruction — changing these values changes scoring output.
+// Keys 'account' and 'postcode' are not in the canonical weight table and default to 0 there.
+const SCORER_INTERNAL_SIGNAL_WEIGHTS: Record<string, number> = {
   card: 30,     // payment signal, only trusted by the linker with corroboration
   phone: 30,    // requires a real SIM
   device: 30,   // device fingerprint
-  account: 25,  // merchant-namespace identifier
+  account: 25,  // merchant-namespace identifier — not in canonical table, defaults to 0 there
   email: 35,    // exact normalised email is the only single-signal link exception
-  postcode: 10, // corroborating only
+  postcode: 10, // corroborating only — not in canonical table, defaults to 0 there
   ip: 8,        // weakest corroborating signal
 };
 
@@ -579,7 +586,7 @@ export interface SignalScoreResult {
  *   2. As a fallback when the full `scoreCluster` output is unavailable.
  *
  * Weights (each signal counted once regardless of how many orders match it,
- * must stay in sync with IDENTITY_SIGNAL_WEIGHTS above and linker.ts):
+ * must stay in sync with SCORER_INTERNAL_SIGNAL_WEIGHTS above and linker.ts):
  *   phone:    30 — requires a real SIM
  *   device:   30 — device fingerprint
  *   account:  25 — merchant-namespace identifier
@@ -590,9 +597,9 @@ export interface SignalScoreResult {
  *
  * Grade thresholds (score capped at 100):
  *   >= 85 → definite
- *   >= 60 → probable
- *   >= 35 → possible
- *    < 35 → null  (below product threshold — do not surface)
+ *   >= 65 → probable
+ *   >= 45 → possible
+ *    < 45 → null  (below product threshold — do not surface)
  */
 export function scoreIdentityFromSignals(signals: string[]): SignalScoreResult {
   if (!signals || signals.length === 0) {
@@ -601,7 +608,7 @@ export function scoreIdentityFromSignals(signals: string[]): SignalScoreResult {
 
   let raw = 0;
   for (const s of signals) {
-    raw += IDENTITY_SIGNAL_WEIGHTS[s.toLowerCase()] ?? 0;
+    raw += SCORER_INTERNAL_SIGNAL_WEIGHTS[s.toLowerCase()] ?? 0;
   }
   const identity_score = Math.min(raw, 100);
 

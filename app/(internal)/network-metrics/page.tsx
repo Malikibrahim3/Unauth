@@ -7,6 +7,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
+import { TABLES } from '@/lib/supabase/tables';
 import NetworkMetricsCharts from '@/components/internal/NetworkMetricsCharts';
 
 interface Snapshot {
@@ -31,7 +32,7 @@ export default async function NetworkMetricsPage() {
 
   // Gate: is_internal only
   const { data: merchant } = await supabase
-    .from('merchants')
+    .from(TABLES.MERCHANTS)
     .select('is_internal')
     .eq('user_id', user.id)
     .single();

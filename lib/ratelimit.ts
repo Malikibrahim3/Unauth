@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { env } from '@/lib/utils/env';
 
 export type RateLimitOptions = {
   max: number;
@@ -60,8 +61,8 @@ export function rateLimitKey(...parts: Array<string | number | null | undefined>
 }
 
 function getUpstashConfig() {
-  const url = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+  const url = process.env.UPSTASH_REDIS_REST_URL || env.KV_REST_API_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN || env.KV_REST_API_TOKEN;
   if (!url || !token) return null;
   return { url: url.replace(/\/$/, ''), token };
 }

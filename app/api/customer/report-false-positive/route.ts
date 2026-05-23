@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { TABLES } from '@/lib/supabase/tables';
 import { createRequestLogger, withRequestLogging } from '@/lib/log';
 import { captureServerException } from '@/lib/sentry';
 
@@ -55,7 +56,7 @@ async function POSTHandler(req: NextRequest) {
 
     // ── 1. Fetch evidence snapshot from the matching transactions ───────────
     const { data: txRows } = await supabase
-      .from('audit_transactions')
+      .from(TABLES.AUDIT_TRANSACTIONS)
       .select(
         'id, order_id, identity_confidence_grade, identity_score, signals_matched, behavioural_flags, match_status, confirmed_identity_id'
       )
@@ -107,7 +108,7 @@ async function POSTHandler(req: NextRequest) {
     if ((txRows ?? []).length > 0) {
       const txIds = (txRows ?? []).map((r: any) => r.id as string);
       await supabase
-        .from('audit_transactions')
+        .from(TABLES.AUDIT_TRANSACTIONS)
         .update({
           false_positive_reported: true,
           false_positive_reported_at: new Date().toISOString(),
@@ -117,7 +118,7 @@ async function POSTHandler(req: NextRequest) {
 
     // ── 4. Flag customer_profile rows linked to this cluster ─────────────────
     await supabase
-      .from('customer_profiles')
+      .from(TABLES.CUSTOMER_PROFILES)
       .update({ false_positive_reported: true } as any)
       .eq('identity_cluster_id', cluster_id)
       .eq('merchant_ids', merchantId as any); // narrows to this merchant's profiles

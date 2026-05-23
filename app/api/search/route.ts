@@ -17,6 +17,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { TABLES } from '@/lib/supabase/tables';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 
 export const dynamic = 'force-dynamic';
@@ -85,7 +86,7 @@ export async function GET(req: NextRequest) {
   let merchantJobIds: string[] = [];
   try {
     const { data: jobs } = await serviceClient
-      .from('processing_jobs')
+      .from(TABLES.PROCESSING_JOBS)
       .select('id')
       .eq('merchant_id', ctx.merchantId)
       .limit(500);

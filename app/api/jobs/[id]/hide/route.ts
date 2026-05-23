@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { TABLES } from '@/lib/supabase/tables';
 import { createScopedClient } from '@/lib/supabase/scoped';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { logAction } from '@/lib/permissions/audit';
@@ -22,7 +23,7 @@ async function PATCHHandler(
   const scopedClient = createScopedClient(ctx.merchantId, serviceClient);
 
   const { error } = await scopedClient
-    .from('processing_jobs')
+    .from(TABLES.PROCESSING_JOBS)
     .update({ hidden_by_merchant: true } as any)
     .eq('id', resolvedParams.id);
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { TABLES } from '@/lib/supabase/tables';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { logAction } from '@/lib/permissions/audit';
 
@@ -20,7 +21,7 @@ export async function POST(req: NextRequest) {
   if (denied) return denied;
 
   const { data: transactions, error: txError } = await serviceClient
-    .from('audit_transactions')
+    .from(TABLES.AUDIT_TRANSACTIONS)
     .select('id, job_id')
     .in('id', ids);
 
@@ -33,7 +34,7 @@ export async function POST(req: NextRequest) {
 
   const jobIds = [...new Set(txList.map((row: any) => row.job_id).filter(Boolean))];
   const { data: jobs, error: jobError } = await serviceClient
-    .from('processing_jobs')
+    .from(TABLES.PROCESSING_JOBS)
     .select('id, merchant_id')
     .in('id', jobIds);
 
@@ -47,7 +48,7 @@ export async function POST(req: NextRequest) {
   }
 
   const { error } = await serviceClient
-    .from('audit_transactions')
+    .from(TABLES.AUDIT_TRANSACTIONS)
     .update({ dismissed_by_merchant: true } as any)
     .in('id', allowedIds);
 

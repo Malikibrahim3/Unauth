@@ -6,6 +6,7 @@ import { createRequestLogger, withRequestLogging } from '@/lib/log';
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { TABLES, STORAGE_BUCKETS } from '@/lib/supabase/tables'
 import { createScopedClient } from '@/lib/supabase/scoped'
 import { requirePermission, PERMISSIONS } from '@/lib/permissions'
 import { enforceRateLimit, limitFromEnv, rateLimitKey } from '@/lib/ratelimit'
@@ -37,7 +38,7 @@ async function GETHandler(
 
   // Verify merchant owns this package
   const { data: packageRow, error: pkgError } = await scopedServiceRole
-    .from('evidence_packages')
+    .from(TABLES.EVIDENCE_PACKAGES)
     .select('id, pdf_storage_path, reference_number, merchant_id')
     .eq('id', id)
     .single() as unknown as {
@@ -54,7 +55,7 @@ async function GETHandler(
   }
 
   const { data: fileData, error: dlError } = await serviceRole.storage
-    .from('evidence-packages')
+    .from(STORAGE_BUCKETS.EVIDENCE_PACKAGES)
     .download(packageRow.pdf_storage_path)
 
   if (dlError || !fileData) {

@@ -2,12 +2,14 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { ArrowRight, GitBranch } from 'lucide-react';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { TABLES } from '@/lib/supabase/tables';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { formatDateMode } from '@/lib/utils/format';
 import { MetricCard, SectionCard } from '@/components/ui';
 import { ConfidenceBadge } from '@/components/ui/ConfidenceBadge';
 import { signalCopy } from '@/lib/copy/signals';
 import GlobalIdentityGraphClient from '@/components/global/GlobalIdentityGraphClient';
+import { gradeToLetter, type ConfidenceGrade } from '@/lib/engine/weights';
 
 type RunRow = {
   id: string;
@@ -32,9 +34,10 @@ type ProfileRow = {
 };
 
 function gradeFromIdentityGrade(grade: string | null): 'A' | 'B' | 'C' | 'D' {
-  if (grade === 'definite') return 'A';
-  if (grade === 'probable') return 'B';
-  if (grade === 'possible') return 'C';
+  const known: ConfidenceGrade[] = ['definite', 'probable', 'possible', 'weak'];
+  if (known.includes(grade as ConfidenceGrade)) {
+    return gradeToLetter(grade as ConfidenceGrade);
+  }
   return 'D';
 }
 
@@ -52,14 +55,14 @@ export default async function GlobalGraphPage() {
   const merchantFilter = `merchant_ids.cs.${JSON.stringify([ctx.merchantId])},merchant_ids.cs.${JSON.stringify([user.id])}`;
   const [{ data: runs }, { data: profiles }, { data: networkProfiles }, definite, probable, possible, weak] = await Promise.all([
     serviceClient
-      .from('processing_jobs')
+      .from(TABLES.PROCESSING_JOBS)
       .select('id,filename,created_at,total_rows,flagged_count')
       .eq('merchant_id', ctx.merchantId)
       .eq('hidden_by_merchant', false)
       .order('created_at', { ascending: false })
       .limit(20),
     serviceClient
-      .from('customer_profiles')
+      .from(TABLES.CUSTOMER_PROFILES)
       .select('id,primary_email,risk_level,risk_score,total_orders,total_merchants_seen_at,total_refund_claims,first_seen,last_seen,identity_confidence_grade,identity_signals_summary')
       .or(merchantFilter)
       .gt('total_merchants_seen_at', 1)
@@ -67,15 +70,15 @@ export default async function GlobalGraphPage() {
       .order('risk_score', { ascending: false })
       .limit(25),
     serviceClient
-      .from('customer_profiles')
+      .from(TABLES.CUSTOMER_PROFILES)
       .select('id,total_orders,total_merchants_seen_at,total_refund_claims')
       .or(merchantFilter)
       .gt('total_merchants_seen_at', 1)
       .limit(1000),
-    serviceClient.from('customer_profiles').select('id', { count: 'exact', head: true }).or(merchantFilter).gt('total_merchants_seen_at', 1).eq('identity_confidence_grade', 'definite'),
-    serviceClient.from('customer_profiles').select('id', { count: 'exact', head: true }).or(merchantFilter).gt('total_merchants_seen_at', 1).eq('identity_confidence_grade', 'probable'),
-    serviceClient.from('customer_profiles').select('id', { count: 'exact', head: true }).or(merchantFilter).gt('total_merchants_seen_at', 1).eq('identity_confidence_grade', 'possible'),
-    serviceClient.from('customer_profiles').select('id', { count: 'exact', head: true }).or(merchantFilter).gt('total_merchants_seen_at', 1).eq('identity_confidence_grade', 'weak'),
+    serviceClient.from(TABLES.CUSTOMER_PROFILES).select('id', { count: 'exact', head: true }).or(merchantFilter).gt('total_merchants_seen_at', 1).eq('identity_confidence_grade', 'definite'),
+    serviceClient.from(TABLES.CUSTOMER_PROFILES).select('id', { count: 'exact', head: true }).or(merchantFilter).gt('total_merchants_seen_at', 1).eq('identity_confidence_grade', 'probable'),
+    serviceClient.from(TABLES.CUSTOMER_PROFILES).select('id', { count: 'exact', head: true }).or(merchantFilter).gt('total_merchants_seen_at', 1).eq('identity_confidence_grade', 'possible'),
+    serviceClient.from(TABLES.CUSTOMER_PROFILES).select('id', { count: 'exact', head: true }).or(merchantFilter).gt('total_merchants_seen_at', 1).eq('identity_confidence_grade', 'weak'),
   ]);
 
   const runRows = (runs ?? []) as RunRow[];

@@ -15,8 +15,10 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient as createServiceClient } from '@supabase/supabase-js';
+import { TABLES } from '@/lib/supabase/tables';
 import { createScopedClient } from '@/lib/supabase/scoped';
 import { createRequestLogger, withRequestLogging } from '@/lib/log';
+import { env } from '@/lib/utils/env';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,19 +37,14 @@ async function GETHandler(req: NextRequest) {
     return NextResponse.json({ runs: [] });
   }
 
-  const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
-    return NextResponse.json({ runs: [] });
-  }
-
-  const supabase = createServiceClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
+  const SUPABASE_URL = env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabase = createServiceClient(SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
   const scopedSupabase = createScopedClient(DEMO_MERCHANT_ID, supabase as any);
 
   const { data, error } = await scopedSupabase
-    .from('processing_jobs')
+    .from(TABLES.PROCESSING_JOBS)
     .select(DEMO_FIELDS)
     .order('created_at', { ascending: false })
     .limit(10);

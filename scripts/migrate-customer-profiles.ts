@@ -13,6 +13,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
+import { TABLES } from '../lib/supabase/tables';
 import {
   normaliseEmail,
   normaliseIP,
@@ -100,7 +101,7 @@ async function main() {
 
   // Guard: prevent double run
   const { count: existingCount } = await supabase
-    .from('customer_profiles')
+    .from(TABLES.CUSTOMER_PROFILES)
     .select('id', { count: 'exact', head: true });
 
   if (existingCount && existingCount > 0) {
@@ -331,7 +332,7 @@ async function main() {
   const BATCH_SIZE = 100;
   for (let i = 0; i < profileInserts.length; i += BATCH_SIZE) {
     const batch = profileInserts.slice(i, i + BATCH_SIZE);
-    const { error } = await supabase.from('customer_profiles').insert(batch);
+    const { error } = await supabase.from(TABLES.CUSTOMER_PROFILES).insert(batch);
     if (error) {
       console.error(`Profile insert batch ${i / BATCH_SIZE} failed:`, error.message);
     }

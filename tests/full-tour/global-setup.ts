@@ -5,6 +5,7 @@
 import { chromium, type FullConfig } from '@playwright/test'
 import { loadEnvConfig } from '@next/env'
 import { createClient } from '@supabase/supabase-js'
+import { TABLES } from '../../lib/supabase/tables'
 import fs from 'fs'
 import path from 'path'
 
@@ -48,7 +49,7 @@ async function globalSetup(config: FullConfig) {
   console.log('[full-tour setup] Created test user:', userId)
 
   // Create merchant profile (setup_complete = true so no onboarding redirect)
-  const { error: merchantError } = await supabase.from('merchants').upsert({
+  const { error: merchantError } = await supabase.from(TABLES.MERCHANTS).upsert({
     user_id: userId,
     name: TEST_MERCHANT.storeName,
     monthly_order_volume: '500-2000',

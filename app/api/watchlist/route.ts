@@ -1,4 +1,5 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { TABLES } from '@/lib/supabase/tables';
 import { createScopedClient } from '@/lib/supabase/scoped';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { logAction } from '@/lib/permissions/audit';
@@ -23,7 +24,7 @@ async function GETHandler(_req: NextRequest) {
   if (limited) return limited;
 
   const { data, error } = await serviceClient
-    .from('watchlist_entries')
+    .from(TABLES.WATCHLIST_ENTRIES)
     .select('*')
     .eq('merchant_id', user.id)
     .eq('removed_by_merchant', false)
@@ -55,7 +56,7 @@ async function POSTHandler(req: NextRequest) {
   const { customerProfileId, emailHash, displayName, displayEmail, lastSeenRisk } = body;
 
   const { data, error } = await serviceClient
-    .from('watchlist_entries')
+    .from(TABLES.WATCHLIST_ENTRIES)
     .upsert({
       merchant_id: user.id,
       customer_profile_id: customerProfileId ?? null,

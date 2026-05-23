@@ -1,4 +1,5 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { TABLES } from '@/lib/supabase/tables';
 import { createScopedClient } from '@/lib/supabase/scoped';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { logAction } from '@/lib/permissions/audit';
@@ -41,7 +42,7 @@ async function PATCHHandler(
 
   // Verify the customer profile belongs to this merchant
   const { data: profile } = await scopedClient
-    .from('customer_profiles')
+    .from(TABLES.CUSTOMER_PROFILES)
     .select('id, investigation_status')
     .eq('id', resolvedParams.id)
     .maybeSingle();
@@ -53,7 +54,7 @@ async function PATCHHandler(
   const previousStatus = (profile as any).investigation_status ?? 'new';
 
   const { data, error } = await scopedClient
-    .from('customer_profiles')
+    .from(TABLES.CUSTOMER_PROFILES)
     .update({ investigation_status: body.status })
     .eq('id', resolvedParams.id)
     .select('id, investigation_status')

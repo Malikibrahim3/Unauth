@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { TABLES } from '@/lib/supabase/tables';
 import { createScopedClient } from '@/lib/supabase/scoped';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { dispatchChunk, originFromRequest } from '@/lib/processing/chunkedDispatch';
@@ -22,7 +23,7 @@ async function POSTHandler(
   const scopedClient = createScopedClient(ctx.merchantId, serviceClient);
 
   const { data: job, error: jobError } = await scopedClient
-    .from('processing_jobs')
+    .from(TABLES.PROCESSING_JOBS)
     .select('id, status, merchant_id')
     .eq('id', runId)
     .single();

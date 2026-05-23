@@ -35,6 +35,11 @@
  */
 
 import { createHash } from 'node:crypto';
+import {
+  normaliseEmail,
+  normaliseAddress as normaliseAddressFull,
+  normaliseAddressTokens,
+} from '@/lib/identity/normalise';
 
 // ---------------------------------------------------------------------------
 // Input shape — intentionally loose so we can ingest from both the CSV
@@ -106,42 +111,8 @@ export interface LinkerResult {
 // ---------------------------------------------------------------------------
 // Step 1 — Normalisation. Pure, no I/O, no network.
 // ---------------------------------------------------------------------------
-
-/**
- * Consumer email providers that ignore dots in the local part. Only for these
- * domains do we strip dots — for business/custom domains, dots distinguish
- * different people (john.doe@acmecorp.com ≠ johndoe@acmecorp.com).
- */
-const DOT_IGNORING_DOMAINS = new Set([
-  'gmail.com', 'googlemail.com',
-  'icloud.com', 'me.com', 'mac.com',
-  'proton.me', 'protonmail.com', 'pm.me',
-  'fastmail.com', 'fastmail.fm',
-  'outlook.com', 'hotmail.com', 'hotmail.co.uk', 'live.com', 'live.co.uk', 'msn.com',
-  'yahoo.com', 'yahoo.co.uk', 'ymail.com',
-]);
-
-/**
- * Email: strip plus aliases, lowercase. Remove dots before @ only for
- * consumer providers known to ignore them (Gmail, iCloud, Proton, etc.).
- * For business/custom domains dots are significant — stripping them would
- * create false-positive identity links between different employees.
- *
- * Plus-alias stripping is universal (RFC 5233 sub-addressing).
- */
-export function normaliseEmail(raw: string | null | undefined): string | null {
-  if (!raw) return null;
-  const lower = raw.trim().toLowerCase();
-  const at = lower.indexOf('@');
-  if (at < 1 || at === lower.length - 1) return null;
-  const plusStripped = lower.slice(0, at).split('+')[0];
-  const domain = lower.slice(at + 1);
-  const localPart = DOT_IGNORING_DOMAINS.has(domain)
-    ? plusStripped.replace(/\./g, '')
-    : plusStripped;
-  if (!localPart) return null;
-  return `${localPart}@${domain}`;
-}
+// normaliseEmail and normaliseAddress* are imported from @/lib/identity/normalise
+// (single source of truth). Re-exported below for backwards compat.
 
 /**
  * Phone: strip non-digits, handle UK +44/0 prefix, return a canonical
@@ -173,47 +144,10 @@ export function normalisePhone(raw: string | null | undefined): string | null {
   return digits;
 }
 
-/**
- * Address: lowercase, expand common UK/US abbreviations to full form,
- * strip punctuation, collapse whitespace, return the token array sorted
- * alphabetically.
- *
- * Sorting tokens means "23 Baker Street" and "Baker Street 23" produce
- * identical arrays — the rare cases where sort order actually carries
- * meaning (e.g. apartment numbers) are covered by postcode matching,
- * not street-text matching.
- *
- * NOTE: Address tokens are NOT used as a linker signal per spec §4. This
- * helper is exported purely so the next module can use it for display /
- * evidence. `linkIdentities` ignores whatever this returns.
- */
-const ADDRESS_ABBREVIATIONS: Record<string, string> = {
-  st: 'street',
-  rd: 'road',
-  ave: 'avenue',
-  av: 'avenue',
-  ln: 'lane',
-  cl: 'close',
-  dr: 'drive',
-  blvd: 'boulevard',
-  bvd: 'boulevard',
-  ct: 'court',
-  pl: 'place',
-  sq: 'square',
-  apt: 'apartment',
-};
-
-export function normaliseAddress(raw: string | null | undefined): string[] {
-  if (!raw) return [];
-  const cleaned = raw
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-  if (!cleaned) return [];
-  const tokens = cleaned.split(' ').map((t) => ADDRESS_ABBREVIATIONS[t] ?? t);
-  return tokens.sort();
-}
+// normaliseAddress (token array version) is now normaliseAddressTokens from normalise.ts.
+// Re-exported as normaliseAddress for backwards compatibility.
+export { normaliseEmail } from '@/lib/identity/normalise';
+export { normaliseAddressTokens as normaliseAddress } from '@/lib/identity/normalise';
 
 /**
  * Postcode: uppercase, remove all whitespace.
@@ -354,10 +288,9 @@ export function emailUsername(raw: string | null | undefined): string | null {
  * Full normalised address as a single string (tokens joined by space).
  * Returns null for blank.
  */
-export function normaliseAddressFull(raw: string | null | undefined): string | null {
-  const tokens = normaliseAddress(raw);
-  return tokens.length > 0 ? tokens.join(' ') : null;
-}
+// normaliseAddressFull is imported from @/lib/identity/normalise (as normaliseAddressFull)
+// and re-exported here for backwards compatibility.
+export { normaliseAddress as normaliseAddressFull } from '@/lib/identity/normalise';
 
 /**
  * Jaccard token-set overlap between two normalised address strings.
@@ -419,7 +352,10 @@ export function ipSubnet(raw: string | null): string | null {
 // Step 2 — Indexes. A plain data structure; one pass over input.
 // ---------------------------------------------------------------------------
 
-interface NormalisedOrder {
+// This is the linker's internal order representation — not exported.
+// Renamed from NormalisedOrder to LinkerNormalisedOrder to avoid confusion
+// with lib/engine/types.ts::NormalisedOrder (the pipeline's order shape).
+interface LinkerNormalisedOrder {
   order_id: string;
   email: string | null;
   email_username: string | null;
@@ -466,7 +402,7 @@ function pushIndex(idx: Map<string, string[]>, key: string | null | undefined, o
   else idx.set(key, [orderId]);
 }
 
-function buildIndexes(orders: NormalisedOrder[]): Indexes {
+function buildIndexes(orders: LinkerNormalisedOrder[]): Indexes {
   const ix: Indexes = {
     email: new Map(), email_username: new Map(),
     phone: new Map(), phone_partial: new Map(),
@@ -786,8 +722,8 @@ function jaccardTokens(a: string[], b: string[]): number {
  * and the tiered evidence strings.
  */
 function scorePair(
-  a: NormalisedOrder,
-  b: NormalisedOrder,
+  a: LinkerNormalisedOrder,
+  b: LinkerNormalisedOrder,
   bonusCrossAddress: boolean,
   ix: Indexes,
   options: { allowWeakOnly?: boolean; applyFrequencyPenalty?: boolean } = {}
@@ -936,7 +872,7 @@ class UnionFind {
 
 function hasStableIdentityConflict(
   orderIds: string[],
-  byId: Map<string, NormalisedOrder>,
+  byId: Map<string, LinkerNormalisedOrder>,
   evidence: Set<string> = new Set()
 ): boolean {
   const hasLocationContinuity =
@@ -1126,12 +1062,12 @@ function guardCardLast4(raw: string | null | undefined): string | null {
 
 export function linkIdentities(input: LinkerOrderInput[]): LinkerResult {
   // Step 1 — normalise. No comparisons yet.
-  const normalised: NormalisedOrder[] = input.map((row) => {
+  const normalised: LinkerNormalisedOrder[] = input.map((row) => {
     const ship = row.shipping_address ?? row.address ?? null;
     const bill = row.billing_address ?? null;
-    const shipTokens = normaliseAddress(ship);
-    const billTokens = normaliseAddress(bill);
-    const norm: NormalisedOrder = {
+    const shipTokens = normaliseAddressTokens(ship);
+    const billTokens = normaliseAddressTokens(bill);
+    const norm: LinkerNormalisedOrder = {
       order_id: row.order_id,
       email: normaliseEmail(row.email),
       email_username: emailUsername(row.email),
@@ -1151,6 +1087,8 @@ export function linkIdentities(input: LinkerOrderInput[]): LinkerResult {
       shipping_tokens: shipTokens,
       billing_full: billTokens.length > 0 ? billTokens.join(' ') : null,
       billing_tokens: billTokens,
+      // Note: shipping_full/billing_full could also use normaliseAddressFull(ship/bill)
+      // but are computed from token arrays for consistency with existing logic.
     };
     norm.name_bucket = norm.name ? nameFuzzyBucket(norm.name) : null;
     return norm;
@@ -1188,7 +1126,7 @@ export function linkIdentities(input: LinkerOrderInput[]): LinkerResult {
   const byId = new Map(normalised.map((o) => [o.order_id, o]));
 
   // Detect shipping↔billing cross-matches up front.
-  function isCrossAddressMatch(a: NormalisedOrder, b: NormalisedOrder): boolean {
+  function isCrossAddressMatch(a: LinkerNormalisedOrder, b: LinkerNormalisedOrder): boolean {
     if (a.shipping_full && b.billing_full && a.shipping_full === b.billing_full) return true;
     if (b.shipping_full && a.billing_full && b.shipping_full === a.billing_full) return true;
     return false;

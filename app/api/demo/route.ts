@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { TABLES } from '@/lib/supabase/tables';
 import { createScopedClient } from '@/lib/supabase/scoped';
 import { scoreOrders } from '@/lib/engine';
 import { computeMetrics } from '@/lib/eval/metrics';
@@ -252,7 +253,7 @@ async function POSTHandler(_request: NextRequest) {
     }
 
     const { data: merchant } = await supabase
-      .from('merchants')
+      .from(TABLES.MERCHANTS)
       .select('id')
       .eq('user_id', user.id)
       .single();
@@ -265,7 +266,7 @@ async function POSTHandler(_request: NextRequest) {
     const scopedServiceClient = createScopedClient(merchantData.id, serviceClient);
 
     const { count } = await scopedServiceClient
-      .from('processing_jobs')
+      .from(TABLES.PROCESSING_JOBS)
       .select('id', { count: 'exact', head: true })
 
     if ((count ?? 0) > 0) {
@@ -305,13 +306,13 @@ async function POSTHandler(_request: NextRequest) {
     const BATCH = 500;
     for (let i = 0; i < txInserts.length; i += BATCH) {
       // @ts-ignore
-      await serviceClient.from('audit_transactions').insert(txInserts.slice(i, i + BATCH));
+      await serviceClient.from(TABLES.AUDIT_TRANSACTIONS).insert(txInserts.slice(i, i + BATCH));
     }
 
     await completeJob(scopedServiceClient, jobId, true, undefined, flaggedCount);
     // Attach eval metrics to the job record for reference
     await scopedServiceClient
-      .from('processing_jobs')
+      .from(TABLES.PROCESSING_JOBS)
       .update({ has_ground_truth: true } as any)
       .eq('id', jobId);
 

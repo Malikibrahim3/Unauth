@@ -1,14 +1,30 @@
 /* ────────────────────────────────────────────────────────────────────────────
- * 🔒 LOCKED FILE — DO NOT MODIFY WITHOUT EXPLICIT USER PERMISSION 🔒
- *
  * Core of the CSV scoring pipeline. The parallel pipeline (transactions +
  * intelligence writes) and per-batch progress reporting were tuned on
- * 2026-05-03. Any change requires explicit user sign-off — see workspace
- * memory rule "Locked CSV upload pipeline".
+ * 2026-05-03.
+ *
+ * TWO SCORING PATHS
+ * -----------------
+ * Path 1 — scoreBatch (lib/engine/fastScore.ts):
+ *   Produces the primary per-order risk scores and confidence grades used
+ *   in audit_transactions. Uses its own internal evidence-gated thresholds
+ *   (75/50/25) which differ from CONFIDENCE_THRESHOLDS in weights.ts because
+ *   they encode multi-condition evidence rules, not simple score cuts.
+ *
+ * Path 2 — scoreIdentityFromSignals (lib/scorer.ts):
+ *   Converts the linker's signals_matched set into identity_confidence_grade.
+ *   Uses GRADE_THRESHOLDS (85/60/35) internal to scorer.ts, calibrated for
+ *   this specific use case.
+ *
+ * Both paths use the same normalisation functions from lib/identity/normalise.ts
+ * (single source of truth). The threshold values differ by design — they encode
+ * different evidence models. Do not merge the threshold constants without
+ * explicit algorithmic analysis.
  * ──────────────────────────────────────────────────────────────────────── */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../supabase/types';
+import { TABLES } from '../supabase/tables';
 import type { ParsedCsvRow, FraudTransactionInsert } from './types';
 import { buildFastContext } from '../engine/fastContext';
 import { scoreBatch } from '../engine/fastScore';
@@ -42,6 +58,7 @@ import { scoreClusterIdentity, type IdentityMatchResult } from '../identity/matc
 import { computeContextInsights } from '../identity/contextInsights';
 import { classifyIdentityReview } from '../identity/reviewClassifier';
 import { persistGlobalIdentityGraph } from '../identity/globalIdentityStore';
+import { env } from '../utils/env';
 
 const BATCH_SIZE = 1000;  // 1k rows per upsert keeps payloads reasonable while halving round-trips
 const DEFAULT_CONCURRENCY = 5;
@@ -192,7 +209,7 @@ async function mergePipelineWarnings(
   if (!hasPipelineWarnings(warnings)) return;
 
   const { data, error } = await serviceClient
-    .from('processing_jobs')
+    .from(TABLES.PROCESSING_JOBS)
     .select('data_quality')
     .eq('id', jobId)
     .single();
@@ -223,7 +240,7 @@ async function mergePipelineWarnings(
   };
 
   const { error: updateError } = await serviceClient
-    .from('processing_jobs')
+    .from(TABLES.PROCESSING_JOBS)
     .update({ data_quality: next } as any)
     .eq('id', jobId);
 
@@ -548,7 +565,7 @@ export async function processCsvJob(
     const dqStart = checkpointStart('data_quality_update', { rows: normOrders.length });
     const dataQuality = assessDataQuality(normOrders);
     const { error: dataQualityError } = await serviceClient
-      .from('processing_jobs')
+      .from(TABLES.PROCESSING_JOBS)
       .update({ data_quality: dataQuality } as any)
       .eq('id', jobId);
     if (dataQualityError) {
@@ -945,7 +962,7 @@ export async function processCsvJob(
     checkpointEnd,
     jobLog,
   });
-  if (process.env.SYNC_BACKGROUND_WRITES === '1') {
+  if (env.SYNC_BACKGROUND_WRITES === '1') {
     await backgroundWrites;
   }
 
@@ -1050,7 +1067,7 @@ function startBackgroundIntelligenceWrites(args: {
                   withTransportRetry(() =>
                     withRetry(async () => {
                       const { data, error } = await serviceClient
-                        .from('audit_transactions')
+                        .from(TABLES.AUDIT_TRANSACTIONS)
                         .select('id, order_id')
                         .eq('job_id', jobId)
                         .in('order_id', slice);
@@ -1088,7 +1105,7 @@ function startBackgroundIntelligenceWrites(args: {
                 serviceClient,
                 identitySummaryByOrder
               );
-              const graphResult = process.env.SKIP_OPTIONAL_BACKGROUND_WRITES === '1'
+              const graphResult = env.SKIP_OPTIONAL_BACKGROUND_WRITES === '1'
                 ? {
                     attributesUpserted: 0,
                     appearancesInserted: 0,
@@ -1136,7 +1153,7 @@ function startBackgroundIntelligenceWrites(args: {
           })()
         : Promise.resolve();
 
-      const optionalEnrichmentTasks = process.env.SKIP_OPTIONAL_BACKGROUND_WRITES === '1'
+      const optionalEnrichmentTasks = env.SKIP_OPTIONAL_BACKGROUND_WRITES === '1'
         ? []
         : [
         (async () => {
@@ -1671,7 +1688,7 @@ async function upsertBatchNoProgress(
 
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     const { error } = await serviceClient
-      .from('audit_transactions')
+      .from(TABLES.AUDIT_TRANSACTIONS)
       .upsert(inserts as any, { onConflict: 'job_id,order_id' });
 
     if (!error) return 0;

@@ -7,6 +7,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { createClient } from '@supabase/supabase-js';
+import { TABLES, STORAGE_BUCKETS } from '../lib/supabase/tables';
 import { streamParseCsv } from '../lib/processing/streamParser';
 import { createJob, updateJobTotalRows } from '../lib/processing/job';
 import { uploadChunkRows, dispatchChunk } from '../lib/processing/chunkedDispatch';
@@ -114,7 +115,7 @@ async function main() {
   if (resumeJobId) {
     jobId = resumeJobId;
     const { data: job, error: jobError } = await sc
-      .from('processing_jobs')
+      .from(TABLES.PROCESSING_JOBS)
       .select('id, total_rows')
       .eq('id', jobId)
       .single();
@@ -154,7 +155,7 @@ async function main() {
     const upload = new File([raw], fileName, { type: 'text/csv' });
     const { error: uploadError } = await retry('Storage upload', async () => {
       const result = await sc.storage
-        .from('merchant-csv-uploads-2')
+        .from(STORAGE_BUCKETS.MERCHANT_CSV_UPLOADS)
         .upload(storagePath, upload, { contentType: 'text/csv', upsert: false, cacheControl: '3600' });
       if (result.error) throw new Error(result.error.message);
       return result;
@@ -162,7 +163,7 @@ async function main() {
     if (uploadError) throw new Error(`Storage upload failed: ${uploadError.message}`);
 
     const { data: fileData, error: downloadError } = await retry('Storage download', async () => {
-      const result = await sc.storage.from('merchant-csv-uploads-2').download(storagePath);
+      const result = await sc.storage.from(STORAGE_BUCKETS.MERCHANT_CSV_UPLOADS).download(storagePath);
       if (result.error) throw new Error(result.error.message);
       return result;
     });
@@ -179,7 +180,7 @@ async function main() {
     totalChunks = parse.totalChunks;
 
     await updateJobTotalRows(sc as any, jobId, parse.rowCount);
-    await sc.from('processing_jobs').update({ status: 'processing' } as any).eq('id', jobId);
+    await sc.from(TABLES.PROCESSING_JOBS).update({ status: 'processing' } as any).eq('id', jobId);
     console.log(`Prepared job ${jobId} with ${parse.rowCount.toLocaleString()} rows across ${parse.totalChunks} chunks`);
 
   }
@@ -197,7 +198,7 @@ async function main() {
   const started = Date.now();
   while (true) {
     const { data: job, error } = await sc
-      .from('processing_jobs')
+      .from(TABLES.PROCESSING_JOBS)
       .select('id,status,total_rows,processed_rows,failed_rows,started_at,completed_at,error_log,created_at')
       .eq('id', jobId)
       .single();
@@ -212,7 +213,7 @@ async function main() {
   }
 
   const { data: finalJob } = await sc
-    .from('processing_jobs')
+    .from(TABLES.PROCESSING_JOBS)
     .select('id,status,total_rows,processed_rows,failed_rows,started_at,completed_at,created_at,error_log')
     .eq('id', jobId)
     .single();
@@ -223,7 +224,7 @@ async function main() {
     .select('*', { count: 'exact', head: true })
     .eq('audit_id', jobId);
   const { data: grades } = await sc
-    .from('audit_transactions')
+    .from(TABLES.AUDIT_TRANSACTIONS)
     .select('identity_confidence_grade')
     .eq('job_id', jobId);
 

@@ -34,13 +34,12 @@
  */
 
 import { createHash } from 'node:crypto';
+import { normaliseEmail, normaliseAddress as normaliseAddressFull } from '@/lib/identity/normalise';
 import {
   deterministicClusterId,
   normaliseCard,
-  normaliseEmail,
   normalisePhone,
   normalisePostcode,
-  normaliseAddressFull,
   addressTokenOverlap,
   normaliseName,
   levenshtein,

@@ -11,7 +11,7 @@ import type { CustomerIntelligencePanel } from '@/app/api/customers/[id]/route';
 import type { CustomerIntelligence, Evidence, Transaction, SharedSignalGroup } from '@/types/customer';
 import type { SignalType } from '@/components/ui/SignalBadge';
 import { scoreToGrade } from '@/lib/confidence';
-import { scoreToRiskLevel } from '@/components/ui/RiskScoreBadge';
+import { scoreToRiskLevel } from '@/lib/utils/riskUtils';
 
 // ---------------------------------------------------------------------------
 // Helpers

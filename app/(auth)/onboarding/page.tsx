@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/server';
+import { TABLES } from '@/lib/supabase/tables';
 import { redirect } from 'next/navigation';
 import OnboardingClient from '@/components/OnboardingClient';
 
@@ -12,7 +13,7 @@ export default async function OnboardingPage() {
   if (!user) redirect('/login');
 
   const { data: merchant } = await serviceClient
-    .from('merchants')
+    .from(TABLES.MERCHANTS)
     .select('name, platform, monthly_order_volume, primary_fraud_concern')
     .eq('user_id', user.id)
     .maybeSingle();

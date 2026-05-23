@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { TABLES } from '@/lib/supabase/tables';
 import Link from 'next/link';
 import { ConfidenceBadge } from '@/components/ui/ConfidenceBadge';
 import { riskLevelToNewGrade } from '@/lib/confidence';
@@ -43,7 +44,7 @@ export default async function WatchlistPage({ searchParams }: { searchParams?: {
   const [{ data: entries, count }, { data: recentRaw }] = await Promise.all([
     (() => {
       let q = serviceClient
-        .from('watchlist_entries')
+        .from(TABLES.WATCHLIST_ENTRIES)
         .select('*', { count: 'exact' })
         .eq('merchant_id', user.id)
         .eq('removed_by_merchant', false)

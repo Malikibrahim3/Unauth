@@ -15,6 +15,7 @@
  * ──────────────────────────────────────────────────────────────────────── */
 
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { TABLES, STORAGE_BUCKETS } from '@/lib/supabase/tables';
 import { createScopedClient } from '@/lib/supabase/scoped';
 import { requirePermission, PERMISSIONS, type CallerContext } from '@/lib/permissions';
 import { logAction } from '@/lib/permissions/audit';
@@ -117,7 +118,7 @@ async function runAudit(
     // Cast to any because `label` and `file_hash` columns were added via migration
     // but Supabase types have not been regenerated yet.
     const { data: existing } = await (scopedClient
-      .from('processing_jobs')
+      .from(TABLES.PROCESSING_JOBS)
       .select('id, filename, created_at, label, status')
       .eq('hidden_by_merchant' as any, false)
       .eq('file_hash' as any, fileHash)
@@ -145,7 +146,7 @@ async function runAudit(
   // ── Download from Storage ─────────────────────────────────────────────────
   log(`downloading from storage path=${filePath}`);
   const { data: fileData, error: downloadError } = await scopedClient.storage
-    .from('merchant-csv-uploads-2')
+    .from(STORAGE_BUCKETS.MERCHANT_CSV_UPLOADS)
     .download(filePath);
 
   if (downloadError || !fileData) {

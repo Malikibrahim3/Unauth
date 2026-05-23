@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { TABLES } from '@/lib/supabase/tables';
 import Sidebar from '@/components/nav/Sidebar';
 import AppHeader from '@/components/layout/AppHeader';
 import DemoBanner from '@/components/common/DemoBanner';
@@ -23,13 +24,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const isOnboarding = pathname.startsWith('/onboarding');
 
   const merchantPromise = supabase
-    .from('merchants')
+    .from(TABLES.MERCHANTS)
     .select('id, name, monthly_order_volume, primary_fraud_concern, setup_complete')
     .eq('user_id', user.id)
     .maybeSingle();
 
   const jobsPromise = supabase
-    .from('processing_jobs')
+    .from(TABLES.PROCESSING_JOBS)
     .select('is_demo')
     .limit(20);
 

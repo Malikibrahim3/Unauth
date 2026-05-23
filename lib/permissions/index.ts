@@ -13,6 +13,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import { TABLES } from '@/lib/supabase/tables';
 
 // ---------------------------------------------------------------------------
 // Permissions – every granular capability in the system
@@ -172,7 +173,7 @@ export async function resolveCallerContext(
 ): Promise<CallerContext | null> {
   // 1. Is the user the merchant owner?
   const { data: ownerMerchant } = await serviceClient
-    .from('merchants')
+    .from(TABLES.MERCHANTS)
     .select('id')
     .eq('user_id', userId)
     .maybeSingle();
@@ -183,7 +184,7 @@ export async function resolveCallerContext(
 
   // 2. Is the user an active team member?
   const { data: member } = await serviceClient
-    .from('merchant_members')
+    .from(TABLES.MERCHANT_MEMBERS)
     .select('id, merchant_id, role')
     .eq('user_id', userId)
     .eq('invite_status', 'active')
@@ -200,7 +201,7 @@ export async function resolveCallerContext(
 
   // 3. Did the user just accept a magic-link team invite?
   const { data: pendingMember } = await serviceClient
-    .from('merchant_members')
+    .from(TABLES.MERCHANT_MEMBERS)
     .select('id, merchant_id, role')
     .eq('user_id', userId)
     .eq('invite_status', 'pending')
@@ -208,7 +209,7 @@ export async function resolveCallerContext(
 
   if (pendingMember) {
     await serviceClient
-      .from('merchant_members')
+      .from(TABLES.MERCHANT_MEMBERS)
       .update({
         invite_status: 'active',
         accepted_at: new Date().toISOString(),

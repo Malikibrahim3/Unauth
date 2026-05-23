@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import type { Database } from './types';
+import { env } from '@/lib/utils/env';
 
 function makeMissingEnvStub(name: string): any {
   const message = `${name} not configured`;
@@ -63,7 +64,7 @@ export function createClient(): any {
 
 export function createServiceClient(): any {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const key = env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!url || !key) {
     return makeMissingEnvStub('Supabase (service)');
@@ -88,7 +89,7 @@ export function createServiceClient(): any {
 
 export function createAdminClient(): any {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const key = env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!url || !key) {
     return makeMissingEnvStub('Supabase (admin)');

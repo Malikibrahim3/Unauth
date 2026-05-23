@@ -2,6 +2,7 @@
 // Evidence packages list — shows all generated packages for this merchant.
 
 import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { TABLES } from '@/lib/supabase/tables'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { formatDate } from '@/lib/utils/format'
@@ -21,7 +22,7 @@ export default async function ChargebacksPage() {
   if (denied) redirect('/dashboard')
 
   const { data: packages } = await serviceClient
-    .from('evidence_packages')
+    .from(TABLES.EVIDENCE_PACKAGES)
     .select(
       'id, reference_number, customer_profile_id, generated_for_order_id, generated_at, ce3_eligible, cross_merchant_indicator, narrative_summary'
     )
@@ -47,7 +48,7 @@ export default async function ChargebacksPage() {
   const profileMap: Record<string, { maskedEmail: string }> = {}
   if (profileIds.length > 0) {
     const { data: profiles } = await serviceClient
-      .from('customer_profiles')
+      .from(TABLES.CUSTOMER_PROFILES)
       .select('id, primary_email, emails')
       .in('id', profileIds as string[]) as unknown as {
         data: Array<{ id: string; primary_email: string | null; emails: string[] }> | null

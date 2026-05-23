@@ -25,6 +25,7 @@ if (fs.existsSync(envPath)) {
 }
 
 import { createClient } from '@supabase/supabase-js';
+import { TABLES } from '../lib/supabase/tables';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -44,7 +45,7 @@ async function snapshotNetworkMetrics() {
 
   // ── Identity graph counts ────────────────────────────────────────────────
   const { data: identityCounts, error: idErr } = await supabase
-    .from('customer_profiles')
+    .from(TABLES.CUSTOMER_PROFILES)
     .select('merchant_count');
 
   if (idErr) {
@@ -58,7 +59,7 @@ async function snapshotNetworkMetrics() {
 
   // ── Audits in last 30 days ───────────────────────────────────────────────
   const { count: auditsIn30d } = await supabase
-    .from('processing_jobs')
+    .from(TABLES.PROCESSING_JOBS)
     .select('id', { count: 'exact', head: true })
     .gte('created_at', thirtyDaysAgo)
     .eq('status', 'completed');
@@ -66,7 +67,7 @@ async function snapshotNetworkMetrics() {
   // ── Audits with cross-merchant signal in last 30 days ───────────────────
   // An audit fires a cross-merchant signal if any transaction has 'crossMerchant' in identity_signals
   const { data: crossMerchantJobs } = await supabase
-    .from('audit_transactions')
+    .from(TABLES.AUDIT_TRANSACTIONS)
     .select('job_id')
     .gte('created_at', thirtyDaysAgo)
     .contains('identity_signals', ['crossMerchant'] as unknown as string[]);
@@ -77,7 +78,7 @@ async function snapshotNetworkMetrics() {
 
   // ── Active merchants (at least one completed upload in last 30 days) ─────
   const { data: activeM } = await supabase
-    .from('processing_jobs')
+    .from(TABLES.PROCESSING_JOBS)
     .select('merchant_id')
     .gte('created_at', thirtyDaysAgo)
     .eq('status', 'completed');
@@ -94,7 +95,7 @@ async function snapshotNetworkMetrics() {
 
   // ── Network-wide refund & INR rates (averages across all customer_profiles) ──
   const { data: rateRows } = await supabase
-    .from('customer_profiles')
+    .from(TABLES.CUSTOMER_PROFILES)
     .select('refund_rate, inr_claim_rate')
     .not('refund_rate', 'is', null);
 
