@@ -1,5 +1,6 @@
 import { chromium, FullConfig, Page, Response } from '@playwright/test'
 import { createClient } from '@supabase/supabase-js'
+import { TABLES } from '../lib/supabase/tables'
 import fs from 'fs'
 import path from 'path'
 
@@ -49,7 +50,7 @@ async function globalSetup(config: FullConfig) {
   const userId = authData.user.id
 
   const { error: merchantError } = await supabase
-    .from('merchants')
+    .from(TABLES.MERCHANTS)
     .upsert({
       user_id: userId,
       name: TEST_MERCHANT.storeName,

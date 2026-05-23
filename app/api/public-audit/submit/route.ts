@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
   // Per-email daily cap: 3 submissions per calendar day (UTC).
   const todayUtc = new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
   const { count: todayCount } = await sc
-    .from('public_audits' as any)
+    .from(TABLES.PUBLIC_AUDITS)
     .select('id', { count: 'exact', head: true })
     .eq('submitted_email', email)
     .gte('created_at', `${todayUtc}T00:00:00Z`)
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
   }
 
   const { data: publicAudit, error: insertPublicError } = await sc
-    .from('public_audits' as any)
+    .from(TABLES.PUBLIC_AUDITS)
     .insert({
       submitted_email: email,
       original_filename: upload.name,
@@ -106,12 +106,12 @@ export async function POST(request: NextRequest) {
     });
 
   if (uploadError) {
-    await sc.from('public_audits' as any).update({ status: 'failed' } as any).eq('id', auditId);
+    await sc.from(TABLES.PUBLIC_AUDITS).update({ status: 'failed' } as any).eq('id', auditId);
     return NextResponse.json({ error: uploadError.message }, { status: 500 });
   }
 
   await sc
-    .from('public_audits' as any)
+    .from(TABLES.PUBLIC_AUDITS)
     .update({
       csv_path: filePath,
       submitted_at: new Date().toISOString(),
@@ -123,13 +123,13 @@ export async function POST(request: NextRequest) {
     .from(STORAGE_BUCKETS.MERCHANT_CSV_UPLOADS)
     .download(filePath);
   if (downloadError || !fileData) {
-    await sc.from('public_audits' as any).update({ status: 'failed' } as any).eq('id', auditId);
+    await sc.from(TABLES.PUBLIC_AUDITS).update({ status: 'failed' } as any).eq('id', auditId);
     return NextResponse.json({ error: downloadError?.message ?? 'Failed to read uploaded CSV.' }, { status: 500 });
   }
 
   const magicBytes = await sniffCsvMagicBytes(upload, upload.name);
   if (!magicBytes.valid) {
-    await sc.from('public_audits' as any).update({ status: 'failed' } as any).eq('id', auditId);
+    await sc.from(TABLES.PUBLIC_AUDITS).update({ status: 'failed' } as any).eq('id', auditId);
     return NextResponse.json({ error: magicBytes.message ?? 'Invalid CSV upload.' }, { status: 400 });
   }
 
@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
       uploadType: 'standard',
     });
   } catch (err) {
-    await sc.from('public_audits' as any).update({ status: 'failed' } as any).eq('id', auditId);
+    await sc.from(TABLES.PUBLIC_AUDITS).update({ status: 'failed' } as any).eq('id', auditId);
     return NextResponse.json({ error: err instanceof Error ? err.message : 'Failed to create job.' }, { status: 500 });
   }
 
@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
     .eq('id', jobId);
 
   await sc
-    .from('public_audits' as any)
+    .from(TABLES.PUBLIC_AUDITS)
     .update({ processing_job_id: jobId, status: 'processing' } as any)
     .eq('id', auditId);
 
@@ -165,7 +165,7 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     const message = err instanceof Error ? err.message : 'CSV parse failed';
     await completeJob(scopedClient, jobId, false, [{ message }]);
-    await sc.from('public_audits' as any).update({ status: 'failed' } as any).eq('id', auditId);
+    await sc.from(TABLES.PUBLIC_AUDITS).update({ status: 'failed' } as any).eq('id', auditId);
     return NextResponse.json({ error: message }, { status: 422 });
   }
 
@@ -173,26 +173,26 @@ export async function POST(request: NextRequest) {
     await completeJob(scopedClient, jobId, false, [
       { message: `Missing required columns: ${parseResult.missingRequired.join(', ')}` },
     ]);
-    await sc.from('public_audits' as any).update({ status: 'failed' } as any).eq('id', auditId);
+    await sc.from(TABLES.PUBLIC_AUDITS).update({ status: 'failed' } as any).eq('id', auditId);
     return NextResponse.json({ error: 'CSV validation failed.' }, { status: 422 });
   }
   if (parseResult.rowCount > MAX_ROWS) {
     await completeJob(scopedClient, jobId, false, [
       { message: `Row count ${parseResult.rowCount} exceeds limit of ${MAX_ROWS}` },
     ]);
-    await sc.from('public_audits' as any).update({ status: 'failed' } as any).eq('id', auditId);
+    await sc.from(TABLES.PUBLIC_AUDITS).update({ status: 'failed' } as any).eq('id', auditId);
     return NextResponse.json({ error: `Row count exceeds limit of ${MAX_ROWS}.` }, { status: 422 });
   }
 
   await updateJobTotalRows(scopedClient, jobId, parseResult.rowCount);
-  await sc.from('public_audits' as any).update({ row_count: parseResult.rowCount } as any).eq('id', auditId);
+  await sc.from(TABLES.PUBLIC_AUDITS).update({ row_count: parseResult.rowCount } as any).eq('id', auditId);
 
   const usageGuard = await checkCsvUsageGuard(scopedClient);
   if (usageGuard.shouldStop) {
     await completeJob(scopedClient, jobId, false, [
       { message: usageGuard.reason ?? 'Supabase usage guard stopped this run', code: 'SUPABASE_USAGE_GUARD' },
     ]);
-    await sc.from('public_audits' as any).update({ status: 'failed' } as any).eq('id', auditId);
+    await sc.from(TABLES.PUBLIC_AUDITS).update({ status: 'failed' } as any).eq('id', auditId);
     return NextResponse.json({ error: usageGuard.reason ?? 'Usage limit reached.' }, { status: 429 });
   }
 

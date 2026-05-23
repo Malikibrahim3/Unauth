@@ -55,7 +55,7 @@ export default async function PublicAuditReportPage({ params }: ReportPageProps)
   } = await supabase.auth.getUser();
 
   const { data: audit } = await service
-    .from('public_audits' as any)
+    .from(TABLES.PUBLIC_AUDITS)
     .select('id, submitted_email, linked_user_id, processing_job_id')
     .eq('id', runId)
     .maybeSingle();

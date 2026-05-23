@@ -61,8 +61,8 @@ export function rateLimitKey(...parts: Array<string | number | null | undefined>
 }
 
 function getUpstashConfig() {
-  const url = process.env.UPSTASH_REDIS_REST_URL || env.KV_REST_API_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN || env.KV_REST_API_TOKEN;
+  const url = env.UPSTASH_REDIS_REST_URL || env.KV_REST_API_URL;
+  const token = env.UPSTASH_REDIS_REST_TOKEN || env.KV_REST_API_TOKEN;
   if (!url || !token) return null;
   return { url: url.replace(/\/$/, ''), token };
 }
@@ -112,7 +112,7 @@ export async function rateLimit(
   const upstash = getUpstashConfig();
 
   if (!upstash) {
-    const vercelEnv = process.env.VERCEL_ENV;
+    const vercelEnv = env.VERCEL_ENV;
     if (vercelEnv === 'production' || vercelEnv === 'preview') {
       throw new Error('Upstash Redis rate limiting is not configured — set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN');
     }

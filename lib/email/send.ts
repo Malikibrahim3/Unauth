@@ -26,7 +26,7 @@ export async function sendEmail(payload: EmailPayload): Promise<EmailSendResult>
   const apiKey = env.RESEND_API_KEY;
 
   if (!apiKey) {
-    const isProduction = process.env.VERCEL_ENV === 'production';
+    const isProduction = env.VERCEL_ENV === 'production';
     if (isProduction) {
       return { ok: false, skipped: false, error: 'RESEND_API_KEY is not configured.' };
     }
