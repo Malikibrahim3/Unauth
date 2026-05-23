@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
 
   // 1. Fetch expired, unclaimed public_audits
   const { data: expired, error: fetchError } = await sc
-    .from('public_audits' as any)
+    .from(TABLES.PUBLIC_AUDITS)
     .select('id, csv_path')
     .lt('deletion_scheduled_at', new Date().toISOString())
     .eq('account_created', false)
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
 
   // 6. Delete the public_audit rows
   const { error: deleteError } = await sc
-    .from('public_audits' as any)
+    .from(TABLES.PUBLIC_AUDITS)
     .delete()
     .in('id', auditIds);
 

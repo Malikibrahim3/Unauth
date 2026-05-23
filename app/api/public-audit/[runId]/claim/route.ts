@@ -24,7 +24,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 
   const { data: publicAudit } = await service
-    .from('public_audits' as any)
+    .from(TABLES.PUBLIC_AUDITS)
     .select('id, submitted_email, processing_job_id')
     .eq('id', runId)
     .maybeSingle();
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   });
 
   await service
-    .from('public_audits' as any)
+    .from(TABLES.PUBLIC_AUDITS)
     .update({
       linked_user_id: user.id,
       linked_merchant_id: merchantId,
