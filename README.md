@@ -74,12 +74,16 @@ Include `ground_truth_label` (fraud/legitimate) to get precision/recall metrics 
 | `inrSpeed` | 10 | INR claim within 48h of order |
 | `emailPattern` | 8 | Disposable or aliased email patterns |
 | `addressClustering` | 9 | Multiple emails shipping to the same address |
+| `billingAddressClustering` | 9 | Multiple emails linked through billing-address dispute history |
+| `billingAddressClusteringActive` | 9 | Billing-address chargeback cluster with current dispute behavior |
 | `valueAnomaly` | 5 | Order value far outside the customer's norm |
 | `paymentChurn` | 15 | Tight-window payment-method churn |
 | `refundPattern` | 20 | Historical refund-pattern intelligence |
 | `crossMerchant` | 24 | Cross-network refund or INR history (k-anon >=3) |
 | `disputeHistory` | 40 | Prior disputes, refund requests, or return requests |
 | `addressMismatch` | 4 | Billing and shipping address mismatch |
+| `networkDeviceLink` | 15 | Shared device or network identifier linked to a known fraud cluster |
+| `networkDeviceLinkActive` | 25 | Shared device or network identifier plus active current-order dispute evidence |
 <!-- signals-table:end -->
 
 Phase 0.1 calibration decision: `lib/engine/weights.ts` is the source of truth for blend weights. The scoring tests assert raw 0-100 signal outputs; this table documents the relative weights used when fired signals are combined.

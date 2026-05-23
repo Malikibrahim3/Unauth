@@ -511,10 +511,10 @@ export async function processProfilesForBatch(
   // -------------------------------------------------------------------------
   interface OrderData {
     scoredOrder: ScoredOrder;
-    normEmail: string;
+    normEmail: string | null;
     normCard: string;
     normIP: string;
-    normAddr: string;
+    normAddr: string | null;
     flags: string[];
     isRefund: boolean;
     refundDate: string | null;
@@ -554,9 +554,9 @@ export async function processProfilesForBatch(
     };
   });
 
-  const uniqueEmails = [...new Set(orderDataList.map((od) => od.normEmail).filter(Boolean))];
+  const uniqueEmails = [...new Set(orderDataList.map((od) => od.normEmail).filter((value): value is string => Boolean(value)))];
   const uniqueCards  = [...new Set(orderDataList.map((od) => od.normCard).filter((c) => c.length === 4))];
-  const uniqueIPs    = [...new Set(orderDataList.map((od) => od.normIP).filter(Boolean))];
+  const uniqueIPs    = [...new Set(orderDataList.map((od) => od.normIP).filter((value): value is string => Boolean(value)))];
 
   // -------------------------------------------------------------------------
   // 1. Bulk fetch potentially matching profiles — 3 parallel queries.

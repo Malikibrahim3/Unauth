@@ -1297,14 +1297,16 @@ function accumulateEntities(scored: ScoredOrder[]): Map<string, EntityAccumulato
       refund_in_this_batch: isRefund,
     };
 
-    bump('email', email, {
-      ...baseContribution,
-      refund_timestamps: refundTs,
-      fastest_claim_days: isRefund ? daysToClaim : null,
-    });
-    bump('ip', ip, baseContribution);
-    bump('address', address, baseContribution);
-    bump('card_last4', card, baseContribution);
+    if (email) {
+      bump('email', email, {
+        ...baseContribution,
+        refund_timestamps: refundTs,
+        fastest_claim_days: isRefund ? daysToClaim : null,
+      });
+    }
+    if (ip) bump('ip', ip, baseContribution);
+    if (address) bump('address', address, baseContribution);
+    if (card) bump('card_last4', card, baseContribution);
   }
 
   return acc;
@@ -1609,7 +1611,7 @@ async function writeIdentityClusters(
     if (!cluster) continue;
     // Re-normalise the entity value defensively so cluster keys match
     // the same normalisation used for fraud_entities lookups.
-    let entityValue = cluster.entityValue;
+    let entityValue: string | null = cluster.entityValue;
     switch (cluster.entityType) {
       case 'email':     entityValue = normaliseEmail(entityValue); break;
       case 'ip':        entityValue = normaliseIP(entityValue); break;

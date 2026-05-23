@@ -334,7 +334,7 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
               download
             >
               <Download className="h-4 w-4" />
-              Export report
+              Export CSV
             </a>
             <Link
               href={`/audit/${jobId}?tab=transactions`}

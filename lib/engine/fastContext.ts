@@ -326,19 +326,19 @@ export async function buildFastContext(
   // -----------------------------------------------------------------------
   const allEmails = Array.from(new Set(
     orders.map((o) => normaliseEmail((o as NormalisedOrder & { _rawEmail?: string })._rawEmail))
-          .filter(Boolean)
+          .filter((value): value is string => Boolean(value))
   ));
   const allIPs = Array.from(new Set(
     orders.map((o) => normaliseIP((o as NormalisedOrder & { _rawIP?: string | null })._rawIP))
-          .filter(Boolean)
+          .filter((value): value is string => Boolean(value))
   ));
   const allAddresses = Array.from(new Set(
     orders.map((o) => normaliseAddress((o as NormalisedOrder & { _rawAddress?: string | null })._rawAddress))
-          .filter(Boolean)
+          .filter((value): value is string => Boolean(value))
   ));
   const allCards = Array.from(new Set(
     orders.map((o) => normaliseCard((o as NormalisedOrder & { _rawCardLast4?: string | null })._rawCardLast4))
-          .filter(Boolean)
+          .filter((value): value is string => Boolean(value))
   ));
 
   // -----------------------------------------------------------------------

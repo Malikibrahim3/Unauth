@@ -29,6 +29,22 @@ function loadTsModule(filePath) {
   const module = { exports: {} };
   const dirname = path.dirname(filePath);
   const localRequire = (specifier) => {
+    if (specifier.startsWith('@/')) {
+      const resolved = path.resolve(repoRoot, specifier.slice(2));
+
+      if (fs.existsSync(resolved) && fs.statSync(resolved).isFile()) {
+        return resolved.endsWith('.ts') ? loadTsModule(resolved) : require(resolved);
+      }
+
+      if (fs.existsSync(`${resolved}.ts`)) {
+        return loadTsModule(`${resolved}.ts`);
+      }
+
+      if (fs.existsSync(`${resolved}.js`)) {
+        return require(`${resolved}.js`);
+      }
+    }
+
     if (specifier.startsWith('./') || specifier.startsWith('../')) {
       const resolved = path.resolve(dirname, specifier);
 
@@ -105,6 +121,20 @@ function main() {
   if (mode !== '--write' && mode !== '--check') {
     console.error('Usage: node scripts/generate-signals-readme.mjs --write|--check');
     process.exit(1);
+  }
+
+  // README drift checks only need the static signal tables, not production env.
+  if (!process.env.IDENTITY_SALT) {
+    process.env.IDENTITY_SALT = 'docs-check-identity-salt-placeholder-0000';
+  }
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'docs-check-service-role-placeholder';
+  }
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://localhost:3000';
+  }
+  if (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY && !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) {
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'docs-check-anon-placeholder';
   }
 
   const { SIGNAL_WEIGHTS } = loadTsModule(weightsPath);
