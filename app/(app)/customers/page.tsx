@@ -2,7 +2,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { requirePermission, PERMISSIONS } from '@/lib/permissions';
+import { requirePermission, PERMISSIONS, resolveDefaultAppPath } from '@/lib/permissions';
 import CustomersFilterSheet from '@/components/customers/CustomersFilterSheet';
 import CustomersTableClient from '@/components/customers/CustomersTableClient';
 import PageSizeSelect from '@/components/common/PageSizeSelect';
@@ -85,7 +85,7 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
 
   const svc = createServiceClient();
   const { denied, ctx } = await requirePermission(svc, user.id, PERMISSIONS.VIEW_CUSTOMERS);
-  if (denied) return redirect('/dashboard');
+  if (denied) return redirect(await resolveDefaultAppPath(svc, user.id));
   // `searchParams` may be a Promise in newer Next.js versions — await to normalize.
   const sp = (await Promise.resolve(searchParams)) ?? {};
 

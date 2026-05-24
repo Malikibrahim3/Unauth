@@ -7,7 +7,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { formatDate } from '@/lib/utils/format'
 import { Badge, Button, WorkbenchActionBar, WorkbenchEmptyState, WorkbenchKpiStrip, WorkbenchPage } from '@/components/ui'
-import { requirePermission, PERMISSIONS } from '@/lib/permissions'
+import { requirePermission, PERMISSIONS, resolveDefaultAppPath } from '@/lib/permissions'
 
 export const metadata = {
   title: 'Evidence Packages — Unauth',
@@ -19,7 +19,7 @@ export default async function ChargebacksPage() {
   if (!user) redirect('/login')
   const serviceClient = createServiceClient()
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_CHARGEBACKS)
-  if (denied) redirect('/dashboard')
+  if (denied) redirect(await resolveDefaultAppPath(serviceClient, user.id))
 
   const { data: packages } = await serviceClient
     .from(TABLES.EVIDENCE_PACKAGES)

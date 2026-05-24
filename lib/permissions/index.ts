@@ -253,6 +253,42 @@ export async function hasPermission(
   return !!grant;
 }
 
+const DEFAULT_APP_DESTINATIONS: Array<{ permission: Permission; href: string }> = [
+  { permission: PERMISSIONS.VIEW_DASHBOARD, href: '/dashboard' },
+  { permission: PERMISSIONS.VIEW_INBOX, href: '/inbox' },
+  { permission: PERMISSIONS.VIEW_CUSTOMERS, href: '/customers' },
+  { permission: PERMISSIONS.VIEW_HISTORY, href: '/history' },
+  { permission: PERMISSIONS.VIEW_CHARGEBACKS, href: '/chargebacks' },
+  { permission: PERMISSIONS.VIEW_WATCHLIST, href: '/watchlist' },
+  { permission: PERMISSIONS.VIEW_SAVED, href: '/saved' },
+  { permission: PERMISSIONS.VIEW_SETTINGS, href: '/settings' },
+  { permission: PERMISSIONS.UPLOAD_CSV, href: '/upload' },
+];
+
+/**
+ * Finds the best safe in-app destination for users who hit a page they cannot
+ * access. This avoids chaining denied pages through /dashboard and accidentally
+ * dumping every click into the New Audit upload flow.
+ */
+export async function resolveDefaultAppPath(
+  serviceClient: SupabaseClient,
+  userId: string,
+  options: { exclude?: string[] } = {},
+): Promise<string> {
+  const ctx = await resolveCallerContext(serviceClient, userId);
+  if (!ctx) return '/onboarding';
+
+  const excluded = new Set(options.exclude ?? []);
+  for (const destination of DEFAULT_APP_DESTINATIONS) {
+    if (excluded.has(destination.href)) continue;
+    if (await hasPermission(serviceClient, ctx, destination.permission)) {
+      return destination.href;
+    }
+  }
+
+  return '/onboarding';
+}
+
 /**
  * One-liner guard for API routes.
  *

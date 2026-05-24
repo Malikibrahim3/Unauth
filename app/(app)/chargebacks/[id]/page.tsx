@@ -9,7 +9,7 @@ import { formatDate } from '@/lib/utils/format'
 import { EvidenceStrengthMeter } from '@/components/evidence/EvidenceStrengthMeter'
 import { DisputeReadinessPanel } from '@/components/evidence/DisputeReadinessPanel'
 import { EvidencePackagePreview } from '@/components/evidence/EvidencePackagePreview'
-import { requirePermission, PERMISSIONS } from '@/lib/permissions'
+import { requirePermission, PERMISSIONS, resolveDefaultAppPath } from '@/lib/permissions'
 
 interface Props {
   params: Promise<{ id: string }>
@@ -22,7 +22,7 @@ export default async function EvidenceDetailPage({ params }: Props) {
   if (!user) redirect('/login')
   const serviceClient = createServiceClient()
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_CHARGEBACKS)
-  if (denied) redirect('/dashboard')
+  if (denied) redirect(await resolveDefaultAppPath(serviceClient, user.id))
 
   const { data: pkg } = await serviceClient
     .from(TABLES.EVIDENCE_PACKAGES)

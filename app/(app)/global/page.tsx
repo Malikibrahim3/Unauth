@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import { ArrowRight, GitBranch } from 'lucide-react';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
-import { requirePermission, PERMISSIONS } from '@/lib/permissions';
+import { requirePermission, PERMISSIONS, resolveDefaultAppPath } from '@/lib/permissions';
 import { formatDateMode } from '@/lib/utils/format';
 import { MetricCard, SectionCard } from '@/components/ui';
 import { ConfidenceBadge } from '@/components/ui/ConfidenceBadge';
@@ -50,7 +50,7 @@ export default async function GlobalGraphPage() {
   if (!user) redirect('/login');
 
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_CUSTOMERS);
-  if (denied) redirect('/dashboard');
+  if (denied) redirect(await resolveDefaultAppPath(serviceClient, user.id));
 
   const merchantFilter = `merchant_ids.cs.${JSON.stringify([ctx.merchantId])},merchant_ids.cs.${JSON.stringify([user.id])}`;
   const [{ data: runs }, { data: profiles }, { data: networkProfiles }, definite, probable, possible, weak] = await Promise.all([

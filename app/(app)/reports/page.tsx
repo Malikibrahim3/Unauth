@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
-import { requirePermission, PERMISSIONS } from '@/lib/permissions';
+import { requirePermission, PERMISSIONS, resolveDefaultAppPath } from '@/lib/permissions';
 import { getExposureAtRisk } from '@/lib/supabase/merchantHelpers';
 import { formatCurrencyNullable } from '@/lib/utils/format';
 import { Button, MetricCard, SectionCard, WorkbenchPage } from '@/components/ui';
@@ -61,7 +61,7 @@ export default async function ReportsPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_DASHBOARD);
-  if (denied) redirect('/dashboard');
+  if (denied) redirect(await resolveDefaultAppPath(serviceClient, user.id));
 
   const [{ data: runs }, exposureAtRisk] = await Promise.all([
     serviceClient

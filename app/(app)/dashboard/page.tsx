@@ -11,7 +11,7 @@ import {
   fetchReviewQueueProfileIds,
   getExposureAtRisk,
 } from '@/lib/supabase/merchantHelpers';
-import { requirePermission, PERMISSIONS } from '@/lib/permissions';
+import { requirePermission, PERMISSIONS, resolveDefaultAppPath } from '@/lib/permissions';
 import TrackPageView from '@/components/common/TrackPageView';
 import DashboardCharts, { type TransactionChartData } from '@/components/dashboard/DashboardCharts';
 import { ConfidenceBadge } from '@/components/ui/ConfidenceBadge';
@@ -94,7 +94,7 @@ export default async function DashboardPage() {
 
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_DASHBOARD);
   if (denied) {
-    redirect('/upload');
+    redirect(await resolveDefaultAppPath(serviceClient, user.id, { exclude: ['/dashboard'] }));
   }
 
   const { data: runs } = await serviceClient

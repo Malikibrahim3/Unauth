@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
-import { requirePermission, PERMISSIONS } from '@/lib/permissions';
+import { requirePermission, PERMISSIONS, resolveDefaultAppPath } from '@/lib/permissions';
 import Link from 'next/link';
 import InboxClient from '@/components/inbox/InboxClient';
 import TrackPageView from '@/components/common/TrackPageView';
@@ -39,8 +39,8 @@ export default async function InboxPage({ searchParams }: { searchParams?: Promi
 
   const serviceClient = createServiceClient();
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_INBOX);
-  // Permission denied: redirect to dashboard rather than returning a NextResponse from a page component.
-  if (denied) redirect('/dashboard');
+  // Permission denied: route to the best available app page instead of chaining through /dashboard.
+  if (denied) redirect(await resolveDefaultAppPath(serviceClient, user.id));
 
   let items: Array<{
     id: string;

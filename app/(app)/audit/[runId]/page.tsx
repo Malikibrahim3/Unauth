@@ -20,7 +20,7 @@ import { PageHeader } from '@/components/common/PageHeader';
 import { SectionCard, MetricCard } from '@/components/ui';
 import { RiskDistributionStrip } from '@/components/audit/RiskDistributionStrip';
 import { formatDateMode } from '@/lib/utils/format';
-import { requirePermission, PERMISSIONS } from '@/lib/permissions';
+import { requirePermission, PERMISSIONS, resolveDefaultAppPath } from '@/lib/permissions';
 import { buildReviewableFilter } from '@/lib/supabase/filters';
 import { TABLES } from '@/lib/supabase/tables';
 
@@ -103,7 +103,7 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_AUDIT);
-  if (denied) redirect('/dashboard');
+  if (denied) redirect(await resolveDefaultAppPath(serviceClient, user.id));
 
   const txPage = Math.max(1, parseInt(resolvedSearchParams.txPage ?? resolvedSearchParams.page ?? '1', 10));
   const txPageSize = normalizePageSize(resolvedSearchParams.txPageSize, TX_PAGE_SIZE);

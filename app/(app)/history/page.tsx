@@ -5,7 +5,7 @@ import AuditHistoryTableClient from '@/components/audit/AuditHistoryTableClient'
 import type { Database } from '@/lib/supabase/types';
 import PageSizeSelect from '@/components/common/PageSizeSelect';
 import { Button, WorkbenchPage, WorkbenchActionBar, WorkbenchEmptyState, WorkbenchKpiStrip } from '@/components/ui';
-import { requirePermission, PERMISSIONS } from '@/lib/permissions';
+import { requirePermission, PERMISSIONS, resolveDefaultAppPath } from '@/lib/permissions';
 import { redirect } from 'next/navigation';
 
 type RunRow = Database['public']['Tables']['processing_jobs']['Row'];
@@ -22,7 +22,7 @@ export default async function HistoryPage({ searchParams }: { searchParams?: { p
   }
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_HISTORY);
   if (denied) {
-    redirect('/dashboard');
+    redirect(await resolveDefaultAppPath(serviceClient, user.id));
   }
   const sp = (await Promise.resolve(searchParams)) ?? {};
   const page = Math.max(1, parseInt(sp?.page ?? '1', 10));
