@@ -3,6 +3,9 @@ import { createServiceClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
 import { redirect } from 'next/navigation';
 import OnboardingClient from '@/components/OnboardingClient';
+import { resolveDefaultAppPath } from '@/lib/permissions';
+import { shouldRequireOnboarding } from '@/lib/account/onboardingGate';
+import { ensureMerchantContextForUser } from '@/lib/account/ensureMerchantContext';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,11 +15,33 @@ export default async function OnboardingPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  const { data: merchant } = await serviceClient
-    .from(TABLES.MERCHANTS)
-    .select('name, platform, monthly_order_volume, primary_fraud_concern')
-    .eq('user_id', user.id)
-    .maybeSingle();
+  const ctx = await ensureMerchantContextForUser(serviceClient, user);
+
+  const merchantPromise = ctx
+    ? serviceClient
+      .from(TABLES.MERCHANTS)
+      .select('name, platform, monthly_order_volume, primary_fraud_concern, setup_complete')
+      .eq('id', ctx.merchantId)
+      .maybeSingle()
+    : Promise.resolve({ data: null });
+
+  const jobsPromise = ctx
+    ? serviceClient
+      .from(TABLES.PROCESSING_JOBS)
+      .select('id')
+      .eq('merchant_id', ctx.merchantId)
+      .limit(1)
+    : Promise.resolve({ data: [] });
+
+  const [{ data: merchant }, { data: jobs }] = await Promise.all([merchantPromise, jobsPromise]);
+
+  if (!shouldRequireOnboarding({
+    hasMerchantContext: !!ctx,
+    setupComplete: (merchant as { setup_complete?: boolean } | null)?.setup_complete,
+    auditRunCount: (jobs ?? []).length,
+  })) {
+    redirect(await resolveDefaultAppPath(serviceClient, user.id));
+  }
 
   return (
     <OnboardingClient

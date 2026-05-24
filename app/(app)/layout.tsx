@@ -6,11 +6,15 @@ import AppHeader from '@/components/layout/AppHeader';
 import DemoBanner from '@/components/common/DemoBanner';
 import AmplitudeInit from '@/components/common/AmplitudeInit';
 import { headers } from 'next/headers';
+import { createServiceClient } from '@/lib/supabase/server';
+import { shouldRequireOnboarding } from '@/lib/account/onboardingGate';
+import { ensureMerchantContextForUser } from '@/lib/account/ensureMerchantContext';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = createClient();
+  const serviceClient = createServiceClient();
   const { data } = await supabase.auth.getUser();
   const user = data?.user ?? null;
 
@@ -23,27 +27,35 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const pathname = headerList.get('x-pathname') ?? '';
   const isOnboarding = pathname.startsWith('/onboarding');
 
-  const merchantPromise = supabase
-    .from(TABLES.MERCHANTS)
-    .select('id, name, monthly_order_volume, primary_fraud_concern, setup_complete')
-    .eq('user_id', user.id)
-    .maybeSingle();
+  const ctx = await ensureMerchantContextForUser(serviceClient, user);
 
-  const jobsPromise = supabase
-    .from(TABLES.PROCESSING_JOBS)
-    .select('is_demo')
-    .limit(20);
+  const merchantPromise = ctx
+    ? serviceClient
+      .from(TABLES.MERCHANTS)
+      .select('id, name, monthly_order_volume, primary_fraud_concern, setup_complete')
+      .eq('id', ctx.merchantId)
+      .maybeSingle()
+    : Promise.resolve({ data: null });
+
+  const jobsPromise = ctx
+    ? serviceClient
+      .from(TABLES.PROCESSING_JOBS)
+      .select('is_demo')
+      .eq('merchant_id', ctx.merchantId)
+      .limit(20)
+    : Promise.resolve({ data: [] });
 
   const [{ data: merchantProfile }, { data: jobs }] = await Promise.all([merchantPromise, jobsPromise]);
 
   if (!isOnboarding) {
-    // Primary check: auth user_metadata — set at onboarding completion and
-    // survives any application-table (merchants, processing_jobs, etc.) deletions.
-    const metaComplete = (user as any).user_metadata?.setup_complete === true;
     const merchantComplete =
       !!(merchantProfile as unknown as { setup_complete?: boolean } | null)?.setup_complete;
 
-    if (!metaComplete && !merchantComplete) {
+    if (shouldRequireOnboarding({
+      hasMerchantContext: !!ctx,
+      setupComplete: merchantComplete,
+      auditRunCount: (jobs ?? []).length,
+    })) {
       redirect('/onboarding');
     }
   }
