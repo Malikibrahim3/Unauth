@@ -11,12 +11,10 @@ export default function LandingScreenshotFrame({ src, alt, delay = 0 }: Props) {
   return (
     <Reveal delay={delay}>
       <div
+        className="ua-glass-card"
         style={{
-          position: 'relative',
-          borderRadius: 6,
-          overflow: 'hidden',
           border: `1px solid ${t.border}`,
-          boxShadow: 'var(--landing-shadow-card)',
+          background: '#ffffff',
         }}
       >
         <img

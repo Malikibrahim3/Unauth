@@ -12,7 +12,6 @@ import HeroNotificationArtifact from './_components/HeroNotificationArtifact';
 import VerdictTicker from './_components/VerdictTicker';
 import HeroAuditCta from './_components/HeroAuditCta';
 import { t } from './_tokens';
-import { SectionCard } from '@/components/ui/SectionCard';
 
 export const metadata = {
   title: 'Unauth — Fraud Intelligence for Ecommerce',
@@ -646,7 +645,7 @@ export default function LandingPage() {
                           <AnimatedBar
                             className="ua-case-signal-bar"
                             value={v}
-                            color={on ? t.accent : t.darkMuted}
+                            color={on ? t.accent : t.border}
                             track={t.border}
                             height={3}
                             delay={520 + i * 130}
@@ -1028,50 +1027,110 @@ export default function LandingPage() {
       {/* ── §1.5 · Founding merchant testimonial ────────────────── */}
       <PipelineTabs />
 
+      {/* ── § 6 — Data Schema ───────────────────────────────────────── */}
+      <section style={{ background: t.bg }}>
+        <div className="mx-auto max-w-[1400px] px-6 md:px-10 py-16 md:py-24">
+          <div style={{ marginBottom: '32px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '24px', flexWrap: 'wrap' }}>
+            <div>
+              <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11px', fontWeight: 600, letterSpacing: '0.16em', textTransform: 'uppercase', color: t.accent, marginBottom: '10px' }}>§ 6 — Data Schema</p>
+              <h2 style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: 'clamp(22px, 2vw, 32px)', fontWeight: 500, letterSpacing: '-0.02em', lineHeight: 1.08, color: t.ink, margin: 0 }}>Use data you already have.</h2>
+            </div>
+            <p style={{ fontFamily: 'var(--font-serif, serif)', fontSize: '14px', color: t.inkSecondary, lineHeight: 1.6, maxWidth: '380px', margin: 0 }}>Standard order, refund, delivery, and payment exports. No integration required.</p>
+          </div>
+
+          <div style={{ background: t.darkCard, border: `1px solid ${t.darkBorder}`, borderRadius: '6px', overflow: 'hidden', marginBottom: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 18px', borderBottom: `1px solid ${t.darkBorder}`, background: t.darkBg, gap: '12px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: t.darkBright, flexShrink: 0 }} />
+                <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: t.darkText }}>Required — 24 core fields</span>
+              </div>
+              <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10px', letterSpacing: '0.06em', color: t.darkSubtle }}>shopify · woocommerce · custom OMS · stripe</span>
+            </div>
+            {([
+              { label: 'Identity',      sensitive: true,  fields: ['email', 'phone', 'shipping_name', 'billing_name', 'customer_id'] },
+              { label: 'Order',                           fields: ['order_id', 'order_date', 'order_value', 'item_count', 'sku / category'] },
+              { label: 'Address',       sensitive: true,  fields: ['shipping_address', 'shipping_postcode', 'billing_address', 'billing_postcode'] },
+              { label: 'Payment',       sensitive: true,  fields: ['payment_method', 'card_bin', 'card_last4'] },
+              { label: 'Fulfillment',                     fields: ['carrier', 'tracking_number', 'delivery_status'] },
+              { label: 'Abuse signals',                   fields: ['refund_requested', 'refund_reason', 'return_reason', 'chargeback_status'] },
+            ] as { label: string; sensitive?: boolean; fields: string[] }[]).map((cat, ci) => (
+              <div key={cat.label} style={{ display: 'grid', gridTemplateColumns: '110px minmax(0,1fr)', borderTop: ci > 0 ? `1px solid ${t.darkBorder2}` : 'none' }}>
+                <div style={{ padding: '12px 16px 12px 18px', borderRight: `1px solid ${t.darkBorder2}`, display: 'flex', alignItems: 'flex-start' }}>
+                  <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: cat.sensitive ? t.darkBright : t.darkSubtle, lineHeight: 1.8 }}>{cat.label}</span>
+                </div>
+                <div style={{ padding: '12px 18px', display: 'flex', flexWrap: 'wrap', gap: '5px 6px', alignContent: 'flex-start' }}>
+                  {cat.fields.map((f) => (
+                    <span key={f} style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11.5px', letterSpacing: '0.01em', color: cat.sensitive ? t.darkText : t.darkMuted, background: cat.sensitive ? 'rgba(212,160,120,0.1)' : 'rgba(255,255,255,0.06)', border: `1px solid ${cat.sensitive ? 'rgba(212,160,120,0.22)' : t.darkBorder2}`, borderRadius: '3px', padding: '2px 7px', lineHeight: 1.7 }}>{f}</span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ background: t.darkCard, border: `1px dashed ${t.darkBorder}`, borderRadius: '6px', padding: '16px 18px', display: 'flex', gap: '20px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+            <div style={{ minWidth: '110px', flexShrink: 0 }}>
+              <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: t.darkSubtle, margin: 0, lineHeight: 1.8 }}>Optional</p>
+              <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: t.darkSubtle, margin: 0, lineHeight: 1.8 }}>Enrichment</p>
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px 6px', marginBottom: '10px' }}>
+                {['ip_address', 'device_fingerprint', 'payment_fingerprint', 'browser_fingerprint', 'delivery_photo_metadata', 'courier_gps_proof'].map((f) => (
+                  <span key={f} style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11.5px', letterSpacing: '0.01em', color: t.darkMuted, background: 'rgba(255,255,255,0.06)', border: `1px solid ${t.darkBorder}`, borderRadius: '3px', padding: '2px 7px', lineHeight: 1.7 }}>{f}</span>
+                ))}
+              </div>
+              <p style={{ fontFamily: 'var(--font-serif, serif)', fontStyle: 'italic', fontSize: '13px', color: t.darkLabel, lineHeight: 1.55, margin: 0 }}>Improves resolution for clusters where email + address alone don&rsquo;t meet the DEFINITE threshold.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <hr style={{ border: 'none', borderTop: `1px solid ${t.lineFaint}`, margin: 0 }} />
 
       {/* ── §4 · Merchant dashboard ────────────────────────────────── */}
       <section className="ua-section-quiet mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-20 pb-12 md:pb-16" suppressHydrationWarning>
-        <div className="mb-10">
+        <div className="mb-10 grid grid-cols-1 lg:grid-cols-[200px_minmax(0,1fr)] lg:gap-12 items-start">
           <p
             style={{
-              fontFamily: 'var(--font-dm-sans, sans-serif)',
+              fontFamily: 'var(--font-dm-mono, monospace)',
               fontSize: '11px',
               fontWeight: 600,
               letterSpacing: '0.16em',
               textTransform: 'uppercase',
               color: t.accent,
-              marginBottom: '12px',
+              paddingTop: '6px',
+              lineHeight: 1.6,
             }}
           >
-            § 4 — MERCHANT DASHBOARD
+            § 4 —<br />Merchant<br />Dashboard
           </p>
-          <h2
-            style={{
-              fontFamily: 'var(--font-dm-sans, sans-serif)',
-              fontSize: 'clamp(28px, 2.8vw, 40px)',
-              fontWeight: 500,
-              letterSpacing: '-0.02em',
-              lineHeight: 1.05,
-              color: t.ink,
-              marginBottom: '10px',
-              maxWidth: '760px',
-            }}
-          >
-            Everything you need.{' '}
-            <span style={{ fontFamily: 'var(--font-serif, serif)', fontStyle: 'italic', fontWeight: 400, color: t.inkMuted }}>Nothing you don&rsquo;t.</span>
-          </h2>
-          <p
-            style={{
-              fontFamily: 'var(--font-serif, serif)',
-              fontSize: 'clamp(15px, 1.1vw, 17px)',
-              lineHeight: 1.55,
-              color: t.inkSecondary,
-              maxWidth: '600px',
-              margin: 0,
-            }}
-          >
-            Flagged identities, risk scores, evidence packets, and network exposure — all in one audit view.
-          </p>
+          <div>
+            <h2
+              style={{
+                fontFamily: 'var(--font-dm-sans, sans-serif)',
+                fontSize: 'clamp(28px, 2.8vw, 40px)',
+                fontWeight: 500,
+                letterSpacing: '-0.02em',
+                lineHeight: 1.05,
+                color: t.ink,
+                marginBottom: '10px',
+              }}
+            >
+              Everything you need.{' '}
+              <span style={{ fontFamily: 'var(--font-serif, serif)', fontStyle: 'italic', fontWeight: 400, color: t.inkMuted }}>Nothing you don&rsquo;t.</span>
+            </h2>
+            <p
+              style={{
+                fontFamily: 'var(--font-serif, serif)',
+                fontSize: 'clamp(15px, 1.1vw, 17px)',
+                lineHeight: 1.55,
+                color: t.inkSecondary,
+                maxWidth: '600px',
+                margin: 0,
+              }}
+            >
+              Flagged identities, risk scores, evidence packets, and network exposure — all in one audit view.
+            </p>
+          </div>
         </div>
         <LandingScreenshotFrame
           src="/screenshots/dashboard.png"
@@ -1079,49 +1138,53 @@ export default function LandingPage() {
         />
       </section>
 
+      <hr style={{ border: 'none', borderTop: `1px solid ${t.lineFaint}`, margin: 0 }} />
+
       {/* ── §8 · Comparison matrix ──────────────────────────────── */}
       <section className="ua-section-flow mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-20 pb-12 md:pb-16" suppressHydrationWarning>
 
-        <div className="mb-10">
+        <div className="mb-10 grid grid-cols-1 lg:grid-cols-[200px_minmax(0,1fr)] lg:gap-12 items-start">
           <p
             style={{
-              fontFamily: 'var(--font-dm-sans, sans-serif)',
+              fontFamily: 'var(--font-dm-mono, monospace)',
               fontSize: '11px',
               fontWeight: 600,
               letterSpacing: '0.16em',
               textTransform: 'uppercase',
               color: t.accent,
-              marginBottom: '12px',
+              paddingTop: '6px',
+              lineHeight: 1.6,
             }}
           >
-            § 8 — HOW UNAUTH COMPARES
+            § 8 —<br />How Unauth<br />Compares
           </p>
-          <h2
-            style={{
-              fontFamily: 'var(--font-dm-sans, sans-serif)',
-              fontSize: 'clamp(28px, 2.8vw, 40px)',
-              fontWeight: 500,
-              letterSpacing: '-0.02em',
-              lineHeight: 1.05,
-              color: t.ink,
-              marginBottom: '10px',
-              maxWidth: '760px',
-            }}
-          >
-            Checkout tools miss what happens after.
-          </h2>
-          <p
-            style={{
-              fontFamily: 'var(--font-serif, serif)',
-              fontSize: 'clamp(15px, 1.1vw, 17px)',
-              color: t.inkSecondary,
-              lineHeight: 1.55,
-              maxWidth: '640px',
-              margin: 0,
-            }}
-          >
-            Unauth finds refund abuse, friendly fraud, and INR cycles after the transaction clears.
-          </p>
+          <div>
+            <h2
+              style={{
+                fontFamily: 'var(--font-dm-sans, sans-serif)',
+                fontSize: 'clamp(28px, 2.8vw, 40px)',
+                fontWeight: 500,
+                letterSpacing: '-0.02em',
+                lineHeight: 1.05,
+                color: t.ink,
+                marginBottom: '10px',
+              }}
+            >
+              Checkout tools miss what happens after.
+            </h2>
+            <p
+              style={{
+                fontFamily: 'var(--font-serif, serif)',
+                fontSize: 'clamp(15px, 1.1vw, 17px)',
+                color: t.inkSecondary,
+                lineHeight: 1.55,
+                maxWidth: '640px',
+                margin: 0,
+              }}
+            >
+              Unauth finds refund abuse, friendly fraud, and INR cycles after the transaction clears.
+            </p>
+          </div>
         </div>
 
         {/* Comparison data */}
@@ -1205,7 +1268,7 @@ export default function LandingPage() {
           return (
             <>
               {/* ── Desktop / tablet grid (hidden below sm) ── */}
-              <div className="hidden sm:block ua-glass-card" suppressHydrationWarning style={{ border: `1px solid ${t.border}`, background: 'rgba(253, 251, 246, 0.92)', overflow: 'hidden' }}>
+              <div className="hidden sm:block ua-glass-card" suppressHydrationWarning style={{ border: `1px solid ${t.border}`, background: '#ffffff', overflow: 'hidden' }}>
                 {/* Header row */}
                 <div
                   className="grid grid-cols-[1.6fr_1fr_1fr_1fr]"
@@ -1281,14 +1344,14 @@ export default function LandingPage() {
                     </div>
                     <div style={{ padding: '14px 16px', borderLeft: `1px solid ${t.border}`, display: 'flex', alignItems: 'center' }}>{indicator(a)}</div>
                     <div style={{ padding: '14px 16px', borderLeft: `1px solid ${t.border}`, display: 'flex', alignItems: 'center' }}>{indicator(b)}</div>
-                    <div style={{ padding: '14px 16px', borderLeft: `1px solid ${t.border}`, background: 'linear-gradient(180deg, rgba(123,45,38,0.08), rgba(123,45,38,0.03))', display: 'flex', alignItems: 'center' }}>{indicator(c, true)}</div>
+                    <div style={{ padding: '14px 16px', borderLeft: `1px solid ${t.border}`, background: 'linear-gradient(180deg, rgba(123,45,38,0.08), rgba(123,45,38,0.04))', display: 'flex', alignItems: 'center' }}>{indicator(c, true)}</div>
                   </Reveal>
                 ))}
               </div>
 
               {/* ── Mobile stacked cards (hidden above sm) ── */}
-              <div className="sm:hidden" style={{ border: `1px solid ${t.border}`, background: t.surfaceWarm }}>
-                <div style={{ padding: '14px 18px', borderBottom: `1px solid ${t.border}`, display: 'flex', gap: '10px', flexWrap: 'wrap', fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10.5px', color: t.inkTertiary }}>
+              <div className="sm:hidden ua-glass-card" style={{ border: `1px solid ${t.border}`, background: '#ffffff', overflow: 'hidden' }}>
+                <div style={{ padding: '14px 18px', borderBottom: `1px solid ${t.border}`, display: 'flex', gap: '10px', flexWrap: 'wrap', fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10.5px', color: t.inkSecondary }}>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>{indicator('yes', true)} Included</span>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>{indicator('partial')} Partial</span>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>{indicator('no')} Not included</span>
@@ -1310,9 +1373,9 @@ export default function LandingPage() {
                     </p>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       {[
-                        { label: 'Blocklists', val: a, sub: 'Flags known emails, IPs, or devices' },
-                        { label: 'Checkout scoring', val: b, sub: 'Scores orders before approval' },
-                        { label: 'Unauth', val: c, sub: 'Finds post-purchase abuse across stores', highlight: true },
+                        { label: 'Blocklists', val: a },
+                        { label: 'Checkout scoring', val: b },
+                        { label: 'Unauth', val: c, highlight: true },
                       ].map(({ label, val, highlight }) => (
                         <div
                           key={label}
@@ -1321,8 +1384,9 @@ export default function LandingPage() {
                             gridTemplateColumns: '1fr auto',
                             alignItems: 'center',
                             padding: '8px 12px',
-                            background: highlight ? t.surfaceWarm2 : t.bg,
-                            border: `1px solid ${highlight ? t.borderWarm : t.border}`,
+                            background: highlight ? 'rgba(123,45,38,0.06)' : t.surfaceWarm,
+                            border: `1px solid ${highlight ? t.accent : t.border}`,
+                            borderRadius: '4px',
                           }}
                         >
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
@@ -1330,11 +1394,11 @@ export default function LandingPage() {
                               fontFamily: 'var(--font-dm-sans, sans-serif)',
                               fontSize: '13px',
                               fontWeight: highlight ? 600 : 400,
-                              color: highlight ? t.accent : t.inkSecondary,
+                              color: highlight ? t.accent : t.ink,
                             }}>
                               {label}
                             </span>
-                            <span style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '11.5px', color: t.inkTertiary, lineHeight: 1.4 }}>
+                            <span style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '11.5px', color: t.inkSecondary, lineHeight: 1.4 }}>
                               {label === 'Blocklists' ? 'Flags known emails, IPs, or devices' : label === 'Checkout scoring' ? 'Scores orders before approval' : 'Finds post-purchase abuse across stores'}
                             </span>
                           </div>
@@ -1354,42 +1418,81 @@ export default function LandingPage() {
       </section>
 
       {/* ── FAQ ─────────────────────────────────────────────────── */}
-      <section className="mx-auto max-w-[1400px] px-6 md:px-10 pt-12 md:pt-16 pb-4">
-        <p
-          style={{
-            fontFamily: 'var(--font-dm-mono, monospace)',
-            fontSize: '11px',
-            fontWeight: 500,
-            letterSpacing: '0.16em',
-            textTransform: 'uppercase',
-            color: t.accent,
-            marginBottom: '20px',
-          }}
-        >
-          § FREQUENT QUESTIONS
-        </p>
+      <section
+        style={{ background: t.darkBg, position: 'relative', zIndex: 1 }}
+      >
+        <div className="mx-auto max-w-[1100px] px-6 md:px-10 py-16 md:py-24 lg:grid lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-16 xl:gap-20">
 
-        <SectionCard
-          title="Merchant FAQ"
-          description="Direct answers on data, privacy, and rollout"
-          className="overflow-hidden"
-        >
-          <div
-            className="grid grid-cols-1 gap-3"
-            style={{
-              background: t.darkBg,
-              padding: '10px',
-              borderRadius: '6px',
-            }}
-          >
-            {[...faqFeatured, ...faqMore].map((item) => (
+          {/* Left — sticky heading block */}
+          <div className="mb-12 lg:mb-0">
+            <div className="lg:sticky lg:top-24">
+              <p
+                style={{
+                  fontFamily: 'var(--font-dm-mono, monospace)',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  letterSpacing: '0.16em',
+                  textTransform: 'uppercase',
+                  color: t.accent,
+                  marginBottom: '16px',
+                }}
+              >
+                § Frequent Questions
+              </p>
+              <h2
+                style={{
+                  fontFamily: 'var(--font-dm-sans, sans-serif)',
+                  fontSize: 'clamp(26px, 2.4vw, 36px)',
+                  fontWeight: 500,
+                  letterSpacing: '-0.025em',
+                  lineHeight: 1.08,
+                  color: t.darkText,
+                  marginBottom: '14px',
+                }}
+              >
+                Everything you&rsquo;d ask<br />
+                <span style={{ fontFamily: 'var(--font-serif, serif)', fontStyle: 'italic', fontWeight: 400, color: t.darkLabel }}>before committing.</span>
+              </h2>
+              <p
+                style={{
+                  fontFamily: 'var(--font-serif, serif)',
+                  fontSize: '15px',
+                  color: t.darkLabel,
+                  lineHeight: 1.6,
+                  marginBottom: '24px',
+                }}
+              >
+                Data handling, privacy, integration, evidence — answered directly.
+              </p>
+              <a
+                href="/audit-demo"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  fontFamily: 'var(--font-dm-sans, sans-serif)',
+                  fontSize: '13px',
+                  fontWeight: 500,
+                  color: t.accent,
+                  textDecoration: 'none',
+                  borderBottom: `1px solid ${t.accent}`,
+                  paddingBottom: '2px',
+                }}
+              >
+                Run a free audit →
+              </a>
+            </div>
+          </div>
+
+          {/* Right — accordion list */}
+          <div>
+            {[...faqFeatured, ...faqMore].map((item, i) => (
               <details
                 key={item.q}
+                className="ua-faq-item group"
                 style={{
-                  background: t.darkShell2,
-                  border: `1px solid ${t.darkBorder}`,
-                  padding: '14px 16px',
-                  color: '#E8E4D8',
+                  borderTop: i === 0 ? `1px solid ${t.darkBorder}` : 'none',
+                  borderBottom: `1px solid ${t.darkBorder}`,
                 }}
               >
                 <summary
@@ -1399,33 +1502,44 @@ export default function LandingPage() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    gap: '12px',
+                    gap: '16px',
+                    padding: '18px 0',
                     fontFamily: 'var(--font-dm-sans, sans-serif)',
                     fontSize: '15px',
                     fontWeight: 500,
-                    color: '#E8E4D8',
+                    color: t.darkText,
+                    userSelect: 'none',
                   }}
                 >
-                  <span>{item.q}</span>
+                  <span style={{ flex: 1 }}>{item.q}</span>
                   <span
                     aria-hidden="true"
+                    className="ua-faq-icon"
                     style={{
-                      fontFamily: 'var(--font-dm-mono, monospace)',
-                      fontSize: '13px',
-                      color: '#B8B2A0',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: '22px',
+                      height: '22px',
                       flexShrink: 0,
+                      border: `1px solid ${t.darkBorder}`,
+                      borderRadius: '3px',
+                      fontFamily: 'var(--font-dm-mono, monospace)',
+                      fontSize: '14px',
+                      lineHeight: 1,
+                      color: t.darkMuted,
+                      transition: 'background 140ms ease, border-color 140ms ease, color 140ms ease',
                     }}
-                  >
-                    +
-                  </span>
+                  />
                 </summary>
                 <p
                   style={{
-                    margin: '10px 0 0',
+                    margin: '0 0 18px',
                     fontFamily: 'var(--font-serif, serif)',
-                    fontSize: '14px',
-                    lineHeight: 1.6,
-                    color: '#CFC7B6',
+                    fontSize: '15px',
+                    lineHeight: 1.65,
+                    color: t.darkLabel,
+                    maxWidth: '68ch',
                   }}
                 >
                   {item.a}
@@ -1433,17 +1547,39 @@ export default function LandingPage() {
               </details>
             ))}
           </div>
-        </SectionCard>
+        </div>
+
+        <style>{`
+          .ua-faq-item[open] > summary .ua-faq-icon {
+            background: var(--landing-accent);
+            border-color: var(--landing-accent);
+            color: var(--landing-accent-fg);
+          }
+          .ua-faq-item[open] > summary .ua-faq-icon::after {
+            content: '−';
+          }
+          .ua-faq-item > summary .ua-faq-icon::after {
+            content: '+';
+          }
+.ua-faq-item summary::-webkit-details-marker { display: none; }
+          .ua-faq-item summary::marker { display: none; }
+          .ua-faq-item > summary:hover .ua-faq-icon {
+            background: rgba(255,255,255,0.06);
+          }
+          .ua-faq-item[open] > summary:hover .ua-faq-icon {
+            background: var(--landing-accent-hover);
+          }
+        `}</style>
       </section>
 
       {/* ── Footer ──────────────────────────────────────────────── */}
-      <footer className="mx-auto max-w-[1400px] px-6 md:px-10 py-8">
+      <footer style={{ background: t.darkBg, borderTop: `1px solid ${t.darkBorder}` }}>
         <div
-          className="flex flex-col md:flex-row md:justify-between gap-4"
+          className="mx-auto max-w-[1100px] px-6 md:px-10 py-8 flex flex-col md:flex-row md:justify-between gap-4"
           style={{
             fontFamily: 'var(--font-dm-sans, sans-serif)',
             fontSize: '12px',
-            color: t.inkSecondary,
+            color: t.darkSubtle,
           }}
         >
           <p
@@ -1451,7 +1587,7 @@ export default function LandingPage() {
               fontFamily: 'var(--font-serif, serif)',
               fontStyle: 'italic',
               fontSize: '12px',
-              color: t.inkTertiary,
+              color: t.darkSubtle,
               margin: '0 0 12px',
               width: '100%',
             }}
@@ -1460,15 +1596,15 @@ export default function LandingPage() {
           </p>
           <span>
             Unauth ·{' '}
-            <a href="/legal/privacy" style={{ color: t.inkSecondary }} className="hover:underline">privacy</a>
+            <a href="/legal/privacy" style={{ color: t.darkMuted }} className="hover:underline">privacy</a>
             {' · '}
-            <a href="/legal/dpa" style={{ color: t.inkSecondary }} className="hover:underline">DPA</a>
+            <a href="/legal/dpa" style={{ color: t.darkMuted }} className="hover:underline">DPA</a>
             {' · '}
-            <a href="/legal/data-handling" style={{ color: t.inkSecondary }} className="hover:underline">data handling</a>
+            <a href="/legal/data-handling" style={{ color: t.darkMuted }} className="hover:underline">data handling</a>
           </span>
           <a
             href="mailto:hello@unauth.app"
-            style={{ color: t.inkSecondary }}
+            style={{ color: t.darkMuted }}
             className="hover:underline"
           >
             hello@unauth.app
