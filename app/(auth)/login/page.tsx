@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { UnauthLogo } from '@/components/ui/UnauthLogo';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
 
 function formatAuthError(message: string): string {
   const lower = message.toLowerCase();
@@ -15,7 +17,7 @@ function formatAuthError(message: string): string {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen" style={{ background: 'var(--surface-base)' }} />}>
+    <Suspense fallback={<div className="min-h-screen" style={{ background: 'var(--landing-bg, #F8F5EE)' }} />}>
       <LoginPageInner />
     </Suspense>
   );
@@ -116,37 +118,33 @@ function LoginPageInner() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center px-4 py-8" style={{ background: 'var(--surface-base)' }}>
+    <main className="flex min-h-screen items-center justify-center px-4 py-8" style={{ background: 'var(--landing-bg, #F8F5EE)' }}>
       <div className="w-full max-w-[400px]">
         <Link href="/" className="mb-6 flex justify-center">
           <UnauthLogo variant="auto" size={28} />
         </Link>
 
-        <section className="rounded-lg border p-8" style={{ background: 'var(--surface-raised)', borderColor: 'var(--surface-border)' }}>
+        <section className="rounded-md border p-8" style={{ background: '#FFFFFF', borderColor: 'var(--landing-border, #D8D0BD)', boxShadow: '0 2px 4px rgba(26,24,20,0.04), 0 12px 28px rgba(26,24,20,0.08)' }}>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="t-label mb-2 block" style={{ color: 'var(--ink-tertiary)' }}>Email address</label>
-              <input
+              <Input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 placeholder="you@company.com"
-                className="w-full rounded-md border px-3 py-2 text-sm outline-none"
-                style={{ background: 'var(--surface-input)', borderColor: 'var(--surface-border)', color: 'var(--ink-primary)' }}
               />
             </div>
 
             <div>
               <label className="t-label mb-2 block" style={{ color: 'var(--ink-tertiary)' }}>Password</label>
-              <input
+              <Input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 placeholder="••••••••"
-                className="w-full rounded-md border px-3 py-2 text-sm outline-none"
-                style={{ background: 'var(--surface-input)', borderColor: 'var(--surface-border)', color: 'var(--ink-primary)' }}
               />
             </div>
 
@@ -161,21 +159,19 @@ function LoginPageInner() {
             {isSignUp && (
               <div className="space-y-4 border-t pt-4" style={{ borderColor: 'var(--surface-border)' }}>
                 <p className="t-label" style={{ color: 'var(--ink-tertiary)' }}>Store details</p>
-                <input
+                <Input
                   type="text"
                   value={storeName}
                   onChange={(e) => setStoreName(e.target.value)}
                   required
                   placeholder="Store name"
-                  className="w-full rounded-md border px-3 py-2 text-sm outline-none"
-                  style={{ background: 'var(--surface-input)', borderColor: 'var(--surface-border)', color: 'var(--ink-primary)' }}
                 />
                 <select
                   value={platform}
                   onChange={(e) => setPlatform(e.target.value)}
                   required
-                  className="w-full rounded-md border px-3 py-2 text-sm outline-none"
-                  style={{ background: 'var(--surface-input)', borderColor: 'var(--surface-border)', color: platform ? 'var(--ink-primary)' : 'var(--ink-tertiary)' }}
+                  className="w-full px-3 py-2 text-sm outline-none focus:border-[var(--copper-bright)]"
+                  style={{ background: 'var(--surface-input)', border: '1px solid var(--surface-border)', borderRadius: 'var(--radius-md)', color: platform ? 'var(--ink-primary)' : 'var(--ink-tertiary)' }}
                 >
                   <option value="">Select platform...</option>
                   <option value="shopify">Shopify</option>
@@ -189,8 +185,8 @@ function LoginPageInner() {
                   value={annualVolume}
                   onChange={(e) => setAnnualVolume(e.target.value)}
                   required
-                  className="w-full rounded-md border px-3 py-2 text-sm outline-none"
-                  style={{ background: 'var(--surface-input)', borderColor: 'var(--surface-border)', color: annualVolume ? 'var(--ink-primary)' : 'var(--ink-tertiary)' }}
+                  className="w-full px-3 py-2 text-sm outline-none focus:border-[var(--copper-bright)]"
+                  style={{ background: 'var(--surface-input)', border: '1px solid var(--surface-border)', borderRadius: 'var(--radius-md)', color: annualVolume ? 'var(--ink-primary)' : 'var(--ink-tertiary)' }}
                 >
                   <option value="">Annual order volume...</option>
                   <option value="under_10k">Under 10,000</option>
@@ -202,8 +198,8 @@ function LoginPageInner() {
                   value={primaryConcern}
                   onChange={(e) => setPrimaryConcern(e.target.value)}
                   required
-                  className="w-full rounded-md border px-3 py-2 text-sm outline-none"
-                  style={{ background: 'var(--surface-input)', borderColor: 'var(--surface-border)', color: primaryConcern ? 'var(--ink-primary)' : 'var(--ink-tertiary)' }}
+                  className="w-full px-3 py-2 text-sm outline-none focus:border-[var(--copper-bright)]"
+                  style={{ background: 'var(--surface-input)', border: '1px solid var(--surface-border)', borderRadius: 'var(--radius-md)', color: primaryConcern ? 'var(--ink-primary)' : 'var(--ink-tertiary)' }}
                 >
                   <option value="">Primary concern...</option>
                   <option value="refund_abuse">Refund abuse</option>
@@ -227,14 +223,15 @@ function LoginPageInner() {
               </p>
             )}
 
-            <button
+            <Button
               type="submit"
+              size="lg"
               disabled={isSubmitDisabled}
-              className="h-10 w-full rounded-md text-xs font-semibold uppercase tracking-[0.04em] disabled:cursor-not-allowed disabled:opacity-50"
-              style={{ background: 'var(--copper-bright)', color: 'var(--ink-inverse)' }}
+              loading={loading}
+              className="w-full"
             >
-              {loading ? 'Processing...' : isSignUp ? 'Create account' : 'Sign in'}
-            </button>
+              {loading ? 'Processing…' : isSignUp ? 'Create account' : 'Sign in'}
+            </Button>
           </form>
 
           <p className="mt-5 text-center t-caption" style={{ color: 'var(--ink-tertiary)' }}>

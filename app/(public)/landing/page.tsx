@@ -200,6 +200,7 @@ export default function LandingPage() {
                 background: t.accent,
                 padding: '6px 12px',
                 border: `1px solid ${t.accent}`,
+                borderRadius: '6px',
                 textDecoration: 'none',
               }}
               className="md:hidden hover:bg-[var(--landing-accent-hover)]"
@@ -214,9 +215,11 @@ export default function LandingPage() {
                 fontWeight: 500,
                 color: t.bg,
                 background: t.accent,
-                padding: '7px 14px',
+                padding: '7px 16px',
                 border: `1px solid ${t.accent}`,
+                borderRadius: '6px',
                 textDecoration: 'none',
+                whiteSpace: 'nowrap',
               }}
               className="hidden md:inline-flex hover:bg-[var(--landing-accent-hover)]"
             >
@@ -1042,9 +1045,9 @@ export default function LandingPage() {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 18px', borderBottom: `1px solid ${t.darkBorder}`, background: t.darkBg, gap: '12px', flexWrap: 'wrap' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: t.darkBright, flexShrink: 0 }} />
-                <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: t.darkText }}>Required — 24 core fields</span>
+                <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#ffffff' }}>Required — 24 core fields</span>
               </div>
-              <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10px', letterSpacing: '0.06em', color: t.darkSubtle }}>shopify · woocommerce · custom OMS · stripe</span>
+              <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10px', letterSpacing: '0.06em', color: '#ffffff', opacity: 0.7 }}>shopify · woocommerce · custom OMS · stripe</span>
             </div>
             {([
               { label: 'Identity',      sensitive: true,  fields: ['email', 'phone', 'shipping_name', 'billing_name', 'customer_id'] },
@@ -1056,11 +1059,11 @@ export default function LandingPage() {
             ] as { label: string; sensitive?: boolean; fields: string[] }[]).map((cat, ci) => (
               <div key={cat.label} style={{ display: 'grid', gridTemplateColumns: '110px minmax(0,1fr)', borderTop: ci > 0 ? `1px solid ${t.darkBorder2}` : 'none' }}>
                 <div style={{ padding: '12px 16px 12px 18px', borderRight: `1px solid ${t.darkBorder2}`, display: 'flex', alignItems: 'flex-start' }}>
-                  <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: cat.sensitive ? t.darkBright : t.darkSubtle, lineHeight: 1.8 }}>{cat.label}</span>
+                  <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: cat.sensitive ? '#d4a078' : '#ffffff', opacity: cat.sensitive ? 1 : 0.7, lineHeight: 1.8 }}>{cat.label}</span>
                 </div>
                 <div style={{ padding: '12px 18px', display: 'flex', flexWrap: 'wrap', gap: '5px 6px', alignContent: 'flex-start' }}>
                   {cat.fields.map((f) => (
-                    <span key={f} style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11.5px', letterSpacing: '0.01em', color: cat.sensitive ? t.darkText : t.darkMuted, background: cat.sensitive ? 'rgba(212,160,120,0.1)' : 'rgba(255,255,255,0.06)', border: `1px solid ${cat.sensitive ? 'rgba(212,160,120,0.22)' : t.darkBorder2}`, borderRadius: '3px', padding: '2px 7px', lineHeight: 1.7 }}>{f}</span>
+                    <span key={f} style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11.5px', letterSpacing: '0.01em', color: '#ffffff', background: cat.sensitive ? 'rgba(212,160,120,0.15)' : 'rgba(255,255,255,0.08)', border: `1px solid ${cat.sensitive ? 'rgba(212,160,120,0.3)' : 'rgba(255,255,255,0.15)'}`, borderRadius: '3px', padding: '2px 7px', lineHeight: 1.7 }}>{f}</span>
                   ))}
                 </div>
               </div>
@@ -1069,16 +1072,16 @@ export default function LandingPage() {
 
           <div style={{ background: t.darkCard, border: `1px dashed ${t.darkBorder}`, borderRadius: '6px', padding: '16px 18px', display: 'flex', gap: '20px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
             <div style={{ minWidth: '110px', flexShrink: 0 }}>
-              <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: t.darkSubtle, margin: 0, lineHeight: 1.8 }}>Optional</p>
-              <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: t.darkSubtle, margin: 0, lineHeight: 1.8 }}>Enrichment</p>
+              <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#ffffff', opacity: 0.7, margin: 0, lineHeight: 1.8 }}>Optional</p>
+              <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#ffffff', opacity: 0.7, margin: 0, lineHeight: 1.8 }}>Enrichment</p>
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px 6px', marginBottom: '10px' }}>
                 {['ip_address', 'device_fingerprint', 'payment_fingerprint', 'browser_fingerprint', 'delivery_photo_metadata', 'courier_gps_proof'].map((f) => (
-                  <span key={f} style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11.5px', letterSpacing: '0.01em', color: t.darkMuted, background: 'rgba(255,255,255,0.06)', border: `1px solid ${t.darkBorder}`, borderRadius: '3px', padding: '2px 7px', lineHeight: 1.7 }}>{f}</span>
+                  <span key={f} style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11.5px', letterSpacing: '0.01em', color: '#ffffff', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '3px', padding: '2px 7px', lineHeight: 1.7 }}>{f}</span>
                 ))}
               </div>
-              <p style={{ fontFamily: 'var(--font-serif, serif)', fontStyle: 'italic', fontSize: '13px', color: t.darkLabel, lineHeight: 1.55, margin: 0 }}>Improves resolution for clusters where email + address alone don&rsquo;t meet the DEFINITE threshold.</p>
+              <p style={{ fontFamily: 'var(--font-serif, serif)', fontStyle: 'italic', fontSize: '13px', color: '#ffffff', opacity: 0.8, lineHeight: 1.55, margin: 0 }}>Improves resolution for clusters where email + address alone don&rsquo;t meet the DEFINITE threshold.</p>
             </div>
           </div>
         </div>
@@ -1421,7 +1424,7 @@ export default function LandingPage() {
       <section
         style={{ background: t.darkBg, position: 'relative', zIndex: 1 }}
       >
-        <div className="mx-auto max-w-[1100px] px-6 md:px-10 py-16 md:py-24 lg:grid lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-16 xl:gap-20">
+        <div className="mx-auto max-w-[1100px] px-6 md:px-10 py-16 md:py-24 lg:grid lg:grid-cols-[360px_minmax(0,1fr)] lg:gap-12 xl:gap-16">
 
           {/* Left — sticky heading block */}
           <div className="mb-12 lg:mb-0">
@@ -1448,10 +1451,10 @@ export default function LandingPage() {
                   lineHeight: 1.08,
                   color: t.darkText,
                   marginBottom: '14px',
+                  maxWidth: '320px',
                 }}
               >
-                Everything you&rsquo;d ask<br />
-                <span style={{ fontFamily: 'var(--font-serif, serif)', fontStyle: 'italic', fontWeight: 400, color: t.darkLabel }}>before committing.</span>
+                Everything you&rsquo;d ask <span style={{ fontFamily: 'var(--font-serif, serif)', fontStyle: 'italic', fontWeight: 400, color: t.darkLabel, whiteSpace: 'nowrap' }}>before committing.</span>
               </h2>
               <p
                 style={{

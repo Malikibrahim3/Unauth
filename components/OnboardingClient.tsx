@@ -5,6 +5,7 @@ import { cloneElement, type ReactElement } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Check, Upload, Users, FileText, Plug, UserPlus } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
 
 interface OnboardingClientProps {
   userId: string;
@@ -103,7 +104,7 @@ export default function OnboardingClient({
             <h1 className="t-heading" style={{ color: 'var(--ink-primary)' }}>First-run checklist</h1>
             <Link
               href="/dashboard"
-              className="t-caption inline-flex rounded-md border px-2.5 py-1 transition-colors hover:opacity-90"
+              className="inline-flex items-center rounded-md border px-2.5 py-1 text-xs transition-colors hover:bg-[var(--bg-hover)]"
               style={{ color: 'var(--ink-secondary)', borderColor: 'var(--surface-border)', background: 'var(--surface-input)' }}
             >
               Skip
@@ -197,15 +198,15 @@ export default function OnboardingClient({
               </div>
               {error && <p className="md:col-span-2 t-caption" style={{ color: 'var(--sev-definite)' }}>{error}</p>}
               <div className="md:col-span-2 flex justify-end">
-                <button
+                <Button
                   type="button"
+                  size="lg"
                   onClick={saveAndContinue}
-                  disabled={!canStart || loading}
-                  className="rounded-md px-5 py-2 text-xs font-semibold uppercase tracking-[0.04em] disabled:opacity-50"
-                  style={{ background: 'var(--copper-bright)', color: 'var(--ink-inverse)' }}
+                  disabled={!canStart}
+                  loading={loading}
                 >
-                  {loading ? 'Saving...' : 'Upload first audit'}
-                </button>
+                  {loading ? 'Saving…' : 'Upload first audit'}
+                </Button>
               </div>
             </div>
           ) : activeStep === 4 ? (

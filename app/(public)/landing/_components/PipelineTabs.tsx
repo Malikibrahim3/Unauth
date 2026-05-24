@@ -35,24 +35,38 @@ const TABS = [
   },
 ] as const;
 
-const SCREENSHOT_ARTIFACTS = [
+type ArtifactEntry = {
+  src: string;
+  alt: string;
+  w: number;
+  h: number;
+  crop?: { top: number; left: number };
+};
+
+const SCREENSHOT_ARTIFACTS: ArtifactEntry[] = [
   {
     src: '/screenshots/upload.png',
     alt: 'Unauth new audit upload page — drag and drop CSV export with step-by-step format guidance',
+    w: 2400, h: 900,
   },
   {
     src: '/screenshots/hash-demo.png',
     alt: 'Unauth new audit hash step — email and phone fields transforming to HMAC-SHA256 hashes before transmission',
+    w: 2880, h: 1800,
+    // crop sidebar (~455px) and top nav bar (~160px) from the full-app screenshot
+    crop: { top: 58, left: 165 },
   },
   {
     src: '/screenshots/customers-clusters.png',
     alt: 'Unauth customers clusters view with cross-merchant identity matches, confidence grades, and network links',
+    w: 2400, h: 1060,
   },
   {
-    src: '/screenshots/identity-detail.png',
-    alt: 'Unauth customer case file showing DEFINITE verdict, risk score, signal summary, and behaviour roadmap',
+    src: '/screenshots/case-file-full.png',
+    alt: 'Unauth customer case file showing DEFINITE verdict, CONF 0.99, signal strength, behaviour roadmap and merchant dossier',
+    w: 2400, h: 1200,
   },
-] as const;
+];
 
 // ── Shared data ────────────────────────────────────────────────────────────────
 
@@ -128,21 +142,44 @@ function ArtifactFooter({ children }: { children: React.ReactNode }) {
   );
 }
 
-function ScreenshotArtifact({ artifact }: { artifact: typeof SCREENSHOT_ARTIFACTS[number] }) {
+function ScreenshotArtifact({ artifact }: { artifact: ArtifactEntry }) {
+  const { crop } = artifact;
   return (
-    <div style={{ position: 'relative', flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-      <img
-        src={artifact.src}
-        alt={artifact.alt}
-        loading="lazy"
-        width={2880}
-        height={1800}
-        style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top left' }}
-      />
+    <div style={{ position: 'relative', flex: 1, overflow: 'hidden' }}>
+      {crop ? (
+        // Crop wrapper shifts image up/left to hide nav bar and sidebar.
+        // height: calc(100% + top) ensures objectFit:cover fills the panel after the offset.
+        // objectPosition 16% shifts right ~22px in rendered coords, clearing the sidebar edge.
+        <div style={{
+          position: 'absolute',
+          top: `-${crop.top}px`,
+          left: `-${crop.left}px`,
+          width: `calc(100% + ${crop.left}px)`,
+          height: `calc(100% + ${crop.top}px)`,
+        }}>
+          <img
+            src={artifact.src}
+            alt={artifact.alt}
+            loading="lazy"
+            width={artifact.w}
+            height={artifact.h}
+            style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover', objectPosition: '16% 0%' }}
+          />
+        </div>
+      ) : (
+        <img
+          src={artifact.src}
+          alt={artifact.alt}
+          loading="lazy"
+          width={artifact.w}
+          height={artifact.h}
+          style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top left' }}
+        />
+      )}
       {/* Bottom fade — blends into panel */}
       <div style={{
         position: 'absolute', bottom: 0, left: 0, right: 0,
-        height: '25%',
+        height: '30%',
         background: `linear-gradient(to bottom, transparent, ${t.screenshotBg})`,
         pointerEvents: 'none',
       }} />
@@ -1010,102 +1047,16 @@ export default function PipelineTabs() {
           </div>
         </div>
 
-        {/* ── § 6 — Data Schema ──────────────────────────────────── */}
-        <div style={{ marginTop: '64px' }}>
-          <div style={{ marginBottom: '28px' }}>
-            <p style={{
-              fontFamily: t.mono, fontSize: '11px', fontWeight: 600,
-              letterSpacing: '0.16em', textTransform: 'uppercase',
-              color: t.accent, marginBottom: '12px',
-            }}>
-              § 6 — Data Schema
-            </p>
-            <h2 style={{
-              fontFamily: t.sans, fontSize: 'clamp(24px, 2.4vw, 36px)',
-              fontWeight: 500, letterSpacing: '-0.02em', lineHeight: 1.05,
-              color: t.ink, marginBottom: '10px', maxWidth: '760px',
-            }}>
-              Use data you already have.
-            </h2>
-            <p style={{
-              fontFamily: t.serif, fontSize: 'clamp(14px, 1.05vw, 16px)',
-              color: t.inkMuted, lineHeight: 1.55, maxWidth: '560px', margin: 0,
-            }}>
-              Standard order, refund, return, delivery, and payment exports. No integration required.
-            </p>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1px', borderRadius: t.radius, overflow: 'hidden' }} className="ua-schema-grid">
-            {/* Required fields */}
-            <div
-              className="ua-glass-card ua-schema-required"
-              style={{ background: t.darkCard, padding: '22px 24px', boxShadow: 'none', border: `1px solid ${t.darkBorder}` }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
-                <p style={{ fontFamily: t.mono, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.14em', color: '#E8E4D8', margin: 0 }}>
-                  REQUIRED — CORE FIELDS (24)
-                </p>
-                <span style={{ fontFamily: t.mono, fontSize: '10.5px', color: '#E8E4D8', letterSpacing: '0.06em' }}>
-                  shopify · woocommerce · custom OMS · stripe
-                </span>
-              </div>
-              <div
-                className="ua-schema-fields"
-                style={{ fontFamily: t.mono, fontSize: '12px', color: '#E8E4D8', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px 16px' }}
-              >
-                {[
-                  'order_id', 'order_date', 'customer_id', 'email',
-                  'phone', 'shipping_name', 'shipping_address', 'shipping_postcode',
-                  'billing_name', 'billing_address', 'billing_postcode', 'order_value',
-                  'item_count', 'sku / category', 'payment_method', 'card_bin',
-                  'card_last4', 'refund_requested', 'refund_reason', 'return_reason',
-                  'chargeback_status', 'carrier', 'tracking_number', 'delivery_status',
-                ].map((f) => (
-                  <span key={f} style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
-                    <span style={{ width: 3, height: 3, background: t.accent, display: 'inline-block', borderRadius: '50%', flexShrink: 0 }} />
-                    {f}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            {/* Optional fields */}
-            <div
-              className="ua-glass-card ua-schema-optional"
-              style={{ background: t.darkCard, padding: '22px 24px', boxShadow: 'none', border: `1px solid ${t.darkBorder}` }}
-            >
-              <p style={{ fontFamily: t.mono, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.14em', color: '#E8E4D8', marginBottom: '14px' }}>
-                OPTIONAL — ENRICHMENT
-              </p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px 16px', fontFamily: t.mono, fontSize: '12px', color: '#E8E4D8', marginBottom: '16px' }} className="ua-schema-opt-fields">
-                {[
-                  'ip_address', 'device_fingerprint', 'payment_fingerprint',
-                  'browser_fingerprint', 'delivery_photo_metadata', 'courier_gps_proof',
-                ].map((f) => (
-                  <span key={f} style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
-                    <span style={{ width: 3, height: 3, background: t.accent, display: 'inline-block', borderRadius: '50%', flexShrink: 0 }} />
-                    {f}
-                  </span>
-                ))}
-              </div>
-              <p style={{ fontFamily: t.serif, fontStyle: 'italic', fontSize: '13px', color: '#E8E4D8', lineHeight: 1.5, margin: 0 }}>
-                Improves resolution for clusters where email + address alone don&rsquo;t meet the DEFINITE threshold.
-              </p>
-            </div>
-          </div>
-        </div>
 
       </div>
 
       <style>{`
         @media (max-width: 900px) {
           .ua-pipeline-grid { grid-template-columns: 1fr !important; gap: 32px !important; }
-          .ua-schema-fields { grid-template-columns: repeat(2, 1fr) !important; }
-          .ua-schema-opt-fields { grid-template-columns: repeat(2, 1fr) !important; }
         }
-        @media (max-width: 560px) {
-          .ua-schema-fields { grid-template-columns: 1fr !important; }
-          .ua-schema-opt-fields { grid-template-columns: 1fr !important; }
+        @media (max-width: 600px) {
+          .ua-schema-grid .ua-schema-row { grid-template-columns: 1fr !important; }
+          .ua-schema-grid .ua-schema-row > div:first-child { border-right: none !important; border-bottom: 1px solid var(--landing-line-faint); }
         }
         @keyframes ua-artifact-enter {
           from { opacity: 0; transform: translateY(8px); }

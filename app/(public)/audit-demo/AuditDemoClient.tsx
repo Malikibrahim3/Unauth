@@ -73,7 +73,7 @@ function OptionCard({
         width: '100%',
         textAlign: 'left',
         padding: '14px 16px',
-        borderRadius: '14px',
+        borderRadius: '6px',
         border: selected ? '1px solid var(--landing-accent, #7b2d26)' : '1px solid var(--landing-border, #d9d0c1)',
         background: selected ? 'color-mix(in srgb, var(--landing-accent, #7b2d26) 8%, white)' : 'var(--landing-bg, #f8f5ee)',
         color: 'var(--landing-ink, #1f1a15)',
@@ -162,7 +162,7 @@ export default function AuditDemoClient({ initialEmail = '' }: { initialEmail?: 
         style={{
           background: 'rgba(255,255,255,0.92)',
           border: '1px solid var(--landing-border, #d9d0c1)',
-          borderRadius: '18px',
+          borderRadius: '6px',
           boxShadow: '0 24px 64px -36px rgba(26,24,20,0.24)',
           padding: 'clamp(24px, 4vw, 40px)',
         }}
@@ -240,12 +240,12 @@ export default function AuditDemoClient({ initialEmail = '' }: { initialEmail?: 
                     setEmail(event.target.value);
                     if (emailError) setEmailError('');
                   }}
-                  className="h-12 rounded-[14px] border-[var(--landing-border)] bg-white px-4 text-[15px] text-[var(--landing-ink)] placeholder:text-[var(--landing-ink-tertiary)]"
+                  className="h-12 rounded-md border-[var(--landing-border)] bg-white px-4 text-[15px] text-[var(--landing-ink)] placeholder:text-[var(--landing-ink-tertiary)]"
                 />
                 <Button
                   type="submit"
                   size="lg"
-                  className="h-12 rounded-[14px] normal-case tracking-normal"
+                  className="h-12 rounded-md normal-case tracking-normal"
                   style={{
                     background: 'var(--landing-accent)',
                     borderColor: 'var(--landing-accent)',
@@ -376,7 +376,7 @@ export default function AuditDemoClient({ initialEmail = '' }: { initialEmail?: 
                                 background: 'var(--landing-accent, #7b2d26)',
                                 color: 'var(--landing-bg, #f8f5ee)',
                                 border: '1px solid var(--landing-accent, #7b2d26)',
-                                borderRadius: '14px',
+                                borderRadius: '6px',
                                 fontFamily: 'var(--font-dm-sans, sans-serif)',
                                 fontSize: '14px',
                                 fontWeight: 500,
