@@ -9,7 +9,6 @@
  */
 
 import type { IdentitySignalName } from './types';
-import { env } from '@/lib/utils/env';
 
 export const SIGNAL_WEIGHTS = {
   refundRate: 20,
@@ -41,7 +40,7 @@ export const RISK_TIER_THRESHOLDS = {
 // Current benchmark calibration:
 //  - us_benchmark_v1.csv: P=0.985, R=0.876, F1=0.927 at threshold=44
 //  - clean merchant datasets should remain near-zero false positives at this threshold
-export const FLAG_THRESHOLD = env.FLAG_THRESHOLD;
+export const FLAG_THRESHOLD = Number(process.env.FLAG_THRESHOLD ?? 44);
 
 // =============================================================================
 // IDENTITY CONFIDENCE MODEL WEIGHTS
