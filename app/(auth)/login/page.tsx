@@ -35,7 +35,8 @@ function LoginPageInner() {
   const supabase = createClient();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const nextPath = searchParams.get('next') || '/upload';
+  const requestedNextPath = searchParams.get('next');
+  const nextPath = !requestedNextPath || requestedNextPath === '/dashboard' ? '/upload' : requestedNextPath;
   const isSubmitDisabled =
     loading ||
     !email ||

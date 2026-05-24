@@ -94,14 +94,7 @@ export default async function DashboardPage() {
 
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_DASHBOARD);
   if (denied) {
-    return (
-      <div className="p-8">
-        <h1 className="text-heading-lg">Access denied</h1>
-        <p className="text-body-sm mt-2" style={{ color: 'var(--text-muted)' }}>
-          You do not have permission to view dashboard analytics.
-        </p>
-      </div>
-    );
+    redirect('/upload');
   }
 
   const { data: runs } = await serviceClient
