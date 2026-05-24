@@ -99,8 +99,17 @@ export default function OnboardingClient({
     <main className="min-h-screen p-4 md:p-8" style={{ background: 'var(--surface-base)' }}>
       <div className="mx-auto grid max-w-6xl gap-5 lg:grid-cols-[360px_minmax(0,1fr)]">
         <aside className="rounded-lg border p-4" style={{ background: 'var(--surface-raised)', borderColor: 'var(--surface-border)' }}>
-          <div className="mb-6">
+          <div className="mb-6 flex items-start justify-between gap-3">
             <h1 className="t-heading" style={{ color: 'var(--ink-primary)' }}>First-run checklist</h1>
+            <Link
+              href="/dashboard"
+              className="t-caption inline-flex rounded-md border px-2.5 py-1 transition-colors hover:opacity-90"
+              style={{ color: 'var(--ink-secondary)', borderColor: 'var(--surface-border)', background: 'var(--surface-input)' }}
+            >
+              Skip
+            </Link>
+          </div>
+          <div className="mb-6">
             <p className="t-body mt-2" style={{ color: 'var(--ink-secondary)' }}>
               Complete the first audit path, then add integrations and team access when you are ready.
             </p>

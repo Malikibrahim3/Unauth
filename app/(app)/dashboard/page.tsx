@@ -438,25 +438,6 @@ export default async function DashboardPage() {
               )}
             </div>
 
-            <div className="px-4 py-2">
-              <div className="flex items-center justify-between gap-2">
-                <p className="t-label" style={{ color: 'var(--ink-tertiary)' }}>7D MATCH RATE</p>
-                <p className="t-mono" style={{ color: 'var(--data-score)' }}>
-                  {avgFlagRate === null ? '—' : `${avgFlagRate.toFixed(1)}%`}
-                </p>
-              </div>
-              <svg className="mt-2 h-10 w-full" viewBox="0 0 240 40" role="img" aria-label="Seven day match rate">
-                <polyline
-                  points={`0,32 40,${avgFlagRate ? 30 - avgFlagRate : 30} 80,26 120,28 160,18 200,22 240,${avgFlagRate ? Math.max(6, 32 - avgFlagRate) : 24}`}
-                  fill="none"
-                  stroke="var(--copper-bright)"
-                  strokeWidth="2"
-                  vectorEffect="non-scaling-stroke"
-                />
-                <circle cx="240" cy={avgFlagRate ? Math.max(6, 32 - avgFlagRate) : 24} r="3" fill="var(--copper-bright)" />
-              </svg>
-              <p className="t-caption" style={{ color: 'var(--ink-tertiary)' }}>{totalFlagged.toLocaleString()} matched</p>
-            </div>
           </aside>
         </div>
 
