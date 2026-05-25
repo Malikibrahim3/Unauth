@@ -103,6 +103,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         .update({ merchant_id: merchantId } as any)
         .eq('job_id', audit.processing_job_id)
         .eq('merchant_id', intakeMerchantId);
+      await service
+        .from(TABLES.AUDIT_TRANSACTIONS)
+        .update({ merchant_id: merchantId } as any)
+        .eq('job_id', audit.processing_job_id)
+        .eq('merchant_id', intakeMerchantId);
     }
   }
 

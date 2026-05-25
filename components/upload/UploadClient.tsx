@@ -1273,7 +1273,7 @@ export default function UploadClient() {
                     className="inline-block mt-1.5 text-[10px] px-2 py-0.5 rounded font-semibold"
                     style={{ background: 'var(--bg-inset)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
                   >
-                    Coming soon
+                    Planned integration
                   </span>
                 </div>
               </div>

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient, createClient, createServiceClient } from '@/lib/supabase/server';
 import { STORAGE_BUCKETS, TABLES } from '@/lib/supabase/tables';
 import { enforceRateLimit, limitFromEnv, rateLimitKey, getClientIp } from '@/lib/ratelimit';
+import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 
 async function removeStoragePrefix(
   service: ReturnType<typeof createServiceClient>,
@@ -38,6 +39,20 @@ async function removeStoragePrefix(
   }
 }
 
+async function removeStorageObjects(
+  service: ReturnType<typeof createServiceClient>,
+  bucket: string,
+  paths: string[]
+) {
+  const uniquePaths = Array.from(new Set(paths.filter((path) => path.length > 0)));
+  for (let i = 0; i < uniquePaths.length; i += 100) {
+    const { error } = await service.storage.from(bucket).remove(uniquePaths.slice(i, i + 100));
+    if (error) {
+      console.warn(`[account-delete] non-fatal storage remove: ${bucket}:`, error.message);
+    }
+  }
+}
+
 export async function POST(request: NextRequest) {
   const limited = await enforceRateLimit(
     rateLimitKey('account-delete', getClientIp(request.headers)),
@@ -57,22 +72,46 @@ export async function POST(request: NextRequest) {
   }
 
   const service = createServiceClient();
+  const { denied, ctx } = await requirePermission(service, user.id, PERMISSIONS.GRANT_PERMISSIONS);
+  if (denied) return denied;
 
-  // Resolve the merchant owned by this user.
-  const { data: merchant } = await service
-    .from(TABLES.MERCHANTS)
-    .select('id')
-    .eq('user_id', user.id)
-    .maybeSingle();
-  const merchantId = (merchant as { id?: string } | null)?.id ?? null;
+  // Account deletion is owner-only. Use the resolved caller context so team
+  // members cannot delete a merchant account by sharing the owner's session UI.
+  const merchantId = ctx.merchantId;
 
   if (merchantId) {
+    const { data: queuePaths } = await service
+      .from(TABLES.CSV_UPLOAD_QUEUE)
+      .select('storage_path')
+      .eq('merchant_id', merchantId);
+    const { data: publicAuditPaths } = await service
+      .from(TABLES.PUBLIC_AUDITS)
+      .select('csv_path')
+      .eq('linked_merchant_id', merchantId);
+    const { data: evidencePaths } = await service
+      .from('evidence_packages' as any)
+      .select('pdf_storage_path')
+      .eq('merchant_id', merchantId);
+
     // Remove raw uploaded CSVs and generated PDFs for this account. Database
     // deletes alone leave source files in Storage, which is unacceptable for
     // merchant data deletion.
     for (const bucket of [STORAGE_BUCKETS.MERCHANT_CSV_UPLOADS, STORAGE_BUCKETS.EVIDENCE_PACKAGES]) {
       await removeStoragePrefix(service, bucket, user.id);
     }
+    await removeStorageObjects(
+      service,
+      STORAGE_BUCKETS.MERCHANT_CSV_UPLOADS,
+      [
+        ...((queuePaths as Array<{ storage_path: string | null }> | null) ?? []).map((row) => row.storage_path ?? ''),
+        ...((publicAuditPaths as Array<{ csv_path: string | null }> | null) ?? []).map((row) => row.csv_path ?? ''),
+      ]
+    );
+    await removeStorageObjects(
+      service,
+      STORAGE_BUCKETS.EVIDENCE_PACKAGES,
+      ((evidencePaths as Array<{ pdf_storage_path: string | null }> | null) ?? []).map((row) => row.pdf_storage_path ?? '')
+    );
 
     // Delete merchant data in dependency order.
     // Non-fatal failures are logged but don't block account deletion.
@@ -102,6 +141,7 @@ export async function POST(request: NextRequest) {
     // Delete customer profiles where this is the only merchant.
     await service.rpc('delete_orphan_customer_profiles' as any, { p_merchant_id: merchantId }).maybeSingle();
 
+    await service.from(TABLES.PUBLIC_AUDITS).delete().eq('linked_merchant_id', merchantId);
     await service.from(TABLES.MERCHANTS).delete().eq('id', merchantId);
   }
 

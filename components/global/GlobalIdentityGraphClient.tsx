@@ -35,6 +35,8 @@ type Props = {
 const gradeRank: Record<string, number> = { definite: 4, probable: 3, possible: 2, weak: 1 };
 const FIT_VIEW_OPTIONS = { padding: 0.22 };
 const PRO_OPTIONS = { hideAttribution: true };
+const NODE_TYPES = {};
+const EDGE_TYPES = {};
 
 function gradeLabel(grade: string | null | undefined) {
   if (grade === 'definite') return 'A';
@@ -267,6 +269,8 @@ export default function GlobalIdentityGraphClient({ profiles }: Props) {
             onNodeClick={handleNodeClick}
             nodesDraggable={false}
             proOptions={PRO_OPTIONS}
+            nodeTypes={NODE_TYPES}
+            edgeTypes={EDGE_TYPES}
           >
             <Background color="var(--surface-border)" gap={26} size={1} />
             <Controls showInteractive={false} />

@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import Link from 'next/link';
 import {
   Bar,
   BarChart,
@@ -18,6 +19,7 @@ import {
   YAxis,
 } from 'recharts';
 import { SectionCard } from '@/components/ui/SectionCard';
+import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
 import { CONFIDENCE_THRESHOLDS } from '@/lib/engine/weights';
 
@@ -271,7 +273,18 @@ export default function DashboardCharts({ runs, transactions }: Props) {
   if (runs.length === 0 && transactions.length === 0) {
     return (
       <div className="border-t p-4" style={{ borderColor: 'var(--surface-border)' }}>
-        <EmptyChart message="Run an audit to populate dashboard trends." />
+        <div className="flex h-96 flex-col items-center justify-center rounded-md border border-dashed gap-4" style={{ borderColor: 'var(--surface-border)' }}>
+          <div className="text-center max-w-sm">
+            <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--ink-primary)' }}>No audits yet</h3>
+            <p className="text-sm mb-6" style={{ color: 'var(--ink-secondary)' }}>Upload your order history to see risk patterns, fraud exposure, and evidence-ready case files.</p>
+            <Link href="/upload">
+              <Button variant="primary" size="md">
+                Run your first audit →
+              </Button>
+            </Link>
+            <p className="text-xs mt-3" style={{ color: 'var(--ink-tertiary)' }}>Takes about 20 minutes</p>
+          </div>
+        </div>
       </div>
     );
   }

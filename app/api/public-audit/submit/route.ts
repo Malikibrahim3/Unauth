@@ -14,6 +14,20 @@ import { env } from '@/lib/utils/env';
 const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024;
 export const maxDuration = 300;
 
+async function failPublicAudit(
+  sc: ReturnType<typeof createServiceClient>,
+  auditId: string,
+  filePath: string | null,
+  status: number,
+  error: string
+) {
+  if (filePath) {
+    await sc.storage.from(STORAGE_BUCKETS.MERCHANT_CSV_UPLOADS).remove([filePath]).catch(() => {});
+  }
+  await sc.from(TABLES.PUBLIC_AUDITS).update({ status: 'failed' } as any).eq('id', auditId);
+  return NextResponse.json({ error }, { status });
+}
+
 export async function POST(request: NextRequest) {
   createRequestLogger(request, '/api/public-audit/submit');
 
@@ -47,6 +61,11 @@ export async function POST(request: NextRequest) {
       { error: `File exceeds the 50 MB limit (${(upload.size / 1024 / 1024).toFixed(1)} MB).` },
       { status: 400 }
     );
+  }
+
+  const magicBytes = await sniffCsvMagicBytes(upload, upload.name);
+  if (!magicBytes.valid) {
+    return NextResponse.json({ error: magicBytes.message ?? 'Invalid CSV upload.' }, { status: 400 });
   }
 
   let columnMap: Record<string, string> | null = null;
@@ -106,8 +125,7 @@ export async function POST(request: NextRequest) {
     });
 
   if (uploadError) {
-    await sc.from(TABLES.PUBLIC_AUDITS).update({ status: 'failed' } as any).eq('id', auditId);
-    return NextResponse.json({ error: uploadError.message }, { status: 500 });
+    return failPublicAudit(sc, auditId, null, 500, uploadError.message);
   }
 
   await sc
@@ -123,14 +141,7 @@ export async function POST(request: NextRequest) {
     .from(STORAGE_BUCKETS.MERCHANT_CSV_UPLOADS)
     .download(filePath);
   if (downloadError || !fileData) {
-    await sc.from(TABLES.PUBLIC_AUDITS).update({ status: 'failed' } as any).eq('id', auditId);
-    return NextResponse.json({ error: downloadError?.message ?? 'Failed to read uploaded CSV.' }, { status: 500 });
-  }
-
-  const magicBytes = await sniffCsvMagicBytes(upload, upload.name);
-  if (!magicBytes.valid) {
-    await sc.from(TABLES.PUBLIC_AUDITS).update({ status: 'failed' } as any).eq('id', auditId);
-    return NextResponse.json({ error: magicBytes.message ?? 'Invalid CSV upload.' }, { status: 400 });
+    return failPublicAudit(sc, auditId, filePath, 500, downloadError?.message ?? 'Failed to read uploaded CSV.');
   }
 
   let jobId: string;
@@ -141,8 +152,7 @@ export async function POST(request: NextRequest) {
       uploadType: 'standard',
     });
   } catch (err) {
-    await sc.from(TABLES.PUBLIC_AUDITS).update({ status: 'failed' } as any).eq('id', auditId);
-    return NextResponse.json({ error: err instanceof Error ? err.message : 'Failed to create job.' }, { status: 500 });
+    return failPublicAudit(sc, auditId, filePath, 500, err instanceof Error ? err.message : 'Failed to create job.');
   }
 
   await sc
@@ -165,23 +175,20 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     const message = err instanceof Error ? err.message : 'CSV parse failed';
     await completeJob(scopedClient, jobId, false, [{ message }]);
-    await sc.from(TABLES.PUBLIC_AUDITS).update({ status: 'failed' } as any).eq('id', auditId);
-    return NextResponse.json({ error: message }, { status: 422 });
+    return failPublicAudit(sc, auditId, filePath, 422, message);
   }
 
   if (!parseResult.valid) {
     await completeJob(scopedClient, jobId, false, [
       { message: `Missing required columns: ${parseResult.missingRequired.join(', ')}` },
     ]);
-    await sc.from(TABLES.PUBLIC_AUDITS).update({ status: 'failed' } as any).eq('id', auditId);
-    return NextResponse.json({ error: 'CSV validation failed.' }, { status: 422 });
+    return failPublicAudit(sc, auditId, filePath, 422, 'CSV validation failed.');
   }
   if (parseResult.rowCount > MAX_ROWS) {
     await completeJob(scopedClient, jobId, false, [
       { message: `Row count ${parseResult.rowCount} exceeds limit of ${MAX_ROWS}` },
     ]);
-    await sc.from(TABLES.PUBLIC_AUDITS).update({ status: 'failed' } as any).eq('id', auditId);
-    return NextResponse.json({ error: `Row count exceeds limit of ${MAX_ROWS}.` }, { status: 422 });
+    return failPublicAudit(sc, auditId, filePath, 422, `Row count exceeds limit of ${MAX_ROWS}.`);
   }
 
   await updateJobTotalRows(scopedClient, jobId, parseResult.rowCount);
@@ -192,8 +199,7 @@ export async function POST(request: NextRequest) {
     await completeJob(scopedClient, jobId, false, [
       { message: usageGuard.reason ?? 'Supabase usage guard stopped this run', code: 'SUPABASE_USAGE_GUARD' },
     ]);
-    await sc.from(TABLES.PUBLIC_AUDITS).update({ status: 'failed' } as any).eq('id', auditId);
-    return NextResponse.json({ error: usageGuard.reason ?? 'Usage limit reached.' }, { status: 429 });
+    return failPublicAudit(sc, auditId, filePath, 429, usageGuard.reason ?? 'Usage limit reached.');
   }
 
   await dispatchChunk(originFromRequest(request), {

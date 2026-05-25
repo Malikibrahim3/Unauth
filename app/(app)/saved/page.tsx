@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { BookMarked } from 'lucide-react';
 import { WorkbenchEmptyState, WorkbenchPage } from '@/components/ui';
 
 export default function SavedViewsPage() {
@@ -35,10 +34,6 @@ export default function SavedViewsPage() {
                 </div>
               }
             />
-          </div>
-          <div className="mt-4 flex items-center gap-2 text-caption" style={{ color: 'var(--text-subtle)' }}>
-            <BookMarked className="h-4 w-4" />
-            <span>Saved views are coming soon for cross-route query presets.</span>
           </div>
         </div>
       }

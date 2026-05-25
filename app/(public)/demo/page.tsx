@@ -59,15 +59,15 @@ export default async function DemoPage() {
     return (
       <div className="flex min-h-screen items-center justify-center p-8">
         <div className="max-w-md text-center space-y-4">
-          <h1 className="text-2xl font-bold text-[var(--text)]">Demo coming soon</h1>
+          <h1 className="text-2xl font-bold text-[var(--text)]">Unauth demo</h1>
           <p className="text-[var(--text-muted)]">
-            The interactive demo is being set up. Check back shortly.
+            Explore the public audit walkthrough, then create a workspace when you are ready to test your own CSV.
           </p>
           <Link
-            href="/login"
+            href="/audit-demo"
             className="inline-block rounded-md bg-[var(--accent)] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[var(--accent-hover)]"
           >
-            Sign up free →
+            Open audit demo →
           </Link>
         </div>
       </div>

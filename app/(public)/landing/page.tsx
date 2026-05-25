@@ -55,7 +55,7 @@ export default function LandingPage() {
   const faqFeatured = [
     {
       q: 'What exactly is Unauth?',
-      a: 'Unauth is a cross-merchant identity resolution platform. We take your order and transaction data, link identities across signals — email, device, address, card, phone — and tell you which customers have a history of refund abuse, INR claims, or chargebacks at other stores. We do not block orders. We give you the intelligence to make better decisions yourself.',
+      a: 'Unauth is a cross-merchant identity resolution platform. We take your order and transaction history, link identities across signals — email, address, card, phone — and tell you which customers have a documented pattern of refund abuse, INR claims, or chargebacks at other stores. We don\'t block orders. We give you the intelligence to make better decisions yourself.',
     },
     {
       q: 'How do you get data from other merchants?',
@@ -71,29 +71,29 @@ export default function LandingPage() {
     },
     {
       q: 'Do I need to integrate anything?',
-      a: 'No. You export a CSV from your store — Shopify, WooCommerce, Magento, or any platform — and upload it. No API keys, no developer, no checkout plugin. If you can export an order report you can run an audit.',
+      a: 'No. Export a CSV from your store — Shopify, WooCommerce, Stripe, or any platform — and upload it. No API keys, no developer, no checkout plugin. If you can export an order report, you can run an audit.',
     },
     {
       q: 'How long does an audit take?',
-      a: "Around 20 minutes for most datasets. Larger files with 50,000+ orders may take slightly longer. You do not need to stay on the page — we'll have the results ready when you come back.",
+      a: "Around 20 minutes for most datasets. Files with 50,000+ orders may take slightly longer. You don't need to stay on the page — results will be ready when you return.",
     },
   ];
   const faqMore = [
     {
       q: 'How is this different from a blocklist?',
-      a: "Blocklists flag signals you've already seen — an email or device that caused you a problem before. That only catches repeat offenders at your store. Unauth links identities across multiple merchants, so we can surface a customer who has never defrauded you but has hit five other stores in the last 90 days. You catch them before they cost you anything.",
+      a: "Blocklists only flag signals you've already seen — an email or device that caused you a problem before. That catches repeat offenders at your store. Unauth links identities across merchants, so we can surface a customer who has never touched you but has hit five other stores in the last 90 days. You see the threat before it costs you anything.",
     },
     {
       q: 'What does a confidence grade actually mean?',
-      a: 'Every identity cluster gets a grade — Definite, Probable, Possible, or Weak — based on how many signals match and how strong those matches are. Definite means we have high certainty this is the same person across multiple merchants with a documented abuse pattern. Weak means there is a partial signal worth watching but not worth acting on yet. You decide what threshold you act on.',
+      a: 'Every identity cluster gets a grade — Definite, Probable, Possible, or Weak — based on how many signals match and how strong those matches are. Definite means high certainty: the same person, across multiple merchants, with a documented abuse pattern. Weak means a partial signal worth watching but not worth acting on yet. You decide what threshold you act on.',
     },
     {
       q: 'What do I actually get at the end?',
-      a: 'A full audit report showing every identity cluster we found, their confidence grade, the signals that linked them, their abuse history across the network, and a representment-ready case file for any cluster you want to dispute. You can export the report and the case files directly.',
+      a: 'A full audit report showing every identity cluster found, their confidence grade, the signals that linked them, their abuse history across the network, and a representment-ready case file for any cluster you want to dispute. Everything exportable.',
     },
     {
       q: 'What is a representment-ready case file?',
-      a: "If you want to dispute a chargeback, card networks require documented evidence that the order was legitimate and the customer has a pattern of abuse. Unauth generates that evidence packet automatically — transaction history, linked identity signals, cross-merchant abuse pattern, confidence grade. It's formatted to meet Visa's Compelling Evidence 3.0 requirements.",
+      a: "To dispute a chargeback, card networks require documented evidence of order legitimacy and customer abuse pattern. Unauth generates that evidence packet automatically — transaction history, linked identity signals, cross-merchant abuse pattern, confidence grade. Formatted to meet Visa's Compelling Evidence 3.0 requirements.",
     },
     {
       q: 'Does Unauth block orders automatically?',
@@ -101,15 +101,15 @@ export default function LandingPage() {
     },
     {
       q: 'How does pricing work?',
-      a: 'Pricing is based on order volume processed. The first audit is free with no card required. Paid plans are available for merchants who want ongoing monitoring, API access, and automatic flagging on new orders. Get in touch for a quote based on your volume.',
+      a: 'The first audit is free — no card required. Paid plans are based on order volume and cover ongoing monitoring, automatic flagging on new orders, and full API access. Get in touch for a quote based on your volume.',
     },
     {
       q: 'Who is Unauth for?',
-      a: "Primarily US ecommerce merchants processing more than 1,000 orders a month who are seeing refund abuse, INR fraud, or chargeback rates they cannot explain with their current tools. If you're a small merchant just starting out, a free audit is still worth running — you might be surprised what is already in your data.",
+      a: "US ecommerce merchants processing more than 1,000 orders a month who are seeing refund abuse, INR fraud, or chargeback rates they can't explain with their current tools. If you're smaller, a free audit is still worth running — you might be surprised what's already in your data.",
     },
     {
       q: 'How do I get started?',
-      a: 'Run a free audit — no account, no card, no integration required. Export your order history as a CSV and upload it. You will have a full report in about 20 minutes.',
+      a: 'Export your order history as a CSV and upload it. No account, no card, no integration. You\'ll have a full report in around 20 minutes.',
     },
   ];
   const heroSubjectFields = [
@@ -318,9 +318,9 @@ export default function LandingPage() {
               maxWidth: '22ch',
             }}
           >
-            Find repeat abusers before they{' '}
+            Catch serial refund fraud before it{' '}
             <span style={{ color: t.accent, fontStyle: 'italic', fontFamily: 'var(--font-serif, serif)', fontWeight: 400, whiteSpace: 'nowrap' }}>
-              strike again.
+              costs you again.
             </span>
           </h1>
 
@@ -335,8 +335,8 @@ export default function LandingPage() {
               maxWidth: '44ch',
             }}
           >
-            Upload orders. Unauth links refund abuse, INR claims, and friendly-fraud patterns across stores.{' '}
-            <span style={{ color: t.ink, fontWeight: 500, fontStyle: 'normal' }}>Free audit. No account. Results emailed.</span>
+            Upload your orders. We link refund abuse, INR claims, and friendly fraud across merchants — and hand you a scored case file.{' '}
+            <span style={{ color: t.ink, fontWeight: 500, fontStyle: 'normal' }}>Free. No account. No integration.</span>
           </p>
 
           {/* CTA row */}
@@ -1016,8 +1016,8 @@ export default function LandingPage() {
             {/* Three stats inline */}
             <div className="grid grid-cols-1 min-[390px]:grid-cols-3 gap-4 min-[390px]:gap-6 mt-7 pt-6" style={{ borderTop: '1px solid rgba(212,199,175,0.24)' }}>
               {[
-                { v: 89,  prefix: '$', suffix: 'B', dec: 0, l: 'Lost annually to refund / INR fraud', n: 3 },
-                { v: 20,  prefix: '',  suffix: '%', dec: 0, l: 'Of DTC refund claims tied to repeat abusers', n: 4 },
+                { v: 89,  prefix: '$', suffix: 'B', dec: 0, l: 'Estimated annual loss to refund and INR fraud across US ecommerce', n: 3 },
+                { v: 20,  prefix: '',  suffix: '%', dec: 0, l: 'Of DTC refund claims attributed to repeat abusers across multiple stores', n: 4 },
                 { v: 2.7, prefix: '',  suffix: '×', dec: 1, l: 'True cost of a lost chargeback', n: 5 },
               ].map((s, i) => (
                 <Reveal key={s.l} delay={120 + i * 80}>
@@ -1117,7 +1117,7 @@ export default function LandingPage() {
                 <span key={f} className="ua-schema-chip" style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11.5px', letterSpacing: '0.01em', color: '#ffffff', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '3px', padding: '2px 7px', lineHeight: 1.7 }}>{f}</span>
               ))}
             </div>
-            <p style={{ fontFamily: 'var(--font-serif, serif)', fontStyle: 'italic', fontSize: '13px', color: '#ffffff', opacity: 0.8, lineHeight: 1.55, margin: 0, maxWidth: '290px', textAlign: 'left' }} className="md:text-right">Real-time signals captured at the moment of transaction — no CSV required.</p>
+            <p style={{ fontFamily: 'var(--font-serif, serif)', fontStyle: 'italic', fontSize: '13px', color: '#ffffff', opacity: 0.8, lineHeight: 1.55, margin: 0, maxWidth: '290px', textAlign: 'left' }} className="md:text-right">Captures device, session, and behavioural signals at the moment of transaction — stronger identity links, no CSV needed.</p>
           </Reveal>
         </div>
       </section>
@@ -1142,9 +1142,9 @@ export default function LandingPage() {
               fontWeight: 500, letterSpacing: '-0.02em', lineHeight: 1.05,
               color: t.ink, marginBottom: '10px',
             }}>
-              Everything you need.{' '}
+              Your fraud exposure,{' '}
               <span style={{ fontFamily: 'var(--font-serif, serif)', fontStyle: 'italic', fontWeight: 400, color: t.inkMuted }}>
-                Nothing you don&rsquo;t.
+                ranked and ready to act on.
               </span>
             </h2>
             <p style={{
@@ -1233,9 +1233,9 @@ export default function LandingPage() {
         {/* Comparison data */}
         {(() => {
           const rows = [
-            { cap: 'Resolves cross-merchant identity',       a: 'no',      b: 'no',      c: 'yes', note: '7+ stores observed per cluster' },
+            { cap: 'Resolves cross-merchant identity',       a: 'no',      b: 'no',      c: 'yes', note: 'linked across multiple merchants' },
             { cap: 'Catches friendly fraud / INR cycles',    a: 'no',      b: 'partial', c: 'yes', note: 'post-purchase patterns' },
-            { cap: 'Surfaces network-known abusers',         a: 'partial', b: 'no',      c: 'yes', note: 'k-anon gated at 3+ merchants' },
+            { cap: 'Surfaces network-known abusers',         a: 'partial', b: 'no',      c: 'yes', note: 'only surfaces when confirmed across 3+ merchants' },
             { cap: 'Explainable signals (no black box)',     a: 'partial', b: 'no',      c: 'yes', note: 'every flag documented' },
             { cap: 'Generates representment-ready case file', a: 'no',      b: 'no',      c: 'yes', note: 'chargeback evidence packet' },
             { cap: 'Works from CSV upload — no code required', a: 'no',    b: 'no',      c: 'yes', note: 'start with exports you already have' },
@@ -1680,7 +1680,7 @@ export default function LandingPage() {
             }}
           >
             <p style={{ margin: 0, fontStyle: 'italic', fontFamily: 'var(--font-serif, serif)', fontSize: '12px' }}>
-              Case files, audit outputs, and network figures shown on this page are illustrative.
+              Case files, audit outputs, and network figures shown on this page are illustrative examples only.
             </p>
             <span style={{ color: footerStyles.link }}>© 2026 Unauth. All rights reserved.</span>
           </div>

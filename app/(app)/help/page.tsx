@@ -48,14 +48,13 @@ export default function HelpIndexPage() {
       ]}
       activeNavKey="audits"
       main={<div className="p-4 space-y-3">
-        {ARTICLES.map(({ icon: Icon, title, description, href, comingSoon }) => (
+        {ARTICLES.map(({ icon: Icon, title, description, href }) => (
           <div
             key={title}
             className="flex items-start gap-4 rounded-lg px-5 py-4 border"
             style={{
               background: 'var(--bg-surface)',
               borderColor: 'var(--border-subtle)',
-              opacity: comingSoon ? 0.65 : 1,
             }}
           >
             <div
@@ -69,32 +68,18 @@ export default function HelpIndexPage() {
                 <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
                   {title}
                 </p>
-                {comingSoon && (
-                  <span
-                    className="text-xs px-1.5 py-0.5 rounded font-medium"
-                    style={{
-                      background: 'var(--bg-subtle)',
-                      color: 'var(--text-subtle)',
-                      border: '1px solid var(--border)',
-                    }}
-                  >
-                    Coming soon
-                  </span>
-                )}
               </div>
               <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
                 {description}
               </p>
             </div>
-            {!comingSoon && (
-              <Link
-                href={href}
-                className="text-xs font-semibold hover:underline flex-shrink-0 mt-0.5"
-                style={{ color: 'var(--text)' }}
-              >
-                Read →
-              </Link>
-            )}
+            <Link
+              href={href}
+              className="text-xs font-semibold hover:underline flex-shrink-0 mt-0.5"
+              style={{ color: 'var(--text)' }}
+            >
+              Read →
+            </Link>
           </div>
         ))}
       <div
