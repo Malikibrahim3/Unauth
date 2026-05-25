@@ -29,8 +29,8 @@ import { sniffCsvMagicBytes } from '@/lib/csv/sniffMagicBytes';
 import { enforceRateLimit, limitFromEnv, rateLimitKey } from '@/lib/ratelimit';
 import { captureServerException } from '@/lib/sentry';
 
-// 500 MB cap — enough headroom for ~5M-row CSVs at typical per-row size.
-const MAX_FILE_SIZE_BYTES = 500 * 1024 * 1024;
+// 200 MB cap, aligned with the upload UI and pilot guardrails.
+const MAX_FILE_SIZE_BYTES = 200 * 1024 * 1024;
 
 // Allow this dispatcher up to 5 minutes — large uploads need time to parse
 // and stage chunk JSONs to Storage before the chain starts.
@@ -85,7 +85,7 @@ async function runAudit(
 ) {
 
   // ── Parse request body ────────────────────────────────────────────────────
-  let filePath: string;
+  let filePath: string | undefined;
   let columnMap: Record<string, string> | null = null;
   let uploadLabel: string | undefined;
   let dateRangeStart: string | undefined;
@@ -93,6 +93,7 @@ async function runAudit(
   let uploadType: 'standard' | 'historical' | 'investigation' = 'standard';
   let fileHash: string | undefined;
   let forceReupload = false;
+  let checkDuplicateOnly = false;
   try {
     const body = await request.json();
     filePath = body.filePath;
@@ -102,10 +103,12 @@ async function runAudit(
     dateRangeEnd = body.dateRangeEnd ?? undefined;
     fileHash = typeof body.fileHash === 'string' && body.fileHash ? body.fileHash : undefined;
     forceReupload = body.forceReupload === true;
+    checkDuplicateOnly = body.checkDuplicateOnly === true;
     if (body.uploadType === 'historical' || body.uploadType === 'investigation') {
       uploadType = body.uploadType;
     }
-    if (!filePath) throw new Error('filePath is required');
+    if (!checkDuplicateOnly && !filePath) throw new Error('filePath is required');
+    if (checkDuplicateOnly && !fileHash) throw new Error('fileHash is required');
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : 'Invalid request body' },
@@ -143,6 +146,14 @@ async function runAudit(
     }
   }
 
+  if (checkDuplicateOnly) {
+    return NextResponse.json({ duplicate: false });
+  }
+
+  if (!filePath) {
+    return NextResponse.json({ error: 'filePath is required' }, { status: 400 });
+  }
+
   // ── Download from Storage ─────────────────────────────────────────────────
   log(`downloading from storage path=${filePath}`);
   const { data: fileData, error: downloadError } = await scopedClient.storage
@@ -163,7 +174,7 @@ async function runAudit(
 
   if (file.size > MAX_FILE_SIZE_BYTES) {
     return NextResponse.json(
-      { error: `File exceeds the 500 MB limit (${(file.size / 1024 / 1024).toFixed(1)} MB)` },
+      { error: `File exceeds the 200 MB limit (${(file.size / 1024 / 1024).toFixed(1)} MB)` },
       { status: 400 }
     );
   }

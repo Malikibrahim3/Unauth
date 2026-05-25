@@ -1,0 +1,8 @@
+Order Number,Email,Total,Created At,Shipping Address,Buyer Name,Refunded,Return Reason,Payment,Odd Extra Column
+MESSY-1,messy.one@example-audit.test,39.99,2026/05/01,"1 Some St, London",Messy One,no,,visa,ignored
+MESSY-2,messy.two@example-audit.test,88.10,05-02-2026,"Flat B, 2 Any Road",Messy Two,yes,late delivery,mastercard,ignored
+MESSY-2,messy.two.dup@example-audit.test,88.10,May 2 2026,"Flat B, 2 Any Road",Messy Two Duplicate,yes,duplicate order id,mastercard,ignored
+MESSY-4,,20.00,2026-05-04,"No email row",Blank Email,no,,visa,ignored
+MESSY-5,messy.five@example-audit.test,,2026-05-05,"Missing total",Missing Total,no,,visa,ignored
+MESSY-6,messy.six@example-audit.test,120.00,,"Missing date",Missing Date,no,,visa,ignored
+MESSY-7,messy.seven@example-audit.test,15.50,2026-05-07,"Apartment ???",Messy Seven,no,,paypal,ignored

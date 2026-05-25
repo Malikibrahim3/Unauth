@@ -220,7 +220,7 @@ export default function OnboardingClient({
               </Field>
               <div className="md:col-span-2 rounded-md border px-4 py-3" style={{ background: 'var(--privacy-fill)', borderColor: 'var(--privacy-border)' }}>
                 <p className="t-body" style={{ color: 'var(--privacy-ink)' }}>
-                  When you upload an order CSV, we hash PII fields before network comparison and only expose aggregate k-safe presence to other merchants.
+                  When you upload an order CSV, raw records stay scoped to your merchant workspace. Network comparison uses hashed identifiers and only exposes aggregate k-safe presence to other merchants.
                 </p>
               </div>
               {error && <p className="md:col-span-2 t-caption" style={{ color: 'var(--sev-definite)' }}>{error}</p>}

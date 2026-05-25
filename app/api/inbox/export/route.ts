@@ -6,6 +6,7 @@ import {
   escapeCsvCell,
   fetchMerchantReviewQueueRows,
 } from '@/lib/supabase/merchantHelpers';
+import { maskEmail, maskName } from '@/lib/privacy/mask';
 
 export const dynamic = 'force-dynamic';
 
@@ -43,7 +44,7 @@ export async function GET() {
   }
 
   if (rows.length === 0) {
-    const csv = ['order_id,date,confidence_grade,identity_score,value_at_risk,why_flagged,customer_email,customer_name'].join('\n');
+    const csv = ['order_id,date,confidence_grade,identity_score,value_at_risk,why_flagged,customer_email_masked,customer_name_masked'].join('\n');
     return new NextResponse(csv, {
       status: 200,
       headers: {
@@ -60,8 +61,8 @@ export async function GET() {
     'identity_score',
     'value_at_risk',
     'why_flagged',
-    'customer_email',
-    'customer_name',
+    'customer_email_masked',
+    'customer_name_masked',
   ];
   const lines = [headers.join(',')];
 
@@ -73,8 +74,8 @@ export async function GET() {
       escapeCsvCell(row.identity_score != null ? String(Math.round(row.identity_score as number)) : ''),
       escapeCsvCell(row.order_value != null ? String(row.order_value) : ''),
       escapeCsvCell(topReason(row.signals_matched)),
-      escapeCsvCell(row.customer_email ?? ''),
-      escapeCsvCell(row.customer_name ?? ''),
+      escapeCsvCell(maskEmail(row.customer_email as string | null) ?? ''),
+      escapeCsvCell(maskName(row.customer_name as string | null) ?? ''),
     ].join(','));
   }
 

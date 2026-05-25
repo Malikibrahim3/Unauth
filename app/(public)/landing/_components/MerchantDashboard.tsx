@@ -805,7 +805,7 @@ export default function MerchantDashboard() {
           ))}
         </div>
         <span style={{ fontFamily: t.mono, fontSize: '9px', color: t.inkSecondary, letterSpacing: '0.06em' }}>
-          HMAC-SHA256 · 0 PII FIELDS STORED · SOC 2 IN PROGRESS
+          HMAC-SHA256 MATCHING · MERCHANT-SCOPED DATA · SOC 2 IN PROGRESS
         </span>
       </div>
 

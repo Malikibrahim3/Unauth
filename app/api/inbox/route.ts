@@ -9,6 +9,7 @@ import {
   fetchReviewQueueProfileIds,
   type ReviewQueueWindow,
 } from '@/lib/supabase/merchantHelpers';
+import { maskEmail, maskIdentifier, maskName } from '@/lib/privacy/mask';
 
 export const dynamic = 'force-dynamic';
 
@@ -100,15 +101,15 @@ async function GETHandler(req: NextRequest) {
     return NextResponse.json({
       items: rows.map((row: any) => ({
         id: row.id,
-        order_id: row.order_id,
+        order_id: maskIdentifier(row.order_id as string | null),
         identity_score: row.identity_score ?? 0,
         identity_confidence_grade: row.identity_confidence_grade ?? null,
         match_status: row.match_status ?? null,
         processed_at: row.processed_at,
         processing_job_id: row.job_id,
         customer_profile_id: profileIds.get(row.id) ?? null,
-        customer_email: row.customer_email ?? null,
-        customer_name: row.customer_name ?? null,
+        customer_email: maskEmail(row.customer_email as string | null),
+        customer_name: maskName(row.customer_name as string | null),
         order_value: row.order_value ?? null,
         reason: topReason(row.signals_matched),
       })),

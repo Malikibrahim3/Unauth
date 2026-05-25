@@ -6,6 +6,7 @@ import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { logAction } from '@/lib/permissions/audit';
 import { enforceRateLimit, limitFromEnv, rateLimitKey } from '@/lib/ratelimit';
 import { withRequestLogging } from '@/lib/log';
+import { maskEmail, maskName } from '@/lib/privacy/mask';
 
 // ---------------------------------------------------------------------------
 // CSV cell escaping — neutralizes formula injection (CVE-class: CSV injection).
@@ -128,8 +129,8 @@ async function GETHandler(
     'cluster_id',
     'candidate_cluster_id',
     'confirmed_identity_id',
-    'customer_email',
-    'customer_name',
+    'customer_email_masked',
+    'customer_name_masked',
     'matched_datapoints',
     'changed_datapoints',
     'evidence_summary',
@@ -171,8 +172,8 @@ async function GETHandler(
       escapeCsvCell(row.cluster_id ?? ''),
       escapeCsvCell(row.candidate_cluster_id ?? ''),
       escapeCsvCell(row.confirmed_identity_id ?? ''),
-      escapeCsvCell(row.customer_email ?? ''),
-      escapeCsvCell(row.customer_name ?? ''),
+      escapeCsvCell(maskEmail(row.customer_email) ?? ''),
+      escapeCsvCell(maskName(row.customer_name) ?? ''),
       escapeCsvCell(matchedDp),
       escapeCsvCell(changedDp),
       escapeCsvCell(row.evidence_summary ?? ''),

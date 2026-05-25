@@ -453,7 +453,7 @@ export default function SignupFlow() {
                     Run audit →
                   </Button>
                   <p className="mt-3 text-sm" style={TEXT_MUTED}>
-                    Your data is hashed before it leaves your browser. Unauth never sees raw PII.
+                    Your upload is processed in your merchant workspace. Shared network matching uses hashed identifiers and exports minimise customer identifiers by default.
                   </p>
                 </div>
               </>

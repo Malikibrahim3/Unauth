@@ -18,9 +18,9 @@ const STEPS = [
   },
   {
     n: '02', label: 'Hash', timing: '4ms',
-    stat: '0', unit: 'PII fields transmitted',
-    headline: 'Sensitive fields stay in the browser.',
-    body: 'Email, phone, address, and card references are HMAC-SHA256 hashed with a per-merchant salt before anything leaves your origin.',
+    stat: 'k-safe', unit: 'network signals',
+    headline: 'Sensitive fields are minimised for matching.',
+    body: 'Email, phone, address, and card references are normalised into HMAC-SHA256 matching keys before cross-merchant graph comparison.',
     screenshot: '/screenshots/hash-demo.png',
     alt: 'Unauth Hash Demo — Privacy Boundary Active banner and table of rows with email and phone replaced by HMAC tokens',
   },

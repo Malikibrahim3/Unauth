@@ -15,9 +15,9 @@ import { validateHeaders } from '../csv/validate';
 import { sniffHeaders } from '../csv/sniffer';
 import type { ParsedCsvRow } from './types';
 
-/** Hard cap on rows per upload. With CHUNK_SIZE=10k that's 500 chunks worst
- *  case — still bounded but covers all realistic merchant CSVs. */
-export const MAX_ROWS = 5_000_000;
+/** Hard cap on rows per upload. With CHUNK_SIZE=10k that's 50 chunks worst
+ *  case, aligned with the upload UI and pilot guardrails. */
+export const MAX_ROWS = 500_000;
 
 /** Rows per chunk. Dropped from 50k → 10k on 2026-05-12 after the ASOS 50k
  *  stress test exposed Supabase fetch failures (`TypeError: fetch failed`)

@@ -1,0 +1,19 @@
+{
+  "merchantA": {
+    "email": "codex-readiness-a-1779730111626@example.com",
+    "cleanup": "Completed after the main Playwright run via authenticated /api/account/delete.",
+    "status": 200,
+    "extraStorageCleanup": {
+      "bucket": "merchant-csv-uploads-2",
+      "removed": [
+        "37064a04-4a63-438e-9e07-6c2ef76f5b3e/1779730314195_merchant-a-valid.csv"
+      ],
+      "reason": "Duplicate-upload warning occurs after browser storage upload, leaving an orphan source CSV unless explicitly removed."
+    }
+  },
+  "merchantB": {
+    "email": "codex-readiness-b-1779730260205@example.com",
+    "cleanup": "Completed during the main Playwright run via account settings delete flow.",
+    "finalUrl": "http://localhost:3000/login?deleted=1"
+  }
+}

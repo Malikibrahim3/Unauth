@@ -131,9 +131,10 @@ export default async function DashboardPage() {
   const ce3Packages =
     (evidenceRows as Array<{ ce3_eligible: boolean }> | null)?.filter((pkg) => pkg.ce3_eligible).length ?? 0;
 
-  const { count: unreviewedAppearances } = await supabase
+  const { count: unreviewedAppearances } = await serviceClient
     .from('watchlist_appearances' as never)
     .select('id', { count: 'exact', head: true })
+    .eq('merchant_id', ctx.merchantId)
     .is('reviewed_at', null);
   const watchlistNeedReview = unreviewedAppearances ?? 0;
 
@@ -446,7 +447,7 @@ export default async function DashboardPage() {
             {latestRun ? `Audit ${formatDateMode(latestRun.created_at, 'table')} · ${latestRun.total_rows.toLocaleString()} rows` : 'No audits yet'}
           </span>
           <span className="text-caption font-mono" style={{ color: 'var(--text-subtle)' }}>
-            k &gt;= 3 gate · HMAC-SHA256 · 0 PII fields stored
+            k &gt;= 3 gate · HMAC-SHA256 matching · merchant-scoped data
           </span>
         </footer>
       </section>

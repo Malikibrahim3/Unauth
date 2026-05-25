@@ -581,6 +581,10 @@ function gradeRank(grade: string | null | undefined): number {
   }
 }
 
+function isMissingRelationError(error: { message?: string; code?: string } | null | undefined): boolean {
+  return !!error && (error.code === '42P01' || /relation .* does not exist/i.test(error.message ?? ''));
+}
+
 /**
  * Refreshes persisted per-audit customer summaries. Production databases use
  * the SQL RPC added in migration 0081; the fallback keeps older/local databases
@@ -598,6 +602,10 @@ export async function refreshAuditCustomerSummaries(
 
   if (!rpcResult.error) {
     return Number(rpcResult.data ?? 0);
+  }
+
+  if (isMissingRelationError(rpcResult.error as { message?: string; code?: string })) {
+    return 0;
   }
 
   if (rpcResult.error.code !== 'PGRST202' && rpcResult.error.code !== '42883') {
@@ -664,6 +672,7 @@ export async function refreshAuditCustomerSummaries(
     .delete()
     .eq('audit_id', auditId)
     .eq('merchant_id', merchantId);
+  if (isMissingRelationError(deleteError as { message?: string; code?: string })) return 0;
   if (deleteError) throw new Error(`refreshAuditCustomerSummaries delete failed: ${deleteError.message}`);
 
   const summaryRows = [...summaries.entries()].map(([customerKey, row]) => ({
@@ -677,6 +686,7 @@ export async function refreshAuditCustomerSummaries(
     const { error } = await serviceClient
       .from('audit_customer_summaries' as any)
       .upsert(summaryRows.slice(offset, offset + 1000), { onConflict: 'audit_id,customer_key' });
+    if (isMissingRelationError(error as { message?: string; code?: string })) return 0;
     if (error) throw new Error(`refreshAuditCustomerSummaries upsert failed: ${error.message}`);
   }
 
@@ -698,6 +708,7 @@ export async function refreshAuditCustomerSummaries(
       estimated_exposure: valueAtRisk * 0.42,
     }, { onConflict: 'audit_id' });
   if (resultSummaryError) {
+    if (isMissingRelationError(resultSummaryError as { message?: string; code?: string })) return summaryRows.length;
     throw new Error(`refreshAuditCustomerSummaries result summary upsert failed: ${resultSummaryError.message}`);
   }
 

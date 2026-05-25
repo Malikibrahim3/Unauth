@@ -16,7 +16,7 @@ const DATA_RULES = [
   },
   {
     label: 'NEVER SHARED',
-    value: '0 PII',
+    value: 'PII isolated',
     body: 'Other merchant names, customer IDs, order IDs, and raw customer identifiers are not exposed.',
   },
 ];

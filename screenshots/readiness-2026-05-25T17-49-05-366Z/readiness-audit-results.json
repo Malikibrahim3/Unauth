@@ -1,0 +1,1314 @@
+{
+  "baseURL": "http://localhost:3000",
+  "startedAt": "2026-05-25T17:49:05.367Z",
+  "accounts": [
+    {
+      "key": "A",
+      "email": "codex-readiness-a-1779731349845@example.com",
+      "storeName": "Codex Audit A 2026-05-25",
+      "password": "UnauthAudit!2026-1779731345367",
+      "signupResult": "http://localhost:3000/onboarding",
+      "signupText": "First-run checklist\nSkip\n\nComplete the first audit path, then add integrations and team access when you are ready.\n\nUpload your first audit\n01\nReview flagged customers\n02\nGenerate an evidence package\n03\nSet up chargeback integration\nOptional\n04\nInvite a team member\nOptional\n05\n\nSTEP 1\n\nUpload your first audit\n\nWhen you upload an order CSV, Unauth maps your order, refund, payment, and identity columns into a privacy-safe audit run.\n\nSTORE NAME\nPLATFORM\nSelect platform...\nShopify\nWooCommerce\nMagen"
+    },
+    {
+      "key": "B",
+      "email": "codex-readiness-b-1779731449358@example.com",
+      "storeName": "Codex Audit B 2026-05-25",
+      "password": "UnauthAudit!2026-1779731345367",
+      "signupResult": "http://localhost:3000/onboarding",
+      "signupText": "First-run checklist\nSkip\n\nComplete the first audit path, then add integrations and team access when you are ready.\n\nUpload your first audit\n01\nReview flagged customers\n02\nGenerate an evidence package\n03\nSet up chargeback integration\nOptional\n04\nInvite a team member\nOptional\n05\n\nSTEP 1\n\nUpload your first audit\n\nWhen you upload an order CSV, Unauth maps your order, refund, payment, and identity columns into a privacy-safe audit run.\n\nSTORE NAME\nPLATFORM\nSelect platform...\nShopify\nWooCommerce\nMagen"
+    }
+  ],
+  "uploads": [
+    {
+      "key": "A",
+      "filename": "invalid-empty.csv",
+      "expected": "validation only",
+      "selectedText": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nNew Audit\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nUpload a CSV export of your orders to detect identity matches and repeated claim patterns.\n\nVIEW HISTORY\n\nSTEP\n\n01 Upload\n\nStart with source CSV\n\nMAX FILE\n\n200 MB\n\nCurrent limit\n\nMAX ROWS\n\n500k\n\nPer file\n\nFLOW\n\nMap -> Process\n\nColumn mapping included\n\nOUTPUT\n\nAudit run\n\nCreates review queue\n\nUPLOAD\n\nMAP FIELDS\n\nCONFIRM & RUN\n\nHow do I export this from your platform?\n\nDrop one or more CSVs here, or click to browse\n\nAccepted formats: CSV. Batch upload supported. Max 200 MB per file.\n\nWe couldn't read this file\n\nThe upload is empty or is not a valid CSV export. Download the template or export a fresh CSV from your platform and try again.\n\nCode: UA-202\n\nShow technical details\nChoose file\nDownload template\n\nExporting from WooCommerce, BigCommerce or Magento? Any CSV with orders, customers and refund info will work — we'll help you match the columns.",
+      "result": "validation-shown",
+      "runId": null,
+      "finalURL": "http://localhost:3000/upload",
+      "notes": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nNew Audit\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nUpload a CSV export of your orders to detect identity matches and repeated claim patterns.\n\nVIEW HISTORY\n\nSTEP\n\n01 Upload\n\nStart with source CSV\n\nMAX FILE\n\n200 MB\n\nCurrent limit\n\nMAX ROWS\n\n500k\n\nPer file\n\nFLOW\n\nMap -> Process\n\nColumn mapping included\n\nOUTPUT\n\nAudit run\n\nCreates review queue\n\nUPLOAD\n\nMAP FIELDS\n\nCONFIRM & RUN\n\nHow do I export this from your platform?\n\nDrop one or more CSVs here, or click to browse\n\nAccepted formats: CSV. Batch upload supported. Max 200 MB per file.\n\nWe couldn't read this file\n\nThe upload is empty or is not a valid CSV export. Download the template or export a fresh CSV from your platform and try again.\n\nCode: UA-202\n\nShow technical details\nChoose file\nDownload template\n\nExporting from WooCommerce, BigCommerce or Magento? Any CSV with orders, customers and refund info will work — we'll help you match the columns."
+    },
+    {
+      "key": "A",
+      "filename": "not-really-csv.csv",
+      "expected": "validation only",
+      "selectedText": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nNew Audit\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nUpload a CSV export of your orders to detect identity matches and repeated claim patterns.\n\nVIEW HISTORY\n\nSTEP\n\n01 Upload\n\nStart with source CSV\n\nMAX FILE\n\n200 MB\n\nCurrent limit\n\nMAX ROWS\n\n500k\n\nPer file\n\nFLOW\n\nMap -> Process\n\nColumn mapping included\n\nOUTPUT\n\nAudit run\n\nCreates review queue\n\nUPLOAD\n\nMAP FIELDS\n\nCONFIRM & RUN\n\nHow do I export this from your platform?\n\nDrop one or more CSVs here, or click to browse\n\nAccepted formats: CSV. Batch upload supported. Max 200 MB per file.\n\nWe couldn't read this file\n\nThe upload is empty or is not a valid CSV export. Download the template or export a fresh CSV from your platform and try again.\n\nCode: UA-202\n\nShow technical details\nChoose file\nDownload template\n\nExporting from WooCommerce, BigCommerce or Magento? Any CSV with orders, customers and refund info will work — we'll help you match the columns.",
+      "result": "validation-shown",
+      "runId": null,
+      "finalURL": "http://localhost:3000/upload",
+      "notes": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nNew Audit\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nUpload a CSV export of your orders to detect identity matches and repeated claim patterns.\n\nVIEW HISTORY\n\nSTEP\n\n01 Upload\n\nStart with source CSV\n\nMAX FILE\n\n200 MB\n\nCurrent limit\n\nMAX ROWS\n\n500k\n\nPer file\n\nFLOW\n\nMap -> Process\n\nColumn mapping included\n\nOUTPUT\n\nAudit run\n\nCreates review queue\n\nUPLOAD\n\nMAP FIELDS\n\nCONFIRM & RUN\n\nHow do I export this from your platform?\n\nDrop one or more CSVs here, or click to browse\n\nAccepted formats: CSV. Batch upload supported. Max 200 MB per file.\n\nWe couldn't read this file\n\nThe upload is empty or is not a valid CSV export. Download the template or export a fresh CSV from your platform and try again.\n\nCode: UA-202\n\nShow technical details\nChoose file\nDownload template\n\nExporting from WooCommerce, BigCommerce or Magento? Any CSV with orders, customers and refund info will work — we'll help you match the columns."
+    },
+    {
+      "key": "A",
+      "filename": "invalid-missing-required.csv",
+      "expected": "validation only",
+      "selectedText": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nNew Audit\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nUpload a CSV export of your orders to detect identity matches and repeated claim patterns.\n\nVIEW HISTORY\n\nSTEP\n\n01 Upload\n\nStart with source CSV\n\nMAX FILE\n\n200 MB\n\nCurrent limit\n\nMAX ROWS\n\n500k\n\nPer file\n\nFLOW\n\nMap -> Process\n\nColumn mapping included\n\nOUTPUT\n\nAudit run\n\nCreates review queue\n\nUPLOAD\n\nMAP FIELDS\n\nCONFIRM & RUN\n\nHow do I export this from your platform?\nWe found 3 columns in your CSV. Match them:\n\nUpload your existing order export. Unauth works with standard order, customer, payment and refund fields. Advanced integrations can add device, payment and delivery intelligence later.\n\nREQUIRED COLUMNS\n\nOrder ID\n←\n— not mapped —\ncustomer_name\nshipping_address\nrefund_status\nOrder date\n←\n— not mapped —\ncustomer_name\nshipping_address\nrefund_status\nCustomer email\n←\n— not mapped —\ncustomer_name\nshipping_address\nrefund_status\nOrder total\n←\n— not map",
+      "result": "validation-shown",
+      "runId": null,
+      "finalURL": "http://localhost:3000/upload",
+      "notes": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nNew Audit\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nUpload a CSV export of your orders to detect identity matches and repeated claim patterns.\n\nVIEW HISTORY\n\nSTEP\n\n01 Upload\n\nStart with source CSV\n\nMAX FILE\n\n200 MB\n\nCurrent limit\n\nMAX ROWS\n\n500k\n\nPer file\n\nFLOW\n\nMap -> Process\n\nColumn mapping included\n\nOUTPUT\n\nAudit run\n\nCreates review queue\n\nUPLOAD\n\nMAP FIELDS\n\nCONFIRM & RUN\n\nHow do I export this from your platform?\nWe found 3 columns in your CSV. Match them:\n\nUpload your existing order export. Unauth works with standard order, customer, payment and refund fields. Advanced integrations can add device, payment and delivery intelligence later.\n\nREQUIRED COLUMNS\n\nOrder ID\n←\n— not mapped —\ncustomer_name\nshipping_address\nrefund_status\nOrder date\n←\n— not mapped —\ncustomer_name\nshipping_address\nrefund_status\nCustomer email\n←\n— not mapped —\ncustomer_name\nshipping_address\nrefund_status\nOrder total\n←\n— not map"
+    },
+    {
+      "key": "A",
+      "filename": "invalid-headers-only.csv",
+      "expected": "validation only",
+      "selectedText": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nNew Audit\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nUpload a CSV export of your orders to detect identity matches and repeated claim patterns.\n\nVIEW HISTORY\n\nSTEP\n\n01 Upload\n\nStart with source CSV\n\nMAX FILE\n\n200 MB\n\nCurrent limit\n\nMAX ROWS\n\n500k\n\nPer file\n\nFLOW\n\nMap -> Process\n\nColumn mapping included\n\nOUTPUT\n\nAudit run\n\nCreates review queue\n\nUPLOAD\n\nMAP FIELDS\n\nCONFIRM & RUN\n\nHow do I export this from your platform?\n\nDrop one or more CSVs here, or click to browse\n\nAccepted formats: CSV. Batch upload supported. Max 200 MB per file.\n\nWe couldn't read this file\n\nThe upload is empty or is not a valid CSV export. Download the template or export a fresh CSV from your platform and try again.\n\nCode: UA-202\n\nShow technical details\nChoose file\nDownload template\n\nExporting from WooCommerce, BigCommerce or Magento? Any CSV with orders, customers and refund info will work — we'll help you match the columns.",
+      "result": "validation-shown",
+      "runId": null,
+      "finalURL": "http://localhost:3000/upload",
+      "notes": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nNew Audit\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nUpload a CSV export of your orders to detect identity matches and repeated claim patterns.\n\nVIEW HISTORY\n\nSTEP\n\n01 Upload\n\nStart with source CSV\n\nMAX FILE\n\n200 MB\n\nCurrent limit\n\nMAX ROWS\n\n500k\n\nPer file\n\nFLOW\n\nMap -> Process\n\nColumn mapping included\n\nOUTPUT\n\nAudit run\n\nCreates review queue\n\nUPLOAD\n\nMAP FIELDS\n\nCONFIRM & RUN\n\nHow do I export this from your platform?\n\nDrop one or more CSVs here, or click to browse\n\nAccepted formats: CSV. Batch upload supported. Max 200 MB per file.\n\nWe couldn't read this file\n\nThe upload is empty or is not a valid CSV export. Download the template or export a fresh CSV from your platform and try again.\n\nCode: UA-202\n\nShow technical details\nChoose file\nDownload template\n\nExporting from WooCommerce, BigCommerce or Magento? Any CSV with orders, customers and refund info will work — we'll help you match the columns."
+    },
+    {
+      "key": "A",
+      "filename": "invalid-formula-script.csv",
+      "expected": "validation only",
+      "selectedText": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nNew Audit\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nUpload a CSV export of your orders to detect identity matches and repeated claim patterns.\n\nVIEW HISTORY\n\nSTEP\n\n01 Upload\n\nStart with source CSV\n\nMAX FILE\n\n200 MB\n\nCurrent limit\n\nMAX ROWS\n\n500k\n\nPer file\n\nFLOW\n\nMap -> Process\n\nColumn mapping included\n\nOUTPUT\n\nAudit run\n\nCreates review queue\n\nUPLOAD\n\nMAP FIELDS\n\nCONFIRM & RUN\n\nHow do I export this from your platform?\nWe found 8 columns in your CSV. Match them:\n\nUpload your existing order export. Unauth works with standard order, customer, payment and refund fields. Advanced integrations can add device, payment and delivery intelligence later.\n\nREQUIRED COLUMNS\n\nOrder ID\n←\n— not mapped —\norder_id\norder_date\ncustomer_email\ncustomer_name\nshipping_address\norder_total\ncurrency\norder_status\nOrder date\n←\n— not mapped —\norder_id\norder_date\ncustomer_email\ncustomer_name\nshipping_address\norder_total\ncurrency\nord",
+      "result": "validation-shown",
+      "runId": null,
+      "finalURL": "http://localhost:3000/upload",
+      "notes": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nNew Audit\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nUpload a CSV export of your orders to detect identity matches and repeated claim patterns.\n\nVIEW HISTORY\n\nSTEP\n\n01 Upload\n\nStart with source CSV\n\nMAX FILE\n\n200 MB\n\nCurrent limit\n\nMAX ROWS\n\n500k\n\nPer file\n\nFLOW\n\nMap -> Process\n\nColumn mapping included\n\nOUTPUT\n\nAudit run\n\nCreates review queue\n\nUPLOAD\n\nMAP FIELDS\n\nCONFIRM & RUN\n\nHow do I export this from your platform?\nWe found 8 columns in your CSV. Match them:\n\nUpload your existing order export. Unauth works with standard order, customer, payment and refund fields. Advanced integrations can add device, payment and delivery intelligence later.\n\nREQUIRED COLUMNS\n\nOrder ID\n←\n— not mapped —\norder_id\norder_date\ncustomer_email\ncustomer_name\nshipping_address\norder_total\ncurrency\norder_status\nOrder date\n←\n— not mapped —\norder_id\norder_date\ncustomer_email\ncustomer_name\nshipping_address\norder_total\ncurrency\nord"
+    },
+    {
+      "key": "A",
+      "filename": "messy-realistic.csv",
+      "expected": "validation only",
+      "selectedText": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nNew Audit\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nUpload a CSV export of your orders to detect identity matches and repeated claim patterns.\n\nVIEW HISTORY\n\nSTEP\n\n01 Upload\n\nStart with source CSV\n\nMAX FILE\n\n200 MB\n\nCurrent limit\n\nMAX ROWS\n\n500k\n\nPer file\n\nFLOW\n\nMap -> Process\n\nColumn mapping included\n\nOUTPUT\n\nAudit run\n\nCreates review queue\n\nUPLOAD\n\nMAP FIELDS\n\nCONFIRM & RUN\n\nHow do I export this from your platform?\nWe found 10 columns in your CSV. Match them:\n\nUpload your existing order export. Unauth works with standard order, customer, payment and refund fields. Advanced integrations can add device, payment and delivery intelligence later.\n\nREQUIRED COLUMNS\n\nOrder ID\n←\n— not mapped —\nOrder Number\nEmail\nTotal\nCreated At\nShipping Address\nBuyer Name\nRefunded\nReturn Reason\nPayment\nOdd Extra Column\nOrder date\n←\n— not mapped —\nOrder Number\nEmail\nTotal\nCreated At\nShipping Address\nBuyer Name\nRefunded\nRetu",
+      "result": "validation-shown",
+      "runId": null,
+      "finalURL": "http://localhost:3000/upload",
+      "notes": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nNew Audit\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nUpload a CSV export of your orders to detect identity matches and repeated claim patterns.\n\nVIEW HISTORY\n\nSTEP\n\n01 Upload\n\nStart with source CSV\n\nMAX FILE\n\n200 MB\n\nCurrent limit\n\nMAX ROWS\n\n500k\n\nPer file\n\nFLOW\n\nMap -> Process\n\nColumn mapping included\n\nOUTPUT\n\nAudit run\n\nCreates review queue\n\nUPLOAD\n\nMAP FIELDS\n\nCONFIRM & RUN\n\nHow do I export this from your platform?\nWe found 10 columns in your CSV. Match them:\n\nUpload your existing order export. Unauth works with standard order, customer, payment and refund fields. Advanced integrations can add device, payment and delivery intelligence later.\n\nREQUIRED COLUMNS\n\nOrder ID\n←\n— not mapped —\nOrder Number\nEmail\nTotal\nCreated At\nShipping Address\nBuyer Name\nRefunded\nReturn Reason\nPayment\nOdd Extra Column\nOrder date\n←\n— not mapped —\nOrder Number\nEmail\nTotal\nCreated At\nShipping Address\nBuyer Name\nRefunded\nRetu"
+    },
+    {
+      "key": "A",
+      "filename": "merchant-a-valid.csv",
+      "expected": "inspect",
+      "selectedText": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nNew Audit\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nUpload a CSV export of your orders to detect identity matches and repeated claim patterns.\n\nVIEW HISTORY\n\nSTEP\n\n01 Upload\n\nStart with source CSV\n\nMAX FILE\n\n200 MB\n\nCurrent limit\n\nMAX ROWS\n\n500k\n\nPer file\n\nFLOW\n\nMap -> Process\n\nColumn mapping included\n\nOUTPUT\n\nAudit run\n\nCreates review queue\n\nUPLOAD\n\nMAP FIELDS\n\nCONFIRM & RUN\n\nHow do I export this from your platform?\nWe found 29 columns in your CSV. Match them:\n\nUpload your existing order export. Unauth works with standard order, customer, payment and refund fields. Advanced integrations can add device, payment and delivery intelligence later.\n\nREQUIRED COLUMNS\n\nOrder ID\n←\n— not mapped —\norder_id\norder_date\ncustomer_email\ncustomer_name\nshipping_address\npostcode\norder_total\ncurrency\norder_status\ncustomer_phone\nbilling_address\nrefund_status\nrefund_reason\nrefund_date\nrefund_amount\npayment_method\nip_addre",
+      "result": "complete",
+      "runId": "66019083-e472-45eb-9907-9530c149c85f",
+      "finalURL": "http://localhost:3000/audit/66019083-e472-45eb-9907-9530c149c85f",
+      "notes": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nAudit results\n66019083…\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nDashboard\n/\nAudit result\nAudit Results\n\n1779731404914_merchant-a-valid.csv · 25 May 2026, 18:50\n\ncompleted\nSTATUS\n\n5 orders with likely identity links.\n\nReview likely identities\nExport CSV\nView all transactions\nORDERS ANALYSED\n15\nNETWORK LINKED\n5\n\nCross-merchant profiles\n\nANCHOR METRIC\nANCHOR METRIC\n5\nDEFINITE\n5 · 100%\nPROBABLE\n0 · 0%\nPOSSIBLE\n0 · 0%\nWEAK\n0 · 0%\nDEFINITE MATCHES\n5\nCOMPLETED\njust now\n\n25 May 2026, 18:50\n\nOverview\nCustomers\nTransactions (15)\nData quality\nA\n5\nLinked accounts\nB\n0\nProbable connections\nC\n0\nPossible signals found\nD\n0\nLow signals\nMATCH DISTRIBUTION\n\n5 customers with match signals\n\nDefinite\n5 · 100.0%\nCUSTOMERS BY MATCH CONFIDENCE\n\nCounts across all four "
+    },
+    {
+      "key": "B",
+      "filename": "merchant-b-valid.csv",
+      "expected": "inspect",
+      "selectedText": "Unauth\nx\nCodex Audit B 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-b-1779731449358@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nNew Audit\nCodex Audit B 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nUpload a CSV export of your orders to detect identity matches and repeated claim patterns.\n\nVIEW HISTORY\n\nSTEP\n\n01 Upload\n\nStart with source CSV\n\nMAX FILE\n\n200 MB\n\nCurrent limit\n\nMAX ROWS\n\n500k\n\nPer file\n\nFLOW\n\nMap -> Process\n\nColumn mapping included\n\nOUTPUT\n\nAudit run\n\nCreates review queue\n\nUPLOAD\n\nMAP FIELDS\n\nCONFIRM & RUN\n\nHow do I export this from your platform?\nWe found 29 columns in your CSV. Match them:\n\nUpload your existing order export. Unauth works with standard order, customer, payment and refund fields. Advanced integrations can add device, payment and delivery intelligence later.\n\nREQUIRED COLUMNS\n\nOrder ID\n←\n— not mapped —\norder_id\norder_date\ncustomer_email\ncustomer_name\nshipping_address\npostcode\norder_total\ncurrency\norder_status\ncustomer_phone\nbilling_address\nrefund_status\nrefund_reason\nrefund_date\nrefund_amount\npayment_method\nip_addre",
+      "result": "complete",
+      "runId": "ce912b37-0f99-4775-a775-a240b4f75406",
+      "finalURL": "http://localhost:3000/audit/ce912b37-0f99-4775-a775-a240b4f75406",
+      "notes": "Unauth\nx\nCodex Audit B 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-b-1779731449358@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nAudit results\nce912b37…\nCodex Audit B 2026-05-25\nPROD\nSearch\n⌘K\nCO\nDashboard\n/\nAudit result\nAudit Results\n\n1779731462834_merchant-b-valid.csv · 25 May 2026, 18:51\n\ncompleted\nSTATUS\n\n3 orders with likely identity links.\n\nReview likely identities\nExport CSV\nView all transactions\nORDERS ANALYSED\n10\nNETWORK LINKED\n3\n\nCross-merchant profiles\n\nANCHOR METRIC\nANCHOR METRIC\n3\nDEFINITE\n3 · 100%\nPROBABLE\n0 · 0%\nPOSSIBLE\n0 · 0%\nWEAK\n0 · 0%\nDEFINITE MATCHES\n3\nCOMPLETED\njust now\n\n25 May 2026, 18:51\n\nOverview\nCustomers\nTransactions (10)\nData quality\nA\n3\nLinked accounts\nB\n0\nProbable connections\nC\n0\nPossible signals found\nD\n0\nLow signals\nMATCH DISTRIBUTION\n\n3 customers with match signals\n\nDefinite\n3 · 100.0%\nCUSTOMERS BY MATCH CONFIDENCE\n\nCounts across all four "
+    },
+    {
+      "key": "A",
+      "filename": "merchant-a-valid.csv",
+      "expected": "inspect",
+      "selectedText": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nNew Audit\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nUpload a CSV export of your orders to detect identity matches and repeated claim patterns.\n\nVIEW HISTORY\n\nSTEP\n\n01 Upload\n\nStart with source CSV\n\nMAX FILE\n\n200 MB\n\nCurrent limit\n\nMAX ROWS\n\n500k\n\nPer file\n\nFLOW\n\nMap -> Process\n\nColumn mapping included\n\nOUTPUT\n\nAudit run\n\nCreates review queue\n\nUPLOAD\n\nMAP FIELDS\n\nCONFIRM & RUN\n\nHow do I export this from your platform?\nWe found 29 columns in your CSV. Match them:\n\nUpload your existing order export. Unauth works with standard order, customer, payment and refund fields. Advanced integrations can add device, payment and delivery intelligence later.\n\nREQUIRED COLUMNS\n\nOrder ID\n←\n— not mapped —\norder_id\norder_date\ncustomer_email\ncustomer_name\nshipping_address\npostcode\norder_total\ncurrency\norder_status\ncustomer_phone\nbilling_address\nrefund_status\nrefund_reason\nrefund_date\nrefund_amount\npayment_method\nip_addre",
+      "result": "duplicate-warning",
+      "runId": null,
+      "finalURL": "http://localhost:3000/upload",
+      "notes": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nNew Audit\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nUpload a CSV export of your orders to detect identity matches and repeated claim patterns.\n\nVIEW HISTORY\n\nSTEP\n\n01 Upload\n\nStart with source CSV\n\nMAX FILE\n\n200 MB\n\nCurrent limit\n\nMAX ROWS\n\n500k\n\nPer file\n\nFLOW\n\nMap -> Process\n\nColumn mapping included\n\nOUTPUT\n\nAudit run\n\nCreates review queue\n\nUPLOAD\n\nMAP FIELDS\n\nCONFIRM & RUN\n\nHow do I export this from your platform?\nmerchant-a-valid.csv\n\n5 KB\n\nUpload context\n\nTell us a bit about this upload. All fields are optional — skip anything you don't need.\n\nLabel\n\nAppears in your audit history. Leave blank to use the upload date.\n\nDate range this upload covers\nto\n\nThe order date range your export covers — not the "
+    },
+    {
+      "key": "A",
+      "filename": "guardrail-26-rows.csv",
+      "expected": "inspect",
+      "selectedText": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nNew Audit\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nUpload a CSV export of your orders to detect identity matches and repeated claim patterns.\n\nVIEW HISTORY\n\nSTEP\n\n01 Upload\n\nStart with source CSV\n\nMAX FILE\n\n200 MB\n\nCurrent limit\n\nMAX ROWS\n\n500k\n\nPer file\n\nFLOW\n\nMap -> Process\n\nColumn mapping included\n\nOUTPUT\n\nAudit run\n\nCreates review queue\n\nUPLOAD\n\nMAP FIELDS\n\nCONFIRM & RUN\n\nHow do I export this from your platform?\nWe found 8 columns in your CSV. Match them:\n\nUpload your existing order export. Unauth works with standard order, customer, payment and refund fields. Advanced integrations can add device, payment and delivery intelligence later.\n\nREQUIRED COLUMNS\n\nOrder ID\n←\n— not mapped —\norder_id\norder_date\ncustomer_email\ncustomer_name\nshipping_address\norder_total\ncurrency\norder_status\nOrder date\n←\n— not mapped —\norder_id\norder_date\ncustomer_email\ncustomer_name\nshipping_address\norder_total\ncurrency\nord",
+      "result": "complete",
+      "runId": "1582cbf5-f03d-4466-b056-00adcab16af0",
+      "finalURL": "http://localhost:3000/audit/1582cbf5-f03d-4466-b056-00adcab16af0",
+      "notes": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nAudit results\n1582cbf5…\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nDashboard\n/\nAudit result\nAudit Results\n\n1779731559620_guardrail-26-rows.csv · 25 May 2026, 18:52\n\ncompleted\nORDERS ANALYSED\n26\nNETWORK LINKED\n0\n\nCross-merchant profiles\n\nANCHOR METRIC\nANCHOR METRIC\n0\nDEFINITE\n0 · 0%\nPROBABLE\n0 · 0%\nPOSSIBLE\n0 · 0%\nWEAK\n0 · 0%\nDEFINITE MATCHES\n0\nCOMPLETED\njust now\n\n25 May 2026, 18:52\n\n⚠\n\nVery limited identity data\n\nOnly required fields were present in this upload. Email and address patterns were checked but stronger identity matching was not possible.\n\nImprove future audits →\n✕\nOverview\nCustomers\nTransactions (26)\nData quality\nA\n0\nLinked accounts\nB\n0\nProbable connections\nC\n0\nPossible signals found\nD\n0\nLow signals\nMATCH DISTRIBUTION\n\n0 customers wi"
+    }
+  ],
+  "routeChecks": [
+    {
+      "key": "logged-out",
+      "route": "/dashboard",
+      "finalURL": "http://localhost:3000/login",
+      "text": "Unauth\nEMAIL ADDRESS\nPASSWORD\nForgot password?\nSIGN IN\n\nDon't have an account? Request access\n\nBy signing in, you agree to use Unauth for authorised investigations only."
+    },
+    {
+      "key": "logged-out",
+      "route": "/upload",
+      "finalURL": "http://localhost:3000/login",
+      "text": "Unauth\nEMAIL ADDRESS\nPASSWORD\nForgot password?\nSIGN IN\n\nDon't have an account? Request access\n\nBy signing in, you agree to use Unauth for authorised investigations only."
+    },
+    {
+      "key": "logged-out",
+      "route": "/history",
+      "finalURL": "http://localhost:3000/login",
+      "text": "Unauth\nEMAIL ADDRESS\nPASSWORD\nForgot password?\nSIGN IN\n\nDon't have an account? Request access\n\nBy signing in, you agree to use Unauth for authorised investigations only."
+    },
+    {
+      "key": "logged-out",
+      "route": "/customers",
+      "finalURL": "http://localhost:3000/login",
+      "text": "Unauth\nEMAIL ADDRESS\nPASSWORD\nForgot password?\nSIGN IN\n\nDon't have an account? Request access\n\nBy signing in, you agree to use Unauth for authorised investigations only."
+    },
+    {
+      "key": "logged-out",
+      "route": "/settings/account",
+      "finalURL": "http://localhost:3000/login",
+      "text": "Unauth\nEMAIL ADDRESS\nPASSWORD\nForgot password?\nSIGN IN\n\nDon't have an account? Request access\n\nBy signing in, you agree to use Unauth for authorised investigations only."
+    },
+    {
+      "key": "logged-out",
+      "route": "/audit/00000000-0000-0000-0000-000000000000",
+      "finalURL": "http://localhost:3000/login",
+      "text": "Unauth\nEMAIL ADDRESS\nPASSWORD\nForgot password?\nSIGN IN\n\nDon't have an account? Request access\n\nBy signing in, you agree to use Unauth for authorised investigations only."
+    },
+    {
+      "key": "logged-out",
+      "route": "/api/watchlist",
+      "status": 401,
+      "text": "{\"error\":\"Unauthorized\"}"
+    },
+    {
+      "key": "A",
+      "path": "/dashboard before onboarding",
+      "finalURL": "http://localhost:3000/onboarding",
+      "text": "First-run checklist\nSkip\n\nComplete the first audit path, then add integrations and team access when you are ready.\n\nUpload your first audit\n01\nReview flagged customers\n02\nGenerate an evidence package\n03\nSet up chargeback integration\nOptional\n04\nInvite a team member\nOptional\n05\n\nSTEP 1\n\nUpload your first audit\n\nWhen you upload an order CSV, Unauth maps your order, refund, payment, and identity columns into a privacy-safe audit run.\n\nSTORE NAME\nPLATFORM\nSelect platform...\nShopify\nWooCommerce\nMagen"
+    },
+    {
+      "key": "A",
+      "route": "/dashboard",
+      "suffix": "empty",
+      "finalURL": "http://localhost:3000/dashboard",
+      "ms": 1525,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nGRAPH LIVE\nNew Audit\n\nEXPOSURE AT RISK\n\n£0.00\n\nCurrent queue\n\nCUSTOMERS TO REVIEW\n\n—\n\nOpen profiles\n\nTRANSACTIONS ANALYSED\n\n0\n\n0 audit runs\n\nEVIDENCE READY\n\n0\n\nNo CE3.0 signals detected\n\nAVG MATCH RATE\n\n—\n\nAwaiting data\n\nRun an audit to populate dashboard trends.\n\nCASES REQUIRING ATTENTION\n\n0 in immediate queue\n\nView all\n\nRun your first audit to populate the queue.\n\nUpload a CSV to start generating cases, clusters, and evidence signals.\n\nUpload a CSV\n\nNETWORK EXPOSURE\n\nNo network-linked profiles yet.\n\nTOP SIGNALS\n\nNo signal breakdown yet.\n\nACTIVITY\n\nNo recent activity.\n\nNo audits yet\nk >= 3 gate · HMAC-SHA256 matching · merchant-scoped data"
+    },
+    {
+      "key": "A",
+      "route": "/upload",
+      "suffix": "empty",
+      "finalURL": "http://localhost:3000/upload",
+      "ms": 1040,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nNew Audit\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nUpload a CSV export of your orders to detect identity matches and repeated claim patterns.\n\nVIEW HISTORY\n\nSTEP\n\n01 Upload\n\nStart with source CSV\n\nMAX FILE\n\n200 MB\n\nCurrent limit\n\nMAX ROWS\n\n500k\n\nPer file\n\nFLOW\n\nMap -> Process\n\nColumn mapping included\n\nOUTPUT\n\nAudit run\n\nCreates review queue\n\nUPLOAD\n\nMAP FIELDS\n\nCONFIRM & RUN\n\nHow do I export this from your platform?\n\nDrop one or more CSVs here, or click to browse\n\nAccepted formats: CSV. Batch upload supported. Max 200 MB per file.\n\nYour uploaded data is processed to identify patterns within your own order "
+    },
+    {
+      "key": "A",
+      "route": "/history",
+      "suffix": "empty",
+      "finalURL": "http://localhost:3000/history",
+      "ms": 1120,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nAudit history\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nShowing 0-0 of 0 runs\n\nNEW AUDIT\n\nAUDITS\n\n0\n\nVisible runs\n\nROWS PROCESSED\n\n0\n\nCurrent page scope\n\nMATCHED\n\n0\n\nCurrent page scope\n\nLAST UPLOAD\n\n-\n\nMost recent run\n\nFAILED\n\n0\n\nCurrent page scope\n\nRows per page\n25\n50\n100\n\nNo audits yet\n\nUpload your first CSV to start reviewing identity match patterns.\n\nUpload your first CSV"
+    },
+    {
+      "key": "A",
+      "route": "/reports",
+      "suffix": "empty",
+      "finalURL": "http://localhost:3000/reports",
+      "ms": 1372,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nReports\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nReports\n\nNetwork signal performance and evidence readiness over time.\n\n7D\n30D\n90D\nEXPORT REPORT\nTOTAL FLAGGED\n0\n\n0 rows analysed\n\nMATCH RATE TREND\n0.0%\n\nPeak axis 4.0%\n\nAVG EXPOSURE\n£0.00\n\nCurrent review queue\n\nMATCH RATE OVER TIME\nAWAITING AUDIT DATA\nFLAG DISTRIBUTION BY GRADE\nA DEFINITE\n0\n\n0.0% of analysed rows\n\nB PROBABLE\n0\n\n0.0% of analysed rows\n\nC POSSIBLE\n0\n\n0.0% of analysed rows\n\nD WEAK\n0\n\n0.0% of analysed rows\n\nDistribution is derived from merchant-owned audit transactions only; cross-merchant identifiers remain aggregate."
+    },
+    {
+      "key": "A",
+      "route": "/inbox",
+      "suffix": "empty",
+      "finalURL": "http://localhost:3000/inbox",
+      "ms": 1259,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nInbox\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nIdentity-flagged transactions awaiting review\n\nEXPORT QUEUE\nNEW AUDIT\n\nOPEN CASES\n\n0\n\nCurrent page\n\nVALUE AT RISK\n\n£0\n\nCurrent page estimate\n\nDEFINITE\n\n0\n\nQueue\n\nPROBABLE\n\n0\n\nQueue\n\nTOTAL QUEUE\n\n0\n\nAll pages\n\nALL\nNEW\nREVIEW\nCONTACTED\nRESOLVED\nCLEARED\nRows per page\n25\n50\n100\n\nYou're all caught up\n\nNo high or critical transactions need review right now.\n\nUpload a CSV to get started"
+    },
+    {
+      "key": "A",
+      "route": "/customers",
+      "suffix": "empty",
+      "finalURL": "http://localhost:3000/customers",
+      "ms": 1285,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nCustomers\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nSegment, filter, and act on customer identity clusters.\n\nNEW AUDIT\n\nPROFILES\n\n0\n\nFiltered result set\n\nWATCHLISTED\n\n0\n\nCurrent page\n\nNEW STATUS\n\n0\n\nCurrent page\n\nHAS REFUNDS\n\n0\n\nCurrent page\n\nLINKED IDENTITIES\n\n0\n\nCurrent page\n\nSort: Highest risk\nSort: Most recent\nSort: Oldest first\nSort: Most orders\nSort: Highest refund rate\nSort: Most chargebacks\nSort: Most merchants\nSort: Fastest claims\nAll\nNew\nReview\nContacted\nResolved\nCleared\nFilters\nRows per page\n25\n50\n100\nSAVED VIEWS\nHIGH-CONFIDENCE UNRESOLVED\nREPEAT REFUND CLAIMS\nLINKED IDENTITIES\nFAST CLAIMANTS\n\nNo"
+    },
+    {
+      "key": "A",
+      "route": "/watchlist",
+      "suffix": "empty",
+      "finalURL": "http://localhost:3000/watchlist",
+      "ms": 1186,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nWatchlist\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nCustomers you're monitoring across future audits.\n\nBROWSE CUSTOMERS\n\nWATCHLISTED\n\n0\n\nTotal entries\n\nAPPEARED 30D\n\n0\n\nRecent audits\n\nSEARCH\n\nOff\n\nNo query\n\nPAGE SIZE\n\n25\n\nRows per page\n\nPAGES\n\n1\n\nResult pages\n\nRows per page\n25\n50\n100\nAppeared in recent audits\n\nNo watchlisted customers have appeared in recent audits.\n\nYour watchlist is empty\n\nNo customers on watchlist.\n\nBrowse clusters →"
+    },
+    {
+      "key": "A",
+      "route": "/chargebacks",
+      "suffix": "empty",
+      "finalURL": "http://localhost:3000/chargebacks",
+      "ms": 1142,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nEvidence packages\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nSignal data compiled from your records for disputed orders.\n\nVIEW CUSTOMERS\n\nPACKAGES\n\n0\n\nGenerated reports\n\nCE3.0 SIGNALS\n\n0\n\nCE3.0 signals detected\n\nCROSS-MERCHANT\n\n0\n\nNetwork-linked evidence\n\nLATEST\n\n-\n\nMost recent package\n\nSOURCE\n\nCustomers\n\nGenerated from customer profiles\n\nGENERATE FROM CUSTOMER\n\nNo evidence packages yet\n\nCompile signal data from customer profiles to support dispute review. CE3.0 signal detection is included when prior matching transactions are found.\n\nView customers"
+    },
+    {
+      "key": "A",
+      "route": "/clusters",
+      "suffix": "empty",
+      "finalURL": "http://localhost:3000/customers?merchantsMin=2",
+      "ms": 1473,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nCustomers\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nSegment, filter, and act on customer identity clusters.\n\nNEW AUDIT\n\nPROFILES\n\n0\n\nFiltered result set\n\nWATCHLISTED\n\n0\n\nCurrent page\n\nNEW STATUS\n\n0\n\nCurrent page\n\nHAS REFUNDS\n\n0\n\nCurrent page\n\nLINKED IDENTITIES\n\n0\n\nCurrent page\n\nSort: Highest risk\nSort: Most recent\nSort: Oldest first\nSort: Most orders\nSort: Highest refund rate\nSort: Most chargebacks\nSort: Most merchants\nSort: Fastest claims\nAll\nNew\nReview\nContacted\nResolved\nCleared\nFilters\n1\nClear\nRows per page\n25\n50\n100\nSAVED VIEWS\nHIGH-CONFIDENCE UNRESOLVED\nREPEAT REFUND CLAIMS\nLINKED IDENTITIES\nFAST CLAIM"
+    },
+    {
+      "key": "A",
+      "route": "/graph",
+      "suffix": "empty",
+      "finalURL": "http://localhost:3000/global",
+      "ms": 1543,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nGlobal\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\n\nPERSISTENT INTELLIGENCE\n\nGlobal Identity Graph\n\nCross-run and cross-merchant matches for your merchant, with privacy-safe network counts. Other merchant names and order details are intentionally hidden.\n\nProcess CSV\nNETWORK-LINKED PROFILES\n0\n\nSeen at 2+ merchants\n\nNETWORK-LINKED ORDERS\n0\n\n0 rows scanned\n\nCLAIMS IN CLUSTERS\n0\n\nRefund or dispute events\n\nWIDEST FOOTPRINT\n—\n\nNames and order IDs hidden\n\nCONTROLS\n\nGRADE TIER\nALL\nDEFINITE\nPROBABLE\nPOSSIBLE\nWEAK\nDATE RANGE\nALL\n90D\n30D\nMERCHANT SPAN\n2+\n3+\n4+\n\nNo identities match these filters.\n\nLoosen the grade, date, or merchant span filter.\n\nSELECTED NOD"
+    },
+    {
+      "key": "A",
+      "route": "/lookup",
+      "suffix": "empty",
+      "finalURL": "http://localhost:3000/customers",
+      "ms": 1411,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nCustomers\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nSegment, filter, and act on customer identity clusters.\n\nNEW AUDIT\n\nPROFILES\n\n0\n\nFiltered result set\n\nWATCHLISTED\n\n0\n\nCurrent page\n\nNEW STATUS\n\n0\n\nCurrent page\n\nHAS REFUNDS\n\n0\n\nCurrent page\n\nLINKED IDENTITIES\n\n0\n\nCurrent page\n\nSort: Highest risk\nSort: Most recent\nSort: Oldest first\nSort: Most orders\nSort: Highest refund rate\nSort: Most chargebacks\nSort: Most merchants\nSort: Fastest claims\nAll\nNew\nReview\nContacted\nResolved\nCleared\nFilters\nRows per page\n25\n50\n100\nSAVED VIEWS\nHIGH-CONFIDENCE UNRESOLVED\nREPEAT REFUND CLAIMS\nLINKED IDENTITIES\nFAST CLAIMANTS\n\nNo"
+    },
+    {
+      "key": "A",
+      "route": "/global",
+      "suffix": "empty",
+      "finalURL": "http://localhost:3000/global",
+      "ms": 1200,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nGlobal\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\n\nPERSISTENT INTELLIGENCE\n\nGlobal Identity Graph\n\nCross-run and cross-merchant matches for your merchant, with privacy-safe network counts. Other merchant names and order details are intentionally hidden.\n\nProcess CSV\nNETWORK-LINKED PROFILES\n0\n\nSeen at 2+ merchants\n\nNETWORK-LINKED ORDERS\n0\n\n0 rows scanned\n\nCLAIMS IN CLUSTERS\n0\n\nRefund or dispute events\n\nWIDEST FOOTPRINT\n—\n\nNames and order IDs hidden\n\nCONTROLS\n\nGRADE TIER\nALL\nDEFINITE\nPROBABLE\nPOSSIBLE\nWEAK\nDATE RANGE\nALL\n90D\n30D\nMERCHANT SPAN\n2+\n3+\n4+\n\nNo identities match these filters.\n\nLoosen the grade, date, or merchant span filter.\n\nSELECTED NOD"
+    },
+    {
+      "key": "A",
+      "route": "/evidence",
+      "suffix": "empty",
+      "finalURL": "http://localhost:3000/chargebacks",
+      "ms": 1441,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nEvidence packages\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nSignal data compiled from your records for disputed orders.\n\nVIEW CUSTOMERS\n\nPACKAGES\n\n0\n\nGenerated reports\n\nCE3.0 SIGNALS\n\n0\n\nCE3.0 signals detected\n\nCROSS-MERCHANT\n\n0\n\nNetwork-linked evidence\n\nLATEST\n\n-\n\nMost recent package\n\nSOURCE\n\nCustomers\n\nGenerated from customer profiles\n\nGENERATE FROM CUSTOMER\n\nNo evidence packages yet\n\nCompile signal data from customer profiles to support dispute review. CE3.0 signal detection is included when prior matching transactions are found.\n\nView customers"
+    },
+    {
+      "key": "A",
+      "route": "/saved",
+      "suffix": "empty",
+      "finalURL": "http://localhost:3000/saved",
+      "ms": 1195,
+      "hasAccessDenied": false,
+      "hasPlaceholder": true,
+      "text": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nSaved Views\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nReusable filtered views across clusters, cases, and audits.\n\nNo saved views yet\n\nSave a filtered customer, case, or audit view and it will appear here.\n\nBrowse customers\nBrowse cases\nBrowse audits\nSaved views are coming soon for cross-route query presets."
+    },
+    {
+      "key": "A",
+      "route": "/help",
+      "suffix": "empty",
+      "finalURL": "http://localhost:3000/help",
+      "ms": 1102,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nHelp\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nGuides to get the most out of Unauth.\n\nHow Unauth works\n\nHow identity analysis works, how uploads build on each other, and how the chargeback evidence is generated.\n\nRead →\n\nExporting your orders CSV\n\nStep-by-step guide to exporting your orders CSV from any platform and getting the best results from Unauth.\n\nRead →\n\nUnderstanding confidence grades\n\nWhat definite, probable, possible, and weak confidence grades mean, and how to action each one.\n\nRead →\n\nHow identity matching works\n\nHow Unauth links customers across orders using device IDs, IP addresses and card f"
+    },
+    {
+      "key": "A",
+      "route": "/help/csv-export",
+      "suffix": "empty",
+      "finalURL": "http://localhost:3000/help/csv-export",
+      "ms": 1100,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nHelp\nCsv Export\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\n← Back to upload\nHow to improve your CSV export\n\nThe more information your export includes, the more accurately we can identify patterns. This guide explains which fields to add and how to find them.\n\nWhy more fields matter\n\nThe more information your export includes, the more accurately we can tell whether two orders came from the same person. With just an email address, someone can open a new Gmail account in 60 seconds and appear as a brand-new customer. With a card fingerprint, device ID, and IP address together, it becomes very difficult to hide — those three pieces of hardware-level d"
+    },
+    {
+      "key": "A",
+      "route": "/help/identity-matching",
+      "suffix": "empty",
+      "finalURL": "http://localhost:3000/help/identity-matching",
+      "ms": 1068,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nHelp\nidentity…\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nHelp\nHow identity matching works\n\nUnauth identifies customers who are operating multiple accounts by linking orders across your transaction history using a layered set of identity signals. This page explains each signal type, how they are combined, and the limits of what matching can and cannot prove.\n\nThe matching pipeline\n\nWhen an order export is uploaded, each order is parsed into a set of identity tokens — structured representations of the identity signals it contains. These tokens are compared against all existing orders in your account to find overlapping signals.\n\nOverlaps are groupe"
+    },
+    {
+      "key": "A",
+      "route": "/settings/account",
+      "suffix": "empty",
+      "finalURL": "http://localhost:3000/settings/account",
+      "ms": 1080,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nSettings\nAccount\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\n\nSETTINGS\n\nAccount\nTeam\nData & privacy\nSettings\nAccount & Profile\n\nUpdate your store information and account preferences.\n\nPROFILE\n\nStore details and review preferences\n\nEmail address\n\nTo change your email, contact support@unauth.io.\n\nStore / business name *\nMonthly order volume\nSelect a range…\nUnder 500\n500 – 2,000\n2,000 – 10,000\n10,000+\nPrimary review focus\nSelect…\nRefund abuse / INR claims\nChargebacks\nAccount takeover\nMulti-accounting\nPromo / voucher abuse\nAll of the above\nSAVE CHANGES\nNOTIFICATIONS\n\nPassword and access controls\n\nChange password\nShow\nNew password\nConfirm new password\nU"
+    },
+    {
+      "key": "A",
+      "route": "/settings/team",
+      "suffix": "empty",
+      "finalURL": "http://localhost:3000/settings/team",
+      "ms": 1047,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nSettings\nTeam\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\n\nSETTINGS\n\nAccount\nTeam\nData & privacy\nSettings\n/\nTeam\nTeam management\n\nInvite teammates, assign owner, admin, analyst, and viewer roles, and review recent team access changes.\n\nTEAM\n\nRoles, invitations, and recent access changes\n\nInvite teammate\n\nInvite up to 50 teammates per hour with a magic-link email.\n\nEmail\nRole\nAdmin\nAnalyst\nViewer\nInvite\nTeam members\n\n1 active user(s)\n\ncodex-readiness-a-1779731349845@example.com\n\nActive\n\nAccount owner\n\nOwner\nAdmin\nAnalyst\nViewer\nOwner\nRole audit\n\nRecent invites, role changes, and removals.\n\nNo team role changes yet.\n\nBack to Settings"
+    },
+    {
+      "key": "A",
+      "route": "/settings/audit-trail",
+      "suffix": "empty",
+      "finalURL": "http://localhost:3000/settings/audit-trail",
+      "ms": 1126,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nSettings\nData & privacy\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\n\nSETTINGS\n\nAccount\nTeam\nData & privacy\nSettings\nData & privacy\n\nReview the controls behind privacy-safe network intelligence, hashed identifiers, and merchant-owned data retention.\n\nPRIVACY CONTROLS\n\nThe network graph exposes aggregate fraud presence without exposing another merchant's customer data.\n\nK-SAFE\n\nK-ANONYMITY GATE\n\nk>=3\n\nNetwork matches are only shown after aggregate presence clears the merchant-count threshold.\n\nHASHED BEFORE MATCHING\n\nHMAC-SHA256\n\nEmails, payment tokens, IPs, and address keys are normalised and hashed before network comparison.\n\nNEVER SHARED\n\nPII isol"
+    },
+    {
+      "key": "A",
+      "route": "/dashboard",
+      "suffix": "after-valid-upload",
+      "finalURL": "http://localhost:3000/dashboard",
+      "ms": 2522,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nGRAPH LIVE\nNew Audit\n\nEXPOSURE AT RISK\n\n£1,103.49\n\nCurrent queue\n\nCUSTOMERS TO REVIEW\n\n5\n\nOpen profiles\n\nTRANSACTIONS ANALYSED\n\n15\n\n1 audit run\n\nEVIDENCE READY\n\n0\n\nNo CE3.0 signals detected\n\nAVG MATCH RATE\n\n33.3%\n\nHigh\n\nTRANSACTION INTELLIGENCE\n\n15 seeded transactions, refreshed from merchant-owned audits.\n\n30\n60\n90\nFRAUD RATE OVER TIME\n\n30 day transaction flag rate\n\n26 Apr\n30 Apr\n04 May\n08 May\n12 May\n16 May\n20 May\n25 May\n0%\n9%\n18%\n27%\n36%\nTRANSACTION VOLUME\n\nDaily or weekly completed order volume\n\nDAILY\nWEEKLY\n25 May\n0\n4\n8\n12\n16\nIDENTITY MATCH BREAKDOWN\n\nConfidence grade distribution\n\nDefiniteProbablePossibleWeak\nCHARGEBACK RATE TREND\n\nWeekly rat"
+    },
+    {
+      "key": "A",
+      "route": "/upload",
+      "suffix": "after-valid-upload",
+      "finalURL": "http://localhost:3000/upload",
+      "ms": 1124,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nNew Audit\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nUpload a CSV export of your orders to detect identity matches and repeated claim patterns.\n\nVIEW HISTORY\n\nSTEP\n\n01 Upload\n\nStart with source CSV\n\nMAX FILE\n\n200 MB\n\nCurrent limit\n\nMAX ROWS\n\n500k\n\nPer file\n\nFLOW\n\nMap -> Process\n\nColumn mapping included\n\nOUTPUT\n\nAudit run\n\nCreates review queue\n\nUPLOAD\n\nMAP FIELDS\n\nCONFIRM & RUN\n\nHow do I export this from your platform?\n\nDrop one or more CSVs here, or click to browse\n\nAccepted formats: CSV. Batch upload supported. Max 200 MB per file.\n\nYour uploaded data is processed to identify patterns within your own order "
+    },
+    {
+      "key": "A",
+      "route": "/history",
+      "suffix": "after-valid-upload",
+      "finalURL": "http://localhost:3000/history",
+      "ms": 1158,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nAudit history\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nShowing 1-1 of 1 runs\n\nNEW AUDIT\n\nAUDITS\n\n1\n\nVisible runs\n\nROWS PROCESSED\n\n15\n\nCurrent page scope\n\nMATCHED\n\n5\n\nCurrent page scope\n\nLAST UPLOAD\n\n25/05/2026\n\nMost recent run\n\nFAILED\n\n0\n\nCurrent page scope\n\nRows per page\n25\n50\n100\n\tLABEL\tTYPE\tPERIOD\tSTATUS\tROWS\tMATCHED\tUPLOADED\t\n\t\nMerchant A 2026-05-25T17-49-05-366Z\n1779731404914_merchant-a-valid.csv\n\tRegular\t01 May 2026 – 14 May 2026\tCompleted\t15\t5(33.3%)\t25 May 2026, 18:50\tView →"
+    },
+    {
+      "key": "A",
+      "route": "/reports",
+      "suffix": "after-valid-upload",
+      "finalURL": "http://localhost:3000/reports",
+      "ms": 1458,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nReports\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nReports\n\nNetwork signal performance and evidence readiness over time.\n\n7D\n30D\n90D\nEXPORT REPORT\nTOTAL FLAGGED\n5\n\n15 rows analysed\n\nMATCH RATE TREND\n33.3%\n\nPeak axis 33.3%\n\nAVG EXPOSURE\n£1,103.49\n\nCurrent review queue\n\nMATCH RATE OVER TIME\n33.3%\nFLAG DISTRIBUTION BY GRADE\nA DEFINITE\n5\n\n33.3% of analysed rows\n\nB PROBABLE\n0\n\n0.0% of analysed rows\n\nC POSSIBLE\n0\n\n0.0% of analysed rows\n\nD WEAK\n10\n\n66.7% of analysed rows\n\nDistribution is derived from merchant-owned audit transactions only; cross-merchant identifiers remain aggregate."
+    },
+    {
+      "key": "A",
+      "route": "/inbox",
+      "suffix": "after-valid-upload",
+      "finalURL": "http://localhost:3000/inbox",
+      "ms": 1346,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nInbox\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nIdentity-flagged transactions awaiting review\n\nEXPORT QUEUE\nNEW AUDIT\n\nOPEN CASES\n\n5\n\nCurrent page\n\nVALUE AT RISK\n\n£1,103\n\nCurrent page estimate\n\nDEFINITE\n\n5\n\nQueue\n\nPROBABLE\n\n0\n\nQueue\n\nTOTAL QUEUE\n\n5\n\nAll pages\n\nALL\nNEW\nREVIEW\nCONTACTED\nRESOLVED\nCLEARED\nRows per page\n25\n50\n100\n\tORDER ID\tRISK\tSCORE\tVALUE\tMATCH SIGNALS\tDATE\t\n\t\nUNA-A-1005\n\t\nA\n\t92\t£200\tPayment card\t25/05/2026\t\nReview →\nSet status\n\n\t\nUNA-A-1006\n\t\nA\n\t92\t£190\tPayment card\t25/05/2026\t\nReview →\nSet status\n\n\t\nUNA-A-1007\n\t\nA\n\t92\t£210\tPayment card\t25/05/2026\t\nReview →\nSet status\n\n\t\nUNA-A-1010\n\t\nA\n\t92\t£24"
+    },
+    {
+      "key": "A",
+      "route": "/customers",
+      "suffix": "after-valid-upload",
+      "finalURL": "http://localhost:3000/customers",
+      "ms": 1141,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nCustomers\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nSegment, filter, and act on customer identity clusters.\n\nNEW AUDIT\n\nPROFILES\n\n15\n\nFiltered result set\n\nWATCHLISTED\n\n0\n\nCurrent page\n\nNEW STATUS\n\n15\n\nCurrent page\n\nHAS REFUNDS\n\n5\n\nCurrent page\n\nLINKED IDENTITIES\n\n15\n\nCurrent page\n\nSort: Highest risk\nSort: Most recent\nSort: Oldest first\nSort: Most orders\nSort: Highest refund rate\nSort: Most chargebacks\nSort: Most merchants\nSort: Fastest claims\nAll\nNew\nReview\nContacted\nResolved\nCleared\nFilters\nRows per page\n25\n50\n100\nFILTERS\nNEW TO REVIEW\nHAS REFUNDS\nHAS CHARGEBACKS\nWATCHLISTED\nSAVED VIEWS\nHIGH-CONFIDENCE UNR"
+    },
+    {
+      "key": "A",
+      "route": "/watchlist",
+      "suffix": "after-valid-upload",
+      "finalURL": "http://localhost:3000/watchlist",
+      "ms": 1083,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nWatchlist\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nCustomers you're monitoring across future audits.\n\nBROWSE CUSTOMERS\n\nWATCHLISTED\n\n0\n\nTotal entries\n\nAPPEARED 30D\n\n0\n\nRecent audits\n\nSEARCH\n\nOff\n\nNo query\n\nPAGE SIZE\n\n25\n\nRows per page\n\nPAGES\n\n1\n\nResult pages\n\nRows per page\n25\n50\n100\nAppeared in recent audits\n\nNo watchlisted customers have appeared in recent audits.\n\nYour watchlist is empty\n\nNo customers on watchlist.\n\nBrowse clusters →"
+    },
+    {
+      "key": "A",
+      "route": "/chargebacks",
+      "suffix": "after-valid-upload",
+      "finalURL": "http://localhost:3000/chargebacks",
+      "ms": 1067,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nEvidence packages\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nSignal data compiled from your records for disputed orders.\n\nVIEW CUSTOMERS\n\nPACKAGES\n\n0\n\nGenerated reports\n\nCE3.0 SIGNALS\n\n0\n\nCE3.0 signals detected\n\nCROSS-MERCHANT\n\n0\n\nNetwork-linked evidence\n\nLATEST\n\n-\n\nMost recent package\n\nSOURCE\n\nCustomers\n\nGenerated from customer profiles\n\nGENERATE FROM CUSTOMER\n\nNo evidence packages yet\n\nCompile signal data from customer profiles to support dispute review. CE3.0 signal detection is included when prior matching transactions are found.\n\nView customers"
+    },
+    {
+      "key": "A",
+      "route": "/clusters",
+      "suffix": "after-valid-upload",
+      "finalURL": "http://localhost:3000/customers?merchantsMin=2",
+      "ms": 1463,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nCustomers\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nSegment, filter, and act on customer identity clusters.\n\nNEW AUDIT\n\nPROFILES\n\n15\n\nFiltered result set\n\nWATCHLISTED\n\n0\n\nCurrent page\n\nNEW STATUS\n\n15\n\nCurrent page\n\nHAS REFUNDS\n\n5\n\nCurrent page\n\nLINKED IDENTITIES\n\n15\n\nCurrent page\n\nSort: Highest risk\nSort: Most recent\nSort: Oldest first\nSort: Most orders\nSort: Highest refund rate\nSort: Most chargebacks\nSort: Most merchants\nSort: Fastest claims\nAll\nNew\nReview\nContacted\nResolved\nCleared\nFilters\n1\nClear\nRows per page\n25\n50\n100\nFILTERS\nNEW TO REVIEW\nHAS REFUNDS\nHAS CHARGEBACKS\nWATCHLISTED\nSAVED VIEWS\nHIGH-CONFID"
+    },
+    {
+      "key": "A",
+      "route": "/graph",
+      "suffix": "after-valid-upload",
+      "finalURL": "http://localhost:3000/global",
+      "ms": 1835,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nGlobal\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\n\nPERSISTENT INTELLIGENCE\n\nGlobal Identity Graph\n\nCross-run and cross-merchant matches for your merchant, with privacy-safe network counts. Other merchant names and order details are intentionally hidden.\n\nProcess CSV\nNETWORK-LINKED PROFILES\n15\n\nSeen at 2+ merchants\n\nNETWORK-LINKED ORDERS\n30\n\n15 rows scanned\n\nCLAIMS IN CLUSTERS\n10\n\nRefund or dispute events\n\nWIDEST FOOTPRINT\n2 merchants\n\nNames and order IDs hidden\n\nCONTROLS\n\nGRADE TIER\nALL\nDEFINITE\nPROBABLE\nPOSSIBLE\nWEAK\nDATE RANGE\nALL\n90D\n30D\nMERCHANT SPAN\n2+\n3+\n4+\nUNAUTH NETWORK\nkai fast a\nA\n2 merchants · 2 orders\njules fast a\nA\n2 merchants · 2 ord"
+    },
+    {
+      "key": "A",
+      "route": "/lookup",
+      "suffix": "after-valid-upload",
+      "finalURL": "http://localhost:3000/customers",
+      "ms": 1484,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nCustomers\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nSegment, filter, and act on customer identity clusters.\n\nNEW AUDIT\n\nPROFILES\n\n15\n\nFiltered result set\n\nWATCHLISTED\n\n0\n\nCurrent page\n\nNEW STATUS\n\n15\n\nCurrent page\n\nHAS REFUNDS\n\n5\n\nCurrent page\n\nLINKED IDENTITIES\n\n15\n\nCurrent page\n\nSort: Highest risk\nSort: Most recent\nSort: Oldest first\nSort: Most orders\nSort: Highest refund rate\nSort: Most chargebacks\nSort: Most merchants\nSort: Fastest claims\nAll\nNew\nReview\nContacted\nResolved\nCleared\nFilters\nRows per page\n25\n50\n100\nFILTERS\nNEW TO REVIEW\nHAS REFUNDS\nHAS CHARGEBACKS\nWATCHLISTED\nSAVED VIEWS\nHIGH-CONFIDENCE UNR"
+    },
+    {
+      "key": "A",
+      "route": "/global",
+      "suffix": "after-valid-upload",
+      "finalURL": "http://localhost:3000/global",
+      "ms": 1444,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nGlobal\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\n\nPERSISTENT INTELLIGENCE\n\nGlobal Identity Graph\n\nCross-run and cross-merchant matches for your merchant, with privacy-safe network counts. Other merchant names and order details are intentionally hidden.\n\nProcess CSV\nNETWORK-LINKED PROFILES\n15\n\nSeen at 2+ merchants\n\nNETWORK-LINKED ORDERS\n30\n\n15 rows scanned\n\nCLAIMS IN CLUSTERS\n10\n\nRefund or dispute events\n\nWIDEST FOOTPRINT\n2 merchants\n\nNames and order IDs hidden\n\nCONTROLS\n\nGRADE TIER\nALL\nDEFINITE\nPROBABLE\nPOSSIBLE\nWEAK\nDATE RANGE\nALL\n90D\n30D\nMERCHANT SPAN\n2+\n3+\n4+\nUNAUTH NETWORK\nkai fast a\nA\n2 merchants · 2 orders\njules fast a\nA\n2 merchants · 2 ord"
+    },
+    {
+      "key": "A",
+      "route": "/evidence",
+      "suffix": "after-valid-upload",
+      "finalURL": "http://localhost:3000/chargebacks",
+      "ms": 1474,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nEvidence packages\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nSignal data compiled from your records for disputed orders.\n\nVIEW CUSTOMERS\n\nPACKAGES\n\n0\n\nGenerated reports\n\nCE3.0 SIGNALS\n\n0\n\nCE3.0 signals detected\n\nCROSS-MERCHANT\n\n0\n\nNetwork-linked evidence\n\nLATEST\n\n-\n\nMost recent package\n\nSOURCE\n\nCustomers\n\nGenerated from customer profiles\n\nGENERATE FROM CUSTOMER\n\nNo evidence packages yet\n\nCompile signal data from customer profiles to support dispute review. CE3.0 signal detection is included when prior matching transactions are found.\n\nView customers"
+    },
+    {
+      "key": "A",
+      "route": "/saved",
+      "suffix": "after-valid-upload",
+      "finalURL": "http://localhost:3000/saved",
+      "ms": 1079,
+      "hasAccessDenied": false,
+      "hasPlaceholder": true,
+      "text": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nSaved Views\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nReusable filtered views across clusters, cases, and audits.\n\nNo saved views yet\n\nSave a filtered customer, case, or audit view and it will appear here.\n\nBrowse customers\nBrowse cases\nBrowse audits\nSaved views are coming soon for cross-route query presets."
+    },
+    {
+      "key": "A",
+      "route": "/help",
+      "suffix": "after-valid-upload",
+      "finalURL": "http://localhost:3000/help",
+      "ms": 1083,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nHelp\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nGuides to get the most out of Unauth.\n\nHow Unauth works\n\nHow identity analysis works, how uploads build on each other, and how the chargeback evidence is generated.\n\nRead →\n\nExporting your orders CSV\n\nStep-by-step guide to exporting your orders CSV from any platform and getting the best results from Unauth.\n\nRead →\n\nUnderstanding confidence grades\n\nWhat definite, probable, possible, and weak confidence grades mean, and how to action each one.\n\nRead →\n\nHow identity matching works\n\nHow Unauth links customers across orders using device IDs, IP addresses and card f"
+    },
+    {
+      "key": "A",
+      "route": "/help/csv-export",
+      "suffix": "after-valid-upload",
+      "finalURL": "http://localhost:3000/help/csv-export",
+      "ms": 1199,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nHelp\nCsv Export\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\n← Back to upload\nHow to improve your CSV export\n\nThe more information your export includes, the more accurately we can identify patterns. This guide explains which fields to add and how to find them.\n\nWhy more fields matter\n\nThe more information your export includes, the more accurately we can tell whether two orders came from the same person. With just an email address, someone can open a new Gmail account in 60 seconds and appear as a brand-new customer. With a card fingerprint, device ID, and IP address together, it becomes very difficult to hide — those three pieces of hardware-level d"
+    },
+    {
+      "key": "A",
+      "route": "/help/identity-matching",
+      "suffix": "after-valid-upload",
+      "finalURL": "http://localhost:3000/help/identity-matching",
+      "ms": 1155,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nHelp\nidentity…\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nHelp\nHow identity matching works\n\nUnauth identifies customers who are operating multiple accounts by linking orders across your transaction history using a layered set of identity signals. This page explains each signal type, how they are combined, and the limits of what matching can and cannot prove.\n\nThe matching pipeline\n\nWhen an order export is uploaded, each order is parsed into a set of identity tokens — structured representations of the identity signals it contains. These tokens are compared against all existing orders in your account to find overlapping signals.\n\nOverlaps are groupe"
+    },
+    {
+      "key": "A",
+      "route": "/settings/account",
+      "suffix": "after-valid-upload",
+      "finalURL": "http://localhost:3000/settings/account",
+      "ms": 1172,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nSettings\nAccount\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\n\nSETTINGS\n\nAccount\nTeam\nData & privacy\nSettings\nAccount & Profile\n\nUpdate your store information and account preferences.\n\nPROFILE\n\nStore details and review preferences\n\nEmail address\n\nTo change your email, contact support@unauth.io.\n\nStore / business name *\nMonthly order volume\nSelect a range…\nUnder 500\n500 – 2,000\n2,000 – 10,000\n10,000+\nPrimary review focus\nSelect…\nRefund abuse / INR claims\nChargebacks\nAccount takeover\nMulti-accounting\nPromo / voucher abuse\nAll of the above\nSAVE CHANGES\nNOTIFICATIONS\n\nPassword and access controls\n\nChange password\nShow\nNew password\nConfirm new password\nU"
+    },
+    {
+      "key": "A",
+      "route": "/settings/team",
+      "suffix": "after-valid-upload",
+      "finalURL": "http://localhost:3000/settings/team",
+      "ms": 1160,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nSettings\nTeam\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\n\nSETTINGS\n\nAccount\nTeam\nData & privacy\nSettings\n/\nTeam\nTeam management\n\nInvite teammates, assign owner, admin, analyst, and viewer roles, and review recent team access changes.\n\nTEAM\n\nRoles, invitations, and recent access changes\n\nInvite teammate\n\nInvite up to 50 teammates per hour with a magic-link email.\n\nEmail\nRole\nAdmin\nAnalyst\nViewer\nInvite\nTeam members\n\n1 active user(s)\n\ncodex-readiness-a-1779731349845@example.com\n\nActive\n\nAccount owner\n\nOwner\nAdmin\nAnalyst\nViewer\nOwner\nRole audit\n\nRecent invites, role changes, and removals.\n\nNo team role changes yet.\n\nBack to Settings"
+    },
+    {
+      "key": "A",
+      "route": "/settings/audit-trail",
+      "suffix": "after-valid-upload",
+      "finalURL": "http://localhost:3000/settings/audit-trail",
+      "ms": 1075,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nSettings\nData & privacy\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\n\nSETTINGS\n\nAccount\nTeam\nData & privacy\nSettings\nData & privacy\n\nReview the controls behind privacy-safe network intelligence, hashed identifiers, and merchant-owned data retention.\n\nPRIVACY CONTROLS\n\nThe network graph exposes aggregate fraud presence without exposing another merchant's customer data.\n\nK-SAFE\n\nK-ANONYMITY GATE\n\nk>=3\n\nNetwork matches are only shown after aggregate presence clears the merchant-count threshold.\n\nHASHED BEFORE MATCHING\n\nHMAC-SHA256\n\nEmails, payment tokens, IPs, and address keys are normalised and hashed before network comparison.\n\nNEVER SHARED\n\nPII isol"
+    },
+    {
+      "key": "A",
+      "route": "/api/inbox",
+      "suffix": "api-authenticated",
+      "status": 200,
+      "text": "{\"items\":[{\"id\":\"942425a3-40fb-45d7-9e9a-959f424baf4d\",\"order_id\":\"UNA-A-1005\",\"identity_score\":92,\"identity_confidence_grade\":\"definite\",\"match_status\":\"definite\",\"processed_at\":\"2026-05-25T17:50:07.426655+00:00\",\"processing_job_id\":\"66019083-e472-45eb-9907-9530c149c85f\",\"customer_profile_id\":\"b565c0c0-6cc8-447c-8cb2-4d4ddf7e3161\",\"customer_email\":\"el***@example-audit.test\",\"customer_name\":\"E*** H***\",\"order_value\":199.99,\"reason\":\"Payment card\"},{\"id\":\"f0bcf4d9-63f5-4de4-8061-dd193f1e7090\",\"order_id\":\"UNA-A-1006\",\"identity_score\":92,\"identity_confidence_grade\":\"definite\",\"match_status\":\"definite\",\"processed_at\":\"2026-05-25T17:50:07.426655+00:00\",\"processing_job_id\":\"66019083-e472-45eb-9907-9530c149c85f\",\"customer_profile_id\":\"1e07b59b-ab15-4404-b6c3-2a516a21e007\",\"customer_email\":\"fr***@example-audit.test\",\"customer_name\":\"F*** H***\",\"order_value\":189.5,\"reason\":\"Payment card\"},{\"id\":\""
+    },
+    {
+      "key": "A",
+      "route": "/api/watchlist",
+      "suffix": "api-authenticated",
+      "status": 200,
+      "text": "{\"entries\":[]}"
+    },
+    {
+      "key": "A",
+      "route": "/api/customers/search?q=UNA-A",
+      "suffix": "api-authenticated",
+      "status": 200,
+      "text": "{\"results\":[]}"
+    },
+    {
+      "key": "A",
+      "route": "/api/lookup/remaining",
+      "suffix": "api-authenticated",
+      "status": 200,
+      "text": "{\"used\":0,\"limit\":200}"
+    },
+    {
+      "key": "A",
+      "route": "/dashboard",
+      "suffix": "mobile",
+      "finalURL": "http://localhost:3000/dashboard",
+      "text": "GRAPH LIVE\nNew Audit\n\nEXPOSURE AT RISK\n\n£1,103.49\n\nCurrent queue\n\nCUSTOMERS TO REVIEW\n\n5\n\nOpen profiles\n\nTRANSACTIONS ANALYSED\n\n15\n\n1 audit run\n\nEVIDENCE READY\n\n0\n\nNo CE3.0 signals detected\n\nAVG MATCH RATE\n\n33.3%\n\nHigh\n\nTRANSACTION INTELLIGENCE\n\n15 seeded transactions, refreshed from merchant-owned audits.\n\n30\n60\n90\nFRAUD RATE OVER TIME\n\n30 day transaction flag rate\n\n30 Apr\n08 May\n16 May\n25 May\n0%\n9%\n18%\n27%\n36%\nTRANSACTION VOLUME\n\nDaily or weekly completed order volume\n\nDAILY\nWEEKLY\n25 May\n0\n4\n8\n12\n16\nIDENTITY MATCH BREAKDOWN\n\nConfidence grade distribution\n\nDefiniteProbablePossibleWeak\nCHARGEBACK RATE TREND\n\nWeekly rate with 1.5% benchmark\n\nW/c 25 May\n0%\n1%\n2%\n3%\n4%\nbenchmark\nRISK SCORE DISTRIBUTION\n\nHistogram across analysed orders\n\n0-20\n21-40\n41-60\n61-80\n81-100\n0\n3\n6\n9\n12\nTOP FLAGGED SIGNALS\n\nMost common signals in the current data set\n\ncard\ndevice\npostcode\nip\nshipping address\nrefundP"
+    },
+    {
+      "key": "A",
+      "route": "/upload",
+      "suffix": "mobile",
+      "finalURL": "http://localhost:3000/upload",
+      "text": "New Audit\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nUpload a CSV export of your orders to detect identity matches and repeated claim patterns.\n\nVIEW HISTORY\n\nSTEP\n\n01 Upload\n\nStart with source CSV\n\nMAX FILE\n\n200 MB\n\nCurrent limit\n\nMAX ROWS\n\n500k\n\nPer file\n\nFLOW\n\nMap -> Process\n\nColumn mapping included\n\nOUTPUT\n\nAudit run\n\nCreates review queue\n\nUPLOAD\n\nMAP FIELDS\n\nCONFIRM & RUN\n\nHow do I export this from your platform?\n\nDrop one or more CSVs here, or click to browse\n\nAccepted formats: CSV. Batch upload supported. Max 200 MB per file.\n\nYour uploaded data is processed to identify patterns within your own order history. Data handling details are available in your merchant agreement.\n\nChoose file\nDownload template\n\nExporting from WooCommerce, BigCommerce or Magento? Any CSV with orders, customers and refund info will work — we'll help you match the columns."
+    },
+    {
+      "key": "B",
+      "path": "/dashboard before onboarding",
+      "finalURL": "http://localhost:3000/onboarding",
+      "text": "First-run checklist\nSkip\n\nComplete the first audit path, then add integrations and team access when you are ready.\n\nUpload your first audit\n01\nReview flagged customers\n02\nGenerate an evidence package\n03\nSet up chargeback integration\nOptional\n04\nInvite a team member\nOptional\n05\n\nSTEP 1\n\nUpload your first audit\n\nWhen you upload an order CSV, Unauth maps your order, refund, payment, and identity columns into a privacy-safe audit run.\n\nSTORE NAME\nPLATFORM\nSelect platform...\nShopify\nWooCommerce\nMagen"
+    },
+    {
+      "key": "B",
+      "route": "/dashboard",
+      "suffix": "after-valid-upload",
+      "finalURL": "http://localhost:3000/dashboard",
+      "ms": 2250,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit B 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-b-1779731449358@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nGRAPH LIVE\nNew Audit\n\nEXPOSURE AT RISK\n\n£548.00\n\nCurrent queue\n\nCUSTOMERS TO REVIEW\n\n3\n\nOpen profiles\n\nTRANSACTIONS ANALYSED\n\n10\n\n1 audit run\n\nEVIDENCE READY\n\n0\n\nNo CE3.0 signals detected\n\nAVG MATCH RATE\n\n30.0%\n\nHigh\n\nTRANSACTION INTELLIGENCE\n\n10 seeded transactions, refreshed from merchant-owned audits.\n\n30\n60\n90\nFRAUD RATE OVER TIME\n\n30 day transaction flag rate\n\n26 Apr\n30 Apr\n04 May\n08 May\n12 May\n16 May\n20 May\n25 May\n0%\n8%\n16%\n24%\n32%\nTRANSACTION VOLUME\n\nDaily or weekly completed order volume\n\nDAILY\nWEEKLY\n25 May\n0\n3\n6\n9\n12\nIDENTITY MATCH BREAKDOWN\n\nConfidence grade distribution\n\nDefiniteProbablePossibleWeak\nCHARGEBACK RATE TREND\n\nWeekly rate w"
+    },
+    {
+      "key": "B",
+      "route": "/upload",
+      "suffix": "after-valid-upload",
+      "finalURL": "http://localhost:3000/upload",
+      "ms": 1071,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit B 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-b-1779731449358@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nNew Audit\nCodex Audit B 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nUpload a CSV export of your orders to detect identity matches and repeated claim patterns.\n\nVIEW HISTORY\n\nSTEP\n\n01 Upload\n\nStart with source CSV\n\nMAX FILE\n\n200 MB\n\nCurrent limit\n\nMAX ROWS\n\n500k\n\nPer file\n\nFLOW\n\nMap -> Process\n\nColumn mapping included\n\nOUTPUT\n\nAudit run\n\nCreates review queue\n\nUPLOAD\n\nMAP FIELDS\n\nCONFIRM & RUN\n\nHow do I export this from your platform?\n\nDrop one or more CSVs here, or click to browse\n\nAccepted formats: CSV. Batch upload supported. Max 200 MB per file.\n\nYour uploaded data is processed to identify patterns within your own order "
+    },
+    {
+      "key": "B",
+      "route": "/history",
+      "suffix": "after-valid-upload",
+      "finalURL": "http://localhost:3000/history",
+      "ms": 1057,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit B 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-b-1779731449358@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nAudit history\nCodex Audit B 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nShowing 1-1 of 1 runs\n\nNEW AUDIT\n\nAUDITS\n\n1\n\nVisible runs\n\nROWS PROCESSED\n\n10\n\nCurrent page scope\n\nMATCHED\n\n3\n\nCurrent page scope\n\nLAST UPLOAD\n\n25/05/2026\n\nMost recent run\n\nFAILED\n\n0\n\nCurrent page scope\n\nRows per page\n25\n50\n100\n\tLABEL\tTYPE\tPERIOD\tSTATUS\tROWS\tMATCHED\tUPLOADED\t\n\t\nMerchant B 2026-05-25T17-49-05-366Z\n1779731462834_merchant-b-valid.csv\n\tRegular\t01 May 2026 – 14 May 2026\tCompleted\t10\t3(30.0%)\t25 May 2026, 18:51\tView →"
+    },
+    {
+      "key": "B",
+      "route": "/reports",
+      "suffix": "after-valid-upload",
+      "finalURL": "http://localhost:3000/reports",
+      "ms": 1416,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit B 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-b-1779731449358@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nReports\nCodex Audit B 2026-05-25\nPROD\nSearch\n⌘K\nCO\nReports\n\nNetwork signal performance and evidence readiness over time.\n\n7D\n30D\n90D\nEXPORT REPORT\nTOTAL FLAGGED\n3\n\n10 rows analysed\n\nMATCH RATE TREND\n30.0%\n\nPeak axis 30.0%\n\nAVG EXPOSURE\n£548.00\n\nCurrent review queue\n\nMATCH RATE OVER TIME\n30.0%\nFLAG DISTRIBUTION BY GRADE\nA DEFINITE\n3\n\n30.0% of analysed rows\n\nB PROBABLE\n0\n\n0.0% of analysed rows\n\nC POSSIBLE\n0\n\n0.0% of analysed rows\n\nD WEAK\n7\n\n70.0% of analysed rows\n\nDistribution is derived from merchant-owned audit transactions only; cross-merchant identifiers remain aggregate."
+    },
+    {
+      "key": "B",
+      "route": "/inbox",
+      "suffix": "after-valid-upload",
+      "finalURL": "http://localhost:3000/inbox",
+      "ms": 1233,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit B 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-b-1779731449358@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nInbox\nCodex Audit B 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nIdentity-flagged transactions awaiting review\n\nEXPORT QUEUE\nNEW AUDIT\n\nOPEN CASES\n\n3\n\nCurrent page\n\nVALUE AT RISK\n\n£548\n\nCurrent page estimate\n\nDEFINITE\n\n3\n\nQueue\n\nPROBABLE\n\n0\n\nQueue\n\nTOTAL QUEUE\n\n3\n\nAll pages\n\nALL\nNEW\nREVIEW\nCONTACTED\nRESOLVED\nCLEARED\nRows per page\n25\n50\n100\n\tORDER ID\tRISK\tSCORE\tVALUE\tMATCH SIGNALS\tDATE\t\n\t\nUNA-B-2006\n\t\nA\n\t97\t£181\tPayment card\t25/05/2026\t\nReview →\nSet status\n\n\t\nUNA-B-2007\n\t\nA\n\t97\t£192\tPayment card\t25/05/2026\t\nReview →\nSet status\n\n\t\nUNA-B-2005\n\t\nA\n\t92\t£175\tPayment card\t25/05/2026\t\nReview →\nSet status\nJ/K\nNAVIGATE\n↵\nOPEN\nS\nWATCH"
+    },
+    {
+      "key": "B",
+      "route": "/customers",
+      "suffix": "after-valid-upload",
+      "finalURL": "http://localhost:3000/customers",
+      "ms": 1180,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit B 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-b-1779731449358@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nCustomers\nCodex Audit B 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nSegment, filter, and act on customer identity clusters.\n\nNEW AUDIT\n\nPROFILES\n\n10\n\nFiltered result set\n\nWATCHLISTED\n\n0\n\nCurrent page\n\nNEW STATUS\n\n10\n\nCurrent page\n\nHAS REFUNDS\n\n3\n\nCurrent page\n\nLINKED IDENTITIES\n\n10\n\nCurrent page\n\nSort: Highest risk\nSort: Most recent\nSort: Oldest first\nSort: Most orders\nSort: Highest refund rate\nSort: Most chargebacks\nSort: Most merchants\nSort: Fastest claims\nAll\nNew\nReview\nContacted\nResolved\nCleared\nFilters\nRows per page\n25\n50\n100\nFILTERS\nNEW TO REVIEW\nHAS REFUNDS\nHAS CHARGEBACKS\nWATCHLISTED\nSAVED VIEWS\nHIGH-CONFIDENCE UNR"
+    },
+    {
+      "key": "B",
+      "route": "/watchlist",
+      "suffix": "after-valid-upload",
+      "finalURL": "http://localhost:3000/watchlist",
+      "ms": 1219,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit B 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-b-1779731449358@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nWatchlist\nCodex Audit B 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nCustomers you're monitoring across future audits.\n\nBROWSE CUSTOMERS\n\nWATCHLISTED\n\n0\n\nTotal entries\n\nAPPEARED 30D\n\n0\n\nRecent audits\n\nSEARCH\n\nOff\n\nNo query\n\nPAGE SIZE\n\n25\n\nRows per page\n\nPAGES\n\n1\n\nResult pages\n\nRows per page\n25\n50\n100\nAppeared in recent audits\n\nNo watchlisted customers have appeared in recent audits.\n\nYour watchlist is empty\n\nNo customers on watchlist.\n\nBrowse clusters →"
+    },
+    {
+      "key": "B",
+      "route": "/chargebacks",
+      "suffix": "after-valid-upload",
+      "finalURL": "http://localhost:3000/chargebacks",
+      "ms": 1070,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit B 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-b-1779731449358@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nEvidence packages\nCodex Audit B 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nSignal data compiled from your records for disputed orders.\n\nVIEW CUSTOMERS\n\nPACKAGES\n\n0\n\nGenerated reports\n\nCE3.0 SIGNALS\n\n0\n\nCE3.0 signals detected\n\nCROSS-MERCHANT\n\n0\n\nNetwork-linked evidence\n\nLATEST\n\n-\n\nMost recent package\n\nSOURCE\n\nCustomers\n\nGenerated from customer profiles\n\nGENERATE FROM CUSTOMER\n\nNo evidence packages yet\n\nCompile signal data from customer profiles to support dispute review. CE3.0 signal detection is included when prior matching transactions are found.\n\nView customers"
+    },
+    {
+      "key": "B",
+      "route": "/clusters",
+      "suffix": "after-valid-upload",
+      "finalURL": "http://localhost:3000/customers?merchantsMin=2",
+      "ms": 1549,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit B 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-b-1779731449358@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nCustomers\nCodex Audit B 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nSegment, filter, and act on customer identity clusters.\n\nNEW AUDIT\n\nPROFILES\n\n10\n\nFiltered result set\n\nWATCHLISTED\n\n0\n\nCurrent page\n\nNEW STATUS\n\n10\n\nCurrent page\n\nHAS REFUNDS\n\n3\n\nCurrent page\n\nLINKED IDENTITIES\n\n10\n\nCurrent page\n\nSort: Highest risk\nSort: Most recent\nSort: Oldest first\nSort: Most orders\nSort: Highest refund rate\nSort: Most chargebacks\nSort: Most merchants\nSort: Fastest claims\nAll\nNew\nReview\nContacted\nResolved\nCleared\nFilters\n1\nClear\nRows per page\n25\n50\n100\nFILTERS\nNEW TO REVIEW\nHAS REFUNDS\nHAS CHARGEBACKS\nWATCHLISTED\nSAVED VIEWS\nHIGH-CONFID"
+    },
+    {
+      "key": "B",
+      "route": "/graph",
+      "suffix": "after-valid-upload",
+      "finalURL": "http://localhost:3000/global",
+      "ms": 2579,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit B 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-b-1779731449358@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nGlobal\nCodex Audit B 2026-05-25\nPROD\nSearch\n⌘K\nCO\n\nPERSISTENT INTELLIGENCE\n\nGlobal Identity Graph\n\nCross-run and cross-merchant matches for your merchant, with privacy-safe network counts. Other merchant names and order details are intentionally hidden.\n\nProcess CSV\nNETWORK-LINKED PROFILES\n10\n\nSeen at 2+ merchants\n\nNETWORK-LINKED ORDERS\n40\n\n10 rows scanned\n\nCLAIMS IN CLUSTERS\n12\n\nRefund or dispute events\n\nWIDEST FOOTPRINT\n3 merchants\n\nNames and order IDs hidden\n\nCONTROLS\n\nGRADE TIER\nALL\nDEFINITE\nPROBABLE\nPOSSIBLE\nWEAK\nDATE RANGE\nALL\n90D\n30D\nMERCHANT SPAN\n2+\n3+\n4+\nUNAUTH NETWORK\nelle pattern b\nA\n3 merchants · 4 orders\nfinn pattern b\nA\n3 merchants ·"
+    },
+    {
+      "key": "B",
+      "route": "/lookup",
+      "suffix": "after-valid-upload",
+      "finalURL": "http://localhost:3000/customers",
+      "ms": 1649,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit B 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-b-1779731449358@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nCustomers\nCodex Audit B 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nSegment, filter, and act on customer identity clusters.\n\nNEW AUDIT\n\nPROFILES\n\n10\n\nFiltered result set\n\nWATCHLISTED\n\n0\n\nCurrent page\n\nNEW STATUS\n\n10\n\nCurrent page\n\nHAS REFUNDS\n\n3\n\nCurrent page\n\nLINKED IDENTITIES\n\n10\n\nCurrent page\n\nSort: Highest risk\nSort: Most recent\nSort: Oldest first\nSort: Most orders\nSort: Highest refund rate\nSort: Most chargebacks\nSort: Most merchants\nSort: Fastest claims\nAll\nNew\nReview\nContacted\nResolved\nCleared\nFilters\nRows per page\n25\n50\n100\nFILTERS\nNEW TO REVIEW\nHAS REFUNDS\nHAS CHARGEBACKS\nWATCHLISTED\nSAVED VIEWS\nHIGH-CONFIDENCE UNR"
+    },
+    {
+      "key": "B",
+      "route": "/global",
+      "suffix": "after-valid-upload",
+      "finalURL": "http://localhost:3000/global",
+      "ms": 1117,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit B 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-b-1779731449358@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nGlobal\nCodex Audit B 2026-05-25\nPROD\nSearch\n⌘K\nCO\n\nPERSISTENT INTELLIGENCE\n\nGlobal Identity Graph\n\nCross-run and cross-merchant matches for your merchant, with privacy-safe network counts. Other merchant names and order details are intentionally hidden.\n\nProcess CSV\nNETWORK-LINKED PROFILES\n10\n\nSeen at 2+ merchants\n\nNETWORK-LINKED ORDERS\n40\n\n10 rows scanned\n\nCLAIMS IN CLUSTERS\n12\n\nRefund or dispute events\n\nWIDEST FOOTPRINT\n3 merchants\n\nNames and order IDs hidden\n\nCONTROLS\n\nGRADE TIER\nALL\nDEFINITE\nPROBABLE\nPOSSIBLE\nWEAK\nDATE RANGE\nALL\n90D\n30D\nMERCHANT SPAN\n2+\n3+\n4+\nUNAUTH NETWORK\nelle pattern b\nA\n3 merchants · 4 orders\nfinn pattern b\nA\n3 merchants ·"
+    },
+    {
+      "key": "B",
+      "route": "/evidence",
+      "suffix": "after-valid-upload",
+      "finalURL": "http://localhost:3000/chargebacks",
+      "ms": 1465,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit B 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-b-1779731449358@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nEvidence packages\nCodex Audit B 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nSignal data compiled from your records for disputed orders.\n\nVIEW CUSTOMERS\n\nPACKAGES\n\n0\n\nGenerated reports\n\nCE3.0 SIGNALS\n\n0\n\nCE3.0 signals detected\n\nCROSS-MERCHANT\n\n0\n\nNetwork-linked evidence\n\nLATEST\n\n-\n\nMost recent package\n\nSOURCE\n\nCustomers\n\nGenerated from customer profiles\n\nGENERATE FROM CUSTOMER\n\nNo evidence packages yet\n\nCompile signal data from customer profiles to support dispute review. CE3.0 signal detection is included when prior matching transactions are found.\n\nView customers"
+    },
+    {
+      "key": "B",
+      "route": "/saved",
+      "suffix": "after-valid-upload",
+      "finalURL": "http://localhost:3000/saved",
+      "ms": 1079,
+      "hasAccessDenied": false,
+      "hasPlaceholder": true,
+      "text": "Unauth\nx\nCodex Audit B 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-b-1779731449358@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nSaved Views\nCodex Audit B 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nReusable filtered views across clusters, cases, and audits.\n\nNo saved views yet\n\nSave a filtered customer, case, or audit view and it will appear here.\n\nBrowse customers\nBrowse cases\nBrowse audits\nSaved views are coming soon for cross-route query presets."
+    },
+    {
+      "key": "B",
+      "route": "/help",
+      "suffix": "after-valid-upload",
+      "finalURL": "http://localhost:3000/help",
+      "ms": 1055,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit B 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-b-1779731449358@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nHelp\nCodex Audit B 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nGuides to get the most out of Unauth.\n\nHow Unauth works\n\nHow identity analysis works, how uploads build on each other, and how the chargeback evidence is generated.\n\nRead →\n\nExporting your orders CSV\n\nStep-by-step guide to exporting your orders CSV from any platform and getting the best results from Unauth.\n\nRead →\n\nUnderstanding confidence grades\n\nWhat definite, probable, possible, and weak confidence grades mean, and how to action each one.\n\nRead →\n\nHow identity matching works\n\nHow Unauth links customers across orders using device IDs, IP addresses and card f"
+    },
+    {
+      "key": "B",
+      "route": "/help/csv-export",
+      "suffix": "after-valid-upload",
+      "finalURL": "http://localhost:3000/help/csv-export",
+      "ms": 1061,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit B 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-b-1779731449358@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nHelp\nCsv Export\nCodex Audit B 2026-05-25\nPROD\nSearch\n⌘K\nCO\n← Back to upload\nHow to improve your CSV export\n\nThe more information your export includes, the more accurately we can identify patterns. This guide explains which fields to add and how to find them.\n\nWhy more fields matter\n\nThe more information your export includes, the more accurately we can tell whether two orders came from the same person. With just an email address, someone can open a new Gmail account in 60 seconds and appear as a brand-new customer. With a card fingerprint, device ID, and IP address together, it becomes very difficult to hide — those three pieces of hardware-level d"
+    },
+    {
+      "key": "B",
+      "route": "/help/identity-matching",
+      "suffix": "after-valid-upload",
+      "finalURL": "http://localhost:3000/help/identity-matching",
+      "ms": 1058,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit B 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-b-1779731449358@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nHelp\nidentity…\nCodex Audit B 2026-05-25\nPROD\nSearch\n⌘K\nCO\nHelp\nHow identity matching works\n\nUnauth identifies customers who are operating multiple accounts by linking orders across your transaction history using a layered set of identity signals. This page explains each signal type, how they are combined, and the limits of what matching can and cannot prove.\n\nThe matching pipeline\n\nWhen an order export is uploaded, each order is parsed into a set of identity tokens — structured representations of the identity signals it contains. These tokens are compared against all existing orders in your account to find overlapping signals.\n\nOverlaps are groupe"
+    },
+    {
+      "key": "B",
+      "route": "/settings/account",
+      "suffix": "after-valid-upload",
+      "finalURL": "http://localhost:3000/settings/account",
+      "ms": 1066,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit B 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-b-1779731449358@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nSettings\nAccount\nCodex Audit B 2026-05-25\nPROD\nSearch\n⌘K\nCO\n\nSETTINGS\n\nAccount\nTeam\nData & privacy\nSettings\nAccount & Profile\n\nUpdate your store information and account preferences.\n\nPROFILE\n\nStore details and review preferences\n\nEmail address\n\nTo change your email, contact support@unauth.io.\n\nStore / business name *\nMonthly order volume\nSelect a range…\nUnder 500\n500 – 2,000\n2,000 – 10,000\n10,000+\nPrimary review focus\nSelect…\nRefund abuse / INR claims\nChargebacks\nAccount takeover\nMulti-accounting\nPromo / voucher abuse\nAll of the above\nSAVE CHANGES\nNOTIFICATIONS\n\nPassword and access controls\n\nChange password\nShow\nNew password\nConfirm new password\nU"
+    },
+    {
+      "key": "B",
+      "route": "/settings/team",
+      "suffix": "after-valid-upload",
+      "finalURL": "http://localhost:3000/settings/team",
+      "ms": 1098,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit B 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-b-1779731449358@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nSettings\nTeam\nCodex Audit B 2026-05-25\nPROD\nSearch\n⌘K\nCO\n\nSETTINGS\n\nAccount\nTeam\nData & privacy\nSettings\n/\nTeam\nTeam management\n\nInvite teammates, assign owner, admin, analyst, and viewer roles, and review recent team access changes.\n\nTEAM\n\nRoles, invitations, and recent access changes\n\nInvite teammate\n\nInvite up to 50 teammates per hour with a magic-link email.\n\nEmail\nRole\nAdmin\nAnalyst\nViewer\nInvite\nTeam members\n\n1 active user(s)\n\ncodex-readiness-b-1779731449358@example.com\n\nActive\n\nAccount owner\n\nOwner\nAdmin\nAnalyst\nViewer\nOwner\nRole audit\n\nRecent invites, role changes, and removals.\n\nNo team role changes yet.\n\nBack to Settings"
+    },
+    {
+      "key": "B",
+      "route": "/settings/audit-trail",
+      "suffix": "after-valid-upload",
+      "finalURL": "http://localhost:3000/settings/audit-trail",
+      "ms": 1070,
+      "hasAccessDenied": false,
+      "hasPlaceholder": false,
+      "text": "Unauth\nx\nCodex Audit B 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-b-1779731449358@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nSettings\nData & privacy\nCodex Audit B 2026-05-25\nPROD\nSearch\n⌘K\nCO\n\nSETTINGS\n\nAccount\nTeam\nData & privacy\nSettings\nData & privacy\n\nReview the controls behind privacy-safe network intelligence, hashed identifiers, and merchant-owned data retention.\n\nPRIVACY CONTROLS\n\nThe network graph exposes aggregate fraud presence without exposing another merchant's customer data.\n\nK-SAFE\n\nK-ANONYMITY GATE\n\nk>=3\n\nNetwork matches are only shown after aggregate presence clears the merchant-count threshold.\n\nHASHED BEFORE MATCHING\n\nHMAC-SHA256\n\nEmails, payment tokens, IPs, and address keys are normalised and hashed before network comparison.\n\nNEVER SHARED\n\nPII isol"
+    }
+  ],
+  "csvTests": [
+    {
+      "key": "A",
+      "filename": "invalid-empty.csv",
+      "expected": "validation only",
+      "selectedText": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nNew Audit\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nUpload a CSV export of your orders to detect identity matches and repeated claim patterns.\n\nVIEW HISTORY\n\nSTEP\n\n01 Upload\n\nStart with source CSV\n\nMAX FILE\n\n200 MB\n\nCurrent limit\n\nMAX ROWS\n\n500k\n\nPer file\n\nFLOW\n\nMap -> Process\n\nColumn mapping included\n\nOUTPUT\n\nAudit run\n\nCreates review queue\n\nUPLOAD\n\nMAP FIELDS\n\nCONFIRM & RUN\n\nHow do I export this from your platform?\n\nDrop one or more CSVs here, or click to browse\n\nAccepted formats: CSV. Batch upload supported. Max 200 MB per file.\n\nWe couldn't read this file\n\nThe upload is empty or is not a valid CSV export. Download the template or export a fresh CSV from your platform and try again.\n\nCode: UA-202\n\nShow technical details\nChoose file\nDownload template\n\nExporting from WooCommerce, BigCommerce or Magento? Any CSV with orders, customers and refund info will work — we'll help you match the columns.",
+      "result": "validation-shown",
+      "runId": null,
+      "finalURL": "http://localhost:3000/upload",
+      "notes": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nNew Audit\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nUpload a CSV export of your orders to detect identity matches and repeated claim patterns.\n\nVIEW HISTORY\n\nSTEP\n\n01 Upload\n\nStart with source CSV\n\nMAX FILE\n\n200 MB\n\nCurrent limit\n\nMAX ROWS\n\n500k\n\nPer file\n\nFLOW\n\nMap -> Process\n\nColumn mapping included\n\nOUTPUT\n\nAudit run\n\nCreates review queue\n\nUPLOAD\n\nMAP FIELDS\n\nCONFIRM & RUN\n\nHow do I export this from your platform?\n\nDrop one or more CSVs here, or click to browse\n\nAccepted formats: CSV. Batch upload supported. Max 200 MB per file.\n\nWe couldn't read this file\n\nThe upload is empty or is not a valid CSV export. Download the template or export a fresh CSV from your platform and try again.\n\nCode: UA-202\n\nShow technical details\nChoose file\nDownload template\n\nExporting from WooCommerce, BigCommerce or Magento? Any CSV with orders, customers and refund info will work — we'll help you match the columns."
+    },
+    {
+      "key": "A",
+      "filename": "not-really-csv.csv",
+      "expected": "validation only",
+      "selectedText": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nNew Audit\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nUpload a CSV export of your orders to detect identity matches and repeated claim patterns.\n\nVIEW HISTORY\n\nSTEP\n\n01 Upload\n\nStart with source CSV\n\nMAX FILE\n\n200 MB\n\nCurrent limit\n\nMAX ROWS\n\n500k\n\nPer file\n\nFLOW\n\nMap -> Process\n\nColumn mapping included\n\nOUTPUT\n\nAudit run\n\nCreates review queue\n\nUPLOAD\n\nMAP FIELDS\n\nCONFIRM & RUN\n\nHow do I export this from your platform?\n\nDrop one or more CSVs here, or click to browse\n\nAccepted formats: CSV. Batch upload supported. Max 200 MB per file.\n\nWe couldn't read this file\n\nThe upload is empty or is not a valid CSV export. Download the template or export a fresh CSV from your platform and try again.\n\nCode: UA-202\n\nShow technical details\nChoose file\nDownload template\n\nExporting from WooCommerce, BigCommerce or Magento? Any CSV with orders, customers and refund info will work — we'll help you match the columns.",
+      "result": "validation-shown",
+      "runId": null,
+      "finalURL": "http://localhost:3000/upload",
+      "notes": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nNew Audit\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nUpload a CSV export of your orders to detect identity matches and repeated claim patterns.\n\nVIEW HISTORY\n\nSTEP\n\n01 Upload\n\nStart with source CSV\n\nMAX FILE\n\n200 MB\n\nCurrent limit\n\nMAX ROWS\n\n500k\n\nPer file\n\nFLOW\n\nMap -> Process\n\nColumn mapping included\n\nOUTPUT\n\nAudit run\n\nCreates review queue\n\nUPLOAD\n\nMAP FIELDS\n\nCONFIRM & RUN\n\nHow do I export this from your platform?\n\nDrop one or more CSVs here, or click to browse\n\nAccepted formats: CSV. Batch upload supported. Max 200 MB per file.\n\nWe couldn't read this file\n\nThe upload is empty or is not a valid CSV export. Download the template or export a fresh CSV from your platform and try again.\n\nCode: UA-202\n\nShow technical details\nChoose file\nDownload template\n\nExporting from WooCommerce, BigCommerce or Magento? Any CSV with orders, customers and refund info will work — we'll help you match the columns."
+    },
+    {
+      "key": "A",
+      "filename": "invalid-missing-required.csv",
+      "expected": "validation only",
+      "selectedText": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nNew Audit\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nUpload a CSV export of your orders to detect identity matches and repeated claim patterns.\n\nVIEW HISTORY\n\nSTEP\n\n01 Upload\n\nStart with source CSV\n\nMAX FILE\n\n200 MB\n\nCurrent limit\n\nMAX ROWS\n\n500k\n\nPer file\n\nFLOW\n\nMap -> Process\n\nColumn mapping included\n\nOUTPUT\n\nAudit run\n\nCreates review queue\n\nUPLOAD\n\nMAP FIELDS\n\nCONFIRM & RUN\n\nHow do I export this from your platform?\nWe found 3 columns in your CSV. Match them:\n\nUpload your existing order export. Unauth works with standard order, customer, payment and refund fields. Advanced integrations can add device, payment and delivery intelligence later.\n\nREQUIRED COLUMNS\n\nOrder ID\n←\n— not mapped —\ncustomer_name\nshipping_address\nrefund_status\nOrder date\n←\n— not mapped —\ncustomer_name\nshipping_address\nrefund_status\nCustomer email\n←\n— not mapped —\ncustomer_name\nshipping_address\nrefund_status\nOrder total\n←\n— not map",
+      "result": "validation-shown",
+      "runId": null,
+      "finalURL": "http://localhost:3000/upload",
+      "notes": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nNew Audit\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nUpload a CSV export of your orders to detect identity matches and repeated claim patterns.\n\nVIEW HISTORY\n\nSTEP\n\n01 Upload\n\nStart with source CSV\n\nMAX FILE\n\n200 MB\n\nCurrent limit\n\nMAX ROWS\n\n500k\n\nPer file\n\nFLOW\n\nMap -> Process\n\nColumn mapping included\n\nOUTPUT\n\nAudit run\n\nCreates review queue\n\nUPLOAD\n\nMAP FIELDS\n\nCONFIRM & RUN\n\nHow do I export this from your platform?\nWe found 3 columns in your CSV. Match them:\n\nUpload your existing order export. Unauth works with standard order, customer, payment and refund fields. Advanced integrations can add device, payment and delivery intelligence later.\n\nREQUIRED COLUMNS\n\nOrder ID\n←\n— not mapped —\ncustomer_name\nshipping_address\nrefund_status\nOrder date\n←\n— not mapped —\ncustomer_name\nshipping_address\nrefund_status\nCustomer email\n←\n— not mapped —\ncustomer_name\nshipping_address\nrefund_status\nOrder total\n←\n— not map"
+    },
+    {
+      "key": "A",
+      "filename": "invalid-headers-only.csv",
+      "expected": "validation only",
+      "selectedText": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nNew Audit\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nUpload a CSV export of your orders to detect identity matches and repeated claim patterns.\n\nVIEW HISTORY\n\nSTEP\n\n01 Upload\n\nStart with source CSV\n\nMAX FILE\n\n200 MB\n\nCurrent limit\n\nMAX ROWS\n\n500k\n\nPer file\n\nFLOW\n\nMap -> Process\n\nColumn mapping included\n\nOUTPUT\n\nAudit run\n\nCreates review queue\n\nUPLOAD\n\nMAP FIELDS\n\nCONFIRM & RUN\n\nHow do I export this from your platform?\n\nDrop one or more CSVs here, or click to browse\n\nAccepted formats: CSV. Batch upload supported. Max 200 MB per file.\n\nWe couldn't read this file\n\nThe upload is empty or is not a valid CSV export. Download the template or export a fresh CSV from your platform and try again.\n\nCode: UA-202\n\nShow technical details\nChoose file\nDownload template\n\nExporting from WooCommerce, BigCommerce or Magento? Any CSV with orders, customers and refund info will work — we'll help you match the columns.",
+      "result": "validation-shown",
+      "runId": null,
+      "finalURL": "http://localhost:3000/upload",
+      "notes": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nNew Audit\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nUpload a CSV export of your orders to detect identity matches and repeated claim patterns.\n\nVIEW HISTORY\n\nSTEP\n\n01 Upload\n\nStart with source CSV\n\nMAX FILE\n\n200 MB\n\nCurrent limit\n\nMAX ROWS\n\n500k\n\nPer file\n\nFLOW\n\nMap -> Process\n\nColumn mapping included\n\nOUTPUT\n\nAudit run\n\nCreates review queue\n\nUPLOAD\n\nMAP FIELDS\n\nCONFIRM & RUN\n\nHow do I export this from your platform?\n\nDrop one or more CSVs here, or click to browse\n\nAccepted formats: CSV. Batch upload supported. Max 200 MB per file.\n\nWe couldn't read this file\n\nThe upload is empty or is not a valid CSV export. Download the template or export a fresh CSV from your platform and try again.\n\nCode: UA-202\n\nShow technical details\nChoose file\nDownload template\n\nExporting from WooCommerce, BigCommerce or Magento? Any CSV with orders, customers and refund info will work — we'll help you match the columns."
+    },
+    {
+      "key": "A",
+      "filename": "invalid-formula-script.csv",
+      "expected": "validation only",
+      "selectedText": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nNew Audit\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nUpload a CSV export of your orders to detect identity matches and repeated claim patterns.\n\nVIEW HISTORY\n\nSTEP\n\n01 Upload\n\nStart with source CSV\n\nMAX FILE\n\n200 MB\n\nCurrent limit\n\nMAX ROWS\n\n500k\n\nPer file\n\nFLOW\n\nMap -> Process\n\nColumn mapping included\n\nOUTPUT\n\nAudit run\n\nCreates review queue\n\nUPLOAD\n\nMAP FIELDS\n\nCONFIRM & RUN\n\nHow do I export this from your platform?\nWe found 8 columns in your CSV. Match them:\n\nUpload your existing order export. Unauth works with standard order, customer, payment and refund fields. Advanced integrations can add device, payment and delivery intelligence later.\n\nREQUIRED COLUMNS\n\nOrder ID\n←\n— not mapped —\norder_id\norder_date\ncustomer_email\ncustomer_name\nshipping_address\norder_total\ncurrency\norder_status\nOrder date\n←\n— not mapped —\norder_id\norder_date\ncustomer_email\ncustomer_name\nshipping_address\norder_total\ncurrency\nord",
+      "result": "validation-shown",
+      "runId": null,
+      "finalURL": "http://localhost:3000/upload",
+      "notes": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nNew Audit\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nUpload a CSV export of your orders to detect identity matches and repeated claim patterns.\n\nVIEW HISTORY\n\nSTEP\n\n01 Upload\n\nStart with source CSV\n\nMAX FILE\n\n200 MB\n\nCurrent limit\n\nMAX ROWS\n\n500k\n\nPer file\n\nFLOW\n\nMap -> Process\n\nColumn mapping included\n\nOUTPUT\n\nAudit run\n\nCreates review queue\n\nUPLOAD\n\nMAP FIELDS\n\nCONFIRM & RUN\n\nHow do I export this from your platform?\nWe found 8 columns in your CSV. Match them:\n\nUpload your existing order export. Unauth works with standard order, customer, payment and refund fields. Advanced integrations can add device, payment and delivery intelligence later.\n\nREQUIRED COLUMNS\n\nOrder ID\n←\n— not mapped —\norder_id\norder_date\ncustomer_email\ncustomer_name\nshipping_address\norder_total\ncurrency\norder_status\nOrder date\n←\n— not mapped —\norder_id\norder_date\ncustomer_email\ncustomer_name\nshipping_address\norder_total\ncurrency\nord"
+    },
+    {
+      "key": "A",
+      "filename": "messy-realistic.csv",
+      "expected": "validation only",
+      "selectedText": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nNew Audit\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nUpload a CSV export of your orders to detect identity matches and repeated claim patterns.\n\nVIEW HISTORY\n\nSTEP\n\n01 Upload\n\nStart with source CSV\n\nMAX FILE\n\n200 MB\n\nCurrent limit\n\nMAX ROWS\n\n500k\n\nPer file\n\nFLOW\n\nMap -> Process\n\nColumn mapping included\n\nOUTPUT\n\nAudit run\n\nCreates review queue\n\nUPLOAD\n\nMAP FIELDS\n\nCONFIRM & RUN\n\nHow do I export this from your platform?\nWe found 10 columns in your CSV. Match them:\n\nUpload your existing order export. Unauth works with standard order, customer, payment and refund fields. Advanced integrations can add device, payment and delivery intelligence later.\n\nREQUIRED COLUMNS\n\nOrder ID\n←\n— not mapped —\nOrder Number\nEmail\nTotal\nCreated At\nShipping Address\nBuyer Name\nRefunded\nReturn Reason\nPayment\nOdd Extra Column\nOrder date\n←\n— not mapped —\nOrder Number\nEmail\nTotal\nCreated At\nShipping Address\nBuyer Name\nRefunded\nRetu",
+      "result": "validation-shown",
+      "runId": null,
+      "finalURL": "http://localhost:3000/upload",
+      "notes": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nNew Audit\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nUpload a CSV export of your orders to detect identity matches and repeated claim patterns.\n\nVIEW HISTORY\n\nSTEP\n\n01 Upload\n\nStart with source CSV\n\nMAX FILE\n\n200 MB\n\nCurrent limit\n\nMAX ROWS\n\n500k\n\nPer file\n\nFLOW\n\nMap -> Process\n\nColumn mapping included\n\nOUTPUT\n\nAudit run\n\nCreates review queue\n\nUPLOAD\n\nMAP FIELDS\n\nCONFIRM & RUN\n\nHow do I export this from your platform?\nWe found 10 columns in your CSV. Match them:\n\nUpload your existing order export. Unauth works with standard order, customer, payment and refund fields. Advanced integrations can add device, payment and delivery intelligence later.\n\nREQUIRED COLUMNS\n\nOrder ID\n←\n— not mapped —\nOrder Number\nEmail\nTotal\nCreated At\nShipping Address\nBuyer Name\nRefunded\nReturn Reason\nPayment\nOdd Extra Column\nOrder date\n←\n— not mapped —\nOrder Number\nEmail\nTotal\nCreated At\nShipping Address\nBuyer Name\nRefunded\nRetu"
+    },
+    {
+      "key": "A",
+      "filename": "merchant-a-valid.csv",
+      "expected": "inspect",
+      "selectedText": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nNew Audit\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nUpload a CSV export of your orders to detect identity matches and repeated claim patterns.\n\nVIEW HISTORY\n\nSTEP\n\n01 Upload\n\nStart with source CSV\n\nMAX FILE\n\n200 MB\n\nCurrent limit\n\nMAX ROWS\n\n500k\n\nPer file\n\nFLOW\n\nMap -> Process\n\nColumn mapping included\n\nOUTPUT\n\nAudit run\n\nCreates review queue\n\nUPLOAD\n\nMAP FIELDS\n\nCONFIRM & RUN\n\nHow do I export this from your platform?\nWe found 29 columns in your CSV. Match them:\n\nUpload your existing order export. Unauth works with standard order, customer, payment and refund fields. Advanced integrations can add device, payment and delivery intelligence later.\n\nREQUIRED COLUMNS\n\nOrder ID\n←\n— not mapped —\norder_id\norder_date\ncustomer_email\ncustomer_name\nshipping_address\npostcode\norder_total\ncurrency\norder_status\ncustomer_phone\nbilling_address\nrefund_status\nrefund_reason\nrefund_date\nrefund_amount\npayment_method\nip_addre",
+      "result": "complete",
+      "runId": "66019083-e472-45eb-9907-9530c149c85f",
+      "finalURL": "http://localhost:3000/audit/66019083-e472-45eb-9907-9530c149c85f",
+      "notes": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nAudit results\n66019083…\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nDashboard\n/\nAudit result\nAudit Results\n\n1779731404914_merchant-a-valid.csv · 25 May 2026, 18:50\n\ncompleted\nSTATUS\n\n5 orders with likely identity links.\n\nReview likely identities\nExport CSV\nView all transactions\nORDERS ANALYSED\n15\nNETWORK LINKED\n5\n\nCross-merchant profiles\n\nANCHOR METRIC\nANCHOR METRIC\n5\nDEFINITE\n5 · 100%\nPROBABLE\n0 · 0%\nPOSSIBLE\n0 · 0%\nWEAK\n0 · 0%\nDEFINITE MATCHES\n5\nCOMPLETED\njust now\n\n25 May 2026, 18:50\n\nOverview\nCustomers\nTransactions (15)\nData quality\nA\n5\nLinked accounts\nB\n0\nProbable connections\nC\n0\nPossible signals found\nD\n0\nLow signals\nMATCH DISTRIBUTION\n\n5 customers with match signals\n\nDefinite\n5 · 100.0%\nCUSTOMERS BY MATCH CONFIDENCE\n\nCounts across all four "
+    },
+    {
+      "key": "B",
+      "filename": "merchant-b-valid.csv",
+      "expected": "inspect",
+      "selectedText": "Unauth\nx\nCodex Audit B 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-b-1779731449358@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nNew Audit\nCodex Audit B 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nUpload a CSV export of your orders to detect identity matches and repeated claim patterns.\n\nVIEW HISTORY\n\nSTEP\n\n01 Upload\n\nStart with source CSV\n\nMAX FILE\n\n200 MB\n\nCurrent limit\n\nMAX ROWS\n\n500k\n\nPer file\n\nFLOW\n\nMap -> Process\n\nColumn mapping included\n\nOUTPUT\n\nAudit run\n\nCreates review queue\n\nUPLOAD\n\nMAP FIELDS\n\nCONFIRM & RUN\n\nHow do I export this from your platform?\nWe found 29 columns in your CSV. Match them:\n\nUpload your existing order export. Unauth works with standard order, customer, payment and refund fields. Advanced integrations can add device, payment and delivery intelligence later.\n\nREQUIRED COLUMNS\n\nOrder ID\n←\n— not mapped —\norder_id\norder_date\ncustomer_email\ncustomer_name\nshipping_address\npostcode\norder_total\ncurrency\norder_status\ncustomer_phone\nbilling_address\nrefund_status\nrefund_reason\nrefund_date\nrefund_amount\npayment_method\nip_addre",
+      "result": "complete",
+      "runId": "ce912b37-0f99-4775-a775-a240b4f75406",
+      "finalURL": "http://localhost:3000/audit/ce912b37-0f99-4775-a775-a240b4f75406",
+      "notes": "Unauth\nx\nCodex Audit B 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-b-1779731449358@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nAudit results\nce912b37…\nCodex Audit B 2026-05-25\nPROD\nSearch\n⌘K\nCO\nDashboard\n/\nAudit result\nAudit Results\n\n1779731462834_merchant-b-valid.csv · 25 May 2026, 18:51\n\ncompleted\nSTATUS\n\n3 orders with likely identity links.\n\nReview likely identities\nExport CSV\nView all transactions\nORDERS ANALYSED\n10\nNETWORK LINKED\n3\n\nCross-merchant profiles\n\nANCHOR METRIC\nANCHOR METRIC\n3\nDEFINITE\n3 · 100%\nPROBABLE\n0 · 0%\nPOSSIBLE\n0 · 0%\nWEAK\n0 · 0%\nDEFINITE MATCHES\n3\nCOMPLETED\njust now\n\n25 May 2026, 18:51\n\nOverview\nCustomers\nTransactions (10)\nData quality\nA\n3\nLinked accounts\nB\n0\nProbable connections\nC\n0\nPossible signals found\nD\n0\nLow signals\nMATCH DISTRIBUTION\n\n3 customers with match signals\n\nDefinite\n3 · 100.0%\nCUSTOMERS BY MATCH CONFIDENCE\n\nCounts across all four "
+    },
+    {
+      "key": "A",
+      "filename": "merchant-a-valid.csv",
+      "expected": "inspect",
+      "selectedText": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nNew Audit\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nUpload a CSV export of your orders to detect identity matches and repeated claim patterns.\n\nVIEW HISTORY\n\nSTEP\n\n01 Upload\n\nStart with source CSV\n\nMAX FILE\n\n200 MB\n\nCurrent limit\n\nMAX ROWS\n\n500k\n\nPer file\n\nFLOW\n\nMap -> Process\n\nColumn mapping included\n\nOUTPUT\n\nAudit run\n\nCreates review queue\n\nUPLOAD\n\nMAP FIELDS\n\nCONFIRM & RUN\n\nHow do I export this from your platform?\nWe found 29 columns in your CSV. Match them:\n\nUpload your existing order export. Unauth works with standard order, customer, payment and refund fields. Advanced integrations can add device, payment and delivery intelligence later.\n\nREQUIRED COLUMNS\n\nOrder ID\n←\n— not mapped —\norder_id\norder_date\ncustomer_email\ncustomer_name\nshipping_address\npostcode\norder_total\ncurrency\norder_status\ncustomer_phone\nbilling_address\nrefund_status\nrefund_reason\nrefund_date\nrefund_amount\npayment_method\nip_addre",
+      "result": "duplicate-warning",
+      "runId": null,
+      "finalURL": "http://localhost:3000/upload",
+      "notes": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nNew Audit\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nUpload a CSV export of your orders to detect identity matches and repeated claim patterns.\n\nVIEW HISTORY\n\nSTEP\n\n01 Upload\n\nStart with source CSV\n\nMAX FILE\n\n200 MB\n\nCurrent limit\n\nMAX ROWS\n\n500k\n\nPer file\n\nFLOW\n\nMap -> Process\n\nColumn mapping included\n\nOUTPUT\n\nAudit run\n\nCreates review queue\n\nUPLOAD\n\nMAP FIELDS\n\nCONFIRM & RUN\n\nHow do I export this from your platform?\nmerchant-a-valid.csv\n\n5 KB\n\nUpload context\n\nTell us a bit about this upload. All fields are optional — skip anything you don't need.\n\nLabel\n\nAppears in your audit history. Leave blank to use the upload date.\n\nDate range this upload covers\nto\n\nThe order date range your export covers — not the "
+    },
+    {
+      "key": "A",
+      "filename": "guardrail-26-rows.csv",
+      "expected": "inspect",
+      "selectedText": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nNew Audit\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nOverview\nCases\nClusters\nAudits\nReports\n\nUpload a CSV export of your orders to detect identity matches and repeated claim patterns.\n\nVIEW HISTORY\n\nSTEP\n\n01 Upload\n\nStart with source CSV\n\nMAX FILE\n\n200 MB\n\nCurrent limit\n\nMAX ROWS\n\n500k\n\nPer file\n\nFLOW\n\nMap -> Process\n\nColumn mapping included\n\nOUTPUT\n\nAudit run\n\nCreates review queue\n\nUPLOAD\n\nMAP FIELDS\n\nCONFIRM & RUN\n\nHow do I export this from your platform?\nWe found 8 columns in your CSV. Match them:\n\nUpload your existing order export. Unauth works with standard order, customer, payment and refund fields. Advanced integrations can add device, payment and delivery intelligence later.\n\nREQUIRED COLUMNS\n\nOrder ID\n←\n— not mapped —\norder_id\norder_date\ncustomer_email\ncustomer_name\nshipping_address\norder_total\ncurrency\norder_status\nOrder date\n←\n— not mapped —\norder_id\norder_date\ncustomer_email\ncustomer_name\nshipping_address\norder_total\ncurrency\nord",
+      "result": "complete",
+      "runId": "1582cbf5-f03d-4466-b056-00adcab16af0",
+      "finalURL": "http://localhost:3000/audit/1582cbf5-f03d-4466-b056-00adcab16af0",
+      "notes": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nAudit results\n1582cbf5…\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\nDashboard\n/\nAudit result\nAudit Results\n\n1779731559620_guardrail-26-rows.csv · 25 May 2026, 18:52\n\ncompleted\nORDERS ANALYSED\n26\nNETWORK LINKED\n0\n\nCross-merchant profiles\n\nANCHOR METRIC\nANCHOR METRIC\n0\nDEFINITE\n0 · 0%\nPROBABLE\n0 · 0%\nPOSSIBLE\n0 · 0%\nWEAK\n0 · 0%\nDEFINITE MATCHES\n0\nCOMPLETED\njust now\n\n25 May 2026, 18:52\n\n⚠\n\nVery limited identity data\n\nOnly required fields were present in this upload. Email and address patterns were checked but stronger identity matching was not possible.\n\nImprove future audits →\n✕\nOverview\nCustomers\nTransactions (26)\nData quality\nA\n0\nLinked accounts\nB\n0\nProbable connections\nC\n0\nPossible signals found\nD\n0\nLow signals\nMATCH DISTRIBUTION\n\n0 customers wi"
+    }
+  ],
+  "tenantChecks": [
+    {
+      "actor": "B",
+      "account": {
+        "key": "B",
+        "email": "codex-readiness-b-1779731449358@example.com",
+        "storeName": "Codex Audit B 2026-05-25",
+        "context": {
+          "_type": "BrowserContext",
+          "_guid": "browser-context@2463e740f294b9824cef0f9c02f50556"
+        },
+        "page": {
+          "_type": "Page",
+          "_guid": "page@1e764168c581027f86120850f79ffdf3"
+        }
+      },
+      "target": "/audit/66019083-e472-45eb-9907-9530c149c85f",
+      "name": "B visiting A audit page",
+      "finalURL": "http://localhost:3000/audit/66019083-e472-45eb-9907-9530c149c85f",
+      "leakedA": false,
+      "leakedB": false,
+      "has404": true,
+      "hasDenied": false,
+      "text": "Unauth\nx\nCodex Audit B 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-b-1779731449358@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nAudit results\n66019083…\nCodex Audit B 2026-05-25\nPROD\nSearch\n⌘K\nCO\n404\nThis page could not be found."
+    },
+    {
+      "actor": "A",
+      "account": {
+        "key": "A",
+        "email": "codex-readiness-a-1779731349845@example.com",
+        "storeName": "Codex Audit A 2026-05-25",
+        "context": {
+          "_type": "BrowserContext",
+          "_guid": "browser-context@0c405ed144cdf4198492ccd5c73644b0"
+        },
+        "page": {
+          "_type": "Page",
+          "_guid": "page@06269f162c034118cb6fd279bb349fbb"
+        }
+      },
+      "target": "/audit/ce912b37-0f99-4775-a775-a240b4f75406",
+      "name": "A visiting B audit page",
+      "finalURL": "http://localhost:3000/audit/ce912b37-0f99-4775-a775-a240b4f75406",
+      "leakedA": false,
+      "leakedB": false,
+      "has404": true,
+      "hasDenied": false,
+      "text": "Unauth\nx\nCodex Audit A 2026-05-25\nWORKSPACE\nDashboard\nInbox\nAUDITS\nNew audit\nAudit history\nReports\nINVESTIGATIONS\nCustomers\nWatchlist\nEvidence packages\ncodex-readiness-a-1779731349845@example.com\nHelp\nSettings\nSign out\nPrivacy\nData handling\nDPA\nAudit results\nce912b37…\nCodex Audit A 2026-05-25\nPROD\nSearch\n⌘K\nCO\n404\nThis page could not be found."
+    },
+    {
+      "actor": "B",
+      "account": {
+        "key": "B",
+        "email": "codex-readiness-b-1779731449358@example.com",
+        "storeName": "Codex Audit B 2026-05-25",
+        "context": {
+          "_type": "BrowserContext",
+          "_guid": "browser-context@2463e740f294b9824cef0f9c02f50556"
+        },
+        "page": {
+          "_type": "Page",
+          "_guid": "page@1e764168c581027f86120850f79ffdf3"
+        }
+      },
+      "target": "/api/audit/66019083-e472-45eb-9907-9530c149c85f/progress",
+      "name": "B fetching A progress API",
+      "result": 404,
+      "leakedA": false,
+      "leakedB": false,
+      "text": "{\"error\":\"Audit run not found\"}"
+    },
+    {
+      "actor": "A",
+      "account": {
+        "key": "A",
+        "email": "codex-readiness-a-1779731349845@example.com",
+        "storeName": "Codex Audit A 2026-05-25",
+        "context": {
+          "_type": "BrowserContext",
+          "_guid": "browser-context@0c405ed144cdf4198492ccd5c73644b0"
+        },
+        "page": {
+          "_type": "Page",
+          "_guid": "page@06269f162c034118cb6fd279bb349fbb"
+        }
+      },
+      "target": "/api/audit/ce912b37-0f99-4775-a775-a240b4f75406/progress",
+      "name": "A fetching B progress API",
+      "result": 404,
+      "leakedA": false,
+      "leakedB": false,
+      "text": "{\"error\":\"Audit run not found\"}"
+    }
+  ],
+  "piiFindings": [
+    {
+      "label": "A",
+      "url": "http://localhost:3000/api/inbox",
+      "status": 200,
+      "markers": [
+        "UNA-A-",
+        "@example-audit.test",
+        "@example-audit.test"
+      ],
+      "sample": "{\"items\":[{\"id\":\"942425a3-40fb-45d7-9e9a-959f424baf4d\",\"order_id\":\"UNA-A-1005\",\"identity_score\":92,\"identity_confidence_grade\":\"definite\",\"match_status\":\"definite\",\"processed_at\":\"2026-05-25T17:50:07.426655+00:00\",\"processing_job_id\":\"66019083-e472-45eb-9907-9530c149c85f\",\"customer_profile_id\":\"b565c0c0-6cc8-447c-8cb2-4d4ddf7e3161\",\"customer_email\":\"el***@example-audit.test\",\"customer_name\":\"E*** H***\",\"order_value\":199.99,\"reason\":\"Payment card\"},{\"id\":\"f0bcf4d9-63f5-4de4-8061-dd193f1e7090\",\"order_id\":\"UNA-A-1006\",\"identity_score\":92,\"identity_confidence_grade\":\"definite\",\"match_status\":\"definite\",\"processed_at\":\"2026-05-25T17:50:07.426655+00:00\",\"processing_job_id\":\"66019083-e472-45eb-9907-9530c149c85f\",\"customer_profile_id\":\"1e07b59b-ab15-4404-b6c3-2a516a21e007\",\"customer_email\":\"fr***@"
+    }
+  ],
+  "console": [
+    {
+      "label": "logged-out",
+      "type": "error",
+      "url": "http://localhost:3000/login",
+      "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    },
+    {
+      "label": "A",
+      "type": "log",
+      "url": "http://localhost:3000/upload",
+      "text": "[Analytics] CSV Uploaded {uploadType: standard, hasLabel: true, hasDateRange: true, dataQualityGrade: rich}"
+    },
+    {
+      "label": "A",
+      "type": "warning",
+      "url": "http://localhost:3000/global",
+      "text": "[React Flow]: It looks like you've created a new nodeTypes or edgeTypes object. If this wasn't on purpose please define the nodeTypes/edgeTypes outside of the component or memoize them. Help: https://reactflow.dev/error#002"
+    },
+    {
+      "label": "A",
+      "type": "warning",
+      "url": "http://localhost:3000/global",
+      "text": "[React Flow]: It looks like you've created a new nodeTypes or edgeTypes object. If this wasn't on purpose please define the nodeTypes/edgeTypes outside of the component or memoize them. Help: https://reactflow.dev/error#002"
+    },
+    {
+      "label": "A",
+      "type": "warning",
+      "url": "http://localhost:3000/global",
+      "text": "[React Flow]: It looks like you've created a new nodeTypes or edgeTypes object. If this wasn't on purpose please define the nodeTypes/edgeTypes outside of the component or memoize them. Help: https://reactflow.dev/error#002"
+    },
+    {
+      "label": "A",
+      "type": "warning",
+      "url": "http://localhost:3000/global",
+      "text": "[React Flow]: It looks like you've created a new nodeTypes or edgeTypes object. If this wasn't on purpose please define the nodeTypes/edgeTypes outside of the component or memoize them. Help: https://reactflow.dev/error#002"
+    },
+    {
+      "label": "B",
+      "type": "log",
+      "url": "http://localhost:3000/upload",
+      "text": "[Analytics] CSV Uploaded {uploadType: standard, hasLabel: true, hasDateRange: true, dataQualityGrade: rich}"
+    },
+    {
+      "label": "B",
+      "type": "warning",
+      "url": "http://localhost:3000/global",
+      "text": "[React Flow]: It looks like you've created a new nodeTypes or edgeTypes object. If this wasn't on purpose please define the nodeTypes/edgeTypes outside of the component or memoize them. Help: https://reactflow.dev/error#002"
+    },
+    {
+      "label": "B",
+      "type": "warning",
+      "url": "http://localhost:3000/global",
+      "text": "[React Flow]: It looks like you've created a new nodeTypes or edgeTypes object. If this wasn't on purpose please define the nodeTypes/edgeTypes outside of the component or memoize them. Help: https://reactflow.dev/error#002"
+    },
+    {
+      "label": "B",
+      "type": "warning",
+      "url": "http://localhost:3000/global",
+      "text": "[React Flow]: It looks like you've created a new nodeTypes or edgeTypes object. If this wasn't on purpose please define the nodeTypes/edgeTypes outside of the component or memoize them. Help: https://reactflow.dev/error#002"
+    },
+    {
+      "label": "B",
+      "type": "warning",
+      "url": "http://localhost:3000/global",
+      "text": "[React Flow]: It looks like you've created a new nodeTypes or edgeTypes object. If this wasn't on purpose please define the nodeTypes/edgeTypes outside of the component or memoize them. Help: https://reactflow.dev/error#002"
+    },
+    {
+      "label": "B",
+      "type": "error",
+      "url": "http://localhost:3000/audit/66019083-e472-45eb-9907-9530c149c85f",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "label": "A",
+      "type": "error",
+      "url": "http://localhost:3000/audit/ce912b37-0f99-4775-a775-a240b4f75406",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "label": "B",
+      "type": "error",
+      "url": "http://localhost:3000/audit/66019083-e472-45eb-9907-9530c149c85f",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "label": "A",
+      "type": "error",
+      "url": "http://localhost:3000/audit/ce912b37-0f99-4775-a775-a240b4f75406",
+      "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    },
+    {
+      "label": "A",
+      "type": "error",
+      "url": "http://localhost:3000/upload",
+      "text": "Failed to load resource: the server responded with a status of 409 (Conflict)"
+    },
+    {
+      "label": "A",
+      "type": "log",
+      "url": "http://localhost:3000/upload",
+      "text": "[Analytics] CSV Uploaded {uploadType: standard, hasLabel: true, hasDateRange: true, dataQualityGrade: minimal}"
+    },
+    {
+      "label": "B",
+      "type": "error",
+      "url": "http://localhost:3000/settings/account",
+      "text": "Failed to load resource: the server responded with a status of 403 ()"
+    },
+    {
+      "label": "A",
+      "type": "error",
+      "url": "http://localhost:3000/settings/account",
+      "text": "Failed to load resource: the server responded with a status of 403 ()"
+    }
+  ],
+  "network": [
+    {
+      "label": "logged-out",
+      "type": "http-error",
+      "url": "http://localhost:3000/api/watchlist",
+      "status": 401,
+      "method": "GET"
+    },
+    {
+      "label": "B",
+      "type": "http-error",
+      "url": "http://localhost:3000/audit/66019083-e472-45eb-9907-9530c149c85f",
+      "status": 404,
+      "method": "GET"
+    },
+    {
+      "label": "A",
+      "type": "http-error",
+      "url": "http://localhost:3000/audit/ce912b37-0f99-4775-a775-a240b4f75406",
+      "status": 404,
+      "method": "GET"
+    },
+    {
+      "label": "B",
+      "type": "http-error",
+      "url": "http://localhost:3000/api/audit/66019083-e472-45eb-9907-9530c149c85f/progress",
+      "status": 404,
+      "method": "GET"
+    },
+    {
+      "label": "A",
+      "type": "http-error",
+      "url": "http://localhost:3000/api/audit/ce912b37-0f99-4775-a775-a240b4f75406/progress",
+      "status": 404,
+      "method": "GET"
+    },
+    {
+      "label": "A",
+      "type": "http-error",
+      "url": "http://localhost:3000/api/audit",
+      "status": 409,
+      "method": "POST"
+    },
+    {
+      "label": "B",
+      "type": "http-error",
+      "url": "https://lquvbikyvmbjbfffrlky.supabase.co/auth/v1/logout?scope=global",
+      "status": 403,
+      "method": "POST"
+    },
+    {
+      "label": "A",
+      "type": "http-error",
+      "url": "https://lquvbikyvmbjbfffrlky.supabase.co/auth/v1/logout?scope=global",
+      "status": 403,
+      "method": "POST"
+    }
+  ],
+  "screenshots": [
+    "screenshots/readiness-2026-05-25T17-49-05-366Z/A-01-login.png",
+    "screenshots/readiness-2026-05-25T17-49-05-366Z/A-02-after-signup.png",
+    "screenshots/readiness-2026-05-25T17-49-05-366Z/A-03-onboarding-gate.png",
+    "screenshots/readiness-2026-05-25T17-49-05-366Z/A-04-upload-empty.png",
+    "screenshots/readiness-2026-05-25T17-49-05-366Z/A-routes-empty.png",
+    "screenshots/readiness-2026-05-25T17-49-05-366Z/A-upload-invalid-empty-csv-selected.png",
+    "screenshots/readiness-2026-05-25T17-49-05-366Z/A-upload-not-really-csv-csv-selected.png",
+    "screenshots/readiness-2026-05-25T17-49-05-366Z/A-upload-invalid-missing-required-csv-selected.png",
+    "screenshots/readiness-2026-05-25T17-49-05-366Z/A-upload-invalid-headers-only-csv-selected.png",
+    "screenshots/readiness-2026-05-25T17-49-05-366Z/A-upload-invalid-formula-script-csv-selected.png",
+    "screenshots/readiness-2026-05-25T17-49-05-366Z/A-upload-messy-realistic-csv-selected.png",
+    "screenshots/readiness-2026-05-25T17-49-05-366Z/A-upload-merchant-a-valid-csv-selected.png",
+    "screenshots/readiness-2026-05-25T17-49-05-366Z/A-upload-merchant-a-valid-csv-context.png",
+    "screenshots/readiness-2026-05-25T17-49-05-366Z/A-upload-merchant-a-valid-csv-complete.png",
+    "screenshots/readiness-2026-05-25T17-49-05-366Z/A-routes-after-valid-upload.png",
+    "screenshots/readiness-2026-05-25T17-49-05-366Z/A-mobile-dashboard.png",
+    "screenshots/readiness-2026-05-25T17-49-05-366Z/A-mobile-upload.png",
+    "screenshots/readiness-2026-05-25T17-49-05-366Z/B-01-login.png",
+    "screenshots/readiness-2026-05-25T17-49-05-366Z/B-02-after-signup.png",
+    "screenshots/readiness-2026-05-25T17-49-05-366Z/B-03-onboarding-gate.png",
+    "screenshots/readiness-2026-05-25T17-49-05-366Z/B-04-upload-empty.png",
+    "screenshots/readiness-2026-05-25T17-49-05-366Z/B-upload-merchant-b-valid-csv-selected.png",
+    "screenshots/readiness-2026-05-25T17-49-05-366Z/B-upload-merchant-b-valid-csv-context.png",
+    "screenshots/readiness-2026-05-25T17-49-05-366Z/B-upload-merchant-b-valid-csv-complete.png",
+    "screenshots/readiness-2026-05-25T17-49-05-366Z/B-routes-after-valid-upload.png",
+    "screenshots/readiness-2026-05-25T17-49-05-366Z/B-tenant-B-visiting-A-audit-page.png",
+    "screenshots/readiness-2026-05-25T17-49-05-366Z/A-tenant-A-visiting-B-audit-page.png",
+    "screenshots/readiness-2026-05-25T17-49-05-366Z/A-upload-merchant-a-valid-csv-selected.png",
+    "screenshots/readiness-2026-05-25T17-49-05-366Z/A-upload-merchant-a-valid-csv-context.png",
+    "screenshots/readiness-2026-05-25T17-49-05-366Z/A-upload-merchant-a-valid-csv-error.png",
+    "screenshots/readiness-2026-05-25T17-49-05-366Z/A-upload-merchant-a-valid-csv-error.png",
+    "screenshots/readiness-2026-05-25T17-49-05-366Z/A-upload-merchant-a-valid-csv-error.png",
+    "screenshots/readiness-2026-05-25T17-49-05-366Z/A-upload-merchant-a-valid-csv-error.png",
+    "screenshots/readiness-2026-05-25T17-49-05-366Z/A-upload-merchant-a-valid-csv-error.png",
+    "screenshots/readiness-2026-05-25T17-49-05-366Z/A-upload-merchant-a-valid-csv-error.png",
+    "screenshots/readiness-2026-05-25T17-49-05-366Z/A-upload-merchant-a-valid-csv-error.png",
+    "screenshots/readiness-2026-05-25T17-49-05-366Z/A-upload-merchant-a-valid-csv-error.png",
+    "screenshots/readiness-2026-05-25T17-49-05-366Z/A-upload-merchant-a-valid-csv-error.png",
+    "screenshots/readiness-2026-05-25T17-49-05-366Z/A-upload-merchant-a-valid-csv-error.png",
+    "screenshots/readiness-2026-05-25T17-49-05-366Z/A-upload-merchant-a-valid-csv-error.png",
+    "screenshots/readiness-2026-05-25T17-49-05-366Z/A-upload-merchant-a-valid-csv-error.png",
+    "screenshots/readiness-2026-05-25T17-49-05-366Z/A-upload-merchant-a-valid-csv-error.png",
+    "screenshots/readiness-2026-05-25T17-49-05-366Z/A-upload-merchant-a-valid-csv-error.png",
+    "screenshots/readiness-2026-05-25T17-49-05-366Z/A-upload-merchant-a-valid-csv-error.png",
+    "screenshots/readiness-2026-05-25T17-49-05-366Z/A-upload-guardrail-26-rows-csv-selected.png",
+    "screenshots/readiness-2026-05-25T17-49-05-366Z/A-upload-guardrail-26-rows-csv-context.png",
+    "screenshots/readiness-2026-05-25T17-49-05-366Z/A-upload-guardrail-26-rows-csv-complete.png"
+  ],
+  "storage": {
+    "A-empty": {
+      "localStorage": {
+        "unauth.theme": "light"
+      },
+      "sessionStorage": {},
+      "cookieNames": [
+        "sb-lquvbikyvmbjbfffrlky-auth-token.0",
+        "sb-lquvbikyvmbjbfffrlky-auth-token.1"
+      ]
+    },
+    "B-after-upload": {
+      "localStorage": {
+        "unauth.theme": "light"
+      },
+      "sessionStorage": {},
+      "cookieNames": [
+        "sb-lquvbikyvmbjbfffrlky-auth-token.0",
+        "sb-lquvbikyvmbjbfffrlky-auth-token.1"
+      ]
+    },
+    "A-after-all": {
+      "localStorage": {
+        "unauth.theme": "light"
+      },
+      "sessionStorage": {},
+      "cookieNames": [
+        "sb-lquvbikyvmbjbfffrlky-auth-token.0",
+        "sb-lquvbikyvmbjbfffrlky-auth-token.1"
+      ]
+    }
+  },
+  "accessibility": [
+    {
+      "key": "A",
+      "page": "/upload",
+      "activeAfterTabs": {
+        "tag": "BUTTON",
+        "text": "",
+        "aria": "Switch to dark mode",
+        "outline": "solid"
+      }
+    }
+  ],
+  "performance": [],
+  "cleanup": [
+    {
+      "key": "B",
+      "attempted": true,
+      "finalURL": "http://localhost:3000/login?deleted=1",
+      "text": "Unauth\nEMAIL ADDRESS\nPASSWORD\nForgot password?\nSIGN IN\n\nDon't have an account? Request access\n\nBy signing in, you agree to use Unauth for authorised investigations only."
+    },
+    {
+      "key": "A",
+      "attempted": true,
+      "finalURL": "http://localhost:3000/login?deleted=1",
+      "text": "Unauth\nEMAIL ADDRESS\nPASSWORD\nForgot password?\nSIGN IN\n\nDon't have an account? Request access\n\nBy signing in, you agree to use Unauth for authorised investigations only."
+    }
+  ],
+  "completedAt": "2026-05-25T17:53:00.422Z"
+}

@@ -1,0 +1,104 @@
+{
+  "email": "codex-readiness-c-1779730525341@example.com",
+  "runId": "e10d6ca3-e696-47b7-b5d3-bac895559fde",
+  "exportInfo": {
+    "suggested": "audit-e10d6ca3.csv",
+    "path": "/Users/malikibrahim/Downloads/Unauth/screenshots/readiness-2026-05-25T17-28-22-791Z/C-export-audit-e10d6ca3.csv",
+    "bytes": 7573,
+    "sample": "order_id,processed_at,order_value,match_status,identity_match_score,identity_match_grade,cluster_id,candidate_cluster_id,confirmed_identity_id,customer_email,customer_name,matched_datapoints,changed_datapoints,evidence_summary,identity_evidence,context_flags,context_summary,recommended_review_reason,identity_score,identity_confidence_grade,signals_matched\nUNA-B-2008,2026-05-25T17:35:36.64616+00:00,49.99,none,,,,,,hugo.clean.b@example-audit.test,Hugo Field,,,,[],,,,,,\nUNA-B-2009,2026-05-25T17:35:36.64616+00:00,84,none,,,,,,ivana.clean.b@example-audit.test,Ivana Lane,,,,[],,,,,,\nUNA-B-2002,2026-05-25T17:35:36.64616+00:00,64.95,none,,,,,,bryn.clean.b@example-audit.test,Bryn Fox,,,,[],,,,,,\nUNA-B-2003,2026-05-25T17:35:36.64616+00:00,112,none,,,,,,cora.clean.b@example-audit.test,Cora West,,,,[],,,,,,\nUNA-B-2004,2026-05-25T17:35:36.64616+00:00,56.5,none,,,,,,dan.clean.b@example-audit.test,Dan Black,,,,[],,,,,,\nUNA-B-2007,2026-05-25T17:35:36.64616+00:00,192,definite,97,confirmed,3eb03483-1a00-4c0e-deae-2d823583508e,3eb03483-1a00-4c0e-deae-2d823583508e,3eb03483-1a00-4c0e-deae-2d823583508e,gina.pattern.b@example-audit.test,Gina Mars,same device fingerprint; same card fingerprint; same shipping address; same postcode; same IP address; same customer name,different account ID; different phone number; new email surface form,\"High-confidence same customer: same device fingerprint, same card fingerprint, same shipping address, same postcode, same IP address and same customer name match prio",
+    "hasFullEmail": true,
+    "hasOrderIds": true
+  },
+  "logs": [
+    {
+      "type": "log",
+      "text": "[HMR] connected",
+      "url": "http://localhost:3000/login"
+    },
+    {
+      "type": "log",
+      "text": "[HMR] connected",
+      "url": "http://localhost:3000/onboarding"
+    },
+    {
+      "type": "log",
+      "text": "[HMR] connected",
+      "url": "http://localhost:3000/upload"
+    },
+    {
+      "type": "log",
+      "text": "[Analytics] CSV Uploaded {uploadType: standard, hasLabel: true, hasDateRange: true, dataQualityGrade: rich}",
+      "url": "http://localhost:3000/upload"
+    },
+    {
+      "type": "log",
+      "text": "[Fast Refresh] rebuilding",
+      "url": "http://localhost:3000/audit/e10d6ca3-e696-47b7-b5d3-bac895559fde"
+    },
+    {
+      "type": "log",
+      "text": "[Fast Refresh] done in 112ms",
+      "url": "http://localhost:3000/audit/e10d6ca3-e696-47b7-b5d3-bac895559fde"
+    },
+    {
+      "type": "log",
+      "text": "[Fast Refresh] rebuilding",
+      "url": "http://localhost:3000/audit/e10d6ca3-e696-47b7-b5d3-bac895559fde"
+    },
+    {
+      "type": "log",
+      "text": "[Fast Refresh] done in 1314ms",
+      "url": "http://localhost:3000/audit/e10d6ca3-e696-47b7-b5d3-bac895559fde"
+    },
+    {
+      "type": "log",
+      "text": "[Fast Refresh] rebuilding",
+      "url": "http://localhost:3000/audit/e10d6ca3-e696-47b7-b5d3-bac895559fde"
+    },
+    {
+      "type": "log",
+      "text": "[Fast Refresh] done in 169ms",
+      "url": "http://localhost:3000/audit/e10d6ca3-e696-47b7-b5d3-bac895559fde"
+    },
+    {
+      "type": "log",
+      "text": "[Fast Refresh] rebuilding",
+      "url": "http://localhost:3000/audit/e10d6ca3-e696-47b7-b5d3-bac895559fde"
+    },
+    {
+      "type": "log",
+      "text": "[Fast Refresh] done in 222ms",
+      "url": "http://localhost:3000/audit/e10d6ca3-e696-47b7-b5d3-bac895559fde"
+    },
+    {
+      "type": "log",
+      "text": "[HMR] connected",
+      "url": "http://localhost:3000/customers/7a28a142-2bf2-4b9f-8acf-a7998eb48d7f"
+    },
+    {
+      "type": "log",
+      "text": "[Fast Refresh] rebuilding",
+      "url": "http://localhost:3000/customers/7a28a142-2bf2-4b9f-8acf-a7998eb48d7f"
+    },
+    {
+      "type": "log",
+      "text": "[Fast Refresh] done in 105ms",
+      "url": "http://localhost:3000/customers/7a28a142-2bf2-4b9f-8acf-a7998eb48d7f"
+    }
+  ],
+  "net": [],
+  "storage": {
+    "local": {
+      "unauth.theme": "light"
+    },
+    "session": {},
+    "cookies": [
+      "sb-lquvbikyvmbjbfffrlky-auth-token.0",
+      "sb-lquvbikyvmbjbfffrlky-auth-token.1"
+    ]
+  },
+  "deleteResult": {
+    "status": 200,
+    "text": "{\"ok\":true}"
+  }
+}

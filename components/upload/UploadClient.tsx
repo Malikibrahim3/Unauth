@@ -32,9 +32,18 @@ interface BatchItem {
   error: string | null;
 }
 
+type DuplicateWarning = {
+  existingRunId: string;
+  existingFilename: string;
+  existingLabel: string | null;
+  existingCreatedAt: string;
+  existingStatus: string;
+};
+
 type FilePreflightResult = {
   ok: boolean;
   message?: string;
+  warnings?: string[];
 };
 
 const CSV_TEMPLATE_HEADERS =
@@ -94,6 +103,7 @@ export default function UploadClient() {
   const [runId, setRunId] = useState<string | null>(null);
   const [friendlyError, setFriendlyError] = useState<FriendlyError | null>(null);
   const [rawErrorDetail, setRawErrorDetail] = useState<string | null>(null);
+  const [uploadWarnings, setUploadWarnings] = useState<string[]>([]);
   const [showErrorDetail, setShowErrorDetail] = useState(false);
   const [canRecover, setCanRecover] = useState(false);
   const [uploadLabel, setUploadLabel] = useState('');
@@ -101,13 +111,7 @@ export default function UploadClient() {
   const [dateRangeEnd, setDateRangeEnd] = useState('');
   const [uploadType, setUploadType] = useState<UploadType>('standard');
   const [fileHash, setFileHash] = useState<string | null>(null);
-  const [duplicateWarning, setDuplicateWarning] = useState<{
-    existingRunId: string;
-    existingFilename: string;
-    existingLabel: string | null;
-    existingCreatedAt: string;
-    existingStatus: string;
-  } | null>(null);
+  const [duplicateWarning, setDuplicateWarning] = useState<DuplicateWarning | null>(null);
   // Batch upload queue — populated when user drops/selects multiple files
   const [batchQueue, setBatchQueue] = useState<BatchItem[]>([]);
   const [batchRunning, setBatchRunning] = useState(false);
@@ -138,11 +142,12 @@ export default function UploadClient() {
     setDataQuality(null);
     setState('error');
     setCanRecover(false);
+    setUploadWarnings([]);
     setRawErrorDetail(message);
     setFriendlyError(friendlyUploadError(message));
   }
 
-  function validateCsvFile(fileToCheck: File, headers: string[]): FilePreflightResult {
+  async function validateCsvFile(fileToCheck: File, headers: string[]): Promise<FilePreflightResult> {
     const lowerName = fileToCheck.name.toLowerCase();
     const looksLikeCsv = lowerName.endsWith('.csv') || fileToCheck.type === 'text/csv' || fileToCheck.type === 'application/vnd.ms-excel';
     if (!looksLikeCsv) {
@@ -160,7 +165,46 @@ export default function UploadClient() {
     if (normalizedHeaders.length === 1 && !normalizedHeaders[0].includes(',')) {
       return { ok: false, message: 'This file does not look like a CSV export. Please upload a comma-separated CSV.' };
     }
-    return { ok: true };
+    const sampleText = await fileToCheck.slice(0, 64 * 1024).text();
+    const rows = sampleText
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0);
+    if (rows.length < 2) {
+      return { ok: false, message: 'This CSV has a header row but no order rows. Please upload a file with at least one order.' };
+    }
+    const dangerousCell = rows
+      .slice(1, 51)
+      .some((line) => line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).some((cell) => /^[=+\-@\t\r]/.test(cell.trim().replace(/^"+|"+$/g, ''))));
+    return {
+      ok: true,
+      warnings: dangerousCell
+        ? ['Some cells look like spreadsheet formulas. We will treat them as plain text in exports.']
+        : undefined,
+    };
+  }
+
+  async function checkDuplicateFile(hash: string): Promise<DuplicateWarning | null> {
+    const res = await fetch('/api/audit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ checkDuplicateOnly: true, fileHash: hash }),
+    });
+    if (res.status === 409) {
+      const body = await res.json();
+      return {
+        existingRunId: body.existingRunId,
+        existingFilename: body.existingFilename,
+        existingLabel: body.existingLabel,
+        existingCreatedAt: body.existingCreatedAt,
+        existingStatus: body.existingStatus,
+      };
+    }
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.error ?? `HTTP ${res.status} checking duplicate upload`);
+    }
+    return null;
   }
 
   // Compute SHA-256 hash for a file
@@ -170,20 +214,6 @@ export default function UploadClient() {
     return Array.from(new Uint8Array(hashBuf))
       .map((b) => b.toString(16).padStart(2, '0'))
       .join('');
-  }
-
-  function startProcessing(runIdToStart: string, totalChunks: number, storagePath: string) {
-    void fetch(`/api/audit/${runIdToStart}/start`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        totalChunks,
-        columnMap,
-        storagePath,
-      }),
-    }).catch((err) => {
-      console.error('[UploadClient] failed to start processing:', err);
-    });
   }
 
   // Handle multiple files — build batch queue, map headers from first file
@@ -231,10 +261,13 @@ export default function UploadClient() {
 
     // Sniff first file for column mapping
     const { headers, collisions } = await sniffFile(csvFiles[0]);
-    const preflight = validateCsvFile(csvFiles[0], headers);
+    const preflight = await validateCsvFile(csvFiles[0], headers);
     if (!preflight.ok) {
       failPreflight(preflight.message ?? 'Invalid CSV upload.');
       return;
+    }
+    if (preflight.warnings?.length) {
+      setUploadWarnings(preflight.warnings);
     }
     if (collisions.length > 0) console.warn('[UploadClient] batch header collisions:', collisions);
     setCsvHeaders(headers);
@@ -251,6 +284,7 @@ export default function UploadClient() {
     setFile(f);
     setBatchQueue([]);
     setDuplicateWarning(null);
+    setUploadWarnings([]);
     // Compute SHA-256 for duplicate-upload detection
     f.arrayBuffer().then((buf) =>
       crypto.subtle.digest('SHA-256', buf).then((hashBuf) => {
@@ -262,11 +296,14 @@ export default function UploadClient() {
     );
     // Use sniffFile for robust BOM stripping, delimiter detection, and
     // quoted-field-aware header tokenisation (instead of a naive comma-split).
-    sniffFile(f).then(({ headers, collisions }) => {
-      const preflight = validateCsvFile(f, headers);
+    sniffFile(f).then(async ({ headers, collisions }) => {
+      const preflight = await validateCsvFile(f, headers);
       if (!preflight.ok) {
         failPreflight(preflight.message ?? 'Invalid CSV upload.');
         return;
+      }
+      if (preflight.warnings?.length) {
+        setUploadWarnings(preflight.warnings);
       }
       if (collisions.length > 0) {
         console.warn(
@@ -321,6 +358,7 @@ export default function UploadClient() {
     setStatusText(`Uploading — ${(file.size / 1024 / 1024).toFixed(1)} MB…`);
     setFriendlyError(null);
     setRawErrorDetail(null);
+    setUploadWarnings([]);
     setShowErrorDetail(false);
     try {
       const supabase = createClient();
@@ -328,7 +366,19 @@ export default function UploadClient() {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
+      const hash = fileHash ?? await hashFile(file);
+      setFileHash(hash);
+      if (!forceReupload) {
+        setStatusText('Checking for duplicate uploads…');
+        const duplicate = await checkDuplicateFile(hash);
+        if (duplicate) {
+          setState('context');
+          setDuplicateWarning(duplicate);
+          return;
+        }
+      }
       const filePath = `${user.id}/${Date.now()}_${file.name}`;
+      let uploadedToStorage = false;
 
       // Use TUS resumable upload for files > 6 MB — the default Supabase
       // single-PUT upload silently fails on large bodies behind some CDNs.
@@ -351,6 +401,7 @@ export default function UploadClient() {
           JSON.stringify(uploadError);
         throw new Error(`Storage upload failed: ${detail}`);
       }
+      uploadedToStorage = true;
       setStatusText('Uploaded — starting analysis…');
       const res = await fetch('/api/audit', {
         method: 'POST',
@@ -362,7 +413,7 @@ export default function UploadClient() {
           dateRangeStart: dateRangeStart || undefined,
           dateRangeEnd: dateRangeEnd || undefined,
           uploadType,
-          fileHash: fileHash ?? undefined,
+          fileHash: hash,
           forceReupload,
         }),
       });
@@ -381,13 +432,15 @@ export default function UploadClient() {
       }
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
+        if (uploadedToStorage) {
+          await supabase.storage.from('merchant-csv-uploads-2').remove([filePath]).catch(() => {});
+        }
         throw new Error(body.error ?? `HTTP ${res.status} from /api/audit`);
       }
-      const { runId: newRunId, totalChunks } = await res.json();
+      const { runId: newRunId } = await res.json();
       setRunId(newRunId);
       setState('processing');
       setStatusText('Queued for processing…');
-      startProcessing(newRunId, totalChunks, filePath);
       track('CSV Uploaded', {
         uploadType,
         hasLabel: !!uploadLabel.trim(),
@@ -473,13 +526,25 @@ export default function UploadClient() {
       if (item.status !== 'queued') continue;
       updateItem(item.id, { status: 'uploading', statusText: `Uploading ${(item.file.size / 1024 / 1024).toFixed(1)} MB…` });
       try {
+        const hash = item.hash ?? await hashFile(item.file);
+        updateItem(item.id, { hash });
+        const duplicate = await checkDuplicateFile(hash);
+        if (duplicate) {
+          updateItem(item.id, {
+            status: 'error',
+            statusText: 'Duplicate file',
+            error: `Already uploaded as ${duplicate.existingLabel ?? duplicate.existingFilename}`,
+          });
+          continue;
+        }
         const filePath = `${user.id}/${Date.now()}_${item.file.name}`;
+        let uploadedToStorage = false;
         const { error: uploadError } = await supabase.storage
           .from('merchant-csv-uploads-2')
           .upload(filePath, item.file, { contentType: 'text/csv', upsert: false, cacheControl: '3600' });
         if (uploadError) throw new Error((uploadError as any).message ?? JSON.stringify(uploadError));
+        uploadedToStorage = true;
 
-        const hash = item.hash ?? await hashFile(item.file);
         const res = await fetch('/api/audit', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -496,11 +561,13 @@ export default function UploadClient() {
         });
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
+          if (uploadedToStorage) {
+            await supabase.storage.from('merchant-csv-uploads-2').remove([filePath]).catch(() => {});
+          }
           throw new Error(body.error ?? `HTTP ${res.status}`);
         }
-        const { runId: newRunId, totalChunks } = await res.json();
+        const { runId: newRunId } = await res.json();
         updateItem(item.id, { status: 'processing', statusText: 'Processing…', runId: newRunId });
-        startProcessing(newRunId, totalChunks, filePath);
         track('CSV Uploaded', { uploadType, hasLabel: !!uploadLabel.trim(), hasDateRange: !!(dateRangeStart || dateRangeEnd), dataQualityGrade: dataQuality?.grade ?? null });
         await pollItem(item.id, newRunId);
       } catch (err) {
@@ -602,6 +669,7 @@ export default function UploadClient() {
     setStatusText('Recovering — finalising your audit…');
     setFriendlyError(null);
     setRawErrorDetail(null);
+    setUploadWarnings([]);
     try {
       const res = await fetch(`/api/audit/${runId}/recover`, { method: 'POST' });
       const body = await res.json().catch(() => ({}));
@@ -1368,6 +1436,22 @@ export default function UploadClient() {
               <p className="mt-1" style={{ color: 'var(--text-muted)' }}>
                 Want to run it again anyway?
               </p>
+            </div>
+          )}
+
+          {uploadWarnings.length > 0 && (
+            <div
+              className="rounded-lg border px-4 py-3 text-sm"
+              style={{ background: 'var(--bg-subtle)', borderColor: 'var(--border)' }}
+            >
+              <p className="font-semibold" style={{ color: 'var(--text)' }}>
+                Review before processing
+              </p>
+              <ul className="mt-1 list-disc space-y-1 pl-5" style={{ color: 'var(--text-muted)' }}>
+                {uploadWarnings.map((warning) => (
+                  <li key={warning}>{warning}</li>
+                ))}
+              </ul>
             </div>
           )}
 

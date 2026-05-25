@@ -59,15 +59,15 @@ export default function LandingPage() {
     },
     {
       q: 'How do you get data from other merchants?',
-      a: "Every merchant who runs an audit contributes anonymised, hashed identity signals to the shared graph. No raw customer data, no PII in clear text — everything is hashed client-side before it leaves your system. You benefit from every other merchant's history, and they benefit from yours. The network gets more valuable with every participant.",
+      a: "Every merchant who runs an audit contributes anonymised, hashed identity signals to the shared graph. Raw customer records remain scoped to the uploading merchant, and cross-merchant matching exposes aggregate k-safe signals rather than another merchant's customer list. You benefit from every other merchant's history, and they benefit from yours.",
     },
     {
       q: "Can you see my customers' data?",
-      a: "No. PII is hashed on your side before upload using HMAC-SHA256. We receive hashed signals, not names, emails, or addresses in readable form. We cannot reverse the hash, we cannot read your customer list, and we cannot sell or expose it. The audit report you receive shows you the patterns — not the underlying data of other merchants.",
+      a: "Your raw upload is processed inside your merchant workspace and is not exposed to other merchants. Network comparison uses HMAC-SHA256 identifiers, k-anonymity gates, and masked outputs so reports show relevant risk patterns without revealing another merchant's customer records.",
     },
     {
       q: 'Is this GDPR compliant?',
-      a: 'Yes. Because PII is hashed client-side before upload and we never store raw customer data, we are not a data processor of personal information under GDPR. The hashed signals we store cannot be used to identify any individual. We recommend reviewing our data processing documentation with your legal team if you operate in the EU.',
+      a: 'Unauth is designed around data minimisation, merchant-scoped processing, and hashed network signals. You should review the data processing documentation with your legal team before using live EU customer data.',
     },
     {
       q: 'Do I need to integrate anything?',

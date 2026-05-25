@@ -1,7 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient, createClient, createServiceClient } from '@/lib/supabase/server';
-import { TABLES } from '@/lib/supabase/tables';
+import { STORAGE_BUCKETS, TABLES } from '@/lib/supabase/tables';
 import { enforceRateLimit, limitFromEnv, rateLimitKey, getClientIp } from '@/lib/ratelimit';
+
+async function removeStoragePrefix(
+  service: ReturnType<typeof createServiceClient>,
+  bucket: string,
+  prefix: string
+) {
+  const paths: string[] = [];
+  const stack = [prefix];
+
+  while (stack.length > 0) {
+    const current = stack.pop()!;
+    const { data: objects, error } = await service.storage
+      .from(bucket)
+      .list(current, { limit: 1000 });
+    if (error) {
+      console.warn(`[account-delete] non-fatal storage list: ${bucket}/${current}:`, error.message);
+      continue;
+    }
+    for (const object of objects ?? []) {
+      const path = `${current}/${object.name}`;
+      if (object.id === null) {
+        stack.push(path);
+      } else {
+        paths.push(path);
+      }
+    }
+  }
+
+  for (let i = 0; i < paths.length; i += 100) {
+    const { error } = await service.storage.from(bucket).remove(paths.slice(i, i + 100));
+    if (error) {
+      console.warn(`[account-delete] non-fatal storage remove: ${bucket}:`, error.message);
+    }
+  }
+}
 
 export async function POST(request: NextRequest) {
   const limited = await enforceRateLimit(
@@ -32,6 +67,13 @@ export async function POST(request: NextRequest) {
   const merchantId = (merchant as { id?: string } | null)?.id ?? null;
 
   if (merchantId) {
+    // Remove raw uploaded CSVs and generated PDFs for this account. Database
+    // deletes alone leave source files in Storage, which is unacceptable for
+    // merchant data deletion.
+    for (const bucket of [STORAGE_BUCKETS.MERCHANT_CSV_UPLOADS, STORAGE_BUCKETS.EVIDENCE_PACKAGES]) {
+      await removeStoragePrefix(service, bucket, user.id);
+    }
+
     // Delete merchant data in dependency order.
     // Non-fatal failures are logged but don't block account deletion.
     const tables: string[] = [

@@ -1,0 +1,3 @@
+order_id,order_date,customer_email,customer_name,shipping_address,order_total,currency,order_status
+=CMD(),2026-05-01,formula@example-audit.test,"<script>alert(1)</script>","=HYPERLINK(""https://evil.example"")",+SUM(1,1),GBP,delivered
+@HYPERLINK("https://evil.example"),2026-05-02,formula2@example-audit.test,Formula Two,"<img src=x onerror=alert(1)>",999999999999999999999999,GBP,refunded
