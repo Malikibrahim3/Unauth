@@ -1009,7 +1009,7 @@ export default function LandingPage() {
             </p>
 
             {/* Three stats inline */}
-            <div className="grid grid-cols-3 gap-6 mt-7 pt-6" style={{ borderTop: '1px solid rgba(212,199,175,0.24)' }}>
+            <div className="grid grid-cols-1 min-[390px]:grid-cols-3 gap-4 min-[390px]:gap-6 mt-7 pt-6" style={{ borderTop: '1px solid rgba(212,199,175,0.24)' }}>
               {[
                 { v: 89,  prefix: '$', suffix: 'B', dec: 0, l: 'Lost annually to refund / INR fraud', n: 3 },
                 { v: 20,  prefix: '',  suffix: '%', dec: 0, l: 'Of DTC refund claims tied to repeat abusers', n: 4 },
@@ -1151,7 +1151,29 @@ export default function LandingPage() {
             </p>
           </Reveal>
           <Reveal delay={120}>
-            <div className="ua-hover-glow" style={{
+            <div className="grid grid-cols-2 gap-2 sm:hidden">
+              {[
+                ['£8.8k', 'exposure at risk'],
+                ['4', 'customers to review'],
+                ['292', 'transactions analysed'],
+                ['6', 'evidence packets ready'],
+              ].map(([value, label]) => (
+                <div
+                  key={label}
+                  style={{
+                    border: `1px solid ${t.border}`,
+                    background: t.paper,
+                    borderRadius: '6px',
+                    padding: '14px 13px',
+                    boxShadow: '0 10px 30px rgba(26,24,20,0.08)',
+                  }}
+                >
+                  <p style={{ fontFamily: t.sans, fontSize: '24px', lineHeight: 1, color: t.ink, margin: '0 0 8px', fontWeight: 500 }}>{value}</p>
+                  <p style={{ fontFamily: t.mono, fontSize: '9px', lineHeight: 1.45, letterSpacing: '0.08em', textTransform: 'uppercase', color: t.inkTertiary, margin: 0 }}>{label}</p>
+                </div>
+              ))}
+            </div>
+            <div className="ua-hover-glow hidden sm:block" style={{
               border: `1px solid ${t.border}`,
               borderRadius: '8px',
               overflow: 'hidden',
@@ -1279,8 +1301,6 @@ export default function LandingPage() {
               </span>
             );
           };
-          const iconLabel = (v: string) => v === 'yes' ? 'Included' : v === 'partial' ? 'Partial coverage' : 'Not included';
-
           return (
             <>
               {/* ── Desktop / tablet grid (hidden below sm) ── */}
@@ -1365,7 +1385,7 @@ export default function LandingPage() {
                 ))}
               </Reveal>
 
-              {/* ── Mobile stacked cards (hidden above sm) ── */}
+              {/* ── Mobile compact matrix (hidden above sm) ── */}
               <Reveal delay={120} className="sm:hidden ua-glass-card ua-hover-glow" style={{ border: `1px solid ${t.border}`, background: '#ffffff', overflow: 'hidden', boxShadow: '0 10px 36px rgba(0,0,0,0.14), 0 2px 6px rgba(0,0,0,0.07)' }}>
                 <div style={{ padding: '14px 18px', borderBottom: `1px solid ${t.border}`, display: 'flex', gap: '10px', flexWrap: 'wrap', fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10.5px', color: t.inkSecondary }}>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>{indicator('yes', true)} Included</span>
@@ -1377,50 +1397,40 @@ export default function LandingPage() {
                     key={`m-${i}`}
                     delay={60 + i * 50}
                     style={{
-                      padding: '16px 18px',
+                      padding: '15px 16px',
                       borderBottom: i < 7 ? `1px solid ${t.border}` : 'none',
                     }}
                   >
-                    <p style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '14px', color: t.ink, fontWeight: 500, marginBottom: '2px' }}>
+                    <p style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '14px', color: t.ink, fontWeight: 500, marginBottom: '3px', lineHeight: 1.3 }}>
                       {cap}
                     </p>
-                    <p style={{ fontFamily: 'var(--font-serif, serif)', fontStyle: 'italic', fontSize: '12px', color: t.inkTertiary, marginBottom: '12px' }}>
+                    <p style={{ fontFamily: 'var(--font-serif, serif)', fontStyle: 'italic', fontSize: '12px', color: t.inkTertiary, marginBottom: '10px', lineHeight: 1.35 }}>
                       {note}
                     </p>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '6px' }}>
                       {[
-                        { label: 'Blocklists', val: a },
-                        { label: 'Checkout scoring', val: b },
+                        { label: 'Lists', val: a },
+                        { label: 'Scoring', val: b },
                         { label: 'Unauth', val: c, highlight: true },
                       ].map(({ label, val, highlight }) => (
                         <div
                           key={label}
                           style={{
-                            display: 'grid',
-                            gridTemplateColumns: '1fr auto',
+                            minHeight: '58px',
+                            display: 'flex',
+                            flexDirection: 'column',
                             alignItems: 'center',
-                            padding: '8px 12px',
+                            justifyContent: 'center',
+                            gap: '6px',
+                            padding: '8px 6px',
                             background: highlight ? 'rgba(123,45,38,0.06)' : t.surfaceWarm,
                             border: `1px solid ${highlight ? t.accent : t.border}`,
                             borderRadius: '4px',
                           }}
                         >
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                            <span style={{
-                              fontFamily: 'var(--font-dm-sans, sans-serif)',
-                              fontSize: '13px',
-                              fontWeight: highlight ? 600 : 400,
-                              color: highlight ? t.accent : t.ink,
-                            }}>
-                              {label}
-                            </span>
-                            <span style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '11.5px', color: t.inkSecondary, lineHeight: 1.4 }}>
-                              {label === 'Blocklists' ? 'Flags known emails, IPs, or devices' : label === 'Checkout scoring' ? 'Scores orders before approval' : 'Finds post-purchase abuse across stores'}
-                            </span>
-                          </div>
-                          <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11px', color: t.inkSecondary }}>
-                            {indicator(val, Boolean(highlight))}
-                            <span style={{ color: t.inkTertiary }}>{iconLabel(val)}</span>
+                          {indicator(val, Boolean(highlight))}
+                          <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '9px', letterSpacing: '0.06em', textTransform: 'uppercase', color: highlight ? t.accent : t.inkTertiary, textAlign: 'center' }}>
+                            {label}
                           </span>
                         </div>
                       ))}

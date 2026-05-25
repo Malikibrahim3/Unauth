@@ -167,7 +167,38 @@ function MarqueeColumn({
 
 export default function HeroNotificationArtifact() {
   return (
-    <div className="relative flex h-[810px] w-full items-center justify-end overflow-hidden [perspective:1800px]">
+    <>
+    <div className="flex flex-col gap-3 sm:hidden">
+      {complaints.slice(0, 3).map((item, index) => (
+        <div
+          key={`${item.store}-${index}`}
+          style={{
+            background: 'rgba(22,21,16,0.96)',
+            border: '1px solid rgba(212,160,120,0.22)',
+            borderRadius: t.radius,
+            boxShadow: '0 18px 42px -28px rgba(0,0,0,0.7)',
+          }}
+        >
+          <div className="flex items-center justify-between px-3 py-2" style={{ borderBottom: '1px solid rgba(48,44,36,0.85)' }}>
+            <span style={{ fontFamily: t.mono, fontSize: '9px', letterSpacing: '0.1em', textTransform: 'uppercase', color: t.darkLabel }}>
+              {item.handle}
+            </span>
+            <span style={{ fontFamily: t.mono, fontSize: '8.5px', letterSpacing: '0.08em', textTransform: 'uppercase', color: t.accent, fontWeight: 600 }}>
+              {item.tone}
+            </span>
+          </div>
+          <p style={{ fontFamily: t.mono, fontSize: '10.5px', lineHeight: 1.6, color: t.bg, margin: 0, padding: '12px 12px 10px' }}>
+            {item.body}
+          </p>
+          <div className="px-3 pb-3">
+            <span style={{ fontFamily: t.mono, fontSize: '9px', letterSpacing: '0.08em', color: t.darkLabel }}>
+              {item.store}
+            </span>
+          </div>
+        </div>
+      ))}
+    </div>
+    <div className="ua-complaint-artifact relative hidden h-[810px] w-full items-center justify-end overflow-hidden [perspective:1800px] sm:flex">
       <style>{`
         @keyframes ua-complaints-scroll {
           from {
@@ -250,7 +281,7 @@ export default function HeroNotificationArtifact() {
       {/* Secondary cool-dark vignette to push depth */}
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_80%_at_50%_50%,transparent_40%,rgba(15,14,10,0.55)_100%)]" />
       <div
-        className="flex flex-row items-start gap-5"
+        className="ua-complaint-stack flex flex-row items-start gap-5"
         style={{
           transform:
             'translateX(543px) translateY(30px) translateZ(0) rotateX(9deg) rotateY(-10deg) rotateZ(5deg)',
@@ -268,5 +299,6 @@ export default function HeroNotificationArtifact() {
       <div className="pointer-events-none absolute inset-y-0 left-0 w-64 bg-gradient-to-r from-[var(--landing-dark-bg)] via-[var(--landing-dark-bg)]/80 to-transparent" />
       <div className="pointer-events-none absolute inset-y-0 right-0 w-36 bg-gradient-to-l from-[var(--landing-dark-bg)] via-[var(--landing-dark-bg)]/80 to-transparent" />
     </div>
+    </>
   );
 }

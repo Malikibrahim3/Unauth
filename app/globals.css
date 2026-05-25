@@ -1425,3 +1425,13 @@
     animation: none !important;
   }
 }
+
+@media (max-width: 640px) {
+  .ua-motion-ready .ua-reveal:not(.is-visible),
+  .ua-motion-ready .ua-reveal.is-visible {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+    will-change: auto !important;
+  }
+}

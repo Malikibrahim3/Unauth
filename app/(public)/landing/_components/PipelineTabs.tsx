@@ -302,10 +302,23 @@ export default function PipelineTabs() {
         @media (max-width: 900px) {
           .ua-pipeline-stage {
             grid-template-columns: 1fr !important;
+            height: auto !important;
+            gap: 18px !important;
           }
           .ua-pipeline-stage > div:first-child {
             border-right: none !important;
-            border-bottom: 1px solid var(--landing-line);
+          }
+          .ua-pipeline-stage .ua-artifact-enter {
+            aspect-ratio: 16 / 11;
+            min-height: 220px;
+          }
+        }
+        @media (max-width: 420px) {
+          .ua-pipeline-stage .ua-artifact-enter {
+            min-height: 190px;
+          }
+          .ua-step-content {
+            padding: 22px 18px !important;
           }
         }
         @keyframes ua-artifact-enter {
