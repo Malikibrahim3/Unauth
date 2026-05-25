@@ -64,6 +64,7 @@ export default function OnboardingClient({
   const [annualVolume, setAnnualVolume] = useState(initialAnnualVolume);
   const [primaryConcern, setPrimaryConcern] = useState(initialPrimaryConcern);
   const [loading, setLoading] = useState(false);
+  const [skipLoading, setSkipLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
 
@@ -92,6 +93,30 @@ export default function OnboardingClient({
     router.refresh();
   }
 
+  async function skipOnboarding() {
+    setSkipLoading(true);
+    setError('');
+    const response = await fetch('/api/account/setup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        storeName: storeName.trim() || undefined,
+        platform: platform || undefined,
+        monthlyOrderVolume: annualVolume || undefined,
+        primaryFraudConcern: primaryConcern || undefined,
+        setupComplete: true,
+      }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    setSkipLoading(false);
+    if (!response.ok) {
+      setError(payload.error ?? 'Could not skip setup right now. Please try again.');
+      return;
+    }
+    router.push('/dashboard');
+    router.refresh();
+  }
+
   const current = STEPS[activeStep];
   const CurrentIcon = current.icon;
   const canStart = !!storeName.trim() && !!platform && !!annualVolume && !!primaryConcern;
@@ -102,13 +127,15 @@ export default function OnboardingClient({
         <aside className="rounded-lg border p-4" style={{ background: 'var(--surface-raised)', borderColor: 'var(--surface-border)' }}>
           <div className="mb-6 flex items-start justify-between gap-3">
             <h1 className="t-heading" style={{ color: 'var(--ink-primary)' }}>First-run checklist</h1>
-            <Link
-              href="/dashboard"
-              className="inline-flex items-center rounded-md border px-2.5 py-1 text-xs transition-colors hover:bg-[var(--bg-hover)]"
+            <button
+              type="button"
+              onClick={skipOnboarding}
+              disabled={skipLoading || loading}
+              className="inline-flex items-center rounded-md border px-2.5 py-1 text-xs transition-colors hover:bg-[var(--bg-hover)] disabled:cursor-not-allowed disabled:opacity-70"
               style={{ color: 'var(--ink-secondary)', borderColor: 'var(--surface-border)', background: 'var(--surface-input)' }}
             >
-              Skip
-            </Link>
+              {skipLoading ? 'Skipping…' : 'Skip'}
+            </button>
           </div>
           <div className="mb-6">
             <p className="t-body mt-2" style={{ color: 'var(--ink-secondary)' }}>

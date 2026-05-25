@@ -40,7 +40,8 @@ export async function POST(request: NextRequest) {
     const email = user.email?.toLowerCase() ?? '';
     const domain = email.split('@')[1] ?? '';
     const isDemo = Boolean((user.user_metadata as Record<string, unknown> | undefined)?.is_demo);
-    if (!isDemo && (!domain || PERSONAL_EMAIL_DOMAINS.has(domain))) {
+    const isSkipAction = body.setupComplete === true;
+    if (!isSkipAction && !isDemo && (!domain || PERSONAL_EMAIL_DOMAINS.has(domain))) {
       return NextResponse.json(
         { error: 'Use a company email domain to complete merchant verification.' },
         { status: 403 }

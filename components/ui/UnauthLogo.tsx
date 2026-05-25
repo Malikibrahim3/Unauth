@@ -11,6 +11,7 @@ interface UnauthLogoProps {
     | 'mark';
   size?: number | 'nav' | 'footer' | 'display';
   className?: string;
+  compact?: boolean;
 }
 
 const SIZE_MAP = {
@@ -19,7 +20,7 @@ const SIZE_MAP = {
   display: 156,
 } as const;
 
-export function UnauthLogo({ variant = 'light', size = 'nav', className }: UnauthLogoProps) {
+export function UnauthLogo({ variant = 'light', size = 'nav', className, compact = false }: UnauthLogoProps) {
   const px = typeof size === 'number' ? size : SIZE_MAP[size];
   const normalized =
     variant === 'auto' ? '' :
@@ -29,6 +30,8 @@ export function UnauthLogo({ variant = 'light', size = 'nav', className }: Unaut
     'primary';
 
   const knownSizeClass =
+    px === 9 ? 's9' :
+    px === 10 ? 's10' :
     px === 12 ? 's12' :
     px === 18 ? 's18' :
     px === 22 ? 'nav' :
@@ -39,12 +42,12 @@ export function UnauthLogo({ variant = 'light', size = 'nav', className }: Unaut
 
   return (
     <span
-      className={['ua-mark', normalized, knownSizeClass, className].filter(Boolean).join(' ')}
+      className={['ua-mark', compact && 'compact', normalized, knownSizeClass, className].filter(Boolean).join(' ')}
       role="img"
       aria-label="Unauth."
       style={knownSizeClass && knownSizeClass !== 'display' ? undefined : { fontSize: `${px}px` }}
     >
-      <span className="word">Unauth</span>
+      {!compact && <span className="word">Unauth</span>}
       <span aria-hidden="true" className="dot" />
     </span>
   );

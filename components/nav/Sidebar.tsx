@@ -257,18 +257,25 @@ export default function Sidebar({
       {/* Logo / merchant */}
       <div
         className={cn(
-          'flex h-14 flex-shrink-0 items-center gap-2 px-3 border-b border-[var(--surface-border)]',
+          'flex flex-shrink-0 border-b border-[var(--surface-border)] px-3',
+          isCollapsed ? 'h-16 flex-col items-center justify-center gap-1 py-1.5' : 'h-14 items-center gap-2',
         )}
       >
-        <div className="flex min-w-0 flex-shrink-0 items-center justify-center">
-          <UnauthLogo variant="auto" size={isCollapsed ? 22 : 28} />
+        <div className="flex min-w-0 flex-shrink-0 items-baseline justify-center overflow-hidden leading-none translate-y-[-9%]">
+          <UnauthLogo
+            variant="auto"
+            size={isCollapsed ? 9 : 24}
+          />
         </div>
 
-        {!isCollapsed && (
-          <div className="min-w-0 flex-1">
-            {merchantName && (
-              <div className="text-caption text-[var(--ink-tertiary)] truncate leading-none">{merchantName}</div>
-            )}
+        {!isCollapsed ? (
+          <div className="min-w-0 flex flex-1 items-baseline -translate-x-[9%] -translate-y-[3%] truncate text-[20px] font-semibold text-[var(--ink-primary)] leading-none">
+            <span className="mx-1 inline-flex items-baseline self-baseline -translate-y-[14%] text-[14px] text-[var(--ink-tertiary)]">x</span>
+            <span className="truncate text-[var(--ink-secondary)]">{merchantName ?? ''}</span>
+          </div>
+        ) : (
+          <div className="w-full truncate text-center text-[9px] leading-none text-[var(--ink-tertiary)]">
+            {merchantName ?? ''}
           </div>
         )}
 
