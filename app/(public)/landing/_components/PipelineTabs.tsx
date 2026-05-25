@@ -138,7 +138,7 @@ export default function PipelineTabs() {
         >
 
             {/* ── Left: step nav + content (self-contained card) ── */}
-            <div style={{
+            <div className="ua-pipeline-control" style={{
               border: `1px solid ${t.line}`,
               borderRadius: '8px',
               overflow: 'hidden',
@@ -274,7 +274,7 @@ export default function PipelineTabs() {
             {/* ── Right: screenshot floats freely, no card ── */}
             <div
               key={active}
-              className="ua-artifact-enter"
+              className="ua-artifact-enter ua-pipeline-screenshot"
               style={{
                 opacity: fade ? 1 : 0,
                 transition: 'opacity 351ms',
@@ -301,24 +301,73 @@ export default function PipelineTabs() {
       <style>{`
         @media (max-width: 900px) {
           .ua-pipeline-stage {
+            display: flex !important;
+            flex-direction: column !important;
             grid-template-columns: 1fr !important;
             height: auto !important;
-            gap: 18px !important;
+            gap: 14px !important;
           }
-          .ua-pipeline-stage > div:first-child {
+          .ua-pipeline-control {
+            order: 2;
+            display: grid !important;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            border-radius: 6px !important;
+          }
+          .ua-pipeline-screenshot {
+            order: 1;
+            width: calc(100% + 28px);
+            margin-left: -14px;
+            margin-right: -14px;
+            aspect-ratio: 1 / 1.05;
+            min-height: 390px;
+            border-radius: 6px !important;
+          }
+          .ua-pipeline-control > button {
+            min-height: 48px;
+            padding: 8px 4px !important;
+            justify-content: center;
+            border-left: none !important;
+            border-right: 1px solid var(--landing-line-faint) !important;
+          }
+          .ua-pipeline-control > button:nth-child(4) {
             border-right: none !important;
           }
-          .ua-pipeline-stage .ua-artifact-enter {
-            aspect-ratio: 16 / 11;
-            min-height: 220px;
+          .ua-pipeline-control > button span:first-child {
+            display: none;
+          }
+          .ua-pipeline-control > button span:nth-child(2) {
+            flex: unset !important;
+            font-size: 11.5px !important;
+            text-align: center;
+          }
+          .ua-pipeline-control > button span:nth-child(3) {
+            display: none;
+          }
+          .ua-step-content {
+            grid-column: 1 / -1;
+            flex: unset !important;
+            padding: 14px 16px 16px !important;
+            gap: 8px !important;
+          }
+          .ua-step-content > div:first-child span:first-child {
+            font-size: 32px !important;
+          }
+          .ua-step-content h3 {
+            font-size: 15px !important;
+            line-height: 1.22 !important;
+          }
+          .ua-step-content p {
+            font-size: 12px !important;
+            line-height: 1.42 !important;
+          }
+          .ua-pipeline-control > div:last-child {
+            grid-column: 1 / -1;
+            padding: 9px 16px !important;
           }
         }
         @media (max-width: 420px) {
-          .ua-pipeline-stage .ua-artifact-enter {
-            min-height: 190px;
-          }
-          .ua-step-content {
-            padding: 22px 18px !important;
+          .ua-pipeline-screenshot {
+            min-height: 360px;
           }
         }
         @keyframes ua-artifact-enter {
