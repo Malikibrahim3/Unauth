@@ -1090,8 +1090,8 @@ export default function LandingPage() {
               { label: 'Fulfillment',                     fields: ['carrier', 'tracking_number', 'delivery_status'] },
               { label: 'Abuse signals',                   fields: ['refund_requested', 'refund_reason', 'return_reason', 'chargeback_status'] },
             ] as { label: string; sensitive?: boolean; fields: string[] }[]).map((cat, ci) => (
-              <div key={cat.label} className="ua-schema-row" style={{ display: 'grid', gridTemplateColumns: '110px minmax(0,1fr)', borderTop: ci > 0 ? `1px solid ${t.darkBorder2}` : 'none' }}>
-                <div style={{ padding: '12px 16px 12px 18px', borderRight: `1px solid ${t.darkBorder2}`, display: 'flex', alignItems: 'flex-start' }}>
+              <div key={cat.label} className="ua-schema-row grid grid-cols-1 sm:grid-cols-[110px_minmax(0,1fr)]" style={{ borderTop: ci > 0 ? `1px solid ${t.darkBorder2}` : 'none' }}>
+                <div style={{ padding: '12px 16px 12px 18px', borderRight: 'none', display: 'flex', alignItems: 'flex-start' }} className="sm:[border-right:1px_solid_var(--landing-dark-border-2)]">
                   <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: cat.sensitive ? '#d4a078' : '#ffffff', opacity: cat.sensitive ? 1 : 0.7, lineHeight: 1.8 }}>{cat.label}</span>
                 </div>
                 <div style={{ padding: '12px 18px', display: 'flex', flexWrap: 'wrap', gap: '5px 6px', alignContent: 'flex-start' }}>
@@ -1103,7 +1103,7 @@ export default function LandingPage() {
             ))}
           </Reveal>
 
-          <Reveal delay={200} className="ua-hover-glow" style={{ background: 'rgba(19, 18, 16, 0.95)', border: `1px dashed ${t.darkBorder}`, borderRadius: '6px', padding: '16px 18px', display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', gap: '24px', boxShadow: '0 10px 36px rgba(0,0,0,0.22), 0 2px 6px rgba(0,0,0,0.12)' }}>
+          <Reveal delay={200} className="ua-hover-glow grid grid-cols-1 md:grid-cols-[auto_1fr_auto]" style={{ background: 'rgba(19, 18, 16, 0.95)', border: `1px dashed ${t.darkBorder}`, borderRadius: '6px', padding: '16px 18px', alignItems: 'center', gap: '14px', boxShadow: '0 10px 36px rgba(0,0,0,0.22), 0 2px 6px rgba(0,0,0,0.12)' }}>
             <div style={{ minWidth: '110px', flexShrink: 0 }}>
               <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#ffffff', opacity: 0.7, margin: 0, lineHeight: 1.8 }}>◯ CHECKOUT EMBED — COMING SOON</p>
             </div>
@@ -1112,7 +1112,7 @@ export default function LandingPage() {
                 <span key={f} className="ua-schema-chip" style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11.5px', letterSpacing: '0.01em', color: '#ffffff', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '3px', padding: '2px 7px', lineHeight: 1.7 }}>{f}</span>
               ))}
             </div>
-            <p style={{ fontFamily: 'var(--font-serif, serif)', fontStyle: 'italic', fontSize: '13px', color: '#ffffff', opacity: 0.8, lineHeight: 1.55, margin: 0, maxWidth: '290px', textAlign: 'right' }}>Real-time signals captured at the moment of transaction — no CSV required.</p>
+            <p style={{ fontFamily: 'var(--font-serif, serif)', fontStyle: 'italic', fontSize: '13px', color: '#ffffff', opacity: 0.8, lineHeight: 1.55, margin: 0, maxWidth: '290px', textAlign: 'left' }} className="md:text-right">Real-time signals captured at the moment of transaction — no CSV required.</p>
           </Reveal>
         </div>
       </section>
@@ -1121,7 +1121,7 @@ export default function LandingPage() {
 
       {/* ── §4 · Merchant Dashboard ────────────────────────────────── */}
       <section className="ua-section-quiet mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-20 pb-12 md:pb-16" suppressHydrationWarning>
-        <div style={{ display: 'grid', gridTemplateColumns: '38fr 62fr', gap: '48px', alignItems: 'center' }}>
+        <div className="grid grid-cols-1 lg:grid-cols-[38fr_62fr] gap-8 md:gap-12 items-center">
           <Reveal delay={40}>
             <p style={{
               fontFamily: 'var(--font-dm-mono, monospace)',
@@ -1175,7 +1175,7 @@ export default function LandingPage() {
       {/* ── §5 · Comparison matrix ──────────────────────────────── */}
       <section className="ua-section-flow mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-20 pb-12 md:pb-16" suppressHydrationWarning>
 
-        <Reveal delay={40} style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '48px', alignItems: 'center', marginBottom: '24px' }}>
+        <Reveal delay={40} className="grid grid-cols-1 lg:grid-cols-[auto_1fr] gap-6 lg:gap-12 items-start lg:items-center mb-6">
           <div>
             <p style={{
               fontFamily: 'var(--font-dm-mono, monospace)',
