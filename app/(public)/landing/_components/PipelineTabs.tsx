@@ -96,11 +96,11 @@ export default function PipelineTabs() {
       className="ua-section-flow"
     >
       <div
-        className="relative mx-auto max-w-[1400px] px-6 md:px-10 pb-16 md:pb-24"
-        style={{ paddingTop: 'clamp(80px, 10vw, 128px)' }}
+        className="ua-pipeline-shell relative mx-auto max-w-[1400px] px-6 md:px-10 pb-16 md:pb-24"
+        style={{ paddingTop: 'clamp(48px, 8vw, 128px)' }}
       >
         {/* ── Header ── */}
-        <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+        <div className="ua-pipeline-header" style={{ textAlign: 'center', marginBottom: '40px' }}>
           <p style={{
             fontFamily: t.mono, fontSize: '11px', fontWeight: 600,
             letterSpacing: '0.18em', textTransform: 'uppercase',
@@ -271,7 +271,7 @@ export default function PipelineTabs() {
               </div>
             </div>
 
-            {/* ── Right: screenshot floats freely, no card ── */}
+            {/* ── Right: mobile gets a bespoke step visual; desktop keeps the screenshot ── */}
             <div
               key={active}
               className="ua-artifact-enter ua-pipeline-screenshot"
@@ -289,7 +289,7 @@ export default function PipelineTabs() {
                 src={step.screenshot}
                 alt={step.alt}
                 fill
-                style={{ objectFit: 'cover', objectPosition: 'top left' }}
+                className="ua-pipeline-screenshot-img"
                 sizes="(max-width: 900px) 100vw, 60vw"
                 priority={active === 0}
               />
@@ -299,7 +299,12 @@ export default function PipelineTabs() {
       </div>
 
       <style>{`
+        .ua-pipeline-screenshot-img { object-fit: cover; object-position: top left; }
         @media (max-width: 900px) {
+          .ua-pipeline-screenshot-img { object-fit: contain !important; object-position: center !important; background: #fdfbf6; }
+          .ua-pipeline-header { margin-bottom: 24px !important; }
+          .ua-pipeline-header h2 { font-size: clamp(28px, 7vw, 40px) !important; margin-bottom: 12px !important; }
+          .ua-pipeline-header p { font-size: 14px !important; }
           .ua-pipeline-stage {
             display: flex !important;
             flex-direction: column !important;
@@ -315,12 +320,16 @@ export default function PipelineTabs() {
           }
           .ua-pipeline-screenshot {
             order: 1;
-            width: calc(100% + 28px);
-            margin-left: -14px;
-            margin-right: -14px;
-            aspect-ratio: 1 / 1.05;
-            min-height: 390px;
+            width: 100%;
+            margin-left: 0;
+            margin-right: 0;
+            aspect-ratio: 16 / 11 !important;
+            min-height: 0 !important;
+            height: auto !important;
             border-radius: 6px !important;
+            border: 1px solid var(--landing-line) !important;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.08) !important;
+            background: #fdfbf6;
           }
           .ua-pipeline-control > button {
             min-height: 48px;
@@ -363,11 +372,6 @@ export default function PipelineTabs() {
           .ua-pipeline-control > div:last-child {
             grid-column: 1 / -1;
             padding: 9px 16px !important;
-          }
-        }
-        @media (max-width: 420px) {
-          .ua-pipeline-screenshot {
-            min-height: 360px;
           }
         }
         @keyframes ua-artifact-enter {

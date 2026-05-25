@@ -357,10 +357,10 @@ export default function LandingPage() {
         </Reveal>
 
         {/* Right — large product artifact */}
-        <Reveal as="div" className="ua-hero-stage relative mt-10 md:mt-14 lg:mt-0" delay={180} noFade>
-            {/* Floating eyebrow above artifact */}
+        <Reveal as="div" className="ua-hero-stage relative mt-8 md:mt-14 lg:mt-0" delay={180} noFade>
+            {/* Floating eyebrow above artifact — hidden on mobile, the mobile card has its own header */}
             <div
-              className="flex items-center justify-between mb-3"
+              className="hidden md:flex items-center justify-between mb-3"
               style={{
                 fontFamily: 'var(--font-dm-mono, monospace)',
                 fontSize: '10.5px',
@@ -962,11 +962,16 @@ export default function LandingPage() {
 
       {/* ── §1 · The pattern your store can't see — VISUAL ───────── */}
       <section
-        className="ua-why-matters w-full -mt-[0vh] pb-16 md:pb-20"
+        className="ua-why-matters w-full -mt-[0vh] pb-6 md:pb-20"
         style={{ background: t.darkBg, position: 'relative', zIndex: 1 }}
       >
         <VerdictTicker />
-        <div className="mx-auto max-w-[1400px] px-2 md:px-4 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center mt-10 md:mt-14" style={{ transform: 'translateY(-5vh)' }}>
+        <style>{`
+          @media (min-width: 1024px) {
+            .ua-why-matters-grid { transform: translateY(-5vh); }
+          }
+        `}</style>
+        <div className="ua-why-matters-grid mx-auto max-w-[1400px] px-6 md:px-4 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center mt-8 md:mt-14">
           <div className="lg:col-span-3">
             <p
               style={{
