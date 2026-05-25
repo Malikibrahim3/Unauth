@@ -6,6 +6,7 @@ type Props = {
   children: ReactNode;
   as?: keyof JSX.IntrinsicElements;
   delay?: number;
+  duration?: number;
   className?: string;
   style?: CSSProperties;
   once?: boolean;
@@ -23,6 +24,7 @@ export default function Reveal({
   children,
   as = 'div',
   delay = 0,
+  duration,
   className = '',
   style,
   once = true,
@@ -72,6 +74,7 @@ export default function Reveal({
   const styleWithDelay: CSSProperties = {
     ...style,
     ...(delay ? ({ ['--ua-reveal-delay' as string]: `${delay}ms` } as CSSProperties) : {}),
+    ...(duration ? ({ ['--ua-reveal-duration' as string]: `${duration}ms` } as CSSProperties) : {}),
   };
 
   return (

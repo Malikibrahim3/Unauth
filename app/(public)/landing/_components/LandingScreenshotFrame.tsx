@@ -9,7 +9,7 @@ type Props = {
 
 export default function LandingScreenshotFrame({ src, alt, delay = 0 }: Props) {
   return (
-    <Reveal delay={delay}>
+    <Reveal delay={delay} duration={1092}>
       <div
         className="ua-glass-card"
         style={{

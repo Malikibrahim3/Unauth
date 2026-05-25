@@ -57,7 +57,7 @@ function ComplaintCard({
 }) {
   return (
     <figure
-      className="group relative w-[252px] cursor-pointer transition-colors duration-200"
+      className="ua-complaint-card group relative w-[252px] cursor-pointer transition-colors duration-200"
       style={{
         background: 'rgba(22,21,16,0.92)',
         border: '1px solid rgba(48,44,36,0.9)',
@@ -146,7 +146,7 @@ function MarqueeColumn({
   const repeated = [...items, ...items];
 
     return (
-    <div className="relative h-[740px] w-[252px] overflow-hidden">
+    <div className="ua-complaint-column relative h-[740px] w-[252px] overflow-hidden">
       <div
         className={cn('ua-complaint-marquee flex flex-col gap-4', reverse && 'ua-complaint-marquee-reverse')}
         style={{ ['--ua-duration' as string]: `${duration}s` }}
@@ -200,6 +200,48 @@ export default function HeroNotificationArtifact() {
 
         .ua-complaint-marquee-reverse {
           animation-name: ua-complaints-scroll-reverse;
+        }
+
+        .ua-complaint-card {
+          transition:
+            transform 220ms cubic-bezier(0.22, 0.61, 0.36, 1),
+            border-color 220ms ease,
+            box-shadow 220ms cubic-bezier(0.22, 0.61, 0.36, 1),
+            filter 220ms ease;
+        }
+
+        .ua-complaint-card::after {
+          content: '';
+          position: absolute;
+          inset: -10px;
+          border-radius: 10px;
+          pointer-events: none;
+          opacity: 0;
+          background:
+            radial-gradient(80% 65% at 22% 20%, rgba(212, 160, 120, 0.20), transparent 72%),
+            radial-gradient(75% 70% at 80% 82%, rgba(123, 45, 38, 0.22), transparent 74%);
+          filter: blur(14px);
+          transition: opacity 220ms ease;
+          z-index: -1;
+        }
+
+        .ua-complaint-marquee:hover .ua-complaint-card {
+          filter: saturate(1.05) brightness(1.03);
+        }
+
+        .ua-complaint-card:hover {
+          transform: translateY(-2px) scale(1.01);
+          border-color: rgba(212, 160, 120, 0.55) !important;
+          box-shadow:
+            0 0 0 1px rgba(212, 160, 120, 0.28),
+            0 14px 34px -16px rgba(212, 160, 120, 0.28),
+            0 40px 90px -42px rgba(123, 45, 38, 0.42),
+            0 1px 0 rgba(255,255,255,0.05) inset !important;
+          filter: saturate(1.12) brightness(1.06);
+        }
+
+        .ua-complaint-card:hover::after {
+          opacity: 1;
         }
       `}</style>
 

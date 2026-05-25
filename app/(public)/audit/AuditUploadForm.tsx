@@ -13,7 +13,7 @@ const SCHEMA_REQUIRED = [
 const SCHEMA_OPTIONAL = [
   'customer_name', 'shipping_address', 'billing_address', 'customer_phone',
   'ip_address', 'device_fingerprint', 'payment_fingerprint',
-  'browser_fingerprint', 'delivery_photo_metadata', 'courier_gps_proof',
+  'browser_fingerprint',
 ];
 
 const MAX_FILE_BYTES = 50 * 1024 * 1024; // 50 MB

@@ -54,7 +54,7 @@ export default function PipelineTabs() {
   const triggerFade = useCallback(() => {
     if (fadeTimer.current) clearTimeout(fadeTimer.current);
     setFade(false);
-    fadeTimer.current = setTimeout(() => setFade(true), 120);
+    fadeTimer.current = setTimeout(() => setFade(true), 351);
   }, []);
 
   const advance = useCallback(() => {
@@ -277,7 +277,7 @@ export default function PipelineTabs() {
               className="ua-artifact-enter"
               style={{
                 opacity: fade ? 1 : 0,
-                transition: 'opacity 120ms',
+                transition: 'opacity 351ms',
                 position: 'relative',
                 borderRadius: '8px',
                 overflow: 'hidden',
@@ -313,7 +313,7 @@ export default function PipelineTabs() {
           to   { opacity: 1; }
         }
         .ua-artifact-enter {
-          animation: ua-artifact-enter 300ms ease;
+          animation: ua-artifact-enter 878ms ease;
         }
         @keyframes ua-step-content-enter {
           from { opacity: 0; transform: translateY(5px); }

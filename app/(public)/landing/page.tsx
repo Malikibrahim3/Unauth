@@ -22,6 +22,36 @@ export const metadata = {
 export default function LandingPage() {
   const today = new Date();
   const todayISO = today.toISOString().slice(0, 10);
+  const footerVariant: 'espresso' | 'cream' | 'split' = 'espresso';
+  const footerStyles = {
+    espresso: {
+      shellBg: t.darkBg,
+      shellBorder: t.darkBorder,
+      text: 'rgba(245, 239, 229, 0.78)',
+      heading: 'rgba(248, 242, 233, 0.96)',
+      title: 'rgba(251, 247, 240, 0.98)',
+      link: 'rgba(244, 237, 226, 0.9)',
+      bottomBg: 'transparent',
+    },
+    cream: {
+      shellBg: t.bg,
+      shellBorder: t.border,
+      text: t.inkSecondary,
+      heading: t.ink,
+      title: t.ink,
+      link: t.inkSecondary,
+      bottomBg: 'transparent',
+    },
+    split: {
+      shellBg: t.bg,
+      shellBorder: t.border,
+      text: t.inkSecondary,
+      heading: t.ink,
+      title: t.ink,
+      link: t.inkSecondary,
+      bottomBg: t.darkBg,
+    },
+  }[footerVariant];
   const faqFeatured = [
     {
       q: 'What exactly is Unauth?',
@@ -932,7 +962,7 @@ export default function LandingPage() {
 
       {/* ── §1 · The pattern your store can't see — VISUAL ───────── */}
       <section
-        className="w-full -mt-[0vh] pb-16 md:pb-20"
+        className="ua-why-matters w-full -mt-[0vh] pb-16 md:pb-20"
         style={{ background: t.darkBg, position: 'relative', zIndex: 1 }}
       >
         <VerdictTicker />
@@ -1033,22 +1063,25 @@ export default function LandingPage() {
       {/* ── §3 · Data Schema ───────────────────────────────────────── */}
       <section style={{ background: t.bg }}>
         <div className="mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-20 pb-12 md:pb-16">
-          <div style={{ marginBottom: '24px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '24px', flexWrap: 'wrap' }}>
+          <Reveal delay={40} style={{ marginBottom: '24px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '24px', flexWrap: 'wrap' }}>
             <div>
               <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11px', fontWeight: 600, letterSpacing: '0.16em', textTransform: 'uppercase', color: t.accent, marginBottom: '10px' }}>§ 3 — DATA SCHEMA</p>
               <h2 style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: 'clamp(22px, 2vw, 32px)', fontWeight: 500, letterSpacing: '-0.02em', lineHeight: 1.08, color: t.ink, margin: 0 }}>Use data you already have.</h2>
             </div>
             <p style={{ fontFamily: 'var(--font-serif, serif)', fontSize: '14px', color: t.inkSecondary, lineHeight: 1.6, maxWidth: '380px', margin: 0 }}>Standard order, refund, delivery, and payment exports. No integration required.</p>
-          </div>
+          </Reveal>
 
-          <div style={{ background: t.darkCard, border: `1px solid ${t.darkBorder}`, borderRadius: '6px', overflow: 'hidden', marginBottom: '8px', boxShadow: '0 10px 36px rgba(0,0,0,0.22), 0 2px 6px rgba(0,0,0,0.12)' }}>
+          <Reveal delay={120} className="ua-hover-glow" style={{ background: t.darkCard, border: `1px solid ${t.darkBorder}`, borderRadius: '6px', overflow: 'hidden', marginBottom: '10px', boxShadow: '0 10px 36px rgba(0,0,0,0.22), 0 2px 6px rgba(0,0,0,0.12)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 18px', borderBottom: `1px solid ${t.darkBorder}`, background: t.darkBg, gap: '12px', flexWrap: 'wrap' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: t.darkBright, flexShrink: 0 }} />
-                <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#ffffff' }}>Required — 24 core fields</span>
+                <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10.5px', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#ffffff' }}>● CSV UPLOAD — WORKS TODAY</span>
               </div>
-              <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10px', letterSpacing: '0.06em', color: '#ffffff', opacity: 0.7 }}>shopify · woocommerce · custom OMS · stripe</span>
+              <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10px', letterSpacing: '0.06em', color: '#ffffff', opacity: 0.7 }}>shopify · woocommerce · stripe · custom OMS</span>
             </div>
+            <p style={{ fontFamily: 'var(--font-serif, serif)', fontSize: '13px', color: '#ffffff', opacity: 0.72, lineHeight: 1.55, margin: 0, padding: '0 24px 16px', textAlign: 'left' }}>
+              Works with partial data — every additional field strengthens identity confidence. Nothing is mandatory.
+            </p>
             {([
               { label: 'Identity',      sensitive: true,  fields: ['email', 'phone', 'shipping_name', 'billing_name', 'customer_id'] },
               { label: 'Order',                           fields: ['order_id', 'order_date', 'order_value', 'item_count', 'sku / category'] },
@@ -1057,31 +1090,30 @@ export default function LandingPage() {
               { label: 'Fulfillment',                     fields: ['carrier', 'tracking_number', 'delivery_status'] },
               { label: 'Abuse signals',                   fields: ['refund_requested', 'refund_reason', 'return_reason', 'chargeback_status'] },
             ] as { label: string; sensitive?: boolean; fields: string[] }[]).map((cat, ci) => (
-              <div key={cat.label} style={{ display: 'grid', gridTemplateColumns: '110px minmax(0,1fr)', borderTop: ci > 0 ? `1px solid ${t.darkBorder2}` : 'none' }}>
+              <div key={cat.label} className="ua-schema-row" style={{ display: 'grid', gridTemplateColumns: '110px minmax(0,1fr)', borderTop: ci > 0 ? `1px solid ${t.darkBorder2}` : 'none' }}>
                 <div style={{ padding: '12px 16px 12px 18px', borderRight: `1px solid ${t.darkBorder2}`, display: 'flex', alignItems: 'flex-start' }}>
                   <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: cat.sensitive ? '#d4a078' : '#ffffff', opacity: cat.sensitive ? 1 : 0.7, lineHeight: 1.8 }}>{cat.label}</span>
                 </div>
                 <div style={{ padding: '12px 18px', display: 'flex', flexWrap: 'wrap', gap: '5px 6px', alignContent: 'flex-start' }}>
                   {cat.fields.map((f) => (
-                    <span key={f} style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11.5px', letterSpacing: '0.01em', color: '#ffffff', background: cat.sensitive ? 'rgba(212,160,120,0.15)' : 'rgba(255,255,255,0.08)', border: `1px solid ${cat.sensitive ? 'rgba(212,160,120,0.3)' : 'rgba(255,255,255,0.15)'}`, borderRadius: '3px', padding: '2px 7px', lineHeight: 1.7 }}>{f}</span>
+                    <span key={f} className="ua-schema-chip" style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11.5px', letterSpacing: '0.01em', color: '#ffffff', background: cat.sensitive ? 'rgba(212,160,120,0.15)' : 'rgba(255,255,255,0.08)', border: `1px solid ${cat.sensitive ? 'rgba(212,160,120,0.3)' : 'rgba(255,255,255,0.15)'}`, borderRadius: '3px', padding: '2px 7px', lineHeight: 1.7 }}>{f}</span>
                   ))}
                 </div>
               </div>
             ))}
-          </div>
+          </Reveal>
 
-          <div style={{ background: t.darkCard, border: `1px dashed ${t.darkBorder}`, borderRadius: '6px', padding: '16px 18px', display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', gap: '24px', boxShadow: '0 10px 36px rgba(0,0,0,0.22), 0 2px 6px rgba(0,0,0,0.12)' }}>
+          <Reveal delay={200} className="ua-hover-glow" style={{ background: 'rgba(19, 18, 16, 0.95)', border: `1px dashed ${t.darkBorder}`, borderRadius: '6px', padding: '16px 18px', display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', gap: '24px', boxShadow: '0 10px 36px rgba(0,0,0,0.22), 0 2px 6px rgba(0,0,0,0.12)' }}>
             <div style={{ minWidth: '110px', flexShrink: 0 }}>
-              <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#ffffff', opacity: 0.7, margin: 0, lineHeight: 1.8 }}>Optional</p>
-              <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#ffffff', opacity: 0.7, margin: 0, lineHeight: 1.8 }}>Enrichment</p>
+              <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#ffffff', opacity: 0.7, margin: 0, lineHeight: 1.8 }}>◯ CHECKOUT EMBED — COMING SOON</p>
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px 6px' }}>
-              {['ip_address', 'device_fingerprint', 'payment_fingerprint', 'browser_fingerprint', 'delivery_photo_metadata', 'courier_gps_proof'].map((f) => (
-                <span key={f} style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11.5px', letterSpacing: '0.01em', color: '#ffffff', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '3px', padding: '2px 7px', lineHeight: 1.7 }}>{f}</span>
+              {['device_fingerprint', 'browser_fingerprint', 'session_id', 'checkout_timestamp'].map((f) => (
+                <span key={f} className="ua-schema-chip" style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11.5px', letterSpacing: '0.01em', color: '#ffffff', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '3px', padding: '2px 7px', lineHeight: 1.7 }}>{f}</span>
               ))}
             </div>
-            <p style={{ fontFamily: 'var(--font-serif, serif)', fontStyle: 'italic', fontSize: '13px', color: '#ffffff', opacity: 0.8, lineHeight: 1.55, margin: 0, maxWidth: '240px', textAlign: 'right' }}>Improves resolution for clusters where email + address alone don&rsquo;t meet the DEFINITE threshold.</p>
-          </div>
+            <p style={{ fontFamily: 'var(--font-serif, serif)', fontStyle: 'italic', fontSize: '13px', color: '#ffffff', opacity: 0.8, lineHeight: 1.55, margin: 0, maxWidth: '290px', textAlign: 'right' }}>Real-time signals captured at the moment of transaction — no CSV required.</p>
+          </Reveal>
         </div>
       </section>
 
@@ -1090,7 +1122,7 @@ export default function LandingPage() {
       {/* ── §4 · Merchant Dashboard ────────────────────────────────── */}
       <section className="ua-section-quiet mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-20 pb-12 md:pb-16" suppressHydrationWarning>
         <div style={{ display: 'grid', gridTemplateColumns: '38fr 62fr', gap: '48px', alignItems: 'center' }}>
-          <div>
+          <Reveal delay={40}>
             <p style={{
               fontFamily: 'var(--font-dm-mono, monospace)',
               fontSize: '11px', fontWeight: 600,
@@ -1117,9 +1149,9 @@ export default function LandingPage() {
             }}>
               Flagged identities, risk scores, evidence packets, and network exposure — all in one audit view.
             </p>
-          </div>
-          <Reveal>
-            <div style={{
+          </Reveal>
+          <Reveal delay={120}>
+            <div className="ua-hover-glow" style={{
               border: `1px solid ${t.border}`,
               borderRadius: '8px',
               overflow: 'hidden',
@@ -1143,7 +1175,7 @@ export default function LandingPage() {
       {/* ── §5 · Comparison matrix ──────────────────────────────── */}
       <section className="ua-section-flow mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-20 pb-12 md:pb-16" suppressHydrationWarning>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '48px', alignItems: 'center', marginBottom: '24px' }}>
+        <Reveal delay={40} style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '48px', alignItems: 'center', marginBottom: '24px' }}>
           <div>
             <p style={{
               fontFamily: 'var(--font-dm-mono, monospace)',
@@ -1169,7 +1201,7 @@ export default function LandingPage() {
           }}>
             Unauth finds refund abuse, friendly fraud, and INR cycles after the transaction clears.
           </p>
-        </div>
+        </Reveal>
 
         {/* Comparison data */}
         {(() => {
@@ -1252,7 +1284,7 @@ export default function LandingPage() {
           return (
             <>
               {/* ── Desktop / tablet grid (hidden below sm) ── */}
-              <div className="hidden sm:block ua-glass-card" suppressHydrationWarning style={{ border: `1px solid ${t.border}`, background: '#ffffff', overflow: 'hidden', boxShadow: '0 10px 36px rgba(0,0,0,0.14), 0 2px 6px rgba(0,0,0,0.07)' }}>
+              <Reveal delay={120} className="hidden sm:block ua-glass-card ua-hover-glow" style={{ border: `1px solid ${t.border}`, background: '#ffffff', overflow: 'hidden', boxShadow: '0 10px 36px rgba(0,0,0,0.14), 0 2px 6px rgba(0,0,0,0.07)' }}>
                 {/* Header row */}
                 <div
                   className="grid grid-cols-[1.6fr_1fr_1fr_1fr]"
@@ -1331,10 +1363,10 @@ export default function LandingPage() {
                     <div style={{ padding: '14px 16px', borderLeft: `1px solid ${t.border}`, background: 'linear-gradient(180deg, rgba(123,45,38,0.08), rgba(123,45,38,0.04))', display: 'flex', alignItems: 'center' }}>{indicator(c, true)}</div>
                   </Reveal>
                 ))}
-              </div>
+              </Reveal>
 
               {/* ── Mobile stacked cards (hidden above sm) ── */}
-              <div className="sm:hidden ua-glass-card" style={{ border: `1px solid ${t.border}`, background: '#ffffff', overflow: 'hidden', boxShadow: '0 10px 36px rgba(0,0,0,0.14), 0 2px 6px rgba(0,0,0,0.07)' }}>
+              <Reveal delay={120} className="sm:hidden ua-glass-card ua-hover-glow" style={{ border: `1px solid ${t.border}`, background: '#ffffff', overflow: 'hidden', boxShadow: '0 10px 36px rgba(0,0,0,0.14), 0 2px 6px rgba(0,0,0,0.07)' }}>
                 <div style={{ padding: '14px 18px', borderBottom: `1px solid ${t.border}`, display: 'flex', gap: '10px', flexWrap: 'wrap', fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10.5px', color: t.inkSecondary }}>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>{indicator('yes', true)} Included</span>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>{indicator('partial')} Partial</span>
@@ -1395,7 +1427,7 @@ export default function LandingPage() {
                     </div>
                   </Reveal>
                 ))}
-              </div>
+              </Reveal>
             </>
           );
         })()}
@@ -1409,7 +1441,7 @@ export default function LandingPage() {
 
           {/* Left — sticky heading block */}
           <div className="mb-12 lg:mb-0">
-            <div className="lg:sticky lg:top-24">
+            <Reveal className="lg:sticky lg:top-24" delay={40}>
               <p
                 style={{
                   fontFamily: 'var(--font-dm-mono, monospace)',
@@ -1435,7 +1467,9 @@ export default function LandingPage() {
                   maxWidth: '320px',
                 }}
               >
-                Everything you&rsquo;d ask <span style={{ fontFamily: 'var(--font-serif, serif)', fontStyle: 'italic', fontWeight: 400, color: t.darkLabel, whiteSpace: 'nowrap' }}>before committing.</span>
+                <span style={{ whiteSpace: 'nowrap' }}>Everything you&rsquo;d ask</span>
+                <br />
+                <span style={{ fontFamily: 'var(--font-serif, serif)', fontStyle: 'italic', fontWeight: 400, color: t.darkLabel, whiteSpace: 'nowrap' }}>before committing.</span>
               </h2>
               <p
                 style={{
@@ -1465,14 +1499,17 @@ export default function LandingPage() {
               >
                 Run a free audit →
               </a>
-            </div>
+            </Reveal>
           </div>
 
           {/* Right — accordion list */}
           <div>
             {[...faqFeatured, ...faqMore].map((item, i) => (
-              <details
+              <Reveal
                 key={item.q}
+                delay={Math.min(320, 60 + i * 22)}
+              >
+              <details
                 className="ua-faq-item group"
                 style={{
                   borderTop: i === 0 ? `1px solid ${t.darkBorder}` : 'none',
@@ -1529,6 +1566,7 @@ export default function LandingPage() {
                   {item.a}
                 </p>
               </details>
+              </Reveal>
             ))}
           </div>
         </div>
@@ -1557,46 +1595,80 @@ export default function LandingPage() {
       </section>
 
       {/* ── Footer ──────────────────────────────────────────────── */}
-      <footer style={{ background: t.darkBg, borderTop: `1px solid ${t.darkBorder}` }}>
+      <footer style={{ background: footerStyles.shellBg, borderTop: `1px solid ${footerStyles.shellBorder}` }}>
         <div
-          className="mx-auto max-w-[1100px] px-6 md:px-10 py-8 flex flex-col md:flex-row md:justify-between gap-4"
+          className="mx-auto max-w-[1100px] px-6 md:px-10 py-12 md:py-14"
           style={{
             fontFamily: 'var(--font-dm-sans, sans-serif)',
-            fontSize: '12px',
-            color: t.darkSubtle,
+            fontSize: '13px',
+            color: footerStyles.text,
           }}
         >
-          <p
+          <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-5">
+            <div className="lg:col-span-2">
+              <div style={{ margin: 0 }}>
+                <UnauthLogo variant="wordmark-dark" size={24} />
+              </div>
+              <p style={{ margin: '10px 0 0', lineHeight: 1.65, maxWidth: '42ch' }}>
+                Risk intelligence for dispute-heavy commerce teams. We turn raw transaction logs into
+                case-ready evidence and customer-level risk context in one workflow.
+              </p>
+              <p
+                style={{
+                  margin: '14px 0 0',
+                  fontFamily: 'var(--font-dm-mono, monospace)',
+                  fontSize: '11px',
+                  color: footerStyles.link,
+                }}
+              >
+                Version issue-04 · build date {todayISO}
+              </p>
+            </div>
+
+            <div>
+              <p style={{ margin: 0, color: footerStyles.heading, fontWeight: 600, letterSpacing: '0.02em' }}>Product</p>
+              <div className="mt-3 flex flex-col gap-2">
+                <a href="/audit" style={{ color: footerStyles.link }} className="hover:underline">Audit portal</a>
+                <a href="/signup" style={{ color: footerStyles.link }} className="hover:underline">Book a pilot</a>
+                <a href="/demo" style={{ color: footerStyles.link }} className="hover:underline">Interactive demo</a>
+              </div>
+            </div>
+
+            <div>
+              <p style={{ margin: 0, color: footerStyles.heading, fontWeight: 600, letterSpacing: '0.02em' }}>Trust & legal</p>
+              <div className="mt-3 flex flex-col gap-2">
+                <a href="/legal/privacy" style={{ color: footerStyles.link }} className="hover:underline">Privacy notice</a>
+                <a href="/legal/dpa" style={{ color: footerStyles.link }} className="hover:underline">Data Processing Addendum</a>
+                <a href="/legal/data-handling" style={{ color: footerStyles.link }} className="hover:underline">Data handling</a>
+                <a href="/legal/pilot-terms" style={{ color: footerStyles.link }} className="hover:underline">Pilot terms</a>
+              </div>
+            </div>
+
+            <div>
+              <p style={{ margin: 0, color: footerStyles.heading, fontWeight: 600, letterSpacing: '0.02em' }}>Contact</p>
+              <div className="mt-3 flex flex-col gap-2">
+                <a href="mailto:hello@unauth.app" style={{ color: footerStyles.link }} className="hover:underline">hello@unauth.app</a>
+                <span style={{ color: footerStyles.link }}>London, UK</span>
+                <span style={{ color: footerStyles.link }}>Support window: Mon-Fri, 09:00-18:00 GMT</span>
+              </div>
+            </div>
+          </div>
+
+          <div
+            className="mt-10 pt-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
             style={{
-              fontFamily: 'var(--font-serif, serif)',
-              fontStyle: 'italic',
-              fontSize: '12px',
-              color: t.darkSubtle,
-              margin: '0 0 12px',
-              width: '100%',
+              borderTop: `1px solid ${footerStyles.shellBorder}`,
+              background: footerStyles.bottomBg,
+              marginInline: footerStyles.bottomBg === 'transparent' ? 0 : '-24px',
+              paddingInline: footerStyles.bottomBg === 'transparent' ? 0 : '24px',
+              paddingBlock: footerStyles.bottomBg === 'transparent' ? 0 : '18px',
             }}
           >
-            Case files, audit outputs, and network figures shown on this page are illustrative.
-          </p>
-          <span>
-            Unauth ·{' '}
-            <a href="/legal/privacy" style={{ color: t.darkMuted }} className="hover:underline">privacy</a>
-            {' · '}
-            <a href="/legal/dpa" style={{ color: t.darkMuted }} className="hover:underline">DPA</a>
-            {' · '}
-            <a href="/legal/data-handling" style={{ color: t.darkMuted }} className="hover:underline">data handling</a>
-          </span>
-          <a
-            href="mailto:hello@unauth.app"
-            style={{ color: t.darkMuted }}
-            className="hover:underline"
-          >
-            hello@unauth.app
-          </a>
-          <span>
-            © 2026 — Issue 04 ·{' '}
-            <span style={{ fontFamily: 'var(--font-dm-mono, monospace)' }}>{todayISO}</span>
-          </span>
+            <p style={{ margin: 0, fontStyle: 'italic', fontFamily: 'var(--font-serif, serif)', fontSize: '12px' }}>
+              Case files, audit outputs, and network figures shown on this page are illustrative.
+            </p>
+            <span style={{ color: footerStyles.link }}>© 2026 Unauth. All rights reserved.</span>
+          </div>
         </div>
       </footer>
     </div>
