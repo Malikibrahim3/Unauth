@@ -1030,18 +1030,18 @@ export default function LandingPage() {
       {/* ── §1.5 · Founding merchant testimonial ────────────────── */}
       <PipelineTabs />
 
-      {/* ── § 6 — Data Schema ───────────────────────────────────────── */}
+      {/* ── §3 · Data Schema ───────────────────────────────────────── */}
       <section style={{ background: t.bg }}>
-        <div className="mx-auto max-w-[1400px] px-6 md:px-10 py-16 md:py-24">
-          <div style={{ marginBottom: '32px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '24px', flexWrap: 'wrap' }}>
+        <div className="mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-20 pb-12 md:pb-16">
+          <div style={{ marginBottom: '24px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '24px', flexWrap: 'wrap' }}>
             <div>
-              <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11px', fontWeight: 600, letterSpacing: '0.16em', textTransform: 'uppercase', color: t.accent, marginBottom: '10px' }}>§ 6 — Data Schema</p>
+              <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11px', fontWeight: 600, letterSpacing: '0.16em', textTransform: 'uppercase', color: t.accent, marginBottom: '10px' }}>§ 3 — DATA SCHEMA</p>
               <h2 style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: 'clamp(22px, 2vw, 32px)', fontWeight: 500, letterSpacing: '-0.02em', lineHeight: 1.08, color: t.ink, margin: 0 }}>Use data you already have.</h2>
             </div>
             <p style={{ fontFamily: 'var(--font-serif, serif)', fontSize: '14px', color: t.inkSecondary, lineHeight: 1.6, maxWidth: '380px', margin: 0 }}>Standard order, refund, delivery, and payment exports. No integration required.</p>
           </div>
 
-          <div style={{ background: t.darkCard, border: `1px solid ${t.darkBorder}`, borderRadius: '6px', overflow: 'hidden', marginBottom: '8px' }}>
+          <div style={{ background: t.darkCard, border: `1px solid ${t.darkBorder}`, borderRadius: '6px', overflow: 'hidden', marginBottom: '8px', boxShadow: '0 10px 36px rgba(0,0,0,0.22), 0 2px 6px rgba(0,0,0,0.12)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 18px', borderBottom: `1px solid ${t.darkBorder}`, background: t.darkBg, gap: '12px', flexWrap: 'wrap' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: t.darkBright, flexShrink: 0 }} />
@@ -1070,124 +1070,105 @@ export default function LandingPage() {
             ))}
           </div>
 
-          <div style={{ background: t.darkCard, border: `1px dashed ${t.darkBorder}`, borderRadius: '6px', padding: '16px 18px', display: 'flex', gap: '20px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+          <div style={{ background: t.darkCard, border: `1px dashed ${t.darkBorder}`, borderRadius: '6px', padding: '16px 18px', display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', gap: '24px', boxShadow: '0 10px 36px rgba(0,0,0,0.22), 0 2px 6px rgba(0,0,0,0.12)' }}>
             <div style={{ minWidth: '110px', flexShrink: 0 }}>
               <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#ffffff', opacity: 0.7, margin: 0, lineHeight: 1.8 }}>Optional</p>
               <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10px', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#ffffff', opacity: 0.7, margin: 0, lineHeight: 1.8 }}>Enrichment</p>
             </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px 6px', marginBottom: '10px' }}>
-                {['ip_address', 'device_fingerprint', 'payment_fingerprint', 'browser_fingerprint', 'delivery_photo_metadata', 'courier_gps_proof'].map((f) => (
-                  <span key={f} style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11.5px', letterSpacing: '0.01em', color: '#ffffff', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '3px', padding: '2px 7px', lineHeight: 1.7 }}>{f}</span>
-                ))}
-              </div>
-              <p style={{ fontFamily: 'var(--font-serif, serif)', fontStyle: 'italic', fontSize: '13px', color: '#ffffff', opacity: 0.8, lineHeight: 1.55, margin: 0 }}>Improves resolution for clusters where email + address alone don&rsquo;t meet the DEFINITE threshold.</p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px 6px' }}>
+              {['ip_address', 'device_fingerprint', 'payment_fingerprint', 'browser_fingerprint', 'delivery_photo_metadata', 'courier_gps_proof'].map((f) => (
+                <span key={f} style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11.5px', letterSpacing: '0.01em', color: '#ffffff', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '3px', padding: '2px 7px', lineHeight: 1.7 }}>{f}</span>
+              ))}
             </div>
+            <p style={{ fontFamily: 'var(--font-serif, serif)', fontStyle: 'italic', fontSize: '13px', color: '#ffffff', opacity: 0.8, lineHeight: 1.55, margin: 0, maxWidth: '240px', textAlign: 'right' }}>Improves resolution for clusters where email + address alone don&rsquo;t meet the DEFINITE threshold.</p>
           </div>
         </div>
       </section>
 
       <hr style={{ border: 'none', borderTop: `1px solid ${t.lineFaint}`, margin: 0 }} />
 
-      {/* ── §4 · Merchant dashboard ────────────────────────────────── */}
+      {/* ── §4 · Merchant Dashboard ────────────────────────────────── */}
       <section className="ua-section-quiet mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-20 pb-12 md:pb-16" suppressHydrationWarning>
-        <div className="mb-10 grid grid-cols-1 lg:grid-cols-[200px_minmax(0,1fr)] lg:gap-12 items-start">
-          <p
-            style={{
-              fontFamily: 'var(--font-dm-mono, monospace)',
-              fontSize: '11px',
-              fontWeight: 600,
-              letterSpacing: '0.16em',
-              textTransform: 'uppercase',
-              color: t.accent,
-              paddingTop: '6px',
-              lineHeight: 1.6,
-            }}
-          >
-            § 4 —<br />Merchant<br />Dashboard
-          </p>
+        <div style={{ display: 'grid', gridTemplateColumns: '38fr 62fr', gap: '48px', alignItems: 'center' }}>
           <div>
-            <h2
-              style={{
-                fontFamily: 'var(--font-dm-sans, sans-serif)',
-                fontSize: 'clamp(28px, 2.8vw, 40px)',
-                fontWeight: 500,
-                letterSpacing: '-0.02em',
-                lineHeight: 1.05,
-                color: t.ink,
-                marginBottom: '10px',
-              }}
-            >
+            <p style={{
+              fontFamily: 'var(--font-dm-mono, monospace)',
+              fontSize: '11px', fontWeight: 600,
+              letterSpacing: '0.16em', textTransform: 'uppercase',
+              color: t.accent, marginBottom: '20px', lineHeight: 1.6,
+            }}>
+              § 4 — MERCHANT DASHBOARD
+            </p>
+            <h2 style={{
+              fontFamily: 'var(--font-dm-sans, sans-serif)',
+              fontSize: 'clamp(28px, 2.8vw, 40px)',
+              fontWeight: 500, letterSpacing: '-0.02em', lineHeight: 1.05,
+              color: t.ink, marginBottom: '10px',
+            }}>
               Everything you need.{' '}
-              <span style={{ fontFamily: 'var(--font-serif, serif)', fontStyle: 'italic', fontWeight: 400, color: t.inkMuted }}>Nothing you don&rsquo;t.</span>
+              <span style={{ fontFamily: 'var(--font-serif, serif)', fontStyle: 'italic', fontWeight: 400, color: t.inkMuted }}>
+                Nothing you don&rsquo;t.
+              </span>
             </h2>
-            <p
-              style={{
-                fontFamily: 'var(--font-serif, serif)',
-                fontSize: 'clamp(15px, 1.1vw, 17px)',
-                lineHeight: 1.55,
-                color: t.inkSecondary,
-                maxWidth: '600px',
-                margin: 0,
-              }}
-            >
+            <p style={{
+              fontFamily: 'var(--font-serif, serif)',
+              fontSize: 'clamp(15px, 1.1vw, 17px)',
+              lineHeight: 1.55, color: t.inkSecondary, margin: 0,
+            }}>
               Flagged identities, risk scores, evidence packets, and network exposure — all in one audit view.
             </p>
           </div>
+          <Reveal>
+            <div style={{
+              border: `1px solid ${t.border}`,
+              borderRadius: '8px',
+              overflow: 'hidden',
+              boxShadow: '0 10px 36px rgba(0,0,0,0.14), 0 2px 6px rgba(0,0,0,0.07)',
+            }}>
+              <img
+                src="/screenshots/dashboard.png"
+                alt="Unauth merchant dashboard showing fraud rate, transaction volume, chargeback trend, and identity match breakdown"
+                loading="lazy"
+                width={2880}
+                height={1800}
+                style={{ display: 'block', width: '100%', height: 'auto' }}
+              />
+            </div>
+          </Reveal>
         </div>
-        <LandingScreenshotFrame
-          src="/screenshots/dashboard.png"
-          alt="Unauth merchant dashboard showing fraud rate, transaction volume, chargeback trend, and identity match breakdown"
-        />
       </section>
 
       <hr style={{ border: 'none', borderTop: `1px solid ${t.lineFaint}`, margin: 0 }} />
 
-      {/* ── §8 · Comparison matrix ──────────────────────────────── */}
+      {/* ── §5 · Comparison matrix ──────────────────────────────── */}
       <section className="ua-section-flow mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-20 pb-12 md:pb-16" suppressHydrationWarning>
 
-        <div className="mb-10 grid grid-cols-1 lg:grid-cols-[200px_minmax(0,1fr)] lg:gap-12 items-start">
-          <p
-            style={{
-              fontFamily: 'var(--font-dm-mono, monospace)',
-              fontSize: '11px',
-              fontWeight: 600,
-              letterSpacing: '0.16em',
-              textTransform: 'uppercase',
-              color: t.accent,
-              paddingTop: '6px',
-              lineHeight: 1.6,
-            }}
-          >
-            § 8 —<br />How Unauth<br />Compares
-          </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '48px', alignItems: 'center', marginBottom: '24px' }}>
           <div>
-            <h2
-              style={{
-                fontFamily: 'var(--font-dm-sans, sans-serif)',
-                fontSize: 'clamp(28px, 2.8vw, 40px)',
-                fontWeight: 500,
-                letterSpacing: '-0.02em',
-                lineHeight: 1.05,
-                color: t.ink,
-                marginBottom: '10px',
-              }}
-            >
+            <p style={{
+              fontFamily: 'var(--font-dm-mono, monospace)',
+              fontSize: '11px', fontWeight: 600,
+              letterSpacing: '0.16em', textTransform: 'uppercase',
+              color: t.accent, marginBottom: '12px', lineHeight: 1.6,
+            }}>
+              § 5 — HOW UNAUTH COMPARES
+            </p>
+            <h2 style={{
+              fontFamily: 'var(--font-dm-sans, sans-serif)',
+              fontSize: 'clamp(28px, 2.8vw, 40px)',
+              fontWeight: 500, letterSpacing: '-0.02em', lineHeight: 1.05,
+              color: t.ink, margin: 0,
+            }}>
               Checkout tools miss what happens after.
             </h2>
-            <p
-              style={{
-                fontFamily: 'var(--font-serif, serif)',
-                fontSize: 'clamp(15px, 1.1vw, 17px)',
-                color: t.inkSecondary,
-                lineHeight: 1.55,
-                maxWidth: '640px',
-                margin: 0,
-              }}
-            >
-              Unauth finds refund abuse, friendly fraud, and INR cycles after the transaction clears.
-            </p>
           </div>
+          <p style={{
+            fontFamily: 'var(--font-serif, serif)',
+            fontSize: 'clamp(15px, 1.1vw, 17px)',
+            color: t.inkSecondary, lineHeight: 1.55, margin: 0,
+          }}>
+            Unauth finds refund abuse, friendly fraud, and INR cycles after the transaction clears.
+          </p>
         </div>
 
         {/* Comparison data */}
@@ -1271,7 +1252,7 @@ export default function LandingPage() {
           return (
             <>
               {/* ── Desktop / tablet grid (hidden below sm) ── */}
-              <div className="hidden sm:block ua-glass-card" suppressHydrationWarning style={{ border: `1px solid ${t.border}`, background: '#ffffff', overflow: 'hidden' }}>
+              <div className="hidden sm:block ua-glass-card" suppressHydrationWarning style={{ border: `1px solid ${t.border}`, background: '#ffffff', overflow: 'hidden', boxShadow: '0 10px 36px rgba(0,0,0,0.14), 0 2px 6px rgba(0,0,0,0.07)' }}>
                 {/* Header row */}
                 <div
                   className="grid grid-cols-[1.6fr_1fr_1fr_1fr]"
@@ -1353,7 +1334,7 @@ export default function LandingPage() {
               </div>
 
               {/* ── Mobile stacked cards (hidden above sm) ── */}
-              <div className="sm:hidden ua-glass-card" style={{ border: `1px solid ${t.border}`, background: '#ffffff', overflow: 'hidden' }}>
+              <div className="sm:hidden ua-glass-card" style={{ border: `1px solid ${t.border}`, background: '#ffffff', overflow: 'hidden', boxShadow: '0 10px 36px rgba(0,0,0,0.14), 0 2px 6px rgba(0,0,0,0.07)' }}>
                 <div style={{ padding: '14px 18px', borderBottom: `1px solid ${t.border}`, display: 'flex', gap: '10px', flexWrap: 'wrap', fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '10.5px', color: t.inkSecondary }}>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>{indicator('yes', true)} Included</span>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>{indicator('partial')} Partial</span>
@@ -1420,7 +1401,7 @@ export default function LandingPage() {
         })()}
       </section>
 
-      {/* ── FAQ ─────────────────────────────────────────────────── */}
+      {/* ── §6 · Frequent Questions ─────────────────────────────── */}
       <section
         style={{ background: t.darkBg, position: 'relative', zIndex: 1 }}
       >
@@ -1440,7 +1421,7 @@ export default function LandingPage() {
                   marginBottom: '16px',
                 }}
               >
-                § Frequent Questions
+                § 6 — FREQUENT QUESTIONS
               </p>
               <h2
                 style={{

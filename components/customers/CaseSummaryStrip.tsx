@@ -58,7 +58,10 @@ export default function CaseSummaryStrip({
           <div className="mt-1 num" style={{ fontFamily: 'var(--font-mono)', color: 'var(--data-date)' }}>{formatDateMode(lastSeen, 'recent', renderNow)}</div>
         </div>
       </div>
-      <div className="flex gap-1 px-4 pb-4">
+      <div
+        className="flex gap-1 px-4 pb-4 cursor-help"
+        title="Weekly order activity — each bar is one week; darker red = higher volume of flagged orders or refund claims"
+      >
         {density.map((value, index) => (
           <span
             key={index}

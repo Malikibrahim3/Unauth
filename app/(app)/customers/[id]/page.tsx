@@ -494,7 +494,10 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
           </div>
         </div>
         <div className="flex h-10 items-center gap-4 border-t px-4" style={{ background: 'var(--surface-border)', borderColor: 'var(--surface-border)' }}>
-          <div className="flex flex-1 gap-1">
+          <div
+            className="flex flex-1 gap-1 cursor-help"
+            title="Activity timeline — each bar is one week of orders and refund claims across all merchants"
+          >
             {density.map((value, index) => (
               <span
                 key={index}

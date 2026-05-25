@@ -100,7 +100,10 @@ export default function BehaviorRoadmap({ events }: BehaviorRoadmapProps) {
           <p className="t-label" style={{ color: 'var(--ink-tertiary)' }}>BEHAVIOR ROADMAP</p>
           <p className="t-mono" style={{ color: 'var(--ink-secondary)' }}>{events.length} EVENTS</p>
         </div>
-        <div className="mt-2">
+        <div
+          className="mt-2 cursor-help"
+          title="Event density over 90 days — each bar is a 5-day window; red = refunds or chargebacks, amber = regular orders"
+        >
           <DensitySvg events={events} />
         </div>
         {patternTags.length > 0 && (

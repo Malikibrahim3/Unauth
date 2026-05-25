@@ -37,7 +37,7 @@ const STEPS = [
     stat: '0.99', unit: 'confidence grade',
     headline: 'Scored verdict and evidence packet, ready to act on.',
     body: 'You get the risk score, cluster ID, fired signals, confidence grade, and an evidence packet — ready for review or dispute response.',
-    screenshot: '/screenshots/pipeline-casefile-v2.png',
+    screenshot: '/screenshots/pipeline-casefile-v3.png',
     alt: 'Unauth Customer case file — Nora Kessler, DEFINITE verdict, CONF 0.99, full-page view with exposure, customer roadmap, merchant dossier, and fired signals',
   },
 ] as const;
@@ -106,7 +106,7 @@ export default function PipelineTabs() {
             letterSpacing: '0.18em', textTransform: 'uppercase',
             color: t.accent, marginBottom: '20px',
           }}>
-            § 2 — The Pipeline
+            § 2 — THE PIPELINE
           </p>
           <h2 style={{
             fontFamily: t.sans, fontSize: 'clamp(36px, 4vw, 56px)',
@@ -129,14 +129,24 @@ export default function PipelineTabs() {
         </div>
 
         {/* ── Main panel ── */}
-        <div style={{ border: `1px solid ${t.line}`, background: t.paper, overflow: 'hidden' }}>
-          <div
-            className="ua-pipeline-stage"
-            style={{ display: 'grid', gridTemplateColumns: '300px 1fr', alignItems: 'stretch', height: '620px' }}
-          >
+        <div
+          className="ua-pipeline-stage"
+          style={{
+            display: 'grid', gridTemplateColumns: '300px 1fr', alignItems: 'stretch',
+            height: '620px', gap: '32px',
+          }}
+        >
 
-            {/* ── Left: step nav + content ── */}
-            <div style={{ borderRight: `1px solid ${t.line}`, display: 'flex', flexDirection: 'column' }}>
+            {/* ── Left: step nav + content (self-contained card) ── */}
+            <div style={{
+              border: `1px solid ${t.line}`,
+              borderRadius: '8px',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+              background: t.paper,
+              boxShadow: '0 10px 36px rgba(0,0,0,0.14), 0 2px 6px rgba(0,0,0,0.07)',
+            }}>
 
               {/* Step rows */}
               {STEPS.map((s, i) => {
@@ -261,45 +271,30 @@ export default function PipelineTabs() {
               </div>
             </div>
 
-            {/* ── Right: screenshot in fixed-size frame ── */}
+            {/* ── Right: screenshot floats freely, no card ── */}
             <div
+              key={active}
+              className="ua-artifact-enter"
               style={{
-                background: t.cream,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                padding: '32px',
-                overflow: 'hidden',
+                opacity: fade ? 1 : 0,
+                transition: 'opacity 120ms',
                 position: 'relative',
+                borderRadius: '8px',
+                overflow: 'hidden',
+                boxShadow: '0 10px 36px rgba(0,0,0,0.14), 0 2px 6px rgba(0,0,0,0.07)',
+                border: `1px solid ${t.line}`,
               }}
             >
-              <div
-                key={active}
-                className="ua-artifact-enter"
-                style={{
-                  opacity: fade ? 1 : 0,
-                  transition: 'opacity 120ms',
-                  width: '100%',
-                  maxWidth: '880px',
-                  aspectRatio: '8 / 5',
-                  position: 'relative',
-                  borderRadius: '6px',
-                  overflow: 'hidden',
-                  border: '1px solid rgba(0,0,0,0.10)',
-                  boxShadow: '0 12px 40px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.06)',
-                  background: t.paper,
-                }}
-              >
-                <Image
-                  src={step.screenshot}
-                  alt={step.alt}
-                  fill
-                  style={{ objectFit: 'fill' }}
-                  sizes="(max-width: 900px) 100vw, 60vw"
-                  priority={active === 0}
-                />
-              </div>
+              <Image
+                src={step.screenshot}
+                alt={step.alt}
+                fill
+                style={{ objectFit: 'cover', objectPosition: 'top left' }}
+                sizes="(max-width: 900px) 100vw, 60vw"
+                priority={active === 0}
+              />
             </div>
 
-          </div>
         </div>
       </div>
 
