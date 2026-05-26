@@ -26,6 +26,8 @@ const envSchema = z.object({
   SUPABASE_DB_USAGE_LIMIT_MB: z.coerce.number().optional(),
   SUPABASE_DB_USAGE_HEADROOM_MB: z.coerce.number().optional(),
   AUDIT_EMAIL_FROM: z.string().optional(),
+  SHOPIFY_API_KEY: z.string().min(1).optional(),
+  SHOPIFY_API_SECRET: z.string().min(1).optional(),
 }).superRefine((env, ctx) => {
   if (!env.NEXT_PUBLIC_SUPABASE_ANON_KEY && !env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) {
     ctx.addIssue({
