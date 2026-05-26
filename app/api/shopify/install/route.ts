@@ -16,14 +16,19 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid or missing shop domain' }, { status: 400 });
     }
 
-    const authRoute = await shopify.auth.begin({
+    const response = await shopify.auth.begin({
       shop,
       callbackPath: '/api/shopify/callback',
       isOnline: false,
       rawRequest: request,
     });
 
-    return authRoute as unknown as NextResponse;
+    const redirectUrl = response.headers.get('location');
+    if (!redirectUrl) {
+      throw new Error('No redirect URL from Shopify');
+    }
+
+    return NextResponse.redirect(redirectUrl);
   } catch (error) {
     console.error('Shopify install route failed', {
       error,
