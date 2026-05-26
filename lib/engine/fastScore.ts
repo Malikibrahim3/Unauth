@@ -933,8 +933,8 @@ export function scoreBatch(
     //     lack card-fingerprint evidence; cap at probable regardless of score.
     // (b) Customers with only 2 orders in the batch have too thin a history
     //     to warrant a definite grade.
-    const customerOrders = ctx.customerOrderHistory.get(order.emailHash) ?? [];
-    const isTwoOrderCluster = customerOrders.length <= 2;
+    const customerOrderHistoryForCaps = ctx.customerOrderHistory.get(order.emailHash) ?? [];
+    const isTwoOrderCluster = customerOrderHistoryForCaps.length <= 2;
     // Option A DEFINITE gate: replaces the prior isSinglePMOnly hard cap, which
     // symmetrically blocked legitimate single-card customers. We instead require
     // either direct card-fingerprint evidence or a non-thin order history (≥3).
@@ -946,9 +946,9 @@ export function scoreBatch(
     // Multi-corroborated email evidence (≥3 distinct signals) is treated as
     // equivalent to a two-identifier definite — but only when the score
     // already clears the definite bar AND the order is not subject to a cap.
-    if (adjustedScore >= 75 && strongCount >= 2 && (hasCardEvidence || customerOrders.length >= 3)) {
+    if (adjustedScore >= 75 && strongCount >= 2 && (hasCardEvidence || customerOrderHistoryForCaps.length >= 3)) {
       confidenceGrade = 'definite';
-    } else if (adjustedScore >= 75 && multiCorroborated && (hasCardEvidence || customerOrders.length >= 3) && !isTwoOrderCluster) {
+    } else if (adjustedScore >= 75 && multiCorroborated && (hasCardEvidence || customerOrderHistoryForCaps.length >= 3) && !isTwoOrderCluster) {
       confidenceGrade = 'definite'; // ≥3 corroborating email signals, no thin-evidence cap
     } else if (adjustedScore >= 75) {
       confidenceGrade = 'probable'; // single-identifier cap (or PM/thin-history cap)
