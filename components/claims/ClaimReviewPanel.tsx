@@ -8,8 +8,20 @@ type Outcome = 'loss' | 'recovered' | 'pending' | 'chargeback_won' | 'chargeback
 type EvidenceType = 'tracking' | 'proof_of_delivery' | 'customer_message' | 'support_ticket' | 'return_label' | 'warehouse_scan' | 'payment_dispute' | 'note' | 'other';
 type EvidenceSource = 'manual' | 'csv_import' | 'zendesk' | 'gorgias' | 'shopify' | 'stripe' | 'paypal' | 'carrier';
 
+type OrderOption = { id: string; orderLabel: string; orderValue: number | null; currency?: string | null; status: string; date?: string | null };
+
 function safeKey(v: string) { return /^[a-zA-Z0-9_.-]{1,40}$/.test(v); }
 function clean(v: string) { return v.replace(/[<>]/g, '').trim(); }
+
+function formatMoney(value: number | null | undefined, currency?: string | null) {
+  if (typeof value !== 'number' || Number.isNaN(value)) return 'n/a';
+  return `${value.toFixed(2)}${currency ? ` ${currency}` : ''}`;
+}
+
+function formatOrderOption(o: OrderOption) {
+  const date = o.date ? new Date(o.date).toLocaleDateString('en-GB') : 'n/a';
+  return `${o.orderLabel} · ${o.id} · ${formatMoney(o.orderValue, o.currency)} · ${o.status || 'unknown'} · ${date}`;
+}
 
 export default function ClaimReviewPanel({ profileId }: { profileId: string }) {
   const [data, setData] = useState<any>(null);
@@ -33,15 +45,9 @@ export default function ClaimReviewPanel({ profileId }: { profileId: string }) {
   const [message, setMessage] = useState('');
 
   useEffect(() => {
-    fetch(`/api/customers/${profileId}`).then(r => r.ok ? r.json() : null).then((x) => {
-      setData(x);
-      const first = x?.orderHistory?.[0]?.orderId;
-      if (first) setSelectedOrderId(first);
-    }).catch(() => {});
+    fetch(`/api/customers/${profileId}`).then(r => r.ok ? r.json() : null).then((x) => setData(x)).catch(() => {});
     fetch(`/api/customers/${profileId}/shopify-orders`).then(r => r.ok ? r.json() : null).then((x) => {
-      const rows = x?.orders ?? [];
-      setShopifyOrders(rows);
-      if (!selectedOrderId && rows.length > 0) setSelectedOrderId(rows[0].id);
+      setShopifyOrders(x?.orders ?? []);
     }).catch(() => {});
     fetch(`/api/claims?profileId=${encodeURIComponent(profileId)}`).then(r => r.ok ? r.json() : null).then((x) => {
       if (!x) return;
@@ -50,6 +56,60 @@ export default function ClaimReviewPanel({ profileId }: { profileId: string }) {
       setHistory(x.claims ?? []);
     }).catch(() => {});
   }, [profileId]);
+
+  const orderOptions = useMemo<OrderOption[]>(() => {
+    const map = new Map<string, OrderOption>();
+    for (const o of data?.orderHistory ?? []) {
+      const id = String(o.orderId ?? '');
+      if (!id) continue;
+      map.set(id, {
+        id,
+        orderLabel: String(o.orderNumber ?? o.orderId ?? id),
+        orderValue: typeof o.orderValue === 'number' ? o.orderValue : null,
+        status: o.refundStatus ?? 'unknown',
+        date: o.orderDate ?? null,
+      });
+    }
+    for (const o of shopifyOrders) {
+      const id = String(o.id ?? o.shopify_order_id ?? '');
+      if (!id) continue;
+      map.set(id, {
+        id,
+        orderLabel: String(o.order_id ?? o.order_number ?? id),
+        orderValue: typeof o.order_value === 'number' ? o.order_value : null,
+        currency: o.currency ?? null,
+        status: o.status ?? 'unknown',
+        date: o.processed_at ?? null,
+      });
+    }
+    for (const h of history) {
+      const id = String(h.shopify_order_id ?? '');
+      if (!id || map.has(id)) continue;
+      map.set(id, {
+        id,
+        orderLabel: id,
+        orderValue: typeof h.amount_at_risk === 'number' ? h.amount_at_risk : null,
+        currency: h.currency ?? null,
+        status: h.status ?? 'unknown',
+        date: h.updated_at ?? null,
+      });
+    }
+    return Array.from(map.values());
+  }, [data, history, shopifyOrders]);
+
+  useEffect(() => {
+    if (selectedOrderId && orderOptions.some((o) => o.id === selectedOrderId)) return;
+    if (orderOptions.length === 1) {
+      setSelectedOrderId(orderOptions[0].id);
+      return;
+    }
+    if (!selectedOrderId && orderOptions.length > 1) {
+      const fromHistory = history[0]?.shopify_order_id;
+      if (fromHistory && orderOptions.some((o) => o.id === fromHistory)) {
+        setSelectedOrderId(String(fromHistory));
+      }
+    }
+  }, [history, orderOptions, selectedOrderId]);
 
   const order = useMemo(() => data?.orderHistory?.find((o: any) => o.orderId === selectedOrderId), [data, selectedOrderId]);
 
@@ -110,16 +170,21 @@ export default function ClaimReviewPanel({ profileId }: { profileId: string }) {
         </div>
         <div>
           <label className="text-xs" style={{ color: 'var(--text-muted)' }}>Order</label>
-          <select className="w-full px-3 py-2 rounded-md text-sm" style={{ border: '1px solid var(--border)', background: 'var(--bg-inset)' }} value={selectedOrderId} onChange={e => setSelectedOrderId(e.target.value)}>
-            <option value="">Select order…</option>
-            {(data?.orderHistory ?? []).map((o: any) => <option key={o.orderId} value={o.orderId}>{o.orderId} · {o.orderDate ? new Date(o.orderDate).toLocaleDateString('en-GB') : 'n/a'} · {typeof o.orderValue === 'number' ? o.orderValue.toFixed(2) : 'n/a'} · {o.refundStatus ?? 'unknown'}</option>)}
-            {shopifyOrders.map((o: any) => <option key={o.id} value={o.id}>{o.order_id} · {o.processed_at ? new Date(o.processed_at).toLocaleDateString('en-GB') : 'n/a'} · {typeof o.order_value === 'number' ? o.order_value.toFixed(2) : 'n/a'} · {o.status ?? 'unknown'}</option>)}
-          </select>
+          {orderOptions.length === 0 ? (
+            <div className="w-full px-3 py-2 rounded-md text-sm" style={{ border: '1px solid var(--border)', background: 'var(--bg-inset)', color: 'var(--text-muted)' }}>
+              No Shopify orders found for this profile yet.
+            </div>
+          ) : (
+            <select aria-label="Order" className="w-full px-3 py-2 rounded-md text-sm" style={{ border: '1px solid var(--border)', background: 'var(--bg-inset)' }} value={selectedOrderId} onChange={e => setSelectedOrderId(e.target.value)}>
+              {orderOptions.length > 1 && <option value="">Select order…</option>}
+              {orderOptions.map((o) => <option key={o.id} value={o.id}>{formatOrderOption(o)}</option>)}
+            </select>
+          )}
         </div>
       </div>
     </section>
 
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">{/* unchanged below */}
       <section className="rounded-xl p-4 border" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}>
         <p className="text-overline mb-2">Claim</p>
         <input className="w-full mb-2 px-3 py-2 rounded-md text-sm" style={{ border: '1px solid var(--border)', background: 'var(--bg-inset)' }} placeholder="Claim id (optional, for update)" value={claimId} onChange={e => setClaimId(e.target.value)} />
