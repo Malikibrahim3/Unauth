@@ -36,6 +36,7 @@ export async function processWebhook(rawBody: string, shopDomain: string, topic:
   const now = new Date().toISOString();
   const supabase = supabaseClient ?? createServiceClient();
   const rows: MerchantIdentityInsert[] = [];
+  const payloadHash = crypto.createHash('sha256').update(rawBody, 'utf8').digest('hex');
 
   if (topic === 'app/uninstalled') {
     await supabase
@@ -101,8 +102,6 @@ export async function processWebhook(rawBody: string, shopDomain: string, topic:
     const tagList = typeof payload.tags === 'string'
       ? payload.tags.split(',').map((t: string) => t.trim()).filter(Boolean)
       : [];
-    const payloadHash = crypto.createHash('sha256').update(rawBody, 'utf8').digest('hex');
-
     await supabase
       .from('shopify_order_signals' as any)
       .upsert({
@@ -142,6 +141,25 @@ export async function processWebhook(rawBody: string, shopDomain: string, topic:
   }
 
   if (topic === 'refunds/create') {
+    const refundedAmount = Number(payload.transactions?.reduce((sum: number, tx: any) => {
+      const amount = Number(tx?.amount ?? 0);
+      return sum + (Number.isFinite(amount) ? amount : 0);
+    }, 0) ?? 0);
+    await supabase
+      .from('shopify_refund_events' as any)
+      .upsert({
+        shop_domain: shopDomain,
+        shopify_order_id: payload.order_id ? String(payload.order_id) : null,
+        refund_id: String(payload.id),
+        refunded_amount: Number.isFinite(refundedAmount) ? refundedAmount : 0,
+        currency: payload.currency ?? null,
+        refund_reason: payload.note ?? payload.reason ?? null,
+        refunded_line_items_count: Array.isArray(payload.refund_line_items) ? payload.refund_line_items.length : 0,
+        created_at_shopify: payload.created_at ?? null,
+        raw_payload_hash: payloadHash,
+        updated_at: now,
+      }, { onConflict: 'shop_domain,refund_id' });
+
     rows.push({
       shop_domain: shopDomain,
       source: 'refund',
@@ -153,6 +171,30 @@ export async function processWebhook(rawBody: string, shopDomain: string, topic:
       customer_id: payload.order?.customer?.id ? String(payload.order.customer.id) : null,
       updated_at: now,
     });
+  }
+
+  if (topic === 'fulfillments/create' || topic === 'fulfillments/update') {
+    const trackingNumberRaw = payload.tracking_number ?? payload.shipment_status?.tracking_number ?? null;
+    const trackingNumberHash = typeof trackingNumberRaw === 'string' && trackingNumberRaw.trim()
+      ? crypto.createHash('sha256').update(trackingNumberRaw.trim(), 'utf8').digest('hex')
+      : null;
+    const trackingUrlsCount = Array.isArray(payload.tracking_urls) ? payload.tracking_urls.length : 0;
+    await supabase
+      .from('shopify_fulfillment_events' as any)
+      .upsert({
+        shop_domain: shopDomain,
+        shopify_order_id: payload.order_id ? String(payload.order_id) : null,
+        fulfillment_id: String(payload.id),
+        tracking_company: payload.tracking_company ?? null,
+        tracking_number_hash: trackingNumberHash,
+        tracking_urls_count: trackingUrlsCount,
+        shipment_status: payload.shipment_status ?? null,
+        status: payload.status ?? null,
+        created_at_shopify: payload.created_at ?? null,
+        updated_at_shopify: payload.updated_at ?? null,
+        raw_payload_hash: payloadHash,
+        updated_at: now,
+      }, { onConflict: 'shop_domain,fulfillment_id' });
   }
 
   if (topic === 'disputes/create') {

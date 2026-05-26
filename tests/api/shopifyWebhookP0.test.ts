@@ -322,4 +322,109 @@ describe('shopify webhook p0', () => {
     expect(signalUpserts.length).toBe(1);
     expect(signalUpserts[0].opts.onConflict).toBe('shop_domain,shopify_order_id');
   });
+
+  it('refund webhook inserts refund event without PII and finalizes completed', async () => {
+    const updates: any[] = [];
+    const refundUpserts: any[] = [];
+    const supabase = {
+      from: (table: string) => {
+        if (table === 'processed_webhooks') {
+          return {
+            select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null, error: null }) }) }),
+            upsert: async () => ({ error: null }),
+            update: (payload: any) => { updates.push(payload); return { eq: async () => ({ error: null }) }; },
+          };
+        }
+        if (table === 'merchant_identities') return { upsert: async () => ({ error: null }) };
+        if (table === 'shopify_refund_events') {
+          return { upsert: async (payload: any, opts: any) => { refundUpserts.push({ payload, opts }); return { error: null }; } };
+        }
+        return { upsert: async () => ({ error: null }) };
+      },
+    };
+    createServiceClient.mockReturnValue(supabase);
+    const body = JSON.stringify({ id: 201, order_id: 901, currency: 'USD', note: 'customer request', refund_line_items: [{ id: 1 }], transactions: [{ amount: '10.00' }] });
+    const hmac = createHmac('sha256', 'test-secret').update(body, 'utf8').digest('base64');
+    const req = makeReq(body, {
+      'x-shopify-hmac-sha256': hmac,
+      'x-shopify-shop-domain': 'unit-test.myshopify.com',
+      'x-shopify-topic': 'refunds/create',
+      'x-shopify-webhook-id': 'wid-refund-1',
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+    expect(refundUpserts.length).toBe(1);
+    expect(refundUpserts[0].opts.onConflict).toBe('shop_domain,refund_id');
+    expect(refundUpserts[0].payload.tracking_number).toBeUndefined();
+    expect(refundUpserts[0].payload.email).toBeUndefined();
+    expect(updates.some((u) => u.status === 'completed')).toBe(true);
+  });
+
+  it('fulfillment webhook inserts fulfillment event with hashed tracking only', async () => {
+    const fulfillmentUpserts: any[] = [];
+    const supabase = {
+      from: (table: string) => {
+        if (table === 'processed_webhooks') {
+          return {
+            select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null, error: null }) }) }),
+            upsert: async () => ({ error: null }),
+            update: () => ({ eq: async () => ({ error: null }) }),
+          };
+        }
+        if (table === 'merchant_identities') return { upsert: async () => ({ error: null }) };
+        if (table === 'shopify_fulfillment_events') {
+          return { upsert: async (payload: any, opts: any) => { fulfillmentUpserts.push({ payload, opts }); return { error: null }; } };
+        }
+        return { upsert: async () => ({ error: null }) };
+      },
+    };
+    createServiceClient.mockReturnValue(supabase);
+    const body = JSON.stringify({ id: 333, order_id: 777, tracking_company: 'UPS', tracking_number: '1Z999AA10123456784', tracking_urls: ['https://x.test/t/1'], shipment_status: 'in_transit', status: 'success' });
+    const hmac = createHmac('sha256', 'test-secret').update(body, 'utf8').digest('base64');
+    const req = makeReq(body, {
+      'x-shopify-hmac-sha256': hmac,
+      'x-shopify-shop-domain': 'unit-test.myshopify.com',
+      'x-shopify-topic': 'fulfillments/create',
+      'x-shopify-webhook-id': 'wid-fulfill-1',
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+    expect(fulfillmentUpserts.length).toBe(1);
+    expect(fulfillmentUpserts[0].opts.onConflict).toBe('shop_domain,fulfillment_id');
+    expect(fulfillmentUpserts[0].payload.tracking_number_hash).toMatch(/^[a-f0-9]{64}$/);
+    expect(fulfillmentUpserts[0].payload.tracking_number).toBeUndefined();
+    expect(fulfillmentUpserts[0].payload.tracking_urls).toBeUndefined();
+  });
+
+  it('failed fulfillment processing finalizes as failed', async () => {
+    const updates: any[] = [];
+    const supabase = {
+      from: (table: string) => {
+        if (table === 'processed_webhooks') {
+          return {
+            select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null, error: null }) }) }),
+            upsert: async () => ({ error: null }),
+            update: (payload: any) => { updates.push(payload); return { eq: async () => ({ error: null }) }; },
+          };
+        }
+        if (table === 'shopify_fulfillment_events') {
+          return { upsert: async () => { throw new Error('boom'); } };
+        }
+        if (table === 'merchant_identities') return { upsert: async () => ({ error: null }) };
+        return { upsert: async () => ({ error: null }) };
+      },
+    };
+    createServiceClient.mockReturnValue(supabase);
+    const body = JSON.stringify({ id: 334, order_id: 778 });
+    const hmac = createHmac('sha256', 'test-secret').update(body, 'utf8').digest('base64');
+    const req = makeReq(body, {
+      'x-shopify-hmac-sha256': hmac,
+      'x-shopify-shop-domain': 'unit-test.myshopify.com',
+      'x-shopify-topic': 'fulfillments/update',
+      'x-shopify-webhook-id': 'wid-fulfill-fail',
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+    expect(updates.some((u) => u.status === 'failed')).toBe(true);
+  });
 });

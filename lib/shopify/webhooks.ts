@@ -1,7 +1,16 @@
 import { createHmac, timingSafeEqual } from 'crypto';
 import { getAppUrl } from '@/lib/utils/appUrl';
 
-const WEBHOOK_TOPICS = ['orders/create', 'orders/updated', 'refunds/create', 'disputes/create', 'app/uninstalled'] as const;
+const WEBHOOK_TOPICS = [
+  'orders/create',
+  'orders/updated',
+  'refunds/create',
+  'orders/cancelled',
+  'fulfillments/create',
+  'fulfillments/update',
+  'disputes/create',
+  'app/uninstalled',
+] as const;
 
 export function verifyShopifyWebhookHmac(rawBody: string, providedHmac: string | null): boolean {
   if (!providedHmac) return false;
