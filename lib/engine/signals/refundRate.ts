@@ -37,10 +37,18 @@ export const refundRate: Signal = (order: NormalisedOrder, context: ScoringConte
 
   if (customerOrders.length < 3) return notFired;
 
-  const refundedCount = customerOrders.filter(
+  const refundedOrders = customerOrders.filter(
     (o) => o.refundStatus === 'full' || o.refundStatus === 'partial' || o.orderStatus === 'refunded'
-  ).length;
+  );
+  const refundedCount = refundedOrders.length;
   const customerRate = refundedCount / customerOrders.length;
+  const lifetimeSpend = customerOrders.reduce((s, o) => s + o.orderTotal, 0);
+  const totalRefundAmount = customerOrders.reduce((s, o) => s + (o.refundAmount ?? 0), 0);
+  const refundedSpendRate = lifetimeSpend > 0 ? totalRefundAmount / lifetimeSpend : 0;
+  const highValueThreshold = Math.max(120, order.orderTotal * 0.75);
+  const highValueRefundAmount = refundedOrders.reduce((s, o) => s + ((o.refundAmount ?? 0) >= highValueThreshold ? (o.refundAmount ?? 0) : 0), 0);
+  const highValueConcentration = totalRefundAmount > 0 ? highValueRefundAmount / totalRefundAmount : 0;
+  const refundToOrderValue = order.orderTotal > 0 ? (order.refundAmount ?? 0) / order.orderTotal : 0;
 
   const { mean, stddev } = computePopulationStats(context.allOrders);
   const threshold = mean + 2 * stddev;
@@ -48,18 +56,31 @@ export const refundRate: Signal = (order: NormalisedOrder, context: ScoringConte
   if (customerRate <= threshold) return notFired;
 
   const zscore = (customerRate - mean) / stddev;
-  const score = Math.min(100, Math.round(zscore * 25));
+  const smoothedRate = (refundedCount + 1) / (customerOrders.length + 4);
+  let score = Math.min(100, Math.round(zscore * 25));
+  if (smoothedRate < threshold) score = Math.max(0, score - 15);
+  if (refundedSpendRate > 0.3) score += 10;
+  if (highValueConcentration > 0.65) score += 10;
+  if (refundToOrderValue > 0.75) score += 5;
+  score = Math.min(100, score);
 
   return {
     name: 'refundRate',
     fired: true,
     score,
-    reason: `Customer refund rate is ${(customerRate * 100).toFixed(0)}% across ${customerOrders.length} orders, which is ${zscore.toFixed(1)} standard deviations above the population baseline of ${(mean * 100).toFixed(0)}%.`,
+    reason: `Refund frequency ${(customerRate * 100).toFixed(0)}% (${refundedCount}/${customerOrders.length}), refunded spend ${(refundedSpendRate * 100).toFixed(0)}% of lifetime spend, high-value concentration ${(highValueConcentration * 100).toFixed(0)}%.`,
     evidence: {
       customerRate,
       populationMean: mean,
       populationStddev: stddev,
       zscore,
+      smoothedRate,
+      refundedSpendRate,
+      highValueConcentration,
+      refundToOrderValue,
+      lifetimeSpend,
+      totalRefundAmount,
+      highValueRefundAmount,
       orderCount: customerOrders.length,
       refundedCount,
     },

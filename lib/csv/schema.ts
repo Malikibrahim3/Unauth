@@ -51,6 +51,12 @@ export const csvRowSchema = z.object({
     const n = parseFloat(v);
     return !isNaN(n) && n >= 0;
   }, 'refund_amount must be a non-negative number'),
+  delivery_status: z.string().optional(),
+  delivered_at: z.string().optional().refine((v) => {
+    if (!v || v === '') return true;
+    const d = new Date(v);
+    return !isNaN(d.getTime());
+  }, 'delivered_at must be a valid date'),
   payment_method: z.string().optional(),
   ip_address: z.string().optional(),
   device_id: z.string().optional(),

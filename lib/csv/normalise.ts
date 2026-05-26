@@ -80,6 +80,15 @@ export function normaliseRow(row: CsvRow): NormalisedOrderWithRawEmail {
 
   const orderDate = new Date(row.order_date);
   const refundDate = row.refund_date ? new Date(row.refund_date) : null;
+  const deliveredAt = row.delivered_at ? new Date(row.delivered_at) : null;
+  const deliveryStatusRaw = (row.delivery_status ?? '').toLowerCase().trim();
+  const deliveryStatus = deliveryStatusRaw === 'delivered'
+    ? 'delivered'
+    : deliveryStatusRaw === 'in_transit'
+      ? 'in_transit'
+      : deliveryStatusRaw === 'pending'
+        ? 'pending'
+        : 'unknown';
 
   const cleanedStatus = cleanOrderStatus(row.order_status) ?? 'completed';
   const cleanedRefundStatus = cleanRefundStatus(row.refund_status) ?? 'none';
@@ -114,6 +123,8 @@ export function normaliseRow(row: CsvRow): NormalisedOrderWithRawEmail {
     refundReason: cleanedRefundReason,
     refundDate,
     refundAmount: row.refund_amount ? parseFloat(row.refund_amount) : null,
+    deliveryStatus,
+    deliveredAt: deliveredAt && !Number.isNaN(deliveredAt.getTime()) ? deliveredAt : null,
     paymentMethod: row.payment_method ?? null,
     groundTruthLabel: cleanedGroundTruth,
     // Dispute-history intelligence (§1 consortium signal).

@@ -21,10 +21,18 @@ function refundRate(order: NormalisedOrder, ctx: FastScoringContext): SignalResu
 
   if (customerOrders.length < 3) return notFired;
 
-  const refundedCount = customerOrders.filter(
+  const refundedOrders = customerOrders.filter(
     (o) => o.refundStatus === 'full' || o.refundStatus === 'partial' || o.orderStatus === 'refunded'
-  ).length;
+  );
+  const refundedCount = refundedOrders.length;
   const customerRate = refundedCount / customerOrders.length;
+  const lifetimeSpend = customerOrders.reduce((s, o) => s + o.orderTotal, 0);
+  const totalRefundAmount = customerOrders.reduce((s, o) => s + (o.refundAmount ?? 0), 0);
+  const refundedSpendRate = lifetimeSpend > 0 ? totalRefundAmount / lifetimeSpend : 0;
+  const highValueThreshold = Math.max(120, order.orderTotal * 0.75);
+  const highValueRefundAmount = refundedOrders.reduce((s, o) => s + ((o.refundAmount ?? 0) >= highValueThreshold ? (o.refundAmount ?? 0) : 0), 0);
+  const highValueConcentration = totalRefundAmount > 0 ? highValueRefundAmount / totalRefundAmount : 0;
+  const refundToOrderValue = order.orderTotal > 0 ? (order.refundAmount ?? 0) / order.orderTotal : 0;
 
   const { mean, stddev } = ctx.populationRefundStats;
   const threshold = mean + 2 * stddev;
@@ -32,14 +40,20 @@ function refundRate(order: NormalisedOrder, ctx: FastScoringContext): SignalResu
   if (customerRate <= threshold) return notFired;
 
   const zscore = (customerRate - mean) / stddev;
-  const score = Math.min(100, Math.round(zscore * 25));
+  const smoothedRate = (refundedCount + 1) / (customerOrders.length + 4);
+  let score = Math.min(100, Math.round(zscore * 25));
+  if (smoothedRate < threshold) score = Math.max(0, score - 15);
+  if (refundedSpendRate > 0.3) score += 10;
+  if (highValueConcentration > 0.65) score += 10;
+  if (refundToOrderValue > 0.75) score += 5;
+  score = Math.min(100, score);
 
   return {
     name: 'refundRate',
     fired: true,
     score,
-    reason: `Customer refund rate is ${(customerRate * 100).toFixed(0)}% across ${customerOrders.length} orders, which is ${zscore.toFixed(1)} standard deviations above the population baseline of ${(mean * 100).toFixed(0)}%.`,
-    evidence: { customerRate, populationMean: mean, populationStddev: stddev, zscore, orderCount: customerOrders.length, refundedCount },
+    reason: `Refund frequency ${(customerRate * 100).toFixed(0)}% (${refundedCount}/${customerOrders.length}), refunded spend ${(refundedSpendRate * 100).toFixed(0)}% of lifetime spend, high-value concentration ${(highValueConcentration * 100).toFixed(0)}%.`,
+    evidence: { customerRate, populationMean: mean, populationStddev: stddev, zscore, smoothedRate, refundedSpendRate, highValueConcentration, refundToOrderValue, lifetimeSpend, totalRefundAmount, highValueRefundAmount, orderCount: customerOrders.length, refundedCount },
     identifierTypesUsed: ['email'],
   };
 }
@@ -173,14 +187,26 @@ function inrSpeed(order: NormalisedOrder): SignalResult {
   }
 
   const hoursToRefund = (order.refundDate.getTime() - order.orderDate.getTime()) / (1000 * 60 * 60);
+  const hasDeliveryEvidence = order.deliveryStatus === 'delivered' || !!order.deliveredAt;
+  const claimAfterDelivery = !!order.deliveredAt && order.refundDate.getTime() >= order.deliveredAt.getTime();
 
-  if (hoursToRefund >= SUSPICIOUS_HOURS) {
+  if (!hasDeliveryEvidence) {
+    return {
+      name: 'inrSpeed',
+      fired: false,
+      score: 0,
+      reason: 'INR timing present but delivery confirmation is missing; no high-severity inference.',
+      evidence: { hoursToRefund, hasDeliveryEvidence: false },
+    };
+  }
+
+  if (hoursToRefund >= SUSPICIOUS_HOURS || !claimAfterDelivery) {
     return {
       name: 'inrSpeed',
       fired: false,
       score: 0,
       reason: `INR claim made ${hoursToRefund.toFixed(0)}h after order — within expected delivery window.`,
-      evidence: { hoursToRefund },
+      evidence: { hoursToRefund, hasDeliveryEvidence, claimAfterDelivery },
     };
   }
 
@@ -189,7 +215,7 @@ function inrSpeed(order: NormalisedOrder): SignalResult {
     fired: true,
     score: 80,
     reason: `Customer claimed item not received ${hoursToRefund.toFixed(0)} hours after placing the order — too fast for typical delivery (threshold: ${SUSPICIOUS_HOURS}h).`,
-    evidence: { hoursToRefund, orderDate: order.orderDate.toISOString(), refundDate: order.refundDate.toISOString() },
+    evidence: { hoursToRefund, hasDeliveryEvidence, claimAfterDelivery, orderDate: order.orderDate.toISOString(), refundDate: order.refundDate.toISOString() },
   };
 }
 
@@ -818,8 +844,20 @@ export function scoreBatch(
     const signals = rawSignals.map((s) => applyAdjustment(s, ctx));
 
     const totalScore = computeScore(signals);
-    const riskTier = getRiskTier(totalScore);
-    const baseFlagged = totalScore >= FLAG_THRESHOLD;
+    const customerOrders = ctx.customerOrderHistory.get(order.emailHash) ?? [];
+    const lifetimeSpend = customerOrders.reduce((s, o) => s + o.orderTotal, 0);
+    const cleanOrderCount = customerOrders.filter((o) => o.refundStatus === 'none' && o.chargebackDispute !== true).length;
+    const firstSeenAt = customerOrders.reduce((m, o) => Math.min(m, o.orderDate.getTime()), order.orderDate.getTime());
+    const tenureDays = Math.max(0, (order.orderDate.getTime() - firstSeenAt) / 86400000);
+    const hasStrongDispute = signals.some((s) => s.fired && s.name === 'disputeHistory');
+    const fairnessEligible = tenureDays >= 120 && customerOrders.length >= 20 && cleanOrderCount >= 15 && lifetimeSpend >= 1500;
+    const adjustedScore = fairnessEligible && !hasStrongDispute ? totalScore * 0.82 : totalScore;
+    const independentSignals = new Set(signals.filter((s) => s.fired && s.score >= 25).map((s) => s.name));
+    let riskTier = getRiskTier(adjustedScore);
+    if ((riskTier === 'high' || riskTier === 'critical') && !hasStrongDispute && independentSignals.size < 2) {
+      riskTier = adjustedScore >= RISK_TIER_THRESHOLDS.medium ? 'medium' : 'low';
+    }
+    const baseFlagged = adjustedScore >= FLAG_THRESHOLD;
 
     // §5.1 — Data completeness cap
     // A 'definite' grade requires at least 2 distinct strong identifier types.
@@ -865,17 +903,17 @@ export function scoreBatch(
     // Multi-corroborated email evidence (≥3 distinct signals) is treated as
     // equivalent to a two-identifier definite — but only when the score
     // already clears the definite bar AND the order is not subject to a cap.
-    if (totalScore >= 75 && strongCount >= 2 && (hasCardEvidence || customerOrders.length >= 3)) {
+    if (adjustedScore >= 75 && strongCount >= 2 && (hasCardEvidence || customerOrders.length >= 3)) {
       confidenceGrade = 'definite';
-    } else if (totalScore >= 75 && multiCorroborated && (hasCardEvidence || customerOrders.length >= 3) && !isTwoOrderCluster) {
+    } else if (adjustedScore >= 75 && multiCorroborated && (hasCardEvidence || customerOrders.length >= 3) && !isTwoOrderCluster) {
       confidenceGrade = 'definite'; // ≥3 corroborating email signals, no thin-evidence cap
-    } else if (totalScore >= 75) {
+    } else if (adjustedScore >= 75) {
       confidenceGrade = 'probable'; // single-identifier cap (or PM/thin-history cap)
-    } else if (totalScore >= 50 && strongCount >= 2) {
+    } else if (adjustedScore >= 50 && strongCount >= 2) {
       confidenceGrade = 'probable';
-    } else if (totalScore >= 25 && strongCount >= 1) {
+    } else if (adjustedScore >= 25 && strongCount >= 1) {
       confidenceGrade = 'possible';
-    } else if (totalScore >= 25 && strongCount === 0) {
+    } else if (adjustedScore >= 25 && strongCount === 0) {
       confidenceGrade = 'weak'; // IP-only or no identifiers
     } else {
       confidenceGrade = null; // below scoring threshold
@@ -904,7 +942,7 @@ export function scoreBatch(
 
     return {
       order,
-      totalScore,
+      totalScore: adjustedScore,
       riskTier,
       confidenceGrade,
       flagged,

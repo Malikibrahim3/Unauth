@@ -25,6 +25,8 @@ export interface NormalisedOrder {
   refundReason: string | null;
   refundDate: Date | null;
   refundAmount: number | null;
+  deliveryStatus?: 'delivered' | 'in_transit' | 'pending' | 'unknown' | null;
+  deliveredAt?: Date | null;
   paymentMethod: string | null;
   groundTruthLabel?: 'fraud' | 'legitimate' | 'same_person' | 'different_people' | 'unknown' | null;
   // Dispute-history intelligence (§1 consortium signal).

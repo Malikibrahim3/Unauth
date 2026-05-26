@@ -34,10 +34,12 @@ describe('inrSpeed signal', () => {
     expect(inrSpeed(order, emptyCtx).fired).toBe(false);
   });
 
-  it('fires when INR claimed within 48 hours of order', () => {
+  it('fires when INR claimed quickly after confirmed delivery', () => {
     const order = makeOrder({
       orderDate: new Date('2025-01-01T10:00:00Z'),
       refundDate: new Date('2025-01-02T09:00:00Z'),
+      deliveryStatus: 'delivered',
+      deliveredAt: new Date('2025-01-01T12:00:00Z'),
     });
     const result = inrSpeed(order, emptyCtx);
     expect(result.fired).toBe(true);

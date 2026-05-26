@@ -118,8 +118,20 @@ export function scoreOrders(
   return orders.map((order) => {
     const signals = SIGNALS.map(({ fn }) => fn(order, context));
     const totalScore = computeScore(signals);
-    const riskTier = getRiskTier(totalScore);
-    const baseFlagged = totalScore >= FLAG_THRESHOLD;
+    const customerOrders = context.customerOrderHistory.get(order.emailHash) ?? [];
+    const lifetimeSpend = customerOrders.reduce((s, o) => s + o.orderTotal, 0);
+    const cleanOrderCount = customerOrders.filter((o) => o.refundStatus === 'none' && o.chargebackDispute !== true).length;
+    const firstSeenAt = customerOrders.reduce((m, o) => Math.min(m, o.orderDate.getTime()), order.orderDate.getTime());
+    const tenureDays = Math.max(0, (order.orderDate.getTime() - firstSeenAt) / 86400000);
+    const hasStrongDispute = signals.some((s) => s.fired && s.name === 'disputeHistory');
+    const fairnessEligible = tenureDays >= 120 && customerOrders.length >= 20 && cleanOrderCount >= 15 && lifetimeSpend >= 1500;
+    const adjustedScore = fairnessEligible && !hasStrongDispute ? totalScore * 0.82 : totalScore;
+    const independentSignals = new Set(signals.filter((s) => s.fired && s.score >= 25).map((s) => s.name));
+    let riskTier = getRiskTier(adjustedScore);
+    if ((riskTier === 'high' || riskTier === 'critical') && !hasStrongDispute && independentSignals.size < 2) {
+      riskTier = adjustedScore >= RISK_TIER_THRESHOLDS.medium ? 'medium' : 'low';
+    }
+    const baseFlagged = adjustedScore >= FLAG_THRESHOLD;
 
     // Composition gate — broad-overlap signals (shared infrastructure) cannot
     // flag an order on their own. At least one BEHAVIORAL_FRAUD_SIGNAL must fire.
@@ -131,7 +143,7 @@ export function scoreOrders(
 
     return {
       order,
-      totalScore,
+      totalScore: adjustedScore,
       riskTier,
       flagged,
       signals,
