@@ -24,11 +24,13 @@ async function fetchAllPages<T>(
   firstUrl: string,
   accessToken: string,
   key: 'orders'
-): Promise<T[]> {
+): Promise<{ rows: T[]; pages: number }> {
   const rows: T[] = [];
   let nextUrl: string | null = firstUrl;
+  let pages = 0;
 
   while (nextUrl) {
+    pages += 1;
     const res = await fetch(nextUrl, {
       headers: {
         'X-Shopify-Access-Token': accessToken,
@@ -48,7 +50,7 @@ async function fetchAllPages<T>(
     nextUrl = parseNextLink(res.headers.get('link'));
   }
 
-  return rows;
+  return { rows, pages };
 }
 
 export async function backfillShopifyMerchantIdentities(input: {
@@ -67,11 +69,10 @@ export async function backfillShopifyMerchantIdentities(input: {
     `${base}/orders.json?status=any&limit=250&fields=id,email,shipping_address,billing_address,created_at&created_at_min=` +
     encodeURIComponent(createdAtMin);
 
-  const orders = await fetchAllPages<ShopifyOrder>(ordersUrl, accessToken, 'orders');
+  const { rows: orders, pages } = await fetchAllPages<ShopifyOrder>(ordersUrl, accessToken, 'orders');
 
   const now = new Date().toISOString();
-  const rows: MerchantIdentityInsert[] = [
-    ...orders.map((order) => ({
+  const rows: MerchantIdentityInsert[] = orders.map((order) => ({
       shop_domain: shopDomain,
       source: 'order' as const,
       source_id: String(order.id),
@@ -81,12 +82,20 @@ export async function backfillShopifyMerchantIdentities(input: {
       billing_address: normalizeAddress(order.billing_address),
       customer_id: null,
       updated_at: now,
-    })),
-  ];
+  }));
 
   if (!rows.length) return { orders: 0, inserted: 0 };
 
+  const ordersWithNoIdentitySignals = rows.filter(
+    (row) => !row.email && !row.shipping_address && !row.billing_address
+  ).length;
+
   await upsertMerchantIdentityRows(supabase, rows);
 
-  return { orders: orders.length, inserted: rows.length };
+  return {
+    pages_fetched: pages,
+    orders: orders.length,
+    inserted: rows.length,
+    orders_with_no_identity_fields: ordersWithNoIdentitySignals,
+  };
 }

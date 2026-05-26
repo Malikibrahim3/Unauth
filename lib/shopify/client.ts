@@ -8,7 +8,7 @@ if (!apiKey || !apiSecretKey) {
   throw new Error('Missing SHOPIFY_API_KEY or SHOPIFY_API_SECRET');
 }
 
-export const SHOPIFY_SCOPES = ['read_orders', 'read_customers'] as const;
+export const SHOPIFY_SCOPES = ['read_orders', 'read_all_orders', 'read_customers'] as const;
 
 export const shopify = shopifyApi({
   apiKey,

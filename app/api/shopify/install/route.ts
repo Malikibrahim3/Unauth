@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
 
     const state = crypto.randomBytes(16).toString('hex');
     const redirectUri = `${appUrl.replace(/\/$/, '')}/api/shopify/callback`;
-    const scope = 'read_orders,read_customers';
+    const scope = 'read_orders,read_all_orders,read_customers';
     const installUrl = new URL(`https://${shop}/admin/oauth/authorize`);
     installUrl.searchParams.set('client_id', apiKey);
     installUrl.searchParams.set('scope', scope);
