@@ -1,6 +1,5 @@
 import '@shopify/shopify-api/adapters/node';
 import { ApiVersion, shopifyApi } from '@shopify/shopify-api';
-import { getAppUrl } from '@/lib/utils/appUrl';
 
 const apiKey = process.env.SHOPIFY_API_KEY;
 const apiSecretKey = process.env.SHOPIFY_API_SECRET;
@@ -15,8 +14,7 @@ export const shopify = shopifyApi({
   apiKey,
   apiSecretKey,
   scopes: [...SHOPIFY_SCOPES],
-  hostName: getAppUrl().replace(/^https?:\/\//, ''),
-  apiVersion: ApiVersion.October25,
+  hostName: 'unauth-pi.vercel.app',
+  apiVersion: ApiVersion.January25,
   isEmbeddedApp: false,
 });
-
