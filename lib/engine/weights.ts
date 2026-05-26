@@ -15,6 +15,7 @@ export const SIGNAL_WEIGHTS = {
   inrAbuse: 25,
   velocity: 18,            // multi-bucket 1h/24h/7d — strong corroborating behavioral signal
   inrSpeed: 10,
+  postDeliveryClaimRate: 22,
   emailPattern: 8,
   addressClustering: 9,    // reduced to curb household/shared-address false positives
   billingAddressClustering: 9, // Fix 4 — mirrors addressClustering for billing-address-anchored fraud
@@ -195,6 +196,7 @@ export const STRONG_FRAUD_EVIDENCE_SIGNALS = new Set<string>([
   'refundRate',
   'inrAbuse',
   'inrSpeed',
+  'postDeliveryClaimRate',
   'paymentChurn',
   'refundPattern',
   'disputeHistory',
@@ -228,6 +230,7 @@ export const STRONG_EVIDENCE_BY_SCORE: Record<string, number> = {
 export const BEHAVIORAL_FRAUD_SIGNALS = new Set<string>([
   'inrAbuse',
   'inrSpeed',
+  'postDeliveryClaimRate',
   'disputeHistory',
   'crossMerchant',
   'refundPattern',

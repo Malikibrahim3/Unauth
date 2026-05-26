@@ -7,6 +7,7 @@ import { refundRate } from './signals/refundRate';
 import { inrAbuse } from './signals/inrAbuse';
 import { velocity } from './signals/velocity';
 import { inrSpeed } from './signals/inrSpeed';
+import { postDeliveryClaimRate } from './signals/postDeliveryClaimRate';
 import { emailPattern } from './signals/emailPattern';
 import { addressClustering } from './signals/addressClustering';
 import { valueAnomaly } from './signals/valueAnomaly';
@@ -23,6 +24,7 @@ const SIGNALS = [
   { fn: inrAbuse, key: 'inrAbuse' as const },
   { fn: velocity, key: 'velocity' as const },
   { fn: inrSpeed, key: 'inrSpeed' as const },
+  { fn: postDeliveryClaimRate, key: 'postDeliveryClaimRate' as const },
   { fn: emailPattern, key: 'emailPattern' as const },
   { fn: addressClustering, key: 'addressClustering' as const },
   { fn: billingAddressClustering, key: 'billingAddressClustering' as const },
