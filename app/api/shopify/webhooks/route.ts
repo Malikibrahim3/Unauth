@@ -3,6 +3,33 @@ import { createServiceClient } from '@/lib/supabase/server';
 import { normalizeAddress, normalizeEmail, normalizePhone, type MerchantIdentityInsert, upsertMerchantIdentityRows } from '@/lib/shopify/identity';
 import { verifyShopifyWebhookHmac } from '@/lib/shopify/webhooks';
 
+async function fetchShopifyCustomerIdentity(input: {
+  shopDomain: string;
+  customerId: string;
+  supabase: any;
+}) {
+  const { shopDomain, customerId, supabase } = input;
+  const tokenRes = await supabase
+    .from('shopify_merchants' as any)
+    .select('access_token')
+    .eq('shop_domain', shopDomain)
+    .maybeSingle();
+  const accessToken = tokenRes.data?.access_token as string | null | undefined;
+  if (!accessToken) return null;
+
+  const url = `https://${shopDomain}/admin/api/2025-10/customers/${customerId}.json?fields=id,email,phone,default_address`;
+  const res = await fetch(url, {
+    headers: {
+      'X-Shopify-Access-Token': accessToken,
+      'Content-Type': 'application/json',
+    },
+    cache: 'no-store',
+  });
+  if (!res.ok) return null;
+  const payload = (await res.json()) as any;
+  return payload?.customer ?? null;
+}
+
 export async function processWebhook(rawBody: string, shopDomain: string, topic: string, supabaseClient?: any) {
   const payload = JSON.parse(rawBody) as any;
   const now = new Date().toISOString();
@@ -30,15 +57,35 @@ export async function processWebhook(rawBody: string, shopDomain: string, topic:
   }
 
   if (topic === 'orders/create' || topic === 'orders/updated') {
+    const customerId = payload.customer?.id ? String(payload.customer.id) : null;
+    let email = normalizeEmail(payload.email ?? payload.contact_email ?? payload.customer?.email ?? null);
+    let phone = normalizePhone(payload.phone ?? payload.customer?.phone ?? null);
+    let shippingAddress = normalizeAddress(payload.shipping_address ?? payload.customer?.default_address ?? null);
+    let billingAddress = normalizeAddress(payload.billing_address ?? payload.customer?.default_address ?? null);
+
+    if (customerId && (!email || !shippingAddress || !billingAddress)) {
+      const hydrated = await fetchShopifyCustomerIdentity({
+        shopDomain,
+        customerId,
+        supabase,
+      });
+      if (hydrated) {
+        email = email ?? normalizeEmail(hydrated.email);
+        phone = phone ?? normalizePhone(hydrated.phone);
+        shippingAddress = shippingAddress ?? normalizeAddress(hydrated.default_address);
+        billingAddress = billingAddress ?? normalizeAddress(hydrated.default_address);
+      }
+    }
+
     rows.push({
       shop_domain: shopDomain,
       source: 'order',
       source_id: String(payload.id),
-      email: normalizeEmail(payload.email),
-      phone: normalizePhone(payload.phone),
-      shipping_address: normalizeAddress(payload.shipping_address),
-      billing_address: normalizeAddress(payload.billing_address),
-      customer_id: payload.customer?.id ? String(payload.customer.id) : null,
+      email,
+      phone,
+      shipping_address: shippingAddress,
+      billing_address: billingAddress,
+      customer_id: customerId,
       updated_at: now,
     });
   }
