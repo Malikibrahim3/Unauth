@@ -3,11 +3,31 @@ import { createServiceClient } from '@/lib/supabase/server';
 import { normalizeAddress, normalizeEmail, normalizePhone, type MerchantIdentityInsert, upsertMerchantIdentityRows } from '@/lib/shopify/identity';
 import { verifyShopifyWebhookHmac } from '@/lib/shopify/webhooks';
 
-async function processWebhook(rawBody: string, shopDomain: string, topic: string) {
+export async function processWebhook(rawBody: string, shopDomain: string, topic: string, supabaseClient?: any) {
   const payload = JSON.parse(rawBody) as any;
   const now = new Date().toISOString();
-  const supabase = createServiceClient();
+  const supabase = supabaseClient ?? createServiceClient();
   const rows: MerchantIdentityInsert[] = [];
+
+  if (topic === 'app/uninstalled') {
+    await supabase
+      .from('shopify_merchants' as any)
+      .update({
+        access_token: null,
+        uninstalled_at: now,
+        updated_at: now,
+      })
+      .eq('shop_domain', shopDomain);
+    await supabase
+      .from('merchant_shopify_connections' as any)
+      .update({
+        active: false,
+        uninstalled_at: now,
+        updated_at: now,
+      })
+      .eq('shop_domain', shopDomain);
+    return;
+  }
 
   if (topic === 'orders/create' || topic === 'orders/updated') {
     rows.push({
@@ -71,18 +91,60 @@ export async function POST(request: NextRequest) {
   }
 
   const supabase = createServiceClient();
-  const { error: claimError } = await supabase
+  const { data: existing, error: readError } = await supabase
     .from('processed_webhooks' as any)
-    .insert({ webhook_id: webhookId });
-  if (claimError) {
-    if ((claimError as any).code === '23505') {
-      return NextResponse.json({ ok: true, duplicate: true });
-    }
-    return NextResponse.json({ error: claimError.message }, { status: 500 });
+    .select('webhook_id,status,attempts')
+    .eq('webhook_id', webhookId)
+    .maybeSingle();
+  if (readError) {
+    return NextResponse.json({ error: 'Failed to read webhook status' }, { status: 500 });
   }
 
-  void processWebhook(rawBody, shopDomain, topic).catch((err) => {
-    console.error('Shopify webhook processing failed', err);
+  if (existing?.status === 'completed') {
+    return NextResponse.json({ ok: true, duplicate: true });
+  }
+
+  const nextAttempts = Number(existing?.attempts ?? 0) + 1;
+  const { error: claimError } = await supabase
+    .from('processed_webhooks' as any)
+    .upsert({
+      webhook_id: webhookId,
+      status: 'processing',
+      attempts: nextAttempts,
+      last_error: null,
+      topic,
+      shop_domain: shopDomain,
+      updated_at: new Date().toISOString(),
+    });
+  if (claimError) {
+    return NextResponse.json({ error: 'Failed to claim webhook' }, { status: 500 });
+  }
+
+  void processWebhook(rawBody, shopDomain, topic).then(async () => {
+    await supabase
+      .from('processed_webhooks' as any)
+      .update({
+        status: 'completed',
+        last_error: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('webhook_id', webhookId);
+  }).catch(async (err) => {
+    const message = err instanceof Error ? err.message.slice(0, 300) : 'webhook_processing_failed';
+    await supabase
+      .from('processed_webhooks' as any)
+      .update({
+        status: 'failed',
+        last_error: message,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('webhook_id', webhookId);
+    console.error('Shopify webhook processing failed', {
+      webhookId,
+      topic,
+      shopDomain,
+      message,
+    });
   });
 
   return NextResponse.json({ ok: true });

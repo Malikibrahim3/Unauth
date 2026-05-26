@@ -28,6 +28,7 @@ const envSchema = z.object({
   AUDIT_EMAIL_FROM: z.string().optional(),
   SHOPIFY_API_KEY: z.string().min(1).optional(),
   SHOPIFY_API_SECRET: z.string().min(1).optional(),
+  SHOPIFY_WEBHOOK_SECRET: z.string().min(1).optional(),
 }).superRefine((env, ctx) => {
   if (!env.NEXT_PUBLIC_SUPABASE_ANON_KEY && !env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) {
     ctx.addIssue({
@@ -45,6 +46,10 @@ const envSchema = z.object({
       'UPSTASH_REDIS_REST_URL',
       'UPSTASH_REDIS_REST_TOKEN',
       'INTERNAL_HMAC_SECRET',
+      'SHOPIFY_API_KEY',
+      'SHOPIFY_API_SECRET',
+      'SHOPIFY_WEBHOOK_SECRET',
+      'NEXT_PUBLIC_APP_URL',
     ];
     for (const key of required) {
       if (!env[key]) {
