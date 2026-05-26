@@ -165,3 +165,70 @@ export const GRADE_ORDER: Record<ConfidenceGrade, number> = {
   possible: 2,
   weak: 1,
 };
+
+// =============================================================================
+// CORROBORATION HALVING — SIGNAL CLASSIFICATION SSOT
+// =============================================================================
+
+/**
+ * Signals that indicate broad overlap but not confirmed fraud on their own.
+ * When ONLY these fire (no strong-fraud-evidence signal), the raw score is
+ * multiplied by 0.45 to prevent household / shared-address false positives.
+ * Do not add crossMerchant here — it requires behavioral evidence to fire,
+ * making its presence already corroborating (see crossMerchantSignal.ts:48-62).
+ */
+export const BROAD_OVERLAP_SIGNALS = new Set<string>([
+  'addressClustering',
+  'billingAddressClustering',
+  'emailPattern',
+  'addressMismatch',
+  'networkDeviceLink',
+]);
+
+/**
+ * Signals that constitute strong fraud evidence and unlock the full raw score
+ * (removing the 0.45 corroboration penalty when BROAD_OVERLAP_SIGNALS fire).
+ * crossMerchant is included because every fired crossMerchant already has
+ * behavioral evidence baked in (networkOrders ≥ 3 or inrRate ≥ 0.20 gate).
+ */
+export const STRONG_FRAUD_EVIDENCE_SIGNALS = new Set<string>([
+  'refundRate',
+  'inrAbuse',
+  'inrSpeed',
+  'paymentChurn',
+  'refundPattern',
+  'disputeHistory',
+  'valueAnomaly',
+  'billingAddressClusteringActive',
+  'networkDeviceLinkActive',
+  'crossMerchant',
+]);
+
+/**
+ * Signals where a score-based floor determines strong-evidence status.
+ * A signal listed here counts as strong evidence only when its score >= the value.
+ * Scores below the threshold indicate plausible-legitimate behaviour.
+ * velocity: burst-level (≥70) is near-definitive; moderate (35–55) is ambient.
+ */
+export const STRONG_EVIDENCE_BY_SCORE: Record<string, number> = {
+  velocity: 70,
+};
+
+/**
+ * Behavioral fraud signals — at least one of these MUST fire for an order to
+ * be flagged. Composition gate (not a score change): broad-overlap signals
+ * like `billingAddressClustering(Active)` and `networkDeviceLink(Active)`
+ * indicate shared infrastructure (household IP, shared device, shared billing
+ * address) rather than confirmed fraud behavior. On legit high-return /
+ * wardrobing shoppers these can fire as Active variants because a legit return
+ * itself is a "refund event", with no actual fraud behavior present.
+ *
+ * If NONE of these fire, the order is downgraded regardless of score.
+ */
+export const BEHAVIORAL_FRAUD_SIGNALS = new Set<string>([
+  'inrAbuse',
+  'inrSpeed',
+  'disputeHistory',
+  'crossMerchant',
+  'refundPattern',
+]);

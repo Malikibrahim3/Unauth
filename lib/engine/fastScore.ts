@@ -1,5 +1,5 @@
 import type { NormalisedOrder, SignalResult, ScoredOrder, ConfidenceGrade } from './types';
-import { SIGNAL_WEIGHTS, RISK_TIER_THRESHOLDS, FLAG_THRESHOLD } from './weights';
+import { SIGNAL_WEIGHTS, RISK_TIER_THRESHOLDS, FLAG_THRESHOLD, BROAD_OVERLAP_SIGNALS, STRONG_FRAUD_EVIDENCE_SIGNALS, STRONG_EVIDENCE_BY_SCORE, BEHAVIORAL_FRAUD_SIGNALS } from './weights';
 import type { FastScoringContext } from './fastContext';
 import { generateIdentityAlert, type IdentityClusterMap } from './identityMatching';
 import { normaliseEmail, normaliseIP, normaliseAddress, normaliseCard } from '../identity/normalise';
@@ -503,49 +503,19 @@ function disputeHistory(order: NormalisedOrder, ctx: FastScoringContext): Signal
     (o) => o.refundStatus === 'full' || o.refundStatus === 'partial' || o.orderStatus === 'refunded'
   ).length;
 
-  const hasExplicitFlags = prior.some(
-    (o) =>
-      o.chargebackDispute !== null && o.chargebackDispute !== undefined ||
-      o.refundRequested !== null && o.refundRequested !== undefined ||
-      o.returnRequested !== null && o.returnRequested !== undefined
-  );
-
-  // Tuning fix 1 — gate refund/return-request firing on rate, not raw count.
-  // Mirrors lib/engine/signals/disputeHistory.ts (see comment there).
+  // Precision fix — disputeHistory must fire ONLY on actual chargeback /
+  // dispute evidence. Plain refund requests, return requests, and refunded
+  // order status are NOT disputes (they are returns) — legitimate high-return
+  // shoppers (e.g. 40% return rate cohorts) generated mass false positives
+  // when those events were treated as soft disputes. Chargebacks remain the
+  // sole trigger; the score table for chargebacks is unchanged. Mirrors
+  // lib/engine/signals/disputeHistory.ts.
   let score = 0;
   const reasons: string[] = [];
 
-  const softDisputeEvents = priorRefundRequests + priorReturnRequests;
-  const softDisputeRate = prior.length > 0 ? softDisputeEvents / prior.length : 0;
-
   if (priorChargebacks > 0) {
-    score = Math.max(score, priorChargebacks >= 2 ? 100 : 95);
+    score = priorChargebacks >= 2 ? 100 : 95;
     reasons.push(`${priorChargebacks} prior chargeback${priorChargebacks > 1 ? 's' : ''}`);
-  }
-
-  if (softDisputeEvents >= 3 && softDisputeRate > 0.40) {
-    score = Math.max(score, softDisputeEvents >= 4 ? 80 : 60);
-    reasons.push(
-      `${softDisputeEvents} prior dispute event${softDisputeEvents > 1 ? 's' : ''} ` +
-        `(${(softDisputeRate * 100).toFixed(0)}% of ${prior.length} prior orders)`,
-    );
-  } else if (softDisputeEvents >= 2 && softDisputeRate >= 0.25) {
-    score = Math.max(score, 30);
-    reasons.push(
-      `${softDisputeEvents} prior dispute event${softDisputeEvents > 1 ? 's' : ''} ` +
-        `(${(softDisputeRate * 100).toFixed(0)}% of ${prior.length} prior orders, below high-confidence threshold)`,
-    );
-  }
-
-  if (!hasExplicitFlags && priorActualRefunds >= 2) {
-    const actualRefundRate = priorActualRefunds / prior.length;
-    if (actualRefundRate > 0.40) {
-      score = Math.max(score, 50);
-      reasons.push(`${priorActualRefunds} prior refunds (${(actualRefundRate * 100).toFixed(0)}% rate, no explicit dispute flags)`);
-    } else if (actualRefundRate >= 0.25) {
-      score = Math.max(score, 25);
-      reasons.push(`${priorActualRefunds} prior refunds (${(actualRefundRate * 100).toFixed(0)}% rate, no explicit dispute flags)`);
-    }
   }
 
   if (score === 0) {
@@ -553,7 +523,7 @@ function disputeHistory(order: NormalisedOrder, ctx: FastScoringContext): Signal
       name: 'disputeHistory',
       fired: false,
       score: 0,
-      reason: 'No prior disputes, refund requests, or return requests on this customer.',
+      reason: 'No prior chargebacks on this customer.',
       evidence: { priorOrderCount: prior.length, priorChargebacks, priorRefundRequests, priorReturnRequests, priorActualRefunds },
     };
   }
@@ -563,7 +533,7 @@ function disputeHistory(order: NormalisedOrder, ctx: FastScoringContext): Signal
     fired: true,
     score,
     reason: `Customer has ${reasons.join(', ')} across ${prior.length} prior order${prior.length > 1 ? 's' : ''} — consortium / dispute-history elevation.`,
-    evidence: { priorOrderCount: prior.length, priorChargebacks, priorRefundRequests, priorReturnRequests, priorActualRefunds, hasExplicitFlags },
+    evidence: { priorOrderCount: prior.length, priorChargebacks, priorRefundRequests, priorReturnRequests, priorActualRefunds },
     identifierTypesUsed: ['email'],
   };
 }
@@ -784,10 +754,11 @@ function computeScore(signals: SignalResult[]): number {
     // Including unfired signals in the denominator dilutes the score and causes
     // real fraud patterns to fall below the flagging threshold.
     if (!signal.fired) continue;
-    if (['addressClustering', 'emailPattern', 'crossMerchant', 'addressMismatch'].includes(signal.name)) {
+    if (BROAD_OVERLAP_SIGNALS.has(signal.name)) {
       hasBroadOverlap = true;
     }
-    if (['refundRate', 'inrAbuse', 'inrSpeed', 'paymentChurn', 'refundPattern', 'disputeHistory', 'valueAnomaly'].includes(signal.name)) {
+    const scoreFloor = STRONG_EVIDENCE_BY_SCORE[signal.name];
+    if (STRONG_FRAUD_EVIDENCE_SIGNALS.has(signal.name) || (scoreFloor !== undefined && signal.score >= scoreFloor)) {
       hasStrongFraudEvidence = true;
     }
     weightedSum += signal.score * weight;
@@ -882,17 +853,21 @@ export function scoreBatch(
     // (b) Customers with only 2 orders in the batch have too thin a history
     //     to warrant a definite grade.
     const customerOrders = ctx.customerOrderHistory.get(order.emailHash) ?? [];
-    const uniquePMs = new Set(customerOrders.map((o) => (o.paymentMethod ?? '').toLowerCase().trim()));
-    const isSinglePMOnly = uniquePMs.size === 1;
     const isTwoOrderCluster = customerOrders.length <= 2;
+    // Option A DEFINITE gate: replaces the prior isSinglePMOnly hard cap, which
+    // symmetrically blocked legitimate single-card customers. We instead require
+    // either direct card-fingerprint evidence or a non-thin order history (≥3).
+    const hasCardEvidence = signals.some(
+      (s) => s.fired && s.identifierTypesUsed?.includes('card')
+    );
 
     let confidenceGrade: ConfidenceGrade | null;
     // Multi-corroborated email evidence (≥3 distinct signals) is treated as
     // equivalent to a two-identifier definite — but only when the score
     // already clears the definite bar AND the order is not subject to a cap.
-    if (totalScore >= 75 && strongCount >= 2 && !isSinglePMOnly) {
+    if (totalScore >= 75 && strongCount >= 2 && (hasCardEvidence || customerOrders.length >= 3)) {
       confidenceGrade = 'definite';
-    } else if (totalScore >= 75 && multiCorroborated && !isSinglePMOnly && !isTwoOrderCluster) {
+    } else if (totalScore >= 75 && multiCorroborated && (hasCardEvidence || customerOrders.length >= 3) && !isTwoOrderCluster) {
       confidenceGrade = 'definite'; // ≥3 corroborating email signals, no thin-evidence cap
     } else if (totalScore >= 75) {
       confidenceGrade = 'probable'; // single-identifier cap (or PM/thin-history cap)
@@ -918,7 +893,14 @@ export function scoreBatch(
 
     const cluster = identityClusterMap[order.orderId] || null;
     const identityAlerts = generateIdentityAlert(order, cluster, ctx);
-    const flagged = baseFlagged && confidenceGrade !== null && confidenceGrade !== 'weak';
+
+    // Composition gate — broad-overlap signals (shared infrastructure) cannot
+    // flag an order on their own. At least one BEHAVIORAL_FRAUD_SIGNAL must fire.
+    // See lib/engine/weights.ts BEHAVIORAL_FRAUD_SIGNALS for rationale.
+    const hasBehavioralSignal = signals.some(
+      (s) => s.fired && BEHAVIORAL_FRAUD_SIGNALS.has(s.name),
+    );
+    const flagged = baseFlagged && confidenceGrade !== null && confidenceGrade !== 'weak' && hasBehavioralSignal;
 
     return {
       order,

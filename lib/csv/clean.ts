@@ -42,6 +42,7 @@ const REFUND_MAP: Record<string, RefundStatus> = {
 
 const REASON_MAP: Record<string, RefundReason> = {
   inr: 'inr',
+  'item_not_received': 'inr',
   'item not received': 'inr',
   'not received': 'inr',
   'never arrived': 'inr',

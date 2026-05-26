@@ -1,0 +1,131 @@
+[
+  {
+    "scenario": 1,
+    "description": "Clean high-signal data, 3 rings",
+    "rows_loaded": 500,
+    "rows_skipped": 0,
+    "rows_duplicates_dropped": 0,
+    "precision": 1,
+    "recall": 0.058823529411764705,
+    "f1": 0.1111111111111111,
+    "fpr": 0,
+    "truePositives": 6,
+    "falsePositives": 0,
+    "trueNegatives": 398,
+    "falseNegatives": 96,
+    "flagged_count": 6,
+    "fraud_count_gt": 102,
+    "legitimate_count_gt": 398,
+    "grade_distribution": {
+      "definite": 0,
+      "probable": 5,
+      "possible": 35,
+      "weak": 4,
+      "none": 456
+    },
+    "identity_precision": 0.1950286806883365,
+    "identity_recall": 1,
+    "cluster_count": 135,
+    "signals_fired_count": {
+      "refundRate": 0,
+      "inrAbuse": 0,
+      "velocity": 2,
+      "inrSpeed": 0,
+      "emailPattern": 0,
+      "addressClustering": 85,
+      "billingAddressClustering": 25,
+      "valueAnomaly": 0,
+      "paymentChurn": 0,
+      "disputeHistory": 4,
+      "addressMismatch": 0,
+      "crossMerchant": 102,
+      "refundPattern": 0,
+      "networkDeviceLink": 3,
+      "billingAddressClusteringActive": 6
+    },
+    "false_definite_orders": [],
+    "signals_failed_to_fire": [
+      "refundRate",
+      "inrAbuse",
+      "inrSpeed",
+      "emailPattern",
+      "valueAnomaly",
+      "paymentChurn",
+      "addressMismatch",
+      "refundPattern"
+    ],
+    "latency_ms": 259,
+    "rings": [
+      {
+        "ringId": "ring_s1_A",
+        "expected_orders": 43,
+        "flagged_orders": 3,
+        "max_grade": "probable"
+      },
+      {
+        "ringId": "ring_s1_B",
+        "expected_orders": 21,
+        "flagged_orders": 0,
+        "max_grade": "possible"
+      },
+      {
+        "ringId": "ring_s1_C",
+        "expected_orders": 38,
+        "flagged_orders": 3,
+        "max_grade": "probable"
+      }
+    ],
+    "pass_summary": {
+      "precision_min_0.80": {
+        "actual": "1.000",
+        "target": "≥ 0.80",
+        "pass": true
+      },
+      "precision_pilot_0.85": {
+        "actual": "1.000",
+        "target": "≥ 0.85",
+        "pass": true
+      },
+      "recall_min_0.60": {
+        "actual": "0.059",
+        "target": "≥ 0.60",
+        "pass": false
+      },
+      "recall_pilot_0.75": {
+        "actual": "0.059",
+        "target": "≥ 0.75",
+        "pass": false
+      },
+      "f1_min_0.70": {
+        "actual": "0.111",
+        "target": "≥ 0.70",
+        "pass": false
+      },
+      "f1_pilot_0.80": {
+        "actual": "0.111",
+        "target": "≥ 0.80",
+        "pass": false
+      },
+      "fpr_max_0.05": {
+        "actual": "0.000",
+        "target": "≤ 0.05",
+        "pass": true
+      },
+      "identity_precision_min_0.95": {
+        "actual": "0.195",
+        "target": "≥ 0.95",
+        "pass": false
+      },
+      "identity_recall_min_0.99": {
+        "actual": "1.000",
+        "target": "≥ 0.99",
+        "pass": true
+      },
+      "latency_40_row_10s": {
+        "actual": "259ms (500 rows)",
+        "target": "n/a",
+        "pass": true
+      }
+    }
+  }
+]

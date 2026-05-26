@@ -1,0 +1,151 @@
+[
+  {
+    "scenario": 102,
+    "description": "B: Seasonal burst (BFCM 72h)",
+    "rows_loaded": 2000,
+    "rows_skipped": 0,
+    "rows_duplicates_dropped": 0,
+    "precision": 1,
+    "recall": 0.2222222222222222,
+    "f1": 0.3636363636363636,
+    "fpr": 0,
+    "truePositives": 46,
+    "falsePositives": 0,
+    "trueNegatives": 1793,
+    "falseNegatives": 161,
+    "flagged_count": 46,
+    "fraud_count_gt": 207,
+    "legitimate_count_gt": 1793,
+    "grade_distribution": {
+      "definite": 0,
+      "probable": 10,
+      "possible": 49,
+      "weak": 428,
+      "none": 1513
+    },
+    "identity_precision": 1,
+    "identity_recall": 1,
+    "cluster_count": 607,
+    "signals_fired_count": {
+      "refundRate": 0,
+      "inrAbuse": 0,
+      "velocity": 464,
+      "inrSpeed": 0,
+      "emailPattern": 0,
+      "addressClustering": 191,
+      "billingAddressClustering": 32,
+      "valueAnomaly": 0,
+      "paymentChurn": 0,
+      "disputeHistory": 45,
+      "addressMismatch": 0,
+      "crossMerchant": 0,
+      "refundPattern": 37,
+      "networkDeviceLink": 281,
+      "networkDeviceLinkActive": 100,
+      "billingAddressClusteringActive": 11
+    },
+    "false_definite_orders": [],
+    "signals_failed_to_fire": [
+      "refundRate",
+      "inrAbuse",
+      "inrSpeed",
+      "emailPattern",
+      "valueAnomaly",
+      "paymentChurn",
+      "addressMismatch",
+      "crossMerchant"
+    ],
+    "latency_ms": 376,
+    "rings": [
+      {
+        "ringId": "ring_s102_burst_0",
+        "expected_orders": 38,
+        "flagged_orders": 8,
+        "max_grade": "probable"
+      },
+      {
+        "ringId": "ring_s102_burst_1",
+        "expected_orders": 45,
+        "flagged_orders": 10,
+        "max_grade": "probable"
+      },
+      {
+        "ringId": "ring_s102_burst_2",
+        "expected_orders": 44,
+        "flagged_orders": 10,
+        "max_grade": "probable"
+      },
+      {
+        "ringId": "ring_s102_burst_3",
+        "expected_orders": 40,
+        "flagged_orders": 5,
+        "max_grade": "possible"
+      },
+      {
+        "ringId": "ring_s102_burst_4",
+        "expected_orders": 40,
+        "flagged_orders": 13,
+        "max_grade": "probable"
+      }
+    ],
+    "cohort_fpr": {
+      "burst_legit": {
+        "fp": 0,
+        "n": 1793,
+        "fpr": 0
+      }
+    },
+    "pass_summary": {
+      "precision_min_0.80": {
+        "actual": "1.000",
+        "target": "≥ 0.80",
+        "pass": true
+      },
+      "precision_pilot_0.85": {
+        "actual": "1.000",
+        "target": "≥ 0.85",
+        "pass": true
+      },
+      "recall_min_0.60": {
+        "actual": "0.222",
+        "target": "≥ 0.60",
+        "pass": false
+      },
+      "recall_pilot_0.75": {
+        "actual": "0.222",
+        "target": "≥ 0.75",
+        "pass": false
+      },
+      "f1_min_0.70": {
+        "actual": "0.364",
+        "target": "≥ 0.70",
+        "pass": false
+      },
+      "f1_pilot_0.80": {
+        "actual": "0.364",
+        "target": "≥ 0.80",
+        "pass": false
+      },
+      "fpr_max_0.05": {
+        "actual": "0.000",
+        "target": "≤ 0.05",
+        "pass": true
+      },
+      "identity_precision_min_0.95": {
+        "actual": "1.000",
+        "target": "≥ 0.95",
+        "pass": true
+      },
+      "identity_recall_min_0.99": {
+        "actual": "1.000",
+        "target": "≥ 0.99",
+        "pass": true
+      },
+      "cohort_fpr_burst_legit_zero": {
+        "actual": "0/1793 = 0.000",
+        "target": "= 0",
+        "pass": true
+      }
+    }
+  }
+]

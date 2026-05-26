@@ -1,0 +1,5048 @@
+{
+  "scenario": 4,
+  "description": "High noise low fraud",
+  "orders": {
+    "test_bench_o_0001300": {
+      "fraudLabel": "fraud",
+      "customerId": "test_bench_ringidentity_ring_s4_A",
+      "ringId": "ring_s4_A",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001301": {
+      "fraudLabel": "fraud",
+      "customerId": "test_bench_ringidentity_ring_s4_A",
+      "ringId": "ring_s4_A",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001302": {
+      "fraudLabel": "fraud",
+      "customerId": "test_bench_ringidentity_ring_s4_A",
+      "ringId": "ring_s4_A",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001303": {
+      "fraudLabel": "fraud",
+      "customerId": "test_bench_ringidentity_ring_s4_A",
+      "ringId": "ring_s4_A",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001304": {
+      "fraudLabel": "fraud",
+      "customerId": "test_bench_ringidentity_ring_s4_A",
+      "ringId": "ring_s4_A",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001305": {
+      "fraudLabel": "fraud",
+      "customerId": "test_bench_ringidentity_ring_s4_A",
+      "ringId": "ring_s4_A",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001306": {
+      "fraudLabel": "fraud",
+      "customerId": "test_bench_ringidentity_ring_s4_A",
+      "ringId": "ring_s4_A",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001307": {
+      "fraudLabel": "fraud",
+      "customerId": "test_bench_ringidentity_ring_s4_A",
+      "ringId": "ring_s4_A",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001308": {
+      "fraudLabel": "fraud",
+      "customerId": "test_bench_ringidentity_ring_s4_A",
+      "ringId": "ring_s4_A",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001309": {
+      "fraudLabel": "fraud",
+      "customerId": "test_bench_ringidentity_ring_s4_A",
+      "ringId": "ring_s4_A",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001310": {
+      "fraudLabel": "fraud",
+      "customerId": "test_bench_ringidentity_ring_s4_A",
+      "ringId": "ring_s4_A",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001311": {
+      "fraudLabel": "fraud",
+      "customerId": "test_bench_ringidentity_ring_s4_A",
+      "ringId": "ring_s4_A",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001312": {
+      "fraudLabel": "fraud",
+      "customerId": "test_bench_ringidentity_ring_s4_A",
+      "ringId": "ring_s4_A",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001313": {
+      "fraudLabel": "fraud",
+      "customerId": "test_bench_ringidentity_ring_s4_A",
+      "ringId": "ring_s4_A",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001314": {
+      "fraudLabel": "fraud",
+      "customerId": "test_bench_ringidentity_ring_s4_A",
+      "ringId": "ring_s4_A",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001315": {
+      "fraudLabel": "fraud",
+      "customerId": "test_bench_ringidentity_ring_s4_A",
+      "ringId": "ring_s4_A",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001316": {
+      "fraudLabel": "fraud",
+      "customerId": "test_bench_ringidentity_ring_s4_A",
+      "ringId": "ring_s4_A",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001317": {
+      "fraudLabel": "fraud",
+      "customerId": "test_bench_ringidentity_ring_s4_A",
+      "ringId": "ring_s4_A",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001318": {
+      "fraudLabel": "fraud",
+      "customerId": "test_bench_ringidentity_ring_s4_A",
+      "ringId": "ring_s4_A",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001319": {
+      "fraudLabel": "fraud",
+      "customerId": "test_bench_ringidentity_ring_s4_A",
+      "ringId": "ring_s4_A",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001320": {
+      "fraudLabel": "fraud",
+      "customerId": "test_bench_ringidentity_ring_s4_A",
+      "ringId": "ring_s4_A",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001321": {
+      "fraudLabel": "fraud",
+      "customerId": "test_bench_ringidentity_ring_s4_A",
+      "ringId": "ring_s4_A",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001322": {
+      "fraudLabel": "fraud",
+      "customerId": "test_bench_ringidentity_ring_s4_A",
+      "ringId": "ring_s4_A",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001323": {
+      "fraudLabel": "fraud",
+      "customerId": "test_bench_ringidentity_ring_s4_A",
+      "ringId": "ring_s4_A",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001324": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50000_4zu7",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001325": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50000_4zu7",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001326": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50000_4zu7",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001327": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50001_ayh9",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001328": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50002_cmkd",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001329": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50002_cmkd",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001330": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50003_hukk",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001331": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50003_hukk",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001332": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50004_6j83",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001333": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50004_6j83",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001334": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50005_5vvs",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001335": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50005_5vvs",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001336": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50006_78ky",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001337": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50007_gde5",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001338": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50007_gde5",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001339": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50007_gde5",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001340": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50008_xqp",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001341": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50008_xqp",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001342": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50009_jtv",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001343": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50009_jtv",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001344": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50009_jtv",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001345": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50010_g6em",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001346": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50011_44j7",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001347": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50012_j80d",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001348": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50012_j80d",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001349": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50013_klxt",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001350": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50013_klxt",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001351": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50013_klxt",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001352": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50014_fxc9",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001353": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50015_gvdb",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001354": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50015_gvdb",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001355": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50015_gvdb",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001356": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50016_40ph",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001357": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50017_4uuk",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001358": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50018_836",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001359": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50018_836",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001360": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50019_cvmz",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001361": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50020_78yt",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001362": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50020_78yt",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001363": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50020_78yt",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001364": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50021_l0qb",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001365": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50022_833u",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001366": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50022_833u",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001367": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50023_3qj6",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001368": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50023_3qj6",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001369": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50023_3qj6",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001370": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50024_8ssj",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001371": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50024_8ssj",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001372": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50025_jwv3",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001373": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50025_jwv3",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001374": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50026_bjz7",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001375": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50027_4aa4",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001376": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50027_4aa4",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001377": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50027_4aa4",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001378": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50028_9fd4",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001379": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50029_8sje",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001380": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50029_8sje",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001381": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50029_8sje",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001382": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50030_86pl",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001383": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50030_86pl",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001384": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50030_86pl",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001385": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50031_4znp",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001386": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50032_hlz6",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001387": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50032_hlz6",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001388": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50033_cbiw",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001389": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50033_cbiw",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001390": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50034_1z5j",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001391": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50035_i9lx",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001392": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50035_i9lx",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001393": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50036_a9ao",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001394": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50036_a9ao",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001395": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50037_al4r",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001396": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50037_al4r",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001397": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50037_al4r",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001398": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50038_g8hb",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001399": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50038_g8hb",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001400": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50039_1rlq",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001401": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50039_1rlq",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001402": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50040_493f",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001403": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50041_97lf",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001404": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50041_97lf",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001405": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50042_alx8",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001406": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50042_alx8",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001407": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50043_9you",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001408": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50044_ngf",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001409": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50045_g3qb",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001410": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50045_g3qb",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001411": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50045_g3qb",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001412": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50046_beep",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001413": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50046_beep",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001414": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50046_beep",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001415": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50047_8i9o",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001416": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50047_8i9o",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001417": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50048_hkj8",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001418": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50049_743c",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001419": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50049_743c",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001420": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50050_2oxl",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001421": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50050_2oxl",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001422": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50051_5xew",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001423": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50051_5xew",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001424": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50051_5xew",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001425": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50052_dko0",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001426": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50053_jdf5",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001427": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50054_dodl",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001428": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50054_dodl",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001429": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50055_g2q8",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001430": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50056_26mo",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001431": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50057_bw59",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001432": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50057_bw59",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001433": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50057_bw59",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001434": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50058_j11i",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001435": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50058_j11i",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001436": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50058_j11i",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001437": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50059_39lt",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001438": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50059_39lt",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001439": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50060_9dty",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001440": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50060_9dty",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001441": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50061_6fbp",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001442": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50061_6fbp",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001443": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50062_2f1x",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001444": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50062_2f1x",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001445": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50063_ed9n",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001446": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50063_ed9n",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001447": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50063_ed9n",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001448": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50064_1ng1",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001449": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50065_j0lg",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001450": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50065_j0lg",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001451": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50065_j0lg",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001452": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50066_kels",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001453": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50067_fafv",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001454": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50067_fafv",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001455": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50067_fafv",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001456": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50068_4wcw",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001457": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50068_4wcw",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001458": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50069_czm8",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001459": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50069_czm8",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001460": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50070_80mp",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001461": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50071_7m7c",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001462": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50072_k7tv",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001463": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50072_k7tv",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001464": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50072_k7tv",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001465": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50073_a1m9",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001466": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50074_ftlh",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001467": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50074_ftlh",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001468": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50075_ler3",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001469": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50075_ler3",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001470": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50075_ler3",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001471": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50076_8ik7",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001472": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50076_8ik7",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001473": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50076_8ik7",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001474": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50077_h8vc",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001475": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50078_gjdd",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001476": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50078_gjdd",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001477": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50079_beoy",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001478": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50079_beoy",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001479": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50079_beoy",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001480": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50080_cu8e",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001481": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50080_cu8e",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001482": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50081_9qns",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001483": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50081_9qns",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001484": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50081_9qns",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001485": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50082_gigj",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001486": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50082_gigj",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001487": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50083_gb1k",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001488": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50083_gb1k",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001489": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50083_gb1k",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001490": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50084_ko3n",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001491": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50084_ko3n",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001492": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50084_ko3n",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001493": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50085_im8v",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001494": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50085_im8v",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001495": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50085_im8v",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001496": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50086_k58n",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001497": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50087_c441",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001498": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50087_c441",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001499": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50087_c441",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001500": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50088_d83w",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001501": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50089_6sfo",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001502": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50089_6sfo",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001503": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50089_6sfo",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001504": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50090_gnn7",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001505": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50090_gnn7",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001506": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50091_gmmx",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001507": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50091_gmmx",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001508": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50092_hvqn",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001509": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50093_859p",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001510": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50094_db61",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001511": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50094_db61",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001512": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50095_ez26",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001513": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50095_ez26",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001514": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50096_e4l4",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001515": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50097_9sew",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001516": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50097_9sew",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001517": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50098_3ob9",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001518": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50099_61cn",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001519": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50099_61cn",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001520": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50100_25as",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001521": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50101_36c5",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001522": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50101_36c5",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001523": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50102_k0o2",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001524": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50102_k0o2",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001525": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50103_6mrb",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001526": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50103_6mrb",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001527": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50103_6mrb",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001528": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50104_da19",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001529": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50105_8xsr",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001530": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50105_8xsr",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001531": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50105_8xsr",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001532": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50106_c643",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001533": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50106_c643",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001534": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50107_95ac",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001535": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50107_95ac",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001536": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50107_95ac",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001537": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50108_4q46",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001538": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50108_4q46",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001539": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50109_6eap",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001540": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50110_56ic",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001541": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50110_56ic",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001542": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50111_hbxw",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001543": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50111_hbxw",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001544": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50112_71ye",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001545": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50113_908t",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001546": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50114_6q6f",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001547": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50114_6q6f",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001548": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50115_ab2h",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001549": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50116_e78n",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001550": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50117_80c5",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001551": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50117_80c5",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001552": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50118_l5zm",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001553": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50119_czr1",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001554": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50120_18xu",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001555": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50120_18xu",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001556": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50120_18xu",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001557": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50121_jupe",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001558": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50121_jupe",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001559": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50121_jupe",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001560": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50122_e8jw",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001561": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50122_e8jw",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001562": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50123_2zlx",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001563": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50124_gtrn",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001564": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50124_gtrn",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001565": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50124_gtrn",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001566": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50125_8b7c",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001567": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50125_8b7c",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001568": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50125_8b7c",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001569": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50126_3vm7",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001570": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50126_3vm7",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001571": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50127_8vwk",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001572": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50128_8ffw",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001573": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50129_1hyg",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001574": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50129_1hyg",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001575": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50129_1hyg",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001576": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50130_9hbh",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001577": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50130_9hbh",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001578": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50131_65wh",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001579": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50132_fy8t",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001580": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50132_fy8t",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001581": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50133_7izb",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001582": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50133_7izb",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001583": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50133_7izb",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001584": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50134_2y6t",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001585": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50135_7owm",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001586": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50135_7owm",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001587": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50135_7owm",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001588": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50136_hdyo",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001589": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50136_hdyo",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001590": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50137_d5hl",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001591": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50137_d5hl",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001592": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50138_7pma",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001593": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50138_7pma",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001594": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50138_7pma",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001595": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50139_ko8u",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001596": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50139_ko8u",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001597": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50140_atxo",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001598": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50140_atxo",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001599": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50140_atxo",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001600": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50141_hbhu",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001601": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50141_hbhu",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001602": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50141_hbhu",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001603": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50142_j5g3",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001604": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50143_8lj4",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001605": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50143_8lj4",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001606": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50144_j0nq",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001607": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50145_9gmm",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001608": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50145_9gmm",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001609": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50145_9gmm",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001610": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50146_c2y6",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001611": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50146_c2y6",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001612": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50146_c2y6",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001613": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50147_awu1",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001614": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50147_awu1",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001615": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50147_awu1",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001616": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50148_28hj",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001617": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50148_28hj",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001618": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50149_g6tf",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001619": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50149_g6tf",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001620": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50149_g6tf",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001621": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50150_afkk",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001622": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50150_afkk",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001623": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50151_9288",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001624": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50152_69vc",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001625": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50152_69vc",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001626": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50152_69vc",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001627": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50153_51lv",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001628": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50153_51lv",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001629": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50153_51lv",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001630": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50154_2jm0",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001631": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50154_2jm0",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001632": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50154_2jm0",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001633": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50155_bxcl",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001634": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50156_ivn9",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001635": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50156_ivn9",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001636": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50156_ivn9",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001637": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50157_9mdi",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001638": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50157_9mdi",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001639": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50157_9mdi",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001640": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50158_cf5j",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001641": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50159_2tfz",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001642": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50159_2tfz",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001643": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50159_2tfz",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001644": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50160_dz0n",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001645": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50160_dz0n",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001646": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50160_dz0n",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001647": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50161_g14o",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001648": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50161_g14o",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001649": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50161_g14o",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001650": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50162_gl6t",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001651": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50162_gl6t",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001652": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50162_gl6t",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001653": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50163_alb4",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001654": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50164_4tmv",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001655": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50165_4mcm",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001656": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50165_4mcm",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001657": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50165_4mcm",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001658": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50166_jop7",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001659": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50166_jop7",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001660": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50166_jop7",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001661": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50167_9wl0",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001662": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50167_9wl0",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001663": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50168_b96g",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001664": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50169_kq3p",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001665": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50170_3ylw",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001666": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50171_1e2o",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001667": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50172_b3d4",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001668": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50172_b3d4",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001669": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50173_4150",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001670": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50174_gqud",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001671": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50174_gqud",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001672": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50175_af1o",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001673": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50176_f08g",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001674": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50177_tc7",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001675": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50178_f7xh",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001676": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50178_f7xh",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001677": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50178_f7xh",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001678": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50179_8d0y",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001679": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50179_8d0y",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001680": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50179_8d0y",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001681": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50180_9pxd",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001682": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50180_9pxd",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001683": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50181_7f8d",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001684": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50182_b412",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001685": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50182_b412",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001686": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50183_3k79",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001687": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50183_3k79",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001688": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50183_3k79",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001689": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50184_8uav",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001690": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50184_8uav",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001691": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50184_8uav",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001692": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50185_8hl0",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001693": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50185_8hl0",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001694": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50186_l953",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001695": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50186_l953",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001696": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50187_jfry",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001697": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50187_jfry",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001698": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50188_9mgo",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001699": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50188_9mgo",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001700": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50188_9mgo",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001701": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50189_6ese",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001702": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50190_l35z",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001703": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50191_6m3v",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001704": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50191_6m3v",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001705": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50191_6m3v",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001706": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50192_58lh",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001707": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50193_1yn2",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001708": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50193_1yn2",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001709": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50194_6zwz",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001710": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50194_6zwz",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001711": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50195_b75y",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001712": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50195_b75y",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001713": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50196_2kak",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001714": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50196_2kak",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001715": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50196_2kak",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001716": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50197_5iyw",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001717": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50197_5iyw",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001718": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50197_5iyw",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001719": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50198_i7h4",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001720": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50199_j6xo",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001721": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50200_7iai",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001722": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50200_7iai",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001723": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50201_k67j",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001724": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50201_k67j",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001725": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50201_k67j",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001726": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50202_hz3k",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001727": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50202_hz3k",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001728": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50202_hz3k",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001729": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50203_3ugg",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001730": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50204_98hy",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001731": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50204_98hy",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001732": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50205_3uki",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001733": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50205_3uki",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001734": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50205_3uki",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001735": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50206_5y31",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001736": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50206_5y31",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001737": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50206_5y31",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001738": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50207_apno",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001739": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50208_5gv2",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001740": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50208_5gv2",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001741": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50208_5gv2",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001742": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50209_c6z1",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001743": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50209_c6z1",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001744": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50209_c6z1",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001745": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50210_jgv2",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001746": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50210_jgv2",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001747": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50211_7fd1",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001748": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50212_ir3x",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001749": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50212_ir3x",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001750": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50213_1nri",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001751": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50213_1nri",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001752": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50213_1nri",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001753": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50214_beaq",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001754": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50214_beaq",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001755": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50215_7n9k",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001756": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50216_du8n",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001757": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50216_du8n",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001758": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50216_du8n",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001759": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50217_ezvf",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001760": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50217_ezvf",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001761": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50218_kk9x",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001762": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50218_kk9x",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001763": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50219_5mvr",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001764": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50220_frsk",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001765": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50220_frsk",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001766": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50220_frsk",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001767": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50221_7kai",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001768": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50222_6f0h",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001769": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50222_6f0h",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001770": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50223_fa2f",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001771": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50223_fa2f",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001772": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50224_2a0s",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001773": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50224_2a0s",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001774": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50224_2a0s",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001775": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50225_afqn",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001776": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50225_afqn",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001777": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50226_1tna",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001778": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50226_1tna",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001779": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50226_1tna",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001780": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50227_gdjf",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001781": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50227_gdjf",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001782": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50228_h7vr",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001783": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50229_7oec",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001784": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50229_7oec",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001785": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50229_7oec",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001786": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50230_9mr5",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001787": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50230_9mr5",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001788": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50230_9mr5",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001789": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50231_jvs3",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001790": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50231_jvs3",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001791": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50231_jvs3",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001792": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50232_9cil",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001793": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50232_9cil",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001794": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50232_9cil",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001795": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50233_6bpc",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001796": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50234_97hc",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001797": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50235_6o0x",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001798": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50235_6o0x",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001799": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50235_6o0x",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001800": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50236_bnvf",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001801": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50236_bnvf",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001802": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50236_bnvf",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001803": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50237_h7ex",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001804": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50237_h7ex",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001805": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50238_ctr9",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001806": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50238_ctr9",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001807": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50238_ctr9",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001808": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50239_4uvs",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001809": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50239_4uvs",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001810": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50240_7xos",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001811": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50240_7xos",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001812": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50240_7xos",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001813": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50241_cz7i",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001814": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50242_8gsw",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001815": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50242_8gsw",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001816": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50242_8gsw",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001817": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50243_kgme",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001818": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50243_kgme",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001819": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50244_k68y",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001820": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50244_k68y",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001821": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50245_bjiq",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001822": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50245_bjiq",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001823": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50246_arrt",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001824": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50246_arrt",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001825": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50247_w88",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001826": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50247_w88",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001827": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50247_w88",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001828": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50248_c16z",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001829": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50248_c16z",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001830": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50248_c16z",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001831": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50249_j9c6",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001832": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50249_j9c6",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001833": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50250_ivpm",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001834": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50251_25la",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001835": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50251_25la",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001836": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50251_25la",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001837": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50252_d2ru",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001838": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50252_d2ru",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001839": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50252_d2ru",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001840": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50253_h7ol",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001841": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50253_h7ol",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001842": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50254_d0ae",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001843": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50255_c7ad",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001844": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50255_c7ad",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001845": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50256_71xy",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001846": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50257_bkus",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001847": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50258_8sjz",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001848": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50258_8sjz",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001849": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50259_8cir",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001850": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50260_gcf1",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001851": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50261_2bih",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001852": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50261_2bih",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001853": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50262_8l71",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001854": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50262_8l71",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001855": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50262_8l71",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001856": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50263_623l",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001857": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50264_1ip3",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001858": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50264_1ip3",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001859": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50265_fatp",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001860": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50265_fatp",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001861": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50266_55gv",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001862": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50266_55gv",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001863": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50266_55gv",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001864": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50267_vce",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001865": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50267_vce",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001866": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50267_vce",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001867": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50268_7tc7",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001868": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50269_9n8i",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001869": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50270_8l0u",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001870": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50271_gsl3",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001871": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50271_gsl3",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001872": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50272_j97",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001873": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50272_j97",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001874": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50272_j97",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001875": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50273_44nf",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001876": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50273_44nf",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001877": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50273_44nf",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001878": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50274_kgvd",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001879": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50274_kgvd",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001880": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50275_216w",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001881": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50275_216w",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001882": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50276_6j1y",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001883": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50276_6j1y",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001884": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50276_6j1y",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001885": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50277_epde",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001886": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50277_epde",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001887": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50278_2rgl",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001888": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50278_2rgl",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001889": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50278_2rgl",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001890": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50279_4wk9",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001891": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50279_4wk9",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001892": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50279_4wk9",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001893": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50280_lbz4",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001894": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50280_lbz4",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001895": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50280_lbz4",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001896": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50281_4nt5",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001897": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50281_4nt5",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001898": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50281_4nt5",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001899": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50282_du1c",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001900": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50282_du1c",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001901": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50282_du1c",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001902": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50283_c1rc",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001903": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50283_c1rc",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001904": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50283_c1rc",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001905": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50284_9wq2",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001906": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50285_lceh",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001907": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50286_js5y",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001908": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50287_bq5b",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001909": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50287_bq5b",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001910": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50288_bq9y",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001911": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50288_bq9y",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001912": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50288_bq9y",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001913": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50289_kf00",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001914": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50289_kf00",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001915": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50289_kf00",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001916": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50290_cgvd",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001917": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50290_cgvd",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001918": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50291_jl2v",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001919": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50291_jl2v",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001920": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50292_9p94",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001921": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50292_9p94",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001922": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50292_9p94",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001923": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50293_8c8a",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001924": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50294_22mn",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001925": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50294_22mn",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001926": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50295_7k12",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001927": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50295_7k12",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001928": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50296_5en2",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001929": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50296_5en2",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001930": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50297_b4jw",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001931": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50298_5vs3",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001932": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50298_5vs3",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001933": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50298_5vs3",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001934": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50299_6d8l",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001935": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50299_6d8l",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001936": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50299_6d8l",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001937": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50300_acrk",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001938": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50300_acrk",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001939": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50301_4c0p",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001940": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50301_4c0p",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001941": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50302_j5bd",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001942": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50302_j5bd",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001943": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50302_j5bd",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001944": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50303_a0tr",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001945": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50303_a0tr",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001946": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50304_j6kk",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001947": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50304_j6kk",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001948": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50304_j6kk",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001949": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50305_925",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001950": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50305_925",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001951": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50305_925",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001952": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50306_g2qv",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001953": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50307_cweb",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001954": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50308_9mz7",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001955": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50308_9mz7",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001956": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50308_9mz7",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001957": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50309_88or",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001958": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50309_88or",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001959": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50309_88or",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001960": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50310_jknb",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001961": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50311_kjs2",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001962": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50312_a70b",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001963": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50312_a70b",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001964": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50312_a70b",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001965": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50313_a097",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001966": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50314_sz8",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001967": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50314_sz8",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001968": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50315_zr7",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001969": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50316_9hnh",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001970": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50316_9hnh",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001971": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50316_9hnh",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001972": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50317_8q18",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001973": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50317_8q18",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001974": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50317_8q18",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001975": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50318_l691",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001976": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50318_l691",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001977": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50319_k49",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001978": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50320_5ody",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001979": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50320_5ody",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001980": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50321_iwy5",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001981": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50321_iwy5",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001982": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50321_iwy5",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001983": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50322_9tfz",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001984": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50323_clxu",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001985": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50323_clxu",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001986": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50324_7f8w",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001987": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50324_7f8w",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001988": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50324_7f8w",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001989": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50325_fp8d",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001990": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50326_99f2",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001991": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50326_99f2",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001992": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50327_kl0i",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001993": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50328_dtq1",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001994": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50328_dtq1",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001995": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50329_if4s",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0001996": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50329_if4s",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0001997": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50330_f7i9",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0001998": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50330_f7i9",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0001999": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50331_93kr",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002000": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50332_gcw",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002001": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50332_gcw",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002002": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50332_gcw",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002003": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50333_54ig",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002004": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50334_dqcc",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002005": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50335_4tfu",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002006": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50335_4tfu",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002007": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50335_4tfu",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002008": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50336_a2xo",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002009": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50337_8cv6",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002010": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50337_8cv6",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002011": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50338_gnxs",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002012": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50338_gnxs",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002013": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50339_iftw",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002014": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50339_iftw",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002015": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50340_9ywv",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002016": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50341_e0no",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002017": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50342_5rcd",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002018": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50342_5rcd",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002019": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50342_5rcd",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002020": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50343_k9d",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002021": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50343_k9d",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002022": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50344_dh6z",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002023": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50344_dh6z",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002024": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50344_dh6z",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002025": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50345_65l9",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002026": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50345_65l9",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002027": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50346_7wyr",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002028": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50346_7wyr",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002029": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50346_7wyr",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002030": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50347_54j3",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002031": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50347_54j3",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002032": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50347_54j3",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002033": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50348_ikps",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002034": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50348_ikps",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002035": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50348_ikps",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002036": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50349_806o",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002037": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50349_806o",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002038": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50350_1caw",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002039": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50350_1caw",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002040": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50351_humx",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002041": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50351_humx",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002042": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50351_humx",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002043": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50352_jgmx",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002044": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50352_jgmx",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002045": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50352_jgmx",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002046": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50353_2gai",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002047": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50353_2gai",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002048": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50353_2gai",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002049": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50354_e4wd",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002050": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50355_cm5",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002051": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50356_fp42",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002052": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50356_fp42",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002053": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50357_8nxn",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002054": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50357_8nxn",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002055": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50357_8nxn",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002056": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50358_ab00",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002057": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50358_ab00",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002058": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50358_ab00",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002059": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50359_6glh",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002060": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50360_lqb",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002061": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50360_lqb",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002062": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50360_lqb",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002063": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50361_7m19",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002064": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50361_7m19",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002065": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50361_7m19",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002066": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50362_i80d",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002067": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50362_i80d",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002068": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50362_i80d",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002069": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50363_8m00",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002070": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50364_gbf7",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002071": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50364_gbf7",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002072": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50365_csr7",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002073": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50365_csr7",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002074": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50365_csr7",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002075": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50366_5yxe",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002076": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50366_5yxe",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002077": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50367_i0hg",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002078": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50367_i0hg",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002079": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50367_i0hg",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002080": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50368_f7s8",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002081": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50368_f7s8",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002082": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50369_8xl0",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002083": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50369_8xl0",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002084": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50370_hbl9",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002085": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50370_hbl9",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002086": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50371_ivms",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002087": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50371_ivms",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002088": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50372_fikq",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002089": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50372_fikq",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002090": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50373_9hq5",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002091": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50374_2wiw",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002092": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50375_fn0j",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002093": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50375_fn0j",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002094": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50376_87k6",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002095": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50376_87k6",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002096": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50376_87k6",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002097": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50377_1caf",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002098": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50377_1caf",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002099": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50377_1caf",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002100": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50378_4l9",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002101": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50379_fnf7",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002102": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50379_fnf7",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002103": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50380_4z5l",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002104": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50380_4z5l",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002105": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50380_4z5l",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002106": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50381_9c6b",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002107": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50381_9c6b",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002108": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50381_9c6b",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002109": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50382_jo80",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002110": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50383_a0ro",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002111": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50383_a0ro",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002112": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50384_504q",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002113": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50384_504q",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002114": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50385_8po9",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002115": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50385_8po9",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002116": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50385_8po9",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002117": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50386_9qdq",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002118": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50386_9qdq",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002119": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50387_ddec",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002120": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50388_itbu",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002121": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50389_3ct4",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002122": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50389_3ct4",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002123": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50390_a7pb",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002124": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50390_a7pb",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002125": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50390_a7pb",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002126": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50391_7ykg",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002127": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50391_7ykg",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002128": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50392_68v1",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002129": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50393_k5hg",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002130": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50394_7pgj",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002131": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50394_7pgj",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002132": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50394_7pgj",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002133": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50395_hpea",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002134": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50395_hpea",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002135": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50395_hpea",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002136": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50396_4nvn",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002137": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50396_4nvn",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002138": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50397_kb7f",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002139": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50398_h42p",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002140": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50398_h42p",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002141": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50399_cdq4",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002142": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50399_cdq4",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002143": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50400_fzgj",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002144": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50400_fzgj",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002145": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50401_7xfi",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002146": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50402_7v74",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002147": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50402_7v74",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002148": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50403_h0w4",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002149": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50403_h0w4",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002150": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50403_h0w4",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002151": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50404_ov0",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002152": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50404_ov0",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002153": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50404_ov0",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002154": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50405_iijx",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002155": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50405_iijx",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002156": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50406_14kf",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002157": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50406_14kf",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002158": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50407_e3wu",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002159": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50408_87wj",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002160": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50408_87wj",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002161": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50408_87wj",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002162": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50409_4zxg",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002163": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50410_3gfh",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002164": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50410_3gfh",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002165": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50410_3gfh",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002166": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50411_fp30",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002167": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50411_fp30",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002168": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50412_c2s6",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002169": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50413_99kl",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002170": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50413_99kl",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002171": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50413_99kl",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002172": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50414_bbjb",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002173": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50414_bbjb",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002174": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50415_l9xk",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002175": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50415_l9xk",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002176": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50416_ksbk",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002177": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50416_ksbk",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002178": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50416_ksbk",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002179": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50417_je1e",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002180": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50417_je1e",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002181": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50418_djda",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002182": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50418_djda",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002183": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50419_15lo",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002184": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50419_15lo",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002185": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50419_15lo",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002186": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50420_h6eg",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002187": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50420_h6eg",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002188": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50421_ag28",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002189": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50422_cvdd",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002190": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50422_cvdd",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002191": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50423_65uh",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002192": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50423_65uh",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002193": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50423_65uh",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002194": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50424_6s0f",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002195": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50424_6s0f",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002196": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50424_6s0f",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002197": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50425_73i3",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002198": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50425_73i3",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002199": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50426_157d",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002200": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50426_157d",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002201": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50427_18fb",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002202": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50427_18fb",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002203": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50428_97dw",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002204": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50428_97dw",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002205": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50428_97dw",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002206": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50429_ahny",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002207": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50429_ahny",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002208": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50430_gn52",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002209": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50431_4mde",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002210": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50432_45u2",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002211": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50432_45u2",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002212": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50433_9f1k",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002213": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50433_9f1k",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002214": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50433_9f1k",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002215": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50434_gg39",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002216": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50434_gg39",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002217": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50435_2fsm",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002218": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50435_2fsm",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002219": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50436_kpj7",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002220": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50437_2d08",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002221": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50437_2d08",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002222": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50438_agcg",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002223": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50438_agcg",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002224": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50438_agcg",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002225": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50439_1abc",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002226": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50439_1abc",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002227": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50439_1abc",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002228": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50440_ci95",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002229": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50440_ci95",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002230": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50441_emrm",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002231": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50441_emrm",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002232": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50441_emrm",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002233": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50442_85l6",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002234": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50442_85l6",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002235": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50443_gtxm",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002236": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50444_xfa",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002237": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50444_xfa",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002238": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50444_xfa",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002239": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50445_h5xz",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002240": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50446_31c1",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002241": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50447_bter",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002242": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50447_bter",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002243": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50447_bter",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002244": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50448_43vy",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002245": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50449_6x9g",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002246": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50450_gih5",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002247": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50450_gih5",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002248": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50451_45qj",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002249": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50451_45qj",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002250": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50451_45qj",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002251": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50452_hmie",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002252": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50452_hmie",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002253": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50453_4hii",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002254": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50453_4hii",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002255": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50454_4p46",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002256": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50455_dhkb",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002257": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50455_dhkb",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002258": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50455_dhkb",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002259": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50456_7pv1",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002260": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50456_7pv1",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002261": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50457_1gwi",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002262": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50457_1gwi",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002263": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50458_7jhu",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002264": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50458_7jhu",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002265": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50458_7jhu",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002266": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50459_bpa4",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002267": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50459_bpa4",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002268": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50459_bpa4",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002269": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50460_fm5g",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002270": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50461_3dze",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002271": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50461_3dze",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002272": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50462_8x1o",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002273": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50463_4z24",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002274": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50463_4z24",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002275": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50463_4z24",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002276": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50464_ddub",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002277": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50464_ddub",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002278": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50464_ddub",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002279": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50465_5gf2",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002280": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50465_5gf2",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002281": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50466_inc4",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002282": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50466_inc4",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002283": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50466_inc4",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002284": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50467_1pci",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002285": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50467_1pci",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002286": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50468_4tk",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002287": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50468_4tk",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002288": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50469_fmpv",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002289": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50469_fmpv",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002290": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50469_fmpv",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002291": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50470_byon",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002292": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50470_byon",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002293": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50471_ju95",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002294": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50471_ju95",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002295": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50472_4b2r",
+      "merchantId": "m_delta"
+    },
+    "test_bench_o_0002296": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50472_4b2r",
+      "merchantId": "m_alpha"
+    },
+    "test_bench_o_0002297": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50473_ea8h",
+      "merchantId": "m_beta"
+    },
+    "test_bench_o_0002298": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50473_ea8h",
+      "merchantId": "m_gamma"
+    },
+    "test_bench_o_0002299": {
+      "fraudLabel": "legitimate",
+      "customerId": "test_bench_cust_50474_kqs4",
+      "merchantId": "m_delta"
+    }
+  },
+  "rings": [
+    {
+      "ringId": "ring_s4_A",
+      "memberCustomerIds": [
+        "test_bench_ringidentity_ring_s4_A",
+        "test_bench_ringidentity_ring_s4_A",
+        "test_bench_ringidentity_ring_s4_A",
+        "test_bench_ringidentity_ring_s4_A",
+        "test_bench_ringidentity_ring_s4_A"
+      ],
+      "merchantIds": [
+        "m_alpha",
+        "m_beta",
+        "m_gamma",
+        "m_delta"
+      ]
+    }
+  ]
+}

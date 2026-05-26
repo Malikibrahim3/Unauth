@@ -38,57 +38,18 @@ export const disputeHistory: Signal = (order: NormalisedOrder, context: ScoringC
     (o) => o.refundStatus === 'full' || o.refundStatus === 'partial' || o.orderStatus === 'refunded'
   ).length;
 
-  const hasExplicitFlags = prior.some(
-    (o) =>
-      (o.chargebackDispute !== null && o.chargebackDispute !== undefined) ||
-      (o.refundRequested !== null && o.refundRequested !== undefined) ||
-      (o.returnRequested !== null && o.returnRequested !== undefined)
-  );
-
-  // Tuning fix 1 — gate refund/return-request firing on rate, not raw count.
-  // US apparel/electronics has 20-30% legitimate return rates; firing on a
-  // single prior refund treats normal customers as fraud. We now require:
-  //   - chargebacks: always fire (rare and strongly fraud-correlated)
-  //   - refund/return requests: ≥2 events AND dispute rate above threshold
-  //   - rate >0.40 with ≥3 events → full weight (score 60); otherwise 0.25+ → half (score 30)
+  // Precision fix — disputeHistory must fire ONLY on actual chargeback /
+  // dispute evidence. Plain refund requests, return requests, and refunded
+  // order status are NOT disputes (they are returns) — legitimate high-return
+  // shoppers (e.g. 40% return rate cohorts) generated mass false positives
+  // when those events were treated as soft disputes. Chargebacks remain the
+  // sole trigger; the score table for chargebacks is unchanged.
   let score = 0;
   const reasons: string[] = [];
 
-  const softDisputeEvents = priorRefundRequests + priorReturnRequests;
-  const softDisputeRate = prior.length > 0 ? softDisputeEvents / prior.length : 0;
-
   if (priorChargebacks > 0) {
-    // Chargebacks are unchanged — the strongest signal in the industry.
-    score = Math.max(score, priorChargebacks >= 2 ? 100 : 95);
+    score = priorChargebacks >= 2 ? 100 : 95;
     reasons.push(`${priorChargebacks} prior chargeback${priorChargebacks > 1 ? 's' : ''}`);
-  }
-
-  if (softDisputeEvents >= 3 && softDisputeRate > 0.40) {
-    score = Math.max(score, softDisputeEvents >= 4 ? 80 : 60);
-    reasons.push(
-      `${softDisputeEvents} prior dispute event${softDisputeEvents > 1 ? 's' : ''} ` +
-        `(${(softDisputeRate * 100).toFixed(0)}% of ${prior.length} prior orders)`,
-    );
-  } else if (softDisputeEvents >= 2 && softDisputeRate >= 0.25) {
-    score = Math.max(score, 30);
-    reasons.push(
-      `${softDisputeEvents} prior dispute event${softDisputeEvents > 1 ? 's' : ''} ` +
-        `(${(softDisputeRate * 100).toFixed(0)}% of ${prior.length} prior orders, below high-confidence threshold)`,
-    );
-  }
-  // softDisputeRate below 0.25 or fewer than 2 events: do not fire.
-
-  // Fallback for merchants that don't supply explicit dispute flags but do
-  // record refund status on the order itself.
-  if (!hasExplicitFlags && priorActualRefunds >= 2) {
-    const actualRefundRate = priorActualRefunds / prior.length;
-    if (actualRefundRate > 0.40) {
-      score = Math.max(score, 50);
-      reasons.push(`${priorActualRefunds} prior refunds (${(actualRefundRate * 100).toFixed(0)}% rate, no explicit dispute flags)`);
-    } else if (actualRefundRate >= 0.25) {
-      score = Math.max(score, 25);
-      reasons.push(`${priorActualRefunds} prior refunds (${(actualRefundRate * 100).toFixed(0)}% rate, no explicit dispute flags)`);
-    }
   }
 
   if (score === 0) {
@@ -96,7 +57,7 @@ export const disputeHistory: Signal = (order: NormalisedOrder, context: ScoringC
       name: 'disputeHistory',
       fired: false,
       score: 0,
-      reason: 'No prior disputes, refund requests, or return requests on this customer.',
+      reason: 'No prior chargebacks on this customer.',
       evidence: { priorOrderCount: prior.length, priorChargebacks, priorRefundRequests, priorReturnRequests, priorActualRefunds },
     };
   }
@@ -106,6 +67,6 @@ export const disputeHistory: Signal = (order: NormalisedOrder, context: ScoringC
     fired: true,
     score,
     reason: `Customer has ${reasons.join(', ')} across ${prior.length} prior order${prior.length > 1 ? 's' : ''} — consortium / dispute-history elevation.`,
-    evidence: { priorOrderCount: prior.length, priorChargebacks, priorRefundRequests, priorReturnRequests, priorActualRefunds, hasExplicitFlags },
+    evidence: { priorOrderCount: prior.length, priorChargebacks, priorRefundRequests, priorReturnRequests, priorActualRefunds },
   };
 };

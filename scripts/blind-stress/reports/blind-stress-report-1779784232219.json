@@ -1,0 +1,538 @@
+[
+  {
+    "scenario": 104,
+    "description": "D: Wardrobing — out-of-scope vs in-scope",
+    "rows_loaded": 600,
+    "rows_skipped": 0,
+    "rows_duplicates_dropped": 0,
+    "precision": 0.9794520547945206,
+    "recall": 1,
+    "f1": 0.9896193771626297,
+    "fpr": 0.006564551422319475,
+    "truePositives": 143,
+    "falsePositives": 3,
+    "trueNegatives": 454,
+    "falseNegatives": 0,
+    "flagged_count": 146,
+    "fraud_count_gt": 143,
+    "legitimate_count_gt": 457,
+    "grade_distribution": {
+      "definite": 96,
+      "probable": 48,
+      "possible": 35,
+      "weak": 22,
+      "none": 399
+    },
+    "identity_precision": 1,
+    "identity_recall": 1,
+    "cluster_count": 144,
+    "signals_fired_count": {
+      "refundRate": 0,
+      "inrAbuse": 0,
+      "velocity": 42,
+      "inrSpeed": 0,
+      "emailPattern": 0,
+      "addressClustering": 0,
+      "billingAddressClustering": 61,
+      "valueAnomaly": 0,
+      "paymentChurn": 0,
+      "disputeHistory": 103,
+      "addressMismatch": 0,
+      "crossMerchant": 143,
+      "refundPattern": 33,
+      "networkDeviceLink": 0,
+      "billingAddressClusteringActive": 62,
+      "networkDeviceLinkActive": 100
+    },
+    "false_definite_orders": [],
+    "signals_failed_to_fire": [
+      "refundRate",
+      "inrAbuse",
+      "inrSpeed",
+      "emailPattern",
+      "addressClustering",
+      "valueAnomaly",
+      "paymentChurn",
+      "addressMismatch",
+      "networkDeviceLink"
+    ],
+    "latency_ms": 194,
+    "rings": [
+      {
+        "ringId": "ring_s104_abuser_0",
+        "expected_orders": 15,
+        "flagged_orders": 15,
+        "max_grade": "definite"
+      },
+      {
+        "ringId": "ring_s104_abuser_1",
+        "expected_orders": 14,
+        "flagged_orders": 14,
+        "max_grade": "definite"
+      },
+      {
+        "ringId": "ring_s104_abuser_2",
+        "expected_orders": 14,
+        "flagged_orders": 14,
+        "max_grade": "definite"
+      },
+      {
+        "ringId": "ring_s104_abuser_3",
+        "expected_orders": 17,
+        "flagged_orders": 17,
+        "max_grade": "definite"
+      },
+      {
+        "ringId": "ring_s104_abuser_4",
+        "expected_orders": 14,
+        "flagged_orders": 14,
+        "max_grade": "definite"
+      },
+      {
+        "ringId": "ring_s104_abuser_5",
+        "expected_orders": 14,
+        "flagged_orders": 14,
+        "max_grade": "definite"
+      },
+      {
+        "ringId": "ring_s104_abuser_6",
+        "expected_orders": 14,
+        "flagged_orders": 14,
+        "max_grade": "definite"
+      },
+      {
+        "ringId": "ring_s104_abuser_7",
+        "expected_orders": 15,
+        "flagged_orders": 15,
+        "max_grade": "definite"
+      },
+      {
+        "ringId": "ring_s104_abuser_8",
+        "expected_orders": 12,
+        "flagged_orders": 12,
+        "max_grade": "definite"
+      },
+      {
+        "ringId": "ring_s104_abuser_9",
+        "expected_orders": 14,
+        "flagged_orders": 14,
+        "max_grade": "definite"
+      }
+    ],
+    "cohort_fpr": {
+      "wardrobe_legit": {
+        "fp": 3,
+        "n": 153,
+        "fpr": 0.0196078431372549
+      }
+    },
+    "legit_cohort_flags": [
+      {
+        "orderId": "test_bench_o_0018585",
+        "cohort": "wardrobe_legit",
+        "grade": "probable",
+        "signals": [
+          "velocity",
+          "billingAddressClustering",
+          "refundPattern"
+        ],
+        "score": 50.53191489361702
+      },
+      {
+        "orderId": "test_bench_o_0018539",
+        "cohort": "wardrobe_legit",
+        "grade": "possible",
+        "signals": [
+          "refundPattern"
+        ],
+        "score": 25
+      },
+      {
+        "orderId": "test_bench_o_0018560",
+        "cohort": "wardrobe_legit",
+        "grade": "possible",
+        "signals": [
+          "billingAddressClustering",
+          "refundPattern"
+        ],
+        "score": 38.44827586206897
+      },
+      {
+        "orderId": "test_bench_o_0018633",
+        "cohort": "wardrobe_legit",
+        "grade": "possible",
+        "signals": [
+          "billingAddressClustering",
+          "refundPattern"
+        ],
+        "score": 28.103448275862068
+      },
+      {
+        "orderId": "test_bench_o_0018650",
+        "cohort": "wardrobe_legit",
+        "grade": "possible",
+        "signals": [
+          "billingAddressClustering",
+          "refundPattern"
+        ],
+        "score": 28.103448275862068
+      },
+      {
+        "orderId": "test_bench_o_0018614",
+        "cohort": "wardrobe_legit",
+        "grade": "possible",
+        "signals": [
+          "velocity",
+          "billingAddressClustering"
+        ],
+        "score": 58.333333333333336
+      },
+      {
+        "orderId": "test_bench_o_0018636",
+        "cohort": "wardrobe_legit",
+        "grade": "possible",
+        "signals": [
+          "velocity",
+          "billingAddressClustering"
+        ],
+        "score": 58.333333333333336
+      },
+      {
+        "orderId": "test_bench_o_0018638",
+        "cohort": "wardrobe_legit",
+        "grade": "possible",
+        "signals": [
+          "velocity",
+          "billingAddressClustering"
+        ],
+        "score": 58.333333333333336
+      },
+      {
+        "orderId": "test_bench_o_0018604",
+        "cohort": "wardrobe_legit",
+        "grade": "possible",
+        "signals": [
+          "billingAddressClustering",
+          "refundPattern"
+        ],
+        "score": 38.44827586206897
+      },
+      {
+        "orderId": "test_bench_o_0018577",
+        "cohort": "wardrobe_legit",
+        "grade": "possible",
+        "signals": [
+          "velocity",
+          "refundPattern"
+        ],
+        "score": 46.31578947368421
+      },
+      {
+        "orderId": "test_bench_o_0018660",
+        "cohort": "wardrobe_legit",
+        "grade": "possible",
+        "signals": [
+          "refundPattern"
+        ],
+        "score": 25
+      },
+      {
+        "orderId": "test_bench_o_0018618",
+        "cohort": "wardrobe_legit",
+        "grade": "possible",
+        "signals": [
+          "billingAddressClustering",
+          "refundPattern"
+        ],
+        "score": 38.44827586206897
+      },
+      {
+        "orderId": "test_bench_o_0018557",
+        "cohort": "wardrobe_legit",
+        "grade": "possible",
+        "signals": [
+          "refundPattern"
+        ],
+        "score": 25
+      },
+      {
+        "orderId": "test_bench_o_0018613",
+        "cohort": "wardrobe_legit",
+        "grade": "possible",
+        "signals": [
+          "velocity",
+          "billingAddressClustering",
+          "refundPattern"
+        ],
+        "score": 44.148936170212764
+      },
+      {
+        "orderId": "test_bench_o_0018627",
+        "cohort": "wardrobe_legit",
+        "grade": "possible",
+        "signals": [
+          "refundPattern"
+        ],
+        "score": 25
+      },
+      {
+        "orderId": "test_bench_o_0018566",
+        "cohort": "wardrobe_legit",
+        "grade": "possible",
+        "signals": [
+          "billingAddressClustering",
+          "refundPattern"
+        ],
+        "score": 28.103448275862068
+      },
+      {
+        "orderId": "test_bench_o_0018679",
+        "cohort": "wardrobe_legit",
+        "grade": "possible",
+        "signals": [
+          "refundPattern"
+        ],
+        "score": 25
+      },
+      {
+        "orderId": "test_bench_o_0018672",
+        "cohort": "wardrobe_legit",
+        "grade": "possible",
+        "signals": [
+          "billingAddressClustering",
+          "refundPattern"
+        ],
+        "score": 38.44827586206897
+      },
+      {
+        "orderId": "test_bench_o_0018551",
+        "cohort": "wardrobe_legit",
+        "grade": "possible",
+        "signals": [
+          "velocity",
+          "billingAddressClustering"
+        ],
+        "score": 58.333333333333336
+      },
+      {
+        "orderId": "test_bench_o_0018628",
+        "cohort": "wardrobe_legit",
+        "grade": "possible",
+        "signals": [
+          "billingAddressClustering",
+          "refundPattern"
+        ],
+        "score": 38.44827586206897
+      },
+      {
+        "orderId": "test_bench_o_0018574",
+        "cohort": "wardrobe_legit",
+        "grade": "possible",
+        "signals": [
+          "velocity",
+          "billingAddressClustering"
+        ],
+        "score": 58.333333333333336
+      },
+      {
+        "orderId": "test_bench_o_0018553",
+        "cohort": "wardrobe_legit",
+        "grade": "possible",
+        "signals": [
+          "velocity",
+          "billingAddressClustering"
+        ],
+        "score": 58.333333333333336
+      },
+      {
+        "orderId": "test_bench_o_0018676",
+        "cohort": "wardrobe_legit",
+        "grade": "possible",
+        "signals": [
+          "billingAddressClustering",
+          "refundPattern"
+        ],
+        "score": 28.103448275862068
+      },
+      {
+        "orderId": "test_bench_o_0018576",
+        "cohort": "wardrobe_legit",
+        "grade": "possible",
+        "signals": [
+          "velocity",
+          "billingAddressClustering"
+        ],
+        "score": 58.333333333333336
+      },
+      {
+        "orderId": "test_bench_o_0018624",
+        "cohort": "wardrobe_legit",
+        "grade": "possible",
+        "signals": [
+          "refundPattern"
+        ],
+        "score": 25
+      },
+      {
+        "orderId": "test_bench_o_0018582",
+        "cohort": "wardrobe_legit",
+        "grade": "possible",
+        "signals": [
+          "billingAddressClustering",
+          "refundPattern"
+        ],
+        "score": 38.44827586206897
+      },
+      {
+        "orderId": "test_bench_o_0018545",
+        "cohort": "wardrobe_legit",
+        "grade": "possible",
+        "signals": [
+          "billingAddressClustering",
+          "refundPattern"
+        ],
+        "score": 28.103448275862068
+      },
+      {
+        "orderId": "test_bench_o_0018586",
+        "cohort": "wardrobe_legit",
+        "grade": "possible",
+        "signals": [
+          "velocity",
+          "billingAddressClustering"
+        ],
+        "score": 58.333333333333336
+      },
+      {
+        "orderId": "test_bench_o_0018583",
+        "cohort": "wardrobe_legit",
+        "grade": "possible",
+        "signals": [
+          "refundPattern"
+        ],
+        "score": 25
+      },
+      {
+        "orderId": "test_bench_o_0018682",
+        "cohort": "wardrobe_legit",
+        "grade": "possible",
+        "signals": [
+          "billingAddressClustering",
+          "refundPattern"
+        ],
+        "score": 38.44827586206897
+      },
+      {
+        "orderId": "test_bench_o_0018579",
+        "cohort": "wardrobe_legit",
+        "grade": "possible",
+        "signals": [
+          "velocity",
+          "billingAddressClustering"
+        ],
+        "score": 58.333333333333336
+      },
+      {
+        "orderId": "test_bench_o_0018674",
+        "cohort": "wardrobe_legit",
+        "grade": "possible",
+        "signals": [
+          "billingAddressClustering",
+          "refundPattern"
+        ],
+        "score": 38.44827586206897
+      },
+      {
+        "orderId": "test_bench_o_0018584",
+        "cohort": "wardrobe_legit",
+        "grade": "possible",
+        "signals": [
+          "billingAddressClustering",
+          "refundPattern"
+        ],
+        "score": 38.44827586206897
+      },
+      {
+        "orderId": "test_bench_o_0018588",
+        "cohort": "wardrobe_legit",
+        "grade": "possible",
+        "signals": [
+          "velocity",
+          "billingAddressClustering"
+        ],
+        "score": 58.333333333333336
+      },
+      {
+        "orderId": "test_bench_o_0018651",
+        "cohort": "wardrobe_legit",
+        "grade": "possible",
+        "signals": [
+          "billingAddressClustering",
+          "refundPattern"
+        ],
+        "score": 28.103448275862068
+      },
+      {
+        "orderId": "test_bench_o_0018571",
+        "cohort": "wardrobe_legit",
+        "grade": "possible",
+        "signals": [
+          "refundPattern"
+        ],
+        "score": 25
+      }
+    ],
+    "pass_summary": {
+      "precision_min_0.80": {
+        "actual": "0.979",
+        "target": "≥ 0.80",
+        "pass": true
+      },
+      "precision_pilot_0.85": {
+        "actual": "0.979",
+        "target": "≥ 0.85",
+        "pass": true
+      },
+      "recall_min_0.60": {
+        "actual": "1.000",
+        "target": "≥ 0.60",
+        "pass": true
+      },
+      "recall_pilot_0.75": {
+        "actual": "1.000",
+        "target": "≥ 0.75",
+        "pass": true
+      },
+      "f1_min_0.70": {
+        "actual": "0.990",
+        "target": "≥ 0.70",
+        "pass": true
+      },
+      "f1_pilot_0.80": {
+        "actual": "0.990",
+        "target": "≥ 0.80",
+        "pass": true
+      },
+      "fpr_max_0.05": {
+        "actual": "0.007",
+        "target": "≤ 0.05",
+        "pass": true
+      },
+      "identity_precision_min_0.95": {
+        "actual": "1.000",
+        "target": "≥ 0.95",
+        "pass": true
+      },
+      "identity_recall_min_0.99": {
+        "actual": "1.000",
+        "target": "≥ 0.99",
+        "pass": true
+      },
+      "cohort_fpr_wardrobe_legit_zero": {
+        "actual": "3/153 = 0.020",
+        "target": "= 0",
+        "pass": false
+      }
+    }
+  }
+]

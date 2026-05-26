@@ -32,6 +32,7 @@
     "test:e2e": "playwright test --config=tests/playwright.config.ts",
     "test:e2e:report": "playwright show-report tests/reports/html",
     "test:fixtures": "ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' tests/utils/generate-fixtures.ts",
+    "synthetic:iterate": "ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' synthetic-lab/iterate.ts",
     "docs:generate": "node scripts/generate-signals-readme.mjs --write",
     "docs:check": "node scripts/generate-signals-readme.mjs --check",
     "tune:generate": "ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/tune/generateDatasets.ts",

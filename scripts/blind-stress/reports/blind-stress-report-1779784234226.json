@@ -1,0 +1,112 @@
+[
+  {
+    "scenario": 105,
+    "description": "E: International formats",
+    "rows_loaded": 800,
+    "rows_skipped": 0,
+    "rows_duplicates_dropped": 0,
+    "precision": 1,
+    "recall": 1,
+    "f1": 1,
+    "fpr": 0,
+    "truePositives": 62,
+    "falsePositives": 0,
+    "trueNegatives": 738,
+    "falseNegatives": 0,
+    "flagged_count": 62,
+    "fraud_count_gt": 62,
+    "legitimate_count_gt": 738,
+    "grade_distribution": {
+      "definite": 1,
+      "probable": 56,
+      "possible": 5,
+      "weak": 24,
+      "none": 714
+    },
+    "identity_precision": 1,
+    "identity_recall": 1,
+    "cluster_count": 252,
+    "signals_fired_count": {
+      "refundRate": 23,
+      "inrAbuse": 22,
+      "velocity": 21,
+      "inrSpeed": 14,
+      "emailPattern": 0,
+      "addressClustering": 0,
+      "billingAddressClustering": 0,
+      "valueAnomaly": 0,
+      "paymentChurn": 0,
+      "disputeHistory": 4,
+      "addressMismatch": 0,
+      "crossMerchant": 62,
+      "refundPattern": 3,
+      "networkDeviceLink": 18,
+      "networkDeviceLinkActive": 27
+    },
+    "false_definite_orders": [],
+    "signals_failed_to_fire": [
+      "emailPattern",
+      "addressClustering",
+      "billingAddressClustering",
+      "valueAnomaly",
+      "paymentChurn",
+      "addressMismatch"
+    ],
+    "latency_ms": 177,
+    "rings": [
+      {
+        "ringId": "ring_s105_intl",
+        "expected_orders": 62,
+        "flagged_orders": 62,
+        "max_grade": "definite"
+      }
+    ],
+    "pass_summary": {
+      "precision_min_0.80": {
+        "actual": "1.000",
+        "target": "≥ 0.80",
+        "pass": true
+      },
+      "precision_pilot_0.85": {
+        "actual": "1.000",
+        "target": "≥ 0.85",
+        "pass": true
+      },
+      "recall_min_0.60": {
+        "actual": "1.000",
+        "target": "≥ 0.60",
+        "pass": true
+      },
+      "recall_pilot_0.75": {
+        "actual": "1.000",
+        "target": "≥ 0.75",
+        "pass": true
+      },
+      "f1_min_0.70": {
+        "actual": "1.000",
+        "target": "≥ 0.70",
+        "pass": true
+      },
+      "f1_pilot_0.80": {
+        "actual": "1.000",
+        "target": "≥ 0.80",
+        "pass": true
+      },
+      "fpr_max_0.05": {
+        "actual": "0.000",
+        "target": "≤ 0.05",
+        "pass": true
+      },
+      "identity_precision_min_0.95": {
+        "actual": "1.000",
+        "target": "≥ 0.95",
+        "pass": true
+      },
+      "identity_recall_min_0.99": {
+        "actual": "1.000",
+        "target": "≥ 0.99",
+        "pass": true
+      }
+    }
+  }
+]

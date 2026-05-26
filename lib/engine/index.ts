@@ -1,6 +1,8 @@
 import type { NormalisedOrder, ScoredOrder, ScoringContext, SignalResult } from './types';
 import type { CrossMerchantProfile, PendingAuditLog } from './fastContext';
-import { SIGNAL_WEIGHTS, RISK_TIER_THRESHOLDS, FLAG_THRESHOLD } from './weights';
+import { SIGNAL_WEIGHTS, RISK_TIER_THRESHOLDS, FLAG_THRESHOLD, BROAD_OVERLAP_SIGNALS, STRONG_FRAUD_EVIDENCE_SIGNALS, STRONG_EVIDENCE_BY_SCORE, CONFIDENCE_THRESHOLDS, BEHAVIORAL_FRAUD_SIGNALS } from './weights';
+import { mergeHistoryByCluster } from './identityHistory';
+import type { LinkerResult } from '../linker';
 import { refundRate } from './signals/refundRate';
 import { inrAbuse } from './signals/inrAbuse';
 import { velocity } from './signals/velocity';
@@ -38,15 +40,31 @@ export interface ScoreOrdersOptions {
   requestingMerchantId?: string;
   pendingAuditLogs?: PendingAuditLog[];
   networkFraudsterIdentifiers?: Set<string>;
+  /** Linker output. When provided, histories are merged across identity clusters
+   *  so behavioral signals see the full ring history, not per-email fragments. */
+  linkerResult?: LinkerResult;
+  /** Minimum linker confidence_score for history merging. Defaults to PROBABLE. */
+  linkerConfidenceFloor?: number;
 }
 
 function buildContext(orders: NormalisedOrder[], opts?: ScoreOrdersOptions): ScoringContext {
-  const customerOrderHistory = new Map<string, NormalisedOrder[]>();
+  const baseHistory = new Map<string, NormalisedOrder[]>();
   for (const order of orders) {
-    const arr = customerOrderHistory.get(order.emailHash) ?? [];
+    const arr = baseHistory.get(order.emailHash) ?? [];
     arr.push(order);
-    customerOrderHistory.set(order.emailHash, arr);
+    baseHistory.set(order.emailHash, arr);
   }
+
+  let customerOrderHistory = baseHistory;
+  if (opts?.linkerResult) {
+    const merged = mergeHistoryByCluster(
+      orders,
+      opts.linkerResult,
+      opts.linkerConfidenceFloor ?? CONFIDENCE_THRESHOLDS.PROBABLE,
+    );
+    customerOrderHistory = merged.byEmailHash;
+  }
+
   return {
     allOrders: orders,
     customerOrderHistory,
@@ -67,10 +85,11 @@ function computeScore(signals: SignalResult[]): number {
     const weight = SIGNAL_WEIGHTS[signal.name as keyof typeof SIGNAL_WEIGHTS];
     if (weight === undefined) continue;
     if (!signal.fired) continue;
-    if (['addressClustering', 'billingAddressClustering', 'emailPattern', 'crossMerchant', 'addressMismatch', 'networkDeviceLink'].includes(signal.name)) {
+    if (BROAD_OVERLAP_SIGNALS.has(signal.name)) {
       hasBroadOverlap = true;
     }
-    if (['refundRate', 'inrAbuse', 'inrSpeed', 'paymentChurn', 'refundPattern', 'disputeHistory', 'valueAnomaly', 'billingAddressClusteringActive', 'networkDeviceLinkActive'].includes(signal.name)) {
+    const scoreFloor = STRONG_EVIDENCE_BY_SCORE[signal.name];
+    if (STRONG_FRAUD_EVIDENCE_SIGNALS.has(signal.name) || (scoreFloor !== undefined && signal.score >= scoreFloor)) {
       hasStrongFraudEvidence = true;
     }
     weightedSum += signal.score * weight;
@@ -100,7 +119,15 @@ export function scoreOrders(
     const signals = SIGNALS.map(({ fn }) => fn(order, context));
     const totalScore = computeScore(signals);
     const riskTier = getRiskTier(totalScore);
-    const flagged = totalScore >= FLAG_THRESHOLD;
+    const baseFlagged = totalScore >= FLAG_THRESHOLD;
+
+    // Composition gate — broad-overlap signals (shared infrastructure) cannot
+    // flag an order on their own. At least one BEHAVIORAL_FRAUD_SIGNAL must fire.
+    // See lib/engine/weights.ts BEHAVIORAL_FRAUD_SIGNALS for rationale.
+    const hasBehavioralSignal = signals.some(
+      (s) => s.fired && BEHAVIORAL_FRAUD_SIGNALS.has(s.name),
+    );
+    const flagged = baseFlagged && hasBehavioralSignal;
 
     return {
       order,

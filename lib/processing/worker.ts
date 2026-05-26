@@ -28,6 +28,8 @@ import { TABLES } from '../supabase/tables';
 import type { ParsedCsvRow, FraudTransactionInsert } from './types';
 import { buildFastContext } from '../engine/fastContext';
 import { scoreBatch } from '../engine/fastScore';
+import { mergeHistoryByCluster } from '../engine/identityHistory';
+import { CONFIDENCE_THRESHOLDS } from '../engine/weights';
 import { buildIdentityClusterMapFromLinkerResult } from '../engine/identityClusterBuilder';
 import { linkIdentities, type LinkedCluster, type LinkerOrderInput } from '../linker';
 import { scoreAllClusters, scoreIdentityFromSignals, type ScoredCluster, type ScorerOrder } from '../scorer';
@@ -606,6 +608,14 @@ export async function processCsvJob(
   pipelineWarnings.fastContextReadRetries += context.readHealth?.fastContextReadRetries ?? 0;
   pipelineWarnings.fastContextReadFailures += context.readHealth?.fastContextReadFailures ?? 0;
   jobLog(`buildFastContext completed in ${Date.now() - overallStart}ms — orders=${normOrders.length}`);
+
+  // Merge customerOrderHistory across identity clusters so behavioural signals
+  // (velocity, refundRate, refundPattern, etc.) see the full ring history rather
+  // than per-email fragments created by email-rotating fraud rings.
+  const mergeStart = Date.now();
+  const merged = mergeHistoryByCluster(normOrders, linkerResult, CONFIDENCE_THRESHOLDS.PROBABLE);
+  for (const [eh, hist] of merged.byEmailHash) context.customerOrderHistory.set(eh, hist);
+  jobLog(`identity history merge completed in ${Date.now() - mergeStart}ms`);
 
   // Build the cluster map and order/cluster scores from the single linker run.
   const identityClusterMap = buildIdentityClusterMapFromLinkerResult(normOrders, linkerResult);

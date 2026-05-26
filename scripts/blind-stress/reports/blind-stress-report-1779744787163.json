@@ -1,0 +1,1020 @@
+[
+  {
+    "scenario": 101,
+    "description": "A: High legit returns vs INR abuser",
+    "rows_loaded": 1000,
+    "rows_skipped": 0,
+    "rows_duplicates_dropped": 0,
+    "precision": 0.15294117647058825,
+    "recall": 0.10077519379844961,
+    "f1": 0.12149532710280374,
+    "fpr": 0.08266360505166476,
+    "truePositives": 13,
+    "falsePositives": 72,
+    "trueNegatives": 799,
+    "falseNegatives": 116,
+    "flagged_count": 85,
+    "fraud_count_gt": 129,
+    "legitimate_count_gt": 871,
+    "grade_distribution": {
+      "definite": 0,
+      "probable": 15,
+      "possible": 71,
+      "weak": 253,
+      "none": 661
+    },
+    "identity_precision": 1,
+    "identity_recall": 1,
+    "cluster_count": 244,
+    "signals_fired_count": {
+      "refundRate": 41,
+      "inrAbuse": 0,
+      "velocity": 72,
+      "inrSpeed": 0,
+      "emailPattern": 0,
+      "addressClustering": 0,
+      "billingAddressClustering": 74,
+      "valueAnomaly": 0,
+      "paymentChurn": 0,
+      "disputeHistory": 264,
+      "addressMismatch": 0,
+      "crossMerchant": 0,
+      "refundPattern": 24,
+      "networkDeviceLink": 117,
+      "networkDeviceLinkActive": 130
+    },
+    "false_definite_orders": [],
+    "signals_failed_to_fire": [
+      "inrAbuse",
+      "inrSpeed",
+      "emailPattern",
+      "addressClustering",
+      "valueAnomaly",
+      "paymentChurn",
+      "addressMismatch",
+      "crossMerchant"
+    ],
+    "latency_ms": 307,
+    "rings": [
+      {
+        "ringId": "ring_s101_abuser_0",
+        "expected_orders": 13,
+        "flagged_orders": 3,
+        "max_grade": "probable"
+      },
+      {
+        "ringId": "ring_s101_abuser_1",
+        "expected_orders": 11,
+        "flagged_orders": 0,
+        "max_grade": "weak"
+      },
+      {
+        "ringId": "ring_s101_abuser_2",
+        "expected_orders": 13,
+        "flagged_orders": 0,
+        "max_grade": "none"
+      },
+      {
+        "ringId": "ring_s101_abuser_3",
+        "expected_orders": 15,
+        "flagged_orders": 0,
+        "max_grade": "weak"
+      },
+      {
+        "ringId": "ring_s101_abuser_4",
+        "expected_orders": 15,
+        "flagged_orders": 1,
+        "max_grade": "probable"
+      },
+      {
+        "ringId": "ring_s101_abuser_5",
+        "expected_orders": 12,
+        "flagged_orders": 2,
+        "max_grade": "possible"
+      },
+      {
+        "ringId": "ring_s101_abuser_6",
+        "expected_orders": 12,
+        "flagged_orders": 0,
+        "max_grade": "none"
+      },
+      {
+        "ringId": "ring_s101_abuser_7",
+        "expected_orders": 13,
+        "flagged_orders": 2,
+        "max_grade": "probable"
+      },
+      {
+        "ringId": "ring_s101_abuser_8",
+        "expected_orders": 14,
+        "flagged_orders": 2,
+        "max_grade": "probable"
+      },
+      {
+        "ringId": "ring_s101_abuser_9",
+        "expected_orders": 11,
+        "flagged_orders": 3,
+        "max_grade": "possible"
+      }
+    ],
+    "cohort_fpr": {
+      "high_return_legit": {
+        "fp": 72,
+        "n": 324,
+        "fpr": 0.2222222222222222
+      }
+    },
+    "legit_cohort_flags": [
+      {
+        "orderId": "test_bench_o_0015101",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "billingAddressClustering",
+          "disputeHistory",
+          "networkDeviceLink"
+        ],
+        "score": 66.640625
+      },
+      {
+        "orderId": "test_bench_o_0015095",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "disputeHistory",
+          "refundPattern",
+          "networkDeviceLinkActive"
+        ],
+        "score": 65.58823529411765
+      },
+      {
+        "orderId": "test_bench_o_0015249",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "billingAddressClustering",
+          "disputeHistory",
+          "networkDeviceLinkActive"
+        ],
+        "score": 72.83783783783784
+      },
+      {
+        "orderId": "test_bench_o_0014950",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "billingAddressClustering",
+          "disputeHistory",
+          "networkDeviceLink"
+        ],
+        "score": 66.640625
+      },
+      {
+        "orderId": "test_bench_o_0015141",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "velocity",
+          "billingAddressClustering",
+          "disputeHistory",
+          "networkDeviceLinkActive"
+        ],
+        "score": 72.28260869565217
+      },
+      {
+        "orderId": "test_bench_o_0014984",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "billingAddressClustering",
+          "disputeHistory",
+          "networkDeviceLinkActive"
+        ],
+        "score": 72.83783783783784
+      },
+      {
+        "orderId": "test_bench_o_0015233",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "billingAddressClustering",
+          "disputeHistory",
+          "networkDeviceLink"
+        ],
+        "score": 66.640625
+      },
+      {
+        "orderId": "test_bench_o_0015205",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "billingAddressClustering",
+          "disputeHistory",
+          "networkDeviceLinkActive"
+        ],
+        "score": 72.83783783783784
+      },
+      {
+        "orderId": "test_bench_o_0015065",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "billingAddressClustering",
+          "disputeHistory",
+          "networkDeviceLink"
+        ],
+        "score": 66.640625
+      },
+      {
+        "orderId": "test_bench_o_0014958",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "refundRate",
+          "disputeHistory",
+          "refundPattern",
+          "networkDeviceLinkActive"
+        ],
+        "score": 62.80952380952381
+      },
+      {
+        "orderId": "test_bench_o_0014962",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "refundRate",
+          "billingAddressClustering",
+          "disputeHistory",
+          "networkDeviceLinkActive"
+        ],
+        "score": 68.19148936170212
+      },
+      {
+        "orderId": "test_bench_o_0015241",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "velocity",
+          "billingAddressClustering",
+          "disputeHistory",
+          "networkDeviceLinkActive"
+        ],
+        "score": 72.28260869565217
+      },
+      {
+        "orderId": "test_bench_o_0015070",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "billingAddressClustering",
+          "disputeHistory",
+          "networkDeviceLink"
+        ],
+        "score": 66.640625
+      },
+      {
+        "orderId": "test_bench_o_0014964",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "refundRate",
+          "billingAddressClustering",
+          "disputeHistory",
+          "networkDeviceLinkActive"
+        ],
+        "score": 68.19148936170212
+      },
+      {
+        "orderId": "test_bench_o_0014947",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "billingAddressClustering",
+          "disputeHistory",
+          "networkDeviceLinkActive"
+        ],
+        "score": 72.83783783783784
+      },
+      {
+        "orderId": "test_bench_o_0015208",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "billingAddressClustering",
+          "disputeHistory"
+        ],
+        "score": 71.73469387755102
+      },
+      {
+        "orderId": "test_bench_o_0015049",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "billingAddressClustering",
+          "disputeHistory",
+          "networkDeviceLinkActive"
+        ],
+        "score": 72.83783783783784
+      },
+      {
+        "orderId": "test_bench_o_0014974",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "disputeHistory",
+          "refundPattern",
+          "networkDeviceLink"
+        ],
+        "score": 59.333333333333336
+      },
+      {
+        "orderId": "test_bench_o_0014986",
+        "cohort": "high_return_legit",
+        "grade": "probable",
+        "signals": [
+          "refundRate",
+          "billingAddressClustering",
+          "disputeHistory",
+          "refundPattern"
+        ],
+        "score": 60.842696629213485
+      },
+      {
+        "orderId": "test_bench_o_0015206",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "billingAddressClustering",
+          "disputeHistory"
+        ],
+        "score": 71.73469387755102
+      },
+      {
+        "orderId": "test_bench_o_0015067",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "billingAddressClustering",
+          "disputeHistory",
+          "networkDeviceLink"
+        ],
+        "score": 66.640625
+      },
+      {
+        "orderId": "test_bench_o_0015000",
+        "cohort": "high_return_legit",
+        "grade": "probable",
+        "signals": [
+          "refundRate",
+          "billingAddressClustering",
+          "disputeHistory",
+          "refundPattern",
+          "networkDeviceLinkActive"
+        ],
+        "score": 65.17543859649123
+      },
+      {
+        "orderId": "test_bench_o_0015006",
+        "cohort": "high_return_legit",
+        "grade": "probable",
+        "signals": [
+          "velocity",
+          "billingAddressClustering",
+          "disputeHistory",
+          "refundPattern",
+          "networkDeviceLink"
+        ],
+        "score": 59.068627450980394
+      },
+      {
+        "orderId": "test_bench_o_0014973",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "disputeHistory",
+          "refundPattern",
+          "networkDeviceLink"
+        ],
+        "score": 59.333333333333336
+      },
+      {
+        "orderId": "test_bench_o_0015093",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "refundRate",
+          "billingAddressClustering",
+          "disputeHistory"
+        ],
+        "score": 66.8840579710145
+      },
+      {
+        "orderId": "test_bench_o_0015232",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "refundRate",
+          "billingAddressClustering",
+          "disputeHistory"
+        ],
+        "score": 72.3913043478261
+      },
+      {
+        "orderId": "test_bench_o_0014989",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "refundRate",
+          "billingAddressClustering",
+          "disputeHistory"
+        ],
+        "score": 66.8840579710145
+      },
+      {
+        "orderId": "test_bench_o_0015109",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "billingAddressClustering",
+          "disputeHistory"
+        ],
+        "score": 71.73469387755102
+      },
+      {
+        "orderId": "test_bench_o_0014966",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "disputeHistory",
+          "refundPattern",
+          "networkDeviceLinkActive"
+        ],
+        "score": 65.58823529411765
+      },
+      {
+        "orderId": "test_bench_o_0015039",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "disputeHistory",
+          "refundPattern"
+        ],
+        "score": 61.666666666666664
+      },
+      {
+        "orderId": "test_bench_o_0015243",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "velocity",
+          "billingAddressClustering",
+          "disputeHistory",
+          "networkDeviceLink"
+        ],
+        "score": 67.3780487804878
+      },
+      {
+        "orderId": "test_bench_o_0014996",
+        "cohort": "high_return_legit",
+        "grade": "probable",
+        "signals": [
+          "refundRate",
+          "billingAddressClustering",
+          "disputeHistory",
+          "refundPattern",
+          "networkDeviceLinkActive"
+        ],
+        "score": 62.54385964912281
+      },
+      {
+        "orderId": "test_bench_o_0015254",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "billingAddressClustering",
+          "disputeHistory",
+          "networkDeviceLink"
+        ],
+        "score": 66.640625
+      },
+      {
+        "orderId": "test_bench_o_0014968",
+        "cohort": "high_return_legit",
+        "grade": "probable",
+        "signals": [
+          "billingAddressClustering",
+          "disputeHistory",
+          "refundPattern",
+          "networkDeviceLinkActive"
+        ],
+        "score": 65.85106382978724
+      },
+      {
+        "orderId": "test_bench_o_0015242",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "velocity",
+          "billingAddressClustering",
+          "disputeHistory",
+          "networkDeviceLink"
+        ],
+        "score": 67.3780487804878
+      },
+      {
+        "orderId": "test_bench_o_0014975",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "disputeHistory",
+          "refundPattern",
+          "networkDeviceLinkActive"
+        ],
+        "score": 65.58823529411765
+      },
+      {
+        "orderId": "test_bench_o_0015048",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "billingAddressClustering",
+          "disputeHistory",
+          "networkDeviceLinkActive"
+        ],
+        "score": 72.83783783783784
+      },
+      {
+        "orderId": "test_bench_o_0015003",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "refundRate",
+          "billingAddressClustering",
+          "disputeHistory",
+          "networkDeviceLinkActive"
+        ],
+        "score": 70.53191489361703
+      },
+      {
+        "orderId": "test_bench_o_0015255",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "disputeHistory",
+          "refundPattern",
+          "networkDeviceLinkActive"
+        ],
+        "score": 65.58823529411765
+      },
+      {
+        "orderId": "test_bench_o_0015211",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "billingAddressClustering",
+          "disputeHistory"
+        ],
+        "score": 71.73469387755102
+      },
+      {
+        "orderId": "test_bench_o_0015052",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "billingAddressClustering",
+          "disputeHistory",
+          "networkDeviceLink"
+        ],
+        "score": 66.640625
+      },
+      {
+        "orderId": "test_bench_o_0015112",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "billingAddressClustering",
+          "disputeHistory"
+        ],
+        "score": 71.73469387755102
+      },
+      {
+        "orderId": "test_bench_o_0015094",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "disputeHistory",
+          "refundPattern",
+          "networkDeviceLink"
+        ],
+        "score": 59.333333333333336
+      },
+      {
+        "orderId": "test_bench_o_0014953",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "refundRate",
+          "billingAddressClustering",
+          "disputeHistory",
+          "networkDeviceLinkActive"
+        ],
+        "score": 69.04255319148936
+      },
+      {
+        "orderId": "test_bench_o_0014945",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "billingAddressClustering",
+          "disputeHistory",
+          "networkDeviceLink"
+        ],
+        "score": 66.640625
+      },
+      {
+        "orderId": "test_bench_o_0014971",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "billingAddressClustering",
+          "disputeHistory",
+          "networkDeviceLinkActive"
+        ],
+        "score": 72.83783783783784
+      },
+      {
+        "orderId": "test_bench_o_0015212",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "billingAddressClustering",
+          "disputeHistory"
+        ],
+        "score": 71.73469387755102
+      },
+      {
+        "orderId": "test_bench_o_0014976",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "disputeHistory",
+          "refundPattern",
+          "networkDeviceLink"
+        ],
+        "score": 59.333333333333336
+      },
+      {
+        "orderId": "test_bench_o_0015250",
+        "cohort": "high_return_legit",
+        "grade": "probable",
+        "signals": [
+          "billingAddressClustering",
+          "disputeHistory",
+          "refundPattern",
+          "networkDeviceLink"
+        ],
+        "score": 60.29761904761905
+      },
+      {
+        "orderId": "test_bench_o_0015202",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "billingAddressClustering",
+          "disputeHistory",
+          "networkDeviceLink"
+        ],
+        "score": 66.640625
+      },
+      {
+        "orderId": "test_bench_o_0015009",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "velocity",
+          "billingAddressClustering",
+          "disputeHistory",
+          "networkDeviceLinkActive"
+        ],
+        "score": 72.28260869565217
+      },
+      {
+        "orderId": "test_bench_o_0015090",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "refundRate",
+          "billingAddressClustering",
+          "disputeHistory"
+        ],
+        "score": 66.8840579710145
+      },
+      {
+        "orderId": "test_bench_o_0015231",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "refundRate",
+          "billingAddressClustering",
+          "disputeHistory"
+        ],
+        "score": 72.3913043478261
+      },
+      {
+        "orderId": "test_bench_o_0015247",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "velocity",
+          "billingAddressClustering",
+          "disputeHistory",
+          "networkDeviceLink"
+        ],
+        "score": 67.3780487804878
+      },
+      {
+        "orderId": "test_bench_o_0014979",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "billingAddressClustering",
+          "disputeHistory",
+          "networkDeviceLink"
+        ],
+        "score": 66.640625
+      },
+      {
+        "orderId": "test_bench_o_0015140",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "velocity",
+          "billingAddressClustering",
+          "disputeHistory",
+          "networkDeviceLink"
+        ],
+        "score": 67.3780487804878
+      },
+      {
+        "orderId": "test_bench_o_0015102",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "billingAddressClustering",
+          "disputeHistory",
+          "networkDeviceLink"
+        ],
+        "score": 66.640625
+      },
+      {
+        "orderId": "test_bench_o_0015106",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "billingAddressClustering",
+          "disputeHistory"
+        ],
+        "score": 71.73469387755102
+      },
+      {
+        "orderId": "test_bench_o_0015051",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "billingAddressClustering",
+          "disputeHistory",
+          "networkDeviceLink"
+        ],
+        "score": 66.640625
+      },
+      {
+        "orderId": "test_bench_o_0014961",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "refundRate",
+          "billingAddressClustering",
+          "disputeHistory",
+          "networkDeviceLinkActive"
+        ],
+        "score": 68.19148936170212
+      },
+      {
+        "orderId": "test_bench_o_0015047",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "billingAddressClustering",
+          "disputeHistory",
+          "networkDeviceLink"
+        ],
+        "score": 66.640625
+      },
+      {
+        "orderId": "test_bench_o_0015248",
+        "cohort": "high_return_legit",
+        "grade": "probable",
+        "signals": [
+          "velocity",
+          "billingAddressClustering",
+          "disputeHistory",
+          "refundPattern",
+          "networkDeviceLinkActive"
+        ],
+        "score": 63.839285714285715
+      },
+      {
+        "orderId": "test_bench_o_0015113",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "billingAddressClustering",
+          "disputeHistory"
+        ],
+        "score": 71.73469387755102
+      },
+      {
+        "orderId": "test_bench_o_0015046",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "disputeHistory",
+          "refundPattern",
+          "networkDeviceLinkActive"
+        ],
+        "score": 65.58823529411765
+      },
+      {
+        "orderId": "test_bench_o_0015218",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "billingAddressClustering",
+          "disputeHistory",
+          "networkDeviceLink"
+        ],
+        "score": 66.640625
+      },
+      {
+        "orderId": "test_bench_o_0014985",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "billingAddressClustering",
+          "disputeHistory",
+          "networkDeviceLink"
+        ],
+        "score": 66.640625
+      },
+      {
+        "orderId": "test_bench_o_0014965",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "refundRate",
+          "billingAddressClustering",
+          "disputeHistory",
+          "networkDeviceLink"
+        ],
+        "score": 62.916666666666664
+      },
+      {
+        "orderId": "test_bench_o_0015253",
+        "cohort": "high_return_legit",
+        "grade": "probable",
+        "signals": [
+          "billingAddressClustering",
+          "disputeHistory",
+          "refundPattern",
+          "networkDeviceLinkActive"
+        ],
+        "score": 65.85106382978724
+      },
+      {
+        "orderId": "test_bench_o_0014999",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "refundRate",
+          "billingAddressClustering",
+          "disputeHistory",
+          "networkDeviceLinkActive"
+        ],
+        "score": 70.53191489361703
+      },
+      {
+        "orderId": "test_bench_o_0015131",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "refundRate",
+          "billingAddressClustering",
+          "disputeHistory",
+          "networkDeviceLinkActive"
+        ],
+        "score": 69.04255319148936
+      },
+      {
+        "orderId": "test_bench_o_0014982",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "billingAddressClustering",
+          "disputeHistory",
+          "networkDeviceLink"
+        ],
+        "score": 66.640625
+      },
+      {
+        "orderId": "test_bench_o_0015096",
+        "cohort": "high_return_legit",
+        "grade": "possible",
+        "signals": [
+          "billingAddressClustering",
+          "disputeHistory",
+          "networkDeviceLink"
+        ],
+        "score": 66.640625
+      }
+    ],
+    "missed_fraud": [
+      {
+        "customerId": "test_bench_cust_1010506_915a",
+        "ringId": "ring_s101_abuser_6",
+        "signals_fired_on_their_orders": []
+      },
+      {
+        "customerId": "test_bench_cust_1010502_76x4",
+        "ringId": "ring_s101_abuser_2",
+        "signals_fired_on_their_orders": []
+      },
+      {
+        "customerId": "test_bench_cust_1010501_8onc",
+        "ringId": "ring_s101_abuser_1",
+        "signals_fired_on_their_orders": [
+          "disputeHistory"
+        ]
+      },
+      {
+        "customerId": "test_bench_cust_1010503_6wzx",
+        "ringId": "ring_s101_abuser_3",
+        "signals_fired_on_their_orders": [
+          "disputeHistory",
+          "velocity"
+        ]
+      }
+    ],
+    "pass_summary": {
+      "precision_min_0.80": {
+        "actual": "0.153",
+        "target": "≥ 0.80",
+        "pass": false
+      },
+      "precision_pilot_0.85": {
+        "actual": "0.153",
+        "target": "≥ 0.85",
+        "pass": false
+      },
+      "recall_min_0.60": {
+        "actual": "0.101",
+        "target": "≥ 0.60",
+        "pass": false
+      },
+      "recall_pilot_0.75": {
+        "actual": "0.101",
+        "target": "≥ 0.75",
+        "pass": false
+      },
+      "f1_min_0.70": {
+        "actual": "0.121",
+        "target": "≥ 0.70",
+        "pass": false
+      },
+      "f1_pilot_0.80": {
+        "actual": "0.121",
+        "target": "≥ 0.80",
+        "pass": false
+      },
+      "fpr_max_0.05": {
+        "actual": "0.083",
+        "target": "≤ 0.05",
+        "pass": false
+      },
+      "identity_precision_min_0.95": {
+        "actual": "1.000",
+        "target": "≥ 0.95",
+        "pass": true
+      },
+      "identity_recall_min_0.99": {
+        "actual": "1.000",
+        "target": "≥ 0.99",
+        "pass": true
+      },
+      "cohort_fpr_high_return_legit_zero": {
+        "actual": "72/324 = 0.222",
+        "target": "= 0",
+        "pass": false
+      }
+    }
+  }
+]
