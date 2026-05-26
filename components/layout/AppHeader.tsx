@@ -27,6 +27,8 @@ interface AppHeaderProps {
   environment?: string;
   /** Authenticated user email for the avatar menu */
   userEmail?: string | null;
+  shopifyConnected?: boolean;
+  shopifyShopDomain?: string | null;
 }
 
 /**
@@ -41,6 +43,8 @@ export default function AppHeader({
   merchantName,
   environment,
   userEmail,
+  shopifyConnected = false,
+  shopifyShopDomain = null,
 }: AppHeaderProps) {
   const pathname = usePathname();
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -166,6 +170,18 @@ export default function AppHeader({
 
       {/* MerchantEnvChip — left of search */}
       <MerchantEnvChip merchantName={merchantName ?? null} environment={environment} />
+      <Link
+        href={shopifyConnected ? '/settings/account' : '/onboarding'}
+        className={cn(
+          'hidden md:inline-flex h-7 items-center px-2 border text-caption',
+          shopifyConnected
+            ? 'border-[var(--sev-clear)] text-[var(--sev-clear)]'
+            : 'border-[var(--surface-border)] text-[var(--ink-secondary)] hover:text-[var(--ink-primary)]',
+        )}
+        style={{ background: 'var(--surface-input)', borderRadius: 6 }}
+      >
+        {shopifyConnected ? `Shopify connected${shopifyShopDomain ? `: ${shopifyShopDomain}` : ''}` : 'Shopify not connected'}
+      </Link>
 
       {/* ⌘K trigger */}
       <button

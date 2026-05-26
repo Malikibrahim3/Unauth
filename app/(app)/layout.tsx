@@ -44,8 +44,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       .eq('merchant_id', ctx.merchantId)
       .limit(20)
     : Promise.resolve({ data: [] });
+  const shopifyPromise = ctx
+    ? serviceClient
+      .from('merchant_shopify_connections' as any)
+      .select('shop_domain')
+      .eq('merchant_id', ctx.merchantId)
+      .maybeSingle()
+    : Promise.resolve({ data: null });
 
-  const [{ data: merchantProfile }, { data: jobs }] = await Promise.all([merchantPromise, jobsPromise]);
+  const [{ data: merchantProfile }, { data: jobs }, { data: shopifyConnection }] = await Promise.all([merchantPromise, jobsPromise, shopifyPromise]);
 
   if (!isOnboarding) {
     const merchantComplete =
@@ -90,6 +97,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <AppHeader
           merchantName={(merchantProfile as any)?.name ?? null}
           userEmail={user.email ?? null}
+          shopifyConnected={!!(shopifyConnection as any)?.shop_domain}
+          shopifyShopDomain={(shopifyConnection as any)?.shop_domain ?? null}
         />
 
         {/* Demo / data-quality banner (full-width, between header and page) */}

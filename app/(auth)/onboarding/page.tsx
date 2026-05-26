@@ -32,8 +32,15 @@ export default async function OnboardingPage() {
       .eq('merchant_id', ctx.merchantId)
       .limit(1)
     : Promise.resolve({ data: [] });
+  const shopifyPromise = ctx
+    ? serviceClient
+      .from('merchant_shopify_connections' as any)
+      .select('shop_domain')
+      .eq('merchant_id', ctx.merchantId)
+      .maybeSingle()
+    : Promise.resolve({ data: null });
 
-  const [{ data: merchant }, { data: jobs }] = await Promise.all([merchantPromise, jobsPromise]);
+  const [{ data: merchant }, { data: jobs }, { data: shopifyConnection }] = await Promise.all([merchantPromise, jobsPromise, shopifyPromise]);
 
   if (!shouldRequireOnboarding({
     hasMerchantContext: !!ctx,
@@ -50,6 +57,8 @@ export default async function OnboardingPage() {
       initialPlatform={(merchant as { platform?: string | null } | null)?.platform ?? (user.user_metadata?.platform as string | undefined) ?? ''}
       initialAnnualVolume={(merchant as { monthly_order_volume?: string | null } | null)?.monthly_order_volume ?? (user.user_metadata?.monthly_order_volume as string | undefined) ?? ''}
       initialPrimaryConcern={(merchant as { primary_fraud_concern?: string | null } | null)?.primary_fraud_concern ?? (user.user_metadata?.primary_fraud_concern as string | undefined) ?? ''}
+      shopifyConnected={!!(shopifyConnection as any)?.shop_domain}
+      shopifyShopDomain={(shopifyConnection as any)?.shop_domain ?? ''}
     />
   );
 }

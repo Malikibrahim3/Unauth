@@ -13,6 +13,8 @@ interface OnboardingClientProps {
   initialPlatform?: string;
   initialAnnualVolume?: string;
   initialPrimaryConcern?: string;
+  shopifyConnected?: boolean;
+  shopifyShopDomain?: string;
 }
 
 const STEPS = [
@@ -56,6 +58,8 @@ export default function OnboardingClient({
   initialPlatform = '',
   initialAnnualVolume = '',
   initialPrimaryConcern = '',
+  shopifyConnected = false,
+  shopifyShopDomain = '',
 }: OnboardingClientProps) {
   void userId;
   const [activeStep, setActiveStep] = useState(0);
@@ -66,6 +70,7 @@ export default function OnboardingClient({
   const [loading, setLoading] = useState(false);
   const [skipLoading, setSkipLoading] = useState(false);
   const [error, setError] = useState('');
+  const [shopDomain, setShopDomain] = useState(shopifyShopDomain);
   const router = useRouter();
 
   async function saveAndContinue() {
@@ -245,9 +250,41 @@ export default function OnboardingClient({
             </div>
           ) : (
             <div className="rounded-md border px-4 py-3" style={{ background: 'var(--surface-input)', borderColor: 'var(--surface-border)' }}>
-              <p className="t-body" style={{ color: 'var(--ink-secondary)' }}>
-                This step becomes available after your first audit creates the initial case queue and evidence candidates.
-              </p>
+              {activeStep === 3 ? (
+                <div className="space-y-3">
+                  <p className="t-body" style={{ color: 'var(--ink-secondary)' }}>
+                    {shopifyConnected
+                      ? `Shopify is connected (${shopifyShopDomain}). You can reconnect any time from settings.`
+                      : 'Connect Shopify now to sync orders/customers and keep identity signals up to date via webhooks.'}
+                  </p>
+                  {!shopifyConnected && (
+                    <div className="flex flex-col gap-2 md:flex-row">
+                      <input
+                        value={shopDomain}
+                        onChange={(e) => setShopDomain(e.target.value)}
+                        placeholder="your-store.myshopify.com"
+                        className="w-full rounded-md border px-3 py-2 text-sm outline-none"
+                        style={{
+                          background: 'var(--surface-input)',
+                          borderColor: 'var(--surface-border)',
+                          color: 'var(--ink-primary)',
+                        }}
+                      />
+                      <a
+                        href={`/api/shopify/install?shop=${encodeURIComponent(shopDomain.trim())}`}
+                        className="inline-flex items-center justify-center rounded-md border px-3 py-2 text-sm font-medium"
+                        style={{ borderColor: 'var(--surface-border)', color: 'var(--ink-primary)' }}
+                      >
+                        Connect Shopify
+                      </a>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className="t-body" style={{ color: 'var(--ink-secondary)' }}>
+                  This step becomes available after your first audit creates the initial case queue and evidence candidates.
+                </p>
+              )}
             </div>
           )}
         </section>

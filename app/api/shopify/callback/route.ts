@@ -73,6 +73,7 @@ export async function GET(request: NextRequest) {
     }
 
     const supabase = createServiceClient();
+    const merchantId = request.cookies.get('shopify_oauth_merchant_id')?.value ?? null;
     const { error } = await supabase
       .from('shopify_merchants' as any)
       .upsert(
@@ -86,6 +87,21 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       throw new Error(error.message);
+    }
+    if (merchantId) {
+      const { error: mappingError } = await supabase
+        .from('merchant_shopify_connections' as any)
+        .upsert(
+          {
+            merchant_id: merchantId,
+            shop_domain: shop,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'merchant_id' }
+        );
+      if (mappingError) {
+        throw new Error(mappingError.message);
+      }
     }
 
     const backfill = await backfillShopifyMerchantIdentities({
@@ -101,6 +117,13 @@ export async function GET(request: NextRequest) {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? request.nextUrl.origin;
     const response = NextResponse.redirect(`${appUrl.replace(/\/$/, '')}/dashboard`);
     response.cookies.set('shopify_oauth_state', '', {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 0,
+    });
+    response.cookies.set('shopify_oauth_merchant_id', '', {
       httpOnly: true,
       secure: true,
       sameSite: 'lax',

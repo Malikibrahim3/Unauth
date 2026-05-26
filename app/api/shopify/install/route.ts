@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { ensureMerchantContextForUser } from '@/lib/account/ensureMerchantContext';
 
 const SHOP_REGEX = /^[a-zA-Z0-9][a-zA-Z0-9-]*\.myshopify\.com$/;
 
@@ -41,6 +43,23 @@ export async function GET(request: NextRequest) {
       path: '/',
       maxAge: 600,
     });
+    const supabase = createClient();
+    const serviceClient = createServiceClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user) {
+      const ctx = await ensureMerchantContextForUser(serviceClient, user);
+      if (ctx?.merchantId) {
+        response.cookies.set('shopify_oauth_merchant_id', ctx.merchantId, {
+          httpOnly: true,
+          secure: true,
+          sameSite: 'lax',
+          path: '/',
+          maxAge: 600,
+        });
+      }
+    }
 
     return response;
   } catch (error) {
