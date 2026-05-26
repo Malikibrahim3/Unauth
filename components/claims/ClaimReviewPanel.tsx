@@ -9,9 +9,56 @@ type EvidenceType = 'tracking' | 'proof_of_delivery' | 'customer_message' | 'sup
 type EvidenceSource = 'manual' | 'csv_import' | 'zendesk' | 'gorgias' | 'shopify' | 'stripe' | 'paypal' | 'carrier';
 
 type OrderOption = { id: string; orderLabel: string; orderValue: number | null; currency?: string | null; status: string; date?: string | null };
+type ClaimDraft = {
+  selectedOrderId: string;
+  claimType: ClaimType;
+  customerReason: string;
+  notes: string;
+  claimId: string;
+  decision: Decision;
+  outcome: Outcome;
+  evidenceType: EvidenceType;
+  source: EvidenceSource;
+  evidenceUrl: string;
+  evidenceHash: string;
+  metaRows: Array<{ key: string; value: string }>;
+};
+
+const DEFAULT_META_ROWS = [{ key: 'note', value: '' }];
 
 function safeKey(v: string) { return /^[a-zA-Z0-9_.-]{1,40}$/.test(v); }
 function clean(v: string) { return v.replace(/[<>]/g, '').trim(); }
+function storageKey(profileId: string) { return `claims.review.draft.${profileId}`; }
+
+export function loadClaimDraft(profileId: string): Partial<ClaimDraft> | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem(storageKey(profileId));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<ClaimDraft>;
+    return parsed && typeof parsed === 'object' ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveClaimDraft(profileId: string, draft: Partial<ClaimDraft>) {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(storageKey(profileId), JSON.stringify(draft));
+  } catch {
+    // Ignore storage failures so the form still works in privacy-restricted browsers.
+  }
+}
+
+export function clearClaimDraft(profileId: string) {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.removeItem(storageKey(profileId));
+  } catch {
+    // noop
+  }
+}
 
 function formatMoney(value: number | null | undefined, currency?: string | null) {
   if (typeof value !== 'number' || Number.isNaN(value)) return 'n/a';
@@ -40,7 +87,7 @@ export default function ClaimReviewPanel({ profileId }: { profileId: string }) {
   const [source, setSource] = useState<EvidenceSource>('manual');
   const [evidenceUrl, setEvidenceUrl] = useState('');
   const [evidenceHash, setEvidenceHash] = useState('');
-  const [metaRows, setMetaRows] = useState<Array<{ key: string; value: string }>>([{ key: 'note', value: '' }]);
+  const [metaRows, setMetaRows] = useState<Array<{ key: string; value: string }>>(DEFAULT_META_ROWS);
   const [state, setState] = useState<'idle'|'busy'>('idle');
   const [message, setMessage] = useState('');
   const [messageTone, setMessageTone] = useState<'success' | 'error' | 'neutral'>('neutral');
@@ -57,6 +104,27 @@ export default function ClaimReviewPanel({ profileId }: { profileId: string }) {
       setHistory(x.claims ?? []);
     }).catch(() => {});
   }, [profileId]);
+
+  useEffect(() => {
+    const draft = loadClaimDraft(profileId);
+    if (!draft) return;
+    if (typeof draft.selectedOrderId === 'string') setSelectedOrderId(draft.selectedOrderId);
+    if (typeof draft.claimType === 'string') setClaimType(draft.claimType as ClaimType);
+    if (typeof draft.customerReason === 'string') setCustomerReason(draft.customerReason);
+    if (typeof draft.notes === 'string') setNotes(draft.notes);
+    if (typeof draft.claimId === 'string') setClaimId(draft.claimId);
+    if (typeof draft.decision === 'string') setDecision(draft.decision as Decision);
+    if (typeof draft.outcome === 'string') setOutcome(draft.outcome as Outcome);
+    if (typeof draft.evidenceType === 'string') setEvidenceType(draft.evidenceType as EvidenceType);
+    if (typeof draft.source === 'string') setSource(draft.source as EvidenceSource);
+    if (typeof draft.evidenceUrl === 'string') setEvidenceUrl(draft.evidenceUrl);
+    if (typeof draft.evidenceHash === 'string') setEvidenceHash(draft.evidenceHash);
+    if (Array.isArray(draft.metaRows) && draft.metaRows.length > 0) setMetaRows(draft.metaRows);
+  }, [profileId]);
+
+  useEffect(() => {
+    saveClaimDraft(profileId, { selectedOrderId, claimType, customerReason, notes, claimId, decision, outcome, evidenceType, source, evidenceUrl, evidenceHash, metaRows });
+  }, [profileId, selectedOrderId, claimType, customerReason, notes, claimId, decision, outcome, evidenceType, source, evidenceUrl, evidenceHash, metaRows]);
 
   const orderOptions = useMemo<OrderOption[]>(() => {
     const map = new Map<string, OrderOption>();
@@ -136,6 +204,7 @@ export default function ClaimReviewPanel({ profileId }: { profileId: string }) {
     setMessage(r.message);
     setMessageTone(r.claimId ? 'success' : 'error');
     if (r.claimId) setClaimId(r.claimId);
+    if (r.claimId) saveClaimDraft(profileId, { selectedOrderId, claimType, customerReason, notes, claimId: r.claimId, decision, outcome, evidenceType, source, evidenceUrl, evidenceHash, metaRows });
     await refreshHistory();
   }
   async function onOutcome() {
@@ -149,6 +218,7 @@ export default function ClaimReviewPanel({ profileId }: { profileId: string }) {
     setState('idle');
     setMessage(r.message);
     setMessageTone(r.message.toLowerCase().includes('saved') ? 'success' : 'error');
+    if (r.message.toLowerCase().includes('saved')) saveClaimDraft(profileId, { selectedOrderId, claimType, customerReason, notes, claimId, decision, outcome, evidenceType, source, evidenceUrl, evidenceHash, metaRows });
     await refreshHistory();
   }
   async function onEvidence() {
@@ -162,9 +232,24 @@ export default function ClaimReviewPanel({ profileId }: { profileId: string }) {
     setState('idle');
     setMessage(r.message);
     setMessageTone(r.message.toLowerCase().includes('saved') ? 'success' : 'error');
+    if (r.message.toLowerCase().includes('saved')) saveClaimDraft(profileId, { selectedOrderId, claimType, customerReason, notes, claimId, decision, outcome, evidenceType, source, evidenceUrl, evidenceHash, metaRows });
   }
 
   return <div className="p-8 max-w-5xl mx-auto space-y-5">
+    {message && (
+      <div className="sticky top-4 z-30">
+        <p
+          className="text-sm px-3 py-2 rounded-md border shadow-sm"
+          style={{
+            color: messageTone === 'success' ? '#166534' : messageTone === 'error' ? '#991b1b' : 'var(--text-muted)',
+            borderColor: messageTone === 'success' ? '#86efac' : messageTone === 'error' ? '#fca5a5' : 'var(--border-subtle)',
+            background: messageTone === 'success' ? '#dcfce7' : messageTone === 'error' ? '#fee2e2' : 'var(--bg-surface)',
+          }}
+        >
+          {message}
+        </p>
+      </div>
+    )}
     <h1 className="text-heading-lg">Claim Review</h1>
     <div className="rounded-xl p-4 border" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
@@ -245,17 +330,5 @@ export default function ClaimReviewPanel({ profileId }: { profileId: string }) {
       </div>
     </section>
 
-    {message && (
-      <p
-        className="text-sm px-3 py-2 rounded-md border"
-        style={{
-          color: messageTone === 'success' ? '#166534' : messageTone === 'error' ? '#991b1b' : 'var(--text-muted)',
-          borderColor: messageTone === 'success' ? '#86efac' : messageTone === 'error' ? '#fca5a5' : 'var(--border-subtle)',
-          background: messageTone === 'success' ? '#dcfce7' : messageTone === 'error' ? '#fee2e2' : 'var(--bg-surface)',
-        }}
-      >
-        {message}
-      </p>
-    )}
   </div>;
 }
