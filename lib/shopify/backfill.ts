@@ -3,17 +3,9 @@ import { normalizeAddress, normalizeEmail, normalizePhone, upsertMerchantIdentit
 type ShopifyOrder = {
   id: number;
   email?: string | null;
-  phone?: string | null;
-  customer?: { id?: number | null } | null;
   shipping_address?: ShopifyAddress | null;
   billing_address?: ShopifyAddress | null;
-};
-
-type ShopifyCustomer = {
-  id: number;
-  email?: string | null;
-  phone?: string | null;
-  default_address?: ShopifyAddress | null;
+  created_at?: string | null;
 };
 
 function parseNextLink(linkHeader: string | null): string | null {
@@ -31,7 +23,7 @@ function parseNextLink(linkHeader: string | null): string | null {
 async function fetchAllPages<T>(
   firstUrl: string,
   accessToken: string,
-  key: 'orders' | 'customers'
+  key: 'orders'
 ): Promise<T[]> {
   const rows: T[] = [];
   let nextUrl: string | null = firstUrl;
@@ -72,16 +64,10 @@ export async function backfillShopifyMerchantIdentities(input: {
 
   const base = `https://${shopDomain}/admin/api/${apiVersion}`;
   const ordersUrl =
-    `${base}/orders.json?status=any&limit=250&fields=id,email,phone,customer,shipping_address,billing_address,created_at&created_at_min=` +
-    encodeURIComponent(createdAtMin);
-  const customersUrl =
-    `${base}/customers.json?limit=250&fields=id,email,phone,default_address,created_at&created_at_min=` +
+    `${base}/orders.json?status=any&limit=250&fields=id,email,shipping_address,billing_address,created_at&created_at_min=` +
     encodeURIComponent(createdAtMin);
 
-  const [orders, customers] = await Promise.all([
-    fetchAllPages<ShopifyOrder>(ordersUrl, accessToken, 'orders'),
-    fetchAllPages<ShopifyCustomer>(customersUrl, accessToken, 'customers'),
-  ]);
+  const orders = await fetchAllPages<ShopifyOrder>(ordersUrl, accessToken, 'orders');
 
   const now = new Date().toISOString();
   const rows: MerchantIdentityInsert[] = [
@@ -90,28 +76,17 @@ export async function backfillShopifyMerchantIdentities(input: {
       source: 'order' as const,
       source_id: String(order.id),
       email: normalizeEmail(order.email),
-      phone: normalizePhone(order.phone),
+      phone: null,
       shipping_address: normalizeAddress(order.shipping_address),
       billing_address: normalizeAddress(order.billing_address),
-      customer_id: order.customer?.id ? String(order.customer.id) : null,
-      updated_at: now,
-    })),
-    ...customers.map((customer) => ({
-      shop_domain: shopDomain,
-      source: 'customer' as const,
-      source_id: String(customer.id),
-      email: normalizeEmail(customer.email),
-      phone: normalizePhone(customer.phone),
-      shipping_address: normalizeAddress(customer.default_address),
-      billing_address: normalizeAddress(customer.default_address),
-      customer_id: String(customer.id),
+      customer_id: null,
       updated_at: now,
     })),
   ];
 
-  if (!rows.length) return { orders: 0, customers: 0, inserted: 0 };
+  if (!rows.length) return { orders: 0, inserted: 0 };
 
   await upsertMerchantIdentityRows(supabase, rows);
 
-  return { orders: orders.length, customers: customers.length, inserted: rows.length };
+  return { orders: orders.length, inserted: rows.length };
 }
