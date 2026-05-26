@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { shopify } from '@/lib/shopify/client';
+import crypto from 'crypto';
+
+const SHOP_REGEX = /^[a-zA-Z0-9][a-zA-Z0-9-]*\.myshopify\.com$/;
 
 function normalizeShopDomain(shop: string): string | null {
-  const value = shop.trim().toLowerCase();
+  const value = shop.trim();
   if (!value) return null;
-  return /^[a-z0-9][a-z0-9-]*\.myshopify\.com$/.test(value) ? value : null;
+  return SHOP_REGEX.test(value) ? value.toLowerCase() : null;
 }
 
 export async function GET(request: NextRequest) {
@@ -16,19 +18,31 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid or missing shop domain' }, { status: 400 });
     }
 
-    const response = await shopify.auth.begin({
-      shop,
-      callbackPath: '/api/shopify/callback',
-      isOnline: false,
-      rawRequest: request,
-    });
-
-    const redirectUrl = response.headers.get('location');
-    if (!redirectUrl) {
-      throw new Error('No redirect URL from Shopify');
+    const apiKey = process.env.SHOPIFY_API_KEY;
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+    if (!apiKey || !appUrl) {
+      return NextResponse.json({ error: 'Missing SHOPIFY_API_KEY or NEXT_PUBLIC_APP_URL' }, { status: 500 });
     }
 
-    return NextResponse.redirect(redirectUrl);
+    const state = crypto.randomBytes(16).toString('hex');
+    const redirectUri = `${appUrl.replace(/\/$/, '')}/api/shopify/callback`;
+    const scope = 'read_orders,read_customers';
+    const installUrl = new URL(`https://${shop}/admin/oauth/authorize`);
+    installUrl.searchParams.set('client_id', apiKey);
+    installUrl.searchParams.set('scope', scope);
+    installUrl.searchParams.set('redirect_uri', redirectUri);
+    installUrl.searchParams.set('state', state);
+
+    const response = NextResponse.redirect(installUrl.toString());
+    response.cookies.set('shopify_oauth_state', state, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 600,
+    });
+
+    return response;
   } catch (error) {
     console.error('Shopify install route failed', {
       error,
