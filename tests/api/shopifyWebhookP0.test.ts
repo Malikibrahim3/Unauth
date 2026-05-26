@@ -96,6 +96,18 @@ describe('shopify webhook p0', () => {
         if (table === 'merchant_identities') {
           return { upsert: async () => ({ error: null }) };
         }
+        if (table === 'shopify_order_signals') {
+          return { upsert: async () => ({ error: null }) };
+        }
+        if (table === 'shopify_merchants') {
+          return {
+            select: () => ({
+              eq: () => ({
+                maybeSingle: async () => ({ data: { access_token: null }, error: null }),
+              }),
+            }),
+          };
+        }
         return {};
       },
     };
@@ -113,5 +125,201 @@ describe('shopify webhook p0', () => {
     expect(upsertPayload.status).toBe('processing');
     expect(upsertPayload.attempts).toBe(2);
   });
-});
 
+  it('successful orders/create finalizes as completed', async () => {
+    const updates: any[] = [];
+    const signalUpserts: any[] = [];
+    const supabase = {
+      from: (table: string) => {
+        if (table === 'processed_webhooks') {
+          return {
+            select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null, error: null }) }) }),
+            upsert: async () => ({ error: null }),
+            update: (payload: any) => {
+              updates.push(payload);
+              return { eq: async () => ({ error: null }) };
+            },
+          };
+        }
+        if (table === 'merchant_identities') {
+          return { upsert: async () => ({ error: null }) };
+        }
+        if (table === 'shopify_order_signals') {
+          return { upsert: async (payload: any) => { signalUpserts.push(payload); return { error: null }; } };
+        }
+        if (table === 'shopify_merchants') {
+          return {
+            select: () => ({
+              eq: () => ({
+                maybeSingle: async () => ({ data: { access_token: null }, error: null }),
+              }),
+            }),
+          };
+        }
+        return {};
+      },
+    };
+    createServiceClient.mockReturnValue(supabase);
+    const body = '{"id":10,"email":"ok@test.com"}';
+    const hmac = createHmac('sha256', 'test-secret').update(body, 'utf8').digest('base64');
+    const req = makeReq(body, {
+      'x-shopify-hmac-sha256': hmac,
+      'x-shopify-shop-domain': 'unit-test.myshopify.com',
+      'x-shopify-topic': 'orders/create',
+      'x-shopify-webhook-id': 'wid-complete-create',
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+    expect(updates.some((u) => u.status === 'completed')).toBe(true);
+    expect(updates.some((u) => u.status === 'failed')).toBe(false);
+    expect(signalUpserts.length).toBe(1);
+    const signal = signalUpserts[0];
+    expect(signal.shop_domain).toBe('unit-test.myshopify.com');
+    expect(signal.shopify_order_id).toBe('10');
+    expect(signal.raw_payload_hash).toMatch(/^[a-f0-9]{64}$/);
+    expect((signal as any).email).toBeUndefined();
+    expect((signal as any).phone).toBeUndefined();
+    expect((signal as any).shipping_address).toBeUndefined();
+    expect((signal as any).billing_address).toBeUndefined();
+  });
+
+  it('successful orders/updated finalizes as completed', async () => {
+    const updates: any[] = [];
+    const signalUpserts: any[] = [];
+    const supabase = {
+      from: (table: string) => {
+        if (table === 'processed_webhooks') {
+          return {
+            select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null, error: null }) }) }),
+            upsert: async () => ({ error: null }),
+            update: (payload: any) => {
+              updates.push(payload);
+              return { eq: async () => ({ error: null }) };
+            },
+          };
+        }
+        if (table === 'merchant_identities') {
+          return { upsert: async () => ({ error: null }) };
+        }
+        if (table === 'shopify_order_signals') {
+          return { upsert: async (payload: any) => { signalUpserts.push(payload); return { error: null }; } };
+        }
+        if (table === 'shopify_merchants') {
+          return {
+            select: () => ({
+              eq: () => ({
+                maybeSingle: async () => ({ data: { access_token: null }, error: null }),
+              }),
+            }),
+          };
+        }
+        return {};
+      },
+    };
+    createServiceClient.mockReturnValue(supabase);
+    const body = '{"id":11,"customer":{"id":44,"email":"u@test.com"}}';
+    const hmac = createHmac('sha256', 'test-secret').update(body, 'utf8').digest('base64');
+    const req = makeReq(body, {
+      'x-shopify-hmac-sha256': hmac,
+      'x-shopify-shop-domain': 'unit-test.myshopify.com',
+      'x-shopify-topic': 'orders/updated',
+      'x-shopify-webhook-id': 'wid-complete-updated',
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+    expect(updates.some((u) => u.status === 'completed')).toBe(true);
+    expect(updates.some((u) => u.status === 'failed')).toBe(false);
+    expect(signalUpserts.length).toBe(1);
+  });
+
+  it('failed processing finalizes as failed', async () => {
+    const { upsertMerchantIdentityRows } = jest.requireMock('@/lib/shopify/identity') as { upsertMerchantIdentityRows: jest.Mock };
+    upsertMerchantIdentityRows.mockImplementationOnce(async () => {
+      throw new Error('insert_failed');
+    });
+    const updates: any[] = [];
+    const supabase = {
+      from: (table: string) => {
+        if (table === 'processed_webhooks') {
+          return {
+            select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null, error: null }) }) }),
+            upsert: async () => ({ error: null }),
+            update: (payload: any) => {
+              updates.push(payload);
+              return { eq: async () => ({ error: null }) };
+            },
+          };
+        }
+        if (table === 'merchant_identities') {
+          return { upsert: async () => ({ error: { message: 'insert_failed' } }) };
+        }
+        if (table === 'shopify_order_signals') {
+          return { upsert: async () => ({ error: null }) };
+        }
+        if (table === 'shopify_merchants') {
+          return {
+            select: () => ({
+              eq: () => ({
+                maybeSingle: async () => ({ data: { access_token: null }, error: null }),
+              }),
+            }),
+          };
+        }
+        return {};
+      },
+    };
+    createServiceClient.mockReturnValue(supabase);
+    const body = '{"id":12,"email":"fail@test.com"}';
+    const hmac = createHmac('sha256', 'test-secret').update(body, 'utf8').digest('base64');
+    const req = makeReq(body, {
+      'x-shopify-hmac-sha256': hmac,
+      'x-shopify-shop-domain': 'unit-test.myshopify.com',
+      'x-shopify-topic': 'orders/create',
+      'x-shopify-webhook-id': 'wid-failed',
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+    expect(updates.some((u) => u.status === 'failed')).toBe(true);
+  });
+
+  it('duplicate webhook updates same signal row via stable upsert key', async () => {
+    const signalUpserts: any[] = [];
+    const supabase = {
+      from: (table: string) => {
+        if (table === 'processed_webhooks') {
+          return {
+            select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { webhook_id: 'wid-same', status: 'failed', attempts: 1 }, error: null }) }) }),
+            upsert: async () => ({ error: null }),
+            update: () => ({ eq: async () => ({ error: null }) }),
+          };
+        }
+        if (table === 'merchant_identities') return { upsert: async () => ({ error: null }) };
+        if (table === 'shopify_order_signals') {
+          return {
+            upsert: async (payload: any, opts: any) => {
+              signalUpserts.push({ payload, opts });
+              return { error: null };
+            },
+          };
+        }
+        if (table === 'shopify_merchants') {
+          return { select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { access_token: null }, error: null }) }) }) };
+        }
+        return {};
+      },
+    };
+    createServiceClient.mockReturnValue(supabase);
+    const body = '{"id":99,"email":"same@test.com"}';
+    const hmac = createHmac('sha256', 'test-secret').update(body, 'utf8').digest('base64');
+    const req = makeReq(body, {
+      'x-shopify-hmac-sha256': hmac,
+      'x-shopify-shop-domain': 'unit-test.myshopify.com',
+      'x-shopify-topic': 'orders/create',
+      'x-shopify-webhook-id': 'wid-same',
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+    expect(signalUpserts.length).toBe(1);
+    expect(signalUpserts[0].opts.onConflict).toBe('shop_domain,shopify_order_id');
+  });
+});

@@ -26,6 +26,11 @@ describe('shopify order normalization', () => {
             }),
           };
         }
+        if (table === 'shopify_order_signals') {
+          return {
+            upsert: async () => ({ error: null }),
+          };
+        }
         return {};
       },
     };
@@ -68,4 +73,3 @@ describe('shopify order normalization', () => {
     fetchSpy.mockRestore();
   });
 });
-
