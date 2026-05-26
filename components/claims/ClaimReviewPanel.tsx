@@ -43,6 +43,7 @@ export default function ClaimReviewPanel({ profileId }: { profileId: string }) {
   const [metaRows, setMetaRows] = useState<Array<{ key: string; value: string }>>([{ key: 'note', value: '' }]);
   const [state, setState] = useState<'idle'|'busy'>('idle');
   const [message, setMessage] = useState('');
+  const [messageTone, setMessageTone] = useState<'success' | 'error' | 'neutral'>('neutral');
 
   useEffect(() => {
     fetch(`/api/customers/${profileId}`).then(r => r.ok ? r.json() : null).then((x) => setData(x)).catch(() => {});
@@ -131,19 +132,36 @@ export default function ClaimReviewPanel({ profileId }: { profileId: string }) {
   async function onClaim() {
     setState('busy');
     const r = await submitClaim({ id: claimId || undefined, shop_domain: shopDomain, shopify_order_id: selectedOrderId, customer_id: profileId, claim_type: claimType, customer_claim_reason: customerReason, normalized_reason: notes, status: 'under_review' });
-    setState('idle'); setMessage(r.message); if (r.claimId) setClaimId(r.claimId); await refreshHistory();
+    setState('idle');
+    setMessage(r.message);
+    setMessageTone(r.claimId ? 'success' : 'error');
+    if (r.claimId) setClaimId(r.claimId);
+    await refreshHistory();
   }
   async function onOutcome() {
-    if (!claimId) return setMessage('Create claim first');
+    if (!claimId) {
+      setMessage('Create claim first');
+      setMessageTone('error');
+      return;
+    }
     setState('busy');
     const r = await submitOutcome(claimId, { decision, outcome, notes });
-    setState('idle'); setMessage(r.message); await refreshHistory();
+    setState('idle');
+    setMessage(r.message);
+    setMessageTone(r.message.toLowerCase().includes('saved') ? 'success' : 'error');
+    await refreshHistory();
   }
   async function onEvidence() {
-    if (!claimId) return setMessage('Create claim first');
+    if (!claimId) {
+      setMessage('Create claim first');
+      setMessageTone('error');
+      return;
+    }
     setState('busy');
     const r = await submitEvidence(claimId, { evidence_type: evidenceType, source, evidence_url: evidenceUrl || null, evidence_hash: evidenceHash || null, metadata });
-    setState('idle'); setMessage(r.message);
+    setState('idle');
+    setMessage(r.message);
+    setMessageTone(r.message.toLowerCase().includes('saved') ? 'success' : 'error');
   }
 
   return <div className="p-8 max-w-5xl mx-auto space-y-5">
@@ -227,6 +245,17 @@ export default function ClaimReviewPanel({ profileId }: { profileId: string }) {
       </div>
     </section>
 
-    {message && <p className="text-sm" style={{ color: message.toLowerCase().includes('permission denied') ? 'var(--risk-high-fg)' : 'var(--text-muted)' }}>{message}</p>}
+    {message && (
+      <p
+        className="text-sm px-3 py-2 rounded-md border"
+        style={{
+          color: messageTone === 'success' ? '#166534' : messageTone === 'error' ? '#991b1b' : 'var(--text-muted)',
+          borderColor: messageTone === 'success' ? '#86efac' : messageTone === 'error' ? '#fca5a5' : 'var(--border-subtle)',
+          background: messageTone === 'success' ? '#dcfce7' : messageTone === 'error' ? '#fee2e2' : 'var(--bg-surface)',
+        }}
+      >
+        {message}
+      </p>
+    )}
   </div>;
 }
