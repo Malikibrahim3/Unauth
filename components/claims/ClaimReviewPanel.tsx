@@ -13,6 +13,7 @@ function clean(v: string) { return v.replace(/[<>]/g, '').trim(); }
 
 export default function ClaimReviewPanel({ profileId }: { profileId: string }) {
   const [data, setData] = useState<any>(null);
+  const [shopifyOrders, setShopifyOrders] = useState<any[]>([]);
   const [shops, setShops] = useState<string[]>([]);
   const [shopDomain, setShopDomain] = useState('');
   const [history, setHistory] = useState<any[]>([]);
@@ -36,6 +37,11 @@ export default function ClaimReviewPanel({ profileId }: { profileId: string }) {
       setData(x);
       const first = x?.orderHistory?.[0]?.orderId;
       if (first) setSelectedOrderId(first);
+    }).catch(() => {});
+    fetch(`/api/customers/${profileId}/shopify-orders`).then(r => r.ok ? r.json() : null).then((x) => {
+      const rows = x?.orders ?? [];
+      setShopifyOrders(rows);
+      if (!selectedOrderId && rows.length > 0) setSelectedOrderId(rows[0].id);
     }).catch(() => {});
     fetch(`/api/claims?profileId=${encodeURIComponent(profileId)}`).then(r => r.ok ? r.json() : null).then((x) => {
       if (!x) return;
@@ -107,6 +113,7 @@ export default function ClaimReviewPanel({ profileId }: { profileId: string }) {
           <select className="w-full px-3 py-2 rounded-md text-sm" style={{ border: '1px solid var(--border)', background: 'var(--bg-inset)' }} value={selectedOrderId} onChange={e => setSelectedOrderId(e.target.value)}>
             <option value="">Select order…</option>
             {(data?.orderHistory ?? []).map((o: any) => <option key={o.orderId} value={o.orderId}>{o.orderId} · {o.orderDate ? new Date(o.orderDate).toLocaleDateString('en-GB') : 'n/a'} · {typeof o.orderValue === 'number' ? o.orderValue.toFixed(2) : 'n/a'} · {o.refundStatus ?? 'unknown'}</option>)}
+            {shopifyOrders.map((o: any) => <option key={o.id} value={o.id}>{o.order_id} · {o.processed_at ? new Date(o.processed_at).toLocaleDateString('en-GB') : 'n/a'} · {typeof o.order_value === 'number' ? o.order_value.toFixed(2) : 'n/a'} · {o.status ?? 'unknown'}</option>)}
           </select>
         </div>
       </div>

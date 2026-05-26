@@ -1,4 +1,5 @@
 import { normalizeAddress, normalizeEmail, normalizePhone, upsertMerchantIdentityRows, type MerchantIdentityInsert, type ShopifyAddress } from '@/lib/shopify/identity';
+import { syncShopifyProfilesForShop } from '@/lib/shopify/profileLinking';
 
 type ShopifyOrder = {
   id: number;
@@ -91,6 +92,7 @@ export async function backfillShopifyMerchantIdentities(input: {
   ).length;
 
   await upsertMerchantIdentityRows(supabase, rows);
+  await syncShopifyProfilesForShop({ shopDomain, supabase });
 
   return {
     pages_fetched: pages,

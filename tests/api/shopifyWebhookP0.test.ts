@@ -13,7 +13,17 @@ jest.mock('@/lib/shopify/identity', () => ({
   upsertMerchantIdentityRows: jest.fn(async () => {}),
 }));
 
+jest.mock('@/lib/shopify/profileLinking', () => ({
+  syncShopifyProfilesForShop: jest.fn(async () => ({
+    groups: 1,
+    profilesCreated: 1,
+    profilesLinked: 0,
+    identitiesUpserted: 2,
+  })),
+}));
+
 const { createServiceClient } = jest.requireMock('@/lib/supabase/server') as { createServiceClient: jest.Mock };
+const { syncShopifyProfilesForShop } = jest.requireMock('@/lib/shopify/profileLinking') as { syncShopifyProfilesForShop: jest.Mock };
 
 function makeReq(body: string, headers: Record<string, string>) {
   return new NextRequest('http://localhost/api/shopify/webhooks', {
@@ -27,6 +37,7 @@ describe('shopify webhook p0', () => {
   beforeEach(() => {
     jest.resetAllMocks();
     process.env.SHOPIFY_WEBHOOK_SECRET = 'test-secret';
+    syncShopifyProfilesForShop.mockResolvedValue({ groups: 1, profilesCreated: 1, profilesLinked: 0, identitiesUpserted: 2 });
   });
 
   it('rejects invalid webhook hmac', async () => {

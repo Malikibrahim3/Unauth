@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { createServiceClient } from '@/lib/supabase/server';
 import { normalizeAddress, normalizeEmail, normalizePhone, type MerchantIdentityInsert, upsertMerchantIdentityRows } from '@/lib/shopify/identity';
 import { verifyShopifyWebhookHmac } from '@/lib/shopify/webhooks';
+import { syncShopifyProfilesForShop } from '@/lib/shopify/profileLinking';
 
 async function fetchShopifyCustomerIdentity(input: {
   shopDomain: string;
@@ -213,6 +214,24 @@ export async function processWebhook(rawBody: string, shopDomain: string, topic:
 
   if (rows.length) {
     await upsertMerchantIdentityRows(supabase, rows);
+  }
+
+  if (topic === 'orders/create' || topic === 'orders/updated') {
+    const orderId = payload?.id ? String(payload.id) : null;
+    const syncResult = await syncShopifyProfilesForShop({
+      shopDomain,
+      supabase,
+      onlyOrderIds: orderId ? [orderId] : undefined,
+    });
+    console.info('Shopify profile sync result', {
+      shopDomain,
+      topic,
+      orderId,
+      groups: syncResult.groups,
+      profilesCreated: syncResult.profilesCreated,
+      profilesLinked: syncResult.profilesLinked,
+      identitiesUpserted: syncResult.identitiesUpserted,
+    });
   }
 }
 

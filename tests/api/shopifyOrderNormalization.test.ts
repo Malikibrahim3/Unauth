@@ -1,6 +1,7 @@
 import { processWebhook } from '@/app/api/shopify/webhooks/route';
 
 const upsertRowsMock = jest.fn(async () => {});
+const { syncShopifyProfilesForShop } = jest.requireMock('@/lib/shopify/profileLinking') as { syncShopifyProfilesForShop: jest.Mock };
 
 jest.mock('@/lib/shopify/identity', () => ({
   normalizeAddress: (v: any) => (v ? 'addr' : null),
@@ -9,9 +10,19 @@ jest.mock('@/lib/shopify/identity', () => ({
   upsertMerchantIdentityRows: (...args: any[]) => upsertRowsMock(...args),
 }));
 
+jest.mock('@/lib/shopify/profileLinking', () => ({
+  syncShopifyProfilesForShop: jest.fn(async () => ({
+    groups: 0,
+    profilesCreated: 0,
+    profilesLinked: 0,
+    identitiesUpserted: 0,
+  })),
+}));
+
 describe('shopify order normalization', () => {
   beforeEach(() => {
     jest.resetAllMocks();
+    syncShopifyProfilesForShop.mockResolvedValue({ groups: 0, profilesCreated: 0, profilesLinked: 0, identitiesUpserted: 0 });
   });
 
   function supabaseStub(opts?: { token?: string | null }) {

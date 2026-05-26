@@ -40,7 +40,8 @@
     "tune:run:skip-generate": "node --max-old-space-size=4096 node_modules/.bin/ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/tune/run.ts --skip-generate",
     "tune:run:resume": "node --max-old-space-size=4096 node_modules/.bin/ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/tune/run.ts --skip-generate --resume",
     "tune:dashboard": "node scripts/tune/dashboard.mjs",
-    "tune:overnight": "node scripts/tune/start.mjs"
+    "tune:overnight": "node scripts/tune/start.mjs",
+    "backfill:shopify-profiles": "ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/backfill-customer-profile-identities.ts"
   },
   "dependencies": {
     "@amplitude/analytics-browser": "^2.42.0",

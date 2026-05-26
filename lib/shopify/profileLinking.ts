@@ -1,0 +1,181 @@
+import { createHash } from 'crypto';
+import { createServiceClient } from '../supabase/server';
+
+type IdentityRow = {
+  email: string | null;
+  phone: string | null;
+  shipping_address: string | null;
+  billing_address: string | null;
+  customer_id: string | null;
+  source_id: string;
+};
+
+type OrderSignalRow = {
+  shopify_order_id: string;
+  customer_id?: string | null;
+  risk_level: string | null;
+  risk_recommendation: string | null;
+  refunds_count: number | null;
+  created_at_shopify: string | null;
+};
+
+type Anchor = { identity_type: 'email'|'phone'|'shopify_customer_id'|'shopify_order_id'|'address_hash'; identity_value: string };
+
+function uniq(values: Array<string | null | undefined>): string[] {
+  return Array.from(new Set(values.filter((v): v is string => !!v && v.trim().length > 0).map((v) => v.trim())));
+}
+
+function hashAddress(value: string | null): string | null {
+  if (!value) return null;
+  return createHash('sha256').update(value.trim().toLowerCase(), 'utf8').digest('hex');
+}
+
+async function resolveMerchantIdsForShop(service: any, shopDomain: string): Promise<string[]> {
+  const { data } = await service.from('merchant_shopify_connections' as any).select('merchant_id').eq('shop_domain', shopDomain).eq('active', true);
+  return uniq((data ?? []).map((r: any) => r.merchant_id));
+}
+
+export async function syncShopifyProfilesForShop(input: { shopDomain: string; supabase?: any; onlyOrderIds?: string[]; }) {
+  const service = input.supabase ?? createServiceClient();
+  const merchantIds = await resolveMerchantIdsForShop(service, input.shopDomain);
+  if (merchantIds.length === 0) return { groups: 0, profilesCreated: 0, profilesLinked: 0, identitiesUpserted: 0 };
+
+  const onlyOrderIds = uniq((input.onlyOrderIds ?? []).map((v) => String(v)));
+  let idQuery = service.from('merchant_identities' as any).select('email,phone,shipping_address,billing_address,customer_id,source_id').eq('shop_domain', input.shopDomain).eq('source', 'order');
+  if (onlyOrderIds.length) idQuery = idQuery.in('source_id', onlyOrderIds);
+  let identities = ((await idQuery).data ?? []) as IdentityRow[];
+  if (onlyOrderIds.length && identities.length === 0) {
+    identities = ((await service.from('merchant_identities' as any).select('email,phone,shipping_address,billing_address,customer_id,source_id').eq('shop_domain', input.shopDomain).eq('source', 'order')).data ?? []) as IdentityRow[];
+  }
+
+  let signalQuery = service
+    .from('shopify_order_signals' as any)
+    .select('shopify_order_id,customer_id,risk_level,risk_recommendation,refunds_count,created_at_shopify')
+    .eq('shop_domain', input.shopDomain);
+  if (onlyOrderIds.length) signalQuery = signalQuery.in('shopify_order_id', onlyOrderIds);
+  const signalsForScope = ((await signalQuery).data ?? []) as OrderSignalRow[];
+
+  const groupMap = new Map<string, IdentityRow[]>();
+  for (const row of identities) {
+    const key = (row.customer_id ? `cid:${row.customer_id}` : null) ?? (row.email ? `email:${row.email.toLowerCase()}` : `order:${row.source_id}`);
+    if (!groupMap.has(key)) groupMap.set(key, []);
+    groupMap.get(key)!.push(row);
+  }
+  for (const s of signalsForScope) {
+    const key = s.customer_id ? `cid:${String(s.customer_id)}` : `order:${String(s.shopify_order_id)}`;
+    if (!groupMap.has(key)) {
+      groupMap.set(key, [{
+        email: null,
+        phone: null,
+        shipping_address: null,
+        billing_address: null,
+        customer_id: s.customer_id ? String(s.customer_id) : null,
+        source_id: String(s.shopify_order_id),
+      }]);
+    }
+  }
+  for (const orderId of onlyOrderIds) {
+    const orderKey = `order:${orderId}`;
+    const customerKey = signalsForScope.find((s) => String(s.shopify_order_id) === orderId && s.customer_id)?.customer_id;
+    const key = customerKey ? `cid:${String(customerKey)}` : orderKey;
+    if (!groupMap.has(key)) {
+      groupMap.set(key, [{
+        email: null,
+        phone: null,
+        shipping_address: null,
+        billing_address: null,
+        customer_id: customerKey ? String(customerKey) : null,
+        source_id: orderId,
+      }]);
+    }
+  }
+
+  let profilesCreated = 0;
+  let profilesLinked = 0;
+  let identitiesUpserted = 0;
+
+  for (const rows of groupMap.values()) {
+    const orderIds = uniq(rows.map((r) => String(r.source_id)));
+    const emails = uniq(rows.map((r) => r.email?.toLowerCase() ?? null));
+    const phones = uniq(rows.map((r) => r.phone));
+    const addresses = uniq(rows.flatMap((r) => [r.shipping_address, r.billing_address]));
+    const customerIds = uniq(rows.map((r) => r.customer_id));
+
+    const { data: signalsRaw } = await service
+      .from('shopify_order_signals' as any)
+      .select('shopify_order_id,customer_id,risk_level,risk_recommendation,refunds_count,created_at_shopify')
+      .eq('shop_domain', input.shopDomain)
+      .in('shopify_order_id', orderIds);
+    const signals = (signalsRaw ?? []) as OrderSignalRow[];
+    for (const s of signals) if (s.customer_id) customerIds.push(String(s.customer_id));
+
+    const anchors: Anchor[] = [
+      ...emails.map((v) => ({ identity_type: 'email' as const, identity_value: v })),
+      ...phones.map((v) => ({ identity_type: 'phone' as const, identity_value: v })),
+      ...uniq(customerIds).map((v) => ({ identity_type: 'shopify_customer_id' as const, identity_value: v })),
+      ...orderIds.map((v) => ({ identity_type: 'shopify_order_id' as const, identity_value: v })),
+      ...uniq(addresses.map(hashAddress)).map((v) => ({ identity_type: 'address_hash' as const, identity_value: v })),
+    ];
+
+    let profileId: string | null = null;
+    for (const merchantId of merchantIds) {
+      const grouped = anchors.reduce((acc, a) => {
+        (acc[a.identity_type] ||= []).push(a.identity_value);
+        return acc;
+      }, {} as Record<string, string[]>);
+      for (const [t, vals] of Object.entries(grouped)) {
+        const { data } = await service.from('customer_profile_identities' as any).select('customer_profile_id').eq('merchant_id', merchantId).eq('identity_type', t).in('identity_value', uniq(vals)).limit(1).maybeSingle();
+        if (data?.customer_profile_id) {
+          profileId = data.customer_profile_id;
+          break;
+        }
+      }
+      if (profileId) break;
+    }
+
+    if (!profileId && emails.length) {
+      const { data } = await service.from('customer_profiles' as any).select('id,merchant_ids').contains('emails', [emails[0]]).limit(1).maybeSingle();
+      if (data && (data.merchant_ids ?? []).some((m: string) => merchantIds.includes(m))) profileId = data.id;
+    }
+
+    const createdTs = signals.map((r) => r.created_at_shopify).filter(Boolean).sort();
+    const firstSeen = createdTs[0] ?? new Date().toISOString();
+    const lastSeen = createdTs[createdTs.length - 1] ?? new Date().toISOString();
+
+    if (!profileId) {
+      const ins = await service.from('customer_profiles' as any).insert({
+        primary_email: emails[0] ?? null, emails, ips: [], addresses, card_last4s: [], phones, names: [],
+        risk_score: 15, risk_level: 'low', fraud_flags: [], total_orders: signals.length, total_refund_claims: signals.reduce((n, r) => n + (r.refunds_count ?? 0), 0),
+        total_chargebacks: 0, total_merchants_seen_at: merchantIds.length, refund_rate: 0, refund_timestamps: [], refund_acceleration_score: 0,
+        merchant_ids: merchantIds, first_seen: firstSeen, last_seen: lastSeen, profile_confidence: 60, manually_reviewed: false, on_watchlist: false,
+      }).select('id').single();
+      profileId = ins.data?.id ?? null;
+      if (profileId) profilesCreated += 1;
+    } else {
+      const existing = await service.from('customer_profiles' as any).select('merchant_ids,emails,phones,addresses').eq('id', profileId).single();
+      const row = existing.data;
+      await service.from('customer_profiles' as any).update({
+        merchant_ids: uniq([...(row?.merchant_ids ?? []), ...merchantIds]),
+        emails: uniq([...(row?.emails ?? []), ...emails]),
+        phones: uniq([...(row?.phones ?? []), ...phones]),
+        addresses: uniq([...(row?.addresses ?? []), ...addresses]),
+        primary_email: emails[0] ?? null,
+        last_seen: lastSeen,
+      }).eq('id', profileId);
+      profilesLinked += 1;
+    }
+
+    if (!profileId) continue;
+    for (const merchantId of merchantIds) {
+      for (const a of anchors) {
+        const { error } = await service.from('customer_profile_identities' as any).upsert({
+          customer_profile_id: profileId, merchant_id: merchantId, shop_domain: input.shopDomain,
+          identity_type: a.identity_type, identity_value: a.identity_value, source: 'shopify', updated_at: new Date().toISOString(),
+        }, { onConflict: 'merchant_id,identity_type,identity_value' });
+        if (!error) identitiesUpserted += 1;
+      }
+    }
+  }
+
+  return { groups: groupMap.size, profilesCreated, profilesLinked, identitiesUpserted };
+}
