@@ -45,16 +45,13 @@ function setupServiceClient(opts: { ownsShop?: boolean; claimShopDomain?: string
   const service = {
     from: (table: string) => {
       if (table === 'merchant_shopify_connections') {
+        const chain: any = {
+          eq: () => chain,
+          maybeSingle: async () => ({ data: ownsShop ? { merchant_id: 'm-1' } : null, error: null }),
+          then: async (resolve: any) => resolve({ data: ownsShop ? [{ merchant_id: 'm-1', shop_domain: 'unit-test.myshopify.com', active: true }] : [], error: null }),
+        };
         return {
-          select: () => ({
-            eq: () => ({
-              eq: () => ({
-                eq: () => ({
-                  maybeSingle: async () => ({ data: ownsShop ? { merchant_id: 'm-1' } : null, error: null }),
-                }),
-              }),
-            }),
-          }),
+          select: () => chain,
         };
       }
       if (table === 'merchant_claims') {

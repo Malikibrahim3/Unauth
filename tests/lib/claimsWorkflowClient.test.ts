@@ -28,4 +28,11 @@ describe('claims workflow client', () => {
     const res = await submitEvidence('c1', { evidence_type: 'tracking', source: 'manual' });
     expect(res.message).toBe('Permission denied');
   });
+
+  it('sanitizes claim text fields', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({ ok: true, json: async () => ({ claim: { id: 'c2' } }) });
+    await submitClaim({ shop_domain: 'x.myshopify.com', claim_type: 'other', customer_claim_reason: '<script>x</script>' });
+    const payload = JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+    expect(payload.customer_claim_reason).toBe('scriptx/script');
+  });
 });
