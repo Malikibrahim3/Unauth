@@ -25,8 +25,14 @@ export async function GET(request: NextRequest) {
 
     return authRoute as unknown as NextResponse;
   } catch (error) {
+    console.error('Shopify install route failed', {
+      error,
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      url: request.url,
+      shop: request.nextUrl.searchParams.get('shop'),
+    });
     const message = error instanceof Error ? error.message : 'Failed to begin Shopify OAuth';
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
-
