@@ -58,12 +58,10 @@ const STORAGE_KEY = 'unauth.sidebar.collapsed';
 function buildGroups(inboxCount = 0, watchlistCount = 0, claimsCount = 0): NavGroup[] {
   const investigationItems: NavItem[] = [
     { href: '/customers', label: 'Customers', icon: Users },
+    { href: '/claims', label: 'Claims', icon: FileWarning, badge: claimsCount > 0 ? claimsCount : undefined },
     { href: '/watchlist', label: 'Watchlist', icon: Star, badge: watchlistCount },
     { href: '/chargebacks', label: 'Evidence packages', icon: ShieldCheck },
   ];
-  if (claimsCount > 0) {
-    investigationItems.splice(1, 0, { href: '/claims', label: 'Claims', icon: FileWarning, badge: claimsCount });
-  }
   return [
     {
       label: 'Workspace',

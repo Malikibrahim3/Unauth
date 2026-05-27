@@ -143,6 +143,11 @@ export async function proxy(request: NextRequest) {
   if (!user && !isAuthRoute && !isApiRoute && !isPublicRoute) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
+    // Preserve signup intent: /signup → /login?signup=1 so the create-account
+    // toggle pre-opens on the login page.
+    if (pathname === '/signup') {
+      url.searchParams.set('signup', '1');
+    }
     const response = NextResponse.redirect(url);
     response.headers.set(requestIdHeader, requestHeaders.get(requestIdHeader)!);
     return response;

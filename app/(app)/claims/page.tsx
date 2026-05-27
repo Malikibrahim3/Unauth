@@ -76,8 +76,18 @@ export default async function ClaimsPage({
 
   if (statusFilter) query = query.eq('status', statusFilter);
 
-  const { data: rawClaims } = await query;
-  const claims = (rawClaims ?? []) as Array<{
+  const { data: rawClaims, error: claimsQueryError } = await query;
+  let claimsSource = rawClaims;
+  if (claimsQueryError) {
+    const { data: fallbackClaims } = await serviceClient
+      .from('merchant_claims' as any)
+      .select('id,customer_id,shop_domain,shopify_order_id,order_ref,claim_type,status,amount_at_risk,currency,updated_at')
+      .eq('merchant_id', ctx.merchantId)
+      .order('updated_at', { ascending: false })
+      .limit(100);
+    claimsSource = (fallbackClaims ?? []).map((c: any) => ({ ...c, merchant_case_outcomes: [] }));
+  }
+  const claims = (claimsSource ?? []) as Array<{
     id: string;
     customer_id: string | null;
     shop_domain: string | null;
@@ -138,10 +148,10 @@ export default async function ClaimsPage({
         isEmpty ? (
           <WorkbenchEmptyState
             title="No claims yet"
-            description="Claims appear here when filed from a customer profile. Open a customer, go to the Claims tab, and file your first claim."
+            description="Claims appear here when filed from a customer profile. Open a customer profile, run a claim review, and it will show up in this list."
             action={
               <Link href="/customers" className="text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
-                Browse customers →
+                Go to Customers →
               </Link>
             }
           />
@@ -170,7 +180,7 @@ export default async function ClaimsPage({
 
             {claims.length === 0 ? (
               <p className="py-12 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
-                No claims with status &ldquo;{statusFilter}&rdquo;.
+                {statusFilter ? `No claims with status "${statusFilter}".` : 'No claims found.'}
               </p>
             ) : (
               <div className="overflow-x-auto rounded-xl border" style={{ borderColor: 'var(--border-subtle)' }}>
