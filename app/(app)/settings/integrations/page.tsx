@@ -1,6 +1,8 @@
 import { Plug } from 'lucide-react';
 import Link from 'next/link';
+import { Suspense } from 'react';
 import SyncStatusCard from '@/components/shopify/SyncStatusCard';
+import ShopifyIntegrationBanner from '@/components/shopify/ShopifyIntegrationBanner';
 
 export default function IntegrationsPage() {
   return (
@@ -24,6 +26,9 @@ export default function IntegrationsPage() {
 
       <div>
         <h2 className="text-sm font-semibold mb-3" style={{ color: 'var(--text)' }}>Shopify</h2>
+        <Suspense fallback={null}>
+          <ShopifyIntegrationBanner />
+        </Suspense>
         <SyncStatusCard />
       </div>
     </div>

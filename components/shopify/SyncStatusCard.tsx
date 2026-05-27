@@ -12,6 +12,7 @@ interface WebhookEvent {
 
 interface ShopifyStatus {
   connected: boolean;
+  linkState?: 'connected' | 'not_connected' | 'disconnected' | 'installed_unlinked';
   shopDomain?: string;
   lastOrderSyncedAt?: string | null;
   lastWebhookAt?: string | null;
@@ -174,15 +175,42 @@ export default function SyncStatusCard() {
   const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
-    fetch('/api/shopify/status')
-      .then(r => r.ok ? r.json() : null)
-      .then((d) => setStatus(d))
-      .catch(() => {});
+    function loadStatus() {
+      fetch('/api/shopify/status')
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => setStatus(d))
+        .catch(() => {});
+    }
+    loadStatus();
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('shopify_connected') === '1') {
+      const timer = window.setTimeout(loadStatus, 300);
+      return () => window.clearTimeout(timer);
+    }
+    return undefined;
   }, []);
 
   if (!status) return null;
 
   if (!status.connected) {
+    const linkState = status.linkState ?? 'not_connected';
+    const title =
+      linkState === 'disconnected'
+        ? 'Shopify was disconnected'
+        : linkState === 'installed_unlinked'
+          ? 'Shopify installed but not linked'
+          : 'Not connected';
+    const description =
+      linkState === 'disconnected'
+        ? `Reconnect ${status.shopDomain ?? 'Shopify'} to continue syncing orders, customers, refunds and fulfilment events.`
+        : linkState === 'installed_unlinked'
+          ? `Shopify is installed for ${status.shopDomain ?? 'your store'} but not linked to this Unauth workspace. Reconnect to finish linking.`
+          : 'Connect Shopify to sync orders, customers, refunds and fulfilment events.';
+    const actionLabel =
+      linkState === 'disconnected' || linkState === 'installed_unlinked'
+        ? 'Reconnect Shopify'
+        : 'Connect Shopify';
+
     return (
       <>
         <div
@@ -192,14 +220,19 @@ export default function SyncStatusCard() {
           <div className="flex items-start gap-3">
             <div
               className="h-2.5 w-2.5 rounded-full mt-1 flex-shrink-0"
-              style={{ background: 'var(--text-muted)' }}
+              style={{
+                background:
+                  linkState === 'installed_unlinked'
+                    ? 'var(--risk-medium, #D97706)'
+                    : 'var(--text-muted)',
+              }}
             />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
-                Not connected
+                {title}
               </p>
               <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                Connect Shopify to sync orders, customers, refunds and fulfilment events.
+                {description}
               </p>
               <button
                 onClick={() => setModalOpen(true)}
@@ -207,7 +240,7 @@ export default function SyncStatusCard() {
                 style={{ background: 'var(--accent)', color: '#fff' }}
                 data-testid="open-connect-shopify-modal"
               >
-                Connect Shopify
+                {actionLabel}
               </button>
             </div>
           </div>
@@ -233,7 +266,10 @@ export default function SyncStatusCard() {
         </div>
 
         {modalOpen && (
-          <ConnectModal onClose={() => setModalOpen(false)} />
+          <ConnectModal
+            initialValue={status.shopDomain ?? ''}
+            onClose={() => setModalOpen(false)}
+          />
         )}
       </>
     );

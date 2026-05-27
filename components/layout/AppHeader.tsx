@@ -29,6 +29,7 @@ interface AppHeaderProps {
   userEmail?: string | null;
   shopifyConnected?: boolean;
   shopifyShopDomain?: string | null;
+  shopifyLinkState?: 'connected' | 'not_connected' | 'disconnected' | 'installed_unlinked';
 }
 
 /**
@@ -45,6 +46,7 @@ export default function AppHeader({
   userEmail,
   shopifyConnected = false,
   shopifyShopDomain = null,
+  shopifyLinkState = 'not_connected',
 }: AppHeaderProps) {
   const pathname = usePathname();
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -176,7 +178,13 @@ export default function AppHeader({
         )}
         style={{ background: 'var(--surface-input)', borderRadius: 6 }}
       >
-        {shopifyConnected ? `Shopify connected${shopifyShopDomain ? `: ${shopifyShopDomain}` : ''}` : 'Shopify not connected'}
+        {shopifyConnected
+          ? `Shopify connected${shopifyShopDomain ? `: ${shopifyShopDomain}` : ''}`
+          : shopifyLinkState === 'installed_unlinked'
+            ? `Shopify not linked${shopifyShopDomain ? `: ${shopifyShopDomain}` : ''}`
+            : shopifyLinkState === 'disconnected'
+              ? 'Shopify disconnected'
+              : 'Shopify not connected'}
       </Link>
 
       {/* ⌘K trigger */}

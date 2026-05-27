@@ -48,7 +48,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     : Promise.resolve({ data: [] });
   const shopifyPromise = ctx
     ? getShopifyConnectionStatus(serviceClient, ctx.merchantId)
-    : Promise.resolve({ connected: false, shopDomain: null, lastError: null });
+    : Promise.resolve({ connected: false, linkState: 'not_connected' as const, shopDomain: null, lastError: null });
   const claimsCountPromise = ctx
     ? serviceClient
       .from('merchant_claims' as any)
@@ -110,6 +110,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           userEmail={user.email ?? null}
           shopifyConnected={shopifyStatus.connected}
           shopifyShopDomain={shopifyStatus.shopDomain}
+          shopifyLinkState={shopifyStatus.linkState}
         />
 
         {/* Demo / data-quality banner (full-width, between header and page) */}

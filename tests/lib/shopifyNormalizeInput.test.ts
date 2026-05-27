@@ -2,6 +2,13 @@ import { normalizeShopInput } from '@/lib/shopify/normalizeShopInput';
 
 describe('normalizeShopInput', () => {
   describe('admin.shopify.com URLs', () => {
+    it('accepts admin.shopify.com/store/unauth-test', () => {
+      expect(normalizeShopInput('admin.shopify.com/store/unauth-test')).toEqual({
+        domain: 'unauth-test.myshopify.com',
+        error: null,
+      });
+    });
+
     it('accepts admin.shopify.com/store/skims', () => {
       expect(normalizeShopInput('admin.shopify.com/store/skims')).toEqual({ domain: 'skims.myshopify.com', error: null });
     });
@@ -24,6 +31,13 @@ describe('normalizeShopInput', () => {
   });
 
   describe('.myshopify.com URLs', () => {
+    it('accepts unauth-test.myshopify.com', () => {
+      expect(normalizeShopInput('unauth-test.myshopify.com')).toEqual({
+        domain: 'unauth-test.myshopify.com',
+        error: null,
+      });
+    });
+
     it('accepts skims.myshopify.com', () => {
       expect(normalizeShopInput('skims.myshopify.com')).toEqual({ domain: 'skims.myshopify.com', error: null });
     });

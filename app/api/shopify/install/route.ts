@@ -2,33 +2,44 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { ensureMerchantContextForUser } from '@/lib/account/ensureMerchantContext';
+import { shopifyDebugLog } from '@/lib/shopify/debugLog';
+import { clearShopifyOAuthCookieOptions, shopifyOAuthCookieOptions } from '@/lib/shopify/oauthCookies';
 import { normalizeShopInput } from '@/lib/shopify/normalizeShopInput';
+import { getAppUrl } from '@/lib/utils/appUrl';
 
 const INTEGRATIONS_URL = '/settings/integrations';
+
+function integrationsRedirect(request: NextRequest, params: Record<string, string>): NextResponse {
+  const url = new URL(INTEGRATIONS_URL, request.url);
+  for (const [key, value] of Object.entries(params)) {
+    url.searchParams.set(key, value);
+  }
+  return NextResponse.redirect(url);
+}
 
 export async function GET(request: NextRequest) {
   const shopParam = request.nextUrl.searchParams.get('shop') ?? '';
   const normalized = normalizeShopInput(shopParam);
 
+  shopifyDebugLog('shopify.install.started', {
+    hasShopParam: Boolean(shopParam.trim()),
+    normalizeError: normalized.error,
+  });
+
   if (normalized.error !== null) {
-    // Never show raw JSON to the browser — redirect back to the integrations page
-    // with a query param the UI can surface as a friendly message.
     const reason = normalized.error === 'public_domain' ? 'public_domain' : 'invalid_shop';
-    return NextResponse.redirect(
-      new URL(`${INTEGRATIONS_URL}?error=${reason}`, request.url),
-    );
+    return integrationsRedirect(request, { shopify_error: reason });
   }
 
   const shop = normalized.domain;
+  shopifyDebugLog('shopify.install.normalized', { shopDomain: shop });
 
   try {
     const apiKey = process.env.SHOPIFY_API_KEY;
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL;
-    if (!apiKey || !appUrl) {
-      console.error('Shopify install: missing SHOPIFY_API_KEY or NEXT_PUBLIC_APP_URL');
-      return NextResponse.redirect(
-        new URL(`${INTEGRATIONS_URL}?error=misconfigured`, request.url),
-      );
+    const appUrl = getAppUrl();
+    if (!apiKey) {
+      shopifyDebugLog('shopify.install.misconfigured', { missing: 'SHOPIFY_API_KEY' });
+      return integrationsRedirect(request, { shopify_error: 'misconfigured' });
     }
 
     const state = crypto.randomBytes(16).toString('hex');
@@ -40,14 +51,13 @@ export async function GET(request: NextRequest) {
     installUrl.searchParams.set('redirect_uri', redirectUri);
     installUrl.searchParams.set('state', state);
 
-    const response = NextResponse.redirect(installUrl.toString());
-    response.cookies.set('shopify_oauth_state', state, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 600,
+    shopifyDebugLog('oauth.redirect', {
+      host: installUrl.host,
+      redirectUriHost: new URL(redirectUri).host,
     });
+
+    const response = NextResponse.redirect(installUrl.toString());
+    response.cookies.set('shopify_oauth_state', state, shopifyOAuthCookieOptions(600));
 
     const supabase = createClient();
     const serviceClient = createServiceClient();
@@ -55,27 +65,24 @@ export async function GET(request: NextRequest) {
     if (user) {
       const ctx = await ensureMerchantContextForUser(serviceClient, user);
       if (ctx?.merchantId) {
-        response.cookies.set('shopify_oauth_merchant_id', ctx.merchantId, {
-          httpOnly: true,
-          secure: true,
-          sameSite: 'lax',
-          path: '/',
-          maxAge: 600,
-        });
+        response.cookies.set('shopify_oauth_merchant_id', ctx.merchantId, shopifyOAuthCookieOptions(600));
+        shopifyDebugLog('shopify.install.merchant_cookie_set', { hasMerchantId: true });
+      } else {
+        shopifyDebugLog('shopify.install.merchant_cookie_set', { hasMerchantId: false });
       }
+    } else {
+      shopifyDebugLog('shopify.install.merchant_cookie_set', { hasMerchantId: false, reason: 'no_user' });
     }
 
     return response;
   } catch (error) {
     console.error('Shopify install route failed', {
-      error,
       message: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-      url: request.url,
       shop,
     });
-    return NextResponse.redirect(
-      new URL(`${INTEGRATIONS_URL}?error=install_failed`, request.url),
-    );
+    const response = integrationsRedirect(request, { shopify_error: 'install_failed' });
+    response.cookies.set('shopify_oauth_state', '', clearShopifyOAuthCookieOptions());
+    response.cookies.set('shopify_oauth_merchant_id', '', clearShopifyOAuthCookieOptions());
+    return response;
   }
 }

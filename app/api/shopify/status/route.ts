@@ -27,6 +27,8 @@ export async function GET() {
   if (!connection.connected || !connection.shopDomain) {
     return NextResponse.json({
       connected: false,
+      linkState: connection.linkState,
+      shopDomain: connection.shopDomain,
       scopes: [...SHOPIFY_SCOPES],
       dataSources: ['CSV upload', 'Shopify orders (when connected)'],
     });
@@ -69,6 +71,7 @@ export async function GET() {
 
   return NextResponse.json({
     connected: true,
+    linkState: connection.linkState,
     shopDomain,
     lastOrderSyncedAt: lastSignal?.created_at_shopify ?? null,
     lastWebhookAt: lastWebhook?.created_at ?? null,
