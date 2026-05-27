@@ -2,28 +2,33 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { ensureMerchantContextForUser } from '@/lib/account/ensureMerchantContext';
+import { normalizeShopInput } from '@/lib/shopify/normalizeShopInput';
 
-const SHOP_REGEX = /^[a-zA-Z0-9][a-zA-Z0-9-]*\.myshopify\.com$/;
-
-function normalizeShopDomain(shop: string): string | null {
-  const value = shop.trim();
-  if (!value) return null;
-  return SHOP_REGEX.test(value) ? value.toLowerCase() : null;
-}
+const INTEGRATIONS_URL = '/settings/integrations';
 
 export async function GET(request: NextRequest) {
+  const shopParam = request.nextUrl.searchParams.get('shop') ?? '';
+  const normalized = normalizeShopInput(shopParam);
+
+  if (normalized.error !== null) {
+    // Never show raw JSON to the browser — redirect back to the integrations page
+    // with a query param the UI can surface as a friendly message.
+    const reason = normalized.error === 'public_domain' ? 'public_domain' : 'invalid_shop';
+    return NextResponse.redirect(
+      new URL(`${INTEGRATIONS_URL}?error=${reason}`, request.url),
+    );
+  }
+
+  const shop = normalized.domain;
+
   try {
-    const shopParam = request.nextUrl.searchParams.get('shop');
-    const shop = shopParam ? normalizeShopDomain(shopParam) : null;
-
-    if (!shop) {
-      return NextResponse.json({ error: 'Invalid or missing shop domain' }, { status: 400 });
-    }
-
     const apiKey = process.env.SHOPIFY_API_KEY;
     const appUrl = process.env.NEXT_PUBLIC_APP_URL;
     if (!apiKey || !appUrl) {
-      return NextResponse.json({ error: 'Missing SHOPIFY_API_KEY or NEXT_PUBLIC_APP_URL' }, { status: 500 });
+      console.error('Shopify install: missing SHOPIFY_API_KEY or NEXT_PUBLIC_APP_URL');
+      return NextResponse.redirect(
+        new URL(`${INTEGRATIONS_URL}?error=misconfigured`, request.url),
+      );
     }
 
     const state = crypto.randomBytes(16).toString('hex');
@@ -43,11 +48,10 @@ export async function GET(request: NextRequest) {
       path: '/',
       maxAge: 600,
     });
+
     const supabase = createClient();
     const serviceClient = createServiceClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       const ctx = await ensureMerchantContextForUser(serviceClient, user);
       if (ctx?.merchantId) {
@@ -68,9 +72,10 @@ export async function GET(request: NextRequest) {
       message: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
       url: request.url,
-      shop: request.nextUrl.searchParams.get('shop'),
+      shop,
     });
-    const message = error instanceof Error ? error.message : 'Failed to begin Shopify OAuth';
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.redirect(
+      new URL(`${INTEGRATIONS_URL}?error=install_failed`, request.url),
+    );
   }
 }
