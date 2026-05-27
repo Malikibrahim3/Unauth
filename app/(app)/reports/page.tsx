@@ -5,6 +5,7 @@ import { requirePermission, PERMISSIONS, resolveDefaultAppPath } from '@/lib/per
 import { getExposureAtRisk } from '@/lib/supabase/merchantHelpers';
 import { formatCurrencyNullable } from '@/lib/utils/format';
 import { Button, MetricCard, SectionCard, WorkbenchPage } from '@/components/ui';
+import { buildClaimOpsMetrics } from '@/lib/claims/reporting';
 
 type RunSummary = {
   id: string;
@@ -55,13 +56,20 @@ function buildRatePoints(trend: RunSummary[]) {
   };
 }
 
-export default async function ReportsPage() {
+export default async function ReportsPage({ searchParams }: { searchParams?: Promise<{ range?: string }> }) {
   const supabase = createClient();
   const serviceClient = createServiceClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_DASHBOARD);
   if (denied) redirect(await resolveDefaultAppPath(serviceClient, user.id));
+  const resolvedSearchParams = (await searchParams) ?? {};
+  const range = resolvedSearchParams.range === '7d' || resolvedSearchParams.range === '90d' || resolvedSearchParams.range === 'all'
+    ? resolvedSearchParams.range
+    : '30d';
+  const cutoff = range === 'all'
+    ? null
+    : new Date(Date.now() - (range === '7d' ? 7 : range === '90d' ? 90 : 30) * 86400000).toISOString();
 
   const [{ data: runs }, exposureAtRisk] = await Promise.all([
     serviceClient
@@ -115,6 +123,22 @@ export default async function ReportsPage() {
     pct: (gradeCounts[key] / gradeTotal) * 100,
   }));
 
+  let claimsQuery = serviceClient
+    .from('merchant_claims' as any)
+    .select('id,status,amount_at_risk,submitted_at,created_at,updated_at')
+    .eq('merchant_id', ctx.merchantId);
+  if (cutoff) claimsQuery = claimsQuery.gte('submitted_at', cutoff);
+  const { data: claimRows } = await claimsQuery;
+  const claims = (claimRows ?? []) as Array<{ id: string; status: string; amount_at_risk: number | null; submitted_at?: string | null; created_at?: string | null; updated_at?: string | null }>;
+
+  const { data: outcomeRows } = claims.length > 0
+    ? await serviceClient
+      .from('merchant_case_outcomes' as any)
+      .select('claim_id,decision,outcome,amount_refunded,decided_at,created_at,updated_at')
+      .in('claim_id', claims.map((claim) => claim.id))
+    : { data: [] };
+  const claimMetrics = buildClaimOpsMetrics(claims, outcomeRows ?? []);
+
   return (
     <WorkbenchPage
       title="Reports"
@@ -122,21 +146,22 @@ export default async function ReportsPage() {
       actions={
         <div className="flex flex-wrap items-center gap-2">
           <div className="inline-flex rounded-md border p-0.5" style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-input)' }}>
-            {['7d', '30d', '90d'].map((range, index) => (
-              <span
-                key={range}
+            {['7d', '30d', '90d', 'all'].map((option) => (
+              <a
+                key={option}
+                href={`/reports?range=${option}`}
                 className="t-label px-2.5 py-1"
                 style={{
                   borderRadius: 3,
-                  background: index === 1 ? 'var(--copper-dim)' : 'transparent',
-                  color: index === 1 ? 'var(--copper-bright)' : 'var(--ink-tertiary)',
+                  background: range === option ? 'var(--copper-dim)' : 'transparent',
+                  color: range === option ? 'var(--copper-bright)' : 'var(--ink-tertiary)',
                 }}
               >
-                {range}
-              </span>
+                {option}
+              </a>
             ))}
           </div>
-          <Button variant="secondary" size="sm">Export report</Button>
+          <a href={`/api/reports/claims?range=${range}`}><Button variant="secondary" size="sm">Export claims CSV</Button></a>
         </div>
       }
       kpiStrip={
@@ -148,6 +173,23 @@ export default async function ReportsPage() {
       }
       main={
         <div className="grid gap-4 p-4 xl:grid-cols-2">
+          <SectionCard title="Claims Operations" description={`Claim metrics for ${range === 'all' ? 'all time' : `last ${range.replace('d', ' days')}`}`}>
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+              <MetricCard label="Total claims" value={claimMetrics.totalClaims.toLocaleString()} density="compact" />
+              <MetricCard label="Open claims" value={claimMetrics.openClaims.toLocaleString()} density="compact" />
+              <MetricCard label="Under review / pending" value={claimMetrics.inReviewOrPendingClaims.toLocaleString()} density="compact" />
+              <MetricCard label="Resolved" value={claimMetrics.resolvedClaims.toLocaleString()} density="compact" />
+              <MetricCard label="Denied" value={claimMetrics.deniedClaims.toLocaleString()} density="compact" />
+              <MetricCard label="Approved" value={claimMetrics.approvedClaims.toLocaleString()} density="compact" />
+              <MetricCard label="Suspected outcomes" value={claimMetrics.suspectedFraudOutcomes.toLocaleString()} density="compact" />
+              <MetricCard label="Legitimate outcomes" value={claimMetrics.legitimateOutcomes.toLocaleString()} density="compact" />
+              <MetricCard label="Value at risk" value={formatCurrencyNullable(claimMetrics.valueAtRisk || null)} density="compact" />
+              <MetricCard label="Refunded" value={formatCurrencyNullable(claimMetrics.amountRefunded || null)} density="compact" />
+              <MetricCard label="Resolution rate" value={`${Math.round(claimMetrics.resolutionRate * 100)}%`} density="compact" />
+              <MetricCard label="Overdue" value={claimMetrics.overdueClaims.toLocaleString()} density="compact" />
+            </div>
+          </SectionCard>
+
           <SectionCard title="Match rate over time">
             <svg className="h-56 w-full" viewBox="0 0 520 220" preserveAspectRatio="none" role="img" aria-label="Match rate over time">
               {[40, 90, 140, 190].map((y) => (

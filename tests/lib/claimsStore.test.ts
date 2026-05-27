@@ -93,6 +93,7 @@ describe('claims store', () => {
     await expect(
       upsertMerchantClaim(supabase, {
         shop_domain: 'unit-test.myshopify.com',
+        shopify_order_id: '1002',
         claim_type: 'other',
       })
     ).resolves.toBeTruthy();

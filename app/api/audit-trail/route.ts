@@ -52,26 +52,72 @@ async function GETHandler(request: NextRequest) {
 
   if (action)       query = query.eq('action', action);
   if (actorUserId)  query = query.eq('actor_user_id', actorUserId);
-  if (resourceType) query = query.eq('resource_type', resourceType);
+  if (resourceType && resourceType !== 'claim') query = query.eq('resource_type', resourceType);
   if (startDate)    query = query.gte('created_at', startDate);
   if (endDate)      query = query.lte('created_at', endDate);
 
-  const { data: rows, count, error } = await query;
+  const shouldIncludeActionLog = resourceType !== 'claim';
+  const { data: actionRows, count, error } = shouldIncludeActionLog
+    ? await query
+    : { data: [], count: 0, error: null };
 
   if (error) {
     logger.error('audit_trail.query_failed', { error });
     return NextResponse.json({ error: 'Failed to fetch audit trail' }, { status: 500 });
   }
 
+  let claimEventQuery = service
+    .from('claim_events' as any)
+    .select('id,claim_id,merchant_id,event_type,previous_status,new_status,previous_decision,new_decision,previous_outcome,new_outcome,note,actor_user_id,metadata,created_at')
+    .eq('merchant_id', ctx.merchantId)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (action) claimEventQuery = claimEventQuery.eq('event_type', action);
+  if (actorUserId) claimEventQuery = claimEventQuery.eq('actor_user_id', actorUserId);
+  if (startDate) claimEventQuery = claimEventQuery.gte('created_at', startDate);
+  if (endDate) claimEventQuery = claimEventQuery.lte('created_at', endDate);
+  const { data: claimEvents, error: claimEventError } = resourceType && resourceType !== 'claim'
+    ? { data: [], error: null }
+    : await claimEventQuery;
+  if (claimEventError) {
+    logger.error('audit_trail.claim_events_query_failed', { error: claimEventError });
+    return NextResponse.json({ error: 'Failed to fetch audit trail' }, { status: 500 });
+  }
+
+  const mappedClaimEvents = (claimEvents ?? []).map((event: any) => ({
+    id: event.id,
+    merchant_id: event.merchant_id,
+    actor_user_id: event.actor_user_id,
+    action: event.event_type,
+    resource_type: 'claim',
+    resource_id: event.claim_id,
+    metadata: {
+      previous_status: event.previous_status,
+      new_status: event.new_status,
+      previous_decision: event.previous_decision,
+      new_decision: event.new_decision,
+      previous_outcome: event.previous_outcome,
+      new_outcome: event.new_outcome,
+      note: event.note,
+      ...(event.metadata ?? {}),
+    },
+    created_at: event.created_at,
+  }));
+
+  const rows = [...(actionRows ?? []), ...mappedClaimEvents]
+    .sort((a: any, b: any) => String(b.created_at ?? '').localeCompare(String(a.created_at ?? '')))
+    .slice(0, limit);
+  const total = (count ?? 0) + mappedClaimEvents.length;
+
   // Log that someone viewed the audit trail (non-blocking)
   logAction({ ctx, action: 'view_audit_trail', resourceType: 'audit_log' });
 
   return NextResponse.json({
-    rows: rows ?? [],
-    total: count ?? 0,
+    rows,
+    total,
     page,
     limit,
-    pages: Math.ceil((count ?? 0) / limit),
+    pages: Math.ceil(total / limit),
   });
 }
 

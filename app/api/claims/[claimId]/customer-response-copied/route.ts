@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { PERMISSIONS, requirePermission } from '@/lib/permissions';
-import { createEvidenceItemSchema, upsertClaimEvidenceItem } from '@/lib/claims/store';
 import { loadClaimForMerchant } from '@/lib/claims/access';
 import { appendClaimEvent } from '@/lib/claims/events';
 
@@ -18,37 +17,23 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const loaded = await loadClaimForMerchant(serviceClient, claimId, ctx.merchantId);
   if (loaded.denied === 'not_found') return NextResponse.json({ error: 'Claim not found' }, { status: 404 });
   if (loaded.denied === 'forbidden') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+
+  const body = await request.json().catch(() => ({}));
   const claim = loaded.claim!;
-
-  let body: unknown;
   try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
-  }
-
-  const parsed = createEvidenceItemSchema.safeParse({ ...body as object, claim_id: claimId });
-  if (!parsed.success) return NextResponse.json({ error: 'Invalid evidence payload' }, { status: 400 });
-
-  try {
-    const evidence = await upsertClaimEvidenceItem(serviceClient, {
-      ...parsed.data,
-      actor_user_id: parsed.data.actor_user_id ?? user.id,
-    });
     await appendClaimEvent(serviceClient, {
       claim_id: claimId,
       merchant_id: ctx.merchantId,
       shop_domain: claim.shop_domain,
-      event_type: 'evidence_added',
+      event_type: 'customer_response_copied',
       actor_user_id: user.id,
       metadata: {
-        evidence_id: evidence.id,
-        evidence_type: evidence.evidence_type,
-        source: evidence.source,
+        decision: typeof body?.decision === 'string' ? body.decision : null,
+        outcome: typeof body?.outcome === 'string' ? body.outcome : null,
       },
     });
-    return NextResponse.json({ evidence: { id: evidence.id, claim_id: evidence.claim_id, evidence_type: evidence.evidence_type, source: evidence.source } });
+    return NextResponse.json({ ok: true });
   } catch {
-    return NextResponse.json({ error: 'Failed to add evidence' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to record customer response copy' }, { status: 500 });
   }
 }

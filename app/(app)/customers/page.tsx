@@ -10,6 +10,8 @@ import { Button, WorkbenchActionBar, WorkbenchEmptyState, WorkbenchKpiStrip, Wor
 import { RISK_TIER_COPY } from '@/lib/copy/riskTiers';
 import { escapePostgrestFilterValue } from '@/lib/supabase/merchantHelpers';
 import { STATUS_LABELS } from '@/lib/utils/investigationStatus';
+import { getMerchantOwnedJobIds } from '@/lib/supabase/merchantHelpers';
+import { isOrderReferenceSearchTerm, orderReferenceIlike } from '@/lib/customers/orderSearch';
 
 // Helper: build a URL with one search param removed
 function buildRemoveHref(sp: Record<string, string | undefined>, key: string) {
@@ -139,6 +141,56 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
   // Scope to profiles this merchant owns — accepts both the auth-user UUID
   // (legacy, pre-merchants-table uploads) and the merchants-table UUID (current).
   const merchantFilter = `merchant_ids.cs.${JSON.stringify([ctx.merchantId])}`;
+  const isOrderReferenceSearch = isOrderReferenceSearchTerm(q);
+  let orderMatchedProfileIds: string[] | null = null;
+
+  if (isOrderReferenceSearch) {
+    const ids = new Set<string>();
+    const ilike = orderReferenceIlike(q);
+
+    const claimsWithOrderRef = await svc
+      .from('merchant_claims' as any)
+      .select('customer_id')
+      .eq('merchant_id', ctx.merchantId)
+      .or(`shopify_order_id.ilike.${ilike},order_ref.ilike.${ilike}`)
+      .limit(100);
+    let claimRows = claimsWithOrderRef.data as Array<{ customer_id: string | null }> | null;
+
+    if (claimsWithOrderRef.error) {
+      const fallbackClaims = await svc
+        .from('merchant_claims' as any)
+        .select('customer_id')
+        .eq('merchant_id', ctx.merchantId)
+        .ilike('shopify_order_id', ilike)
+        .limit(100);
+      claimRows = fallbackClaims.data as Array<{ customer_id: string | null }> | null;
+    }
+
+    for (const row of claimRows ?? []) {
+      if (row.customer_id) ids.add(row.customer_id);
+    }
+
+    const ownedJobIds = await getMerchantOwnedJobIds(svc, ctx.merchantId);
+    if (ownedJobIds.length > 0) {
+      const { data: txRows } = await svc
+        .from(TABLES.AUDIT_TRANSACTIONS)
+        .select('id')
+        .in('job_id', ownedJobIds)
+        .ilike('order_id', ilike)
+        .limit(100) as unknown as { data: Array<{ id: string }> | null };
+      const txIds = (txRows ?? []).map((row) => row.id);
+      if (txIds.length > 0) {
+        const { data: appearanceRows } = await svc
+          .from('customer_profile_audit_appearances' as any)
+          .select('profile_id')
+          .in('audit_id', ownedJobIds)
+          .in('transaction_id', txIds) as unknown as { data: Array<{ profile_id: string }> | null };
+        for (const row of appearanceRows ?? []) ids.add(row.profile_id);
+      }
+    }
+
+    orderMatchedProfileIds = Array.from(ids);
+  }
 
   let query = svc
     .from(TABLES.CUSTOMER_PROFILES)
@@ -150,10 +202,16 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
 
   // Text search (email or name)
   if (q.length >= 2) {
-    // Use shared escape helper — prevents PostgREST filter injection via
-    // ( ) ' % , { } " \ and other control characters.
-    const safeQ = escapePostgrestFilterValue(q);
-    query = query.or(`primary_email.ilike.%${safeQ}%,names.cs.["${safeQ}"]`);
+    if (isOrderReferenceSearch) {
+      query = orderMatchedProfileIds && orderMatchedProfileIds.length > 0
+        ? query.in('id', orderMatchedProfileIds)
+        : query.eq('id', '00000000-0000-0000-0000-000000000000');
+    } else {
+      // Use shared escape helper — prevents PostgREST filter injection via
+      // ( ) ' % , { } " \ and other control characters.
+      const safeQ = escapePostgrestFilterValue(q);
+      query = query.or(`primary_email.ilike.%${safeQ}%,names.cs.["${safeQ}"]`);
+    }
   }
 
   // Identity exact-match filters

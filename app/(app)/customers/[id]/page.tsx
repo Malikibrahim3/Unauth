@@ -44,6 +44,7 @@ import { riskBadgeStyle, riskBarStyle, riskTok } from '@/lib/utils/riskStyles';
 import { formatCurrencyNullable, formatDate, formatDateMode } from '@/lib/utils/format';
 import { getEventStream } from '@/lib/analysis/customerIntelligence';
 import { FLAG_EXPERIENCE_POLISH_V1 } from '@/lib/flags';
+import { ACTIVE_CLAIM_STATUSES, formatFiledDate, getClaimSlaState } from '@/lib/claims/sla';
 
 interface PageProps {
   params: Promise<{ id: string }> | { id: string };
@@ -97,6 +98,26 @@ function roadmapTitle(tx: any) {
   if (tier === 'critical' || tier === 'high') return 'Order requiring review';
   return 'Order placed';
 }
+
+const CLAIM_TYPE_LABELS: Record<string, string> = {
+  missing_parcel: 'Missing parcel',
+  damaged: 'Damaged item',
+  wrong_item: 'Wrong item',
+  refund_request: 'Refund request',
+  chargeback: 'Chargeback',
+  return_abuse: 'Return abuse',
+  other: 'Other',
+};
+
+const CLAIM_STATUS_LABELS: Record<string, string> = {
+  open: 'Open',
+  under_review: 'Under review',
+  evidence_requested: 'Evidence requested',
+  pending: 'Pending external evidence',
+  escalated: 'Escalated',
+  resolved: 'Resolved',
+  closed: 'Closed',
+};
 
 function RoadmapOrderCard({ tx, isLast }: { tx: any; isLast: boolean }) {
   const hasClaim = !!(tx.refund_claimed ?? tx.chargeback_filed);
@@ -410,6 +431,27 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
     linkedAccountCount: 0,
   });
   const profileGrade = riskLevelToNewGrade(profile.risk_level);
+  let { data: profileClaims, error: profileClaimsError } = await svc
+    .from('merchant_claims' as any)
+    .select('id,claim_type,status,shopify_order_id,order_ref,submitted_at,created_at,updated_at')
+    .eq('merchant_id', merchantId)
+    .eq('customer_id', profileId)
+    .order('updated_at', { ascending: false })
+    .limit(20);
+  if (profileClaimsError) {
+    const fallback = await svc
+      .from('merchant_claims' as any)
+      .select('id,claim_type,status,shopify_order_id,submitted_at,created_at,updated_at')
+      .eq('merchant_id', merchantId)
+      .eq('customer_id', profileId)
+      .order('updated_at', { ascending: false })
+      .limit(20);
+    profileClaims = fallback.data;
+  }
+  const claimSummaryRows = (profileClaims ?? []) as Array<{ id: string; claim_type: string; status: string; shopify_order_id?: string | null; order_ref?: string | null; submitted_at?: string | null; created_at?: string | null; updated_at?: string | null }>;
+  const openClaimCount = claimSummaryRows.filter((claim) => ACTIVE_CLAIM_STATUSES.includes(claim.status as any)).length;
+  const latestClaim = claimSummaryRows[0] ?? null;
+  const latestClaimSla = latestClaim ? getClaimSlaState(latestClaim) : null;
 
   return (
     <div className="mx-auto max-w-7xl px-3 py-5 sm:px-5">
@@ -599,6 +641,40 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
                 </div>
               </div>
             </div>
+          </SectionCard>
+
+          <SectionCard title="Claim summary">
+            {latestClaim ? (
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <MetricCard label="Open claims" value={openClaimCount.toLocaleString()} density="compact" />
+                  <MetricCard label="Latest status" value={CLAIM_STATUS_LABELS[latestClaim.status] ?? latestClaim.status} density="compact" />
+                </div>
+                <div className="rounded-md border p-3" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)' }}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-caption" style={{ color: 'var(--text-muted)' }}>Latest claim</p>
+                      <p className="text-body-sm font-semibold" style={{ color: 'var(--text)' }}>{CLAIM_TYPE_LABELS[latestClaim.claim_type] ?? latestClaim.claim_type}</p>
+                      <p className="font-mono text-caption" style={{ color: 'var(--text-muted)' }}>{latestClaim.shopify_order_id ?? latestClaim.order_ref ?? latestClaim.id.slice(0, 8)}</p>
+                    </div>
+                    {latestClaimSla && (
+                      <span className="rounded-full px-2 py-0.5 text-caption font-semibold" style={{
+                        background: latestClaimSla.state === 'overdue' ? 'var(--sev-high-fill,#FEE2E2)' : latestClaimSla.state === 'approaching' ? 'var(--sev-medium-fill,#FEF3C7)' : 'var(--bg-subtle)',
+                        color: latestClaimSla.state === 'overdue' ? 'var(--sev-high,#991B1B)' : latestClaimSla.state === 'approaching' ? 'var(--sev-medium,#B45309)' : 'var(--text-muted)',
+                      }}>
+                        {latestClaimSla.label}
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-2 text-caption" style={{ color: 'var(--text-muted)' }}>Filed {formatFiledDate(latestClaim)}</p>
+                  <Link href={`/customers/${profile.id}/claims?claimId=${latestClaim.id}`} className="mt-3 inline-flex text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
+                    Open review
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              <EmptyState title="No claims in progress" description="Claims filed for this customer will appear here." />
+            )}
           </SectionCard>
 
           <SectionCard

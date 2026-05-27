@@ -1,8 +1,12 @@
 import ClaimReviewPanel from '@/components/claims/ClaimReviewPanel';
 
-interface Props { params: Promise<{ id: string }> }
+interface Props {
+  params: Promise<{ id: string }>;
+  searchParams?: Promise<{ claimId?: string }>;
+}
 
-export default async function CustomerClaimReviewPage({ params }: Props) {
+export default async function CustomerClaimReviewPage({ params, searchParams }: Props) {
   const { id } = await params;
-  return <ClaimReviewPanel profileId={id} />;
+  const sp = (await searchParams) ?? {};
+  return <ClaimReviewPanel profileId={id} initialClaimId={sp.claimId ?? null} />;
 }

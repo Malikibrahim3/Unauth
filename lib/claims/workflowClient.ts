@@ -6,8 +6,8 @@ async function safePost(url: string, body: Record<string, unknown>) {
   const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    if (res.status === 401 || res.status === 403) return { ok: false, message: 'Permission denied' };
-    return { ok: false, message: (data as any).error ?? 'Request failed' };
+    if (res.status === 401 || res.status === 403) return { ok: false, message: 'Permission denied', data };
+    return { ok: false, message: (data as any).error ?? 'Request failed', data };
   }
   return { ok: true, data };
 }
@@ -19,7 +19,14 @@ export async function submitClaim(input: Record<string, unknown>) {
     normalized_reason: typeof input.normalized_reason === 'string' ? sanitize(input.normalized_reason) : input.normalized_reason,
   };
   const result = await safePost('/api/claims', payload);
-  if (!result.ok) return { message: result.message, claimId: null };
+  if (!result.ok) {
+    return {
+      message: result.message,
+      claimId: null,
+      duplicateClaimId: (result.data as any)?.existingClaimId ?? null,
+      duplicateCode: (result.data as any)?.code ?? null,
+    };
+  }
   return { message: 'Claim saved', claimId: (result.data as any)?.claim?.id ?? null };
 }
 
@@ -37,4 +44,27 @@ export async function submitEvidence(claimId: string, input: Record<string, unkn
   };
   const result = await safePost(`/api/claims/${claimId}/evidence`, payload);
   return { message: result.ok ? 'Evidence saved' : result.message };
+}
+
+export async function updateClaimStatus(claimId: string, input: Record<string, unknown>) {
+  const payload = { ...input, note: typeof input.note === 'string' ? sanitize(input.note) : input.note };
+  const result = await safePost(`/api/claims/${claimId}/status`, payload);
+  return { message: result.ok ? 'Status updated' : result.message };
+}
+
+export async function reopenClaim(claimId: string, input: Record<string, unknown>) {
+  const payload = { ...input, note: typeof input.note === 'string' ? sanitize(input.note) : input.note };
+  const result = await safePost(`/api/claims/${claimId}/reopen`, payload);
+  return { message: result.ok ? 'Claim reopened' : result.message };
+}
+
+export async function reverseClaimDecision(claimId: string, input: Record<string, unknown>) {
+  const payload = { ...input, note: typeof input.note === 'string' ? sanitize(input.note) : input.note };
+  const result = await safePost(`/api/claims/${claimId}/reverse`, payload);
+  return { message: result.ok ? 'Decision reversed' : result.message };
+}
+
+export async function recordCustomerResponseCopied(claimId: string, input: Record<string, unknown>) {
+  const result = await safePost(`/api/claims/${claimId}/customer-response-copied`, input);
+  return { message: result.ok ? 'Customer response copied' : result.message };
 }

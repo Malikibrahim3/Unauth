@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { PERMISSIONS, requirePermission } from '@/lib/permissions';
-import { createEvidenceItemSchema, upsertClaimEvidenceItem } from '@/lib/claims/store';
-import { loadClaimForMerchant } from '@/lib/claims/access';
+import { loadClaimForMerchant, updateClaimStatus } from '@/lib/claims/access';
 import { appendClaimEvent } from '@/lib/claims/events';
+import { isFinalClaimStatus } from '@/lib/claims/sla';
+
+const reopenBodySchema = z.object({
+  note: z.string().trim().min(3),
+});
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ claimId: string }> }) {
   const userClient = createClient();
@@ -18,7 +23,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const loaded = await loadClaimForMerchant(serviceClient, claimId, ctx.merchantId);
   if (loaded.denied === 'not_found') return NextResponse.json({ error: 'Claim not found' }, { status: 404 });
   if (loaded.denied === 'forbidden') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  const claim = loaded.claim!;
 
   let body: unknown;
   try {
@@ -27,28 +31,28 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  const parsed = createEvidenceItemSchema.safeParse({ ...body as object, claim_id: claimId });
-  if (!parsed.success) return NextResponse.json({ error: 'Invalid evidence payload' }, { status: 400 });
+  const parsed = reopenBodySchema.safeParse(body);
+  if (!parsed.success) return NextResponse.json({ error: 'Reopen requires a reason.' }, { status: 400 });
+
+  const claim = loaded.claim!;
+  if (!isFinalClaimStatus(claim.status)) {
+    return NextResponse.json({ error: 'Only resolved or closed claims can be reopened.' }, { status: 409 });
+  }
 
   try {
-    const evidence = await upsertClaimEvidenceItem(serviceClient, {
-      ...parsed.data,
-      actor_user_id: parsed.data.actor_user_id ?? user.id,
-    });
+    const updated = await updateClaimStatus(serviceClient, claim, ctx.merchantId, 'under_review');
     await appendClaimEvent(serviceClient, {
       claim_id: claimId,
       merchant_id: ctx.merchantId,
       shop_domain: claim.shop_domain,
-      event_type: 'evidence_added',
+      event_type: 'claim_reopened',
+      previous_status: claim.status,
+      new_status: 'under_review',
+      note: parsed.data.note,
       actor_user_id: user.id,
-      metadata: {
-        evidence_id: evidence.id,
-        evidence_type: evidence.evidence_type,
-        source: evidence.source,
-      },
     });
-    return NextResponse.json({ evidence: { id: evidence.id, claim_id: evidence.claim_id, evidence_type: evidence.evidence_type, source: evidence.source } });
+    return NextResponse.json({ claim: { id: updated.id, status: updated.status } });
   } catch {
-    return NextResponse.json({ error: 'Failed to add evidence' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to reopen claim' }, { status: 500 });
   }
 }

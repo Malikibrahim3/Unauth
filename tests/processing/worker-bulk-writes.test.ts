@@ -106,6 +106,17 @@ describe('incrementJobProgress fallback', () => {
   });
 });
 
+describe('worker — refund persistence mapping', () => {
+  it('persists refund_requested=true as a claimed refund even without refund_status', async () => {
+    const { isRefundClaimedForPersistence } = await import('@/lib/processing/worker');
+
+    expect(isRefundClaimedForPersistence({ refund_requested: 'true', refund_status: undefined })).toBe(true);
+    expect(isRefundClaimedForPersistence({ refund_requested: 'yes', refund_status: 'none' })).toBe(true);
+    expect(isRefundClaimedForPersistence({ refund_requested: 'false', refund_status: 'full' })).toBe(true);
+    expect(isRefundClaimedForPersistence({ refund_requested: 'false', refund_status: 'none' })).toBe(false);
+  });
+});
+
 // ---------------------------------------------------------------------------
 // accumulateEntities helpers (tested via type-checking + logic checks)
 // ---------------------------------------------------------------------------

@@ -1,14 +1,32 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
-import { submitClaim, submitEvidence, submitOutcome } from '@/lib/claims/workflowClient';
+import {
+  recordCustomerResponseCopied,
+  reopenClaim,
+  reverseClaimDecision,
+  submitClaim,
+  submitEvidence,
+  submitOutcome,
+  updateClaimStatus as submitClaimStatus,
+} from '@/lib/claims/workflowClient';
 import { signalLabel } from '@/lib/copy/signalLabels';
 import { formatRiskScore } from '@/lib/utils/format';
+import { buildCustomerResponse } from '@/lib/claims/customerResponses';
+import { claimEventLabel } from '@/lib/claims/events';
+import {
+  ACTIVE_CLAIM_STATUSES,
+  formatClaimAge,
+  formatFiledDate,
+  getClaimSlaState,
+  isFinalClaimStatus,
+} from '@/lib/claims/sla';
 
 type ClaimType = 'missing_parcel' | 'damaged' | 'wrong_item' | 'refund_request' | 'chargeback' | 'return_abuse' | 'other';
 type Decision = 'approved' | 'denied' | 'escalated' | 'partial_refund' | 'full_refund' | 'chargeback_disputed' | 'blacklist' | 'no_action';
-type Outcome = 'loss' | 'recovered' | 'pending' | 'chargeback_won' | 'chargeback_lost' | 'customer_verified' | 'suspected_fraud';
+type Outcome = 'loss' | 'recovered' | 'pending' | 'chargeback_won' | 'chargeback_lost' | 'customer_verified' | 'suspected_fraud' | 'legitimate';
 type EvidenceType = 'tracking' | 'proof_of_delivery' | 'customer_message' | 'support_ticket' | 'return_label' | 'warehouse_scan' | 'payment_dispute' | 'note' | 'other';
 type EvidenceSource = 'manual' | 'csv_import' | 'zendesk' | 'gorgias' | 'shopify' | 'stripe' | 'paypal' | 'carrier';
+type ClaimStatus = 'open' | 'under_review' | 'evidence_requested' | 'pending' | 'escalated' | 'resolved' | 'closed';
 
 type OrderOption = { id: string; orderLabel: string; orderValue: number | null; currency?: string | null; status: string; date?: string | null; source?: string };
 type ClaimDraft = {
@@ -28,6 +46,7 @@ type ClaimDraft = {
   manualOrderSource: string;
   manualModeExplicit: boolean;
   orderValue: string;
+  statusToSet: ClaimStatus;
 };
 
 const DEFAULT_META_ROWS = [{ key: 'note', value: '' }];
@@ -61,6 +80,7 @@ const OUTCOME_LABELS: Record<Outcome, string> = {
   chargeback_lost: 'Chargeback lost',
   customer_verified: 'Customer verified',
   suspected_fraud: 'Suspected fraud',
+  legitimate: 'Legitimate',
 };
 
 const EVIDENCE_TYPE_LABELS: Record<EvidenceType, string> = {
@@ -90,6 +110,8 @@ const STATUS_LABELS: Record<string, string> = {
   open: 'Open',
   under_review: 'Under review',
   evidence_requested: 'Evidence requested',
+  pending: 'Pending external evidence',
+  escalated: 'Escalated',
   resolved: 'Resolved',
   closed: 'Closed',
 };
@@ -142,6 +164,8 @@ function StatusPill({ status }: { status: string }) {
     open: { bg: 'var(--bg-subtle)', text: 'var(--text-muted)' },
     under_review: { bg: 'var(--sev-medium-fill, #FEF3C7)', text: 'var(--sev-medium, #B45309)' },
     evidence_requested: { bg: 'var(--sev-high-fill, #FEE2E2)', text: 'var(--sev-high, #991B1B)' },
+    pending: { bg: 'var(--sev-medium-fill, #FEF3C7)', text: 'var(--sev-medium, #B45309)' },
+    escalated: { bg: 'var(--risk-critical-bg, #FEE2E2)', text: 'var(--risk-critical, #991B1B)' },
     resolved: { bg: 'var(--sev-clear-fill, #DCFCE7)', text: 'var(--sev-clear, #166534)' },
     closed: { bg: 'var(--bg-subtle)', text: 'var(--text-muted)' },
   };
@@ -149,6 +173,22 @@ function StatusPill({ status }: { status: string }) {
   return (
     <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: c.bg, color: c.text }}>
       {label}
+    </span>
+  );
+}
+
+function SlaBadge({ claim }: { claim: any }) {
+  const sla = getClaimSlaState(claim);
+  const colourMap: Record<string, { bg: string; text: string }> = {
+    normal: { bg: 'var(--bg-subtle)', text: 'var(--text-muted)' },
+    approaching: { bg: 'var(--sev-medium-fill, #FEF3C7)', text: 'var(--sev-medium, #B45309)' },
+    overdue: { bg: 'var(--sev-high-fill, #FEE2E2)', text: 'var(--sev-high, #991B1B)' },
+    resolved: { bg: 'var(--sev-clear-fill, #DCFCE7)', text: 'var(--sev-clear, #166534)' },
+  };
+  const c = colourMap[sla.state] ?? colourMap.normal;
+  return (
+    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: c.bg, color: c.text }}>
+      {sla.label}
     </span>
   );
 }
@@ -161,7 +201,7 @@ function inputStyle(): React.CSSProperties {
   return { border: '1px solid var(--border)', background: 'var(--bg-inset)', color: 'var(--text)' };
 }
 
-export default function ClaimReviewPanel({ profileId }: { profileId: string }) {
+export default function ClaimReviewPanel({ profileId, initialClaimId }: { profileId: string; initialClaimId?: string | null }) {
   const [data, setData] = useState<any>(null);
   const [shopifyOrders, setShopifyOrders] = useState<any[]>([]);
   const [shops, setShops] = useState<string[]>([]);
@@ -183,6 +223,14 @@ export default function ClaimReviewPanel({ profileId }: { profileId: string }) {
   const [state, setState] = useState<'idle' | 'busy'>('idle');
   const [message, setMessage] = useState('');
   const [messageTone, setMessageTone] = useState<'success' | 'error' | 'neutral'>('neutral');
+  const [statusToSet, setStatusToSet] = useState<ClaimStatus>('pending');
+  const [statusNote, setStatusNote] = useState('');
+  const [reopenNote, setReopenNote] = useState('');
+  const [reverseDecision, setReverseDecision] = useState<Decision>('approved');
+  const [reverseOutcome, setReverseOutcome] = useState<Outcome>('legitimate');
+  const [reverseNote, setReverseNote] = useState('');
+  const [nextClaimHref, setNextClaimHref] = useState<string | null>(null);
+  const [noMoreClaims, setNoMoreClaims] = useState(false);
   // Manual order entry (Fix 2)
   const [manualOrderRef, setManualOrderRef] = useState('');
   const [manualOrderSource, setManualOrderSource] = useState('manual');
@@ -222,11 +270,12 @@ export default function ClaimReviewPanel({ profileId }: { profileId: string }) {
     if (typeof draft.manualOrderSource === 'string') setManualOrderSource(draft.manualOrderSource);
     if (typeof draft.manualModeExplicit === 'boolean') setManualModeExplicit(draft.manualModeExplicit);
     if (typeof draft.orderValue === 'string') setOrderValue(draft.orderValue);
+    if (typeof draft.statusToSet === 'string') setStatusToSet(draft.statusToSet as ClaimStatus);
   }, [profileId]);
 
   useEffect(() => {
-    saveClaimDraft(profileId, { selectedOrderId, claimType, customerReason, notes, claimId, decision, outcome, evidenceType, source, evidenceUrl, evidenceHash, metaRows, manualOrderRef, manualOrderSource, manualModeExplicit, orderValue });
-  }, [profileId, selectedOrderId, claimType, customerReason, notes, claimId, decision, outcome, evidenceType, source, evidenceUrl, evidenceHash, metaRows, manualOrderRef, manualOrderSource, manualModeExplicit, orderValue]);
+    saveClaimDraft(profileId, { selectedOrderId, claimType, customerReason, notes, claimId, decision, outcome, evidenceType, source, evidenceUrl, evidenceHash, metaRows, manualOrderRef, manualOrderSource, manualModeExplicit, orderValue, statusToSet });
+  }, [profileId, selectedOrderId, claimType, customerReason, notes, claimId, decision, outcome, evidenceType, source, evidenceUrl, evidenceHash, metaRows, manualOrderRef, manualOrderSource, manualModeExplicit, orderValue, statusToSet]);
 
   const orderOptions = useMemo<OrderOption[]>(() => {
     const map = new Map<string, OrderOption>();
@@ -291,6 +340,20 @@ export default function ClaimReviewPanel({ profileId }: { profileId: string }) {
 
   const selectedOrder = useMemo(() => orderOptions.find((o) => o.id === selectedOrderId), [orderOptions, selectedOrderId]);
   const order = useMemo(() => data?.orderHistory?.find((o: any) => o.orderId === selectedOrderId), [data, selectedOrderId]);
+  const selectedClaim = useMemo(() => history.find((h) => h.id === claimId) ?? null, [claimId, history]);
+  const selectedClaimOutcomes = useMemo(() => selectedClaim?.outcomes ?? [], [selectedClaim]);
+  const latestOutcome = selectedClaimOutcomes[0] ?? selectedClaim?.latest_outcome ?? null;
+  const previousOutcome = selectedClaimOutcomes[1] ?? null;
+  const selectedClaimEvents = selectedClaim?.events ?? [];
+  const customerResponse = useMemo(
+    () => buildCustomerResponse({ decision: latestOutcome?.decision, outcome: latestOutcome?.outcome, status: selectedClaim?.status }),
+    [latestOutcome, selectedClaim],
+  );
+
+  useEffect(() => {
+    if (!initialClaimId || claimId || history.length === 0) return;
+    if (history.some((h) => h.id === initialClaimId)) setClaimId(initialClaimId);
+  }, [claimId, history, initialClaimId]);
 
   const riskScore = order?.fraudScore ?? data?.profile?.risk_score;
   const fraudFlags: string[] = order?.fraudFlags ?? data?.profile?.fraud_flags ?? [];
@@ -305,8 +368,20 @@ export default function ClaimReviewPanel({ profileId }: { profileId: string }) {
     return out;
   }, [metaRows]);
 
+  const effectiveOrderRef = manualMode ? manualOrderRef.trim() : selectedOrderId;
+  const duplicateClaim = useMemo(() => {
+    if (!effectiveOrderRef) return null;
+    return history.find((h) => {
+      if (h.id === claimId) return false;
+      const orderRef = String(h.shopify_order_id ?? h.order_ref ?? '');
+      return orderRef === effectiveOrderRef && h.claim_type === claimType;
+    }) ?? null;
+  }, [claimId, claimType, effectiveOrderRef, history]);
+  const activeDuplicateClaim = duplicateClaim && ACTIVE_CLAIM_STATUSES.includes(duplicateClaim.status as any) ? duplicateClaim : null;
+  const resolvedDuplicateClaim = duplicateClaim && isFinalClaimStatus(duplicateClaim.status) ? duplicateClaim : null;
+
   async function refreshHistory() {
-    const x = await fetch(`/api/claims?profileId=${encodeURIComponent(profileId)}&orderId=${encodeURIComponent(selectedOrderId)}`).then(r => r.ok ? r.json() : null).catch(() => null);
+    const x = await fetch(`/api/claims?profileId=${encodeURIComponent(profileId)}`).then(r => r.ok ? r.json() : null).catch(() => null);
     if (x?.claims) setHistory(x.claims);
   }
 
@@ -322,6 +397,18 @@ export default function ClaimReviewPanel({ profileId }: { profileId: string }) {
       showMsg(manualMode ? 'Please enter an order reference to continue' : 'Select an order before saving the claim.', 'error');
       return;
     }
+    if (activeDuplicateClaim) {
+      setClaimId(activeDuplicateClaim.id);
+      showMsg(`An active ${CLAIM_TYPE_LABELS[claimType].toLowerCase()} claim already exists for this order.`, 'error');
+      return;
+    }
+    if (resolvedDuplicateClaim) {
+      setClaimId(resolvedDuplicateClaim.id);
+      showMsg(`A resolved ${CLAIM_TYPE_LABELS[claimType].toLowerCase()} claim already exists for this order. Reopen the existing claim if new evidence changes the decision.`, 'error');
+      return;
+    }
+    setNextClaimHref(null);
+    setNoMoreClaims(false);
     setState('busy');
 
     let claimOrderSource: string;
@@ -363,7 +450,9 @@ export default function ClaimReviewPanel({ profileId }: { profileId: string }) {
     showMsg(r.message, r.claimId ? 'success' : 'error');
     if (r.claimId) {
       setClaimId(r.claimId);
-      saveClaimDraft(profileId, { selectedOrderId, claimType, customerReason, notes, claimId: r.claimId, decision, outcome, evidenceType, source, evidenceUrl, evidenceHash, metaRows, manualOrderRef, manualOrderSource, manualModeExplicit, orderValue });
+      saveClaimDraft(profileId, { selectedOrderId, claimType, customerReason, notes, claimId: r.claimId, decision, outcome, evidenceType, source, evidenceUrl, evidenceHash, metaRows, manualOrderRef, manualOrderSource, manualModeExplicit, orderValue, statusToSet });
+    } else if (r.duplicateClaimId) {
+      setClaimId(r.duplicateClaimId);
     }
     await refreshHistory();
   }
@@ -378,7 +467,18 @@ export default function ClaimReviewPanel({ profileId }: { profileId: string }) {
     setState('idle');
     showMsg(r.message, r.message.toLowerCase().includes('saved') ? 'success' : 'error');
     if (r.message.toLowerCase().includes('saved')) {
-      saveClaimDraft(profileId, { selectedOrderId, claimType, customerReason, notes, claimId, decision, outcome, evidenceType, source, evidenceUrl, evidenceHash, metaRows });
+      saveClaimDraft(profileId, { selectedOrderId, claimType, customerReason, notes, claimId, decision, outcome, evidenceType, source, evidenceUrl, evidenceHash, metaRows, statusToSet });
+      const next = await fetch(`/api/claims?queue=active&sort=age&limit=1&excludeId=${encodeURIComponent(claimId)}`)
+        .then(r => r.ok ? r.json() : null)
+        .catch(() => null);
+      const nextClaim = next?.claims?.[0];
+      if (nextClaim?.customer_id) {
+        setNextClaimHref(`/customers/${nextClaim.customer_id}/claims?claimId=${nextClaim.id}`);
+        setNoMoreClaims(false);
+      } else {
+        setNextClaimHref(null);
+        setNoMoreClaims(true);
+      }
     }
     await refreshHistory();
   }
@@ -393,7 +493,71 @@ export default function ClaimReviewPanel({ profileId }: { profileId: string }) {
     setState('idle');
     showMsg(r.message, r.message.toLowerCase().includes('saved') ? 'success' : 'error');
     if (r.message.toLowerCase().includes('saved')) {
-      saveClaimDraft(profileId, { selectedOrderId, claimType, customerReason, notes, claimId, decision, outcome, evidenceType, source, evidenceUrl, evidenceHash, metaRows });
+      saveClaimDraft(profileId, { selectedOrderId, claimType, customerReason, notes, claimId, decision, outcome, evidenceType, source, evidenceUrl, evidenceHash, metaRows, statusToSet });
+    }
+    await refreshHistory();
+  }
+
+  async function onStatusChange() {
+    if (!claimId) {
+      showMsg('Save or select a claim before changing status.', 'error');
+      return;
+    }
+    if (!statusNote.trim()) {
+      showMsg('Add a short note before changing status.', 'error');
+      return;
+    }
+    setState('busy');
+    const r = await submitClaimStatus(claimId, { status: statusToSet, note: statusNote });
+    setState('idle');
+    showMsg(r.message, r.message.toLowerCase().includes('updated') ? 'success' : 'error');
+    if (r.message.toLowerCase().includes('updated')) setStatusNote('');
+    await refreshHistory();
+  }
+
+  async function onReopen() {
+    if (!claimId) {
+      showMsg('Select a resolved claim before reopening.', 'error');
+      return;
+    }
+    if (!reopenNote.trim()) {
+      showMsg('Add a reason before reopening the claim.', 'error');
+      return;
+    }
+    setState('busy');
+    const r = await reopenClaim(claimId, { note: reopenNote });
+    setState('idle');
+    showMsg(r.message, r.message.toLowerCase().includes('reopened') ? 'success' : 'error');
+    if (r.message.toLowerCase().includes('reopened')) setReopenNote('');
+    await refreshHistory();
+  }
+
+  async function onReverse() {
+    if (!claimId) {
+      showMsg('Select a resolved claim before reversing a decision.', 'error');
+      return;
+    }
+    if (!reverseNote.trim()) {
+      showMsg('Add a reason before reversing the decision.', 'error');
+      return;
+    }
+    setState('busy');
+    const r = await reverseClaimDecision(claimId, { decision: reverseDecision, outcome: reverseOutcome, note: reverseNote });
+    setState('idle');
+    showMsg(r.message, r.message.toLowerCase().includes('reversed') ? 'success' : 'error');
+    if (r.message.toLowerCase().includes('reversed')) setReverseNote('');
+    await refreshHistory();
+  }
+
+  async function onCopyCustomerResponse() {
+    if (!claimId) return;
+    try {
+      await navigator.clipboard.writeText(customerResponse);
+      await recordCustomerResponseCopied(claimId, { decision: latestOutcome?.decision ?? null, outcome: latestOutcome?.outcome ?? null });
+      showMsg('Customer response copied', 'success');
+      await refreshHistory();
+    } catch {
+      showMsg('Copy unavailable in this browser. Select the response text and copy manually.', 'error');
     }
   }
 
@@ -467,6 +631,56 @@ export default function ClaimReviewPanel({ profileId }: { profileId: string }) {
           </div>
         )}
       </div>
+
+      {selectedClaim && (
+        <section className="rounded-xl p-4 border" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-overline mb-2" style={{ color: 'var(--text-muted)' }}>Selected claim</p>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-mono text-xs" style={{ color: 'var(--text)' }}>{selectedClaim.shopify_order_id ?? selectedClaim.order_ref ?? selectedClaim.id.slice(0, 8)}</span>
+                <StatusPill status={selectedClaim.status} />
+                <SlaBadge claim={selectedClaim} />
+              </div>
+            </div>
+            <div className="text-right text-xs" style={{ color: 'var(--text-muted)' }}>
+              <p>Filed {formatFiledDate(selectedClaim)}</p>
+              <p>{formatClaimAge(selectedClaim)}</p>
+            </div>
+          </div>
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+            <div>
+              <p className="text-xs mb-0.5" style={{ color: 'var(--text-muted)' }}>Current decision</p>
+              <p className="font-semibold" style={{ color: 'var(--text)' }}>
+                {latestOutcome ? DECISION_LABELS[latestOutcome.decision as Decision] ?? latestOutcome.decision : '—'}
+              </p>
+              {latestOutcome?.actor_user_id && (
+                <p className="text-xs font-mono" style={{ color: 'var(--text-muted)' }}>Actor {String(latestOutcome.actor_user_id).slice(0, 8)}</p>
+              )}
+            </div>
+            <div>
+              <p className="text-xs mb-0.5" style={{ color: 'var(--text-muted)' }}>Current outcome</p>
+              <p className="font-semibold" style={{ color: 'var(--text)' }}>
+                {latestOutcome ? OUTCOME_LABELS[latestOutcome.outcome as Outcome] ?? latestOutcome.outcome : '—'}
+              </p>
+              {latestOutcome?.updated_at && (
+                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{new Date(latestOutcome.updated_at).toLocaleString('en-GB')}</p>
+              )}
+            </div>
+            <div>
+              <p className="text-xs mb-0.5" style={{ color: 'var(--text-muted)' }}>Previous outcome</p>
+              <p className="font-semibold" style={{ color: 'var(--text)' }}>
+                {previousOutcome
+                  ? `${DECISION_LABELS[previousOutcome.decision as Decision] ?? previousOutcome.decision} / ${OUTCOME_LABELS[previousOutcome.outcome as Outcome] ?? previousOutcome.outcome}`
+                  : '—'}
+              </p>
+              {previousOutcome?.updated_at && (
+                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{new Date(previousOutcome.updated_at).toLocaleString('en-GB')}</p>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Context: shop + order picker */}
       <section className="rounded-xl p-4 border" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}>
@@ -566,6 +780,18 @@ export default function ClaimReviewPanel({ profileId }: { profileId: string }) {
                 ))}
               </select>
             </div>
+            {activeDuplicateClaim && (
+              <div className="rounded-md border px-3 py-2 text-sm" style={{ borderColor: '#fca5a5', background: '#fee2e2', color: '#991b1b' }}>
+                An active {CLAIM_TYPE_LABELS[claimType].toLowerCase()} claim already exists for this order.
+                <button type="button" onClick={() => setClaimId(activeDuplicateClaim.id)} className="ml-2 font-semibold underline">Open existing review</button>
+              </div>
+            )}
+            {resolvedDuplicateClaim && (
+              <div className="rounded-md border px-3 py-2 text-sm" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)', color: 'var(--text)' }}>
+                A resolved {CLAIM_TYPE_LABELS[claimType].toLowerCase()} claim already exists for this order. Reopen the old claim if new evidence changes the decision.
+                <button type="button" onClick={() => setClaimId(resolvedDuplicateClaim.id)} className="ml-2 font-semibold underline" style={{ color: 'var(--accent)' }}>Open resolved claim</button>
+              </div>
+            )}
             <div>
               <FieldLabel>Customer&apos;s reason</FieldLabel>
               <textarea
@@ -653,9 +879,80 @@ export default function ClaimReviewPanel({ profileId }: { profileId: string }) {
             >
               {busy ? <><span className="h-3.5 w-3.5 rounded-full border-2 border-white border-t-transparent animate-spin" /> Saving…</> : 'Save outcome'}
             </button>
+            {(nextClaimHref || noMoreClaims) && (
+              <div className="rounded-md border p-3 text-sm" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)' }}>
+                <div className="flex flex-wrap items-center gap-2">
+                  {nextClaimHref ? (
+                    <a href={nextClaimHref} className="px-3 py-1.5 rounded-md text-xs font-semibold" style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}>
+                      Next claim
+                    </a>
+                  ) : (
+                    <span className="text-xs font-semibold" style={{ color: 'var(--text)' }}>No more open claims in this queue.</span>
+                  )}
+                  <a href="/claims?status=open" className="px-3 py-1.5 rounded-md text-xs font-semibold" style={{ border: '1px solid var(--border)', color: 'var(--text)' }}>
+                    Back to queue
+                  </a>
+                </div>
+              </div>
+            )}
           </div>
         </section>
       </div>
+
+      <section className="rounded-xl p-4 border" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}>
+        <p className="text-overline mb-3" style={{ color: 'var(--text-muted)' }}>Status and follow-up</p>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="space-y-2">
+            <FieldLabel>Set status</FieldLabel>
+            <select className="w-full px-3 py-2 rounded-md text-sm" style={inputStyle()} value={statusToSet} onChange={e => setStatusToSet(e.target.value as ClaimStatus)}>
+              <option value="open">Open</option>
+              <option value="under_review">Under review</option>
+              <option value="evidence_requested">Evidence requested</option>
+              <option value="pending">Pending external evidence</option>
+              <option value="escalated">Escalated</option>
+              <option value="resolved">Resolved</option>
+              <option value="closed">Closed</option>
+            </select>
+            <textarea className="w-full px-3 py-2 rounded-md text-sm resize-none" style={inputStyle()} rows={2} placeholder="Status note" value={statusNote} onChange={e => setStatusNote(e.target.value)} />
+            <button onClick={onStatusChange} disabled={busy || !claimId} className="w-full px-3 py-2 rounded-md text-sm font-semibold disabled:opacity-60" style={{ background: claimId ? 'var(--accent)' : 'var(--bg-inset)', color: claimId ? 'var(--text-inverse)' : 'var(--text-muted)' }}>
+              Update status
+            </button>
+          </div>
+          <div className="space-y-2">
+            <FieldLabel>Reopen resolved claim</FieldLabel>
+            <textarea className="w-full px-3 py-2 rounded-md text-sm resize-none" style={inputStyle()} rows={3} placeholder="Reason for reopening" value={reopenNote} onChange={e => setReopenNote(e.target.value)} />
+            <button onClick={onReopen} disabled={busy || !claimId || !selectedClaim || !isFinalClaimStatus(selectedClaim.status)} className="w-full px-3 py-2 rounded-md text-sm font-semibold disabled:opacity-60" style={{ border: '1px solid var(--border)', color: 'var(--text)' }}>
+              Reopen claim
+            </button>
+          </div>
+          <div className="space-y-2">
+            <FieldLabel>Reverse decision</FieldLabel>
+            <div className="grid grid-cols-2 gap-2">
+              <select className="w-full px-3 py-2 rounded-md text-sm" style={inputStyle()} value={reverseDecision} onChange={e => setReverseDecision(e.target.value as Decision)}>
+                {(Object.entries(DECISION_LABELS) as [Decision, string][]).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+              </select>
+              <select className="w-full px-3 py-2 rounded-md text-sm" style={inputStyle()} value={reverseOutcome} onChange={e => setReverseOutcome(e.target.value as Outcome)}>
+                {(Object.entries(OUTCOME_LABELS) as [Outcome, string][]).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+              </select>
+            </div>
+            <textarea className="w-full px-3 py-2 rounded-md text-sm resize-none" style={inputStyle()} rows={2} placeholder="Reason for reversal" value={reverseNote} onChange={e => setReverseNote(e.target.value)} />
+            <button onClick={onReverse} disabled={busy || !claimId || !latestOutcome} className="w-full px-3 py-2 rounded-md text-sm font-semibold disabled:opacity-60" style={{ border: '1px solid var(--border)', color: 'var(--text)' }}>
+              Reverse decision
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-xl p-4 border" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}>
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+          <p className="text-overline" style={{ color: 'var(--text-muted)' }}>Customer response</p>
+          <button onClick={onCopyCustomerResponse} disabled={!claimId} className="px-3 py-1.5 rounded-md text-xs font-semibold disabled:opacity-60" style={{ border: '1px solid var(--border)', color: 'var(--text)' }}>
+            Copy
+          </button>
+        </div>
+        <textarea className="w-full px-3 py-2 rounded-md text-sm resize-none" style={inputStyle()} rows={3} value={customerResponse} readOnly />
+        <p className="mt-2 text-xs" style={{ color: 'var(--text-muted)' }}>Internal notes and risk signals stay out of the customer-facing response.</p>
+      </section>
 
       {/* Evidence */}
       <section className="rounded-xl p-4 border" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}>
@@ -744,6 +1041,8 @@ export default function ClaimReviewPanel({ profileId }: { profileId: string }) {
                   <th className="text-left py-2 pr-3 text-xs font-semibold">Status</th>
                   <th className="text-left py-2 pr-3 text-xs font-semibold">Type</th>
                   <th className="text-left py-2 pr-3 text-xs font-semibold">Decision / Outcome</th>
+                  <th className="text-left py-2 pr-3 text-xs font-semibold">Filed</th>
+                  <th className="text-left py-2 pr-3 text-xs font-semibold">SLA</th>
                   <th className="text-left py-2 pr-3 text-xs font-semibold">At risk</th>
                   <th className="text-left py-2 text-xs font-semibold">Updated</th>
                 </tr>
@@ -764,6 +1063,11 @@ export default function ClaimReviewPanel({ profileId }: { profileId: string }) {
                         ? `${DECISION_LABELS[h.latest_outcome.decision as Decision] ?? h.latest_outcome.decision} / ${OUTCOME_LABELS[h.latest_outcome.outcome as Outcome] ?? h.latest_outcome.outcome}`
                         : '—'}
                     </td>
+                    <td className="py-2 pr-3 text-xs" style={{ color: 'var(--text-muted)' }}>
+                      <span>{formatFiledDate(h)}</span>
+                      <span className="block">{formatClaimAge(h)}</span>
+                    </td>
+                    <td className="py-2 pr-3"><SlaBadge claim={h} /></td>
                     <td className="py-2 pr-3">{h.amount_at_risk != null ? formatMoney(h.amount_at_risk, h.currency) : '—'}</td>
                     <td className="py-2 text-xs" style={{ color: 'var(--text-muted)' }}>
                       {h.updated_at ? new Date(h.updated_at).toLocaleDateString('en-GB') : '—'}
@@ -773,6 +1077,38 @@ export default function ClaimReviewPanel({ profileId }: { profileId: string }) {
               </tbody>
             </table>
           </div>
+        )}
+      </section>
+
+      <section className="rounded-xl p-4 border" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}>
+        <p className="text-overline mb-3" style={{ color: 'var(--text-muted)' }}>Event timeline</p>
+        {!selectedClaim ? (
+          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Select a claim to view its audit history.</p>
+        ) : selectedClaimEvents.length === 0 ? (
+          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No claim events recorded yet.</p>
+        ) : (
+          <ol className="space-y-2">
+            {selectedClaimEvents.map((event: any) => (
+              <li key={event.id} className="rounded-md border p-3" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)' }}>
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div>
+                    <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{claimEventLabel(event.event_type)}</p>
+                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                      {[event.previous_status && event.new_status ? `${STATUS_LABELS[event.previous_status] ?? event.previous_status} → ${STATUS_LABELS[event.new_status] ?? event.new_status}` : null,
+                        event.previous_decision && event.new_decision ? `${DECISION_LABELS[event.previous_decision as Decision] ?? event.previous_decision} → ${DECISION_LABELS[event.new_decision as Decision] ?? event.new_decision}` : null,
+                        event.previous_outcome && event.new_outcome ? `${OUTCOME_LABELS[event.previous_outcome as Outcome] ?? event.previous_outcome} → ${OUTCOME_LABELS[event.new_outcome as Outcome] ?? event.new_outcome}` : null,
+                      ].filter(Boolean).join(' · ') || 'Claim action recorded'}
+                    </p>
+                    {event.note && <p className="mt-1 text-sm" style={{ color: 'var(--text)' }}>{event.note}</p>}
+                  </div>
+                  <div className="text-right text-xs" style={{ color: 'var(--text-muted)' }}>
+                    <p>{event.created_at ? new Date(event.created_at).toLocaleString('en-GB') : '—'}</p>
+                    {event.actor_user_id && <p className="font-mono">Actor {String(event.actor_user_id).slice(0, 8)}</p>}
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ol>
         )}
       </section>
     </div>

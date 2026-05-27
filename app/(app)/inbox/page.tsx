@@ -8,6 +8,7 @@ import { signalLabel } from '@/lib/copy/signalLabels';
 import PageSizeSelect from '@/components/common/PageSizeSelect';
 import { fetchMerchantReviewQueueRows } from '@/lib/supabase/merchantHelpers';
 import { Button, WorkbenchActionBar, WorkbenchEmptyState, WorkbenchKpiStrip, WorkbenchPage } from '@/components/ui';
+import { ACTIVE_CLAIM_STATUSES, formatClaimAge, getClaimSlaState } from '@/lib/claims/sla';
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
 const DEFAULT_PAGE_SIZE = 25;
@@ -81,6 +82,17 @@ export default async function InboxPage({ searchParams }: { searchParams?: Promi
     reason: topReason(row.signals_matched),
   }));
 
+  const { data: claimQueueRows } = await serviceClient
+    .from('merchant_claims' as any)
+    .select('id,status,submitted_at,created_at,updated_at')
+    .eq('merchant_id', ctx.merchantId)
+    .in('status', [...ACTIVE_CLAIM_STATUSES])
+    .order('submitted_at', { ascending: true })
+    .limit(100);
+  const activeClaims = (claimQueueRows ?? []) as Array<{ id: string; status: string; submitted_at?: string | null; created_at?: string | null; updated_at?: string | null }>;
+  const overdueClaims = activeClaims.filter((claim) => getClaimSlaState(claim).state === 'overdue').length;
+  const oldestClaim = activeClaims[0] ?? null;
+
   const totalValueAtRisk = items.reduce((sum, item) => sum + (item.order_value ?? 0), 0);
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
@@ -109,6 +121,7 @@ export default async function InboxPage({ searchParams }: { searchParams?: Promi
             { label: 'Value at risk', value: new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(totalValueAtRisk), hint: 'Current page estimate' },
             { label: 'Definite', value: items.filter((i) => i.match_status === 'definite').length.toLocaleString(), hint: 'Queue' },
             { label: 'Probable', value: items.filter((i) => i.match_status === 'probable').length.toLocaleString(), hint: 'Queue' },
+            { label: 'Claims urgency', value: overdueClaims.toLocaleString(), hint: oldestClaim ? `Oldest ${formatClaimAge(oldestClaim)}` : 'No open claims' },
             { label: 'Total queue', value: total.toLocaleString(), hint: 'All pages' },
           ]}
         />

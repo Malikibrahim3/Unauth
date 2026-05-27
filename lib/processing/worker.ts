@@ -423,6 +423,25 @@ function buildClusterIdentityResults(
 // NOT the raw streamParser row. The raw row keeps the CSV's original header
 // names (e.g. `email`, `Customer Email`) — only the parsed row guarantees
 // canonical fields like `customer_email`, `ip_address`, `card_last4`.
+export function isRefundClaimedForPersistence(row: Pick<CsvRow, 'refund_status' | 'refund_requested'>): boolean {
+  const bool = (value: unknown): boolean => {
+    if (typeof value === 'boolean') return value;
+    if (typeof value === 'number') return value === 1;
+    if (typeof value === 'string') {
+      const v = value.trim().toLowerCase();
+      return v === 'true' || v === '1' || v === 'yes' || v === 'y';
+    }
+    return false;
+  };
+
+  return (
+    row.refund_status === 'full' ||
+    row.refund_status === 'partial' ||
+    row.refund_status === 'refunded' ||
+    bool(row.refund_requested)
+  );
+}
+
 function rowToFraudTransaction(
   row: CsvRow,
   scored: { totalScore: number; riskTier: 'low' | 'medium' | 'high' | 'critical'; flagged: boolean; signals: { name: string; fired: boolean }[] },
@@ -431,6 +450,7 @@ function rowToFraudTransaction(
 ): FraudTransactionInsert {
   const flags = scored.signals.filter((s) => s.fired).map((s) => s.name);
   const imr = identity?.identityMatchResult;
+  const refundClaimed = isRefundClaimedForPersistence(row);
 
   return {
     job_id: jobId,
@@ -446,7 +466,7 @@ function rowToFraudTransaction(
     account_created_at: null,
     previous_order_count: null,
     delivery_status: row.order_status ?? 'completed',
-    refund_claimed: row.refund_status === 'full' || row.refund_status === 'partial' || row.refund_status === 'refunded',
+    refund_claimed: refundClaimed,
     refund_reason: row.refund_reason,
     chargeback_filed: null,
     match_score: scored.totalScore,
