@@ -37,6 +37,19 @@ const STATUS_META: Record<string, { label: string; bg: string; text: string }> =
 const ALLOWED_STATUSES = ['open', 'under_review', 'evidence_requested', 'resolved', 'closed'] as const;
 type ClaimStatus = (typeof ALLOWED_STATUSES)[number];
 
+type ClaimRow = {
+  id: string;
+  customer_id: string | null;
+  shop_domain: string | null;
+  shopify_order_id: string | null;
+  order_ref?: string | null;
+  claim_type: string;
+  status: string;
+  amount_at_risk: number | null;
+  currency: string | null;
+  updated_at: string;
+};
+
 function StatusPill({ status }: { status: string }) {
   const m = STATUS_META[status] ?? STATUS_META['open'];
   return (
@@ -76,19 +89,27 @@ export default async function ClaimsPage({
 
   if (statusFilter) query = query.eq('status', statusFilter);
 
-  const { data: rawClaims } = await query;
-  const claims = (rawClaims ?? []) as Array<{
-    id: string;
-    customer_id: string | null;
-    shop_domain: string | null;
-    shopify_order_id: string | null;
-    order_ref: string | null;
-    claim_type: string;
-    status: string;
-    amount_at_risk: number | null;
-    currency: string | null;
-    updated_at: string;
-  }>;
+  const { data: rawClaims, error: claimsQueryError } = await query;
+
+  let claims = (rawClaims ?? []) as ClaimRow[];
+  if (claimsQueryError) {
+    console.error('Claims page query failed; retrying with base merchant_claims columns', claimsQueryError);
+
+    let fallbackQuery = serviceClient
+      .from('merchant_claims' as any)
+      .select('id,customer_id,shop_domain,shopify_order_id,claim_type,status,amount_at_risk,currency,updated_at')
+      .eq('merchant_id', ctx.merchantId)
+      .order('updated_at', { ascending: false })
+      .limit(100);
+
+    if (statusFilter) fallbackQuery = fallbackQuery.eq('status', statusFilter);
+
+    const { data: fallbackClaims, error: fallbackQueryError } = await fallbackQuery;
+    if (fallbackQueryError) {
+      console.error('Claims page fallback query failed', fallbackQueryError);
+    }
+    claims = (fallbackClaims ?? []) as ClaimRow[];
+  }
 
   const claimIds = claims.map((c) => c.id);
   let latestOutcomeByClaimId = new Map<string, { decision: string; outcome: string; updated_at: string }>();
