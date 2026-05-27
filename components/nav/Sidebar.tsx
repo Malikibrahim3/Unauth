@@ -17,6 +17,7 @@ import {
   ChevronRight,
   ShieldCheck,
   BarChart3,
+  FileWarning,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { UnauthLogo } from '@/components/ui/UnauthLogo';
@@ -45,6 +46,7 @@ interface SidebarProps {
   userEmail: string;
   inboxCount?: number;
   watchlistCount?: number;
+  claimsCount?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -53,7 +55,15 @@ interface SidebarProps {
 
 const STORAGE_KEY = 'unauth.sidebar.collapsed';
 
-function buildGroups(inboxCount = 0, watchlistCount = 0): NavGroup[] {
+function buildGroups(inboxCount = 0, watchlistCount = 0, claimsCount = 0): NavGroup[] {
+  const investigationItems: NavItem[] = [
+    { href: '/customers', label: 'Customers', icon: Users },
+    { href: '/watchlist', label: 'Watchlist', icon: Star, badge: watchlistCount },
+    { href: '/chargebacks', label: 'Evidence packages', icon: ShieldCheck },
+  ];
+  if (claimsCount > 0) {
+    investigationItems.splice(1, 0, { href: '/claims', label: 'Claims', icon: FileWarning, badge: claimsCount });
+  }
   return [
     {
       label: 'Workspace',
@@ -72,11 +82,7 @@ function buildGroups(inboxCount = 0, watchlistCount = 0): NavGroup[] {
     },
     {
       label: 'Investigations',
-      items: [
-        { href: '/customers', label: 'Customers', icon: Users },
-        { href: '/watchlist', label: 'Watchlist', icon: Star, badge: watchlistCount },
-        { href: '/chargebacks', label: 'Evidence packages', icon: ShieldCheck },
-      ],
+      items: investigationItems,
     },
   ];
 }
@@ -195,6 +201,7 @@ export default function Sidebar({
   userEmail,
   inboxCount = 0,
   watchlistCount = 0,
+  claimsCount = 0,
 }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -231,7 +238,7 @@ export default function Sidebar({
     router.push('/login');
   }
 
-  const groups = buildGroups(inboxCount, watchlistCount);
+  const groups = buildGroups(inboxCount, watchlistCount, claimsCount);
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
 
   // Effective collapsed state: collapsed only if pinned AND not hovering

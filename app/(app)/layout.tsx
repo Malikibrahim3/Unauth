@@ -51,8 +51,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       .eq('merchant_id', ctx.merchantId)
       .maybeSingle()
     : Promise.resolve({ data: null });
+  const claimsCountPromise = ctx
+    ? serviceClient
+      .from('merchant_claims' as any)
+      .select('id', { count: 'exact', head: true })
+      .eq('merchant_id', ctx.merchantId)
+    : Promise.resolve({ count: 0 });
 
-  const [{ data: merchantProfile }, { data: jobs }, { data: shopifyConnection }] = await Promise.all([merchantPromise, jobsPromise, shopifyPromise]);
+  const [{ data: merchantProfile }, { data: jobs }, { data: shopifyConnection }, { count: claimsCount }] = await Promise.all([merchantPromise, jobsPromise, shopifyPromise, claimsCountPromise]);
 
   if (!isOnboarding) {
     const merchantComplete =
@@ -81,7 +87,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       className="flex h-screen overflow-hidden bg-[var(--surface-base)] text-[var(--ink-primary)]"
     >
       {/* ── Sidebar ── */}
-      <Sidebar merchantName={(merchantProfile as any)?.name ?? null} userEmail={user.email ?? ''} />
+      <Sidebar merchantName={(merchantProfile as any)?.name ?? null} userEmail={user.email ?? ''} claimsCount={claimsCount ?? 0} />
 
       {/* Amplitude — initialise after session confirmed */}
       <AmplitudeInit

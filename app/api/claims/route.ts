@@ -30,12 +30,13 @@ export async function GET(request: NextRequest) {
   const orderId = request.nextUrl.searchParams.get('orderId');
   const shops = await getMerchantShops(serviceClient, ctx.merchantId);
 
+  const pageSize = Math.min(100, Math.max(1, parseInt(request.nextUrl.searchParams.get('limit') ?? '50', 10)));
   let query = serviceClient
     .from('merchant_claims' as any)
-    .select('id,shop_domain,shopify_order_id,order_ref,order_source,claim_type,status,amount_at_risk,updated_at,merchant_case_outcomes(decision,outcome,updated_at)')
+    .select('id,customer_id,shop_domain,shopify_order_id,order_ref,order_source,claim_type,status,amount_at_risk,currency,updated_at,merchant_case_outcomes(decision,outcome,updated_at)')
     .eq('merchant_id', ctx.merchantId)
     .order('updated_at', { ascending: false })
-    .limit(25);
+    .limit(pageSize);
 
   if (profileId) query = query.eq('customer_id', profileId);
   if (orderId) query = query.eq('shopify_order_id', orderId);
@@ -46,6 +47,7 @@ export async function GET(request: NextRequest) {
     activeShopDomain: shops[0] ?? null,
     claims: (claims ?? []).map((c: any) => ({
       id: c.id,
+      customer_id: c.customer_id,
       shop_domain: c.shop_domain,
       shopify_order_id: c.shopify_order_id,
       order_ref: c.order_ref,
@@ -53,6 +55,7 @@ export async function GET(request: NextRequest) {
       claim_type: c.claim_type,
       status: c.status,
       amount_at_risk: c.amount_at_risk,
+      currency: c.currency,
       updated_at: c.updated_at,
       latest_outcome: Array.isArray(c.merchant_case_outcomes) && c.merchant_case_outcomes.length > 0 ? c.merchant_case_outcomes[0] : null,
     })),
