@@ -69,25 +69,15 @@ export default async function ClaimsPage({
 
   let query = serviceClient
     .from('merchant_claims' as any)
-    .select('id,customer_id,shop_domain,shopify_order_id,order_ref,claim_type,status,amount_at_risk,currency,updated_at,merchant_case_outcomes(decision,outcome,updated_at)')
+    .select('id,customer_id,shop_domain,shopify_order_id,order_ref,claim_type,status,amount_at_risk,currency,updated_at')
     .eq('merchant_id', ctx.merchantId)
     .order('updated_at', { ascending: false })
     .limit(100);
 
   if (statusFilter) query = query.eq('status', statusFilter);
 
-  const { data: rawClaims, error: claimsQueryError } = await query;
-  let claimsSource = rawClaims;
-  if (claimsQueryError) {
-    const { data: fallbackClaims } = await serviceClient
-      .from('merchant_claims' as any)
-      .select('id,customer_id,shop_domain,shopify_order_id,order_ref,claim_type,status,amount_at_risk,currency,updated_at')
-      .eq('merchant_id', ctx.merchantId)
-      .order('updated_at', { ascending: false })
-      .limit(100);
-    claimsSource = (fallbackClaims ?? []).map((c: any) => ({ ...c, merchant_case_outcomes: [] }));
-  }
-  const claims = (claimsSource ?? []) as Array<{
+  const { data: rawClaims } = await query;
+  const claims = (rawClaims ?? []) as Array<{
     id: string;
     customer_id: string | null;
     shop_domain: string | null;
@@ -98,8 +88,22 @@ export default async function ClaimsPage({
     amount_at_risk: number | null;
     currency: string | null;
     updated_at: string;
-    merchant_case_outcomes: Array<{ decision: string; outcome: string; updated_at: string }> | null;
   }>;
+
+  const claimIds = claims.map((c) => c.id);
+  let latestOutcomeByClaimId = new Map<string, { decision: string; outcome: string; updated_at: string }>();
+  if (claimIds.length > 0) {
+    const { data: outcomeRows } = await serviceClient
+      .from('merchant_case_outcomes' as any)
+      .select('claim_id,decision,outcome,updated_at')
+      .in('claim_id', claimIds)
+      .order('updated_at', { ascending: false });
+    for (const row of (outcomeRows ?? []) as Array<{ claim_id: string; decision: string; outcome: string; updated_at: string }>) {
+      if (!latestOutcomeByClaimId.has(row.claim_id)) {
+        latestOutcomeByClaimId.set(row.claim_id, { decision: row.decision, outcome: row.outcome, updated_at: row.updated_at });
+      }
+    }
+  }
 
   // Count by status for KPI strip
   const { data: allRaw } = await serviceClient
@@ -198,9 +202,7 @@ export default async function ClaimsPage({
                   <tbody>
                     {claims.map((c) => {
                       const orderRef = c.shopify_order_id ?? c.order_ref ?? c.id.slice(0, 8);
-                      const latestOutcome = Array.isArray(c.merchant_case_outcomes) && c.merchant_case_outcomes.length > 0
-                        ? c.merchant_case_outcomes[0]
-                        : null;
+                      const latestOutcome = latestOutcomeByClaimId.get(c.id) ?? null;
                       return (
                         <tr
                           key={c.id}
