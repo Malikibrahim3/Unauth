@@ -7,6 +7,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { formatDate } from '@/lib/utils/format'
 import { Badge, Button, WorkbenchActionBar, WorkbenchEmptyState, WorkbenchKpiStrip, WorkbenchPage } from '@/components/ui'
+import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems'
 import { requirePermission, PERMISSIONS, resolveDefaultAppPath } from '@/lib/permissions'
 
 export const metadata = {
@@ -65,16 +66,10 @@ export default async function ChargebacksPage() {
 
   return (
     <WorkbenchPage
-      title="Evidence Packages"
+      title="Evidence packages"
       subtitle="Signal data compiled from your records for disputed orders."
-      navItems={[
-        { key: 'overview', label: 'Overview', href: '/dashboard' },
-        { key: 'cases', label: 'Cases', href: '/inbox' },
-        { key: 'clusters', label: 'Clusters', href: '/customers?merchantsMin=2' },
-        { key: 'audits', label: 'Audits', href: '/history' },
-        { key: 'reports', label: 'Reports', href: '/reports' },
-      ]}
-      activeNavKey="reports"
+      navItems={WORKBENCH_NAV_ITEMS}
+      activeNavKey="customers"
       actions={
         <Link href="/customers">
           <Button variant="secondary" size="sm">View customers</Button>

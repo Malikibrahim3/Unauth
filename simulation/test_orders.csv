@@ -1,0 +1,21 @@
+order_id,customer_email,customer_name,order_date,order_value,delivery_postcode,order_status,refund_requested,refund_reason
+ORD-2025-00901,amelia.king@example.co.uk,Amelia King,2026-05-19,72.50,SW1A 1AA,delivered,false,
+ORD-2025-00902,priya.mehta@example.co.uk,Priya Mehta,2026-05-20,89.99,E1 6AN,delivered,true,Missing parcel after delivery scan
+ORD-2025-00903,oliver.brown@example.co.uk,Oliver Brown,2026-05-18,34.00,M4 6EF,delivered,false,
+ORD-2025-00904,sophie.evans@example.co.uk,Sophie Evans,2026-05-17,124.00,BS1 4QA,in_transit,false,
+ORD-2025-00905,liam.wilson@example.co.uk,Liam Wilson,2026-05-16,212.40,LS1 2AB,delivered,true,Item not received
+ORD-2025-00906,priya.mehta@example.co.uk,Priya Mehta,2026-05-15,67.50,E1 6AN,delivered,false,
+ORD-2025-00907,hannah.scott@example.co.uk,Hannah Scott,2026-05-14,45.20,CF10 1AA,cancelled,false,
+ORD-2025-00908,noah.patel@example.co.uk,Noah Patel,2026-05-13,338.00,B1 1AA,delivered,false,
+ORD-2025-00909,ava.roberts@example.co.uk,Ava Roberts,2026-05-12,58.00,N1 9GU,delivered,true,Damaged parcel on arrival
+ORD-2025-00910,george.hughes@example.co.uk,George Hughes,2026-05-11,92.15,SE1 7PB,delivered,false,
+ORD-2025-00911,isla.morgan@example.co.uk,Isla Morgan,2026-05-10,22.99,EH1 1YZ,in_transit,false,
+ORD-2025-00912,jacob.green@example.co.uk,Jacob Green,2026-05-09,144.00,G1 1AA,delivered,false,
+ORD-2025-00913,ruby.clarke@example.co.uk,Ruby Clarke,2026-05-08,75.75,L1 8JQ,delivered,false,
+ORD-2025-00914,ethan.lewis@example.co.uk,Ethan Lewis,2026-05-07,19.99,NE1 4LP,cancelled,false,
+ORD-2025-00915,mia.walker@example.co.uk,Mia Walker,2026-05-06,310.00,OX1 1PT,delivered,false,
+ORD-2025-00916,archie.hall@example.co.uk,Archie Hall,2026-05-05,48.50,YO1 7PR,delivered,false,
+ORD-2025-00917,ella.allen@example.co.uk,Ella Allen,2026-05-04,86.20,CB2 1TN,delivered,false,
+ORD-2025-00918,freddie.young@example.co.uk,Freddie Young,2026-05-03,129.99,BN1 1AA,in_transit,false,
+ORD-2025-00919,charlotte.wright@example.co.uk,Charlotte Wright,2026-05-02,39.95,W1A 1HQ,delivered,false,
+ORD-2025-00920,oscar.harris@example.co.uk,Oscar Harris,2026-05-01,266.00,M20 2LT,delivered,false,

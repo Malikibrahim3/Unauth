@@ -14,10 +14,13 @@ import {
 import { requirePermission, PERMISSIONS, resolveDefaultAppPath } from '@/lib/permissions';
 import TrackPageView from '@/components/common/TrackPageView';
 import DashboardCharts, { type TransactionChartData } from '@/components/dashboard/DashboardCharts';
+import NextUpPanel, { type NextUpClaim } from '@/components/dashboard/NextUpPanel';
 import { ConfidenceBadge } from '@/components/ui/ConfidenceBadge';
 import { Badge } from '@/components/ui/Badge';
 import { riskLevelToNewGrade } from '@/lib/confidence';
 import { signalCopy } from '@/lib/copy/signals';
+import { ACTIVE_CLAIM_STATUSES } from '@/lib/claims/sla';
+import { pickPriorityClaim } from '@/lib/claims/priority';
 
 type RunRow = Database['public']['Tables']['processing_jobs']['Row'];
 
@@ -192,10 +195,74 @@ export default async function DashboardPage() {
   const networkClusterRows = clusterRows.filter((profile) => profile.total_merchants_seen_at > 1);
   const visibleClusterRows = networkClusterRows.length > 0 ? networkClusterRows : clusterRows;
 
+  let nextUpClaims: NextUpClaim[] = [];
+  try {
+    const { data: rawClaims } = await serviceClient
+      .from('merchant_claims' as never)
+      .select('id,customer_id,claim_type,status,amount_at_risk,currency,submitted_at,created_at,updated_at')
+      .eq('merchant_id', ctx.merchantId)
+      .in('status', [...ACTIVE_CLAIM_STATUSES])
+      .limit(50);
+
+    const claimPool = (rawClaims ?? []) as Array<{
+      id: string;
+      customer_id: string | null;
+      claim_type: string;
+      status: string;
+      amount_at_risk: number | null;
+      currency: string | null;
+      submitted_at?: string | null;
+      created_at?: string | null;
+      updated_at?: string | null;
+    }>;
+
+    const remaining = [...claimPool];
+    const ranked: typeof claimPool = [];
+    while (ranked.length < 5 && remaining.length > 0) {
+      const next = pickPriorityClaim(remaining);
+      if (!next) break;
+      ranked.push(next);
+      remaining.splice(remaining.findIndex((claim) => claim.id === next.id), 1);
+    }
+
+    const customerIds = [...new Set(ranked.map((c) => c.customer_id).filter(Boolean) as string[])];
+    const profileById = new Map<string, { names: string[] | null; primary_email: string | null }>();
+    if (customerIds.length > 0) {
+      const { data: profiles } = await serviceClient
+        .from(TABLES.CUSTOMER_PROFILES)
+        .select('id, names, primary_email')
+        .in('id', customerIds);
+      for (const profile of (profiles ?? []) as Array<{ id: string; names: string[] | null; primary_email: string | null }>) {
+        profileById.set(profile.id, profile);
+      }
+    }
+
+    nextUpClaims = ranked
+      .filter((claim) => claim.customer_id)
+      .map((claim) => {
+        const profile = profileById.get(claim.customer_id!);
+        return {
+          id: claim.id,
+          customerId: claim.customer_id!,
+          customerName: profile?.names?.[0] ?? 'Unknown customer',
+          customerEmail: profile?.primary_email ?? null,
+          claimType: claim.claim_type,
+          status: claim.status,
+          amountAtRisk: claim.amount_at_risk,
+          currency: claim.currency,
+          submittedAt: claim.submitted_at,
+          createdAt: claim.created_at,
+          updatedAt: claim.updated_at,
+        };
+      });
+  } catch {
+    nextUpClaims = [];
+  }
+
   const activity: ActivityItem[] = [];
   if (latestRun) {
     activity.push({
-      type: 'AUDIT',
+      type: 'Audit',
       detail: `${latestRun.filename} · ${(latestRun.flagged_count ?? 0).toLocaleString()} flagged`,
       time: formatDateMode(latestRun.created_at, 'recent'),
       href: `/audit/${latestRun.id}`,
@@ -204,7 +271,7 @@ export default async function DashboardPage() {
   if (reviewRows[0]) {
     const row = reviewRows[0];
     activity.push({
-      type: 'QUEUE',
+      type: 'Queue',
       detail: `${row.customer_name ?? row.customer_email ?? 'Unidentified'} · ${row.match_status ?? 'candidate'}`,
       time: formatDateMode(row.processed_at, 'recent'),
       href: profileIdByTx.get(row.id) ? `/customers/${profileIdByTx.get(row.id)}` : `/audit/${row.job_id}`,
@@ -212,7 +279,7 @@ export default async function DashboardPage() {
   }
   if (ce3Packages > 0) {
     activity.push({
-      type: 'EVIDENCE',
+      type: 'Evidence',
       detail: `${ce3Packages} signal report${ce3Packages === 1 ? '' : 's'} with CE3.0 signals detected`,
       time: 'current',
       href: '/chargebacks',
@@ -220,7 +287,7 @@ export default async function DashboardPage() {
   }
   if (watchlistNeedReview > 0) {
     activity.push({
-      type: 'WATCHLIST',
+      type: 'Watchlist',
       detail: `${watchlistNeedReview} watchlist appearance${watchlistNeedReview === 1 ? '' : 's'} pending`,
       time: 'current',
       href: '/watchlist',
@@ -235,17 +302,25 @@ export default async function DashboardPage() {
         className="relative overflow-hidden border"
         style={{ borderColor: 'var(--border-default)', background: 'var(--bg-surface)', borderRadius: 4 }}
       >
-        <div className="absolute right-4 top-3 z-10 flex items-center gap-3">
-          <span className="t-label flex items-center gap-2" style={{ color: 'var(--ink-tertiary)' }}>
-            <span className="ua-pulse h-2 w-2 rounded-full" style={{ background: 'var(--sev-clear)' }} />
-            GRAPH LIVE
-          </span>
-          <Link href="/upload" className="btn-accent rounded-md px-3 py-1.5 text-caption font-semibold">
-            New Audit
-          </Link>
+        <div className="flex flex-wrap items-start justify-between gap-3 border-b px-4 py-3 md:px-5" style={{ borderColor: 'var(--border-default)' }}>
+          <div className="min-w-0">
+            <h1 className="t-heading" style={{ color: 'var(--ink-primary)' }}>Dashboard</h1>
+            <p className="text-body-sm mt-1" style={{ color: 'var(--ink-secondary)' }}>
+              Operational overview and priority work across your merchant data.
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="t-label flex items-center gap-2" style={{ color: 'var(--ink-tertiary)' }}>
+              <span className="ua-pulse h-2 w-2 rounded-full" style={{ background: 'var(--sev-clear)' }} />
+              Graph live
+            </span>
+            <Link href="/upload" className="btn-accent rounded-md px-3 py-1.5 text-caption font-semibold">
+              New audit
+            </Link>
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 border-b pt-9 md:grid-cols-[1.35fr_repeat(4,minmax(0,1fr))] md:pt-8" style={{ borderColor: 'var(--border-default)' }}>
+        <div className="grid grid-cols-2 border-b md:grid-cols-[1.35fr_repeat(4,minmax(0,1fr))]" style={{ borderColor: 'var(--border-default)' }}>
           {[
             {
               label: 'Exposure at risk',
@@ -289,6 +364,8 @@ export default async function DashboardPage() {
           ))}
         </div>
 
+        <NextUpPanel claims={nextUpClaims} inboxCount={reviewRows.length} />
+
         <DashboardCharts
           runs={typedRuns.map((run) => ({
             id: run.id,
@@ -304,7 +381,7 @@ export default async function DashboardPage() {
           <section className="border-r" style={{ borderColor: 'var(--border-default)' }}>
             <div className="flex items-center justify-between border-b px-4 py-2" style={{ borderColor: 'var(--border-default)', background: 'var(--bg-surface-alt)' }}>
               <div>
-                <p className="text-overline" style={{ color: 'var(--text-muted)' }}>Cases requiring attention</p>
+                <p className="text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Cases requiring attention</p>
                 <p className="text-caption" style={{ color: 'var(--text-subtle)' }}>
                   {reviewRows.length} in immediate queue
                 </p>
@@ -369,7 +446,7 @@ export default async function DashboardPage() {
 
           <aside>
             <div className="border-b px-4 py-2" style={{ borderColor: 'var(--border-default)', background: 'var(--bg-surface-alt)' }}>
-              <p className="text-overline" style={{ color: 'var(--text-muted)' }}>Network exposure</p>
+              <p className="text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Network exposure</p>
             </div>
             <div className="border-b px-4 py-2" style={{ borderColor: 'var(--border-subtle)' }}>
               {visibleClusterRows.length === 0 ? (
@@ -394,7 +471,7 @@ export default async function DashboardPage() {
             </div>
 
             <div className="border-b px-4 py-2" style={{ borderColor: 'var(--border-default)', background: 'var(--bg-surface-alt)' }}>
-              <p className="text-overline" style={{ color: 'var(--text-muted)' }}>Top signals</p>
+              <p className="text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Top signals</p>
             </div>
             <div className="border-b px-4 py-2" style={{ borderColor: 'var(--border-subtle)' }}>
               {topSignals.length === 0 ? (
@@ -412,7 +489,7 @@ export default async function DashboardPage() {
             </div>
 
             <div className="border-b px-4 py-2" style={{ borderColor: 'var(--border-default)', background: 'var(--bg-surface-alt)' }}>
-              <p className="text-overline" style={{ color: 'var(--text-muted)' }}>Activity</p>
+              <p className="text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Activity</p>
             </div>
             <div className="border-b px-4 py-2" style={{ borderColor: 'var(--border-subtle)' }}>
               {activity.length === 0 ? (
@@ -422,7 +499,7 @@ export default async function DashboardPage() {
                   {activity.slice(0, 5).map((item, idx) => {
                     const content = (
                       <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] gap-2">
-                        <span className="text-overline" style={{ color: 'var(--text-subtle)' }}>{item.type}</span>
+                        <span className="text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>{item.type}</span>
                         <p className="truncate text-caption" style={{ color: 'var(--text)' }}>{item.detail}</p>
                         <span className="text-caption font-mono" style={{ color: 'var(--text-subtle)' }}>{item.time}</span>
                       </div>

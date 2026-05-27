@@ -1,0 +1,238 @@
+{
+  "generatedAt": "2026-05-27T00:19:27.280Z",
+  "base": "http://localhost:3000",
+  "signup": {
+    "afterSubmitUrl": "http://localhost:3000/onboarding",
+    "raceResult": "navigated",
+    "confirmNeeded": false,
+    "snippet": "First-run checklist\nSkip\n\nComplete the first audit path, then add integrations and team access when you are ready.\n\nUpload your first audit\n01\nReview flagged customers\n02\nGenerate an evidence package\n03\nSet up chargeback integration\nOptional\n04\nInvite a team member\nOptional\n05\n\nSTEP 1\n\nUpload your first audit\n\nWhen you upload an order CSV, Unauth maps your order, refund, payment, and identity colu"
+  },
+  "pages": [
+    {
+      "name": "Landing",
+      "route": "/landing",
+      "url": "http://localhost:3000/landing",
+      "status": 200,
+      "screenshot": "screenshots/00_landing.png",
+      "domMs": 1925,
+      "navMs": 2550
+    },
+    {
+      "name": "Onboarding",
+      "route": "/onboarding",
+      "url": "http://localhost:3000/onboarding",
+      "screenshot": "screenshots/06_onboarding.png"
+    },
+    {
+      "name": "Dashboard",
+      "route": "/dashboard",
+      "url": "http://localhost:3000/onboarding",
+      "status": 200,
+      "screenshot": "screenshots/07_dashboard.png",
+      "domMs": 5786,
+      "navMs": 6320
+    },
+    {
+      "name": "Inbox",
+      "route": "/inbox",
+      "url": "http://localhost:3000/onboarding",
+      "status": 200,
+      "screenshot": "screenshots/08_inbox.png",
+      "domMs": 1136,
+      "navMs": 1646
+    },
+    {
+      "name": "New audit (upload)",
+      "route": "/upload",
+      "url": "http://localhost:3000/onboarding",
+      "status": 200,
+      "screenshot": "screenshots/09_upload.png",
+      "domMs": 1088,
+      "navMs": 1619
+    },
+    {
+      "name": "Audit history",
+      "route": "/history",
+      "url": "http://localhost:3000/onboarding",
+      "status": 200,
+      "screenshot": "screenshots/10_history.png",
+      "domMs": 1976,
+      "navMs": 2500
+    },
+    {
+      "name": "Reports",
+      "route": "/reports",
+      "url": "http://localhost:3000/onboarding",
+      "status": 200,
+      "screenshot": "screenshots/11_reports.png",
+      "domMs": 1346,
+      "navMs": 1878
+    },
+    {
+      "name": "Customers",
+      "route": "/customers",
+      "url": "http://localhost:3000/onboarding",
+      "status": 200,
+      "screenshot": "screenshots/12_customers.png",
+      "domMs": 1458,
+      "navMs": 1980
+    },
+    {
+      "name": "Watchlist",
+      "route": "/watchlist",
+      "url": "http://localhost:3000/onboarding",
+      "status": 200,
+      "screenshot": "screenshots/13_watchlist.png",
+      "domMs": 1554,
+      "navMs": 2099
+    },
+    {
+      "name": "Evidence packages",
+      "route": "/chargebacks",
+      "url": "http://localhost:3000/onboarding",
+      "status": 200,
+      "screenshot": "screenshots/14_chargebacks.png",
+      "domMs": 1217,
+      "navMs": 1740
+    },
+    {
+      "name": "Evidence",
+      "route": "/evidence",
+      "url": "http://localhost:3000/onboarding",
+      "status": 200,
+      "screenshot": "screenshots/15_evidence.png",
+      "domMs": 1178,
+      "navMs": 1682
+    },
+    {
+      "name": "Lookup",
+      "route": "/lookup",
+      "url": "http://localhost:3000/onboarding",
+      "status": 200,
+      "screenshot": "screenshots/16_lookup.png",
+      "domMs": 1274,
+      "navMs": 1798
+    },
+    {
+      "name": "Settings",
+      "route": "/settings",
+      "url": "http://localhost:3000/onboarding",
+      "status": 200,
+      "screenshot": "screenshots/17_settings.png",
+      "domMs": 1386,
+      "navMs": 1934
+    },
+    {
+      "name": "Settings · Account",
+      "route": "/settings/account",
+      "url": "http://localhost:3000/onboarding",
+      "status": 200,
+      "screenshot": "screenshots/17a_settings_account.png",
+      "domMs": 2269,
+      "navMs": 2793
+    },
+    {
+      "name": "Settings · Team",
+      "route": "/settings/team",
+      "url": "http://localhost:3000/onboarding",
+      "status": 200,
+      "screenshot": "screenshots/17b_settings_team.png",
+      "domMs": 1670,
+      "navMs": 2204
+    },
+    {
+      "name": "Settings · Audit trail",
+      "route": "/settings/audit-trail",
+      "url": "http://localhost:3000/onboarding",
+      "status": 200,
+      "screenshot": "screenshots/17c_settings_audit_trail.png",
+      "domMs": 1281,
+      "navMs": 1799
+    },
+    {
+      "name": "Help",
+      "route": "/help",
+      "url": "http://localhost:3000/onboarding",
+      "status": 200,
+      "screenshot": "screenshots/18_help.png",
+      "domMs": 948,
+      "navMs": 1460
+    },
+    {
+      "name": "Help · How it works",
+      "route": "/help/how-it-works",
+      "url": "http://localhost:3000/onboarding",
+      "status": 200,
+      "screenshot": "screenshots/18a_help_how.png",
+      "domMs": 1084,
+      "navMs": 1605
+    },
+    {
+      "name": "Help · Confidence grades",
+      "route": "/help/confidence-grades",
+      "url": "http://localhost:3000/onboarding",
+      "status": 200,
+      "screenshot": "screenshots/18b_help_grades.png",
+      "domMs": 964,
+      "navMs": 1466
+    },
+    {
+      "name": "Help · Identity matching",
+      "route": "/help/identity-matching",
+      "url": "http://localhost:3000/onboarding",
+      "status": 200,
+      "screenshot": "screenshots/18c_help_identity.png",
+      "domMs": 1218,
+      "navMs": 1740
+    },
+    {
+      "name": "Legal · Privacy",
+      "route": "/legal/privacy",
+      "url": "http://localhost:3000/legal/privacy",
+      "status": 200,
+      "screenshot": "screenshots/30_legal_privacy.png",
+      "domMs": 455,
+      "navMs": 968
+    },
+    {
+      "name": "Legal · Data handling",
+      "route": "/legal/data-handling",
+      "url": "http://localhost:3000/legal/data-handling",
+      "status": 200,
+      "screenshot": "screenshots/31_legal_data.png",
+      "domMs": 478,
+      "navMs": 980
+    },
+    {
+      "name": "Legal · DPA",
+      "route": "/legal/dpa",
+      "url": "http://localhost:3000/legal/dpa",
+      "status": 200,
+      "screenshot": "screenshots/32_legal_dpa.png",
+      "domMs": 561,
+      "navMs": 1077
+    }
+  ],
+  "steps": [
+    {
+      "step": "seedDemo",
+      "ok": false,
+      "status": 403,
+      "t": "{\"error\":\"Merchant account not found.\"}"
+    },
+    {
+      "step": "darkMode",
+      "toggledViaButton": false
+    }
+  ],
+  "timings": [],
+  "errorsByRoute": {
+    "/onboarding": [
+      "[network 403] POST http://localhost:3000/api/demo",
+      "[console error] Failed to load resource: the server responded with a status of 403 (Forbidden)"
+    ]
+  },
+  "limitations": [
+    "No customer profile link found on /customers — claim workflow could not start from list."
+  ]
+}

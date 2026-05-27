@@ -242,7 +242,7 @@ export default function AccountSettingsPage() {
       </SectionCard>
 
       {/* Password Change */}
-      <SectionCard title="Notifications" description="Password and access controls">
+      <SectionCard title="Security" description="Password and access controls">
       <form
         onSubmit={handlePasswordChange}
         className="space-y-4"

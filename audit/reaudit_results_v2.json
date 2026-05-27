@@ -1,0 +1,137 @@
+{
+  "results": {
+    "landingFinalUrl": "/landing",
+    "signupFinalUrl": "/login",
+    "signupRedirectsToLogin": true,
+    "signupHasSignupParam": false,
+    "loginHasCreateAccountToggle": true,
+    "loginHasRequestAccess": false,
+    "workEmailCopyVisible": true,
+    "signupFormShowsStoreFields": true,
+    "loggedIn": true,
+    "postLoginUrl": "/onboarding",
+    "blockedByOnboarding": true,
+    "demoStatus": 200,
+    "demoBody": "{\"runId\":\"82a067a2-a91f-4d81-ad52-4c4c4082affc\",\"flaggedCount\":40,\"rowCount\":3000}",
+    "dashboardReachable": true,
+    "dashboardHasSparseOverlay": true,
+    "sampleDataButtonFound": false,
+    "integrationsUrl": "/settings/integrations",
+    "integrationsAccessible": true,
+    "syncCardPresent": true,
+    "syncCardShowsNotConnected": true,
+    "syncCardHasConnectCTA": true,
+    "syncCardExplainsValue": true,
+    "integrationsHasBackLink": true,
+    "integrationsPageTitle": true,
+    "headerPillVisible": true,
+    "headerPillLinksToIntegrations": true,
+    "headerPillText": "Shopify not connected",
+    "noCustomers": true,
+    "claimFlow": {
+      "navigatedToCustomer": false,
+      "claimPanelOpens": false,
+      "rawEnumVisible": false,
+      "longFloatVisible": false,
+      "orderPickerWorks": false,
+      "saveSucceeds": false,
+      "saveHttpStatus": null,
+      "outcomeCanSet": false,
+      "evidenceLabelled": false,
+      "hashHidden": false,
+      "historyUpdates": false,
+      "loadingVisible": false,
+      "buttonsDisabledBeforeSave": false,
+      "humanReadableLabels": false,
+      "formInlineValidation": false
+    },
+    "claimsPageUrl": "/claims",
+    "claimsAccessible": true,
+    "claimsHasKpiStrip": true,
+    "claimsHasTable": true,
+    "claimsHasStatusFilter": true,
+    "claimsEmptyState": true,
+    "claimsEmptyStateHelpful": true,
+    "claimsInSidebar": false,
+    "claimsNavHref": null,
+    "navChecks": {
+      "dashboard": {
+        "requested": "/dashboard",
+        "final": "/dashboard",
+        "redirected": false,
+        "is404": false
+      },
+      "inbox": {
+        "requested": "/inbox",
+        "final": "/inbox",
+        "redirected": false,
+        "is404": false
+      },
+      "claims": {
+        "requested": "/claims",
+        "final": "/claims",
+        "redirected": false,
+        "is404": false
+      },
+      "customers": {
+        "requested": "/customers",
+        "final": "/customers",
+        "redirected": false,
+        "is404": false
+      },
+      "chargebacks": {
+        "requested": "/chargebacks",
+        "final": "/chargebacks",
+        "redirected": false,
+        "is404": false
+      },
+      "help": {
+        "requested": "/help",
+        "final": "/help",
+        "redirected": false,
+        "is404": false
+      },
+      "settings": {
+        "requested": "/settings",
+        "final": "/settings/account",
+        "redirected": true,
+        "is404": false
+      },
+      "settings_integrations": {
+        "requested": "/settings/integrations",
+        "final": "/settings/integrations",
+        "redirected": false,
+        "is404": false
+      },
+      "evidence_redirect": {
+        "requested": "/evidence",
+        "final": "/chargebacks",
+        "redirected": true,
+        "is404": false
+      },
+      "lookup_redirect": {
+        "requested": "/lookup",
+        "final": "/customers",
+        "redirected": true,
+        "is404": false
+      }
+    },
+    "helpHasAuditTabBar": true,
+    "helpHasOwnHeader": true,
+    "helpIsClean": false,
+    "settingsHasIntegrationsTab": true,
+    "evidenceRedirectsTo": "/chargebacks",
+    "evidenceIsSilentRedirect": true,
+    "lookupRedirectsTo": "/customers",
+    "lookupIsSilentRedirect": true
+  },
+  "errorLog": {
+    "/login": [
+      {
+        "type": "console",
+        "msg": "Failed to load resource: the server responded with a status of 400 ()"
+      }
+    ]
+  },
+  "apiErrors": []
+}

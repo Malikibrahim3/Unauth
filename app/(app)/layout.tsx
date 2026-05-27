@@ -9,6 +9,8 @@ import { headers } from 'next/headers';
 import { createServiceClient } from '@/lib/supabase/server';
 import { shouldRequireOnboarding } from '@/lib/account/onboardingGate';
 import { ensureMerchantContextForUser } from '@/lib/account/ensureMerchantContext';
+import { ACTIVE_CLAIM_STATUSES } from '@/lib/claims/sla';
+import { getShopifyConnectionStatus } from '@/lib/shopify/connectionStatus';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,20 +47,17 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       .limit(20)
     : Promise.resolve({ data: [] });
   const shopifyPromise = ctx
-    ? serviceClient
-      .from('merchant_shopify_connections' as any)
-      .select('shop_domain')
-      .eq('merchant_id', ctx.merchantId)
-      .maybeSingle()
-    : Promise.resolve({ data: null });
+    ? getShopifyConnectionStatus(serviceClient, ctx.merchantId)
+    : Promise.resolve({ connected: false, shopDomain: null, lastError: null });
   const claimsCountPromise = ctx
     ? serviceClient
       .from('merchant_claims' as any)
       .select('id', { count: 'exact', head: true })
       .eq('merchant_id', ctx.merchantId)
+      .in('status', [...ACTIVE_CLAIM_STATUSES])
     : Promise.resolve({ count: 0 });
 
-  const [{ data: merchantProfile }, { data: jobs }, { data: shopifyConnection }, { count: claimsCount }] = await Promise.all([merchantPromise, jobsPromise, shopifyPromise, claimsCountPromise]);
+  const [{ data: merchantProfile }, { data: jobs }, shopifyStatus, { count: claimsCount }] = await Promise.all([merchantPromise, jobsPromise, shopifyPromise, claimsCountPromise]);
 
   if (!isOnboarding) {
     const merchantComplete =
@@ -77,6 +76,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     (jobs ?? []).length > 0 &&
     (jobs as unknown as Array<{ is_demo: boolean }>).every((j) => j.is_demo);
 
+  const merchantName = ((merchantProfile as any)?.name as string | null) ?? null;
+  const connectedShopDomain = shopifyStatus.shopDomain;
+  const displayMerchantName = connectedShopDomain
+    ? connectedShopDomain.replace(/^www\./i, '').split('.')[0]?.replace(/[-_]/g, ' ') ?? merchantName
+    : merchantName;
+
   return (
     /*
      * Shell:  sidebar (sticky, full height) + right column (header sticky + scrollable body)
@@ -87,7 +92,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       className="flex h-screen overflow-hidden bg-[var(--surface-base)] text-[var(--ink-primary)]"
     >
       {/* ── Sidebar ── */}
-      <Sidebar merchantName={(merchantProfile as any)?.name ?? null} userEmail={user.email ?? ''} claimsCount={claimsCount ?? 0} />
+      <Sidebar merchantName={displayMerchantName ?? null} userEmail={user.email ?? ''} claimsCount={claimsCount ?? 0} />
 
       {/* Amplitude — initialise after session confirmed */}
       <AmplitudeInit
@@ -101,10 +106,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Sticky header */}
         <AppHeader
-          merchantName={(merchantProfile as any)?.name ?? null}
+          merchantName={displayMerchantName ?? null}
           userEmail={user.email ?? null}
-          shopifyConnected={!!(shopifyConnection as any)?.shop_domain}
-          shopifyShopDomain={(shopifyConnection as any)?.shop_domain ?? null}
+          shopifyConnected={shopifyStatus.connected}
+          shopifyShopDomain={shopifyStatus.shopDomain}
         />
 
         {/* Demo / data-quality banner (full-width, between header and page) */}

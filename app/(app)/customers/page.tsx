@@ -7,6 +7,7 @@ import CustomersFilterSheet from '@/components/customers/CustomersFilterSheet';
 import CustomersTableClient from '@/components/customers/CustomersTableClient';
 import PageSizeSelect from '@/components/common/PageSizeSelect';
 import { Button, WorkbenchActionBar, WorkbenchEmptyState, WorkbenchKpiStrip, WorkbenchPage } from '@/components/ui';
+import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
 import { RISK_TIER_COPY } from '@/lib/copy/riskTiers';
 import { escapePostgrestFilterValue } from '@/lib/supabase/merchantHelpers';
 import { STATUS_LABELS } from '@/lib/utils/investigationStatus';
@@ -332,17 +333,11 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
 
   return (
     <WorkbenchPage
-      title="Clusters"
-      subtitle="Segment, filter, and act on customer identity clusters."
-      navItems={[
-        { key: 'overview', label: 'Overview', href: '/dashboard' },
-        { key: 'cases', label: 'Cases', href: '/inbox' },
-        { key: 'clusters', label: 'Clusters', href: '/customers?merchantsMin=2' },
-        { key: 'audits', label: 'Audits', href: '/history' },
-        { key: 'reports', label: 'Reports', href: '/reports' },
-      ]}
-      activeNavKey="clusters"
-      actions={<Link href="/upload"><Button size="sm">New Audit</Button></Link>}
+      title="Customers"
+      subtitle="Search, filter, and act on customer identity profiles."
+      navItems={WORKBENCH_NAV_ITEMS}
+      activeNavKey="customers"
+      actions={<Link href="/upload"><Button size="sm">New audit</Button></Link>}
       kpiStrip={
         <WorkbenchKpiStrip
           items={[

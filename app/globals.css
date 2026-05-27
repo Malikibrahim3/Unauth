@@ -13,12 +13,12 @@
     --brand-rust:       #7B2D26;
     --brand-rust-hover: #5E2018;
     --brand-rust-soft:  #F4E6E0;
-    --brand-paper:      #F8F5EE;
+    --brand-paper:      #F6F5F3;
 
-    --bg-canvas:        #F8F5EE;
-    --bg-surface:       #FEFCF7;
-    --bg-surface-alt:   #F2EDE3;
-    --bg-surface-sunk:  #E9E0D1;
+    --bg-canvas:        #F6F5F3;
+    --bg-surface:       #FFFFFF;
+    --bg-surface-alt:   #F0EEEA;
+    --bg-surface-sunk:  #E8E6E2;
     --bg-hover:         #EFE8DA;
     --bg-selected:      #F4E6E0;
 
@@ -28,7 +28,7 @@
 
     /* Text — canonical names used throughout the app */
     --text:             #1A1814;
-    --text-muted:       #6E7A8A;
+    --text-muted:       #7A7268;
     --text-subtle:      #9AA5B4;
     --text-disabled:    #B9C2CF;
     --text-inverse:     #FFFFFF;
@@ -253,11 +253,11 @@
     --radius:              var(--radius-lg);
 
     /* ── Unauth light workbench palette (default for new users) ── */
-    --surface-base:    #FAF9F7;
+    --surface-base:    #F4F3F1;
     --surface-raised:  #FFFFFF;
-    --surface-overlay: #F5F1EB;
-    --surface-border:  #E8E3DC;
-    --surface-muted:   #EDE6DC;
+    --surface-overlay: #EEEDEA;
+    --surface-border:  #E2E0DC;
+    --surface-muted:   #E8E6E2;
     --surface-input:   #FFFDFC;
 
     --ink-primary:   #1A1612;
@@ -588,8 +588,8 @@
   body {
     background-color: var(--bg-canvas);
     color: var(--text);
-    font-size: 13px;
-    line-height: 19.5px;
+    font-size: 14px;
+    line-height: 21px;
     font-feature-settings: "kern" 1;
   }
 
@@ -644,7 +644,7 @@
   .t-heading { font-size: 1.25rem; line-height: 1.2; font-weight: 600; letter-spacing: 0; }
   .t-subhead { font-size: 0.9375rem; line-height: 1.3; font-weight: 500; letter-spacing: 0; }
   .t-body { font-size: 0.8125rem; line-height: 1.5; font-weight: 400; letter-spacing: 0; }
-  .t-label { font-size: 0.6875rem; line-height: 1.4; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; }
+  .t-label { font-size: 0.6875rem; line-height: 1.4; font-weight: 600; letter-spacing: 0.01em; }
   .t-caption { font-size: 0.625rem; line-height: 1.4; font-weight: 400; letter-spacing: 0.02em; }
   .t-score { font-family: var(--font-mono); font-size: 1.375rem; line-height: 1; font-weight: 600; letter-spacing: 0; }
   .t-mono { font-family: var(--font-mono); font-size: 0.75rem; line-height: 1.4; font-weight: 400; letter-spacing: 0.01em; }
@@ -1458,5 +1458,18 @@
     transform: none !important;
     animation: none !important;
     will-change: auto !important;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  button,
+  a,
+  summary,
+  [role='button'] {
+    transition: opacity 120ms ease, background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+  }
+
+  tr {
+    transition: background-color 120ms ease;
   }
 }

@@ -95,10 +95,10 @@ export default function BehaviorRoadmap({ events }: BehaviorRoadmapProps) {
 
   return (
     <div className="overflow-hidden rounded-md border" style={{ background: 'var(--surface-raised)', borderColor: 'var(--surface-border)' }}>
-      <div className="border-b px-4 py-3" style={{ background: 'var(--surface-overlay)', borderColor: 'var(--surface-border)' }}>
+      <div className="border-b px-4 py-3" style={{ borderColor: 'var(--surface-border)' }}>
         <div className="flex items-center justify-between gap-3">
-          <p className="t-label" style={{ color: 'var(--ink-tertiary)' }}>BEHAVIOR ROADMAP</p>
-          <p className="t-mono" style={{ color: 'var(--ink-secondary)' }}>{events.length} EVENTS</p>
+          <p className="text-[13px] font-semibold" style={{ color: 'var(--ink-primary)' }}>Behavior roadmap</p>
+          <p className="t-mono" style={{ color: 'var(--ink-secondary)' }}>{events.length} events</p>
         </div>
         <div
           className="mt-2 cursor-help"
@@ -111,8 +111,8 @@ export default function BehaviorRoadmap({ events }: BehaviorRoadmapProps) {
             {patternTags.map((tag) => (
               <span
                 key={tag}
-                className="rounded-sm border px-1.5 py-0.5 font-mono text-[10px] uppercase"
-                style={{ background: 'var(--surface-muted)', borderColor: 'var(--surface-border)', color: 'var(--ink-secondary)', letterSpacing: '0.04em' }}
+                className="rounded-sm border px-1.5 py-0.5 text-[11px] font-medium"
+                style={{ background: 'var(--surface-muted)', borderColor: 'var(--surface-border)', color: 'var(--ink-secondary)' }}
               >
                 {tag}
               </span>

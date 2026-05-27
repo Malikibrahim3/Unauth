@@ -69,11 +69,10 @@ function tierLabel(risk: string): string {
 }
 
 const OVERLINE: CSSProperties = {
-  fontSize: 10,
+  fontSize: 11,
   fontWeight: 600,
-  letterSpacing: '0.12em',
-  textTransform: 'uppercase',
-  color: 'var(--ink-tertiary)',
+  letterSpacing: '0.01em',
+  color: 'var(--ink-secondary)',
   lineHeight: 1,
 };
 
@@ -162,7 +161,7 @@ function DetailLine({
     <div className="flex items-start gap-2 min-w-0">
       <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0" style={{ color: 'var(--text-subtle)' }} />
       <div className="min-w-0">
-        <p style={{ fontSize: 10, color: 'var(--ink-tertiary)', lineHeight: 1.4, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</p>
+        <p style={{ fontSize: 11, color: 'var(--ink-secondary)', lineHeight: 1.4 }}>{label}</p>
         <p style={{ fontSize: 12, color: 'var(--ink-primary)', fontFamily: mono ? 'var(--font-mono)' : undefined, wordBreak: 'break-word' }}>
           {value}
         </p>
@@ -270,7 +269,7 @@ function OrderRoadmapCard({ order, isLast }: { order: OrderHistoryEntry; isLast:
             background: isCritical ? 'var(--sev-definite-fill)' : 'var(--sev-probable-fill)',
             border: `1px solid ${isCritical ? 'color-mix(in srgb, var(--sev-definite) 40%, transparent)' : 'color-mix(in srgb, var(--sev-probable) 40%, transparent)'}`,
           }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: isCritical ? 'var(--sev-definite)' : 'var(--sev-probable)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: isCritical ? 'var(--sev-definite)' : 'var(--sev-probable)' }}>
               {order.chargebackFiled ? 'Chargeback' : order.returnRequested ? 'Return' : 'Refund'}
             </p>
             <p style={{ fontSize: 11, color: 'var(--ink-primary)', marginTop: 2 }}>
@@ -556,8 +555,8 @@ function DrawerContent({
               width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
               background: profile.risk_level === 'critical' ? 'var(--sev-definite)' : profile.risk_level === 'high' ? 'var(--sev-probable)' : 'var(--ink-tertiary)',
             }} aria-hidden="true" />
-            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', color: 'var(--ink-secondary)', textTransform: 'uppercase' }}>
-              CASE FILE · {caseId}
+            <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.01em', color: 'var(--ink-secondary)' }}>
+              Case file · {caseId}
             </span>
           </div>
           <div className="flex items-center gap-1.5">
@@ -620,8 +619,8 @@ function DrawerContent({
         }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{
-              fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase',
-              color: 'var(--ink-tertiary)',
+              fontSize: 11, fontWeight: 600, letterSpacing: '0.01em',
+              color: 'var(--ink-secondary)',
               marginBottom: 1,
             }}>
               Signal summary
@@ -680,7 +679,7 @@ function DrawerContent({
           padding: '10px 12px',
         }}>
           <div className="flex items-start gap-2">
-            <ShieldCheck style={{ marginTop: 1, width: 14, height: 14, flexShrink: 0, color: 'var(--privacy-ink)' }} />
+            <ShieldCheck style={{ marginTop: 1, width: 14, height: 14, flexShrink: 0, color: 'var(--copper-bright)' }} />
             <p style={{ fontSize: 12, color: 'var(--ink-primary)', lineHeight: 1.6 }}>{narrative}</p>
           </div>
           {identitySignals.length > 0 && (
@@ -741,15 +740,15 @@ function DrawerContent({
                 border: '1px solid var(--surface-border)',
                 borderRadius: 3,
               }}>
-                <span style={{ width: 6, height: 6, borderRadius: '50%', marginTop: 5, flexShrink: 0, background: 'var(--privacy-ink)' }} />
+                <span style={{ width: 6, height: 6, borderRadius: '50%', marginTop: 5, flexShrink: 0, background: 'var(--copper-bright)' }} />
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <div className="flex items-center justify-between gap-3">
-                    <p style={{ ...OVERLINE, color: 'var(--privacy-ink)' }}>{flagLabel(acc.entityType)}</p>
+                    <p style={{ ...OVERLINE, color: 'var(--copper-bright)' }}>{flagLabel(acc.entityType)}</p>
                     <p style={{ fontSize: 10, color: 'var(--ink-tertiary)', flexShrink: 0 }}>{acc.confidence}% conf. · {formatDateMode(profile.last_seen, 'recent')}</p>
                   </div>
                   <p style={{ fontSize: 12, color: 'var(--data-id)', marginTop: 2, wordBreak: 'break-all', fontFamily: 'var(--font-mono)' }}>{acc.entityValue}</p>
                 </div>
-                <span style={{ ...CHIP, background: 'var(--privacy-fill)', color: 'var(--privacy-ink)', border: '1px solid var(--privacy-border)', flexShrink: 0 }}>LINKED</span>
+                <span style={{ ...CHIP, background: 'var(--copper-glow)', color: 'var(--copper-bright)', border: '1px solid color-mix(in srgb, var(--copper-bright) 40%, transparent)', flexShrink: 0 }}>LINKED</span>
               </div>
             ))}
           </div>

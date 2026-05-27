@@ -88,7 +88,21 @@ const FIELD_LABELS: Record<RequiredField, string> = {
   tracking_number: 'Tracking number',
 };
 
-export default function UploadClient() {
+type RecentImport = {
+  id: string;
+  filename: string | null;
+  label: string | null;
+  status: string;
+  createdAt: string;
+  totalRows: number;
+  flaggedCount: number;
+};
+
+type UploadClientProps = {
+  recentImports?: RecentImport[];
+};
+
+export default function UploadClient({ recentImports = [] }: UploadClientProps) {
   const router = useRouter();
   const [state, setState] = useState<UploadState>('idle');
   const [file, setFile] = useState<File | null>(null);
@@ -804,6 +818,47 @@ export default function UploadClient() {
 
   return (
     <div className="space-y-6">
+      {state === 'idle' && recentImports.length > 0 ? (
+        <div
+          className="rounded-lg border px-4 py-3"
+          style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}
+        >
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Recent imports</p>
+            <Link href="/history" className="text-xs font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
+              View all
+            </Link>
+          </div>
+          <ul className="mt-2 divide-y" style={{ borderColor: 'var(--border-subtle)' }}>
+            {recentImports.map((run) => (
+              <li key={run.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-xs">
+                <div className="min-w-0">
+                  <p className="truncate font-medium" style={{ color: 'var(--text)' }}>
+                    {run.label || run.filename || 'Untitled audit'}
+                  </p>
+                  <p style={{ color: 'var(--text-muted)' }}>
+                    {formatDateShort(run.createdAt)} · {run.totalRows.toLocaleString()} rows · {run.flaggedCount.toLocaleString()} matched
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span
+                    className="rounded px-2 py-0.5 font-semibold capitalize"
+                    style={{ background: 'var(--bg-inset)', color: 'var(--text-muted)' }}
+                  >
+                    {run.status.replace(/_/g, ' ')}
+                  </span>
+                  {run.status === 'complete' ? (
+                    <Link href={`/audit/${run.id}`} className="font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
+                      Open
+                    </Link>
+                  ) : null}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
       <div className="space-y-2">
         <div className="grid grid-cols-3 gap-2">
           {['Upload', 'Map fields', 'Confirm & run'].map((label, index) => (
@@ -817,7 +872,7 @@ export default function UploadClient() {
                     'var(--surface-muted)',
                 }}
               />
-              <p className="t-label mt-2" style={{ color: index <= stepIndex ? 'var(--ink-secondary)' : 'var(--ink-tertiary)' }}>
+              <p className="t-label mt-2 whitespace-nowrap" style={{ color: index <= stepIndex ? 'var(--ink-secondary)' : 'var(--ink-tertiary)' }}>
                 {label}
               </p>
             </div>

@@ -12,8 +12,8 @@ interface RiskDistributionStripProps {
 const ROWS = [
   { key: 'definite', label: 'Definite', color: 'var(--sev-definite)' },
   { key: 'probable', label: 'Probable', color: 'var(--sev-probable)' },
-  { key: 'candidate', label: 'Possible', color: 'var(--sev-neutral)' },
-  { key: 'weak', label: 'Weak', color: 'color-mix(in srgb, var(--sev-neutral) 45%, var(--surface-muted))' },
+  { key: 'candidate', label: 'Possible', color: 'var(--copper-mid)' },
+  { key: 'weak', label: 'Weak', color: 'var(--copper-dim)' },
 ] as const;
 
 export function RiskDistributionStrip({ definite, probable, candidate, weak }: RiskDistributionStripProps) {
@@ -24,9 +24,8 @@ export function RiskDistributionStrip({ definite, probable, candidate, weak }: R
     <div>
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="t-label" style={{ color: 'var(--ink-tertiary)' }}>
-            <span aria-hidden="true" className="ua-section-dot" />
-            ANCHOR METRIC
+          <div className="t-label" style={{ color: 'var(--ink-secondary)' }}>
+            Anchor metric
           </div>
           <div className="t-score mt-2 num" style={{ color: 'var(--data-score)' }}>
             {total.toLocaleString('en-GB')}

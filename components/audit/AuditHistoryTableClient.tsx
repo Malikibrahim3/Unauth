@@ -96,13 +96,13 @@ export default function AuditHistoryTableClient({ rows: initialRows }: AuditHist
                   aria-label="Select all audits"
                 />
               </th>
-              <th className="text-left px-4 py-2.5 text-overline">Label</th>
-              <th className="text-left px-4 py-2.5 text-overline">Type</th>
-              <th className="text-left px-4 py-2.5 text-overline">Period</th>
-              <th className="text-left px-4 py-2.5 text-overline">Status</th>
-              <th className="text-right px-4 py-2.5 text-overline">Rows</th>
-              <th className="text-right px-4 py-2.5 text-overline">Matched</th>
-              <th className="text-left px-4 py-2.5 text-overline">Uploaded</th>
+              <th className="text-left px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Label</th>
+              <th className="text-left px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Type</th>
+              <th className="text-left px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Period</th>
+              <th className="text-left px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Status</th>
+              <th className="text-right px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Rows</th>
+              <th className="text-right px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Matched</th>
+              <th className="text-left px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Uploaded</th>
               <th className="px-4 py-2.5"></th>
             </tr>
           </thead>

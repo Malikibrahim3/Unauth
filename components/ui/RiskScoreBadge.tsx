@@ -36,16 +36,15 @@ export function RiskScoreBadge({ score, level, size = 'md', className }: RiskSco
         paddingLeft: '7px',
         paddingRight: '7px',
         borderRadius: 3,
-        fontSize: 10,
-        fontWeight: 700,
-        letterSpacing: '0.06em',
-        textTransform: 'uppercase',
+        fontSize: 11,
+        fontWeight: 600,
+        letterSpacing: '0.01em',
         whiteSpace: 'nowrap',
         ...chipStyle,
       }}
       title={`Signal confidence ${score}/100`}
     >
-      CONF {formatScore(score)}
+      Conf {formatScore(score)}
     </span>
   );
 }

@@ -14,12 +14,12 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const BASE =
-  'inline-flex items-center justify-center gap-2 font-medium uppercase transition-colors duration-[120ms] focus-visible:outline-none disabled:opacity-50 disabled:cursor-not-allowed select-none';
+  'inline-flex items-center justify-center gap-2 font-medium transition-colors duration-[120ms] focus-visible:outline-none disabled:opacity-50 disabled:cursor-not-allowed select-none';
 
 const SIZES: Record<ButtonSize, { height: number; px: string; fontSize: number }> = {
-  sm: { height: 28, px: '10px', fontSize: 12 },
-  md: { height: 32, px: '14px', fontSize: 13 },
-  lg: { height: 36, px: '18px', fontSize: 13 },
+  sm: { height: 30, px: '10px', fontSize: 12 },
+  md: { height: 34, px: '14px', fontSize: 13 },
+  lg: { height: 38, px: '18px', fontSize: 14 },
 };
 
 const ICON_SIZES: Record<ButtonSize, string> = {
@@ -91,8 +91,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           paddingLeft: isLink ? undefined : sz.px,
           paddingRight: isLink ? undefined : sz.px,
           fontSize: sz.fontSize,
-          borderRadius: isLink ? undefined : 4,
-          letterSpacing: '0.04em',
+          borderRadius: isLink ? undefined : 'var(--radius-md)',
           ...variantStyle(variant),
           ...style,
         }}

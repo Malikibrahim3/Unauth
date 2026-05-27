@@ -960,6 +960,68 @@ export default function LandingPage() {
         </div>{/* end lg:grid */}
       </section>
 
+      {/* ── Shopify Connect ─────────────────────────────────────── */}
+      <section
+        id="how-it-works"
+        className="mx-auto max-w-[1400px] px-6 md:px-10 pt-14 md:pt-16 pb-10 md:pb-12"
+        style={{ background: t.bg }}
+      >
+        <Reveal delay={40} className="grid grid-cols-1 lg:grid-cols-[1.15fr_1fr] gap-8 items-start">
+          <div>
+            <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11px', fontWeight: 600, letterSpacing: '0.16em', textTransform: 'uppercase', color: t.accent, marginBottom: '10px' }}>
+              § 2 — SHOPIFY INTEGRATION
+            </p>
+            <h2 style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: 'clamp(24px,2.1vw,34px)', lineHeight: 1.08, letterSpacing: '-0.02em', margin: 0, color: t.ink }}>
+              Connect Shopify in under a minute.
+            </h2>
+            <p style={{ fontFamily: 'var(--font-serif, serif)', fontSize: '15px', color: t.inkSecondary, lineHeight: 1.6, marginTop: '14px', maxWidth: '62ch' }}>
+              No engineering lift. Connect once, sync orders and dispute evidence automatically, and move straight into case review.
+            </p>
+
+            <div className="mt-5 flex flex-wrap gap-2">
+              <span className="ua-schema-chip" style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11px', color: t.inkSecondary, background: t.surfaceAlt, border: `1px solid ${t.border}`, borderRadius: '4px', padding: '4px 8px' }}>Read-only scopes</span>
+              <span className="ua-schema-chip" style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11px', color: t.inkSecondary, background: t.surfaceAlt, border: `1px solid ${t.border}`, borderRadius: '4px', padding: '4px 8px' }}>No checkout changes</span>
+              <span className="ua-schema-chip" style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11px', color: t.inkSecondary, background: t.surfaceAlt, border: `1px solid ${t.border}`, borderRadius: '4px', padding: '4px 8px' }}>No CSV after connect</span>
+            </div>
+
+            <div className="mt-6 flex flex-wrap gap-3">
+              <a
+                href="/settings/integrations"
+                style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '13px', fontWeight: 600, color: t.bg, background: t.accent, padding: '9px 14px', border: `1px solid ${t.accent}`, borderRadius: '6px', textDecoration: 'none' }}
+                className="hover:bg-[var(--landing-accent-hover)]"
+              >
+                Connect Shopify →
+              </a>
+              <a
+                href="/demo"
+                style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '13px', fontWeight: 600, color: t.inkSecondary, background: t.surfaceAlt, padding: '9px 14px', border: `1px solid ${t.border}`, borderRadius: '6px', textDecoration: 'none' }}
+                className="hover:underline"
+              >
+                Watch 30-sec demo
+              </a>
+            </div>
+          </div>
+
+          <div style={{ background: t.surfaceAlt, border: `1px solid ${t.border}`, borderRadius: '6px', overflow: 'hidden' }}>
+            {[
+              ['1', 'Connect store', 'Install app and authorize your Shopify store.'],
+              ['2', 'Auto-sync data', 'Orders, fulfillment, and claim context start syncing immediately.'],
+              ['3', 'Review and close cases', 'Fraud team works a live queue with status + evidence links.'],
+            ].map(([step, title, copy], i) => (
+              <div key={title} style={{ padding: '14px 16px', borderTop: i === 0 ? 'none' : `1px solid ${t.border}` }}>
+                <div className="flex items-start gap-3">
+                  <span style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11px', color: t.bg, background: t.accent, borderRadius: '3px', padding: '2px 6px', lineHeight: 1.4 }}>{step}</span>
+                  <div>
+                    <p style={{ margin: 0, fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '14px', fontWeight: 600, color: t.ink }}>{title}</p>
+                    <p style={{ margin: '4px 0 0', fontFamily: 'var(--font-serif, serif)', fontSize: '13px', color: t.inkSecondary, lineHeight: 1.5 }}>{copy}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Reveal>
+      </section>
+
       {/* ── §1 · The pattern your store can't see — VISUAL ───────── */}
       <section
         className="ua-why-matters w-full -mt-[0vh] pb-6 md:pb-20"

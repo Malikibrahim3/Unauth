@@ -1,0 +1,157 @@
+{
+  "results": {
+    "landingUrl": "http://localhost:3000/landing",
+    "signupRedirectsTo": "http://localhost:3000/login",
+    "signupRedirectsToLoginSignup": false,
+    "hasCreateAccountLabel": true,
+    "hasRequestAccessLabel": false,
+    "workEmailMentioned": false,
+    "loggedIn": false,
+    "demoApiStatus": 401,
+    "demoApiBody": "{\"error\":\"Unauthorized\"}",
+    "area2": {
+      "signupRedirects": false,
+      "hasCreateAccountLabel": true,
+      "workEmailExplained": false,
+      "demoSucceeds": false,
+      "demoStatus": 401
+    },
+    "integrationsRouteWorks": true,
+    "hasSyncStatusCard": false,
+    "hasConnectionStatus": false,
+    "hasLastSynced": false,
+    "hasRecordCount": false,
+    "hasConnectCTA": false,
+    "integrationsExplainsWhat": false,
+    "headerPillToIntegrations": false,
+    "headerPillText": "",
+    "area3": {
+      "routeWorks": true,
+      "hasSyncCard": false,
+      "hasStatus": false,
+      "hasLastSynced": false,
+      "hasConnectCTA": false,
+      "headerPillExists": false
+    },
+    "hasCustomers": true,
+    "noCustomers": true,
+    "claimFlow": {
+      "navigatedToCustomer": false,
+      "claimPanelOpens": false,
+      "rawEnumVisible": false,
+      "longFloatVisible": false,
+      "orderPickerWorks": false,
+      "saveSuceeeds": false,
+      "saveHttpStatus": null,
+      "outcomeSetWorks": false,
+      "evidenceFieldLabelled": false,
+      "hashFieldHidden": false,
+      "historyTableUpdates": false,
+      "loadingStateVisible": false,
+      "buttonsDisabled": false,
+      "humanReadableLabels": false,
+      "panelVisuallyConsistent": false
+    },
+    "claimsRouteWorks": true,
+    "claimsHasKpiStrip": false,
+    "claimsHasTable": false,
+    "claimsHasFilter": false,
+    "claimsEmptyStateHelpful": false,
+    "claimsInNav": false,
+    "claimsNavText": "",
+    "area4": {
+      "routeWorks": true,
+      "hasKpiStrip": false,
+      "hasTable": false,
+      "hasFilter": false,
+      "claimsInNav": false,
+      "emptyStateHelpful": false
+    },
+    "navResults": {
+      "dashboard": {
+        "requestedUrl": "/dashboard",
+        "finalUrl": "/login",
+        "redirected": true,
+        "is404": false
+      },
+      "customers": {
+        "requestedUrl": "/customers",
+        "finalUrl": "/login",
+        "redirected": true,
+        "is404": false
+      },
+      "inbox": {
+        "requestedUrl": "/inbox",
+        "finalUrl": "/login",
+        "redirected": true,
+        "is404": false
+      },
+      "claims": {
+        "requestedUrl": "/claims",
+        "finalUrl": "/login",
+        "redirected": true,
+        "is404": false
+      },
+      "help": {
+        "requestedUrl": "/help",
+        "finalUrl": "/login",
+        "redirected": true,
+        "is404": false
+      },
+      "settings": {
+        "requestedUrl": "/settings",
+        "finalUrl": "/login",
+        "redirected": true,
+        "is404": false
+      },
+      "settings_integrations": {
+        "requestedUrl": "/settings/integrations",
+        "finalUrl": "/login",
+        "redirected": true,
+        "is404": false
+      },
+      "evidence_redirect": {
+        "requestedUrl": "/evidence",
+        "finalUrl": "/login",
+        "redirected": true,
+        "is404": false
+      },
+      "lookup_redirect": {
+        "requestedUrl": "/lookup",
+        "finalUrl": "/login",
+        "redirected": true,
+        "is404": false
+      },
+      "chargebacks": {
+        "requestedUrl": "/chargebacks",
+        "finalUrl": "/login",
+        "redirected": true,
+        "is404": false
+      }
+    },
+    "helpHasTabBar": false,
+    "helpHasBreadcrumb": false,
+    "helpIsClean": true,
+    "evidenceRedirectsTo": "/login",
+    "evidenceIsSilentRedirect": true,
+    "lookupRedirectsTo": "/login",
+    "lookupIsSilentRedirect": true,
+    "settingsHasIntegrationsTab": false,
+    "area5": {
+      "helpIsClean": true,
+      "settingsHasIntegrations": false,
+      "evidenceSilentRedirect": true,
+      "lookupSilentRedirect": true,
+      "claimsInNav": false
+    }
+  },
+  "errorLog": {
+    "/signup": [
+      {
+        "type": "console_error",
+        "msg": "Failed to load resource: the server responded with a status of 400 ()",
+        "ts": "2026-05-27T01:22:27.511Z"
+      }
+    ]
+  }
+}

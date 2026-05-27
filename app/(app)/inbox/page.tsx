@@ -8,6 +8,7 @@ import { signalLabel } from '@/lib/copy/signalLabels';
 import PageSizeSelect from '@/components/common/PageSizeSelect';
 import { fetchMerchantReviewQueueRows } from '@/lib/supabase/merchantHelpers';
 import { Button, WorkbenchActionBar, WorkbenchEmptyState, WorkbenchKpiStrip, WorkbenchPage } from '@/components/ui';
+import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
 import { ACTIVE_CLAIM_STATUSES, formatClaimAge, getClaimSlaState } from '@/lib/claims/sla';
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
@@ -98,20 +99,14 @@ export default async function InboxPage({ searchParams }: { searchParams?: Promi
 
   return (
     <WorkbenchPage
-      title="Cases"
+      title="Inbox"
       subtitle="Identity-flagged transactions awaiting review"
-      navItems={[
-        { key: 'overview', label: 'Overview', href: '/dashboard' },
-        { key: 'cases', label: 'Cases', href: '/inbox' },
-        { key: 'clusters', label: 'Clusters', href: '/customers?merchantsMin=2' },
-        { key: 'audits', label: 'Audits', href: '/history' },
-        { key: 'reports', label: 'Reports', href: '/reports' },
-      ]}
-      activeNavKey="cases"
+      navItems={WORKBENCH_NAV_ITEMS}
+      activeNavKey="inbox"
       actions={
         <div className="flex items-center gap-2">
-          <a href="/api/inbox/export"><Button variant="secondary" size="sm">Export Queue</Button></a>
-          <Link href="/upload"><Button size="sm">New Audit</Button></Link>
+          <a href="/api/inbox/export"><Button variant="secondary" size="sm">Export queue</Button></a>
+          <Link href="/upload"><Button size="sm">New audit</Button></Link>
         </div>
       }
       kpiStrip={

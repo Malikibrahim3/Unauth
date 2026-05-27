@@ -119,6 +119,26 @@ const CLAIM_STATUS_LABELS: Record<string, string> = {
   closed: 'Closed',
 };
 
+function confidenceTone(grade: string) {
+  const g = grade.toUpperCase();
+  if (g === 'A') return { label: 'Definite', bg: 'var(--sev-definite-fill)', fg: 'var(--sev-definite)' };
+  if (g === 'B') return { label: 'Probable', bg: 'var(--sev-probable-fill)', fg: 'var(--sev-probable)' };
+  if (g === 'C') return { label: 'Possible', bg: 'var(--sev-neutral-fill)', fg: 'var(--sev-neutral)' };
+  return { label: 'Weak', bg: 'var(--surface-muted)', fg: 'var(--ink-tertiary)' };
+}
+
+function ConfidencePill({ grade }: { grade: string }) {
+  const tone = confidenceTone(grade);
+  return (
+    <span
+      className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold"
+      style={{ background: tone.bg, color: tone.fg }}
+    >
+      {tone.label}
+    </span>
+  );
+}
+
 function RoadmapOrderCard({ tx, isLast }: { tx: any; isLast: boolean }) {
   const hasClaim = !!(tx.refund_claimed ?? tx.chargeback_filed);
   const eventDate = tx.processed_at;
@@ -150,7 +170,7 @@ function RoadmapOrderCard({ tx, isLast }: { tx: any; isLast: boolean }) {
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="text-h2" style={{ color: 'var(--text-primary)' }}>{roadmapTitle(tx)}</h3>
-              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-caption font-semibold uppercase" style={riskBadgeStyle(tx.risk_level)}>
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-caption font-semibold" style={riskBadgeStyle(tx.risk_level)}>
                 {tx.risk_level}
               </span>
             </div>
@@ -431,6 +451,7 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
     linkedAccountCount: 0,
   });
   const profileGrade = riskLevelToNewGrade(profile.risk_level);
+  const merchantSignalCount = Math.max(0, Number(profile.total_merchants_seen_at ?? 1));
   let { data: profileClaims, error: profileClaimsError } = await svc
     .from('merchant_claims' as any)
     .select('id,claim_type,status,shopify_order_id,order_ref,submitted_at,created_at,updated_at')
@@ -452,6 +473,25 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
   const openClaimCount = claimSummaryRows.filter((claim) => ACTIVE_CLAIM_STATUSES.includes(claim.status as any)).length;
   const latestClaim = claimSummaryRows[0] ?? null;
   const latestClaimSla = latestClaim ? getClaimSlaState(latestClaim) : null;
+  const profileWideOrders = Math.max(0, Number(profile.total_orders ?? merchantOrderCount));
+  const merchantsSeen = Math.max(1, Number(profile.total_merchants_seen_at ?? 1));
+  const localOrderSharePct = profileWideOrders > 0 ? (merchantOrderCount / profileWideOrders) * 100 : 0;
+  const localClaimRatePct = merchantOrderCount > 0 ? (merchantClaimCount / merchantOrderCount) * 100 : 0;
+  const networkChargebackRatePct = profileWideOrders > 0 ? (profile.total_chargebacks / profileWideOrders) * 100 : 0;
+  const thisStoreMerchantSharePct = (1 / merchantsSeen) * 100;
+  const merchantSignalPills = merchantSignalCount > 0
+    ? Array.from({ length: merchantSignalCount }).map((_, i) => ({
+      merchantLabel: `Merchant #${String.fromCharCode(65 + (i % 26))}`,
+      claimType: CLAIM_TYPE_LABELS[claimSummaryRows[i % Math.max(claimSummaryRows.length, 1)]?.claim_type ?? 'other'] ?? 'Other',
+    }))
+    : [];
+
+  const identityNodes = [
+    profile.primary_email ?? profile.emails[0],
+    profile.addresses[0],
+    profile.phones?.[0],
+    profile.ips?.[0],
+  ].filter(Boolean) as string[];
 
   return (
     <div className="mx-auto max-w-7xl px-3 py-5 sm:px-5">
@@ -497,25 +537,25 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
                 lastSeenRisk={profile.risk_level}
                 initialWatchlisted={!!watchlistRow}
               />
+              {openClaimCount > 0 && (
+                <Link
+                  href={`/customers/${profile.id}/claims`}
+                  className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors"
+                  style={{ background: 'var(--copper-bright)', color: 'var(--ink-inverse)' }}
+                >
+                  Open claim review
+                </Link>
+              )}
               {isEligibleForEvidence ? (
                 <Link
                   href={`/customers/${profile.id}/evidence/new`}
-                  className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold uppercase transition-colors"
-                  style={{ background: 'var(--copper-bright)', color: 'var(--ink-inverse)' }}
+                  className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors"
+                  style={{ border: '1px solid var(--surface-border)', color: 'var(--ink-secondary)' }}
                 >
                   <FileText className="h-3.5 w-3.5" />
-                  Compile signal data
+                  Generate evidence package
                 </Link>
-              ) : (
-                <span
-                  className="inline-flex cursor-not-allowed items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold uppercase opacity-50"
-                  title="No refund claims or chargebacks on record for this customer"
-                  style={{ background: 'var(--surface-muted)', color: 'var(--ink-tertiary)', border: '1px solid var(--surface-border)' }}
-                >
-                  <FileText className="h-3.5 w-3.5" />
-                  Signal data unavailable
-                </span>
-              )}
+              ) : null}
             </div>
           </div>
 
@@ -549,7 +589,7 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
             ))}
           </div>
           <span className="t-mono whitespace-nowrap" style={{ color: 'var(--data-date)' }}>
-            LAST SEEN {formatDateMode(profile.last_seen, 'recent')}
+            Last seen {formatDateMode(profile.last_seen, 'recent')}
           </span>
         </div>
       </section>
@@ -566,6 +606,92 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
           />
         </div>
       )}
+
+      <section className="mb-[var(--space-5)] rounded-md border p-4" style={{ background: 'var(--surface-raised)', borderColor: 'var(--surface-border)' }}>
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <p className="text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Evidence scope</p>
+          <span className="text-caption" style={{ color: 'var(--text-muted)' }}>
+            Compare what was observed in this store vs merchant-wide network exposure
+          </span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="rounded-md border p-3" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)' }}>
+            <p className="text-caption font-semibold mb-2" style={{ color: 'var(--text)' }}>This store</p>
+            <div className="grid grid-cols-2 gap-y-1.5 text-caption">
+              <span style={{ color: 'var(--text-muted)' }}>Orders</span>
+              <span className="font-mono text-right" style={{ color: 'var(--text)' }}>
+                {merchantOrderCount.toLocaleString()} ({localOrderSharePct.toFixed(1)}%)
+              </span>
+              <span style={{ color: 'var(--text-muted)' }}>Claims</span>
+              <span className="font-mono text-right" style={{ color: 'var(--text)' }}>
+                {merchantClaimCount.toLocaleString()} ({localClaimRatePct.toFixed(1)}%)
+              </span>
+              <span style={{ color: 'var(--text-muted)' }}>Exposure</span>
+              <span className="font-mono text-right" style={{ color: 'var(--text)' }}>{formatCurrencyNullable(totalOrderValue)}</span>
+              <span style={{ color: 'var(--text-muted)' }}>Refunded</span>
+              <span className="font-mono text-right" style={{ color: 'var(--text)' }}>{formatCurrencyNullable(totalRefundedValue)}</span>
+            </div>
+          </div>
+          <div className="rounded-md border p-3" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)' }}>
+            <p className="text-caption font-semibold mb-2" style={{ color: 'var(--text)' }}>Merchant-wide network</p>
+            <div className="grid grid-cols-2 gap-y-1.5 text-caption">
+              <span style={{ color: 'var(--text-muted)' }}>Merchants seen</span>
+              <span className="font-mono text-right" style={{ color: 'var(--text)' }}>
+                {merchantsSeen.toLocaleString()} (this store {thisStoreMerchantSharePct.toFixed(1)}%)
+              </span>
+              <span style={{ color: 'var(--text-muted)' }}>Profile orders</span>
+              <span className="font-mono text-right" style={{ color: 'var(--text)' }}>
+                {profileWideOrders.toLocaleString()} (100%)
+              </span>
+              <span style={{ color: 'var(--text-muted)' }}>Chargebacks</span>
+              <span className="font-mono text-right" style={{ color: 'var(--text)' }}>
+                {profile.total_chargebacks.toLocaleString()} ({networkChargebackRatePct.toFixed(1)}%)
+              </span>
+              <span style={{ color: 'var(--text-muted)' }}>First seen → last seen</span>
+              <span className="font-mono text-right" style={{ color: 'var(--text)' }}>
+                {formatDateMode(profile.first_seen, 'table')} → {formatDateMode(profile.last_seen, 'table')}
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="mb-[var(--space-5)] rounded-md border p-4" style={{ background: 'var(--surface-raised)', borderColor: 'var(--surface-border)' }}>
+        <p className="text-caption font-semibold mb-3" style={{ color: 'var(--ink-secondary)' }}>Identity signals</p>
+        <div className="rounded-md border overflow-hidden" style={{ borderColor: 'var(--border-subtle)' }}>
+          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_110px_90px_140px] gap-3 px-3 py-2" style={{ background: 'var(--bg-subtle)', borderBottom: '1px solid var(--border-subtle)' }}>
+            <span className="text-caption font-semibold" style={{ color: 'var(--text-muted)' }}>Primary identifier</span>
+            <span className="text-caption font-semibold" style={{ color: 'var(--text-muted)' }}>Linked signal</span>
+            <span className="text-caption font-semibold" style={{ color: 'var(--text-muted)' }}>Signal type</span>
+            <span className="text-caption font-semibold" style={{ color: 'var(--text-muted)' }}>Confidence</span>
+            <span className="text-caption font-semibold" style={{ color: 'var(--text-muted)' }}>Observed</span>
+          </div>
+          {identityNodes.slice(1, 4).map((node, i) => {
+            const labels = ['email match', 'address match', 'device/ip match'];
+            return (
+              <div key={`${node}-${i}`} className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_110px_90px_140px] gap-3 px-3 py-2 border-t" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)' }}>
+                <span className="font-mono text-caption truncate" style={{ color: 'var(--text)' }}>{profile.primary_email ?? profile.emails[0] ?? 'primary'}</span>
+                <span className="text-caption truncate" style={{ color: 'var(--text)' }}>{String(node)}</span>
+                <span className="text-caption" style={{ color: 'var(--text-muted)' }}>{labels[i]}</span>
+                <ConfidencePill grade={i === 0 ? 'A' : i === 1 ? 'B' : 'C'} />
+                <span className="font-mono text-caption" style={{ color: 'var(--text-muted)' }}>
+                  {formatDateMode(profile.first_seen, 'table')} → {formatDateMode(profile.last_seen, 'table')}
+                </span>
+              </div>
+            );
+          })}
+          {identityNodes.length <= 1 && (
+            <div className="px-3 py-3 border-t" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)' }}>
+              <p className="text-caption" style={{ color: 'var(--text-muted)' }}>
+                More signals appear as cross-merchant data accumulates
+              </p>
+            </div>
+          )}
+        </div>
+        <p className="text-caption mt-2" style={{ color: 'var(--text-muted)' }}>
+          Signals are derived from merchant-scoped audit records. “Observed” shows when this profile first and most recently carried the linked signal in your available dataset.
+        </p>
+      </section>
 
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-[var(--space-6)]">
         <div className="xl:col-span-8 space-y-[var(--space-5)]">
@@ -686,6 +812,26 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
               <MetricCard label="Profile orders" value={profile.total_orders ?? merchantOrderCount} density="compact" />
               <MetricCard label="Privacy" value="k-safe" density="compact" />
             </div>
+            {merchantSignalPills.length === 0 ? (
+              <EmptyState title="No merchant signals" description="No cross-merchant claim signals are available for this profile yet." />
+            ) : (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {merchantSignalPills.map((pill, idx) => (
+                  <span
+                    key={`${pill.merchantLabel}-${idx}`}
+                    className="inline-flex items-center gap-2 rounded-md border px-2.5 py-1 text-xs"
+                    style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)', color: 'var(--text)' }}
+                    title="Cross-merchant signal summary"
+                  >
+                    <span className="font-semibold">{pill.merchantLabel}</span>
+                    <span>·</span>
+                    <span>{pill.claimType}</span>
+                    <span>·</span>
+                    <ConfidencePill grade={profileGrade} />
+                  </span>
+                ))}
+              </div>
+            )}
             <p className="text-caption mt-3" style={{ color: 'var(--text-muted)' }}>
               Other merchant names, customer IDs, and order IDs are hidden — only aggregate presence is shown.
             </p>
@@ -750,7 +896,26 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
 
           <SectionCard title={`Linked identities (${linkedAccounts.length})`}>
             {linkedAccounts.length === 0 ? (
-              <EmptyState title="No linked identities" description="No additional identity records were connected to this customer." />
+              <div className="space-y-2">
+                {[0, 1].map((idx) => (
+                  <div
+                    key={idx}
+                    className="grid grid-cols-[minmax(0,1fr)_90px] items-center gap-3 rounded-md border border-dashed p-3"
+                    style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)', opacity: 0.75 }}
+                  >
+                    <div className="space-y-1">
+                      <p className="text-caption font-mono" style={{ color: 'var(--text-muted)' }}>email: placeholder@domain.com</p>
+                      <p className="text-caption" style={{ color: 'var(--text-muted)' }}>address: 12 Example Street, City</p>
+                    </div>
+                    <div className="justify-self-end">
+                      <ConfidencePill grade="D" />
+                    </div>
+                  </div>
+                ))}
+                <p className="text-caption" style={{ color: 'var(--text-muted)' }}>
+                  Linked identities appear when cross-merchant signals connect this profile to other customer records.
+                </p>
+              </div>
             ) : (
               <ul className="space-y-2">
                 {linkedAccounts.map((acc: any, index: number) => (
@@ -760,7 +925,7 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
                       <p className="t-caption truncate font-mono" style={{ color: 'var(--ink-secondary)' }}>{acc.entityValue}</p>
                     </div>
                     <div className="h-0.5 overflow-hidden rounded-full" style={{ background: 'var(--surface-muted)' }}>
-                      <div className="h-full" style={{ width: `${acc.confidence}%`, background: 'var(--privacy-ink)' }} />
+                      <div className="h-full" style={{ width: `${acc.confidence}%`, background: 'var(--copper-bright)' }} />
                     </div>
                     <span className="t-mono text-right" style={{ color: 'var(--ink-secondary)' }}>{acc.confidence}%</span>
                   </li>

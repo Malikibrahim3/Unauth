@@ -31,31 +31,31 @@ const GRADE_TONE = {
   A: {
     fg: 'var(--sev-definite)',
     fill: 'var(--sev-definite-fill)',
-    label: 'DEFINITE',
+    label: 'Definite',
     dashed: false,
   },
   B: {
     fg: 'var(--sev-probable)',
     fill: 'var(--sev-probable-fill)',
-    label: 'PROBABLE',
+    label: 'Probable',
     dashed: false,
   },
   C: {
     fg: 'var(--sev-neutral)',
     fill: 'var(--sev-neutral-fill)',
-    label: 'POSSIBLE',
+    label: 'Possible',
     dashed: false,
   },
   D: {
     fg: 'color-mix(in srgb, var(--sev-neutral) 60%, transparent)',
     fill: 'var(--sev-neutral-fill)',
-    label: 'WEAK',
+    label: 'Weak',
     dashed: true,
   },
   F: {
     fg: 'var(--ink-tertiary)',
     fill: 'var(--surface-muted)',
-    label: 'WEAK',
+    label: 'Weak',
     dashed: true,
   },
 } as const;
@@ -91,9 +91,9 @@ export function ConfidenceBadge({
   const badge = (
     <span
       title={panelEnabled ? undefined : title}
-      className="inline-flex items-center overflow-hidden font-mono uppercase tabular-nums"
+      className="inline-flex items-center overflow-hidden font-mono tabular-nums"
       style={{
-        width: compact ? 20 : score != null ? 108 : 80,
+        width: compact ? 20 : score != null ? 112 : 96,
         height: compact ? 20 : 22,
         borderRadius: 'var(--radius-sm)',
         background: tone.fill,
@@ -121,7 +121,7 @@ export function ConfidenceBadge({
               color: 'var(--ink-secondary)',
               fontSize: 10,
               fontWeight: 600,
-              letterSpacing: '0.04em',
+              letterSpacing: '0.01em',
               lineHeight: 1,
             }}
           >

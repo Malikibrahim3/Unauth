@@ -1,0 +1,165 @@
+{
+  "generated_at": "2026-05-27T17:50:05.449Z",
+  "base_url": "http://localhost:3000",
+  "account": {
+    "email": "simulation@unauth-test.com",
+    "merchant_id": "137aae66-a4b4-4278-80c0-e52075bcc057",
+    "shop_domain": "aurora-outfitters.myshopify.com"
+  },
+  "captures": [
+    {
+      "file": "./design-audit/screenshots/00_root_landing_or_redirect.png",
+      "label": "Root route / before auth",
+      "url": "http://localhost:3000/landing",
+      "title": "Unauth — Fraud Intelligence for Ecommerce",
+      "viewport": {
+        "width": 1440,
+        "height": 980
+      },
+      "route": "/"
+    },
+    {
+      "file": "./design-audit/screenshots/00_login.png",
+      "label": "Login page",
+      "url": "http://localhost:3000/login",
+      "title": "Unauth — Order Identity Review",
+      "viewport": {
+        "width": 1440,
+        "height": 980
+      },
+      "route": "/login"
+    },
+    {
+      "file": "./design-audit/screenshots/00_signup_state.png",
+      "label": "Signup state on login page",
+      "url": "http://localhost:3000/login",
+      "title": "Unauth — Order Identity Review",
+      "viewport": {
+        "width": 1440,
+        "height": 980
+      },
+      "route": "/login?signup-state"
+    }
+  ],
+  "route_observations": [
+    {
+      "route": "/",
+      "label": "Root route / before auth",
+      "path": "/landing",
+      "h1": "Catch serial refund fraud before it costs you again.",
+      "bodyText": "Unauth How it works Network Evidence Security Sign in Run free audit → CROSS-MERCHANT FRAUD GRAPH · ECOMMERCE Issue 04 · 2026-05-27 Catch serial refund fraud before it costs you again. Upload your orders. We link refund abuse, INR claims, and friendly fraud across merchants — and hand you a scored case file. Free. No account. No integration. Run free audit → See how it works → INBOX · IDENTITY-FLAGGED CASES 25 OPEN · £5,192 AT RISK § 2 — SHOPIFY INTEGRATION Connect Shopify in under a minute. No engineering lift. Connect once, sync orders and dispute evidence automatically, and move straight into case review. Read-only scopes No checkout changes No CSV after connect Connect Shopify → Watch 30-sec demo 1 Connect store Install app and authorize your Shopify store. 2 Auto-sync data Orders, fulfillment, and claim context start syncing immediately. 3 Review and close cases Fraud team works a live queue with status + evidence links. #u_kessler.07 · DEFINITE · 0.94 · shared_card shared_ip · BLOCK #u_midform.13 · PROBABLE · 0.81 · shared_email name_variant · REVIEW #u_northrun.02 · DEFINITE · 0.97 · shared_device shared_card · BLOCK #u_primeco.19 · POSSIBLE · 0.58 · shared_ip address_mismatch · WATCH #u_oakshelf.04 · PROBABLE · 0.76 · shared_email shared_card · REVIEW #u_bridleworks.11 · DEFINITE · 0.92 · shared_card shared_device · BLOCK #u_kessler.21 · WEAK · 0.38 · name_variant · WAT",
+      "tokens": {
+        "--surface-base": "#faf9f7",
+        "--surface-raised": "#fff",
+        "--surface-overlay": "#f5f1eb",
+        "--surface-border": "#e8e3dc",
+        "--ink-primary": "#1a1612",
+        "--ink-secondary": "#7a6f65",
+        "--ink-tertiary": "#a6998d",
+        "--copper-bright": "#8a2828",
+        "--copper-mid": "#7b2d26",
+        "--bg-canvas": "#f8f5ee",
+        "--bg-surface": "#fefcf7",
+        "--text-muted": "#6e7a8a",
+        "--risk-critical": "#9f1d1d",
+        "--risk-high": "#b6512a",
+        "--risk-medium": "#8b6a14",
+        "--risk-low": "#2f6b43"
+      },
+      "tables": [],
+      "buttons": [
+        "How it works",
+        "Network",
+        "Evidence",
+        "Security",
+        "Sign in",
+        "Audit →",
+        "Run free audit →",
+        "Run free audit →",
+        "See how it works →",
+        "1",
+        "Connect Shopify →",
+        "Watch 30-sec demo",
+        "3",
+        "4",
+        "5",
+        "01\nUpload\n11ms",
+        "02\nHash\n4ms",
+        "03\nResolve\n17ms",
+        "04\nCase File\n6ms",
+        "PAUSE",
+        "Run a free audit →",
+        "Audit portal",
+        "Book a pilot",
+        "Interactive demo",
+        "Privacy notice",
+        "Data Processing Addendum",
+        "Data handling",
+        "Pilot terms",
+        "hello@unauth.app"
+      ],
+      "inputs": [
+        {
+          "tag": "input",
+          "type": "email",
+          "placeholder": "you@yourstore.com",
+          "label": "Work email"
+        }
+      ],
+      "mainScrollHeight": 6628,
+      "mainClientHeight": 6628,
+      "bodyClass": "font-sans antialiased"
+    },
+    {
+      "route": "/login",
+      "label": "Login page",
+      "path": "/login",
+      "h1": "",
+      "bodyText": "Unauth Email address Password Forgot password? Sign in New here? Create account By signing in, you agree to use Unauth for authorised investigations only.",
+      "tokens": {
+        "--surface-base": "#faf9f7",
+        "--surface-raised": "#fff",
+        "--surface-overlay": "#f5f1eb",
+        "--surface-border": "#e8e3dc",
+        "--ink-primary": "#1a1612",
+        "--ink-secondary": "#7a6f65",
+        "--ink-tertiary": "#a6998d",
+        "--copper-bright": "#8a2828",
+        "--copper-mid": "#7b2d26",
+        "--bg-canvas": "#f8f5ee",
+        "--bg-surface": "#fefcf7",
+        "--text-muted": "#6e7a8a",
+        "--risk-critical": "#9f1d1d",
+        "--risk-high": "#b6512a",
+        "--risk-medium": "#8b6a14",
+        "--risk-low": "#2f6b43"
+      },
+      "tables": [],
+      "buttons": [
+        "Unauth",
+        "Forgot password?",
+        "Sign in",
+        "Create account"
+      ],
+      "inputs": [
+        {
+          "tag": "input",
+          "type": "email",
+          "placeholder": "you@company.com",
+          "label": ""
+        },
+        {
+          "tag": "input",
+          "type": "password",
+          "placeholder": "••••••••",
+          "label": ""
+        }
+      ],
+      "mainScrollHeight": 980,
+      "mainClientHeight": 980,
+      "bodyClass": "font-sans antialiased"
+    }
+  ],
+  "console_errors": [],
+  "error": "locator.fill: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByLabel('Email address')\u001b[22m\n\n    at main (/Users/malikibrahim/Downloads/Unauth/design-audit/capture-audit-screenshots.mjs:143:42)"
+}

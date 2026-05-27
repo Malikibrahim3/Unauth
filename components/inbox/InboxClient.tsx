@@ -41,22 +41,39 @@ function formatInboxDate(iso: string): string {
   }
 }
 
-export default function InboxClient({ initialItems }: Props) {
-  // Phase E-6: sort by confidence × exposure when flag is on
-  const sortedInitial = FLAG_QUEUE_PRIORITISATION
-    ? [...initialItems].sort((a, b) => {
+type SortKey = 'priority' | 'score' | 'value' | 'date';
+
+function sortInboxItems(items: InboxTransaction[], sortBy: SortKey): InboxTransaction[] {
+  const copy = [...items];
+  switch (sortBy) {
+    case 'score':
+      return copy.sort((a, b) => (b.identity_score ?? 0) - (a.identity_score ?? 0));
+    case 'value':
+      return copy.sort((a, b) => (b.order_value ?? 0) - (a.order_value ?? 0));
+    case 'date':
+      return copy.sort((a, b) => new Date(b.processed_at).getTime() - new Date(a.processed_at).getTime());
+    case 'priority':
+    default:
+      return copy.sort((a, b) => {
         const scoreA = (a.identity_score ?? 0) * (a.order_value ?? 1);
         const scoreB = (b.identity_score ?? 0) * (b.order_value ?? 1);
         return scoreB - scoreA;
-      })
-    : initialItems;
+      });
+  }
+}
 
-  const [items, setItems] = useState<InboxTransaction[]>(sortedInitial);
+export default function InboxClient({ initialItems }: Props) {
+  const [sortBy, setSortBy] = useState<SortKey>(FLAG_QUEUE_PRIORITISATION ? 'priority' : 'date');
+  const [items, setItems] = useState<InboxTransaction[]>(() => sortInboxItems(initialItems, sortBy));
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [pending, setPending] = useState<Record<string, boolean>>({});
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDismissing, setBulkDismissing] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setItems((current) => sortInboxItems(current, sortBy));
+  }, [sortBy]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -188,7 +205,7 @@ export default function InboxClient({ initialItems }: Props) {
       >
         <div className="flex items-center gap-1.5 mb-2" style={{ color: 'var(--text-muted)' }}>
           <Keyboard className="h-3.5 w-3.5" />
-          <span className="text-xs font-semibold tracking-wide uppercase">Keyboard shortcuts</span>
+          <span className="text-xs font-semibold">Keyboard shortcuts</span>
         </div>
         <ul className="space-y-1">
           {[
@@ -240,6 +257,26 @@ export default function InboxClient({ initialItems }: Props) {
 
   return (
     <div className="space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+        <p className="text-caption" style={{ color: 'var(--text-muted)' }}>
+          {items.length} {items.length === 1 ? 'case' : 'cases'} in queue
+        </p>
+        <label className="flex items-center gap-2 text-caption" style={{ color: 'var(--text-muted)' }}>
+          Sort by
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as SortKey)}
+            className="rounded border px-2 py-1 text-xs"
+            style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)', color: 'var(--text)' }}
+          >
+            <option value="priority">Priority (score × value)</option>
+            <option value="score">Risk score</option>
+            <option value="value">Order value</option>
+            <option value="date">Most recent</option>
+          </select>
+        </label>
+      </div>
+
       {selectedIds.size > 0 && (
         <div className="fixed inset-x-0 bottom-0 z-50 flex h-14 items-center justify-between gap-3 border-t px-6" style={{ background: 'var(--surface-raised)', borderColor: 'var(--surface-border)', boxShadow: 'var(--shadow-drawer)' }}>
           <div className="flex items-center gap-2">
@@ -250,12 +287,12 @@ export default function InboxClient({ initialItems }: Props) {
             <button
               onClick={bulkDismissSelected}
               disabled={bulkDismissing}
-              className="rounded px-3 py-1.5 text-xs font-semibold uppercase disabled:opacity-50"
+              className="rounded px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
               style={{ background: 'var(--sev-definite)', color: 'var(--ink-primary)', border: '1px solid var(--sev-definite)' }}
             >
               {bulkDismissing ? 'Dismissing…' : 'Dismiss selected'}
             </button>
-            <button onClick={() => setSelectedIds(new Set())} disabled={bulkDismissing} className="text-xs font-semibold uppercase" style={{ color: 'var(--ink-secondary)' }}>
+            <button onClick={() => setSelectedIds(new Set())} disabled={bulkDismissing} className="text-xs font-semibold" style={{ color: 'var(--ink-secondary)' }}>
               Clear
             </button>
           </div>
@@ -280,12 +317,12 @@ export default function InboxClient({ initialItems }: Props) {
                 aria-label="Select all inbox items"
               />
             </th>
-            <th className="text-left px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Order ID</th>
-            <th className="text-left px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Risk</th>
-            <th className="text-right px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Score</th>
-            <th className="text-right px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Value</th>
-            <th className="text-left px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Match signals</th>
-            <th className="text-left px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Date</th>
+            <th className="text-left px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Order ID</th>
+            <th className="text-left px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Risk</th>
+            <th className="text-right px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Score</th>
+            <th className="text-right px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Value</th>
+            <th className="text-left px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Match signals</th>
+            <th className="text-left px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Date</th>
             <th className="px-4 py-2.5" />
           </tr>
         </thead>
@@ -353,17 +390,33 @@ export default function InboxClient({ initialItems }: Props) {
               <td className="px-4 py-3 text-right">
                 <div className="flex items-center justify-end gap-2" ref={openDropdown === tx.id ? dropdownRef : undefined}>
                   <Link
-                    href={`/audit/${tx.processing_job_id}/transaction/${tx.id}`}
+                    href={tx.customer_profile_id ? `/customers/${tx.customer_profile_id}` : `/audit/${tx.processing_job_id}/transaction/${tx.id}`}
                     className="text-xs font-semibold hover:underline"
-                    style={{ color: 'var(--text)' }}
+                    style={{ color: 'var(--accent)' }}
                   >
                     Review →
+                  </Link>
+                  {tx.customer_profile_id && (
+                    <Link
+                      href={`/customers/${tx.customer_profile_id}/claims`}
+                      className="text-xs font-semibold hover:underline hidden lg:inline"
+                      style={{ color: 'var(--text-muted)' }}
+                    >
+                      Claim
+                    </Link>
+                  )}
+                  <Link
+                    href={`/audit/${tx.processing_job_id}/transaction/${tx.id}`}
+                    className="text-xs font-semibold hover:underline hidden md:inline"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
+                    Audit
                   </Link>
                   <div className="relative">
                     <button
                       type="button"
                       onClick={() => setOpenDropdown(openDropdown === tx.id ? null : tx.id)}
-                      className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border opacity-0 transition-all group-hover:opacity-100 focus:opacity-100"
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border transition-all"
                       style={{
                         borderColor: 'var(--border)',
                         color: 'var(--text-muted)',
@@ -404,7 +457,7 @@ export default function InboxClient({ initialItems }: Props) {
                           style={{ color: 'var(--text)' }}
                           onClick={() => setStatusAndDismiss(tx, 'resolved')}
                         >
-                          Mark as Refund blocked
+                          Resolve and close case
                         </button>
                         <button
                           type="button"
@@ -412,7 +465,7 @@ export default function InboxClient({ initialItems }: Props) {
                           style={{ color: 'var(--text)' }}
                           onClick={() => setStatusAndDismiss(tx, 'cleared')}
                         >
-                          Mark as False alarm
+                          Clear as false alarm
                         </button>
                         <div style={{ borderTop: '1px solid var(--border-subtle)' }} />
                           <button
@@ -421,7 +474,7 @@ export default function InboxClient({ initialItems }: Props) {
                             style={{ color: 'var(--text-muted)' }}
                             onClick={() => { setOpenDropdown(null); dismissItem(tx.id); }}
                           >
-                          Clear from inbox
+                          Remove from inbox only
                         </button>
                       </div>
                     )}

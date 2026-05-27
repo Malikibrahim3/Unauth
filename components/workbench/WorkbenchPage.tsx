@@ -46,19 +46,20 @@ export function WorkbenchPage({
         >
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
-              {navItems && activeNavKey
-                ? (
-                  <>
-                    <WorkbenchNav items={navItems} activeKey={activeNavKey} />
-                    {subtitle && <p className="text-body-sm mt-2" style={{ color: 'var(--ink-secondary)', maxWidth: 720 }}>{subtitle}</p>}
-                  </>
-                ) : (
-                  <>
-                    <h1 className="t-heading" style={{ color: 'var(--ink-primary)' }}>{title}</h1>
-                    {subtitle && <p className="text-body-sm mt-1" style={{ color: 'var(--ink-secondary)', maxWidth: 720 }}>{subtitle}</p>}
-                  </>
-                )
-              }
+              <h1 className="t-heading" style={{ color: 'var(--ink-primary)' }}>{title}</h1>
+              {navItems && activeNavKey && (
+                <div className="mt-2">
+                  <WorkbenchNav items={navItems} activeKey={activeNavKey} />
+                </div>
+              )}
+              {subtitle && (
+                <p
+                  className="text-body-sm mt-2"
+                  style={{ color: 'var(--ink-secondary)', maxWidth: 720 }}
+                >
+                  {subtitle}
+                </p>
+              )}
             </div>
             {actions && <div className="flex items-center gap-2">{actions}</div>}
           </div>

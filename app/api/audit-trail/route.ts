@@ -17,7 +17,14 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { createScopedClient } from '@/lib/supabase/scoped';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { logAction } from '@/lib/permissions/audit';
+import { auditActionLabel, auditResourceSummary } from '@/lib/audit/actionLabels';
+import { claimEventSummary } from '@/lib/claims/events';
 import { createRequestLogger, withRequestLogging } from '@/lib/log';
+
+function csvCell(value: unknown) {
+  const text = String(value ?? '');
+  return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
 
 export const dynamic = 'force-dynamic';
 
@@ -33,6 +40,7 @@ async function GETHandler(request: NextRequest) {
   const scopedService = createScopedClient(ctx.merchantId, service);
 
   const { searchParams } = new URL(request.url);
+  const format       = searchParams.get('format')       ?? 'json';
   const page         = Math.max(1, parseInt(searchParams.get('page')  ?? '1', 10));
   const limit        = Math.min(200, Math.max(1, parseInt(searchParams.get('limit') ?? '50', 10)));
   const action       = searchParams.get('action')       ?? null;
@@ -109,7 +117,89 @@ async function GETHandler(request: NextRequest) {
     .slice(0, limit);
   const total = (count ?? 0) + mappedClaimEvents.length;
 
-  // Log that someone viewed the audit trail (non-blocking)
+  if (format === 'csv') {
+    const exportDenied = await requirePermission(service, user.id, PERMISSIONS.EXPORT_AUDIT);
+    if (exportDenied.denied) return exportDenied.denied;
+
+    const actorIds = [...new Set(rows.map((r: { actor_user_id?: string | null }) => r.actor_user_id).filter(Boolean))] as string[];
+    const actorMap: Record<string, { email: string; role: string }> = {};
+    if (actorIds.length > 0) {
+      const { data: memberRows } = await service
+        .from('merchant_members' as never)
+        .select('user_id, invited_email, role')
+        .eq('merchant_id', ctx.merchantId)
+        .in('user_id', actorIds);
+      const { data: merchantRow2 } = await service
+        .from('merchants')
+        .select('user_id')
+        .eq('id', ctx.merchantId)
+        .maybeSingle();
+      for (const m of (memberRows ?? []) as Array<{ user_id: string | null; invited_email: string; role: string }>) {
+        if (m.user_id) actorMap[m.user_id] = { email: m.invited_email, role: m.role };
+      }
+      if (merchantRow2?.user_id && !actorMap[merchantRow2.user_id]) {
+        actorMap[merchantRow2.user_id] = { email: user.email ?? 'owner', role: 'owner' };
+      }
+    }
+
+    function resolveActor(actorUserId: string | null, actorRole: string | null): string {
+      if (!actorUserId) return 'system';
+      const known = actorMap[actorUserId];
+      if (known) return `${known.email} (${known.role})`;
+      return `${actorUserId.slice(0, 8)} (${actorRole ?? 'user'})`;
+    }
+
+    const csvRows = rows.map((row: {
+      created_at: string;
+      action: string;
+      resource_type: string | null;
+      resource_id: string | null;
+      actor_user_id?: string | null;
+      actor_role?: string | null;
+      metadata?: Record<string, unknown> | null;
+    }) => {
+      const summary = row.resource_type === 'claim'
+        ? claimEventSummary({
+            event_type: row.action,
+            previous_status: typeof row.metadata?.previous_status === 'string' ? row.metadata.previous_status : null,
+            new_status: typeof row.metadata?.new_status === 'string' ? row.metadata.new_status : null,
+            previous_decision: typeof row.metadata?.previous_decision === 'string' ? row.metadata.previous_decision : null,
+            new_decision: typeof row.metadata?.new_decision === 'string' ? row.metadata.new_decision : null,
+            previous_outcome: typeof row.metadata?.previous_outcome === 'string' ? row.metadata.previous_outcome : null,
+            new_outcome: typeof row.metadata?.new_outcome === 'string' ? row.metadata.new_outcome : null,
+            note: typeof row.metadata?.note === 'string' ? row.metadata.note : null,
+          })
+        : JSON.stringify(row.metadata ?? {});
+
+      return [
+        row.created_at,
+        auditActionLabel(row.action, row.resource_type),
+        auditResourceSummary(row.resource_type, row.resource_id),
+        resolveActor(row.actor_user_id ?? null, row.actor_role ?? null),
+        summary,
+      ].map(csvCell).join(',');
+    });
+
+    const csv = [
+      ['timestamp', 'action', 'object', 'actor', 'summary'].join(','),
+      ...csvRows,
+    ].join('\n');
+
+    logAction({
+      ctx,
+      action: 'export_audit',
+      resourceType: 'audit_log',
+      metadata: { format: 'csv', rowCount: rows.length, resourceType: resourceType ?? 'all' },
+    });
+
+    return new NextResponse(csv, {
+      headers: {
+        'Content-Type': 'text/csv; charset=utf-8',
+        'Content-Disposition': 'attachment; filename="audit-trail-export.csv"',
+      },
+    });
+  }
+
   logAction({ ctx, action: 'view_audit_trail', resourceType: 'audit_log' });
 
   return NextResponse.json({

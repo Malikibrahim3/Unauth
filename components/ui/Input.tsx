@@ -8,11 +8,12 @@ export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputE
     <input
       ref={ref}
       className={cn(
-        'w-full px-3 py-2 text-sm focus:outline-none transition-colors duration-[120ms]',
+        'w-full px-3 text-sm focus:outline-none transition-colors duration-[120ms]',
         'focus:border-[var(--copper-bright)] focus:ring-[var(--shadow-focus)]',
         className,
       )}
       style={{
+        height: 36,
         background: 'var(--surface-input)',
         border: '1px solid var(--surface-border)',
         borderRadius: 'var(--radius-md)',

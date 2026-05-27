@@ -33,6 +33,28 @@ interface UnifiedResult {
 
 const NAV_ITEMS: NavItem[] = [
   {
+    label: 'Open claim review',
+    description: 'Work open claims and record outcomes',
+    href: '/claims',
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <path d="M3 4h10v9H3z" stroke="currentColor" strokeWidth="1.4" />
+        <path d="M5 7h6M5 10h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
+    label: 'Export reports',
+    description: 'Manager-ready claims and outcomes exports',
+    href: '/reports',
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <path d="M8 2v8M5 7l3 3 3-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+        <rect x="2" y="12" width="12" height="2" rx="1" stroke="currentColor" strokeWidth="1.4" />
+      </svg>
+    ),
+  },
+  {
     label: 'Risk Overview',
     description: 'Dashboard, key metrics and trends',
     href: '/dashboard',

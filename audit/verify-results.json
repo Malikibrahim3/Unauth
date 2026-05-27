@@ -1,0 +1,47 @@
+[
+  {
+    "id": "AC-1",
+    "status": "PASS",
+    "note": "Redirected to http://localhost:3000/login?signup=1"
+  },
+  {
+    "id": "AC-1b",
+    "status": "FAIL",
+    "note": "Could not confirm create-account toggle is pre-opened — check screenshot"
+  },
+  {
+    "id": "AC-2",
+    "status": "PASS",
+    "note": "Claims nav link visible in sidebar"
+  },
+  {
+    "id": "AC-3a",
+    "status": "PASS",
+    "note": "Empty state title/description present"
+  },
+  {
+    "id": "AC-3b",
+    "status": "PASS",
+    "note": "\"Go to Customers\" CTA present"
+  },
+  {
+    "id": "AC-4",
+    "status": "FAIL",
+    "note": "No customers found — cannot verify claim panel"
+  },
+  {
+    "id": "AC-5",
+    "status": "FAIL",
+    "note": "No customers found — cannot verify claim panel"
+  },
+  {
+    "id": "AC-7",
+    "status": "FAIL",
+    "note": "Could not confirm claim in /claims — check screenshot"
+  },
+  {
+    "id": "AC-8",
+    "status": "PASS",
+    "note": "Total at risk KPI present (may show — if amount not populated yet)"
+  }
+]

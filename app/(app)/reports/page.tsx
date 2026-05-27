@@ -4,8 +4,19 @@ import { TABLES } from '@/lib/supabase/tables';
 import { requirePermission, PERMISSIONS, resolveDefaultAppPath } from '@/lib/permissions';
 import { getExposureAtRisk } from '@/lib/supabase/merchantHelpers';
 import { formatCurrencyNullable } from '@/lib/utils/format';
-import { Button, MetricCard, SectionCard, WorkbenchPage } from '@/components/ui';
+import { MetricCard, SectionCard, WorkbenchPage } from '@/components/ui';
+import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
 import { buildClaimOpsMetrics } from '@/lib/claims/reporting';
+import ExportMenu from '@/components/reports/ExportMenu';
+
+type ClaimRow = {
+  id: string;
+  status: string;
+  amount_at_risk: number | null;
+  submitted_at?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+};
 
 type RunSummary = {
   id: string;
@@ -22,10 +33,10 @@ type TxGradeRow = {
 };
 
 const GRADE_META: Record<GradeBucket, { label: string; color: string }> = {
-  definite: { label: 'A DEFINITE', color: 'var(--sev-definite)' },
-  probable: { label: 'B PROBABLE', color: 'var(--sev-probable)' },
-  possible: { label: 'C POSSIBLE', color: 'var(--sev-neutral)' },
-  weak: { label: 'D WEAK', color: 'rgba(74,101,114,0.58)' },
+  definite: { label: 'A · Definite', color: 'var(--sev-definite)' },
+  probable: { label: 'B · Probable', color: 'var(--sev-probable)' },
+  possible: { label: 'C · Possible', color: 'var(--copper-mid)' },
+  weak: { label: 'D · Weak', color: 'var(--ink-tertiary)' },
 };
 
 function gradeFromTransaction(row: TxGradeRow): GradeBucket {
@@ -56,6 +67,37 @@ function buildRatePoints(trend: RunSummary[]) {
   };
 }
 
+function delta(current: number, prior: number | null | undefined): string | null {
+  if (prior == null) return null;
+  if (prior === 0) return current > 0 ? 'new vs prior period' : null;
+  const pct = Math.round(((current - prior) / prior) * 100);
+  if (pct === 0) return null;
+  return pct > 0 ? `↑ ${pct}%` : `↓ ${Math.abs(pct)}%`;
+}
+
+function deltaCurrency(current: number, prior: number | null | undefined): string | null {
+  if (prior == null) return null;
+  if (prior === 0) return current > 0 ? 'new exposure vs prior period' : null;
+  const diff = Math.round(current - prior);
+  if (diff === 0) return null;
+  const amount = formatCurrencyNullable(Math.abs(diff));
+  return diff > 0 ? `+${amount} vs prior` : `−${amount} vs prior`;
+}
+
+function metricHint(base: string, current: number, priorMetrics: ReturnType<typeof buildClaimOpsMetrics> | null, priorKey: keyof ReturnType<typeof buildClaimOpsMetrics>) {
+  const change = priorMetrics ? delta(current, priorMetrics[priorKey] as number) : null;
+  return [base, change].filter(Boolean).join(' · ') || base;
+}
+
+function metricHintCurrency(
+  base: string,
+  current: number,
+  priorMetrics: ReturnType<typeof buildClaimOpsMetrics> | null,
+) {
+  const change = priorMetrics ? deltaCurrency(current, priorMetrics.valueAtRisk) : null;
+  return [base, change].filter(Boolean).join(' · ') || base;
+}
+
 export default async function ReportsPage({ searchParams }: { searchParams?: Promise<{ range?: string }> }) {
   const supabase = createClient();
   const serviceClient = createServiceClient();
@@ -70,6 +112,13 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
   const cutoff = range === 'all'
     ? null
     : new Date(Date.now() - (range === '7d' ? 7 : range === '90d' ? 90 : 30) * 86400000).toISOString();
+  const rangeMs = range === '7d' ? 7 : range === '90d' ? 90 : 30;
+  const priorCutoff = range === 'all'
+    ? null
+    : new Date(Date.now() - rangeMs * 2 * 86400000).toISOString();
+  const priorEnd = range === 'all'
+    ? null
+    : new Date(Date.now() - rangeMs * 86400000).toISOString();
 
   const [{ data: runs }, exposureAtRisk] = await Promise.all([
     serviceClient
@@ -124,25 +173,51 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
   }));
 
   let claimsQuery = serviceClient
-    .from('merchant_claims' as any)
+    .from('merchant_claims' as never)
     .select('id,status,amount_at_risk,submitted_at,created_at,updated_at')
     .eq('merchant_id', ctx.merchantId);
   if (cutoff) claimsQuery = claimsQuery.gte('submitted_at', cutoff);
-  const { data: claimRows } = await claimsQuery;
-  const claims = (claimRows ?? []) as Array<{ id: string; status: string; amount_at_risk: number | null; submitted_at?: string | null; created_at?: string | null; updated_at?: string | null }>;
 
-  const { data: outcomeRows } = claims.length > 0
-    ? await serviceClient
-      .from('merchant_case_outcomes' as any)
-      .select('claim_id,decision,outcome,amount_refunded,decided_at,created_at,updated_at')
-      .in('claim_id', claims.map((claim) => claim.id))
-    : { data: [] };
-  const claimMetrics = buildClaimOpsMetrics(claims, outcomeRows ?? []);
+  let priorClaimsQuery = serviceClient
+    .from('merchant_claims' as never)
+    .select('id,status,amount_at_risk,submitted_at,created_at,updated_at')
+    .eq('merchant_id', ctx.merchantId);
+  if (priorCutoff) priorClaimsQuery = priorClaimsQuery.gte('submitted_at', priorCutoff);
+  if (priorEnd) priorClaimsQuery = priorClaimsQuery.lte('submitted_at', priorEnd);
+
+  const [{ data: claimRows }, priorClaimResult] = await Promise.all([
+    claimsQuery,
+    range === 'all' ? Promise.resolve({ data: [] as ClaimRow[] | null }) : priorClaimsQuery,
+  ]);
+  const claims = (claimRows ?? []) as ClaimRow[];
+  const priorClaims = (priorClaimResult.data ?? []) as ClaimRow[];
+
+  const [outcomeResult, priorOutcomeResult] = await Promise.all([
+    claims.length > 0
+      ? serviceClient
+        .from('merchant_case_outcomes' as never)
+        .select('claim_id,decision,outcome,amount_refunded,decided_at,created_at,updated_at')
+        .in('claim_id', claims.map((claim) => claim.id))
+      : Promise.resolve({ data: [] }),
+    priorClaims.length > 0
+      ? serviceClient
+        .from('merchant_case_outcomes' as never)
+        .select('claim_id,decision,outcome,amount_refunded,decided_at,created_at,updated_at')
+        .in('claim_id', priorClaims.map((c) => c.id))
+      : Promise.resolve({ data: [] }),
+  ]);
+
+  const claimMetrics = buildClaimOpsMetrics(claims, outcomeResult.data ?? []);
+  const priorMetrics = range === 'all'
+    ? null
+    : buildClaimOpsMetrics(priorClaims, priorOutcomeResult.data ?? []);
 
   return (
     <WorkbenchPage
       title="Reports"
       subtitle="Network signal performance and evidence readiness over time."
+      navItems={WORKBENCH_NAV_ITEMS}
+      activeNavKey="reports"
       actions={
         <div className="flex flex-wrap items-center gap-2">
           <div className="inline-flex rounded-md border p-0.5" style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-input)' }}>
@@ -161,32 +236,98 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
               </a>
             ))}
           </div>
-          <a href={`/api/reports/claims?range=${range}`}><Button variant="secondary" size="sm">Export claims CSV</Button></a>
+          <ExportMenu range={range} />
         </div>
       }
       kpiStrip={
-        <div className="grid grid-cols-1 gap-3 border-b p-4 md:grid-cols-3" style={{ borderColor: 'var(--surface-border)' }}>
-          <MetricCard label="Total flagged" value={totalFlagged.toLocaleString()} hint={`${totalRows.toLocaleString()} rows analysed`} />
-          <MetricCard label="Match rate trend" value={`${matchRate.toFixed(1)}%`} hint={`Peak axis ${maxRate.toFixed(1)}%`} />
-          <MetricCard label="Avg exposure" value={exposureAtRisk === null ? 'Unavailable' : formatCurrencyNullable(exposureAtRisk)} hint="Current review queue" />
+        <div className="border-b p-4" style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-overlay)' }}>
+          <p className="text-body-sm font-semibold" style={{ color: 'var(--ink-primary)' }}>Weekly ops summary</p>
+          <p className="text-body-sm mt-2 max-w-3xl" style={{ color: 'var(--ink-secondary)' }}>
+            {range === 'all' ? 'All time' : `Last ${range.replace('d', ' days')}`}: {claimMetrics.totalClaims.toLocaleString()} claims filed,{' '}
+            {claimMetrics.openClaims.toLocaleString()} still open, {claimMetrics.overdueClaims.toLocaleString()} overdue SLA,{' '}
+            {formatCurrencyNullable(claimMetrics.valueAtRisk || null)} at risk with{' '}
+            {formatCurrencyNullable(claimMetrics.amountRefunded || null)} refunded or recovered.
+            Resolution rate is {Math.round(claimMetrics.resolutionRate * 100)}%.
+          </p>
         </div>
       }
       main={
         <div className="grid gap-4 p-4 xl:grid-cols-2">
-          <SectionCard title="Claims Operations" description={`Claim metrics for ${range === 'all' ? 'all time' : `last ${range.replace('d', ' days')}`}`}>
+          <SectionCard title="Claims operations" description={`Claim metrics for ${range === 'all' ? 'all time' : `last ${range.replace('d', ' days')}`}`}>
             <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-              <MetricCard label="Total claims" value={claimMetrics.totalClaims.toLocaleString()} density="compact" />
-              <MetricCard label="Open claims" value={claimMetrics.openClaims.toLocaleString()} density="compact" />
-              <MetricCard label="Under review / pending" value={claimMetrics.inReviewOrPendingClaims.toLocaleString()} density="compact" />
-              <MetricCard label="Resolved" value={claimMetrics.resolvedClaims.toLocaleString()} density="compact" />
-              <MetricCard label="Denied" value={claimMetrics.deniedClaims.toLocaleString()} density="compact" />
-              <MetricCard label="Approved" value={claimMetrics.approvedClaims.toLocaleString()} density="compact" />
-              <MetricCard label="Suspected outcomes" value={claimMetrics.suspectedFraudOutcomes.toLocaleString()} density="compact" />
-              <MetricCard label="Legitimate outcomes" value={claimMetrics.legitimateOutcomes.toLocaleString()} density="compact" />
-              <MetricCard label="Value at risk" value={formatCurrencyNullable(claimMetrics.valueAtRisk || null)} density="compact" />
-              <MetricCard label="Refunded" value={formatCurrencyNullable(claimMetrics.amountRefunded || null)} density="compact" />
-              <MetricCard label="Resolution rate" value={`${Math.round(claimMetrics.resolutionRate * 100)}%`} density="compact" />
-              <MetricCard label="Overdue" value={claimMetrics.overdueClaims.toLocaleString()} density="compact" />
+              <MetricCard label="Total claims" value={claimMetrics.totalClaims.toLocaleString()} density="compact" hint={metricHint('Filed in range', claimMetrics.totalClaims, priorMetrics, 'totalClaims')} />
+              <MetricCard label="Open claims" value={claimMetrics.openClaims.toLocaleString()} density="compact" hint={metricHint('Needs action', claimMetrics.openClaims, priorMetrics, 'openClaims')} />
+              <MetricCard label="Under review / pending" value={claimMetrics.inReviewOrPendingClaims.toLocaleString()} density="compact" hint="In progress" />
+              <MetricCard label="Resolved" value={claimMetrics.resolvedClaims.toLocaleString()} density="compact" hint={metricHint('Closed outcomes', claimMetrics.resolvedClaims, priorMetrics, 'resolvedClaims')} />
+              <MetricCard label="Denied" value={claimMetrics.deniedClaims.toLocaleString()} density="compact" hint="Latest decisions" />
+              <MetricCard label="Approved" value={claimMetrics.approvedClaims.toLocaleString()} density="compact" hint="Latest decisions" />
+              <MetricCard label="Value at risk" value={formatCurrencyNullable(claimMetrics.valueAtRisk || null)} density="compact" hint={metricHintCurrency('Open exposure', claimMetrics.valueAtRisk, priorMetrics)} />
+              <MetricCard label="Recovered / refunded" value={formatCurrencyNullable(claimMetrics.amountRefunded || null)} density="compact" hint="Outcome totals" />
+              <MetricCard
+                label="Resolution rate"
+                value={`${Math.round(claimMetrics.resolutionRate * 100)}%`}
+                density="compact"
+                hint={[
+                  'Resolved / total',
+                  priorMetrics ? delta(Math.round(claimMetrics.resolutionRate * 100), Math.round(priorMetrics.resolutionRate * 100)) : null,
+                ].filter(Boolean).join(' · ') || 'Resolved / total'}
+              />
+              <MetricCard label="Overdue" value={claimMetrics.overdueClaims.toLocaleString()} density="compact" hint={metricHint('>72h open', claimMetrics.overdueClaims, priorMetrics, 'overdueClaims')} />
+            </div>
+            {priorMetrics && (
+              <p className="mt-3 t-caption" style={{ color: 'var(--ink-tertiary)' }}>
+                Δ vs previous {range.replace('d', '-day')} period
+              </p>
+            )}
+          </SectionCard>
+
+          <SectionCard title="Resolution funnel" description="Claim volume by current status">
+            <div className="space-y-3">
+              {[
+                { label: 'Open', value: claimMetrics.openClaims, color: 'var(--ink-tertiary)' },
+                { label: 'In review / pending', value: claimMetrics.inReviewOrPendingClaims, color: 'var(--sev-probable)' },
+                { label: 'Resolved', value: claimMetrics.resolvedClaims, color: 'var(--sev-clear)' },
+                { label: 'Overdue SLA', value: claimMetrics.overdueClaims, color: 'var(--sev-definite)' },
+              ].map((step) => {
+                const pct = claimMetrics.totalClaims > 0 ? (step.value / claimMetrics.totalClaims) * 100 : 0;
+                return (
+                  <div key={step.label}>
+                    <div className="mb-1 flex items-center justify-between gap-2">
+                      <span className="t-label" style={{ color: 'var(--ink-secondary)' }}>{step.label}</span>
+                      <span className="t-mono-md num" style={{ color: 'var(--ink-primary)' }}>{step.value.toLocaleString()}</span>
+                    </div>
+                    <div className="h-2 rounded-full" style={{ background: 'var(--surface-muted)' }}>
+                      <div className="h-2 rounded-full" style={{ width: `${Math.max(step.value > 0 ? 4 : 0, pct)}%`, background: step.color }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </SectionCard>
+
+          <SectionCard title="Loss vs recovery" description="Financial impact for selected date range">
+            <div className="grid grid-cols-2 gap-3">
+              <MetricCard
+                label="Value at risk"
+                value={formatCurrencyNullable(claimMetrics.valueAtRisk || null)}
+                hint="Outstanding claim exposure"
+              />
+              <MetricCard
+                label="Recovered / refunded"
+                value={formatCurrencyNullable(claimMetrics.amountRefunded || null)}
+                hint="Recorded in outcomes"
+              />
+            </div>
+            <p className="t-caption mt-3" style={{ color: 'var(--ink-tertiary)' }}>
+              Net exposure estimate: {formatCurrencyNullable(Math.max(0, claimMetrics.valueAtRisk - claimMetrics.amountRefunded) || null)}
+            </p>
+          </SectionCard>
+
+          <SectionCard title="Audit signal performance" description={`${totalRows.toLocaleString()} rows analysed · ${matchRate.toFixed(1)}% match rate`}>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-3 mb-4">
+              <MetricCard label="Total flagged" value={totalFlagged.toLocaleString()} hint={`${totalRows.toLocaleString()} rows analysed`} density="compact" />
+              <MetricCard label="Match rate" value={`${matchRate.toFixed(1)}%`} hint={`Peak axis ${maxRate.toFixed(1)}%`} density="compact" />
+              <MetricCard label="Queue exposure" value={exposureAtRisk === null ? 'Unavailable' : formatCurrencyNullable(exposureAtRisk)} hint="Current review queue" density="compact" />
             </div>
           </SectionCard>
 

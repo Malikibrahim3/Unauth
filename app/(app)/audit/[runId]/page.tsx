@@ -305,7 +305,7 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
   return (
     <div className="p-6 md:p-8 space-y-6">
       <PageHeader
-        title="Audit Results"
+        title="Audit results"
         subtitle={`${runData.filename} · ${formatDate(runData.created_at)}`}
         breadcrumbs={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'Audit result' }]}
         actions={statusBadge}
@@ -353,7 +353,7 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
         <Link href={`/audit/${jobId}?tab=transactions`} className="block"><MetricCard label="Orders analysed" value={runData.total_rows} /></Link>
         <Link href={`/audit/${jobId}?tab=transactions`} className="block"><MetricCard label="Network linked" value={networkLinkedCount.toLocaleString()} hint="Cross-merchant profiles" /></Link>
         <div className="md:col-span-2">
-          <SectionCard title="Anchor Metric">
+          <SectionCard title="Anchor metric">
             <RiskDistributionStrip definite={gradeCounts.definite} probable={gradeCounts.probable} candidate={gradeCounts.possible} weak={gradeCounts.weak} />
           </SectionCard>
         </div>
@@ -431,10 +431,10 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="border-b" style={{ background: 'var(--bg-subtle)', borderColor: 'var(--border-subtle)' }}>
-                          <th className="text-left px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Customer</th>
-                          <th className="text-right px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Orders ↓</th>
-                          <th className="text-right px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Total spend</th>
-                          <th className="text-right px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Max score ↓</th>
+                          <th className="text-left px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Customer</th>
+                          <th className="text-right px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Orders ↓</th>
+                          <th className="text-right px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Total spend</th>
+                          <th className="text-right px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Max score ↓</th>
                           <th className="px-4 py-2.5"></th>
                         </tr>
                       </thead>
@@ -540,12 +540,12 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="border-b" style={{ background: 'var(--bg-subtle)', borderColor: 'var(--border-subtle)' }}>
-                          <th className="text-left px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Order ID</th>
-                          <th className="text-left px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Date ↓</th>
-                          <th className="text-right px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Total</th>
-                          <th className="text-right px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Score ↓</th>
-                          <th className="text-left px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Grade</th>
-                          <th className="text-left px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Top signal</th>
+                          <th className="text-left px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Order ID</th>
+                          <th className="text-left px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Date ↓</th>
+                          <th className="text-right px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Total</th>
+                          <th className="text-right px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Score ↓</th>
+                          <th className="text-left px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Grade</th>
+                          <th className="text-left px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Top signal</th>
                           <th className="px-4 py-2.5"></th>
                         </tr>
                       </thead>

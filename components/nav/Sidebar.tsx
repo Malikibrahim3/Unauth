@@ -105,15 +105,15 @@ function SidebarItem({
       href={item.href}
       title={collapsed ? item.label : undefined}
       className={cn(
-        'group relative flex h-8 items-center gap-3 rounded-none px-2',
+        'group relative flex h-8 items-center gap-3 rounded-md px-2',
         'text-[13px] font-medium',
         'transition-colors duration-[var(--duration-fast)]',
         'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] focus-visible:outline-offset-2',
         active
-          ? 'text-[var(--ink-primary)] font-semibold'
+          ? 'bg-[var(--copper-glow)] text-[var(--ink-primary)] font-semibold'
           : item.isPrimary
             ? 'border border-[var(--surface-border)] bg-transparent text-[var(--ink-primary)] hover:text-[var(--copper-bright)]'
-            : 'text-[var(--ink-secondary)] hover:text-[var(--ink-primary)]',
+            : 'text-[var(--ink-secondary)] hover:bg-[var(--surface-overlay)] hover:text-[var(--ink-primary)]',
         collapsed && 'justify-center',
       )}
     >
@@ -169,21 +169,9 @@ function GroupLabel({ label, collapsed }: { label: string; collapsed: boolean })
   return (
     <div className="mt-5 mb-1 px-2">
       <span
-        className="block text-[10px] font-semibold uppercase leading-none"
-        style={{ color: 'var(--ink-tertiary)', letterSpacing: '0.04em' }}
+        className="block text-[11px] font-semibold leading-none"
+        style={{ color: 'var(--ink-tertiary)', letterSpacing: '0.01em' }}
       >
-        <span
-          aria-hidden="true"
-          style={{
-            display: 'inline-block',
-            width: 4,
-            height: 4,
-            borderRadius: 1,
-            background: 'var(--copper-bright)',
-            marginRight: 7,
-            verticalAlign: '2px',
-          }}
-        />
         {label}
       </span>
     </div>
@@ -263,41 +251,56 @@ export default function Sidebar({
       <div
         className={cn(
           'flex flex-shrink-0 border-b border-[var(--surface-border)] px-3',
-          isCollapsed ? 'h-16 flex-col items-center justify-center gap-1 py-1.5' : 'h-14 items-center gap-2',
+          isCollapsed ? 'h-16 flex-col items-center justify-center gap-1 py-1.5' : 'flex-col gap-2 py-3',
         )}
       >
-        <div className="flex min-w-0 flex-shrink-0 items-baseline justify-center overflow-hidden leading-none translate-y-[-9%]">
-          <UnauthLogo
-            variant="auto"
-            size={isCollapsed ? 9 : 24}
-          />
+        <div className="flex w-full min-w-0 items-center justify-between gap-2">
+          <Link
+            href="/dashboard"
+            className="flex min-w-0 flex-shrink-0 items-center gap-2"
+            title="Unauth"
+          >
+            <UnauthLogo variant="auto" size={isCollapsed ? 9 : 22} />
+            {!isCollapsed && (
+              <span className="text-[15px] font-semibold text-[var(--ink-primary)] leading-none">
+                Unauth
+              </span>
+            )}
+          </Link>
+          {!isCollapsed && (
+            <button
+              type="button"
+              aria-label="Collapse sidebar"
+              onClick={toggleCollapse}
+              className={cn(
+                'flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-sm',
+                'text-[var(--ink-tertiary)] hover:text-[var(--ink-secondary)]',
+                'transition-colors duration-[var(--duration-fast)]',
+                'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] focus-visible:outline-offset-2',
+              )}
+            >
+              <ChevronRight className="h-3.5 w-3.5 rotate-180" aria-hidden="true" />
+            </button>
+          )}
         </div>
 
-        {!isCollapsed ? (
-          <div className="min-w-0 flex flex-1 items-baseline -translate-x-[9%] -translate-y-[3%] truncate text-[20px] font-semibold text-[var(--ink-primary)] leading-none">
-            <span className="mx-1 inline-flex items-baseline self-baseline -translate-y-[14%] text-[14px] text-[var(--ink-tertiary)]">x</span>
-            <span className="truncate text-[var(--ink-secondary)]">{merchantName ?? ''}</span>
-          </div>
-        ) : (
-          <div className="w-full truncate text-center text-[9px] leading-none text-[var(--ink-tertiary)]">
-            {merchantName ?? ''}
+        {!isCollapsed && merchantName && (
+          <div
+            className="w-full truncate rounded-sm px-2 py-1 text-[11px] font-medium leading-tight"
+            style={{ background: 'var(--surface-overlay)', color: 'var(--ink-secondary)' }}
+            title={merchantName}
+          >
+            {merchantName}
           </div>
         )}
 
-        {!isCollapsed && (
-          <button
-            type="button"
-            aria-label="Collapse sidebar"
-            onClick={toggleCollapse}
-            className={cn(
-              'flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-sm',
-              'text-[var(--ink-tertiary)] hover:text-[var(--ink-secondary)]',
-              'transition-colors duration-[var(--duration-fast)]',
-              'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] focus-visible:outline-offset-2',
-            )}
+        {isCollapsed && merchantName && (
+          <div
+            className="w-full truncate text-center text-[9px] leading-none text-[var(--ink-tertiary)]"
+            title={merchantName}
           >
-            <ChevronRight className="h-3.5 w-3.5 rotate-180" aria-hidden="true" />
-          </button>
+            {merchantName.slice(0, 8)}
+          </div>
         )}
       </div>
 

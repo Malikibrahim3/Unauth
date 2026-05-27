@@ -66,10 +66,6 @@ export default function AppHeader({
   // Derive a simple breadcrumb from pathname when none is provided
   const segments: BreadcrumbSegment[] = breadcrumbs ?? deriveFromPathname(pathname);
 
-  if (pathname === '/dashboard') {
-    return null;
-  }
-
   return (
     <header
       className={cn(
@@ -123,7 +119,7 @@ export default function AppHeader({
                   className={cn(
                     'truncate',
                     isLast
-                      ? 'text-overline font-semibold text-[var(--ink-primary)]'
+                      ? 'text-[13px] font-semibold text-[var(--ink-primary)]'
                       : 'text-caption text-[var(--ink-secondary)]',
                   )}
                   aria-current={isLast ? 'page' : undefined}
@@ -219,25 +215,28 @@ export default function AppHeader({
 
 function deriveFromPathname(pathname: string): BreadcrumbSegment[] {
   const segmentMap: Record<string, string> = {
-    dashboard:   'Home',
-    upload:      'New Audit',
-    audits:      'Audits',
+    dashboard:   'Dashboard',
+    upload:      'New audit',
+    audits:      'Audit history',
     customers:   'Customers',
-    lookup:      'Lookup',
+    claims:      'Claims',
     watchlist:   'Watchlist',
     history:     'Audit history',
     inbox:       'Inbox',
-    home:        'Home',
     onboarding:  'Onboarding',
     help:        'Help',
     settings:    'Settings',
     saved:       'Saved Views',
     audit:       'Audit results',
-    new:         'New Audit',
+    new:         'New audit',
   };
   const pathMap: Record<string, string> = {
-    'settings/audit-trail': 'Data & privacy',
+    'settings/audit-trail': 'Audit trail',
+    'settings/data-privacy': 'Data & privacy',
     chargebacks: 'Evidence packages',
+    'new-audit': 'New audit',
+    'audit-history': 'Audit history',
+    'evidence-packages': 'Evidence packages',
   };
 
   const parts = pathname.split('/').filter(Boolean);

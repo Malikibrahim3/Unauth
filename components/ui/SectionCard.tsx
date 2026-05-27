@@ -30,40 +30,26 @@ export function SectionCard({
         background: 'var(--surface-raised)',
         border: '1px solid var(--surface-border)',
         borderRadius: 'var(--radius-md)',
+        boxShadow: 'var(--shadow-sm)',
       }}
     >
       {/* Header */}
       <div
         className="flex items-center justify-between gap-3"
         style={{
-          background: 'var(--surface-overlay)',
           borderBottom: '1px solid var(--surface-border)',
-          padding: '9px 14px',
+          padding: '10px 14px',
         }}
       >
         <div>
           <div
             style={{
-              fontSize: 10,
+              fontSize: 13,
               fontWeight: 600,
-              letterSpacing: '0.12em',
-              textTransform: 'uppercase',
               color: 'var(--ink-primary)',
-              lineHeight: 1,
+              lineHeight: 1.3,
             }}
           >
-            <span
-              aria-hidden="true"
-              style={{
-                display: 'inline-block',
-                width: 5,
-                height: 5,
-                borderRadius: 1,
-                background: 'var(--copper-bright)',
-                marginRight: 7,
-                verticalAlign: '1px',
-              }}
-            />
             {title}
           </div>
           {description && (

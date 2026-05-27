@@ -3,6 +3,10 @@ import Link from 'next/link';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { WorkbenchPage, WorkbenchKpiStrip, WorkbenchEmptyState, Button } from '@/components/ui';
+import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
+import { TABLES } from '@/lib/supabase/tables';
+import { ConfidenceBadge } from '@/components/ui/ConfidenceBadge';
+import { riskLevelToNewGrade } from '@/lib/confidence';
 import { formatCurrencyNullable } from '@/lib/utils/format';
 import { ACTIVE_CLAIM_STATUSES, formatClaimAge, formatFiledDate, getClaimSlaState } from '@/lib/claims/sla';
 
@@ -53,6 +57,21 @@ type ClaimRow = {
   submitted_at?: string | null;
   created_at?: string | null;
   updated_at: string;
+};
+
+type CustomerProfileSummary = {
+  id: string;
+  names: string[] | null;
+  primary_email: string | null;
+  risk_level: string;
+};
+
+type EvidencePackageRow = {
+  id: string;
+  customer_profile_id: string | null;
+  generated_for_order_id: string | null;
+  reference_number: string;
+  generated_at: string;
 };
 
 function StatusPill({ status }: { status: string }) {
@@ -121,7 +140,15 @@ export default async function ClaimsPage({
 
   let claims = (rawClaims ?? []) as ClaimRow[];
   if (claimsQueryError) {
-    console.error('Claims page query failed; retrying with base merchant_claims columns', claimsQueryError);
+    const errMsg = String((claimsQueryError as any)?.message ?? '');
+    const isExpectedShapeFallback =
+      errMsg.includes('order_ref') ||
+      errMsg.includes('order_source') ||
+      errMsg.includes('column') ||
+      errMsg.includes('schema cache');
+    if (!isExpectedShapeFallback) {
+      console.error('Claims page query failed; retrying with base merchant_claims columns', claimsQueryError);
+    }
 
     let fallbackQuery = serviceClient
       .from('merchant_claims' as any)
@@ -158,6 +185,53 @@ export default async function ClaimsPage({
     }
   }
 
+  const customerIds = Array.from(new Set(claims.map((c) => c.customer_id).filter(Boolean) as string[]));
+  const customerById = new Map<string, CustomerProfileSummary>();
+  if (customerIds.length > 0) {
+    const { data: profileRows } = await serviceClient
+      .from(TABLES.CUSTOMER_PROFILES)
+      .select('id, names, primary_email, risk_level')
+      .in('id', customerIds);
+    for (const row of (profileRows ?? []) as CustomerProfileSummary[]) {
+      customerById.set(row.id, row);
+    }
+  }
+
+  const orderRefs = Array.from(new Set(claims.map((c) => c.shopify_order_id ?? c.order_ref).filter(Boolean) as string[]));
+
+  const orderIdByOrderRef = new Map<string, string>();
+  if (orderRefs.length > 0) {
+    const { data: orderRows } = await serviceClient
+      .from('fraud_transactions' as any)
+      .select('id,order_id')
+      .eq('merchant_id', ctx.merchantId)
+      .in('order_id', orderRefs)
+      .limit(500);
+    for (const row of (orderRows ?? []) as Array<{ id: string; order_id: string }>) {
+      orderIdByOrderRef.set(row.order_id, row.id);
+    }
+  }
+
+  const evidenceByClaimId = new Map<string, EvidencePackageRow | null>();
+  if (customerIds.length > 0) {
+    const { data: evidenceRows } = await serviceClient
+      .from('evidence_packages' as any)
+      .select('id,customer_profile_id,generated_for_order_id,reference_number,generated_at')
+      .eq('merchant_id', ctx.merchantId)
+      .in('customer_profile_id', customerIds)
+      .order('generated_at', { ascending: false })
+      .limit(1000);
+
+    const rows = (evidenceRows ?? []) as EvidencePackageRow[];
+    for (const claim of claims) {
+      const claimOrderRef = claim.shopify_order_id ?? claim.order_ref ?? null;
+      const disputedOrderId = claimOrderRef ? orderIdByOrderRef.get(claimOrderRef) ?? null : null;
+      const customerMatch = rows.filter((r) => r.customer_profile_id === claim.customer_id);
+      const exact = disputedOrderId ? customerMatch.find((r) => r.generated_for_order_id === disputedOrderId) : null;
+      evidenceByClaimId.set(claim.id, exact ?? customerMatch[0] ?? null);
+    }
+  }
+
   // Count by status for KPI strip
   const { data: allRaw } = await serviceClient
     .from('merchant_claims' as any)
@@ -186,12 +260,8 @@ export default async function ClaimsPage({
       title="Claims"
       subtitle="Track and resolve customer claims across all orders"
       navItems={[
-        { key: 'overview', label: 'Overview', href: '/dashboard' },
-        { key: 'cases', label: 'Cases', href: '/inbox' },
+        ...WORKBENCH_NAV_ITEMS,
         { key: 'claims', label: 'Claims', href: '/claims' },
-        { key: 'clusters', label: 'Clusters', href: '/customers?merchantsMin=2' },
-        { key: 'audits', label: 'Audits', href: '/history' },
-        { key: 'reports', label: 'Reports', href: '/reports' },
       ]}
       activeNavKey="claims"
       kpiStrip={
@@ -264,62 +334,114 @@ export default async function ClaimsPage({
               </p>
             ) : (
               <div className="overflow-x-auto rounded-xl border" style={{ borderColor: 'var(--border-subtle)' }}>
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr style={{ background: 'var(--bg-subtle)', borderBottom: '1px solid var(--border-subtle)' }}>
-                      {['Order ref', 'Type', 'Status', 'Decision', 'Filed', 'Age', 'SLA', 'At risk', 'Updated'].map((h) => (
-                        <th key={h} className="text-left px-4 py-2.5 text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>
-                          {h}
+                <table className="w-full min-w-[880px] text-sm">
+                  <thead className="sticky top-0 z-10" style={{ background: 'var(--bg-subtle)' }}>
+                    <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                      {[
+                        { label: 'Order ref', className: '' },
+                        { label: 'Customer', className: 'min-w-[160px]' },
+                        { label: 'Type', className: '' },
+                        { label: 'Status', className: '' },
+                        { label: 'Decision', className: 'hidden xl:table-cell' },
+                        { label: 'Filed', className: 'hidden lg:table-cell' },
+                        { label: 'Age', className: 'hidden lg:table-cell' },
+                        { label: 'SLA', className: '' },
+                        { label: 'Evidence', className: 'hidden xl:table-cell' },
+                        { label: 'At risk', className: '' },
+                        { label: 'Updated', className: 'hidden lg:table-cell' },
+                      ].map((col) => (
+                        <th
+                          key={col.label}
+                          className={`text-left px-4 py-2.5 text-xs font-semibold whitespace-nowrap ${col.className}`}
+                          style={{ color: 'var(--text-muted)' }}
+                        >
+                          {col.label}
                         </th>
                       ))}
-                      <th className="px-4 py-2.5" />
+                      <th
+                        className="sticky right-0 px-4 py-2.5 text-xs font-semibold text-right whitespace-nowrap"
+                        style={{ color: 'var(--text-muted)', background: 'var(--bg-subtle)' }}
+                      >
+                        Action
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {claims.map((c) => {
                       const orderRef = c.shopify_order_id ?? c.order_ref ?? c.id.slice(0, 8);
                       const latestOutcome = latestOutcomeByClaimId.get(c.id) ?? null;
+                      const linkedEvidence = evidenceByClaimId.get(c.id) ?? null;
+                      const customer = c.customer_id ? customerById.get(c.customer_id) ?? null : null;
+                      const customerName = customer?.names?.[0] ?? null;
+                      const customerEmail = customer?.primary_email ?? null;
                       return (
                         <tr
                           key={c.id}
-                          className="border-t"
+                          className="group border-t hover:bg-[var(--bg-hover)]"
                           style={{ borderColor: 'var(--border-subtle)' }}
                         >
-                          <td className="px-4 py-3 font-mono text-xs" style={{ color: 'var(--text)' }}>
+                          <td className="px-4 py-3 font-mono text-xs max-w-[120px] truncate" style={{ color: 'var(--text)' }} title={orderRef}>
                             {orderRef}
                           </td>
                           <td className="px-4 py-3 text-xs" style={{ color: 'var(--text)' }}>
+                            {c.customer_id ? (
+                              <Link href={`/customers/${c.customer_id}`} className="block min-w-0 hover:underline" style={{ color: 'var(--accent)' }}>
+                                <span className="block font-semibold truncate">{customerName ?? 'Unknown customer'}</span>
+                                {customerEmail && (
+                                  <span className="block truncate text-[11px]" style={{ color: 'var(--text-muted)' }}>{customerEmail}</span>
+                                )}
+                                {customer?.risk_level && (
+                                  <span className="mt-1 inline-block">
+                                    <ConfidenceBadge grade={riskLevelToNewGrade(customer.risk_level)} size="sm" />
+                                  </span>
+                                )}
+                              </Link>
+                            ) : (
+                              <span style={{ color: 'var(--text-muted)' }}>—</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: 'var(--text)' }}>
                             {CLAIM_TYPE_LABELS[c.claim_type] ?? c.claim_type}
                           </td>
                           <td className="px-4 py-3">
                             <StatusPill status={c.status} />
                           </td>
-                          <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-muted)' }}>
+                          <td className="hidden xl:table-cell px-4 py-3 text-xs whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>
                             {latestOutcome ? DECISION_LABELS[latestOutcome.decision] ?? latestOutcome.decision : '—'}
                           </td>
-                          <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-muted)' }}>
+                          <td className="hidden lg:table-cell px-4 py-3 text-xs whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>
                             {formatFiledDate(c)}
                           </td>
-                          <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-muted)' }}>
+                          <td className="hidden lg:table-cell px-4 py-3 text-xs whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>
                             {formatClaimAge(c)}
                           </td>
                           <td className="px-4 py-3">
                             <SlaPill claim={c} />
                           </td>
-                          <td className="px-4 py-3 text-xs tabular-nums" style={{ color: 'var(--text)' }}>
+                          <td className="hidden xl:table-cell px-4 py-3 text-xs max-w-[100px] truncate" style={{ color: 'var(--text-muted)' }}>
+                            {linkedEvidence ? (
+                              <Link href={`/chargebacks/${linkedEvidence.id}`} className="hover:underline truncate block" style={{ color: 'var(--accent)' }} title={linkedEvidence.reference_number}>
+                                {linkedEvidence.reference_number}
+                              </Link>
+                            ) : '—'}
+                          </td>
+                          <td className="px-4 py-3 text-xs tabular-nums whitespace-nowrap" style={{ color: 'var(--text)' }}>
                             {formatCurrencyNullable(c.amount_at_risk, c.currency ?? undefined)}
                           </td>
-                          <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-muted)' }}>
+                          <td className="hidden lg:table-cell px-4 py-3 text-xs whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>
                             {new Date(c.updated_at).toLocaleDateString('en-GB')}
                           </td>
-                          <td className="px-4 py-3 text-right">
+                          <td
+                            className="sticky right-0 px-4 py-3 text-right whitespace-nowrap group-hover:bg-[var(--bg-hover)]"
+                            style={{ background: 'var(--surface-raised)' }}
+                          >
                             {c.customer_id ? (
                               <Link
                                 href={`/customers/${c.customer_id}/claims?claimId=${c.id}`}
                                 className="text-xs font-semibold hover:underline"
                                 style={{ color: 'var(--accent)' }}
                               >
-                                Open review →
+                                Review
                               </Link>
                             ) : (
                               <span className="text-xs" style={{ color: 'var(--text-muted)' }}>—</span>

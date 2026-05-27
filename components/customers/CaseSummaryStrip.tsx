@@ -25,36 +25,38 @@ export default function CaseSummaryStrip({
   const renderNow = Date.now();
 
   return (
-    <div style={{ background: 'var(--surface-raised)', border: '1px solid var(--surface-border)', borderRadius: 'var(--radius-md)' }}>
-      <div style={{ background: 'var(--surface-overlay)', borderBottom: '1px solid var(--surface-border)', padding: '10px 14px' }}>
-        <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--ink-tertiary)', lineHeight: 1 }}>
-          <span aria-hidden="true" className="ua-section-dot" />
-          Case At A Glance
+    <div style={{ background: 'var(--surface-raised)', border: '1px solid var(--surface-border)', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-sm)' }}>
+      <div style={{ borderBottom: '1px solid var(--surface-border)', padding: '10px 14px' }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-primary)', lineHeight: 1 }}>
+          Case at a glance
         </div>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4 p-4">
         <div>
-          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--ink-tertiary)' }}>Flagged</div>
+          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.01em', color: 'var(--ink-secondary)' }}>Flagged</div>
           <div className="mt-1 num" style={{ fontFamily: 'var(--font-mono)', color: 'var(--data-date)' }}>{formatDateMode(flaggedAt, 'table')}</div>
         </div>
         <div>
-          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--ink-tertiary)' }}>Orders</div>
+          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.01em', color: 'var(--ink-secondary)' }}>Orders</div>
           <div className="mt-1 num" style={{ fontFamily: 'var(--font-mono)', color: 'var(--data-score)' }}>{orders}</div>
         </div>
         <div>
-          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--ink-tertiary)' }}>Exposure</div>
+          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.01em', color: 'var(--ink-secondary)' }}>Exposure</div>
           <div className="mt-1 num" style={{ fontFamily: 'var(--font-mono)', color: 'var(--data-currency)' }}>{formatCurrencyCompact(exposure)}</div>
         </div>
         <div>
-          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--ink-tertiary)' }}>Cadence</div>
+          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.01em', color: 'var(--ink-secondary)' }}>Cadence</div>
           <div className="mt-1 flex items-center gap-1">
             {barCells(cadence).map((active, index) => (
               <span key={index} style={{ width: 12, height: 8, borderRadius: 1, background: active ? 'var(--copper-bright)' : 'var(--surface-muted)' }} />
             ))}
           </div>
+          <div className="mt-1 text-[10px]" style={{ color: 'var(--ink-tertiary)' }}>
+            Activity cadence: each square = 1 week
+          </div>
         </div>
         <div title={formatDateMode(lastSeen, 'timestamp')}>
-          <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--ink-tertiary)' }}>Last Seen</div>
+          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.01em', color: 'var(--ink-secondary)' }}>Last seen</div>
           <div className="mt-1 num" style={{ fontFamily: 'var(--font-mono)', color: 'var(--data-date)' }}>{formatDateMode(lastSeen, 'recent', renderNow)}</div>
         </div>
       </div>

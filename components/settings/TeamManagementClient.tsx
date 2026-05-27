@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { Check, Clock, MailPlus, Shield, Trash2, UserCog } from 'lucide-react';
+import { Check, Clock, MailPlus, Shield, Trash2 } from 'lucide-react';
 
 type TeamRole = 'owner' | 'admin' | 'analyst' | 'viewer';
 type InviteStatus = 'pending' | 'active' | 'revoked';
@@ -103,15 +103,22 @@ export default function TeamManagementClient() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [busyMemberId, setBusyMemberId] = useState<string | null>(null);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const canManageTeam = currentUser?.canManageTeam === true;
   const isAccountOwner = currentUser?.isAccountOwner === true;
 
-  const activeCount = useMemo(
-    () => members.filter((member) => member.invite_status === 'active').length,
-    [members]
+  const activeMembers = useMemo(
+    () => members.filter((member) => member.invite_status === 'active'),
+    [members],
   );
+  const pendingMembers = useMemo(
+    () => members.filter((member) => member.invite_status === 'pending'),
+    [members],
+  );
+
+  const activeCount = activeMembers.length;
 
   async function loadTeam() {
     setLoading(true);
@@ -180,6 +187,7 @@ export default function TeamManagementClient() {
 
   async function removeMember(member: TeamMember) {
     setBusyMemberId(member.id);
+    setConfirmingId(null);
     setMessage(null);
     try {
       const response = await fetch(`/api/team/${member.id}`, { method: 'DELETE' });
@@ -192,6 +200,94 @@ export default function TeamManagementClient() {
     } finally {
       setBusyMemberId(null);
     }
+  }
+
+  function renderMemberRow(member: TeamMember) {
+    const isOwnerRow = member.is_account_owner === true;
+    const canChangeThisRole =
+      canManageTeam &&
+      !isOwnerRow &&
+      (isAccountOwner || member.role !== 'owner');
+    const canRemoveThisMember = canManageTeam && !isOwnerRow && member.role !== 'owner';
+    const roleDisabled = busyMemberId === member.id || !canChangeThisRole;
+
+    return (
+      <div key={member.id} className="grid gap-4 px-5 py-4 md:grid-cols-[1fr_170px_auto] md:items-center">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="truncate text-sm font-medium" style={{ color: 'var(--text)' }}>{member.invited_email}</p>
+            {member.invite_status === 'pending' ? (
+              <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs" style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
+                <Clock className="h-3 w-3" /> Pending
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs" style={{ background: 'rgba(47, 107, 67, 0.10)', color: 'var(--text)' }}>
+                <Check className="h-3 w-3" /> {STATUS_LABELS[member.invite_status]}
+              </span>
+            )}
+          </div>
+          <p className="mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>
+            {member.is_account_owner
+              ? 'Account owner'
+              : member.invite_status === 'pending'
+                ? `Invited ${formatDate(member.created_at)}`
+                : `Joined: ${formatDate(member.accepted_at)}`}
+          </p>
+        </div>
+
+        <select
+          value={member.role}
+          onChange={(event) => changeRole(member, event.target.value as TeamRole)}
+          disabled={roleDisabled}
+          aria-label={`Role for ${member.invited_email}`}
+          className="rounded-md px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 disabled:opacity-50"
+          style={{ background: 'var(--bg-inset)', border: '1px solid var(--border)', color: 'var(--text)', outlineColor: 'var(--accent)' }}
+        >
+          {ASSIGNABLE_ROLES.map((roleOption) => (
+            <option
+              key={roleOption}
+              value={roleOption}
+              disabled={roleOption === 'owner' && (!isAccountOwner || member.invite_status !== 'active')}
+            >
+              {ROLE_LABELS[roleOption]}
+            </option>
+          ))}
+        </select>
+
+        {confirmingId === member.id ? (
+          <div className="flex items-center gap-1.5 text-xs">
+            <button
+              type="button"
+              onClick={() => removeMember(member)}
+              disabled={busyMemberId === member.id}
+              className="inline-flex items-center rounded-md px-2.5 py-1.5 font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 disabled:opacity-50"
+              style={{ background: 'var(--risk-critical-fg)', color: 'white', outlineColor: 'var(--risk-critical-fg)' }}
+            >
+              {busyMemberId === member.id ? 'Removing…' : 'Remove'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirmingId(null)}
+              className="inline-flex items-center rounded-md border px-2.5 py-1.5 font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1"
+              style={{ borderColor: 'var(--border-subtle)', color: 'var(--text-muted)', outlineColor: 'var(--accent)' }}
+            >
+              Cancel
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setConfirmingId(member.id)}
+            disabled={!canRemoveThisMember || busyMemberId === member.id}
+            aria-label={`Remove ${member.invited_email}`}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md transition-opacity focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40"
+            style={{ border: '1px solid var(--border)', color: 'var(--text-muted)', outlineColor: 'var(--accent)' }}
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+    );
   }
 
   return (
@@ -235,8 +331,8 @@ export default function TeamManagementClient() {
               disabled={!canManageTeam || submitting}
               required
               placeholder="name@company.com"
-              className="w-full rounded-md px-3 py-2 text-sm focus:outline-none disabled:opacity-50"
-              style={{ background: 'var(--bg-inset)', border: '1px solid var(--border)', color: 'var(--text)' }}
+              className="w-full rounded-md px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 disabled:opacity-50"
+              style={{ background: 'var(--bg-inset)', border: '1px solid var(--border)', color: 'var(--text)', outlineColor: 'var(--accent)' }}
             />
           </label>
 
@@ -246,8 +342,8 @@ export default function TeamManagementClient() {
               value={role}
               onChange={(event) => setRole(event.target.value as Exclude<TeamRole, 'owner'>)}
               disabled={!canManageTeam || submitting}
-              className="w-full rounded-md px-3 py-2 text-sm focus:outline-none disabled:opacity-50"
-              style={{ background: 'var(--bg-inset)', border: '1px solid var(--border)', color: 'var(--text)' }}
+              className="w-full rounded-md px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 disabled:opacity-50"
+              style={{ background: 'var(--bg-inset)', border: '1px solid var(--border)', color: 'var(--text)', outlineColor: 'var(--accent)' }}
             >
               {INVITE_ROLES.map((option) => (
                 <option key={option.value} value={option.value}>{option.label}</option>
@@ -276,7 +372,7 @@ export default function TeamManagementClient() {
       <section className="rounded-lg border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
         <div className="flex items-center justify-between border-b px-5 py-4" style={{ borderColor: 'var(--border-subtle)' }}>
           <div>
-            <h2 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Team members</h2>
+            <h2 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Active members</h2>
             <p className="mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>{activeCount} active user(s)</p>
           </div>
           <Shield className="h-5 w-5" style={{ color: 'var(--icon-muted)' }} />
@@ -284,77 +380,28 @@ export default function TeamManagementClient() {
 
         {loading ? (
           <div className="px-5 py-8 text-sm" style={{ color: 'var(--text-muted)' }}>Loading team...</div>
+        ) : activeMembers.length === 0 ? (
+          <p className="px-5 py-6 text-sm" style={{ color: 'var(--text-muted)' }}>No active team members yet.</p>
         ) : (
           <div className="divide-y" style={{ borderColor: 'var(--border-subtle)' }}>
-            {members.map((member) => {
-              const isOwnerRow = member.is_account_owner === true;
-              const canChangeThisRole =
-                canManageTeam &&
-                !isOwnerRow &&
-                (isAccountOwner || member.role !== 'owner');
-              const canRemoveThisMember = canManageTeam && !isOwnerRow && member.role !== 'owner';
-              const roleDisabled = busyMemberId === member.id || !canChangeThisRole;
-
-              return (
-                <div key={member.id} className="grid gap-4 px-5 py-4 md:grid-cols-[1fr_170px_130px_auto] md:items-center">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="truncate text-sm font-medium" style={{ color: 'var(--text)' }}>{member.invited_email}</p>
-                      {member.invite_status === 'pending' ? (
-                        <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs" style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
-                          <Clock className="h-3 w-3" /> Pending
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs" style={{ background: 'rgba(47, 107, 67, 0.10)', color: 'var(--text)' }}>
-                          <Check className="h-3 w-3" /> {STATUS_LABELS[member.invite_status]}
-                        </span>
-                      )}
-                    </div>
-                    <p className="mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>
-                      {member.is_account_owner ? 'Account owner' : `Joined: ${formatDate(member.accepted_at)}`}
-                    </p>
-                  </div>
-
-                  <select
-                    value={member.role}
-                    onChange={(event) => changeRole(member, event.target.value as TeamRole)}
-                    disabled={roleDisabled}
-                    aria-label={`Role for ${member.invited_email}`}
-                    className="rounded-md px-3 py-2 text-sm focus:outline-none disabled:opacity-50"
-                    style={{ background: 'var(--bg-inset)', border: '1px solid var(--border)', color: 'var(--text)' }}
-                  >
-                    {ASSIGNABLE_ROLES.map((roleOption) => (
-                      <option
-                        key={roleOption}
-                        value={roleOption}
-                        disabled={roleOption === 'owner' && (!isAccountOwner || member.invite_status !== 'active')}
-                      >
-                        {ROLE_LABELS[roleOption]}
-                      </option>
-                    ))}
-                  </select>
-
-                  <div className="inline-flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
-                    <UserCog className="h-4 w-4" />
-                    {ROLE_LABELS[member.role]}
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => removeMember(member)}
-                    disabled={!canRemoveThisMember || busyMemberId === member.id}
-                    aria-label={`Remove ${member.invited_email}`}
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-md transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40"
-                    style={{ border: '1px solid var(--border)', color: 'var(--text-muted)' }}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              );
-            })}
+            {activeMembers.map((member) => renderMemberRow(member))}
           </div>
         )}
       </section>
+
+      {pendingMembers.length > 0 ? (
+        <section className="rounded-lg border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
+          <div className="border-b px-5 py-4" style={{ borderColor: 'var(--border-subtle)' }}>
+            <h2 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Pending invites</h2>
+            <p className="mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>
+              {pendingMembers.length} invite(s) awaiting acceptance
+            </p>
+          </div>
+          <div className="divide-y" style={{ borderColor: 'var(--border-subtle)' }}>
+            {pendingMembers.map((member) => renderMemberRow(member))}
+          </div>
+        </section>
+      ) : null}
 
       <section className="rounded-lg border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
         <div className="border-b px-5 py-4" style={{ borderColor: 'var(--border-subtle)' }}>

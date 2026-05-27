@@ -1,0 +1,51 @@
+{
+  "pages": [
+    {
+      "name": "Customer profile",
+      "route": "/customers/2f3d94f9-a537-4b1c-b37f-499f196d4745",
+      "url": "http://localhost:3000/customers/2f3d94f9-a537-4b1c-b37f-499f196d4745",
+      "screenshot": "screenshots/48_customer_profile.png"
+    },
+    {
+      "name": "Claim review",
+      "route": "/customers/2f3d94f9-a537-4b1c-b37f-499f196d4745/claims",
+      "url": "http://localhost:3000/customers/2f3d94f9-a537-4b1c-b37f-499f196d4745/claims",
+      "screenshot": "screenshots/49_claim_panel.png"
+    }
+  ],
+  "steps": [
+    {
+      "step": "saveClaim",
+      "snippet": "missing_parcel"
+    },
+    {
+      "step": "saveOutcome",
+      "snippet": "(none)"
+    }
+  ],
+  "timings": [
+    {
+      "action": "customerProfileLoad",
+      "ms": 7500
+    },
+    {
+      "action": "saveClaim",
+      "ms": 3162
+    },
+    {
+      "action": "saveOutcome",
+      "ms": 3114
+    },
+    {
+      "action": "saveEvidence",
+      "ms": 3048
+    }
+  ],
+  "errorsByRoute": {
+    "/customers/2f3d94f9-a537-4b1c-b37f-499f196d4745/claims": [
+      "[network 400] POST http://localhost:3000/api/claims",
+      "[console error] Failed to load resource: the server responded with a status of 400 (Bad Request)"
+    ]
+  },
+  "limitations": []
+}

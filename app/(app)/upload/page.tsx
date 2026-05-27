@@ -1,35 +1,83 @@
 import UploadClient from '@/components/upload/UploadClient';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { Button, WorkbenchKpiStrip, WorkbenchPage } from '@/components/ui';
+import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { TABLES } from '@/lib/supabase/tables';
+import type { Database } from '@/lib/supabase/types';
+import { PERMISSIONS, requirePermission } from '@/lib/permissions';
+
+type RecentRunRow = Pick<
+  Database['public']['Tables']['processing_jobs']['Row'],
+  'id' | 'filename' | 'label' | 'status' | 'created_at' | 'total_rows' | 'flagged_count'
+>;
 
 interface UploadPageProps {
   searchParams: { welcome?: string };
 }
 
 export default async function UploadPage({ searchParams }: UploadPageProps) {
+  const userClient = createClient();
+  const { data: { user } } = await userClient.auth.getUser();
+
+  let recentImports: Array<{
+    id: string;
+    filename: string | null;
+    label: string | null;
+    status: string;
+    createdAt: string;
+    totalRows: number;
+    flaggedCount: number;
+  }> = [];
+
+  if (user) {
+    const serviceClient = createServiceClient();
+    const { denied: uploadDenied } = await requirePermission(serviceClient, user.id, PERMISSIONS.UPLOAD_CSV);
+    if (uploadDenied) {
+      redirect('/dashboard');
+    }
+
+    const { denied: histDenied, ctx: histCtx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_HISTORY);
+    if (!histDenied) {
+      const { data: recentRuns } = await serviceClient
+        .from(TABLES.PROCESSING_JOBS)
+        .select('id, filename, label, status, created_at, total_rows, flagged_count')
+        .eq('merchant_id', histCtx.merchantId)
+        .eq('hidden_by_merchant', false)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      recentImports = ((recentRuns ?? []) as RecentRunRow[]).map((run) => ({
+        id: run.id,
+        filename: run.filename,
+        label: run.label,
+        status: run.status,
+        createdAt: run.created_at,
+        totalRows: run.total_rows,
+        flaggedCount: run.flagged_count ?? 0,
+      }));
+    }
+  }
+
   const sp = (await Promise.resolve(searchParams)) ?? {};
   const isWelcome = sp.welcome === '1';
   return (
     <WorkbenchPage
-      title="New Audit"
+      title="New audit"
       subtitle="Upload a CSV export of your orders to detect identity matches and repeated claim patterns."
-      navItems={[
-        { key: 'overview', label: 'Overview', href: '/dashboard' },
-        { key: 'cases', label: 'Cases', href: '/inbox' },
-        { key: 'clusters', label: 'Clusters', href: '/customers?merchantsMin=2' },
-        { key: 'audits', label: 'Audits', href: '/history' },
-        { key: 'reports', label: 'Reports', href: '/reports' },
-      ]}
+      navItems={WORKBENCH_NAV_ITEMS}
       activeNavKey="audits"
-      actions={<Link href="/history"><Button variant="secondary" size="sm">View History</Button></Link>}
+      actions={<Link href="/history"><Button variant="secondary" size="sm">View history</Button></Link>}
       kpiStrip={
         <WorkbenchKpiStrip
+          colsClassName="grid-cols-2 md:grid-cols-3 xl:grid-cols-5"
           items={[
-            { label: 'Step', value: '01 Upload', hint: 'Start with source CSV' },
-            { label: 'Max file', value: '200 MB', hint: 'Current limit' },
+            { label: 'Step', value: 'Upload', hint: 'Source CSV' },
+            { label: 'Max file', value: '200 MB', hint: 'Per upload' },
             { label: 'Max rows', value: '500k', hint: 'Per file' },
-            { label: 'Flow', value: 'Map -> Process', hint: 'Column mapping included' },
-            { label: 'Output', value: 'Audit run', hint: 'Creates review queue' },
+            { label: 'Flow', value: 'Map & run', hint: 'Column mapping' },
+            { label: 'Output', value: 'Audit run', hint: 'Review queue' },
           ]}
         />
       }
@@ -46,7 +94,7 @@ export default async function UploadPage({ searchParams }: UploadPageProps) {
               </p>
             </div>
           )}
-          <UploadClient />
+          <UploadClient recentImports={recentImports} />
         </div>
       }
     />

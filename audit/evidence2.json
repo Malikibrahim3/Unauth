@@ -1,0 +1,74 @@
+{
+  "pages": [
+    {
+      "name": "Dashboard (populated)",
+      "route": "/dashboard",
+      "url": "http://localhost:3000/onboarding",
+      "status": 200,
+      "dom": 979,
+      "idle": 1482,
+      "screenshot": "screenshots/46_dashboard_populated.png"
+    },
+    {
+      "name": "Customers (populated)",
+      "route": "/customers",
+      "url": "http://localhost:3000/onboarding",
+      "status": 200,
+      "dom": 909,
+      "idle": 1418,
+      "screenshot": "screenshots/47_customers_populated.png"
+    },
+    {
+      "name": "Inbox (populated)",
+      "route": "/inbox",
+      "url": "http://localhost:3000/onboarding",
+      "status": 200,
+      "dom": 602,
+      "idle": 1134,
+      "screenshot": "screenshots/55_inbox_populated.png"
+    },
+    {
+      "name": "Audit history (populated)",
+      "route": "/history",
+      "url": "http://localhost:3000/onboarding",
+      "status": 200,
+      "dom": 680,
+      "idle": 1196,
+      "screenshot": "screenshots/56_history_populated.png"
+    },
+    {
+      "name": "Reports (populated)",
+      "route": "/reports",
+      "url": "http://localhost:3000/onboarding",
+      "status": 200,
+      "dom": 673,
+      "idle": 1197,
+      "screenshot": "screenshots/57_reports_populated.png"
+    },
+    {
+      "name": "Watchlist",
+      "route": "/watchlist",
+      "url": "http://localhost:3000/onboarding",
+      "status": 200,
+      "dom": 588,
+      "idle": 1091,
+      "screenshot": "screenshots/58_watchlist_populated.png"
+    },
+    {
+      "name": "Evidence packages",
+      "route": "/chargebacks",
+      "url": "http://localhost:3000/onboarding",
+      "status": 200,
+      "dom": 605,
+      "idle": 1109,
+      "screenshot": "screenshots/59_chargebacks_populated.png"
+    }
+  ],
+  "steps": [],
+  "timings": [],
+  "errorsByRoute": {},
+  "limitations": [
+    "upload flow error: locator.setInputFiles: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('input[type=\"file\"]')\n",
+    "No /customers/[id] link found after upload; customers may render in a drawer."
+  ]
+}

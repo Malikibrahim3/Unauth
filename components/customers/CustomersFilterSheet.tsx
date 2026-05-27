@@ -239,7 +239,7 @@ export default function CustomersFilterSheet() {
 
                 {/* Identity */}
                 <div>
-                  <p className="text-xs font-medium mb-2 uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Identity</p>
+                  <p className="text-[11px] font-semibold mb-2" style={{ color: 'var(--ink-secondary)' }}>Identity</p>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {[
                       { key: 'ip', placeholder: labelFor('ip'), minLen: 4 },
@@ -264,7 +264,7 @@ export default function CustomersFilterSheet() {
 
                 {/* Match confidence */}
                 <div>
-                  <p className="text-xs font-medium mb-2 uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Match confidence</p>
+                  <p className="text-[11px] font-semibold mb-2" style={{ color: 'var(--ink-secondary)' }}>Match confidence</p>
                   <div className="flex items-center gap-2 max-w-xs">
                     <input
                       key={searchParams.get('riskMin')}
@@ -288,7 +288,7 @@ export default function CustomersFilterSheet() {
 
                 {/* Behaviour */}
                 <div>
-                  <p className="text-xs font-medium mb-2 uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Behaviour</p>
+                  <p className="text-[11px] font-semibold mb-2" style={{ color: 'var(--ink-secondary)' }}>Behaviour</p>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {[
                       { label: 'Refund rate %', minKey: 'refundRateMin', maxKey: 'refundRateMax', min: 0, max: 100 },
@@ -319,7 +319,7 @@ export default function CustomersFilterSheet() {
 
                 {/* Date ranges */}
                 <div>
-                  <p className="text-xs font-medium mb-2 uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Date ranges</p>
+                  <p className="text-[11px] font-semibold mb-2" style={{ color: 'var(--ink-secondary)' }}>Date ranges</p>
                   <div className="grid grid-cols-2 gap-3">
                     {[
                       { label: 'First seen', fromKey: 'firstSeenFrom', toKey: 'firstSeenTo' },
@@ -339,7 +339,7 @@ export default function CustomersFilterSheet() {
 
                 {/* Identity signal */}
                 <div>
-                  <p className="text-xs font-medium mb-2 uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Identity signal</p>
+                  <p className="text-[11px] font-semibold mb-2" style={{ color: 'var(--ink-secondary)' }}>Identity signal</p>
                   <input
                     key={searchParams.get('flag')}
                     type="search"

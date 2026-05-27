@@ -48,17 +48,17 @@ export function MetricCard({ label, value, delta, hint, icon, density = 'default
         background: 'var(--surface-raised)',
         border: '1px solid var(--surface-border)',
         borderRadius: 'var(--radius-md)',
+        boxShadow: 'var(--shadow-sm)',
         padding,
       }}
     >
       <div className="flex items-start justify-between gap-2">
         <span
           style={{
-            fontSize: 10,
-            fontWeight: 600,
-            letterSpacing: '0.12em',
-            textTransform: 'uppercase',
-            color: 'var(--ink-tertiary)',
+            fontSize: 11,
+            fontWeight: 500,
+            letterSpacing: '0.01em',
+            color: 'var(--ink-secondary)',
             lineHeight: 1,
           }}
         >
@@ -74,11 +74,11 @@ export function MetricCard({ label, value, delta, hint, icon, density = 'default
       <div
         className="mt-2 num leading-tight tabular-nums"
         style={{
-          fontSize: isHero ? 28 : 20,
+          fontSize: isHero ? 40 : 22,
           fontWeight: 600,
           color: String(value).includes('£') || String(value).includes('$') ? 'var(--data-currency)' : 'var(--data-score)',
           letterSpacing: '-0.02em',
-          fontFamily: 'var(--font-mono)',
+          fontFamily: 'var(--font-sans)',
         }}
       >
         {displayValue}

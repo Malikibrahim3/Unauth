@@ -126,10 +126,17 @@ function LoginPageInner() {
         </Link>
 
         <section className="rounded-md border p-8" style={{ background: '#FFFFFF', borderColor: 'var(--landing-border, #D8D0BD)', boxShadow: '0 2px 4px rgba(26,24,20,0.04), 0 12px 28px rgba(26,24,20,0.08)' }}>
+          <h1 className="t-heading mb-1" style={{ color: 'var(--ink-primary)' }}>
+            {isSignUp ? 'Create account' : 'Sign in'}
+          </h1>
+          <p className="t-caption mb-5" style={{ color: 'var(--ink-tertiary)' }}>
+            {isSignUp ? 'Set up your fraud-ops workspace' : 'Access your merchant fraud-ops console'}
+          </p>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="t-label mb-2 block" style={{ color: 'var(--ink-tertiary)' }}>Email address</label>
+              <label htmlFor="login-email" className="t-label mb-2 block" style={{ color: 'var(--ink-tertiary)' }}>Email address</label>
               <Input
+                id="login-email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -144,8 +151,9 @@ function LoginPageInner() {
             </div>
 
             <div>
-              <label className="t-label mb-2 block" style={{ color: 'var(--ink-tertiary)' }}>Password</label>
+              <label htmlFor="login-password" className="t-label mb-2 block" style={{ color: 'var(--ink-tertiary)' }}>Password</label>
               <Input
+                id="login-password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -165,14 +173,18 @@ function LoginPageInner() {
             {isSignUp && (
               <div className="space-y-4 border-t pt-4" style={{ borderColor: 'var(--surface-border)' }}>
                 <p className="t-label" style={{ color: 'var(--ink-tertiary)' }}>Store details</p>
+                <label htmlFor="signup-store-name" className="sr-only">Store name</label>
                 <Input
+                  id="signup-store-name"
                   type="text"
                   value={storeName}
                   onChange={(e) => setStoreName(e.target.value)}
                   required
                   placeholder="Store name"
                 />
+                <label htmlFor="signup-platform" className="t-label block" style={{ color: 'var(--ink-tertiary)' }}>Platform</label>
                 <select
+                  id="signup-platform"
                   value={platform}
                   onChange={(e) => setPlatform(e.target.value)}
                   required
@@ -187,7 +199,9 @@ function LoginPageInner() {
                   <option value="custom">Custom</option>
                   <option value="other">Other</option>
                 </select>
+                <label htmlFor="signup-volume" className="t-label block" style={{ color: 'var(--ink-tertiary)' }}>Annual order volume</label>
                 <select
+                  id="signup-volume"
                   value={annualVolume}
                   onChange={(e) => setAnnualVolume(e.target.value)}
                   required
@@ -199,7 +213,9 @@ function LoginPageInner() {
                     <option key={o.value} value={o.value}>{o.label}</option>
                   ))}
                 </select>
+                <label htmlFor="signup-concern" className="t-label block" style={{ color: 'var(--ink-tertiary)' }}>Primary concern</label>
                 <select
+                  id="signup-concern"
                   value={primaryConcern}
                   onChange={(e) => setPrimaryConcern(e.target.value)}
                   required

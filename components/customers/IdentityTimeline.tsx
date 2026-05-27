@@ -26,10 +26,10 @@ export default function IdentityTimeline({ entries }: IdentityTimelineProps) {
       <table className="w-full border-collapse" style={{ fontSize: 12 }}>
         <thead>
           <tr style={{ background: 'var(--surface-base)', borderBottom: '1px solid var(--surface-border)' }}>
-            <th style={{ padding: '8px 10px', textAlign: 'left', fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ink-tertiary)' }}>First Seen</th>
-            <th style={{ padding: '8px 10px', textAlign: 'left', fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ink-tertiary)' }}>Field</th>
-            <th style={{ padding: '8px 10px', textAlign: 'left', fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ink-tertiary)' }}>Value</th>
-            <th style={{ padding: '8px 10px', textAlign: 'left', fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ink-tertiary)' }}>Last Seen</th>
+            <th style={{ padding: '8px 10px', textAlign: 'left', fontSize: 11, fontWeight: 600, letterSpacing: '0.01em', color: 'var(--ink-secondary)' }}>First Seen</th>
+            <th style={{ padding: '8px 10px', textAlign: 'left', fontSize: 11, fontWeight: 600, letterSpacing: '0.01em', color: 'var(--ink-secondary)' }}>Field</th>
+            <th style={{ padding: '8px 10px', textAlign: 'left', fontSize: 11, fontWeight: 600, letterSpacing: '0.01em', color: 'var(--ink-secondary)' }}>Value</th>
+            <th style={{ padding: '8px 10px', textAlign: 'left', fontSize: 11, fontWeight: 600, letterSpacing: '0.01em', color: 'var(--ink-secondary)' }}>Last seen</th>
           </tr>
         </thead>
         <tbody>
@@ -44,7 +44,7 @@ export default function IdentityTimeline({ entries }: IdentityTimelineProps) {
             >
               <td className="num" style={{ padding: '10px', fontFamily: 'var(--font-mono)', color: 'var(--data-date)' }}>{formatDateMode(entry.date, 'table')}</td>
               <td style={{ padding: '10px' }}>
-                <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ink-tertiary)' }}>{FIELD_LABELS[entry.field]}</div>
+                <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.01em', color: 'var(--ink-secondary)' }}>{FIELD_LABELS[entry.field]}</div>
               </td>
               <td style={{ padding: '10px' }}>
                 <div className="font-mono break-all" style={{ color: 'var(--data-id)' }}>{entry.value}</div>

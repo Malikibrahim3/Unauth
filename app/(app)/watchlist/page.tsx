@@ -8,6 +8,7 @@ import WatchlistSearchInput from '@/components/watchlist/WatchlistSearchInput';
 import { formatDate } from '@/lib/utils/format';
 import PageSizeSelect from '@/components/common/PageSizeSelect';
 import { Button, WorkbenchActionBar, WorkbenchEmptyState, WorkbenchKpiStrip, WorkbenchPage } from '@/components/ui';
+import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
 import { createServiceClient } from '@/lib/supabase/server';
 import { resolveCallerContext } from '@/lib/permissions';
 
@@ -41,7 +42,7 @@ export default async function WatchlistPage({ searchParams }: { searchParams?: {
   const querySearchParams = sp ?? {};
   const searchQuery = (sp?.q ?? '').trim();
 
-  const [{ data: entries, count }, { data: recentRaw }] = await Promise.all([
+  const [{ data: entries, count }, { data: allWatchlistIds }, { data: recentRaw }] = await Promise.all([
     (() => {
       let q = serviceClient
         .from(TABLES.WATCHLIST_ENTRIES)
@@ -51,13 +52,17 @@ export default async function WatchlistPage({ searchParams }: { searchParams?: {
         .order('added_at', { ascending: false })
         .range(offset, offset + pageSize - 1);
       if (searchQuery) {
-        // Substring match on display_name or display_email (case-insensitive)
         q = q.or(
           `display_name.ilike.%${searchQuery}%,display_email.ilike.%${searchQuery}%`,
         );
       }
       return q;
     })(),
+    serviceClient
+      .from(TABLES.WATCHLIST_ENTRIES)
+      .select('customer_profile_id')
+      .eq('merchant_id', user.id)
+      .eq('removed_by_merchant', false),
     serviceClient
       .from('customer_profile_audit_appearances')
       .select(`
@@ -71,7 +76,7 @@ export default async function WatchlistPage({ searchParams }: { searchParams?: {
       `)
       .gte('appeared_at', thirtyDaysAgo)
       .order('appeared_at', { ascending: false })
-      .limit(10),
+      .limit(20),
   ]);
 
   const rows = (entries ?? []) as Array<{
@@ -84,8 +89,21 @@ export default async function WatchlistPage({ searchParams }: { searchParams?: {
     last_seen_at: string | null;
   }>;
 
-  // Filter recent appearances to only those whose profile_id is in the watchlist
-  const watchlistedProfileIds = new Set(rows.map((r) => r.customer_profile_id).filter(Boolean));
+  const allWatchlistedProfileIds = new Set(
+    ((allWatchlistIds ?? []) as Array<{ customer_profile_id: string | null }>)
+      .map((row) => row.customer_profile_id)
+      .filter((id): id is string => typeof id === 'string' && id.length > 0),
+  );
+
+  let appeared30dCount = 0;
+  if (allWatchlistedProfileIds.size > 0) {
+    const { count: appearanceCount } = await serviceClient
+      .from('customer_profile_audit_appearances')
+      .select('id', { count: 'exact', head: true })
+      .gte('appeared_at', thirtyDaysAgo)
+      .in('profile_id', Array.from(allWatchlistedProfileIds));
+    appeared30dCount = appearanceCount ?? 0;
+  }
 
   type RecentRow = {
     id: string;
@@ -98,14 +116,14 @@ export default async function WatchlistPage({ searchParams }: { searchParams?: {
   };
 
   const recentAppearances = ((recentRaw ?? []) as unknown as RecentRow[]).filter(
-    (r) => watchlistedProfileIds.has(r.profile_id)
+    (r) => allWatchlistedProfileIds.has(r.profile_id),
   );
 
   // Build per-profile score history map (oldest-first, up to 10 snapshots)
   // Used to compute risk trend in the watchlist table.
   const trendScoresMap = new Map<string, number[]>();
   for (const r of ((recentRaw ?? []) as unknown as RecentRow[])) {
-    if (!watchlistedProfileIds.has(r.profile_id)) continue;
+    if (!allWatchlistedProfileIds.has(r.profile_id)) continue;
     if (!trendScoresMap.has(r.profile_id)) trendScoresMap.set(r.profile_id, []);
     trendScoresMap.get(r.profile_id)!.push(r.score_at_time);
   }
@@ -119,20 +137,14 @@ export default async function WatchlistPage({ searchParams }: { searchParams?: {
     <WorkbenchPage
       title="Watchlist"
       subtitle="Customers you're monitoring across future audits."
-      navItems={[
-        { key: 'overview', label: 'Overview', href: '/dashboard' },
-        { key: 'cases', label: 'Cases', href: '/inbox' },
-        { key: 'clusters', label: 'Clusters', href: '/customers?merchantsMin=2' },
-        { key: 'audits', label: 'Audits', href: '/history' },
-        { key: 'reports', label: 'Reports', href: '/reports' },
-      ]}
-      activeNavKey="clusters"
+      navItems={WORKBENCH_NAV_ITEMS}
+      activeNavKey="customers"
       actions={<Link href="/customers"><Button size="sm">Browse Customers</Button></Link>}
       kpiStrip={
         <WorkbenchKpiStrip
           items={[
             { label: 'Watchlisted', value: total.toLocaleString(), hint: 'Total entries' },
-            { label: 'Appeared 30d', value: recentAppearances.length.toLocaleString(), hint: 'Recent audits' },
+            { label: 'Appeared 30d', value: (appeared30dCount ?? 0).toLocaleString(), hint: 'Watchlisted profiles' },
             { label: 'Search', value: searchQuery ? 'On' : 'Off', hint: searchQuery || 'No query' },
             { label: 'Page size', value: pageSize.toLocaleString(), hint: 'Rows per page' },
             { label: 'Pages', value: totalPages.toLocaleString(), hint: 'Result pages' },
@@ -216,7 +228,7 @@ export default async function WatchlistPage({ searchParams }: { searchParams?: {
             action={
               !searchQuery ? (
                 <Link href="/customers" className="text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
-                  Browse clusters →
+                  Browse customers →
                 </Link>
               ) : undefined
             }

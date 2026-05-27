@@ -104,11 +104,10 @@ export function DataTable<T>({
                 scope="col"
                 style={{
                   width: col.width,
-                  fontSize: 10,
+                  fontSize: 11,
                   fontWeight: 600,
-                  letterSpacing: '0.12em',
-                  textTransform: 'uppercase',
-                  color: 'var(--ink-tertiary)',
+                  letterSpacing: '0.01em',
+                  color: 'var(--ink-secondary)',
                   padding: '0 14px',
                   height: 34,
                   whiteSpace: 'nowrap',
@@ -152,7 +151,7 @@ export function DataTable<T>({
                   onClick={onRowClick ? () => onRowClick(row) : undefined}
                   style={{
                     height: rowH,
-                    borderBottom: '1px solid var(--surface-border)',
+                    borderBottom: '1px solid var(--border-subtle)',
                     background: isSelected ? 'var(--copper-glow)' : undefined,
                     borderLeft: isSelected ? '3px solid var(--copper-bright)' : '3px solid transparent',
                     cursor: onRowClick ? 'pointer' : undefined,

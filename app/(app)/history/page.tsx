@@ -5,6 +5,7 @@ import AuditHistoryTableClient from '@/components/audit/AuditHistoryTableClient'
 import type { Database } from '@/lib/supabase/types';
 import PageSizeSelect from '@/components/common/PageSizeSelect';
 import { Button, WorkbenchPage, WorkbenchActionBar, WorkbenchEmptyState, WorkbenchKpiStrip } from '@/components/ui';
+import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
 import { requirePermission, PERMISSIONS, resolveDefaultAppPath } from '@/lib/permissions';
 import { redirect } from 'next/navigation';
 
@@ -47,19 +48,13 @@ export default async function HistoryPage({ searchParams }: { searchParams?: { p
 
   return (
     <WorkbenchPage
-      title="Audits"
+      title="Audit history"
       subtitle={`Showing ${total === 0 ? 0 : offset + 1}-${Math.min(offset + pageSize, total)} of ${total.toLocaleString()} runs`}
-      navItems={[
-        { key: 'overview', label: 'Overview', href: '/dashboard' },
-        { key: 'cases', label: 'Cases', href: '/inbox' },
-        { key: 'clusters', label: 'Clusters', href: '/customers?merchantsMin=2' },
-        { key: 'audits', label: 'Audits', href: '/history' },
-        { key: 'reports', label: 'Reports', href: '/reports' },
-      ]}
+      navItems={WORKBENCH_NAV_ITEMS}
       activeNavKey="audits"
       actions={
         <Link href="/upload">
-          <Button size="sm">New Audit</Button>
+          <Button size="sm">New audit</Button>
         </Link>
       }
       kpiStrip={

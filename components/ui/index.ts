@@ -17,6 +17,7 @@ export { ConfidenceBadge } from './ConfidenceBadge';
 export { scoreToGrade } from '@/lib/confidence';
 export type { ConfidenceGradeValue } from '@/lib/confidence';
 export { PrivacyBadge } from './PrivacyBadge';
+export { SensitiveField } from './SensitiveField';
 
 export { RiskScoreBadge, scoreToRiskLevel } from './RiskScoreBadge';
 export type { RiskLevel } from './RiskScoreBadge';

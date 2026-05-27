@@ -16,8 +16,8 @@ interface Props {
 const TIERS = [
   { key: 'definite', label: 'Definite', color: 'var(--sev-definite)' },
   { key: 'probable', label: 'Probable', color: 'var(--sev-probable)' },
-  { key: 'possible', label: 'Possible', color: 'var(--sev-neutral)' },
-  { key: 'weak',     label: 'Weak',     color: 'color-mix(in srgb, var(--sev-neutral) 45%, var(--surface-muted))' },
+  { key: 'possible', label: 'Possible', color: 'var(--copper-mid)' },
+  { key: 'weak',     label: 'Weak',     color: 'var(--copper-dim)' },
 ] as const;
 
 export default function AuditCharts({ counts, totalRows, totalFlagged }: Props) {
@@ -30,7 +30,7 @@ export default function AuditCharts({ counts, totalRows, totalFlagged }: Props) 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {/* Horizontal stacked evidence-bar */}
-      <SectionCard title="Match Distribution" description={`${totalTiered.toLocaleString()} ${totalTiered === 1 ? 'customer' : 'customers'} with match signals`}>
+      <SectionCard title="Match distribution" description={`${totalTiered.toLocaleString()} ${totalTiered === 1 ? 'customer' : 'customers'} with match signals`}>
         {totalTiered === 0 ? (
           <div className="flex items-center justify-center h-[120px] rounded-md" style={{ background: 'var(--surface-overlay)' }}>
             <div className="text-center">
@@ -84,7 +84,7 @@ export default function AuditCharts({ counts, totalRows, totalFlagged }: Props) 
       </SectionCard>
 
       {/* Tier counts bar chart */}
-      <SectionCard title="Customers By Match Confidence" description="Counts across all four confidence tiers">
+      <SectionCard title="Customers by match confidence" description="Counts across all four confidence tiers">
         <div className="grid grid-cols-4 gap-3 h-[160px] items-end">
           {TIERS.map((tier) => {
             const value = counts[tier.key];
@@ -100,7 +100,7 @@ export default function AuditCharts({ counts, totalRows, totalFlagged }: Props) 
                 </div>
                 <div className="text-center">
                   <p className="text-caption font-mono" style={{ color: 'var(--ink-primary)' }}>{value.toLocaleString()}</p>
-                  <p className="text-[10px] uppercase truncate" style={{ color: 'var(--ink-tertiary)' }}>{tier.label}</p>
+                  <p className="text-[11px] truncate" style={{ color: 'var(--ink-secondary)' }}>{tier.label}</p>
                 </div>
               </div>
             );
@@ -109,7 +109,7 @@ export default function AuditCharts({ counts, totalRows, totalFlagged }: Props) 
       </SectionCard>
 
       {/* Overall composition — full width */}
-      <SectionCard title="Overall Composition" className="md:col-span-2">
+      <SectionCard title="Overall composition" className="md:col-span-2">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-4 text-caption" style={{ color: 'var(--ink-tertiary)' }}>
             <span className="flex items-center gap-1.5">

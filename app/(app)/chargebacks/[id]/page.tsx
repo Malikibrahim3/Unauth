@@ -9,7 +9,9 @@ import { formatDate } from '@/lib/utils/format'
 import { EvidenceStrengthMeter } from '@/components/evidence/EvidenceStrengthMeter'
 import { DisputeReadinessPanel } from '@/components/evidence/DisputeReadinessPanel'
 import { EvidencePackagePreview } from '@/components/evidence/EvidencePackagePreview'
-import { requirePermission, PERMISSIONS, resolveDefaultAppPath } from '@/lib/permissions'
+import { requirePermission, hasPermission, PERMISSIONS, resolveDefaultAppPath } from '@/lib/permissions'
+import { SensitiveField } from '@/components/ui/SensitiveField'
+import { SectionCard } from '@/components/ui'
 
 interface Props {
   params: Promise<{ id: string }>
@@ -49,7 +51,10 @@ export default async function EvidenceDetailPage({ params }: Props) {
 
   if (!pkg) notFound()
 
+  const canRevealCustomer = await hasPermission(serviceClient, user.id, PERMISSIONS.VIEW_CUSTOMERS)
+
   let maskedEmail = '****'
+  let fullEmail: string | null = null
   if (pkg.customer_profile_id) {
     const { data: profile } = await serviceClient
       .from(TABLES.CUSTOMER_PROFILES)
@@ -57,6 +62,7 @@ export default async function EvidenceDetailPage({ params }: Props) {
       .eq('id', pkg.customer_profile_id)
       .single() as unknown as { data: { primary_email: string | null; emails: string[]; risk_level: string } | null }
     const email = profile?.primary_email ?? profile?.emails?.[0] ?? ''
+    fullEmail = email || null
     if (email) maskedEmail = `${email[0]}****@${email.split('@')[1] ?? '***'}`
   }
 
@@ -114,6 +120,55 @@ export default async function EvidenceDetailPage({ params }: Props) {
         </div>
       </div>
 
+      <SectionCard
+        title="Package provenance"
+        description="How this evidence package was compiled and where it can be reviewed."
+      >
+        <div className="grid gap-4 md:grid-cols-2">
+          <div>
+            <p className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Generated</p>
+            <p className="text-sm font-medium mt-1" style={{ color: 'var(--text)' }}>
+              {formatDate(pkg.generated_at)}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Data sources</p>
+            <p className="text-sm font-medium mt-1" style={{ color: 'var(--text)' }}>
+              {signalCount} identity signal{signalCount === 1 ? '' : 's'}
+              {pkg.ce3_eligible ? ' · CE3.0 qualifying signals detected' : ''}
+            </p>
+          </div>
+          {pkg.customer_profile_id ? (
+            <div>
+              <p className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Customer dossier</p>
+              <Link
+                href={`/customers/${pkg.customer_profile_id}`}
+                className="text-sm font-semibold mt-1 inline-block hover:underline"
+                style={{ color: 'var(--accent)' }}
+              >
+                View customer profile →
+              </Link>
+            </div>
+          ) : null}
+          <div>
+            <p className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Retention</p>
+            <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
+              Stored in your merchant-scoped evidence archive with masked identifiers for export.
+            </p>
+          </div>
+        </div>
+        {fullEmail ? (
+          <div className="mt-4 pt-4 border-t" style={{ borderColor: 'var(--border-subtle)' }}>
+            <SensitiveField
+              label="Customer email"
+              masked={maskedEmail}
+              full={fullEmail}
+              canReveal={canRevealCustomer}
+            />
+          </div>
+        ) : null}
+      </SectionCard>
+
       {/* CE3 signals banner */}
       {pkg.ce3_eligible && (
         <div
@@ -151,11 +206,8 @@ export default async function EvidenceDetailPage({ params }: Props) {
       )}
       {/* ── END PHASE C ──────────────────────────────────────────────── */}
 
-      {/* Summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         <Card label="Reference" value={pkg.reference_number} mono />
-        <Card label="Customer" value={maskedEmail} />
-        <Card label="Generated" value={formatDate(pkg.generated_at)} />
         <Card
           label="CE3.0 Signals"
           value={pkg.ce3_eligible ? 'Detected' : 'Not detected'}

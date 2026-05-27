@@ -2,14 +2,25 @@
 import { useEffect, useState } from 'react';
 import { formatRelativeTime } from '@/lib/utils/format';
 
+interface WebhookEvent {
+  at: string;
+  topic: string | null;
+  status: string;
+}
+
 interface ShopifyStatus {
   connected: boolean;
   shopDomain?: string;
   lastOrderSyncedAt?: string | null;
   lastWebhookAt?: string | null;
   lastWebhookTopic?: string | null;
+  lastWebhookStatus?: string | null;
   orderCount?: number;
   lastError?: string | null;
+  scopes?: string[];
+  dataSources?: string[];
+  webhookFailures?: number;
+  recentWebhooks?: WebhookEvent[];
 }
 
 export default function SyncStatusCard() {
@@ -26,7 +37,7 @@ export default function SyncStatusCard() {
 
   if (!status.connected) {
     return (
-      <div className="rounded-xl p-5 border" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}>
+      <div className="rounded-xl p-5 border space-y-4" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}>
         <div className="flex items-start gap-3">
           <div className="h-2.5 w-2.5 rounded-full mt-1 flex-shrink-0" style={{ background: 'var(--text-muted)' }} />
           <div>
@@ -43,14 +54,31 @@ export default function SyncStatusCard() {
             </a>
           </div>
         </div>
+        {status.scopes && status.scopes.length > 0 ? (
+          <div>
+            <p className="text-xs font-semibold mb-2" style={{ color: 'var(--text-muted)' }}>Requested read-only scopes</p>
+            <div className="flex flex-wrap gap-1.5">
+              {status.scopes.map((scope) => (
+                <span
+                  key={scope}
+                  className="rounded px-2 py-0.5 font-mono text-[10px]"
+                  style={{ background: 'var(--bg-inset)', color: 'var(--text-muted)' }}
+                >
+                  {scope}
+                </span>
+              ))}
+            </div>
+          </div>
+        ) : null}
       </div>
     );
   }
 
   const hasError = !!status.lastError;
+  const webhookHealthy = (status.webhookFailures ?? 0) === 0;
 
   return (
-    <div className="rounded-xl p-5 border" style={{ borderColor: hasError ? 'var(--risk-high-bd, #FCA5A5)' : 'var(--border-subtle)', background: 'var(--bg-surface)' }}>
+    <div className="rounded-xl p-5 border space-y-4" style={{ borderColor: hasError ? 'var(--risk-high-bd, #FCA5A5)' : 'var(--border-subtle)', background: 'var(--bg-surface)' }}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3">
           <div
@@ -62,7 +90,7 @@ export default function SyncStatusCard() {
               {status.shopDomain}
             </p>
             <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-              {status.orderCount?.toLocaleString() ?? '—'} orders synced
+              {status.orderCount?.toLocaleString() ?? '—'} orders synced · read-only connection
             </p>
           </div>
         </div>
@@ -75,7 +103,7 @@ export default function SyncStatusCard() {
         </a>
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
+      <div className="grid grid-cols-2 gap-3 text-xs">
         <div>
           <p style={{ color: 'var(--text-muted)' }}>Last order synced</p>
           <p className="font-medium mt-0.5" style={{ color: 'var(--text)' }}>
@@ -91,10 +119,55 @@ export default function SyncStatusCard() {
             )}
           </p>
         </div>
+        <div>
+          <p style={{ color: 'var(--text-muted)' }}>Webhook health</p>
+          <p className="font-medium mt-0.5" style={{ color: webhookHealthy ? 'var(--success)' : 'var(--risk-high)' }}>
+            {webhookHealthy ? 'Healthy' : `${status.webhookFailures} failed`}
+          </p>
+        </div>
+        <div>
+          <p style={{ color: 'var(--text-muted)' }}>Data sources</p>
+          <p className="font-medium mt-0.5" style={{ color: 'var(--text)' }}>
+            {(status.dataSources ?? ['Shopify']).join(' · ')}
+          </p>
+        </div>
       </div>
 
+      {status.scopes && status.scopes.length > 0 ? (
+        <div>
+          <p className="text-xs font-semibold mb-2" style={{ color: 'var(--text-muted)' }}>Granted scopes</p>
+          <div className="flex flex-wrap gap-1.5">
+            {status.scopes.map((scope) => (
+              <span
+                key={scope}
+                className="rounded px-2 py-0.5 font-mono text-[10px]"
+                style={{ background: 'var(--bg-inset)', color: 'var(--text-muted)' }}
+              >
+                {scope}
+              </span>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {status.recentWebhooks && status.recentWebhooks.length > 0 ? (
+        <div>
+          <p className="text-xs font-semibold mb-2" style={{ color: 'var(--text-muted)' }}>Recent webhook activity</p>
+          <ul className="space-y-1">
+            {status.recentWebhooks.map((event) => (
+              <li key={`${event.at}-${event.topic ?? 'unknown'}`} className="flex items-center justify-between gap-2 text-xs">
+                <span className="font-mono truncate" style={{ color: 'var(--text)' }}>{event.topic ?? 'webhook'}</span>
+                <span style={{ color: event.status === 'failed' ? 'var(--risk-high)' : 'var(--text-muted)' }}>
+                  {event.status} · {formatRelativeTime(event.at)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
       {hasError && (
-        <div className="mt-3 px-3 py-2 rounded-md text-xs" style={{ background: 'var(--risk-high-bg, #FEE2E2)', color: 'var(--risk-high, #991B1B)' }}>
+        <div className="px-3 py-2 rounded-md text-xs" style={{ background: 'var(--risk-high-bg, #FEE2E2)', color: 'var(--risk-high, #991B1B)' }}>
           <p className="font-semibold mb-0.5">Sync error</p>
           <p>{status.lastError}</p>
           <a href="/api/shopify/install" className="font-semibold underline mt-1 inline-block">Reconnect Shopify</a>

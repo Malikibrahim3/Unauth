@@ -66,7 +66,7 @@ const GRADE_LABEL: Record<string, string> = {
 const GRADE_COLOR: Record<string, string> = {
   definite: 'var(--sev-definite)',
   probable: 'var(--sev-probable)',
-  possible: 'var(--sev-neutral)',
+  possible: 'var(--copper-mid)',
   weak: 'var(--ink-tertiary)',
 };
 
@@ -160,7 +160,7 @@ function Segmented<T extends string | number>({
           key={String(item)}
           type="button"
           onClick={() => onChange(item)}
-          className={cn('h-6 min-w-10 rounded-sm px-2 text-[11px] font-semibold uppercase transition-colors')}
+          className={cn('h-6 min-w-10 rounded-sm px-2 text-[11px] font-semibold transition-colors')}
           style={{
             background: item === value ? 'var(--copper-bright)' : 'transparent',
             color: item === value ? 'var(--ink-inverse)' : 'var(--ink-secondary)',
@@ -303,7 +303,7 @@ export default function DashboardCharts({ runs, transactions }: Props) {
     <div className="border-t p-4" style={{ borderColor: 'var(--surface-border)' }}>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-overline" style={{ color: 'var(--ink-tertiary)' }}>Transaction intelligence</p>
+          <p className="text-[13px] font-semibold" style={{ color: 'var(--ink-primary)' }}>Transaction intelligence</p>
           <p className="text-caption mt-1" style={{ color: 'var(--ink-secondary)' }}>
             {transactions.length.toLocaleString()} seeded transactions, refreshed from merchant-owned audits.
           </p>
@@ -312,7 +312,7 @@ export default function DashboardCharts({ runs, transactions }: Props) {
       </div>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-6">
-        <SectionCard title="Fraud Rate Over Time" description={`${range} day transaction flag rate`} className="xl:col-span-3">
+        <SectionCard title="Fraud rate over time" description={`${range} day transaction flag rate`} className="xl:col-span-3">
           {fraudRate.some((d) => d.total > 0) ? (
             <div className="relative">
               <ResponsiveContainer width="100%" height={230}>
@@ -330,7 +330,7 @@ export default function DashboardCharts({ runs, transactions }: Props) {
         </SectionCard>
 
         <SectionCard
-          title="Transaction Volume"
+          title="Transaction volume"
           description="Daily or weekly completed order volume"
           actions={<Segmented<VolumeMode> value={volumeMode} values={['daily', 'weekly']} onChange={setVolumeMode} />}
           className="xl:col-span-3"
@@ -343,7 +343,7 @@ export default function DashboardCharts({ runs, transactions }: Props) {
                   <XAxis dataKey="label" tick={{ fill: 'var(--ink-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} minTickGap={18} />
                   <YAxis tick={{ fill: 'var(--ink-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} width={42} />
                   <Tooltip content={<CustomTooltip />} cursor={{ fill: 'color-mix(in srgb, var(--copper-bright) 8%, transparent)' }} />
-                  <Bar name="Transactions" dataKey="count" fill="var(--privacy-ink)" radius={[4, 4, 0, 0]} />
+                  <Bar name="Transactions" dataKey="count" fill="var(--copper-dim)" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
               {volume.filter((d) => d.count > 0).length < 3 && <SparseDataOverlay />}
@@ -351,7 +351,7 @@ export default function DashboardCharts({ runs, transactions }: Props) {
           ) : <EmptyChart />}
         </SectionCard>
 
-        <SectionCard title="Identity Match Breakdown" description="Confidence grade distribution" className="xl:col-span-2">
+        <SectionCard title="Identity match breakdown" description="Confidence grade distribution" className="xl:col-span-2">
           <ResponsiveContainer width="100%" height={240}>
             <PieChart>
               <Pie data={gradeBreakdown} dataKey="value" nameKey="name" innerRadius={58} outerRadius={86} paddingAngle={3}>
@@ -363,7 +363,7 @@ export default function DashboardCharts({ runs, transactions }: Props) {
           </ResponsiveContainer>
         </SectionCard>
 
-        <SectionCard title="Chargeback Rate Trend" description="Weekly rate with 1.5% benchmark" className="xl:col-span-2">
+        <SectionCard title="Chargeback rate trend" description="Weekly rate with 1.5% benchmark" className="xl:col-span-2">
           {chargebackTrend.length ? (
             <ResponsiveContainer width="100%" height={240}>
               <LineChart data={chargebackTrend} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
@@ -378,23 +378,23 @@ export default function DashboardCharts({ runs, transactions }: Props) {
           ) : <EmptyChart />}
         </SectionCard>
 
-        <SectionCard title="Risk Score Distribution" description="Histogram across analysed orders" className="xl:col-span-2">
+        <SectionCard title="Risk score distribution" description="Histogram across analysed orders" className="xl:col-span-2">
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={riskDistribution} margin={{ top: 8, right: 8, left: 0, bottom: 0 }} barSize={34}>
               <CartesianGrid stroke="var(--surface-border)" vertical={false} />
               <XAxis dataKey="range" tick={{ fill: 'var(--ink-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fill: 'var(--ink-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} width={46} />
-              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'color-mix(in srgb, var(--privacy-ink) 8%, transparent)' }} />
+              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'color-mix(in srgb, var(--copper-bright) 8%, transparent)' }} />
               <Bar name="Orders" dataKey="count" radius={[4, 4, 0, 0]}>
                 {riskDistribution.map((bucket, index) => (
-                  <Cell key={bucket.range} fill={index >= 4 ? 'var(--sev-definite)' : index === 3 ? 'var(--sev-probable)' : index === 2 ? 'var(--sev-neutral)' : 'var(--privacy-ink)'} />
+                  <Cell key={bucket.range} fill={index >= 4 ? 'var(--sev-definite)' : index === 3 ? 'var(--sev-probable)' : index === 2 ? 'var(--copper-mid)' : 'var(--copper-dim)'} />
                 ))}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
         </SectionCard>
 
-        <SectionCard title="Top Flagged Signals" description="Most common signals in the current data set" className="xl:col-span-6">
+        <SectionCard title="Top flagged signals" description="Most common signals in the current data set" className="xl:col-span-6">
           {topSignals.length ? (
             <ResponsiveContainer width="100%" height={260}>
               <BarChart data={topSignals} layout="vertical" margin={{ top: 4, right: 16, left: 142, bottom: 0 }} barSize={18}>
