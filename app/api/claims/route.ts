@@ -88,7 +88,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: msg }, { status });
   }
 
-  // Verify the customer profile belongs to this merchant (works for both CSV and Shopify customers).
+  // Verify the customer profile belongs to this merchant.
+  // CSV customers (no shop_domain, order_ref supplied instead of shopify_order_id) are fully
+  // supported — the schema requires only one of shopify_order_id | order_ref | audit_transaction_id,
+  // and this ownership check is profile-based, not Shopify-connection-based. Verified 2026-05-27.
   if (parsed.data.customer_id) {
     const { data: profile } = await serviceClient
       .from('customer_profiles' as any)

@@ -138,10 +138,10 @@ export default async function ClaimsPage({
         isEmpty ? (
           <WorkbenchEmptyState
             title="No claims yet"
-            description="Claims appear here when filed from a customer profile. Open a customer, go to the Claims tab, and file your first claim."
+            description="Claims appear here when filed from a customer profile. Open a customer profile, run a claim review, and it will show up in this list."
             action={
               <Link href="/customers" className="text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
-                Browse customers →
+                Go to Customers →
               </Link>
             }
           />

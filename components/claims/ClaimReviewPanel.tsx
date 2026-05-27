@@ -24,6 +24,10 @@ type ClaimDraft = {
   evidenceUrl: string;
   evidenceHash: string;
   metaRows: Array<{ key: string; value: string }>;
+  manualOrderRef: string;
+  manualOrderSource: string;
+  manualModeExplicit: boolean;
+  orderValue: string;
 };
 
 const DEFAULT_META_ROWS = [{ key: 'note', value: '' }];
@@ -179,6 +183,12 @@ export default function ClaimReviewPanel({ profileId }: { profileId: string }) {
   const [state, setState] = useState<'idle' | 'busy'>('idle');
   const [message, setMessage] = useState('');
   const [messageTone, setMessageTone] = useState<'success' | 'error' | 'neutral'>('neutral');
+  // Manual order entry (Fix 2)
+  const [manualOrderRef, setManualOrderRef] = useState('');
+  const [manualOrderSource, setManualOrderSource] = useState('manual');
+  const [manualModeExplicit, setManualModeExplicit] = useState(false);
+  // Order value for amount_at_risk (Fix 4)
+  const [orderValue, setOrderValue] = useState('');
 
   useEffect(() => {
     fetch(`/api/customers/${profileId}`).then(r => r.ok ? r.json() : null).then((x) => setData(x)).catch(() => {});
@@ -208,11 +218,15 @@ export default function ClaimReviewPanel({ profileId }: { profileId: string }) {
     if (typeof draft.evidenceUrl === 'string') setEvidenceUrl(draft.evidenceUrl);
     if (typeof draft.evidenceHash === 'string') setEvidenceHash(draft.evidenceHash);
     if (Array.isArray(draft.metaRows) && draft.metaRows.length > 0) setMetaRows(draft.metaRows);
+    if (typeof draft.manualOrderRef === 'string') setManualOrderRef(draft.manualOrderRef);
+    if (typeof draft.manualOrderSource === 'string') setManualOrderSource(draft.manualOrderSource);
+    if (typeof draft.manualModeExplicit === 'boolean') setManualModeExplicit(draft.manualModeExplicit);
+    if (typeof draft.orderValue === 'string') setOrderValue(draft.orderValue);
   }, [profileId]);
 
   useEffect(() => {
-    saveClaimDraft(profileId, { selectedOrderId, claimType, customerReason, notes, claimId, decision, outcome, evidenceType, source, evidenceUrl, evidenceHash, metaRows });
-  }, [profileId, selectedOrderId, claimType, customerReason, notes, claimId, decision, outcome, evidenceType, source, evidenceUrl, evidenceHash, metaRows]);
+    saveClaimDraft(profileId, { selectedOrderId, claimType, customerReason, notes, claimId, decision, outcome, evidenceType, source, evidenceUrl, evidenceHash, metaRows, manualOrderRef, manualOrderSource, manualModeExplicit, orderValue });
+  }, [profileId, selectedOrderId, claimType, customerReason, notes, claimId, decision, outcome, evidenceType, source, evidenceUrl, evidenceHash, metaRows, manualOrderRef, manualOrderSource, manualModeExplicit, orderValue]);
 
   const orderOptions = useMemo<OrderOption[]>(() => {
     const map = new Map<string, OrderOption>();
@@ -258,6 +272,9 @@ export default function ClaimReviewPanel({ profileId }: { profileId: string }) {
     return Array.from(map.values());
   }, [data, history, shopifyOrders]);
 
+  // Auto-engage manual mode when no orders are available; otherwise respect explicit toggle.
+  const manualMode = manualModeExplicit || orderOptions.length === 0;
+
   useEffect(() => {
     if (selectedOrderId && orderOptions.some((o) => o.id === selectedOrderId)) return;
     if (orderOptions.length === 1) {
@@ -299,29 +316,54 @@ export default function ClaimReviewPanel({ profileId }: { profileId: string }) {
   }
 
   async function onClaim() {
-    if (!selectedOrderId) {
-      showMsg('Select an order before saving the claim.', 'error');
+    // Validate order reference (picker selection or manual entry)
+    const effectiveRef = manualMode ? manualOrderRef.trim() : selectedOrderId;
+    if (!effectiveRef) {
+      showMsg(manualMode ? 'Please enter an order reference to continue' : 'Select an order before saving the claim.', 'error');
       return;
     }
     setState('busy');
-    const orderSource = selectedOrder?.source ?? (shopDomain ? 'shopify' : 'audit');
+
+    let claimOrderSource: string;
+    let claimShopifyOrderId: string | null;
+    let claimOrderRef: string | null;
+    let claimShopDomain: string | null;
+
+    if (manualMode) {
+      claimOrderSource = manualOrderSource;
+      claimShopifyOrderId = null;
+      claimOrderRef = effectiveRef;
+      claimShopDomain = null;
+    } else {
+      claimOrderSource = selectedOrder?.source ?? (shopDomain ? 'shopify' : 'audit');
+      claimShopifyOrderId = claimOrderSource === 'shopify' ? selectedOrderId : null;
+      claimOrderRef = claimOrderSource !== 'shopify' ? selectedOrderId : null;
+      claimShopDomain = shopDomain || null;
+    }
+
+    const parsedValue = orderValue ? parseFloat(orderValue) : null;
+    const amountAtRisk = parsedValue !== null && !isNaN(parsedValue) && parsedValue > 0 ? parsedValue : null;
+    const orderCurrency = selectedOrder?.currency ?? null;
+
     const r = await submitClaim({
       id: claimId || undefined,
-      shop_domain: shopDomain || null,
-      shopify_order_id: orderSource === 'shopify' ? selectedOrderId : null,
-      order_source: orderSource,
-      order_ref: orderSource !== 'shopify' ? selectedOrderId : null,
+      shop_domain: claimShopDomain,
+      shopify_order_id: claimShopifyOrderId,
+      order_source: claimOrderSource,
+      order_ref: claimOrderRef,
       customer_id: profileId,
       claim_type: claimType,
       customer_claim_reason: customerReason,
       normalized_reason: notes,
       status: 'under_review',
+      amount_at_risk: amountAtRisk,
+      currency: amountAtRisk ? (orderCurrency ?? null) : null,
     });
     setState('idle');
     showMsg(r.message, r.claimId ? 'success' : 'error');
     if (r.claimId) {
       setClaimId(r.claimId);
-      saveClaimDraft(profileId, { selectedOrderId, claimType, customerReason, notes, claimId: r.claimId, decision, outcome, evidenceType, source, evidenceUrl, evidenceHash, metaRows });
+      saveClaimDraft(profileId, { selectedOrderId, claimType, customerReason, notes, claimId: r.claimId, decision, outcome, evidenceType, source, evidenceUrl, evidenceHash, metaRows, manualOrderRef, manualOrderSource, manualModeExplicit, orderValue });
     }
     await refreshHistory();
   }
@@ -444,23 +486,63 @@ export default function ClaimReviewPanel({ profileId }: { profileId: string }) {
           )}
           <div className={shops.length > 0 ? '' : 'md:col-span-2'}>
             <FieldLabel>Order</FieldLabel>
-            {orderOptions.length === 0 ? (
-              <p className="text-sm px-3 py-2 rounded-md" style={{ ...inputStyle(), color: 'var(--text-muted)' }}>
-                No linked orders yet — pick from this customer&apos;s audited orders below, or connect Shopify for live orders.
-              </p>
+            {!manualMode && orderOptions.length > 0 ? (
+              <>
+                <select
+                  aria-label="Order"
+                  className="w-full px-3 py-2 rounded-md text-sm"
+                  style={inputStyle()}
+                  value={selectedOrderId}
+                  onChange={e => setSelectedOrderId(e.target.value)}
+                >
+                  {orderOptions.length > 1 && <option value="">Select an order…</option>}
+                  {orderOptions.map((o) => (
+                    <option key={o.id} value={o.id}>{formatOrderOption(o)}</option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => setManualModeExplicit(true)}
+                  className="mt-1 text-xs hover:underline"
+                  style={{ color: 'var(--text-muted)' }}
+                >
+                  Enter reference manually
+                </button>
+              </>
             ) : (
-              <select
-                aria-label="Order"
-                className="w-full px-3 py-2 rounded-md text-sm"
-                style={inputStyle()}
-                value={selectedOrderId}
-                onChange={e => setSelectedOrderId(e.target.value)}
-              >
-                {orderOptions.length > 1 && <option value="">Select an order…</option>}
-                {orderOptions.map((o) => (
-                  <option key={o.id} value={o.id}>{formatOrderOption(o)}</option>
-                ))}
-              </select>
+              <div className="space-y-2">
+                <input
+                  className="w-full px-3 py-2 rounded-md text-sm"
+                  style={inputStyle()}
+                  placeholder="Order reference (e.g. #1001)"
+                  value={manualOrderRef}
+                  onChange={e => setManualOrderRef(e.target.value)}
+                />
+                <div>
+                  <FieldLabel>Order source</FieldLabel>
+                  <select
+                    className="w-full px-3 py-2 rounded-md text-sm"
+                    style={inputStyle()}
+                    value={manualOrderSource}
+                    onChange={e => setManualOrderSource(e.target.value)}
+                  >
+                    <option value="manual">Manual entry</option>
+                    <option value="csv">CSV import</option>
+                    <option value="shopify">Shopify</option>
+                    <option value="audit">Audit</option>
+                  </select>
+                </div>
+                {orderOptions.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setManualModeExplicit(false)}
+                    className="text-xs hover:underline"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
+                    ← Back to order list
+                  </button>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -504,6 +586,19 @@ export default function ClaimReviewPanel({ profileId }: { profileId: string }) {
                 placeholder="Your assessment, context, or next steps"
                 value={notes}
                 onChange={e => setNotes(e.target.value)}
+              />
+            </div>
+            <div>
+              <FieldLabel>Order value (optional)</FieldLabel>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                className="w-full px-3 py-2 rounded-md text-sm"
+                style={inputStyle()}
+                placeholder="0.00"
+                value={orderValue}
+                onChange={e => setOrderValue(e.target.value)}
               />
             </div>
             <button
