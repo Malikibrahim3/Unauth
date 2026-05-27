@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { formatRelativeTime } from '@/lib/utils/format';
 
 interface WebhookEvent {
@@ -25,6 +25,9 @@ interface ShopifyStatus {
 
 export default function SyncStatusCard() {
   const [status, setStatus] = useState<ShopifyStatus | null>(null);
+  const [shopInput, setShopInput] = useState('');
+  const [inputError, setInputError] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetch('/api/shopify/status')
@@ -33,6 +36,24 @@ export default function SyncStatusCard() {
       .catch(() => {});
   }, []);
 
+  function buildShopDomain(raw: string): string | null {
+    const v = raw.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '');
+    if (!v) return null;
+    const domain = v.includes('.myshopify.com') ? v : `${v}.myshopify.com`;
+    return /^[a-z0-9][a-z0-9-]*\.myshopify\.com$/.test(domain) ? domain : null;
+  }
+
+  function handleConnect(e: React.FormEvent) {
+    e.preventDefault();
+    const domain = buildShopDomain(shopInput);
+    if (!domain) {
+      setInputError('Enter your store name or full .myshopify.com domain.');
+      inputRef.current?.focus();
+      return;
+    }
+    window.location.href = `/api/shopify/install?shop=${encodeURIComponent(domain)}`;
+  }
+
   if (!status) return null;
 
   if (!status.connected) {
@@ -40,18 +61,42 @@ export default function SyncStatusCard() {
       <div className="rounded-xl p-5 border space-y-4" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}>
         <div className="flex items-start gap-3">
           <div className="h-2.5 w-2.5 rounded-full mt-1 flex-shrink-0" style={{ background: 'var(--text-muted)' }} />
-          <div>
+          <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Shopify not connected</p>
             <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
               Connect Shopify to pull live orders into the claim workflow, see real-time webhooks, and enrich identity signals.
             </p>
-            <a
-              href="/api/shopify/install"
-              className="inline-flex items-center mt-2 text-xs font-semibold hover:underline"
-              style={{ color: 'var(--accent)' }}
-            >
-              Connect Shopify →
-            </a>
+            <form onSubmit={handleConnect} className="mt-3 flex flex-col gap-1.5">
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={shopInput}
+                    onChange={(e) => { setShopInput(e.target.value); setInputError(''); }}
+                    placeholder="your-store.myshopify.com"
+                    className="w-full rounded-md border px-3 py-1.5 text-xs outline-none focus:ring-1"
+                    style={{
+                      borderColor: inputError ? 'var(--risk-high, #DC2626)' : 'var(--border-subtle)',
+                      background: 'var(--bg-inset)',
+                      color: 'var(--text)',
+                    }}
+                    autoComplete="off"
+                    spellCheck={false}
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="rounded-md px-3 py-1.5 text-xs font-semibold flex-shrink-0"
+                  style={{ background: 'var(--accent)', color: '#fff' }}
+                >
+                  Connect →
+                </button>
+              </div>
+              {inputError && (
+                <p className="text-xs" style={{ color: 'var(--risk-high, #DC2626)' }}>{inputError}</p>
+              )}
+            </form>
           </div>
         </div>
         {status.scopes && status.scopes.length > 0 ? (
@@ -170,7 +215,7 @@ export default function SyncStatusCard() {
         <div className="px-3 py-2 rounded-md text-xs" style={{ background: 'var(--risk-high-bg, #FEE2E2)', color: 'var(--risk-high, #991B1B)' }}>
           <p className="font-semibold mb-0.5">Sync error</p>
           <p>{status.lastError}</p>
-          <a href="/api/shopify/install" className="font-semibold underline mt-1 inline-block">Reconnect Shopify</a>
+          <a href="/settings/integrations" className="font-semibold underline mt-1 inline-block">Reconnect Shopify</a>
         </div>
       )}
     </div>
