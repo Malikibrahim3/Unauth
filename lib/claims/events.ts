@@ -3,6 +3,11 @@ import { z } from 'zod';
 export const claimEventTypeSchema = z.enum([
   'claim_created',
   'claim_updated',
+  'claim_viewed',
+  'claim_assigned',
+  'claim_unassigned',
+  'claim_snoozed',
+  'claim_unsnoozed',
   'note_added',
   'evidence_added',
   'outcome_added',
@@ -11,6 +16,7 @@ export const claimEventTypeSchema = z.enum([
   'claim_reopened',
   'decision_reversed',
   'customer_response_copied',
+  'customer_response_saved',
   'escalation_added',
 ]);
 
@@ -64,6 +70,11 @@ export function claimEventLabel(eventType: string): string {
   const labels: Record<string, string> = {
     claim_created: 'Claim created',
     claim_updated: 'Claim updated',
+    claim_viewed: 'Claim viewed',
+    claim_assigned: 'Claim assigned',
+    claim_unassigned: 'Claim unassigned',
+    claim_snoozed: 'Claim snoozed',
+    claim_unsnoozed: 'Claim unsnoozed',
     note_added: 'Internal note added',
     evidence_added: 'Evidence added',
     outcome_added: 'Outcome recorded',
@@ -72,6 +83,7 @@ export function claimEventLabel(eventType: string): string {
     claim_reopened: 'Claim reopened',
     decision_reversed: 'Decision reversed',
     customer_response_copied: 'Customer response copied',
+    customer_response_saved: 'Customer response saved',
     escalation_added: 'Claim escalated',
   };
   return labels[eventType] ?? eventType.replace(/_/g, ' ');
@@ -155,12 +167,24 @@ export function claimEventSummary(event: ClaimEventSummaryInput): string {
   switch (event.event_type) {
     case 'claim_created':
       return 'A new claim was opened for this order.';
+    case 'claim_viewed':
+      return 'The claim was opened for review.';
+    case 'claim_assigned':
+      return 'Ownership was assigned for this claim.';
+    case 'claim_unassigned':
+      return 'Ownership was removed from this claim.';
+    case 'claim_snoozed':
+      return 'The claim was snoozed until follow-up is due.';
+    case 'claim_unsnoozed':
+      return 'The claim returned to the active queue.';
     case 'evidence_added':
       return 'Supporting evidence was attached to the claim.';
     case 'outcome_added':
       return 'An outcome was recorded for analyst review.';
     case 'customer_response_copied':
       return 'The customer-safe response template was copied.';
+    case 'customer_response_saved':
+      return 'The customer-safe response text was saved.';
     case 'claim_reopened':
       return 'The claim was reopened for further review.';
     case 'decision_reversed':
@@ -170,4 +194,8 @@ export function claimEventSummary(event: ClaimEventSummaryInput): string {
     default:
       return 'Claim activity recorded.';
   }
+}
+
+export function claimHasEvidence(input: { evidence_count?: number | null; events?: Array<{ event_type?: string | null }> | null }): boolean {
+  return (input.evidence_count ?? 0) > 0 || (input.events ?? []).some((event) => event.event_type === 'evidence_added');
 }

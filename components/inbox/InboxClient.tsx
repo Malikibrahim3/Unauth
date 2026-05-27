@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { ChevronDown, Trash2, Keyboard } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ChevronDown, Clock3, Eye, Keyboard, Trash2, UserCircle2 } from 'lucide-react';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { KbdHint } from '@/components/ui/KbdHint';
 import { FLAG_QUEUE_PRIORITISATION } from '@/lib/flags';
@@ -22,26 +22,22 @@ interface InboxTransaction {
   customer_profile_id?: string | null;
   order_value?: number | null;
   reason?: string;
+  claim_id?: string | null;
+  first_viewed_at?: string | null;
+  assigned_to?: string | null;
+  snoozed_until?: string | null;
+  status?: string | null;
 }
 
 interface Props {
   initialItems: InboxTransaction[];
 }
 
-function formatInboxDate(iso: string): string {
-  try {
-    return new Intl.DateTimeFormat('en-GB', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      timeZone: 'UTC',
-    }).format(new Date(iso));
-  } catch {
-    return iso;
-  }
-}
-
 type SortKey = 'priority' | 'score' | 'value' | 'date';
+export type QueueFilter = 'active' | 'new' | 'viewed' | 'overdue' | 'decision_ready' | 'unassigned';
+type CompletionNotice = { message: string; tone: 'success' | 'neutral' } | null;
+
+const REVIEW_SLA_HOURS = 72;
 
 function sortInboxItems(items: InboxTransaction[], sortBy: SortKey): InboxTransaction[] {
   const copy = [...items];
@@ -62,6 +58,55 @@ function sortInboxItems(items: InboxTransaction[], sortBy: SortKey): InboxTransa
   }
 }
 
+function hoursSince(iso: string): number {
+  const time = new Date(iso).getTime();
+  if (Number.isNaN(time)) return 0;
+  return Math.max(0, (Date.now() - time) / (1000 * 60 * 60));
+}
+
+export function queueMeta(tx: InboxTransaction) {
+  const viewed = !!tx.first_viewed_at;
+  const ageHours = hoursSince(tx.processed_at);
+  const overdue = ageHours >= REVIEW_SLA_HOURS;
+  const decisionReady = tx.match_status === 'definite' || (tx.identity_score ?? 0) >= 85;
+  const dueHours = Math.ceil(REVIEW_SLA_HOURS - ageHours);
+  const dueLabel = overdue ? 'Overdue' : dueHours <= 24 ? `Due in ${Math.max(1, dueHours)}h` : `Due in ${Math.ceil(dueHours / 24)}d`;
+  const stage = !viewed ? 'New / unread' : decisionReady ? 'Decision ready' : 'Viewed';
+  const nextAction = !viewed
+    ? 'Open identity evidence'
+    : decisionReady
+      ? 'Record merchant decision'
+      : 'Review behaviour pattern';
+
+  return { viewed, overdue, decisionReady, dueLabel, stage, nextAction };
+}
+
+export function matchesInboxQueueFilter(tx: InboxTransaction, queueFilter: QueueFilter): boolean {
+  const meta = queueMeta(tx);
+  switch (queueFilter) {
+    case 'new': return !meta.viewed;
+    case 'viewed': return meta.viewed;
+    case 'overdue': return meta.overdue;
+    case 'decision_ready': return meta.decisionReady;
+    case 'unassigned': return !tx.assigned_to;
+    case 'active':
+    default: return true;
+  }
+}
+
+export function countInboxQueues(items: InboxTransaction[]): Record<QueueFilter, number> {
+  return items.reduce<Record<QueueFilter, number>>((acc, tx) => {
+    const meta = queueMeta(tx);
+    acc.active += 1;
+    if (!meta.viewed) acc.new += 1;
+    if (meta.viewed) acc.viewed += 1;
+    if (meta.overdue) acc.overdue += 1;
+    if (meta.decisionReady) acc.decision_ready += 1;
+    if (!tx.assigned_to) acc.unassigned += 1;
+    return acc;
+  }, { active: 0, new: 0, viewed: 0, overdue: 0, decision_ready: 0, unassigned: 0 });
+}
+
 export default function InboxClient({ initialItems }: Props) {
   const [sortBy, setSortBy] = useState<SortKey>(FLAG_QUEUE_PRIORITISATION ? 'priority' : 'date');
   const [items, setItems] = useState<InboxTransaction[]>(() => sortInboxItems(initialItems, sortBy));
@@ -69,11 +114,20 @@ export default function InboxClient({ initialItems }: Props) {
   const [pending, setPending] = useState<Record<string, boolean>>({});
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDismissing, setBulkDismissing] = useState(false);
+  const [queueFilter, setQueueFilter] = useState<QueueFilter>('active');
+  const [completionNotice, setCompletionNotice] = useState<CompletionNotice>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setItems((current) => sortInboxItems(current, sortBy));
   }, [sortBy]);
+
+  const markViewed = useCallback(async (tx: InboxTransaction) => {
+    if (!tx.claim_id || tx.first_viewed_at) return;
+    const viewedAt = new Date().toISOString();
+    setItems((prev) => prev.map((item) => item.id === tx.id ? { ...item, first_viewed_at: viewedAt } : item));
+    await fetch(`/api/claims/${tx.claim_id}/view`, { method: 'POST' }).catch(() => {});
+  }, []);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -133,6 +187,7 @@ export default function InboxClient({ initialItems }: Props) {
   async function dismissItem(txId: string) {
     // Optimistic remove
     setItems((prev) => prev.filter((t) => t.id !== txId));
+    setCompletionNotice({ message: 'Removed from the active inbox. The audit row remains available in history.', tone: 'neutral' });
     setSelectedIds((prev) => {
       const next = new Set(prev);
       next.delete(txId);
@@ -147,6 +202,7 @@ export default function InboxClient({ initialItems }: Props) {
 
   async function setStatusAndDismiss(tx: InboxTransaction, status: 'under_review' | 'contacted' | 'resolved' | 'cleared') {
     setOpenDropdown(null);
+    await markViewed(tx);
     if (!tx.customer_profile_id) {
       // No profile — just dismiss
       await dismissItem(tx.id);
@@ -166,6 +222,13 @@ export default function InboxClient({ initialItems }: Props) {
       });
       // Dismiss transaction
       await fetch(`/api/transactions/${tx.id}/dismiss`, { method: 'PATCH' });
+      const messages: Record<typeof status, string> = {
+        under_review: 'Moved to in review and removed from the active inbox.',
+        contacted: 'Marked awaiting response and removed from the active inbox.',
+        resolved: 'Merchant outcome recorded as resolved. The item left the active inbox.',
+        cleared: 'Marked no further action and removed from the active inbox.',
+      };
+      setCompletionNotice({ message: `${messages[status]} ${Math.max(0, items.length - 1)} active ${items.length - 1 === 1 ? 'item' : 'items'} remain on this page.`, tone: 'success' });
     } catch {
       // Already removed optimistically — no revert needed for status change
     } finally {
@@ -186,10 +249,15 @@ export default function InboxClient({ initialItems }: Props) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ids }),
       });
+      setCompletionNotice({ message: `${ids.length} selected items left the active inbox.`, tone: 'success' });
     } finally {
       setBulkDismissing(false);
     }
   }
+
+  const queueCounts = countInboxQueues(items);
+
+  const filteredItems = items.filter((tx) => matchesInboxQueueFilter(tx, queueFilter));
 
   if (items.length === 0) {
     const inboxIcon = (
@@ -210,9 +278,9 @@ export default function InboxClient({ initialItems }: Props) {
         <ul className="space-y-1">
           {[
             ['1', 'Mark as Under review'],
-            ['2', 'Mark as Contacted'],
-            ['3', 'Mark as Refund blocked'],
-            ['4', 'Mark as False alarm'],
+            ['2', 'Mark awaiting response'],
+            ['3', 'Record resolved'],
+            ['4', 'Mark no further action'],
             ['5', 'Clear from inbox'],
           ].map(([key, label]) => (
             <li key={key} className="flex items-center gap-2">
@@ -257,24 +325,86 @@ export default function InboxClient({ initialItems }: Props) {
 
   return (
     <div className="space-y-3">
+      {completionNotice && (
+        <div
+          className="flex flex-wrap items-center justify-between gap-3 rounded-md border px-3 py-2 text-sm"
+          style={{
+            borderColor: completionNotice.tone === 'success' ? '#86efac' : 'var(--border-subtle)',
+            background: completionNotice.tone === 'success' ? '#dcfce7' : 'var(--bg-inset)',
+            color: completionNotice.tone === 'success' ? '#166534' : 'var(--text)',
+          }}
+        >
+          <span>{completionNotice.message}</span>
+          <button type="button" onClick={() => setCompletionNotice(null)} className="text-xs font-semibold opacity-70 hover:opacity-100">
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      <div className="rounded-md border p-3" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>
+              Active operational inbox
+            </p>
+            <p className="mt-0.5 text-xs" style={{ color: 'var(--text-muted)' }}>
+              Unresolved identity reviews only. Completed items leave this queue and remain available in history.
+            </p>
+          </div>
+          <label className="flex items-center gap-2 text-caption" style={{ color: 'var(--text-muted)' }}>
+            Sort by
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as SortKey)}
+              className="rounded border px-2 py-1 text-xs"
+              style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)', color: 'var(--text)' }}
+            >
+              <option value="priority">Priority (score x value)</option>
+              <option value="score">Identity score</option>
+              <option value="value">Order value</option>
+              <option value="date">Most recent</option>
+            </select>
+          </label>
+        </div>
+
+        <div className="mt-3 flex flex-wrap gap-2" role="tablist" aria-label="Inbox filters">
+          {[
+            { key: 'active' as QueueFilter, label: 'Active', icon: Clock3 },
+            { key: 'new' as QueueFilter, label: 'New / unread', icon: Eye },
+            { key: 'viewed' as QueueFilter, label: 'Viewed', icon: CheckCircle2 },
+            { key: 'overdue' as QueueFilter, label: 'Overdue', icon: AlertTriangle },
+            { key: 'decision_ready' as QueueFilter, label: 'Decision ready', icon: CheckCircle2 },
+            { key: 'unassigned' as QueueFilter, label: 'Unassigned', icon: UserCircle2 },
+          ].map((filter) => {
+            const active = queueFilter === filter.key;
+            const Icon = filter.icon;
+            return (
+              <button
+                key={filter.key}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => setQueueFilter(filter.key)}
+                className="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-semibold"
+                style={{
+                  borderColor: active ? 'var(--accent)' : 'var(--border-subtle)',
+                  background: active ? 'var(--accent)' : 'var(--bg-inset)',
+                  color: active ? 'var(--text-inverse)' : 'var(--text-muted)',
+                }}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {filter.label}
+                <span className="font-mono">{queueCounts[filter.key]}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       <div className="flex flex-wrap items-center justify-between gap-2 px-1">
         <p className="text-caption" style={{ color: 'var(--text-muted)' }}>
-          {items.length} {items.length === 1 ? 'case' : 'cases'} in queue
+          Showing {filteredItems.length} of {items.length} active {items.length === 1 ? 'item' : 'items'}
         </p>
-        <label className="flex items-center gap-2 text-caption" style={{ color: 'var(--text-muted)' }}>
-          Sort by
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as SortKey)}
-            className="rounded border px-2 py-1 text-xs"
-            style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)', color: 'var(--text)' }}
-          >
-            <option value="priority">Priority (score × value)</option>
-            <option value="score">Risk score</option>
-            <option value="value">Order value</option>
-            <option value="date">Most recent</option>
-          </select>
-        </label>
       </div>
 
       {selectedIds.size > 0 && (
@@ -299,38 +429,46 @@ export default function InboxClient({ initialItems }: Props) {
         </div>
       )}
 
+      {filteredItems.length === 0 ? (
+        <div className="rounded-md border px-4 py-8 text-center text-sm" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)', color: 'var(--text-muted)' }}>
+          No active items match this filter.
+        </div>
+      ) : (
       <div className="overflow-x-auto border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)', borderRadius: 4 }}>
-      <table className="w-full min-w-[880px] text-sm">
+      <table className="w-full min-w-[1080px] text-sm">
         <thead>
           <tr className="border-b" style={{ background: 'var(--bg-subtle)', borderColor: 'var(--border-subtle)' }}>
             <th className="text-left px-4 py-2.5 text-overline" style={{ width: 44, color: 'var(--text-muted)' }}>
               <input
                 type="checkbox"
-                checked={items.length > 0 && selectedIds.size === items.length}
+                checked={filteredItems.length > 0 && filteredItems.every((item) => selectedIds.has(item.id))}
                 onChange={(e) => {
                   if (!e.target.checked) {
                     setSelectedIds(new Set());
                     return;
                   }
-                  setSelectedIds(new Set(items.map((item) => item.id)));
+                  setSelectedIds(new Set(filteredItems.map((item) => item.id)));
                 }}
                 aria-label="Select all inbox items"
               />
             </th>
             <th className="text-left px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Order ID</th>
-            <th className="text-left px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Risk</th>
+            <th className="text-left px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Queue state</th>
+            <th className="text-left px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Owner</th>
+            <th className="text-left px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Confidence</th>
             <th className="text-right px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Score</th>
             <th className="text-right px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Value</th>
             <th className="text-left px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Match signals</th>
-            <th className="text-left px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Date</th>
+            <th className="text-left px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Due / next action</th>
             <th className="px-4 py-2.5" />
           </tr>
         </thead>
         <tbody>
-          {items.map((tx, rowIdx) => {
+          {filteredItems.map((tx, rowIdx) => {
             const isTopRow = rowIdx === 0 && FLAG_QUEUE_PRIORITISATION && items.length > 1;
             const priorityScore = Math.round((tx.identity_score ?? 0) * (tx.order_value ?? 1));
             const isSelected = selectedIds.has(tx.id);
+            const meta = queueMeta(tx);
             return (
               <tr
                 key={tx.id}
@@ -357,7 +495,9 @@ export default function InboxClient({ initialItems }: Props) {
                 </td>
                 <td className="px-4 py-3 font-mono text-xs" style={{ color: 'var(--text-muted)' }}>
                   <div>
-                    {tx.order_id}
+                    <span className={!meta.viewed ? 'font-semibold' : undefined} style={{ color: !meta.viewed ? 'var(--text)' : undefined }}>
+                      {tx.order_id}
+                    </span>
                     {isTopRow && (
                       <div
                         className="mt-0.5 text-[10px] font-medium"
@@ -369,6 +509,20 @@ export default function InboxClient({ initialItems }: Props) {
                     )}
                   </div>
                 </td>
+              <td className="px-4 py-3 text-xs">
+                <span
+                  className="inline-flex items-center rounded-full px-2 py-0.5 font-semibold"
+                  style={{
+                    background: !meta.viewed ? 'var(--accent)' : meta.decisionReady ? 'var(--sev-clear-fill,#DCFCE7)' : 'var(--bg-subtle)',
+                    color: !meta.viewed ? 'var(--text-inverse)' : meta.decisionReady ? 'var(--sev-clear,#166534)' : 'var(--text-muted)',
+                  }}
+                >
+                  {meta.stage}
+                </span>
+              </td>
+              <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-muted)' }}>
+                {tx.assigned_to ? 'Assigned' : 'Unassigned'}
+              </td>
               <td className="px-4 py-3">
                 <ConfidenceBadge
                   grade={riskLevelToNewGrade(tx.identity_confidence_grade ?? tx.match_status)}
@@ -385,28 +539,32 @@ export default function InboxClient({ initialItems }: Props) {
                 {tx.reason ?? 'Needs manual review'}
               </td>
               <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-muted)' }}>
-                {formatInboxDate(tx.processed_at)}
+                <span className="block font-semibold" style={{ color: meta.overdue ? 'var(--sev-high,#991B1B)' : 'var(--text)' }}>{meta.dueLabel}</span>
+                <span className="block">{meta.nextAction}</span>
               </td>
               <td className="px-4 py-3 text-right">
                 <div className="flex items-center justify-end gap-2" ref={openDropdown === tx.id ? dropdownRef : undefined}>
                   <Link
                     href={tx.customer_profile_id ? `/customers/${tx.customer_profile_id}` : `/audit/${tx.processing_job_id}/transaction/${tx.id}`}
+                    onClick={() => { void markViewed(tx); }}
                     className="text-xs font-semibold hover:underline"
                     style={{ color: 'var(--accent)' }}
                   >
-                    Review →
+                    Review identity
                   </Link>
                   {tx.customer_profile_id && (
                     <Link
                       href={`/customers/${tx.customer_profile_id}/claims`}
+                      onClick={() => { void markViewed(tx); }}
                       className="text-xs font-semibold hover:underline hidden lg:inline"
                       style={{ color: 'var(--text-muted)' }}
                     >
-                      Claim
+                      Claim workflow
                     </Link>
                   )}
                   <Link
                     href={`/audit/${tx.processing_job_id}/transaction/${tx.id}`}
+                    onClick={() => { void markViewed(tx); }}
                     className="text-xs font-semibold hover:underline hidden md:inline"
                     style={{ color: 'var(--text-muted)' }}
                   >
@@ -449,7 +607,7 @@ export default function InboxClient({ initialItems }: Props) {
                           style={{ color: 'var(--text)' }}
                           onClick={() => setStatusAndDismiss(tx, 'contacted')}
                         >
-                          Mark as Contacted
+                          Mark awaiting response
                         </button>
                         <button
                           type="button"
@@ -465,7 +623,7 @@ export default function InboxClient({ initialItems }: Props) {
                           style={{ color: 'var(--text)' }}
                           onClick={() => setStatusAndDismiss(tx, 'cleared')}
                         >
-                          Clear as false alarm
+                          Mark no further action
                         </button>
                         <div style={{ borderTop: '1px solid var(--border-subtle)' }} />
                           <button
@@ -487,6 +645,7 @@ export default function InboxClient({ initialItems }: Props) {
         </tbody>
       </table>
       </div>
+      )}
       <div className="flex justify-end">
         <KbdHint pairs={[['J/K', 'navigate'], ['↵', 'open'], ['S', 'watchlist']]} />
       </div>

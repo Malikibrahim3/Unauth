@@ -2,6 +2,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { Suspense } from 'react';
 import { requirePermission, PERMISSIONS, resolveDefaultAppPath } from '@/lib/permissions';
 import CustomersFilterSheet from '@/components/customers/CustomersFilterSheet';
 import CustomersTableClient from '@/components/customers/CustomersTableClient';
@@ -40,8 +41,22 @@ function FilterChip({ label, removeHref }: { label: string; removeHref: string }
 const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
 const DEFAULT_PAGE_SIZE = 25;
 
+export const dynamic = 'force-dynamic';
+
+function customersListHref(
+  sp: Record<string, string | undefined>,
+  overrides: Record<string, string | undefined> = {},
+) {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries({ ...sp, ...overrides })) {
+    if (value != null && value !== '') params.set(key, value);
+  }
+  const qs = params.toString();
+  return qs ? `/customers?${qs}` : '/customers';
+}
+
 interface PageProps {
-  searchParams: {
+  searchParams: Promise<{
     // Basic
     q?: string;
     risk?: string;
@@ -78,7 +93,7 @@ interface PageProps {
     flag?: string;
     // Investigation status
     status?: string;
-  };
+  }>;
 }
 
 export default async function CustomersOverviewPage({ searchParams }: PageProps) {
@@ -141,7 +156,10 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
 
   // Scope to profiles this merchant owns — accepts both the auth-user UUID
   // (legacy, pre-merchants-table uploads) and the merchants-table UUID (current).
-  const merchantFilter = `merchant_ids.cs.${JSON.stringify([ctx.merchantId])}`;
+  const merchantFilter = [
+    `merchant_ids.cs.${JSON.stringify([ctx.merchantId])}`,
+    `merchant_ids.cs.${JSON.stringify([user.id])}`,
+  ].join(',');
   const isOrderReferenceSearch = isOrderReferenceSearchTerm(q);
   let orderMatchedProfileIds: string[] | null = null;
 
@@ -351,15 +369,29 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
       }
       actionBar={
         <WorkbenchActionBar
-          left={<CustomersFilterSheet />}
+          left={
+            <Suspense fallback={<div className="h-10 w-full max-w-xl animate-pulse rounded-lg" style={{ background: 'var(--bg-subtle)' }} />}>
+              <CustomersFilterSheet />
+            </Suspense>
+          }
           right={
             <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
-              <PageSizeSelect pathname="/customers" searchParams={sp} pageSize={PAGE_SIZE} />
+              <Suspense fallback={<span className="text-xs" style={{ color: 'var(--text-muted)' }}>Rows per page…</span>}>
+                <PageSizeSelect pathname="/customers" pageSize={PAGE_SIZE} />
+              </Suspense>
               {totalPages > 1 && (
                 <>
                   <span>Page {page} of {totalPages}</span>
-                  {page > 1 && <Link href={`/customers?${new URLSearchParams({ ...sp, page: String(page - 1), pageSize: String(PAGE_SIZE) }).toString()}`}><Button variant="secondary" size="sm">Prev</Button></Link>}
-                  {page < totalPages && <Link href={`/customers?${new URLSearchParams({ ...sp, page: String(page + 1), pageSize: String(PAGE_SIZE) }).toString()}`}><Button variant="secondary" size="sm">Next</Button></Link>}
+                  {page > 1 && (
+                    <Link href={customersListHref(sp, { page: String(page - 1), pageSize: String(PAGE_SIZE) })}>
+                      <Button variant="secondary" size="sm">Prev</Button>
+                    </Link>
+                  )}
+                  {page < totalPages && (
+                    <Link href={customersListHref(sp, { page: String(page + 1), pageSize: String(PAGE_SIZE) })}>
+                      <Button variant="secondary" size="sm">Next</Button>
+                    </Link>
+                  )}
                 </>
               )}
             </div>
@@ -446,17 +478,19 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
                 {totalPages > 1 && (
               <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
               <span>Page {page} of {totalPages}</span>
-                <PageSizeSelect pathname="/customers" searchParams={sp} pageSize={PAGE_SIZE} />
+                <Suspense fallback={null}>
+                  <PageSizeSelect pathname="/customers" pageSize={PAGE_SIZE} />
+                </Suspense>
                 {page > 1 && (
                   <Link
-                    href={`/customers?${new URLSearchParams({ ...sp, page: String(page - 1), pageSize: String(PAGE_SIZE) }).toString()}`}
+                    href={customersListHref(sp, { page: String(page - 1), pageSize: String(PAGE_SIZE) })}
                     className="px-2 py-1 rounded border"
                     style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}
                   >← Prev</Link>
                 )}
                 {page < totalPages && (
                   <Link
-                    href={`/customers?${new URLSearchParams({ ...sp, page: String(page + 1), pageSize: String(PAGE_SIZE) }).toString()}`}
+                    href={customersListHref(sp, { page: String(page + 1), pageSize: String(PAGE_SIZE) })}
                     className="px-2 py-1 rounded border"
                     style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}
                   >Next ›</Link>

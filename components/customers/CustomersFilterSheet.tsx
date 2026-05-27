@@ -1,9 +1,24 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useCallback, useTransition, useRef, useState } from 'react';
 import { ChevronDown, ChevronUp, X, SlidersHorizontal } from 'lucide-react';
 import { labelFor } from '@/lib/copy/labels';
+
+function buildCustomersHref(
+  searchParams: URLSearchParams,
+  overrides: Record<string, string | undefined> = {},
+) {
+  const params = new URLSearchParams(searchParams.toString());
+  for (const [key, value] of Object.entries(overrides)) {
+    if (value === undefined || value === '') params.delete(key);
+    else params.set(key, value);
+  }
+  params.delete('page');
+  const qs = params.toString();
+  return qs ? `/customers?${qs}` : '/customers';
+}
 
 /* ─── Shared input style ─────────────────────────────────────────── */
 const inputCls =
@@ -45,13 +60,13 @@ export default function CustomersFilterSheet() {
   /* ── Filter helpers ────────────────────────────────────────────── */
   const updateParam = useCallback(
     (key: string, value: string) => {
-      const params = new URLSearchParams(searchParams.toString());
-      if (value) params.set(key, value);
-      else params.delete(key);
-      params.delete('page');
-      startTransition(() => router.push(`${pathname}?${params.toString()}`));
+      const href = buildCustomersHref(searchParams, { [key]: value || undefined });
+      startTransition(() => {
+        router.push(href);
+        router.refresh();
+      });
     },
-    [router, pathname, searchParams],
+    [router, searchParams],
   );
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -63,7 +78,10 @@ export default function CustomersFilterSheet() {
   };
 
   const handleClearAll = () =>
-    startTransition(() => router.push(pathname));
+    startTransition(() => {
+      router.push(pathname);
+      router.refresh();
+    });
 
   const hasAnyFilter =
     searchParams.toString().length > 0 &&
@@ -87,7 +105,7 @@ export default function CustomersFilterSheet() {
         <input
           key={searchParams.get('q')}
           type="search"
-          placeholder={`Search by ${labelFor('email').toLowerCase()} or ${labelFor('name').toLowerCase()}…`}
+          placeholder={`Search by ${labelFor('email').toLowerCase()}, ${labelFor('name').toLowerCase()}, or order reference…`}
           defaultValue={searchParams.get('q') ?? ''}
           onChange={(e) => makeDebounced('q', 2)(e.target.value)}
           className="flex-1 min-w-[200px] rounded-lg px-3 py-2 text-sm focus:outline-none"
@@ -113,7 +131,7 @@ export default function CustomersFilterSheet() {
           <option value="fastestClaim">Sort: Fastest claims</option>
         </select>
 
-        {/* Status tabs */}
+        {/* Status tabs — Link navigation so the server page re-fetches with filters */}
         <div className="flex items-center gap-0.5 rounded-lg p-0.5" style={{ background: 'var(--bg-inset)', border: '1px solid var(--border-subtle)' }}>
           {[
             { value: '', label: 'All' },
@@ -125,9 +143,10 @@ export default function CustomersFilterSheet() {
           ].map(({ value, label }) => {
             const active = (searchParams.get('status') ?? '') === value;
             return (
-              <button
+              <Link
                 key={value || 'all'}
-                onClick={() => updateParam('status', value)}
+                href={buildCustomersHref(searchParams, { status: value || undefined })}
+                scroll={false}
                 className="px-2.5 py-1 text-xs font-medium rounded-md transition-all"
                 style={
                   active
@@ -136,7 +155,7 @@ export default function CustomersFilterSheet() {
                 }
               >
                 {label}
-              </button>
+              </Link>
             );
           })}
         </div>

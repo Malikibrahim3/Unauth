@@ -1,0 +1,130 @@
+[
+  {
+    "route": "/dashboard",
+    "page": "Dashboard",
+    "url_after_load": "/dashboard",
+    "screenshot": "./interaction-audit/screenshots/dashboard-load.png",
+    "controls_found": 51,
+    "status": "mapped"
+  },
+  {
+    "route": "/inbox",
+    "page": "Inbox",
+    "url_after_load": "/inbox",
+    "screenshot": "./interaction-audit/screenshots/inbox-load.png",
+    "controls_found": 100,
+    "status": "mapped"
+  },
+  {
+    "route": "/claims",
+    "page": "Claims",
+    "url_after_load": "/claims",
+    "screenshot": "./interaction-audit/screenshots/claims-load.png",
+    "controls_found": 106,
+    "status": "mapped"
+  },
+  {
+    "route": "/customers",
+    "page": "Customers",
+    "url_after_load": "/customers",
+    "screenshot": "./interaction-audit/screenshots/customers-load.png",
+    "controls_found": 56,
+    "status": "mapped"
+  },
+  {
+    "route": "/customers/ed72731a-9a6e-490d-9906-4ca0961325d9",
+    "page": "Customer Profile",
+    "url_after_load": "/customers/ed72731a-9a6e-490d-9906-4ca0961325d9",
+    "screenshot": "./interaction-audit/screenshots/customers-ed72731a-9a6e-490d-9906-4ca0961325d9-load.png",
+    "controls_found": 31,
+    "status": "mapped"
+  },
+  {
+    "route": "/customers/ed72731a-9a6e-490d-9906-4ca0961325d9/claims?claimId=6e1384fd-adc5-4b58-af3d-270382a10425",
+    "page": "Customer Claim Review",
+    "url_after_load": "/customers/ed72731a-9a6e-490d-9906-4ca0961325d9/claims?claimId=6e1384fd-adc5-4b58-af3d-270382a10425",
+    "screenshot": "./interaction-audit/screenshots/customers-ed72731a-9a6e-490d-9906-4ca0961325d9-claims-claimid-6e1384fd-adc5-4b58-af3d-270382a10425-load.png",
+    "controls_found": 56,
+    "status": "mapped"
+  },
+  {
+    "route": "/reports",
+    "page": "Reports",
+    "url_after_load": "/reports",
+    "screenshot": "./interaction-audit/screenshots/reports-load.png",
+    "controls_found": 32,
+    "status": "mapped"
+  },
+  {
+    "route": "/watchlist",
+    "page": "Watchlist",
+    "url_after_load": "/watchlist",
+    "screenshot": "./interaction-audit/screenshots/watchlist-load.png",
+    "controls_found": 43,
+    "status": "mapped"
+  },
+  {
+    "route": "/evidence-packages",
+    "page": "Evidence Packages",
+    "url_after_load": "/chargebacks",
+    "screenshot": "./interaction-audit/screenshots/evidence-packages-load.png",
+    "controls_found": 41,
+    "status": "mapped"
+  },
+  {
+    "route": "/upload",
+    "page": "Upload",
+    "url_after_load": "/upload",
+    "screenshot": "./interaction-audit/screenshots/upload-load.png",
+    "controls_found": 33,
+    "status": "mapped"
+  },
+  {
+    "route": "/new-audit",
+    "page": "New Audit",
+    "url_after_load": "/upload",
+    "screenshot": "./interaction-audit/screenshots/new-audit-load.png",
+    "controls_found": 33,
+    "status": "mapped"
+  },
+  {
+    "route": "/audit-history",
+    "page": "Audit History",
+    "url_after_load": "/history",
+    "screenshot": "./interaction-audit/screenshots/audit-history-load.png",
+    "controls_found": 35,
+    "status": "mapped"
+  },
+  {
+    "route": "/settings",
+    "page": "Settings",
+    "url_after_load": "/settings/account",
+    "screenshot": "./interaction-audit/screenshots/settings-load.png",
+    "controls_found": 41,
+    "status": "mapped"
+  },
+  {
+    "route": "/settings/audit-trail",
+    "page": "Audit Trail",
+    "url_after_load": "/settings/audit-trail",
+    "screenshot": "./interaction-audit/screenshots/settings-audit-trail-load.png",
+    "controls_found": 149,
+    "status": "mapped"
+  },
+  {
+    "route": "/settings/data-privacy",
+    "page": "Data Privacy",
+    "url_after_load": "/settings/data-privacy",
+    "screenshot": "./interaction-audit/screenshots/settings-data-privacy-load.png",
+    "controls_found": 32,
+    "status": "mapped"
+  },
+  {
+    "route": "/settings/team",
+    "page": "Team",
+    "url_after_load": "/settings/team",
+    "screenshot": "./interaction-audit/screenshots/settings-team-load.png",
+    "controls_found": 35,
+    "status": "mapped"
+  }
+]

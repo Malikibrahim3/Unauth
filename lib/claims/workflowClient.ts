@@ -68,3 +68,18 @@ export async function recordCustomerResponseCopied(claimId: string, input: Recor
   const result = await safePost(`/api/claims/${claimId}/customer-response-copied`, input);
   return { message: result.ok ? 'Customer response copied' : result.message };
 }
+
+export async function markClaimViewed(claimId: string) {
+  const result = await safePost(`/api/claims/${claimId}/view`, {});
+  return { message: result.ok ? 'Claim viewed' : result.message };
+}
+
+export async function assignClaim(claimId: string, action: 'assign_to_me' | 'unassign') {
+  const result = await safePost(`/api/claims/${claimId}/assignment`, { action });
+  return { message: result.ok ? 'Assignment updated' : result.message };
+}
+
+export async function snoozeClaim(claimId: string, input: { snoozed_until: string | null; reason?: string | null }) {
+  const result = await safePost(`/api/claims/${claimId}/snooze`, input);
+  return { message: result.ok ? 'Follow-up updated' : result.message };
+}

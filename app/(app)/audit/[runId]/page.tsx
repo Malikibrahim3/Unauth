@@ -474,7 +474,7 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
                     <span>
                       Showing {totalCustomers === 0 ? 0 : customerOffset + 1}–{Math.min(customerOffset + customerPageSize, totalCustomers)} of {totalCustomers.toLocaleString()} customers
                     </span>
-                    <PageSizeSelect pathname={`/audit/${jobId}`} searchParams={{ ...resolvedSearchParams, txPage: String(txPage), customerPage: String(customerPage), txPageSize: String(txPageSize), customerPageSize: String(customerPageSize) }} pageSize={customerPageSize} label="Customers per page" />
+                    <PageSizeSelect pathname={`/audit/${jobId}`} pageSize={customerPageSize} pageParam="customerPage" pageSizeParam="customerPageSize" label="Customers per page" />
                   </div>
                   <AuditCustomersTableClient
                     runId={runData.id}
@@ -534,7 +534,7 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
                     )}
                   </div>
                   <div className="mb-3 flex items-center justify-end">
-                    <PageSizeSelect pathname={`/audit/${jobId}`} searchParams={{ ...resolvedSearchParams, txPage: String(txPage), customerPage: String(customerPage), txPageSize: String(txPageSize), customerPageSize: String(customerPageSize) }} pageSize={txPageSize} label="Transactions per page" />
+                    <PageSizeSelect pathname={`/audit/${jobId}`} pageSize={txPageSize} pageParam="txPage" pageSizeParam="txPageSize" label="Transactions per page" />
                   </div>
                   <div className="rounded-lg overflow-hidden border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
                     <table className="w-full text-sm">

@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+import { Suspense } from 'react';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission, PERMISSIONS, resolveDefaultAppPath } from '@/lib/permissions';
 import Link from 'next/link';
@@ -6,7 +7,7 @@ import InboxClient from '@/components/inbox/InboxClient';
 import TrackPageView from '@/components/common/TrackPageView';
 import { signalLabel } from '@/lib/copy/signalLabels';
 import PageSizeSelect from '@/components/common/PageSizeSelect';
-import { fetchMerchantReviewQueueRows } from '@/lib/supabase/merchantHelpers';
+import { fetchMerchantReviewQueueRows, fetchReviewQueueProfileIds } from '@/lib/supabase/merchantHelpers';
 import { Button, WorkbenchActionBar, WorkbenchEmptyState, WorkbenchKpiStrip, WorkbenchPage } from '@/components/ui';
 import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
 import { ACTIVE_CLAIM_STATUSES, formatClaimAge, getClaimSlaState } from '@/lib/claims/sla';
@@ -54,15 +55,50 @@ export default async function InboxPage({ searchParams }: { searchParams?: Promi
     processing_job_id: string;
     order_value?: number | null;
     reason?: string;
+    customer_profile_id?: string | null;
+    claim_id?: string | null;
+    first_viewed_at?: string | null;
+    assigned_to?: string | null;
+    snoozed_until?: string | null;
+    status?: string | null;
   }> = [];
   let total = 0;
 
   // Use shared review-queue definition: identity fields, merchant scoped,
   // excludes dismissed. Ordered by identity_score.
-  const { rows } = await fetchMerchantReviewQueueRows(serviceClient, ctx.merchantId, {
+  const { rows, ownedJobIds } = await fetchMerchantReviewQueueRows(serviceClient, ctx.merchantId, {
     from: offset,
     to: offset + pageSize - 1,
   });
+  const profileIdByTransactionId = await fetchReviewQueueProfileIds(
+    serviceClient,
+    ownedJobIds,
+    rows.map((row: any) => row.id).filter(Boolean),
+  );
+  const profileIds = Array.from(new Set(Array.from(profileIdByTransactionId.values()).filter(Boolean) as string[]));
+  const activeClaimByProfileId = new Map<string, any>();
+  if (profileIds.length > 0) {
+    let { data: claimRows, error: claimRowsError } = await serviceClient
+      .from('merchant_claims' as any)
+      .select('id,customer_id,status,first_viewed_at,assigned_to,snoozed_until,submitted_at,created_at,updated_at')
+      .eq('merchant_id', ctx.merchantId)
+      .in('customer_id', profileIds)
+      .in('status', [...ACTIVE_CLAIM_STATUSES])
+      .order('updated_at', { ascending: false });
+    if (claimRowsError) {
+      const fallback = await serviceClient
+        .from('merchant_claims' as any)
+        .select('id,customer_id,status,submitted_at,created_at,updated_at')
+        .eq('merchant_id', ctx.merchantId)
+        .in('customer_id', profileIds)
+        .in('status', [...ACTIVE_CLAIM_STATUSES])
+        .order('updated_at', { ascending: false });
+      claimRows = fallback.data;
+    }
+    for (const claim of claimRows ?? []) {
+      if (!activeClaimByProfileId.has(claim.customer_id)) activeClaimByProfileId.set(claim.customer_id, claim);
+    }
+  }
 
   // Get total count separately (paginate with id-only select)
   const { rows: allRows } = await fetchMerchantReviewQueueRows(serviceClient, ctx.merchantId, {
@@ -71,7 +107,10 @@ export default async function InboxPage({ searchParams }: { searchParams?: Promi
   });
   total = allRows.length;
 
-  items = rows.map((row: any) => ({
+  items = rows.map((row: any) => {
+    const profileId = profileIdByTransactionId.get(row.id) ?? null;
+    const claim = profileId ? activeClaimByProfileId.get(profileId) : null;
+    return ({
     id: row.id,
     order_id: row.order_id,
     identity_score: row.identity_score ?? 0,
@@ -81,7 +120,14 @@ export default async function InboxPage({ searchParams }: { searchParams?: Promi
     processing_job_id: row.job_id,
     order_value: row.order_value ?? null,
     reason: topReason(row.signals_matched),
-  }));
+    customer_profile_id: profileId,
+    claim_id: claim?.id ?? null,
+    first_viewed_at: claim?.first_viewed_at ?? null,
+    assigned_to: claim?.assigned_to ?? null,
+    snoozed_until: claim?.snoozed_until ?? null,
+    status: claim?.status ?? null,
+  });
+  });
 
   const { data: claimQueueRows } = await serviceClient
     .from('merchant_claims' as any)
@@ -112,10 +158,10 @@ export default async function InboxPage({ searchParams }: { searchParams?: Promi
       kpiStrip={
         <WorkbenchKpiStrip
           items={[
-            { label: 'Open cases', value: items.length.toLocaleString(), hint: 'Current page' },
+            { label: 'Active inbox', value: total.toLocaleString(), hint: 'Unresolved identity reviews' },
             { label: 'Value at risk', value: new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(totalValueAtRisk), hint: 'Current page estimate' },
-            { label: 'Definite', value: items.filter((i) => i.match_status === 'definite').length.toLocaleString(), hint: 'Queue' },
-            { label: 'Probable', value: items.filter((i) => i.match_status === 'probable').length.toLocaleString(), hint: 'Queue' },
+            { label: 'Decision ready', value: items.filter((i) => i.match_status === 'definite' || (i.identity_score ?? 0) >= 85).length.toLocaleString(), hint: 'Current page' },
+            { label: 'Review recommended', value: items.filter((i) => i.match_status === 'probable' || (i.identity_score ?? 0) >= 70).length.toLocaleString(), hint: 'Current page' },
             { label: 'Claims urgency', value: overdueClaims.toLocaleString(), hint: oldestClaim ? `Oldest ${formatClaimAge(oldestClaim)}` : 'No open claims' },
             { label: 'Total queue', value: total.toLocaleString(), hint: 'All pages' },
           ]}
@@ -125,22 +171,30 @@ export default async function InboxPage({ searchParams }: { searchParams?: Promi
         <WorkbenchActionBar
           left={
             <nav className="flex flex-wrap items-center gap-x-4 gap-y-2" aria-label="Case status">
-              {['All', 'New', 'Review', 'Contacted', 'Resolved', 'Cleared'].map((tab, index) => (
+              {[
+                { label: 'Active work', href: '/inbox' },
+                { label: 'Claims queue', href: '/claims' },
+                { label: 'Resolved history', href: '/claims?queue=history' },
+              ].map((tab, index) => (
                 <Link
-                  key={tab}
-                  href="/inbox"
+                  key={tab.label}
+                  href={tab.href}
                   className="t-label border-b-2 pb-1"
                   style={{
                     color: index === 0 ? 'var(--ink-primary)' : 'var(--ink-tertiary)',
                     borderBottomColor: index === 0 ? 'var(--copper-bright)' : 'transparent',
                   }}
                 >
-                  {tab}
+                  {tab.label}
                 </Link>
               ))}
             </nav>
           }
-          middle={<PageSizeSelect pathname="/inbox" searchParams={querySearchParams} pageSize={pageSize} />}
+          middle={
+            <Suspense fallback={<span className="text-xs" style={{ color: 'var(--text-muted)' }}>Rows per page…</span>}>
+              <PageSizeSelect pathname="/inbox" pageSize={pageSize} />
+            </Suspense>
+          }
           right={totalPages > 1 ? (
             <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
               <span>Page {page} of {totalPages}</span>

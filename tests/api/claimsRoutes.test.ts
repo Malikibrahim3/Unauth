@@ -32,6 +32,10 @@ import { POST as evidencePost } from '@/app/api/claims/[claimId]/evidence/route'
 import { POST as reopenPost } from '@/app/api/claims/[claimId]/reopen/route';
 import { POST as reversePost } from '@/app/api/claims/[claimId]/reverse/route';
 import { POST as statusPost } from '@/app/api/claims/[claimId]/status/route';
+import { POST as viewPost } from '@/app/api/claims/[claimId]/view/route';
+import { POST as assignmentPost } from '@/app/api/claims/[claimId]/assignment/route';
+import { POST as snoozePost } from '@/app/api/claims/[claimId]/snooze/route';
+import { POST as responseCopiedPost } from '@/app/api/claims/[claimId]/customer-response-copied/route';
 import { upsertMerchantClaim, upsertMerchantCaseOutcome, upsertClaimEvidenceItem } from '@/lib/claims/store';
 import { fetchMerchantScopedCustomerProfile } from '@/lib/supabase/merchantHelpers';
 
@@ -52,6 +56,8 @@ function setupServiceClient(opts: {
   claimShopDomain?: string | null;
   claimMerchantId?: string | null;
   claimStatus?: string;
+  firstViewedAt?: string | null;
+  assignedTo?: string | null;
   duplicateClaims?: any[];
   latestOutcome?: any;
 } = {}) {
@@ -59,7 +65,10 @@ function setupServiceClient(opts: {
   const claimShopDomain = Object.prototype.hasOwnProperty.call(opts, 'claimShopDomain') ? opts.claimShopDomain : 'unit-test.myshopify.com';
   const claimMerchantId = Object.prototype.hasOwnProperty.call(opts, 'claimMerchantId') ? opts.claimMerchantId : 'm-1';
   const claimStatus = opts.claimStatus ?? 'open';
+  const firstViewedAt = opts.firstViewedAt ?? null;
+  const assignedTo = opts.assignedTo ?? null;
   const claimEvents: any[] = [];
+  const claimUpdates: any[] = [];
 
   function makeSelectChain(table: string) {
     const filters: Array<{ op: string; column: string; value: any }> = [];
@@ -84,6 +93,12 @@ function setupServiceClient(opts: {
               customer_id: 'p1',
               submitted_at: new Date(Date.now() - 86400000).toISOString(),
               updated_at: new Date().toISOString(),
+              first_viewed_at: firstViewedAt,
+              first_viewed_by: firstViewedAt ? 'user-1' : null,
+              assigned_to: assignedTo,
+              assigned_at: assignedTo ? new Date().toISOString() : null,
+              snoozed_until: null,
+              snooze_reason: null,
             },
             error: null,
           };
@@ -117,15 +132,23 @@ function setupServiceClient(opts: {
       if (table === 'merchant_claims') {
         const updateChain: any = {
           eq: () => updateChain,
-          select: () => ({
-            single: async () => ({
+          is: () => updateChain,
+          select: () => {
+            const row = async () => ({
               data: {
                 id: '550e8400-e29b-41d4-a716-446655440000',
                 status: updateChain.status ?? 'resolved',
+                first_viewed_at: updateChain.payload?.first_viewed_at ?? firstViewedAt,
+                first_viewed_by: updateChain.payload?.first_viewed_by ?? (firstViewedAt ? 'user-1' : null),
+                assigned_to: Object.prototype.hasOwnProperty.call(updateChain.payload ?? {}, 'assigned_to') ? updateChain.payload.assigned_to : assignedTo,
+                assigned_at: updateChain.payload?.assigned_at ?? null,
+                snoozed_until: updateChain.payload?.snoozed_until ?? null,
+                snooze_reason: updateChain.payload?.snooze_reason ?? null,
               },
               error: null,
-            }),
-          }),
+            });
+            return { single: row, maybeSingle: row };
+          },
         };
         const upsertSingle = jest.fn().mockResolvedValue({
           data: {
@@ -141,6 +164,8 @@ function setupServiceClient(opts: {
           select: () => makeSelectChain(table),
           update: (payload: any) => {
             updateChain.status = payload.status;
+            updateChain.payload = payload;
+            claimUpdates.push(payload);
             return updateChain;
           },
           upsert: () => ({
@@ -171,7 +196,7 @@ function setupServiceClient(opts: {
     },
   };
   (createServiceClient as jest.Mock).mockReturnValue(service);
-  return { service, claimEvents };
+  return { service, claimEvents, claimUpdates };
 }
 
 describe('claims routes', () => {
@@ -390,6 +415,118 @@ describe('claims routes', () => {
     setupServiceClient({ claimMerchantId: 'm-2', claimShopDomain: null });
     const res = await reopenPost(
       mkReq('http://localhost/api/claims/c1/reopen', { note: 'Trying wrong merchant' }),
+      { params: Promise.resolve({ claimId: '550e8400-e29b-41d4-a716-446655440000' }) }
+    );
+    expect(res.status).toBe(403);
+  });
+
+  it('new claim appears unread until first view is persisted', async () => {
+    setupAuth(true);
+    setupPermission();
+    const { claimEvents, claimUpdates } = setupServiceClient({ firstViewedAt: null });
+    const res = await viewPost(
+      mkReq('http://localhost/api/claims/c1/view', {}),
+      { params: Promise.resolve({ claimId: '550e8400-e29b-41d4-a716-446655440000' }) }
+    );
+    const body = await res.json();
+    expect(res.status).toBe(200);
+    expect(body.claim.first_viewed_at).toBeTruthy();
+    expect(claimUpdates).toEqual(expect.arrayContaining([expect.objectContaining({ first_viewed_by: 'user-1' })]));
+    expect(claimEvents).toEqual(expect.arrayContaining([expect.objectContaining({ event_type: 'claim_viewed' })]));
+  });
+
+  it('viewed claim survives refresh without duplicate first-view event', async () => {
+    setupAuth(true);
+    setupPermission();
+    const viewedAt = new Date().toISOString();
+    const { claimEvents, claimUpdates } = setupServiceClient({ firstViewedAt: viewedAt });
+    const res = await viewPost(
+      mkReq('http://localhost/api/claims/c1/view', {}),
+      { params: Promise.resolve({ claimId: '550e8400-e29b-41d4-a716-446655440000' }) }
+    );
+    const body = await res.json();
+    expect(res.status).toBe(200);
+    expect(body.claim.first_viewed_at).toBe(viewedAt);
+    expect(claimUpdates).toHaveLength(0);
+    expect(claimEvents).toHaveLength(0);
+  });
+
+  it('wrong merchant cannot mark another merchant claim viewed', async () => {
+    setupAuth(true);
+    setupPermission();
+    setupServiceClient({ claimMerchantId: 'm-2', claimShopDomain: null });
+    const res = await viewPost(
+      mkReq('http://localhost/api/claims/c1/view', {}),
+      { params: Promise.resolve({ claimId: '550e8400-e29b-41d4-a716-446655440000' }) }
+    );
+    expect(res.status).toBe(403);
+  });
+
+  it('assign to self and unassign write operational events', async () => {
+    setupAuth(true);
+    setupPermission();
+    const { claimEvents, claimUpdates } = setupServiceClient();
+    const assignRes = await assignmentPost(
+      mkReq('http://localhost/api/claims/c1/assignment', { action: 'assign_to_me' }),
+      { params: Promise.resolve({ claimId: '550e8400-e29b-41d4-a716-446655440000' }) }
+    );
+    const unassignRes = await assignmentPost(
+      mkReq('http://localhost/api/claims/c1/assignment', { action: 'unassign' }),
+      { params: Promise.resolve({ claimId: '550e8400-e29b-41d4-a716-446655440000' }) }
+    );
+    expect(assignRes.status).toBe(200);
+    expect(unassignRes.status).toBe(200);
+    expect(claimUpdates).toEqual(expect.arrayContaining([
+      expect.objectContaining({ assigned_to: 'user-1' }),
+      expect.objectContaining({ assigned_to: null }),
+    ]));
+    expect(claimEvents.map((event) => event.event_type)).toEqual(expect.arrayContaining(['claim_assigned', 'claim_unassigned']));
+  });
+
+  it('wrong merchant cannot assign claim', async () => {
+    setupAuth(true);
+    setupPermission();
+    setupServiceClient({ claimMerchantId: 'm-2', claimShopDomain: null });
+    const res = await assignmentPost(
+      mkReq('http://localhost/api/claims/c1/assignment', { action: 'assign_to_me' }),
+      { params: Promise.resolve({ claimId: '550e8400-e29b-41d4-a716-446655440000' }) }
+    );
+    expect(res.status).toBe(403);
+  });
+
+  it('snooze persists follow-up state and timeline event', async () => {
+    setupAuth(true);
+    setupPermission();
+    const { claimEvents, claimUpdates } = setupServiceClient();
+    const due = new Date(Date.now() + 86400000).toISOString();
+    const res = await snoozePost(
+      mkReq('http://localhost/api/claims/c1/snooze', { snoozed_until: due, reason: 'Awaiting carrier photo' }),
+      { params: Promise.resolve({ claimId: '550e8400-e29b-41d4-a716-446655440000' }) }
+    );
+    expect(res.status).toBe(200);
+    expect(claimUpdates).toEqual(expect.arrayContaining([expect.objectContaining({ snoozed_until: due, status: 'pending' })]));
+    expect(claimEvents).toEqual(expect.arrayContaining([expect.objectContaining({ event_type: 'claim_snoozed', note: 'Awaiting carrier photo' })]));
+  });
+
+  it('customer response copy persists safe text on claim and event', async () => {
+    setupAuth(true);
+    setupPermission();
+    const { claimEvents, claimUpdates } = setupServiceClient();
+    const res = await responseCopiedPost(
+      mkReq('http://localhost/api/claims/c1/customer-response-copied', { decision: 'no_action', outcome: 'legitimate' }),
+      { params: Promise.resolve({ claimId: '550e8400-e29b-41d4-a716-446655440000' }) }
+    );
+    expect(res.status).toBe(200);
+    expect(claimUpdates[0].last_customer_response_text).toContain('no further action');
+    expect(claimEvents.map((event) => event.event_type)).toEqual(expect.arrayContaining(['customer_response_saved', 'customer_response_copied']));
+  });
+
+  it('wrong merchant cannot write customer response record', async () => {
+    setupAuth(true);
+    setupPermission();
+    setupServiceClient({ claimMerchantId: 'm-2', claimShopDomain: null });
+    const res = await responseCopiedPost(
+      mkReq('http://localhost/api/claims/c1/customer-response-copied', { decision: 'no_action', outcome: 'legitimate' }),
       { params: Promise.resolve({ claimId: '550e8400-e29b-41d4-a716-446655440000' }) }
     );
     expect(res.status).toBe(403);

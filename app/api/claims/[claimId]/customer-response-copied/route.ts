@@ -3,6 +3,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { loadClaimForMerchant } from '@/lib/claims/access';
 import { appendClaimEvent } from '@/lib/claims/events';
+import { buildCustomerResponse, customerResponseContainsInternalTerm } from '@/lib/claims/customerResponses';
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ claimId: string }> }) {
   const userClient = createClient();
@@ -20,7 +21,38 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const body = await request.json().catch(() => ({}));
   const claim = loaded.claim!;
+  const decision = typeof body?.decision === 'string' ? body.decision : null;
+  const outcome = typeof body?.outcome === 'string' ? body.outcome : null;
+  const responseText = typeof body?.responseText === 'string'
+    ? body.responseText
+    : buildCustomerResponse({ decision, outcome, status: claim.status });
+  if (customerResponseContainsInternalTerm(responseText)) {
+    return NextResponse.json({ error: 'Customer response contains internal language' }, { status: 400 });
+  }
   try {
+    const { error: updateError } = await serviceClient
+      .from('merchant_claims' as any)
+      .update({
+        last_customer_response_text: responseText,
+        last_customer_response_at: new Date().toISOString(),
+        last_customer_response_by: user.id,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', claimId)
+      .eq('merchant_id', ctx.merchantId);
+    if (updateError) throw updateError;
+    await appendClaimEvent(serviceClient, {
+      claim_id: claimId,
+      merchant_id: ctx.merchantId,
+      shop_domain: claim.shop_domain,
+      event_type: 'customer_response_saved',
+      actor_user_id: user.id,
+      metadata: {
+        decision,
+        outcome,
+        response_text: responseText,
+      },
+    });
     await appendClaimEvent(serviceClient, {
       claim_id: claimId,
       merchant_id: ctx.merchantId,
@@ -28,8 +60,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       event_type: 'customer_response_copied',
       actor_user_id: user.id,
       metadata: {
-        decision: typeof body?.decision === 'string' ? body.decision : null,
-        outcome: typeof body?.outcome === 'string' ? body.outcome : null,
+        decision,
+        outcome,
       },
     });
     return NextResponse.json({ ok: true });

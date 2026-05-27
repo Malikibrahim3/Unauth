@@ -17,6 +17,7 @@ type AuditRow = {
   action: string;
   resource_type: string | null;
   resource_id: string | null;
+  resource_href?: string | null;
   metadata: Record<string, unknown> | null;
   created_at: string;
 };
@@ -177,7 +178,7 @@ export default function AuditTrailClient({ actorsByUserId }: AuditTrailClientPro
                 const isExpanded = expandedId === rowKey;
                 const details = metadataEntries(row.metadata);
                 const claimHref = row.resource_type === 'claim' && row.resource_id
-                  ? '/claims'
+                  ? row.resource_href ?? '/claims'
                   : null;
 
                 return (
@@ -209,7 +210,7 @@ export default function AuditTrailClient({ actorsByUserId }: AuditTrailClientPro
                             href={claimHref}
                             className="font-medium hover:underline"
                             style={{ color: 'var(--accent)' }}
-                            title={`Claim ${row.resource_id?.slice(0, 8) ?? ''} — opens claims list`}
+                            title={`Open claim ${row.resource_id?.slice(0, 8) ?? ''}`}
                           >
                             {auditResourceSummary(row.resource_type, row.resource_id)}
                           </Link>

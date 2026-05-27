@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
 import Link from 'next/link';
@@ -70,7 +71,11 @@ export default async function HistoryPage({ searchParams }: { searchParams?: { p
       }
       actionBar={
         <WorkbenchActionBar
-          left={<PageSizeSelect pathname="/history" searchParams={baseSearchParams} pageSize={pageSize} />}
+          left={
+            <Suspense fallback={<span className="text-xs" style={{ color: 'var(--text-muted)' }}>Rows per page…</span>}>
+              <PageSizeSelect pathname="/history" pageSize={pageSize} />
+            </Suspense>
+          }
           right={
             totalPages > 1 ? (
               <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>

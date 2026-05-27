@@ -107,14 +107,15 @@ export async function GET(request: NextRequest) {
   const ascending = sort === 'age';
   let query = serviceClient
     .from('merchant_claims' as any)
-    .select('id,customer_id,shop_domain,shopify_order_id,order_ref,order_source,claim_type,status,amount_at_risk,currency,submitted_at,created_at,updated_at')
+    .select('id,customer_id,shop_domain,shopify_order_id,order_ref,order_source,claim_type,status,amount_at_risk,currency,submitted_at,created_at,updated_at,first_viewed_at,first_viewed_by,assigned_to,assigned_at,snoozed_until,snooze_reason,last_customer_response_text,last_customer_response_at,last_customer_response_by')
     .eq('merchant_id', ctx.merchantId)
     .order(orderColumn, { ascending })
     .limit(pageSize);
 
   if (profileId) query = query.eq('customer_id', profileId);
   if (orderId) query = query.eq('shopify_order_id', orderId);
-  if (queue === 'active') query = query.in('status', [...ACTIVE_CLAIM_STATUSES]);
+  if (queue === 'active') query = query.in('status', [...ACTIVE_CLAIM_STATUSES]).or(`snoozed_until.is.null,snoozed_until.lte.${new Date().toISOString()}`);
+  else if (queue === 'snoozed') query = query.not('snoozed_until', 'is', null).gt('snoozed_until', new Date().toISOString());
   else if (statusFilter) query = query.eq('status', statusFilter);
   if (excludeId) query = query.neq('id', excludeId);
   let { data: claims, error: claimsError } = await query;
@@ -139,6 +140,7 @@ export async function GET(request: NextRequest) {
   const claimIds = (claims ?? []).map((claim: any) => claim.id).filter(Boolean);
   const outcomesByClaimId = new Map<string, any[]>();
   const eventsByClaimId = new Map<string, any[]>();
+  const evidenceCountByClaimId = new Map<string, number>();
 
   if (claimIds.length > 0) {
     const { data: outcomeRows } = await serviceClient
@@ -163,6 +165,14 @@ export async function GET(request: NextRequest) {
       rows.push(event);
       eventsByClaimId.set(event.claim_id, rows);
     }
+
+    const { data: evidenceRows } = await serviceClient
+      .from('claim_evidence_items' as any)
+      .select('claim_id')
+      .in('claim_id', claimIds);
+    for (const row of evidenceRows ?? []) {
+      evidenceCountByClaimId.set(row.claim_id, (evidenceCountByClaimId.get(row.claim_id) ?? 0) + 1);
+    }
   }
 
   return NextResponse.json({
@@ -182,6 +192,16 @@ export async function GET(request: NextRequest) {
       submitted_at: c.submitted_at ?? null,
       created_at: c.created_at ?? null,
       updated_at: c.updated_at,
+      first_viewed_at: c.first_viewed_at ?? null,
+      first_viewed_by: c.first_viewed_by ?? null,
+      assigned_to: c.assigned_to ?? null,
+      assigned_at: c.assigned_at ?? null,
+      snoozed_until: c.snoozed_until ?? null,
+      snooze_reason: c.snooze_reason ?? null,
+      last_customer_response_text: c.last_customer_response_text ?? null,
+      last_customer_response_at: c.last_customer_response_at ?? null,
+      last_customer_response_by: c.last_customer_response_by ?? null,
+      evidence_count: evidenceCountByClaimId.get(c.id) ?? 0,
       outcomes: outcomesByClaimId.get(c.id) ?? [],
       events: eventsByClaimId.get(c.id) ?? [],
       latest_outcome: (outcomesByClaimId.get(c.id) ?? [])[0] ?? null,

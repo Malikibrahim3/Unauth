@@ -2,8 +2,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   recordCustomerResponseCopied,
+  assignClaim,
+  markClaimViewed,
   reopenClaim,
   reverseClaimDecision,
+  snoozeClaim,
   submitClaim,
   submitEvidence,
   submitOutcome,
@@ -12,7 +15,7 @@ import {
 import { signalLabel } from '@/lib/copy/signalLabels';
 import { formatRiskScore } from '@/lib/utils/format';
 import { buildCustomerResponse } from '@/lib/claims/customerResponses';
-import { claimEventLabel, claimEventSummary } from '@/lib/claims/events';
+import { claimEventLabel, claimEventSummary, claimHasEvidence } from '@/lib/claims/events';
 import { pickPriorityClaim } from '@/lib/claims/priority';
 import {
   ACTIVE_CLAIM_STATUSES,
@@ -63,13 +66,13 @@ const CLAIM_TYPE_LABELS: Record<ClaimType, string> = {
 };
 
 const DECISION_LABELS: Record<Decision, string> = {
-  approved: 'Approved',
-  denied: 'Denied',
+  approved: 'Merchant approved claim',
+  denied: 'Merchant declined claim',
   escalated: 'Escalated for review',
   partial_refund: 'Partial refund',
   full_refund: 'Full refund',
   chargeback_disputed: 'Chargeback disputed',
-  blacklist: 'Blacklist customer',
+  blacklist: 'Added to merchant watchlist',
   no_action: 'No action',
 };
 
@@ -80,7 +83,7 @@ const OUTCOME_LABELS: Record<Outcome, string> = {
   chargeback_won: 'Chargeback won',
   chargeback_lost: 'Chargeback lost',
   customer_verified: 'Customer verified',
-  suspected_fraud: 'Suspected fraud',
+  suspected_fraud: 'Pattern suggests misuse',
   legitimate: 'Legitimate',
 };
 
@@ -202,6 +205,31 @@ function inputStyle(): React.CSSProperties {
   return { border: '1px solid var(--border)', background: 'var(--bg-inset)', color: 'var(--text)' };
 }
 
+function statusNextAction(claim: any, hasDecision: boolean, responseRecorded: boolean) {
+  if (!claim) return 'Select or save a claim';
+  if (claim.status === 'open') return 'Review evidence';
+  if (claim.status === 'pending' || claim.status === 'evidence_requested') return 'Check requested evidence';
+  if (claim.status === 'escalated') return 'Review escalation';
+  if (!hasDecision) return 'Record merchant decision';
+  if (!responseRecorded) return 'Record customer response';
+  if (isFinalClaimStatus(claim.status)) return 'Work complete';
+  return 'Close claim';
+}
+
+function identityEvidencePoints(data: any, order: any, fraudFlags: string[]) {
+  const points: string[] = [];
+  const emails = Array.isArray(data?.profile?.emails) ? data.profile.emails.length : 0;
+  const addresses = Array.isArray(data?.profile?.addresses) ? data.profile.addresses.length : 0;
+  const ips = Array.isArray(data?.profile?.ips) ? data.profile.ips.length : 0;
+  const cards = Array.isArray(data?.profile?.card_last4s) ? data.profile.card_last4s.length : 0;
+  if (emails > 1) points.push(`${emails} email variants`);
+  if (addresses > 1) points.push(`${addresses} address variants`);
+  if (ips > 1 || order?.ip) points.push('IP/device overlap');
+  if (cards > 0) points.push('Payment card signal');
+  if (fraudFlags.length > 0) points.push(`${Math.min(fraudFlags.length, 5)} behaviour signals`);
+  return points.slice(0, 5);
+}
+
 export default function ClaimReviewPanel({ profileId, initialClaimId }: { profileId: string; initialClaimId?: string | null }) {
   const [data, setData] = useState<any>(null);
   const [shopifyOrders, setShopifyOrders] = useState<any[]>([]);
@@ -240,6 +268,8 @@ export default function ClaimReviewPanel({ profileId, initialClaimId }: { profil
   const [manualModeExplicit, setManualModeExplicit] = useState(false);
   // Order value for amount_at_risk (Fix 4)
   const [orderValue, setOrderValue] = useState('');
+  const [snoozeDays, setSnoozeDays] = useState('2');
+  const [snoozeReason, setSnoozeReason] = useState('Awaiting carrier or customer evidence');
 
   useEffect(() => {
     fetch(`/api/customers/${profileId}`).then(r => r.ok ? r.json() : null).then((x) => setData(x)).catch(() => {});
@@ -344,6 +374,7 @@ export default function ClaimReviewPanel({ profileId, initialClaimId }: { profil
   const selectedOrder = useMemo(() => orderOptions.find((o) => o.id === selectedOrderId), [orderOptions, selectedOrderId]);
   const order = useMemo(() => data?.orderHistory?.find((o: any) => o.orderId === selectedOrderId), [data, selectedOrderId]);
   const selectedClaim = useMemo(() => history.find((h) => h.id === claimId) ?? null, [claimId, history]);
+  const activeClaimId = selectedClaim?.id ?? claimId;
   const selectedClaimOutcomes = useMemo(() => selectedClaim?.outcomes ?? [], [selectedClaim]);
   const latestOutcome = selectedClaimOutcomes[0] ?? selectedClaim?.latest_outcome ?? null;
   const previousOutcome = selectedClaimOutcomes[1] ?? null;
@@ -352,6 +383,9 @@ export default function ClaimReviewPanel({ profileId, initialClaimId }: { profil
     () => buildCustomerResponse({ decision: latestOutcome?.decision, outcome: latestOutcome?.outcome, status: selectedClaim?.status }),
     [latestOutcome, selectedClaim],
   );
+  const responseRecorded = selectedClaimEvents.some((event: any) => event.event_type === 'customer_response_copied');
+  const evidenceRecorded = claimHasEvidence({ evidence_count: selectedClaim?.evidence_count, events: selectedClaimEvents });
+  const claimIsClosed = selectedClaim ? isFinalClaimStatus(selectedClaim.status) : false;
 
   useEffect(() => {
     if (history.length === 0 || claimId) return;
@@ -362,6 +396,9 @@ export default function ClaimReviewPanel({ profileId, initialClaimId }: { profil
 
   useEffect(() => {
     if (!selectedClaim) return;
+    if (!selectedClaim.first_viewed_at) {
+      markClaimViewed(selectedClaim.id).then(() => refreshHistory()).catch(() => {});
+    }
     if (selectedClaim.claim_type) setClaimType(selectedClaim.claim_type as ClaimType);
     if (selectedClaim.customer_claim_reason) setCustomerReason(selectedClaim.customer_claim_reason);
     if (selectedClaim.normalized_reason) setNotes(selectedClaim.normalized_reason);
@@ -392,6 +429,8 @@ export default function ClaimReviewPanel({ profileId, initialClaimId }: { profil
   const customerEmail = data?.profile?.primary_email ?? data?.profile?.primaryEmail ?? data?.profile?.email ?? data?.profile?.customerEmail ?? null;
   const customerProfileHref = `/customers/${profileId}`;
   const fraudFlags: string[] = order?.fraudFlags ?? data?.profile?.fraud_flags ?? [];
+  const nextClaimAction = statusNextAction(selectedClaim, !!latestOutcome, responseRecorded);
+  const identityPoints = identityEvidencePoints(data, order, fraudFlags);
 
   const metadata = useMemo(() => {
     const out: Record<string, string> = {};
@@ -493,17 +532,22 @@ export default function ClaimReviewPanel({ profileId, initialClaimId }: { profil
   }
 
   async function onOutcome() {
-    if (!claimId) {
+    if (!activeClaimId) {
       showMsg('Save a claim first, then record the outcome.', 'error');
       return;
     }
     setState('busy');
-    const r = await submitOutcome(claimId, { decision, outcome, notes });
+    const r = await submitOutcome(activeClaimId, { decision, outcome, notes });
     setState('idle');
-    showMsg(r.message, r.message.toLowerCase().includes('saved') ? 'success' : 'error');
     if (r.message.toLowerCase().includes('saved')) {
-      saveClaimDraft(profileId, { selectedOrderId, claimType, customerReason, notes, claimId, decision, outcome, evidenceType, source, evidenceUrl, evidenceHash, metaRows, statusToSet });
-      const next = await fetch(`/api/claims?queue=active&sort=age&limit=1&excludeId=${encodeURIComponent(claimId)}`)
+      showMsg(
+        decision === 'escalated'
+          ? 'Merchant decision recorded. Claim moved to escalated review.'
+          : 'Merchant decision recorded. Claim resolved and removed from the active queue.',
+        'success',
+      );
+      saveClaimDraft(profileId, { selectedOrderId, claimType, customerReason, notes, claimId: activeClaimId, decision, outcome, evidenceType, source, evidenceUrl, evidenceHash, metaRows, statusToSet });
+      const next = await fetch(`/api/claims?queue=active&sort=age&limit=1&excludeId=${encodeURIComponent(activeClaimId)}`)
         .then(r => r.ok ? r.json() : null)
         .catch(() => null);
       const nextClaim = next?.claims?.[0];
@@ -514,27 +558,29 @@ export default function ClaimReviewPanel({ profileId, initialClaimId }: { profil
         setNextClaimHref(null);
         setNoMoreClaims(true);
       }
+    } else {
+      showMsg(r.message, 'error');
     }
     await refreshHistory();
   }
 
   async function onEvidence() {
-    if (!claimId) {
+    if (!activeClaimId) {
       showMsg('Save a claim first, then attach evidence.', 'error');
       return;
     }
     setState('busy');
-    const r = await submitEvidence(claimId, { evidence_type: evidenceType, source, evidence_url: evidenceUrl || null, evidence_hash: evidenceHash || null, metadata });
+    const r = await submitEvidence(activeClaimId, { evidence_type: evidenceType, source, evidence_url: evidenceUrl || null, evidence_hash: evidenceHash || null, metadata });
     setState('idle');
     showMsg(r.message, r.message.toLowerCase().includes('saved') ? 'success' : 'error');
     if (r.message.toLowerCase().includes('saved')) {
-      saveClaimDraft(profileId, { selectedOrderId, claimType, customerReason, notes, claimId, decision, outcome, evidenceType, source, evidenceUrl, evidenceHash, metaRows, statusToSet });
+      saveClaimDraft(profileId, { selectedOrderId, claimType, customerReason, notes, claimId: activeClaimId, decision, outcome, evidenceType, source, evidenceUrl, evidenceHash, metaRows, statusToSet });
     }
     await refreshHistory();
   }
 
   async function onStatusChange() {
-    if (!claimId) {
+    if (!activeClaimId) {
       showMsg('Save or select a claim before changing status.', 'error');
       return;
     }
@@ -543,7 +589,7 @@ export default function ClaimReviewPanel({ profileId, initialClaimId }: { profil
       return;
     }
     setState('busy');
-    const r = await submitClaimStatus(claimId, { status: statusToSet, note: statusNote });
+    const r = await submitClaimStatus(activeClaimId, { status: statusToSet, note: statusNote });
     setState('idle');
     showMsg(r.message, r.message.toLowerCase().includes('updated') ? 'success' : 'error');
     if (r.message.toLowerCase().includes('updated')) setStatusNote('');
@@ -551,7 +597,7 @@ export default function ClaimReviewPanel({ profileId, initialClaimId }: { profil
   }
 
   async function onReopen() {
-    if (!claimId) {
+    if (!activeClaimId) {
       showMsg('Select a resolved claim before reopening.', 'error');
       return;
     }
@@ -560,7 +606,7 @@ export default function ClaimReviewPanel({ profileId, initialClaimId }: { profil
       return;
     }
     setState('busy');
-    const r = await reopenClaim(claimId, { note: reopenNote });
+    const r = await reopenClaim(activeClaimId, { note: reopenNote });
     setState('idle');
     showMsg(r.message, r.message.toLowerCase().includes('reopened') ? 'success' : 'error');
     if (r.message.toLowerCase().includes('reopened')) setReopenNote('');
@@ -568,7 +614,7 @@ export default function ClaimReviewPanel({ profileId, initialClaimId }: { profil
   }
 
   async function onReverse() {
-    if (!claimId) {
+    if (!activeClaimId) {
       showMsg('Select a resolved claim before reversing a decision.', 'error');
       return;
     }
@@ -577,7 +623,7 @@ export default function ClaimReviewPanel({ profileId, initialClaimId }: { profil
       return;
     }
     setState('busy');
-    const r = await reverseClaimDecision(claimId, { decision: reverseDecision, outcome: reverseOutcome, note: reverseNote });
+    const r = await reverseClaimDecision(activeClaimId, { decision: reverseDecision, outcome: reverseOutcome, note: reverseNote });
     setState('idle');
     showMsg(r.message, r.message.toLowerCase().includes('reversed') ? 'success' : 'error');
     if (r.message.toLowerCase().includes('reversed')) setReverseNote('');
@@ -585,38 +631,53 @@ export default function ClaimReviewPanel({ profileId, initialClaimId }: { profil
   }
 
   async function onCopyCustomerResponse() {
-    if (!claimId) return;
+    if (!activeClaimId) return;
     try {
       await navigator.clipboard.writeText(customerResponse);
-      await recordCustomerResponseCopied(claimId, { decision: latestOutcome?.decision ?? null, outcome: latestOutcome?.outcome ?? null });
-      showMsg('Customer response copied', 'success');
+      await recordCustomerResponseCopied(activeClaimId, { decision: latestOutcome?.decision ?? null, outcome: latestOutcome?.outcome ?? null, responseText: customerResponse });
+      showMsg('Customer response copied and recorded on the claim timeline.', 'success');
       await refreshHistory();
     } catch {
-      showMsg('Copy unavailable in this browser. Select the response text and copy manually.', 'error');
+      await recordCustomerResponseCopied(activeClaimId, { decision: latestOutcome?.decision ?? null, outcome: latestOutcome?.outcome ?? null, responseText: customerResponse });
+      showMsg('Clipboard copy unavailable. Response was still recorded on the claim timeline.', 'success');
+      await refreshHistory();
     }
+  }
+
+  async function onAssignment(action: 'assign_to_me' | 'unassign') {
+    if (!activeClaimId) return;
+    setState('busy');
+    const r = await assignClaim(activeClaimId, action);
+    setState('idle');
+    showMsg(r.message, r.message === 'Assignment updated' ? 'success' : 'error');
+    await refreshHistory();
+  }
+
+  async function onSnooze() {
+    if (!activeClaimId) return;
+    const days = Math.max(1, Math.min(30, parseInt(snoozeDays, 10) || 2));
+    const until = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
+    setState('busy');
+    const r = await snoozeClaim(activeClaimId, { snoozed_until: until, reason: snoozeReason });
+    setState('idle');
+    showMsg(r.message, r.message === 'Follow-up updated' ? 'success' : 'error');
+    await refreshHistory();
   }
 
   const busy = state === 'busy';
   const riskNumeric = riskScore != null ? Math.max(0, Math.min(100, Math.round(Number(riskScore)))) : null;
-  const riskBand = riskNumeric == null ? '—' : riskNumeric <= 30 ? 'Low risk' : riskNumeric <= 60 ? 'Medium risk' : 'High risk';
-  const crossMerchantSignals = useMemo(() => {
+  const riskBand = riskNumeric == null ? '—' : riskNumeric <= 30 ? 'Low confidence' : riskNumeric <= 60 ? 'Medium confidence' : 'High confidence';
+  const withinStoreSignals = useMemo(() => {
     const linked = Array.isArray(data?.linkedAccounts) ? data.linkedAccounts : [];
     return linked.slice(0, 8).map((row: any, i: number) => ({
-      merchant: `Merchant #${String.fromCharCode(65 + (i % 26))}`,
-      claimType: CLAIM_TYPE_LABELS[(row.claim_type as ClaimType) ?? 'other'] ?? 'Other',
-      outcome: OUTCOME_LABELS[(row.outcome as Outcome) ?? 'pending'] ?? 'Pending',
+      signal: row.entityType ? String(row.entityType).replace(/_/g, ' ') : `Signal ${i + 1}`,
+      detail: row.entityValue ?? 'Identity variant observed',
+      reason: Array.isArray(row.matchReasons) ? row.matchReasons.join(', ').replace(/_/g, ' ') : 'Matching data point',
       date: row.updated_at ?? row.created_at ?? null,
-      grade: (row.match_status as string) ?? 'possible',
+      grade: row.confidence != null ? `${Math.round(Number(row.confidence) * 100)}%` : 'Context',
     }));
   }, [data?.linkedAccounts]);
-  const merchantCount = new Set(crossMerchantSignals.map((s: any) => s.merchant)).size;
-  const gradeTone = (grade: string) => {
-    const g = grade.toLowerCase();
-    if (g.includes('definite')) return { label: 'Definite', bg: '#FEE2E2', text: '#991B1B' };
-    if (g.includes('probable')) return { label: 'Probable', bg: '#FEF3C7', text: '#B45309' };
-    if (g.includes('possible')) return { label: 'Possible', bg: '#FEF9C3', text: '#A16207' };
-    return { label: 'Weak', bg: '#F3F4F6', text: '#4B5563' };
-  };
+  const crossMerchantCount = Number(data?.profile?.total_merchants_seen_at ?? 1);
   const actorLabel = (actor?: string | null) => actor ? `Agent #${actor.slice(-4)}` : null;
   const getSlaVisual = (claim: any) => {
     const base = getClaimSlaState(claim);
@@ -715,6 +776,76 @@ export default function ClaimReviewPanel({ profileId, initialClaimId }: { profil
         </section>
       )}
 
+      {selectedClaim && (
+        <section className="rounded-xl p-4 border" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-caption font-semibold mb-1" style={{ color: 'var(--ink-secondary)' }}>Claim lifecycle</p>
+              <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{nextClaimAction}</p>
+              <p className="mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>
+                {selectedClaim.first_viewed_at
+                  ? `First viewed ${new Date(selectedClaim.first_viewed_at).toLocaleString('en-GB')}`
+                  : 'Unread until opened by an analyst'}
+                {' · '}
+                {selectedClaim.assigned_to ? 'Owner assigned' : 'Unassigned'}
+                {selectedClaim.snoozed_until ? ` · Follow-up due ${new Date(selectedClaim.snoozed_until).toLocaleString('en-GB')}` : ''}
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <button type="button" disabled={busy} onClick={() => onAssignment('assign_to_me')} className="px-3 py-1.5 rounded-md text-xs font-semibold disabled:opacity-50" style={{ border: '1px solid var(--border)', color: 'var(--text)' }}>
+                Assign to me
+              </button>
+              <button type="button" disabled={busy} onClick={() => onAssignment('unassign')} className="px-3 py-1.5 rounded-md text-xs font-semibold disabled:opacity-50" style={{ border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+                Unassign
+              </button>
+              <a href="/claims" className="px-3 py-1.5 rounded-md text-xs font-semibold" style={{ border: '1px solid var(--border)', color: 'var(--text)' }}>
+                Active queue
+              </a>
+            </div>
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-2 md:grid-cols-5">
+            {([
+              ['Opened', true],
+              ['Evidence', evidenceRecorded],
+              ['Merchant decision', !!latestOutcome],
+              ['Customer response', responseRecorded],
+              ['Closed', claimIsClosed],
+            ] as Array<[string, boolean]>).map(([label, complete]) => (
+              <div
+                key={String(label)}
+                className="rounded-md border px-2.5 py-2 text-xs"
+                style={{
+                  borderColor: complete ? '#86efac' : 'var(--border-subtle)',
+                  background: complete ? '#dcfce7' : 'var(--bg-inset)',
+                  color: complete ? '#166534' : 'var(--text-muted)',
+                }}
+              >
+                <span className="block font-semibold">{label}</span>
+                <span>{complete ? 'Recorded' : 'Pending'}</span>
+              </div>
+            ))}
+          </div>
+          <div className="mt-3 flex flex-wrap items-end gap-2 rounded-md border p-3" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)' }}>
+            <label className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>
+              Snooze days
+              <input className="mt-1 block w-20 rounded-md px-2 py-1 text-sm" style={inputStyle()} value={snoozeDays} onChange={(e) => setSnoozeDays(e.target.value)} inputMode="numeric" />
+            </label>
+            <label className="min-w-[220px] flex-1 text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>
+              Follow-up note
+              <input className="mt-1 block w-full rounded-md px-2 py-1 text-sm" style={inputStyle()} value={snoozeReason} onChange={(e) => setSnoozeReason(e.target.value)} />
+            </label>
+            <button type="button" disabled={busy} onClick={onSnooze} className="rounded-md px-3 py-1.5 text-xs font-semibold disabled:opacity-50" style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}>
+              Snooze follow-up
+            </button>
+            {selectedClaim.snoozed_until && (
+              <button type="button" disabled={busy} onClick={async () => { setState('busy'); const r = await snoozeClaim(claimId, { snoozed_until: null }); setState('idle'); showMsg(r.message, r.message === 'Follow-up updated' ? 'success' : 'error'); await refreshHistory(); }} className="rounded-md px-3 py-1.5 text-xs font-semibold disabled:opacity-50" style={{ border: '1px solid var(--border)', color: 'var(--text)' }}>
+                Return to active
+              </button>
+            )}
+          </div>
+        </section>
+      )}
+
       <section className="rounded-xl p-4 border" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -738,12 +869,22 @@ export default function ClaimReviewPanel({ profileId, initialClaimId }: { profil
         </div>
       </section>
 
-      {/* Risk summary */}
+      {/* Identity confidence summary */}
       <div className="rounded-xl p-4 border" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}>
-        <p className="text-caption font-semibold mb-3" style={{ color: 'var(--ink-secondary)' }}>Customer risk summary</p>
+        <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Linked identity confidence</p>
+            <p className="mt-1 text-xs max-w-2xl" style={{ color: 'var(--text-muted)' }}>
+              Evidence suggests these records belong to the same identity based on matching data points. Unauth shows context; the merchant owns the action.
+            </p>
+          </div>
+          <span className="rounded-full px-2 py-0.5 text-xs font-semibold" style={{ background: 'var(--bg-inset)', color: 'var(--text-muted)', border: '1px solid var(--border-subtle)' }}>
+            Review recommended
+          </span>
+        </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
           <div>
-            <p className="text-xs mb-0.5" style={{ color: 'var(--text-muted)' }}>Risk score</p>
+            <p className="text-xs mb-0.5" style={{ color: 'var(--text-muted)' }}>Confidence score</p>
             <p className="font-semibold text-lg font-mono" style={{ color: 'var(--text)' }}>{riskNumeric ?? '—'}</p>
             <div
               className="mt-1 h-2 rounded-full overflow-hidden relative"
@@ -791,27 +932,48 @@ export default function ClaimReviewPanel({ profileId, initialClaimId }: { profil
             ))}
           </div>
         )}
+        {identityPoints.length > 0 && (
+          <div className="mt-3">
+            <p className="text-xs font-semibold mb-1.5" style={{ color: 'var(--text-muted)' }}>Matching data points</p>
+            <div className="flex flex-wrap gap-1.5">
+              {identityPoints.map((point) => (
+                <span key={point} className="inline-flex items-center rounded-full px-2 py-0.5 text-xs" style={{ background: 'var(--bg-inset)', color: 'var(--text)' }}>
+                  {point}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       <section className="rounded-xl p-4 border" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}>
         <div className="flex items-center justify-between mb-3">
-          <p className="text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Cross-merchant signals</p>
-          <span className="text-xs font-semibold" style={{ color: 'var(--text)' }}>Flagged across {merchantCount} merchants</span>
+          <p className="text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Cross-merchant and identity-link context</p>
+          <span className="text-xs font-semibold" style={{ color: 'var(--text)' }}>{crossMerchantCount > 1 ? `Aggregate signal across ${crossMerchantCount} merchants` : 'Store-scoped signal'}</span>
         </div>
-        {crossMerchantSignals.length === 0 ? (
-          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No cross-merchant matches found yet</p>
+        <div className="mb-3 rounded-md border p-3 text-sm" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)' }}>
+          <p className="font-semibold" style={{ color: 'var(--text)' }}>
+            {crossMerchantCount > 1 ? 'Cross-merchant signal detected' : 'No cross-merchant aggregate signal yet'}
+          </p>
+          <p className="mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>
+            {crossMerchantCount > 1
+              ? 'Unauth has an anonymised aggregate signal that this identity appears in multiple merchant datasets. Merchant-specific details are not exposed here.'
+              : 'No network-level merchant recurrence is available for this identity. Continue with store-owned evidence.'}
+          </p>
+        </div>
+        {withinStoreSignals.length === 0 ? (
+          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No additional store-scoped identity variants found yet.</p>
         ) : (
           <div className="space-y-2">
-            {crossMerchantSignals.map((row: any, i: number) => {
-              const tone = gradeTone(row.grade);
+            {withinStoreSignals.map((row: any, i: number) => {
               return (
-                <div key={`${row.merchant}-${i}`} className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_auto] gap-2 rounded-md border p-2.5 text-xs" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)' }}>
-                  <span className="font-semibold">{row.merchant}</span>
-                  <span>{row.claimType}</span>
-                  <span>{row.outcome}</span>
+                <div key={`${row.signal}-${i}`} className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_auto] gap-2 rounded-md border p-2.5 text-xs" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)' }}>
+                  <span className="font-semibold capitalize">{row.signal}</span>
+                  <span>{row.detail}</span>
+                  <span>{row.reason}</span>
                   <span className="inline-flex items-center gap-2">
                     <span className="font-mono" style={{ color: 'var(--text-muted)' }}>{row.date ? new Date(row.date).toLocaleDateString('en-GB') : '—'}</span>
-                    <span className="rounded-full px-2 py-0.5 text-[11px] font-semibold" style={{ background: tone.bg, color: tone.text }}>{tone.label}</span>
+                    <span className="rounded-full px-2 py-0.5 text-[11px] font-semibold" style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>{row.grade}</span>
                   </span>
                 </div>
               );
@@ -1016,7 +1178,7 @@ export default function ClaimReviewPanel({ profileId, initialClaimId }: { profil
           <p className="text-caption font-semibold mb-3" style={{ color: 'var(--ink-secondary)' }}>Claim actions</p>
           <div className="mb-3 inline-flex rounded-md border p-0.5" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)' }}>
             {[
-              ['resolve', 'Resolve'],
+              ['resolve', 'Decision'],
               ['status', 'Status'],
               ['escalate', 'Escalate / Reverse'],
             ].map(([k, l]) => (
@@ -1061,7 +1223,7 @@ export default function ClaimReviewPanel({ profileId, initialClaimId }: { profil
               className="w-full px-4 py-2 rounded-md text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60"
               style={{ background: claimId ? 'var(--accent)' : 'var(--bg-inset)', color: claimId ? 'var(--text-inverse)' : 'var(--text-muted)', border: claimId ? 'none' : '1px solid var(--border)' }}
             >
-              {busy ? <><span className="h-3.5 w-3.5 rounded-full border-2 border-white border-t-transparent animate-spin" /> Saving…</> : 'Save outcome'}
+              {busy ? <><span className="h-3.5 w-3.5 rounded-full border-2 border-white border-t-transparent animate-spin" /> Saving…</> : 'Record merchant decision'}
             </button>
             {(nextClaimHref || noMoreClaims) && (
               <div className="rounded-md border p-3 text-sm" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)' }}>
@@ -1073,7 +1235,7 @@ export default function ClaimReviewPanel({ profileId, initialClaimId }: { profil
                   ) : (
                     <span className="text-xs font-semibold" style={{ color: 'var(--text)' }}>No more open claims in this queue.</span>
                   )}
-                  <a href="/claims?status=open" className="px-3 py-1.5 rounded-md text-xs font-semibold" style={{ border: '1px solid var(--border)', color: 'var(--text)' }}>
+                  <a href="/claims" className="px-3 py-1.5 rounded-md text-xs font-semibold" style={{ border: '1px solid var(--border)', color: 'var(--text)' }}>
                     Back to queue
                   </a>
                 </div>
@@ -1118,7 +1280,7 @@ export default function ClaimReviewPanel({ profileId, initialClaimId }: { profil
         <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
           <p className="text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Customer response</p>
           <button onClick={onCopyCustomerResponse} disabled={!claimId} className="px-3 py-1.5 rounded-md text-xs font-semibold disabled:opacity-60" style={{ border: '1px solid var(--border)', color: 'var(--text)' }}>
-            Copy
+            Copy & record
           </button>
         </div>
         <textarea className="w-full px-3 py-2 rounded-md text-sm resize-none" style={inputStyle()} rows={3} value={customerResponse} readOnly />

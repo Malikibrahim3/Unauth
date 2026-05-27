@@ -1,0 +1,47 @@
+[
+  {
+    "id": "ISS-001",
+    "severity": "HIGH",
+    "route": "/inbox",
+    "control": "Unassigned filter",
+    "expected": "Show only unassigned inbox rows and count only unassigned work.",
+    "actual": "Before fix, the filter returned every row and the count included assigned rows.",
+    "merchant_experience": "Analyst thinks ownership filtering is active while assigned work remains mixed in.",
+    "root_cause": "Inbox unassigned filter/count did not inspect assigned_to.",
+    "screenshot": "./interaction-audit/screenshots/inbox_filter_unassigned.png",
+    "fixed": true,
+    "fix_summary": "Added shared queue filter/count helpers that require assigned_to to be empty.",
+    "tests_run": "npm test -- --runInBand tests/components/inboxFilters.test.ts tests/api/auditTrailClaims.test.ts",
+    "retest_result": "pass"
+  },
+  {
+    "id": "ISS-002",
+    "severity": "HIGH",
+    "route": "/settings/audit-trail",
+    "control": "Claim row link",
+    "expected": "Open the exact affected customer claim workflow.",
+    "actual": "Before fix, claim audit rows linked to the generic /claims list.",
+    "merchant_experience": "Analyst loses context when moving from audit trail to claim evidence.",
+    "root_cause": "Audit-trail API mapped claim events without claim/customer href context.",
+    "screenshot": "./interaction-audit/screenshots/audit_trail_claim_link_result.png",
+    "fixed": true,
+    "fix_summary": "API now resolves claim customer_id and emits resource_href; client uses that href.",
+    "tests_run": "npm test -- --runInBand tests/components/inboxFilters.test.ts tests/api/auditTrailClaims.test.ts",
+    "retest_result": "pass"
+  },
+  {
+    "id": "ISS-003",
+    "severity": "LOW",
+    "route": "/customers",
+    "control": "Customer search input",
+    "expected": "Search affordance advertises email, name, and order reference lookup.",
+    "actual": "Placeholder only mentioned email/name even though order-reference search works.",
+    "merchant_experience": "Merchant may not discover an important Shopify/order lookup workflow.",
+    "root_cause": "Copy drift after order-reference search support was added.",
+    "screenshot": "./interaction-audit/screenshots/customers_after_order_ref_search.png",
+    "fixed": true,
+    "fix_summary": "Updated placeholder copy to include order reference.",
+    "tests_run": "npx tsc --noEmit --pretty false",
+    "retest_result": "pass"
+  }
+]

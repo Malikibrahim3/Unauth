@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { createClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
 import Link from 'next/link';
@@ -156,7 +157,9 @@ export default async function WatchlistPage({ searchParams }: { searchParams?: {
           left={<WatchlistSearchInput defaultValue={searchQuery} />}
           right={
             <div className="flex items-center gap-2">
-              <PageSizeSelect pathname="/watchlist" searchParams={querySearchParams} pageSize={pageSize} />
+              <Suspense fallback={<span className="text-xs" style={{ color: 'var(--text-muted)' }}>Rows per page…</span>}>
+                <PageSizeSelect pathname="/watchlist" pageSize={pageSize} />
+              </Suspense>
               {totalPages > 1 && (
                 <>
                   <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Page {page} of {totalPages}</span>

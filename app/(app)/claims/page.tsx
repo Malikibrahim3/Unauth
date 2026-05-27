@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import { Suspense } from 'react';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { WorkbenchPage, WorkbenchKpiStrip, WorkbenchEmptyState, Button } from '@/components/ui';
@@ -9,6 +10,17 @@ import { ConfidenceBadge } from '@/components/ui/ConfidenceBadge';
 import { riskLevelToNewGrade } from '@/lib/confidence';
 import { formatCurrencyNullable } from '@/lib/utils/format';
 import { ACTIVE_CLAIM_STATUSES, formatClaimAge, formatFiledDate, getClaimSlaState } from '@/lib/claims/sla';
+import PageSizeSelect from '@/components/common/PageSizeSelect';
+
+export const dynamic = 'force-dynamic';
+
+const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
+const DEFAULT_PAGE_SIZE = 25;
+const FINAL_CLAIM_STATUSES = ['resolved', 'closed'] as const;
+
+/** Columns that exist on all deployed merchant_claims schemas (order_ref may be absent). */
+const CLAIM_LIST_SELECT =
+  'id,customer_id,shop_domain,shopify_order_id,claim_type,status,amount_at_risk,currency,submitted_at,created_at,updated_at,first_viewed_at,first_viewed_by,assigned_to,assigned_at,snoozed_until,snooze_reason';
 
 const CLAIM_TYPE_LABELS: Record<string, string> = {
   missing_parcel: 'Missing parcel',
@@ -21,13 +33,13 @@ const CLAIM_TYPE_LABELS: Record<string, string> = {
 };
 
 const DECISION_LABELS: Record<string, string> = {
-  approved: 'Approved',
-  denied: 'Denied',
-  escalated: 'Escalated',
+  approved: 'Merchant approved',
+  denied: 'Merchant declined',
+  escalated: 'Escalated for review',
   partial_refund: 'Partial refund',
   full_refund: 'Full refund',
   chargeback_disputed: 'CB disputed',
-  blacklist: 'Blacklisted',
+  blacklist: 'Added to watchlist',
   no_action: 'No action',
 };
 
@@ -57,6 +69,12 @@ type ClaimRow = {
   submitted_at?: string | null;
   created_at?: string | null;
   updated_at: string;
+  first_viewed_at?: string | null;
+  first_viewed_by?: string | null;
+  assigned_to?: string | null;
+  assigned_at?: string | null;
+  snoozed_until?: string | null;
+  snooze_reason?: string | null;
 };
 
 type CustomerProfileSummary = {
@@ -105,10 +123,53 @@ function SlaPill({ claim }: { claim: ClaimRow }) {
   );
 }
 
+function claimNextAction(claim: ClaimRow, latestOutcome: { decision: string; outcome: string; updated_at: string } | null, currentUserId: string) {
+  const owner = claim.assigned_to === currentUserId ? 'Assigned to me' : claim.assigned_to ? 'Assigned' : 'Unassigned';
+  const snoozedUntil = claim.snoozed_until ? new Date(claim.snoozed_until) : null;
+  if (snoozedUntil && snoozedUntil.getTime() > Date.now()) {
+    return { stage: 'Snoozed', owner, next: `Follow up ${snoozedUntil.toLocaleDateString('en-GB')}` };
+  }
+  switch (claim.status) {
+    case 'open':
+      return { stage: claim.first_viewed_at ? 'Viewed' : 'New / unread', owner, next: 'Review linked identity evidence' };
+    case 'under_review':
+      return { stage: 'Investigating', owner, next: latestOutcome ? 'Prepare customer response' : 'Record merchant decision' };
+    case 'evidence_requested':
+      return { stage: 'Awaiting evidence', owner, next: 'Check delivery or support evidence' };
+    case 'pending':
+      return { stage: 'Awaiting info', owner, next: 'Wait for carrier or customer update' };
+    case 'escalated':
+      return { stage: 'Escalated', owner, next: 'Review escalation context' };
+    case 'resolved':
+      return { stage: 'Outcome recorded', owner: 'Merchant', next: 'In history' };
+    case 'closed':
+      return { stage: 'Closed', owner: 'Merchant', next: 'Archived' };
+    default:
+      return { stage: 'Review', owner, next: 'Record next action' };
+  }
+}
+
+function buildClaimsQueryString(
+  sp: Record<string, string | undefined>,
+  overrides: Record<string, string | undefined> = {},
+) {
+  const merged: Record<string, string | undefined> = { ...sp, ...overrides };
+  for (const [key, value] of Object.entries(overrides)) {
+    if (value === undefined) delete merged[key];
+  }
+  const next = new URLSearchParams();
+  for (const [key, value] of Object.entries(merged)) {
+    if (value == null || value === '') continue;
+    next.set(key, value);
+  }
+  const qs = next.toString();
+  return qs ? `?${qs}` : '';
+}
+
 export default async function ClaimsPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ status?: string; sort?: string; sla?: string }>;
+  searchParams?: Promise<{ status?: string; sort?: string; sla?: string; page?: string; pageSize?: string; queue?: string; owner?: string; viewed?: string }>;
 }) {
   const userClient = createClient();
   const { data: { user } } = await userClient.auth.getUser();
@@ -119,56 +180,82 @@ export default async function ClaimsPage({
   if (denied) redirect('/dashboard');
 
   const resolvedParams = (await searchParams) ?? {};
+  const sp: Record<string, string | undefined> = { ...resolvedParams };
   const statusFilter = ALLOWED_STATUSES.includes(resolvedParams.status as ClaimStatus)
     ? (resolvedParams.status as ClaimStatus)
     : null;
+  const queueFilter = resolvedParams.queue === 'history' || resolvedParams.queue === 'snoozed' || (statusFilter && FINAL_CLAIM_STATUSES.includes(statusFilter as any))
+    ? resolvedParams.queue === 'snoozed' ? 'snoozed' : 'history'
+    : 'active';
+  const ownerFilter = resolvedParams.owner === 'me' || resolvedParams.owner === 'unassigned' ? resolvedParams.owner : null;
+  const viewedFilter = resolvedParams.viewed === 'unread' || resolvedParams.viewed === 'viewed' ? resolvedParams.viewed : null;
   const sort = resolvedParams.sort === 'age' || resolvedParams.sort === 'filed_desc' ? resolvedParams.sort : 'updated';
   const slaFilter = resolvedParams.sla === 'overdue' || resolvedParams.sla === 'approaching' ? resolvedParams.sla : null;
   const orderColumn = sort === 'age' || sort === 'filed_desc' ? 'submitted_at' : 'updated_at';
   const orderAscending = sort === 'age';
+  const page = Math.max(1, parseInt(resolvedParams.page ?? '1', 10));
+  const requestedPageSize = parseInt(resolvedParams.pageSize ?? String(DEFAULT_PAGE_SIZE), 10);
+  const pageSize = PAGE_SIZE_OPTIONS.includes(requestedPageSize as (typeof PAGE_SIZE_OPTIONS)[number])
+    ? requestedPageSize
+    : DEFAULT_PAGE_SIZE;
 
-  let query = serviceClient
+  // SLA filters apply after fetch — load all matching status rows (merchant-scoped, capped).
+  const listCap = slaFilter ? 1000 : pageSize;
+  const listOffset = slaFilter ? 0 : (page - 1) * pageSize;
+
+  let listQuery = serviceClient
     .from('merchant_claims' as any)
-    .select('id,customer_id,shop_domain,shopify_order_id,order_ref,claim_type,status,amount_at_risk,currency,submitted_at,created_at,updated_at')
+    .select(CLAIM_LIST_SELECT, slaFilter ? undefined : { count: 'exact' })
     .eq('merchant_id', ctx.merchantId)
-    .order(orderColumn, { ascending: orderAscending })
-    .limit(100);
+    .order(orderColumn, { ascending: orderAscending });
 
-  if (statusFilter) query = query.eq('status', statusFilter);
+  if (statusFilter) {
+    listQuery = listQuery.eq('status', statusFilter);
+  } else if (queueFilter === 'history') {
+    listQuery = listQuery.in('status', [...FINAL_CLAIM_STATUSES]);
+  } else if (queueFilter === 'snoozed') {
+    listQuery = listQuery.in('status', [...ACTIVE_CLAIM_STATUSES]).not('snoozed_until', 'is', null).gt('snoozed_until', new Date().toISOString());
+  } else {
+    listQuery = listQuery.in('status', [...ACTIVE_CLAIM_STATUSES]).or(`snoozed_until.is.null,snoozed_until.lte.${new Date().toISOString()}`);
+  }
+  if (ownerFilter === 'me') listQuery = listQuery.eq('assigned_to', user.id);
+  if (ownerFilter === 'unassigned') listQuery = listQuery.is('assigned_to', null);
+  if (viewedFilter === 'unread') listQuery = listQuery.is('first_viewed_at', null);
+  if (viewedFilter === 'viewed') listQuery = listQuery.not('first_viewed_at', 'is', null);
+  listQuery = listQuery.range(listOffset, listOffset + listCap - 1);
 
-  const { data: rawClaims, error: claimsQueryError } = await query;
+  const { data: rawClaims, error: claimsQueryError, count: listCount } = await listQuery;
 
-  let claims = (rawClaims ?? []) as ClaimRow[];
+  let fallbackClaims: any[] | null = null;
   if (claimsQueryError) {
-    const errMsg = String((claimsQueryError as any)?.message ?? '');
-    const isExpectedShapeFallback =
-      errMsg.includes('order_ref') ||
-      errMsg.includes('order_source') ||
-      errMsg.includes('column') ||
-      errMsg.includes('schema cache');
-    if (!isExpectedShapeFallback) {
-      console.error('Claims page query failed; retrying with base merchant_claims columns', claimsQueryError);
-    }
-
+    console.error('Claims page query failed', claimsQueryError);
     let fallbackQuery = serviceClient
       .from('merchant_claims' as any)
-      .select('id,customer_id,shop_domain,shopify_order_id,claim_type,status,amount_at_risk,currency,submitted_at,created_at,updated_at')
+      .select('id,customer_id,shop_domain,shopify_order_id,claim_type,status,amount_at_risk,currency,submitted_at,created_at,updated_at', slaFilter ? undefined : { count: 'exact' })
       .eq('merchant_id', ctx.merchantId)
-      .order(orderColumn, { ascending: orderAscending })
-      .limit(100);
-
-    if (statusFilter) fallbackQuery = fallbackQuery.eq('status', statusFilter);
-
-    const { data: fallbackClaims, error: fallbackQueryError } = await fallbackQuery;
-    if (fallbackQueryError) {
-      console.error('Claims page fallback query failed', fallbackQueryError);
+      .order(orderColumn, { ascending: orderAscending });
+    if (statusFilter) {
+      fallbackQuery = fallbackQuery.eq('status', statusFilter);
+    } else if (queueFilter === 'history') {
+      fallbackQuery = fallbackQuery.in('status', [...FINAL_CLAIM_STATUSES]);
+    } else {
+      fallbackQuery = fallbackQuery.in('status', [...ACTIVE_CLAIM_STATUSES]);
     }
-    claims = (fallbackClaims ?? []) as ClaimRow[];
+    const fallback = await fallbackQuery.range(listOffset, listOffset + listCap - 1);
+    fallbackClaims = fallback.data ?? [];
   }
+
+  let claims = ((claimsQueryError ? fallbackClaims : rawClaims) ?? []) as ClaimRow[];
+  let totalForPager = slaFilter ? claims.length : (claimsQueryError ? claims.length : (listCount ?? claims.length));
 
   if (slaFilter) {
     claims = claims.filter((claim) => getClaimSlaState(claim).state === slaFilter);
+    totalForPager = claims.length;
+    const slaOffset = (page - 1) * pageSize;
+    claims = claims.slice(slaOffset, slaOffset + pageSize);
   }
+
+  const totalPages = Math.max(1, Math.ceil(totalForPager / pageSize));
 
   const claimIds = claims.map((c) => c.id);
   let latestOutcomeByClaimId = new Map<string, { decision: string; outcome: string; updated_at: string }>();
@@ -197,7 +284,7 @@ export default async function ClaimsPage({
     }
   }
 
-  const orderRefs = Array.from(new Set(claims.map((c) => c.shopify_order_id ?? c.order_ref).filter(Boolean) as string[]));
+  const orderRefs = Array.from(new Set(claims.map((c) => c.shopify_order_id).filter(Boolean) as string[]));
 
   const orderIdByOrderRef = new Map<string, string>();
   if (orderRefs.length > 0) {
@@ -224,7 +311,7 @@ export default async function ClaimsPage({
 
     const rows = (evidenceRows ?? []) as EvidencePackageRow[];
     for (const claim of claims) {
-      const claimOrderRef = claim.shopify_order_id ?? claim.order_ref ?? null;
+      const claimOrderRef = claim.shopify_order_id ?? null;
       const disputedOrderId = claimOrderRef ? orderIdByOrderRef.get(claimOrderRef) ?? null : null;
       const customerMatch = rows.filter((r) => r.customer_profile_id === claim.customer_id);
       const exact = disputedOrderId ? customerMatch.find((r) => r.generated_for_order_id === disputedOrderId) : null;
@@ -232,33 +319,67 @@ export default async function ClaimsPage({
     }
   }
 
-  // Count by status for KPI strip
-  const { data: allRaw } = await serviceClient
-    .from('merchant_claims' as any)
-    .select('status,amount_at_risk,currency,submitted_at,created_at,updated_at')
-    .eq('merchant_id', ctx.merchantId);
-  const all = (allRaw ?? []) as Array<{ status: string; amount_at_risk: number | null; currency: string | null }>;
-  const openCount = all.filter((c) => ACTIVE_CLAIM_STATUSES.includes(c.status as any)).length;
-  const totalAtRisk = all.reduce((s, c) => s + (c.amount_at_risk ?? 0), 0);
-  const resolvedCount = all.filter((c) => c.status === 'resolved' || c.status === 'closed').length;
-  const overdueCount = all.filter((c) => ACTIVE_CLAIM_STATUSES.includes(c.status as any) && getClaimSlaState(c).state === 'overdue').length;
+  const [
+    { count: totalClaimsCount },
+    { count: openCount },
+    { count: resolvedCount },
+    { data: activeForSla },
+    { data: allAmountRows },
+  ] = await Promise.all([
+    serviceClient
+      .from('merchant_claims' as any)
+      .select('id', { count: 'exact', head: true })
+      .eq('merchant_id', ctx.merchantId),
+    serviceClient
+      .from('merchant_claims' as any)
+      .select('id', { count: 'exact', head: true })
+      .eq('merchant_id', ctx.merchantId)
+      .in('status', [...ACTIVE_CLAIM_STATUSES]),
+    serviceClient
+      .from('merchant_claims' as any)
+      .select('id', { count: 'exact', head: true })
+      .eq('merchant_id', ctx.merchantId)
+      .in('status', ['resolved', 'closed']),
+    serviceClient
+      .from('merchant_claims' as any)
+      .select('status,submitted_at,created_at,updated_at')
+      .eq('merchant_id', ctx.merchantId)
+      .in('status', [...ACTIVE_CLAIM_STATUSES]),
+    serviceClient
+      .from('merchant_claims' as any)
+      .select('amount_at_risk')
+      .eq('merchant_id', ctx.merchantId),
+  ]);
 
-  const statusTabs: Array<{ label: string; value: string | null }> = [
-    { label: 'All', value: null },
+  const totalAtRisk = (allAmountRows ?? []).reduce(
+    (s: number, c: { amount_at_risk: number | null }) => s + (c.amount_at_risk ?? 0),
+    0,
+  );
+  const overdueCount = (activeForSla ?? []).filter(
+    (c: { status: string; submitted_at?: string | null; created_at?: string | null; updated_at?: string | null }) =>
+      getClaimSlaState(c).state === 'overdue',
+  ).length;
+
+  const statusTabs: Array<{ label: string; value: string | null; queue?: 'active' | 'history' | 'snoozed' }> = [
+    { label: 'Active queue', value: null, queue: 'active' },
+    { label: 'Unread', value: null },
+    { label: 'Assigned to me', value: null },
+    { label: 'Unassigned', value: null },
+    { label: 'Snoozed', value: null, queue: 'snoozed' },
     { label: 'Open', value: 'open' },
     { label: 'Under review', value: 'under_review' },
-    { label: 'Pending', value: 'pending' },
+    { label: 'Awaiting evidence', value: 'evidence_requested' },
+    { label: 'Awaiting info', value: 'pending' },
     { label: 'Escalated', value: 'escalated' },
-    { label: 'Resolved', value: 'resolved' },
-    { label: 'Closed', value: 'closed' },
+    { label: 'History', value: null, queue: 'history' },
   ];
 
-  const isEmpty = all.length === 0;
+  const isEmpty = (totalClaimsCount ?? 0) === 0;
 
   return (
     <WorkbenchPage
       title="Claims"
-      subtitle="Track and resolve customer claims across all orders"
+      subtitle="Track active claim work and merchant-recorded outcomes"
       navItems={[
         ...WORKBENCH_NAV_ITEMS,
         { key: 'claims', label: 'Claims', href: '/claims' },
@@ -267,11 +388,11 @@ export default async function ClaimsPage({
       kpiStrip={
         <WorkbenchKpiStrip
           items={[
-            { label: 'Open / in review', value: openCount.toLocaleString(), hint: 'Needs action' },
+            { label: 'Open / in review', value: (openCount ?? 0).toLocaleString(), hint: 'Needs action' },
             { label: 'Overdue', value: overdueCount.toLocaleString(), hint: '>72h open' },
             { label: 'Total at risk', value: formatCurrencyNullable(totalAtRisk || null), hint: 'All claims' },
-            { label: 'Resolved', value: resolvedCount.toLocaleString(), hint: 'All time' },
-            { label: 'Total claims', value: all.length.toLocaleString(), hint: 'All time' },
+            { label: 'Resolved', value: (resolvedCount ?? 0).toLocaleString(), hint: 'All time' },
+            { label: 'Total claims', value: (totalClaimsCount ?? 0).toLocaleString(), hint: 'All time' },
           ]}
         />
       }
@@ -288,11 +409,39 @@ export default async function ClaimsPage({
           />
         ) : (
           <div className="p-4 space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                Showing {claims.length.toLocaleString()} of {totalForPager.toLocaleString()} matching claims
+                {statusFilter ? ` · ${STATUS_META[statusFilter]?.label ?? statusFilter}` : ''}
+                {!statusFilter && queueFilter === 'active' ? ' · active queue' : ''}
+                {!statusFilter && queueFilter === 'history' ? ' · history' : ''}
+                {slaFilter ? ` · SLA ${slaFilter}` : ''}
+              </p>
+              <Suspense fallback={<span className="text-xs" style={{ color: 'var(--text-muted)' }}>Rows per page…</span>}>
+                <PageSizeSelect pathname="/claims" pageSize={pageSize} />
+              </Suspense>
+            </div>
+
             {/* Status filter tabs */}
             <div className="flex flex-wrap items-center gap-x-1 gap-y-1 border-b pb-3" style={{ borderColor: 'var(--border-subtle)' }}>
               {statusTabs.map((tab) => {
-                const active = statusFilter === tab.value;
-                const href = tab.value ? `/claims?status=${tab.value}` : '/claims';
+                const special =
+                  tab.label === 'Unread' ? { viewed: 'unread', queue: 'active', owner: undefined, status: undefined } :
+                  tab.label === 'Assigned to me' ? { owner: 'me', queue: 'active', viewed: undefined, status: undefined } :
+                  tab.label === 'Unassigned' ? { owner: 'unassigned', queue: 'active', viewed: undefined, status: undefined } :
+                  null;
+                const active = special
+                  ? (tab.label === 'Unread' ? viewedFilter === 'unread' : tab.label === 'Assigned to me' ? ownerFilter === 'me' : ownerFilter === 'unassigned')
+                  : tab.queue
+                  ? !statusFilter && queueFilter === tab.queue
+                  : statusFilter === tab.value;
+                const href = `/claims${buildClaimsQueryString(sp, {
+                  status: special?.status ?? tab.value ?? undefined,
+                  queue: special?.queue ?? (tab.queue === 'history' || tab.queue === 'snoozed' ? tab.queue : undefined),
+                  owner: special?.owner,
+                  viewed: special?.viewed,
+                  page: '1',
+                })}`;
                 return (
                   <Link
                     key={tab.label}
@@ -309,13 +458,21 @@ export default async function ClaimsPage({
               })}
             </div>
 
+            <div className="rounded-md border px-3 py-2 text-xs" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)', color: 'var(--text-muted)' }}>
+              {queueFilter === 'history'
+                ? 'History shows resolved and closed claims with merchant-recorded outcomes.'
+                : queueFilter === 'snoozed'
+                  ? 'Snoozed claims are hidden from the active queue until follow-up is due.'
+                : 'Active queue shows unresolved work only. Resolved and closed claims move to history.'}
+            </div>
+
             <div className="flex flex-wrap items-center gap-2 text-xs">
               {[
-                { label: 'Recently updated', href: statusFilter ? `/claims?status=${statusFilter}` : '/claims', active: sort === 'updated' },
-                { label: 'Oldest first', href: `/claims?${new URLSearchParams({ ...(statusFilter ? { status: statusFilter } : {}), sort: 'age' }).toString()}`, active: sort === 'age' },
-                { label: 'Newest filed', href: `/claims?${new URLSearchParams({ ...(statusFilter ? { status: statusFilter } : {}), sort: 'filed_desc' }).toString()}`, active: sort === 'filed_desc' },
-                { label: 'Overdue', href: '/claims?sla=overdue&sort=age', active: slaFilter === 'overdue' },
-                { label: 'Approaching SLA', href: '/claims?sla=approaching&sort=age', active: slaFilter === 'approaching' },
+                { label: 'Recently updated', href: `/claims${buildClaimsQueryString(sp, { sort: undefined, sla: undefined, page: '1' })}`, active: sort === 'updated' && !slaFilter },
+                { label: 'Oldest first', href: `/claims${buildClaimsQueryString(sp, { sort: 'age', sla: undefined, page: '1' })}`, active: sort === 'age' && !slaFilter },
+                { label: 'Newest filed', href: `/claims${buildClaimsQueryString(sp, { sort: 'filed_desc', sla: undefined, page: '1' })}`, active: sort === 'filed_desc' && !slaFilter },
+                { label: 'Overdue', href: `/claims${buildClaimsQueryString(sp, { sla: 'overdue', sort: 'age', page: '1' })}`, active: slaFilter === 'overdue' },
+                { label: 'Approaching SLA', href: `/claims${buildClaimsQueryString(sp, { sla: 'approaching', sort: 'age', page: '1' })}`, active: slaFilter === 'approaching' },
               ].map((item) => (
                 <Link
                   key={item.label}
@@ -329,12 +486,17 @@ export default async function ClaimsPage({
             </div>
 
             {claims.length === 0 ? (
-              <p className="py-12 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
-                {statusFilter ? `No claims with status "${statusFilter}".` : 'No claims found.'}
-              </p>
+              <div className="rounded-md border py-12 text-center text-sm" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)', color: 'var(--text-muted)' }}>
+                <p>{statusFilter ? `No claims with status "${statusFilter}".` : queueFilter === 'history' ? 'No resolved claims in history yet.' : 'No active claims need work right now.'}</p>
+                {queueFilter === 'active' && (
+                  <Link href="/claims?queue=history" className="mt-2 inline-block font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
+                    View history
+                  </Link>
+                )}
+              </div>
             ) : (
               <div className="overflow-x-auto rounded-xl border" style={{ borderColor: 'var(--border-subtle)' }}>
-                <table className="w-full min-w-[880px] text-sm">
+                <table className="w-full min-w-[1080px] text-sm">
                   <thead className="sticky top-0 z-10" style={{ background: 'var(--bg-subtle)' }}>
                     <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
                       {[
@@ -342,7 +504,10 @@ export default async function ClaimsPage({
                         { label: 'Customer', className: 'min-w-[160px]' },
                         { label: 'Type', className: '' },
                         { label: 'Status', className: '' },
-                        { label: 'Decision', className: 'hidden xl:table-cell' },
+                        { label: 'Stage', className: '' },
+                        { label: 'Owner', className: 'hidden xl:table-cell' },
+                        { label: 'Next action', className: 'min-w-[150px]' },
+                        { label: 'Merchant decision', className: 'hidden xl:table-cell' },
                         { label: 'Filed', className: 'hidden lg:table-cell' },
                         { label: 'Age', className: 'hidden lg:table-cell' },
                         { label: 'SLA', className: '' },
@@ -368,12 +533,13 @@ export default async function ClaimsPage({
                   </thead>
                   <tbody>
                     {claims.map((c) => {
-                      const orderRef = c.shopify_order_id ?? c.order_ref ?? c.id.slice(0, 8);
+                      const orderRef = c.shopify_order_id ?? c.id.slice(0, 8);
                       const latestOutcome = latestOutcomeByClaimId.get(c.id) ?? null;
                       const linkedEvidence = evidenceByClaimId.get(c.id) ?? null;
                       const customer = c.customer_id ? customerById.get(c.customer_id) ?? null : null;
                       const customerName = customer?.names?.[0] ?? null;
                       const customerEmail = customer?.primary_email ?? null;
+                      const ops = claimNextAction(c, latestOutcome, user.id);
                       return (
                         <tr
                           key={c.id}
@@ -405,6 +571,15 @@ export default async function ClaimsPage({
                           </td>
                           <td className="px-4 py-3">
                             <StatusPill status={c.status} />
+                          </td>
+                          <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: 'var(--text)' }}>
+                            {ops.stage}
+                          </td>
+                          <td className="hidden xl:table-cell px-4 py-3 text-xs whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>
+                            {ops.owner}
+                          </td>
+                          <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-muted)' }}>
+                            {ops.next}
                           </td>
                           <td className="hidden xl:table-cell px-4 py-3 text-xs whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>
                             {latestOutcome ? DECISION_LABELS[latestOutcome.decision] ?? latestOutcome.decision : '—'}
@@ -441,7 +616,7 @@ export default async function ClaimsPage({
                                 className="text-xs font-semibold hover:underline"
                                 style={{ color: 'var(--accent)' }}
                               >
-                                Review
+                                Review & record
                               </Link>
                             ) : (
                               <span className="text-xs" style={{ color: 'var(--text-muted)' }}>—</span>
@@ -452,6 +627,22 @@ export default async function ClaimsPage({
                     })}
                   </tbody>
                 </table>
+              </div>
+            )}
+
+            {totalPages > 1 && (
+              <div className="flex flex-wrap items-center justify-end gap-2 pt-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+                <span>Page {page} of {totalPages}</span>
+                {page > 1 && (
+                  <Link href={`/claims${buildClaimsQueryString(sp, { page: String(page - 1) })}`}>
+                    <Button variant="secondary" size="sm">Previous</Button>
+                  </Link>
+                )}
+                {page < totalPages && (
+                  <Link href={`/claims${buildClaimsQueryString(sp, { page: String(page + 1) })}`}>
+                    <Button variant="secondary" size="sm">Next</Button>
+                  </Link>
+                )}
               </div>
             )}
           </div>

@@ -92,6 +92,24 @@ async function GETHandler(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to fetch audit trail' }, { status: 500 });
   }
 
+  const claimIds = [...new Set((claimEvents ?? []).map((event: any) => event.claim_id).filter(Boolean))] as string[];
+  const claimHrefById = new Map<string, string>();
+  if (claimIds.length > 0) {
+    const { data: claimRows } = await service
+      .from('merchant_claims' as any)
+      .select('id,customer_id')
+      .eq('merchant_id', ctx.merchantId)
+      .in('id', claimIds);
+    for (const claim of (claimRows ?? []) as Array<{ id: string; customer_id: string | null }>) {
+      claimHrefById.set(
+        claim.id,
+        claim.customer_id
+          ? `/customers/${claim.customer_id}/claims?claimId=${claim.id}`
+          : `/claims?claimId=${claim.id}`,
+      );
+    }
+  }
+
   const mappedClaimEvents = (claimEvents ?? []).map((event: any) => ({
     id: event.id,
     merchant_id: event.merchant_id,
@@ -99,6 +117,7 @@ async function GETHandler(request: NextRequest) {
     action: event.event_type,
     resource_type: 'claim',
     resource_id: event.claim_id,
+    resource_href: claimHrefById.get(event.claim_id) ?? '/claims',
     metadata: {
       previous_status: event.previous_status,
       new_status: event.new_status,

@@ -1,0 +1,25 @@
+{
+  "ok": true,
+  "email": "simeonmurray123@gmail.com",
+  "merchant_id": "af070af9-df1a-46ba-89f8-29409926ef61",
+  "store_name": "Simeon Murray Store",
+  "shop_domain": "simeon-murray-store.myshopify.com",
+  "counts": {
+    "customers": 500,
+    "processing_jobs": 12,
+    "audit_transactions": 3683,
+    "inbox_reviewable_transactions": 572,
+    "claims": 272,
+    "open_claims": 55,
+    "evidence_packages": 48,
+    "watchlist_entries": 32,
+    "critical_risk_profiles": 19,
+    "high_risk_profiles": 46
+  },
+  "scripts": {
+    "full_seed": "node scripts/seed-simeon-fraud-ops.mjs",
+    "complete_partial": "node scripts/complete-simeon-seed.mjs",
+    "claim_purge_sql": "scripts/sql/purge_merchant_claims_for_reseed.sql"
+  },
+  "generated_at": "2026-05-27T12:00:00.000Z"
+}
