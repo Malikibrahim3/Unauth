@@ -1,3 +1,8 @@
+export function formatRiskScore(score: number | null | undefined): string {
+  if (typeof score !== 'number' || Number.isNaN(score)) return '—';
+  return Math.round(score).toString();
+}
+
 export function formatCurrency(amount: number, currency = 'GBP'): string {
   return new Intl.NumberFormat('en-GB', {
     style: 'currency',

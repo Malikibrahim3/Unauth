@@ -1,6 +1,8 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
 import { submitClaim, submitEvidence, submitOutcome } from '@/lib/claims/workflowClient';
+import { signalLabel } from '@/lib/copy/signalLabels';
+import { formatRiskScore } from '@/lib/utils/format';
 
 type ClaimType = 'missing_parcel' | 'damaged' | 'wrong_item' | 'refund_request' | 'chargeback' | 'return_abuse' | 'other';
 type Decision = 'approved' | 'denied' | 'escalated' | 'partial_refund' | 'full_refund' | 'chargeback_disputed' | 'blacklist' | 'no_action';
@@ -8,7 +10,7 @@ type Outcome = 'loss' | 'recovered' | 'pending' | 'chargeback_won' | 'chargeback
 type EvidenceType = 'tracking' | 'proof_of_delivery' | 'customer_message' | 'support_ticket' | 'return_label' | 'warehouse_scan' | 'payment_dispute' | 'note' | 'other';
 type EvidenceSource = 'manual' | 'csv_import' | 'zendesk' | 'gorgias' | 'shopify' | 'stripe' | 'paypal' | 'carrier';
 
-type OrderOption = { id: string; orderLabel: string; orderValue: number | null; currency?: string | null; status: string; date?: string | null };
+type OrderOption = { id: string; orderLabel: string; orderValue: number | null; currency?: string | null; status: string; date?: string | null; source?: string };
 type ClaimDraft = {
   selectedOrderId: string;
   claimType: ClaimType;
@@ -25,6 +27,68 @@ type ClaimDraft = {
 };
 
 const DEFAULT_META_ROWS = [{ key: 'note', value: '' }];
+
+const CLAIM_TYPE_LABELS: Record<ClaimType, string> = {
+  missing_parcel: 'Missing parcel',
+  damaged: 'Damaged item',
+  wrong_item: 'Wrong item',
+  refund_request: 'Refund request',
+  chargeback: 'Chargeback',
+  return_abuse: 'Return abuse',
+  other: 'Other',
+};
+
+const DECISION_LABELS: Record<Decision, string> = {
+  approved: 'Approved',
+  denied: 'Denied',
+  escalated: 'Escalated for review',
+  partial_refund: 'Partial refund',
+  full_refund: 'Full refund',
+  chargeback_disputed: 'Chargeback disputed',
+  blacklist: 'Blacklist customer',
+  no_action: 'No action',
+};
+
+const OUTCOME_LABELS: Record<Outcome, string> = {
+  loss: 'Loss accepted',
+  recovered: 'Recovered',
+  pending: 'Pending',
+  chargeback_won: 'Chargeback won',
+  chargeback_lost: 'Chargeback lost',
+  customer_verified: 'Customer verified',
+  suspected_fraud: 'Suspected fraud',
+};
+
+const EVIDENCE_TYPE_LABELS: Record<EvidenceType, string> = {
+  tracking: 'Tracking record',
+  proof_of_delivery: 'Proof of delivery',
+  customer_message: 'Customer message',
+  support_ticket: 'Support ticket',
+  return_label: 'Return label',
+  warehouse_scan: 'Warehouse scan',
+  payment_dispute: 'Payment dispute',
+  note: 'Internal note',
+  other: 'Other',
+};
+
+const EVIDENCE_SOURCE_LABELS: Record<EvidenceSource, string> = {
+  manual: 'Manual upload',
+  csv_import: 'CSV import',
+  zendesk: 'Zendesk',
+  gorgias: 'Gorgias',
+  shopify: 'Shopify',
+  stripe: 'Stripe',
+  paypal: 'PayPal',
+  carrier: 'Carrier',
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  open: 'Open',
+  under_review: 'Under review',
+  evidence_requested: 'Evidence requested',
+  resolved: 'Resolved',
+  closed: 'Closed',
+};
 
 function safeKey(v: string) { return /^[a-zA-Z0-9_.-]{1,40}$/.test(v); }
 function clean(v: string) { return v.replace(/[<>]/g, '').trim(); }
@@ -46,28 +110,51 @@ export function saveClaimDraft(profileId: string, draft: Partial<ClaimDraft>) {
   if (typeof window === 'undefined') return;
   try {
     window.localStorage.setItem(storageKey(profileId), JSON.stringify(draft));
-  } catch {
-    // Ignore storage failures so the form still works in privacy-restricted browsers.
-  }
+  } catch { /* Ignore storage failures */ }
 }
 
 export function clearClaimDraft(profileId: string) {
   if (typeof window === 'undefined') return;
   try {
     window.localStorage.removeItem(storageKey(profileId));
-  } catch {
-    // noop
-  }
+  } catch { /* noop */ }
 }
 
 function formatMoney(value: number | null | undefined, currency?: string | null) {
-  if (typeof value !== 'number' || Number.isNaN(value)) return 'n/a';
-  return `${value.toFixed(2)}${currency ? ` ${currency}` : ''}`;
+  if (typeof value !== 'number' || Number.isNaN(value)) return '—';
+  return new Intl.NumberFormat('en-GB', { style: 'currency', currency: currency ?? 'GBP', minimumFractionDigits: 2 }).format(value);
 }
 
 function formatOrderOption(o: OrderOption) {
-  const date = o.date ? new Date(o.date).toLocaleDateString('en-GB') : 'n/a';
-  return `${o.orderLabel} · ${o.id} · ${formatMoney(o.orderValue, o.currency)} · ${o.status || 'unknown'} · ${date}`;
+  const date = o.date ? new Date(o.date).toLocaleDateString('en-GB') : '—';
+  const val = typeof o.orderValue === 'number' ? formatMoney(o.orderValue, o.currency) : '—';
+  const status = o.status !== 'unknown' ? o.status : '—';
+  return `${o.orderLabel} · ${val} · ${status} · ${date}`;
+}
+
+function StatusPill({ status }: { status: string }) {
+  const label = STATUS_LABELS[status] ?? status;
+  const colourMap: Record<string, { bg: string; text: string }> = {
+    open: { bg: 'var(--bg-subtle)', text: 'var(--text-muted)' },
+    under_review: { bg: 'var(--sev-medium-fill, #FEF3C7)', text: 'var(--sev-medium, #B45309)' },
+    evidence_requested: { bg: 'var(--sev-high-fill, #FEE2E2)', text: 'var(--sev-high, #991B1B)' },
+    resolved: { bg: 'var(--sev-clear-fill, #DCFCE7)', text: 'var(--sev-clear, #166534)' },
+    closed: { bg: 'var(--bg-subtle)', text: 'var(--text-muted)' },
+  };
+  const c = colourMap[status] ?? { bg: 'var(--bg-subtle)', text: 'var(--text-muted)' };
+  return (
+    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: c.bg, color: c.text }}>
+      {label}
+    </span>
+  );
+}
+
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  return <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>{children}</label>;
+}
+
+function inputStyle(): React.CSSProperties {
+  return { border: '1px solid var(--border)', background: 'var(--bg-inset)', color: 'var(--text)' };
 }
 
 export default function ClaimReviewPanel({ profileId }: { profileId: string }) {
@@ -88,7 +175,8 @@ export default function ClaimReviewPanel({ profileId }: { profileId: string }) {
   const [evidenceUrl, setEvidenceUrl] = useState('');
   const [evidenceHash, setEvidenceHash] = useState('');
   const [metaRows, setMetaRows] = useState<Array<{ key: string; value: string }>>(DEFAULT_META_ROWS);
-  const [state, setState] = useState<'idle'|'busy'>('idle');
+  const [showMeta, setShowMeta] = useState(false);
+  const [state, setState] = useState<'idle' | 'busy'>('idle');
   const [message, setMessage] = useState('');
   const [messageTone, setMessageTone] = useState<'success' | 'error' | 'neutral'>('neutral');
 
@@ -135,8 +223,10 @@ export default function ClaimReviewPanel({ profileId }: { profileId: string }) {
         id,
         orderLabel: String(o.orderNumber ?? o.orderId ?? id),
         orderValue: typeof o.orderValue === 'number' ? o.orderValue : null,
+        currency: o.currency ?? null,
         status: o.refundStatus ?? 'unknown',
         date: o.orderDate ?? null,
+        source: 'audit',
       });
     }
     for (const o of shopifyOrders) {
@@ -149,10 +239,11 @@ export default function ClaimReviewPanel({ profileId }: { profileId: string }) {
         currency: o.currency ?? null,
         status: o.status ?? 'unknown',
         date: o.processed_at ?? null,
+        source: 'shopify',
       });
     }
     for (const h of history) {
-      const id = String(h.shopify_order_id ?? '');
+      const id = String(h.shopify_order_id ?? h.order_ref ?? '');
       if (!id || map.has(id)) continue;
       map.set(id, {
         id,
@@ -161,6 +252,7 @@ export default function ClaimReviewPanel({ profileId }: { profileId: string }) {
         currency: h.currency ?? null,
         status: h.status ?? 'unknown',
         date: h.updated_at ?? null,
+        source: h.order_source ?? 'manual',
       });
     }
     return Array.from(map.values());
@@ -173,14 +265,18 @@ export default function ClaimReviewPanel({ profileId }: { profileId: string }) {
       return;
     }
     if (!selectedOrderId && orderOptions.length > 1) {
-      const fromHistory = history[0]?.shopify_order_id;
+      const fromHistory = history[0]?.shopify_order_id ?? history[0]?.order_ref;
       if (fromHistory && orderOptions.some((o) => o.id === fromHistory)) {
         setSelectedOrderId(String(fromHistory));
       }
     }
   }, [history, orderOptions, selectedOrderId]);
 
+  const selectedOrder = useMemo(() => orderOptions.find((o) => o.id === selectedOrderId), [orderOptions, selectedOrderId]);
   const order = useMemo(() => data?.orderHistory?.find((o: any) => o.orderId === selectedOrderId), [data, selectedOrderId]);
+
+  const riskScore = order?.fraudScore ?? data?.profile?.risk_score;
+  const fraudFlags: string[] = order?.fraudFlags ?? data?.profile?.fraud_flags ?? [];
 
   const metadata = useMemo(() => {
     const out: Record<string, string> = {};
@@ -197,138 +293,393 @@ export default function ClaimReviewPanel({ profileId }: { profileId: string }) {
     if (x?.claims) setHistory(x.claims);
   }
 
+  function showMsg(msg: string, tone: 'success' | 'error') {
+    setMessage(msg);
+    setMessageTone(tone);
+  }
+
   async function onClaim() {
+    if (!selectedOrderId) {
+      showMsg('Select an order before saving the claim.', 'error');
+      return;
+    }
     setState('busy');
-    const r = await submitClaim({ id: claimId || undefined, shop_domain: shopDomain, shopify_order_id: selectedOrderId, customer_id: profileId, claim_type: claimType, customer_claim_reason: customerReason, normalized_reason: notes, status: 'under_review' });
+    const orderSource = selectedOrder?.source ?? (shopDomain ? 'shopify' : 'audit');
+    const r = await submitClaim({
+      id: claimId || undefined,
+      shop_domain: shopDomain || null,
+      shopify_order_id: orderSource === 'shopify' ? selectedOrderId : null,
+      order_source: orderSource,
+      order_ref: orderSource !== 'shopify' ? selectedOrderId : null,
+      customer_id: profileId,
+      claim_type: claimType,
+      customer_claim_reason: customerReason,
+      normalized_reason: notes,
+      status: 'under_review',
+    });
     setState('idle');
-    setMessage(r.message);
-    setMessageTone(r.claimId ? 'success' : 'error');
-    if (r.claimId) setClaimId(r.claimId);
-    if (r.claimId) saveClaimDraft(profileId, { selectedOrderId, claimType, customerReason, notes, claimId: r.claimId, decision, outcome, evidenceType, source, evidenceUrl, evidenceHash, metaRows });
+    showMsg(r.message, r.claimId ? 'success' : 'error');
+    if (r.claimId) {
+      setClaimId(r.claimId);
+      saveClaimDraft(profileId, { selectedOrderId, claimType, customerReason, notes, claimId: r.claimId, decision, outcome, evidenceType, source, evidenceUrl, evidenceHash, metaRows });
+    }
     await refreshHistory();
   }
+
   async function onOutcome() {
     if (!claimId) {
-      setMessage('Create claim first');
-      setMessageTone('error');
+      showMsg('Save a claim first, then record the outcome.', 'error');
       return;
     }
     setState('busy');
     const r = await submitOutcome(claimId, { decision, outcome, notes });
     setState('idle');
-    setMessage(r.message);
-    setMessageTone(r.message.toLowerCase().includes('saved') ? 'success' : 'error');
-    if (r.message.toLowerCase().includes('saved')) saveClaimDraft(profileId, { selectedOrderId, claimType, customerReason, notes, claimId, decision, outcome, evidenceType, source, evidenceUrl, evidenceHash, metaRows });
+    showMsg(r.message, r.message.toLowerCase().includes('saved') ? 'success' : 'error');
+    if (r.message.toLowerCase().includes('saved')) {
+      saveClaimDraft(profileId, { selectedOrderId, claimType, customerReason, notes, claimId, decision, outcome, evidenceType, source, evidenceUrl, evidenceHash, metaRows });
+    }
     await refreshHistory();
   }
+
   async function onEvidence() {
     if (!claimId) {
-      setMessage('Create claim first');
-      setMessageTone('error');
+      showMsg('Save a claim first, then attach evidence.', 'error');
       return;
     }
     setState('busy');
     const r = await submitEvidence(claimId, { evidence_type: evidenceType, source, evidence_url: evidenceUrl || null, evidence_hash: evidenceHash || null, metadata });
     setState('idle');
-    setMessage(r.message);
-    setMessageTone(r.message.toLowerCase().includes('saved') ? 'success' : 'error');
-    if (r.message.toLowerCase().includes('saved')) saveClaimDraft(profileId, { selectedOrderId, claimType, customerReason, notes, claimId, decision, outcome, evidenceType, source, evidenceUrl, evidenceHash, metaRows });
+    showMsg(r.message, r.message.toLowerCase().includes('saved') ? 'success' : 'error');
+    if (r.message.toLowerCase().includes('saved')) {
+      saveClaimDraft(profileId, { selectedOrderId, claimType, customerReason, notes, claimId, decision, outcome, evidenceType, source, evidenceUrl, evidenceHash, metaRows });
+    }
   }
 
-  return <div className="p-8 max-w-5xl mx-auto space-y-5">
-    {message && (
-      <div className="sticky top-4 z-30">
-        <p
-          className="text-sm px-3 py-2 rounded-md border shadow-sm"
-          style={{
-            color: messageTone === 'success' ? '#166534' : messageTone === 'error' ? '#991b1b' : 'var(--text-muted)',
-            borderColor: messageTone === 'success' ? '#86efac' : messageTone === 'error' ? '#fca5a5' : 'var(--border-subtle)',
-            background: messageTone === 'success' ? '#dcfce7' : messageTone === 'error' ? '#fee2e2' : 'var(--bg-surface)',
-          }}
-        >
-          {message}
-        </p>
-      </div>
-    )}
-    <h1 className="text-heading-lg">Claim Review</h1>
-    <div className="rounded-xl p-4 border" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-        <div>Order number: <strong>{selectedOrderId || '—'}</strong></div>
-        <div>Customer linkage summary: <strong>{data?.linkedAccounts?.length ?? 0} linked accounts</strong></div>
-        <div>Risk score/signals: <strong>{order?.fraudScore ?? data?.profile?.risk_score ?? '—'}</strong> · {(order?.fraudFlags ?? data?.profile?.fraud_flags ?? []).slice(0,3).join(', ') || 'none'}</div>
-        <div>Refund/Fulfillment status: <strong>{order?.refundStatus ?? 'unknown'}</strong></div>
-        <div>postDeliveryClaimRate: <strong>{(order?.fraudFlags ?? []).includes('postDeliveryClaimRate') ? 'present' : 'not present'}</strong></div>
-        <div>Evidence summary: <strong>{(order?.fraudFlags ?? []).length} signals</strong></div>
-        <div>Previous claims count: <strong>{history.length}</strong></div>
-      </div>
-    </div>
+  const busy = state === 'busy';
 
-    <section className="rounded-xl p-4 border" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}>
-      <p className="text-overline mb-2">Context</p>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-        <div>
-          <label className="text-xs" style={{ color: 'var(--text-muted)' }}>Shop</label>
-          {shops.length <= 1 ? <input className="w-full px-3 py-2 rounded-md text-sm" style={{ border: '1px solid var(--border)', background: 'var(--bg-inset)' }} value={shopDomain} readOnly /> :
-            <select className="w-full px-3 py-2 rounded-md text-sm" style={{ border: '1px solid var(--border)', background: 'var(--bg-inset)' }} value={shopDomain} onChange={e => setShopDomain(e.target.value)}>{shops.map(s => <option key={s} value={s}>{s}</option>)}</select>}
+  return (
+    <div className="p-6 max-w-5xl mx-auto space-y-5">
+
+      {/* Toast */}
+      {message && (
+        <div className="sticky top-4 z-30">
+          <p
+            className="text-sm px-4 py-2.5 rounded-lg border shadow-sm flex items-center gap-2"
+            style={{
+              color: messageTone === 'success' ? '#166534' : messageTone === 'error' ? '#991b1b' : 'var(--text-muted)',
+              borderColor: messageTone === 'success' ? '#86efac' : messageTone === 'error' ? '#fca5a5' : 'var(--border-subtle)',
+              background: messageTone === 'success' ? '#dcfce7' : messageTone === 'error' ? '#fee2e2' : 'var(--bg-surface)',
+            }}
+          >
+            <span className="flex-1">{message}</span>
+            <button onClick={() => setMessage('')} className="text-xs opacity-60 hover:opacity-100">✕</button>
+          </p>
         </div>
-        <div>
-          <label className="text-xs" style={{ color: 'var(--text-muted)' }}>Order</label>
-          {orderOptions.length === 0 ? (
-            <div className="w-full px-3 py-2 rounded-md text-sm" style={{ border: '1px solid var(--border)', background: 'var(--bg-inset)', color: 'var(--text-muted)' }}>
-              No Shopify orders found for this profile yet.
+      )}
+
+      <div className="flex items-start justify-between">
+        <h1 className="text-heading-lg">Claim Review</h1>
+        {claimId && <span className="text-xs font-mono px-2 py-1 rounded" style={{ background: 'var(--bg-inset)', color: 'var(--text-muted)' }}>Claim {claimId.slice(0, 8)}…</span>}
+      </div>
+
+      {/* Risk summary */}
+      <div className="rounded-xl p-4 border" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}>
+        <p className="text-overline mb-3" style={{ color: 'var(--text-muted)' }}>Customer risk summary</p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+          <div>
+            <p className="text-xs mb-0.5" style={{ color: 'var(--text-muted)' }}>Risk score</p>
+            <p className="font-semibold text-base" style={{ color: 'var(--text)' }}>
+              {riskScore != null ? formatRiskScore(riskScore) : '—'}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs mb-0.5" style={{ color: 'var(--text-muted)' }}>Linked accounts</p>
+            <p className="font-semibold text-base" style={{ color: 'var(--text)' }}>
+              {data?.linkedAccounts?.length ?? '—'}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs mb-0.5" style={{ color: 'var(--text-muted)' }}>Refund/fulfilment</p>
+            <p className="font-semibold text-base" style={{ color: 'var(--text)' }}>
+              {order?.refundStatus ?? '—'}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs mb-0.5" style={{ color: 'var(--text-muted)' }}>Previous claims</p>
+            <p className="font-semibold text-base" style={{ color: 'var(--text)' }}>
+              {history.length}
+            </p>
+          </div>
+        </div>
+        {fraudFlags.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {fraudFlags.slice(0, 5).map((f) => (
+              <span
+                key={f}
+                className="inline-flex items-center px-2 py-0.5 rounded-full text-xs"
+                style={{ background: 'var(--sev-medium-fill, #FEF3C7)', color: 'var(--sev-medium, #B45309)' }}
+              >
+                {signalLabel(f).short}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Context: shop + order picker */}
+      <section className="rounded-xl p-4 border" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}>
+        <p className="text-overline mb-3" style={{ color: 'var(--text-muted)' }}>Order context</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {shops.length > 0 && (
+            <div>
+              <FieldLabel>Connected shop</FieldLabel>
+              {shops.length <= 1
+                ? <input className="w-full px-3 py-2 rounded-md text-sm" style={inputStyle()} value={shopDomain} readOnly />
+                : (
+                  <select className="w-full px-3 py-2 rounded-md text-sm" style={inputStyle()} value={shopDomain} onChange={e => setShopDomain(e.target.value)}>
+                    {shops.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                )}
             </div>
-          ) : (
-            <select aria-label="Order" className="w-full px-3 py-2 rounded-md text-sm" style={{ border: '1px solid var(--border)', background: 'var(--bg-inset)' }} value={selectedOrderId} onChange={e => setSelectedOrderId(e.target.value)}>
-              {orderOptions.length > 1 && <option value="">Select order…</option>}
-              {orderOptions.map((o) => <option key={o.id} value={o.id}>{formatOrderOption(o)}</option>)}
+          )}
+          <div className={shops.length > 0 ? '' : 'md:col-span-2'}>
+            <FieldLabel>Order</FieldLabel>
+            {orderOptions.length === 0 ? (
+              <p className="text-sm px-3 py-2 rounded-md" style={{ ...inputStyle(), color: 'var(--text-muted)' }}>
+                No linked orders yet — pick from this customer&apos;s audited orders below, or connect Shopify for live orders.
+              </p>
+            ) : (
+              <select
+                aria-label="Order"
+                className="w-full px-3 py-2 rounded-md text-sm"
+                style={inputStyle()}
+                value={selectedOrderId}
+                onChange={e => setSelectedOrderId(e.target.value)}
+              >
+                {orderOptions.length > 1 && <option value="">Select an order…</option>}
+                {orderOptions.map((o) => (
+                  <option key={o.id} value={o.id}>{formatOrderOption(o)}</option>
+                ))}
+              </select>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Claim form */}
+        <section className="rounded-xl p-4 border" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}>
+          <p className="text-overline mb-3" style={{ color: 'var(--text-muted)' }}>Claim details</p>
+          <div className="space-y-3">
+            <div>
+              <FieldLabel>Claim type</FieldLabel>
+              <select
+                className="w-full px-3 py-2 rounded-md text-sm"
+                style={inputStyle()}
+                value={claimType}
+                onChange={e => setClaimType(e.target.value as ClaimType)}
+              >
+                {(Object.entries(CLAIM_TYPE_LABELS) as [ClaimType, string][]).map(([v, l]) => (
+                  <option key={v} value={v}>{l}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <FieldLabel>Customer&apos;s reason</FieldLabel>
+              <textarea
+                className="w-full px-3 py-2 rounded-md text-sm resize-none"
+                style={inputStyle()}
+                rows={2}
+                placeholder="What the customer claimed, in their words"
+                value={customerReason}
+                onChange={e => setCustomerReason(e.target.value)}
+              />
+            </div>
+            <div>
+              <FieldLabel>Internal notes</FieldLabel>
+              <textarea
+                className="w-full px-3 py-2 rounded-md text-sm resize-none"
+                style={inputStyle()}
+                rows={2}
+                placeholder="Your assessment, context, or next steps"
+                value={notes}
+                onChange={e => setNotes(e.target.value)}
+              />
+            </div>
+            <button
+              onClick={onClaim}
+              disabled={busy}
+              className="w-full px-4 py-2 rounded-md text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60"
+              style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}
+            >
+              {busy ? <><span className="h-3.5 w-3.5 rounded-full border-2 border-white border-t-transparent animate-spin" /> Saving…</> : claimId ? 'Update claim' : 'Save claim'}
+            </button>
+          </div>
+        </section>
+
+        {/* Decision */}
+        <section className="rounded-xl p-4 border" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}>
+          <p className="text-overline mb-3" style={{ color: 'var(--text-muted)' }}>Resolve claim</p>
+          <div className="space-y-3">
+            <div>
+              <FieldLabel>Decision</FieldLabel>
+              <select
+                className="w-full px-3 py-2 rounded-md text-sm"
+                style={inputStyle()}
+                value={decision}
+                onChange={e => setDecision(e.target.value as Decision)}
+              >
+                {(Object.entries(DECISION_LABELS) as [Decision, string][]).map(([v, l]) => (
+                  <option key={v} value={v}>{l}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <FieldLabel>Outcome</FieldLabel>
+              <select
+                className="w-full px-3 py-2 rounded-md text-sm"
+                style={inputStyle()}
+                value={outcome}
+                onChange={e => setOutcome(e.target.value as Outcome)}
+              >
+                {(Object.entries(OUTCOME_LABELS) as [Outcome, string][]).map(([v, l]) => (
+                  <option key={v} value={v}>{l}</option>
+                ))}
+              </select>
+            </div>
+            {!claimId && (
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Save a claim first to record the outcome.</p>
+            )}
+            <button
+              onClick={onOutcome}
+              disabled={busy || !claimId}
+              className="w-full px-4 py-2 rounded-md text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60"
+              style={{ background: claimId ? 'var(--accent)' : 'var(--bg-inset)', color: claimId ? 'var(--text-inverse)' : 'var(--text-muted)', border: claimId ? 'none' : '1px solid var(--border)' }}
+            >
+              {busy ? <><span className="h-3.5 w-3.5 rounded-full border-2 border-white border-t-transparent animate-spin" /> Saving…</> : 'Save outcome'}
+            </button>
+          </div>
+        </section>
+      </div>
+
+      {/* Evidence */}
+      <section className="rounded-xl p-4 border" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}>
+        <p className="text-overline mb-3" style={{ color: 'var(--text-muted)' }}>Evidence</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div>
+            <FieldLabel>Evidence type</FieldLabel>
+            <select className="w-full px-3 py-2 rounded-md text-sm" style={inputStyle()} value={evidenceType} onChange={e => setEvidenceType(e.target.value as EvidenceType)}>
+              {(Object.entries(EVIDENCE_TYPE_LABELS) as [EvidenceType, string][]).map(([v, l]) => (
+                <option key={v} value={v}>{l}</option>
+              ))}
             </select>
+          </div>
+          <div>
+            <FieldLabel>Source</FieldLabel>
+            <select className="w-full px-3 py-2 rounded-md text-sm" style={inputStyle()} value={source} onChange={e => setSource(e.target.value as EvidenceSource)}>
+              {(Object.entries(EVIDENCE_SOURCE_LABELS) as [EvidenceSource, string][]).map(([v, l]) => (
+                <option key={v} value={v}>{l}</option>
+              ))}
+            </select>
+          </div>
+          <div className="md:col-span-2">
+            <FieldLabel>Evidence URL (optional)</FieldLabel>
+            <input
+              className="w-full px-3 py-2 rounded-md text-sm"
+              style={inputStyle()}
+              placeholder="https://…"
+              value={evidenceUrl}
+              onChange={e => setEvidenceUrl(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className="mt-3">
+          <button
+            type="button"
+            onClick={() => setShowMeta((v) => !v)}
+            className="text-xs hover:underline"
+            style={{ color: 'var(--text-muted)' }}
+          >
+            {showMeta ? '▲ Hide' : '▼ Advanced'} — hash & metadata
+          </button>
+          {showMeta && (
+            <div className="mt-2 space-y-2">
+              <div>
+                <FieldLabel>Evidence hash (SHA-256)</FieldLabel>
+                <input className="w-full px-3 py-2 rounded-md text-sm" style={inputStyle()} placeholder="sha256:…" value={evidenceHash} onChange={e => setEvidenceHash(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                {metaRows.map((r, i) => (
+                  <div key={i} className="grid grid-cols-2 gap-2">
+                    <input className="px-3 py-2 rounded-md text-sm" style={inputStyle()} placeholder="key" value={r.key} onChange={e => setMetaRows(prev => prev.map((x, ix) => ix === i ? { ...x, key: e.target.value } : x))} />
+                    <input className="px-3 py-2 rounded-md text-sm" style={inputStyle()} placeholder="value" value={r.value} onChange={e => setMetaRows(prev => prev.map((x, ix) => ix === i ? { ...x, value: e.target.value } : x))} />
+                  </div>
+                ))}
+                <button onClick={() => setMetaRows(prev => [...prev, { key: '', value: '' }])} className="px-3 py-1 rounded-md text-xs" style={{ border: '1px solid var(--border)', color: 'var(--text-muted)' }}>+ Add metadata row</button>
+              </div>
+            </div>
           )}
         </div>
-      </div>
-    </section>
 
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">{/* unchanged below */}
-      <section className="rounded-xl p-4 border" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}>
-        <p className="text-overline mb-2">Claim</p>
-        <input className="w-full mb-2 px-3 py-2 rounded-md text-sm" style={{ border: '1px solid var(--border)', background: 'var(--bg-inset)' }} placeholder="Claim id (optional, for update)" value={claimId} onChange={e => setClaimId(e.target.value)} />
-        <select className="w-full mb-2 px-3 py-2 rounded-md text-sm" style={{ border: '1px solid var(--border)', background: 'var(--bg-inset)' }} value={claimType} onChange={e => setClaimType(e.target.value as ClaimType)}>{['missing_parcel','damaged','wrong_item','refund_request','chargeback','return_abuse','other'].map(x => <option key={x} value={x}>{x}</option>)}</select>
-        <textarea className="w-full mb-2 px-3 py-2 rounded-md text-sm" style={{ border: '1px solid var(--border)', background: 'var(--bg-inset)' }} placeholder="Customer claim reason" value={customerReason} onChange={e => setCustomerReason(e.target.value)} />
-        <textarea className="w-full mb-2 px-3 py-2 rounded-md text-sm" style={{ border: '1px solid var(--border)', background: 'var(--bg-inset)' }} placeholder="Internal merchant notes" value={notes} onChange={e => setNotes(e.target.value)} />
-        <button onClick={onClaim} disabled={state==='busy'} className="px-4 py-2 rounded-md text-sm font-semibold" style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}>Save claim</button>
+        {!claimId && (
+          <p className="mt-2 text-xs" style={{ color: 'var(--text-muted)' }}>Save a claim first to attach evidence.</p>
+        )}
+        <button
+          onClick={onEvidence}
+          disabled={busy || !claimId}
+          className="mt-3 w-full px-4 py-2 rounded-md text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60"
+          style={{ background: claimId ? 'var(--accent)' : 'var(--bg-inset)', color: claimId ? 'var(--text-inverse)' : 'var(--text-muted)', border: claimId ? 'none' : '1px solid var(--border)' }}
+        >
+          {busy ? <><span className="h-3.5 w-3.5 rounded-full border-2 border-white border-t-transparent animate-spin" /> Saving…</> : 'Save evidence'}
+        </button>
       </section>
 
+      {/* Claim History */}
       <section className="rounded-xl p-4 border" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}>
-        <p className="text-overline mb-2">Decision</p>
-        <select className="w-full mb-2 px-3 py-2 rounded-md text-sm" style={{ border: '1px solid var(--border)', background: 'var(--bg-inset)' }} value={decision} onChange={e => setDecision(e.target.value as Decision)}>{['approved','denied','escalated','partial_refund','full_refund','chargeback_disputed','blacklist','no_action'].map(x => <option key={x} value={x}>{x}</option>)}</select>
-        <select className="w-full mb-2 px-3 py-2 rounded-md text-sm" style={{ border: '1px solid var(--border)', background: 'var(--bg-inset)' }} value={outcome} onChange={e => setOutcome(e.target.value as Outcome)}>{['loss','recovered','pending','chargeback_won','chargeback_lost','customer_verified','suspected_fraud'].map(x => <option key={x} value={x}>{x}</option>)}</select>
-        <button onClick={onOutcome} disabled={state==='busy'} className="px-4 py-2 rounded-md text-sm font-semibold" style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}>Save outcome</button>
+        <p className="text-overline mb-3" style={{ color: 'var(--text-muted)' }}>Claim history</p>
+        {history.length === 0 ? (
+          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No claims recorded for this customer yet.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr style={{ color: 'var(--text-muted)' }}>
+                  <th className="text-left py-2 pr-3 text-xs font-semibold">Order ref</th>
+                  <th className="text-left py-2 pr-3 text-xs font-semibold">Status</th>
+                  <th className="text-left py-2 pr-3 text-xs font-semibold">Type</th>
+                  <th className="text-left py-2 pr-3 text-xs font-semibold">Decision / Outcome</th>
+                  <th className="text-left py-2 pr-3 text-xs font-semibold">At risk</th>
+                  <th className="text-left py-2 text-xs font-semibold">Updated</th>
+                </tr>
+              </thead>
+              <tbody>
+                {history.map((h) => (
+                  <tr
+                    key={h.id}
+                    className="border-t cursor-pointer hover:bg-[var(--bg-subtle)]"
+                    style={{ borderColor: 'var(--border-subtle)' }}
+                    onClick={() => setClaimId(h.id)}
+                  >
+                    <td className="py-2 pr-3 font-mono text-xs">{h.shopify_order_id ?? h.order_ref ?? '—'}</td>
+                    <td className="py-2 pr-3"><StatusPill status={h.status} /></td>
+                    <td className="py-2 pr-3">{CLAIM_TYPE_LABELS[h.claim_type as ClaimType] ?? h.claim_type}</td>
+                    <td className="py-2 pr-3">
+                      {h.latest_outcome
+                        ? `${DECISION_LABELS[h.latest_outcome.decision as Decision] ?? h.latest_outcome.decision} / ${OUTCOME_LABELS[h.latest_outcome.outcome as Outcome] ?? h.latest_outcome.outcome}`
+                        : '—'}
+                    </td>
+                    <td className="py-2 pr-3">{h.amount_at_risk != null ? formatMoney(h.amount_at_risk, h.currency) : '—'}</td>
+                    <td className="py-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+                      {h.updated_at ? new Date(h.updated_at).toLocaleDateString('en-GB') : '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
     </div>
-
-    <section className="rounded-xl p-4 border" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}>
-      <p className="text-overline mb-2">Evidence</p>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-        <select className="px-3 py-2 rounded-md text-sm" style={{ border: '1px solid var(--border)', background: 'var(--bg-inset)' }} value={evidenceType} onChange={e => setEvidenceType(e.target.value as EvidenceType)}>{['tracking','proof_of_delivery','customer_message','support_ticket','return_label','warehouse_scan','payment_dispute','note','other'].map(x => <option key={x} value={x}>{x}</option>)}</select>
-        <select className="px-3 py-2 rounded-md text-sm" style={{ border: '1px solid var(--border)', background: 'var(--bg-inset)' }} value={source} onChange={e => setSource(e.target.value as EvidenceSource)}>{['manual','csv_import','zendesk','gorgias','shopify','stripe','paypal','carrier'].map(x => <option key={x} value={x}>{x}</option>)}</select>
-        <input className="px-3 py-2 rounded-md text-sm" style={{ border: '1px solid var(--border)', background: 'var(--bg-inset)' }} placeholder="evidence url" value={evidenceUrl} onChange={e => setEvidenceUrl(e.target.value)} />
-        <input className="px-3 py-2 rounded-md text-sm" style={{ border: '1px solid var(--border)', background: 'var(--bg-inset)' }} placeholder="evidence hash" value={evidenceHash} onChange={e => setEvidenceHash(e.target.value)} />
-      </div>
-      <div className="mt-2 space-y-2">
-        {metaRows.map((r, i) => <div key={i} className="grid grid-cols-2 gap-2"><input className="px-3 py-2 rounded-md text-sm" style={{ border: '1px solid var(--border)', background: 'var(--bg-inset)' }} placeholder="key" value={r.key} onChange={e => setMetaRows(prev => prev.map((x, ix) => ix===i ? { ...x, key: e.target.value } : x))} /><input className="px-3 py-2 rounded-md text-sm" style={{ border: '1px solid var(--border)', background: 'var(--bg-inset)' }} placeholder="value" value={r.value} onChange={e => setMetaRows(prev => prev.map((x, ix) => ix===i ? { ...x, value: e.target.value } : x))} /></div>)}
-        <button onClick={() => setMetaRows(prev => [...prev, { key: '', value: '' }])} className="px-3 py-1 rounded-md text-xs" style={{ border: '1px solid var(--border)' }}>+ add metadata</button>
-      </div>
-      <button onClick={onEvidence} disabled={state==='busy'} className="mt-2 px-4 py-2 rounded-md text-sm font-semibold" style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}>Save evidence</button>
-    </section>
-
-    <section className="rounded-xl p-4 border" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}>
-      <p className="text-overline mb-2">Claim History</p>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead><tr style={{ color: 'var(--text-muted)' }}><th className="text-left py-2">Claim</th><th className="text-left py-2">Status</th><th className="text-left py-2">Type</th><th className="text-left py-2">Decision/Outcome</th><th className="text-left py-2">At risk</th><th className="text-left py-2">Updated</th></tr></thead>
-          <tbody>{history.map((h) => <tr key={h.id} className="border-t" style={{ borderColor: 'var(--border-subtle)' }}><td className="py-2">{h.shopify_order_id}</td><td className="py-2">{h.status}</td><td className="py-2">{h.claim_type}</td><td className="py-2">{h.latest_outcome ? `${h.latest_outcome.decision} / ${h.latest_outcome.outcome}` : '—'}</td><td className="py-2">{h.amount_at_risk ?? '—'}</td><td className="py-2">{h.updated_at ? new Date(h.updated_at).toLocaleString('en-GB') : '—'}</td></tr>)}</tbody>
-        </table>
-      </div>
-    </section>
-
-  </div>;
+  );
 }

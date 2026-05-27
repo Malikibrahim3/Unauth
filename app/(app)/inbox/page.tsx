@@ -145,7 +145,7 @@ export default async function InboxPage({ searchParams }: { searchParams?: Promi
       main={items.length === 0 ? (
         <WorkbenchEmptyState
           title="You're all caught up"
-          description="No high or critical transactions need review right now."
+          description="No flagged identity matches need review right now."
           action={<Link href="/upload" className="text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>Upload a CSV to get started</Link>}
         />
       ) : (

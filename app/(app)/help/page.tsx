@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import { BookOpen, FileText, HelpCircle, Info } from 'lucide-react';
-import { WorkbenchPage } from '@/components/ui';
 
 const ARTICLES = [
   {
@@ -9,7 +8,6 @@ const ARTICLES = [
     description:
       'How identity analysis works, how uploads build on each other, and how the chargeback evidence is generated.',
     href: '/help/how-it-works',
-    comingSoon: false,
   },
   {
     icon: FileText,
@@ -36,18 +34,22 @@ const ARTICLES = [
 
 export default function HelpIndexPage() {
   return (
-    <WorkbenchPage
-      title="Help & Docs"
-      subtitle="Guides to get the most out of Unauth."
-      navItems={[
-        { key: 'overview', label: 'Overview', href: '/dashboard' },
-        { key: 'cases', label: 'Cases', href: '/inbox' },
-        { key: 'clusters', label: 'Clusters', href: '/customers?merchantsMin=2' },
-        { key: 'audits', label: 'Audits', href: '/history' },
-        { key: 'reports', label: 'Reports', href: '/reports' },
-      ]}
-      activeNavKey="audits"
-      main={<div className="p-4 space-y-3">
+    <div className="p-8 max-w-2xl mx-auto space-y-6">
+      <div>
+        <Link
+          href="/dashboard"
+          className="inline-flex items-center gap-1.5 text-xs mb-4 hover:underline"
+          style={{ color: 'var(--text-muted)' }}
+        >
+          ← Dashboard
+        </Link>
+        <h1 className="text-heading-lg" style={{ color: 'var(--text)' }}>Help &amp; Docs</h1>
+        <p className="mt-1 text-sm" style={{ color: 'var(--text-muted)' }}>
+          Guides to get the most out of Unauth.
+        </p>
+      </div>
+
+      <div className="space-y-3">
         {ARTICLES.map(({ icon: Icon, title, description, href }) => (
           <div
             key={title}
@@ -64,11 +66,9 @@ export default function HelpIndexPage() {
               <Icon className="h-4 w-4" style={{ color: 'var(--icon-muted)' }} />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
-                  {title}
-                </p>
-              </div>
+              <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
+                {title}
+              </p>
               <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
                 {description}
               </p>
@@ -82,26 +82,27 @@ export default function HelpIndexPage() {
             </Link>
           </div>
         ))}
-      <div
-        className="rounded-lg px-5 py-4 border"
-        style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
-      >
-        <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
-          Still stuck?
-        </p>
-        <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-          Email us at{' '}
-          <a
-            href="mailto:support@unauth.io"
-            className="underline underline-offset-2"
-            style={{ color: 'var(--text)' }}
-          >
-            support@unauth.io
-          </a>{' '}
-          and we&apos;ll get back to you within one business day.
-        </p>
+
+        <div
+          className="rounded-lg px-5 py-4 border"
+          style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
+        >
+          <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
+            Still stuck?
+          </p>
+          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
+            Email us at{' '}
+            <a
+              href="mailto:support@unauth.io"
+              className="underline underline-offset-2"
+              style={{ color: 'var(--text)' }}
+            >
+              support@unauth.io
+            </a>{' '}
+            and we&apos;ll get back to you within one business day.
+          </p>
+        </div>
       </div>
-      </div>}
-    />
+    </div>
   );
 }

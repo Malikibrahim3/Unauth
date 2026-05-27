@@ -10,8 +10,11 @@ const evidenceSourceSchema = z.enum(['manual', 'csv_import', 'zendesk', 'gorgias
 export const createClaimSchema = z.object({
   id: z.string().uuid().optional(),
   merchant_id: z.string().uuid().nullable().optional(),
-  shop_domain: z.string().min(1),
+  shop_domain: z.string().min(1).nullable().optional(),
   shopify_order_id: z.string().nullable().optional(),
+  order_source: z.enum(['shopify', 'csv', 'audit', 'manual']).nullable().optional(),
+  order_ref: z.string().nullable().optional(),
+  audit_transaction_id: z.string().uuid().nullable().optional(),
   customer_id: z.string().nullable().optional(),
   claim_type: claimTypeSchema,
   customer_claim_reason: z.string().nullable().optional(),
@@ -21,12 +24,15 @@ export const createClaimSchema = z.object({
   currency: z.string().nullable().optional(),
   submitted_at: z.string().datetime().optional(),
   actor_user_id: z.string().uuid().nullable().optional(),
-});
+}).refine(
+  (d) => !!(d.shopify_order_id || d.order_ref || d.audit_transaction_id),
+  { message: 'Select an order before saving the claim.' },
+);
 
 export const createOutcomeSchema = z.object({
   id: z.string().uuid().optional(),
   claim_id: z.string().uuid(),
-  shop_domain: z.string().min(1),
+  shop_domain: z.string().min(1).nullable().optional(),
   shopify_order_id: z.string().nullable().optional(),
   decision: outcomeDecisionSchema,
   outcome: outcomeSchema,

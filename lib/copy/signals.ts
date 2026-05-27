@@ -183,6 +183,41 @@ export const SIGNAL_COPY: Record<string, SignalCopy> = {
     recommended: 'The order pattern differs from this profile baseline.',
     explanation: 'The order pattern differs from typical behaviour for this profile.',
   },
+  postDeliveryClaimRate: {
+    title: 'Refund or INR claims filed after orders were marked delivered',
+    short: 'Repeat post-delivery claims',
+    badge: 'Post-delivery claim pattern',
+    recommended: 'The customer files refund or INR claims after orders are confirmed delivered, at an elevated rate.',
+    explanation: 'Claims are being filed after delivery confirmation, which is inconsistent with legitimate refund patterns.',
+  },
+  billingAddressClustering: {
+    title: 'Billing address shared across multiple accounts via dispute history',
+    short: 'Shared billing address cluster',
+    badge: 'Billing address cluster',
+    recommended: 'Multiple emails are linked through a shared billing address in dispute history.',
+    explanation: 'Multiple account identities share a billing address through payment dispute records.',
+  },
+  addressMismatch: {
+    title: 'Billing and shipping address do not match',
+    short: 'Billing/shipping address mismatch',
+    badge: 'Address mismatch',
+    recommended: 'A billing-to-shipping address mismatch adds supporting context.',
+    explanation: 'The billing and delivery addresses on this order differ.',
+  },
+  disputeHistory: {
+    title: 'Prior disputes, refund requests, or return requests detected',
+    short: 'Prior dispute history',
+    badge: 'Dispute history',
+    recommended: 'Documented dispute history is relevant to this claim.',
+    explanation: 'This profile has a prior history of disputes, refund requests, or returns.',
+  },
+  crossMerchant: {
+    title: 'Cross-network refund or INR history (privacy-safe)',
+    short: 'Seen at multiple merchants',
+    badge: 'Cross-merchant signal',
+    recommended: 'This identity appears in other merchants’ data in the network with a minimum group size for privacy.',
+    explanation: 'This identity has refund or INR signals that appear across the wider merchant network.',
+  },
 };
 
 export function signalCopy(name: string): SignalCopy {

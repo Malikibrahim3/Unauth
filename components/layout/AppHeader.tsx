@@ -171,7 +171,7 @@ export default function AppHeader({
       {/* MerchantEnvChip — left of search */}
       <MerchantEnvChip merchantName={merchantName ?? null} environment={environment} />
       <Link
-        href={shopifyConnected ? '/settings/account' : '/onboarding'}
+        href={shopifyConnected ? '/settings/integrations' : '/settings/integrations'}
         className={cn(
           'hidden md:inline-flex h-7 items-center px-2 border text-caption',
           shopifyConnected

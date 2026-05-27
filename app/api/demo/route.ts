@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
 import { createScopedClient } from '@/lib/supabase/scoped';
+import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { scoreOrders } from '@/lib/engine';
 import { computeMetrics } from '@/lib/eval/metrics';
 import { createJob, completeJob } from '@/lib/processing/job';
@@ -10,8 +11,6 @@ import type { NormalisedOrder } from '@/lib/engine/types';
 import type { Database } from '@/lib/supabase/types';
 import { createRequestLogger, withRequestLogging } from '@/lib/log';
 import { captureServerException } from '@/lib/sentry';
-
-type MerchantRow = Database['public']['Tables']['merchants']['Row'];
 
 // Deterministic hash for demo data — does not use IDENTITY_SALT
 function dh(value: string): string {
@@ -252,18 +251,10 @@ async function POSTHandler(_request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { data: merchant } = await supabase
-      .from(TABLES.MERCHANTS)
-      .select('id')
-      .eq('user_id', user.id)
-      .single();
+    const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.UPLOAD_CSV);
+    if (denied) return denied;
 
-    if (!merchant) {
-      return NextResponse.json({ error: 'Merchant account not found.' }, { status: 403 });
-    }
-
-    const merchantData = merchant as unknown as MerchantRow;
-    const scopedServiceClient = createScopedClient(merchantData.id, serviceClient);
+    const scopedServiceClient = createScopedClient(ctx.merchantId, serviceClient);
 
     const { count } = await scopedServiceClient
       .from(TABLES.PROCESSING_JOBS)
@@ -283,7 +274,7 @@ async function POSTHandler(_request: NextRequest) {
     const _evalMetrics = computeMetrics(predicted, actual);
 
     // Create processing_jobs record (unified schema)
-    const jobId = await createJob(scopedServiceClient, merchantData.id, 'sample_audit_3000_orders.csv');
+    const jobId = await createJob(scopedServiceClient, ctx.merchantId, 'sample_audit_3000_orders.csv');
 
     const txInserts = scored.map((s) => ({
       job_id: jobId,

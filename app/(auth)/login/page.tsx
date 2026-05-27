@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client';
 import { UnauthLogo } from '@/components/ui/UnauthLogo';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { ORDER_VOLUME_OPTIONS, FRAUD_CONCERN_OPTIONS } from '@/lib/constants/merchantProfile';
 
 function formatAuthError(message: string): string {
   const lower = message.toLowerCase();
@@ -26,7 +27,6 @@ export default function LoginPage() {
 function LoginPageInner() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isSignUp, setIsSignUp] = useState(false);
   const [storeName, setStoreName] = useState('');
   const [platform, setPlatform] = useState('');
   const [annualVolume, setAnnualVolume] = useState('');
@@ -38,6 +38,7 @@ function LoginPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const requestedNextPath = searchParams.get('next');
+  const [isSignUp, setIsSignUp] = useState(() => searchParams.get('signup') === '1');
   const nextPath = !requestedNextPath || requestedNextPath === '/dashboard' ? '/upload' : requestedNextPath;
   const isSubmitDisabled =
     loading ||
@@ -133,8 +134,13 @@ function LoginPageInner() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                placeholder="you@company.com"
+                placeholder={isSignUp ? 'you@yourstore.com' : 'you@company.com'}
               />
+              {isSignUp && (
+                <p className="mt-1 t-caption" style={{ color: 'var(--ink-tertiary)' }}>
+                  Use your work email to verify your store — personal email addresses are not accepted.
+                </p>
+              )}
             </div>
 
             <div>
@@ -189,10 +195,9 @@ function LoginPageInner() {
                   style={{ background: 'var(--surface-input)', border: '1px solid var(--surface-border)', borderRadius: 'var(--radius-md)', color: annualVolume ? 'var(--ink-primary)' : 'var(--ink-tertiary)' }}
                 >
                   <option value="">Annual order volume...</option>
-                  <option value="under_10k">Under 10,000</option>
-                  <option value="10k_50k">10,000-50,000</option>
-                  <option value="50k_250k">50,000-250,000</option>
-                  <option value="over_250k">Over 250,000</option>
+                  {ORDER_VOLUME_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
                 </select>
                 <select
                   value={primaryConcern}
@@ -202,10 +207,9 @@ function LoginPageInner() {
                   style={{ background: 'var(--surface-input)', border: '1px solid var(--surface-border)', borderRadius: 'var(--radius-md)', color: primaryConcern ? 'var(--ink-primary)' : 'var(--ink-tertiary)' }}
                 >
                   <option value="">Primary concern...</option>
-                  <option value="refund_abuse">Refund abuse</option>
-                  <option value="inr_claims">INR claims</option>
-                  <option value="chargebacks">Chargebacks</option>
-                  <option value="all">All of the above</option>
+                  {FRAUD_CONCERN_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
                 </select>
               </div>
             )}
@@ -235,14 +239,14 @@ function LoginPageInner() {
           </form>
 
           <p className="mt-5 text-center t-caption" style={{ color: 'var(--ink-tertiary)' }}>
-            {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
+            {isSignUp ? 'Already have an account?' : "New here?"}{' '}
             <button
               type="button"
               onClick={() => { setIsSignUp((value) => !value); setError(''); }}
               className="font-semibold underline underline-offset-2"
               style={{ color: 'var(--copper-bright)' }}
             >
-              {isSignUp ? 'Sign in' : 'Request access'}
+              {isSignUp ? 'Sign in' : 'Create account'}
             </button>
           </p>
           <p className="mt-4 text-center t-caption" style={{ color: 'var(--ink-tertiary)' }}>

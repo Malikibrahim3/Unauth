@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
 
   let query = serviceClient
     .from('merchant_claims' as any)
-    .select('id,shop_domain,shopify_order_id,claim_type,status,amount_at_risk,updated_at,merchant_case_outcomes(decision,outcome,updated_at)')
+    .select('id,shop_domain,shopify_order_id,order_ref,order_source,claim_type,status,amount_at_risk,updated_at,merchant_case_outcomes(decision,outcome,updated_at)')
     .eq('merchant_id', ctx.merchantId)
     .order('updated_at', { ascending: false })
     .limit(25);
@@ -48,6 +48,8 @@ export async function GET(request: NextRequest) {
       id: c.id,
       shop_domain: c.shop_domain,
       shopify_order_id: c.shopify_order_id,
+      order_ref: c.order_ref,
+      order_source: c.order_source,
       claim_type: c.claim_type,
       status: c.status,
       amount_at_risk: c.amount_at_risk,
@@ -74,10 +76,33 @@ export async function POST(request: NextRequest) {
   }
 
   const parsed = createClaimSchema.safeParse(body);
-  if (!parsed.success) return NextResponse.json({ error: 'Invalid claim payload' }, { status: 400 });
+  if (!parsed.success) {
+    const firstIssue = parsed.error.issues[0];
+    const msg = firstIssue?.message === 'Select an order before saving the claim.'
+      ? firstIssue.message
+      : 'Invalid claim payload';
+    const status = firstIssue?.message === 'Select an order before saving the claim.' ? 422 : 400;
+    return NextResponse.json({ error: msg }, { status });
+  }
 
-  if (!(await merchantOwnsShopDomain(serviceClient, ctx.merchantId, parsed.data.shop_domain))) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  // Verify the customer profile belongs to this merchant (works for both CSV and Shopify customers).
+  if (parsed.data.customer_id) {
+    const { data: profile } = await serviceClient
+      .from('customer_profiles' as any)
+      .select('id')
+      .eq('id', parsed.data.customer_id)
+      .eq('merchant_id', ctx.merchantId)
+      .maybeSingle();
+    if (!profile) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+  }
+
+  // If a shop_domain is supplied, additionally verify ownership of it.
+  if (parsed.data.shop_domain) {
+    if (!(await merchantOwnsShopDomain(serviceClient, ctx.merchantId, parsed.data.shop_domain))) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
   }
 
   try {
@@ -86,7 +111,7 @@ export async function POST(request: NextRequest) {
       merchant_id: ctx.merchantId,
       actor_user_id: parsed.data.actor_user_id ?? user.id,
     });
-    return NextResponse.json({ claim: { id: claim.id, shop_domain: claim.shop_domain, shopify_order_id: claim.shopify_order_id, claim_type: claim.claim_type, status: claim.status } });
+    return NextResponse.json({ claim: { id: claim.id, shop_domain: claim.shop_domain, shopify_order_id: claim.shopify_order_id, order_ref: claim.order_ref, order_source: claim.order_source, claim_type: claim.claim_type, status: claim.status } });
   } catch {
     return NextResponse.json({ error: 'Failed to upsert claim' }, { status: 500 });
   }

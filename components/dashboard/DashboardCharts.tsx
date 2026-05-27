@@ -134,6 +134,16 @@ function EmptyChart({ message = 'No data for this range.' }: { message?: string 
   );
 }
 
+function SparseDataOverlay() {
+  return (
+    <div className="absolute inset-0 flex items-end justify-center pb-4 pointer-events-none">
+      <p className="text-xs px-2 py-1 rounded" style={{ background: 'var(--surface-raised)', color: 'var(--ink-tertiary)', opacity: 0.85 }}>
+        Charts fill in as you run more audits
+      </p>
+    </div>
+  );
+}
+
 function Segmented<T extends string | number>({
   value,
   values,
@@ -304,15 +314,18 @@ export default function DashboardCharts({ runs, transactions }: Props) {
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-6">
         <SectionCard title="Fraud Rate Over Time" description={`${range} day transaction flag rate`} className="xl:col-span-3">
           {fraudRate.some((d) => d.total > 0) ? (
-            <ResponsiveContainer width="100%" height={230}>
-              <LineChart data={fraudRate} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                <CartesianGrid stroke="var(--surface-border)" vertical={false} />
-                <XAxis dataKey="label" tick={{ fill: 'var(--ink-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} minTickGap={22} />
-                <YAxis tickFormatter={(v) => `${Math.round(Number(v))}%`} tick={{ fill: 'var(--ink-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} width={46} />
-                <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'var(--copper-bright)', strokeOpacity: 0.25 }} />
-                <Line name="Fraud rate" type="monotone" dataKey="rate" stroke="var(--copper-bright)" strokeWidth={2.25} dot={false} activeDot={{ r: 4, fill: 'var(--copper-bright)' }} />
-              </LineChart>
-            </ResponsiveContainer>
+            <div className="relative">
+              <ResponsiveContainer width="100%" height={230}>
+                <LineChart data={fraudRate} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                  <CartesianGrid stroke="var(--surface-border)" vertical={false} />
+                  <XAxis dataKey="label" tick={{ fill: 'var(--ink-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} minTickGap={22} />
+                  <YAxis tickFormatter={(v) => `${Math.round(Number(v))}%`} tick={{ fill: 'var(--ink-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} width={46} />
+                  <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'var(--copper-bright)', strokeOpacity: 0.25 }} />
+                  <Line name="Fraud rate" type="monotone" dataKey="rate" stroke="var(--copper-bright)" strokeWidth={2.25} dot={false} activeDot={{ r: 4, fill: 'var(--copper-bright)' }} />
+                </LineChart>
+              </ResponsiveContainer>
+              {fraudRate.filter((d) => d.total > 0).length < 3 && <SparseDataOverlay />}
+            </div>
           ) : <EmptyChart />}
         </SectionCard>
 
@@ -323,15 +336,18 @@ export default function DashboardCharts({ runs, transactions }: Props) {
           className="xl:col-span-3"
         >
           {volume.length ? (
-            <ResponsiveContainer width="100%" height={230}>
-              <BarChart data={volume} margin={{ top: 8, right: 8, left: 0, bottom: 0 }} barSize={volumeMode === 'weekly' ? 28 : 10}>
-                <CartesianGrid stroke="var(--surface-border)" vertical={false} />
-                <XAxis dataKey="label" tick={{ fill: 'var(--ink-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} minTickGap={18} />
-                <YAxis tick={{ fill: 'var(--ink-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} width={42} />
-                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'color-mix(in srgb, var(--copper-bright) 8%, transparent)' }} />
-                <Bar name="Transactions" dataKey="count" fill="var(--privacy-ink)" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            <div className="relative">
+              <ResponsiveContainer width="100%" height={230}>
+                <BarChart data={volume} margin={{ top: 8, right: 8, left: 0, bottom: 0 }} barSize={volumeMode === 'weekly' ? 28 : 10}>
+                  <CartesianGrid stroke="var(--surface-border)" vertical={false} />
+                  <XAxis dataKey="label" tick={{ fill: 'var(--ink-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} minTickGap={18} />
+                  <YAxis tick={{ fill: 'var(--ink-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} width={42} />
+                  <Tooltip content={<CustomTooltip />} cursor={{ fill: 'color-mix(in srgb, var(--copper-bright) 8%, transparent)' }} />
+                  <Bar name="Transactions" dataKey="count" fill="var(--privacy-ink)" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+              {volume.filter((d) => d.count > 0).length < 3 && <SparseDataOverlay />}
+            </div>
           ) : <EmptyChart />}
         </SectionCard>
 

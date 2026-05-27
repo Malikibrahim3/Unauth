@@ -5,6 +5,7 @@ import { User, ArrowLeft, Save, AlertTriangle, Check, Eye, EyeOff } from 'lucide
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { Button, Input, Select, SectionCard } from '@/components/ui';
+import { ORDER_VOLUME_OPTIONS, FRAUD_CONCERN_OPTIONS } from '@/lib/constants/merchantProfile';
 
 interface MerchantData {
   id: string;
@@ -202,10 +203,9 @@ export default function AccountSettingsPage() {
             onChange={(e) => setMonthlyVolume(e.target.value)}
           >
             <option value="">Select a range…</option>
-            <option value="under_500">Under 500</option>
-            <option value="500_2000">500 – 2,000</option>
-            <option value="2000_10000">2,000 – 10,000</option>
-            <option value="10000_plus">10,000+</option>
+            {ORDER_VOLUME_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
           </Select>
         </div>
 
@@ -218,12 +218,9 @@ export default function AccountSettingsPage() {
             onChange={(e) => setFraudConcern(e.target.value)}
           >
             <option value="">Select…</option>
-            <option value="refund_abuse">Refund abuse / INR claims</option>
-            <option value="chargebacks">Chargebacks</option>
-            <option value="account_takeover">Account takeover</option>
-            <option value="multi_accounting">Multi-accounting</option>
-            <option value="promo_abuse">Promo / voucher abuse</option>
-            <option value="all">All of the above</option>
+            {FRAUD_CONCERN_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
           </Select>
         </div>
 
