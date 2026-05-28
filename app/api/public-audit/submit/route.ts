@@ -5,6 +5,7 @@ import { createScopedClient } from '@/lib/supabase/scoped';
 import { streamParseCsv, MAX_ROWS } from '@/lib/processing/streamParser';
 import { createJob, updateJobTotalRows, completeJob } from '@/lib/processing/job';
 import { uploadChunkRows, dispatchChunk, originFromRequest } from '@/lib/processing/chunkedDispatch';
+import { registerProcessingJobChunks } from '@/lib/processing/chunkQueue';
 import { checkCsvUsageGuard } from '@/lib/processing/supabaseUsageGuard';
 import { sniffCsvMagicBytes } from '@/lib/csv/sniffMagicBytes';
 import { enforceRateLimit, limitFromEnv, rateLimitKey } from '@/lib/ratelimit';
@@ -202,14 +203,16 @@ export async function POST(request: NextRequest) {
     return failPublicAudit(sc, auditId, filePath, 429, usageGuard.reason ?? 'Usage limit reached.');
   }
 
-  await dispatchChunk(originFromRequest(request), {
+  const chunkPayload = {
     jobId,
     chunkIndex: 0,
     totalChunks: parseResult.totalChunks,
     merchantId,
     storagePath: filePath,
     columnMap,
-  });
+  };
+  await registerProcessingJobChunks(sc, chunkPayload);
+  await dispatchChunk(originFromRequest(request), chunkPayload);
 
   return NextResponse.json({ auditId }, { status: 201 });
 }

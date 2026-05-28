@@ -4,6 +4,7 @@ import type { FastScoringContext } from './fastContext';
 import { generateIdentityAlert, type IdentityClusterMap } from './identityMatching';
 import { normaliseEmail, normaliseIP, normaliseAddress, normaliseCard } from '../identity/normalise';
 import { computeCrossMerchantSignal } from './signals/crossMerchant';
+import { formatCurrency } from '@/lib/utils/format';
 
 // ---------------------------------------------------------------------------
 // Fast signal implementations using precomputed O(1) context lookups
@@ -423,7 +424,7 @@ function valueAnomaly(order: NormalisedOrder, ctx: FastScoringContext): SignalRe
       name: 'valueAnomaly',
       fired: false,
       score: 0,
-      reason: `Order value £${order.orderTotal.toFixed(2)} is within the customer's normal range.`,
+      reason: `Order value ${formatCurrency(order.orderTotal, order.currency)} is within the customer's normal range.`,
       evidence: { orderTotal: order.orderTotal, mean, stddev, threshold },
     };
   }
@@ -436,7 +437,7 @@ function valueAnomaly(order: NormalisedOrder, ctx: FastScoringContext): SignalRe
     name: 'valueAnomaly',
     fired: true,
     score,
-    reason: `Order value £${order.orderTotal.toFixed(2)} is ${zscore.toFixed(1)} standard deviations above this customer's average order value of £${mean.toFixed(2)}.`,
+    reason: `Order value ${formatCurrency(order.orderTotal, order.currency)} is ${zscore.toFixed(1)} standard deviations above this customer's average order value of ${formatCurrency(mean, order.currency)}.`,
     evidence: { orderTotal: order.orderTotal, mean, stddev, zscore, threshold, orderCount: (ctx.customerOrderHistory.get(order.emailHash) ?? []).length },
     identifierTypesUsed: ['email'],
   };
@@ -738,13 +739,13 @@ function crossMerchant(order: NormalisedOrder, ctx: FastScoringContext): SignalR
   // (e.g., eval harness, unit tests without a live DB).
   if (ctx.crossMerchantProfiles !== undefined && ctx.requestingMerchantId) {
     return computeCrossMerchantSignal({
-      normEmail:             normaliseEmail((order as NormalisedOrder & { _rawEmail?: string })._rawEmail),
-      normIP:                normaliseIP((order as NormalisedOrder & { _rawIP?: string | null })._rawIP),
-      normAddress:           normaliseAddress((order as NormalisedOrder & { _rawAddress?: string | null })._rawAddress),
-      normCard:              normaliseCard((order as NormalisedOrder & { _rawCardLast4?: string | null })._rawCardLast4),
-      requestingMerchantId:  ctx.requestingMerchantId,
-      profiles:              ctx.crossMerchantProfiles,
-      pendingAuditLogs:      ctx.pendingAuditLogs,
+      emailHash: order.emailHash,
+      ipHash: order.ipHash ?? null,
+      addressHash: order.addressHash ?? null,
+      cardHash: order.cardLast4 ?? null,
+      requestingMerchantId: ctx.requestingMerchantId,
+      profiles: ctx.crossMerchantProfiles,
+      pendingAuditLogs: ctx.pendingAuditLogs,
     });
   }
 

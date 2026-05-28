@@ -8,6 +8,7 @@
 
 import type { EvidencePackage } from './types'
 import { CE3_SIGNAL_LABELS } from './ce3'
+import { formatCurrency } from '@/lib/utils/format'
 
 function fmt(d: Date): string {
   return new Intl.DateTimeFormat('en-GB', {
@@ -45,8 +46,8 @@ export function buildNarrative(pkg: EvidencePackage): string {
     merchant,
   } = pkg
 
-  const currency = disputedOrder.currency ?? 'GBP'
-  const symbol = currency === 'GBP' ? '£' : currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency + ' '
+  const currency = disputedOrder.currency ?? 'USD'
+  const formattedDisputedValue = formatCurrency(disputedOrder.orderValue, currency)
 
   const refundOrders = orderHistory.filter(o => o.outcome === 'refunded' || o.outcome === 'partially_refunded')
   const inrOrders = orderHistory.filter(o => o.outcome === 'refunded') // approximate INR as refunded
@@ -66,7 +67,7 @@ export function buildNarrative(pkg: EvidencePackage): string {
 
   // --- Opening ---
   lines.push(
-    `This report concerns order ${disputedOrder.orderId} placed on ${fmt(disputedOrder.orderDate)} for ${symbol}${disputedOrder.orderValue.toFixed(2)}.`
+    `This report concerns order ${disputedOrder.orderId} placed on ${fmt(disputedOrder.orderDate)} for ${formattedDisputedValue}.`
   )
   lines.push('')
 

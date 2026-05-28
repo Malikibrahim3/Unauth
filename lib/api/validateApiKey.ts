@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
 import { hashApiKey, isValidApiKeyFormat } from '@/lib/api/apiKeys';
+import { incrementAndCheckApiKeyMinuteLimit } from '@/lib/api/v1/rateLimit';
 import { getClientIp } from '@/lib/ratelimit';
 
 export type ValidatedApiKey = {
@@ -17,23 +18,6 @@ type ApiKeyRow = {
   rate_limit_per_minute: number;
   revoked_at: string | null;
 };
-
-const keyMinuteCounts = new Map<string, number>();
-
-function checkKeyRateLimit(keyId: string, limit: number): boolean {
-  const window = Math.floor(Date.now() / 60000);
-  const mapKey = `${keyId}:${window}`;
-  const count = (keyMinuteCounts.get(mapKey) ?? 0) + 1;
-  keyMinuteCounts.set(mapKey, count);
-  if (keyMinuteCounts.size > 20000) {
-    const cutoff = window - 2;
-    for (const k of keyMinuteCounts.keys()) {
-      const minute = parseInt(k.split(':').pop() ?? '0', 10);
-      if (minute < cutoff) keyMinuteCounts.delete(k);
-    }
-  }
-  return count > limit;
-}
 
 function parseBearerToken(request: NextRequest): string | null {
   const header = request.headers.get('authorization');
@@ -81,8 +65,14 @@ export async function validateApiKeyPlaintext(
   }
 
   const limit = row.rate_limit_per_minute ?? 60;
-  if (checkKeyRateLimit(row.id, limit)) {
-    return { status: 429, message: 'Rate limit exceeded for this API key' };
+  try {
+    const minuteRate = await incrementAndCheckApiKeyMinuteLimit(service, row.id, limit);
+    if (!minuteRate.allowed) {
+      return { status: 429, message: 'Rate limit exceeded for this API key' };
+    }
+  } catch (err) {
+    console.error('[validateApiKey] minute rate limit failed:', (err as Error).message);
+    return { status: 500, message: 'Authentication failed' };
   }
 
   const usedAt = new Date().toISOString();

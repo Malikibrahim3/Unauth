@@ -1,34 +1,47 @@
+const CURRENCY_COMPACT_SYMBOL: Record<string, string> = {
+  GBP: '£',
+  USD: '$',
+  EUR: '€',
+};
+
+function compactSymbol(currency: string): string {
+  return CURRENCY_COMPACT_SYMBOL[currency.toUpperCase()] ?? '';
+}
+
 export function formatRiskScore(score: number | null | undefined): string {
   if (typeof score !== 'number' || Number.isNaN(score)) return '—';
   return Math.round(score).toString();
 }
 
-export function formatCurrency(amount: number, currency = 'GBP'): string {
-  return new Intl.NumberFormat('en-GB', {
+export function formatCurrency(amount: number, currency = 'USD'): string {
+  const code = currency.toUpperCase();
+  const locale = code === 'GBP' ? 'en-GB' : 'en-US';
+  return new Intl.NumberFormat(locale, {
     style: 'currency',
-    currency,
+    currency: code,
     minimumFractionDigits: 2,
   }).format(amount);
 }
 
-export function formatCurrencyCompact(amount: number, currency = 'GBP'): string {
-  // Deterministic compact formatting to avoid SSR/CSR hydration drift (e.g. "£4K" vs "£4k").
-  if (currency !== 'GBP') {
-    return formatCurrency(amount, currency);
+export function formatCurrencyCompact(amount: number, currency = 'USD'): string {
+  const code = currency.toUpperCase();
+  const sym = compactSymbol(code);
+  if (!sym) {
+    return formatCurrency(amount, code);
   }
 
   const sign = amount < 0 ? '-' : '';
   const abs = Math.abs(amount);
 
-  if (abs >= 1_000_000_000) return `${sign}£${Math.round(abs / 1_000_000_000)}B`;
-  if (abs >= 1_000_000) return `${sign}£${Math.round(abs / 1_000_000)}M`;
-  if (abs >= 1_000) return `${sign}£${Math.round(abs / 1_000)}k`;
-  if (abs >= 100) return `${sign}£${Math.round(abs)}`;
-  return `${sign}£${abs.toFixed(abs >= 10 ? 1 : 2).replace(/\.0+$/, '').replace(/(\.\d*[1-9])0+$/, '$1')}`;
+  if (abs >= 1_000_000_000) return `${sign}${sym}${Math.round(abs / 1_000_000_000)}B`;
+  if (abs >= 1_000_000) return `${sign}${sym}${Math.round(abs / 1_000_000)}M`;
+  if (abs >= 1_000) return `${sign}${sym}${Math.round(abs / 1_000)}k`;
+  if (abs >= 100) return `${sign}${sym}${Math.round(abs)}`;
+  return `${sign}${sym}${abs.toFixed(abs >= 10 ? 1 : 2).replace(/\.0+$/, '').replace(/(\.\d*[1-9])0+$/, '$1')}`;
 }
 
 /** Null-safe currency formatter — returns '—' for null/undefined values. */
-export function formatCurrencyNullable(amount: number | null | undefined, currency = 'GBP'): string {
+export function formatCurrencyNullable(amount: number | null | undefined, currency = 'USD'): string {
   if (amount == null) return '—';
   return formatCurrency(amount, currency);
 }

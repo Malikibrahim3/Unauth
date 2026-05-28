@@ -475,7 +475,7 @@ export async function fetchMerchantScopedCustomerTransactions(
     let offset = 0;
     const PAGE = 1000;
     while (true) {
-      const { data: page } = await serviceClient
+      const { data: page, error: pageError } = await serviceClient
         .from(TABLES.AUDIT_TRANSACTIONS)
         .select(select)
         .in('id', linkedTxIds)
@@ -483,7 +483,14 @@ export async function fetchMerchantScopedCustomerTransactions(
         .order('processed_at', { ascending: true })
         .range(offset, offset + PAGE - 1) as unknown as {
           data: Array<Record<string, unknown>> | null;
+          error: { message: string } | null;
         };
+      if (pageError) {
+        console.error(
+          '[fetchMerchantScopedCustomerTransactions] audit_transactions query failed:',
+          pageError.message,
+        );
+      }
       pushTx(page ?? []);
       if (!page || page.length < PAGE) break;
       offset += PAGE;

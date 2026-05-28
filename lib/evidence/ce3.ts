@@ -6,27 +6,20 @@
 // Reference: https://usa.visa.com/support/consumer/transaction-disputes.html
 
 import type { CE3QualificationResult } from './types'
-import type { IdentitySignalResult } from '@/lib/engine/types'
+import {
+  extractCe3AcceptedHashes,
+  type Ce3SignalHashes,
+  type CE3AcceptedSignal,
+} from '@/lib/identity/ce3SignalHashes'
 
-// Minimal order shape we need from the caller
-interface SimpleOrder {
+export { extractCe3AcceptedHashes, type Ce3SignalHashes, type CE3AcceptedSignal }
+
+interface CE3PriorInput {
   order_id: string
   order_date: string | Date
   refund_status?: string | null
+  signalHashes: Ce3SignalHashes
 }
-
-/**
- * Visa CE3.0 accepted identity signal types mapped to our internal signal names.
- * Each of these corresponds to a formally accepted data point per the CE3.0 framework.
- */
-const CE3_ACCEPTED_SIGNALS: string[] = [
-  'deviceMatch',     // maps to device_id / browser fingerprint
-  'ipCluster',       // maps to IP address
-  'emailVariant',    // maps to email address
-  'addressCluster',  // maps to shipping address
-  'phoneMatch',      // maps to phone number
-  'accountLink',     // maps to login credentials / account_id
-]
 
 /**
  * Human-readable labels for CE3.0 signal names — used in narrative and PDF.
@@ -50,26 +43,22 @@ export const CE3_SIGNAL_LABELS: Record<string, string> = {
  * 3. Those prior transactions must have occurred MORE THAN 120 DAYS before the
  *    disputed transaction
  * 4. Each prior transaction must share AT LEAST TWO accepted identity signals
- *    with the disputed order
+ *    with the disputed order (evaluated per-prior via hash intersection)
  */
 export function assessCE3Eligibility(
   disputedOrderId: string,
   disputedOrderDate: Date,
-  orderHistory: SimpleOrder[],
-  identitySignals: IdentitySignalResult[]
+  disputedSignalHashes: Ce3SignalHashes,
+  orderHistory: CE3PriorInput[],
 ): CE3QualificationResult {
-  const disputedDate = new Date(disputedOrderDate)
-  const cutoffDate = new Date(disputedDate)
-  cutoffDate.setDate(cutoffDate.getDate() - 120) // CE3.0 requires > 120 days prior
+  const disputedDate = disputedOrderDate
+  const disputedKeys = Object.keys(disputedSignalHashes) as CE3AcceptedSignal[]
 
-  // Find candidate prior transactions — undisputed, >120 days before dispute
-  const candidatePriors = orderHistory.filter(order => {
-    if (order.order_id === disputedOrderId) return false
-    // Must be undisputed (no refund claimed)
-    if (order.refund_status && order.refund_status !== 'none') return false
-    const orderDate = new Date(order.order_date)
-    return orderDate < cutoffDate
-  })
+  const candidatePriors = orderHistory.filter(p =>
+    p.order_id !== disputedOrderId &&
+    (!p.refund_status || p.refund_status === 'none') &&
+    Math.floor((disputedDate.getTime() - new Date(p.order_date).getTime()) / 86400000) > 120
+  )
 
   if (candidatePriors.length < 2) {
     return {
@@ -85,8 +74,7 @@ export function assessCE3Eligibility(
         matchingSignals: [],
         wasUndisputed: true,
         daysPriorToDispute: Math.floor(
-          (disputedDate.getTime() - new Date(p.order_date).getTime()) /
-            (1000 * 60 * 60 * 24)
+          (disputedDate.getTime() - new Date(p.order_date).getTime()) / 86400000
         ),
       })),
       disqualifyingFactors: [
@@ -97,41 +85,35 @@ export function assessCE3Eligibility(
     }
   }
 
-  // For each candidate, determine which CE3.0 signals fired positively
-  const firedSignals = new Set(
-    identitySignals.filter(s => s.fired && CE3_ACCEPTED_SIGNALS.includes(s.signal)).map(s => s.signal)
-  )
+  const perPrior = candidatePriors.map(prior => {
+    const matchingSignals = disputedKeys.filter(
+      k => prior.signalHashes[k] && prior.signalHashes[k] === disputedSignalHashes[k]
+    )
+    return {
+      orderId: prior.order_id,
+      orderDate: new Date(prior.order_date),
+      matchingSignals,
+      wasUndisputed: true,
+      daysPriorToDispute: Math.floor(
+        (disputedDate.getTime() - new Date(prior.order_date).getTime()) / 86400000
+      ),
+    }
+  })
 
-  const qualifyingPriors = candidatePriors
-    .map(prior => {
-      // A signal is considered to match if it fired across the cluster
-      // (signals compare all orders in a cluster, so any fired CE3 signal
-      //  is evidence linking this prior to the disputed order)
-      const matchingSignals = Array.from(firedSignals)
-      return {
-        orderId: prior.order_id,
-        orderDate: new Date(prior.order_date),
-        matchingSignals,
-        wasUndisputed: true,
-        daysPriorToDispute: Math.floor(
-          (disputedDate.getTime() - new Date(prior.order_date).getTime()) /
-            (1000 * 60 * 60 * 24)
-        ),
-      }
-    })
-    .filter(p => p.matchingSignals.length >= 2) // CE3.0: at least 2 matching signals per prior tx
+  const evaluated = perPrior
+    .filter(p => p.matchingSignals.length >= 2)
     .sort((a, b) => b.matchingSignals.length - a.matchingSignals.length)
 
-  if (qualifyingPriors.length < 2) {
-    const firedCount = firedSignals.size
+  if (evaluated.length < 2) {
+    const disputedSignalCount = disputedKeys.length
     return {
       eligible: false,
       reason:
-        firedCount === 0
+        disputedSignalCount === 0
           ? 'No accepted identity signals were detected between orders. CE3.0 requires at least two matching signals per qualifying prior transaction.'
-          : `Only ${firedCount} accepted identity signal${firedCount === 1 ? '' : 's'} detected. CE3.0 requires each qualifying prior transaction to share at least two accepted signals with the disputed order.`,
-      qualifyingSignals: Array.from(firedSignals),
-      priorTransactions: qualifyingPriors,
+          : `Only ${disputedSignalCount} accepted identity signal${disputedSignalCount === 1 ? '' : 's'} on the disputed order. CE3.0 requires each qualifying prior transaction to share at least two accepted signals with the disputed order.`,
+      qualifyingSignals: disputedKeys,
+      priorTransactions: perPrior,
       disqualifyingFactors: [
         'CE3.0 requires each qualifying prior transaction to share at least two accepted identity signals with the disputed order',
         'Consider including IP address, device ID, or account ID in your order exports to improve CE3.0 eligibility',
@@ -139,13 +121,14 @@ export function assessCE3Eligibility(
     }
   }
 
-  const topTwo = qualifyingPriors.slice(0, 2)
-  const allQualifyingSignals = [...new Set(topTwo.flatMap(p => p.matchingSignals))]
+  const eligible = evaluated.length >= 2
+  const topTwo = evaluated.slice(0, 2)
+  const qualifyingSignals = [...new Set(topTwo.flatMap(p => p.matchingSignals))]
 
   return {
-    eligible: true,
+    eligible,
     reason: `This package meets Visa Compelling Evidence 3.0 requirements. Two prior undisputed transactions were identified, each sharing at least two accepted identity signals with the disputed order, and each occurring more than 120 days prior to the dispute.`,
-    qualifyingSignals: allQualifyingSignals,
+    qualifyingSignals,
     priorTransactions: topTwo,
     disqualifyingFactors: [],
   }

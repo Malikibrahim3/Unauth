@@ -94,11 +94,15 @@ export async function GET(request: NextRequest) {
   ].filter(Boolean) as string[];
 
   const { data: rows, error } = await service.rpc('search_customer_profiles', {
-    p_email:   normEmail  || null,
-    p_name:    normName   || null,
-    p_address: normAddress || null,
-    p_card:    normCard && normCard.length === 4 ? normCard : null,
-    p_ip:      normIp     || null,
+    p_email: null,
+    p_name: normName || null,
+    p_address: null,
+    p_card: null,
+    p_ip: null,
+    p_email_hash: normEmail ? hashIdentifier(normEmail) : null,
+    p_address_hash: normAddress ? hashIdentifier(normAddress) : null,
+    p_card_hash: normCard && normCard.length === 4 ? hashIdentifier(normCard) : null,
+    p_ip_hash: normIp ? hashIdentifier(normIp) : null,
   });
 
   if (error) {

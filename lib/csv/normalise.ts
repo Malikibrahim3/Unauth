@@ -2,7 +2,7 @@ import type { CsvRow } from './schema';
 import type { NormalisedOrder } from '../engine/types';
 import { hashIdentifier } from '../identity/hash';
 import { normaliseEmail, normaliseAddress } from '../identity/normalise';
-import { normalisePhone } from '../linker';
+import { normalisePhone } from '../identity/normalise';
 import { cleanOrderStatus, cleanRefundStatus, cleanRefundReason, cleanCurrency, cleanGroundTruth, cleanBoolean } from './clean';
 
 export interface NormalisedOrderWithRawEmail extends NormalisedOrder {

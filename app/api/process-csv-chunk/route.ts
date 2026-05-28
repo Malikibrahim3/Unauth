@@ -1,14 +1,10 @@
 /* ────────────────────────────────────────────────────────────────────────────
- * 🔒 LOCKED FILE — DO NOT MODIFY WITHOUT EXPLICIT USER PERMISSION 🔒
- *
  * Server-to-server chunk worker for the CSV upload pipeline. Each invocation:
  *   1. Verifies the internal HMAC chunk token (no user auth — server-only)
- *   2. Downloads its chunk's parsed rows from Storage
- *   3. Runs processCsvJob for that chunk
- *   4. Either dispatches the next chunk OR dispatches finalisation (last chunk)
- *
- * Any change requires explicit user sign-off — see workspace memory rule
- * "Locked CSV upload pipeline".
+ *   2. Claims the chunk row in processing_job_chunks (idempotent)
+ *   3. Downloads its chunk's parsed rows from Storage
+ *   4. Runs processCsvJob for that chunk
+ *   5. Schedules the next pending chunk or finalisation via the durable queue
  * ──────────────────────────────────────────────────────────────────────── */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -18,15 +14,19 @@ import { processCsvJob } from '@/lib/processing/worker';
 import { completeJob } from '@/lib/processing/job';
 import {
   downloadChunkRows,
-  dispatchChunk,
   originFromRequest,
   type ChunkDispatchPayload,
 } from '@/lib/processing/chunkedDispatch';
 import { checkCsvUsageGuard } from '@/lib/processing/supabaseUsageGuard';
 import { verifyChunkToken, INTERNAL_CHUNK_TOKEN_HEADER } from '@/lib/processing/internalAuth';
 import { signChunkToken } from '@/lib/processing/internalAuth';
+import {
+  beginProcessingJobChunk,
+  completeProcessingJobChunk,
+  failProcessingJobChunk,
+  scheduleFollowingChunkWork,
+} from '@/lib/processing/chunkQueue';
 
-// Allow the full Vercel function budget for a single chunk.
 export const maxDuration = 300;
 
 async function dispatchFinalize(origin: string, payload: ChunkDispatchPayload): Promise<void> {
@@ -72,7 +72,7 @@ async function processChunk(
   origin: string,
   body: ChunkDispatchPayload,
 ): Promise<void> {
-  const { jobId, chunkIndex, totalChunks, merchantId, storagePath } = body;
+  const { jobId, chunkIndex, totalChunks, merchantId } = body;
   const log = (msg: string) =>
     console.log(`[chunk ${jobId} ${chunkIndex}/${totalChunks}] ${new Date().toISOString()} ${msg}`);
   const sc = createServiceClient();
@@ -88,46 +88,46 @@ async function processChunk(
       return;
     }
 
+    const beginStatus = await beginProcessingJobChunk(sc, jobId, chunkIndex);
+    if (beginStatus === 'completed') {
+      log('Chunk already completed — scheduling follow-up work only');
+      await scheduleFollowingChunkWork(sc, origin, body, dispatchFinalize);
+      return;
+    }
+    if (beginStatus === 'missing') {
+      log('Chunk not registered in queue — aborting');
+      return;
+    }
+
     log('Downloading chunk rows');
     const rows = await downloadChunkRows(sc, jobId, chunkIndex);
     log(`Downloaded ${rows.length} rows; running pipeline`);
 
-    const isLast = chunkIndex === totalChunks - 1;
     await processCsvJob(rows, jobId, sc, 5, merchantId, {
       index: chunkIndex,
       totalChunks,
       isFirst: chunkIndex === 0,
-      isLast,
+      isLast: chunkIndex === totalChunks - 1,
     });
     log('Pipeline complete for this chunk');
 
     const postChunkGuard = await checkCsvUsageGuard(sc);
     if (postChunkGuard.shouldStop) {
       log(`Usage guard tripped after processing chunk: ${postChunkGuard.reason}`);
+      await failProcessingJobChunk(sc, jobId, chunkIndex, postChunkGuard.reason ?? 'usage guard');
       await completeJob(sc, jobId, false, [
         { message: postChunkGuard.reason ?? 'Supabase usage guard stopped this run', code: 'SUPABASE_USAGE_GUARD' },
       ]);
       return;
     }
 
-    if (!isLast) {
-      await dispatchChunk(origin, {
-        jobId,
-        chunkIndex: chunkIndex + 1,
-        totalChunks,
-        merchantId,
-        columnMap: body.columnMap,
-        storagePath,
-      });
-      log(`Dispatched chunk ${chunkIndex + 1}`);
-      return;
-    }
-
-    log('Last chunk — dispatching finaliser');
-    await dispatchFinalize(origin, body);
+    await completeProcessingJobChunk(sc, jobId, chunkIndex);
+    log('Chunk marked completed in queue');
+    await scheduleFollowingChunkWork(sc, origin, body, dispatchFinalize);
   } catch (err) {
     const message = formatError(err);
     console.error(`[chunk ${jobId} ${chunkIndex}] FAILED:`, message);
+    await failProcessingJobChunk(sc, jobId, chunkIndex, message).catch(() => undefined);
     await completeJob(sc, jobId, false, [{ message: `Chunk ${chunkIndex}/${totalChunks}: ${message}` }]);
   }
 }
@@ -140,19 +140,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  // Internal HMAC auth — token is bound to jobId so it can't be replayed.
   const token = request.headers.get(INTERNAL_CHUNK_TOKEN_HEADER);
   if (!verifyChunkToken(body.jobId, token)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  const { jobId, chunkIndex, totalChunks, merchantId, storagePath } = body;
+  const { jobId, chunkIndex, totalChunks, merchantId } = body;
   const log = (msg: string) =>
     console.log(`[chunk ${jobId} ${chunkIndex}/${totalChunks}] ${new Date().toISOString()} ${msg}`);
 
   const sc = createServiceClient();
 
-  // Verify the job exists and merchant matches (defence in depth).
   const { data: job } = await sc
     .from(TABLES.PROCESSING_JOBS)
     .select('merchant_id, status')

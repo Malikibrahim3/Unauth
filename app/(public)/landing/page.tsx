@@ -370,7 +370,7 @@ export default function LandingPage() {
               }}
             >
               <span>Inbox · identity-flagged cases</span>
-              <span>25 open · £5,192 at risk</span>
+              <span>25 open · $5,192 at risk</span>
             </div>
 
             <LandingScreenshotFrame
@@ -1220,7 +1220,7 @@ export default function LandingPage() {
           <Reveal delay={120}>
             <div className="grid grid-cols-2 gap-2 sm:hidden">
               {[
-                ['£8.8k', 'exposure at risk'],
+                ['$8.8k', 'exposure at risk'],
                 ['4', 'customers to review'],
                 ['292', 'transactions analysed'],
                 ['6', 'evidence packets ready'],

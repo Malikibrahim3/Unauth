@@ -4,8 +4,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { TABLES } from '@/lib/supabase/tables'
 import type { EvidencePackage } from './types'
-import { assessCE3Eligibility } from './ce3'
-import type { IdentitySignalResult } from '@/lib/engine/types'
+import { assessCE3Eligibility, extractCe3AcceptedHashes } from './ce3'
 import {
   fetchMerchantScopedCustomerProfile,
   fetchMerchantScopedCustomerTransactions,
@@ -13,6 +12,15 @@ import {
 } from '@/lib/supabase/merchantHelpers'
 
 const ENGINE_VERSION = '2.0'
+
+/** audit_transactions has no currency column; use row hint if present, else USD. */
+function resolveEvidencePackageCurrency(disputedTx: Record<string, unknown>): string {
+  const raw = disputedTx.currency
+  if (typeof raw === 'string' && /^[A-Za-z]{3}$/.test(raw.trim())) {
+    return raw.trim().toUpperCase()
+  }
+  return 'USD'
+}
 
 // =============================================================================
 // Masking helpers — no plaintext PII in exported documents
@@ -92,7 +100,7 @@ export async function buildEvidencePackage(
     merchantId,
     customerProfileId,
     profile,
-    { select: 'id,order_id,customer_email,customer_name,shipping_address,device_ip,card_last4,order_value,match_score,risk_level,identity_signals,refund_claimed,refund_reason,processed_at,job_id' }
+    { select: 'id,order_id,customer_email,customer_name,shipping_address,device_ip,card_last4,order_value,match_score,risk_level,signals_matched,ce3_signal_hashes,refund_claimed,refund_reason,processed_at,job_id' }
   )
 
   // -------------------------------------------------------------------------
@@ -175,30 +183,18 @@ export async function buildEvidencePackage(
   // 6. CE3.0 eligibility assessment
   // -------------------------------------------------------------------------
 
-  // Extract identity signals from the disputed transaction
-  const rawSignals: string[] = (disputedTx.identity_signals as string[]) ?? []
-
-  // Map signal name strings to IdentitySignalResult-compatible objects
-  const identitySignalsForCE3: IdentitySignalResult[] = rawSignals.map(name => ({
-    signal: name as any,
-    fired: true,
-    confidence: 50,
-    evidence: `Signal ${name} detected`,
-    dataPointsUsed: [],
-    dataPointsMissing: [],
-  }))
-
+  const disputedSignalHashes = extractCe3AcceptedHashes(disputedTx.ce3_signal_hashes)
   const orderHistoryForCE3 = allTxs.map(tx => ({
     order_id: tx.id as string,
     order_date: tx.processed_at as string,
     refund_status: tx.refund_claimed ? 'full' : 'none',
+    signalHashes: extractCe3AcceptedHashes(tx.ce3_signal_hashes),
   }))
-
   const ce3 = assessCE3Eligibility(
-    disputedOrderId,
+    disputedTx.id as string,
     disputedDate,
-    orderHistoryForCE3,
-    identitySignalsForCE3
+    disputedSignalHashes,
+    orderHistoryForCE3
   )
 
   // -------------------------------------------------------------------------
@@ -309,7 +305,7 @@ export async function buildEvidencePackage(
       orderId: ((disputedTx.order_id ?? disputedTx.id) as string),
       orderDate: disputedDate,
       orderValue: (disputedTx.order_value ?? 0) as number,
-      currency: 'GBP',
+      currency: resolveEvidencePackageCurrency(disputedTx),
       outcome: 'disputed',
     },
     customer,

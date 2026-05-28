@@ -7,6 +7,7 @@ import { logAction } from '@/lib/permissions/audit';
 import { streamParseCsv, MAX_ROWS } from '@/lib/processing/streamParser';
 import { updateJobTotalRows, completeJob } from '@/lib/processing/job';
 import { uploadChunkRows, dispatchChunk, originFromRequest } from '@/lib/processing/chunkedDispatch';
+import { registerProcessingJobChunks } from '@/lib/processing/chunkQueue';
 import { checkCsvUsageGuard } from '@/lib/processing/supabaseUsageGuard';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createRequestLogger, withRequestLogging } from '@/lib/log';
@@ -296,14 +297,16 @@ async function POSTHandler(request: NextRequest) {
       );
     }
 
-    await dispatchChunk(originFromRequest(request), {
+    const chunkPayload = {
       jobId: queueItem.job_id,
       chunkIndex: 0,
       totalChunks: parseResult.totalChunks,
       merchantId: queueItem.merchant_id,
       storagePath: queueItem.storage_path,
       columnMap,
-    });
+    };
+    await registerProcessingJobChunks(scopedClient, chunkPayload);
+    await dispatchChunk(originFromRequest(request), chunkPayload);
 
     return NextResponse.json({
       success: true,

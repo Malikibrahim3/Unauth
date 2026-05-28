@@ -52,6 +52,7 @@ export interface FraudTransactionInsert {
   recommended_action?: string | null;
   ce3_eligible?: boolean;
   ce3_qualifying_transactions?: string[];
+  ce3_signal_hashes?: Record<string, string>;
   cluster_id?: string | null;
   /** Two-tier identity model — derived from identity_score via product thresholds. */
   match_status?: 'none' | 'candidate' | 'probable' | 'definite';

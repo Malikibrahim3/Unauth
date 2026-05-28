@@ -98,6 +98,7 @@ export type Database = {
           card_last4: string | null
           ce3_eligible: boolean
           ce3_qualifying_transactions: Json
+          ce3_signal_hashes: Json
           changed_datapoints: Json
           chargeback_filed: boolean | null
           cluster_id: string | null
@@ -146,6 +147,7 @@ export type Database = {
           card_last4?: string | null
           ce3_eligible?: boolean
           ce3_qualifying_transactions?: Json
+          ce3_signal_hashes?: Json
           changed_datapoints?: Json
           chargeback_filed?: boolean | null
           cluster_id?: string | null
@@ -194,6 +196,7 @@ export type Database = {
           card_last4?: string | null
           ce3_eligible?: boolean
           ce3_qualifying_transactions?: Json
+          ce3_signal_hashes?: Json
           changed_datapoints?: Json
           chargeback_filed?: boolean | null
           cluster_id?: string | null

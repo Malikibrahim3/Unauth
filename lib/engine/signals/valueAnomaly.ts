@@ -1,4 +1,5 @@
 import type { NormalisedOrder, Signal, SignalResult, ScoringContext } from '../types';
+import { formatCurrency } from '@/lib/utils/format';
 
 export const valueAnomaly: Signal = (order: NormalisedOrder, context: ScoringContext): SignalResult => {
   const customerOrders = context.customerOrderHistory.get(order.emailHash) ?? [];
@@ -25,7 +26,7 @@ export const valueAnomaly: Signal = (order: NormalisedOrder, context: ScoringCon
       name: 'valueAnomaly',
       fired: false,
       score: 0,
-      reason: `Order value £${order.orderTotal.toFixed(2)} is within the customer's normal range.`,
+      reason: `Order value ${formatCurrency(order.orderTotal, order.currency)} is within the customer's normal range.`,
       evidence: { orderTotal: order.orderTotal, mean, stddev, threshold },
     };
   }
@@ -36,7 +37,7 @@ export const valueAnomaly: Signal = (order: NormalisedOrder, context: ScoringCon
     name: 'valueAnomaly',
     fired: true,
     score: 40,
-    reason: `Order value £${order.orderTotal.toFixed(2)} is ${zscore.toFixed(1)} standard deviations above this customer's average order value of £${mean.toFixed(2)}.`,
+    reason: `Order value ${formatCurrency(order.orderTotal, order.currency)} is ${zscore.toFixed(1)} standard deviations above this customer's average order value of ${formatCurrency(mean, order.currency)}.`,
     evidence: {
       orderTotal: order.orderTotal,
       mean,

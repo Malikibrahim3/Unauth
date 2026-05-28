@@ -25,8 +25,8 @@ GRANT ALL ON lookup_daily_counts TO service_role;
 
 -- ---------------------------------------------------------------------------
 -- 2. K-anonymity enforcement on search_customer_profiles
---    Profiles with fewer than 3 merchants are dropped unless the caller
---    contributed to that profile (i.e., they are one of the 1-2 merchants).
+--    Profiles with fewer than 3 merchants are never returned (unconditional >= 3).
+--    App layer also returns 404 for sub-threshold matches (defense in depth).
 --    SECURITY DEFINER so the API layer can enforce this before PII masking.
 -- ---------------------------------------------------------------------------
 DROP FUNCTION IF EXISTS search_customer_profiles(text,text,text,text,text);

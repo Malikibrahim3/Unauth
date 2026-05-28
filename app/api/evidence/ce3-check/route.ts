@@ -5,12 +5,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { requirePermission, PERMISSIONS } from '@/lib/permissions'
-import { assessCE3Eligibility } from '@/lib/evidence/ce3'
+import { assessCE3Eligibility, extractCe3AcceptedHashes } from '@/lib/evidence/ce3'
 import {
   fetchMerchantScopedCustomerProfile,
   fetchMerchantScopedCustomerTransactions,
 } from '@/lib/supabase/merchantHelpers'
-import type { IdentitySignalResult } from '@/lib/engine/types'
 
 export const dynamic = 'force-dynamic'
 
@@ -42,8 +41,8 @@ export async function GET(request: NextRequest) {
     ctx.merchantId,
     profileId,
     profile,
-    { select: 'id,processed_at,refund_claimed,identity_signals,job_id' }
-  ) as Array<{ id: string; processed_at: string; refund_claimed: boolean; identity_signals: string[] | null; job_id: string }>
+    { select: 'id,processed_at,refund_claimed,ce3_signal_hashes,job_id' }
+  ) as Array<{ id: string; processed_at: string; refund_claimed: boolean; ce3_signal_hashes: unknown; job_id: string }>
 
   if (txRows.length === 0) return NextResponse.json({ eligible: false, reason: 'No transactions found for this profile in merchant account' })
 
@@ -53,26 +52,19 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ eligible: false, reason: 'Disputed order not found in merchant account' })
   }
 
-  const orderHistory = txRows.map(tx => ({
+  const disputedSignalHashes = extractCe3AcceptedHashes(disputedTx.ce3_signal_hashes)
+  const orderHistoryForCE3 = txRows.map(tx => ({
     order_id: tx.id,
     order_date: tx.processed_at,
     refund_status: tx.refund_claimed ? 'full' : 'none',
-  }))
-
-  const signals: IdentitySignalResult[] = ((disputedTx.identity_signals ?? []) as string[]).map(name => ({
-    signal: name as any,
-    fired: true,
-    confidence: 50,
-    evidence: '',
-    dataPointsUsed: [],
-    dataPointsMissing: [],
+    signalHashes: extractCe3AcceptedHashes(tx.ce3_signal_hashes),
   }))
 
   const result = assessCE3Eligibility(
-    orderId,
+    disputedTx.id,
     new Date(disputedTx.processed_at),
-    orderHistory,
-    signals
+    disputedSignalHashes,
+    orderHistoryForCE3
   )
 
   return NextResponse.json({ eligible: result.eligible, reason: result.reason })

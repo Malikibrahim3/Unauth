@@ -36,6 +36,7 @@ import {
 } from '../identity/normalise';
 import { RISK_TIER_THRESHOLDS } from '../engine/weights';
 import { dbSlot, withRetry } from '../engine/dbSemaphore';
+import { withProfileHashArrays } from '@/lib/identity/profileHashes';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -355,7 +356,7 @@ export async function createCustomerProfile(
 
   const { data, error } = await (serviceClient as any)
     .from(TABLES.CUSTOMER_PROFILES)
-    .insert({
+    .insert(withProfileHashArrays({
       primary_email: normEmail || null,
       emails: normEmail ? [normEmail] : [],
       ips: normIP ? [normIP] : [],
@@ -375,7 +376,7 @@ export async function createCustomerProfile(
       merchant_ids: merchantId ? [merchantId] : [],
       last_audit_id: auditId,
       profile_confidence: 100,
-    } as any)
+    }) as any)
     .select('*')
     .single();
 
@@ -757,31 +758,34 @@ export async function processProfilesForBatch(
   // -------------------------------------------------------------------------
   // 3. Build bulk upsert payload for existing profiles
   // -------------------------------------------------------------------------
-  const profileUpserts = Array.from(profileAccumulators.values()).map(({ profile: p }) => ({
-    id:                        p.id,
-    emails:                    p.emails,
-    ips:                       p.ips,
-    addresses:                 p.addresses,
-    card_last4s:               p.card_last4s,
-    names:                     p.names,
-    merchant_ids:              p.merchant_ids,
-    fraud_flags:               p.fraud_flags,
-    risk_score:                p.risk_score,
-    risk_level:                p.risk_level,
-    total_orders:              p.total_orders,
-    total_refund_claims:       p.total_refund_claims,
-    total_chargebacks:         p.total_chargebacks,
-    total_merchants_seen_at:   p.merchant_ids.length,
-    refund_rate:               p.refund_rate,
-    refund_timestamps:         p.refund_timestamps,
-    last_seen:                 p.last_seen,
-    last_audit_id:             p.last_audit_id,
-    profile_confidence:        p.profile_confidence,
-    identity_confidence_grade: p.identity_confidence_grade ?? null,
-    identity_signals_summary:  p.identity_signals_summary ?? [],
-    identity_cluster_id:       p.identity_cluster_id ?? null,
-    identity_status:           p.identity_status ?? null,
-  }));
+  const profileUpserts = Array.from(profileAccumulators.values()).map(({ profile: p }) =>
+    withProfileHashArrays({
+      id:                        p.id,
+      emails:                    p.emails,
+      ips:                       p.ips,
+      addresses:                 p.addresses,
+      card_last4s:               p.card_last4s,
+      phones:                    p.phones,
+      names:                     p.names,
+      merchant_ids:              p.merchant_ids,
+      fraud_flags:               p.fraud_flags,
+      risk_score:                p.risk_score,
+      risk_level:                p.risk_level,
+      total_orders:              p.total_orders,
+      total_refund_claims:       p.total_refund_claims,
+      total_chargebacks:         p.total_chargebacks,
+      total_merchants_seen_at:   p.merchant_ids.length,
+      refund_rate:               p.refund_rate,
+      refund_timestamps:         p.refund_timestamps,
+      last_seen:                 p.last_seen,
+      last_audit_id:             p.last_audit_id,
+      profile_confidence:        p.profile_confidence,
+      identity_confidence_grade: p.identity_confidence_grade ?? null,
+      identity_signals_summary:  p.identity_signals_summary ?? [],
+      identity_cluster_id:       p.identity_cluster_id ?? null,
+      identity_status:           p.identity_status ?? null,
+    })
+  );
 
   // -------------------------------------------------------------------------
   // 4. Build bulk insert payload for new profiles (one row per group)
@@ -836,7 +840,7 @@ export async function processProfilesForBatch(
       // IP-only or fully anonymous new orders start at 25 (skeleton profile)
       25;
 
-    return {
+    return withProfileHashArrays({
       primary_email:           [...emails][0] ?? null,
       emails:                  [...emails],
       ips:                     [...ips],
@@ -862,7 +866,7 @@ export async function processProfilesForBatch(
       identity_status:           identityStatus,
       first_seen:              now,
       last_seen:               now,
-    };
+    });
   });
 
   // -------------------------------------------------------------------------

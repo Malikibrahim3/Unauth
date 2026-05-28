@@ -100,8 +100,9 @@ function fmt(d: Date): string {
   return new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(d)
 }
 
-function fmtCurrency(amount: number, currency = 'GBP'): string {
-  return new Intl.NumberFormat('en-GB', { style: 'currency', currency }).format(amount)
+function fmtCurrency(amount: number, currency = 'USD'): string {
+  const locale = currency.toUpperCase() === 'GBP' ? 'en-GB' : 'en-US'
+  return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(amount)
 }
 
 // =============================================================================

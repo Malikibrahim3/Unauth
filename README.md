@@ -1,10 +1,10 @@
-# ParcelClaim
+# Unauth
 
-CSV-based refund fraud audit tool for ecommerce merchants.
+Cross-merchant refund and friendly-fraud intelligence network for ecommerce merchants, with Visa Compelling Evidence 3.0 (CE3.0) dispute packages as a flagship output.
 
 ## What it does
 
-Ingests a merchant's historical order data via CSV, runs it through a deterministic fraud scoring engine, and produces a dashboard showing which transactions and customers exhibit refund abuse, INR (item not received) abuse, and friendly fraud patterns.
+Ingests merchant order data (CSV upload and integrations), runs a deterministic fraud scoring engine, and surfaces refund-abuse, INR (item not received), and friendly-fraud patterns. Merchants can generate CE3.0-oriented evidence packages for card-not-present disputes.
 
 ## Running locally
 
@@ -37,7 +37,7 @@ For a full Local + GitHub + Vercel setup checklist, see [ENV_SETUP.md](/Users/ma
 
 ### 3. Apply database migrations
 
-Run the SQL in `supabase/migrations/0001_initial.sql` against your Supabase project via the SQL editor or `supabase db push`.
+Run the SQL in `supabase/migrations/` against your Supabase project via the SQL editor or `supabase db push`.
 
 ### 4. Start the dev server
 
@@ -91,29 +91,32 @@ Phase 0.1 calibration decision: `lib/engine/weights.ts` is the source of truth f
 
 ## Risk tiers
 
-- Scores below `FLAG_THRESHOLD` (default 45) are not flagged for the review queue.
+- Scores below `FLAG_THRESHOLD` (default **44**) are not flagged for the review queue.
 - **Low** (0–24): Not flagged
 - **Medium** (25–49): Review tier
 - **High** (50–74): Flagged for review
 - **Critical** (75–100): Flagged, recommended action
 
+## Evaluation accuracy
+
+Committed threshold tuning (`threshold-recommendations.json`, synthetic `test-data/realistic_fraud_dataset.csv`) reports approximately **P=1.0 / R=0.62 / F1=0.76** at threshold 44–45. Headline metrics quoted elsewhere (e.g. P=0.985) are **not reproducible from this repo** and reflect author-generated synthetic labels where fraud patterns mirror engine signal names (`scripts/generate-test-data.mjs`). Treat all published accuracy figures as **in-sample on synthetic data; not validated against real merchant fraud** until an independent labelled holdout exists.
+
 ## Privacy & data flow
 
 ### Raw PII
-- **Within a merchant's own scope**: `fraud_transactions` stores raw `customer_email`, `customer_name`, `shipping_address`, and `billing_address`. These are scoped by `job_id` → `processing_jobs.merchant_id` via RLS. Only the merchant who uploaded the CSV can read their own rows.
-- **Cross-merchant graph**: Email, address, phone, and card identifiers are normalised then HMAC-SHA256 hashed (with `IDENTITY_SALT`) before entering `customer_profiles`, `fraud_entities`, and co-occurrence tables. Raw values never cross the merchant boundary.
+- **Within a merchant's own scope**: `audit_transactions` and upload pipelines store merchant-scoped order fields (email, name, address, etc.) protected by RLS via `processing_jobs.merchant_id`.
+- **Cross-merchant graph**: `customer_profiles` stores **normalised plaintext** identifiers in JSONB arrays (`emails`, `phones`, `addresses`, etc.) for matching, gated by k-anonymity and RLS. The separate `fraud_entities` table stores **normalised** identifier values (same normalisation as the scoring worker) for historical entity statistics — not raw cross-merchant PII export.
 
 ### K-anonymity
-- Cross-merchant signals and live lookup results only surface when a customer profile has been seen at **≥3 merchants**. Profiles with 1–2 merchants return nothing in lookup and do not trigger cross-merchant scoring.
-- Every live lookup is counted in `lookup_daily_counts` (100/day/merchant cap) and logged.
+- Cross-merchant signals and live lookup results only surface when a customer profile has been seen at **≥3 merchants** (`search_customer_profiles` SQL filter plus app-layer 404 for sub-threshold matches).
+- Every live lookup is counted in `lookup_daily_counts` (daily cap per merchant) and logged.
 
 ### GDPR / right to deletion
 1. A merchant requests deletion for a specific email address.
-2. Compute `email_hash = HMAC(email, IDENTITY_SALT)`.
-3. Find matching `customer_profiles` via `emails @> '["hash"]'`.
-4. Delete or redact `fraud_transactions` rows where `customer_email` matches.
-5. Delete the profile from `customer_profiles` (cascades to `customer_profile_audit_appearances`).
-6. Log the deletion event in a manual audit trail (TODO: automate via support ticket).
+2. Normalise the email (`normaliseEmail`) and locate matching `customer_profiles`.
+3. Delete or redact merchant-scoped transaction rows for that customer.
+4. Delete the profile from `customer_profiles` (cascades to `customer_profile_audit_appearances` where configured).
+5. Log the deletion event in a manual audit trail (TODO: automate via support ticket).
 
 ## Milestone status
 

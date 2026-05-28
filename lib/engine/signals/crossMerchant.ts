@@ -7,7 +7,7 @@
  *
  * Privacy invariants:
  *   - reasoning strings NEVER contain merchant names, only counts
- *   - queried values are normalised hashes, never plaintext PII
+ *   - match keys are HMAC hashes stored on customer_profiles (email_hashes, etc.)
  *   - only profiles with merchant_count >= 3 are eligible (k-anon gate)
  *   - the requesting merchant's own history is excluded from the aggregate
  */
@@ -16,14 +16,14 @@ import type { SignalResult } from '../types';
 import type { CrossMerchantProfile, PendingAuditLog } from '../fastContext';
 
 export interface CrossMerchantInput {
-  /** Normalised email value (from normaliseEmail). May be null. */
-  normEmail: string | null;
-  /** Normalised IP value (from normaliseIP). May be null. */
-  normIP: string | null;
-  /** Normalised address value (from normaliseAddress). May be null. */
-  normAddress: string | null;
-  /** Normalised card last4 value (from normaliseCard). May be null. */
-  normCard: string | null;
+  /** HMAC hash of normalised email (order.emailHash). */
+  emailHash: string | null;
+  /** HMAC hash of normalised IP (order.ipHash). */
+  ipHash: string | null;
+  /** HMAC hash of normalised address (order.addressHash). */
+  addressHash: string | null;
+  /** HMAC hash of card last4 (order.cardLast4). */
+  cardHash: string | null;
   /** The requesting merchant's UUID. Used to exclude self-matches. */
   requestingMerchantId: string;
   /**
@@ -39,30 +39,55 @@ export interface CrossMerchantInput {
   pendingAuditLogs: PendingAuditLog[];
 }
 
+function hashArrayIncludes(arr: unknown, value: string): boolean {
+  return Array.isArray(arr) && (arr as string[]).includes(value);
+}
+
+function profileMatchesHash(
+  profile: CrossMerchantProfile,
+  field: 'email' | 'ip' | 'address' | 'card',
+  hash: string
+): boolean {
+  switch (field) {
+    case 'email':
+      return hashArrayIncludes(profile.email_hashes, hash);
+    case 'ip':
+      return hashArrayIncludes(profile.ip_hashes, hash);
+    case 'address':
+      return hashArrayIncludes(profile.address_hashes, hash);
+    case 'card':
+      return hashArrayIncludes(profile.card_hashes, hash);
+    default:
+      return false;
+  }
+}
+
 /**
  * Pure, testable implementation of the cross-merchant signal.
  * All DB I/O has been moved to buildFastContext; this function is synchronous.
  */
 export function computeCrossMerchantSignal(input: CrossMerchantInput): SignalResult {
   const {
-    normEmail, normIP, normAddress, normCard,
-    requestingMerchantId, profiles, pendingAuditLogs,
+    emailHash,
+    ipHash,
+    addressHash,
+    cardHash,
+    requestingMerchantId,
+    profiles,
+    pendingAuditLogs,
   } = input;
 
-  const queriedHashes = [normEmail, normIP, normAddress, normCard].filter((v): v is string => Boolean(v));
+  const queriedHashes = [emailHash, ipHash, addressHash, cardHash].filter((v): v is string => Boolean(v));
 
-  // Find profiles that match any identifier AND exclude the requesting merchant
   const matchingProfiles = profiles.filter((profile) => {
-    // Exclude profiles where the requesting merchant is already listed —
-    // this would be a self-match, not cross-merchant intelligence.
     if ((profile.merchant_ids as string[]).includes(requestingMerchantId)) {
       return false;
     }
     return (
-      (normEmail   && (profile.emails      as string[]).includes(normEmail))   ||
-      (normAddress && (profile.addresses   as string[]).includes(normAddress)) ||
-      (normCard    && (profile.card_last4s as string[]).includes(normCard))    ||
-      (normIP      && (profile.ips         as string[]).includes(normIP))
+      (emailHash && profileMatchesHash(profile, 'email', emailHash)) ||
+      (addressHash && profileMatchesHash(profile, 'address', addressHash)) ||
+      (cardHash && profileMatchesHash(profile, 'card', cardHash)) ||
+      (ipHash && profileMatchesHash(profile, 'ip', ipHash))
     );
   });
 
@@ -71,7 +96,6 @@ export function computeCrossMerchantSignal(input: CrossMerchantInput): SignalRes
     ? matchingProfiles.reduce((max, p) => Math.max(max, p.total_merchants_seen_at), 0)
     : 0;
 
-  // Always record an audit log entry — whether fired or not
   pendingAuditLogs.push({
     requesting_merchant_id: requestingMerchantId,
     queried_hashes: queriedHashes,
@@ -90,25 +114,23 @@ export function computeCrossMerchantSignal(input: CrossMerchantInput): SignalRes
     };
   }
 
-  // Aggregate across matched profiles (only other merchants' contributions)
   let networkOrders = 0;
   let networkRefundClaims = 0;
   const merchantSet = new Set<string>();
   const usedTypes: string[] = [];
 
   for (const profile of matchingProfiles) {
-    networkOrders       += profile.total_orders;
+    networkOrders += profile.total_orders;
     networkRefundClaims += profile.total_refund_claims;
 
     for (const mid of profile.merchant_ids as string[]) {
       if (mid !== requestingMerchantId) merchantSet.add(mid);
     }
 
-    // Track which identifier types contributed to the match (for §5.1 cap)
-    if (normEmail   && (profile.emails      as string[]).includes(normEmail))   usedTypes.push('email');
-    if (normAddress && (profile.addresses   as string[]).includes(normAddress)) usedTypes.push('address');
-    if (normCard    && (profile.card_last4s as string[]).includes(normCard))    usedTypes.push('payment');
-    if (normIP      && (profile.ips         as string[]).includes(normIP))      usedTypes.push('ip');
+    if (emailHash && profileMatchesHash(profile, 'email', emailHash)) usedTypes.push('email');
+    if (addressHash && profileMatchesHash(profile, 'address', addressHash)) usedTypes.push('address');
+    if (cardHash && profileMatchesHash(profile, 'card', cardHash)) usedTypes.push('payment');
+    if (ipHash && profileMatchesHash(profile, 'ip', ipHash)) usedTypes.push('ip');
   }
 
   const networkMerchantCount = merchantSet.size;
@@ -117,7 +139,6 @@ export function computeCrossMerchantSignal(input: CrossMerchantInput): SignalRes
   let score = 30 + Math.round(inrRate * 40);
   score = Math.min(score, 70);
 
-  // Privacy invariant: reasoning contains only COUNTS, never merchant names
   const reason = `This identity has been observed at ${networkMerchantCount} other merchant${networkMerchantCount !== 1 ? 's' : ''} in the Unauth network with ${Math.round(inrRate * 100)}% 'item not received' claim rate.`;
 
   return {

@@ -35,6 +35,7 @@ import { linkIdentities, type LinkedCluster, type LinkerOrderInput } from '../li
 import { scoreAllClusters, scoreIdentityFromSignals, type ScoredCluster, type ScorerOrder } from '../scorer';
 import { assessDataQuality, type DataQualityReport, type PipelineWarningCounters } from '../csv/dataQuality';
 import type { NormalisedOrder, ScoredOrder } from '../engine/types';
+import { buildCe3SignalHashes } from '../identity/ce3SignalHashes';
 import { normaliseRow } from '../csv/normalise';
 import { cleanRow } from '../csv/clean';
 import type { CsvRow } from '../csv/schema';
@@ -444,7 +445,16 @@ export function isRefundClaimedForPersistence(row: Pick<CsvRow, 'refund_status' 
 
 function rowToFraudTransaction(
   row: CsvRow,
-  scored: { totalScore: number; riskTier: 'low' | 'medium' | 'high' | 'critical'; flagged: boolean; signals: { name: string; fired: boolean }[] },
+  scored: {
+    totalScore: number;
+    riskTier: 'low' | 'medium' | 'high' | 'critical';
+    flagged: boolean;
+    signals: { name: string; fired: boolean }[];
+    order: Pick<
+      NormalisedOrder,
+      'emailHash' | 'addressHash' | 'phoneHash' | 'ipHash' | 'deviceIdHash' | 'accountIdHash'
+    >;
+  },
   identity: PersistedIdentityResult | undefined,
   jobId: string
 ): FraudTransactionInsert {
@@ -494,6 +504,7 @@ function rowToFraudTransaction(
     // ── Context fields (merchant decision support only) ────────────────────
     context_flags: identity?.contextFlags ?? [],
     context_summary: identity?.contextSummary ?? null,
+    ce3_signal_hashes: buildCe3SignalHashes(scored.order),
   };
 }
 

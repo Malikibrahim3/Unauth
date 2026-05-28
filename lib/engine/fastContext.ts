@@ -13,7 +13,6 @@
 import type { NormalisedOrder } from './types';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { TABLES } from '../supabase/tables';
-import { normaliseEmail, normaliseIP, normaliseAddress, normaliseCard } from '../identity/normalise';
 import { withReadRetry } from './dbSemaphore';
 import { env } from '../utils/env';
 
@@ -69,6 +68,10 @@ export interface CrossMerchantProfile {
   addresses: string[];
   card_last4s: string[];
   phones: string[];
+  email_hashes?: string[];
+  ip_hashes?: string[];
+  address_hashes?: string[];
+  card_hashes?: string[];
   total_orders: number;
   total_refund_claims: number;
   total_merchants_seen_at: number;
@@ -151,10 +154,14 @@ async function fetchCrossMerchantProfiles(
   }
 
   const rpc = await supabase.rpc('search_cross_merchant_profiles' as any, {
-    p_emails: emails,
-    p_ips: ips,
-    p_addresses: addresses,
-    p_cards: cards,
+    p_emails: [],
+    p_ips: [],
+    p_addresses: [],
+    p_cards: [],
+    p_email_hashes: emails,
+    p_ip_hashes: ips,
+    p_address_hashes: addresses,
+    p_card_hashes: cards,
     p_min_merchants: 3,
     p_limit: 10000,
   });
@@ -324,21 +331,13 @@ export async function buildFastContext(
   // write-side in worker.ts uses the same functions so the read/write
   // contract is symmetric.
   // -----------------------------------------------------------------------
-  const allEmails = Array.from(new Set(
-    orders.map((o) => normaliseEmail((o as NormalisedOrder & { _rawEmail?: string })._rawEmail))
-          .filter((value): value is string => Boolean(value))
-  ));
-  const allIPs = Array.from(new Set(
-    orders.map((o) => normaliseIP((o as NormalisedOrder & { _rawIP?: string | null })._rawIP))
-          .filter((value): value is string => Boolean(value))
-  ));
+  const allEmails = Array.from(new Set(orders.map((o) => o.emailHash).filter(Boolean)));
+  const allIPs = Array.from(new Set(orders.map((o) => o.ipHash).filter((v): v is string => Boolean(v))));
   const allAddresses = Array.from(new Set(
-    orders.map((o) => normaliseAddress((o as NormalisedOrder & { _rawAddress?: string | null })._rawAddress))
-          .filter((value): value is string => Boolean(value))
+    orders.map((o) => o.addressHash).filter((v): v is string => Boolean(v))
   ));
   const allCards = Array.from(new Set(
-    orders.map((o) => normaliseCard((o as NormalisedOrder & { _rawCardLast4?: string | null })._rawCardLast4))
-          .filter((value): value is string => Boolean(value))
+    orders.map((o) => o.cardLast4).filter((v): v is string => Boolean(v))
   ));
 
   // -----------------------------------------------------------------------

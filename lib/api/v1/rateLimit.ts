@@ -24,3 +24,27 @@ export async function incrementAndCheckDailyLookupLimit(
   }
   return { allowed: true, count };
 }
+
+/** Atomic per-minute cap for a single API key (shared across serverless instances). */
+export async function incrementAndCheckApiKeyMinuteLimit(
+  service: SupabaseClient,
+  keyId: string,
+  limitPerMinute: number
+): Promise<{ allowed: true; count: number } | { allowed: false; count: number }> {
+  const windowMinute = Math.floor(Date.now() / 60000);
+
+  const { data: newCount, error } = await service.rpc(
+    'increment_api_key_minute_count' as never,
+    { p_key_id: keyId, p_window_minute: windowMinute }
+  );
+
+  if (error) {
+    throw new Error(`API key minute rate limit check failed: ${error.message}`);
+  }
+
+  const count = newCount as number;
+  if (count > limitPerMinute) {
+    return { allowed: false, count };
+  }
+  return { allowed: true, count };
+}

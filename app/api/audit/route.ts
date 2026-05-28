@@ -24,6 +24,7 @@ import { streamParseCsv, MAX_ROWS } from '@/lib/processing/streamParser';
 import { createJob, updateJobTotalRows, completeJob } from '@/lib/processing/job';
 import { createRequestLogger, withRequestLogging } from '@/lib/log';
 import { dispatchChunk, originFromRequest, uploadChunkRows } from '@/lib/processing/chunkedDispatch';
+import { registerProcessingJobChunks } from '@/lib/processing/chunkQueue';
 import { checkCsvUsageGuard } from '@/lib/processing/supabaseUsageGuard';
 import { sniffCsvMagicBytes } from '@/lib/csv/sniffMagicBytes';
 import { enforceRateLimit, limitFromEnv, rateLimitKey } from '@/lib/ratelimit';
@@ -276,14 +277,16 @@ async function runAudit(
 
   if (totalChunks > 0) {
     try {
-      await dispatchChunk(originFromRequest(request), {
+      const chunkPayload = {
         jobId,
         chunkIndex: 0,
         totalChunks,
         merchantId,
         columnMap,
         storagePath: filePath,
-      });
+      };
+      await registerProcessingJobChunks(scopedClient, chunkPayload);
+      await dispatchChunk(originFromRequest(request), chunkPayload);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       log(`Dispatch failed: ${message}`);

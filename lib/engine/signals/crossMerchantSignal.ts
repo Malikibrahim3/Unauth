@@ -1,13 +1,6 @@
 import type { Signal, SignalResult, NormalisedOrder, ScoringContext } from '../types';
 import { computeCrossMerchantSignal } from './crossMerchant';
 
-interface WithRaw {
-  _rawEmail?: string;
-  _rawIP?: string | null;
-  _rawAddress?: string | null;
-  _rawCardLast4?: string | null;
-}
-
 export const crossMerchant: Signal = (
   order: NormalisedOrder,
   context: ScoringContext,
@@ -24,13 +17,11 @@ export const crossMerchant: Signal = (
       identifierTypesUsed: [],
     };
   }
-  const o = order as NormalisedOrder & WithRaw;
-  const normEmail = o._rawEmail ? o._rawEmail.toLowerCase().trim() : null;
   const result = computeCrossMerchantSignal({
-    normEmail,
-    normIP: o._rawIP ?? null,
-    normAddress: o._rawAddress ?? null,
-    normCard: o._rawCardLast4 ?? null,
+    emailHash: order.emailHash,
+    ipHash: order.ipHash ?? null,
+    addressHash: order.addressHash ?? null,
+    cardHash: order.cardLast4 ?? null,
     requestingMerchantId,
     profiles,
     pendingAuditLogs: context.pendingAuditLogs ?? [],

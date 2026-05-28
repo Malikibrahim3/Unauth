@@ -11,6 +11,7 @@ import { TABLES, STORAGE_BUCKETS } from '../lib/supabase/tables';
 import { streamParseCsv } from '../lib/processing/streamParser';
 import { createJob, updateJobTotalRows } from '../lib/processing/job';
 import { uploadChunkRows, dispatchChunk } from '../lib/processing/chunkedDispatch';
+import { registerProcessingJobChunks } from '../lib/processing/chunkQueue';
 
 function loadEnvLocal() {
   const file = path.join(process.cwd(), '.env.local');
@@ -185,14 +186,16 @@ async function main() {
 
   }
 
-  await dispatchChunk(appOrigin, {
+  const chunkPayload = {
     jobId,
     chunkIndex: startChunkIndex,
     totalChunks,
     merchantId,
     storagePath,
     columnMap: null,
-  });
+  };
+  await registerProcessingJobChunks(sc as any, chunkPayload);
+  await dispatchChunk(appOrigin, chunkPayload);
   console.log(`Dispatched job ${jobId} from chunk ${startChunkIndex}/${Math.max(totalChunks - 1, 0)}`);
 
   const started = Date.now();

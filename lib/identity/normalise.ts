@@ -105,3 +105,14 @@ export const normaliseCard = (card: string | null | undefined): string => {
   if (!card) return '';
   return card.trim().replace(/\D/g, '').slice(-4);
 };
+
+/**
+ * Phone: strip non-digits; use the last 10 digits as the canonical local number.
+ * Stable across +44/07, +1, and formatting variants — used for hashing and entity matching.
+ */
+export function normalisePhone(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  const digits = raw.replace(/\D/g, '');
+  if (digits.length < 7) return null;
+  return digits.slice(-10);
+}

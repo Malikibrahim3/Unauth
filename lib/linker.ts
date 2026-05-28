@@ -37,9 +37,13 @@
 import { createHash } from 'node:crypto';
 import {
   normaliseEmail,
+  normalisePhone,
   normaliseAddress as normaliseAddressFull,
   normaliseAddressTokens,
 } from '@/lib/identity/normalise';
+
+export { normaliseEmail, normalisePhone };
+export { normaliseAddressTokens as normaliseAddress };
 
 // ---------------------------------------------------------------------------
 // Input shape — intentionally loose so we can ingest from both the CSV
@@ -114,40 +118,7 @@ export interface LinkerResult {
 // normaliseEmail and normaliseAddress* are imported from @/lib/identity/normalise
 // (single source of truth). Re-exported below for backwards compat.
 
-/**
- * Phone: strip non-digits, handle UK +44/0 prefix, return a canonical
- * digit string. Not a strict E.164 reconstruction — we only need values
- * normalised the same way on both sides of a comparison.
- *
- * UK-specific rules:
- *   +44 7xxxxxxxxx → 447xxxxxxxxx        (no leading 0 after +44)
- *   07xxxxxxxxx    → 447xxxxxxxxx        (domestic 0 → international 44)
- *   44 7xxxxxxxxx  → 447xxxxxxxxx
- *
- * Everything else: return the digit string unchanged (US, AU, other
- * international numbers already pass-through consistently).
- */
-export function normalisePhone(raw: string | null | undefined): string | null {
-  if (!raw) return null;
-  const digits = raw.replace(/\D/g, '');
-  if (digits.length < 7) return null;
-  // UK special-cases
-  if (digits.startsWith('44') && digits.length === 12) {
-    return digits; // already 44 + 10 digits
-  }
-  if (digits.startsWith('0044') && digits.length === 14) {
-    return digits.slice(2); // strip 00 international-access prefix
-  }
-  if (digits.startsWith('0') && digits.length === 11) {
-    return `44${digits.slice(1)}`; // 07xxx… → 447xxx…
-  }
-  return digits;
-}
-
-// normaliseAddress (token array version) is now normaliseAddressTokens from normalise.ts.
-// Re-exported as normaliseAddress for backwards compatibility.
-export { normaliseEmail } from '@/lib/identity/normalise';
-export { normaliseAddressTokens as normaliseAddress } from '@/lib/identity/normalise';
+/** Phone normalisation lives in @/lib/identity/normalise (last-10-digit canonical form). */
 
 /**
  * Postcode: uppercase, remove all whitespace.

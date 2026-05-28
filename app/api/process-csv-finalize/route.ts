@@ -12,6 +12,7 @@ import { verifyChunkToken, INTERNAL_CHUNK_TOKEN_HEADER } from '@/lib/processing/
 import { countReviewWorthyTransactions, paginateAll, refreshAuditCustomerSummaries } from '@/lib/supabase/merchantHelpers';
 import { restitchAuditIdentityFromChunks } from '@/lib/processing/restitchAuditIdentity';
 import { checkCsvUsageGuard } from '@/lib/processing/supabaseUsageGuard';
+import { tryClaimJobFinalize } from '@/lib/processing/chunkQueue';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { summarizeAuditResults } from '@/lib/audit/resultsSummary';
 import { sendEmail } from '@/lib/email/send';
@@ -340,6 +341,12 @@ export async function POST(request: NextRequest) {
   const rowsDone = (job.processed_rows ?? 0) + (job.failed_rows ?? 0);
   if ((job.total_rows ?? 0) > 0 && rowsDone < job.total_rows) {
     return NextResponse.json({ error: 'Job rows are not fully processed yet' }, { status: 409 });
+  }
+
+  const claimed = await tryClaimJobFinalize(sc, jobId);
+  if (!claimed) {
+    log('Finalize already claimed or chunks incomplete — skipping');
+    return NextResponse.json({ skipped: true, reason: 'finalize_not_ready' });
   }
 
   void finalizeJob(jobId, totalChunks, merchantId, storagePath, job.total_rows ?? 0).catch((err) => {

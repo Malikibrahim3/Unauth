@@ -8,8 +8,9 @@
 
 import { computeCrossMerchantSignal } from '../../lib/engine/signals/crossMerchant';
 import type { CrossMerchantProfile, PendingAuditLog } from '../../lib/engine/fastContext';
+import { hashIdentifier } from '../../lib/identity/hash';
+import { normaliseEmail, normaliseIP } from '../../lib/identity/normalise';
 
-// 50 fake merchant names that must NEVER appear in any reasoning string
 const FAKE_MERCHANT_NAMES = [
   'Gymshark', 'ASOS', 'Nike', 'Adidas', 'PrettyLittleThing',
   'Boohoo', 'Zara', 'Uniqlo', 'H&M', 'Primark',
@@ -25,89 +26,82 @@ const FAKE_MERCHANT_NAMES = [
   'Iota Traders', 'Kappa Deals',
 ];
 
-// Ensure exactly 50 names
 if (FAKE_MERCHANT_NAMES.length !== 50) {
   throw new Error(`Expected 50 fake merchant names, got ${FAKE_MERCHANT_NAMES.length}`);
 }
 
 const REQUESTING_MERCHANT_ID = 'aaaaaaaa-0000-0000-0000-000000000001';
 
-/** Build a fake CrossMerchantProfile that "knows about" the given merchant names */
-function buildProfileWithMerchantNames(
-  merchantNames: string[],
+function emailHash(email: string): string {
+  const norm = normaliseEmail(email);
+  if (!norm) throw new Error(`invalid email: ${email}`);
+  return hashIdentifier(norm);
+}
+
+function buildProfile(
   normEmail: string,
   merchantIds: string[]
 ): CrossMerchantProfile {
+  const h = hashIdentifier(normEmail);
   return {
     id: 'profile-test-1',
     emails: [normEmail],
+    email_hashes: [h],
     ips: [],
+    ip_hashes: [],
     addresses: [],
+    address_hashes: [],
     card_last4s: [],
+    card_hashes: [],
     phones: [],
     total_orders: 10,
     total_refund_claims: 7,
     total_merchants_seen_at: merchantIds.length,
-    // Intentionally embed merchant names in merchant_ids to simulate a
-    // DB row that has merchant UUIDs — the signal must never expose these
     merchant_ids: merchantIds,
   };
 }
 
 describe('crossMerchant signal privacy', () => {
   it('never leaks merchant names into reasoning strings', () => {
-    // Build fake merchant IDs (UUIDs) — the names are separate; the signal
-    // should only ever see counts, never names
     const fakeMerchantIds = FAKE_MERCHANT_NAMES.map((_, i) =>
       `merchant-uuid-${String(i).padStart(4, '0')}-0000-0000-0000-000000000000`
     );
 
-    const profile = buildProfileWithMerchantNames(
-      FAKE_MERCHANT_NAMES,
-      'test@example.com',
-      fakeMerchantIds
-    );
-
+    const profile = buildProfile('test@example.com', fakeMerchantIds);
     const pendingAuditLogs: PendingAuditLog[] = [];
 
     const result = computeCrossMerchantSignal({
-      normEmail: 'test@example.com',
-      normIP: null,
-      normAddress: null,
-      normCard: null,
+      emailHash: emailHash('test@example.com'),
+      ipHash: null,
+      addressHash: null,
+      cardHash: null,
       requestingMerchantId: REQUESTING_MERCHANT_ID,
       profiles: [profile],
       pendingAuditLogs,
     });
 
-    // Assert: no merchant name appears in any output string
     for (const name of FAKE_MERCHANT_NAMES) {
       expect(result.reason).not.toContain(name);
       expect(result.reason.toLowerCase()).not.toContain(name.toLowerCase());
-
-      // Also check evidence values (stringified)
       const evidenceStr = JSON.stringify(result.evidence);
       expect(evidenceStr).not.toContain(name);
       expect(evidenceStr.toLowerCase()).not.toContain(name.toLowerCase());
     }
 
-    // Signal should have fired (email matched, 50 merchant IDs → 49 other merchants)
     expect(result.fired).toBe(true);
-    // Reasoning must contain a COUNT, not names
     expect(result.reason).toMatch(/\d+ other merchant/);
   });
 
   it('never leaks merchant names when signal does not fire', () => {
     const pendingAuditLogs: PendingAuditLog[] = [];
 
-    // No matching profiles — signal should not fire
     const result = computeCrossMerchantSignal({
-      normEmail: 'nobody@example.com',
-      normIP: null,
-      normAddress: null,
-      normCard: null,
+      emailHash: emailHash('nobody@example.com'),
+      ipHash: null,
+      addressHash: null,
+      cardHash: null,
       requestingMerchantId: REQUESTING_MERCHANT_ID,
-      profiles: [], // empty
+      profiles: [],
       pendingAuditLogs,
     });
 
@@ -125,19 +119,15 @@ describe('crossMerchant signal privacy', () => {
       `merchant-uuid-${String(i).padStart(4, '0')}-0000-0000-0000-000000000000`
     );
 
-    const profile = buildProfileWithMerchantNames(
-      FAKE_MERCHANT_NAMES,
-      'audited@example.com',
-      fakeMerchantIds
-    );
-
+    const profile = buildProfile('audited@example.com', fakeMerchantIds);
     const pendingAuditLogs: PendingAuditLog[] = [];
+    const ip = normaliseIP('1.2.3.4');
 
     computeCrossMerchantSignal({
-      normEmail: 'audited@example.com',
-      normIP: '1.2.3.4',
-      normAddress: null,
-      normCard: null,
+      emailHash: emailHash('audited@example.com'),
+      ipHash: ip ? hashIdentifier(ip) : null,
+      addressHash: null,
+      cardHash: null,
       requestingMerchantId: REQUESTING_MERCHANT_ID,
       profiles: [profile],
       pendingAuditLogs,
@@ -146,7 +136,6 @@ describe('crossMerchant signal privacy', () => {
     expect(pendingAuditLogs).toHaveLength(1);
     const logEntry = pendingAuditLogs[0];
 
-    // queried_hashes must contain the normalised hash values, not names
     for (const name of FAKE_MERCHANT_NAMES) {
       expect(logEntry.queried_hashes.join(',')).not.toContain(name);
     }
@@ -157,25 +146,30 @@ describe('crossMerchant signal privacy', () => {
 
   it('returns correct score range (30-80) when signal fires', () => {
     const merchantIds = ['m1', 'm2', 'm3', 'm4'];
+    const norm = normaliseEmail('scorer@example.com')!;
     const profile: CrossMerchantProfile = {
       id: 'p1',
-      emails: ['scorer@example.com'],
+      emails: [norm],
+      email_hashes: [hashIdentifier(norm)],
       ips: [],
+      ip_hashes: [],
       addresses: [],
+      address_hashes: [],
       card_last4s: [],
+      card_hashes: [],
       phones: [],
       total_orders: 10,
-      total_refund_claims: 0, // 0% INR rate → score = 30
+      total_refund_claims: 0,
       total_merchants_seen_at: 4,
       merchant_ids: merchantIds,
     };
 
     const pendingAuditLogs: PendingAuditLog[] = [];
     const result = computeCrossMerchantSignal({
-      normEmail: 'scorer@example.com',
-      normIP: null,
-      normAddress: null,
-      normCard: null,
+      emailHash: hashIdentifier(norm),
+      ipHash: null,
+      addressHash: null,
+      cardHash: null,
       requestingMerchantId: REQUESTING_MERCHANT_ID,
       profiles: [profile],
       pendingAuditLogs,
@@ -187,32 +181,35 @@ describe('crossMerchant signal privacy', () => {
   });
 
   it('excludes self-merchant matches', () => {
+    const norm = normaliseEmail('self@example.com')!;
     const profile: CrossMerchantProfile = {
       id: 'p-self',
-      emails: ['self@example.com'],
+      emails: [norm],
+      email_hashes: [hashIdentifier(norm)],
       ips: [],
+      ip_hashes: [],
       addresses: [],
+      address_hashes: [],
       card_last4s: [],
+      card_hashes: [],
       phones: [],
       total_orders: 10,
       total_refund_claims: 8,
       total_merchants_seen_at: 5,
-      // requesting merchant IS in this profile → should be excluded
       merchant_ids: [REQUESTING_MERCHANT_ID, 'm2', 'm3', 'm4', 'm5'],
     };
 
     const pendingAuditLogs: PendingAuditLog[] = [];
     const result = computeCrossMerchantSignal({
-      normEmail: 'self@example.com',
-      normIP: null,
-      normAddress: null,
-      normCard: null,
+      emailHash: hashIdentifier(norm),
+      ipHash: null,
+      addressHash: null,
+      cardHash: null,
       requestingMerchantId: REQUESTING_MERCHANT_ID,
       profiles: [profile],
       pendingAuditLogs,
     });
 
-    // Profile includes requesting merchant → excluded → no match → not fired
     expect(result.fired).toBe(false);
     expect(result.score).toBe(0);
   });
