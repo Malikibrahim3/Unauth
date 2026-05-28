@@ -2,12 +2,14 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { AlertTriangle, CheckCircle2, ChevronDown, Clock3, Eye, Keyboard, Trash2, UserCircle2 } from 'lucide-react';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { KbdHint } from '@/components/ui/KbdHint';
 import { FLAG_QUEUE_PRIORITISATION } from '@/lib/flags';
 import { ConfidenceBadge } from '@/components/ui/ConfidenceBadge';
 import { riskLevelToNewGrade } from '@/lib/confidence';
+import type { ClaimQueueCounts } from '@/lib/claims/queueCounts';
 
 interface InboxTransaction {
   id: string;
@@ -31,6 +33,7 @@ interface InboxTransaction {
 
 interface Props {
   initialItems: InboxTransaction[];
+  claimQueueCounts?: ClaimQueueCounts | null;
 }
 
 type SortKey = 'priority' | 'score' | 'value' | 'date';
@@ -107,7 +110,8 @@ export function countInboxQueues(items: InboxTransaction[]): Record<QueueFilter,
   }, { active: 0, new: 0, viewed: 0, overdue: 0, decision_ready: 0, unassigned: 0 });
 }
 
-export default function InboxClient({ initialItems }: Props) {
+export default function InboxClient({ initialItems, claimQueueCounts = null }: Props) {
+  const router = useRouter();
   const [sortBy, setSortBy] = useState<SortKey>(FLAG_QUEUE_PRIORITISATION ? 'priority' : 'date');
   const [items, setItems] = useState<InboxTransaction[]>(() => sortInboxItems(initialItems, sortBy));
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
@@ -126,8 +130,9 @@ export default function InboxClient({ initialItems }: Props) {
     if (!tx.claim_id || tx.first_viewed_at) return;
     const viewedAt = new Date().toISOString();
     setItems((prev) => prev.map((item) => item.id === tx.id ? { ...item, first_viewed_at: viewedAt } : item));
-    await fetch(`/api/claims/${tx.claim_id}/view`, { method: 'POST' }).catch(() => {});
-  }, []);
+    const res = await fetch(`/api/claims/${tx.claim_id}/view`, { method: 'POST' }).catch(() => null);
+    if (res?.ok) router.refresh();
+  }, [router]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -348,8 +353,13 @@ export default function InboxClient({ initialItems }: Props) {
               Active operational inbox
             </p>
             <p className="mt-0.5 text-xs" style={{ color: 'var(--text-muted)' }}>
-              Unresolved identity reviews only. Completed items leave this queue and remain available in history.
+              Unresolved identity reviews only. Opening a linked claim marks it read in Claims — it leaves New / unread but stays Active until resolved.
             </p>
+            {claimQueueCounts && (
+              <p className="mt-1 text-xs tabular-nums" style={{ color: 'var(--text-muted)' }}>
+                Claims workload: {claimQueueCounts.active.toLocaleString()} active · {claimQueueCounts.unread.toLocaleString()} new/unread · {claimQueueCounts.overdue.toLocaleString()} overdue
+              </p>
+            )}
           </div>
           <label className="flex items-center gap-2 text-caption" style={{ color: 'var(--text-muted)' }}>
             Sort by
@@ -403,7 +413,13 @@ export default function InboxClient({ initialItems }: Props) {
 
       <div className="flex flex-wrap items-center justify-between gap-2 px-1">
         <p className="text-caption" style={{ color: 'var(--text-muted)' }}>
-          Showing {filteredItems.length} of {items.length} active {items.length === 1 ? 'item' : 'items'}
+          {queueFilter === 'new'
+            ? `Showing ${filteredItems.length} of ${queueCounts.new} new unread ${queueCounts.new === 1 ? 'item' : 'items'}`
+            : queueFilter === 'unassigned'
+              ? `Showing ${filteredItems.length} of ${queueCounts.unassigned} unassigned ${queueCounts.unassigned === 1 ? 'item' : 'items'}`
+              : queueFilter === 'overdue'
+                ? `Showing ${filteredItems.length} of ${queueCounts.overdue} overdue ${queueCounts.overdue === 1 ? 'item' : 'items'}`
+                : `Showing ${filteredItems.length} of ${items.length} active ${items.length === 1 ? 'item' : 'items'}`}
         </p>
       </div>
 
@@ -545,17 +561,22 @@ export default function InboxClient({ initialItems }: Props) {
               <td className="px-4 py-3 text-right">
                 <div className="flex items-center justify-end gap-2" ref={openDropdown === tx.id ? dropdownRef : undefined}>
                   <Link
-                    href={tx.customer_profile_id ? `/customers/${tx.customer_profile_id}` : `/audit/${tx.processing_job_id}/transaction/${tx.id}`}
+                    href={
+                      tx.claim_id && tx.customer_profile_id
+                        ? `/customers/${tx.customer_profile_id}/claims?claimId=${tx.claim_id}`
+                        : tx.customer_profile_id
+                          ? `/customers/${tx.customer_profile_id}`
+                          : `/audit/${tx.processing_job_id}/transaction/${tx.id}`
+                    }
                     onClick={() => { void markViewed(tx); }}
                     className="text-xs font-semibold hover:underline"
                     style={{ color: 'var(--accent)' }}
                   >
-                    Review identity
+                    {tx.claim_id ? 'Review & record' : 'Review identity'}
                   </Link>
-                  {tx.customer_profile_id && (
+                  {tx.customer_profile_id && !tx.claim_id && (
                     <Link
                       href={`/customers/${tx.customer_profile_id}/claims`}
-                      onClick={() => { void markViewed(tx); }}
                       className="text-xs font-semibold hover:underline hidden lg:inline"
                       style={{ color: 'var(--text-muted)' }}
                     >

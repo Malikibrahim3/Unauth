@@ -17,7 +17,7 @@ export default function TeamSettingsPage() {
           <h1 className="text-heading-lg" style={{ color: 'var(--text)' }}>Team management</h1>
         </div>
         <p className="mt-2 max-w-2xl text-sm" style={{ color: 'var(--text-muted)' }}>
-          Invite teammates, assign owner, admin, analyst, and viewer roles, and review recent team access changes.
+          Invite analysts to investigate customers alongside you. The account owner manages billing and team access.
         </p>
       </div>
 

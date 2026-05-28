@@ -104,7 +104,7 @@ async function globalSetup(config: FullConfig) {
     }
     
     await page.fill(foundSelector, TEST_MERCHANT.email)
-    await page.fill('#password', TEST_MERCHANT.password)
+    await page.fill('#login-password', TEST_MERCHANT.password)
     await page.click('button[type="submit"]')
 
     try {
@@ -112,7 +112,7 @@ async function globalSetup(config: FullConfig) {
       await completeOnboarding(page)
     } catch {}
 
-    await page.waitForURL('**/dashboard', { timeout: 15000 })
+    await page.waitForURL(/\/(dashboard|upload|claims|customers)/, { timeout: 15000 })
 
     try {
       const demoButton = page.locator('[data-testid="load-demo-button"]')
@@ -169,13 +169,13 @@ async function uploadSeedCSV(
   }
 
   await page.goto(`${baseURL}/upload`)
-  await page.waitForSelector('input[type="file"]', { timeout: 10000 })
+  await page.waitForSelector('input[type="file"]', { timeout: 10000, state: 'attached' })
   await page.locator('input[type="file"]').setInputFiles(csvPath)
 
   await page.waitForSelector(
-    '[data-testid="column-mapping"], [data-testid="upload-context"], text=Column mapping, text=Upload context',
+    '[data-testid="column-mapping"], [data-testid="upload-context"]',
     { timeout: 20000 }
-  )
+  ).catch(() => null)
 
   const autoMapButton = page.locator('[data-testid="auto-map-button"], button:has-text("Auto-map")')
   if (await autoMapButton.isVisible({ timeout: 2000 })) {

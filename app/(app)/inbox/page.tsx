@@ -10,7 +10,8 @@ import PageSizeSelect from '@/components/common/PageSizeSelect';
 import { fetchMerchantReviewQueueRows, fetchReviewQueueProfileIds } from '@/lib/supabase/merchantHelpers';
 import { Button, WorkbenchActionBar, WorkbenchEmptyState, WorkbenchKpiStrip, WorkbenchPage } from '@/components/ui';
 import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
-import { ACTIVE_CLAIM_STATUSES, formatClaimAge, getClaimSlaState } from '@/lib/claims/sla';
+import { ACTIVE_CLAIM_STATUSES, formatClaimAge } from '@/lib/claims/sla';
+import { fetchClaimQueueCounts } from '@/lib/claims/queueCounts';
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
 const DEFAULT_PAGE_SIZE = 25;
@@ -129,16 +130,7 @@ export default async function InboxPage({ searchParams }: { searchParams?: Promi
   });
   });
 
-  const { data: claimQueueRows } = await serviceClient
-    .from('merchant_claims' as any)
-    .select('id,status,submitted_at,created_at,updated_at')
-    .eq('merchant_id', ctx.merchantId)
-    .in('status', [...ACTIVE_CLAIM_STATUSES])
-    .order('submitted_at', { ascending: true })
-    .limit(100);
-  const activeClaims = (claimQueueRows ?? []) as Array<{ id: string; status: string; submitted_at?: string | null; created_at?: string | null; updated_at?: string | null }>;
-  const overdueClaims = activeClaims.filter((claim) => getClaimSlaState(claim).state === 'overdue').length;
-  const oldestClaim = activeClaims[0] ?? null;
+  const claimQueueCounts = await fetchClaimQueueCounts(serviceClient, ctx.merchantId, user.id);
 
   const totalValueAtRisk = items.reduce((sum, item) => sum + (item.order_value ?? 0), 0);
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -162,7 +154,9 @@ export default async function InboxPage({ searchParams }: { searchParams?: Promi
             { label: 'Value at risk', value: new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(totalValueAtRisk), hint: 'Current page estimate' },
             { label: 'Decision ready', value: items.filter((i) => i.match_status === 'definite' || (i.identity_score ?? 0) >= 85).length.toLocaleString(), hint: 'Current page' },
             { label: 'Review recommended', value: items.filter((i) => i.match_status === 'probable' || (i.identity_score ?? 0) >= 70).length.toLocaleString(), hint: 'Current page' },
-            { label: 'Claims urgency', value: overdueClaims.toLocaleString(), hint: oldestClaim ? `Oldest ${formatClaimAge(oldestClaim)}` : 'No open claims' },
+            { label: 'Claims active', value: claimQueueCounts.active.toLocaleString(), hint: 'Unresolved claim work' },
+            { label: 'Claims new/unread', value: claimQueueCounts.unread.toLocaleString(), hint: 'Not yet opened' },
+            { label: 'Claims overdue', value: claimQueueCounts.overdue.toLocaleString(), hint: '>72h open' },
             { label: 'Total queue', value: total.toLocaleString(), hint: 'All pages' },
           ]}
         />
@@ -211,7 +205,7 @@ export default async function InboxPage({ searchParams }: { searchParams?: Promi
           action={<Link href="/upload" className="text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>Upload a CSV to get started</Link>}
         />
       ) : (
-        <InboxClient initialItems={items} />
+        <InboxClient initialItems={items} claimQueueCounts={claimQueueCounts} />
       )}
     />
   );

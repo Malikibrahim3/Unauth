@@ -39,7 +39,30 @@ export async function POST(_request: Request, { params }: { params: Promise<{ cl
         first_viewed_by: updated.first_viewed_by ?? claim.first_viewed_by ?? null,
       },
     });
-  } catch {
-    return NextResponse.json({ error: 'Failed to mark claim viewed' }, { status: 500 });
+  } catch (error: any) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    const details = error?.details ?? null;
+    const hint = error?.hint ?? null;
+    const code = error?.code ?? null;
+    console.error('[claims.view] failed', {
+      claimId,
+      merchantId: ctx.merchantId,
+      userId: user.id,
+      message,
+      details,
+      hint,
+      code,
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+    return NextResponse.json(
+      {
+        error: 'Failed to mark claim viewed',
+        message,
+        details,
+        hint,
+        code,
+      },
+      { status: 500 },
+    );
   }
 }

@@ -92,13 +92,19 @@
   "suites": [],
   "errors": [
     {
-      "message": "Error: No tests found",
-      "stack": "Error: No tests found"
+      "message": "TimeoutError: page.waitForSelector: Timeout 180000ms exceeded.\nCall log:\n  - waiting for locator('[data-testid=\"audit-results\"], [data-status=\"completed\"]') to be visible\n",
+      "stack": "TimeoutError: page.waitForSelector: Timeout 180000ms exceeded.\nCall log:\n  - waiting for locator('[data-testid=\"audit-results\"], [data-status=\"completed\"]') to be visible\n\n    at uploadSeedCSV (/Users/malikibrahim/Downloads/Unauth/tests/global-setup.ts:199:14)\n    at globalSetup (/Users/malikibrahim/Downloads/Unauth/tests/global-setup.ts:128:5)",
+      "location": {
+        "file": "/Users/malikibrahim/Downloads/Unauth/tests/global-setup.ts",
+        "column": 14,
+        "line": 199
+      },
+      "snippet": "   at global-setup.ts:199\n\n  197 |   ).click()\n  198 |\n> 199 |   await page.waitForSelector(\n      |              ^\n  200 |     '[data-testid=\"audit-results\"], [data-status=\"completed\"]',\n  201 |     { timeout: 180000 }\n  202 |   )"
     }
   ],
   "stats": {
-    "startTime": "2026-05-11T01:08:02.459Z",
-    "duration": 186.87700000000007,
+    "startTime": "2026-05-28T02:36:26.269Z",
+    "duration": 193579.283,
     "expected": 0,
     "skipped": 0,
     "unexpected": 0,

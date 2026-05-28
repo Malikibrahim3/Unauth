@@ -25,6 +25,30 @@ export default function IntegrationsPage() {
       </div>
 
       <div>
+        <h2 className="text-sm font-semibold mb-3" style={{ color: 'var(--text)' }}>Gorgias</h2>
+        <div
+          className="mb-8 flex items-center justify-between gap-4 rounded-lg border p-4"
+          style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-raised)' }}
+        >
+          <div>
+            <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>
+              Unauth Fraud Intelligence
+            </p>
+            <p className="mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>
+              Available now — show risk scores in the Gorgias ticket sidebar via HTTP integration.
+            </p>
+          </div>
+          <Link
+            href="/settings/integrations/gorgias"
+            className="shrink-0 rounded-md px-3 py-2 text-xs font-medium"
+            style={{ background: 'var(--accent)', color: 'var(--accent-fg, #fff)' }}
+          >
+            Connect
+          </Link>
+        </div>
+      </div>
+
+      <div>
         <h2 className="text-sm font-semibold mb-3" style={{ color: 'var(--text)' }}>Shopify</h2>
         <Suspense fallback={null}>
           <ShopifyIntegrationBanner />

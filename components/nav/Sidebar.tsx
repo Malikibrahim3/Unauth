@@ -6,7 +6,6 @@ import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import {
   Home,
-  Inbox,
   ListChecks,
   PlusSquare,
   Users,
@@ -16,8 +15,6 @@ import {
   Settings,
   ChevronRight,
   ShieldCheck,
-  BarChart3,
-  FileWarning,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { UnauthLogo } from '@/components/ui/UnauthLogo';
@@ -32,6 +29,8 @@ interface NavItem {
   label: string;
   icon: React.ElementType;
   badge?: number;
+  /** Accessible label for count badges (e.g. unread queue). */
+  badgeTitle?: string;
   /** When true, renders with a filled/verb visual treatment */
   isPrimary?: boolean;
 }
@@ -44,9 +43,7 @@ interface NavGroup {
 interface SidebarProps {
   merchantName: string | null;
   userEmail: string;
-  inboxCount?: number;
   watchlistCount?: number;
-  claimsCount?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -55,32 +52,26 @@ interface SidebarProps {
 
 const STORAGE_KEY = 'unauth.sidebar.collapsed';
 
-function buildGroups(inboxCount = 0, watchlistCount = 0, claimsCount = 0): NavGroup[] {
-  const investigationItems: NavItem[] = [
-    { href: '/customers', label: 'Customers', icon: Users },
-    { href: '/claims', label: 'Claims', icon: FileWarning, badge: claimsCount > 0 ? claimsCount : undefined },
-    { href: '/watchlist', label: 'Watchlist', icon: Star, badge: watchlistCount },
-    { href: '/chargebacks', label: 'Evidence packages', icon: ShieldCheck },
-  ];
+function buildGroups(watchlistCount = 0): NavGroup[] {
   return [
     {
       label: 'Workspace',
-      items: [
-        { href: '/dashboard', label: 'Dashboard', icon: Home },
-        { href: '/inbox',     label: 'Inbox', icon: Inbox, badge: inboxCount },
-      ],
+      items: [{ href: '/dashboard', label: 'Dashboard', icon: Home }],
     },
     {
       label: 'Audits',
       items: [
         { href: '/upload', label: 'New audit', icon: PlusSquare, isPrimary: true },
         { href: '/history', label: 'Audit history', icon: ListChecks },
-        { href: '/reports', label: 'Reports', icon: BarChart3 },
       ],
     },
     {
       label: 'Investigations',
-      items: investigationItems,
+      items: [
+        { href: '/customers', label: 'Customers', icon: Users },
+        { href: '/watchlist', label: 'Watchlist', icon: Star, badge: watchlistCount },
+        { href: '/chargebacks', label: 'Evidence packages', icon: ShieldCheck },
+      ],
     },
   ];
 }
@@ -117,7 +108,6 @@ function SidebarItem({
         collapsed && 'justify-center',
       )}
     >
-      {/* 2px left-edge accent rail for active item */}
       {active && (
         <span
           className="absolute left-0 top-0 bottom-0 rounded-r-sm"
@@ -141,6 +131,8 @@ function SidebarItem({
           <span className="flex-1 truncate">{item.label}</span>
           {!!item.badge && item.badge > 0 && (
             <span
+              title={item.badgeTitle ?? `${item.badge} items`}
+              aria-label={item.badgeTitle ? `${item.badgeTitle}: ${item.badge}` : `${item.badge} items`}
               className={cn(
                 'inline-flex h-[18px] min-w-[18px] items-center justify-center',
                 'rounded-sm px-1',
@@ -157,7 +149,8 @@ function SidebarItem({
       {collapsed && !!item.badge && item.badge > 0 && (
         <span
           className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-[var(--sev-definite)]"
-          aria-label={`${item.badge} items`}
+          title={item.badgeTitle ?? `${item.badge} items`}
+          aria-label={item.badgeTitle ? `${item.badgeTitle}: ${item.badge}` : `${item.badge} items`}
         />
       )}
     </Link>
@@ -185,9 +178,7 @@ function GroupLabel({ label, collapsed }: { label: string; collapsed: boolean })
 export default function Sidebar({
   merchantName,
   userEmail,
-  inboxCount = 0,
   watchlistCount = 0,
-  claimsCount = 0,
 }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -195,8 +186,6 @@ export default function Sidebar({
 
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  // When the sidebar is collapsed and the user hovers, we temporarily expand it.
-  // "pinned" = user explicitly toggled; "hover" = transient expansion.
   const [hoverExpanded, setHoverExpanded] = useState(false);
 
   useEffect(() => {
@@ -206,7 +195,6 @@ export default function Sidebar({
     } catch { /* SSR guard */ }
   }, []);
 
-  // Close mobile drawer on route change
   useEffect(() => {
     setMobileOpen(false);
   }, [pathname]);
@@ -224,10 +212,9 @@ export default function Sidebar({
     router.push('/login');
   }
 
-  const groups = buildGroups(inboxCount, watchlistCount, claimsCount);
+  const groups = buildGroups(watchlistCount);
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
 
-  // Effective collapsed state: collapsed only if pinned AND not hovering
   const isCollapsed = collapsed && !hoverExpanded;
 
   const sidebarContent = (isMobile = false) => (
@@ -247,7 +234,6 @@ export default function Sidebar({
       onMouseEnter={() => { if (collapsed) setHoverExpanded(true); }}
       onMouseLeave={() => { if (collapsed) setHoverExpanded(false); }}
     >
-      {/* Logo / merchant */}
       <div
         className={cn(
           'flex flex-shrink-0 border-b border-[var(--surface-border)] px-3',
@@ -304,7 +290,6 @@ export default function Sidebar({
         )}
       </div>
 
-      {/* Navigation */}
       <nav
         className={cn('flex-1 overflow-y-auto overflow-x-hidden', isCollapsed ? 'px-2 py-3' : 'px-2 py-2')}
         aria-label="Main navigation"
@@ -324,11 +309,8 @@ export default function Sidebar({
             </div>
           </div>
         ))}
-
-
       </nav>
 
-      {/* Footer */}
       <div
         className={cn(
           'flex flex-shrink-0 flex-col border-t border-[var(--surface-border)]',
@@ -391,7 +373,6 @@ export default function Sidebar({
           {!isCollapsed && <span>Sign out</span>}
         </button>
 
-        {/* Legal links — small muted text, visible only when expanded */}
         {!isCollapsed && (
           <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 px-2 pb-1">
             {[
@@ -410,7 +391,6 @@ export default function Sidebar({
           </div>
         )}
 
-        {/* Expand toggle when collapsed */}
         {isCollapsed && (
           <button
             type="button"
@@ -432,12 +412,10 @@ export default function Sidebar({
 
   return (
     <>
-      {/* Desktop sidebar — hidden on mobile */}
       <div className="hidden md:block h-full">
         {sidebarContent(false)}
       </div>
 
-      {/* Mobile hamburger toggle — visible only on mobile */}
       <button
         type="button"
         aria-label="Open navigation"
@@ -455,16 +433,13 @@ export default function Sidebar({
         </svg>
       </button>
 
-      {/* Mobile overlay drawer */}
       {mobileOpen && (
         <>
-          {/* Backdrop */}
           <div
             className="md:hidden fixed inset-0 z-40 bg-black/40"
             aria-hidden="true"
             onClick={() => setMobileOpen(false)}
           />
-          {/* Drawer */}
           <div className="md:hidden fixed inset-y-0 left-0 z-50 h-full">
             {sidebarContent(true)}
           </div>

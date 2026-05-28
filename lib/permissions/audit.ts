@@ -34,7 +34,9 @@ export type AuditAction =
   | 'grant_permission'
   | 'revoke_permission'
   | 'update_settings'
-  | 'view_audit_trail';
+  | 'view_audit_trail'
+  | 'create_api_key'
+  | 'revoke_api_key';
 
 export interface LogActionParams {
   ctx:          CallerContext;

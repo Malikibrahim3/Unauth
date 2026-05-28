@@ -64,15 +64,26 @@ async function fetchClaim(serviceClient: any, claimId: string): Promise<ClaimFor
 
 export async function markClaimViewed(serviceClient: any, claim: ClaimForAction, merchantId: string, userId: string) {
   if (claim.first_viewed_at) return { ...claim, _viewRecorded: false };
-  const { data, error } = await serviceClient
+  let query = serviceClient
     .from('merchant_claims' as any)
     .update({ first_viewed_at: new Date().toISOString(), first_viewed_by: userId, updated_at: new Date().toISOString() })
     .eq('id', claim.id)
-    .eq('merchant_id', merchantId)
-    .is('first_viewed_at', null)
-    .select()
-    .maybeSingle();
-  if (error) throw new Error(`mark merchant_claims viewed failed: ${error.message}`);
+    .is('first_viewed_at', null);
+  if (claim.merchant_id) {
+    // Use the claim's actual merchant_id (not caller's merchantId) because
+    // loadClaimForMerchant may have authorized via shop_domain when
+    // claim.merchant_id differs from the caller's merchantId.
+    query = query.eq('merchant_id', claim.merchant_id);
+  } else if (claim.shop_domain) {
+    query = query.eq('shop_domain', claim.shop_domain);
+  } else {
+    throw new Error('mark merchant_claims viewed failed: claim missing merchant scope');
+  }
+  const { data, error } = await query.select().maybeSingle();
+  if (error) {
+    const detail = [error.message, error.details, error.hint, error.code].filter(Boolean).join(' | ');
+    throw new Error(`mark merchant_claims viewed failed: ${detail}`);
+  }
   if (data) return { ...data, _viewRecorded: true };
 
   // Another concurrent request may have won the first-view update. Treat that

@@ -44,7 +44,7 @@ import { riskBadgeStyle, riskBarStyle, riskTok } from '@/lib/utils/riskStyles';
 import { formatCurrencyNullable, formatDate, formatDateMode } from '@/lib/utils/format';
 import { getEventStream } from '@/lib/analysis/customerIntelligence';
 import { FLAG_EXPERIENCE_POLISH_V1 } from '@/lib/flags';
-import { ACTIVE_CLAIM_STATUSES, formatFiledDate, getClaimSlaState } from '@/lib/claims/sla';
+import { ACTIVE_CLAIM_STATUSES, formatFiledDate } from '@/lib/claims/sla';
 
 interface PageProps {
   params: Promise<{ id: string }> | { id: string };
@@ -472,7 +472,6 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
   const claimSummaryRows = (profileClaims ?? []) as Array<{ id: string; claim_type: string; status: string; shopify_order_id?: string | null; order_ref?: string | null; submitted_at?: string | null; created_at?: string | null; updated_at?: string | null }>;
   const openClaimCount = claimSummaryRows.filter((claim) => ACTIVE_CLAIM_STATUSES.includes(claim.status as any)).length;
   const latestClaim = claimSummaryRows[0] ?? null;
-  const latestClaimSla = latestClaim ? getClaimSlaState(latestClaim) : null;
   const profileWideOrders = Math.max(0, Number(profile.total_orders ?? merchantOrderCount));
   const merchantsSeen = Math.max(1, Number(profile.total_merchants_seen_at ?? 1));
   const localOrderSharePct = profileWideOrders > 0 ? (merchantOrderCount / profileWideOrders) * 100 : 0;
@@ -528,6 +527,9 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
             <p className="mt-2 t-mono break-all" style={{ color: 'var(--data-id)' }}>
               {profile.primary_email ?? profile.id}
             </p>
+            <p className="mt-2 max-w-2xl text-body-sm" style={{ color: 'var(--ink-secondary)' }}>
+              Take this intelligence back to your Gorgias or Zendesk ticket. Use an evidence package in your Shopify dispute or bank portal when you need documentation.
+            </p>
             <div className="mt-4 flex flex-wrap items-center gap-2">
               <InvestigationStatusSelect profileId={profile.id} initialStatus={(profile as any).investigation_status ?? 'new'} />
               <WatchlistStarButton
@@ -537,33 +539,24 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
                 lastSeenRisk={profile.risk_level}
                 initialWatchlisted={!!watchlistRow}
               />
-              {openClaimCount > 0 && (
-                <Link
-                  href={`/customers/${profile.id}/claims`}
-                  className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors"
-                  style={{ background: 'var(--copper-bright)', color: 'var(--ink-inverse)' }}
-                >
-                  Open claim review
-                </Link>
-              )}
-              {isEligibleForEvidence ? (
-                <Link
-                  href={`/customers/${profile.id}/evidence/new`}
-                  className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors"
-                  style={{ border: '1px solid var(--surface-border)', color: 'var(--ink-secondary)' }}
-                >
-                  <FileText className="h-3.5 w-3.5" />
-                  Generate evidence package
-                </Link>
-              ) : null}
+              <Link
+                href={`/customers/${profile.id}/evidence/new`}
+                className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors btn-accent"
+                style={!isEligibleForEvidence ? { opacity: 0.85 } : undefined}
+                title={isEligibleForEvidence ? undefined : 'Available when refund or chargeback activity is present'}
+              >
+                <FileText className="h-3.5 w-3.5" />
+                Generate evidence PDF
+              </Link>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-px overflow-hidden rounded-md border md:grid-cols-4" style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-border)' }}>
+          <div className="grid grid-cols-2 gap-px overflow-hidden rounded-md border md:grid-cols-5" style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-border)' }}>
             {[
+              { label: 'Risk grade', value: profileGrade, color: 'var(--data-score)' },
+              { label: 'Confidence', value: `${Math.round(profile.risk_score)} / 100`, color: 'var(--data-score)' },
+              { label: 'Cross-merchant', value: merchantsSeen > 1 ? `${merchantsSeen} merchants` : 'This store only', color: 'var(--data-score)' },
               { label: 'Exposure', value: formatCurrencyNullable(totalOrderValue), color: 'var(--data-currency)' },
-              { label: 'Orders', value: merchantOrderCount.toLocaleString(), color: 'var(--data-score)' },
-              { label: 'Claims', value: merchantClaimCount.toLocaleString(), color: 'var(--data-score)' },
               { label: 'Last seen', value: formatDateMode(profile.last_seen, 'table'), color: 'var(--data-date)', mono: true },
             ].map((metric) => (
               <div key={metric.label} className="p-4" style={{ background: 'var(--surface-raised)' }}>
@@ -657,7 +650,7 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
       </section>
 
       <section className="mb-[var(--space-5)] rounded-md border p-4" style={{ background: 'var(--surface-raised)', borderColor: 'var(--surface-border)' }}>
-        <p className="text-caption font-semibold mb-3" style={{ color: 'var(--ink-secondary)' }}>Identity signals</p>
+        <p className="text-caption font-semibold mb-3" style={{ color: 'var(--ink-secondary)' }}>Cross-merchant signals</p>
         <div className="rounded-md border overflow-hidden" style={{ borderColor: 'var(--border-subtle)' }}>
           <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_110px_90px_140px] gap-3 px-3 py-2" style={{ background: 'var(--bg-subtle)', borderBottom: '1px solid var(--border-subtle)' }}>
             <span className="text-caption font-semibold" style={{ color: 'var(--text-muted)' }}>Primary identifier</span>
@@ -695,7 +688,13 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
 
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-[var(--space-6)]">
         <div className="xl:col-span-8 space-y-[var(--space-5)]">
-          <SectionCard title="Customer Roadmap" description="Chronological order, with the transaction and claim details a merchant needs to act on.">
+          {identityTimeline.length > 0 && (
+            <SectionCard title="Identity timeline" description={variantCount > 0 ? `${variantCount} identifier change${variantCount > 1 ? 's' : ''} across orders` : 'How identifiers evolved over time'}>
+              <IdentityTimeline entries={identityTimeline} />
+            </SectionCard>
+          )}
+
+          <SectionCard title="Behavioral history" description="Chronological orders and claim events — use this narrative in your helpdesk reply.">
             <div className="mb-[var(--space-5)] rounded-lg border p-[var(--space-4)]" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)' }}>
               <div className="flex items-start gap-3">
                 <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" style={{ color: 'var(--text-muted)' }} />
@@ -769,37 +768,22 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
             </div>
           </SectionCard>
 
-          <SectionCard title="Claim summary">
+          <SectionCard title="Dispute context" description="Summary you can reference when responding in Gorgias, Zendesk, or Shopify.">
             {latestClaim ? (
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
-                  <MetricCard label="Open claims" value={openClaimCount.toLocaleString()} density="compact" />
+                  <MetricCard label="Open disputes" value={openClaimCount.toLocaleString()} density="compact" />
                   <MetricCard label="Latest status" value={CLAIM_STATUS_LABELS[latestClaim.status] ?? latestClaim.status} density="compact" />
                 </div>
                 <div className="rounded-md border p-3" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)' }}>
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-caption" style={{ color: 'var(--text-muted)' }}>Latest claim</p>
-                      <p className="text-body-sm font-semibold" style={{ color: 'var(--text)' }}>{CLAIM_TYPE_LABELS[latestClaim.claim_type] ?? latestClaim.claim_type}</p>
-                      <p className="font-mono text-caption" style={{ color: 'var(--text-muted)' }}>{latestClaim.shopify_order_id ?? latestClaim.order_ref ?? latestClaim.id.slice(0, 8)}</p>
-                    </div>
-                    {latestClaimSla && (
-                      <span className="rounded-full px-2 py-0.5 text-caption font-semibold" style={{
-                        background: latestClaimSla.state === 'overdue' ? 'var(--sev-high-fill,#FEE2E2)' : latestClaimSla.state === 'approaching' ? 'var(--sev-medium-fill,#FEF3C7)' : 'var(--bg-subtle)',
-                        color: latestClaimSla.state === 'overdue' ? 'var(--sev-high,#991B1B)' : latestClaimSla.state === 'approaching' ? 'var(--sev-medium,#B45309)' : 'var(--text-muted)',
-                      }}>
-                        {latestClaimSla.label}
-                      </span>
-                    )}
-                  </div>
+                  <p className="text-caption" style={{ color: 'var(--text-muted)' }}>Latest dispute signal</p>
+                  <p className="text-body-sm font-semibold" style={{ color: 'var(--text)' }}>{CLAIM_TYPE_LABELS[latestClaim.claim_type] ?? latestClaim.claim_type}</p>
+                  <p className="font-mono text-caption" style={{ color: 'var(--text-muted)' }}>{latestClaim.shopify_order_id ?? latestClaim.order_ref ?? latestClaim.id.slice(0, 8)}</p>
                   <p className="mt-2 text-caption" style={{ color: 'var(--text-muted)' }}>Filed {formatFiledDate(latestClaim)}</p>
-                  <Link href={`/customers/${profile.id}/claims?claimId=${latestClaim.id}`} className="mt-3 inline-flex text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
-                    Open review
-                  </Link>
                 </div>
               </div>
             ) : (
-              <EmptyState title="No claims in progress" description="Claims filed for this customer will appear here." />
+              <EmptyState title="No dispute signals" description="When Shopify or your PSP reports a claim, context will appear here for your helpdesk ticket." />
             )}
           </SectionCard>
 
@@ -887,12 +871,6 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
               )}
             </dl>
           </SectionCard>
-
-          {identityTimeline.length > 0 && (
-            <SectionCard title="Identity Trail" description={variantCount > 0 ? `${variantCount} change${variantCount > 1 ? 's' : ''} detected` : undefined}>
-              <IdentityTimeline entries={identityTimeline} />
-            </SectionCard>
-          )}
 
           <SectionCard title={`Linked identities (${linkedAccounts.length})`}>
             {linkedAccounts.length === 0 ? (

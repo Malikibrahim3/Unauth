@@ -65,7 +65,7 @@ function setupServiceClient(opts: {
   const claimShopDomain = Object.prototype.hasOwnProperty.call(opts, 'claimShopDomain') ? opts.claimShopDomain : 'unit-test.myshopify.com';
   const claimMerchantId = Object.prototype.hasOwnProperty.call(opts, 'claimMerchantId') ? opts.claimMerchantId : 'm-1';
   const claimStatus = opts.claimStatus ?? 'open';
-  const firstViewedAt = opts.firstViewedAt ?? null;
+  let firstViewedAt = opts.firstViewedAt ?? null;
   const assignedTo = opts.assignedTo ?? null;
   const claimEvents: any[] = [];
   const claimUpdates: any[] = [];
@@ -165,6 +165,9 @@ function setupServiceClient(opts: {
           update: (payload: any) => {
             updateChain.status = payload.status;
             updateChain.payload = payload;
+            if (Object.prototype.hasOwnProperty.call(payload, 'first_viewed_at') && payload.first_viewed_at) {
+              firstViewedAt = payload.first_viewed_at;
+            }
             claimUpdates.push(payload);
             return updateChain;
           },
@@ -449,6 +452,28 @@ describe('claims routes', () => {
     expect(body.claim.first_viewed_at).toBe(viewedAt);
     expect(claimUpdates).toHaveLength(0);
     expect(claimEvents).toHaveLength(0);
+  });
+
+  it('mark viewed is idempotent across repeated calls', async () => {
+    setupAuth(true);
+    setupPermission();
+    const { claimEvents, claimUpdates } = setupServiceClient({ firstViewedAt: null });
+    const first = await viewPost(
+      mkReq('http://localhost/api/claims/c1/view', {}),
+      { params: Promise.resolve({ claimId: '550e8400-e29b-41d4-a716-446655440000' }) }
+    );
+    const second = await viewPost(
+      mkReq('http://localhost/api/claims/c1/view', {}),
+      { params: Promise.resolve({ claimId: '550e8400-e29b-41d4-a716-446655440000' }) }
+    );
+    const firstBody = await first.json();
+    const secondBody = await second.json();
+    expect(first.status).toBe(200);
+    expect(second.status).toBe(200);
+    expect(firstBody.claim.first_viewed_at).toBeTruthy();
+    expect(secondBody.claim.first_viewed_at).toBeTruthy();
+    expect(claimUpdates.filter((payload) => payload.first_viewed_at)).toHaveLength(1);
+    expect(claimEvents.filter((event) => event.event_type === 'claim_viewed')).toHaveLength(1);
   });
 
   it('wrong merchant cannot mark another merchant claim viewed', async () => {

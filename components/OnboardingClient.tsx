@@ -48,7 +48,7 @@ const STEPS = [
     label: 'Invite a team member',
     icon: UserPlus,
     optional: true,
-    body: 'Add analysts, admins, and viewers once the first audit is running. Role access keeps sensitive actions scoped.',
+    body: 'Invite analysts once your first audit is running so they can look up customers and export evidence for your helpdesk.',
   },
 ] as const;
 

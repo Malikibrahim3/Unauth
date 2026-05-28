@@ -10,6 +10,8 @@ import { ConfidenceBadge } from '@/components/ui/ConfidenceBadge';
 import { riskLevelToNewGrade } from '@/lib/confidence';
 import { formatCurrencyNullable } from '@/lib/utils/format';
 import { ACTIVE_CLAIM_STATUSES, formatClaimAge, formatFiledDate, getClaimSlaState } from '@/lib/claims/sla';
+import { fetchClaimQueueCounts } from '@/lib/claims/queueCounts';
+import { claimsListTotalForView, formatClaimsResultText, resolveClaimsListView } from '@/lib/claims/claimsQueueUi';
 import PageSizeSelect from '@/components/common/PageSizeSelect';
 
 export const dynamic = 'force-dynamic';
@@ -241,6 +243,10 @@ export default async function ClaimsPage({
     } else {
       fallbackQuery = fallbackQuery.in('status', [...ACTIVE_CLAIM_STATUSES]);
     }
+    if (ownerFilter === 'me') fallbackQuery = fallbackQuery.eq('assigned_to', user.id);
+    if (ownerFilter === 'unassigned') fallbackQuery = fallbackQuery.is('assigned_to', null);
+    if (viewedFilter === 'unread') fallbackQuery = fallbackQuery.is('first_viewed_at', null);
+    if (viewedFilter === 'viewed') fallbackQuery = fallbackQuery.not('first_viewed_at', 'is', null);
     const fallback = await fallbackQuery.range(listOffset, listOffset + listCap - 1);
     fallbackClaims = fallback.data ?? [];
   }
@@ -319,32 +325,8 @@ export default async function ClaimsPage({
     }
   }
 
-  const [
-    { count: totalClaimsCount },
-    { count: openCount },
-    { count: resolvedCount },
-    { data: activeForSla },
-    { data: allAmountRows },
-  ] = await Promise.all([
-    serviceClient
-      .from('merchant_claims' as any)
-      .select('id', { count: 'exact', head: true })
-      .eq('merchant_id', ctx.merchantId),
-    serviceClient
-      .from('merchant_claims' as any)
-      .select('id', { count: 'exact', head: true })
-      .eq('merchant_id', ctx.merchantId)
-      .in('status', [...ACTIVE_CLAIM_STATUSES]),
-    serviceClient
-      .from('merchant_claims' as any)
-      .select('id', { count: 'exact', head: true })
-      .eq('merchant_id', ctx.merchantId)
-      .in('status', ['resolved', 'closed']),
-    serviceClient
-      .from('merchant_claims' as any)
-      .select('status,submitted_at,created_at,updated_at')
-      .eq('merchant_id', ctx.merchantId)
-      .in('status', [...ACTIVE_CLAIM_STATUSES]),
+  const [queueCounts, { data: allAmountRows }] = await Promise.all([
+    fetchClaimQueueCounts(serviceClient, ctx.merchantId, user.id),
     serviceClient
       .from('merchant_claims' as any)
       .select('amount_at_risk')
@@ -355,26 +337,92 @@ export default async function ClaimsPage({
     (s: number, c: { amount_at_risk: number | null }) => s + (c.amount_at_risk ?? 0),
     0,
   );
-  const overdueCount = (activeForSla ?? []).filter(
-    (c: { status: string; submitted_at?: string | null; created_at?: string | null; updated_at?: string | null }) =>
-      getClaimSlaState(c).state === 'overdue',
-  ).length;
 
-  const statusTabs: Array<{ label: string; value: string | null; queue?: 'active' | 'history' | 'snoozed' }> = [
-    { label: 'Active queue', value: null, queue: 'active' },
-    { label: 'Unread', value: null },
-    { label: 'Assigned to me', value: null },
-    { label: 'Unassigned', value: null },
-    { label: 'Snoozed', value: null, queue: 'snoozed' },
-    { label: 'Open', value: 'open' },
-    { label: 'Under review', value: 'under_review' },
-    { label: 'Awaiting evidence', value: 'evidence_requested' },
-    { label: 'Awaiting info', value: 'pending' },
-    { label: 'Escalated', value: 'escalated' },
-    { label: 'History', value: null, queue: 'history' },
+  const listView = resolveClaimsListView({
+    queue: queueFilter,
+    owner: ownerFilter ?? undefined,
+    viewed: viewedFilter ?? undefined,
+    status: statusFilter ?? undefined,
+    sla: slaFilter ?? undefined,
+  });
+  const listViewTotal = claimsListTotalForView(listView, queueCounts);
+  const resultText = formatClaimsResultText({
+    showing: claims.length,
+    totalMatching: slaFilter ? totalForPager : listViewTotal,
+    view: slaFilter === 'overdue' ? { kind: 'sla', sla: 'overdue' } : slaFilter === 'approaching' ? { kind: 'sla', sla: 'approaching' } : listView,
+  });
+
+  type FilterTab = {
+    label: string;
+    count: number;
+    href: string;
+    active: boolean;
+  };
+
+  const filterTabs: FilterTab[] = [
+    {
+      label: 'Active',
+      count: queueCounts.active,
+      href: `/claims${buildClaimsQueryString(sp, { queue: undefined, viewed: undefined, owner: undefined, status: undefined, sla: undefined, page: '1' })}`,
+      active: listView.kind === 'active',
+    },
+    {
+      label: 'New / unread',
+      count: queueCounts.unread,
+      href: `/claims${buildClaimsQueryString(sp, { viewed: 'unread', queue: undefined, owner: undefined, status: undefined, sla: undefined, page: '1' })}`,
+      active: listView.kind === 'unread',
+    },
+    {
+      label: 'Assigned to me',
+      count: queueCounts.assignedToMe,
+      href: `/claims${buildClaimsQueryString(sp, { owner: 'me', viewed: undefined, queue: undefined, status: undefined, sla: undefined, page: '1' })}`,
+      active: listView.kind === 'assigned_me',
+    },
+    {
+      label: 'Unassigned',
+      count: queueCounts.unassigned,
+      href: `/claims${buildClaimsQueryString(sp, { owner: 'unassigned', viewed: undefined, queue: undefined, status: undefined, sla: undefined, page: '1' })}`,
+      active: listView.kind === 'unassigned',
+    },
+    {
+      label: 'Overdue',
+      count: queueCounts.overdue,
+      href: `/claims${buildClaimsQueryString(sp, { sla: 'overdue', sort: 'age', viewed: undefined, owner: undefined, status: undefined, queue: undefined, page: '1' })}`,
+      active: slaFilter === 'overdue',
+    },
+    {
+      label: 'Awaiting evidence',
+      count: queueCounts.awaitingEvidence,
+      href: `/claims${buildClaimsQueryString(sp, { status: 'evidence_requested', viewed: undefined, owner: undefined, queue: undefined, sla: undefined, page: '1' })}`,
+      active: listView.kind === 'status' && listView.status === 'evidence_requested',
+    },
+    {
+      label: 'Awaiting info',
+      count: queueCounts.awaitingInfo,
+      href: `/claims${buildClaimsQueryString(sp, { status: 'pending', viewed: undefined, owner: undefined, queue: undefined, sla: undefined, page: '1' })}`,
+      active: listView.kind === 'status' && listView.status === 'pending',
+    },
+    {
+      label: 'Snoozed',
+      count: queueCounts.snoozed,
+      href: `/claims${buildClaimsQueryString(sp, { queue: 'snoozed', viewed: undefined, owner: undefined, status: undefined, sla: undefined, page: '1' })}`,
+      active: listView.kind === 'snoozed',
+    },
+    {
+      label: 'Escalated',
+      count: queueCounts.escalated,
+      href: `/claims${buildClaimsQueryString(sp, { status: 'escalated', viewed: undefined, owner: undefined, queue: undefined, sla: undefined, page: '1' })}`,
+      active: listView.kind === 'status' && listView.status === 'escalated',
+    },
+    {
+      label: 'History',
+      count: queueCounts.resolved,
+      href: `/claims${buildClaimsQueryString(sp, { queue: 'history', viewed: undefined, owner: undefined, status: undefined, sla: undefined, page: '1' })}`,
+      active: listView.kind === 'history',
+    },
   ];
 
-  const isEmpty = (totalClaimsCount ?? 0) === 0;
+  const isEmpty = queueCounts.total === 0;
 
   return (
     <WorkbenchPage
@@ -388,11 +436,12 @@ export default async function ClaimsPage({
       kpiStrip={
         <WorkbenchKpiStrip
           items={[
-            { label: 'Open / in review', value: (openCount ?? 0).toLocaleString(), hint: 'Needs action' },
-            { label: 'Overdue', value: overdueCount.toLocaleString(), hint: '>72h open' },
+            { label: 'Active queue', value: queueCounts.active.toLocaleString(), hint: 'Unresolved work' },
+            { label: 'New / unread', value: queueCounts.unread.toLocaleString(), hint: 'Not yet opened' },
+            { label: 'Overdue', value: queueCounts.overdue.toLocaleString(), hint: '>72h open' },
+            { label: 'Resolved', value: queueCounts.resolved.toLocaleString(), hint: 'History' },
+            { label: 'Total claims', value: queueCounts.total.toLocaleString(), hint: 'All time' },
             { label: 'Total at risk', value: formatCurrencyNullable(totalAtRisk || null), hint: 'All claims' },
-            { label: 'Resolved', value: (resolvedCount ?? 0).toLocaleString(), hint: 'All time' },
-            { label: 'Total claims', value: (totalClaimsCount ?? 0).toLocaleString(), hint: 'All time' },
           ]}
         />
       }
@@ -411,51 +460,30 @@ export default async function ClaimsPage({
           <div className="p-4 space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                Showing {claims.length.toLocaleString()} of {totalForPager.toLocaleString()} matching claims
-                {statusFilter ? ` · ${STATUS_META[statusFilter]?.label ?? statusFilter}` : ''}
-                {!statusFilter && queueFilter === 'active' ? ' · active queue' : ''}
-                {!statusFilter && queueFilter === 'history' ? ' · history' : ''}
-                {slaFilter ? ` · SLA ${slaFilter}` : ''}
+                {resultText}
               </p>
               <Suspense fallback={<span className="text-xs" style={{ color: 'var(--text-muted)' }}>Rows per page…</span>}>
                 <PageSizeSelect pathname="/claims" pageSize={pageSize} />
               </Suspense>
             </div>
 
-            {/* Status filter tabs */}
-            <div className="flex flex-wrap items-center gap-x-1 gap-y-1 border-b pb-3" style={{ borderColor: 'var(--border-subtle)' }}>
-              {statusTabs.map((tab) => {
-                const special =
-                  tab.label === 'Unread' ? { viewed: 'unread', queue: 'active', owner: undefined, status: undefined } :
-                  tab.label === 'Assigned to me' ? { owner: 'me', queue: 'active', viewed: undefined, status: undefined } :
-                  tab.label === 'Unassigned' ? { owner: 'unassigned', queue: 'active', viewed: undefined, status: undefined } :
-                  null;
-                const active = special
-                  ? (tab.label === 'Unread' ? viewedFilter === 'unread' : tab.label === 'Assigned to me' ? ownerFilter === 'me' : ownerFilter === 'unassigned')
-                  : tab.queue
-                  ? !statusFilter && queueFilter === tab.queue
-                  : statusFilter === tab.value;
-                const href = `/claims${buildClaimsQueryString(sp, {
-                  status: special?.status ?? tab.value ?? undefined,
-                  queue: special?.queue ?? (tab.queue === 'history' || tab.queue === 'snoozed' ? tab.queue : undefined),
-                  owner: special?.owner,
-                  viewed: special?.viewed,
-                  page: '1',
-                })}`;
-                return (
-                  <Link
-                    key={tab.label}
-                    href={href}
-                    className="px-3 py-1 rounded-full text-xs font-medium transition-colors"
-                    style={{
-                      background: active ? 'var(--accent)' : 'var(--bg-subtle)',
-                      color: active ? 'var(--text-inverse)' : 'var(--text-muted)',
-                    }}
-                  >
-                    {tab.label}
-                  </Link>
-                );
-              })}
+            <div className="flex flex-wrap items-center gap-x-1 gap-y-1 border-b pb-3" style={{ borderColor: 'var(--border-subtle)' }} role="tablist" aria-label="Claims queues">
+              {filterTabs.map((tab) => (
+                <Link
+                  key={tab.label}
+                  href={tab.href}
+                  role="tab"
+                  aria-selected={tab.active}
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-colors"
+                  style={{
+                    background: tab.active ? 'var(--accent)' : 'var(--bg-subtle)',
+                    color: tab.active ? 'var(--text-inverse)' : 'var(--text-muted)',
+                  }}
+                >
+                  {tab.label}
+                  <span className="font-mono tabular-nums">{tab.count}</span>
+                </Link>
+              ))}
             </div>
 
             <div className="rounded-md border px-3 py-2 text-xs" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)', color: 'var(--text-muted)' }}>
@@ -463,7 +491,7 @@ export default async function ClaimsPage({
                 ? 'History shows resolved and closed claims with merchant-recorded outcomes.'
                 : queueFilter === 'snoozed'
                   ? 'Snoozed claims are hidden from the active queue until follow-up is due.'
-                : 'Active queue shows unresolved work only. Resolved and closed claims move to history.'}
+                : 'Open/read removes a claim from New / unread but keeps it in Active until resolved. Resolve/close moves it to History.'}
             </div>
 
             <div className="flex flex-wrap items-center gap-2 text-xs">
@@ -487,7 +515,21 @@ export default async function ClaimsPage({
 
             {claims.length === 0 ? (
               <div className="rounded-md border py-12 text-center text-sm" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)', color: 'var(--text-muted)' }}>
-                <p>{statusFilter ? `No claims with status "${statusFilter}".` : queueFilter === 'history' ? 'No resolved claims in history yet.' : 'No active claims need work right now.'}</p>
+                <p>
+                  {listView.kind === 'unread'
+                    ? 'No new unread claims right now.'
+                    : listView.kind === 'history'
+                      ? 'No resolved claims in history yet.'
+                      : listView.kind === 'snoozed'
+                        ? 'No snoozed claims right now.'
+                        : listView.kind === 'assigned_me'
+                          ? 'No claims are assigned to you.'
+                          : listView.kind === 'unassigned'
+                            ? 'No unassigned active claims.'
+                            : slaFilter === 'overdue'
+                              ? 'No overdue claims in this view.'
+                              : 'No claims match this filter.'}
+                </p>
                 {queueFilter === 'active' && (
                   <Link href="/claims?queue=history" className="mt-2 inline-block font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
                     View history

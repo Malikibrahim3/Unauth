@@ -1,0 +1,169 @@
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { TABLES } from '@/lib/supabase/tables';
+import { normaliseEmail } from '@/lib/identity/normalise';
+import { hashIdentifier } from '@/lib/identity/hash';
+import {
+  fetchMerchantScopedCustomerProfile,
+  fetchMerchantScopedCustomerTransactions,
+} from '@/lib/supabase/merchantHelpers';
+import { maskEmail, maskAddress, maskIdentifier } from '@/lib/privacy/mask';
+import { scoreToGrade, gradeToLetter, K_ANONYMITY_MIN } from '@/lib/engine/weights';
+import { humanizeFraudFlags, crossMerchantSummary } from '@/lib/api/v1/signals';
+import { logPublicApiAccess } from '@/lib/api/v1/audit';
+import { env } from '@/lib/utils/env';
+
+export type CustomerAuth = {
+  merchantId: string;
+  apiKeyId: string;
+  requestIp: string;
+};
+
+export type CustomerResult =
+  | { ok: true; body: Record<string, unknown> }
+  | { ok: false; status: number; error: string };
+
+async function resolveProfileIdByEmail(
+  service: SupabaseClient,
+  merchantId: string,
+  normEmail: string
+): Promise<string | null> {
+  const filters = `merchant_ids.cs.${JSON.stringify([merchantId])}`;
+
+  const { data, error } = await service
+    .from(TABLES.CUSTOMER_PROFILES)
+    .select('id')
+    .contains('emails', JSON.stringify([normEmail]))
+    .or(filters)
+    .order('risk_score', { ascending: false })
+    .limit(1)
+    .maybeSingle() as unknown as { data: { id: string } | null; error: { message: string } | null };
+
+  if (error) {
+    throw new Error(error.message);
+  }
+  return data?.id ?? null;
+}
+
+function countInrClaims(transactions: Array<Record<string, unknown>>): number {
+  return transactions.filter((tx) => {
+    const reason = String(tx.refund_reason ?? '').toLowerCase();
+    return reason === 'inr' || reason.includes('not received');
+  }).length;
+}
+
+export async function performV1CustomerProfile(
+  service: SupabaseClient,
+  auth: CustomerAuth,
+  rawEmail: string
+): Promise<CustomerResult> {
+  if (!rawEmail.trim()) {
+    return { ok: false, status: 400, error: 'email query parameter is required' };
+  }
+
+  const normEmail = normaliseEmail(rawEmail.trim());
+  if (!normEmail) {
+    return { ok: false, status: 400, error: 'Invalid email address' };
+  }
+  const queriedHashes = [hashIdentifier(normEmail)];
+
+  let profileId: string | null;
+  try {
+    profileId = await resolveProfileIdByEmail(service, auth.merchantId, normEmail);
+  } catch {
+    return { ok: false, status: 500, error: 'Profile lookup failed' };
+  }
+
+  if (!profileId) {
+    await logPublicApiAccess(service, {
+      merchantId: auth.merchantId,
+      queryType: 'api_v1_customers',
+      kAnonymitySatisfied: false,
+      resultReturned: false,
+      queriedHashes,
+      matchedMerchantCount: 0,
+      requestIp: auth.requestIp,
+      apiKeyId: auth.apiKeyId,
+    });
+    return { ok: false, status: 404, error: 'Customer not found in your merchant data' };
+  }
+
+  const profile = await fetchMerchantScopedCustomerProfile(
+    service,
+    auth.merchantId,
+    profileId
+  );
+
+  if (!profile) {
+    await logPublicApiAccess(service, {
+      merchantId: auth.merchantId,
+      queryType: 'api_v1_customers',
+      kAnonymitySatisfied: false,
+      resultReturned: false,
+      queriedHashes,
+      matchedMerchantCount: 0,
+      requestIp: auth.requestIp,
+      apiKeyId: auth.apiKeyId,
+    });
+    return { ok: false, status: 404, error: 'Customer not found in your merchant data' };
+  }
+
+  const transactions = await fetchMerchantScopedCustomerTransactions(
+    service,
+    auth.merchantId,
+    profileId,
+    profile
+  );
+
+  const emails = (Array.isArray(profile.emails) ? profile.emails : []) as string[];
+  const addresses = (Array.isArray(profile.addresses) ? profile.addresses : []) as string[];
+  const cards = (Array.isArray(profile.card_last4s) ? profile.card_last4s : []) as string[];
+  const flags = (Array.isArray(profile.fraud_flags) ? profile.fraud_flags : []) as string[];
+
+  const riskScore = Number(profile.risk_score ?? 0);
+  const confidence = scoreToGrade(riskScore);
+  const merchantCount = Number(profile.total_merchants_seen_at ?? 1);
+  const kAnonOk = merchantCount >= K_ANONYMITY_MIN;
+
+  await logPublicApiAccess(service, {
+    merchantId: auth.merchantId,
+    queryType: 'api_v1_customers',
+    kAnonymitySatisfied: kAnonOk,
+    resultReturned: true,
+    queriedHashes,
+    matchedMerchantCount: merchantCount,
+    requestIp: auth.requestIp,
+    apiKeyId: auth.apiKeyId,
+  });
+
+  const crossMerchant = crossMerchantSummary(
+    merchantCount,
+    Number(profile.total_refund_claims ?? 0)
+  );
+
+  const appBase = env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '');
+
+  return {
+    ok: true,
+    body: {
+      profile_id: profileId,
+      risk_grade: gradeToLetter(confidence),
+      confidence,
+      risk_score: Math.round(riskScore),
+      investigation_status: String(profile.investigation_status ?? 'new'),
+      identity_timeline: {
+        emails: emails.map((e) => maskEmail(e)).filter(Boolean),
+        addresses: addresses.map((a) => maskAddress(a)).filter(Boolean),
+        cards: cards.map((c) => maskIdentifier(c, 4)).filter(Boolean),
+      },
+      behavioral_history: {
+        total_orders: Number(profile.total_orders ?? 0),
+        refund_claims: Number(profile.total_refund_claims ?? 0),
+        chargebacks: Number(profile.total_chargebacks ?? 0),
+        INR_claims: countInrClaims(transactions),
+      },
+      cross_merchant: crossMerchant,
+      signals: humanizeFraudFlags(flags),
+      profile_url: `${appBase}/customers/${profileId}`,
+    },
+  };
+}

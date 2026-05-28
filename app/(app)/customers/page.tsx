@@ -59,6 +59,8 @@ interface PageProps {
   searchParams: Promise<{
     // Basic
     q?: string;
+    /** Alias for q= — used by Gorgias widget and Chrome extension deep links */
+    email?: string;
     risk?: string;
     hasRefunds?: string;
     hasChargebacks?: string;
@@ -115,7 +117,7 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
   const offset = (page - 1) * PAGE_SIZE;
 
   // Basic
-  const q               = sp.q?.trim() ?? '';
+  const q               = sp.q?.trim() || sp.email?.trim() || '';
   const riskFilter      = sp.risk ?? '';
   const hasRefunds      = sp.hasRefunds === '1';
   const hasChargebacks  = sp.hasChargebacks === '1';

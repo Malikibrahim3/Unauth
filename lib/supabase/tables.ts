@@ -17,6 +17,7 @@ export const TABLES = {
   WATCHLIST_ENTRIES: 'watchlist_entries',
   CSV_UPLOAD_QUEUE: 'csv_upload_queue',
   EVIDENCE_PACKAGES: 'evidence_packages',
+  MERCHANT_API_KEYS: 'merchant_api_keys',
 } as const;
 
 export type TableName = typeof TABLES[keyof typeof TABLES];

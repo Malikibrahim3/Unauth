@@ -14,13 +14,9 @@ import {
 import { requirePermission, PERMISSIONS, resolveDefaultAppPath } from '@/lib/permissions';
 import TrackPageView from '@/components/common/TrackPageView';
 import DashboardCharts, { type TransactionChartData } from '@/components/dashboard/DashboardCharts';
-import NextUpPanel, { type NextUpClaim } from '@/components/dashboard/NextUpPanel';
 import { ConfidenceBadge } from '@/components/ui/ConfidenceBadge';
 import { Badge } from '@/components/ui/Badge';
 import { riskLevelToNewGrade } from '@/lib/confidence';
-import { signalCopy } from '@/lib/copy/signals';
-import { ACTIVE_CLAIM_STATUSES } from '@/lib/claims/sla';
-import { pickPriorityClaim } from '@/lib/claims/priority';
 
 type RunRow = Database['public']['Tables']['processing_jobs']['Row'];
 
@@ -36,16 +32,6 @@ type QueueRow = {
   customer_email: string | null;
   customer_name: string | null;
   signals_matched: string[] | null;
-};
-
-type ClusterRow = {
-  id: string;
-  names: string[] | null;
-  primary_email: string | null;
-  risk_level: string;
-  total_orders: number;
-  total_refund_claims: number;
-  total_merchants_seen_at: number;
 };
 
 type ActivityItem = {
@@ -65,15 +51,6 @@ function toNumber(value: number | string | null | undefined): number {
 function signalList(row: QueueRow): string[] {
   if (!Array.isArray(row.signals_matched)) return [];
   return row.signals_matched.filter((s): s is string => typeof s === 'string' && s.length > 0);
-}
-
-function formatCompactMoney(value: number): string {
-  return new Intl.NumberFormat('en-GB', {
-    style: 'currency',
-    currency: 'GBP',
-    notation: 'compact',
-    maximumFractionDigits: 1,
-  }).format(value);
 }
 
 function gradeFromQueueRow(row: QueueRow): 'A' | 'B' | 'C' | 'D' | 'F' {
@@ -111,9 +88,6 @@ export default async function DashboardPage() {
   const latestRun = typedRuns[0] ?? null;
   const isEmpty = typedRuns.length === 0;
 
-  const totalTransactions = typedRuns.reduce((sum, r) => sum + r.total_rows, 0);
-  const totalFlagged = typedRuns.reduce((sum, r) => sum + (r.flagged_count ?? 0), 0);
-  const avgFlagRate = totalTransactions > 0 ? (totalFlagged / totalTransactions) * 100 : null;
   const jobIds = typedRuns.map((run) => run.id);
 
   let chartTransactions: TransactionChartData[] = [];
@@ -167,97 +141,7 @@ export default async function DashboardPage() {
     profileIdByTx = new Map<string, string>();
   }
 
-  const merchantFilter = `merchant_ids.cs.${JSON.stringify([user.id])},merchant_ids.cs.${JSON.stringify([ctx.merchantId])}`;
-  let clusterRows: ClusterRow[] = [];
-  try {
-    const { data } = await serviceClient
-      .from(TABLES.CUSTOMER_PROFILES)
-      .select('id,names,primary_email,risk_level,total_orders,total_refund_claims,total_merchants_seen_at')
-      .or(merchantFilter)
-      .order('total_merchants_seen_at', { ascending: false })
-      .order('risk_score', { ascending: false })
-      .limit(6);
-    clusterRows = (data as ClusterRow[] | null) ?? [];
-  } catch {
-    clusterRows = [];
-  }
-
-  const signalCounts = new Map<string, number>();
-  for (const row of reviewRows) {
-    for (const sig of signalList(row)) {
-      signalCounts.set(sig, (signalCounts.get(sig) ?? 0) + 1);
-    }
-  }
-  const topSignals = [...signalCounts.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
-    .map(([name, count]) => ({ name, count }));
-  const networkClusterRows = clusterRows.filter((profile) => profile.total_merchants_seen_at > 1);
-  const visibleClusterRows = networkClusterRows.length > 0 ? networkClusterRows : clusterRows;
-
-  let nextUpClaims: NextUpClaim[] = [];
-  try {
-    const { data: rawClaims } = await serviceClient
-      .from('merchant_claims' as never)
-      .select('id,customer_id,claim_type,status,amount_at_risk,currency,submitted_at,created_at,updated_at')
-      .eq('merchant_id', ctx.merchantId)
-      .in('status', [...ACTIVE_CLAIM_STATUSES])
-      .limit(50);
-
-    const claimPool = (rawClaims ?? []) as Array<{
-      id: string;
-      customer_id: string | null;
-      claim_type: string;
-      status: string;
-      amount_at_risk: number | null;
-      currency: string | null;
-      submitted_at?: string | null;
-      created_at?: string | null;
-      updated_at?: string | null;
-    }>;
-
-    const remaining = [...claimPool];
-    const ranked: typeof claimPool = [];
-    while (ranked.length < 5 && remaining.length > 0) {
-      const next = pickPriorityClaim(remaining);
-      if (!next) break;
-      ranked.push(next);
-      remaining.splice(remaining.findIndex((claim) => claim.id === next.id), 1);
-    }
-
-    const customerIds = [...new Set(ranked.map((c) => c.customer_id).filter(Boolean) as string[])];
-    const profileById = new Map<string, { names: string[] | null; primary_email: string | null }>();
-    if (customerIds.length > 0) {
-      const { data: profiles } = await serviceClient
-        .from(TABLES.CUSTOMER_PROFILES)
-        .select('id, names, primary_email')
-        .in('id', customerIds);
-      for (const profile of (profiles ?? []) as Array<{ id: string; names: string[] | null; primary_email: string | null }>) {
-        profileById.set(profile.id, profile);
-      }
-    }
-
-    nextUpClaims = ranked
-      .filter((claim) => claim.customer_id)
-      .map((claim) => {
-        const profile = profileById.get(claim.customer_id!);
-        return {
-          id: claim.id,
-          customerId: claim.customer_id!,
-          customerName: profile?.names?.[0] ?? 'Unknown customer',
-          customerEmail: profile?.primary_email ?? null,
-          claimType: claim.claim_type,
-          status: claim.status,
-          amountAtRisk: claim.amount_at_risk,
-          currency: claim.currency,
-          submittedAt: claim.submitted_at,
-          createdAt: claim.created_at,
-          updatedAt: claim.updated_at,
-        };
-      });
-  } catch {
-    nextUpClaims = [];
-  }
+  const recentRuns = typedRuns.slice(0, 5);
 
   const activity: ActivityItem[] = [];
   if (latestRun) {
@@ -306,7 +190,7 @@ export default async function DashboardPage() {
           <div className="min-w-0">
             <h1 className="t-heading" style={{ color: 'var(--ink-primary)' }}>Dashboard</h1>
             <p className="text-body-sm mt-1" style={{ color: 'var(--ink-secondary)' }}>
-              Operational overview and priority work across your merchant data.
+              Investigation intelligence — look up customers, export evidence, and take findings back to your helpdesk.
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -320,41 +204,36 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 border-b md:grid-cols-[1.35fr_repeat(4,minmax(0,1fr))]" style={{ borderColor: 'var(--border-default)' }}>
+        <div className="grid grid-cols-2 border-b md:grid-cols-4" style={{ borderColor: 'var(--border-default)' }}>
           {[
             {
               label: 'Exposure at risk',
               value: exposureAtRisk === null ? 'Unavailable' : formatCurrencyNullable(exposureAtRisk),
-              hint: exposureAtRisk === null ? 'Could not be computed' : 'Current queue',
+              hint: exposureAtRisk === null ? 'Could not be computed' : 'Flagged order value',
             },
             {
-              label: 'Customers to review',
+              label: 'Flagged customers',
               value: reviewQueue === null ? 'Unavailable' : reviewQueue === 0 ? '—' : reviewQueue.toLocaleString(),
-              hint: reviewQueue === null ? 'Count could not be loaded' : 'Open profiles',
+              hint: reviewQueue === null ? 'Count could not be loaded' : 'Profiles to review',
             },
             {
-              label: 'Transactions analysed',
-              value: totalTransactions.toLocaleString(),
-              hint: `${typedRuns.length} audit ${typedRuns.length === 1 ? 'run' : 'runs'}`,
-            },
-            {
-              label: 'Evidence ready',
+              label: 'Evidence packages ready',
               value: totalPackages.toLocaleString(),
-              hint: ce3Packages > 0 ? `${ce3Packages} with CE3.0 signals` : 'No CE3.0 signals detected',
+              hint: ce3Packages > 0 ? `${ce3Packages} with CE3.0 signals` : 'Use in Shopify dispute or bank portal',
             },
             {
-              label: 'Avg match rate',
-              value: avgFlagRate === null ? '—' : `${avgFlagRate.toFixed(1)}%`,
-              hint: avgFlagRate === null ? 'Awaiting data' : avgFlagRate >= 10 ? 'High' : avgFlagRate >= 4 ? 'Elevated' : 'Normal',
+              label: 'Recent audit runs',
+              value: typedRuns.length.toLocaleString(),
+              hint: latestRun ? formatDateMode(latestRun.created_at, 'recent') : 'Upload a CSV to start',
             },
           ].map((metric, idx) => (
             <div
               key={metric.label}
-              className={idx === 4 ? 'px-3 py-3 md:px-4' : 'px-3 py-3 md:px-4'}
+              className="px-3 py-3 md:px-4"
               style={{
                 borderRightColor: 'var(--border-default)',
-                borderRightWidth: idx === 4 ? 0 : 1,
-                borderRightStyle: idx === 4 ? 'none' : 'solid',
+                borderRightWidth: idx === 3 ? 0 : 1,
+                borderRightStyle: idx === 3 ? 'none' : 'solid',
               }}
             >
               <p className="t-label" style={{ color: 'var(--ink-tertiary)' }}>{metric.label}</p>
@@ -363,8 +242,6 @@ export default async function DashboardPage() {
             </div>
           ))}
         </div>
-
-        <NextUpPanel claims={nextUpClaims} inboxCount={reviewRows.length} />
 
         <DashboardCharts
           runs={typedRuns.map((run) => ({
@@ -381,9 +258,9 @@ export default async function DashboardPage() {
           <section className="border-r" style={{ borderColor: 'var(--border-default)' }}>
             <div className="flex items-center justify-between border-b px-4 py-2" style={{ borderColor: 'var(--border-default)', background: 'var(--bg-surface-alt)' }}>
               <div>
-                <p className="text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Cases requiring attention</p>
+                <p className="text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Flagged customers to review</p>
                 <p className="text-caption" style={{ color: 'var(--text-subtle)' }}>
-                  {reviewRows.length} in immediate queue
+                  Look up by email, then take intelligence back to Gorgias or Zendesk
                 </p>
               </div>
               <Link href="/customers?risk=high&status=new" className="text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
@@ -445,25 +322,53 @@ export default async function DashboardPage() {
           </section>
 
           <aside>
+            <div className="border-b px-4 py-3" style={{ borderColor: 'var(--border-default)', background: 'var(--bg-surface-alt)' }}>
+              <p className="text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Helpdesk integrations</p>
+              <p className="text-caption mt-1" style={{ color: 'var(--text-muted)' }}>
+                Connect your helpdesk —{' '}
+                <Link href="/settings/integrations/gorgias" className="font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
+                  Gorgias available now
+                </Link>
+                . Zendesk and Shopify sidebar coming soon.
+              </p>
+            </div>
+
             <div className="border-b px-4 py-2" style={{ borderColor: 'var(--border-default)', background: 'var(--bg-surface-alt)' }}>
-              <p className="text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Network exposure</p>
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Evidence packages ready</p>
+                <Link href="/chargebacks" className="text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
+                  View all →
+                </Link>
+              </div>
             </div>
             <div className="border-b px-4 py-2" style={{ borderColor: 'var(--border-subtle)' }}>
-              {visibleClusterRows.length === 0 ? (
-                <p className="text-caption" style={{ color: 'var(--text-subtle)' }}>No network-linked profiles yet.</p>
+              <p className="text-body-sm font-semibold num" style={{ color: 'var(--text)' }}>{totalPackages.toLocaleString()}</p>
+              <p className="text-caption mt-1" style={{ color: 'var(--text-muted)' }}>
+                {ce3Packages > 0
+                  ? `${ce3Packages} include CE3.0 signals — use in your Shopify dispute or bank portal.`
+                  : 'Generate packages from a customer profile when a dispute needs documentation.'}
+              </p>
+            </div>
+
+            <div className="border-b px-4 py-2" style={{ borderColor: 'var(--border-default)', background: 'var(--bg-surface-alt)' }}>
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Recent audit runs</p>
+                <Link href="/history" className="text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
+                  History →
+                </Link>
+              </div>
+            </div>
+            <div className="border-b px-4 py-2" style={{ borderColor: 'var(--border-subtle)' }}>
+              {recentRuns.length === 0 ? (
+                <p className="text-caption" style={{ color: 'var(--text-subtle)' }}>No audits yet.</p>
               ) : (
                 <div className="space-y-2">
-                  {visibleClusterRows.map((profile) => (
-                    <Link key={profile.id} href={`/customers/${profile.id}`} className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 hover:opacity-80">
-                      <div className="min-w-0">
-                        <p className="truncate text-caption font-medium" style={{ color: 'var(--text)' }}>
-                          {profile.names?.[0] ?? profile.primary_email ?? 'Unknown profile'}
-                        </p>
-                        <p className="truncate text-caption font-mono" style={{ color: 'var(--text-muted)' }}>
-                          {profile.total_merchants_seen_at} merchants · {profile.total_orders} orders · {profile.total_refund_claims} claims
-                        </p>
-                      </div>
-                      <ConfidenceBadge grade={riskLevelToNewGrade(profile.risk_level)} size="sm" />
+                  {recentRuns.map((run) => (
+                    <Link key={run.id} href={`/audit/${run.id}`} className="block hover:opacity-80">
+                      <p className="truncate text-caption font-medium" style={{ color: 'var(--text)' }}>{run.filename}</p>
+                      <p className="text-caption font-mono" style={{ color: 'var(--text-muted)' }}>
+                        {(run.flagged_count ?? 0).toLocaleString()} flagged · {formatDateMode(run.created_at, 'recent')}
+                      </p>
                     </Link>
                   ))}
                 </div>
@@ -471,21 +376,15 @@ export default async function DashboardPage() {
             </div>
 
             <div className="border-b px-4 py-2" style={{ borderColor: 'var(--border-default)', background: 'var(--bg-surface-alt)' }}>
-              <p className="text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Top signals</p>
+              <p className="text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Exposure at risk</p>
             </div>
             <div className="border-b px-4 py-2" style={{ borderColor: 'var(--border-subtle)' }}>
-              {topSignals.length === 0 ? (
-                <p className="text-caption" style={{ color: 'var(--text-subtle)' }}>No signal breakdown yet.</p>
-              ) : (
-                <div className="space-y-2">
-                  {topSignals.map((sig) => (
-                    <div key={sig.name} className="grid grid-cols-[minmax(0,1fr)_26px] items-center gap-2">
-                      <p className="truncate text-caption" style={{ color: 'var(--text-muted)' }}>{signalCopy(sig.name).short}</p>
-                      <span className="text-caption text-right font-mono num" style={{ color: 'var(--text)' }}>{sig.count}x</span>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <p className="t-display num" style={{ color: 'var(--data-currency)' }}>
+                {exposureAtRisk === null ? '—' : formatCurrencyNullable(exposureAtRisk)}
+              </p>
+              <p className="text-caption mt-1" style={{ color: 'var(--text-muted)' }}>
+                Estimated value tied to flagged identities in your current dataset.
+              </p>
             </div>
 
             <div className="border-b px-4 py-2" style={{ borderColor: 'var(--border-default)', background: 'var(--bg-surface-alt)' }}>

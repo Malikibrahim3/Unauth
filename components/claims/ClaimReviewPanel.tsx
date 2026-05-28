@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   recordCustomerResponseCopied,
   assignClaim,
@@ -150,6 +150,17 @@ export function clearClaimDraft(profileId: string) {
   } catch { /* noop */ }
 }
 
+export function shouldAttemptClaimViewed(
+  claimId: string | null | undefined,
+  firstViewedAt: string | null | undefined,
+  attemptedIds: Set<string>,
+) {
+  if (!claimId) return false;
+  if (firstViewedAt) return false;
+  if (attemptedIds.has(claimId)) return false;
+  return true;
+}
+
 function formatMoney(value: number | null | undefined, currency?: string | null) {
   if (typeof value !== 'number' || Number.isNaN(value)) return '—';
   return new Intl.NumberFormat('en-GB', { style: 'currency', currency: currency ?? 'GBP', minimumFractionDigits: 2 }).format(value);
@@ -201,8 +212,225 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
   return <label className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>{children}</label>;
 }
 
+function RailSection({
+  id,
+  title,
+  open,
+  onToggle,
+  children,
+  badge,
+  highlighted,
+}: {
+  id: string;
+  title: string;
+  open: boolean;
+  onToggle: (id: string) => void;
+  children: React.ReactNode;
+  badge?: React.ReactNode;
+  highlighted?: boolean;
+}) {
+  return (
+    <div
+      className="rounded-lg border overflow-hidden"
+      style={{
+        borderColor: highlighted ? 'var(--copper-bright)' : 'var(--border-subtle)',
+        background: 'var(--bg-surface)',
+        boxShadow: highlighted ? '0 0 0 1px var(--copper-bright)' : undefined,
+      }}
+    >
+      <button
+        type="button"
+        onClick={() => onToggle(id)}
+        className="w-full flex items-center justify-between px-3 py-2 text-left"
+        style={{ background: 'var(--bg-surface)' }}
+        aria-expanded={open}
+      >
+        <span className="flex items-center gap-1.5 min-w-0">
+          <span className="text-[10px] font-semibold uppercase tracking-wide truncate" style={{ color: 'var(--ink-secondary)' }}>{title}</span>
+          {badge}
+        </span>
+        <span className="text-[10px] shrink-0 ml-2" style={{ color: 'var(--text-muted)' }}>{open ? '▲' : '▼'}</span>
+      </button>
+      {open && (
+        <div className="px-3 pb-3 pt-0 border-t" style={{ borderColor: 'var(--border-subtle)' }}>
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const QUICK_LIFECYCLE_STATUSES: Array<{ value: ClaimStatus; label: string }> = [
+  { value: 'under_review', label: 'Under review' },
+  { value: 'evidence_requested', label: 'Awaiting evidence' },
+  { value: 'pending', label: 'Awaiting info' },
+  { value: 'escalated', label: 'Escalated' },
+];
+
+function ClaimLifecycleStatusBar({
+  claimId,
+  busy,
+  claimIsClosed,
+  statusToSet,
+  setStatusToSet,
+  statusNote,
+  setStatusNote,
+  onStatusChange,
+  reopenNote,
+  setReopenNote,
+  onReopen,
+  canReopen,
+  submitIsPrimary,
+}: {
+  claimId: string;
+  busy: boolean;
+  claimIsClosed: boolean;
+  statusToSet: ClaimStatus;
+  setStatusToSet: (status: ClaimStatus) => void;
+  statusNote: string;
+  setStatusNote: (note: string) => void;
+  onStatusChange: () => void;
+  reopenNote: string;
+  setReopenNote: (note: string) => void;
+  onReopen: () => void;
+  canReopen: boolean;
+  submitIsPrimary?: boolean;
+}) {
+  if (claimIsClosed) {
+    return (
+      <div className="space-y-2">
+        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Claim closed — reopen to return to active queue.</p>
+        <textarea
+          className="w-full px-2 py-1.5 rounded-md text-xs resize-none"
+          style={inputStyle()}
+          rows={2}
+          placeholder="Reason for reopening"
+          value={reopenNote}
+          onChange={(e) => setReopenNote(e.target.value)}
+        />
+        <button
+          type="button"
+          onClick={onReopen}
+          disabled={busy || !claimId || !canReopen}
+          className="w-full px-3 py-1.5 rounded-md text-xs font-semibold disabled:opacity-60"
+          style={btnStyle(submitIsPrimary ? 'primary' : 'secondary')}
+        >
+          Reopen claim
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <label className="block">
+        <FieldLabel>Status</FieldLabel>
+        <select
+          className="w-full px-2 py-1.5 rounded-md text-xs"
+          style={inputStyle()}
+          value={statusToSet}
+          onChange={(e) => setStatusToSet(e.target.value as ClaimStatus)}
+          aria-label="Claim lifecycle status"
+        >
+          {(Object.entries(STATUS_LABELS) as [ClaimStatus, string][]).map(([value, label]) => (
+            <option key={value} value={value}>{label}</option>
+          ))}
+        </select>
+      </label>
+      <label className="block">
+        <FieldLabel>Status note (required)</FieldLabel>
+        <input
+          type="text"
+          className="w-full px-2 py-1.5 rounded-md text-xs"
+          style={inputStyle()}
+          placeholder="e.g. Awaiting carrier POD"
+          value={statusNote}
+          onChange={(e) => setStatusNote(e.target.value)}
+        />
+      </label>
+      <button
+        type="button"
+        onClick={onStatusChange}
+        disabled={busy || !claimId}
+        className="w-full px-3 py-1.5 rounded-md text-xs font-semibold disabled:opacity-60"
+        style={btnStyle(submitIsPrimary && claimId ? 'primary' : claimId ? 'secondary' : 'disabled')}
+      >
+        Update status
+      </button>
+      <div className="flex flex-wrap gap-1" role="group" aria-label="Quick status shortcuts">
+        {QUICK_LIFECYCLE_STATUSES.map((item) => (
+          <button
+            key={item.value}
+            type="button"
+            disabled={busy || !claimId}
+            onClick={() => setStatusToSet(item.value)}
+            className="rounded-md border px-2 py-0.5 text-[10px] font-semibold disabled:opacity-50"
+            style={{
+              borderColor: statusToSet === item.value ? 'var(--accent)' : 'var(--border-subtle)',
+              background: 'var(--bg-surface)',
+              color: statusToSet === item.value ? 'var(--accent)' : 'var(--text-muted)',
+            }}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function inputStyle(): React.CSSProperties {
   return { border: '1px solid var(--border)', background: 'var(--bg-inset)', color: 'var(--text)' };
+}
+
+type PrimaryActionKey = 'evidence' | 'decision' | 'response' | 'status' | 'close' | 'save_claim' | 'reopen' | 'none';
+
+function resolvePrimaryAction(
+  claim: any,
+  hasEvidence: boolean,
+  hasDecision: boolean,
+  responseRecorded: boolean,
+  claimIsClosed: boolean,
+  claimId: string,
+): { key: PrimaryActionKey; label: string; reason: string; cta: string; railSection: string | null } {
+  if (!claimId) {
+    return { key: 'save_claim', label: 'Create claim record', reason: 'Save claim details before adding evidence or recording a decision.', cta: 'Create claim', railSection: null };
+  }
+  if (!claim) {
+    return { key: 'none', label: 'Select a claim', reason: 'Choose a claim from the header switcher or queue.', cta: '—', railSection: null };
+  }
+  if (claimIsClosed) {
+    return { key: 'reopen', label: 'Reopen for review', reason: 'This claim is closed. Reopen it to return it to the active queue.', cta: 'Reopen claim', railSection: 'status' };
+  }
+  if (!hasEvidence) {
+    return { key: 'evidence', label: 'Add delivery evidence', reason: 'Evidence on record helps the merchant decide with context.', cta: 'Save evidence', railSection: 'evidence' };
+  }
+  if (!hasDecision) {
+    return { key: 'decision', label: 'Record merchant decision', reason: 'Evidence is on record. Capture the merchant outcome for this claim.', cta: 'Record merchant decision', railSection: 'decision' };
+  }
+  if (!responseRecorded) {
+    return { key: 'response', label: 'Copy customer response', reason: 'Decision recorded. Send or log the customer-facing response.', cta: 'Copy & record response', railSection: 'response' };
+  }
+  if (!isFinalClaimStatus(claim.status)) {
+    return { key: 'status', label: 'Close claim', reason: 'Decision and response are recorded. Update status to resolved or closed.', cta: 'Update status', railSection: 'status' };
+  }
+  return { key: 'close', label: 'Work complete', reason: 'This case is ready to leave the active queue.', cta: 'Next claim', railSection: null };
+}
+
+function btnStyle(variant: 'primary' | 'secondary' | 'muted' | 'disabled'): React.CSSProperties {
+  if (variant === 'primary') return { background: 'var(--accent)', color: 'var(--text-inverse)' };
+  if (variant === 'muted') return { border: '1px solid var(--border-subtle)', background: 'var(--bg-inset)', color: 'var(--text-muted)' };
+  if (variant === 'disabled') return { border: '1px solid var(--border)', background: 'var(--bg-inset)', color: 'var(--text-muted)' };
+  return { border: '1px solid var(--border)', background: 'var(--bg-surface)', color: 'var(--text)' };
+}
+
+function CaseIntelTile({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-lg border px-3 py-2.5 min-w-0" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)' }}>
+      <p className="text-[10px] font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--text-muted)' }}>{label}</p>
+      <div className="text-sm leading-snug" style={{ color: 'var(--text)' }}>{children}</div>
+    </div>
+  );
 }
 
 function statusNextAction(claim: any, hasDecision: boolean, responseRecorded: boolean) {
@@ -240,7 +468,7 @@ export default function ClaimReviewPanel({ profileId, initialClaimId }: { profil
   const [claimType, setClaimType] = useState<ClaimType>('missing_parcel');
   const [customerReason, setCustomerReason] = useState('');
   const [notes, setNotes] = useState('');
-  const [claimId, setClaimId] = useState('');
+  const [claimId, setClaimId] = useState(initialClaimId ?? '');
   const [decision, setDecision] = useState<Decision>('escalated');
   const [outcome, setOutcome] = useState<Outcome>('pending');
   const [evidenceType, setEvidenceType] = useState<EvidenceType>('tracking');
@@ -260,8 +488,18 @@ export default function ClaimReviewPanel({ profileId, initialClaimId }: { profil
   const [reverseNote, setReverseNote] = useState('');
   const [nextClaimHref, setNextClaimHref] = useState<string | null>(null);
   const [noMoreClaims, setNoMoreClaims] = useState(false);
-  const [actionTab, setActionTab] = useState<'resolve' | 'status' | 'escalate'>('resolve');
+  const [actionTab, setActionTab] = useState<'resolve' | 'escalate'>('resolve');
   const [auditTab, setAuditTab] = useState<'timeline' | 'history'>('timeline');
+  const [claimFormOpen, setClaimFormOpen] = useState(false);
+  const [railOpen, setRailOpen] = useState<Record<string, boolean>>({
+    ownership: false,
+    status: false,
+    snooze: false,
+    evidence: false,
+    decision: false,
+    response: false,
+    advanced: false,
+  });
   // Manual order entry (Fix 2)
   const [manualOrderRef, setManualOrderRef] = useState('');
   const [manualOrderSource, setManualOrderSource] = useState('manual');
@@ -270,6 +508,7 @@ export default function ClaimReviewPanel({ profileId, initialClaimId }: { profil
   const [orderValue, setOrderValue] = useState('');
   const [snoozeDays, setSnoozeDays] = useState('2');
   const [snoozeReason, setSnoozeReason] = useState('Awaiting carrier or customer evidence');
+  const viewedAttemptedRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     fetch(`/api/customers/${profileId}`).then(r => r.ok ? r.json() : null).then((x) => setData(x)).catch(() => {});
@@ -388,17 +627,47 @@ export default function ClaimReviewPanel({ profileId, initialClaimId }: { profil
   const claimIsClosed = selectedClaim ? isFinalClaimStatus(selectedClaim.status) : false;
 
   useEffect(() => {
+    if (initialClaimId) setClaimId(initialClaimId);
+  }, [initialClaimId]);
+
+  useEffect(() => {
     if (history.length === 0 || claimId) return;
     const priority = pickPriorityClaim(history, initialClaimId ?? null);
     if (!priority) return;
     setClaimId(priority.id);
   }, [claimId, history, initialClaimId]);
 
+  // Open claim form when no claim is selected yet
+  useEffect(() => {
+    if (!claimId) setClaimFormOpen(true);
+  }, [claimId]);
+
+  // Smart accordion defaults based on claim state
+  useEffect(() => {
+    if (!selectedClaim) {
+      setRailOpen({ ownership: false, status: false, snooze: false, evidence: false, decision: false, response: false, advanced: false });
+      return;
+    }
+    const isClosed = isFinalClaimStatus(selectedClaim.status);
+    const hasDecisionNow = !!(selectedClaim.latest_outcome);
+    const responseNow = (selectedClaim.events ?? []).some((e: any) => e.event_type === 'customer_response_copied');
+    const evidenceNow = claimHasEvidence({ evidence_count: selectedClaim.evidence_count, events: selectedClaim.events ?? [] });
+    const awaitingInfo = selectedClaim.status === 'pending' || selectedClaim.status === 'evidence_requested';
+
+    setRailOpen({
+      ownership: false,
+      status: awaitingInfo,
+      snooze: awaitingInfo,
+      evidence: !evidenceNow && !isClosed,
+      decision: evidenceNow && !hasDecisionNow && !isClosed,
+      response: hasDecisionNow && !responseNow && !isClosed,
+      advanced: isClosed,
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedClaim?.id, selectedClaim?.status]);
+
   useEffect(() => {
     if (!selectedClaim) return;
-    if (!selectedClaim.first_viewed_at) {
-      markClaimViewed(selectedClaim.id).then(() => refreshHistory()).catch(() => {});
-    }
     if (selectedClaim.claim_type) setClaimType(selectedClaim.claim_type as ClaimType);
     if (selectedClaim.customer_claim_reason) setCustomerReason(selectedClaim.customer_claim_reason);
     if (selectedClaim.normalized_reason) setNotes(selectedClaim.normalized_reason);
@@ -424,13 +693,70 @@ export default function ClaimReviewPanel({ profileId, initialClaimId }: { profil
     }
   }, [selectedClaim, orderOptions]);
 
+  useEffect(() => {
+    if (!shouldAttemptClaimViewed(selectedClaim?.id, selectedClaim?.first_viewed_at, viewedAttemptedRef.current)) {
+      return;
+    }
+    const selectedClaimId = selectedClaim!.id;
+    viewedAttemptedRef.current.add(selectedClaimId);
+    const viewedAt = new Date().toISOString();
+    setHistory((prev) =>
+      prev.map((item) =>
+        item.id === selectedClaimId ? { ...item, first_viewed_at: item.first_viewed_at ?? viewedAt } : item,
+      ),
+    );
+    void markClaimViewed(selectedClaimId).then((result) => {
+      // Only show error for genuine failures, not idempotent already-viewed responses
+      const msg = result.message.toLowerCase();
+      if (msg.includes('denied') || (msg.includes('failed') && !msg.includes('already'))) {
+        showMsg(result.message, 'error');
+      }
+    });
+  }, [selectedClaim?.id, selectedClaim?.first_viewed_at]);
+
   const riskScore = order?.fraudScore ?? data?.profile?.risk_score;
   const customerName = data?.profile?.names?.[0] ?? data?.profile?.customerName ?? data?.profile?.name ?? 'Customer';
   const customerEmail = data?.profile?.primary_email ?? data?.profile?.primaryEmail ?? data?.profile?.email ?? data?.profile?.customerEmail ?? null;
   const customerProfileHref = `/customers/${profileId}`;
   const fraudFlags: string[] = order?.fraudFlags ?? data?.profile?.fraud_flags ?? [];
   const nextClaimAction = statusNextAction(selectedClaim, !!latestOutcome, responseRecorded);
+  const primaryAction = useMemo(
+    () => resolvePrimaryAction(selectedClaim, evidenceRecorded, !!latestOutcome, responseRecorded, claimIsClosed, claimId),
+    [selectedClaim, evidenceRecorded, latestOutcome, responseRecorded, claimIsClosed, claimId],
+  );
   const identityPoints = identityEvidencePoints(data, order, fraudFlags);
+
+  function openRailSection(section: string) {
+    setRailOpen((p) => ({ ...p, [section]: true }));
+  }
+
+  async function handlePrimaryCta() {
+    switch (primaryAction.key) {
+      case 'save_claim':
+        setClaimFormOpen(true);
+        break;
+      case 'evidence':
+        openRailSection('evidence');
+        break;
+      case 'decision':
+        openRailSection('decision');
+        break;
+      case 'response':
+        openRailSection('response');
+        await onCopyCustomerResponse();
+        break;
+      case 'status':
+      case 'reopen':
+        openRailSection('status');
+        break;
+      case 'close':
+        if (nextClaimHref) window.location.href = nextClaimHref;
+        else openRailSection('status');
+        break;
+      default:
+        break;
+    }
+  }
 
   const metadata = useMemo(() => {
     const out: Record<string, string> = {};
@@ -691,13 +1017,13 @@ export default function ClaimReviewPanel({ profileId, initialClaimId }: { profil
   };
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-5">
+    <div className="flex flex-col" style={{ minHeight: '100vh', background: 'var(--bg-app)' }}>
 
-      {/* Toast */}
+      {/* Toast — fixed top-right */}
       {message && (
-        <div className="sticky top-4 z-30">
+        <div className="fixed top-4 right-4 z-50 max-w-sm w-full px-4">
           <p
-            className="text-sm px-4 py-2.5 rounded-lg border shadow-sm flex items-center gap-2"
+            className="text-sm px-4 py-2.5 rounded-lg border shadow-md flex items-center gap-2"
             style={{
               color: messageTone === 'success' ? '#166534' : messageTone === 'error' ? '#991b1b' : 'var(--text-muted)',
               borderColor: messageTone === 'success' ? '#86efac' : messageTone === 'error' ? '#fca5a5' : 'var(--border-subtle)',
@@ -710,722 +1036,724 @@ export default function ClaimReviewPanel({ profileId, initialClaimId }: { profil
         </div>
       )}
 
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h1 className="text-heading-lg">Claim review</h1>
-          <p className="text-body-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-            Review evidence, record outcomes, and maintain an audit-ready claim history.
-          </p>
-        </div>
-      </div>
-
-      {(selectedClaim || history.length > 0) && (
-        <section
-          className="sticky top-0 z-20 rounded-xl border px-4 py-3 shadow-sm"
-          style={{ borderColor: 'var(--border-subtle)', background: 'var(--surface-raised)' }}
-        >
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-caption font-semibold mb-1" style={{ color: 'var(--ink-secondary)' }}>Active claim summary</p>
-              {selectedClaim ? (
-                <>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-semibold text-sm" style={{ color: 'var(--text)' }}>
-                      {CLAIM_TYPE_LABELS[selectedClaim.claim_type as ClaimType] ?? selectedClaim.claim_type}
+      {/* Sticky case header */}
+      <header
+        className="sticky top-0 z-30 border-b px-4 md:px-6 py-3"
+        style={{ background: 'var(--surface-raised)', borderColor: 'var(--border-subtle)' }}
+      >
+        <div className="max-w-[1440px] mx-auto flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-3 min-w-0">
+            {selectedClaim ? (
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-semibold text-sm" style={{ color: 'var(--text)' }}>
+                    {CLAIM_TYPE_LABELS[selectedClaim.claim_type as ClaimType] ?? selectedClaim.claim_type ?? 'Claim'}
+                  </span>
+                  <StatusPill status={selectedClaim.status} />
+                  <SlaBadge claim={selectedClaim} />
+                  {selectedClaim.amount_at_risk != null && (
+                    <span className="text-xs font-mono" style={{ color: 'var(--text-muted)' }}>
+                      {formatMoney(selectedClaim.amount_at_risk, selectedClaim.currency)}
                     </span>
-                    <StatusPill status={selectedClaim.status} />
-                    <SlaBadge claim={selectedClaim} />
-                  </div>
-                  <p className="mt-1 text-xs font-mono truncate" style={{ color: 'var(--text-muted)' }}>
-                    {selectedClaim.shopify_order_id ?? selectedClaim.order_ref ?? selectedClaim.id.slice(0, 8)}
-                    {' · '}
-                    {formatMoney(selectedClaim.amount_at_risk, selectedClaim.currency)}
-                    {' · '}
-                    {formatClaimAge(selectedClaim)}
-                  </p>
-                  <p className="mt-1 text-xs truncate" style={{ color: 'var(--text-muted)' }}>
-                    {customerName}{customerEmail ? ` · ${customerEmail}` : ''}
-                  </p>
-                </>
-              ) : (
-                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Select a claim from history or create a new one below.</p>
-              )}
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <a href={customerProfileHref} className="px-3 py-1.5 rounded-md text-xs font-semibold" style={{ border: '1px solid var(--border)', color: 'var(--text)' }}>
-                Customer profile
-              </a>
-              {history.length > 1 && (
-                <select
-                  className="px-2 py-1.5 rounded-md text-xs"
-                  style={inputStyle()}
-                  value={claimId}
-                  onChange={(e) => setClaimId(e.target.value)}
-                  aria-label="Select claim"
-                >
-                  <option value="">Switch claim…</option>
-                  {history.map((h) => (
-                    <option key={h.id} value={h.id}>
-                      {(h.shopify_order_id ?? h.order_ref ?? h.id.slice(0, 8))} · {STATUS_LABELS[h.status] ?? h.status}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {selectedClaim && (
-        <section className="rounded-xl p-4 border" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}>
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <p className="text-caption font-semibold mb-1" style={{ color: 'var(--ink-secondary)' }}>Claim lifecycle</p>
-              <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{nextClaimAction}</p>
-              <p className="mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>
-                {selectedClaim.first_viewed_at
-                  ? `First viewed ${new Date(selectedClaim.first_viewed_at).toLocaleString('en-GB')}`
-                  : 'Unread until opened by an analyst'}
-                {' · '}
-                {selectedClaim.assigned_to ? 'Owner assigned' : 'Unassigned'}
-                {selectedClaim.snoozed_until ? ` · Follow-up due ${new Date(selectedClaim.snoozed_until).toLocaleString('en-GB')}` : ''}
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <button type="button" disabled={busy} onClick={() => onAssignment('assign_to_me')} className="px-3 py-1.5 rounded-md text-xs font-semibold disabled:opacity-50" style={{ border: '1px solid var(--border)', color: 'var(--text)' }}>
-                Assign to me
-              </button>
-              <button type="button" disabled={busy} onClick={() => onAssignment('unassign')} className="px-3 py-1.5 rounded-md text-xs font-semibold disabled:opacity-50" style={{ border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
-                Unassign
-              </button>
-              <a href="/claims" className="px-3 py-1.5 rounded-md text-xs font-semibold" style={{ border: '1px solid var(--border)', color: 'var(--text)' }}>
-                Active queue
-              </a>
-            </div>
-          </div>
-          <div className="mt-3 grid grid-cols-2 gap-2 md:grid-cols-5">
-            {([
-              ['Opened', true],
-              ['Evidence', evidenceRecorded],
-              ['Merchant decision', !!latestOutcome],
-              ['Customer response', responseRecorded],
-              ['Closed', claimIsClosed],
-            ] as Array<[string, boolean]>).map(([label, complete]) => (
-              <div
-                key={String(label)}
-                className="rounded-md border px-2.5 py-2 text-xs"
-                style={{
-                  borderColor: complete ? '#86efac' : 'var(--border-subtle)',
-                  background: complete ? '#dcfce7' : 'var(--bg-inset)',
-                  color: complete ? '#166534' : 'var(--text-muted)',
-                }}
-              >
-                <span className="block font-semibold">{label}</span>
-                <span>{complete ? 'Recorded' : 'Pending'}</span>
+                  )}
+                </div>
+                <p className="mt-0.5 text-xs truncate" style={{ color: 'var(--text-muted)' }}>
+                  {selectedClaim.shopify_order_id ?? selectedClaim.order_ref ?? '—'}
+                  {' · '}{customerName}
+                  {' · '}{selectedClaim.first_viewed_at ? `Viewed ${new Date(selectedClaim.first_viewed_at).toLocaleDateString('en-GB')}` : 'Unread'}
+                  {' · '}{selectedClaim.assigned_to ? 'Owner assigned' : 'Unassigned'}
+                  {selectedClaim.snoozed_until ? ` · Follow-up ${new Date(selectedClaim.snoozed_until).toLocaleDateString('en-GB')}` : ''}
+                </p>
               </div>
-            ))}
-          </div>
-          <div className="mt-3 flex flex-wrap items-end gap-2 rounded-md border p-3" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)' }}>
-            <label className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>
-              Snooze days
-              <input className="mt-1 block w-20 rounded-md px-2 py-1 text-sm" style={inputStyle()} value={snoozeDays} onChange={(e) => setSnoozeDays(e.target.value)} inputMode="numeric" />
-            </label>
-            <label className="min-w-[220px] flex-1 text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>
-              Follow-up note
-              <input className="mt-1 block w-full rounded-md px-2 py-1 text-sm" style={inputStyle()} value={snoozeReason} onChange={(e) => setSnoozeReason(e.target.value)} />
-            </label>
-            <button type="button" disabled={busy} onClick={onSnooze} className="rounded-md px-3 py-1.5 text-xs font-semibold disabled:opacity-50" style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}>
-              Snooze follow-up
-            </button>
-            {selectedClaim.snoozed_until && (
-              <button type="button" disabled={busy} onClick={async () => { setState('busy'); const r = await snoozeClaim(claimId, { snoozed_until: null }); setState('idle'); showMsg(r.message, r.message === 'Follow-up updated' ? 'success' : 'error'); await refreshHistory(); }} className="rounded-md px-3 py-1.5 text-xs font-semibold disabled:opacity-50" style={{ border: '1px solid var(--border)', color: 'var(--text)' }}>
-                Return to active
-              </button>
+            ) : (
+              <span className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Claim review</span>
+            )}
+            {history.length > 1 && (
+              <select
+                aria-label="Switch claim"
+                className="px-2 py-1.5 rounded-md text-xs"
+                style={inputStyle()}
+                value={claimId}
+                onChange={(e) => setClaimId(e.target.value)}
+              >
+                <option value="">Switch claim…</option>
+                {history.map((h) => (
+                  <option key={h.id} value={h.id}>
+                    {h.shopify_order_id ?? h.order_ref ?? h.id.slice(0, 8)} · {STATUS_LABELS[h.status] ?? h.status}
+                  </option>
+                ))}
+              </select>
             )}
           </div>
-        </section>
-      )}
-
-      <section className="rounded-xl p-4 border" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}>
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <p className="text-caption font-semibold mb-2" style={{ color: 'var(--ink-secondary)' }}>Customer context</p>
-            <div className="flex flex-wrap items-center gap-2 text-sm">
-              <span className="font-semibold" style={{ color: 'var(--text)' }}>{customerName}</span>
-            </div>
-            <p className="mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>
-              {customerEmail ?? 'No customer email on file'}
-            </p>
-          </div>
           <div className="flex flex-wrap items-center gap-2">
-            <a
-              href={customerProfileHref}
-              className="px-3 py-1.5 rounded-md text-xs font-semibold"
-              style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}
-            >
-              Open customer profile
+            <a href="/claims" className="px-3 py-1.5 rounded-md text-xs font-semibold" style={{ border: '1px solid var(--border)', color: 'var(--text)' }}>
+              Back to queue
+            </a>
+            {nextClaimHref && (
+              <a href={nextClaimHref} className="px-3 py-1.5 rounded-md text-xs font-semibold" style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}>
+                Next claim
+              </a>
+            )}
+            <a href={customerProfileHref} className="px-3 py-1.5 rounded-md text-xs font-semibold" style={{ border: '1px solid var(--border)', color: 'var(--text)' }}>
+              Customer profile
             </a>
           </div>
         </div>
-      </section>
+      </header>
 
-      {/* Identity confidence summary */}
-      <div className="rounded-xl p-4 border" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}>
-        <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <p className="text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Linked identity confidence</p>
-            <p className="mt-1 text-xs max-w-2xl" style={{ color: 'var(--text-muted)' }}>
-              Evidence suggests these records belong to the same identity based on matching data points. Unauth shows context; the merchant owns the action.
-            </p>
-          </div>
-          <span className="rounded-full px-2 py-0.5 text-xs font-semibold" style={{ background: 'var(--bg-inset)', color: 'var(--text-muted)', border: '1px solid var(--border-subtle)' }}>
-            Review recommended
-          </span>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-          <div>
-            <p className="text-xs mb-0.5" style={{ color: 'var(--text-muted)' }}>Confidence score</p>
-            <p className="font-semibold text-lg font-mono" style={{ color: 'var(--text)' }}>{riskNumeric ?? '—'}</p>
-            <div
-              className="mt-1 h-2 rounded-full overflow-hidden relative"
-              style={{ background: 'linear-gradient(to right, #16A34A 0%, #16A34A 30%, #D97706 30%, #D97706 60%, #7C1D1D 60%, #7C1D1D 100%)' }}
-            >
-              <div
-                className="h-full"
-                style={{
-                  width: `${riskNumeric ?? 0}%`,
-                  background: 'rgba(17,24,39,0.45)',
-                }}
-              />
-            </div>
-            <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{riskBand}</p>
-          </div>
-          <div>
-            <p className="text-xs mb-0.5" style={{ color: 'var(--text-muted)' }}>Linked accounts</p>
-            <p className="font-semibold text-base" style={{ color: 'var(--text)' }}>
-              {data?.linkedAccounts?.length ?? '—'}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs mb-0.5" style={{ color: 'var(--text-muted)' }}>Refund/fulfilment</p>
-            <p className="font-semibold text-base" style={{ color: 'var(--text)' }}>
-              {order?.refundStatus ?? '—'}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs mb-0.5" style={{ color: 'var(--text-muted)' }}>Previous claims</p>
-            <p className="font-semibold text-base" style={{ color: 'var(--text)' }}>
-              {history.length}
-            </p>
-          </div>
-        </div>
-        {fraudFlags.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            {fraudFlags.slice(0, 5).map((f) => (
-              <span
-                key={f}
-                className="inline-flex items-center px-2 py-0.5 rounded-full text-xs"
-                style={{ background: 'var(--sev-medium-fill, #FEF3C7)', color: 'var(--sev-medium, #B45309)' }}
-              >
-                {signalLabel(f).short}
-              </span>
-            ))}
-          </div>
-        )}
-        {identityPoints.length > 0 && (
-          <div className="mt-3">
-            <p className="text-xs font-semibold mb-1.5" style={{ color: 'var(--text-muted)' }}>Matching data points</p>
-            <div className="flex flex-wrap gap-1.5">
-              {identityPoints.map((point) => (
-                <span key={point} className="inline-flex items-center rounded-full px-2 py-0.5 text-xs" style={{ background: 'var(--bg-inset)', color: 'var(--text)' }}>
-                  {point}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
+      {/* Two-column case console — stacks below 1100px */}
+      <div className="max-w-[1440px] mx-auto w-full grid grid-cols-1 min-[1100px]:grid-cols-[minmax(0,1fr)_400px] gap-6 p-4 md:p-6 items-start">
 
-      <section className="rounded-xl p-4 border" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}>
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Cross-merchant and identity-link context</p>
-          <span className="text-xs font-semibold" style={{ color: 'var(--text)' }}>{crossMerchantCount > 1 ? `Aggregate signal across ${crossMerchantCount} merchants` : 'Store-scoped signal'}</span>
-        </div>
-        <div className="mb-3 rounded-md border p-3 text-sm" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)' }}>
-          <p className="font-semibold" style={{ color: 'var(--text)' }}>
-            {crossMerchantCount > 1 ? 'Cross-merchant signal detected' : 'No cross-merchant aggregate signal yet'}
-          </p>
-          <p className="mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>
-            {crossMerchantCount > 1
-              ? 'Unauth has an anonymised aggregate signal that this identity appears in multiple merchant datasets. Merchant-specific details are not exposed here.'
-              : 'No network-level merchant recurrence is available for this identity. Continue with store-owned evidence.'}
-          </p>
-        </div>
-        {withinStoreSignals.length === 0 ? (
-          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No additional store-scoped identity variants found yet.</p>
-        ) : (
-          <div className="space-y-2">
-            {withinStoreSignals.map((row: any, i: number) => {
-              return (
-                <div key={`${row.signal}-${i}`} className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_auto] gap-2 rounded-md border p-2.5 text-xs" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)' }}>
-                  <span className="font-semibold capitalize">{row.signal}</span>
-                  <span>{row.detail}</span>
-                  <span>{row.reason}</span>
-                  <span className="inline-flex items-center gap-2">
-                    <span className="font-mono" style={{ color: 'var(--text-muted)' }}>{row.date ? new Date(row.date).toLocaleDateString('en-GB') : '—'}</span>
-                    <span className="rounded-full px-2 py-0.5 text-[11px] font-semibold" style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>{row.grade}</span>
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </section>
+        {/* LEFT — evidence & context (reading) */}
+        <div className="space-y-4 min-w-0 order-1 min-[1100px]:col-start-1 min-[1100px]:row-start-1">
 
-      {selectedClaim && (
-        <section className="rounded-xl p-4 border" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}>
-          <p className="text-caption font-semibold mb-3" style={{ color: 'var(--ink-secondary)' }}>Decision context</p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
-            <div>
-              <p className="text-xs mb-0.5" style={{ color: 'var(--text-muted)' }}>Current decision</p>
-              <p className="font-semibold" style={{ color: 'var(--text)' }}>
-                {latestOutcome ? DECISION_LABELS[latestOutcome.decision as Decision] ?? latestOutcome.decision : '—'}
-              </p>
-              {latestOutcome?.actor_user_id && <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{actorLabel(latestOutcome.actor_user_id)}</p>}
-            </div>
-            <div>
-              <p className="text-xs mb-0.5" style={{ color: 'var(--text-muted)' }}>Current outcome</p>
-              <p className="font-semibold" style={{ color: 'var(--text)' }}>
-                {latestOutcome ? OUTCOME_LABELS[latestOutcome.outcome as Outcome] ?? latestOutcome.outcome : '—'}
-              </p>
-              {latestOutcome?.updated_at && (
-                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{new Date(latestOutcome.updated_at).toLocaleString('en-GB')}</p>
-              )}
-            </div>
-            <div>
-              <p className="text-xs mb-0.5" style={{ color: 'var(--text-muted)' }}>Previous outcome</p>
-              <p className="font-semibold" style={{ color: 'var(--text)' }}>
-                {previousOutcome
-                  ? `${DECISION_LABELS[previousOutcome.decision as Decision] ?? previousOutcome.decision} / ${OUTCOME_LABELS[previousOutcome.outcome as Outcome] ?? previousOutcome.outcome}`
-                  : '—'}
-              </p>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Context: shop + order picker */}
-      <section className="rounded-xl p-4 border" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}>
-        <p className="text-caption font-semibold mb-3" style={{ color: 'var(--ink-secondary)' }}>Order context</p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {shops.length > 0 && (
-            <div>
-              <FieldLabel>Connected shop</FieldLabel>
-              {shops.length <= 1
-                ? <input className="w-full px-3 py-2 rounded-md text-sm" style={inputStyle()} value={shopDomain} readOnly />
-                : (
-                  <select className="w-full px-3 py-2 rounded-md text-sm" style={inputStyle()} value={shopDomain} onChange={e => setShopDomain(e.target.value)}>
-                    {shops.map(s => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                )}
-            </div>
-          )}
-          <div className={shops.length > 0 ? '' : 'md:col-span-2'}>
-            <FieldLabel>Order</FieldLabel>
-            {!manualMode && orderOptions.length > 0 ? (
+          <section className="rounded-xl p-4 border" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}>
+            <p className="text-caption font-semibold mb-3" style={{ color: 'var(--ink-secondary)' }}>Case intelligence</p>
+            {selectedClaim ? (
               <>
-                <select
-                  aria-label="Order"
-                  className="w-full px-3 py-2 rounded-md text-sm"
-                  style={inputStyle()}
-                  value={selectedOrderId}
-                  onChange={e => setSelectedOrderId(e.target.value)}
-                >
-                  {orderOptions.length > 1 && <option value="">Select an order…</option>}
-                  {orderOptions.map((o) => (
-                    <option key={o.id} value={o.id}>{formatOrderOption(o)}</option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  onClick={() => setManualModeExplicit(true)}
-                  className="mt-1 text-xs hover:underline"
-                  style={{ color: 'var(--text-muted)' }}
-                >
-                  Enter reference manually
-                </button>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">
+                  <CaseIntelTile label="Claim">
+                    <p className="font-semibold">{CLAIM_TYPE_LABELS[selectedClaim.claim_type as ClaimType] ?? selectedClaim.claim_type}</p>
+                    <p className="text-xs mt-1 line-clamp-2" style={{ color: 'var(--text-muted)' }}>{selectedClaim.customer_claim_reason || 'No customer reason recorded'}</p>
+                  </CaseIntelTile>
+                  <CaseIntelTile label="Order">
+                    <p className="font-mono text-xs">{selectedClaim.shopify_order_id ?? selectedClaim.order_ref ?? '—'}</p>
+                    <p className="font-semibold mt-1">{selectedClaim.amount_at_risk != null ? formatMoney(selectedClaim.amount_at_risk, selectedClaim.currency) : '—'}</p>
+                  </CaseIntelTile>
+                  <CaseIntelTile label="Status">
+                    <div className="flex flex-wrap gap-1"><StatusPill status={selectedClaim.status} /><SlaBadge claim={selectedClaim} /></div>
+                    <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{formatClaimAge(selectedClaim)} · {formatFiledDate(selectedClaim)}</p>
+                  </CaseIntelTile>
+                  <CaseIntelTile label="Evidence">
+                    <p className="font-semibold" style={{ color: evidenceRecorded ? '#166534' : 'var(--text)' }}>{evidenceRecorded ? 'On record' : 'Missing'}</p>
+                    <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{evidenceRecorded ? 'Ready for merchant decision' : 'Add evidence in action rail'}</p>
+                  </CaseIntelTile>
+                  <CaseIntelTile label="Owner">
+                    <p className="font-semibold">{selectedClaim.assigned_to ? 'Assigned' : 'Unassigned'}</p>
+                    <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{selectedClaim.first_viewed_at ? `Viewed ${new Date(selectedClaim.first_viewed_at).toLocaleDateString('en-GB')}` : 'Unread'}</p>
+                  </CaseIntelTile>
+                  <CaseIntelTile label="Decision">
+                    {latestOutcome ? (
+                      <>
+                        <p className="font-semibold text-xs leading-tight">{DECISION_LABELS[latestOutcome.decision as Decision] ?? latestOutcome.decision}</p>
+                        <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{OUTCOME_LABELS[latestOutcome.outcome as Outcome] ?? latestOutcome.outcome}</p>
+                      </>
+                    ) : (
+                      <p style={{ color: 'var(--text-muted)' }}>Not recorded</p>
+                    )}
+                  </CaseIntelTile>
+                </div>
+                {selectedClaim.normalized_reason && (
+                  <p className="text-xs rounded-md px-3 py-2" style={{ background: 'var(--bg-inset)', color: 'var(--text-muted)' }}>
+                    <span className="font-semibold" style={{ color: 'var(--text)' }}>Internal notes: </span>
+                    {selectedClaim.normalized_reason}
+                  </p>
+                )}
               </>
             ) : (
-              <div className="space-y-2">
-                <input
-                  className="w-full px-3 py-2 rounded-md text-sm"
-                  style={inputStyle()}
-                  placeholder="Order reference (e.g. #1001)"
-                  value={manualOrderRef}
-                  onChange={e => setManualOrderRef(e.target.value)}
-                />
-                <div>
-                  <FieldLabel>Order source</FieldLabel>
-                  <select
-                    className="w-full px-3 py-2 rounded-md text-sm"
-                    style={inputStyle()}
-                    value={manualOrderSource}
-                    onChange={e => setManualOrderSource(e.target.value)}
-                  >
-                    <option value="manual">Manual entry</option>
-                    <option value="csv">CSV import</option>
-                    <option value="shopify">Shopify</option>
-                    <option value="audit">Audit</option>
-                  </select>
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No claim selected. Expand Edit claim details at the bottom of this column to create one.</p>
+            )}
+          </section>
+
+          {/* Identity confidence */}
+          <div className="rounded-xl p-4 border" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}>
+            <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Linked identity confidence</p>
+                <p className="mt-1 text-xs max-w-2xl" style={{ color: 'var(--text-muted)' }}>
+                  Evidence suggests these records belong to the same identity based on matching data points. Unauth shows context; the merchant owns the action.
+                </p>
+              </div>
+              <span className="rounded-full px-2 py-0.5 text-xs font-semibold" style={{ background: 'var(--bg-inset)', color: 'var(--text-muted)', border: '1px solid var(--border-subtle)' }}>
+                Review recommended
+              </span>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div>
+                <p className="text-xs mb-0.5" style={{ color: 'var(--text-muted)' }}>Confidence score</p>
+                <p className="font-semibold text-lg font-mono" style={{ color: 'var(--text)' }}>{riskNumeric ?? '—'}</p>
+                <div className="mt-1 h-2 rounded-full overflow-hidden" style={{ background: 'linear-gradient(to right, #16A34A 0%, #16A34A 30%, #D97706 30%, #D97706 60%, #7C1D1D 60%, #7C1D1D 100%)' }}>
+                  <div className="h-full" style={{ width: `${riskNumeric ?? 0}%`, background: 'rgba(17,24,39,0.45)' }} />
                 </div>
-                {orderOptions.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setManualModeExplicit(false)}
-                    className="text-xs hover:underline"
-                    style={{ color: 'var(--text-muted)' }}
-                  >
-                    ← Back to order list
+                <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{riskBand}</p>
+              </div>
+              <div>
+                <p className="text-xs mb-0.5" style={{ color: 'var(--text-muted)' }}>Linked accounts</p>
+                <p className="font-semibold text-base" style={{ color: 'var(--text)' }}>{data?.linkedAccounts?.length ?? '—'}</p>
+              </div>
+              <div>
+                <p className="text-xs mb-0.5" style={{ color: 'var(--text-muted)' }}>Refund/fulfilment</p>
+                <p className="font-semibold text-base" style={{ color: 'var(--text)' }}>{order?.refundStatus ?? '—'}</p>
+              </div>
+              <div>
+                <p className="text-xs mb-0.5" style={{ color: 'var(--text-muted)' }}>Previous claims</p>
+                <p className="font-semibold text-base" style={{ color: 'var(--text)' }}>{history.length}</p>
+              </div>
+            </div>
+            {fraudFlags.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {fraudFlags.slice(0, 5).map((f) => (
+                  <span key={f} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs" style={{ background: 'var(--sev-medium-fill, #FEF3C7)', color: 'var(--sev-medium, #B45309)' }}>
+                    {signalLabel(f).short}
+                  </span>
+                ))}
+              </div>
+            )}
+            {identityPoints.length > 0 && (
+              <div className="mt-3">
+                <p className="text-xs font-semibold mb-1.5" style={{ color: 'var(--text-muted)' }}>Matching data points</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {identityPoints.map((point) => (
+                    <span key={point} className="inline-flex items-center rounded-full px-2 py-0.5 text-xs" style={{ background: 'var(--bg-inset)', color: 'var(--text)' }}>
+                      {point}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Cross-merchant and store context */}
+          <section className="rounded-xl p-4 border" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Cross-merchant and identity-link context</p>
+              <span className="text-xs font-semibold" style={{ color: 'var(--text)' }}>{crossMerchantCount > 1 ? `Aggregate signal across ${crossMerchantCount} merchants` : 'Store-scoped signal'}</span>
+            </div>
+            <div className="mb-3 rounded-md border p-3 text-sm" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)' }}>
+              <p className="font-semibold" style={{ color: 'var(--text)' }}>
+                {crossMerchantCount > 1 ? 'Cross-merchant signal detected' : 'No cross-merchant aggregate signal yet'}
+              </p>
+              <p className="mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>
+                {crossMerchantCount > 1
+                  ? 'Unauth has an anonymised aggregate signal that this identity appears in multiple merchant datasets. Merchant-specific details are not exposed here.'
+                  : 'No network-level merchant recurrence is available for this identity. Continue with store-owned evidence.'}
+              </p>
+            </div>
+            {withinStoreSignals.length === 0 ? (
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No additional store-scoped identity variants found yet.</p>
+            ) : (
+              <div className="space-y-2">
+                {withinStoreSignals.map((row: any, i: number) => (
+                  <div key={`${row.signal}-${i}`} className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_auto] gap-2 rounded-md border p-2.5 text-xs" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)' }}>
+                    <span className="font-semibold capitalize">{row.signal}</span>
+                    <span>{row.detail}</span>
+                    <span>{row.reason}</span>
+                    <span className="inline-flex items-center gap-2">
+                      <span className="font-mono" style={{ color: 'var(--text-muted)' }}>{row.date ? new Date(row.date).toLocaleDateString('en-GB') : '—'}</span>
+                      <span className="rounded-full px-2 py-0.5 text-[11px] font-semibold" style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>{row.grade}</span>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          {/* Recorded merchant decision context — shown once decision exists */}
+          {selectedClaim && latestOutcome && (
+            <section className="rounded-xl p-4 border" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}>
+              <p className="text-caption font-semibold mb-3" style={{ color: 'var(--ink-secondary)' }}>Recorded merchant decision</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                <div>
+                  <p className="text-xs mb-0.5" style={{ color: 'var(--text-muted)' }}>Decision</p>
+                  <p className="font-semibold" style={{ color: 'var(--text)' }}>
+                    {DECISION_LABELS[latestOutcome.decision as Decision] ?? latestOutcome.decision}
+                  </p>
+                  {latestOutcome?.actor_user_id && <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{actorLabel(latestOutcome.actor_user_id)}</p>}
+                </div>
+                <div>
+                  <p className="text-xs mb-0.5" style={{ color: 'var(--text-muted)' }}>Outcome</p>
+                  <p className="font-semibold" style={{ color: 'var(--text)' }}>
+                    {OUTCOME_LABELS[latestOutcome.outcome as Outcome] ?? latestOutcome.outcome}
+                  </p>
+                  {latestOutcome?.updated_at && (
+                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{new Date(latestOutcome.updated_at).toLocaleString('en-GB')}</p>
+                  )}
+                </div>
+                {previousOutcome && (
+                  <div>
+                    <p className="text-xs mb-0.5" style={{ color: 'var(--text-muted)' }}>Previous decision</p>
+                    <p className="font-semibold" style={{ color: 'var(--text)' }}>
+                      {DECISION_LABELS[previousOutcome.decision as Decision] ?? previousOutcome.decision} / {OUTCOME_LABELS[previousOutcome.outcome as Outcome] ?? previousOutcome.outcome}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* Timeline / audit trail */}
+          <section className="rounded-xl p-4 border" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}>
+            <div className="mb-3 inline-flex rounded-md border p-0.5" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)' }}>
+              <button onClick={() => setAuditTab('timeline')} className="px-2.5 py-1 text-xs rounded" style={{ background: auditTab === 'timeline' ? 'var(--accent)' : 'transparent', color: auditTab === 'timeline' ? 'var(--text-inverse)' : 'var(--text-muted)' }}>Event timeline</button>
+              <button onClick={() => setAuditTab('history')} className="px-2.5 py-1 text-xs rounded" style={{ background: auditTab === 'history' ? 'var(--accent)' : 'transparent', color: auditTab === 'history' ? 'var(--text-inverse)' : 'var(--text-muted)' }}>Claim history</button>
+            </div>
+            {auditTab === 'timeline' && (
+              <>
+                {!selectedClaim ? (
+                  <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Select a claim to view its audit history.</p>
+                ) : selectedClaimEvents.length === 0 ? (
+                  <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No claim events recorded yet.</p>
+                ) : (
+                  <ol className="space-y-2">
+                    {selectedClaimEvents.map((event: any) => (
+                      <li key={event.id} className="rounded-md border p-3" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)' }}>
+                        <div className="flex flex-wrap items-start justify-between gap-2">
+                          <div>
+                            <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{claimEventLabel(event.event_type)}</p>
+                            <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{claimEventSummary(event)}</p>
+                          </div>
+                          <div className="text-right text-xs" style={{ color: 'var(--text-muted)' }}>
+                            <p>{event.created_at ? new Date(event.created_at).toLocaleString('en-GB') : '—'}</p>
+                            {event.actor_user_id && <p>{actorLabel(event.actor_user_id)}</p>}
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                )}
+              </>
+            )}
+            {auditTab === 'history' && (
+              history.length === 0 ? (
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No claims recorded for this customer yet.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr style={{ color: 'var(--text-muted)' }}>
+                        <th className="text-left py-2 pr-3 text-xs font-semibold">Order ref</th>
+                        <th className="text-left py-2 pr-3 text-xs font-semibold">Status</th>
+                        <th className="text-left py-2 pr-3 text-xs font-semibold">Type</th>
+                        <th className="text-left py-2 pr-3 text-xs font-semibold">Decision / Outcome</th>
+                        <th className="text-left py-2 pr-3 text-xs font-semibold">Filed</th>
+                        <th className="text-left py-2 pr-3 text-xs font-semibold">SLA</th>
+                        <th className="text-left py-2 pr-3 text-xs font-semibold">At risk</th>
+                        <th className="text-left py-2 text-xs font-semibold">Updated</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {history.map((h) => {
+                        const sla = getSlaVisual(h);
+                        const tone = sla.tone === 'red' ? { bg: '#FEE2E2', text: '#991B1B' } : sla.tone === 'amber' ? { bg: '#FEF3C7', text: '#B45309' } : { bg: '#F3F4F6', text: '#4B5563' };
+                        return (
+                          <tr key={h.id} className="border-t cursor-pointer hover:bg-[var(--bg-subtle)]" style={{ borderColor: 'var(--border-subtle)' }} onClick={() => setClaimId(h.id)}>
+                            <td className="py-2 pr-3 font-mono text-xs">{h.shopify_order_id ?? h.order_ref ?? '—'}</td>
+                            <td className="py-2 pr-3"><StatusPill status={h.status} /></td>
+                            <td className="py-2 pr-3">{CLAIM_TYPE_LABELS[h.claim_type as ClaimType] ?? h.claim_type}</td>
+                            <td className="py-2 pr-3">{h.latest_outcome ? `${DECISION_LABELS[h.latest_outcome.decision as Decision] ?? h.latest_outcome.decision} / ${OUTCOME_LABELS[h.latest_outcome.outcome as Outcome] ?? h.latest_outcome.outcome}` : '—'}</td>
+                            <td className="py-2 pr-3 text-xs" style={{ color: 'var(--text-muted)' }}><span>{formatFiledDate(h)}</span><span className="block">{formatClaimAge(h)}</span></td>
+                            <td className="py-2 pr-3">
+                              <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium" style={{ background: tone.bg, color: tone.text }}>
+                                {sla.icon}{sla.label}
+                              </span>
+                            </td>
+                            <td className="py-2 pr-3">{h.amount_at_risk != null ? formatMoney(h.amount_at_risk, h.currency) : '—'}</td>
+                            <td className="py-2 text-xs font-mono" style={{ color: 'var(--text-muted)' }}>{h.updated_at ? new Date(h.updated_at).toLocaleDateString('en-GB') : '—'}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )
+            )}
+          </section>
+
+        </div>{/* end context column */}
+
+        {/* RIGHT — sticky action command centre */}
+        <aside
+          className="space-y-2 min-w-0 w-full order-2 min-[1100px]:col-start-2 min-[1100px]:row-start-1 min-[1100px]:row-span-2 min-[1100px]:sticky min-[1100px]:top-[4.25rem] min-[1100px]:max-h-[calc(100vh-4.5rem)] min-[1100px]:overflow-y-auto min-[1100px]:self-start pb-6"
+          aria-label="Case actions"
+        >
+
+          {/* Command centre — next action + progress */}
+          {selectedClaim && (
+            <div
+              className="rounded-xl px-4 py-3 border"
+              style={{ borderColor: 'var(--copper-bright)', background: 'var(--bg-surface)' }}
+            >
+              <p className="text-[10px] font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--ink-secondary)' }}>Next step</p>
+              <p className="text-sm font-semibold leading-snug" style={{ color: 'var(--text)' }}>{primaryAction.label}</p>
+              <p className="text-xs mt-1 mb-3 leading-relaxed" style={{ color: 'var(--text-muted)' }}>{primaryAction.reason}</p>
+              {primaryAction.key === 'close' && nextClaimHref ? (
+                <a
+                  href={nextClaimHref}
+                  className="block w-full text-center px-3 py-2 rounded-md text-sm font-semibold"
+                  style={btnStyle('primary')}
+                >
+                  {primaryAction.cta}
+                </a>
+              ) : (
+                <button
+                  type="button"
+                  disabled={busy || primaryAction.key === 'none'}
+                  onClick={() => void handlePrimaryCta()}
+                  className="w-full px-3 py-2 rounded-md text-sm font-semibold disabled:opacity-60"
+                  style={btnStyle(primaryAction.key === 'none' ? 'disabled' : 'primary')}
+                >
+                  {primaryAction.cta}
+                </button>
+              )}
+              <div className="mt-3 pt-3 border-t flex items-center gap-1 flex-wrap" style={{ borderColor: 'var(--border-subtle)' }}>
+                {([
+                  ['Opened', true],
+                  ['Evidence', evidenceRecorded],
+                  ['Decision', !!latestOutcome],
+                  ['Response', responseRecorded],
+                  ['Closed', claimIsClosed],
+                ] as Array<[string, boolean]>).map(([label, done], i) => (
+                  <div key={label} className="flex items-center gap-1">
+                    {i > 0 && <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>›</span>}
+                    <span className="text-[10px] font-semibold" style={{ color: done ? '#166534' : 'var(--text-muted)' }}>
+                      {done ? '✓ ' : ''}{label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-2 text-[10px]" style={{ color: 'var(--text-muted)' }}>Queue hint: {nextClaimAction}</p>
+            </div>
+          )}
+
+          {/* Completion banner — shown after decision recorded */}
+          {(nextClaimHref || noMoreClaims) && primaryAction.key !== 'close' && (
+            <div className="rounded-lg px-3 py-2 border text-xs" style={{ borderColor: '#86efac', background: '#dcfce7', color: '#166534' }}>
+              {noMoreClaims ? 'Queue complete.' : 'Outcome recorded — continue in queue.'}
+            </div>
+          )}
+
+          <RailSection id="ownership" title="Ownership" open={railOpen.ownership} onToggle={(id) => setRailOpen((p) => ({ ...p, [id]: !p[id] }))} highlighted={primaryAction.railSection === 'ownership'}>
+            {selectedClaim ? (
+              <>
+                <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>
+                  {selectedClaim.assigned_to ? 'Owner assigned' : 'No owner assigned'}
+                  {' · '}
+                  {selectedClaim.first_viewed_at
+                    ? `First viewed ${new Date(selectedClaim.first_viewed_at).toLocaleDateString('en-GB')}`
+                    : 'Not yet viewed'}
+                </p>
+                <div className="flex gap-2">
+                  <button type="button" disabled={busy} onClick={() => onAssignment('assign_to_me')} className="flex-1 px-3 py-1.5 rounded-md text-xs font-semibold disabled:opacity-50" style={{ border: '1px solid var(--border)', color: 'var(--text)' }}>
+                    Assign to me
+                  </button>
+                  <button type="button" disabled={busy} onClick={() => onAssignment('unassign')} className="flex-1 px-3 py-1.5 rounded-md text-xs font-semibold disabled:opacity-50" style={{ border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+                    Unassign
+                  </button>
+                </div>
+              </>
+            ) : (
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Save a claim to assign ownership.</p>
+            )}
+          </RailSection>
+
+          {/* Workflow status accordion */}
+          {selectedClaim && (
+            <RailSection id="status" title="Workflow status" open={railOpen.status} onToggle={(id) => setRailOpen((p) => ({ ...p, [id]: !p[id] }))} highlighted={primaryAction.railSection === 'status'}>
+              <ClaimLifecycleStatusBar
+                claimId={claimId}
+                busy={busy}
+                claimIsClosed={claimIsClosed}
+                statusToSet={statusToSet}
+                setStatusToSet={setStatusToSet}
+                statusNote={statusNote}
+                setStatusNote={setStatusNote}
+                onStatusChange={onStatusChange}
+                reopenNote={reopenNote}
+                setReopenNote={setReopenNote}
+                onReopen={onReopen}
+                canReopen={!!selectedClaim && isFinalClaimStatus(selectedClaim.status)}
+                submitIsPrimary={primaryAction.key === 'status' || primaryAction.key === 'reopen'}
+              />
+            </RailSection>
+          )}
+
+          {/* Follow-up / snooze accordion */}
+          {selectedClaim && !claimIsClosed && (
+            <RailSection
+              id="snooze"
+              title="Follow-up / snooze"
+              open={railOpen.snooze}
+              onToggle={(id) => setRailOpen((p) => ({ ...p, [id]: !p[id] }))}
+              highlighted={primaryAction.railSection === 'snooze'}
+              badge={selectedClaim.snoozed_until ? (
+                <span className="text-[10px] rounded-full px-1.5 py-0.5 font-semibold" style={{ background: 'var(--sev-medium-fill, #FEF3C7)', color: 'var(--sev-medium, #B45309)' }}>
+                  {new Date(selectedClaim.snoozed_until).toLocaleDateString('en-GB')}
+                </span>
+              ) : undefined}
+            >
+              <div className="flex flex-wrap items-end gap-2 mb-3">
+                <label className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>
+                  Days
+                  <input className="mt-1 block w-16 rounded-md px-2 py-1 text-sm" style={inputStyle()} value={snoozeDays} onChange={(e) => setSnoozeDays(e.target.value)} inputMode="numeric" />
+                </label>
+                <label className="flex-1 text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>
+                  Note
+                  <input className="mt-1 block w-full rounded-md px-2 py-1 text-sm" style={inputStyle()} value={snoozeReason} onChange={(e) => setSnoozeReason(e.target.value)} />
+                </label>
+              </div>
+              <div className="flex gap-2">
+                <button type="button" disabled={busy} onClick={onSnooze} className="flex-1 rounded-md px-3 py-1.5 text-xs font-semibold disabled:opacity-50" style={btnStyle('secondary')}>
+                  Snooze
+                </button>
+                {selectedClaim.snoozed_until && (
+                  <button type="button" disabled={busy} onClick={async () => { setState('busy'); const r = await snoozeClaim(claimId, { snoozed_until: null }); setState('idle'); showMsg(r.message, r.message === 'Follow-up updated' ? 'success' : 'error'); await refreshHistory(); }} className="flex-1 rounded-md px-3 py-1.5 text-xs font-semibold disabled:opacity-50" style={{ border: '1px solid var(--border)', color: 'var(--text)' }}>
+                    Clear snooze
                   </button>
                 )}
               </div>
-            )}
-          </div>
-        </div>
-      </section>
+            </RailSection>
+          )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Claim form */}
-        <section
-          className="rounded-xl p-4 border self-start"
-          style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)', position: 'sticky', top: 24 }}
-        >
-          <p className="text-caption font-semibold mb-3" style={{ color: 'var(--ink-secondary)' }}>Claim details</p>
-          <div className="space-y-3">
-            <div>
-              <FieldLabel>Claim type</FieldLabel>
-              <select
-                className="w-full px-3 py-2 rounded-md text-sm"
-                style={inputStyle()}
-                value={claimType}
-                onChange={e => setClaimType(e.target.value as ClaimType)}
-              >
-                {(Object.entries(CLAIM_TYPE_LABELS) as [ClaimType, string][]).map(([v, l]) => (
-                  <option key={v} value={v}>{l}</option>
-                ))}
-              </select>
-            </div>
-            {activeDuplicateClaim && (
-              <div className="rounded-md border px-3 py-2 text-sm" style={{ borderColor: '#fca5a5', background: '#fee2e2', color: '#991b1b' }}>
-                An active {CLAIM_TYPE_LABELS[claimType].toLowerCase()} claim already exists for this order.
-                <button type="button" onClick={() => setClaimId(activeDuplicateClaim.id)} className="ml-2 font-semibold underline">Open existing review</button>
-              </div>
-            )}
-            {resolvedDuplicateClaim && (
-              <div className="rounded-md border px-3 py-2 text-sm" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)', color: 'var(--text)' }}>
-                A resolved {CLAIM_TYPE_LABELS[claimType].toLowerCase()} claim already exists for this order. Reopen the old claim if new evidence changes the decision.
-                <button type="button" onClick={() => setClaimId(resolvedDuplicateClaim.id)} className="ml-2 font-semibold underline" style={{ color: 'var(--accent)' }}>Open resolved claim</button>
-              </div>
-            )}
-            <div>
-              <FieldLabel>Customer&apos;s reason</FieldLabel>
-              <textarea
-                className="w-full px-3 py-2 rounded-md text-sm resize-none"
-                style={inputStyle()}
-                rows={2}
-                placeholder="What the customer claimed, in their words"
-                value={customerReason}
-                onChange={e => setCustomerReason(e.target.value)}
-              />
-            </div>
-            <div>
-              <FieldLabel>Internal notes</FieldLabel>
-              <textarea
-                className="w-full px-3 py-2 rounded-md text-sm resize-none"
-                style={inputStyle()}
-                rows={2}
-                placeholder="Your assessment, context, or next steps"
-                value={notes}
-                onChange={e => setNotes(e.target.value)}
-              />
-            </div>
-            <div>
-              <FieldLabel>Order value (optional)</FieldLabel>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                className="w-full px-3 py-2 rounded-md text-sm"
-                style={inputStyle()}
-                placeholder="0.00"
-                value={orderValue}
-                onChange={e => setOrderValue(e.target.value)}
-              />
-            </div>
-            <button
-              onClick={onClaim}
-              disabled={busy}
-              className="w-full px-4 py-2 rounded-md text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60"
-              style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}
-            >
-              {busy ? <><span className="h-3.5 w-3.5 rounded-full border-2 border-white border-t-transparent animate-spin" /> Saving…</> : claimId ? 'Update claim' : 'Save claim'}
-            </button>
-          </div>
-        </section>
-
-        {/* Claim Actions */}
-        <section className="rounded-xl p-4 border" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}>
-          <p className="text-caption font-semibold mb-3" style={{ color: 'var(--ink-secondary)' }}>Claim actions</p>
-          <div className="mb-3 inline-flex rounded-md border p-0.5" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)' }}>
-            {[
-              ['resolve', 'Decision'],
-              ['status', 'Status'],
-              ['escalate', 'Escalate / Reverse'],
-            ].map(([k, l]) => (
-              <button key={k} onClick={() => setActionTab(k as any)} className="px-2.5 py-1 text-xs rounded" style={{ background: actionTab === k ? 'var(--accent)' : 'transparent', color: actionTab === k ? 'var(--text-inverse)' : 'var(--text-muted)' }}>{l}</button>
-            ))}
-          </div>
-          <div className="space-y-3">
-            {actionTab === 'resolve' && (
-              <>
-            <div>
-              <FieldLabel>Decision</FieldLabel>
-              <select
-                className="w-full px-3 py-2 rounded-md text-sm"
-                style={inputStyle()}
-                value={decision}
-                onChange={e => setDecision(e.target.value as Decision)}
-              >
-                {(Object.entries(DECISION_LABELS) as [Decision, string][]).map(([v, l]) => (
-                  <option key={v} value={v}>{l}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <FieldLabel>Outcome</FieldLabel>
-              <select
-                className="w-full px-3 py-2 rounded-md text-sm"
-                style={inputStyle()}
-                value={outcome}
-                onChange={e => setOutcome(e.target.value as Outcome)}
-              >
-                {(Object.entries(OUTCOME_LABELS) as [Outcome, string][]).map(([v, l]) => (
-                  <option key={v} value={v}>{l}</option>
-                ))}
-              </select>
-            </div>
+          {/* Add evidence accordion */}
+          <RailSection
+            id="evidence"
+            title="Add evidence"
+            open={railOpen.evidence}
+            onToggle={(id) => setRailOpen((p) => ({ ...p, [id]: !p[id] }))}
+            highlighted={primaryAction.railSection === 'evidence'}
+            badge={evidenceRecorded ? (
+              <span className="text-[10px] rounded-full px-1.5 py-0.5 font-semibold" style={{ background: '#dcfce7', color: '#166534' }}>On record</span>
+            ) : undefined}
+          >
             {!claimId && (
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Save the claim details first — outcome recording requires an active claim.</p>
+              <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>Save the claim first — evidence attaches to an active claim record.</p>
             )}
-            <button
-              onClick={onOutcome}
-              disabled={busy || !claimId}
-              className="w-full px-4 py-2 rounded-md text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60"
-              style={{ background: claimId ? 'var(--accent)' : 'var(--bg-inset)', color: claimId ? 'var(--text-inverse)' : 'var(--text-muted)', border: claimId ? 'none' : '1px solid var(--border)' }}
-            >
-              {busy ? <><span className="h-3.5 w-3.5 rounded-full border-2 border-white border-t-transparent animate-spin" /> Saving…</> : 'Record merchant decision'}
-            </button>
-            {(nextClaimHref || noMoreClaims) && (
-              <div className="rounded-md border p-3 text-sm" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)' }}>
-                <div className="flex flex-wrap items-center gap-2">
-                  {nextClaimHref ? (
-                    <a href={nextClaimHref} className="px-3 py-1.5 rounded-md text-xs font-semibold" style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}>
-                      Next claim
-                    </a>
-                  ) : (
-                    <span className="text-xs font-semibold" style={{ color: 'var(--text)' }}>No more open claims in this queue.</span>
-                  )}
-                  <a href="/claims" className="px-3 py-1.5 rounded-md text-xs font-semibold" style={{ border: '1px solid var(--border)', color: 'var(--text)' }}>
-                    Back to queue
-                  </a>
+            <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <FieldLabel>Type</FieldLabel>
+                  <select className="w-full px-2 py-1.5 rounded-md text-xs" style={inputStyle()} value={evidenceType} onChange={e => setEvidenceType(e.target.value as EvidenceType)}>
+                    {(Object.entries(EVIDENCE_TYPE_LABELS) as [EvidenceType, string][]).map(([v, l]) => (
+                      <option key={v} value={v}>{l}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <FieldLabel>Source</FieldLabel>
+                  <select className="w-full px-2 py-1.5 rounded-md text-xs" style={inputStyle()} value={source} onChange={e => setSource(e.target.value as EvidenceSource)}>
+                    {(Object.entries(EVIDENCE_SOURCE_LABELS) as [EvidenceSource, string][]).map(([v, l]) => (
+                      <option key={v} value={v}>{l}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
-            )}
-              </>
-            )}
-            {actionTab === 'status' && (
-              <>
-                <FieldLabel>Set status</FieldLabel>
-                <select className="w-full px-3 py-2 rounded-md text-sm" style={inputStyle()} value={statusToSet} onChange={e => setStatusToSet(e.target.value as ClaimStatus)}>
-                  <option value="open">Open</option><option value="under_review">Under review</option><option value="evidence_requested">Evidence requested</option><option value="pending">Pending external evidence</option><option value="escalated">Escalated</option><option value="resolved">Resolved</option><option value="closed">Closed</option>
-                </select>
-                <textarea className="w-full px-3 py-2 rounded-md text-sm resize-none" style={inputStyle()} rows={2} placeholder="Status note" value={statusNote} onChange={e => setStatusNote(e.target.value)} />
-                <button onClick={onStatusChange} disabled={busy || !claimId} className="w-full px-3 py-2 rounded-md text-sm font-semibold disabled:opacity-60" style={{ background: claimId ? 'var(--accent)' : 'var(--bg-inset)', color: claimId ? 'var(--text-inverse)' : 'var(--text-muted)' }}>
-                  Update status
-                </button>
-              </>
-            )}
-            {actionTab === 'escalate' && (
-              <>
-                <FieldLabel>Reopen resolved claim</FieldLabel>
-                <textarea className="w-full px-3 py-2 rounded-md text-sm resize-none" style={inputStyle()} rows={2} placeholder="Reason for reopening" value={reopenNote} onChange={e => setReopenNote(e.target.value)} />
-                <button onClick={onReopen} disabled={busy || !claimId || !selectedClaim || !isFinalClaimStatus(selectedClaim.status)} className="w-full px-3 py-2 rounded-md text-sm font-semibold disabled:opacity-60" style={{ border: '1px solid var(--border)', color: 'var(--text)' }}>
-                  Reopen claim
-                </button>
-                <div className="grid grid-cols-2 gap-2">
-                  <select className="w-full px-3 py-2 rounded-md text-sm" style={inputStyle()} value={reverseDecision} onChange={e => setReverseDecision(e.target.value as Decision)}>{(Object.entries(DECISION_LABELS) as [Decision, string][]).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>
-                  <select className="w-full px-3 py-2 rounded-md text-sm" style={inputStyle()} value={reverseOutcome} onChange={e => setReverseOutcome(e.target.value as Outcome)}>{(Object.entries(OUTCOME_LABELS) as [Outcome, string][]).map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>
+              <div>
+                <FieldLabel>Evidence URL (optional)</FieldLabel>
+                <input className="w-full px-2 py-1.5 rounded-md text-xs" style={inputStyle()} placeholder="https://…" value={evidenceUrl} onChange={e => setEvidenceUrl(e.target.value)} />
+              </div>
+              <button type="button" onClick={() => setShowMeta((v) => !v)} className="text-xs hover:underline" style={{ color: 'var(--text-muted)' }}>
+                {showMeta ? '▲ Hide' : '▼ Advanced'} — hash &amp; metadata
+              </button>
+              {showMeta && (
+                <div className="space-y-2">
+                  <div>
+                    <FieldLabel>Evidence hash (SHA-256)</FieldLabel>
+                    <input className="w-full px-2 py-1.5 rounded-md text-xs" style={inputStyle()} placeholder="sha256:…" value={evidenceHash} onChange={e => setEvidenceHash(e.target.value)} />
+                  </div>
+                  {metaRows.map((r, i) => (
+                    <div key={i} className="grid grid-cols-2 gap-2">
+                      <input className="px-2 py-1.5 rounded-md text-xs" style={inputStyle()} placeholder="key" value={r.key} onChange={e => setMetaRows(prev => prev.map((x, ix) => ix === i ? { ...x, key: e.target.value } : x))} />
+                      <input className="px-2 py-1.5 rounded-md text-xs" style={inputStyle()} placeholder="value" value={r.value} onChange={e => setMetaRows(prev => prev.map((x, ix) => ix === i ? { ...x, value: e.target.value } : x))} />
+                    </div>
+                  ))}
+                  <button onClick={() => setMetaRows(prev => [...prev, { key: '', value: '' }])} className="px-2 py-1 rounded-md text-xs" style={{ border: '1px solid var(--border)', color: 'var(--text-muted)' }}>+ Add row</button>
                 </div>
-                <textarea className="w-full px-3 py-2 rounded-md text-sm resize-none" style={inputStyle()} rows={2} placeholder="Reason for reversal" value={reverseNote} onChange={e => setReverseNote(e.target.value)} />
-                <button onClick={onReverse} disabled={busy || !claimId || !latestOutcome} className="w-full px-3 py-2 rounded-md text-sm font-semibold disabled:opacity-60" style={{ border: '1px solid var(--border)', color: 'var(--text)' }}>
+              )}
+            </div>
+            <button
+              onClick={onEvidence}
+              disabled={busy || !claimId}
+              className="mt-3 w-full px-3 py-1.5 rounded-md text-xs font-semibold flex items-center justify-center gap-2 disabled:opacity-60"
+              style={btnStyle(primaryAction.key === 'evidence' && claimId ? 'primary' : claimId ? 'secondary' : 'disabled')}
+            >
+              {busy ? <><span className="h-3 w-3 rounded-full border-2 border-current border-t-transparent animate-spin" /> Saving…</> : 'Save evidence'}
+            </button>
+          </RailSection>
+
+          {/* Merchant decision accordion */}
+          {selectedClaim && !claimIsClosed && (
+            <RailSection
+              id="decision"
+              title="Merchant decision"
+              open={railOpen.decision}
+              onToggle={(id) => setRailOpen((p) => ({ ...p, [id]: !p[id] }))}
+              highlighted={primaryAction.railSection === 'decision'}
+              badge={latestOutcome ? (
+                <span className="text-[10px] rounded-full px-1.5 py-0.5 font-semibold" style={{ background: '#dcfce7', color: '#166534' }}>Recorded</span>
+              ) : undefined}
+            >
+              <p className="text-xs mb-2" style={{ color: 'var(--text-muted)' }}>Unauth surfaces evidence. Merchant decides.</p>
+              <div className="space-y-2">
+                <div>
+                  <FieldLabel>Decision</FieldLabel>
+                  <select className="w-full px-2 py-1.5 rounded-md text-sm" style={inputStyle()} value={decision} onChange={e => setDecision(e.target.value as Decision)}>
+                    {(Object.entries(DECISION_LABELS) as [Decision, string][]).map(([v, l]) => (
+                      <option key={v} value={v}>{l}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <FieldLabel>Outcome</FieldLabel>
+                  <select className="w-full px-2 py-1.5 rounded-md text-sm" style={inputStyle()} value={outcome} onChange={e => setOutcome(e.target.value as Outcome)}>
+                    {(Object.entries(OUTCOME_LABELS) as [Outcome, string][]).map(([v, l]) => (
+                      <option key={v} value={v}>{l}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              {!claimId && (
+                <p className="mt-2 text-xs" style={{ color: 'var(--text-muted)' }}>Save the claim details first — outcome recording requires an active claim.</p>
+              )}
+              <button
+                onClick={onOutcome}
+                disabled={busy || !claimId}
+                className="mt-2 w-full px-3 py-1.5 rounded-md text-xs font-semibold flex items-center justify-center gap-2 disabled:opacity-60"
+                style={btnStyle(primaryAction.key === 'decision' && claimId ? 'primary' : claimId ? 'secondary' : 'disabled')}
+              >
+                {busy ? <><span className="h-3 w-3 rounded-full border-2 border-current border-t-transparent animate-spin" /> Saving…</> : 'Record merchant decision'}
+              </button>
+            </RailSection>
+          )}
+
+          <RailSection
+            id="response"
+            title="Customer response"
+            open={railOpen.response}
+            onToggle={(id) => setRailOpen((p) => ({ ...p, [id]: !p[id] }))}
+            highlighted={primaryAction.railSection === 'response'}
+            badge={responseRecorded ? (
+              <span className="text-[10px] rounded-full px-1.5 py-0.5 font-semibold" style={{ background: '#dcfce7', color: '#166534' }}>Sent</span>
+            ) : undefined}
+          >
+            <textarea className="w-full px-2 py-2 rounded-md text-xs resize-none mb-2" style={inputStyle()} rows={4} value={customerResponse} readOnly />
+            <p className="mb-3 text-[11px]" style={{ color: 'var(--text-muted)' }}>Internal notes and risk signals stay out of the customer-facing response.</p>
+            <button
+              onClick={onCopyCustomerResponse}
+              disabled={!claimId}
+              className="w-full px-3 py-1.5 rounded-md text-xs font-semibold disabled:opacity-60"
+              style={btnStyle(primaryAction.key === 'response' && claimId ? 'primary' : claimId ? 'secondary' : 'disabled')}
+            >
+              Copy &amp; record
+            </button>
+          </RailSection>
+
+          {selectedClaim && latestOutcome && (
+            <RailSection id="advanced" title="Advanced" open={railOpen.advanced} onToggle={(id) => setRailOpen((p) => ({ ...p, [id]: !p[id] }))}>
+              <p className="text-xs mb-3 font-semibold" style={{ color: 'var(--text-muted)' }}>Reverse recorded decision</p>
+              <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <select className="w-full px-2 py-1.5 rounded-md text-xs" style={inputStyle()} value={reverseDecision} onChange={e => setReverseDecision(e.target.value as Decision)}>
+                    {(Object.entries(DECISION_LABELS) as [Decision, string][]).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                  </select>
+                  <select className="w-full px-2 py-1.5 rounded-md text-xs" style={inputStyle()} value={reverseOutcome} onChange={e => setReverseOutcome(e.target.value as Outcome)}>
+                    {(Object.entries(OUTCOME_LABELS) as [Outcome, string][]).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                  </select>
+                </div>
+                <textarea className="w-full px-2 py-1.5 rounded-md text-xs resize-none" style={inputStyle()} rows={2} placeholder="Reason for reversal" value={reverseNote} onChange={e => setReverseNote(e.target.value)} />
+                <button onClick={onReverse} disabled={busy || !claimId} className="w-full px-3 py-1.5 rounded-md text-xs font-semibold disabled:opacity-60" style={btnStyle('muted')}>
                   Reverse decision
                 </button>
-              </>
-            )}
-          </div>
-        </section>
-      </div>
+              </div>
+            </RailSection>
+          )}
 
-      <section className="rounded-xl p-4 border" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}>
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-          <p className="text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Customer response</p>
-          <button onClick={onCopyCustomerResponse} disabled={!claimId} className="px-3 py-1.5 rounded-md text-xs font-semibold disabled:opacity-60" style={{ border: '1px solid var(--border)', color: 'var(--text)' }}>
-            Copy & record
-          </button>
-        </div>
-        <textarea className="w-full px-3 py-2 rounded-md text-sm resize-none" style={inputStyle()} rows={3} value={customerResponse} readOnly />
-        <p className="mt-2 text-xs" style={{ color: 'var(--text-muted)' }}>Internal notes and risk signals stay out of the customer-facing response.</p>
-      </section>
+        </aside>
 
-      {/* Evidence */}
-      <section className="rounded-xl p-4 border" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}>
-        <p className="text-caption font-semibold mb-3" style={{ color: 'var(--ink-secondary)' }}>Evidence</p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div>
-            <FieldLabel>Evidence type</FieldLabel>
-            <select className="w-full px-3 py-2 rounded-md text-sm" style={inputStyle()} value={evidenceType} onChange={e => setEvidenceType(e.target.value as EvidenceType)}>
-              {(Object.entries(EVIDENCE_TYPE_LABELS) as [EvidenceType, string][]).map(([v, l]) => (
-                <option key={v} value={v}>{l}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <FieldLabel>Source</FieldLabel>
-            <select className="w-full px-3 py-2 rounded-md text-sm" style={inputStyle()} value={source} onChange={e => setSource(e.target.value as EvidenceSource)}>
-              {(Object.entries(EVIDENCE_SOURCE_LABELS) as [EvidenceSource, string][]).map(([v, l]) => (
-                <option key={v} value={v}>{l}</option>
-              ))}
-            </select>
-          </div>
-          <div className="md:col-span-2">
-            <FieldLabel>Evidence URL (optional)</FieldLabel>
-            <input
-              className="w-full px-3 py-2 rounded-md text-sm"
-              style={inputStyle()}
-              placeholder="https://…"
-              value={evidenceUrl}
-              onChange={e => setEvidenceUrl(e.target.value)}
-            />
-          </div>
-        </div>
-
-        <div className="mt-3">
+        {/* Edit claim details — after action rail on narrow screens */}
+        <section
+          className="order-3 min-w-0 min-[1100px]:col-start-1 min-[1100px]:row-start-2 rounded-xl border overflow-hidden"
+          style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}
+        >
           <button
             type="button"
-            onClick={() => setShowMeta((v) => !v)}
-            className="text-xs hover:underline"
-            style={{ color: 'var(--text-muted)' }}
+            onClick={() => setClaimFormOpen((v) => !v)}
+            className="w-full flex items-center justify-between px-4 py-2.5 text-left"
           >
-            {showMeta ? '▲ Hide' : '▼ Advanced'} — hash & metadata
+            <span className="text-xs font-semibold" style={{ color: 'var(--ink-secondary)' }}>{claimId ? 'Edit claim details' : 'Create claim'}</span>
+            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{claimFormOpen ? '▲' : '▼'}</span>
           </button>
-          {showMeta && (
-            <div className="mt-2 space-y-2">
-              <div>
-                <FieldLabel>Evidence hash (SHA-256)</FieldLabel>
-                <input className="w-full px-3 py-2 rounded-md text-sm" style={inputStyle()} placeholder="sha256:…" value={evidenceHash} onChange={e => setEvidenceHash(e.target.value)} />
-              </div>
-              <div className="space-y-2">
-                {metaRows.map((r, i) => (
-                  <div key={i} className="grid grid-cols-2 gap-2">
-                    <input className="px-3 py-2 rounded-md text-sm" style={inputStyle()} placeholder="key" value={r.key} onChange={e => setMetaRows(prev => prev.map((x, ix) => ix === i ? { ...x, key: e.target.value } : x))} />
-                    <input className="px-3 py-2 rounded-md text-sm" style={inputStyle()} placeholder="value" value={r.value} onChange={e => setMetaRows(prev => prev.map((x, ix) => ix === i ? { ...x, value: e.target.value } : x))} />
+          {claimFormOpen && (
+            <div className="px-4 pb-4 pt-0 border-t space-y-3" style={{ borderColor: 'var(--border-subtle)' }}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {shops.length > 0 && (
+                  <div>
+                    <FieldLabel>Connected shop</FieldLabel>
+                    {shops.length <= 1
+                      ? <input className="w-full px-2 py-1.5 rounded-md text-xs" style={inputStyle()} value={shopDomain} readOnly />
+                      : (
+                        <select className="w-full px-2 py-1.5 rounded-md text-xs" style={inputStyle()} value={shopDomain} onChange={e => setShopDomain(e.target.value)}>
+                          {shops.map(s => <option key={s} value={s}>{s}</option>)}
+                        </select>
+                      )}
                   </div>
-                ))}
-                <button onClick={() => setMetaRows(prev => [...prev, { key: '', value: '' }])} className="px-3 py-1 rounded-md text-xs" style={{ border: '1px solid var(--border)', color: 'var(--text-muted)' }}>+ Add metadata row</button>
+                )}
+                <div className={shops.length > 0 ? '' : 'sm:col-span-2'}>
+                  <FieldLabel>Order</FieldLabel>
+                  {!manualMode && orderOptions.length > 0 ? (
+                    <>
+                      <select aria-label="Order" className="w-full px-2 py-1.5 rounded-md text-xs" style={inputStyle()} value={selectedOrderId} onChange={e => setSelectedOrderId(e.target.value)}>
+                        {orderOptions.length > 1 && <option value="">Select an order…</option>}
+                        {orderOptions.map((o) => <option key={o.id} value={o.id}>{formatOrderOption(o)}</option>)}
+                      </select>
+                      <button type="button" onClick={() => setManualModeExplicit(true)} className="mt-1 text-xs hover:underline" style={{ color: 'var(--text-muted)' }}>Enter reference manually</button>
+                    </>
+                  ) : (
+                    <div className="space-y-1.5">
+                      <input className="w-full px-2 py-1.5 rounded-md text-xs" style={inputStyle()} placeholder="Order reference" value={manualOrderRef} onChange={e => setManualOrderRef(e.target.value)} />
+                      <select className="w-full px-2 py-1.5 rounded-md text-xs" style={inputStyle()} value={manualOrderSource} onChange={e => setManualOrderSource(e.target.value)}>
+                        <option value="manual">Manual entry</option>
+                        <option value="csv">CSV import</option>
+                        <option value="shopify">Shopify</option>
+                        <option value="audit">Audit</option>
+                      </select>
+                      {orderOptions.length > 0 && (
+                        <button type="button" onClick={() => setManualModeExplicit(false)} className="text-xs hover:underline" style={{ color: 'var(--text-muted)' }}>← Back to order list</button>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <FieldLabel>Claim type</FieldLabel>
+                  <select className="w-full px-2 py-1.5 rounded-md text-xs" style={inputStyle()} value={claimType} onChange={e => setClaimType(e.target.value as ClaimType)}>
+                    {(Object.entries(CLAIM_TYPE_LABELS) as [ClaimType, string][]).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <FieldLabel>Order value (optional)</FieldLabel>
+                  <input type="number" min="0" step="0.01" className="w-full px-2 py-1.5 rounded-md text-xs" style={inputStyle()} placeholder="0.00" value={orderValue} onChange={e => setOrderValue(e.target.value)} />
+                </div>
+                <div className="sm:col-span-2">
+                  <FieldLabel>Customer&apos;s reason</FieldLabel>
+                  <textarea className="w-full px-2 py-1.5 rounded-md text-xs resize-none" style={inputStyle()} rows={2} value={customerReason} onChange={e => setCustomerReason(e.target.value)} />
+                </div>
+                <div className="sm:col-span-2">
+                  <FieldLabel>Internal notes</FieldLabel>
+                  <textarea className="w-full px-2 py-1.5 rounded-md text-xs resize-none" style={inputStyle()} rows={2} value={notes} onChange={e => setNotes(e.target.value)} />
+                </div>
               </div>
+              {activeDuplicateClaim && (
+                <p className="text-xs rounded-md px-2 py-1.5" style={{ border: '1px solid #fca5a5', background: '#fee2e2', color: '#991b1b' }}>
+                  Active claim exists. <button type="button" onClick={() => setClaimId(activeDuplicateClaim.id)} className="font-semibold underline">Open it</button>
+                </p>
+              )}
+              {resolvedDuplicateClaim && (
+                <p className="text-xs rounded-md px-2 py-1.5" style={{ background: 'var(--bg-inset)', color: 'var(--text)' }}>
+                  Resolved claim exists. <button type="button" onClick={() => setClaimId(resolvedDuplicateClaim.id)} className="font-semibold underline" style={{ color: 'var(--accent)' }}>Open it</button>
+                </p>
+              )}
+              <button
+                onClick={onClaim}
+                disabled={busy}
+                className="w-full sm:w-auto px-4 py-1.5 rounded-md text-xs font-semibold flex items-center justify-center gap-2 disabled:opacity-60"
+                style={btnStyle(primaryAction.key === 'save_claim' ? 'primary' : 'secondary')}
+              >
+                {busy ? <><span className="h-3 w-3 rounded-full border-2 border-current border-t-transparent animate-spin" /> Saving…</> : claimId ? 'Update claim' : 'Save claim'}
+              </button>
             </div>
           )}
-        </div>
+        </section>
 
-        {!claimId && (
-          <p className="mt-2 text-xs" style={{ color: 'var(--text-muted)' }}>Save the claim details first — evidence attaches to the selected claim record.</p>
-        )}
-        <button
-          onClick={onEvidence}
-          disabled={busy || !claimId}
-          className="mt-3 w-full px-4 py-2 rounded-md text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-60"
-          style={{ background: claimId ? 'var(--accent)' : 'var(--bg-inset)', color: claimId ? 'var(--text-inverse)' : 'var(--text-muted)', border: claimId ? 'none' : '1px solid var(--border)' }}
-        >
-          {busy ? <><span className="h-3.5 w-3.5 rounded-full border-2 border-white border-t-transparent animate-spin" /> Saving…</> : 'Save evidence'}
-        </button>
-      </section>
-
-      <section className="rounded-xl p-4 border" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}>
-        <div className="mb-3 inline-flex rounded-md border p-0.5" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)' }}>
-          <button onClick={() => setAuditTab('timeline')} className="px-2.5 py-1 text-xs rounded" style={{ background: auditTab === 'timeline' ? 'var(--accent)' : 'transparent', color: auditTab === 'timeline' ? 'var(--text-inverse)' : 'var(--text-muted)' }}>Event timeline</button>
-          <button onClick={() => setAuditTab('history')} className="px-2.5 py-1 text-xs rounded" style={{ background: auditTab === 'history' ? 'var(--accent)' : 'transparent', color: auditTab === 'history' ? 'var(--text-inverse)' : 'var(--text-muted)' }}>Claim history</button>
-        </div>
-        {auditTab === 'timeline' && (
-          <>
-        {!selectedClaim ? (
-          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Select a claim to view its audit history.</p>
-        ) : selectedClaimEvents.length === 0 ? (
-          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No claim events recorded yet.</p>
-        ) : (
-          <ol className="space-y-2">
-            {selectedClaimEvents.map((event: any) => (
-              <li key={event.id} className="rounded-md border p-3" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)' }}>
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div>
-                    <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{claimEventLabel(event.event_type)}</p>
-                    <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                      {claimEventSummary(event)}
-                    </p>
-                  </div>
-                  <div className="text-right text-xs" style={{ color: 'var(--text-muted)' }}>
-                    <p>{event.created_at ? new Date(event.created_at).toLocaleString('en-GB') : '—'}</p>
-                    {event.actor_user_id && <p>{actorLabel(event.actor_user_id)}</p>}
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ol>
-        )}
-          </>
-        )}
-        {auditTab === 'history' && (
-          history.length === 0 ? (
-            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>No claims recorded for this customer yet.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead><tr style={{ color: 'var(--text-muted)' }}><th className="text-left py-2 pr-3 text-xs font-semibold">Order ref</th><th className="text-left py-2 pr-3 text-xs font-semibold">Status</th><th className="text-left py-2 pr-3 text-xs font-semibold">Type</th><th className="text-left py-2 pr-3 text-xs font-semibold">Decision / Outcome</th><th className="text-left py-2 pr-3 text-xs font-semibold">Filed</th><th className="text-left py-2 pr-3 text-xs font-semibold">SLA</th><th className="text-left py-2 pr-3 text-xs font-semibold">At risk</th><th className="text-left py-2 text-xs font-semibold">Updated</th></tr></thead>
-                <tbody>
-                  {history.map((h) => {
-                    const sla = getSlaVisual(h);
-                    const tone = sla.tone === 'red' ? { bg: '#FEE2E2', text: '#991B1B' } : sla.tone === 'amber' ? { bg: '#FEF3C7', text: '#B45309' } : { bg: '#F3F4F6', text: '#4B5563' };
-                    return (
-                      <tr key={h.id} className="border-t cursor-pointer hover:bg-[var(--bg-subtle)]" style={{ borderColor: 'var(--border-subtle)' }} onClick={() => setClaimId(h.id)}>
-                        <td className="py-2 pr-3 font-mono text-xs">{h.shopify_order_id ?? h.order_ref ?? '—'}</td><td className="py-2 pr-3"><StatusPill status={h.status} /></td><td className="py-2 pr-3">{CLAIM_TYPE_LABELS[h.claim_type as ClaimType] ?? h.claim_type}</td>
-                        <td className="py-2 pr-3">{h.latest_outcome ? `${DECISION_LABELS[h.latest_outcome.decision as Decision] ?? h.latest_outcome.decision} / ${OUTCOME_LABELS[h.latest_outcome.outcome as Outcome] ?? h.latest_outcome.outcome}` : '—'}</td>
-                        <td className="py-2 pr-3 text-xs" style={{ color: 'var(--text-muted)' }}><span>{formatFiledDate(h)}</span><span className="block">{formatClaimAge(h)}</span></td>
-                        <td className="py-2 pr-3">
-                          <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium" style={{ background: tone.bg, color: tone.text }}>
-                            {sla.icon}
-                            {sla.label}
-                          </span>
-                        </td>
-                        <td className="py-2 pr-3">{h.amount_at_risk != null ? formatMoney(h.amount_at_risk, h.currency) : '—'}</td>
-                        <td className="py-2 text-xs font-mono" style={{ color: 'var(--text-muted)' }}>{h.updated_at ? new Date(h.updated_at).toLocaleDateString('en-GB') : '—'}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )
-        )}
-      </section>
+      </div>{/* end two-column body */}
     </div>
   );
 }

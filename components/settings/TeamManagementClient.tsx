@@ -40,20 +40,23 @@ type TeamResponse = {
   auditTrail: AuditRow[];
 };
 
-const INVITE_ROLES: Array<{ value: Exclude<TeamRole, 'owner'>; label: string; help: string }> = [
-  { value: 'admin', label: 'Admin', help: 'Can manage settings and invite teammates.' },
-  { value: 'analyst', label: 'Analyst', help: 'Can run reviews and work investigation queues.' },
-  { value: 'viewer', label: 'Viewer', help: 'Read-only access for reports and monitoring.' },
+const INVITE_ROLES: Array<{ value: 'analyst'; label: string; help: string }> = [
+  { value: 'analyst', label: 'Analyst', help: 'Can investigate customers, run audits, and generate evidence packages.' },
 ];
 
-const ASSIGNABLE_ROLES: TeamRole[] = ['owner', 'admin', 'analyst', 'viewer'];
+const UI_ASSIGNABLE_ROLES = ['owner', 'analyst'] as const satisfies readonly TeamRole[];
 
 const ROLE_LABELS: Record<TeamRole, string> = {
   owner: 'Owner',
-  admin: 'Admin',
+  admin: 'Analyst',
   analyst: 'Analyst',
-  viewer: 'Viewer',
+  viewer: 'Analyst',
 };
+
+function uiRoleForMember(role: TeamRole): (typeof UI_ASSIGNABLE_ROLES)[number] {
+  if (role === 'owner') return 'owner';
+  return 'analyst';
+}
 
 const STATUS_LABELS: Record<InviteStatus, string> = {
   active: 'Active',
@@ -236,20 +239,20 @@ export default function TeamManagementClient() {
         </div>
 
         <select
-          value={member.role}
+          value={uiRoleForMember(member.role)}
           onChange={(event) => changeRole(member, event.target.value as TeamRole)}
           disabled={roleDisabled}
           aria-label={`Role for ${member.invited_email}`}
           className="rounded-md px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 disabled:opacity-50"
           style={{ background: 'var(--bg-inset)', border: '1px solid var(--border)', color: 'var(--text)', outlineColor: 'var(--accent)' }}
         >
-          {ASSIGNABLE_ROLES.map((roleOption) => (
+          {UI_ASSIGNABLE_ROLES.map((roleOption) => (
             <option
               key={roleOption}
               value={roleOption}
               disabled={roleOption === 'owner' && (!isAccountOwner || member.invite_status !== 'active')}
             >
-              {ROLE_LABELS[roleOption]}
+              {roleOption === 'owner' ? 'Owner' : 'Analyst'}
             </option>
           ))}
         </select>

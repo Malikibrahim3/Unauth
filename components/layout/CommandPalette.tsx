@@ -33,30 +33,8 @@ interface UnifiedResult {
 
 const NAV_ITEMS: NavItem[] = [
   {
-    label: 'Open claim review',
-    description: 'Work open claims and record outcomes',
-    href: '/claims',
-    icon: (
-      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-        <path d="M3 4h10v9H3z" stroke="currentColor" strokeWidth="1.4" />
-        <path d="M5 7h6M5 10h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-      </svg>
-    ),
-  },
-  {
-    label: 'Export reports',
-    description: 'Manager-ready claims and outcomes exports',
-    href: '/reports',
-    icon: (
-      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-        <path d="M8 2v8M5 7l3 3 3-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-        <rect x="2" y="12" width="12" height="2" rx="1" stroke="currentColor" strokeWidth="1.4" />
-      </svg>
-    ),
-  },
-  {
-    label: 'Risk Overview',
-    description: 'Dashboard, key metrics and trends',
+    label: 'Investigation dashboard',
+    description: 'Flagged customers, evidence, and audit activity',
     href: '/dashboard',
     icon: (
       <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -107,18 +85,6 @@ const NAV_ITEMS: NavItem[] = [
     icon: (
       <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
         <path d="M8 1.5L9.854 5.41l4.146.603-3 2.922.708 4.125L8 10.896l-3.708 1.164.708-4.125-3-2.922 4.146-.603L8 1.5z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
-      </svg>
-    ),
-  },
-  {
-    label: 'Inbox',
-    description: 'Matched transactions to review',
-    href: '/inbox',
-    icon: (
-      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-        <rect x="1" y="2" width="14" height="12" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
-        <path d="M1 6h14" stroke="currentColor" strokeWidth="1.4" />
-        <path d="M5 10h6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
       </svg>
     ),
   },

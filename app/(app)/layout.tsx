@@ -9,7 +9,6 @@ import { headers } from 'next/headers';
 import { createServiceClient } from '@/lib/supabase/server';
 import { shouldRequireOnboarding } from '@/lib/account/onboardingGate';
 import { ensureMerchantContextForUser } from '@/lib/account/ensureMerchantContext';
-import { ACTIVE_CLAIM_STATUSES } from '@/lib/claims/sla';
 import { getShopifyConnectionStatus } from '@/lib/shopify/connectionStatus';
 
 export const dynamic = 'force-dynamic';
@@ -49,15 +48,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const shopifyPromise = ctx
     ? getShopifyConnectionStatus(serviceClient, ctx.merchantId)
     : Promise.resolve({ connected: false, linkState: 'not_connected' as const, shopDomain: null, lastError: null });
-  const claimsCountPromise = ctx
-    ? serviceClient
-      .from('merchant_claims' as any)
-      .select('id', { count: 'exact', head: true })
-      .eq('merchant_id', ctx.merchantId)
-      .in('status', [...ACTIVE_CLAIM_STATUSES])
-    : Promise.resolve({ count: 0 });
-
-  const [{ data: merchantProfile }, { data: jobs }, shopifyStatus, { count: claimsCount }] = await Promise.all([merchantPromise, jobsPromise, shopifyPromise, claimsCountPromise]);
+  const [{ data: merchantProfile }, { data: jobs }, shopifyStatus] = await Promise.all([merchantPromise, jobsPromise, shopifyPromise]);
 
   if (!isOnboarding) {
     const merchantComplete =
@@ -92,7 +83,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       className="flex h-screen overflow-hidden bg-[var(--surface-base)] text-[var(--ink-primary)]"
     >
       {/* ── Sidebar ── */}
-      <Sidebar merchantName={displayMerchantName ?? null} userEmail={user.email ?? ''} claimsCount={claimsCount ?? 0} />
+      <Sidebar merchantName={displayMerchantName ?? null} userEmail={user.email ?? ''} />
 
       {/* Amplitude — initialise after session confirmed */}
       <AmplitudeInit
