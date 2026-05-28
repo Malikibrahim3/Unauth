@@ -71,7 +71,8 @@ Include `ground_truth_label` (fraud/legitimate) to get precision/recall metrics 
 | `refundRate` | 20 | Customer refund rate vs population baseline |
 | `inrAbuse` | 25 | Repeated INR claims |
 | `velocity` | 18 | Burst ordering across 1h / 24h / 7d windows |
-| `inrSpeed` | 10 | INR claim within 48h of order |
+| `inrSpeed` | 10 | INR timing inconsistent with confirmed delivery |
+| `postDeliveryClaimRate` | 22 | Rate of INR claims filed after confirmed delivery |
 | `emailPattern` | 8 | Disposable or aliased email patterns |
 | `addressClustering` | 9 | Multiple emails shipping to the same address |
 | `billingAddressClustering` | 9 | Multiple emails linked through billing-address dispute history |
