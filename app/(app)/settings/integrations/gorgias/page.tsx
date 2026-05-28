@@ -6,6 +6,7 @@ import { TABLES } from '@/lib/supabase/tables';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { env } from '@/lib/utils/env';
 import GorgiasSetupClient from '@/components/settings/GorgiasSetupClient';
+import GorgiasSupportSyncClient from '@/components/settings/GorgiasSupportSyncClient';
 
 export default async function GorgiasIntegrationPage() {
   const userClient = createClient();
@@ -17,6 +18,9 @@ export default async function GorgiasIntegrationPage() {
   const service = createServiceClient();
   const { denied, ctx } = await requirePermission(service, user.id, PERMISSIONS.VIEW_SETTINGS);
   if (denied) redirect('/settings');
+
+  const manageCheck = await requirePermission(service, user.id, PERMISSIONS.MANAGE_SETTINGS);
+  const canManageGorgias = !manageCheck.denied;
 
   const { data: keys } = await service
     .from(TABLES.MERCHANT_API_KEYS)
@@ -59,6 +63,8 @@ export default async function GorgiasIntegrationPage() {
           Add Unauth fraud intelligence to every support ticket
         </p>
       </div>
+
+      <GorgiasSupportSyncClient canManage={canManageGorgias} />
 
       <GorgiasSetupClient
         appBaseUrl={env.NEXT_PUBLIC_APP_URL}

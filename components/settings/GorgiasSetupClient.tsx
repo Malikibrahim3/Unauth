@@ -64,6 +64,9 @@ export default function GorgiasSetupClient({ appBaseUrl, hasApiKeys, keyPrefixes
 
   return (
     <div className="space-y-8">
+      <h2 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
+        Gorgias sidebar widget
+      </h2>
       <ol className="list-decimal space-y-3 pl-5 text-sm" style={{ color: 'var(--text)' }}>
         <li>Copy your widget URL below (paste your widget token into the field first).</li>
         <li>

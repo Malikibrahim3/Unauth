@@ -13,6 +13,7 @@ export type UpsertGorgiasSupportConnectionInput = {
   provider_base_url?: string | null;
   domain?: string | null;
   status?: 'active' | 'disabled' | 'revoked' | 'error';
+  last_error?: string | null;
   /** Plaintext secret; hashed before storage. Never logged. */
   webhookSecretPlaintext?: string | null;
   /** Pre-computed hash for tests/migrations. */
@@ -63,7 +64,7 @@ export async function upsertGorgiasSupportConnection(
     provider_account_name: input.provider_account_name ?? null,
     provider_base_url: providerBaseUrl,
     status: input.status ?? 'active',
-    last_error: null,
+    last_error: input.last_error ?? null,
     ...secretFields,
   });
 }

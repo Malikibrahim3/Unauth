@@ -36,7 +36,11 @@ export type AuditAction =
   | 'update_settings'
   | 'view_audit_trail'
   | 'create_api_key'
-  | 'revoke_api_key';
+  | 'revoke_api_key'
+  | 'create_gorgias_support_connection'
+  | 'update_gorgias_support_connection'
+  | 'rotate_gorgias_webhook_secret'
+  | 'disable_gorgias_support_connection';
 
 export interface LogActionParams {
   ctx:          CallerContext;
