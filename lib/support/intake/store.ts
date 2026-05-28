@@ -68,7 +68,18 @@ export function extractOrderRefFromText(text: string): string | null {
 export function toPublicSupportProviderConnection(
   row: SupportProviderConnectionRow
 ): PublicSupportProviderConnection {
-  const { access_token_encrypted: _a, refresh_token_encrypted: _r, ...safe } = row;
+  const {
+    access_token_encrypted: _a,
+    refresh_token_encrypted: _r,
+    webhook_secret_hash: _wh,
+    webhook_secret_created_at: _wc,
+    webhook_secret_rotated_at: _wr,
+    ...safe
+  } = row as SupportProviderConnectionRow & {
+    webhook_secret_hash?: string | null;
+    webhook_secret_created_at?: string | null;
+    webhook_secret_rotated_at?: string | null;
+  };
   return safe;
 }
 
@@ -102,6 +113,9 @@ const upsertConnectionSchema = z.object({
   scopes: z.array(z.unknown()).default([]),
   last_sync_at: z.string().datetime().nullable().optional(),
   last_error: z.string().nullable().optional(),
+  webhook_secret_hash: z.string().nullable().optional(),
+  webhook_secret_created_at: z.string().datetime().nullable().optional(),
+  webhook_secret_rotated_at: z.string().datetime().nullable().optional(),
 });
 
 const upsertCaseSchema = z.object({

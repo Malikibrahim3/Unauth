@@ -32,6 +32,7 @@ const envSchema = z.object({
   SHOPIFY_API_SECRET: z.string().min(1).optional(),
   SHOPIFY_WEBHOOK_SECRET: z.string().min(1).optional(),
   GORGIAS_SUPPORT_WEBHOOK_SECRET: z.string().min(32).optional(),
+  GORGIAS_SUPPORT_ALLOW_GLOBAL_SECRET: z.string().optional(),
   GORGIAS_SUPPORT_TEST_MERCHANT_ID: z.string().uuid().optional(),
   GORGIAS_SUPPORT_ALLOW_ENV_MERCHANT: z.string().optional(),
 }).superRefine((env, ctx) => {

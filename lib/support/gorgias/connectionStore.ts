@@ -4,6 +4,7 @@ import {
   gorgiasBaseUrlFromDomain,
   normalizeGorgiasDomain,
 } from '@/lib/support/gorgias/accountIdentity';
+import { hashGorgiasWebhookSecret } from '@/lib/support/gorgias/webhookSecret';
 
 export type UpsertGorgiasSupportConnectionInput = {
   merchant_id: string;
@@ -12,6 +13,12 @@ export type UpsertGorgiasSupportConnectionInput = {
   provider_base_url?: string | null;
   domain?: string | null;
   status?: 'active' | 'disabled' | 'revoked' | 'error';
+  /** Plaintext secret; hashed before storage. Never logged. */
+  webhookSecretPlaintext?: string | null;
+  /** Pre-computed hash for tests/migrations. */
+  webhookSecretHash?: string | null;
+  /** When true and a new secret is supplied, sets webhook_secret_rotated_at. */
+  rotateWebhookSecret?: boolean;
 };
 
 type PatchableSupabase = {
@@ -31,6 +38,24 @@ export async function upsertGorgiasSupportConnection(
     input.provider_base_url ?? (domain ? gorgiasBaseUrlFromDomain(domain) : null);
   const providerAccountId = input.provider_account_id ?? domain ?? null;
 
+  let webhook_secret_hash: string | undefined;
+  if (input.webhookSecretPlaintext) {
+    webhook_secret_hash = hashGorgiasWebhookSecret(input.webhookSecretPlaintext);
+  } else if (input.webhookSecretHash) {
+    webhook_secret_hash = input.webhookSecretHash;
+  }
+
+  const now = new Date().toISOString();
+  const secretFields =
+    webhook_secret_hash !== undefined
+      ? {
+          webhook_secret_hash,
+          ...(input.rotateWebhookSecret
+            ? { webhook_secret_rotated_at: now }
+            : { webhook_secret_created_at: now }),
+        }
+      : {};
+
   return upsertSupportProviderConnection(supabase, {
     merchant_id: input.merchant_id,
     provider: 'gorgias',
@@ -39,6 +64,7 @@ export async function upsertGorgiasSupportConnection(
     provider_base_url: providerBaseUrl,
     status: input.status ?? 'active',
     last_error: null,
+    ...secretFields,
   });
 }
 

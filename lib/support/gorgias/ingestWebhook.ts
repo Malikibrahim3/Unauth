@@ -10,13 +10,14 @@ import {
   recordGorgiasSupportConnectionError,
   touchGorgiasSupportConnectionSync,
 } from '@/lib/support/gorgias/connectionStore';
-import { resolveGorgiasSupportConnection } from '@/lib/support/gorgias/resolveConnection';
 import {
-  resolveGorgiasDevMerchantFallback,
-} from '@/lib/support/gorgias/resolveMerchantId';
+  resolveGorgiasSupportConnection,
+  type GorgiasSupportConnectionRow,
+} from '@/lib/support/gorgias/resolveConnection';
+import { resolveGorgiasDevMerchantFallback } from '@/lib/support/gorgias/resolveMerchantId';
 import {
   readGorgiasWebhookSecretHeader,
-  verifyGorgiasSupportWebhookSecret,
+  verifyGorgiasWebhookAuth,
 } from '@/lib/support/gorgias/webhookAuth';
 
 export const GORGIAS_EVENT_TYPE_HEADER = 'x-gorgias-event-type';
@@ -86,8 +87,8 @@ export type IngestGorgiasWebhookInput = {
 
 type ResolvedMerchantContext = {
   merchantId: string;
+  connection: GorgiasSupportConnectionRow | null;
   providerConnectionId: string | null;
-  providerBaseUrl: string | null;
 };
 
 async function resolveMerchantContext(
@@ -102,8 +103,8 @@ async function resolveMerchantContext(
     if ('connection' in connectionResolution) {
       return {
         merchantId: connectionResolution.connection.merchant_id,
+        connection: connectionResolution.connection,
         providerConnectionId: connectionResolution.connection.id,
-        providerBaseUrl: connectionResolution.connection.provider_base_url,
       };
     }
 
@@ -119,8 +120,8 @@ async function resolveMerchantContext(
   if ('merchantId' in devFallback) {
     return {
       merchantId: devFallback.merchantId,
+      connection: null,
       providerConnectionId: null,
-      providerBaseUrl: null,
     };
   }
 
@@ -144,11 +145,6 @@ function safeConnectionErrorCode(error: unknown): string {
 export async function ingestGorgiasSupportWebhook(
   input: IngestGorgiasWebhookInput
 ): Promise<SupportIngestSuccess> {
-  const secret = readGorgiasWebhookSecretHeader(input.headers);
-  if (!verifyGorgiasSupportWebhookSecret(secret)) {
-    throw new GorgiasWebhookError(401, 'unauthorized');
-  }
-
   const ticket = extractGorgiasTicketPayload(input.body);
   const eventType = inferGorgiasEventType(
     ticket,
@@ -160,6 +156,25 @@ export async function ingestGorgiasSupportWebhook(
 
   const supabase = createServiceClient();
   const merchantContext = await resolveMerchantContext(supabase, input, ticket);
+
+  const headerSecret = readGorgiasWebhookSecretHeader(input.headers);
+  const auth = verifyGorgiasWebhookAuth({
+    headerSecret,
+    connection: merchantContext.connection,
+    hasResolvedConnection: merchantContext.connection !== null,
+  });
+
+  if (!auth.ok) {
+    if (merchantContext.providerConnectionId) {
+      await recordGorgiasSupportConnectionError(
+        supabase,
+        merchantContext.providerConnectionId,
+        auth.code
+      );
+    }
+    throw new GorgiasWebhookError(auth.status, auth.code);
+  }
+
   const connectionId = merchantContext.providerConnectionId;
 
   try {

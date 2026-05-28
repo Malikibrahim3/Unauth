@@ -1,5 +1,8 @@
 import { timingSafeEqual } from 'node:crypto';
 import { env } from '@/lib/utils/env';
+import { verifyGorgiasWebhookSecret } from '@/lib/support/gorgias/webhookSecret';
+import type { GorgiasSupportConnectionRow } from '@/lib/support/gorgias/resolveConnection';
+import { isGorgiasProductionIngestMode } from '@/lib/support/gorgias/resolveMerchantId';
 
 export const GORGIAS_SUPPORT_SECRET_HEADERS = [
   'x-unauth-gorgias-secret',
@@ -16,7 +19,17 @@ export function readGorgiasWebhookSecretHeader(
   return null;
 }
 
-export function verifyGorgiasSupportWebhookSecret(headerValue: string | null | undefined): boolean {
+export function isGorgiasGlobalWebhookSecretAllowed(): boolean {
+  if (env.GORGIAS_SUPPORT_ALLOW_GLOBAL_SECRET === 'true') return true;
+  return !isGorgiasProductionIngestMode();
+}
+
+/** Dev/test fallback: compare header to global env secret (plaintext, timing-safe). */
+export function verifyGlobalGorgiasSupportWebhookSecret(
+  headerValue: string | null | undefined
+): boolean {
+  if (!isGorgiasGlobalWebhookSecretAllowed()) return false;
+
   const expected = env.GORGIAS_SUPPORT_WEBHOOK_SECRET;
   if (!expected || !headerValue) return false;
 
@@ -28,4 +41,52 @@ export function verifyGorgiasSupportWebhookSecret(headerValue: string | null | u
   } catch {
     return false;
   }
+}
+
+export type GorgiasWebhookAuthResult =
+  | { ok: true; method: 'connection_hash' | 'global_fallback' }
+  | { ok: false; status: 401 | 403; code: string };
+
+export type VerifyGorgiasWebhookAuthInput = {
+  headerSecret: string | null;
+  connection: Pick<GorgiasSupportConnectionRow, 'webhook_secret_hash'> | null;
+  hasResolvedConnection: boolean;
+};
+
+export function verifyGorgiasWebhookAuth(
+  input: VerifyGorgiasWebhookAuthInput
+): GorgiasWebhookAuthResult {
+  const { headerSecret, connection, hasResolvedConnection } = input;
+  const storedHash = connection?.webhook_secret_hash ?? null;
+
+  if (storedHash) {
+    if (!headerSecret) {
+      return { ok: false, status: 401, code: 'unauthorized' };
+    }
+    if (verifyGorgiasWebhookSecret(headerSecret, storedHash)) {
+      return { ok: true, method: 'connection_hash' };
+    }
+    return { ok: false, status: 401, code: 'unauthorized' };
+  }
+
+  if (hasResolvedConnection) {
+    if (isGorgiasProductionIngestMode() && !isGorgiasGlobalWebhookSecretAllowed()) {
+      return { ok: false, status: 403, code: 'gorgias_connection_secret_missing' };
+    }
+    if (verifyGlobalGorgiasSupportWebhookSecret(headerSecret)) {
+      return { ok: true, method: 'global_fallback' };
+    }
+    return { ok: false, status: 401, code: 'unauthorized' };
+  }
+
+  if (verifyGlobalGorgiasSupportWebhookSecret(headerSecret)) {
+    return { ok: true, method: 'global_fallback' };
+  }
+
+  return { ok: false, status: 401, code: 'unauthorized' };
+}
+
+/** @deprecated Use verifyGorgiasWebhookAuth with a resolved connection. */
+export function verifyGorgiasSupportWebhookSecret(headerValue: string | null | undefined): boolean {
+  return verifyGlobalGorgiasSupportWebhookSecret(headerValue);
 }

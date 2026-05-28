@@ -12,6 +12,7 @@ export type GorgiasSupportConnectionRow = {
   provider_account_id: string | null;
   provider_base_url: string | null;
   status: string;
+  webhook_secret_hash: string | null;
 };
 
 export type GorgiasConnectionResolution =
@@ -39,7 +40,9 @@ export async function listActiveGorgiasSupportConnections(
 ): Promise<GorgiasSupportConnectionRow[]> {
   const { data, error } = await (supabase as ListableSupabase)
     .from(TABLES.SUPPORT_PROVIDER_CONNECTIONS)
-    .select('id, merchant_id, provider_account_id, provider_base_url, status')
+    .select(
+      'id, merchant_id, provider_account_id, provider_base_url, status, webhook_secret_hash'
+    )
     .eq('provider', 'gorgias')
     .eq('status', 'active');
 

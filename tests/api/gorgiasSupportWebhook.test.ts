@@ -9,8 +9,16 @@ import {
 } from '@/lib/support/gorgias/accountIdentity';
 import {
   GORGIAS_SUPPORT_SECRET_HEADERS,
-  verifyGorgiasSupportWebhookSecret,
+  verifyGlobalGorgiasSupportWebhookSecret,
+  verifyGorgiasWebhookAuth,
 } from '@/lib/support/gorgias/webhookAuth';
+import {
+  generateGorgiasWebhookSecret,
+  hashGorgiasWebhookSecret,
+  isGorgiasWebhookSecretSufficientLength,
+  verifyGorgiasWebhookSecret,
+} from '@/lib/support/gorgias/webhookSecret';
+import { upsertGorgiasSupportConnection } from '@/lib/support/gorgias/connectionStore';
 import { matchGorgiasSupportConnection } from '@/lib/support/gorgias/resolveConnection';
 import * as resolveMerchantModule from '@/lib/support/gorgias/resolveMerchantId';
 import {
@@ -40,7 +48,12 @@ const OTHER_MERCHANT_ID = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
 const CONNECTION_ID = 'cccccccc-cccc-cccc-cccc-cccccccccccc';
 const CONNECTION_ID_2 = 'dddddddd-dddd-dddd-dddd-dddddddddddd';
 const SUPPORT_CASE_ID = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee';
-const WEBHOOK_SECRET = 'test-gorgias-support-webhook-secret-32chars-min';
+const GLOBAL_WEBHOOK_SECRET =
+  process.env.GORGIAS_SUPPORT_WEBHOOK_SECRET ??
+  'test-gorgias-support-webhook-secret-32chars-min';
+const CONNECTION_WEBHOOK_SECRET =
+  'gorgias_whsec_abcdefghijklmnopqrstuvwxyz0123456789AB';
+const CONNECTION_SECRET_HASH = hashGorgiasWebhookSecret(CONNECTION_WEBHOOK_SECRET);
 const GORGIAS_ACCOUNT_ID = 'acme-gorgias-account';
 const GORGIAS_DOMAIN = 'acme.gorgias.com';
 
@@ -65,6 +78,7 @@ const activeConnection: GorgiasSupportConnectionRow = {
   provider_account_id: GORGIAS_ACCOUNT_ID,
   provider_base_url: `https://${GORGIAS_DOMAIN}`,
   status: 'active',
+  webhook_secret_hash: CONNECTION_SECRET_HASH,
 };
 
 function makeGorgiasWebhookSupabase(options?: {
@@ -275,12 +289,18 @@ describe('Gorgias support webhook', () => {
   });
 
   it('rejects invalid secret', async () => {
+    disableDevMerchantFallback();
     const mock = makeGorgiasWebhookSupabase();
     createServiceClient.mockReturnValue(mock.supabase);
     const res = await POST(
-      makeWebhookRequest(gorgiasTicket, { secret: 'wrong-secret', accountId: GORGIAS_ACCOUNT_ID })
+      makeWebhookRequest(gorgiasTicket, {
+        secret: 'wrong-secret-value-32chars-minimum!!',
+        accountId: GORGIAS_ACCOUNT_ID,
+      })
     );
     expect(res.status).toBe(401);
+    const updates = mock.connectionUpdates();
+    expect(updates[0]?.values.last_error).toBe('unauthorized');
   });
 
   it('disables merchant header fallback in production mode', () => {
@@ -303,7 +323,7 @@ describe('Gorgias support webhook', () => {
 
     const res = await POST(
       makeWebhookRequest(gorgiasTicket, {
-        secret: WEBHOOK_SECRET,
+        secret: CONNECTION_WEBHOOK_SECRET,
         accountId: 'unknown-account',
       })
     );
@@ -324,7 +344,7 @@ describe('Gorgias support webhook', () => {
 
     const res = await POST(
       makeWebhookRequest(gorgiasTicket, {
-        secret: WEBHOOK_SECRET,
+        secret: CONNECTION_WEBHOOK_SECRET,
         accountId: GORGIAS_ACCOUNT_ID,
       })
     );
@@ -341,7 +361,7 @@ describe('Gorgias support webhook', () => {
 
     const res = await POST(
       makeWebhookRequest(gorgiasTicket, {
-        secret: WEBHOOK_SECRET,
+        secret: CONNECTION_WEBHOOK_SECRET,
         accountId: GORGIAS_ACCOUNT_ID,
       })
     );
@@ -354,12 +374,13 @@ describe('Gorgias support webhook', () => {
 
     const res = await POST(
       makeWebhookRequest(gorgiasTicket, {
-        secret: WEBHOOK_SECRET,
+        secret: CONNECTION_WEBHOOK_SECRET,
         accountId: GORGIAS_ACCOUNT_ID,
       })
     );
     expect(res.status).toBe(200);
     const json = await res.json();
+    expect(json.webhook_secret).toBeUndefined();
     expect(json.order_ref).toBe('1007');
     expect(json.claim_reason).toBe('refund_request');
     expect(json.link_status).toBe('not_found');
@@ -376,6 +397,7 @@ describe('Gorgias support webhook', () => {
           provider_account_id: GORGIAS_DOMAIN,
           provider_base_url: `https://${GORGIAS_DOMAIN}`,
           status: 'active',
+          webhook_secret_hash: CONNECTION_SECRET_HASH,
         },
       ],
     });
@@ -383,7 +405,7 @@ describe('Gorgias support webhook', () => {
 
     const res = await POST(
       makeWebhookRequest(gorgiasTicket, {
-        secret: WEBHOOK_SECRET,
+        secret: CONNECTION_WEBHOOK_SECRET,
         domain: GORGIAS_DOMAIN,
       })
     );
@@ -397,7 +419,7 @@ describe('Gorgias support webhook', () => {
     const res = await POST(
       makeWebhookRequest(
         { account_id: GORGIAS_ACCOUNT_ID, ticket: gorgiasTicket },
-        { secret: WEBHOOK_SECRET }
+        { secret: CONNECTION_WEBHOOK_SECRET }
       )
     );
     expect(res.status).toBe(200);
@@ -412,6 +434,7 @@ describe('Gorgias support webhook', () => {
           provider_account_id: GORGIAS_DOMAIN,
           provider_base_url: `https://${GORGIAS_DOMAIN}`,
           status: 'active',
+          webhook_secret_hash: CONNECTION_SECRET_HASH,
         },
       ],
     });
@@ -423,7 +446,7 @@ describe('Gorgias support webhook', () => {
           ...gorgiasTicket,
           uri: `https://${GORGIAS_DOMAIN}/app/ticket/500`,
         },
-        { secret: WEBHOOK_SECRET }
+        { secret: CONNECTION_WEBHOOK_SECRET }
       )
     );
     expect(res.status).toBe(200);
@@ -435,7 +458,7 @@ describe('Gorgias support webhook', () => {
 
     await POST(
       makeWebhookRequest(gorgiasTicket, {
-        secret: WEBHOOK_SECRET,
+        secret: CONNECTION_WEBHOOK_SECRET,
         accountId: GORGIAS_ACCOUNT_ID,
       })
     );
@@ -453,7 +476,7 @@ describe('Gorgias support webhook', () => {
 
     const res = await POST(
       makeWebhookRequest(gorgiasTicket, {
-        secret: WEBHOOK_SECRET,
+        secret: CONNECTION_WEBHOOK_SECRET,
         accountId: GORGIAS_ACCOUNT_ID,
       })
     );
@@ -470,7 +493,7 @@ describe('Gorgias support webhook', () => {
 
     const res = await POST(
       makeWebhookRequest(gorgiasTicket, {
-        secret: WEBHOOK_SECRET,
+        secret: GLOBAL_WEBHOOK_SECRET,
         merchantId: MERCHANT_ID,
       })
     );
@@ -484,7 +507,7 @@ describe('Gorgias support webhook', () => {
 
     const res = await POST(
       makeWebhookRequest(gorgiasTicket, {
-        secret: WEBHOOK_SECRET,
+        secret: CONNECTION_WEBHOOK_SECRET,
         accountId: GORGIAS_ACCOUNT_ID,
         merchantId: OTHER_MERCHANT_ID,
       })
@@ -499,14 +522,14 @@ describe('Gorgias support webhook', () => {
 
     const first = await POST(
       makeWebhookRequest(gorgiasTicket, {
-        secret: WEBHOOK_SECRET,
+        secret: CONNECTION_WEBHOOK_SECRET,
         accountId: GORGIAS_ACCOUNT_ID,
         eventType: 'ticket_created',
       })
     );
     const second = await POST(
       makeWebhookRequest(gorgiasTicket, {
-        secret: WEBHOOK_SECRET,
+        secret: CONNECTION_WEBHOOK_SECRET,
         accountId: GORGIAS_ACCOUNT_ID,
         eventType: 'ticket_updated',
       })
@@ -522,11 +545,11 @@ describe('Gorgias support webhook', () => {
     const mock = makeGorgiasWebhookSupabase();
     createServiceClient.mockReturnValue(mock.supabase);
 
-    expect(verifyGorgiasSupportWebhookSecret(WEBHOOK_SECRET)).toBe(true);
+    expect(verifyGlobalGorgiasSupportWebhookSecret(GLOBAL_WEBHOOK_SECRET)).toBe(true);
 
     const headers = new Headers({
       'content-type': 'application/json',
-      [GORGIAS_SUPPORT_SECRET_HEADERS[1]]: WEBHOOK_SECRET,
+      [GORGIAS_SUPPORT_SECRET_HEADERS[1]]: CONNECTION_WEBHOOK_SECRET,
       [GORGIAS_ACCOUNT_ID_HEADER]: GORGIAS_ACCOUNT_ID,
     });
 
@@ -559,5 +582,139 @@ describe('Gorgias support webhook', () => {
   it('extracts wrapped ticket payloads', () => {
     const ticket = extractGorgiasTicketPayload({ ticket: gorgiasTicket });
     expect(ticket.id).toBe('g-500');
+  });
+
+  it('accepts connection-specific webhook secret', async () => {
+    const mock = makeGorgiasWebhookSupabase();
+    createServiceClient.mockReturnValue(mock.supabase);
+
+    const res = await POST(
+      makeWebhookRequest(gorgiasTicket, {
+        secret: CONNECTION_WEBHOOK_SECRET,
+        accountId: GORGIAS_ACCOUNT_ID,
+      })
+    );
+    expect(res.status).toBe(200);
+    expect(verifyGorgiasWebhookSecret(CONNECTION_WEBHOOK_SECRET, CONNECTION_SECRET_HASH)).toBe(
+      true
+    );
+  });
+
+  it('rejects global env secret when connection has stored hash', async () => {
+    const mock = makeGorgiasWebhookSupabase();
+    createServiceClient.mockReturnValue(mock.supabase);
+
+    const res = await POST(
+      makeWebhookRequest(gorgiasTicket, {
+        secret: GLOBAL_WEBHOOK_SECRET,
+        accountId: GORGIAS_ACCOUNT_ID,
+      })
+    );
+    expect(res.status).toBe(401);
+  });
+
+  it('rejects connection without stored hash in production mode', async () => {
+    jest.spyOn(resolveMerchantModule, 'isGorgiasProductionIngestMode').mockReturnValue(true);
+    const mock = makeGorgiasWebhookSupabase({
+      connections: [{ ...activeConnection, webhook_secret_hash: null }],
+    });
+    createServiceClient.mockReturnValue(mock.supabase);
+
+    const res = await POST(
+      makeWebhookRequest(gorgiasTicket, {
+        secret: GLOBAL_WEBHOOK_SECRET,
+        accountId: GORGIAS_ACCOUNT_ID,
+      })
+    );
+    expect(res.status).toBe(403);
+    expect((await res.json()).error).toBe('gorgias_connection_secret_missing');
+  });
+
+  it('allows global env fallback in dev when connection has no stored hash', async () => {
+    const mock = makeGorgiasWebhookSupabase({
+      connections: [{ ...activeConnection, webhook_secret_hash: null }],
+    });
+    createServiceClient.mockReturnValue(mock.supabase);
+
+    const res = await POST(
+      makeWebhookRequest(gorgiasTicket, {
+        secret: GLOBAL_WEBHOOK_SECRET,
+        accountId: GORGIAS_ACCOUNT_ID,
+      })
+    );
+    expect(res.status).toBe(200);
+  });
+
+  it('does not use global secret in production even when GORGIAS_SUPPORT_ALLOW_GLOBAL_SECRET is unset', () => {
+    jest.spyOn(resolveMerchantModule, 'isGorgiasProductionIngestMode').mockReturnValue(true);
+    expect(
+      verifyGorgiasWebhookAuth({
+        headerSecret: GLOBAL_WEBHOOK_SECRET,
+        connection: activeConnection,
+        hasResolvedConnection: true,
+      })
+    ).toEqual({ ok: false, status: 401, code: 'unauthorized' });
+  });
+});
+
+describe('Gorgias webhook secret helpers', () => {
+  it('generates secrets with sufficient entropy', () => {
+    const secret = generateGorgiasWebhookSecret();
+    expect(isGorgiasWebhookSecretSufficientLength(secret)).toBe(true);
+    expect(secret.startsWith('gorgias_whsec_')).toBe(true);
+  });
+
+  it('hashes secrets deterministically without storing plaintext', () => {
+    const secret = generateGorgiasWebhookSecret();
+    const hash = hashGorgiasWebhookSecret(secret);
+    expect(hash).toMatch(/^[a-f0-9]{64}$/);
+    expect(hash).not.toContain(secret);
+    expect(verifyGorgiasWebhookSecret(secret, hash)).toBe(true);
+    expect(verifyGorgiasWebhookSecret('wrong', hash)).toBe(false);
+  });
+
+  it('upsertGorgiasSupportConnection passes only hash to store layer', async () => {
+    const plaintext = generateGorgiasWebhookSecret();
+    const expectedHash = hashGorgiasWebhookSecret(plaintext);
+    let capturedPayload: Record<string, unknown> | null = null;
+
+    const mockSupabase = {
+      from: () => ({
+        upsert: (payload: Record<string, unknown>) => {
+          capturedPayload = payload;
+          return {
+            select: () => ({
+              single: async () => ({
+                data: {
+                  id: CONNECTION_ID,
+                  merchant_id: MERCHANT_ID,
+                  provider: 'gorgias',
+                  provider_account_id: GORGIAS_ACCOUNT_ID,
+                  provider_base_url: `https://${GORGIAS_DOMAIN}`,
+                  status: 'active',
+                  token_expires_at: null,
+                  scopes: [],
+                  last_sync_at: null,
+                  last_error: null,
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString(),
+                },
+                error: null,
+              }),
+            }),
+          };
+        },
+      }),
+    };
+
+    await upsertGorgiasSupportConnection(mockSupabase, {
+      merchant_id: MERCHANT_ID,
+      provider_account_id: GORGIAS_ACCOUNT_ID,
+      webhookSecretPlaintext: plaintext,
+    });
+
+    expect(capturedPayload?.webhook_secret_hash).toBe(expectedHash);
+    expect(capturedPayload?.webhook_secret_plaintext).toBeUndefined();
+    expect(JSON.stringify(capturedPayload)).not.toContain(plaintext);
   });
 });

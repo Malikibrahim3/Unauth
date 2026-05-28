@@ -2,10 +2,10 @@
  * POST a Gorgias ticket fixture to /api/gorgias/support-webhook (local dev).
  *
  * Connection routing (production-style):
- *   npm run post:gorgias-webhook-fixture -- --account-id acme-account-1
- *   npm run post:gorgias-webhook-fixture -- --domain acme.gorgias.com
+ *   npm run post:gorgias-webhook-fixture -- --account-id acme-account-1 --webhook-secret <per-connection-secret>
+ *   npm run post:gorgias-webhook-fixture -- --domain acme.gorgias.com --webhook-secret <per-connection-secret>
  *
- * Dev merchant fallback:
+ * Dev merchant fallback (uses GORGIAS_SUPPORT_WEBHOOK_SECRET from .env.local when --webhook-secret omitted):
  *   npm run post:gorgias-webhook-fixture -- --merchant-id <uuid>
  */
 import { readFileSync, existsSync } from 'fs';
@@ -43,6 +43,7 @@ function parseArgs(argv: string[]) {
     shopDomain: get('--shop-domain'),
     orderRef: get('--order-ref'),
     baseUrl: get('--base-url'),
+    webhookSecret: get('--webhook-secret'),
   };
 }
 
@@ -69,18 +70,28 @@ function resolveWebhookBaseUrl(cliBaseUrl?: string): string {
 async function main(): Promise<void> {
   loadEnvLocal();
 
-  const secret = process.env.GORGIAS_SUPPORT_WEBHOOK_SECRET;
-  const { merchantId, accountId, domain, shopDomain, orderRef, baseUrl: cliBaseUrl } = parseArgs(
-    process.argv.slice(2)
-  );
+  const { merchantId, accountId, domain, shopDomain, orderRef, baseUrl: cliBaseUrl, webhookSecret } =
+    parseArgs(process.argv.slice(2));
   const baseUrl = resolveWebhookBaseUrl(cliBaseUrl);
+
+  const secret =
+    webhookSecret ?? process.env.GORGIAS_SUPPORT_WEBHOOK_SECRET ?? null;
+
   if (!secret) {
-    throw new Error('Set GORGIAS_SUPPORT_WEBHOOK_SECRET in .env.local');
+    throw new Error(
+      'Provide --webhook-secret (per-connection, required for production routing) or set GORGIAS_SUPPORT_WEBHOOK_SECRET in .env.local (dev fallback only)'
+    );
   }
 
   if (!merchantId && !accountId && !domain) {
     throw new Error(
       'Provide --account-id, --domain (connection routing), or --merchant-id (dev fallback)'
+    );
+  }
+
+  if ((accountId || domain) && !webhookSecret) {
+    console.warn(
+      'post:gorgias-webhook-fixture: using GORGIAS_SUPPORT_WEBHOOK_SECRET global fallback; production connections require --webhook-secret from create:gorgias-support-connection'
     );
   }
 

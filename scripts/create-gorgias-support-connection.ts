@@ -1,17 +1,23 @@
 /**
  * Upsert a Gorgias row in support_provider_connections (service role).
+ * Generates a per-connection webhook secret unless --webhook-secret is provided.
  *
  * Usage:
  *   npm run create:gorgias-support-connection -- \
  *     --merchant-id <uuid> \
  *     --account-id <gorgias_account_id> \
  *     --domain acme.gorgias.com \
- *     --name "Acme Gorgias"
+ *     --name "Acme Gorgias" \
+ *     [--webhook-secret <plaintext>]
  */
 import { createClient } from '@supabase/supabase-js';
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { upsertGorgiasSupportConnection } from '../lib/support/gorgias/connectionStore';
+import {
+  generateGorgiasWebhookSecret,
+  isGorgiasWebhookSecretSufficientLength,
+} from '../lib/support/gorgias/webhookSecret';
 
 function loadEnvLocal(): void {
   const envPath = join(__dirname, '../.env.local');
@@ -36,14 +42,15 @@ function parseArgs(argv: string[]) {
   const accountId = get('--account-id');
   const domain = get('--domain');
   const name = get('--name');
+  const webhookSecret = get('--webhook-secret');
 
   if (!merchantId || (!accountId && !domain)) {
     throw new Error(
-      'Usage: npm run create:gorgias-support-connection -- --merchant-id <uuid> (--account-id <id> | --domain <domain>) [--name <label>]'
+      'Usage: npm run create:gorgias-support-connection -- --merchant-id <uuid> (--account-id <id> | --domain <domain>) [--name <label>] [--webhook-secret <secret>]'
     );
   }
 
-  return { merchantId, accountId, domain, name };
+  return { merchantId, accountId, domain, name, webhookSecret };
 }
 
 async function main(): Promise<void> {
@@ -55,7 +62,15 @@ async function main(): Promise<void> {
     throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
   }
 
-  const { merchantId, accountId, domain, name } = parseArgs(process.argv.slice(2));
+  const { merchantId, accountId, domain, name, webhookSecret: cliSecret } = parseArgs(
+    process.argv.slice(2)
+  );
+
+  const webhookSecretPlaintext = cliSecret ?? generateGorgiasWebhookSecret();
+  if (!isGorgiasWebhookSecretSufficientLength(webhookSecretPlaintext)) {
+    throw new Error('Webhook secret must contain at least 32 bytes of entropy');
+  }
+
   const supabase = createClient(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
@@ -66,14 +81,29 @@ async function main(): Promise<void> {
     domain: domain ?? null,
     provider_account_name: name ?? null,
     status: 'active',
+    webhookSecretPlaintext,
+    rotateWebhookSecret: Boolean(cliSecret),
   });
+
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000').replace(/\/$/, '');
+  const webhookUrl = `${appUrl}/api/gorgias/support-webhook`;
 
   console.log('gorgias_connection_upserted', {
     id: connection.id,
     merchant_id: connection.merchant_id,
     provider_account_id: connection.provider_account_id,
     provider_base_url: connection.provider_base_url,
+    webhook_url: webhookUrl,
   });
+
+  console.log('');
+  console.log('=== Gorgias webhook secret (shown once) ===');
+  console.log(webhookSecretPlaintext);
+  console.log('');
+  console.log(
+    'Configure Gorgias HTTP integration with header x-unauth-gorgias-secret (or x-gorgias-webhook-secret) set to this value.'
+  );
+  console.log('WARNING: Save this secret now. It cannot be retrieved again.');
 }
 
 main().catch((err) => {
