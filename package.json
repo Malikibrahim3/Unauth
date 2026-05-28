@@ -42,6 +42,7 @@
     "tune:dashboard": "node scripts/tune/dashboard.mjs",
     "tune:overnight": "node scripts/tune/start.mjs",
     "backfill:shopify-profiles": "ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/backfill-customer-profile-identities.ts",
+    "smoke:support-intake": "ts-node --project tsconfig.scripts.json --transpile-only -r tsconfig-paths/register scripts/smoke-support-intake.ts",
     "build:extension": "cd extensions/chrome && npm install && npm run build"
   },
   "dependencies": {
