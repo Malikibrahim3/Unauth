@@ -13,6 +13,7 @@ const envSchema = z.object({
   UPSTASH_REDIS_REST_URL: z.string().url().optional(),
   UPSTASH_REDIS_REST_TOKEN: z.string().min(1).optional(),
   INTERNAL_HMAC_SECRET: z.string().min(32).optional(),
+  PDF_SIGNING_SECRET: z.string().min(32).optional(),
   PUBLIC_INTAKE_MERCHANT_ID: z.string().uuid().optional(),
   VERCEL_ENV: z.string().optional(),
   FLAG_THRESHOLD: z.coerce.number().default(44),

@@ -70,6 +70,7 @@ function App() {
   const [showOptional, setShowOptional] = useState(false);
   const [lookup, setLookup] = useState<LookupResponse | null>(null);
   const [lastEmail, setLastEmail] = useState('');
+  const [profileUrl, setProfileUrl] = useState('');
   const [errorText, setErrorText] = useState('');
   const [saving, setSaving] = useState(false);
   const [checking, setChecking] = useState(false);
@@ -132,6 +133,7 @@ function App() {
     setErrorText('');
     setEvidence(null);
     setEvidenceError('');
+    setProfileUrl('');
 
     const res = await sendMessage({
       type: 'LOOKUP',
@@ -150,6 +152,7 @@ function App() {
 
     setLookup(res.lookup);
     setLastEmail(trimmed);
+    setProfileUrl(res.profileUrl ?? '');
     if (orderId.trim()) setEvidenceOrderId(orderId.trim());
     setScreen('results');
   }
@@ -177,8 +180,8 @@ function App() {
   }
 
   function openProfile() {
-    const params = new URLSearchParams({ email: lastEmail });
-    chrome.tabs.create({ url: `${APP_ORIGIN}/customers?${params.toString()}` });
+    const fallback = `${APP_ORIGIN}/customers`;
+    chrome.tabs.create({ url: profileUrl || fallback });
   }
 
   if (screen === 'loading' && !checking && apiKey === null) {
@@ -384,7 +387,12 @@ function App() {
                   <strong>{evidence.reference}</strong>
                   {evidence.ce3_eligible ? ' · CE3 eligible' : ''}
                 </p>
-                <a className="link" href={evidence.pdf_url} target="_blank" rel="noreferrer">
+                <a
+                  className="link"
+                  href={evidence.download_url || evidence.pdf_url}
+                  target="_blank"
+                  rel="noreferrer"
+                >
                   Download PDF →
                 </a>
               </div>

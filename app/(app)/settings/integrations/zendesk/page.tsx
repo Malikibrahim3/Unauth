@@ -1,13 +1,12 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { MessageSquare } from 'lucide-react';
+import { Headphones } from 'lucide-react';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
-import { env } from '@/lib/utils/env';
-import GorgiasSetupClient from '@/components/settings/GorgiasSetupClient';
+import ZendeskSetupClient from '@/components/settings/ZendeskSetupClient';
 
-export default async function GorgiasIntegrationPage() {
+export default async function ZendeskIntegrationPage() {
   const userClient = createClient();
   const {
     data: { user },
@@ -20,24 +19,14 @@ export default async function GorgiasIntegrationPage() {
 
   const { data: keys } = await service
     .from(TABLES.MERCHANT_API_KEYS)
-    .select('key_prefix, id')
+    .select('key_prefix')
     .eq('merchant_id', ctx.merchantId)
     .is('revoked_at', null)
     .order('created_at', { ascending: false }) as unknown as {
-    data: Array<{ key_prefix: string; id: string }> | null;
+    data: Array<{ key_prefix: string }> | null;
   };
 
   const keyPrefixes = (keys ?? []).map((k) => k.key_prefix);
-  const keyIds = (keys ?? []).map((k) => k.id);
-  const { data: widgetTokens } = await service
-    .from(TABLES.MERCHANT_WIDGET_TOKENS)
-    .select('token_prefix, api_key_id')
-    .in('api_key_id', keyIds.length > 0 ? keyIds : ['00000000-0000-0000-0000-000000000000'])
-    .is('revoked_at', null)
-    .order('created_at', { ascending: false }) as unknown as {
-    data: Array<{ token_prefix: string; api_key_id: string }> | null;
-  };
-  const widgetTokenPrefixes = (widgetTokens ?? []).map((w) => w.token_prefix);
 
   return (
     <div className="space-y-8 p-8 max-w-2xl">
@@ -50,9 +39,9 @@ export default async function GorgiasIntegrationPage() {
           ← Integrations
         </Link>
         <div className="flex items-center gap-3">
-          <MessageSquare className="h-5 w-5" style={{ color: '#FF6B35' }} />
+          <Headphones className="h-5 w-5" style={{ color: '#03363D' }} />
           <h1 className="text-heading-lg" style={{ color: 'var(--text)' }}>
-            Connect Gorgias
+            Connect Zendesk
           </h1>
         </div>
         <p className="mt-1 text-sm" style={{ color: 'var(--text-muted)' }}>
@@ -60,12 +49,7 @@ export default async function GorgiasIntegrationPage() {
         </p>
       </div>
 
-      <GorgiasSetupClient
-        appBaseUrl={env.NEXT_PUBLIC_APP_URL}
-        hasApiKeys={keyPrefixes.length > 0}
-        keyPrefixes={keyPrefixes}
-        widgetTokenPrefixes={widgetTokenPrefixes}
-      />
+      <ZendeskSetupClient hasApiKeys={keyPrefixes.length > 0} keyPrefixes={keyPrefixes} />
     </div>
   );
 }

@@ -8,6 +8,7 @@ type Props = {
   appBaseUrl: string;
   hasApiKeys: boolean;
   keyPrefixes: string[];
+  widgetTokenPrefixes: string[];
 };
 
 const GORGIAS_VARS = {
@@ -16,21 +17,21 @@ const GORGIAS_VARS = {
   orderId: '{{ticket.meta.shopify_order_id}}',
 };
 
-export default function GorgiasSetupClient({ appBaseUrl, hasApiKeys, keyPrefixes }: Props) {
-  const [apiKeyInput, setApiKeyInput] = useState('');
+export default function GorgiasSetupClient({ appBaseUrl, hasApiKeys, keyPrefixes, widgetTokenPrefixes }: Props) {
+  const [widgetTokenInput, setWidgetTokenInput] = useState('');
   const [copied, setCopied] = useState(false);
 
   const widgetUrl = useMemo(() => {
     const base = appBaseUrl.replace(/\/$/, '');
-    const key = apiKeyInput.trim() || 'YOUR_API_KEY';
+    const key = widgetTokenInput.trim() || 'YOUR_WIDGET_TOKEN';
     const params = new URLSearchParams({
-      api_key: key,
+      widget_token: key,
       email: GORGIAS_VARS.email,
       name: GORGIAS_VARS.name,
       order_id: GORGIAS_VARS.orderId,
     });
     return `${base}/api/gorgias/widget?${params.toString()}`;
-  }, [appBaseUrl, apiKeyInput]);
+  }, [appBaseUrl, widgetTokenInput]);
 
   async function copyUrl() {
     await navigator.clipboard.writeText(widgetUrl);
@@ -64,7 +65,7 @@ export default function GorgiasSetupClient({ appBaseUrl, hasApiKeys, keyPrefixes
   return (
     <div className="space-y-8">
       <ol className="list-decimal space-y-3 pl-5 text-sm" style={{ color: 'var(--text)' }}>
-        <li>Copy your widget URL below (paste your API key into the field first).</li>
+        <li>Copy your widget URL below (paste your widget token into the field first).</li>
         <li>
           In Gorgias → Settings → Apps &amp; Plugins → HTTP Integration → Create
         </li>
@@ -79,7 +80,7 @@ export default function GorgiasSetupClient({ appBaseUrl, hasApiKeys, keyPrefixes
       >
         <div>
           <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
-            Paste your API key (stored only in this browser tab for the copy URL)
+            Paste your widget token (stored only in this browser tab for the copy URL)
           </label>
           <input
             type="password"
@@ -89,14 +90,19 @@ export default function GorgiasSetupClient({ appBaseUrl, hasApiKeys, keyPrefixes
               border: '1px solid var(--border)',
               color: 'var(--text)',
             }}
-            placeholder="unauth_sk_…"
-            value={apiKeyInput}
-            onChange={(e) => setApiKeyInput(e.target.value)}
+            placeholder="unauth_wt_…"
+            value={widgetTokenInput}
+            onChange={(e) => setWidgetTokenInput(e.target.value)}
             autoComplete="off"
           />
+          {widgetTokenPrefixes.length > 0 && (
+            <p className="mt-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+              Active widget tokens: {widgetTokenPrefixes.join(', ')}.
+            </p>
+          )}
           {keyPrefixes.length > 0 && (
             <p className="mt-2 text-xs" style={{ color: 'var(--text-muted)' }}>
-              Active keys: {keyPrefixes.join(', ')} — use the full secret you saved at creation.
+              API keys ({keyPrefixes.join(', ')}) are still required for Zendesk, Chrome, and direct API calls.
             </p>
           )}
         </div>
@@ -112,7 +118,7 @@ export default function GorgiasSetupClient({ appBaseUrl, hasApiKeys, keyPrefixes
             {widgetUrl}
           </pre>
           <p className="mt-2 text-xs" style={{ color: 'var(--text-muted)' }}>
-            This URL contains your API key. Do not share it publicly.
+            Widget Token: used only for the Gorgias URL. Separate from your API key so you can rotate independently.
           </p>
         </div>
 

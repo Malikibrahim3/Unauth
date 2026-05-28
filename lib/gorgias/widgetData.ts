@@ -3,6 +3,8 @@ import { TABLES } from '@/lib/supabase/tables';
 import { normaliseEmail } from '@/lib/identity/normalise';
 import { fetchMerchantScopedCustomerProfile } from '@/lib/supabase/merchantHelpers';
 import { performV1Lookup, type LookupAuth } from '@/lib/api/v1/lookup';
+import { makeSignedToken, hashSignedToken } from '@/lib/api/signedAccess';
+import { env } from '@/lib/utils/env';
 
 export type MerchantProfileSummary = {
   profileId: string;
@@ -34,11 +36,13 @@ export type GorgiasWidgetModel =
       };
       merchantProfile: MerchantProfileSummary | null;
       showEvidence: boolean;
+      profileUrl: string | null;
     }
   | {
       state: 'low_clear';
       merchantProfile: MerchantProfileSummary;
       noCrossMerchant: boolean;
+      profileUrl: string | null;
     };
 
 function riskTierFromLookup(lookup: {
@@ -83,6 +87,30 @@ async function resolveMerchantProfile(
   };
 }
 
+async function issueProfileUrl(
+  service: SupabaseClient,
+  merchantId: string,
+  profileId: string
+): Promise<string | null> {
+  const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+  const token = makeSignedToken({
+    profile_id: profileId,
+    merchant_id: merchantId,
+    expires_at: expiresAt,
+  });
+
+  const { error } = await service.from(TABLES.PROFILE_VIEW_TOKENS).insert({
+    profile_id: profileId,
+    merchant_id: merchantId,
+    token_hash: hashSignedToken(token),
+    expires_at: expiresAt,
+  });
+  if (error) return null;
+
+  const appBase = env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '');
+  return `${appBase}/customers/${profileId}?view_token=${encodeURIComponent(token)}`;
+}
+
 export async function buildGorgiasWidgetModel(
   service: SupabaseClient,
   auth: LookupAuth,
@@ -122,15 +150,20 @@ export async function buildGorgiasWidgetModel(
     if (tier === 'low' && !crossMerchant) {
       const merchantProfile = await resolveMerchantProfile(service, auth.merchantId, normEmail);
       if (merchantProfile) {
+        const profileUrl = await issueProfileUrl(service, auth.merchantId, merchantProfile.profileId);
         return {
           state: 'low_clear',
           merchantProfile,
           noCrossMerchant: true,
+          profileUrl,
         };
       }
     }
 
     const merchantProfile = await resolveMerchantProfile(service, auth.merchantId, normEmail);
+    const profileUrl = merchantProfile
+      ? await issueProfileUrl(service, auth.merchantId, merchantProfile.profileId)
+      : null;
 
     return {
       state: 'risk',
@@ -144,6 +177,7 @@ export async function buildGorgiasWidgetModel(
       },
       merchantProfile,
       showEvidence: tier === 'high' || tier === 'medium',
+      profileUrl,
     };
   }
 
@@ -154,10 +188,12 @@ export async function buildGorgiasWidgetModel(
   if (lookupResult.status === 404) {
     const merchantProfile = await resolveMerchantProfile(service, auth.merchantId, normEmail);
     if (merchantProfile) {
+      const profileUrl = await issueProfileUrl(service, auth.merchantId, merchantProfile.profileId);
       return {
         state: 'low_clear',
         merchantProfile,
         noCrossMerchant: true,
+        profileUrl,
       };
     }
     return { state: 'not_found' };

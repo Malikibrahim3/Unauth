@@ -67,7 +67,15 @@ async function lookupCustomer(params: {
       code: result.status === 0 ? 'network' : (result.status as 401 | 404 | 429),
     };
   }
-  return { ok: true, lookup: result.data };
+  const profileLink = await apiFetch<{ profile_url: string }>('/api/v1/profile-link', {
+    method: 'POST',
+    body: JSON.stringify({ email: params.email }),
+  });
+  return {
+    ok: true,
+    lookup: result.data,
+    profileUrl: profileLink.ok ? profileLink.data.profile_url : undefined,
+  };
 }
 
 async function createEvidence(params: {
@@ -93,7 +101,19 @@ async function createEvidence(params: {
       code: result.status === 0 ? 'network' : (result.status as 401 | 404 | 429),
     };
   }
-  return { ok: true, evidence: result.data };
+  const evidenceId = result.data.evidence_id;
+  if (!evidenceId) return { ok: true, evidence: result.data };
+
+  const signedUrl = await apiFetch<{ download_url: string }>(
+    `/api/v1/evidence/${encodeURIComponent(evidenceId)}/signed-url`
+  );
+  return {
+    ok: true,
+    evidence: {
+      ...result.data,
+      download_url: signedUrl.ok ? signedUrl.data.download_url : result.data.download_url,
+    },
+  };
 }
 
 chrome.runtime.onMessage.addListener(

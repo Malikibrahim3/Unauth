@@ -2,13 +2,18 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
 import { validateApiKey, isValidatedApiKey } from '@/lib/api/validateApiKey';
 import { performV1CustomerProfile } from '@/lib/api/v1/customers';
+import { v1OptionsResponse, withV1Cors } from '@/lib/api/v1/cors';
 import { withRequestLogging } from '@/lib/log';
 
 export const dynamic = 'force-dynamic';
 
+export async function OPTIONS(request: NextRequest) {
+  return v1OptionsResponse(request);
+}
+
 async function GETHandler(request: NextRequest) {
   const authResult = await validateApiKey(request);
-  if (!isValidatedApiKey(authResult)) return authResult;
+  if (!isValidatedApiKey(authResult)) return withV1Cors(authResult, request);
 
   const email = new URL(request.url).searchParams.get('email')?.trim() ?? '';
 
@@ -23,9 +28,12 @@ async function GETHandler(request: NextRequest) {
   );
 
   if (!result.ok) {
-    return NextResponse.json({ error: result.error }, { status: result.status });
+    return withV1Cors(
+      NextResponse.json({ error: result.error }, { status: result.status }),
+      request
+    );
   }
-  return NextResponse.json(result.body);
+  return withV1Cors(NextResponse.json(result.body), request);
 }
 
 export const GET = withRequestLogging('/api/v1/customers', GETHandler);

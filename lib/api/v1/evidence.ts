@@ -13,6 +13,7 @@ import {
 import { enforceRateLimit, limitFromEnv, rateLimitKey } from '@/lib/ratelimit';
 import { logPublicApiAccess } from '@/lib/api/v1/audit';
 import { env } from '@/lib/utils/env';
+import { makeSignedToken, hashSignedToken } from '@/lib/api/signedAccess';
 
 export type EvidenceAuth = {
   merchantId: string;
@@ -30,6 +31,30 @@ export type EvidenceBody = {
 export type EvidenceResult =
   | { ok: true; body: Record<string, unknown> }
   | { ok: false; status: number; error: string; detail?: string };
+
+async function issueEvidenceDownloadUrl(
+  service: SupabaseClient,
+  merchantId: string,
+  evidenceId: string
+): Promise<string | null> {
+  const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+  const token = makeSignedToken({
+    evidence_id: evidenceId,
+    merchant_id: merchantId,
+    expires_at: expiresAt,
+  });
+
+  const { error } = await service.from(TABLES.EVIDENCE_DOWNLOAD_TOKENS).insert({
+    evidence_id: evidenceId,
+    merchant_id: merchantId,
+    token_hash: hashSignedToken(token),
+    expires_at: expiresAt,
+  });
+  if (error) return null;
+
+  const appBase = env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '');
+  return `${appBase}/api/v1/evidence/${evidenceId}/download?token=${encodeURIComponent(token)}`;
+}
 
 async function resolveProfileIdByEmail(
   service: SupabaseClient,
@@ -230,6 +255,7 @@ export async function performV1EvidenceCreate(
   });
 
   const appBase = env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '');
+  const downloadUrl = await issueEvidenceDownloadUrl(service, auth.merchantId, row.id);
 
   return {
     ok: true,
@@ -239,6 +265,7 @@ export async function performV1EvidenceCreate(
       ce3_eligible: pkg.ce3.eligible,
       ce3_signals: pkg.ce3.qualifyingSignals,
       pdf_url: `${appBase}/api/v1/evidence/${row.id}/pdf`,
+      download_url: downloadUrl,
       created_at: row.created_at ?? new Date().toISOString(),
     },
   };

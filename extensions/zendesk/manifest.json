@@ -1,0 +1,30 @@
+{
+  "name": "Unauth Fraud Intelligence",
+  "author": {
+    "name": "Unauth",
+    "email": "support@unauth.co",
+    "url": "https://unauth.co"
+  },
+  "version": "1.0.0",
+  "frameworkVersion": "2.0",
+  "location": {
+    "support": {
+      "ticket_sidebar": {
+        "url": "index.html",
+        "size": {
+          "width": "100%",
+          "height": "600px"
+        }
+      }
+    }
+  },
+  "parameters": [
+    {
+      "name": "api_key",
+      "type": "text",
+      "secure": true,
+      "required": true,
+      "description": "Your Unauth API key from Settings → API & Integrations"
+    }
+  ]
+}

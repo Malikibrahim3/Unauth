@@ -2,14 +2,19 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
 import { validateApiKey, isValidatedApiKey } from '@/lib/api/validateApiKey';
 import { performV1EvidenceCreate } from '@/lib/api/v1/evidence';
+import { v1OptionsResponse, withV1Cors } from '@/lib/api/v1/cors';
 import { withRequestLogging } from '@/lib/log';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
+export async function OPTIONS(request: NextRequest) {
+  return v1OptionsResponse(request);
+}
+
 async function POSTHandler(request: NextRequest) {
   const authResult = await validateApiKey(request);
-  if (!isValidatedApiKey(authResult)) return authResult;
+  if (!isValidatedApiKey(authResult)) return withV1Cors(authResult, request);
 
   let body: {
     email?: string;
@@ -20,7 +25,7 @@ async function POSTHandler(request: NextRequest) {
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+    return withV1Cors(NextResponse.json({ error: 'Invalid JSON' }, { status: 400 }), request);
   }
 
   const result = await performV1EvidenceCreate(
@@ -39,12 +44,15 @@ async function POSTHandler(request: NextRequest) {
   );
 
   if (!result.ok) {
-    return NextResponse.json(
-      { error: result.error, ...(result.detail ? { detail: result.detail } : {}) },
-      { status: result.status }
+    return withV1Cors(
+      NextResponse.json(
+        { error: result.error, ...(result.detail ? { detail: result.detail } : {}) },
+        { status: result.status }
+      ),
+      request
     );
   }
-  return NextResponse.json(result.body, { status: 201 });
+  return withV1Cors(NextResponse.json(result.body, { status: 201 }), request);
 }
 
 export const POST = withRequestLogging('/api/v1/evidence', POSTHandler);

@@ -45,10 +45,11 @@ import { formatCurrencyNullable, formatDate, formatDateMode } from '@/lib/utils/
 import { getEventStream } from '@/lib/analysis/customerIntelligence';
 import { FLAG_EXPERIENCE_POLISH_V1 } from '@/lib/flags';
 import { ACTIVE_CLAIM_STATUSES, formatFiledDate } from '@/lib/claims/sla';
+import { parseAndVerifySignedToken, hashSignedToken } from '@/lib/api/signedAccess';
 
 interface PageProps {
   params: Promise<{ id: string }> | { id: string };
-  searchParams: Promise<{ audit?: string }> | { audit?: string };
+  searchParams: Promise<{ audit?: string; view_token?: string }> | { audit?: string; view_token?: string };
 }
 
 // TX_SAFE_SELECT is imported from merchantHelpers — it includes identity fields
@@ -234,14 +235,11 @@ function RoadmapOrderCard({ tx, isLast }: { tx: any; isLast: boolean }) {
 // ---------------------------------------------------------------------------
 
 export default async function CustomerProfilePage({ params, searchParams }: PageProps) {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect('/login');
-
   const resolvedParams = await Promise.resolve(params);
   const resolvedSearchParams = await Promise.resolve(searchParams);
+  const { id } = resolvedParams;
+  const profileId = id;
+  const viewToken = resolvedSearchParams.view_token?.trim() ?? '';
 
   // The ?audit=runId param is set when navigating here from an audit context.
   // It is used to build a contextual back link so users can return to the audit
@@ -250,25 +248,90 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
 
 // ── Auth + permission ──────────────────────────────────────────────────
   const svc = createServiceClient();
-  const { denied, ctx } = await requirePermission(svc, user.id, PERMISSIONS.VIEW_CUSTOMERS);
-  if (denied) {
-    return (
-      <div className="p-8">
-        <h1 className="text-heading-lg">Access denied</h1>
-        <p className="text-body-sm mt-2" style={{ color: 'var(--text-muted)' }}>
-          You do not have permission to view this customer profile.
-        </p>
-      </div>
-    );
+  let merchantId = '';
+  let permissionUserId: string | undefined;
+
+  if (viewToken) {
+    const parsed = parseAndVerifySignedToken(viewToken);
+    if (!parsed || parsed.profile_id !== profileId || new Date(parsed.expires_at).getTime() <= Date.now()) {
+      return (
+        <div className="p-8">
+          <h1 className="text-heading-lg">Link expired</h1>
+          <p className="text-body-sm mt-2" style={{ color: 'var(--text-muted)' }}>
+            This link has expired. Ask your team for a new one from Unauth.
+          </p>
+          <a href="https://unauth.co" className="text-body-sm mt-3 inline-block underline" style={{ color: 'var(--text)' }}>
+            Go to unauth.co
+          </a>
+        </div>
+      );
+    }
+
+    const tokenHash = hashSignedToken(viewToken);
+    const { data: tokenRow } = await svc
+      .from(TABLES.PROFILE_VIEW_TOKENS)
+      .select('profile_id, merchant_id, expires_at')
+      .eq('token_hash', tokenHash)
+      .maybeSingle() as unknown as {
+      data: { profile_id: string; merchant_id: string; expires_at: string } | null;
+    };
+
+    if (!tokenRow || tokenRow.profile_id !== profileId || new Date(tokenRow.expires_at).getTime() <= Date.now()) {
+      return (
+        <div className="p-8">
+          <h1 className="text-heading-lg">Link expired</h1>
+          <p className="text-body-sm mt-2" style={{ color: 'var(--text-muted)' }}>
+            This link has expired. Ask your team for a new one from Unauth.
+          </p>
+          <a href="https://unauth.co" className="text-body-sm mt-3 inline-block underline" style={{ color: 'var(--text)' }}>
+            Go to unauth.co
+          </a>
+        </div>
+      );
+    }
+
+    merchantId = tokenRow.merchant_id;
+  } else {
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) redirect('/login');
+
+    const { denied, ctx } = await requirePermission(svc, user.id, PERMISSIONS.VIEW_CUSTOMERS);
+    if (denied) {
+      return (
+        <div className="p-8">
+          <h1 className="text-heading-lg">Access denied</h1>
+          <p className="text-body-sm mt-2" style={{ color: 'var(--text-muted)' }}>
+            You do not have permission to view this customer profile.
+          </p>
+        </div>
+      );
+    }
+
+    merchantId = ctx.merchantId;
+    permissionUserId = ctx.userId;
   }
 
-  const merchantId = ctx.merchantId;
-  const { id } = resolvedParams;
-  const profileId = id;
-
   // ── Fetch profile (merchant-scoped) ────────────────────────────────────
-  const profileRow = await fetchMerchantScopedCustomerProfile(svc, merchantId, profileId, ctx.userId);
-  if (!profileRow) notFound();
+  const profileRow = await fetchMerchantScopedCustomerProfile(svc, merchantId, profileId, permissionUserId);
+  if (!profileRow) {
+    if (viewToken) {
+      return (
+        <div className="p-8">
+          <h1 className="text-heading-lg">Link expired</h1>
+          <p className="text-body-sm mt-2" style={{ color: 'var(--text-muted)' }}>
+            This link has expired. Ask your team for a new one from Unauth.
+          </p>
+          <a href="https://unauth.co" className="text-body-sm mt-3 inline-block underline" style={{ color: 'var(--text)' }}>
+            Go to unauth.co
+          </a>
+        </div>
+      );
+    }
+    notFound();
+  }
 
   const profile = profileRow as any;
 
@@ -277,7 +340,7 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
     .from(TABLES.WATCHLIST_ENTRIES)
     .select('id')
     .eq('customer_profile_id', profileId)
-    .eq('merchant_id', user.id)
+    .eq('merchant_id', merchantId)
     .eq('removed_by_merchant', false)
     .maybeSingle() as unknown as { data: { id: string } | null };
 

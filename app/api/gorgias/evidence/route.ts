@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
-import { validateApiKeyPlaintext } from '@/lib/api/validateApiKey';
 import { getClientIp } from '@/lib/ratelimit';
 import { performV1EvidenceCreate } from '@/lib/api/v1/evidence';
+import { validateWidgetToken } from '@/lib/api/widgetTokens';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
   const requestIp = getClientIp(request.headers);
 
   let body: {
-    api_key?: string;
+    widget_token?: string;
     email?: string;
     order_id?: string;
     disputed_amount?: number;
@@ -37,18 +37,18 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const apiKey = body.api_key?.trim() ?? '';
+  const widgetToken = body.widget_token?.trim() ?? '';
   const email = body.email?.trim() ?? '';
   const orderId = body.order_id?.trim() ?? '';
 
-  if (!apiKey || !email || !orderId) {
+  if (!widgetToken || !email || !orderId) {
     return NextResponse.json(
-      { error: 'api_key, email, and order_id are required' },
+      { error: 'widget_token, email, and order_id are required' },
       { status: 400, headers: GORGIAS_CORS_HEADERS }
     );
   }
 
-  const authResult = await validateApiKeyPlaintext(apiKey, requestIp);
+  const authResult = await validateWidgetToken(widgetToken);
   if ('status' in authResult) {
     return NextResponse.json(
       { error: authResult.message },
@@ -61,8 +61,8 @@ export async function POST(request: NextRequest) {
     service,
     {
       merchantId: authResult.merchantId,
-      apiKeyId: authResult.keyId,
-      requestIp: authResult.requestIp,
+      apiKeyId: authResult.apiKeyId,
+      requestIp,
     },
     {
       email,
@@ -83,6 +83,7 @@ export async function POST(request: NextRequest) {
   return NextResponse.json(
     {
       pdf_url: evidence.pdf_url,
+      download_url: evidence.download_url,
       reference: evidence.reference,
       evidence_id: evidence.evidence_id,
     },

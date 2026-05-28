@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
-import { validateApiKeyPlaintext } from '@/lib/api/validateApiKey';
 import { getClientIp } from '@/lib/ratelimit';
 import { buildGorgiasWidgetModel } from '@/lib/gorgias/widgetData';
 import { GORGIAS_FRAME_HEADERS, renderGorgiasWidgetHtml } from '@/lib/gorgias/renderWidgetHtml';
+import { validateWidgetToken } from '@/lib/api/widgetTokens';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,42 +23,40 @@ function isUnresolvedGorgiasVar(value: string): boolean {
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const apiKey = searchParams.get('api_key')?.trim() ?? '';
+  const widgetToken = searchParams.get('widget_token')?.trim() ?? '';
   const email = searchParams.get('email')?.trim() ?? '';
   const name = searchParams.get('name')?.trim() ?? '';
   const orderId = searchParams.get('order_id')?.trim() ?? '';
 
   const requestIp = getClientIp(request.headers);
 
-  if (!apiKey) {
+  if (!widgetToken) {
     return htmlResponse(
       renderGorgiasWidgetHtml({
-        model: { state: 'error', message: 'Missing API key in widget URL.' },
-        emailForProfileUrl: '',
-        apiKeyJson: '""',
+        model: { state: 'error', message: 'Missing widget token in widget URL.' },
+        profileUrl: null,
+        widgetTokenJson: '""',
         emailJson: '""',
         orderIdJson: '""',
       })
     );
   }
 
-  const authResult = await validateApiKeyPlaintext(apiKey, requestIp);
+  const authResult = await validateWidgetToken(widgetToken);
   if ('status' in authResult) {
     return htmlResponse(
       renderGorgiasWidgetHtml({
         model: {
           state: 'error',
           message:
-            authResult.status === 429
-              ? 'Daily or per-minute limit reached. Try again later.'
-              : 'Invalid API key. Check Unauth → Settings → API & Integrations.',
+            'Invalid widget token. Check Unauth → Settings → API & Integrations.',
         },
-        emailForProfileUrl: '',
-        apiKeyJson: '""',
+        profileUrl: null,
+        widgetTokenJson: '""',
         emailJson: '""',
         orderIdJson: '""',
       }),
-      authResult.status === 429 ? 429 : 401
+      authResult.status === 500 ? 500 : 401
     );
   }
 
@@ -69,8 +67,8 @@ export async function GET(request: NextRequest) {
           state: 'error',
           message: 'No customer email on this ticket yet.',
         },
-        emailForProfileUrl: '',
-        apiKeyJson: '""',
+        profileUrl: null,
+        widgetTokenJson: '""',
         emailJson: '""',
         orderIdJson: '""',
       })
@@ -82,8 +80,8 @@ export async function GET(request: NextRequest) {
     service,
     {
       merchantId: authResult.merchantId,
-      apiKeyId: authResult.keyId,
-      requestIp: authResult.requestIp,
+      apiKeyId: authResult.apiKeyId,
+      requestIp,
     },
     {
       rawEmail: email,
@@ -94,8 +92,8 @@ export async function GET(request: NextRequest) {
 
   const html = renderGorgiasWidgetHtml({
     model,
-    emailForProfileUrl: encodeURIComponent(email),
-    apiKeyJson: JSON.stringify(apiKey),
+    profileUrl: 'profileUrl' in model ? (model.profileUrl ?? null) : null,
+    widgetTokenJson: JSON.stringify(widgetToken),
     emailJson: JSON.stringify(email),
     orderIdJson: JSON.stringify(isUnresolvedGorgiasVar(orderId) ? '' : orderId),
   });

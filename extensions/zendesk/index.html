@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Unauth</title>
+  <script src="https://static.zdassets.com/zendesk_app_framework_sdk/2.0/zaf_sdk.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      font-size: 13px;
+      line-height: 1.45;
+      color: #f5f0eb;
+      background: #14100e;
+      padding: 12px;
+      max-width: 300px;
+    }
+    .card {
+      border-radius: 8px;
+      border: 1px solid;
+      padding: 12px;
+    }
+    .headline {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      margin-bottom: 4px;
+    }
+    .meta {
+      font-size: 12px;
+      opacity: 0.92;
+      margin-bottom: 10px;
+    }
+    .section { margin-top: 10px; }
+    .section-title {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      opacity: 0.7;
+      margin-bottom: 6px;
+    }
+    ul.signals { list-style: none; padding: 0; }
+    ul.signals li {
+      position: relative;
+      padding-left: 12px;
+      margin-bottom: 4px;
+      font-size: 12px;
+    }
+    ul.signals li::before {
+      content: '·';
+      position: absolute;
+      left: 0;
+      opacity: 0.7;
+    }
+    .cross {
+      font-size: 12px;
+      padding: 8px;
+      border-radius: 6px;
+      background: rgba(0,0,0,0.2);
+    }
+    .actions {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 12px;
+    }
+    .btn {
+      display: block;
+      text-align: center;
+      padding: 8px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      width: 100%;
+      font-family: inherit;
+    }
+    .btn-primary { background: #c8763a; color: #fff; }
+    .btn-primary:hover { background: #9e5a26; }
+    .btn-ghost {
+      background: transparent;
+      color: #c8763a;
+      border: 1px solid #3d2e28;
+    }
+    .btn-ghost:disabled { opacity: 0.5; cursor: not-allowed; }
+    .evidence-result {
+      font-size: 11px;
+      margin-top: 6px;
+      word-break: break-all;
+    }
+    .evidence-result a { color: #c8763a; }
+    .muted { color: #a89890; font-size: 12px; }
+    .brand {
+      font-size: 10px;
+      color: #6b5c54;
+      margin-top: 10px;
+      text-align: right;
+    }
+    .loading-card {
+      background: #1f1814;
+      border-color: #3d2e28;
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.65; }
+    }
+    #root { min-height: 80px; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <p class="brand">Unauth</p>
+  <script>
+    (function () {
+      var APP_BASE = 'https://app.unauth.co';
+      var root = document.getElementById('root');
+
+      function esc(s) {
+        return String(s)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+
+      function tierFromLookup(lookup) {
+        var grade = lookup.risk_grade;
+        var confidence = lookup.confidence;
+        var score = Number(lookup.risk_score || 0);
+        if (grade === 'A' || confidence === 'definite' || score >= 75) return 'high';
+        if (grade === 'B' || confidence === 'probable' || score >= 55) return 'medium';
+        return 'low';
+      }
+
+      function tierTheme(tier) {
+        if (tier === 'high') {
+          return { bg: '#3d0e0a', border: '#e8362a', accent: '#fde8e6', icon: '🔴', label: 'HIGH RISK' };
+        }
+        if (tier === 'medium') {
+          return { bg: '#3d2a0a', border: '#d4a72c', accent: '#fdf6e6', icon: '🟡', label: 'MEDIUM RISK' };
+        }
+        return { bg: '#0f2a18', border: '#6fcf97', accent: '#e6f7ed', icon: '✅', label: 'LOW RISK' };
+      }
+
+      function confidenceLabel(confidence) {
+        if (!confidence) return 'Unknown';
+        return confidence.charAt(0).toUpperCase() + confidence.slice(1);
+      }
+
+      function profileUrl(email) {
+        return APP_BASE + '/customers?email=' + encodeURIComponent(email);
+      }
+
+      async function fetchProfileUrl(apiKey, email) {
+        var response = await fetch(APP_BASE + '/api/v1/profile-link', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+            Authorization: 'Bearer ' + apiKey,
+          },
+          body: JSON.stringify({ email: email }),
+        });
+        var body = await response.json().catch(function () { return {}; });
+        if (!response.ok) throw new Error((body && body.error) || 'Could not build profile link');
+        return body.profile_url || profileUrl(email);
+      }
+
+      function settingsUrl() {
+        return APP_BASE + '/settings/api-integrations';
+      }
+
+      function renderLoading() {
+        root.innerHTML =
+          '<div class="card loading-card" style="border:1px solid #3d2e28;">' +
+          '<p class="muted">Checking identity…</p></div>';
+      }
+
+      function renderError(message) {
+        root.innerHTML =
+          '<div class="card" style="background:#2a211c;border-color:#6b5c54;">' +
+          '<div class="headline">⚠️ Connection error</div>' +
+          '<p class="muted" style="margin-top:8px;">' + esc(message || 'Could not reach Unauth') + '</p>' +
+          '<p class="muted" style="margin-top:8px;">Check your API key</p>' +
+          '<div class="actions">' +
+          '<button type="button" class="btn btn-primary" id="unauth-settings-btn">Open Unauth Settings</button>' +
+          '</div></div>';
+        document.getElementById('unauth-settings-btn').addEventListener('click', function () {
+          window.open(settingsUrl(), '_blank', 'noopener,noreferrer');
+        });
+      }
+
+      function renderNotFound() {
+        root.innerHTML =
+          '<div class="card" style="background:#1f1814;border-color:#3d2e28;">' +
+          '<div class="headline">⚪ NO PROFILE</div>' +
+          '<p class="muted" style="margin-top:8px;">Not in Unauth network yet</p>' +
+          '<div class="actions">' +
+          '<button type="button" class="btn btn-primary" id="unauth-home-btn">Go to Unauth</button>' +
+          '</div></div>';
+        document.getElementById('unauth-home-btn').addEventListener('click', function () {
+          window.open(APP_BASE, '_blank', 'noopener,noreferrer');
+        });
+      }
+
+      function bindProfileBtn(profileUrlValue) {
+        var btn = document.getElementById('unauth-profile-btn');
+        if (btn) {
+          btn.addEventListener('click', function () {
+            window.open(profileUrlValue, '_blank', 'noopener,noreferrer');
+          });
+        }
+      }
+
+      function bindPdfBtn(apiKey, email, orderId) {
+        var btn = document.getElementById('unauth-pdf-btn');
+        var resultEl = document.getElementById('unauth-pdf-result');
+        if (!btn) return;
+        if (!orderId) {
+          btn.disabled = true;
+          btn.textContent = 'Get PDF (needs order ID)';
+          return;
+        }
+        btn.addEventListener('click', function () {
+          btn.disabled = true;
+          btn.textContent = 'Generating…';
+          fetch(APP_BASE + '/api/v1/evidence', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Accept: 'application/json',
+              Authorization: 'Bearer ' + apiKey,
+            },
+            body: JSON.stringify({ email: email, order_id: orderId }),
+          })
+            .then(function (r) {
+              return r.json().then(function (b) {
+                return { ok: r.ok, body: b };
+              });
+            })
+            .then(function (res) {
+              if (!res.ok) {
+                btn.disabled = false;
+                btn.textContent = 'Get PDF';
+                resultEl.hidden = false;
+                resultEl.textContent =
+                  (res.body && res.body.error) || 'PDF generation failed';
+                return;
+              }
+              var ref = res.body.reference || 'Evidence';
+              var evidenceId = res.body.evidence_id || '';
+              if (!evidenceId) {
+                btn.disabled = false;
+                btn.textContent = 'Get PDF';
+                resultEl.hidden = false;
+                resultEl.textContent = 'Evidence generated but download token failed';
+                return;
+              }
+              return fetch(APP_BASE + '/api/v1/evidence/' + encodeURIComponent(evidenceId) + '/signed-url', {
+                headers: {
+                  Accept: 'application/json',
+                  Authorization: 'Bearer ' + apiKey,
+                }
+              }).then(function (signedRes) {
+                return signedRes.json().then(function (signedBody) {
+                  if (!signedRes.ok) throw new Error((signedBody && signedBody.error) || 'Could not issue download link');
+                  var ref = res.body.reference || 'Evidence';
+                  var url = signedBody.download_url || res.body.download_url || res.body.pdf_url || '#';
+                  btn.hidden = true;
+                  resultEl.hidden = false;
+                  resultEl.innerHTML =
+                    '📄 <a href="' +
+                    esc(url) +
+                    '" target="_blank" rel="noopener noreferrer">' +
+                    esc(ref) +
+                    ' — Download PDF</a>';
+                });
+              });
+            })
+            .catch(function () {
+              btn.disabled = false;
+              btn.textContent = 'Get PDF';
+              resultEl.hidden = false;
+              resultEl.textContent = 'Could not reach Unauth';
+            });
+        });
+      }
+
+      function renderLowClear(profileUrlValue, customer) {
+        var theme = tierTheme('low');
+        var bh = (customer && customer.behavioral_history) || {};
+        var orders = bh.total_orders != null ? bh.total_orders : '—';
+        var refunds = bh.refund_claims != null ? bh.refund_claims : '—';
+        root.innerHTML =
+          '<div class="card" style="background:' +
+          theme.bg +
+          ';border-color:' +
+          theme.border +
+          ';color:' +
+          theme.accent +
+          ';">' +
+          '<div class="headline">' +
+          theme.icon +
+          ' ' +
+          theme.label +
+          '</div>' +
+          '<p class="meta">No cross-merchant flags</p>' +
+          '<div class="section">' +
+          '<p class="muted">Orders: ' +
+          esc(String(orders)) +
+          ' · Refunds: ' +
+          esc(String(refunds)) +
+          '</p></div>' +
+          '<div class="actions">' +
+          '<button type="button" class="btn btn-primary" id="unauth-profile-btn">View Profile</button>' +
+          '</div></div>';
+        bindProfileBtn(profileUrlValue);
+      }
+
+      function renderRisk(profileUrlValue, email, lookup, tier, apiKey, orderId, showEvidence) {
+        var theme = tierTheme(tier);
+        var signals = Array.isArray(lookup.signals) ? lookup.signals : [];
+        var signalsHtml =
+          signals.length > 0
+            ? '<div class="section"><p class="section-title">Signals</p><ul class="signals">' +
+              signals.map(function (s) {
+                return '<li>' + esc(s) + '</li>';
+              }).join('') +
+              '</ul></div>'
+            : '';
+        var cross = lookup.cross_merchant;
+        var crossHtml = cross
+          ? '<div class="section cross"><p class="section-title">Cross-merchant</p><p>' +
+            esc(String(cross.merchant_count)) +
+            ' merchants · ' +
+            esc(String(cross.claim_count)) +
+            ' claims</p></div>'
+          : '';
+        var evidenceHtml = showEvidence
+          ? '<button type="button" class="btn btn-ghost" id="unauth-pdf-btn">Get PDF</button>' +
+            '<div class="evidence-result" id="unauth-pdf-result" hidden></div>'
+          : '';
+        root.innerHTML =
+          '<div class="card" style="background:' +
+          theme.bg +
+          ';border-color:' +
+          theme.border +
+          ';color:' +
+          theme.accent +
+          ';">' +
+          '<div class="headline">' +
+          theme.icon +
+          ' ' +
+          theme.label +
+          '</div>' +
+          '<p class="meta">Confidence: ' +
+          esc(confidenceLabel(lookup.confidence)) +
+          ' · Score: ' +
+          esc(String(lookup.risk_score)) +
+          '</p>' +
+          signalsHtml +
+          crossHtml +
+          '<div class="actions">' +
+          '<button type="button" class="btn btn-primary" id="unauth-profile-btn">View Profile</button>' +
+          evidenceHtml +
+          '</div></div>';
+        bindProfileBtn(profileUrlValue);
+        if (showEvidence) bindPdfBtn(apiKey, email, orderId);
+      }
+
+      function apiFetch(path, apiKey) {
+        return fetch(APP_BASE + path, {
+          headers: {
+            Accept: 'application/json',
+            Authorization: 'Bearer ' + apiKey,
+          },
+        });
+      }
+
+      function fetchCustomer(email, apiKey) {
+        return apiFetch(
+          '/api/v1/customers?email=' + encodeURIComponent(email),
+          apiKey
+        ).then(function (r) {
+          if (r.status === 404) return null;
+          if (!r.ok) throw new Error('Customer lookup failed');
+          return r.json();
+        });
+      }
+
+      function runLookup(email, name, orderId, apiKey) {
+        var qs =
+          '?email=' +
+          encodeURIComponent(email) +
+          '&name=' +
+          encodeURIComponent(name || '');
+        return apiFetch('/api/v1/lookup' + qs, apiKey).then(function (r) {
+          return r.json().then(function (body) {
+            return { status: r.status, body: body };
+          });
+        });
+      }
+
+      async function init() {
+        renderLoading();
+        try {
+          var client = ZAFClient.init();
+          var data = await client.get([
+            'ticket.requester.email',
+            'ticket.requester.name',
+            'ticket.externalId',
+          ]);
+          var meta = await client.metadata();
+          var apiKey = (meta.settings && meta.settings.api_key) || '';
+          var email = (data['ticket.requester.email'] || '').trim();
+          var name = (data['ticket.requester.name'] || '').trim();
+          var orderId = (data['ticket.externalId'] || '').trim();
+
+          if (!apiKey) {
+            renderError('API key is not configured in the Zendesk app settings.');
+            return;
+          }
+          if (!email) {
+            renderError('This ticket has no requester email.');
+            return;
+          }
+
+          var lookupRes = await runLookup(email, name, orderId, apiKey);
+          var generatedProfileUrl = await fetchProfileUrl(apiKey, email).catch(function () {
+            return profileUrl(email);
+          });
+
+          if (lookupRes.status === 401) {
+            renderError('Invalid API key. Check Unauth → Settings → API & Integrations.');
+            return;
+          }
+          if (lookupRes.status === 429) {
+            renderError(lookupRes.body.error || 'Daily lookup limit reached.');
+            return;
+          }
+          if (lookupRes.status >= 500) {
+            renderError(lookupRes.body.error || 'Server error');
+            return;
+          }
+
+          if (lookupRes.status === 404) {
+            var customerOnMiss = await fetchCustomer(email, apiKey).catch(function () {
+              return null;
+            });
+            if (customerOnMiss) {
+              renderLowClear(generatedProfileUrl, customerOnMiss);
+            } else {
+              renderNotFound();
+            }
+            return;
+          }
+
+          if (lookupRes.status !== 200) {
+            renderError(lookupRes.body.error || 'Lookup failed');
+            return;
+          }
+
+          var lookup = lookupRes.body;
+          var tier = tierFromLookup(lookup);
+          var cross = lookup.cross_merchant;
+
+          if (tier === 'low' && !cross) {
+            var customer = await fetchCustomer(email, apiKey).catch(function () {
+              return null;
+            });
+            if (customer) {
+              renderLowClear(generatedProfileUrl, customer);
+              return;
+            }
+          }
+
+          var showEvidence = tier === 'high' || tier === 'medium';
+          renderRisk(generatedProfileUrl, email, lookup, tier, apiKey, orderId, showEvidence);
+        } catch (err) {
+          renderError(err && err.message ? err.message : 'Could not load ticket data');
+        }
+      }
+
+      init();
+    })();
+  </script>
+</body>
+</html>

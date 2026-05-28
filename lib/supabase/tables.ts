@@ -18,6 +18,9 @@ export const TABLES = {
   CSV_UPLOAD_QUEUE: 'csv_upload_queue',
   EVIDENCE_PACKAGES: 'evidence_packages',
   MERCHANT_API_KEYS: 'merchant_api_keys',
+  EVIDENCE_DOWNLOAD_TOKENS: 'evidence_download_tokens',
+  PROFILE_VIEW_TOKENS: 'profile_view_tokens',
+  MERCHANT_WIDGET_TOKENS: 'merchant_widget_tokens',
 } as const;
 
 export type TableName = typeof TABLES[keyof typeof TABLES];

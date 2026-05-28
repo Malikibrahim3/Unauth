@@ -4,10 +4,9 @@ import { confidenceLabel, formatRelativeFirstSeen, tierHeadline } from './widget
 
 export type WidgetRenderContext = {
   model: GorgiasWidgetModel;
-  /** encodeURIComponent — for profile links */
-  emailForProfileUrl: string;
+  profileUrl: string | null;
   /** JSON.stringify — safe for inline script literals */
-  apiKeyJson: string;
+  widgetTokenJson: string;
   emailJson: string;
   orderIdJson: string;
 };
@@ -160,7 +159,7 @@ function renderActions(
   showEvidence: boolean
 ): string {
   const appBase = env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '');
-  const profileUrl = `${appBase}/customers?email=${ctx.emailForProfileUrl}`;
+  const profileUrl = ctx.profileUrl ?? appBase;
 
   const evidenceBtn = showEvidence
     ? `<button type="button" class="btn btn-ghost" id="unauth-pdf-btn">Get PDF</button>
@@ -174,7 +173,7 @@ function renderActions(
       if (!btn) return;
       var resultEl = document.getElementById('unauth-pdf-result');
       var orderId = ${ctx.orderIdJson};
-      var apiKey = ${ctx.apiKeyJson};
+      var widgetToken = ${ctx.widgetTokenJson};
       var email = ${ctx.emailJson};
       if (!orderId) {
         btn.disabled = true;
@@ -187,7 +186,7 @@ function renderActions(
         fetch('/api/gorgias/evidence', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-          body: JSON.stringify({ api_key: apiKey, email: email, order_id: orderId })
+          body: JSON.stringify({ widget_token: widgetToken, email: email, order_id: orderId })
         })
           .then(function (r) { return r.json().then(function (b) { return { ok: r.ok, body: b }; }); })
           .then(function (res) {
@@ -199,7 +198,7 @@ function renderActions(
               return;
             }
             var ref = res.body.reference || 'Evidence';
-            var url = res.body.pdf_url || '#';
+            var url = res.body.download_url || res.body.pdf_url || '#';
             btn.hidden = true;
             resultEl.hidden = false;
             resultEl.innerHTML = '📄 <a href="' + url.replace(/"/g, '&quot;') + '" target="_blank" rel="noopener noreferrer">' + ref.replace(/</g, '&lt;') + ' — Download PDF</a>';
@@ -239,7 +238,7 @@ function renderError(message: string): string {
   <div class="card" style="background:#2a211c;border-color:#6b5c54;color:#f5f0eb;">
     <div class="headline">⚠️ Connection error</div>
     <p class="muted" style="margin-top:8px;">${escapeHtml(message)}</p>
-    <p class="muted" style="margin-top:8px;">Check your API key in Unauth → Settings → API &amp; Integrations</p>
+    <p class="muted" style="margin-top:8px;">Check your widget token in Unauth → Settings → API &amp; Integrations</p>
     <div class="actions">
       <a class="btn btn-primary" href="${escapeHtml(settingsUrl)}" target="_blank" rel="noopener noreferrer">Open Unauth Settings</a>
     </div>
@@ -284,7 +283,7 @@ export function renderGorgiasWidgetHtml(ctx: WidgetRenderContext): string {
     const theme = tierTheme('low');
     const p = model.merchantProfile;
     const appBase = env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '');
-    const profileUrl = `${appBase}/customers?email=${ctx.emailForProfileUrl}`;
+    const profileUrl = ctx.profileUrl ?? appBase;
 
     return `<!DOCTYPE html>
 <html lang="en">

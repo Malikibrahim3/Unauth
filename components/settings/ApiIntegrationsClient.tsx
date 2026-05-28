@@ -16,38 +16,38 @@ const INTEGRATIONS = [
   {
     id: 'gorgias',
     name: 'Gorgias',
-    description: 'Surface Unauth risk scores inside your helpdesk sidebar.',
+    description: 'Surface Unauth risk scores inside your helpdesk sidebar',
     badge: 'Connect',
+    badgeVariant: 'connect' as const,
     href: '/settings/integrations/gorgias',
-    logoSrc: 'https://asset.brandfetch.io/idDFoJSMnE/idMKSLgFe0.png',
-    logoAlt: 'Gorgias',
+    logo: '/integrations/gorgias.svg',
   },
   {
     id: 'zendesk',
     name: 'Zendesk',
-    description: 'Flag high-risk customers while agents handle tickets.',
-    badge: 'Coming soon',
-    href: null,
-    logoSrc: 'https://asset.brandfetch.io/idHnvKqnFe/id4WOkzVKG.png',
-    logoAlt: 'Zendesk',
+    description: 'Flag high-risk customers while agents handle tickets',
+    badge: 'Connect',
+    badgeVariant: 'connect' as const,
+    href: '/settings/integrations/zendesk',
+    logo: '/integrations/zendesk.svg',
   },
   {
     id: 'shopify',
     name: 'Shopify sidebar',
-    description: 'Embed identity intelligence in your Shopify admin.',
-    badge: 'Coming soon',
-    href: null,
-    logoSrc: 'https://asset.brandfetch.io/idnrCPuv87/idmpjLtGSE.png',
-    logoAlt: 'Shopify',
+    description: 'Embed identity intelligence in your Shopify admin',
+    badge: 'Connect',
+    badgeVariant: 'connect' as const,
+    href: '/settings/integrations',
+    logo: '/integrations/shopify.svg',
   },
   {
     id: 'chrome',
     name: 'Chrome extension',
-    description: 'Look up customers from any page with one click.',
+    description: 'Look up customers from any page with one click',
     badge: 'Install',
-    href: 'https://chromewebstore.google.com/',
-    logoSrc: 'https://asset.brandfetch.io/id2O-oQ4Ns/idcMmVJmKv.png',
-    logoAlt: 'Chrome',
+    badgeVariant: 'install' as const,
+    href: '/settings/integrations/chrome',
+    logo: '/integrations/chrome.svg',
   },
 ] as const;
 
@@ -69,6 +69,7 @@ export default function ApiIntegrationsClient() {
   const [keyName, setKeyName] = useState('');
   const [creating, setCreating] = useState(false);
   const [createdSecret, setCreatedSecret] = useState<string | null>(null);
+  const [createdWidgetToken, setCreatedWidgetToken] = useState<string | null>(null);
   const [revokeTarget, setRevokeTarget] = useState<ApiKeyRow | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -108,6 +109,7 @@ export default function ApiIntegrationsClient() {
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? 'Failed to create key');
       setCreatedSecret(body.key?.secret ?? null);
+      setCreatedWidgetToken(body.key?.widget_token ?? null);
       setKeyName('');
       await loadKeys();
     } catch (err) {
@@ -147,9 +149,17 @@ export default function ApiIntegrationsClient() {
     setTimeout(() => setCopied(false), 2000);
   }
 
+  async function copyWidgetToken() {
+    if (!createdWidgetToken) return;
+    await navigator.clipboard.writeText(createdWidgetToken);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
   function closeCreateModal() {
     setModalOpen(false);
     setCreatedSecret(null);
+    setCreatedWidgetToken(null);
     setKeyName('');
     setCopied(false);
   }
@@ -234,45 +244,29 @@ export default function ApiIntegrationsClient() {
               className="flex gap-3 rounded-lg border p-4"
               style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-raised)' }}
             >
-              <div
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md p-1.5"
-                style={{ background: '#f5f5f4' }}
-              >
-                <img
-                  src={item.logoSrc}
-                  alt={item.logoAlt}
-                  width={32}
-                  height={32}
-                  className="h-8 w-8 object-contain"
-                />
-              </div>
+              <img
+                src={item.logo}
+                alt=""
+                width={32}
+                height={32}
+                className="h-8 w-8 shrink-0 rounded-md"
+                style={{ objectFit: 'contain' }}
+              />
               <div className="min-w-0 flex-1">
                 <div className="flex items-start justify-between gap-2">
                   <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>{item.name}</p>
-                  {item.href ? (
-                    <a
-                      href={item.href}
-                      {...(item.href.startsWith('http')
-                        ? { target: '_blank', rel: 'noopener noreferrer' }
-                        : {})}
-                      className="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs"
-                      style={
-                        item.badge === 'Connect'
-                          ? { background: 'rgba(47, 107, 67, 0.12)', color: 'var(--sev-clear, #2f6b43)' }
-                          : { background: 'var(--bg-subtle)', color: 'var(--text)' }
-                      }
-                    >
-                      {item.badge}
-                      {item.href.startsWith('http') ? <ExternalLink className="h-3 w-3" /> : null}
-                    </a>
-                  ) : (
-                    <span
-                      className="shrink-0 rounded-full px-2 py-0.5 text-xs"
-                      style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}
-                    >
-                      {item.badge}
-                    </span>
-                  )}
+                  <a
+                    href={item.href}
+                    className="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium"
+                    style={
+                      item.badgeVariant === 'connect'
+                        ? { background: 'rgba(47, 107, 67, 0.12)', color: 'var(--sev-clear, #2f6b43)' }
+                        : { background: 'rgba(26, 115, 232, 0.12)', color: '#1A73E8' }
+                    }
+                  >
+                    {item.badge}
+                    {item.badgeVariant === 'install' ? <ExternalLink className="h-3 w-3" /> : null}
+                  </a>
                 </div>
                 <p className="mt-1 text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
                   {item.description}
@@ -297,16 +291,32 @@ export default function ApiIntegrationsClient() {
           >
             {createdSecret ? (
               <>
-                <h3 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Save your API key</h3>
+                <h3 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Save your credentials</h3>
                 <p className="mt-2 text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-                  Save this key now. You won&apos;t be able to see it again.
+                  Save these now. You won&apos;t be able to see them again.
+                </p>
+                <p className="mt-4 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
+                  API Key (for Chrome, Zendesk, direct API)
                 </p>
                 <pre
-                  className="mt-4 overflow-x-auto rounded-md p-3 text-xs"
+                  className="mt-2 overflow-x-auto rounded-md p-3 text-xs"
                   style={{ background: 'var(--bg-inset)', color: 'var(--text)' }}
                 >
                   {createdSecret}
                 </pre>
+                {createdWidgetToken && (
+                  <>
+                    <p className="mt-4 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
+                      Widget Token (for Gorgias widget URL only)
+                    </p>
+                    <pre
+                      className="mt-2 overflow-x-auto rounded-md p-3 text-xs"
+                      style={{ background: 'var(--bg-inset)', color: 'var(--text)' }}
+                    >
+                      {createdWidgetToken}
+                    </pre>
+                  </>
+                )}
                 <div className="mt-4 flex gap-2">
                   <button
                     type="button"
@@ -315,8 +325,19 @@ export default function ApiIntegrationsClient() {
                     style={{ background: 'var(--accent)', color: 'var(--accent-fg, #fff)' }}
                   >
                     <Copy className="h-4 w-4" />
-                    {copied ? 'Copied' : 'Copy key'}
+                    {copied ? 'Copied' : 'Copy API key'}
                   </button>
+                  {createdWidgetToken && (
+                    <button
+                      type="button"
+                      onClick={copyWidgetToken}
+                      className="inline-flex flex-1 items-center justify-center gap-2 rounded-md px-3 py-2 text-sm"
+                      style={{ background: 'var(--bg-inset)', color: 'var(--text)' }}
+                    >
+                      <Copy className="h-4 w-4" />
+                      Copy widget token
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={closeCreateModal}

@@ -42,6 +42,7 @@ export type ExtensionResponse =
       detectedEmail?: string | null;
       lookup?: LookupResponse;
       evidence?: EvidenceResponse;
+      profileUrl?: string;
     }
   | {
       ok: false;

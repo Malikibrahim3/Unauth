@@ -21,6 +21,7 @@ export type EvidenceResponse = {
   ce3_eligible: boolean;
   ce3_signals: unknown[];
   pdf_url: string;
+  download_url?: string;
   created_at: string;
 };
 

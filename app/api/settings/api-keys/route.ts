@@ -11,6 +11,11 @@ import {
   generateApiKeyPlaintext,
   hashApiKey,
 } from '@/lib/api/apiKeys';
+import {
+  generateWidgetTokenPlaintext,
+  hashWidgetToken,
+  widgetTokenDisplayPrefix,
+} from '@/lib/api/widgetTokens';
 
 const createSchema = z.object({
   name: z.string().trim().min(1).max(120),
@@ -77,6 +82,9 @@ async function POSTHandler(req: NextRequest) {
   const plaintext = generateApiKeyPlaintext();
   const keyHash = hashApiKey(plaintext);
   const keyPrefix = apiKeyDisplayPrefix(plaintext);
+  const widgetToken = generateWidgetTokenPlaintext();
+  const widgetTokenHash = hashWidgetToken(widgetToken);
+  const widgetTokenPrefix = widgetTokenDisplayPrefix(widgetToken);
 
   const { data: inserted, error } = await service
     .from(TABLES.MERCHANT_API_KEYS)
@@ -93,11 +101,29 @@ async function POSTHandler(req: NextRequest) {
     return NextResponse.json({ error: error?.message ?? 'Failed to create API key' }, { status: 500 });
   }
 
+  const insertedKey = inserted as { id: string };
+  const { error: widgetError } = await service
+    .from(TABLES.MERCHANT_WIDGET_TOKENS)
+    .insert({
+      merchant_id: ctx.merchantId,
+      api_key_id: insertedKey.id,
+      token_hash: widgetTokenHash,
+      token_prefix: widgetTokenPrefix,
+    });
+
+  if (widgetError) {
+    await service
+      .from(TABLES.MERCHANT_API_KEYS)
+      .delete()
+      .eq('id', insertedKey.id);
+    return NextResponse.json({ error: 'Failed to create widget token' }, { status: 500 });
+  }
+
   logAction({
     ctx,
     action: 'create_api_key',
     resourceType: 'merchant_api_key',
-    resourceId: (inserted as { id: string }).id,
+    resourceId: insertedKey.id,
     metadata: { name: parsed.name, key_prefix: keyPrefix },
     ip,
   });
@@ -106,6 +132,8 @@ async function POSTHandler(req: NextRequest) {
     key: {
       ...(inserted as object),
       secret: plaintext,
+      widget_token: widgetToken,
+      widget_token_prefix: widgetTokenPrefix,
     },
   });
 }
