@@ -462,9 +462,16 @@ function rowToFraudTransaction(
   const imr = identity?.identityMatchResult;
   const refundClaimed = isRefundClaimedForPersistence(row);
 
+  const parsedOrderDate = row.order_date ? new Date(row.order_date) : null;
+  const orderDateIso =
+    parsedOrderDate && !Number.isNaN(parsedOrderDate.getTime())
+      ? parsedOrderDate.toISOString()
+      : null;
+
   return {
     job_id: jobId,
     order_id: row.order_id,
+    order_date: orderDateIso,
     customer_email: row.customer_email ?? '',
     customer_name: row.customer_name ?? '',
     shipping_address: row.shipping_address ?? '',

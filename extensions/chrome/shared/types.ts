@@ -18,8 +18,8 @@ export type LookupResponse = {
 export type EvidenceResponse = {
   evidence_id: string;
   reference: string;
-  ce3_eligible: boolean;
-  ce3_signals: unknown[];
+  has_prior_match_evidence: boolean;
+  matched_prior_signals: unknown[];
   pdf_url: string;
   download_url?: string;
   created_at: string;

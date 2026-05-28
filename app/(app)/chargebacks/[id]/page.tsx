@@ -66,17 +66,23 @@ export default async function EvidenceDetailPage({ params }: Props) {
     if (email) maskedEmail = `${email[0]}****@${email.split('@')[1] ?? '***'}`
   }
 
-  const ce3Signals = pkg.ce3_qualifying_signals ?? []
-  const ce3Priors = pkg.ce3_prior_transactions ?? []
+  const matchSignals = pkg.ce3_qualifying_signals ?? []
+  const matchedPriors = pkg.ce3_prior_transactions ?? []
 
-  // Derive evidence strength from available signals
   const signalCount = pkg.signal_snapshot?.length ?? 0
+  const identityMatchLevel: 'Strong' | 'Partial' | 'None' =
+    pkg.ce3_eligible && signalCount >= 3 && matchedPriors.length >= 2
+      ? 'Strong'
+      : pkg.ce3_eligible || matchedPriors.length > 0 || signalCount >= 2
+        ? 'Partial'
+        : 'None'
+
   const evidenceStrength: 'weak' | 'moderate' | 'strong' =
-    pkg.ce3_eligible && signalCount >= 3 && ce3Priors.length >= 2
+    identityMatchLevel === 'Strong'
       ? 'strong'
-      : signalCount >= 2 || pkg.narrative_summary
-      ? 'moderate'
-      : 'weak'
+      : identityMatchLevel === 'Partial'
+        ? 'moderate'
+        : 'weak'
 
   return (
     <div className="p-8 max-w-4xl mx-auto space-y-6">
@@ -135,7 +141,7 @@ export default async function EvidenceDetailPage({ params }: Props) {
             <p className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Data sources</p>
             <p className="text-sm font-medium mt-1" style={{ color: 'var(--text)' }}>
               {signalCount} identity signal{signalCount === 1 ? '' : 's'}
-              {pkg.ce3_eligible ? ' · CE3.0 qualifying signals detected' : ''}
+              {identityMatchLevel !== 'None' ? ` · Prior identity match: ${identityMatchLevel}` : ''}
             </p>
           </div>
           {pkg.customer_profile_id ? (
@@ -169,8 +175,7 @@ export default async function EvidenceDetailPage({ params }: Props) {
         ) : null}
       </SectionCard>
 
-      {/* CE3 signals banner */}
-      {pkg.ce3_eligible && (
+      {identityMatchLevel === 'Strong' && (
         <div
           className="rounded-lg p-4"
           style={{
@@ -179,10 +184,10 @@ export default async function EvidenceDetailPage({ params }: Props) {
           }}
         >
           <p className="text-sm font-bold mb-1" style={{ color: 'var(--text)' }}>
-            CE3.0 Signals
+            Strong prior identity match
           </p>
           <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-            This record contains prior transactions with matching identity signals that may be relevant to a CE 3.0 dispute response. Consult your acquirer or payment processor to determine eligibility before submission.
+            Prior orders in your records share multiple identity signals with the disputed transaction.
           </p>
         </div>
       )}
@@ -209,8 +214,8 @@ export default async function EvidenceDetailPage({ params }: Props) {
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         <Card label="Reference" value={pkg.reference_number} mono />
         <Card
-          label="CE3.0 Signals"
-          value={pkg.ce3_eligible ? 'Detected' : 'Not detected'}
+          label="Identity match"
+          value={identityMatchLevel}
         />
         <Card
           label="Cross-merchant indicator"
@@ -223,34 +228,30 @@ export default async function EvidenceDetailPage({ params }: Props) {
         />
       </div>
 
-      {/* CE3 detail */}
-      {pkg.ce3_eligible && (ce3Signals.length > 0 || ce3Priors.length > 0) && (
+      {identityMatchLevel !== 'None' && (matchSignals.length > 0 || matchedPriors.length > 0) && (
         <section
           className="rounded-xl p-5 border"
           style={{ background: 'var(--sev-clear-fill)', borderColor: 'var(--risk-low-bd)' }}
         >
-          <h2 className="text-overline mb-3" style={{ color: 'var(--text-muted)' }}>CE3.0 Signal Detail</h2>
-          {ce3Signals.length > 0 && (
+          <h2 className="text-overline mb-3" style={{ color: 'var(--text-muted)' }}>Prior match detail</h2>
+          {matchSignals.length > 0 && (
             <p className="text-body-sm mb-2" style={{ color: 'var(--text-secondary)' }}>
               <span className="font-semibold">Matching signals:</span>{' '}
-              {ce3Signals.join(', ')}
+              {matchSignals.join(', ')}
             </p>
           )}
-          {ce3Priors.length > 0 && (
+          {matchedPriors.length > 0 && (
             <div className="space-y-1">
               <p className="text-body-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
-                Prior matching transactions:
+                Matched prior orders:
               </p>
-              {ce3Priors.map((p, i) => (
+              {matchedPriors.map((p, i) => (
                 <p key={i} className="text-body-sm font-mono" style={{ color: 'var(--text-secondary)' }}>
                   {p.orderId} — {formatDate(p.orderDate)} ({p.daysPriorToDispute} days prior)
                 </p>
               ))}
             </div>
           )}
-          <p className="text-xs mt-3" style={{ color: 'var(--text-muted)' }}>
-            Consult your acquirer or payment processor to determine whether this signal data meets CE 3.0 submission requirements. Visa's rules on qualifying evidence can change.
-          </p>
         </section>
       )}
 
@@ -296,9 +297,9 @@ export default async function EvidenceDetailPage({ params }: Props) {
                   <span
                     className="text-xs font-semibold px-1.5 py-0.5 rounded"
                     style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)', border: '1px solid var(--border-subtle)' }}
-                    title="This signal type matches CE 3.0 criteria. Consult your acquirer to confirm eligibility."
+                    title="Core identity signal used for prior-order matching"
                   >
-                    CE3.0
+                    Core
                   </span>
                 )}
               </div>
@@ -321,7 +322,7 @@ export default async function EvidenceDetailPage({ params }: Props) {
       )}
 
       <p className="text-xs" style={{ color: 'var(--text-subtle)' }}>
-        This signal data may be relevant when preparing a dispute response. Your acquirer or payment processor can advise on submission requirements and whether this data meets CE 3.0 criteria.
+        This report presents cross-merchant identity match data. Merchants may use this information to support chargeback dispute processes at their discretion.
       </p>
     </div>
   )

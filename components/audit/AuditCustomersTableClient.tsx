@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { ConfidenceBadge, type ConfidenceGradeValue } from '@/components/ui/ConfidenceBadge';
-import { ArrowRight, Search, X, ExternalLink } from 'lucide-react';
+import { ArrowRight, Search, X } from 'lucide-react';
+import CustomerIntelligenceDrawer from '@/components/customers/CustomerIntelligenceDrawer';
+import type { CustomerIntelligencePanel } from '@/app/api/customers/[id]/route';
 
 /** Maps legacy grade strings to new A-F confidence values */
 function legacyGradeToNew(g: 'definite' | 'probable' | 'possible' | 'weak' | null | undefined): ConfidenceGradeValue {
@@ -14,9 +16,15 @@ function legacyGradeToNew(g: 'definite' | 'probable' | 'possible' | 'weak' | nul
     default:         return 'C';
   }
 }
-import Link from 'next/link';
-import CustomerIntelligenceDrawer from '@/components/customers/CustomerIntelligenceDrawer';
-import type { CustomerIntelligencePanel } from '@/app/api/customers/[id]/route';
+
+function gradeToRiskLevel(grade: string | null): string {
+  switch (grade) {
+    case 'definite': return 'critical';
+    case 'probable': return 'high';
+    case 'possible': return 'medium';
+    default:         return 'low';
+  }
+}
 
 type CustomerRow = {
   email: string;
@@ -65,216 +73,83 @@ type AuditCustomerDetail = {
 
 function formatCurrency(value: number | null): string {
   if (value == null) return '-';
-  return new Intl.NumberFormat('en-GB', {
-    style: 'currency',
-    currency: 'GBP',
-    maximumFractionDigits: 0,
-  }).format(value);
+  return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(value);
 }
 
-function formatDate(value: string | null): string {
-  if (!value) return '-';
-  return new Intl.DateTimeFormat('en-GB', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  }).format(new Date(value));
-}
+/** Build a full panel from the audit API response */
+function auditDetailToPanel(detail: AuditCustomerDetail): CustomerIntelligencePanel {
+  const { customer, orders } = detail;
+  const claimCount = customer.refundCount + customer.chargebackCount;
+  const sortedOrders = [...orders].sort((a, b) => String(a.date ?? '').localeCompare(String(b.date ?? '')));
+  const firstSeen = sortedOrders[0]?.date ?? new Date().toISOString();
+  const lastSeen = sortedOrders[sortedOrders.length - 1]?.date ?? new Date().toISOString();
 
-function riskBadgeStyle(level: string | null): React.CSSProperties {
-  const t = ['low', 'medium', 'high', 'critical'].includes(level ?? '') ? level! : 'low';
-  return { background: `var(--risk-${t}-bg)`, color: `var(--risk-${t})`, border: `1px solid var(--risk-${t}-bd)` };
-}
+  const parts: string[] = [];
+  if (sortedOrders.length > 0) {
+    const from = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(firstSeen));
+    const to   = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(lastSeen));
+    parts.push(`This customer has ${customer.orderCount} recorded order${customer.orderCount !== 1 ? 's' : ''} between ${from} and ${to}.`);
+  }
+  if (claimCount > 0) parts.push(`${claimCount} refund or chargeback claim${claimCount !== 1 ? 's' : ''} on record.`);
+  if (customer.signals.length > 0) parts.push(`Signals detected: ${customer.signals.slice(0, 4).join(', ')}.`);
+  const narrative = parts.join(' ') || 'No additional signals detected in this audit.';
 
-function AuditCustomerDrawer({
-  runId,
-  email,
-  onClose,
-  onProfileResolved,
-}: {
-  runId: string;
-  email: string | null;
-  onClose: () => void;
-  onProfileResolved?: (profileId: string) => void;
-}) {
-  const [detail, setDetail] = useState<AuditCustomerDetail | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!email) {
-      setDetail(null);
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-    setDetail(null);
-
-    fetch(`/api/audit/${runId}/customer?email=${encodeURIComponent(email)}`)
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
-      })
-      .then((data: AuditCustomerDetail) => {
-        setDetail(data);
-        // Auto-upgrade: if this customer has a persistent profile, switch to the full drawer
-        if (data.customer.id) {
-          onProfileResolved?.(data.customer.id);
-        }
-      })
-      .catch((err: Error) => setError(err.message))
-      .finally(() => setLoading(false));
-  }, [runId, email]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const open = !!email;
-
-  return (
-    <>
-      <div
-        aria-hidden="true"
-        onClick={onClose}
-        className={`fixed inset-0 z-40 bg-black/30 transition-opacity duration-200 ${open ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-      />
-      <aside
-        role="dialog"
-        aria-modal="true"
-        aria-label="Audit customer profile"
-        className={`fixed right-0 top-0 z-50 h-full w-full sm:w-[624px] overflow-y-auto shadow-2xl transition-transform duration-300 flex flex-col ${open ? 'translate-x-0' : 'translate-x-full'}`}
-        style={{ background: 'var(--bg-surface)' }}
-      >
-        {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4" style={{ background: 'var(--bg-surface)', borderBottom: '1px solid var(--border)' }}>
-          <h2 className="text-heading-sm">Customer Profile</h2>
-          <button onClick={onClose} className="p-1.5 rounded-md transition-colors" style={{ color: 'var(--icon-muted)' }} aria-label="Close panel">
-            <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-            </svg>
-          </button>
-        </div>
-
-        <div className="flex-1 p-6 space-y-5">
-          {loading && (
-            <div className="animate-pulse space-y-4">
-              <div className="h-20 rounded-xl" style={{ background: 'var(--bg-subtle)' }} />
-              <div className="h-4 rounded w-1/2" style={{ background: 'var(--bg-subtle)' }} />
-              <div className="space-y-2">
-                {[...Array(3)].map((_, i) => <div key={i} className="h-16 rounded-lg" style={{ background: 'var(--bg-subtle)' }} />)}
-              </div>
-            </div>
-          )}
-          {error && (
-            <div className="rounded-lg border p-4 text-sm" style={{ color: 'var(--risk-critical)', borderColor: 'var(--risk-critical-bd)', background: 'var(--risk-critical-bg)' }}>
-              Could not load customer data.
-            </div>
-          )}
-
-          {detail && (
-            <>
-              {/* Confidence block */}
-              <div className="rounded-xl border p-4" style={{ background: 'var(--accent-soft)', borderColor: 'var(--border)' }}>
-                <div className="flex items-start justify-between gap-3 mb-3">
-                  <div className="min-w-0">
-                    <p className="text-base font-semibold" style={{ color: 'var(--text)' }}>{detail.customer.names[0] ?? detail.customer.email}</p>
-                    <p className="text-xs font-mono mt-0.5" style={{ color: 'var(--text-muted)' }}>{detail.customer.email}</p>
-                  </div>
-                  {detail.customer.grade && <ConfidenceBadge grade={legacyGradeToNew(detail.customer.grade)} size="sm" />}
-                </div>
-                <div className="grid grid-cols-4 gap-3">
-                  {[
-                    { label: 'Orders', value: detail.customer.orderCount },
-                    { label: 'Spend', value: formatCurrency(detail.customer.totalSpend) },
-                    { label: 'Score', value: Math.round(detail.customer.maxScore) },
-                    { label: 'Refunds', value: detail.customer.refundCount },
-                  ].map(({ label, value }) => (
-                    <div key={label}>
-                      <p className="text-[10px] uppercase font-medium tracking-wide" style={{ color: 'var(--text-muted)' }}>{label}</p>
-                      <p className="text-sm font-semibold font-mono" style={{ color: 'var(--text)' }}>{value}</p>
-                    </div>
-                  ))}
-                </div>
-                {detail.customer.id && (
-                  <div className="mt-3 pt-3" style={{ borderTop: '1px solid var(--border-subtle)' }}>
-                    <Link
-                      href={`/customers/${detail.customer.id}`}
-                      className="inline-flex items-center gap-1.5 text-xs font-semibold hover:underline"
-                      style={{ color: 'var(--accent)' }}
-                    >
-                      <ExternalLink className="h-3.5 w-3.5" />
-                      Open full customer profile
-                    </Link>
-                  </div>
-                )}
-              </div>
-
-              {/* Identity details */}
-              <div>
-                <h3 className="text-overline mb-3">Identity details</h3>
-                <dl className="space-y-2 text-sm">
-                  {([
-                    ['Emails', detail.customer.emails.join(', ') || '—'],
-                    ['Names', detail.customer.names.join(', ') || '—'],
-                    ['Addresses', detail.customer.addresses.join(' · ') || '—'],
-                    ['IPs', detail.customer.ips.join(', ') || '—'],
-                    ['Cards', detail.customer.cardLast4s.map((v) => `•••• ${v}`).join(', ') || '—'],
-                  ] as [string, string][]).map(([label, value]) => (
-                    <div key={label} className="grid gap-2" style={{ gridTemplateColumns: '100px 1fr' }}>
-                      <dt className="text-xs" style={{ color: 'var(--text-muted)' }}>{label}</dt>
-                      <dd className="font-mono text-xs break-words" style={{ color: 'var(--text)' }}>{value}</dd>
-                    </div>
-                  ))}
-                </dl>
-              </div>
-
-              {/* Signals / flags */}
-              {detail.customer.signals.length > 0 && (
-                <div>
-                  <h3 className="text-overline mb-3">Signals</h3>
-                  <div className="flex flex-wrap gap-1.5">
-                    {detail.customer.signals.map((signal) => (
-                      <span key={signal} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium" style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)', border: '1px solid var(--border-subtle)' }}>{signal}</span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Order history */}
-              <div>
-                <h3 className="text-overline mb-3">Order history ({detail.orders.length})</h3>
-                <div className="space-y-2">
-                  {detail.orders.map((order) => (
-                    <div key={order.id} className="rounded-lg p-3" style={{ border: '1px solid var(--border-subtle)', background: 'var(--bg-subtle)' }}>
-                      <div className="flex items-center justify-between gap-2 mb-1">
-                        <span className="font-mono text-xs truncate" style={{ color: 'var(--text-muted)' }}>{order.orderId ?? '—'}</span>
-                        <span
-                          className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-semibold uppercase shrink-0"
-                          style={riskBadgeStyle(order.grade === 'definite' ? 'critical' : order.grade === 'probable' ? 'high' : order.grade === 'possible' ? 'medium' : 'low')}
-                        >
-                          {order.grade ?? 'low'}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between text-xs gap-2">
-                        <span style={{ color: 'var(--text-muted)' }}>{formatDate(order.date)}</span>
-                        <div className="flex items-center gap-3">
-                          {order.refundClaimed && (
-                            <span className="font-medium" style={{ color: 'var(--risk-high)' }}>Refund claimed{order.refundReason ? ` · ${order.refundReason}` : ''}</span>
-                          )}
-                          {order.chargebackFiled && (
-                            <span className="font-medium" style={{ color: 'var(--risk-critical)' }}>Chargeback</span>
-                          )}
-                          <span className="font-semibold font-mono" style={{ color: 'var(--text)' }}>{formatCurrency(order.value)}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-      </aside>
-    </>
-  );
+  return {
+    profile: {
+      id: customer.id ?? '',
+      primary_email: customer.email,
+      emails: customer.emails.length > 0 ? customer.emails : [customer.email],
+      names: customer.names,
+      addresses: customer.addresses,
+      ips: customer.ips,
+      card_last4s: customer.cardLast4s,
+      phones: [],
+      risk_score: customer.maxScore,
+      risk_level: gradeToRiskLevel(customer.grade),
+      fraud_flags: customer.signals,
+      total_orders: customer.orderCount,
+      total_refund_claims: customer.refundCount,
+      total_chargebacks: customer.chargebackCount,
+      total_merchants_seen_at: 1,
+      refund_rate: customer.orderCount > 0 ? customer.refundCount / customer.orderCount : 0,
+      fastest_claim_days: null,
+      avg_claim_days: null,
+      refund_acceleration_score: 0,
+      first_seen: firstSeen,
+      last_seen: lastSeen,
+      profile_confidence: customer.maxScore,
+      manually_reviewed: false,
+      on_watchlist: false,
+      watchlist_entry_id: null,
+    },
+    orderHistory: orders.map((order) => ({
+      transactionId: order.id,
+      orderId: order.orderId ?? order.id,
+      orderDate: order.date,
+      processedAt: order.date ?? new Date().toISOString(),
+      email: order.email,
+      name: order.name,
+      address: null,
+      ip: null,
+      cardLast4: null,
+      orderValue: order.value,
+      fraudScore: order.score,
+      riskLevel: gradeToRiskLevel(order.grade),
+      fraudFlags: order.signals,
+      refundStatus: null,
+      refundRequested: order.refundClaimed ?? false,
+      refundReason: order.refundReason,
+      refundDate: null,
+      refundAmount: null,
+      returnRequested: false,
+      chargebackFiled: order.chargebackFiled ?? false,
+      chargebackDate: null,
+      chargebackReasonCode: null,
+    })),
+    identityTimeline: [],
+    linkedAccounts: [],
+    narrative,
+  };
 }
 
 export default function AuditCustomersTableClient({
@@ -286,37 +161,55 @@ export default function AuditCustomersTableClient({
   rows: CustomerRow[];
   initialEmail?: string | null;
 }) {
-  const [selectedEmail, setSelectedEmail] = useState<string | null>(null);
-  const [upgradeProfileId, setUpgradeProfileId] = useState<string | null>(null);
-  const [upgradePanel, setUpgradePanel] = useState<CustomerIntelligencePanel | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerResolving, setDrawerResolving] = useState(false);
+  const [drawerProfileId, setDrawerProfileId] = useState<string | null>(null);
+  const [drawerPanel, setDrawerPanel] = useState<CustomerIntelligencePanel | null>(null);
   const [search, setSearch] = useState('');
   const [gradeFilter, setGradeFilter] = useState<string>('');
 
+  async function openDrawerForRow(row: CustomerRow) {
+    setDrawerOpen(true);
+    setDrawerResolving(true);
+    setDrawerProfileId(null);
+    setDrawerPanel(null);
+
+    try {
+      const res = await fetch(`/api/audit/${runId}/customer?email=${encodeURIComponent(row.email)}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const detail = (await res.json()) as AuditCustomerDetail;
+
+      if (detail.customer.id) {
+        setDrawerProfileId(detail.customer.id);
+        setDrawerPanel(null);
+      } else {
+        setDrawerProfileId(null);
+        setDrawerPanel(auditDetailToPanel(detail));
+      }
+    } catch {
+      setDrawerOpen(false);
+      setDrawerProfileId(null);
+      setDrawerPanel(null);
+    } finally {
+      setDrawerResolving(false);
+    }
+  }
+
   function openDrawerForEmail(email: string) {
-    setSelectedEmail(email);
-    setUpgradeProfileId(null);
-    setUpgradePanel(null);
+    const row = rows.find((r) => r.email === email);
+    if (row) {
+      openDrawerForRow(row);
+    } else {
+      // Email not in current page — open with a stub row
+      openDrawerForRow({ email, orderCount: 0, totalSpend: 0, maxScore: 0, grade: 'weak' });
+    }
   }
 
   function closeDrawer() {
-    setSelectedEmail(null);
-    setUpgradeProfileId(null);
-    setUpgradePanel(null);
-  }
-
-  async function handleProfileResolved(profileId: string) {
-    setUpgradeProfileId(profileId);
-    setUpgradePanel(null);
-
-    try {
-      const response = await fetch(`/api/customers/${encodeURIComponent(profileId)}`);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const panel = (await response.json()) as CustomerIntelligencePanel;
-      setUpgradePanel(panel);
-      setSelectedEmail(null);
-    } catch {
-      setUpgradeProfileId(null);
-    }
+    setDrawerOpen(false);
+    setDrawerResolving(false);
+    setDrawerProfileId(null);
+    setDrawerPanel(null);
   }
 
   // Resolve initialEmail on mount
@@ -396,7 +289,7 @@ export default function AuditCustomersTableClient({
                 style={{ borderColor: 'var(--border-subtle)' }}
                 onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-subtle)')}
                 onMouseLeave={e => (e.currentTarget.style.background = '')}
-                onClick={() => openDrawerForEmail(row.email)}
+                onClick={() => openDrawerForRow(row)}
               >
                 <td className="px-4 py-2.5">
                   <div className="flex items-center gap-2">
@@ -407,16 +300,16 @@ export default function AuditCustomersTableClient({
                 <td className="px-4 py-2.5 text-right font-mono" style={{ color: 'var(--text)' }}>{row.orderCount}</td>
                 <td className="px-4 py-2.5 text-right font-mono" style={{ color: 'var(--text)' }}>{formatCurrency(row.totalSpend)}</td>
                 <td className="px-4 py-2.5 text-right font-mono font-semibold" style={{ color: 'var(--text)' }}>{Math.round(row.maxScore)}</td>
-                  <td className="px-4 py-2.5 text-right">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); openDrawerForEmail(row.email); }}
-                      className="inline-flex items-center gap-0.5 text-xs font-semibold hover:underline"
-                      style={{ color: 'var(--text)' }}
-                      aria-label={`Open customer drawer for ${row.email}`}
-                    >
-                      View <ArrowRight className="h-3 w-3" />
-                    </button>
-                  </td>
+                <td className="px-4 py-2.5 text-right">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); openDrawerForRow(row); }}
+                    className="inline-flex items-center gap-0.5 text-xs font-semibold hover:underline"
+                    style={{ color: 'var(--text)' }}
+                    aria-label={`Open customer drawer for ${row.email}`}
+                  >
+                    View <ArrowRight className="h-3 w-3" />
+                  </button>
+                </td>
               </tr>
             ))}
             {filtered.length === 0 && (
@@ -437,7 +330,7 @@ export default function AuditCustomersTableClient({
             key={row.email}
             className="rounded-lg border px-4 py-3 flex items-center justify-between gap-3 cursor-pointer transition-colors"
             style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
-            onClick={() => openDrawerForEmail(row.email)}
+            onClick={() => openDrawerForRow(row)}
           >
             <div className="min-w-0">
               <div className="flex items-center gap-1.5 flex-wrap">
@@ -451,7 +344,7 @@ export default function AuditCustomersTableClient({
               </div>
             </div>
             <button
-              onClick={(e) => { e.stopPropagation(); openDrawerForEmail(row.email); }}
+              onClick={(e) => { e.stopPropagation(); openDrawerForRow(row); }}
               className="flex-shrink-0 inline-flex items-center gap-0.5 text-xs font-semibold hover:underline"
               style={{ color: 'var(--text)' }}
               aria-label={`Open customer drawer for ${row.email}`}
@@ -465,17 +358,11 @@ export default function AuditCustomersTableClient({
         )}
       </div>
 
-      {/* AuditCustomerDrawer opens immediately; auto-hides when upgradeProfileId is set */}
-      <AuditCustomerDrawer
-        runId={runId}
-        email={upgradePanel ? null : selectedEmail}
-        onClose={closeDrawer}
-        onProfileResolved={handleProfileResolved}
-      />
-      {/* CustomerIntelligenceDrawer shows when a persistent profile is found */}
       <CustomerIntelligenceDrawer
-        profileId={upgradeProfileId}
-        prefetchedPanel={upgradePanel}
+        open={drawerOpen}
+        resolving={drawerResolving}
+        profileId={drawerProfileId}
+        prefetchedPanel={drawerPanel}
         onClose={closeDrawer}
       />
     </>

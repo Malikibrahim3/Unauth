@@ -93,7 +93,7 @@ export default function LandingPage() {
     },
     {
       q: 'What is a representment-ready case file?',
-      a: "To dispute a chargeback, card networks require documented evidence of order legitimacy and customer abuse pattern. Unauth generates that evidence packet automatically — transaction history, linked identity signals, cross-merchant abuse pattern, confidence grade. Formatted to meet Visa's Compelling Evidence 3.0 requirements.",
+      a: 'To dispute a chargeback, you need documented evidence of order history and linked identity signals. Unauth generates an identity evidence export automatically — transaction history, cross-merchant match data, confidence grade, and prior-order signal overlap — for you to use in dispute review at your discretion.',
     },
     {
       q: 'Does Unauth block orders automatically?',

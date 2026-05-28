@@ -170,7 +170,7 @@ async function POSTHandler(request: NextRequest) {
   return NextResponse.json({
     packageId:   (inserted as any).id,
     referenceNumber: pkg.referenceNumber,
-    ce3Eligible: pkg.ce3.eligible,
+    hasPriorMatchEvidence: pkg.ce3.eligible,
   })
 }
 

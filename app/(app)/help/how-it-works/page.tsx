@@ -79,16 +79,14 @@ export default function HowItWorksPage() {
             signals observed across their records.
           </p>
           <p>
-            CE3.0 is a formal Visa policy, active since October 2025, that allows merchants to counter certain
-            disputes by showing the cardholder previously completed similar non-disputed transactions. Unauth
-            surfaces prior matching transactions and identity signals from your own records that may be relevant
-            when preparing a CE3.0 response. Where prior matching transactions are detected, this is noted in
-            the signal report.
+            Unauth surfaces prior matching transactions and identity signals from your records, plus cross-merchant
+            pattern indicators where available. When prior orders share signals with a disputed transaction, that
+            is highlighted in the identity evidence export.
           </p>
           <p>
-            Whether your data meets Visa&apos;s current CE3.0 criteria is determined by your acquirer or payment
-            processor, not by Unauth. Visa&apos;s rules on qualifying evidence can change. We do not guarantee
-            dispute outcomes.
+            We present fraud intelligence and identity match data for your review. We do not claim any export is
+            card-network compliant or guarantees a dispute outcome. Merchants decide how to use the report with
+            their acquirer or processor.
           </p>
         </div>
       </section>

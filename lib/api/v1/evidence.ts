@@ -262,8 +262,8 @@ export async function performV1EvidenceCreate(
     body: {
       evidence_id: row.id,
       reference: pkg.referenceNumber,
-      ce3_eligible: pkg.ce3.eligible,
-      ce3_signals: pkg.ce3.qualifyingSignals,
+      has_prior_match_evidence: pkg.ce3.eligible,
+      matched_prior_signals: pkg.ce3.qualifyingSignals,
       pdf_url: `${appBase}/api/v1/evidence/${row.id}/pdf`,
       download_url: downloadUrl,
       created_at: row.created_at ?? new Date().toISOString(),

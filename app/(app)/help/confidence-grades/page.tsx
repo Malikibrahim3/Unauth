@@ -87,7 +87,7 @@ export default function ConfidenceGradesPage() {
             color="var(--risk-critical)"
             meaning="We are highly confident that two or more accounts belong to the same underlying person. The evidence is convergent across multiple independent signal types."
             signals="Card fingerprint match + device ID match + overlapping IP address, or card fingerprint match + same shipping address used under different names/emails."
-            action="Strongest signal overlap. Review the full order set and chargeback history. Where refund claims or chargebacks are present, this grade is the basis for compiling CE3.0 signal data."
+            action="Strongest signal overlap. Review the full order set and chargeback history. Where refund claims or chargebacks are present, this grade supports compiling identity evidence for dispute review."
           />
           <GradeRow
             grade="Probable"
@@ -142,14 +142,13 @@ export default function ConfidenceGradesPage() {
 
       <section className="space-y-4">
         <h2 className="text-heading-md" style={{ color: 'var(--text)' }}>
-          Grades and CE3.0 eligibility
+          Grades and identity evidence
         </h2>
         <p className="text-body-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-          Visa CE3.0 requires merchants to demonstrate that a disputed transaction matches a customer&apos;s established
-          prior purchase history. Unauth surfaces prior matching transactions and identity signals from your own records
-          that may be relevant when preparing a dispute response. CE3.0 signal detection is strongest at Definite grade,
-          where multiple independent signal types align. Whether that data meets Visa&apos;s current CE3.0 criteria is a
-          question for your acquirer or payment processor — Visa&apos;s rules can change.
+          Higher confidence grades reflect stronger cross-signal overlap across a customer&apos;s history. Unauth surfaces
+          prior matching transactions and identity signals from your own records that you may use when preparing a dispute
+          response. Prior-match detection is strongest at Definite grade, where multiple independent signal types align.
+          How you use this data in a chargeback is at your discretion — follow your acquirer or processor guidelines.
         </p>
       </section>
 

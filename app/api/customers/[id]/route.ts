@@ -23,6 +23,8 @@ export interface IdentityTimelineEntry {
 }
 
 export interface OrderHistoryEntry {
+  /** audit_transactions.id — used for evidence package generation */
+  transactionId: string;
   orderId: string;
   orderDate: string | null;
   processedAt: string;
@@ -147,7 +149,8 @@ async function GETHandler(
   const { data: ownedJobs } = await scopedClient
     .from(TABLES.PROCESSING_JOBS)
     .select('id')
-    .eq('merchant_id', ctx.merchantId) as unknown as { data: { id: string }[] | null };
+    .eq('merchant_id', ctx.merchantId)
+    .eq('hidden_by_merchant', false) as unknown as { data: { id: string }[] | null };
 
   const ownedJobIds = (ownedJobs ?? []).map((j) => j.id);
 
@@ -286,6 +289,7 @@ async function GETHandler(
   // 5. Build order history
   // -------------------------------------------------------------------------
   const orderHistory: OrderHistoryEntry[] = transactions.map((tx) => ({
+    transactionId: tx.id,
     orderId: tx.order_id,
     orderDate: null,
     processedAt: tx.processed_at,
@@ -426,23 +430,39 @@ async function GETHandler(
   }
 
   // -------------------------------------------------------------------------
-  // 8. Build behavioral narrative
+  // 8. Recompute aggregate stats from visible-job order history.
+  //    The stored profile fields (total_orders, refund_rate, etc.) reflect ALL
+  //    audit runs ever processed for this customer, including runs the merchant
+  //    has since hidden. Recomputing from orderHistory ensures the panel only
+  //    reflects what is currently visible to this merchant.
+  // -------------------------------------------------------------------------
+  const computedTotalOrders = orderHistory.length;
+  const computedRefundClaims = orderHistory.filter((o) => o.refundRequested || o.returnRequested).length;
+  const computedChargebacks = orderHistory.filter((o) => o.chargebackFiled).length;
+  const computedRefundRate = computedTotalOrders > 0 ? computedRefundClaims / computedTotalOrders : 0;
+  const computedFirstSeen =
+    orderHistory.map((o) => o.processedAt).filter(Boolean).sort()[0] ?? profile.first_seen;
+  const computedLastSeen =
+    orderHistory.map((o) => o.processedAt).filter(Boolean).sort().slice(-1)[0] ?? profile.last_seen;
+
+  // -------------------------------------------------------------------------
+  // 9. Build behavioral narrative
   // -------------------------------------------------------------------------
   const narrative = buildBehavioralNarrative({
-    totalOrders: profile.total_orders,
-    totalRefundClaims: profile.total_refund_claims,
-    refundRate: profile.refund_rate,
+    totalOrders: computedTotalOrders,
+    totalRefundClaims: computedRefundClaims,
+    refundRate: computedRefundRate,
     fastestClaimDays: profile.fastest_claim_days,
     avgClaimDays: profile.avg_claim_days,
     refundAccelerationScore: profile.refund_acceleration_score,
-    firstSeen: profile.first_seen,
-    lastSeen: profile.last_seen,
+    firstSeen: computedFirstSeen,
+    lastSeen: computedLastSeen,
     fraudFlags: profile.fraud_flags,
     linkedAccountCount: linkedAccounts.length,
   });
 
   // -------------------------------------------------------------------------
-  // 9. Compose response
+  // 10. Compose response
   // -------------------------------------------------------------------------
   const panel: CustomerIntelligencePanel = {
     profile: {
@@ -457,16 +477,16 @@ async function GETHandler(
       risk_score: profile.risk_score,
       risk_level: profile.risk_level,
       fraud_flags: profile.fraud_flags,
-      total_orders: profile.total_orders,
-      total_refund_claims: profile.total_refund_claims,
-      total_chargebacks: profile.total_chargebacks,
+      total_orders: computedTotalOrders,
+      total_refund_claims: computedRefundClaims,
+      total_chargebacks: computedChargebacks,
       total_merchants_seen_at: profile.total_merchants_seen_at,
-      refund_rate: profile.refund_rate,
+      refund_rate: computedRefundRate,
       fastest_claim_days: profile.fastest_claim_days,
       avg_claim_days: profile.avg_claim_days,
       refund_acceleration_score: profile.refund_acceleration_score,
-      first_seen: profile.first_seen,
-      last_seen: profile.last_seen,
+      first_seen: computedFirstSeen,
+      last_seen: computedLastSeen,
       profile_confidence: profile.profile_confidence,
       manually_reviewed: profile.manually_reviewed,
       on_watchlist: !!watchlistRow,

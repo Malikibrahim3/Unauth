@@ -335,6 +335,7 @@ export async function getMerchantOwnedJobIds(
       .from(TABLES.PROCESSING_JOBS)
       .select('id')
       .eq('merchant_id', merchantId)
+      .eq('hidden_by_merchant', false)
       .range(offset, offset + PAGE - 1);
     if (error) throw new Error(`getMerchantOwnedJobIds failed: ${error.message}`);
     allIds.push(...(data ?? []).map((r: { id: string }) => r.id));
@@ -498,7 +499,16 @@ export async function fetchMerchantScopedCustomerTransactions(
   }
 
   // Step 3: widen to profile identity attributes within owned jobs
-  const profileEmails = (profile.emails ?? []) as string[];
+  const profileEmails = Array.from(
+    new Set(
+      [
+        ...((profile.emails ?? []) as string[]),
+        typeof profile.primary_email === 'string' ? profile.primary_email : null,
+      ]
+        .map((value) => value?.trim())
+        .filter(Boolean) as string[],
+    ),
+  );
   const profileCards = (profile.card_last4s ?? []) as string[];
   const profileIps = (profile.ips ?? []) as string[];
 

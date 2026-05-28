@@ -79,7 +79,7 @@ export default async function ChargebacksPage() {
         <WorkbenchKpiStrip
           items={[
             { label: 'Packages', value: pkgs.length.toLocaleString(), hint: 'Generated reports' },
-            { label: 'CE3.0 signals', value: pkgs.filter((pkg) => pkg.ce3_eligible).length.toLocaleString(), hint: 'CE3.0 signals detected' },
+            { label: 'Prior identity match', value: pkgs.filter((pkg) => pkg.ce3_eligible).length.toLocaleString(), hint: 'Packages with matched priors' },
             { label: 'Cross-merchant', value: pkgs.filter((pkg) => pkg.cross_merchant_indicator).length.toLocaleString(), hint: 'Network-linked evidence' },
             { label: 'Latest', value: pkgs[0]?.generated_at ? new Date(pkgs[0].generated_at).toLocaleDateString('en-GB') : '-', hint: 'Most recent package' },
             { label: 'Source', value: 'Customers', hint: 'Generated from customer profiles' },
@@ -99,7 +99,7 @@ export default async function ChargebacksPage() {
       pkgs.length === 0 ? (
         <WorkbenchEmptyState
           title="No evidence packages yet"
-          description="Compile signal data from customer profiles to support dispute review. CE3.0 signal detection is included when prior matching transactions are found."
+          description="Compile identity evidence from customer profiles to support dispute review. Prior matching transactions are highlighted when found."
           action={<Link href="/customers" className="text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>View customers</Link>}
         />
       ) : (
@@ -107,7 +107,7 @@ export default async function ChargebacksPage() {
           <table className="w-full border-collapse text-sm" style={{ background: 'var(--bg-surface)' }}>
             <thead>
               <tr className="border-b" style={{ background: 'var(--bg-surface-alt)', borderColor: 'var(--border-default)' }}>
-                {['Reference', 'Customer', 'Generated', 'CE3.0', 'Cross-merchant', ''].map((header) => (
+                {['Reference', 'Customer', 'Generated', 'Prior match', 'Cross-merchant', ''].map((header) => (
                   <th key={header} className="px-4 py-2.5 text-left text-overline" style={{ color: 'var(--text-muted)' }}>
                     {header}
                   </th>
@@ -134,7 +134,7 @@ export default async function ChargebacksPage() {
                   </td>
                   <td className="px-4 py-3">
                     {pkg.ce3_eligible
-                      ? <span title="CE3.0 signals detected — consult your acquirer or processor to confirm eligibility"><Badge tone="neutral" size="sm">CE3.0 signals</Badge></span>
+                      ? <span title="Prior orders share identity signals with the disputed order"><Badge tone="neutral" size="sm">Matched</Badge></span>
                       : <span className="text-caption" style={{ color: 'var(--text-subtle)' }}>—</span>}
                   </td>
                   <td className="px-4 py-3">

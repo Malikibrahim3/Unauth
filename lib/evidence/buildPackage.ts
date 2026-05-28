@@ -5,6 +5,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { TABLES } from '@/lib/supabase/tables'
 import type { EvidencePackage } from './types'
 import { assessCE3Eligibility, extractCe3AcceptedHashes } from './ce3'
+import { normaliseEmail, normaliseAddress } from '@/lib/identity/normalise'
 import {
   fetchMerchantScopedCustomerProfile,
   fetchMerchantScopedCustomerTransactions,
@@ -100,7 +101,7 @@ export async function buildEvidencePackage(
     merchantId,
     customerProfileId,
     profile,
-    { select: 'id,order_id,customer_email,customer_name,shipping_address,device_ip,card_last4,order_value,match_score,risk_level,signals_matched,ce3_signal_hashes,refund_claimed,refund_reason,processed_at,job_id' }
+    { select: 'id,order_id,order_date,customer_email,customer_name,shipping_address,device_ip,card_last4,order_value,match_score,risk_level,signals_matched,ce3_signal_hashes,refund_claimed,refund_reason,processed_at,job_id' }
   )
 
   // -------------------------------------------------------------------------
@@ -118,7 +119,12 @@ export async function buildEvidencePackage(
   )
   if (!disputedTx) throw new Error(`Disputed order not found or not owned by merchant: ${disputedOrderId}`)
 
-  const disputedDate = new Date(disputedTx.processed_at as string)
+  // Prefer the merchant-supplied order date; fall back to ingestion time only
+  // when order_date is absent (legacy rows ingested before order_date existed).
+  const txDate = (tx: Record<string, unknown>): string =>
+    (tx.order_date as string | null) ?? (tx.processed_at as string)
+
+  const disputedDate = new Date(txDate(disputedTx))
 
   // -------------------------------------------------------------------------
   // 5. Build identity evidence list
@@ -129,25 +135,42 @@ export async function buildEvidencePackage(
   const ipsPresent = (profile.ips ?? []) as string[]
   const cardsPresent = (profile.card_last4s ?? []) as string[]
 
-  const firstSeenDate = profile.first_seen ? new Date(profile.first_seen as string) : disputedDate
+  // Earliest order date across the customer's history (real order dates, not
+  // ingestion time). Falls back to the profile's stored first_seen, then to the
+  // disputed order date.
+  const orderDateMs = allTxs
+    .map(tx => new Date(txDate(tx)).getTime())
+    .filter(ms => !Number.isNaN(ms))
+  const firstSeenDate =
+    orderDateMs.length > 0
+      ? new Date(Math.min(...orderDateMs))
+      : profile.first_seen
+        ? new Date(profile.first_seen as string)
+        : disputedDate
 
   const identityEvidence: EvidencePackage['identityEvidence'] = []
 
   for (const email of emailsPresent) {
+    const target = normaliseEmail(email)
     identityEvidence.push({
       identifierType: 'Email address',
       maskedValue: maskEmail(email),
       firstSeen: firstSeenDate,
-      orderCount: allTxs.filter(tx => tx.customer_email === email).length,
-      ce3Accepted: true,
+      orderCount: allTxs.filter(
+        tx => normaliseEmail((tx.customer_email as string | null) ?? '') === target,
+      ).length,
+      ce3Accepted: false, // email is NOT a Visa CE3.0 core data element
     })
   }
   for (const addr of addressesPresent.slice(0, 3)) {
+    const target = normaliseAddress(addr)
     identityEvidence.push({
       identifierType: 'Shipping address',
       maskedValue: maskAddress(addr),
       firstSeen: firstSeenDate,
-      orderCount: allTxs.filter(tx => tx.shipping_address === addr).length,
+      orderCount: allTxs.filter(
+        tx => normaliseAddress((tx.shipping_address as string | null) ?? '') === target,
+      ).length,
       ce3Accepted: true,
     })
   }
@@ -157,7 +180,7 @@ export async function buildEvidencePackage(
       maskedValue: maskPhone(phone),
       firstSeen: firstSeenDate,
       orderCount: allTxs.length,
-      ce3Accepted: true,
+      ce3Accepted: false, // phone is NOT a Visa CE3.0 core data element
     })
   }
   for (const ip of ipsPresent.slice(0, 2)) {
@@ -183,18 +206,23 @@ export async function buildEvidencePackage(
   // 6. CE3.0 eligibility assessment
   // -------------------------------------------------------------------------
 
+  const friendlyId = (tx: Record<string, unknown>): string =>
+    (tx.order_id as string | null) ?? (tx.id as string)
+
   const disputedSignalHashes = extractCe3AcceptedHashes(disputedTx.ce3_signal_hashes)
   const orderHistoryForCE3 = allTxs.map(tx => ({
-    order_id: tx.id as string,
-    order_date: tx.processed_at as string,
+    order_id: friendlyId(tx),
+    order_date: txDate(tx),
     refund_status: tx.refund_claimed ? 'full' : 'none',
     signalHashes: extractCe3AcceptedHashes(tx.ce3_signal_hashes),
+    paymentCredential: (tx.card_last4 as string | null) ?? null,
   }))
   const ce3 = assessCE3Eligibility(
-    disputedTx.id as string,
+    friendlyId(disputedTx),
     disputedDate,
     disputedSignalHashes,
-    orderHistoryForCE3
+    orderHistoryForCE3,
+    { disputedPaymentCredential: (disputedTx.card_last4 as string | null) ?? null }
   )
 
   // -------------------------------------------------------------------------
@@ -252,29 +280,31 @@ export async function buildEvidencePackage(
   // -------------------------------------------------------------------------
   const ce3QualifyingIds = new Set(ce3.priorTransactions.map(p => p.orderId))
 
-  const orderHistory: EvidencePackage['orderHistory'] = allTxs.map(tx => {
-    const isDisputed = tx.id === disputedOrderId || tx.order_id === disputedOrderId
-    const refundClaimed: boolean = !!tx.refund_claimed
-    let outcome: string = 'completed'
-    if (isDisputed) outcome = 'disputed'
-    else if (refundClaimed) outcome = 'refunded'
+  const orderHistory: EvidencePackage['orderHistory'] = allTxs
+    .map(tx => {
+      const isDisputed = tx.id === disputedOrderId || tx.order_id === disputedOrderId
+      const refundClaimed: boolean = !!tx.refund_claimed
+      let outcome: string = 'completed'
+      if (isDisputed) outcome = 'disputed'
+      else if (refundClaimed) outcome = 'refunded'
 
-    // Time to claim
-    let timeToClaim: string | undefined
-    if (refundClaimed && tx.processed_at) {
-      // We don't have separate refund_date readily — skip for now
-    }
+      // Time to claim
+      let timeToClaim: string | undefined
+      if (refundClaimed && tx.processed_at) {
+        // We don't have separate refund_date readily — skip for now
+      }
 
-    return {
-      orderId: (tx.order_id ?? tx.id) as string,
-      date: new Date(tx.processed_at as string),
-      value: (tx.order_value ?? 0) as number,
-      outcome,
-      timeToClaim,
-      isDisputedOrder: isDisputed,
-      isCE3QualifyingTransaction: ce3QualifyingIds.has(tx.id as string),
-    }
-  })
+      return {
+        orderId: friendlyId(tx),
+        date: new Date(txDate(tx)),
+        value: (tx.order_value ?? 0) as number,
+        outcome,
+        timeToClaim,
+        isDisputedOrder: isDisputed,
+        isCE3QualifyingTransaction: ce3QualifyingIds.has(friendlyId(tx)),
+      }
+    })
+    .sort((a, b) => a.date.getTime() - b.date.getTime())
 
   // -------------------------------------------------------------------------
   // 12. Customer shape

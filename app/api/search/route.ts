@@ -89,6 +89,7 @@ export async function GET(req: NextRequest) {
       .from(TABLES.PROCESSING_JOBS)
       .select('id')
       .eq('merchant_id', ctx.merchantId)
+      .eq('hidden_by_merchant', false)
       .limit(500);
     merchantJobIds = (jobs ?? []).map((j: { id: string }) => j.id);
   } catch {
@@ -173,7 +174,7 @@ export async function GET(req: NextRequest) {
           type: 'evidence',
           id: e.id,
           label: e.customer_name ?? `Evidence ${e.id.slice(0, 8)}`,
-          sublabel: e.ce3_eligible ? 'CE3.0 eligible' : undefined,
+          sublabel: e.ce3_eligible ? 'Prior identity match' : undefined,
           href: `/chargebacks`,
         });
       }

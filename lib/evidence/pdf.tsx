@@ -1,11 +1,11 @@
 // lib/evidence/pdf.tsx
-// Renders the chargeback evidence package as a polished A4 PDF.
+// Renders the identity evidence package as a polished A4 PDF.
 // Uses @react-pdf/renderer — Helvetica only (embedded, works on Vercel).
 //
 // CONTENT RULES:
 //   - The word "fraud" never appears in any text node
 //   - No other merchant is named
-//   - CE3.0 referenced explicitly and professionally when eligible
+//   - Neutral identity-match framing only (no card-network compliance claims)
 
 import React from 'react'
 import {
@@ -32,13 +32,16 @@ const C = {
   green:       '#2F6B43',
   amber:       '#8B6A14',
   red:         '#9F1D1D',
-  ce3Bg:       '#EEF3FE',
-  ce3Border:   '#2563EB',
+  highlightBg: '#EEF3FE',
+  highlightBorder: '#2563EB',
   amberBg:     '#F7F0DA',
   amberBorder: '#CDB258',
   subtleBg:    '#FAF6EF',
   darkText:    '#2E3947',
 }
+
+const EXPORT_DISCLAIMER =
+  'This report presents cross-merchant identity match data. Merchants may use this information to support chargeback dispute processes at their discretion.'
 
 // =============================================================================
 // Styles
@@ -68,13 +71,13 @@ const s = StyleSheet.create({
   tableHeader:   { flexDirection: 'row', backgroundColor: C.tableBg, borderWidth: 1, borderColor: C.border, paddingHorizontal: 6, paddingVertical: 4 },
   tableRow:      { flexDirection: 'row', borderLeftWidth: 1, borderRightWidth: 1, borderBottomWidth: 1, borderColor: C.border, paddingHorizontal: 6, paddingVertical: 4 },
   tableRowDisputed: { flexDirection: 'row', borderLeftWidth: 3, borderLeftColor: C.red, borderRightWidth: 1, borderBottomWidth: 1, borderColor: C.border, paddingHorizontal: 6, paddingVertical: 4 },
-  tableRowCE3:   { flexDirection: 'row', borderLeftWidth: 3, borderLeftColor: C.green, borderRightWidth: 1, borderBottomWidth: 1, borderColor: C.border, paddingHorizontal: 6, paddingVertical: 4 },
+  tableRowMatched:   { flexDirection: 'row', borderLeftWidth: 3, borderLeftColor: C.green, borderRightWidth: 1, borderBottomWidth: 1, borderColor: C.border, paddingHorizontal: 6, paddingVertical: 4 },
   tableHeaderCell: { fontSize: 7, fontFamily: 'Helvetica-Bold', color: C.muted },
   tableCell:     { fontSize: 8, color: C.text },
   tableCellMuted:{ fontSize: 8, color: C.muted },
-  ce3Box:        { backgroundColor: C.ce3Bg, borderLeftWidth: 3, borderLeftColor: C.ce3Border, borderRightWidth: 1, borderTopWidth: 1, borderBottomWidth: 1, borderColor: C.ce3Border, padding: 10, marginBottom: 8 },
-  ce3Title:      { fontSize: 9, fontFamily: 'Helvetica-Bold', color: C.accent, marginBottom: 3 },
-  ce3Text:       { fontSize: 9, color: C.darkText, lineHeight: 1.5 },
+  highlightBox:        { backgroundColor: C.highlightBg, borderLeftWidth: 3, borderLeftColor: C.highlightBorder, borderRightWidth: 1, borderTopWidth: 1, borderBottomWidth: 1, borderColor: C.highlightBorder, padding: 10, marginBottom: 8 },
+  highlightTitle:      { fontSize: 9, fontFamily: 'Helvetica-Bold', color: C.accent, marginBottom: 3 },
+  highlightText:       { fontSize: 9, color: C.darkText, lineHeight: 1.5 },
   infoBox:       { backgroundColor: C.subtleBg, borderWidth: 1, borderColor: C.border, padding: 10, marginBottom: 8 },
   infoTitle:     { fontSize: 9, fontFamily: 'Helvetica-Bold', color: C.muted, marginBottom: 3 },
   infoText:      { fontSize: 9, color: C.muted },
@@ -84,7 +87,6 @@ const s = StyleSheet.create({
   assessLabel:   { fontSize: 8, color: C.muted, width: 160 },
   assessValue:   { fontSize: 8, color: C.text, flex: 1 },
   assessValueGreen: { fontSize: 8, color: C.green, fontFamily: 'Helvetica-Bold', flex: 1 },
-  actionNote:    { fontSize: 8, fontFamily: 'Helvetica-Bold', color: C.darkText, marginTop: 8 },
   footer:        { position: 'absolute', bottom: 28, left: 56, right: 56, borderTopWidth: 1, borderTopColor: C.border, paddingTop: 6 },
   footerRow:     { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 3 },
   footerText:    { fontSize: 7, color: C.muted },
@@ -105,6 +107,14 @@ function fmtCurrency(amount: number, currency = 'USD'): string {
   return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(amount)
 }
 
+function priorMatchStrength(pkg: EvidencePackage): 'Strong' | 'Partial' | 'None' {
+  const { ce3 } = pkg
+  const signalCount = pkg.identityEvidence.length
+  if (ce3.eligible && signalCount >= 3 && ce3.priorTransactions.length >= 2) return 'Strong'
+  if (ce3.eligible || ce3.priorTransactions.length > 0 || signalCount >= 2) return 'Partial'
+  return 'None'
+}
+
 // =============================================================================
 // Sub-components (JSX)
 // =============================================================================
@@ -114,7 +124,7 @@ function PDFHeader({ pkg }: { pkg: EvidencePackage }) {
     <View style={s.header}>
       <View style={s.headerLeft}>
         <Text style={s.brandName}>UNAUTH</Text>
-        <Text style={s.brandSub}>Identity Verification Report</Text>
+        <Text style={s.brandSub}>Identity Evidence Report</Text>
       </View>
       <View style={s.headerRight}>
         <Text style={s.headerMeta}>Reference: {pkg.referenceNumber}</Text>
@@ -126,13 +136,18 @@ function PDFHeader({ pkg }: { pkg: EvidencePackage }) {
   )
 }
 
-function PDFCe3Banner({ pkg }: { pkg: EvidencePackage }) {
-  if (!pkg.ce3.eligible) return null
+function PDFPriorMatchBanner({ pkg }: { pkg: EvidencePackage }) {
+  const strength = priorMatchStrength(pkg)
+  if (strength === 'None') return null
   return (
-    <View style={s.ce3Box}>
-      <Text style={s.ce3Title}>VISA COMPELLING EVIDENCE 3.0 — ELIGIBLE</Text>
-      <Text style={s.ce3Text}>
-        This submission satisfies the criteria for Visa CE3.0 (Reason Code 10.4). Two qualifying prior transactions have been identified. Present this package to your acquirer via Visa Resolve Online (VROL) within the representment window (30 days from chargeback notification).
+    <View style={s.highlightBox}>
+      <Text style={s.highlightTitle}>
+        {strength === 'Strong' ? 'STRONG PRIOR IDENTITY MATCH' : 'PARTIAL PRIOR IDENTITY MATCH'}
+      </Text>
+      <Text style={s.highlightText}>
+        {strength === 'Strong'
+          ? `Prior orders in your records share multiple identity signals with the disputed transaction (${pkg.ce3.priorTransactions.length} matched prior${pkg.ce3.priorTransactions.length === 1 ? '' : 's'} identified).`
+          : 'Some prior orders or identity signals align with the disputed transaction. Review the match matrix and order history below.'}
       </Text>
     </View>
   )
@@ -143,7 +158,7 @@ function PDFIdentityEvidenceTable({ pkg }: { pkg: EvidencePackage }) {
   return (
     <View style={s.table}>
       <View style={s.tableHeader}>
-        {(['Identifier Type', 'Value (masked)', 'First Seen', 'Orders', 'CE3.0 Accepted'] as const).map((h, i) => (
+        {(['Identifier Type', 'Value (masked)', 'First Seen', 'Orders', 'Core signal'] as const).map((h, i) => (
           <Text key={h} style={[s.tableHeaderCell, { flex: colWidths[i] }]}>{h}</Text>
         ))}
       </View>
@@ -167,7 +182,7 @@ function PDFOrderHistoryTable({ pkg }: { pkg: EvidencePackage }) {
   return (
     <View style={s.table}>
       <View style={s.tableHeader}>
-        {(['Date', 'Order ID', 'Value', 'Outcome', 'Time to Claim', 'CE3.0 Role'] as const).map((h, i) => (
+        {(['Date', 'Order ID', 'Value', 'Outcome', 'Time to Claim', 'Match role'] as const).map((h, i) => (
           <Text key={h} style={[s.tableHeaderCell, { flex: colWidths[i] }]}>{h}</Text>
         ))}
       </View>
@@ -175,12 +190,12 @@ function PDFOrderHistoryTable({ pkg }: { pkg: EvidencePackage }) {
         const rowStyle = order.isDisputedOrder
           ? s.tableRowDisputed
           : order.isCE3QualifyingTransaction
-            ? s.tableRowCE3
+            ? s.tableRowMatched
             : s.tableRow
-        let ce3Role = ''
-        let ce3Color = C.muted
-        if (order.isDisputedOrder) { ce3Role = 'Disputed order'; ce3Color = C.red }
-        else if (order.isCE3QualifyingTransaction) { ce3Role = 'Qualifying prior \u2713'; ce3Color = C.green }
+        let matchRole = ''
+        let matchColor = C.muted
+        if (order.isDisputedOrder) { matchRole = 'Disputed order'; matchColor = C.red }
+        else if (order.isCE3QualifyingTransaction) { matchRole = 'Matched prior'; matchColor = C.green }
         return (
           <View key={i} style={rowStyle}>
             <Text style={[s.tableCellMuted, { flex: colWidths[0] }]}>{fmt(order.date)}</Text>
@@ -188,7 +203,7 @@ function PDFOrderHistoryTable({ pkg }: { pkg: EvidencePackage }) {
             <Text style={[s.tableCell, { flex: colWidths[2] }]}>{fmtCurrency(order.value, pkg.disputedOrder.currency)}</Text>
             <Text style={[s.tableCellMuted, { flex: colWidths[3] }]}>{order.outcome}</Text>
             <Text style={[s.tableCellMuted, { flex: colWidths[4] }]}>{order.timeToClaim ?? '—'}</Text>
-            <Text style={[s.tableCell, { flex: colWidths[5], color: ce3Color }]}>{ce3Role}</Text>
+            <Text style={[s.tableCell, { flex: colWidths[5], color: matchColor }]}>{matchRole}</Text>
           </View>
         )
       })}
@@ -196,48 +211,130 @@ function PDFOrderHistoryTable({ pkg }: { pkg: EvidencePackage }) {
   )
 }
 
-function PDFCe3Assessment({ pkg }: { pkg: EvidencePackage }) {
+function PDFIdentityMatchMatrix({ pkg }: { pkg: EvidencePackage }) {
   const { ce3 } = pkg
-  if (ce3.eligible) {
-    const p1 = ce3.priorTransactions[0]
-    const p2 = ce3.priorTransactions[1]
-    const sigList = ce3.qualifyingSignals.map(s => CE3_SIGNAL_LABELS[s] ?? s).join(', ')
-    const priorTxText = p1 && p2
-      ? `${p1.orderId} (${fmt(p1.orderDate)}), ${p2.orderId} (${fmt(p2.orderDate)})`
-      : p1 ? `${p1.orderId} (${fmt(p1.orderDate)})` : 'See order history'
-    const daysText = p1 && p2
-      ? `${p1.daysPriorToDispute} days, ${p2.daysPriorToDispute} days (minimum 120 required)`
-      : 'See order history'
-
-    return (
-      <View style={s.ce3Box}>
-        {([
-          ['Framework', 'Visa Compelling Evidence 3.0 (CE3.0)', false],
-          ['Applicable reason code', '10.4 — Other Fraud: Card Absent Environment', false],
-          ['Eligibility', 'ELIGIBLE', true],
-          ['Qualifying prior transactions', priorTxText, false],
-          ['Matching signals per transaction', sigList || '—', false],
-          ['Days prior to dispute', daysText, false],
-        ] as [string, string, boolean][]).map(([label, value, isGreen]) => (
-          <View key={label} style={s.assessRow}>
-            <Text style={s.assessLabel}>{label}</Text>
-            <Text style={isGreen ? s.assessValueGreen : s.assessValue}>{value}</Text>
-          </View>
-        ))}
-        <Text style={s.actionNote}>
-          NEXT STEP: Submit this package to your acquirer and request presentment via Visa Resolve Online (VROL). Your acquirer will submit the CE3.0 evidence on your behalf. Response window: 30 days from chargeback notification.
-        </Text>
-      </View>
-    )
-  }
+  const priors = ce3.priorTransactions
+  const labelW = 150
+  const dataW = Math.max(60, Math.floor((360 - labelW) / (priors.length + 1)))
 
   return (
-    <View style={s.infoBox}>
-      <Text style={s.infoTitle}>CE3.0 Eligibility: NOT MET</Text>
-      <Text style={s.infoText}>{ce3.disqualifyingFactors[0] ?? ce3.reason}</Text>
-      <Text style={[s.infoText, { marginTop: 6 }]}>
-        This package remains valid as supporting evidence for a standard representment submission under both Visa and Mastercard dispute guidelines. Identity pattern evidence and purchase history are accepted evidence types under both networks&apos; representment frameworks.
-      </Text>
+    <View style={s.table}>
+      <View style={s.tableHeader}>
+        <Text style={[s.tableHeaderCell, { width: labelW }]}>Identity signal</Text>
+        <Text style={[s.tableHeaderCell, { width: dataW, textAlign: 'center' }]}>Disputed</Text>
+        {priors.map((p, i) => (
+          <Text key={p.orderId} style={[s.tableHeaderCell, { width: dataW, textAlign: 'center' }]}>
+            {`Prior ${i + 1}`}
+          </Text>
+        ))}
+      </View>
+      {ce3.matchMatrix.map((row) => (
+        <View key={row.element} style={s.tableRow}>
+          <Text style={[s.tableCell, { width: labelW }]}>
+            {row.label}{row.isMandatory ? ' \u2020' : ''}
+          </Text>
+          <Text
+            style={[
+              s.tableCell,
+              { width: dataW, textAlign: 'center', color: row.disputedPresent ? C.green : C.muted },
+            ]}
+          >
+            {row.disputedPresent ? '\u2713' : '\u2014'}
+          </Text>
+          {row.priorMatches.map((matched, i) => (
+            <Text
+              key={priors[i]?.orderId ?? i}
+              style={[
+                s.tableCell,
+                { width: dataW, textAlign: 'center', color: matched ? C.green : C.muted },
+              ]}
+            >
+              {matched ? '\u2713' : '\u2014'}
+            </Text>
+          ))}
+        </View>
+      ))}
+    </View>
+  )
+}
+
+function PDFPriorMatchAssessment({ pkg }: { pkg: EvidencePackage }) {
+  const { ce3 } = pkg
+  const priors = ce3.priorTransactions
+  const strength = priorMatchStrength(pkg)
+
+  const credentialText =
+    ce3.paymentCredential === 'verified'
+      ? 'Same payment credential observed across compared transactions'
+      : ce3.paymentCredential === 'mismatch'
+        ? 'Payment credential differs between compared transactions'
+        : 'Not captured in source data'
+
+  const priorRows: [string, string, boolean][] = priors.map((p, i) => {
+    const windowNote = p.withinWindow
+      ? `within ${ce3.windowDays.min}\u2013${ce3.windowDays.max} day lookback`
+      : p.daysPriorToDispute > ce3.windowDays.max
+        ? `outside ${ce3.windowDays.max}-day lookback`
+        : `under ${ce3.windowDays.min}-day lookback`
+    const matched = p.matchingSignals.map(sig => CE3_SIGNAL_LABELS[sig] ?? sig).join(', ') || 'none'
+    return [
+      `Prior ${i + 1} — ${p.orderId}`,
+      `${fmt(p.orderDate)} · ${p.daysPriorToDispute} days prior (${windowNote}) · signals: ${matched}`,
+      p.withinWindow && p.hasMandatoryElement && p.matchingSignals.length >= 2,
+    ]
+  })
+
+  const headerRows: [string, string, boolean][] = [
+    ['Prior identity match', strength, strength === 'Strong'],
+    ['Matched prior orders', priors.length > 0 ? String(priors.length) : 'None identified', priors.length >= 2],
+    ['Lookback window', `${ce3.windowDays.min}–${ce3.windowDays.max} days before disputed order`, false],
+    [
+      'IP or device overlap',
+      ce3.mandatorySatisfied ? 'Present on matched priors' : 'Not confirmed',
+      ce3.mandatorySatisfied,
+    ],
+    ['Payment credential', credentialText, ce3.paymentCredential === 'verified'],
+  ]
+
+  return (
+    <View style={strength === 'Strong' ? s.highlightBox : s.infoBox}>
+      {headerRows.map(([label, value, isGreen]) => (
+        <View key={label} style={s.assessRow}>
+          <Text style={s.assessLabel}>{label}</Text>
+          <Text style={isGreen ? s.assessValueGreen : s.assessValue}>{value}</Text>
+        </View>
+      ))}
+
+      {priors.length > 0 && (
+        <>
+          <Text style={[s.sectionSubhead, { marginTop: 8, marginBottom: 4 }]}>
+            IDENTITY SIGNAL MATCH MATRIX
+          </Text>
+          <PDFIdentityMatchMatrix pkg={pkg} />
+          <Text style={s.noteItalic}>
+            {'\u2020'} Signals marked mandatory require IP address or device ID overlap on matched priors.
+          </Text>
+        </>
+      )}
+
+      {priorRows.length > 0 && (
+        <View style={{ marginTop: 8 }}>
+          {priorRows.map(([label, value, ok]) => (
+            <View key={label} style={s.assessRow}>
+              <Text style={[s.assessLabel, { color: ok ? C.green : C.muted }]}>{label}</Text>
+              <Text style={s.assessValue}>{value}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {ce3.disqualifyingFactors.length > 0 && strength !== 'Strong' && (
+        <View style={{ marginTop: 6 }}>
+          {ce3.disqualifyingFactors.map((f, i) => (
+            <Text key={i} style={s.infoText}>• {f}</Text>
+          ))}
+        </View>
+      )}
     </View>
   )
 }
@@ -248,7 +345,7 @@ function PDFCrossMerchantSection({ pkg }: { pkg: EvidencePackage }) {
     return (
       <View style={s.amberBox}>
         <Text style={s.amberText}>
-          {`This customer's identity has been observed at ${crossMerchant.merchantCount} other merchant${crossMerchant.merchantCount === 1 ? '' : 's'} in the Unauth network. No merchant names, customer details, or order data from other merchants are disclosed. This indicator may be cited as additional context in representment submissions, though it falls outside CE3.0's specific single-merchant framework.`}
+          {`This customer's identity has been observed at ${crossMerchant.merchantCount} other merchant${crossMerchant.merchantCount === 1 ? '' : 's'} in the Unauth network. No merchant names, customer details, or order data from other merchants are disclosed. This cross-merchant match data may provide additional context alongside your store-level evidence.`}
         </Text>
         {crossMerchant.networkOrderCount != null && (
           <View style={{ marginTop: 6 }}>
@@ -278,7 +375,7 @@ function PDFFooter({ pkg }: { pkg: EvidencePackage }) {
         <Text style={s.footerText}>Unauth — https://unauth.co</Text>
       </View>
       <Text style={s.footerNote}>
-        {`This report was generated by Unauth on behalf of ${pkg.merchant.name}. Identifiers are pseudonymised using HMAC-SHA256. Engine version: ${pkg.engineVersion}. This document is provided as supporting evidence only. Unauth does not guarantee dispute outcomes. Follow your acquirer's submission guidelines.`}
+        {`This report was generated by Unauth on behalf of ${pkg.merchant.name}. Identifiers are pseudonymised using HMAC-SHA256. Engine version: ${pkg.engineVersion}. ${EXPORT_DISCLAIMER}`}
       </Text>
     </View>
   )
@@ -286,12 +383,11 @@ function PDFFooter({ pkg }: { pkg: EvidencePackage }) {
 
 function EvidenceDocument({ pkg, narrative }: { pkg: EvidencePackage; narrative: string }) {
   return (
-    <Document title={`Evidence Package ${pkg.referenceNumber}`} author="Unauth">
-      {/* Page 1 — Summary + Identity Evidence */}
+    <Document title={`Identity Evidence ${pkg.referenceNumber}`} author="Unauth">
       <Page size="A4" style={s.page}>
         <PDFHeader pkg={pkg} />
         <View style={s.rule} />
-        <PDFCe3Banner pkg={pkg} />
+        <PDFPriorMatchBanner pkg={pkg} />
         <Text style={s.sectionLabel}>SUMMARY</Text>
         <Text style={s.narrative}>{narrative}</Text>
         <Text style={s.sectionLabel}>IDENTITY EVIDENCE</Text>
@@ -300,33 +396,33 @@ function EvidenceDocument({ pkg, narrative }: { pkg: EvidencePackage; narrative:
         </Text>
         <PDFIdentityEvidenceTable pkg={pkg} />
         <Text style={s.noteItalic}>
-          CE3.0 Accepted signals are those formally recognised by Visa under Compelling Evidence 3.0 as valid identity matching data points.
+          Core signals are identity data points used for prior-order matching in this report.
         </Text>
         <PDFFooter pkg={pkg} />
       </Page>
 
-      {/* Page 2 — Order History + Assessment */}
       <Page size="A4" style={s.page}>
         <Text style={s.sectionLabel}>ORDER HISTORY</Text>
         <Text style={s.sectionSubhead}>
           All orders from this customer at {pkg.merchant.name}, chronological.
         </Text>
         <PDFOrderHistoryTable pkg={pkg} />
-        {pkg.ce3.eligible && (
+        {pkg.ce3.priorTransactions.length > 0 && (
           <Text style={s.noteItalic}>
-            Orders marked &apos;Qualifying prior ✓&apos; satisfy Visa CE3.0 requirements: each shares at least two accepted identity signals with the disputed order and occurred more than 120 days prior to the dispute.
+            Orders marked &apos;Matched prior&apos; share identity signals with the disputed order within the lookback window.
           </Text>
         )}
-        <Text style={s.sectionLabel}>COMPELLING EVIDENCE 3.0 ASSESSMENT</Text>
-        <PDFCe3Assessment pkg={pkg} />
+        <Text style={s.sectionLabel}>PRIOR ORDER IDENTITY MATCH</Text>
+        <PDFPriorMatchAssessment pkg={pkg} />
         <Text style={s.sectionLabel}>CROSS-MERCHANT PATTERN</Text>
         <PDFCrossMerchantSection pkg={pkg} />
         {pkg.merchantNotes && (
-          <>
+          <View>
             <Text style={s.sectionLabel}>MERCHANT NOTES</Text>
             <Text style={s.narrative}>{pkg.merchantNotes}</Text>
-          </>
+          </View>
         )}
+        <Text style={[s.noteItalic, { marginTop: 10 }]}>{EXPORT_DISCLAIMER}</Text>
         <PDFFooter pkg={pkg} />
       </Page>
     </Document>
@@ -337,10 +433,52 @@ function EvidenceDocument({ pkg, narrative }: { pkg: EvidencePackage; narrative:
 // Public export
 // =============================================================================
 
+const LEGACY_ELEMENT_SYMBOL = Symbol.for('react.element')
+
+interface ElementLike {
+  type: unknown
+  props: Record<string, unknown> | null
+  key: string | null
+}
+
+function isReactElement(node: unknown): node is ElementLike {
+  return (
+    node != null &&
+    typeof node === 'object' &&
+    (node as { $$typeof?: unknown }).$$typeof != null
+  )
+}
+
+function toLegacyElement(node: unknown): unknown {
+  if (node == null || typeof node === 'boolean') return null
+  if (typeof node === 'string' || typeof node === 'number') return node
+  if (Array.isArray(node)) return node.map(toLegacyElement)
+  if (!isReactElement(node)) return node
+
+  const { type, props, key } = node
+
+  if (typeof type === 'function') {
+    const rendered = (type as (p: Record<string, unknown>) => unknown)(props ?? {})
+    return toLegacyElement(rendered)
+  }
+
+  const { children, ...rest } = props ?? {}
+  const newChildren = toLegacyElement(children)
+  return {
+    $$typeof: LEGACY_ELEMENT_SYMBOL,
+    type,
+    key: key ?? null,
+    ref: null,
+    props: { ...rest, children: newChildren },
+    _owner: null,
+  }
+}
+
 export async function renderEvidencePDF(
   pkg: EvidencePackage,
   narrative: string
 ): Promise<Buffer> {
-  const buffer = await renderToBuffer(<EvidenceDocument pkg={pkg} narrative={narrative} />)
+  const tree = toLegacyElement(<EvidenceDocument pkg={pkg} narrative={narrative} />)
+  const buffer = await renderToBuffer(tree as React.ReactElement)
   return Buffer.from(buffer)
 }

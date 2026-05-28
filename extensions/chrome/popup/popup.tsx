@@ -385,7 +385,7 @@ function App() {
               <div className="evidence-success">
                 <p>
                   <strong>{evidence.reference}</strong>
-                  {evidence.ce3_eligible ? ' · CE3 eligible' : ''}
+                  {evidence.has_prior_match_evidence ? ' · Prior identity match' : ''}
                 </p>
                 <a
                   className="link"

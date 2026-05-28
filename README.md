@@ -1,10 +1,12 @@
 # Unauth
 
-Cross-merchant refund and friendly-fraud intelligence network for ecommerce merchants, with Visa Compelling Evidence 3.0 (CE3.0) dispute packages as a flagship output.
+Cross-merchant refund and friendly-fraud intelligence network for ecommerce merchants, with identity evidence exports for dispute support.
 
 ## What it does
 
-Ingests merchant order data (CSV upload and integrations), runs a deterministic fraud scoring engine, and surfaces refund-abuse, INR (item not received), and friendly-fraud patterns. Merchants can generate CE3.0-oriented evidence packages for card-not-present disputes.
+Ingests merchant order data (CSV upload and integrations), runs a deterministic fraud scoring engine, and surfaces refund-abuse, INR (item not received), and friendly-fraud patterns. Merchants can generate identity evidence reports (PDF) with cross-merchant match data, confidence grades, and prior-order signal overlap for chargeback review.
+
+> **Roadmap:** Checkout integration (Phase 2) will enable fuller in-checkout signal capture aligned with card-network compelling-evidence frameworks (e.g. Visa CE 3.0). Unauth does not claim current exports are network-compliant.
 
 ## Running locally
 

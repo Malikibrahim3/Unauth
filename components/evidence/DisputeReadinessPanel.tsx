@@ -5,7 +5,7 @@
  * Read-only checklist showing dispute readiness status based on an evidence_packages row.
  * Each check uses a traffic-light Badge tone (success / warning / critical).
  *
- * DO NOT modify narrative text, CE3 eligibility logic, or PDF generator route.
+ * DO NOT modify narrative text, prior-match logic, or PDF generator route.
  */
 
 import { Badge } from '@/components/ui/Badge';
@@ -31,7 +31,7 @@ interface DisputeReadinessPanelProps {
   pkg: EvidencePackageRow;
   /** Minimum identity signals required for readiness (default: 2) */
   minSignals?: number;
-  /** Minimum prior transactions required for CE3.0 (default: 2) */
+  /** Minimum prior transactions for a strong match checklist (default: 2) */
   minPriorTransactions?: number;
 }
 
@@ -57,11 +57,11 @@ export function DisputeReadinessPanel({
 
   const checks: CheckItem[] = [
     {
-      label: 'CE3.0 signals present',
+      label: 'Prior identity match',
       passed: pkg.ce3_eligible ? true : false,
       detail: pkg.ce3_eligible
         ? 'Prior transactions with matching identity signals found in this record'
-        : 'No prior transactions with matching CE3.0 signals detected',
+        : 'No prior transactions with matching identity signals detected',
     },
     {
       label: 'Narrative summary present',
@@ -162,7 +162,7 @@ export function DisputeReadinessPanel({
       >
         <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" style={{ color: 'var(--text-subtle)' }} />
         <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-          Read-only checklist based on signal data in your records. CE3.0 signal detection reflects matching transaction patterns — consult your acquirer or processor to confirm whether this data meets CE 3.0 submission requirements.
+          Read-only checklist based on signal data in your records. Use this report alongside your acquirer or processor guidelines when preparing a dispute response.
         </p>
       </div>
     </div>

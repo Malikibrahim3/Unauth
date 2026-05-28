@@ -105,7 +105,7 @@ export default async function DashboardPage() {
     .select('ce3_eligible')
     .eq('merchant_id', ctx.merchantId);
   const totalPackages = evidenceRows?.length ?? 0;
-  const ce3Packages =
+  const priorMatchPackages =
     (evidenceRows as Array<{ ce3_eligible: boolean }> | null)?.filter((pkg) => pkg.ce3_eligible).length ?? 0;
 
   const { count: unreviewedAppearances } = await serviceClient
@@ -161,10 +161,10 @@ export default async function DashboardPage() {
       href: profileIdByTx.get(row.id) ? `/customers/${profileIdByTx.get(row.id)}` : `/audit/${row.job_id}`,
     });
   }
-  if (ce3Packages > 0) {
+  if (priorMatchPackages > 0) {
     activity.push({
       type: 'Evidence',
-      detail: `${ce3Packages} signal report${ce3Packages === 1 ? '' : 's'} with CE3.0 signals detected`,
+      detail: `${priorMatchPackages} evidence report${priorMatchPackages === 1 ? '' : 's'} with prior identity match`,
       time: 'current',
       href: '/chargebacks',
     });
@@ -219,7 +219,7 @@ export default async function DashboardPage() {
             {
               label: 'Evidence packages ready',
               value: totalPackages.toLocaleString(),
-              hint: ce3Packages > 0 ? `${ce3Packages} with CE3.0 signals` : 'Use in Shopify dispute or bank portal',
+              hint: priorMatchPackages > 0 ? `${priorMatchPackages} with prior identity match` : 'Export for dispute review',
             },
             {
               label: 'Recent audit runs',
@@ -344,9 +344,9 @@ export default async function DashboardPage() {
             <div className="border-b px-4 py-2" style={{ borderColor: 'var(--border-subtle)' }}>
               <p className="text-body-sm font-semibold num" style={{ color: 'var(--text)' }}>{totalPackages.toLocaleString()}</p>
               <p className="text-caption mt-1" style={{ color: 'var(--text-muted)' }}>
-                {ce3Packages > 0
-                  ? `${ce3Packages} include CE3.0 signals — use in your Shopify dispute or bank portal.`
-                  : 'Generate packages from a customer profile when a dispute needs documentation.'}
+                {priorMatchPackages > 0
+                  ? `${priorMatchPackages} include prior identity matches — export for dispute review.`
+                  : 'Generate identity evidence from a customer profile when a dispute needs documentation.'}
               </p>
             </div>
 

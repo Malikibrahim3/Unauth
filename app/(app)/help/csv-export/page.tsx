@@ -213,25 +213,22 @@ export default function CsvExportHelpPage() {
         </p>
       </section>
 
-      {/* CE3.0 eligibility section */}
+      {/* Identity evidence quality */}
       <section className="space-y-4">
-        <h2 className="text-heading-md">Maximising your CE3.0 eligibility</h2>
+        <h2 className="text-heading-md">Maximising identity evidence quality</h2>
         <p className="text-body-sm" style={{ color: 'var(--text-muted)' }}>
-          Visa Compelling Evidence 3.0 (CE3.0) is a chargeback representment framework that came
-          into effect in October 2025, covering Visa reason code 10.4. When CE3.0 criteria are met,
-          you can submit evidence of prior undisputed transactions to challenge a chargeback — and
-          the issuing bank is required to accept it as compelling evidence.
+          Stronger exports come from richer checkout signals and a longer undisputed order history.
+          Prior-order matching works best when you capture device, network, and address data alongside
+          standard contact fields.
         </p>
         <p className="text-body-sm" style={{ color: 'var(--text-muted)' }}>
-          To qualify, your evidence package must contain two prior undisputed orders from the same
-          identity, each placed more than 120 days before the disputed transaction, each sharing at
-          least two of the following accepted signals with the disputed order:
+          Signals that improve prior-order matching in identity evidence exports:
         </p>
         <ul className="space-y-1 text-body-sm list-none pl-0" style={{ color: 'var(--text-muted)' }}>
           {([
-            ['Device fingerprint', 'deviceMatch — requires your platform to capture device ID at checkout'],
+            ['Device fingerprint', 'deviceMatch — capture device ID at checkout'],
             ['IP address cluster', 'ipCluster — IP address or ASN recorded on the order'],
-            ['Email address', 'emailVariant — standard checkout field, always captured automatically'],
+            ['Email address', 'emailVariant — standard checkout field, captured automatically'],
             ['Billing / shipping address', 'addressCluster — full address including postcode'],
             ['Phone number', 'phoneMatch — mobile or landline recorded at checkout'],
             ['Account linkage', 'accountLink — customer account ID or loyalty programme ID'],
@@ -243,18 +240,17 @@ export default function CsvExportHelpPage() {
           ))}
         </ul>
         <p className="text-body-sm" style={{ color: 'var(--text-muted)' }}>
-          Email is always captured automatically, giving you one signal from day one. Adding device
-          fingerprint or IP address alongside billing address will satisfy the two-signal requirement
-          for most orders and significantly increase your CE3.0 eligibility rate.
+          Email is captured on most uploads from day one. Adding device fingerprint or IP address
+          alongside billing address typically yields stronger prior-order identity matches.
         </p>
         <div className="rounded-lg border px-4 py-3" style={{ background: 'var(--accent-soft)', borderColor: 'var(--border)' }}>
           <p className="text-body-sm font-semibold mb-0.5" style={{ color: 'var(--text)' }}>
-            CE3.0 eligibility is assessed automatically
+            Prior matches are assessed automatically
           </p>
           <p className="text-body-sm" style={{ color: 'var(--text-muted)' }}>
-            When you generate an evidence package from a customer profile, Unauth checks CE3.0
-            eligibility in real time and displays whether the disputed order qualifies. View your
-            packages in{' '}
+            When you generate identity evidence from a customer profile, Unauth checks for prior
+            orders that share signals with the disputed order and shows match strength in the export.
+            View packages in{' '}
             <Link href="/chargebacks" className="hover:underline" style={{ color: 'var(--accent)' }}>
               Evidence Packages
             </Link>

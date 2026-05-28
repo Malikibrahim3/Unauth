@@ -31,79 +31,46 @@ function uniq(values: Array<string | null | undefined>) {
   return Array.from(new Set(values.map((v) => v?.trim()).filter(Boolean) as string[]));
 }
 
-async function loadTransactionsForProfile(
+/**
+ * Resolve a profile ID for a set of audit transaction IDs.
+ *
+ * Primary: customer_profile_audit_appearances — populated by the processing
+ * pipeline and is the authoritative link between transactions and profiles.
+ *
+ * Fallback: direct email lookup against customer_profiles, using both
+ * merchantId and userId to handle legacy merchant_ids formats.
+ */
+async function resolveProfileId(
   serviceClient: ReturnType<typeof createServiceClient>,
   runId: string,
-  profileId: string,
-): Promise<{ direct: AuditTx[]; rows: AuditTx[]; profileId: string }> {
-  const { data: appearanceRows } = await serviceClient
-    .from('customer_profile_audit_appearances')
-    .select('transaction_id')
-    .eq('audit_id', runId)
-    .eq('profile_id', profileId);
-  const txIds = (appearanceRows ?? []).map((r: { transaction_id: string }) => r.transaction_id).filter(Boolean);
+  txIds: string[],
+  email: string,
+  merchantId: string,
+  userId: string,
+): Promise<string | null> {
+  // 1. Appearances — most reliable, set by the ingest pipeline
+  if (txIds.length > 0) {
+    const { data: appRows } = await serviceClient
+      .from('customer_profile_audit_appearances')
+      .select('profile_id')
+      .eq('audit_id', runId)
+      .in('transaction_id', txIds.slice(0, 100)) // cap to avoid large IN clause
+      .limit(1) as unknown as { data: Array<{ profile_id: string }> | null };
 
-  const { data: directRows, error: directError } = await serviceClient
-    .from(TABLES.AUDIT_TRANSACTIONS)
-    .select('*')
-    .eq('job_id', runId)
-    .in('id', txIds.length > 0 ? txIds : ['00000000-0000-0000-0000-000000000000'])
-    .order('processed_at', { ascending: true });
-
-  if (directError) {
-    throw new Error('Failed to load customer transactions');
+    const profileId = appRows?.[0]?.profile_id ?? null;
+    if (profileId) return profileId;
   }
 
-  const direct = (directRows ?? []) as unknown as AuditTx[];
-  const clusterIds = uniq(direct.map((row) => row.cluster_id));
-  let rows = direct;
+  // 2. Email-based lookup — handles customers whose appearances haven't been
+  // written yet. Accept both merchantId and userId (legacy merchant_ids format).
+  const emailLower = email.trim().toLowerCase();
+  const safeEmail = escapePostgrestFilterValue(emailLower);
 
-  if (clusterIds.length > 0) {
-    const { data: clusterRows } = await serviceClient
-      .from(TABLES.AUDIT_TRANSACTIONS)
-      .select('*')
-      .eq('job_id', runId)
-      .in('cluster_id', clusterIds)
-      .order('processed_at', { ascending: true });
+  const merchantFilter = [
+    `merchant_ids.cs.${JSON.stringify([merchantId])}`,
+    `merchant_ids.cs.${JSON.stringify([userId])}`,
+  ].join(',');
 
-    const byId = new Map<string, AuditTx>();
-    for (const row of [...direct, ...((clusterRows ?? []) as unknown as AuditTx[])]) {
-      byId.set(row.id, row);
-    }
-    rows = Array.from(byId.values()).sort((a, b) =>
-      String(a.processed_at ?? '').localeCompare(String(b.processed_at ?? '')),
-    );
-  }
-
-  return { direct, rows, profileId };
-}
-
-async function loadTransactionsForCustomerKey(
-  serviceClient: ReturnType<typeof createServiceClient>,
-  runId: string,
-  customerKey: string,
-): Promise<{ direct: AuditTx[]; rows: AuditTx[]; profileId: string | null; displayEmail: string }> {
-  const lookup = customerKey.trim();
-  const lookupLower = lookup.toLowerCase();
-  const safeLookup = escapePostgrestFilterValue(lookup);
-
-  const { data: directRows, error: directError } = await serviceClient
-    .from(TABLES.AUDIT_TRANSACTIONS)
-    .select('*')
-    .eq('job_id', runId)
-    .or(`customer_email.ilike.${safeLookup},customer_name.ilike.${safeLookup}`)
-    .order('processed_at', { ascending: true });
-
-  if (directError) {
-    throw new Error('Failed to load customer transactions');
-  }
-
-  const direct = (directRows ?? []) as unknown as AuditTx[];
-  const clusterIds = uniq(direct.map((row) => row.cluster_id));
-  let rows = direct;
-
-  const merchantFilter = `merchant_ids.cs.${JSON.stringify([ctx.merchantId])}`;
-  const safeEmail = escapePostgrestFilterValue(lookupLower);
   const { data: profileRows } = await serviceClient
     .from(TABLES.CUSTOMER_PROFILES)
     .select('id')
@@ -111,34 +78,47 @@ async function loadTransactionsForCustomerKey(
     .or(`primary_email.ilike.${safeEmail},emails.cs.["${safeEmail}"]`)
     .limit(1) as unknown as { data: Array<{ id: string }> | null };
 
-  const profileId = profileRows?.[0]?.id ?? null;
-
-  if (clusterIds.length > 0) {
-    const { data: clusterRows } = await serviceClient
-      .from(TABLES.AUDIT_TRANSACTIONS)
-      .select('*')
-      .eq('job_id', runId)
-      .in('cluster_id', clusterIds)
-      .order('processed_at', { ascending: true });
-
-    const byId = new Map<string, AuditTx>();
-    for (const row of [...direct, ...((clusterRows ?? []) as unknown as AuditTx[])]) {
-      byId.set(row.id, row);
-    }
-    rows = Array.from(byId.values()).sort((a, b) =>
-      String(a.processed_at ?? '').localeCompare(String(b.processed_at ?? '')),
-    );
-  }
-
-  const displayEmail =
-    direct.find((row) => row.customer_email)?.customer_email?.trim() ||
-    lookup;
-
-  return { direct, rows, profileId, displayEmail };
+  return profileRows?.[0]?.id ?? null;
 }
 
-// Module-level ctx placeholder — set in GET before calling helpers
-let ctx: { merchantId: string };
+async function loadTransactionsById(
+  serviceClient: ReturnType<typeof createServiceClient>,
+  runId: string,
+  txIds: string[],
+): Promise<AuditTx[]> {
+  if (txIds.length === 0) return [];
+  const { data } = await serviceClient
+    .from(TABLES.AUDIT_TRANSACTIONS)
+    .select('*')
+    .eq('job_id', runId)
+    .in('id', txIds)
+    .order('processed_at', { ascending: true });
+  return (data ?? []) as unknown as AuditTx[];
+}
+
+async function expandWithClusterRows(
+  serviceClient: ReturnType<typeof createServiceClient>,
+  runId: string,
+  direct: AuditTx[],
+): Promise<AuditTx[]> {
+  const clusterIds = uniq(direct.map((row) => row.cluster_id));
+  if (clusterIds.length === 0) return direct;
+
+  const { data: clusterRows } = await serviceClient
+    .from(TABLES.AUDIT_TRANSACTIONS)
+    .select('*')
+    .eq('job_id', runId)
+    .in('cluster_id', clusterIds)
+    .order('processed_at', { ascending: true });
+
+  const byId = new Map<string, AuditTx>();
+  for (const row of [...direct, ...((clusterRows ?? []) as unknown as AuditTx[])]) {
+    byId.set(row.id, row);
+  }
+  return Array.from(byId.values()).sort((a, b) =>
+    String(a.processed_at ?? '').localeCompare(String(b.processed_at ?? '')),
+  );
+}
 
 export async function GET(
   req: NextRequest,
@@ -155,9 +135,8 @@ export async function GET(
   if (!user) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
 
   const serviceClient = createServiceClient();
-  const permission = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_AUDIT);
-  if (permission.denied) return permission.denied;
-  ctx = permission.ctx;
+  const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_AUDIT);
+  if (denied) return denied;
 
   const { runId } = await params;
 
@@ -178,26 +157,61 @@ export async function GET(
     let displayEmail: string;
 
     if (profileIdParam) {
-      const loaded = await loadTransactionsForProfile(serviceClient, runId, profileIdParam);
-      if (loaded.direct.length === 0 && loaded.rows.length === 0) {
+      // profile_id path: look up appearances for this profile in this audit
+      const { data: appRows } = await serviceClient
+        .from('customer_profile_audit_appearances')
+        .select('transaction_id')
+        .eq('audit_id', runId)
+        .eq('profile_id', profileIdParam);
+
+      const txIds = (appRows ?? [])
+        .map((r: { transaction_id: string }) => r.transaction_id)
+        .filter(Boolean);
+
+      direct = await loadTransactionsById(serviceClient, runId, txIds);
+      if (direct.length === 0) {
         return NextResponse.json({ error: 'Customer not found in audit' }, { status: 404 });
       }
-      direct = loaded.direct;
-      rows = loaded.rows;
-      profileId = loaded.profileId;
+      rows = await expandWithClusterRows(serviceClient, runId, direct);
+      profileId = profileIdParam;
       displayEmail =
         rows.find((row) => row.customer_email)?.customer_email?.trim() ||
         emailParam ||
         profileIdParam;
     } else {
-      const loaded = await loadTransactionsForCustomerKey(serviceClient, runId, emailParam!);
-      if (loaded.direct.length === 0 && loaded.rows.length === 0) {
+      // email path: find transactions by email match
+      const safeLookup = escapePostgrestFilterValue(emailParam!.trim());
+      const { data: directRows, error: directError } = await serviceClient
+        .from(TABLES.AUDIT_TRANSACTIONS)
+        .select('*')
+        .eq('job_id', runId)
+        .or(`customer_email.ilike.${safeLookup},customer_name.ilike.${safeLookup}`)
+        .order('processed_at', { ascending: true });
+
+      if (directError) {
+        throw new Error('Failed to load customer transactions');
+      }
+
+      direct = (directRows ?? []) as unknown as AuditTx[];
+      if (direct.length === 0) {
         return NextResponse.json({ error: 'Customer not found in audit' }, { status: 404 });
       }
-      direct = loaded.direct;
-      rows = loaded.rows;
-      profileId = loaded.profileId;
-      displayEmail = loaded.displayEmail;
+
+      rows = await expandWithClusterRows(serviceClient, runId, direct);
+
+      // Resolve profile — appearances first, then email fallback
+      const directTxIds = direct.map((row) => row.id);
+      const resolvedEmail = direct.find((row) => row.customer_email)?.customer_email?.trim() || emailParam!;
+      profileId = await resolveProfileId(
+        serviceClient,
+        runId,
+        directTxIds,
+        resolvedEmail,
+        ctx.merchantId,
+        user.id,
+      );
+
+      displayEmail = resolvedEmail;
     }
 
     const directIds = new Set(direct.map((row) => row.id));

@@ -34,7 +34,7 @@ const STEPS = [
     id: 'evidence',
     label: 'Generate an evidence package',
     icon: FileText,
-    body: 'Evidence packages assemble identity signals, transaction history, and CE3.0 readiness into a document your team can submit.',
+    body: 'Identity evidence exports assemble cross-merchant match data, transaction history, and confidence signals into a report your team can use for dispute review.',
   },
   {
     id: 'integration',

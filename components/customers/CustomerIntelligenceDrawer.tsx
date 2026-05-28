@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ComponentType, CSSProperties, ReactNode } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   AlertTriangle,
   CalendarDays,
@@ -322,12 +323,18 @@ interface CustomerIntelligenceDrawerProps {
   profileId: string | null;
   onClose: () => void;
   prefetchedPanel?: CustomerIntelligencePanel | null;
+  /** Keep the drawer mounted/open even when profileId is null (e.g. audit-only customers) */
+  open?: boolean;
+  /** Parent is resolving audit → profile; show skeleton until profileId or prefetchedPanel is set */
+  resolving?: boolean;
 }
 
 export default function CustomerIntelligenceDrawer({
   profileId,
   onClose,
   prefetchedPanel = null,
+  open: openProp = false,
+  resolving = false,
 }: CustomerIntelligenceDrawerProps) {
   const [panel, setPanel] = useState<CustomerIntelligencePanel | null>(prefetchedPanel);
   const [loading, setLoading] = useState(false);
@@ -337,13 +344,18 @@ export default function CustomerIntelligenceDrawer({
   const isNotFoundError = error?.startsWith('HTTP 404');
 
   useEffect(() => {
+    // profileId always wins: fetch from /api/customers/[id] (same source as customers page)
+    if (profileId) {
+      setLoading(true); setError(null); setPanel(null); setOrdersExpanded(false);
+      fetch(`/api/customers/${profileId}`)
+        .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+        .then((data: CustomerIntelligencePanel) => { setPanel(data); setLoading(false); })
+        .catch((err: Error) => { setError(err.message); setLoading(false); });
+      return;
+    }
+    // No profileId — use prefetched panel if available (audit-only / skeleton)
     if (prefetchedPanel) { setPanel(prefetchedPanel); setLoading(false); setError(null); return; }
-    if (!profileId) { setPanel(null); setLoading(false); setError(null); return; }
-    setLoading(true); setError(null); setPanel(null); setOrdersExpanded(false);
-    fetch(`/api/customers/${profileId}`)
-      .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
-      .then((data: CustomerIntelligencePanel) => { setPanel(data); setLoading(false); })
-      .catch((err: Error) => { setError(err.message); setLoading(false); });
+    setPanel(null); setLoading(false); setError(null);
   }, [profileId, prefetchedPanel]);
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); }, [onClose]);
@@ -356,7 +368,9 @@ export default function CustomerIntelligenceDrawer({
     if (drawerRef.current && !drawerRef.current.contains(e.target as Node)) onClose();
   };
 
-  const isOpen = !!profileId;
+  const isOpen = !!(profileId || openProp);
+  const resolvedProfileId = profileId || panel?.profile.id || null;
+  const showLoading = resolving || loading || (!!profileId && !panel && !error);
 
   return (
     <>
@@ -411,9 +425,9 @@ export default function CustomerIntelligenceDrawer({
             </p>
           </div>
           <div className="flex items-center gap-2">
-            {profileId && (
+            {resolvedProfileId && (
               <Link
-                href={`/customers/${profileId}`}
+                href={`/customers/${resolvedProfileId}`}
                 onClick={onClose}
                 style={{
                   display: 'inline-flex', alignItems: 'center', gap: 5,
@@ -447,7 +461,7 @@ export default function CustomerIntelligenceDrawer({
 
         {/* ── Content ───────────────────────────────────────────────── */}
         <div style={{ flex: 1, padding: 16 }}>
-          {loading && <DrawerSkeleton />}
+          {showLoading && <DrawerSkeleton />}
 
           {error && (
             <div style={{
@@ -460,11 +474,12 @@ export default function CustomerIntelligenceDrawer({
             </div>
           )}
 
-          {panel && !loading && (
+          {panel && !showLoading && (
             <DrawerContent
               panel={panel}
               ordersExpanded={ordersExpanded}
               onToggleOrders={() => setOrdersExpanded((v) => !v)}
+              onClose={onClose}
             />
           )}
         </div>
@@ -481,11 +496,14 @@ function DrawerContent({
   panel,
   ordersExpanded,
   onToggleOrders,
+  onClose,
 }: {
   panel: CustomerIntelligencePanel;
   ordersExpanded: boolean;
   onToggleOrders: () => void;
+  onClose: () => void;
 }) {
+  const router = useRouter();
   const { profile, orderHistory, identityTimeline, linkedAccounts, narrative } = panel;
   const visibleOrders = ordersExpanded ? orderHistory : orderHistory.slice(0, 6);
   const variantCount = identityTimeline.filter((e) => e.isVariant).length;
@@ -495,7 +513,25 @@ function DrawerContent({
   const claimCount = orderHistory.filter((o) => o.refundRequested || o.returnRequested || o.chargebackFiled).length;
   const displayName = profile.names[0] ?? profile.primary_email ?? 'Unknown customer';
   const summary = signalSummary(profile.risk_score, claimCount, variantCount);
-  const isEligibleForEvidence = orderHistory.some((o) => o.refundRequested) || profile.total_chargebacks > 0;
+  const hasProfileId = Boolean(profile.id?.trim());
+  const isEligibleForEvidence =
+    orderHistory.some((o) => o.refundRequested || o.returnRequested || o.chargebackFiled) ||
+    profile.total_chargebacks > 0 ||
+    profile.total_refund_claims > 0;
+  const disputedOrder = orderHistory.find(
+    (o) => o.refundRequested || o.chargebackFiled,
+  );
+  const evidenceHref = hasProfileId
+    ? `/customers/${profile.id}/evidence/new${
+        disputedOrder?.transactionId ? `?disputedOrder=${encodeURIComponent(disputedOrder.transactionId)}` : ''
+      }`
+    : null;
+
+  function openEvidenceCompile() {
+    if (!evidenceHref) return;
+    onClose();
+    router.push(evidenceHref);
+  }
   const density = Array.from({ length: 12 }, () => 0);
   for (const order of orderHistory) {
     const diffDays = Math.floor((Date.now() - new Date(order.processedAt).getTime()) / 86400000);
@@ -567,14 +603,16 @@ function DrawerContent({
             <span style={{ ...CHIP, background: 'var(--surface-muted)', color: 'var(--ink-secondary)', border: '1px solid var(--surface-border)' }}>
               CONF {(profile.profile_confidence / 100).toFixed(2)}
             </span>
-            <WatchlistStarButton
-              customerProfileId={profile.id}
-              displayName={profile.names[0] ?? undefined}
-              displayEmail={profile.primary_email ?? undefined}
-              lastSeenRisk={profile.risk_level}
-              initialWatchlisted={profile.on_watchlist}
-              watchlistEntryId={profile.watchlist_entry_id ?? null}
-            />
+            {hasProfileId && (
+              <WatchlistStarButton
+                customerProfileId={profile.id}
+                displayName={profile.names[0] ?? undefined}
+                displayEmail={profile.primary_email ?? undefined}
+                lastSeenRisk={profile.risk_level}
+                initialWatchlisted={profile.on_watchlist}
+                watchlistEntryId={profile.watchlist_entry_id ?? null}
+              />
+            )}
           </div>
         </div>
 
@@ -633,35 +671,37 @@ function DrawerContent({
       </div>
 
       {/* ── Investigation status ─────────────────────────────────── */}
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
-        padding: '8px 12px',
-        background: 'var(--surface-raised)',
-        border: '1px solid var(--surface-border)',
-        borderRadius: 4,
-        marginBottom: 4,
-      }}>
-        <span style={{ fontSize: 11, color: 'var(--ink-secondary)' }}>Investigation status</span>
-        <select
-          value={status}
-          onChange={(e) => handleStatusChange(e.target.value)}
-          disabled={statusSaving}
-          style={{
-            ...statusStyle(status),
-            fontSize: 11,
-            borderRadius: 4,
-            padding: '3px 8px',
-            fontWeight: 600,
-            cursor: 'pointer',
-            outline: 'none',
-            border: '1px solid var(--surface-border)',
-          }}
-        >
-          {STATUS_OPTIONS.map((s) => (
-            <option key={s} value={s}>{STATUS_LABELS[s]}</option>
-          ))}
-        </select>
-      </div>
+      {hasProfileId && (
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
+          padding: '8px 12px',
+          background: 'var(--surface-raised)',
+          border: '1px solid var(--surface-border)',
+          borderRadius: 4,
+          marginBottom: 4,
+        }}>
+          <span style={{ fontSize: 11, color: 'var(--ink-secondary)' }}>Investigation status</span>
+          <select
+            value={status}
+            onChange={(e) => handleStatusChange(e.target.value)}
+            disabled={statusSaving}
+            style={{
+              ...statusStyle(status),
+              fontSize: 11,
+              borderRadius: 4,
+              padding: '3px 8px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              outline: 'none',
+              border: '1px solid var(--surface-border)',
+            }}
+          >
+            {STATUS_OPTIONS.map((s) => (
+              <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {/* ── Stat tiles ───────────────────────────────────────────── */}
       <div className="grid grid-cols-3 gap-2 mt-3">
@@ -767,26 +807,31 @@ function DrawerContent({
       </Section>
 
       {/* ── Notes ────────────────────────────────────────────────── */}
-      <Section title="Merchant notes">
-        <CustomerNotes customerProfileId={profile.id} />
-      </Section>
+      {hasProfileId && (
+        <Section title="Merchant notes">
+          <CustomerNotes customerProfileId={profile.id} />
+        </Section>
+      )}
 
       {/* ── Signal data CTA ─────────────────────────────────────── */}
       <div style={{ borderTop: '1px solid var(--surface-border)', paddingTop: 12, marginTop: 12 }}>
-        {isEligibleForEvidence ? (
-          <Link
-            href={`/customers/${profile.id}/evidence/new`}
+        {hasProfileId ? (
+          <button
+            type="button"
+            onClick={openEvidenceCompile}
             style={{
               display: 'flex', width: '100%', alignItems: 'center', justifyContent: 'center',
               gap: 7, height: 34, borderRadius: 4, fontSize: 12, fontWeight: 600,
               background: 'var(--copper-bright)', color: 'var(--ink-inverse)',
-              textDecoration: 'none', transition: 'background 120ms',
+              border: 'none', cursor: 'pointer', transition: 'background 120ms',
+              opacity: isEligibleForEvidence ? 1 : 0.85,
             }}
             className="hover:bg-[var(--copper-mid)]"
+            title={isEligibleForEvidence ? undefined : 'No refund or chargeback on record — you can still compile a signal report'}
           >
             <FileText style={{ width: 14, height: 14 }} />
             Compile signal data
-          </Link>
+          </button>
         ) : (
           <span
             style={{
@@ -795,7 +840,11 @@ function DrawerContent({
               background: 'var(--surface-muted)', color: 'var(--ink-tertiary)',
               border: '1px solid var(--surface-border)', opacity: 0.65, cursor: 'not-allowed',
             }}
-            title="No refund claims or chargebacks on record for this customer"
+            title={
+              !hasProfileId
+                ? 'Save this customer to a profile before compiling signal data'
+                : 'No refund claims or chargebacks on record for this customer'
+            }
           >
             <FileText style={{ width: 14, height: 14 }} />
             Compile signal data

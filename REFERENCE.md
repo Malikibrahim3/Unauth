@@ -6,7 +6,7 @@
 
 ## WHAT YOU ARE BUILDING
 
-A landing page for Unauth — a cross-merchant fraud intelligence platform that resolves buyer identities across ecommerce stores. It detects friendly fraud, refund abuse, and INR claims by linking the same person across multiple merchants, even when they rotate email, card, or address. It generates Visa CE 3.0 evidence packets for chargeback disputes.
+A landing page for Unauth — a cross-merchant fraud intelligence platform that resolves buyer identities across ecommerce stores. It detects friendly fraud, refund abuse, and INR claims by linking the same person across multiple merchants, even when they rotate email, card, or address. It exports identity evidence and cross-merchant match data merchants can use for chargeback dispute support.
 
 The audience is fraud ops analysts, risk leads, and CFOs at growth-stage DTC ecommerce brands.
 

@@ -67,6 +67,7 @@ async function POSTHandler(req: NextRequest) {
           .from('processing_jobs' as any)
           .select('id')
           .eq('merchant_id', merchantId)
+          .eq('hidden_by_merchant', false)
       ) as any);
 
     // Build a compact evidence snapshot — just the signals, scores, and order IDs.

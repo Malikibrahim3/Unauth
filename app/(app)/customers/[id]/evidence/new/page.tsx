@@ -2,7 +2,7 @@
 // app/(app)/customers/[id]/evidence/new/page.tsx
 // Generate a chargeback evidence package for a customer.
 
-import { Suspense, useState, useEffect } from 'react'
+import { Suspense, use, useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
@@ -29,8 +29,8 @@ function EvidenceNewForm({ profileId }: { profileId: string }) {
   const [loading, setLoading] = useState(false)
   const [loadingOrders, setLoadingOrders] = useState(true)
   const [error, setError] = useState('')
-  const [ce3Preview, setCe3Preview] = useState<'unknown' | 'likely' | 'unlikely'>('unknown')
-  const [ce3Checking, setCe3Checking] = useState(false)
+  const [priorMatchPreview, setPriorMatchPreview] = useState<'unknown' | 'likely' | 'unlikely'>('unknown')
+  const [priorMatchChecking, setPriorMatchChecking] = useState(false)
 
   // Load orders for this customer profile
   useEffect(() => {
@@ -49,19 +49,19 @@ function EvidenceNewForm({ profileId }: { profileId: string }) {
       .finally(() => setLoadingOrders(false))
   }, [profileId, preselectedOrder])
 
-  // CE3.0 pre-assessment when order changes
+  // Prior-order match pre-check when order changes
   useEffect(() => {
-    if (!selectedOrderId) { setCe3Preview('unknown'); return }
-    setCe3Checking(true)
+    if (!selectedOrderId) { setPriorMatchPreview('unknown'); return }
+    setPriorMatchChecking(true)
     fetch(`/api/evidence/ce3-check?profileId=${profileId}&orderId=${selectedOrderId}`)
       .then(r => r.ok ? r.json() : null)
-      .then((data: { eligible?: boolean } | null) => {
-        if (data?.eligible === true) setCe3Preview('likely')
-        else if (data?.eligible === false) setCe3Preview('unlikely')
-        else setCe3Preview('unknown')
+      .then((data: { hasPriorMatchEvidence?: boolean } | null) => {
+        if (data?.hasPriorMatchEvidence === true) setPriorMatchPreview('likely')
+        else if (data?.hasPriorMatchEvidence === false) setPriorMatchPreview('unlikely')
+        else setPriorMatchPreview('unknown')
       })
-      .catch(() => setCe3Preview('unknown'))
-      .finally(() => setCe3Checking(false))
+      .catch(() => setPriorMatchPreview('unknown'))
+      .finally(() => setPriorMatchChecking(false))
   }, [selectedOrderId, profileId])
 
   async function handleSubmit(e: React.FormEvent) {
@@ -102,7 +102,7 @@ function EvidenceNewForm({ profileId }: { profileId: string }) {
     { label: 'Customer identity record', available: true },
     { label: 'Order history (all known orders)', available: true },
     { label: 'Identity signals observed', available: true },
-    { label: 'Prior matching transactions (if any)', available: ce3Preview === 'likely', pending: ce3Preview === 'unknown' },
+    { label: 'Prior matching transactions (if any)', available: priorMatchPreview === 'likely', pending: priorMatchPreview === 'unknown' },
     { label: 'Merchant notes', available: !!notes.trim(), optional: true },
   ]
 
@@ -133,7 +133,7 @@ function EvidenceNewForm({ profileId }: { profileId: string }) {
         Organises identity signal data from your records that may be relevant when preparing a chargeback response. Unauth surfaces the signal history — your payment processor or acquirer determines what qualifies as valid dispute evidence.
       </p>
       <p className="text-caption mb-8 rounded-md border px-3 py-2" style={{ color: 'var(--text-subtle)', borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)' }}>
-        Visa CE 3.0 requirements can change. Verify eligibility and submission requirements with your acquirer or processor before use.
+        This export presents identity match data for your review. How you use it in a dispute is at your discretion — follow your acquirer or processor guidelines.
       </p>
 
       {/* Loading state */}
@@ -215,25 +215,25 @@ function EvidenceNewForm({ profileId }: { profileId: string }) {
             )}
           </div>
 
-          {/* CE3.0 eligibility banner */}
+          {/* Prior match preview */}
           {selectedOrderId && (
             <div>
-              {ce3Checking ? (
+              {priorMatchChecking ? (
                 <div className="rounded-lg p-3 flex items-center gap-2" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-subtle)' }}>
                   <div className="w-3 h-3 rounded-full border border-t-transparent animate-spin" style={{ borderColor: 'var(--border)', borderTopColor: 'var(--accent)' }} />
-                  <p className="text-caption" style={{ color: 'var(--text-muted)' }}>Checking CE3.0 eligibility…</p>
+                  <p className="text-caption" style={{ color: 'var(--text-muted)' }}>Checking for prior identity matches…</p>
                 </div>
-              ) : ce3Preview === 'likely' ? (
+              ) : priorMatchPreview === 'likely' ? (
                 <div className="rounded-lg p-3 flex items-start gap-2.5" style={{ background: 'var(--success-bg)', border: '1px solid var(--success-bd)' }}>
                   <span style={{ color: 'var(--success)' }}>✓</span>
                   <div>
                     <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Prior matching transactions found</p>
                     <p className="text-caption mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                      This customer has matching prior transactions in your records that may be relevant to a CE 3.0 response. Verify requirements with your acquirer or processor before submission.
+                      This customer has prior orders in your records that share identity signals with the selected order.
                     </p>
                   </div>
                 </div>
-              ) : ce3Preview === 'unlikely' ? (
+              ) : priorMatchPreview === 'unlikely' ? (
                 <div className="rounded-lg p-3 flex items-start gap-2.5" style={{ background: 'var(--warning-bg)', border: '1px solid var(--warning-bd)' }}>
                   <span style={{ color: 'var(--warning)' }}>⚠</span>
                   <div>
@@ -345,8 +345,8 @@ function EvidenceNewForm({ profileId }: { profileId: string }) {
   )
 }
 
-export default async function EvidenceNewPage({ params }: PageProps) {
-  const { id } = await params
+export default function EvidenceNewPage({ params }: PageProps) {
+  const { id } = use(params)
   return (
     <Suspense fallback={<div className="p-8 text-sm" style={{ color: 'var(--text-muted)' }}>Loading…</div>}>
       <EvidenceNewForm profileId={id} />

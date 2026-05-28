@@ -28,6 +28,8 @@ export interface ParsedCsvRow {
 export interface FraudTransactionInsert {
   job_id: string;
   order_id: string;
+  /** Order date from the merchant CSV (ISO 8601). Null when unparseable/absent. */
+  order_date?: string | null;
   customer_email: string;
   customer_name: string;
   shipping_address: string;
