@@ -87,6 +87,11 @@ describe('Static security guard: service-role routes must be auth-gated', () => 
       const hasHmacAuth =
         content.includes('HMAC') ||
         content.includes('x-internal-secret') ||
+        content.includes('x-unauth-internal-secret') ||
+        content.includes('verifySupportIngestSecret') ||
+        content.includes('verifyGorgiasSupportWebhookSecret') ||
+        content.includes('x-unauth-gorgias-secret') ||
+        content.includes('x-gorgias-webhook-secret') ||
         content.includes('verifyInternalToken') ||
         content.includes('internal-auth');
       if (hasHmacAuth) continue;

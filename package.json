@@ -43,6 +43,9 @@
     "tune:overnight": "node scripts/tune/start.mjs",
     "backfill:shopify-profiles": "ts-node --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' scripts/backfill-customer-profile-identities.ts",
     "smoke:support-intake": "ts-node --project tsconfig.scripts.json --transpile-only -r tsconfig-paths/register scripts/smoke-support-intake.ts",
+    "post:support-ingest-fixture": "ts-node --project tsconfig.scripts.json --transpile-only -r tsconfig-paths/register scripts/post-support-ingest-fixture.ts",
+    "post:gorgias-webhook-fixture": "ts-node --project tsconfig.scripts.json --transpile-only -r tsconfig-paths/register scripts/post-gorgias-webhook-fixture.ts",
+    "create:gorgias-support-connection": "ts-node --project tsconfig.scripts.json --transpile-only -r tsconfig-paths/register scripts/create-gorgias-support-connection.ts",
     "build:extension": "cd extensions/chrome && npm install && npm run build"
   },
   "dependencies": {

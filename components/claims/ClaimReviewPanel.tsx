@@ -17,6 +17,8 @@ import { formatRiskScore } from '@/lib/utils/format';
 import { buildCustomerResponse } from '@/lib/claims/customerResponses';
 import { claimEventLabel, claimEventSummary, claimHasEvidence } from '@/lib/claims/events';
 import { pickPriorityClaim } from '@/lib/claims/priority';
+import SupportCaseContextList from '@/components/support/SupportCaseContextList';
+import type { PublicSupportCaseContext } from '@/lib/support/intake/supportCaseReadModel';
 import {
   ACTIVE_CLAIM_STATUSES,
   formatClaimAge,
@@ -509,6 +511,7 @@ export default function ClaimReviewPanel({ profileId, initialClaimId }: { profil
   const [snoozeDays, setSnoozeDays] = useState('2');
   const [snoozeReason, setSnoozeReason] = useState('Awaiting carrier or customer evidence');
   const viewedAttemptedRef = useRef<Set<string>>(new Set());
+  const [supportCases, setSupportCases] = useState<PublicSupportCaseContext[]>([]);
 
   useEffect(() => {
     fetch(`/api/customers/${profileId}`).then(r => r.ok ? r.json() : null).then((x) => setData(x)).catch(() => {});
@@ -614,6 +617,17 @@ export default function ClaimReviewPanel({ profileId, initialClaimId }: { profil
   const order = useMemo(() => data?.orderHistory?.find((o: any) => o.orderId === selectedOrderId), [data, selectedOrderId]);
   const selectedClaim = useMemo(() => history.find((h) => h.id === claimId) ?? null, [claimId, history]);
   const activeClaimId = selectedClaim?.id ?? claimId;
+
+  useEffect(() => {
+    if (!activeClaimId) {
+      setSupportCases([]);
+      return;
+    }
+    fetch(`/api/claims/${encodeURIComponent(activeClaimId)}/support-context`)
+      .then((response) => (response.ok ? response.json() : null))
+      .then((payload) => setSupportCases(payload?.support_cases ?? []))
+      .catch(() => setSupportCases([]));
+  }, [activeClaimId]);
   const selectedClaimOutcomes = useMemo(() => selectedClaim?.outcomes ?? [], [selectedClaim]);
   const latestOutcome = selectedClaimOutcomes[0] ?? selectedClaim?.latest_outcome ?? null;
   const previousOutcome = selectedClaimOutcomes[1] ?? null;
@@ -1280,6 +1294,8 @@ export default function ClaimReviewPanel({ profileId, initialClaimId }: { profil
               </div>
             </section>
           )}
+
+          <SupportCaseContextList cases={supportCases} />
 
           {/* Timeline / audit trail */}
           <section className="rounded-xl p-4 border" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}>

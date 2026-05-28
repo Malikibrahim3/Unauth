@@ -13,6 +13,7 @@ const envSchema = z.object({
   UPSTASH_REDIS_REST_URL: z.string().url().optional(),
   UPSTASH_REDIS_REST_TOKEN: z.string().min(1).optional(),
   INTERNAL_HMAC_SECRET: z.string().min(32).optional(),
+  INTERNAL_SUPPORT_INGEST_SECRET: z.string().min(32).optional(),
   PDF_SIGNING_SECRET: z.string().min(32).optional(),
   PUBLIC_INTAKE_MERCHANT_ID: z.string().uuid().optional(),
   VERCEL_ENV: z.string().optional(),
@@ -30,6 +31,9 @@ const envSchema = z.object({
   SHOPIFY_API_KEY: z.string().min(1).optional(),
   SHOPIFY_API_SECRET: z.string().min(1).optional(),
   SHOPIFY_WEBHOOK_SECRET: z.string().min(1).optional(),
+  GORGIAS_SUPPORT_WEBHOOK_SECRET: z.string().min(32).optional(),
+  GORGIAS_SUPPORT_TEST_MERCHANT_ID: z.string().uuid().optional(),
+  GORGIAS_SUPPORT_ALLOW_ENV_MERCHANT: z.string().optional(),
 }).superRefine((env, ctx) => {
   if (!env.NEXT_PUBLIC_SUPABASE_ANON_KEY && !env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) {
     ctx.addIssue({

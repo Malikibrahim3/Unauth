@@ -26,6 +26,7 @@ import {
 import { buildBehavioralNarrative } from '@/lib/customers/narrative';
 import WatchlistStarButton from '@/components/audit/WatchlistStarButton';
 import CustomerNotes from '@/components/audit/CustomerNotes';
+import CustomerSupportCasesSection from '@/components/customers/CustomerSupportCasesSection';
 import { ConfidenceBadge } from '@/components/ui/ConfidenceBadge';
 import { riskLevelToNewGrade } from '@/lib/confidence';
 import { RiskScoreBadge } from '@/components/ui/RiskScoreBadge';
@@ -974,6 +975,8 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
               </ul>
             )}
           </SectionCard>
+
+          <CustomerSupportCasesSection profileId={profile.id} />
 
           <SectionCard title="Merchant notes">
             <CustomerNotes customerProfileId={profile.id} />
