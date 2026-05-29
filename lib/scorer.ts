@@ -99,6 +99,18 @@ export interface ScoredCluster {
   behavioural_flags: BehaviouralFlag[];
   behavioural_score: number;
 
+  /**
+   * Whether this cluster should be surfaced to the merchant for review.
+   * Review-worthy = a real identity link (definite/probable/possible — NOT a
+   * weak IP-only link) AND at least one suspicious-behaviour signal
+   * (behavioural_score > 0). A high-confidence identity match with NO suspicious
+   * behaviour (e.g. a loyal repeat customer) is a correct identity match but NOT
+   * review-worthy — surfacing it would be a false positive. Conversely a weaker
+   * (possible) identity link paired with clear fraud behaviour IS worth a look.
+   * The identity grade itself remains behaviour-independent.
+   */
+  review_worthy: boolean;
+
   // CE 3.0
   ce3_eligible: boolean;
   ce3_qualifying_transactions: CE3QualifyingPair[];
@@ -522,6 +534,9 @@ export function scoreCluster(input: ScoreClusterInput): ScoredCluster {
     recommended_action: buildRecommendedAction(grade, flags, hasChargeback),
     behavioural_flags: flags,
     behavioural_score: behaviouralScore,
+    review_worthy:
+      (grade === 'definite' || grade === 'probable' || grade === 'possible') &&
+      behaviouralScore > 0,
     ce3_eligible: ce3.eligible,
     ce3_qualifying_transactions: ce3.pairs,
   };

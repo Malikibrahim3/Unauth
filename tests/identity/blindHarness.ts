@@ -9,6 +9,7 @@ import { csvRowSchema, type CsvRow } from '../../lib/csv/schema';
 import { normaliseRow } from '../../lib/csv/normalise';
 import { normaliseAddress } from '../../lib/identity/normalise';
 import { linkIdentities, type LinkerOrderInput, type LinkedCluster } from '../../lib/linker';
+import { expandSuspiciousClusters, type RowBehaviourFlags } from '../../lib/processing/clusterExpansion';
 import { scoreAllClusters, scoreIdentityFromSignals, type ScorerOrder } from '../../lib/scorer';
 import { computeAuditSummary } from '../../lib/analysis/auditSummary';
 
@@ -33,6 +34,10 @@ export interface ActualIdentityRow {
   identity_score: number | null;
   identity_confidence_grade: string | null;
   signals_matched: string[];
+  /** Cluster behavioural score (0–40); 0 = no suspicious behaviour. */
+  behavioural_score: number;
+  /** Product review flag: strong identity match AND suspicious behaviour. */
+  review_worthy: boolean;
 }
 
 export interface HarnessResult {
@@ -135,6 +140,73 @@ function toLinkerInput(row: CsvRow): LinkerOrderInput {
   };
 }
 
+function toBoolFlag(v: unknown): boolean {
+  if (typeof v === 'boolean') return v;
+  if (typeof v === 'string') {
+    const lv = v.trim().toLowerCase();
+    return lv === 'true' || lv === '1' || lv === 'yes' || lv === 'y';
+  }
+  return false;
+}
+
+/**
+ * Reproduce the production clustering pipeline (worker.ts): run
+ * expandSuspiciousClusters after the core linker and merge the results.
+ *   - promotedClusters: new identity-only clusters (Phase 1) are added.
+ *   - additionalClusterAssignments: rows expanded into existing clusters
+ *     (Phase 2) are appended, but only if not already in a seed cluster.
+ * Expansion is identity-only by product contract (behaviour is not consulted),
+ * so the behaviour map below is built only to satisfy the signature.
+ */
+function applyClusterExpansion(
+  linkerResult: ReturnType<typeof linkIdentities>,
+  linkerInputs: LinkerOrderInput[],
+  validRows: CsvRow[],
+): LinkedCluster[] {
+  const behaviourMap = new Map<string, RowBehaviourFlags>();
+  const nameMap = new Map<string, string>();
+  for (const row of validRows) {
+    behaviourMap.set(row.order_id, {
+      order_id: row.order_id,
+      refund_requested: toBoolFlag((row as Record<string, unknown>).refund_requested),
+      chargeback_filed: toBoolFlag(
+        (row as Record<string, unknown>).chargeback_filed ?? (row as Record<string, unknown>).chargeback_dispute,
+      ),
+      order_total: parseFloat(String((row as Record<string, unknown>).order_total ?? '0')) || 0,
+    });
+    nameMap.set(row.order_id, (row as Record<string, unknown>).customer_name as string ?? '');
+  }
+
+  const expansion = expandSuspiciousClusters(
+    linkerResult.clusters,
+    linkerResult.candidatePairs,
+    linkerInputs,
+    behaviourMap,
+    nameMap,
+  );
+
+  const byId = new Map<string, LinkedCluster>(
+    linkerResult.clusters.map((c) => [c.cluster_id, { ...c, order_ids: [...c.order_ids] }]),
+  );
+  const alreadyClustered = new Set<string>();
+  for (const c of linkerResult.clusters) for (const id of c.order_ids) alreadyClustered.add(id);
+
+  for (const [orderId, clusterId] of expansion.additionalClusterAssignments) {
+    if (alreadyClustered.has(orderId)) continue;
+    const cluster = byId.get(clusterId);
+    if (cluster && !cluster.order_ids.includes(orderId)) {
+      cluster.order_ids.push(orderId);
+      alreadyClustered.add(orderId);
+    }
+  }
+  for (const promoted of expansion.promotedClusters) {
+    if (!byId.has(promoted.cluster_id)) {
+      byId.set(promoted.cluster_id, { ...promoted, order_ids: [...promoted.order_ids] });
+    }
+  }
+  return Array.from(byId.values());
+}
+
 function identityByOrder(clusters: LinkedCluster[], ordersById: Map<string, ScorerOrder>): Map<string, ActualIdentityRow> {
   const clusterScores = scoreAllClusters(clusters, ordersById);
   const scoresByCluster = new Map(clusterScores.map((score) => [score.cluster_id, score]));
@@ -145,6 +217,11 @@ function identityByOrder(clusters: LinkedCluster[], ordersById: Map<string, Scor
     const fallback = scoreIdentityFromSignals(cluster.signals_matched);
     const grade = scored?.confidence_grade?.toLowerCase() ?? fallback.identity_confidence_grade;
     const identityScore = scored?.review_priority_score ?? (fallback.identity_confidence_grade ? fallback.identity_score : null);
+    const behaviouralScore = scored?.behavioural_score ?? 0;
+    // Review-worthy mirrors the product flag: strong identity match AND
+    // suspicious behaviour. The fallback path has no behavioural data → not
+    // review-worthy.
+    const reviewWorthy = scored?.review_worthy ?? false;
     for (const orderId of cluster.order_ids) {
       out.set(orderId, {
         order_id: orderId,
@@ -152,6 +229,8 @@ function identityByOrder(clusters: LinkedCluster[], ordersById: Map<string, Scor
         identity_score: identityScore,
         identity_confidence_grade: grade,
         signals_matched: cluster.signals_matched,
+        behavioural_score: behaviouralScore,
+        review_worthy: reviewWorthy,
       });
     }
   }
@@ -176,15 +255,24 @@ export async function runBlindDataset(dataset: string, fileName = `${dataset}.cs
   // and scorer below consume raw canonical fields like the worker's public modules.
   void normalised;
 
-  const linkerResult = linkIdentities(validRows.map(toLinkerInput));
+  const linkerInputs = validRows.map(toLinkerInput);
+  const linkerResult = linkIdentities(linkerInputs);
   const ordersById = new Map(validRows.map((row) => [row.order_id, toScorerOrder(row)]));
-  const clustered = identityByOrder(linkerResult.clusters, ordersById);
+  // Mirror the production CSV pipeline (lib/processing/worker.ts): after the
+  // core linker, run candidate-group promotion + identity-signal expansion, then
+  // score the MERGED cluster set. Without this the harness under-clusters
+  // (e.g. phone-bridge fraud, linked only via a single strong signal, never
+  // forms a seed cluster) and under-reports recall relative to production.
+  const mergedClusters = applyClusterExpansion(linkerResult, linkerInputs, validRows);
+  const clustered = identityByOrder(mergedClusters, ordersById);
   const actualRows = validRows.map((row) => clustered.get(row.order_id) ?? {
     order_id: row.order_id,
     cluster_id: null,
     identity_score: null,
     identity_confidence_grade: null,
     signals_matched: [],
+    behavioural_score: 0,
+    review_worthy: false,
   });
   const actualByOrderId = new Map(actualRows.map((row) => [row.order_id, row]));
 
@@ -197,13 +285,17 @@ export async function runBlindDataset(dataset: string, fileName = `${dataset}.cs
     cluster_id: row.cluster_id,
   })));
 
+  // "Flagged" = surfaced to the merchant for review. This mirrors the product
+  // definition: a strong identity match (probable/definite) AND suspicious
+  // behaviour (behavioural_score > 0). A high-confidence identity match with no
+  // suspicious behaviour (loyal repeat customer) is NOT review-worthy.
   const expectedFlagged = answerRows.filter((row) => row._expected_should_flag === 'true');
-  const actualFlagged = actualRows.filter((row) => row.identity_confidence_grade !== null);
+  const actualFlagged = actualRows.filter((row) => row.review_worthy);
   const falsePositiveIds = actualFlagged
     .filter((row) => answerByOrderId.get(row.order_id)?._expected_should_flag !== 'true')
     .map((row) => row.order_id);
   const falseNegativeIds = expectedFlagged
-    .filter((row) => actualByOrderId.get(row.order_id)?.identity_confidence_grade === null)
+    .filter((row) => !actualByOrderId.get(row.order_id)?.review_worthy)
     .map((row) => row.order_id);
   const distinctAddresses = new Set(validRows.map((row) => normaliseAddress((row as any).shipping_address)).filter(Boolean)).size;
   const clusterSizes = new Map<string, number>();
@@ -224,7 +316,7 @@ export async function runBlindDataset(dataset: string, fileName = `${dataset}.cs
     const bucket = scenarioOutcomes[scenario] ?? { total: 0, expected: 0, actual: 0, falsePositives: 0, falseNegatives: 0 };
     bucket.total++;
     const expected = answer._expected_should_flag === 'true';
-    const flagged = actual?.identity_confidence_grade != null;
+    const flagged = actual?.review_worthy ?? false;
     if (expected) bucket.expected++;
     if (flagged) bucket.actual++;
     if (!expected && flagged) bucket.falsePositives++;

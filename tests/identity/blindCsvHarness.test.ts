@@ -15,7 +15,10 @@ describe('blind merchant CSV harness', () => {
     expect(result.diagnostics.rowsFetched).toBe(result.expectedSummary.totalRows);
     expect(result.diagnostics.falseNegativeIds).toEqual([]);
     expect(result.diagnostics.falsePositiveIds).toEqual([]);
-    expect(result.summary.flaggedTransactions).toBe(result.expectedSummary.expectedFlaggedRows);
+    // "Should flag" = review-worthy (identity match + suspicious behaviour) =
+    // diagnostics.actualFlagged. summary.flaggedTransactions is a different
+    // metric (raw identity-match count, behaviour-independent).
+    expect(result.diagnostics.actualFlagged).toBe(result.expectedSummary.expectedFlaggedRows);
     expect(result.diagnostics.distinctAddresses).toBeGreaterThanOrEqual(result.expectedSummary.acceptance.minDistinctNormalizedAddresses);
     expect(result.diagnostics.nullScoreWithCluster).toEqual([]);
   }, 60_000);
