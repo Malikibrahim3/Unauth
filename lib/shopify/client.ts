@@ -1,8 +1,9 @@
 import '@shopify/shopify-api/adapters/node';
 import { ApiVersion, shopifyApi } from '@shopify/shopify-api';
+import { env } from '@/lib/utils/env';
 
-const apiKey = process.env.SHOPIFY_API_KEY;
-const apiSecretKey = process.env.SHOPIFY_API_SECRET;
+const apiKey = env.SHOPIFY_API_KEY;
+const apiSecretKey = env.SHOPIFY_API_SECRET;
 
 if (!apiKey || !apiSecretKey) {
   throw new Error('Missing SHOPIFY_API_KEY or SHOPIFY_API_SECRET');

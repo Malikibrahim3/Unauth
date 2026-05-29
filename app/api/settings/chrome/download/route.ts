@@ -6,6 +6,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { withRequestLogging } from '@/lib/log';
+import { env } from '@/lib/utils/env';
 
 export const dynamic = 'force-dynamic';
 
@@ -43,7 +44,7 @@ async function GETHandler() {
     .is('revoked_at', null);
 
   if (countError) {
-    return NextResponse.json({ error: countError.message }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to load API keys' }, { status: 500 });
   }
 
   if (!count || count < 1) {
@@ -67,14 +68,41 @@ async function GETHandler() {
   }
 
   const manifestPath = path.join(distDir, 'manifest.json');
+  let manifestRaw: string;
   try {
-    await access(manifestPath);
+    manifestRaw = await readFile(manifestPath, 'utf8');
   } catch {
     return NextResponse.json(
       {
         error:
           'Invalid extension build (manifest.json missing). Run npm run build:extension and retry.',
       },
+      { status: 503 }
+    );
+  }
+
+  // Guard: ensure the baked API base matches the current deployment URL.
+  // If NEXT_PUBLIC_APP_URL has changed since the last build, the extension
+  // would silently fail (host_permissions mismatch). Fail fast instead.
+  try {
+    const manifest = JSON.parse(manifestRaw) as { host_permissions?: string[] };
+    const bakedOrigin = (manifest.host_permissions ?? [])
+      .find((p) => p.startsWith('http'))
+      ?.replace(/\/\*$/, '');
+    const expectedOrigin = env.NEXT_PUBLIC_APP_URL.replace(/\/+$/, '');
+    if (bakedOrigin && bakedOrigin !== expectedOrigin) {
+      return NextResponse.json(
+        {
+          error:
+            `Extension build is stale: it targets ${bakedOrigin} but the app is deployed at ${expectedOrigin}. ` +
+            'Run npm run build:extension from the project root to rebuild, then redeploy.',
+        },
+        { status: 503 }
+      );
+    }
+  } catch {
+    return NextResponse.json(
+      { error: 'Invalid extension build (manifest.json unreadable). Run npm run build:extension and retry.' },
       { status: 503 }
     );
   }

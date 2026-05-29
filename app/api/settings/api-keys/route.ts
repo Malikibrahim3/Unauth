@@ -53,7 +53,7 @@ async function GETHandler() {
   };
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to load API keys' }, { status: 500 });
   }
 
   return NextResponse.json({ keys: data ?? [] });
@@ -98,7 +98,7 @@ async function POSTHandler(req: NextRequest) {
     .single();
 
   if (error || !inserted) {
-    return NextResponse.json({ error: error?.message ?? 'Failed to create API key' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to create API key' }, { status: 500 });
   }
 
   const insertedKey = inserted as { id: string };
