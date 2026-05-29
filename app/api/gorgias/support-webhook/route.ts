@@ -6,6 +6,13 @@ import {
 
 export const runtime = 'nodejs';
 
+export function GET() {
+  return NextResponse.json({
+    ok: true,
+    message: 'Unauth Gorgias support webhook — POST events here.',
+  });
+}
+
 export async function POST(request: NextRequest) {
   let body: unknown;
   try {

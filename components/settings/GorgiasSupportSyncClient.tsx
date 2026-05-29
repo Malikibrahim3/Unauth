@@ -266,17 +266,30 @@ export default function GorgiasSupportSyncClient({ canManage }: Props) {
         </div>
 
         <ol className="list-decimal space-y-2 pl-5 text-sm" style={{ color: 'var(--text-muted)' }}>
-          <li>Open Gorgias HTTP integration / webhooks</li>
-          <li>Set method POST</li>
-          <li>Paste the webhook URL</li>
           <li>
-            Add header <code>{secret.headerName}</code> with this secret
+            Log into Gorgias → click <strong>Settings</strong> in the left sidebar → click{' '}
+            <strong>Apps &amp; Plugins</strong> → click <strong>HTTP Integration</strong> → click{' '}
+            <strong>Add HTTP Integration</strong>.
           </li>
           <li>
-            Include account id/domain header if needed:{' '}
-            <code>x-gorgias-account-id</code> or <code>x-gorgias-domain</code>
+            In the <strong>URL</strong> field, paste the webhook URL above.
           </li>
-          <li>Save and send a test event</li>
+          <li>
+            Set the <strong>Request type</strong> (method) to <strong>POST</strong>.
+          </li>
+          <li>
+            Under <strong>Headers</strong>, add a new header: set the name to{' '}
+            <code>{secret.headerName}</code> and the value to the secret you copied above.
+          </li>
+          <li>
+            Still under Headers, add a second header: name{' '}
+            <code>x-gorgias-account-id</code> with your numeric Gorgias account ID as the value
+            (visible in your Gorgias URL, e.g. <code>12345</code>).
+          </li>
+          <li>
+            Click <strong>Save</strong>, then use the <strong>Send test</strong> button to confirm
+            Unauth receives the event.
+          </li>
         </ol>
 
         <button
@@ -343,6 +356,10 @@ export default function GorgiasSupportSyncClient({ canManage }: Props) {
               onChange={(e) => setAccountOrDomain(e.target.value)}
               disabled={!canManage || busy}
             />
+            <p className="mt-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+              This is your Gorgias subdomain — found in your browser URL when logged into Gorgias.
+              If your URL is <code>acme.gorgias.com</code>, enter <code>acme</code> or <code>acme.gorgias.com</code>.
+            </p>
           </div>
           <div>
             <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
@@ -361,6 +378,10 @@ export default function GorgiasSupportSyncClient({ canManage }: Props) {
               disabled={!canManage || busy}
             />
           </div>
+          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+            This creates a webhook so Gorgias sends Unauth a copy of each support ticket, allowing
+            us to match refund and missing parcel claims to customer profiles automatically.
+          </p>
           <button
             type="submit"
             disabled={!canManage || busy}
