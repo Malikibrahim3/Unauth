@@ -66,12 +66,6 @@ const MEDIUM_SIGNALS = new Set<LinkerSignal>(['ip', 'postcode']);
  */
 const CORPORATE_IP_THRESHOLD = 5;
 
-/**
- * Minimum number of suspicious-behaviour rows in a candidate-only group
- * before we promote it to a seed cluster.
- */
-const MIN_SUSPICIOUS_IN_CANDIDATE_GROUP = 2;
-
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------

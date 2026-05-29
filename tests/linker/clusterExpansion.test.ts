@@ -144,7 +144,7 @@ describe('Phase 1: candidate-group promotion — ORD-225258 (card+postcode clust
 // Case 2 — ORD-633229: ip+postcode expansion from Bell seed cluster
 // ---------------------------------------------------------------------------
 
-describe('Phase 2: ip+postcode expansion — ORD-633229 (Lina Cross)', () => {
+describe('Phase 2 conservative guard: ip+postcode-only does NOT expand — ORD-633229 (Lina Cross)', () => {
   /**
    * Bell seed cluster (ORD-875935 + ORD-661713) was linked by the core linker
    * on card+ip+postcode (score=30). ORD-633229 shares ip+postcode with the
@@ -190,16 +190,19 @@ describe('Phase 2: ip+postcode expansion — ORD-633229 (Lina Cross)', () => {
     names,
   );
 
-  it('assigns ORD-633229 to the Bell seed cluster', () => {
-    expect(result.additionalClusterAssignments.get('ORD-633229')).toBe('bell-seed-cluster');
+  // ip+postcode are BOTH medium signals (no strong signal), and ORD-633229's
+  // card differs from the seed. Per the conservative expansion contract
+  // ("a single soft signal NEVER expands"; expansion requires ≥1 strong
+  // signal), location-only overlap must NOT pull a different-card order into a
+  // fraud seed cluster — exactly like the ip-only / postcode-only / household
+  // guards below. This prevents false positives from shared locations.
+  it('does NOT expand ORD-633229 into the seed on ip+postcode alone (no strong signal)', () => {
+    expect(result.additionalClusterAssignments.has('ORD-633229')).toBe(false);
   });
 
-  it('generates a debug report for ORD-633229', () => {
+  it('does not produce an expansion assignment for a location-only match', () => {
     const report = result.debugReports.find((r) => r.missed_order_id === 'ORD-633229');
-    expect(report).toBeDefined();
-    expect(report!.nearest_cluster_id).toBe('bell-seed-cluster');
-    expect(report!.reason_not_flagged_before[0]).toContain('ip+postcode pairs score 0');
-    expect(report!.recommended_fix).toContain('medium signals');
+    expect(report).toBeUndefined();
   });
 
   it('does NOT expand ORD-868570 (ip only, no postcode)', () => {
@@ -390,11 +393,16 @@ describe('FP guard: corporate IP (≥5 orders sharing same ip) suppresses ip-onl
 });
 
 // ---------------------------------------------------------------------------
-// False-positive guard: candidate group with only 1 suspicious row not promoted
+// Phase 1 promotion is identity-only (PRODUCT CONTRACT: behaviour is NOT
+// consulted). A candidate group whose orders share a STRONG signal is promoted
+// regardless of refund/chargeback behaviour. Whether the resulting cluster is
+// then SURFACED for review is gated on behaviour downstream (ScoredCluster
+// .review_worthy), not here.
 // ---------------------------------------------------------------------------
 
-describe('Phase 1 guard: candidate group needs ≥2 suspicious rows to promote', () => {
-  // Two orders share card+postcode, only 1 is suspicious → should NOT promote
+describe('Phase 1 candidate-group promotion is identity-only (no behaviour gate)', () => {
+  // Two orders share card (a STRONG signal) + postcode. Only 1 is "suspicious"
+  // behaviourally, but promotion ignores behaviour → the group IS promoted.
   const inputs: LinkerOrderInput[] = [
     makeInput({ order_id: 'X', card_last4: '1234', card_bin: '411111', postcode: 'EC1A1BB' }),
     makeInput({ order_id: 'Y', card_last4: '1234', card_bin: '411111', postcode: 'EC1A1BB' }),
@@ -405,16 +413,17 @@ describe('Phase 1 guard: candidate group needs ≥2 suspicious rows to promote',
   ];
 
   const beh = behaviourMap([
-    makeFlags('X', { refund_requested: true }),  // only 1 suspicious
-    makeFlags('Y'),                              // not suspicious
+    makeFlags('X', { refund_requested: true }),  // behaviour is not consulted
+    makeFlags('Y'),
   ]);
 
   const result = expandSuspiciousClusters(
     [], candidatePairs, inputs, beh, nameMap([['X', 'X'], ['Y', 'Y']]),
   );
 
-  it('does not promote a two-order group with only 1 suspicious row', () => {
-    expect(result.promotedClusters).toHaveLength(0);
+  it('promotes a two-order group sharing a strong signal regardless of behaviour', () => {
+    expect(result.promotedClusters).toHaveLength(1);
+    expect(result.promotedClusters[0].order_ids.sort()).toEqual(['X', 'Y']);
   });
 });
 
