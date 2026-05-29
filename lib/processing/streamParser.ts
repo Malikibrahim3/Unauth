@@ -40,6 +40,9 @@ export interface StreamParseResult {
   hasGroundTruth: boolean;
   /** Raw CSV headers that did not map to any known canonical field. Non-fatal — surface as a warning. */
   unmappedHeaders: string[];
+  /** True when the upload exceeded MAX_ROWS and parsing was capped. Surface to the
+   *  merchant so a large file is not silently truncated. */
+  truncated: boolean;
 }
 
 /**
@@ -75,6 +78,7 @@ export async function streamParseCsv(
   let rows: ParsedCsvRow[] = [];
   let chunkIndex = 0;
   let totalRowCount = 0;
+  let truncated = false;
   let parsedMeta: Papa.ParseMeta | null = null;
   let firstRowKeys: string[] | null = null;
 
@@ -123,6 +127,15 @@ export async function streamParseCsv(
       // memory bound and risking out-of-order chunk indices.
       step: (result: Papa.ParseStepResult<ParsedCsvRow>, parser: Papa.Parser) => {
         if (rows.length >= MAX_ROWS) {
+          // Cap reached — abort parsing. Flag it so the caller can warn the
+          // merchant that rows beyond MAX_ROWS were not ingested (rather than
+          // silently dropping them).
+          if (!truncated) {
+            truncated = true;
+            console.warn(
+              `[streamParser] CSV exceeded MAX_ROWS (${MAX_ROWS}); parsing capped — remaining rows were not ingested.`,
+            );
+          }
           parser.abort();
           return;
         }
@@ -214,5 +227,6 @@ export async function streamParseCsv(
     totalChunks,
     hasGroundTruth,
     unmappedHeaders: unknownColumns,
+    truncated,
   };
 }

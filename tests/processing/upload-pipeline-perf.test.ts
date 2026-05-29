@@ -49,6 +49,11 @@ function makeRecordingClient() {
   const client = {
     _calls: calls,
     from: (table: string) => builder(table),
+    // Cross-merchant lookup tries an RPC (search_cross_merchant_profiles) first
+    // and only falls back to targeted customer_profiles `.or(cs…)` queries when
+    // the RPC errors. Force the RPC to fail so this test exercises — and pins
+    // the invariant on — that fallback path.
+    rpc: () => Promise.resolve({ data: null, error: { message: 'rpc unavailable in perf test (forces fallback)' } }),
   };
   return client as unknown as SupabaseClient & { _calls: typeof calls };
 }

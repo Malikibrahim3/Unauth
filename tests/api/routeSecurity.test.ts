@@ -96,6 +96,20 @@ describe('Static security guard: service-role routes must be auth-gated', () => 
         content.includes('internal-auth');
       if (hasHmacAuth) continue;
 
+      // Routes legitimately protected by non-session mechanisms: public API key,
+      // widget token, single-use signed download token, OAuth handshake, or cron
+      // secret. These do not use auth.getUser()/requirePermission() but are gated.
+      const hasApiKeyAuth = content.includes('validateApiKey');
+      const hasWidgetAuth = content.includes('validateWidgetToken');
+      const hasSignedTokenAuth =
+        content.includes('parseAndVerifySignedToken') || content.includes('signedAccess');
+      const hasOAuthHandshake =
+        content.includes('shopify_oauth_state') || content.includes('verifyOAuthHmac');
+      const hasCronAuth = content.includes('CRON_SECRET');
+      if (hasApiKeyAuth || hasWidgetAuth || hasSignedTokenAuth || hasOAuthHandshake || hasCronAuth) {
+        continue;
+      }
+
       // Merchant routes should have both checks, but some routes are explicitly
       // protected through other mechanisms (cron secret, internal HMAC, public intake).
       const hasUserAuth = content.includes('auth.getUser');
@@ -403,17 +417,17 @@ describe('Inbox page — review population semantics', () => {
     expect(content).toContain('createServiceClient');
   });
 
-  it('inbox page renders status tabs for case triage', () => {
+  it('inbox page renders case-status navigation for triage', () => {
     const content = fs.readFileSync(
       path.join(process.cwd(), 'app/(app)/inbox/page.tsx'),
       'utf-8'
     );
-    expect(content).toContain('All');
-    expect(content).toContain('New');
-    expect(content).toContain('Review');
-    expect(content).toContain('Contacted');
-    expect(content).toContain('Resolved');
-    expect(content).toContain('Cleared');
+    // The inbox renders a "Case status" navigation for triage across the
+    // active queue, claims, and resolved history.
+    expect(content).toContain('aria-label="Case status"');
+    expect(content).toContain('Active work');
+    expect(content).toContain('Claims queue');
+    expect(content).toContain('Resolved history');
   });
 
   it('inbox client uses merchant-scoped customer profile links from row data', () => {

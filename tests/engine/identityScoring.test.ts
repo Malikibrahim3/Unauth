@@ -50,53 +50,56 @@ function makeCluster(
 // ---------------------------------------------------------------------------
 
 describe('scoreIdentityFromSignals', () => {
+  // Weights (lib/scorer.ts SCORER_INTERNAL_SIGNAL_WEIGHTS): card 30, phone 30,
+  // account 25, email 35, postcode 10, ip 8. Grade thresholds: definite ≥85,
+  // probable ≥65, possible ≥45, else null.
   it('["card","phone","account","email","ip"] → 100, definite', () => {
     const result = scoreIdentityFromSignals(['card', 'phone', 'account', 'email', 'ip']);
-    // 35+30+30+25+10 = 130, capped at 100
+    // 30+30+25+35+8 = 128, capped at 100
     expect(result.identity_score).toBe(100);
     expect(result.identity_confidence_grade).toBe('definite');
     expect(result.recommended_action).not.toBeNull();
   });
 
-  it('["phone","account","email","ip"] → 95, definite', () => {
+  it('["phone","account","email","ip"] → 98, definite', () => {
     const result = scoreIdentityFromSignals(['phone', 'account', 'email', 'ip']);
-    // 30+30+25+10 = 95
+    // 30+25+35+8 = 98
+    expect(result.identity_score).toBe(98);
+    expect(result.identity_confidence_grade).toBe('definite');
+  });
+
+  it('["card","phone","email"] → 95, definite', () => {
+    const result = scoreIdentityFromSignals(['card', 'phone', 'email']);
+    // 30+30+35 = 95
     expect(result.identity_score).toBe(95);
     expect(result.identity_confidence_grade).toBe('definite');
   });
 
-  it('["card","phone","email"] → 90, definite', () => {
-    const result = scoreIdentityFromSignals(['card', 'phone', 'email']);
-    // 35+30+25 = 90
-    expect(result.identity_score).toBe(90);
-    expect(result.identity_confidence_grade).toBe('definite');
-  });
-
-  it('["account","email"] → 55, possible', () => {
+  it('["account","email"] → 60, possible', () => {
     const result = scoreIdentityFromSignals(['account', 'email']);
-    // 30+25 = 55  (>= 35 possible, < 60 probable)
-    expect(result.identity_score).toBe(55);
+    // 25+35 = 60 (>= 45 possible, < 65 probable)
+    expect(result.identity_score).toBe(60);
     expect(result.identity_confidence_grade).toBe('possible');
   });
 
-  it('["card","email"] → 60, probable (exactly at threshold)', () => {
+  it('["card","email"] → 65, probable (exactly at threshold)', () => {
     const result = scoreIdentityFromSignals(['card', 'email']);
-    // 35+25 = 60 (>= 60 → probable)
-    expect(result.identity_score).toBe(60);
+    // 30+35 = 65 (>= 65 → probable)
+    expect(result.identity_score).toBe(65);
     expect(result.identity_confidence_grade).toBe('probable');
   });
 
   it('["card","phone","account","email"] → 100, definite (cap at 100)', () => {
     const result = scoreIdentityFromSignals(['card', 'phone', 'account', 'email']);
-    // 35+30+30+25 = 120, capped 100
+    // 30+30+25+35 = 120, capped 100
     expect(result.identity_score).toBe(100);
     expect(result.identity_confidence_grade).toBe('definite');
   });
 
-  it('["ip"] alone → 10, null (below possible threshold)', () => {
+  it('["ip"] alone → 8, null (below possible threshold)', () => {
     const result = scoreIdentityFromSignals(['ip']);
-    // 10 < 35 → null
-    expect(result.identity_score).toBe(10);
+    // 8 < 45 → null
+    expect(result.identity_score).toBe(8);
     expect(result.identity_confidence_grade).toBeNull();
     expect(result.recommended_action).toBeNull();
   });
@@ -109,30 +112,30 @@ describe('scoreIdentityFromSignals', () => {
 
   it('["postcode","ip"] → below threshold, null', () => {
     const result = scoreIdentityFromSignals(['postcode', 'ip']);
-    // 10+10 = 20 < 35 → null
-    expect(result.identity_score).toBe(20);
+    // 10+8 = 18 < 45 → null
+    expect(result.identity_score).toBe(18);
     expect(result.identity_confidence_grade).toBeNull();
   });
 
-  it('["email","ip"] → 35, exactly possible', () => {
+  it('["email","ip"] → 43, null (below possible threshold)', () => {
     const result = scoreIdentityFromSignals(['email', 'ip']);
-    // 25+10 = 35 >= 35 → possible
-    expect(result.identity_score).toBe(35);
-    expect(result.identity_confidence_grade).toBe('possible');
+    // 35+8 = 43 < 45 → null (email + IP alone is weak corroboration)
+    expect(result.identity_score).toBe(43);
+    expect(result.identity_confidence_grade).toBeNull();
   });
 
-  it('["phone","email"] → 55, possible', () => {
+  it('["phone","email"] → 65, probable', () => {
     const result = scoreIdentityFromSignals(['phone', 'email']);
-    // 30+25 = 55 >= 35, < 60 → possible
-    expect(result.identity_score).toBe(55);
-    expect(result.identity_confidence_grade).toBe('possible');
-  });
-
-  it('["card","account"] → 65, probable', () => {
-    const result = scoreIdentityFromSignals(['card', 'account']);
-    // 35+30 = 65 >= 60 → probable
+    // 30+35 = 65 >= 65 → probable
     expect(result.identity_score).toBe(65);
     expect(result.identity_confidence_grade).toBe('probable');
+  });
+
+  it('["card","account"] → 55, possible', () => {
+    const result = scoreIdentityFromSignals(['card', 'account']);
+    // 30+25 = 55 (>= 45, < 65) → possible
+    expect(result.identity_score).toBe(55);
+    expect(result.identity_confidence_grade).toBe('possible');
   });
 
   it('is case-insensitive', () => {
@@ -145,8 +148,8 @@ describe('scoreIdentityFromSignals', () => {
   it('ignores unknown signal names gracefully', () => {
     // Unknown signals contribute 0 weight; no crash
     const result = scoreIdentityFromSignals(['card', 'unknown_signal', 'email']);
-    // 35+0+25 = 60 → probable
-    expect(result.identity_score).toBe(60);
+    // 30+0+35 = 65 → probable
+    expect(result.identity_score).toBe(65);
     expect(result.identity_confidence_grade).toBe('probable');
   });
 });
@@ -194,20 +197,20 @@ describe('DB regression: same-identity repeat clusters', () => {
     ];
     const ordersById = new Map(orders.map((o) => [o.order_id, o]));
     const [scored] = scoreAllClusters([cluster], ordersById);
-    expect(scored.confidence_grade).toBe('DEFINITE');
+    expect(scored.confidence_grade).toBe('definite');
     expect(scored.review_priority_score).toBeGreaterThanOrEqual(85);
   });
 
   /**
    * Lisa Chan: account+email only.
-   * Should be at least "possible" (55 >= 35), never null.
+   * Should be at least "possible" (60 >= 45), never null.
    */
   it('Lisa Chan cluster: ["account","email"] → possible (not null)', () => {
     const signals = ['account', 'email'];
     const result = scoreIdentityFromSignals(signals);
     expect(result.identity_confidence_grade).not.toBeNull();
     expect(result.identity_confidence_grade).toBe('possible');
-    expect(result.identity_score).toBe(55);
+    expect(result.identity_score).toBe(60);
   });
 });
 
@@ -238,11 +241,11 @@ describe('scoreAllClusters: same-identity cluster gets DEFINITE grade', () => {
     const ordersById = new Map(orders.map((o) => [o.order_id, o]));
     const [scored] = scoreAllClusters([cluster], ordersById);
 
-    expect(scored.confidence_grade).toBe('DEFINITE');
+    expect(scored.confidence_grade).toBe('definite');
     expect(scored.review_priority_score).toBeGreaterThanOrEqual(85);
   });
 
-  it('single-signal ip-only cluster stays WEAK (hard cap)', () => {
+  it('single-signal ip-only cluster stays weak (hard cap)', () => {
     const cluster = makeCluster(['ip'], ['o1', 'o2'], 8);
     const orders = [
       makeOrder('o1', { ip_address: '1.2.3.4' }),
@@ -250,7 +253,7 @@ describe('scoreAllClusters: same-identity cluster gets DEFINITE grade', () => {
     ];
     const ordersById = new Map(orders.map((o) => [o.order_id, o]));
     const [scored] = scoreAllClusters([cluster], ordersById);
-    expect(scored.confidence_grade).toBe('WEAK');
+    expect(scored.confidence_grade).toBe('weak');
   });
 });
 
@@ -259,7 +262,10 @@ describe('scoreAllClusters: same-identity cluster gets DEFINITE grade', () => {
 // when signal score >= POSSIBLE threshold.
 // ---------------------------------------------------------------------------
 
-describe('invariant: clustered rows with score >= 35 never have null grade', () => {
+describe('invariant: clustered rows at/above the possible threshold never have null grade', () => {
+  // Combos that clear the POSSIBLE threshold (>= 45) under current weights.
+  // Note: ['email','ip'] = 43 is intentionally below 45 → null, so it is NOT
+  // a "strong" combo and is excluded here (covered explicitly above).
   const STRONG_SIGNAL_COMBOS = [
     ['card', 'phone', 'account', 'email', 'ip'],
     ['phone', 'account', 'email', 'ip'],
@@ -267,14 +273,13 @@ describe('invariant: clustered rows with score >= 35 never have null grade', () 
     ['card', 'account'],
     ['phone', 'email'],
     ['account', 'email'],
-    ['email', 'ip'],
   ];
 
   for (const signals of STRONG_SIGNAL_COMBOS) {
     it(`${JSON.stringify(signals)} has non-null grade`, () => {
       const result = scoreIdentityFromSignals(signals);
       expect(result.identity_confidence_grade).not.toBeNull();
-      expect(result.identity_score).toBeGreaterThanOrEqual(35);
+      expect(result.identity_score).toBeGreaterThanOrEqual(45);
     });
   }
 });

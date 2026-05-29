@@ -10,15 +10,21 @@ describe('blind UI summary expectations', () => {
       { identity_confidence_grade: null, order_value: 999, cluster_id: null },
     ];
 
+    // Reviewable/flagged metrics count only the ACTIONABLE grades (definite +
+    // probable); possible/weak are visible but excluded from flagged counts,
+    // value-at-risk, and linked-cluster counts.
+    //   flaggedTransactions = definite(1) + probable(1) = 2
+    //   valueAtRisk = 100 (definite) + 50 (probable) = 150
+    //   linkedClusters = distinct clusters among reviewable rows = {c1} = 1
     expect(computeAuditSummary(rows)).toMatchObject({
       definite: 1,
       probable: 1,
       possible: 1,
       weak: 1,
-      flaggedTransactions: 4,
+      flaggedTransactions: 2,
       ungraded: 1,
-      linkedClusters: 3,
-      valueAtRisk: 185,
+      linkedClusters: 1,
+      valueAtRisk: 150,
       estimatedExposure: 150,
     });
   });

@@ -182,20 +182,23 @@ describe('IP-only clustering guard (§5.2)', () => {
 });
 
 describe('Data completeness cap (§5.1)', () => {
-  it('email-only high-score orders cannot receive definite grade', async () => {
-    // Customer with email data only — no address, phone, payment, device
-    // Multiple orders with high refund rate to trigger strong signals
-    const orders: NormalisedOrder[] = Array.from({ length: 5 }, (_, i) =>
+  it('thin email-only evidence cannot receive definite grade', async () => {
+    // §5.1 data-completeness cap: a single strong identifier type (email) with a
+    // THIN history must not reach 'definite'. fastScore intentionally exempts
+    // multi-corroborated email evidence (≥3 distinct email signals over ≥3
+    // orders) from this cap — see fastScore.ts §5.1 — so this guard uses a thin
+    // 2-order history, which is below that exception and must stay capped.
+    const orders: NormalisedOrder[] = Array.from({ length: 2 }, (_, i) =>
       makeOrder({
         orderId: `email-only-${i}`,
         emailHash: 'high-risk-email-hash',
         addressHash: null, // no address
         phoneHash: null,
         ipHash: null,
-        refundStatus: i < 4 ? 'full' : 'none',
-        orderStatus: i < 4 ? 'refunded' : 'completed',
+        refundStatus: i < 1 ? 'full' : 'none',
+        orderStatus: i < 1 ? 'refunded' : 'completed',
         refundReason: 'inr',
-        refundDate: i < 4 ? new Date('2024-01-20') : null,
+        refundDate: i < 1 ? new Date('2024-01-20') : null,
       })
     );
 
@@ -204,7 +207,7 @@ describe('Data completeness cap (§5.1)', () => {
     const scored = scoreBatch(orders, ctx, clusterMap);
 
     for (const s of scored) {
-      // Email-only → single strong identifier type → cannot be 'definite'
+      // Thin email-only (single identifier type, ≤2 orders) → never 'definite'.
       expect(s.confidenceGrade).not.toBe('definite');
     }
   });

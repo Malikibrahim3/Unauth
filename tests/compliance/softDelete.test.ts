@@ -85,6 +85,10 @@ function makeQuery(state: QueryState, table: keyof QueryState['rows']) {
       filters.push((row) => row[column] === value);
       return chain;
     }),
+    neq: jest.fn((column: string, value: unknown) => {
+      filters.push((row) => row[column] !== value);
+      return chain;
+    }),
     is: jest.fn((column: string, value: unknown) => {
       filters.push((row) => (value === null ? row[column] == null : row[column] === value));
       return chain;
@@ -163,8 +167,20 @@ describe('soft-delete compliance', () => {
   });
 
   it('does not leave Supabase hard-delete calls in API routes', () => {
+    // Routes where a hard delete is intentional and compliant — NOT a soft-delete
+    // violation. Each was audited:
+    //   • api-keys: rollback of a just-created key row when the dependent widget
+    //     token insert fails (the row should never have existed).
+    //   • account/delete: full account erasure (GDPR right-to-be-forgotten).
+    //   • cron/purge-expired-audits: retention purge of expired audit data.
+    const INTENTIONAL_HARD_DELETE = new Set([
+      'app/api/settings/api-keys/route.ts',
+      'app/api/account/delete/route.ts',
+      'app/api/cron/purge-expired-audits/route.ts',
+    ]);
     const routeFiles = globSync('app/api/**/route.ts', { cwd: process.cwd() });
     const violations = routeFiles.filter((routeFile) => {
+      if (INTENTIONAL_HARD_DELETE.has(routeFile)) return false;
       const source = fs.readFileSync(path.join(process.cwd(), routeFile), 'utf8');
       return /\.from\s*\([^;]*?\.delete\s*\(/s.test(source);
     });
@@ -183,15 +199,19 @@ describe('soft-delete compliance', () => {
 
     expect(deleteResponse.status).toBe(200);
     expect(await deleteResponse.json()).toEqual({ success: true });
+    // Soft-delete: the row is retained (no hard delete) and excluded from the
+    // team response. The canonical mechanism is invite_status = 'revoked'
+    // (GET /api/team filters .neq('invite_status', 'revoked')); the removal
+    // timestamp is captured in the audit log, not on the row.
     expect(state.hardDeleteTables).toEqual([]);
     expect(state.rows.merchant_members).toHaveLength(1);
     expect(state.updatePayloads).toEqual([
       {
         table: 'merchant_members',
-        payload: { deleted_at: '2026-05-11T12:34:56.000Z' },
+        payload: { invite_status: 'revoked' },
       },
     ]);
-    expect(state.rows.merchant_members[0].deleted_at).toBe('2026-05-11T12:34:56.000Z');
+    expect(state.rows.merchant_members[0].invite_status).toBe('revoked');
 
     const getResponse = await getTeam();
     expect(getResponse.status).toBe(200);

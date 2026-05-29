@@ -33,7 +33,8 @@ describe('customer API merchant isolation', () => {
 
   it('resolves ownedJobIds from processing_jobs before any transaction query', () => {
     expect(source).toContain('ownedJobIds');
-    expect(source).toContain("from('processing_jobs')");
+    // Route uses the canonical TABLES constant (SSOT) rather than a string literal.
+    expect(source).toContain('from(TABLES.PROCESSING_JOBS)');
     expect(source).toContain(".eq('merchant_id', ctx.merchantId)");
   });
 
@@ -63,7 +64,7 @@ describe('customer API merchant isolation', () => {
     // There must be no audit_transactions query that doesn't include job_id scoping.
     // Check that every occurrence of audit_transactions select is preceded by
     // either .in('job_id', ...) or .in('id', transactionIds) + .in('job_id', ...)
-    const txQueries = source.match(/from\('audit_transactions'\)/g) ?? [];
+    const txQueries = source.match(/from\(TABLES\.AUDIT_TRANSACTIONS\)/g) ?? [];
     expect(txQueries.length).toBeGreaterThan(0);
     // All direct identity fetches must check ownedJobIds guard
     expect(source).toContain('if (ownedJobIds.length === 0) return []');

@@ -17,56 +17,65 @@ import { getExposureAtRisk } from '@/lib/supabase/merchantHelpers';
 
 type MockRow = Record<string, unknown>;
 
-/**
- * Builds a chainable Supabase query stub.
- * resolveWith({ data, error }) sets what `.range()` resolves to.
- */
-function makeQueryStub(resolveWith: { data: MockRow[] | null; error: { message: string } | null }) {
-  const stub: Record<string, jest.Mock> = {};
-  const chain = () => stub as unknown as ReturnType<ReturnType<typeof stub.from>>;
+type Page = { data: MockRow[] | null; error: { message: string } | null };
 
-  stub.select = jest.fn().mockReturnValue(chain());
-  stub.eq = jest.fn().mockReturnValue(chain());
-  stub.in = jest.fn().mockReturnValue(chain());
-  stub.not = jest.fn().mockReturnValue(chain());
-  stub.is = jest.fn().mockReturnValue(chain());
-  stub.range = jest.fn().mockResolvedValue(resolveWith);
+/**
+ * Builds a chainable + thenable Supabase query stub.
+ *
+ * Production builds the query as `.from().select().in('job_id').not().range()`
+ * and THEN appends clause filters (`.in('identity_confidence_grade', ...)` /
+ * `.is('identity_confidence_grade', null)`) via a callback before awaiting.
+ * So every chain method must return the stub (chainable) and the stub itself
+ * must be awaitable (thenable) — `.range()` is NOT terminal.
+ *
+ * `resolve(calls)` is invoked at await-time with the recorded `.in`/`.is`
+ * filters so the caller can choose which page to return.
+ */
+function makeQueryStub(resolve: (calls: { inCalls: Array<[string, unknown]>; isCalls: Array<[string, unknown]> }) => Page) {
+  const inCalls: Array<[string, unknown]> = [];
+  const isCalls: Array<[string, unknown]> = [];
+  const stub: Record<string, jest.Mock> & { then?: unknown } = {};
+  const chain = () => stub;
+
+  stub.select = jest.fn(() => chain());
+  stub.eq = jest.fn(() => chain());
+  stub.in = jest.fn((col: string, vals: unknown) => { inCalls.push([col, vals]); return chain(); });
+  stub.not = jest.fn(() => chain());
+  stub.is = jest.fn((col: string, val: unknown) => { isCalls.push([col, val]); return chain(); });
+  stub.range = jest.fn(() => chain());
+  stub.then = (onF: ((v: Page) => unknown) | null, onR?: ((r: unknown) => unknown) | null) =>
+    Promise.resolve(resolve({ inCalls, isCalls })).then(onF as never, onR as never);
 
   return stub;
 }
 
 /**
  * Builds a mock SupabaseClient whose `.from()` calls are controlled per-table.
+ * audit_transactions clauses are discriminated by the actual filter applied —
+ * the status-only clause calls `.is('identity_confidence_grade', null)` — which
+ * is robust to pagination order (no reliance on call counting).
  */
 function buildMockClient(
-  jobsPages: Array<{ data: MockRow[] | null; error: { message: string } | null }>,
-  txPages: { graded: Array<{ data: MockRow[] | null; error: { message: string } | null }>; status: Array<{ data: MockRow[] | null; error: { message: string } | null }> },
+  jobsPages: Array<Page>,
+  txPages: { graded: Array<Page>; status: Array<Page> },
 ) {
   let jobsPageIdx = 0;
-  // Track which tx call set we are in: first sequence = graded, second = status-only
-  let txGradedIdx = 0;
-  let txStatusIdx = 0;
-  // Simple heuristic: first set of `not('identity_confidence_grade')` calls → graded
-  // `is('identity_confidence_grade', null)` calls → status-only
-  // We use the `not` / `is` call order to discriminate.
+  let gradedIdx = 0;
+  let statusIdx = 0;
 
   const fromMock = jest.fn().mockImplementation((table: string) => {
     if (table === 'processing_jobs') {
-      const page = jobsPages[jobsPageIdx++] ?? { data: [], error: null };
-      return makeQueryStub(page);
+      return makeQueryStub(() => jobsPages[jobsPageIdx++] ?? { data: [], error: null });
     }
-    // audit_transactions — detect clause from call sequence
-    // We alternate: graded queries first, then status queries (within each outer pagination loop)
-    const isGradedPage = txGradedIdx < txPages.graded.length;
-    if (isGradedPage) {
-      const page = txPages.graded[txGradedIdx++] ?? { data: [], error: null };
-      const stub = makeQueryStub(page);
-      // Override `is` to mark this as graded (not status-only) — no-op for chain
-      stub.is = jest.fn().mockReturnValue(stub);
-      return stub;
-    }
-    const page = txPages.status[txStatusIdx++] ?? { data: [], error: null };
-    return makeQueryStub(page);
+    // audit_transactions: graded clause vs status-only clause, by filter.
+    return makeQueryStub(({ isCalls }) => {
+      const isStatusClause = isCalls.some(
+        ([col, val]) => col === 'identity_confidence_grade' && val === null,
+      );
+      return isStatusClause
+        ? (txPages.status[statusIdx++] ?? { data: [], error: null })
+        : (txPages.graded[gradedIdx++] ?? { data: [], error: null });
+    });
   });
 
   return { from: fromMock } as unknown as import('@supabase/supabase-js').SupabaseClient;

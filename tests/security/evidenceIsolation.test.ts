@@ -21,8 +21,8 @@ const rowsByTable: Record<string, Row[]> = {
     { id: 'merchant-b', user_id: 'legacy-user-b', business_name: 'Merchant B' },
   ],
   processing_jobs: [
-    { id: 'job-a', merchant_id: 'merchant-a' },
-    { id: 'job-b', merchant_id: 'merchant-b' },
+    { id: 'job-a', merchant_id: 'merchant-a', hidden_by_merchant: false },
+    { id: 'job-b', merchant_id: 'merchant-b', hidden_by_merchant: false },
   ],
   customer_profiles: [
     {

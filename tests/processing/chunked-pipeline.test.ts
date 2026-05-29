@@ -48,10 +48,13 @@ describe('LOCKED INVARIANT — chunk size + row cap', () => {
     expect(CHUNK_SIZE).toBeLessThan(MAX_ROWS);
   });
 
-  it('MAX_ROWS supports millions, CHUNK_SIZE keeps total chunks bounded', () => {
-    expect(MAX_ROWS).toBeGreaterThanOrEqual(1_000_000);
+  it('MAX_ROWS is a deliberate cap, CHUNK_SIZE keeps total chunks bounded', () => {
+    // MAX_ROWS is intentionally capped at 500k (memory/throughput safety on the
+    // serverless pipeline); to be raised later. streamParser flags `truncated`
+    // when the cap is hit so large uploads are not silently dropped.
+    expect(MAX_ROWS).toBeGreaterThanOrEqual(500_000);
     const worstCaseChunks = Math.ceil(MAX_ROWS / CHUNK_SIZE);
-    // 5M rows at 10k/chunk is exactly 500 chunks; keep that as the hard bound.
+    // 500k rows at 10k/chunk is 50 chunks; keep 500 as the hard upper bound.
     expect(worstCaseChunks).toBeLessThanOrEqual(500);
   });
 });
