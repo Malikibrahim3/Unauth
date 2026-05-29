@@ -18,6 +18,13 @@ export const GORGIAS_SUPPORT_WEBHOOK_HEADER_NAME = GORGIAS_SUPPORT_SECRET_HEADER
 export const GORGIAS_SUPPORT_SECRET_SAVE_WARNING =
   'Save this secret now. It will not be shown again.';
 
+export type GorgiasSidebarScopeEntry = {
+  kind: 'gorgias_sidebar_widget';
+  integration_id: number;
+  widget_id: number;
+  registered_at: string;
+};
+
 export type GorgiasSupportConnectionSettings = {
   id: string;
   provider_account_id: string | null;
@@ -30,4 +37,16 @@ export type GorgiasSupportConnectionSettings = {
   webhook_secret_created_at: string | null;
   webhook_secret_rotated_at: string | null;
   webhook_url: string;
+  gorgias_api_configured: boolean;
+  sidebar_widget_registered: boolean;
+  sidebar_integration_id: number | null;
+  sidebar_widget_id: number | null;
+};
+
+export type GorgiasSidebarWidgetSetupResult = {
+  status: 'success' | 'error';
+  integration_id?: number;
+  widget_id?: number;
+  error?: string;
+  widget_token_plaintext?: string;
 };

@@ -20,6 +20,10 @@ export type UpsertGorgiasSupportConnectionInput = {
   webhookSecretHash?: string | null;
   /** When true and a new secret is supplied, sets webhook_secret_rotated_at. */
   rotateWebhookSecret?: boolean;
+  /** Encrypted Gorgias REST API credentials JSON blob. */
+  accessTokenEncrypted?: string | null;
+  /** Provider metadata entries (e.g. sidebar widget registration). */
+  scopes?: unknown[];
 };
 
 type PatchableSupabase = {
@@ -65,6 +69,10 @@ export async function upsertGorgiasSupportConnection(
     provider_base_url: providerBaseUrl,
     status: input.status ?? 'active',
     last_error: input.last_error ?? null,
+    ...(input.accessTokenEncrypted !== undefined
+      ? { access_token_encrypted: input.accessTokenEncrypted }
+      : {}),
+    ...(input.scopes !== undefined ? { scopes: input.scopes } : {}),
     ...secretFields,
   });
 }

@@ -9,6 +9,12 @@ import {
   generateGorgiasWebhookSecret,
   isGorgiasWebhookSecretSufficientLength,
 } from '@/lib/support/gorgias/webhookSecret';
+import { encryptGorgiasApiCredentials } from '@/lib/support/gorgias/credentialCrypto';
+import { createWidgetTokenForGorgiasSidebar } from '@/lib/support/gorgias/ensureWidgetToken';
+import {
+  GorgiasSidebarRegistrationError,
+  registerGorgiasSidebarWidget,
+} from '@/lib/support/gorgias/registerSidebarWidget';
 import { env } from '@/lib/utils/env';
 
 // Client-safe constants/type live in the shared module so the client component
@@ -19,12 +25,15 @@ export {
   GORGIAS_SUPPORT_WEBHOOK_HEADER_NAME,
   GORGIAS_SUPPORT_SECRET_SAVE_WARNING,
   type GorgiasSupportConnectionSettings,
+  type GorgiasSidebarWidgetSetupResult,
 } from '@/lib/support/gorgias/supportConnectionShared';
 import {
   GORGIAS_SUPPORT_WEBHOOK_PATH,
   GORGIAS_SUPPORT_WEBHOOK_HEADER_NAME,
   GORGIAS_SUPPORT_SECRET_SAVE_WARNING,
   type GorgiasSupportConnectionSettings,
+  type GorgiasSidebarScopeEntry,
+  type GorgiasSidebarWidgetSetupResult,
 } from '@/lib/support/gorgias/supportConnectionShared';
 
 type GorgiasConnectionDbRow = {
@@ -39,10 +48,33 @@ type GorgiasConnectionDbRow = {
   webhook_secret_hash: string | null;
   webhook_secret_created_at: string | null;
   webhook_secret_rotated_at: string | null;
+  access_token_encrypted: string | null;
+  scopes: unknown;
 };
 
 const CONNECTION_SETTINGS_SELECT =
-  'id, merchant_id, provider_account_id, provider_account_name, provider_base_url, status, last_sync_at, last_error, webhook_secret_hash, webhook_secret_created_at, webhook_secret_rotated_at';
+  'id, merchant_id, provider_account_id, provider_account_name, provider_base_url, status, last_sync_at, last_error, webhook_secret_hash, webhook_secret_created_at, webhook_secret_rotated_at, access_token_encrypted, scopes';
+
+function readSidebarScopeEntry(scopes: unknown): GorgiasSidebarScopeEntry | null {
+  if (!Array.isArray(scopes)) return null;
+  for (const entry of scopes) {
+    if (
+      entry &&
+      typeof entry === 'object' &&
+      (entry as GorgiasSidebarScopeEntry).kind === 'gorgias_sidebar_widget'
+    ) {
+      const candidate = entry as GorgiasSidebarScopeEntry;
+      if (
+        typeof candidate.integration_id === 'number' &&
+        typeof candidate.widget_id === 'number' &&
+        typeof candidate.registered_at === 'string'
+      ) {
+        return candidate;
+      }
+    }
+  }
+  return null;
+}
 
 type ListableSupabase = {
   from: (table: string) => {
@@ -89,8 +121,12 @@ export function toGorgiasSupportConnectionSettings(
   const {
     webhook_secret_hash: _hash,
     merchant_id: _merchantId,
+    access_token_encrypted: _accessToken,
+    scopes,
     ...rest
   } = row;
+
+  const sidebarScope = readSidebarScopeEntry(scopes);
 
   return {
     id: rest.id,
@@ -104,6 +140,10 @@ export function toGorgiasSupportConnectionSettings(
     webhook_secret_created_at: rest.webhook_secret_created_at,
     webhook_secret_rotated_at: rest.webhook_secret_rotated_at,
     webhook_url: buildGorgiasSupportWebhookUrl(),
+    gorgias_api_configured: Boolean(row.access_token_encrypted?.trim()),
+    sidebar_widget_registered: Boolean(sidebarScope),
+    sidebar_integration_id: sidebarScope?.integration_id ?? null,
+    sidebar_widget_id: sidebarScope?.widget_id ?? null,
   };
 }
 
@@ -132,10 +172,20 @@ export const gorgiasSupportConnectionInputSchema = z
     account_id: z.string().trim().min(1).optional(),
     domain: z.string().trim().min(1).optional(),
     name: z.string().trim().min(1).max(200).optional(),
+    gorgias_api_email: z.string().trim().email().optional(),
+    gorgias_api_key: z.string().trim().min(1).optional(),
   })
   .refine((value) => Boolean(value.account_id || value.domain), {
     message: 'account_id or domain is required',
-  });
+  })
+  .refine(
+    (value) => {
+      const hasEmail = Boolean(value.gorgias_api_email);
+      const hasKey = Boolean(value.gorgias_api_key);
+      return hasEmail === hasKey;
+    },
+    { message: 'gorgias_api_email and gorgias_api_key must be provided together' }
+  );
 
 export type GorgiasSupportConnectionInput = z.infer<typeof gorgiasSupportConnectionInputSchema>;
 
@@ -178,7 +228,102 @@ export type CreateGorgiasSupportConnectionResult = {
   webhook_url: string;
   header_name: string;
   warning: string;
+  sidebar_widget: GorgiasSidebarWidgetSetupResult | null;
 };
+
+async function registerGorgiasSidebarForConnection(
+  supabase: Parameters<typeof upsertGorgiasSupportConnection>[0],
+  merchantId: string,
+  input: GorgiasSupportConnectionInput,
+  identity: {
+    provider_account_id: string;
+    domain: string | null;
+    provider_base_url: string | null;
+  }
+): Promise<{
+  result: GorgiasSidebarWidgetSetupResult;
+  accessTokenEncrypted: string | null;
+  scopes: GorgiasSidebarScopeEntry[] | null;
+}> {
+  if (!input.gorgias_api_email || !input.gorgias_api_key) {
+    return { result: { status: 'error', error: 'Gorgias API credentials are required.' }, accessTokenEncrypted: null, scopes: null };
+  }
+
+  if (!identity.provider_base_url) {
+    return {
+      result: {
+        status: 'error',
+        error: 'Gorgias account domain is required to register the sidebar widget.',
+      },
+      accessTokenEncrypted: null,
+      scopes: null,
+    };
+  }
+
+  const credentials = {
+    email: input.gorgias_api_email,
+    api_key: input.gorgias_api_key,
+  };
+  const accessTokenEncrypted = encryptGorgiasApiCredentials(credentials);
+
+  let widgetTokenPlaintext: string;
+  try {
+    const created = await createWidgetTokenForGorgiasSidebar(supabase, merchantId);
+    widgetTokenPlaintext = created.widgetToken;
+  } catch {
+    return {
+      result: {
+        status: 'error',
+        error: 'Could not create a widget token for Gorgias.',
+      },
+      accessTokenEncrypted,
+      scopes: null,
+    };
+  }
+
+  try {
+    const registered = await registerGorgiasSidebarWidget({
+      providerBaseUrl: identity.provider_base_url,
+      credentials,
+      widgetToken: widgetTokenPlaintext,
+    });
+
+    const sidebarScope: GorgiasSidebarScopeEntry = {
+      kind: 'gorgias_sidebar_widget',
+      integration_id: registered.integrationId,
+      widget_id: registered.widgetId,
+      registered_at: new Date().toISOString(),
+    };
+
+    return {
+      result: {
+        status: 'success',
+        integration_id: registered.integrationId,
+        widget_id: registered.widgetId,
+        widget_token_plaintext: widgetTokenPlaintext,
+      },
+      accessTokenEncrypted,
+      scopes: [sidebarScope],
+    };
+  } catch (error) {
+    const detail =
+      error instanceof GorgiasSidebarRegistrationError
+        ? error.detail
+        : error instanceof Error
+          ? error.message
+          : 'Unknown Gorgias API error';
+
+    return {
+      result: {
+        status: 'error',
+        error: detail,
+        widget_token_plaintext: widgetTokenPlaintext,
+      },
+      accessTokenEncrypted,
+      scopes: null,
+    };
+  }
+}
 
 export async function createMerchantGorgiasSupportConnection(
   supabase: Parameters<typeof upsertGorgiasSupportConnection>[0],
@@ -198,6 +343,13 @@ export async function createMerchantGorgiasSupportConnection(
     throw new Error('generated_webhook_secret_invalid');
   }
 
+  const sidebarRegistration = await registerGorgiasSidebarForConnection(
+    supabase,
+    merchantId,
+    parsed,
+    identity
+  );
+
   await upsertGorgiasSupportConnection(supabase, {
     merchant_id: merchantId,
     provider_account_id: identity.provider_account_id,
@@ -205,9 +357,13 @@ export async function createMerchantGorgiasSupportConnection(
     provider_base_url: identity.provider_base_url,
     provider_account_name: parsed.name ?? null,
     status: 'active',
-    last_error: null,
+    last_error: sidebarRegistration.result.status === 'error' ? sidebarRegistration.result.error ?? null : null,
     webhookSecretPlaintext,
     rotateWebhookSecret: false,
+    ...(sidebarRegistration.accessTokenEncrypted
+      ? { accessTokenEncrypted: sidebarRegistration.accessTokenEncrypted }
+      : {}),
+    ...(sidebarRegistration.scopes ? { scopes: sidebarRegistration.scopes } : {}),
   });
 
   const connection = await getMerchantGorgiasSupportConnection(supabase, merchantId);
@@ -221,6 +377,7 @@ export async function createMerchantGorgiasSupportConnection(
     webhook_url: buildGorgiasSupportWebhookUrl(),
     header_name: GORGIAS_SUPPORT_WEBHOOK_HEADER_NAME,
     warning: GORGIAS_SUPPORT_SECRET_SAVE_WARNING,
+    sidebar_widget: sidebarRegistration.result,
   };
 }
 
@@ -232,6 +389,13 @@ export async function updateMerchantGorgiasSupportConnectionMetadata(
   const parsed = gorgiasSupportConnectionInputSchema.parse(input);
   const identity = resolveGorgiasConnectionIdentity(parsed);
 
+  const sidebarRegistration = await registerGorgiasSidebarForConnection(
+    supabase,
+    merchantId,
+    parsed,
+    identity
+  );
+
   await upsertGorgiasSupportConnection(supabase, {
     merchant_id: merchantId,
     provider_account_id: identity.provider_account_id,
@@ -239,7 +403,11 @@ export async function updateMerchantGorgiasSupportConnectionMetadata(
     provider_base_url: identity.provider_base_url,
     provider_account_name: parsed.name ?? null,
     status: 'active',
-    last_error: null,
+    last_error: sidebarRegistration.result.status === 'error' ? sidebarRegistration.result.error ?? null : null,
+    ...(sidebarRegistration.accessTokenEncrypted
+      ? { accessTokenEncrypted: sidebarRegistration.accessTokenEncrypted }
+      : {}),
+    ...(sidebarRegistration.scopes ? { scopes: sidebarRegistration.scopes } : {}),
   });
 
   const connection = await getMerchantGorgiasSupportConnection(supabase, merchantId);

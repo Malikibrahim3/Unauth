@@ -28,8 +28,22 @@ jest.mock('@/lib/permissions/audit', () => ({
   logAction: jest.fn(),
 }));
 
+jest.mock('@/lib/support/gorgias/ensureWidgetToken', () => ({
+  createWidgetTokenForGorgiasSidebar: jest.fn(),
+}));
+
+jest.mock('@/lib/support/gorgias/registerSidebarWidget', () => ({
+  registerGorgiasSidebarWidget: jest.fn(),
+  GorgiasSidebarRegistrationError: class GorgiasSidebarRegistrationError extends Error {
+    status = 400;
+    detail = 'mock';
+  },
+}));
+
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission } from '@/lib/permissions';
+import { createWidgetTokenForGorgiasSidebar } from '@/lib/support/gorgias/ensureWidgetToken';
+import { registerGorgiasSidebarWidget } from '@/lib/support/gorgias/registerSidebarWidget';
 import { GET, POST } from '@/app/api/settings/gorgias/support-connection/route';
 import { POST as rotatePost } from '@/app/api/settings/gorgias/support-connection/rotate-secret/route';
 import { POST as disablePost } from '@/app/api/settings/gorgias/support-connection/disable/route';
@@ -152,6 +166,9 @@ function makeSettingsSupabase(initial: ConnectionRow[] = []) {
                 webhook_secret_rotated_at:
                   (payload.webhook_secret_rotated_at as string | null) ?? null,
                 last_error: (payload.last_error as string | null) ?? null,
+                access_token_encrypted:
+                  (payload.access_token_encrypted as string | null) ?? null,
+                scopes: (payload.scopes as unknown[]) ?? [],
                 updated_at: now,
                 created_at: now,
               });
@@ -211,6 +228,13 @@ describe('Gorgias support connection settings API', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     process.env.NEXT_PUBLIC_APP_URL = 'https://app.unauth.test';
+    (createWidgetTokenForGorgiasSidebar as jest.Mock).mockResolvedValue({
+      widgetToken: 'unauth_wt_abcd1234567890abcd1234567890ab',
+    });
+    (registerGorgiasSidebarWidget as jest.Mock).mockResolvedValue({
+      integrationId: 101,
+      widgetId: 202,
+    });
   });
 
   it('rejects unauthenticated GET', async () => {
@@ -250,7 +274,12 @@ describe('Gorgias support connection settings API', () => {
     const res = await POST(
       new NextRequest('http://localhost/api/settings/gorgias/support-connection', {
         method: 'POST',
-        body: JSON.stringify({ account_id: GORGIAS_ACCOUNT_ID, name: 'Acme' }),
+        body: JSON.stringify({
+          account_id: GORGIAS_ACCOUNT_ID,
+          name: 'Acme',
+          gorgias_api_email: 'agent@acme.com',
+          gorgias_api_key: 'gorgias-test-key',
+        }),
       })
     );
 
@@ -261,6 +290,33 @@ describe('Gorgias support connection settings API', () => {
     expect(json.header_name).toBe('x-unauth-gorgias-secret');
     expect(json.warning).toContain('will not be shown again');
     expect(json.connection.webhook_secret_configured).toBe(true);
+    expect(json.sidebar_widget?.status).toBe('error');
+    expect(json.sidebar_widget?.error).toContain('domain');
+  });
+
+  it('registers sidebar widget when domain and API credentials are provided', async () => {
+    setupAuth(true);
+    setupPermission(MERCHANT_A);
+    const { supabase } = makeSettingsSupabase();
+    (createServiceClient as jest.Mock).mockReturnValue(supabase);
+
+    const res = await POST(
+      new NextRequest('http://localhost/api/settings/gorgias/support-connection', {
+        method: 'POST',
+        body: JSON.stringify({
+          domain: GORGIAS_DOMAIN,
+          gorgias_api_email: 'agent@acme.com',
+          gorgias_api_key: 'gorgias-test-key',
+        }),
+      })
+    );
+
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.sidebar_widget?.status).toBe('success');
+    expect(json.sidebar_widget?.integration_id).toBe(101);
+    expect(json.sidebar_widget?.widget_id).toBe(202);
+    expect(registerGorgiasSidebarWidget).toHaveBeenCalled();
   });
 
   it('GET after create does not return plaintext or hash', async () => {
@@ -272,7 +328,11 @@ describe('Gorgias support connection settings API', () => {
     const createRes = await POST(
       new NextRequest('http://localhost/api/settings/gorgias/support-connection', {
         method: 'POST',
-        body: JSON.stringify({ domain: GORGIAS_DOMAIN }),
+        body: JSON.stringify({
+          domain: GORGIAS_DOMAIN,
+          gorgias_api_email: 'agent@acme.com',
+          gorgias_api_key: 'gorgias-test-key',
+        }),
       })
     );
     const created = await createRes.json();
@@ -280,6 +340,8 @@ describe('Gorgias support connection settings API', () => {
     const getRes = await GET();
     const got = await getRes.json();
     expect(got.connection.webhook_secret_configured).toBe(true);
+    expect(got.connection.sidebar_widget_registered).toBe(true);
+    expect(got.connection.sidebar_integration_id).toBe(101);
     expect(got.connection.webhook_secret_plaintext).toBeUndefined();
     expect(got.connection.webhook_secret_hash).toBeUndefined();
     expect(created.webhook_secret_plaintext).toBeTruthy();
