@@ -327,9 +327,13 @@ export default async function DashboardPage() {
               <p className="text-caption mt-1" style={{ color: 'var(--text-muted)' }}>
                 Connect your helpdesk —{' '}
                 <Link href="/settings/integrations/gorgias" className="font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
-                  Gorgias available now
+                  Gorgias
                 </Link>
-                . Zendesk and Shopify sidebar coming soon.
+                {' '}and{' '}
+                <Link href="/settings/integrations/zendesk" className="font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
+                  Zendesk
+                </Link>
+                {' '}available now.
               </p>
             </div>
 

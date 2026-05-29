@@ -33,8 +33,8 @@ const INTEGRATIONS = [
   },
   {
     id: 'shopify',
-    name: 'Shopify sidebar',
-    description: 'Embed identity intelligence in your Shopify admin',
+    name: 'Shopify',
+    description: 'Sync orders, refunds & fulfillment to enrich identity intelligence',
     badge: 'Connect',
     badgeVariant: 'connect' as const,
     href: '/settings/integrations',

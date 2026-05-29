@@ -5,7 +5,9 @@ node_modules/
 .tmp_*
 .DS_Store
 *.log
-dist/
+# Anchored to repo root only — the Chrome extension's committed build lives at
+# extensions/chrome/dist and must stay tracked (served by the in-app download route).
+/dist/
 build/
 .turbo/
 tests/.test-credentials.json

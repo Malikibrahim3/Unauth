@@ -32,6 +32,13 @@ const nextConfig = {
   serverExternalPackages: ['papaparse'],
   devIndicators: false,
   allowedDevOrigins: ['127.0.0.1'],
+  // The Chrome/Zendesk download routes read these files from disk at runtime.
+  // Next's tracer can't follow the dynamic process.cwd() reads, so include them
+  // explicitly or the routes 404 on Vercel's serverless filesystem.
+  outputFileTracingIncludes: {
+    '/api/settings/chrome/download': ['./extensions/chrome/dist/**/*'],
+    '/api/settings/zendesk/download': ['./extensions/zendesk/manifest.json', './extensions/zendesk/index.html'],
+  },
   async redirects() {
     return [
       { source: '/inbox', destination: '/customers', permanent: false },

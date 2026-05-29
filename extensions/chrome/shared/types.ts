@@ -1,5 +1,5 @@
-export const API_BASE = 'https://app.unauth.co';
-export const APP_ORIGIN = 'https://app.unauth.co';
+export const API_BASE = __UNAUTH_API_BASE__;
+export const APP_ORIGIN = __UNAUTH_API_BASE__;
 
 export type LookupResponse = {
   email: string;

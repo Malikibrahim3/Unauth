@@ -3,8 +3,14 @@
   "name": "Unauth — Fraud Intelligence",
   "description": "Instantly check if a customer is a known fraudster across merchants",
   "version": "0.1.0",
-  "permissions": ["activeTab", "storage", "scripting"],
-  "host_permissions": ["https://unauth-pi.vercel.app/*"],
+  "permissions": [
+    "activeTab",
+    "storage",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://unauth-pi.vercel.app/*"
+  ],
   "action": {
     "default_popup": "popup/popup.html",
     "default_title": "Unauth — Fraud Intelligence",
@@ -20,8 +26,12 @@
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
-      "js": ["content/content.js"],
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "content/content.js"
+      ],
       "run_at": "document_idle"
     }
   ],
