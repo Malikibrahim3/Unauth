@@ -5,33 +5,27 @@ import {
   gorgiasBaseUrlFromDomain,
   normalizeGorgiasDomain,
 } from '@/lib/support/gorgias/accountIdentity';
-import { GORGIAS_SUPPORT_SECRET_HEADERS } from '@/lib/support/gorgias/webhookAuth';
 import {
   generateGorgiasWebhookSecret,
   isGorgiasWebhookSecretSufficientLength,
 } from '@/lib/support/gorgias/webhookSecret';
 import { env } from '@/lib/utils/env';
 
-export const GORGIAS_SUPPORT_WEBHOOK_PATH = '/api/gorgias/support-webhook';
-
-export const GORGIAS_SUPPORT_WEBHOOK_HEADER_NAME = GORGIAS_SUPPORT_SECRET_HEADERS[0];
-
-export const GORGIAS_SUPPORT_SECRET_SAVE_WARNING =
-  'Save this secret now. It will not be shown again.';
-
-export type GorgiasSupportConnectionSettings = {
-  id: string;
-  provider_account_id: string | null;
-  provider_account_name: string | null;
-  provider_base_url: string | null;
-  status: string;
-  last_sync_at: string | null;
-  last_error: string | null;
-  webhook_secret_configured: boolean;
-  webhook_secret_created_at: string | null;
-  webhook_secret_rotated_at: string | null;
-  webhook_url: string;
-};
+// Client-safe constants/type live in the shared module so the client component
+// can import them without dragging server-only code into the browser bundle.
+// Re-exported here so existing server-side import paths keep working.
+export {
+  GORGIAS_SUPPORT_WEBHOOK_PATH,
+  GORGIAS_SUPPORT_WEBHOOK_HEADER_NAME,
+  GORGIAS_SUPPORT_SECRET_SAVE_WARNING,
+  type GorgiasSupportConnectionSettings,
+} from '@/lib/support/gorgias/supportConnectionShared';
+import {
+  GORGIAS_SUPPORT_WEBHOOK_PATH,
+  GORGIAS_SUPPORT_WEBHOOK_HEADER_NAME,
+  GORGIAS_SUPPORT_SECRET_SAVE_WARNING,
+  type GorgiasSupportConnectionSettings,
+} from '@/lib/support/gorgias/supportConnectionShared';
 
 type GorgiasConnectionDbRow = {
   id: string;

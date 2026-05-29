@@ -1,12 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Check, Copy, RefreshCw, Unplug } from 'lucide-react';
 import {
   GORGIAS_SUPPORT_SECRET_SAVE_WARNING,
   GORGIAS_SUPPORT_WEBHOOK_HEADER_NAME,
   type GorgiasSupportConnectionSettings,
-} from '@/lib/support/gorgias/settingsConnection';
+} from '@/lib/support/gorgias/supportConnectionShared';
 
 type EphemeralSecret = {
   secret: string;
@@ -64,26 +64,29 @@ export default function GorgiasSupportSyncClient({ canManage }: Props) {
   const [showSetupInstructions, setShowSetupInstructions] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
-  const loadConnection = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch('/api/settings/gorgias/support-connection', { cache: 'no-store' });
-      const body = await res.json();
-      if (!res.ok) throw new Error(body.error ?? 'Failed to load Gorgias support connection');
-      setConnection(body.connection ?? null);
-    } catch (err) {
-      setMessage({
-        type: 'error',
-        text: err instanceof Error ? err.message : 'Failed to load connection',
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
-    void loadConnection();
-  }, [loadConnection]);
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch('/api/settings/gorgias/support-connection', { cache: 'no-store' });
+        const body = await res.json();
+        if (!res.ok) throw new Error(body.error ?? 'Failed to load Gorgias support connection');
+        if (!cancelled) setConnection(body.connection ?? null);
+      } catch (err) {
+        if (!cancelled) {
+          setMessage({
+            type: 'error',
+            text: err instanceof Error ? err.message : 'Failed to load connection',
+          });
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function copyText(field: string, value: string) {
     await navigator.clipboard.writeText(value);

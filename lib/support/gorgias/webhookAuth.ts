@@ -4,10 +4,10 @@ import { verifyGorgiasWebhookSecret } from '@/lib/support/gorgias/webhookSecret'
 import type { GorgiasSupportConnectionRow } from '@/lib/support/gorgias/resolveConnection';
 import { isGorgiasProductionIngestMode } from '@/lib/support/gorgias/resolveMerchantId';
 
-export const GORGIAS_SUPPORT_SECRET_HEADERS = [
-  'x-unauth-gorgias-secret',
-  'x-gorgias-webhook-secret',
-] as const;
+// Canonical definition lives in the client-safe shared module; re-exported here
+// for existing server-side importers.
+export { GORGIAS_SUPPORT_SECRET_HEADERS } from '@/lib/support/gorgias/supportConnectionShared';
+import { GORGIAS_SUPPORT_SECRET_HEADERS } from '@/lib/support/gorgias/supportConnectionShared';
 
 export function readGorgiasWebhookSecretHeader(
   headers: Headers | { get(name: string): string | null }
