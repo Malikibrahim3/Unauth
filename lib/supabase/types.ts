@@ -93,6 +93,7 @@ export type Database = {
         Row: {
           account_created_at: string | null
           behavioural_flags: Json
+          review_worthy: boolean
           billing_address: string | null
           candidate_cluster_id: string | null
           card_last4: string | null
@@ -142,6 +143,7 @@ export type Database = {
         Insert: {
           account_created_at?: string | null
           behavioural_flags?: Json
+          review_worthy?: boolean
           billing_address?: string | null
           candidate_cluster_id?: string | null
           card_last4?: string | null
@@ -191,6 +193,7 @@ export type Database = {
         Update: {
           account_created_at?: string | null
           behavioural_flags?: Json
+          review_worthy?: boolean
           billing_address?: string | null
           candidate_cluster_id?: string | null
           card_last4?: string | null

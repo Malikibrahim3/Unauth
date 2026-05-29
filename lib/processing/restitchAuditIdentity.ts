@@ -35,6 +35,7 @@ type ExistingAuditRow = {
   cluster_id: string | null;
   candidate_cluster_id: string | null;
   identity_match_grade: string | null;
+  behavioural_flags: unknown[] | null;
 };
 
 function rawIds(order: NormalisedOrder) {
@@ -282,7 +283,7 @@ async function fetchExistingAuditRows(
     const read = await withReadRetry(async () => {
       const { data, error } = await serviceClient
         .from(TABLES.AUDIT_TRANSACTIONS)
-        .select('id, job_id, order_id, identity_confidence_grade, match_status, cluster_id, candidate_cluster_id, identity_match_grade')
+        .select('id, job_id, order_id, identity_confidence_grade, match_status, cluster_id, candidate_cluster_id, identity_match_grade, behavioural_flags')
         .eq('job_id', jobId)
         .range(from, from + pageSize - 1);
       if (error) throw error;
@@ -464,6 +465,14 @@ export async function restitchAuditIdentityFromChunks(
         continue;
       }
 
+      // Recompute review_worthy whenever the grade changes: real identity match
+      // (definite/probable/possible) AND suspicious behaviour. Behaviour is the
+      // preserved cluster-level behavioural_flags (re-stitch does not alter it).
+      const reviewWorthy =
+        (grade === 'definite' || grade === 'probable' || grade === 'possible') &&
+        Array.isArray(existing.behavioural_flags) &&
+        existing.behavioural_flags.length > 0;
+
       updates.push({
         id: existing.id,
         job_id: existing.job_id,
@@ -473,6 +482,7 @@ export async function restitchAuditIdentityFromChunks(
         signals_matched: getRowMatchedSignals(thisInput, clusterRows),
         cluster_id: nextClusterId,
         match_status: matchStatus,
+        review_worthy: reviewWorthy,
         candidate_cluster_id: cluster.cluster_id,
         confirmed_identity_id: matchStatus === 'definite' ? cluster.cluster_id : null,
         identity_match_score: identity.identity_match_score,

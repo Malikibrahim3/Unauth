@@ -51,6 +51,8 @@ export interface FraudTransactionInsert {
   identity_score?: number | null;
   signals_matched?: string[];
   behavioural_flags?: string[];
+  /** Real identity match AND suspicious behaviour — drives the review queue. */
+  review_worthy?: boolean;
   recommended_action?: string | null;
   ce3_eligible?: boolean;
   ce3_qualifying_transactions?: string[];

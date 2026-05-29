@@ -493,6 +493,16 @@ function rowToFraudTransaction(
     identity_score: identity?.identityScore ?? null,
     signals_matched: identity?.signalsMatched ?? [],
     behavioural_flags: identity?.behaviouralFlags ?? [],
+    // Review-worthy = real identity match (definite/probable/possible) AND
+    // suspicious behaviour (a behavioural flag fired — cluster-level, so ring
+    // members without their own refund still inherit it). A high-confidence
+    // identity match with no suspicious behaviour (loyal repeat customer) is
+    // NOT review-worthy. Drives buildReviewableFilter()/the review queue.
+    review_worthy:
+      (identity?.grade === 'definite' ||
+        identity?.grade === 'probable' ||
+        identity?.grade === 'possible') &&
+      (identity?.behaviouralFlags?.length ?? 0) > 0,
     recommended_action: identity?.recommendedAction ?? null,
     ce3_eligible: identity?.ce3Eligible ?? false,
     ce3_qualifying_transactions: identity?.ce3QualifyingTransactions ?? [],

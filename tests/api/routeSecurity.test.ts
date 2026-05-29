@@ -267,13 +267,12 @@ describe('fetchMerchantReviewQueueRows — review queue definition', () => {
     expect(jobIdIn).toBeDefined();
     expect(jobIdIn![1]).toContain('job-1');
 
-    // Verify or() for identity_confidence_grade and match_status
-    const hasIdentityOr = orCalls.some(
-      (expr) =>
-        expr.includes('identity_confidence_grade') &&
-        expr.includes('match_status')
-    );
-    expect(hasIdentityOr).toBe(true);
+    // Verify the review-queue inclusion filter (buildReviewableFilter) is
+    // applied. Review-worthiness is now the persisted, behaviour-gated
+    // `review_worthy` flag (real identity match AND suspicious behaviour),
+    // not identity grade alone — which over-flagged loyal repeat customers.
+    const hasReviewWorthyOr = orCalls.some((expr) => expr.includes('review_worthy'));
+    expect(hasReviewWorthyOr).toBe(true);
 
     // Verify dismissed_by_merchant is excluded
     const dismissedNot = notCalls.find(([col]) => col === 'dismissed_by_merchant');
@@ -629,9 +628,11 @@ describe('fetchMerchantReviewQueueRows — null match_status regression', () => 
     expect(rows[0].identity_confidence_grade).toBe('B');
     expect(rows[0].match_status).toBeNull();
 
-    // The .or() expression must include identity_confidence_grade check
-    const hasGradeOr = orCalls.some((expr) => expr.includes('identity_confidence_grade'));
-    expect(hasGradeOr).toBe(true);
+    // Inclusion is now driven by the persisted, behaviour-gated review_worthy
+    // flag — which is precomputed and independent of match_status, so a graded
+    // row with null match_status is handled correctly without a match_status OR.
+    const hasReviewWorthyOr = orCalls.some((expr) => expr.includes('review_worthy'));
+    expect(hasReviewWorthyOr).toBe(true);
   });
 
   it('row with match_status=none and null grade is excluded by .or() semantics', () => {

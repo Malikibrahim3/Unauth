@@ -35,4 +35,5 @@ export const STORAGE_BUCKETS = {
 
 export const COLUMNS = {
   IDENTITY_CONFIDENCE_GRADE: 'identity_confidence_grade',
+  REVIEW_WORTHY: 'review_worthy',
 } as const;
