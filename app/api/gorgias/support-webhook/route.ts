@@ -9,7 +9,7 @@ export const runtime = 'nodejs';
 export function GET() {
   return NextResponse.json({
     ok: true,
-    message: 'Unauth Gorgias support webhook — POST events here.',
+    message: 'Unauth Gorgias support webhook - POST events here.',
   });
 }
 
