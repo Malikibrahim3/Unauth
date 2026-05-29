@@ -20,7 +20,7 @@ const INTEGRATIONS = [
     badge: 'Connect',
     badgeVariant: 'connect' as const,
     href: '/settings/integrations/gorgias',
-    logo: '/integrations/gorgias.svg',
+    logo: '/integrations/gorgias.png',
   },
   {
     id: 'zendesk',

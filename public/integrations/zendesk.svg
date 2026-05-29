@@ -1,13 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Zendesk">
-  <rect width="32" height="32" rx="7" fill="#03363D"/>
-  <!-- Zendesk tulip/flower mark: stylised sun with 8 petals -->
-  <circle cx="16" cy="16" r="4" fill="#FFEB3B"/>
-  <line x1="16" y1="6" x2="16" y2="9.5" stroke="#FFEB3B" stroke-width="2.5" stroke-linecap="round"/>
-  <line x1="16" y1="22.5" x2="16" y2="26" stroke="#FFEB3B" stroke-width="2.5" stroke-linecap="round"/>
-  <line x1="6" y1="16" x2="9.5" y2="16" stroke="#FFEB3B" stroke-width="2.5" stroke-linecap="round"/>
-  <line x1="22.5" y1="16" x2="26" y2="16" stroke="#FFEB3B" stroke-width="2.5" stroke-linecap="round"/>
-  <line x1="9.17" y1="9.17" x2="11.65" y2="11.65" stroke="#FFEB3B" stroke-width="2.5" stroke-linecap="round"/>
-  <line x1="20.35" y1="20.35" x2="22.83" y2="22.83" stroke="#FFEB3B" stroke-width="2.5" stroke-linecap="round"/>
-  <line x1="22.83" y1="9.17" x2="20.35" y2="11.65" stroke="#FFEB3B" stroke-width="2.5" stroke-linecap="round"/>
-  <line x1="11.65" y1="20.35" x2="9.17" y2="22.83" stroke="#FFEB3B" stroke-width="2.5" stroke-linecap="round"/>
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="256px" height="195px" viewBox="0 0 256 195" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" preserveAspectRatio="xMidYMid">
+    <g>
+        <path d="M118.249172,51.2326115 L118.249172,194.005605 L0,194.005605 L118.249172,51.2326115 Z M118.249172,2.84217094e-14 C118.249172,32.6440764 91.7686624,59.124586 59.124586,59.124586 C26.4805096,59.124586 0,32.6440764 0,2.84217094e-14 L118.249172,2.84217094e-14 Z M137.750828,194.005605 C137.750828,161.328917 164.198726,134.881019 196.875414,134.881019 C229.552102,134.881019 256,161.361529 256,194.005605 L137.750828,194.005605 Z M137.750828,142.740382 L137.750828,0 L256,0 L137.750828,142.740382 Z" fill="#03363D"></path>
+    </g>
 </svg>

@@ -1,5 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Gorgias">
-  <rect width="32" height="32" rx="7" fill="#FF5524"/>
-  <!-- G letterform: large CCW arc from upper-right, opening at 3 o'clock, with crossbar -->
-  <path d="M22 11.5A7.5 7.5 0 1 0 23.5 16L18 16" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-</svg>
