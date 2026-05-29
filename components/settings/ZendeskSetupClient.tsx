@@ -1,15 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 import { Download } from 'lucide-react';
 
-type Props = {
-  hasApiKeys: boolean;
-  keyPrefixes: string[];
-};
-
-export default function ZendeskSetupClient({ hasApiKeys, keyPrefixes }: Props) {
+export default function ZendeskSetupClient() {
   const [downloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
 
@@ -37,31 +31,6 @@ export default function ZendeskSetupClient({ hasApiKeys, keyPrefixes }: Props) {
     }
   }
 
-  if (!hasApiKeys) {
-    return (
-      <div
-        className="rounded-lg border p-5"
-        style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-raised)' }}
-      >
-        <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>
-          You need an API key first
-        </p>
-        <p className="mt-2 text-sm" style={{ color: 'var(--text-muted)' }}>
-          Create a key in API &amp; Integrations, then return here to download the Zendesk app.
-        </p>
-        <Link
-          href="/settings/api-integrations"
-          className="mt-4 inline-flex rounded-md px-3 py-2 text-sm font-medium"
-          style={{ background: 'var(--accent)', color: 'var(--accent-fg, #fff)' }}
-        >
-          Settings → API &amp; Integrations
-        </Link>
-      </div>
-    );
-  }
-
-  const displayPrefix = keyPrefixes[0] ?? 'unauth_sk_…';
-
   return (
     <div className="space-y-8">
       <div>
@@ -83,34 +52,21 @@ export default function ZendeskSetupClient({ hasApiKeys, keyPrefixes }: Props) {
       </div>
 
       <ol className="list-decimal space-y-3 pl-5 text-sm" style={{ color: 'var(--text)' }}>
-        <li>Download the Unauth app zip above.</li>
+        <li>Download the Unauth app zip above — it ships pre-configured with your key.</li>
         <li>
           In Zendesk → Admin → Apps and integrations → Zendesk Support apps → Upload private app
         </li>
         <li>Upload the zip file.</li>
-        <li>
-          When prompted for API key, enter your key from Unauth → Settings → API &amp; Integrations
-        </li>
-        <li>Install — Unauth now appears on every ticket sidebar.</li>
+        <li>Install — no API key to paste. Unauth now appears on every ticket sidebar.</li>
       </ol>
 
       <div
         className="rounded-lg border p-4 text-sm"
         style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-raised)' }}
       >
-        <p style={{ color: 'var(--text)' }}>
-          Use key:{' '}
-          <span className="font-mono text-xs" style={{ color: 'var(--text-muted)' }}>
-            {displayPrefix}
-          </span>
-        </p>
-        {keyPrefixes.length > 1 && (
-          <p className="mt-2 text-xs" style={{ color: 'var(--text-muted)' }}>
-            Additional keys: {keyPrefixes.slice(1).join(', ')}
-          </p>
-        )}
-        <p className="mt-2 text-xs" style={{ color: 'var(--text-muted)' }}>
-          Paste the full secret you saved when the key was created — only the prefix is shown here.
+        <p style={{ color: 'var(--text-muted)' }}>
+          Each download mints a dedicated, revocable API key bundled into the app. Manage or revoke
+          it any time in Settings → API &amp; Integrations.
         </p>
       </div>
 
