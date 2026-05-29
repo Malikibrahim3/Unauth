@@ -1,0 +1,6 @@
+{
+  "connectionId": "f941bdca-3e69-4d48-863c-54d1f382aa76",
+  "webhookUrl": "https://unauth-pi.vercel.app/api/gorgias/support-webhook",
+  "webhookSecret": "gorgias_whsec_DwDFMDZvG0Cv9DoTV5mxkVWgmAfRWZ8h6awR_iuIGZU",
+  "webhookSecretMasked": "gorgias_whsec_Dw…IGZU"
+}

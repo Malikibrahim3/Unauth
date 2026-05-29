@@ -14,6 +14,8 @@ const WEBHOOK_TOPICS = [
 
 export function verifyShopifyWebhookHmac(rawBody: string, providedHmac: string | null): boolean {
   if (!providedHmac) return false;
+  // Read at call time (not from singleton) so test environments that set
+  // process.env.SHOPIFY_WEBHOOK_SECRET after module load still work correctly.
   const secret = process.env.SHOPIFY_WEBHOOK_SECRET;
   if (!secret) return false;
   const digest = createHmac('sha256', secret).update(rawBody, 'utf8').digest('base64');
