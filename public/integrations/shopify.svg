@@ -1,4 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" role="img" aria-label="Shopify">
-  <rect width="32" height="32" rx="6" fill="#96BF48"/>
-  <text x="16" y="21" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#ffffff">S</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Shopify">
+  <rect width="32" height="32" rx="7" fill="#5C6AC4"/>
+  <!-- Shopping bag handle -->
+  <path d="M12.5 15C12.5 11.5 14 9 16 9C18 9 19.5 11.5 19.5 15" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <!-- Bag body -->
+  <rect x="9.5" y="15" width="13" height="10" rx="1.5" fill="white"/>
 </svg>
