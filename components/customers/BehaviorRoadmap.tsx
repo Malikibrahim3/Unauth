@@ -25,6 +25,7 @@ export interface BehaviorRoadmapEvent {
   tier?: string;
   evidence?: string[];
   detail?: string;
+  source?: string | null;
 }
 
 interface BehaviorRoadmapProps {
@@ -172,6 +173,11 @@ export default function BehaviorRoadmap({ events }: BehaviorRoadmapProps) {
               <div className="flex items-center gap-2 pt-0.5">
                 {riskTag === 'HIGH' && <Badge tone="danger" size="sm">HIGH</Badge>}
                 {riskTag === 'LOW' && <span className="t-label" style={{ color: 'var(--ink-tertiary)' }}>LOW</span>}
+                {event.source && (
+                  <span className="rounded-sm border px-1.5 py-0.5 text-[10px] font-medium uppercase" style={{ background: 'var(--surface-muted)', borderColor: 'var(--surface-border)', color: 'var(--ink-tertiary)' }}>
+                    {event.source}
+                  </span>
+                )}
                 {expanded ? <ChevronDown className="h-3.5 w-3.5" style={{ color: 'var(--ink-tertiary)' }} /> : <ChevronRight className="h-3.5 w-3.5" style={{ color: 'var(--ink-tertiary)' }} />}
               </div>
             </li>

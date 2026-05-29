@@ -418,7 +418,8 @@ export const TX_SAFE_SELECT =
   'identity_confidence_grade,identity_score,match_status,' +
   'refund_claimed,refund_reason,chargeback_filed,' +
   'processed_at,cluster_id,signals_matched,' +
-  'dismissed_by_merchant';
+  'dismissed_by_merchant,' +
+  'source';
 
 /**
  * Fetches transactions for a customer profile, constrained to merchant-owned

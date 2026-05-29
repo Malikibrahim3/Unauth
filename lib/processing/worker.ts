@@ -456,7 +456,8 @@ function rowToFraudTransaction(
     >;
   },
   identity: PersistedIdentityResult | undefined,
-  jobId: string
+  jobId: string,
+  source: FraudTransactionInsert['source'] = 'csv'
 ): FraudTransactionInsert {
   const flags = scored.signals.filter((s) => s.fired).map((s) => s.name);
   const imr = identity?.identityMatchResult;
@@ -511,6 +512,7 @@ function rowToFraudTransaction(
     candidate_cluster_id: identity?.candidateClusterId ?? null,
     confirmed_identity_id: identity?.confirmedIdentityId ?? null,
     false_positive_reported: false,
+    source,
     // ── New pure-identity contract fields ───────────────────────────────────────
     identity_match_score: imr?.identity_match_score ?? null,
     identity_match_grade: imr?.identity_match_grade ?? null,

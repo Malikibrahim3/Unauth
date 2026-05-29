@@ -102,6 +102,7 @@ export interface CustomerEventStreamItem {
   tier?: string;
   evidence?: string[];
   detail?: string;
+  source?: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -492,6 +493,7 @@ export function getEventStream(input: {
     address?: string | null;
     email?: string | null;
     cardLast4?: string | null;
+    source?: string | null;
   }>;
   identityTimeline?: Array<{
     date: string;
@@ -523,6 +525,7 @@ export function getEventStream(input: {
       tier: order.riskLevel ?? undefined,
       evidence: order.fraudFlags?.slice(0, 3) ?? [],
       detail: order.cardLast4 ? `Payment ending ${order.cardLast4}` : undefined,
+      source: order.source ?? null,
     });
   }
 

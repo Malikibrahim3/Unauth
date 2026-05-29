@@ -141,6 +141,14 @@ function ConfidencePill({ grade }: { grade: string }) {
   );
 }
 
+const SOURCE_LABELS: Record<string, string> = {
+  csv: 'CSV',
+  shopify: 'Shopify',
+  zendesk: 'Zendesk',
+  gorgias: 'Gorgias',
+  api: 'API',
+};
+
 function RoadmapOrderCard({ tx, isLast }: { tx: any; isLast: boolean }) {
   const hasClaim = !!(tx.refund_claimed ?? tx.chargeback_filed);
   const eventDate = tx.processed_at;
@@ -175,6 +183,11 @@ function RoadmapOrderCard({ tx, isLast }: { tx: any; isLast: boolean }) {
               <span className="inline-flex items-center px-1.5 py-0.5 rounded text-caption font-semibold" style={riskBadgeStyle(tx.risk_level)}>
                 {tx.risk_level}
               </span>
+              {tx.source && (
+                <span className="inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-medium" style={{ background: 'var(--bg-subtle)', borderColor: 'var(--border-subtle)', color: 'var(--text-muted)' }}>
+                  {SOURCE_LABELS[tx.source] ?? tx.source}
+                </span>
+              )}
             </div>
             <p className="mt-1 text-caption font-mono" style={{ color: 'var(--text-muted)' }}>{tx.order_id}</p>
           </div>
@@ -498,6 +511,7 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
       address: tx.shipping_address,
       email: tx.customer_email,
       cardLast4: tx.card_last4,
+      source: tx.source ?? null,
     })),
     identityTimeline,
     notes: [],

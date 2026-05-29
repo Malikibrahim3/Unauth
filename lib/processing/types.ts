@@ -85,4 +85,6 @@ export interface FraudTransactionInsert {
   context_flags?: unknown[];
   /** Plain-English context summary for export. */
   context_summary?: string | null;
+  /** Ingestion channel: 'csv' | 'shopify' | 'zendesk' | 'gorgias' | 'api' */
+  source?: string | null;
 }
