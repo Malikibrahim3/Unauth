@@ -215,25 +215,32 @@ function returnJsonForModel(input: {
   return returnWidgetHtml(input.branch, html, status, input.ctx);
 }
 
+/** TEMPORARY: set GORGIAS_WIDGET_EMERGENCY_PROOF=0 to disable after Gorgias proof. */
+function gorgiasWidgetEmergencyProofEnabled(): boolean {
+  return process.env.GORGIAS_WIDGET_EMERGENCY_PROOF !== '0';
+}
+
 export async function GET(request: NextRequest) {
   logBuildMarker();
 
-  console.log('[gorgias.widget] emergency_proof_return');
-  return NextResponse.json(
-    {
-      risk_level: 'MEDIUM',
-      identity_confidence_grade: 'N/A',
-      match_score: '28',
-      fraud_flags: 'velocity, paymentChurn',
-    },
-    {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json; charset=utf-8',
-        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+  if (gorgiasWidgetEmergencyProofEnabled()) {
+    console.log('[gorgias.widget] emergency_proof_return');
+    return NextResponse.json(
+      {
+        risk_level: 'MEDIUM',
+        identity_confidence_grade: 'N/A',
+        match_score: '28',
+        fraud_flags: 'velocity, paymentChurn',
       },
-    }
-  );
+      {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        },
+      }
+    );
+  }
 
   const ctx: WidgetReturnContext = { email: '', merchantId: null };
 
