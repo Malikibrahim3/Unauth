@@ -35,6 +35,12 @@ export function buildGorgiasWidgetIntegrationUrl(appBaseUrl: string, widgetToken
 
 export function buildGorgiasSidebarWidgetTemplate(appBaseUrl: string) {
   const appLink = appBaseUrl.replace(/\/$/, '');
+  // Deep-link to the authenticated customer search, pre-filtered to this ticket's
+  // customer, instead of the app root (which renders the public marketing page even
+  // when signed in). `{{ticket.customer.email}}` is a Gorgias template var substituted
+  // at render time — keep the braces literal (no URLSearchParams, which would
+  // percent-encode them so Gorgias never matches).
+  const profileLink = `${appLink}/customers?email={{ticket.customer.email}}`;
   // HTTP integration returns flat JSON at the root; child paths (risk_level, etc.) resolve
   // against that object. Empty card path = root (see Gorgias programmatic widgets docs).
   return {
@@ -46,9 +52,9 @@ export function buildGorgiasSidebarWidgetTemplate(appBaseUrl: string) {
         path: '',
         meta: {
           displayCard: true,
-          link: appLink,
+          link: profileLink,
           custom: {
-            links: [{ url: appLink, label: 'View full profile in Unauth' }],
+            links: [{ url: profileLink, label: 'View full profile in Unauth' }],
           },
         },
         widgets: [
