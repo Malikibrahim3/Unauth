@@ -218,6 +218,23 @@ function returnJsonForModel(input: {
 export async function GET(request: NextRequest) {
   logBuildMarker();
 
+  console.log('[gorgias.widget] emergency_proof_return');
+  return NextResponse.json(
+    {
+      risk_level: 'MEDIUM',
+      identity_confidence_grade: 'N/A',
+      match_score: '28',
+      fraud_flags: 'velocity, paymentChurn',
+    },
+    {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      },
+    }
+  );
+
   const ctx: WidgetReturnContext = { email: '', merchantId: null };
 
   let widgetToken = '';
