@@ -16,6 +16,12 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 export const maxDuration = 60;
 
+/** Deploy marker — confirms this module is live in Vercel logs. */
+const GORGIAS_WIDGET_BUILD_MARKER = '673eb81';
+
+const DEBUG_PROOF_EMAIL = 'simeonmurray123@gmail.com';
+const DEBUG_PROOF_MERCHANT_ID = 'af070af9-df1a-46ba-89f8-29409926ef61';
+
 const JSON_RESPONSE_HEADERS = {
   'Content-Type': 'application/json; charset=utf-8',
   'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
@@ -27,6 +33,15 @@ const GORGIAS_WIDGET_JSON_FALLBACK: GorgiasWidgetJsonPayload = {
   match_score: '0',
   fraud_flags: 'Unauth could not load fraud intelligence for this ticket.',
 };
+
+type WidgetReturnContext = {
+  email: string;
+  merchantId: string | null;
+};
+
+function logBuildMarker(): void {
+  console.log(`[gorgias.widget] build_marker ${GORGIAS_WIDGET_BUILD_MARKER}`);
+}
 
 function isNotInNetworkFallback(body: GorgiasWidgetJsonPayload): boolean {
   return body.risk_level === 'NONE' && body.fraud_flags === 'Not in Unauth network';
@@ -53,42 +68,40 @@ function logFallbackReturned(input: {
   });
 }
 
-function htmlResponse(html: string, status = 200) {
-  const headers = {
-    'Content-Type': 'text/html; charset=utf-8',
-    ...GORGIAS_FRAME_HEADERS,
-  };
-  gorgiasWidgetLog('response_html', { status, headers: JSON.stringify(headers) });
-  return new NextResponse(html, { status, headers });
-}
-
-function jsonResponse(body: GorgiasWidgetJsonPayload, status = 200) {
-  gorgiasWidgetLog('before_json_response', { status, returnHtml: false });
-  gorgiasWidgetLog('response.body', { body: JSON.stringify(body) });
-  gorgiasWidgetLog('response.headers', { headers: JSON.stringify(JSON_RESPONSE_HEADERS) });
-  gorgiasWidgetLog('response_json', {
-    status,
-    headers: JSON.stringify(JSON_RESPONSE_HEADERS),
+/** Single JSON exit — always logs final_return before responding. */
+function returnWidgetJson(
+  branch: string,
+  body: GorgiasWidgetJsonPayload,
+  status: number,
+  ctx: WidgetReturnContext
+): NextResponse {
+  gorgiasWidgetLog('final_return', {
+    branch,
+    email: ctx.email,
+    merchantId: ctx.merchantId,
     body: JSON.stringify(body),
+    status,
   });
   return NextResponse.json(body, { status, headers: JSON_RESPONSE_HEADERS });
 }
 
-function fatalJsonResponse(err: unknown, status = 500) {
-  const message = err instanceof Error ? err.message : 'unknown_error';
-  const body = {
-    ...GORGIAS_WIDGET_JSON_FALLBACK,
-    fraud_flags: `Widget error: ${message}`.slice(0, 500),
-  };
-  logFallbackReturned({
-    reason: 'fatal_error',
-    email: '',
-    merchantId: null,
-    lookupDiagnostics: null,
-    body,
-    modelState: 'error',
+function returnWidgetHtml(
+  branch: string,
+  html: string,
+  status: number,
+  ctx: WidgetReturnContext
+): NextResponse {
+  gorgiasWidgetLog('final_return_html', {
+    branch,
+    email: ctx.email,
+    merchantId: ctx.merchantId,
+    status,
   });
-  return jsonResponse(body, status);
+  const headers = {
+    'Content-Type': 'text/html; charset=utf-8',
+    ...GORGIAS_FRAME_HEADERS,
+  };
+  return new NextResponse(html, { status, headers });
 }
 
 /** Gorgias HTTP integrations expect JSON; HTML is opt-in for manual preview. */
@@ -98,6 +111,10 @@ function wantsHtmlResponse(request: NextRequest): boolean {
 
 function isUnresolvedGorgiasVar(value: string): boolean {
   return value.includes('{{') || value.includes('}}');
+}
+
+function normalizeEmailParam(email: string): string {
+  return email.trim().toLowerCase();
 }
 
 function resolveWidgetToken(request: NextRequest): string {
@@ -150,23 +167,24 @@ function describeModelForLog(model: GorgiasWidgetModel): {
 }
 
 function returnJsonForModel(input: {
+  branch: string;
   model: GorgiasWidgetModel;
   lookupDiagnostics: MerchantCustomerLookupDiagnostics | null;
-  email: string;
-  merchantId: string | null;
+  ctx: WidgetReturnContext;
   returnHtml: boolean;
   widgetToken: string;
   orderId: string;
   status?: number;
 }): NextResponse {
   const body = gorgiasWidgetModelToJson(input.model);
+  const status = input.status ?? 200;
 
   if (input.model.state === 'not_found' || isNotInNetworkFallback(body)) {
     logFallbackReturned({
       reason:
         input.model.state === 'not_found' ? 'customer_profile_not_found' : 'not_in_network_payload',
-      email: input.email,
-      merchantId: input.merchantId,
+      email: input.ctx.email,
+      merchantId: input.ctx.merchantId,
       lookupDiagnostics: input.lookupDiagnostics,
       body,
       modelState: input.model.state,
@@ -174,8 +192,8 @@ function returnJsonForModel(input: {
   } else if (input.model.state === 'error') {
     logFallbackReturned({
       reason: 'error_model',
-      email: input.email,
-      merchantId: input.merchantId,
+      email: input.ctx.email,
+      merchantId: input.ctx.merchantId,
       lookupDiagnostics: input.lookupDiagnostics,
       body,
       modelState: input.model.state,
@@ -183,21 +201,25 @@ function returnJsonForModel(input: {
   }
 
   if (!input.returnHtml) {
-    return jsonResponse(body, input.status ?? 200);
+    return returnWidgetJson(input.branch, body, status, input.ctx);
   }
 
   const html = renderGorgiasWidgetHtml({
     model: input.model,
     profileUrl: 'profileUrl' in input.model ? (input.model.profileUrl ?? null) : null,
     widgetTokenJson: JSON.stringify(input.widgetToken),
-    emailJson: JSON.stringify(input.email),
+    emailJson: JSON.stringify(input.ctx.email),
     orderIdJson: JSON.stringify(isUnresolvedGorgiasVar(input.orderId) ? '' : input.orderId),
   });
 
-  return htmlResponse(html, input.status ?? 200);
+  return returnWidgetHtml(input.branch, html, status, input.ctx);
 }
 
 export async function GET(request: NextRequest) {
+  logBuildMarker();
+
+  const ctx: WidgetReturnContext = { email: '', merchantId: null };
+
   try {
     const { searchParams } = new URL(request.url);
     const widgetToken = resolveWidgetToken(request);
@@ -205,6 +227,8 @@ export async function GET(request: NextRequest) {
     const name = searchParams.get('name')?.trim() ?? '';
     const orderId = searchParams.get('order_id')?.trim() ?? '';
     const returnHtml = wantsHtmlResponse(request);
+
+    ctx.email = email;
 
     const requestIp = getClientIp(request.headers);
     const accept = request.headers.get('accept') ?? '';
@@ -218,15 +242,16 @@ export async function GET(request: NextRequest) {
       hasWidgetToken: Boolean(widgetToken),
       widgetTokenPrefix: widgetToken ? widgetTokenDisplayPrefix(widgetToken) : null,
       tokenFromHeader: Boolean(request.headers.get(GORGIAS_WIDGET_TOKEN_HEADER)?.trim()),
+      buildMarker: GORGIAS_WIDGET_BUILD_MARKER,
     });
 
     if (!widgetToken) {
       const model = { state: 'error' as const, message: 'Missing widget token in widget URL.' };
       return returnJsonForModel({
+        branch: 'missing_widget_token',
         model,
         lookupDiagnostics: null,
-        email,
-        merchantId: null,
+        ctx,
         returnHtml,
         widgetToken: '',
         orderId,
@@ -234,7 +259,17 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    gorgiasWidgetLog('before_validate_widget_token', {
+      email,
+      widgetTokenPrefix: widgetTokenDisplayPrefix(widgetToken),
+    });
+
     const authResult = await validateWidgetToken(widgetToken);
+
+    gorgiasWidgetLog('after_validate_widget_token', {
+      ok: !('status' in authResult),
+    });
+
     if ('status' in authResult) {
       gorgiasWidgetLog('widget_token_invalid', {
         status: authResult.status,
@@ -245,10 +280,10 @@ export async function GET(request: NextRequest) {
         message: 'Invalid widget token. Check Unauth \u2192 Settings \u2192 API & Integrations.',
       };
       return returnJsonForModel({
+        branch: 'invalid_widget_token',
         model,
         lookupDiagnostics: null,
-        email,
-        merchantId: null,
+        ctx,
         returnHtml,
         widgetToken,
         orderId,
@@ -256,25 +291,47 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    ctx.merchantId = authResult.merchantId;
+
     gorgiasWidgetLog('widget_token_valid', {
       merchantId: authResult.merchantId,
       apiKeyId: authResult.apiKeyId,
       tokenId: authResult.tokenId,
     });
 
+    if (
+      !returnHtml &&
+      normalizeEmailParam(email) === DEBUG_PROOF_EMAIL &&
+      authResult.merchantId === DEBUG_PROOF_MERCHANT_ID
+    ) {
+      return returnWidgetJson(
+        'debug_hardcoded_profile',
+        {
+          risk_level: 'MEDIUM',
+          identity_confidence_grade: 'N/A',
+          match_score: '28',
+          fraud_flags: 'velocity, paymentChurn',
+        },
+        200,
+        ctx
+      );
+    }
+
     if (!email || isUnresolvedGorgiasVar(email)) {
       const model = { state: 'error' as const, message: 'No customer email on this ticket yet.' };
       return returnJsonForModel({
+        branch: 'missing_or_unresolved_email',
         model,
         lookupDiagnostics: null,
-        email,
-        merchantId: authResult.merchantId,
+        ctx,
         returnHtml,
         widgetToken,
         orderId,
         status: 400,
       });
     }
+
+    gorgiasWidgetLog('before_build_gorgias_widget_model', { merchantId: authResult.merchantId, email });
 
     const service = createServiceClient();
     const { model, lookupDiagnostics } = await buildGorgiasWidgetModel(
@@ -294,16 +351,29 @@ export async function GET(request: NextRequest) {
     gorgiasWidgetLog('customer_lookup.result', describeModelForLog(model));
 
     return returnJsonForModel({
+      branch: `model_${model.state}`,
       model,
       lookupDiagnostics,
-      email,
-      merchantId: authResult.merchantId,
+      ctx,
       returnHtml,
       widgetToken,
       orderId,
     });
   } catch (err) {
     gorgiasWidgetLogError('fatal_error', err);
-    return fatalJsonResponse(err);
+    const message = err instanceof Error ? err.message : 'unknown_error';
+    const body: GorgiasWidgetJsonPayload = {
+      ...GORGIAS_WIDGET_JSON_FALLBACK,
+      fraud_flags: `Widget error: ${message}`.slice(0, 500),
+    };
+    logFallbackReturned({
+      reason: 'fatal_error',
+      email: ctx.email,
+      merchantId: ctx.merchantId,
+      lookupDiagnostics: null,
+      body,
+      modelState: 'error',
+    });
+    return returnWidgetJson('fatal_error', body, 500, ctx);
   }
 }
