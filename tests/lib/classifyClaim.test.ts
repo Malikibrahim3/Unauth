@@ -55,6 +55,35 @@ describe('classifyClaimType', () => {
     expect(result.claimType).toBe('INR');
     expect(result.confidence).toBeGreaterThan(0.8);
   });
+
+  it('classifies INR through curly apostrophes (real mail-client wording)', () => {
+    // "haven’t received" with a typographic apostrophe must still hit INR.
+    const result = classifyClaimType('Hi, I still haven’t received order #1008. I’d like a refund please.');
+    expect(result.claimType).toBe('INR');
+    expect(result.confidence).toBeGreaterThan(0.8);
+  });
+
+  it.each([
+    ['where is my order #1008'],
+    ['my package never arrived'],
+    ["I haven't received my order"],
+    ['I would like a refund because it never arrived'],
+    ['has not arrived'],
+    ['missing parcel'],
+  ])('treats %p as an INR claim', (text) => {
+    expect(detectIsClaim(text)).toBe(true);
+    expect(classifyClaimType(text).claimType).toBe('INR');
+  });
+
+  it('flags refund-only language as a claim without forcing an INR type', () => {
+    expect(detectIsClaim("I'd like a refund please")).toBe(true);
+  });
+
+  it('does not overclassify a neutral order-status question', () => {
+    const text = 'Can you tell me when my order will arrive?';
+    expect(detectIsClaim(text)).toBe(false);
+    expect(classifyClaimType(text).claimType).toBe('other');
+  });
 });
 
 describe('detectChargebackThreatened', () => {

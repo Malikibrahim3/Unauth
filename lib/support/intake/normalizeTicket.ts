@@ -134,6 +134,15 @@ export type DeriveClaimSignalsInput = {
   subject?: string | null;
   customerText?: string | null;
   agentText?: string | null;
+  /**
+   * All customer (non-agent) message bodies for the thread, oldest→newest.
+   * When provided, claim DETECTION/classification scans the whole customer side
+   * of the conversation (not just the latest message) and ignores agent text —
+   * so a long thread whose original claim sits in an early message is still
+   * classified correctly, and an agent merely saying "refund" never creates a
+   * claim. Stored summary fields keep using `customerText`/`agentText` unchanged.
+   */
+  customerTexts?: Array<string | null | undefined>;
   tags?: string[];
   macros?: string[];
   channel?: string | null;
@@ -156,7 +165,15 @@ export function deriveClaimSignals(
 ): { signals: ClaimSignalFields; inferredOutcome: string | null } {
   const tags = input.tags ?? [];
   const macros = input.macros ?? [];
-  const textParts = [input.subject, input.customerText, input.agentText, tags.join(' ')];
+  // Customer-driven, whole-thread detection when message bodies are supplied;
+  // otherwise fall back to the legacy latest-message + agent text behaviour.
+  const customerTexts = (input.customerTexts ?? []).filter(
+    (t): t is string => typeof t === 'string' && t.trim().length > 0
+  );
+  const textParts =
+    input.customerTexts !== undefined
+      ? [input.subject, ...customerTexts, tags.join(' ')]
+      : [input.subject, input.customerText, input.agentText, tags.join(' ')];
   const isClaim = detectIsClaim(...textParts);
   const classification = classifyClaimType(...textParts);
   const inferredOutcome = inferOutcomeFromMacros(macros);
@@ -473,6 +490,20 @@ function summarizeMessages(
   };
 }
 
+/**
+ * All non-agent (customer) message bodies, oldest→newest, used for claim
+ * DETECTION only (never stored). Lets classification see claim language buried
+ * in early messages of long threads; summary fields still use summarizeMessages.
+ */
+function collectCustomerTexts(
+  messages: Array<{ body?: string | null; from_agent?: boolean }>
+): string[] {
+  return messages
+    .filter((message) => !message.from_agent)
+    .map((message) => asString(message.body))
+    .filter((body): body is string => !!body);
+}
+
 function buildNormalizedBase(
   context: NormalizeSupportTicketContext,
   provider: SupportProvider,
@@ -549,6 +580,7 @@ export function normalizeZendeskTicket(
     subject,
     customerText: customer ?? description,
     agentText: agent,
+    customerTexts: [description, ...collectCustomerTexts(commentBodies)],
     tags,
     channel: normalizeChannel(asString(readPath(ticket, ['via', 'channel']))),
     messageCount: commentBodies.length || null,
@@ -601,14 +633,22 @@ export function normalizeGorgiasTicket(
       row.from_agent === true ||
       asString(row.sender_type)?.toLowerCase() === 'agent' ||
       asString(source?.type)?.toLowerCase() === 'internal-note';
-    return { body: asString(row.body ?? row.stripped_text), from_agent: fromAgent };
+    // Gorgias message text lives in several fields; pick the first NON-EMPTY of
+    // stripped_text (quoted/signature removed — cleanest) then body_text then
+    // body. `??` alone is insufficient: an empty-string stripped_text would
+    // short-circuit and hide the populated body_text (the case for API-created
+    // and some inbound email messages), losing the claim text for detection.
+    const body =
+      asString(row.stripped_text) ?? asString(row.body_text) ?? asString(row.body);
+    return { body, from_agent: fromAgent };
   });
 
   const { customer, agent } = summarizeMessages(mappedMessages);
+  const customerTexts = collectCustomerTexts(mappedMessages);
   const integrationText = JSON.stringify(ticket.integrations ?? ticket.meta ?? {});
   const orderRef = extractOrderRefFromSources(
     subject,
-    customer,
+    ...customerTexts,
     integrationText,
     tags.join(' ')
   );
@@ -635,6 +675,7 @@ export function normalizeGorgiasTicket(
     subject,
     customerText: customer,
     agentText: agent,
+    customerTexts,
     tags,
     macros,
     channel,
@@ -719,6 +760,7 @@ export function normalizeIntercomConversation(
   const { signals, inferredOutcome } = deriveClaimSignals({
     customerText: latestCustomer ?? sourceBody,
     agentText: agent,
+    customerTexts: [sourceBody, ...collectCustomerTexts(mappedParts)],
     tags,
     channel: 'chat',
     messageCount: mappedParts.length || null,

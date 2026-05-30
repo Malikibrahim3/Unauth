@@ -130,6 +130,125 @@ describe('support ticket normalizer', () => {
     expect(normalized.agent_notes_summary?.length).toBeLessThanOrEqual(SUPPORT_SUMMARY_MAX_LENGTH);
   });
 
+  // Regression for the real Gorgias INR ticket (external case 63091193) that was
+  // ingested with is_claim=false / claim_type=null / order_ref=null. Uses the
+  // exact wording, including the curly apostrophes a mail client actually sends.
+  it('classifies the real "Order #1008 not received" INR ticket end to end', () => {
+    const raw = {
+      id: 'g-63091193',
+      subject: 'Order #1008 not received',
+      status: 'open',
+      tags: [],
+      customer: { email: 'shopper@example.com' },
+      messages: [
+        {
+          body: 'Hi, I still haven’t received order #1008. I’d like a refund please.',
+          from_agent: false,
+        },
+      ],
+      created_datetime: '2026-05-28T09:00:00Z',
+      updated_datetime: '2026-05-28T09:30:00Z',
+    };
+
+    const normalized = normalizeGorgiasTicket(raw, baseContext);
+
+    expect(normalized.is_claim).toBe(true);
+    expect(normalized.claim_type).toBe('INR');
+    expect(normalized.claim_type_confidence ?? 0).toBeGreaterThan(0.8);
+    expect(normalized.order_ref).toBe('1008');
+  });
+
+  it('classifies an inbound customer message whose text is only in body_text', () => {
+    // API-created / some inbound email messages leave stripped_text empty and
+    // carry the content in body_text. The classifier must still see it.
+    const raw = {
+      id: 'g-bodytext',
+      subject: 'Order #1008 not received',
+      status: 'open',
+      tags: [],
+      customer: { email: 'shopper@example.com' },
+      messages: [
+        {
+          from_agent: false,
+          stripped_text: '',
+          body_text: "Hi, I still haven't received order #1008. I'd like a refund please.",
+        },
+      ],
+      created_datetime: '2026-05-30T21:00:00Z',
+      updated_datetime: '2026-05-30T21:00:00Z',
+    };
+
+    const normalized = normalizeGorgiasTicket(raw, baseContext);
+    expect(normalized.is_claim).toBe(true);
+    expect(normalized.claim_type).toBe('INR');
+    expect(normalized.order_ref).toBe('1008');
+  });
+
+  it('detects a claim buried in an early message of a long Gorgias thread', () => {
+    const raw = {
+      id: 'g-longthread',
+      subject: 'Order #1008',
+      status: 'open',
+      tags: [],
+      customer: { email: 'shopper@example.com' },
+      messages: [
+        { body: 'Hi, I still haven’t received order #1008. I’d like a refund please.', from_agent: false },
+        { body: 'So sorry to hear that — let me look into it for you.', from_agent: true },
+        { body: 'Any update?', from_agent: false },
+        { body: 'Thanks for checking.', from_agent: false },
+        { body: 'We are still investigating with the carrier.', from_agent: true },
+        { body: 'Ok, appreciate it.', from_agent: false },
+      ],
+      created_datetime: '2026-05-28T09:00:00Z',
+      updated_datetime: '2026-05-29T09:30:00Z',
+    };
+
+    const normalized = normalizeGorgiasTicket(raw, baseContext);
+    expect(normalized.is_claim).toBe(true);
+    expect(normalized.claim_type).toBe('INR');
+    expect(normalized.order_ref).toBe('1008');
+  });
+
+  it('does not flag a long neutral Gorgias thread as a claim', () => {
+    const raw = {
+      id: 'g-neutral',
+      subject: 'Question about sizing',
+      status: 'open',
+      tags: [],
+      customer: { email: 'shopper@example.com' },
+      messages: [
+        { body: 'Hi, what size should I order for a medium fit?', from_agent: false },
+        { body: 'We recommend sizing up — happy to help!', from_agent: true },
+        { body: 'Great, thank you so much.', from_agent: false },
+      ],
+      created_datetime: '2026-05-28T09:00:00Z',
+      updated_datetime: '2026-05-28T10:30:00Z',
+    };
+
+    const normalized = normalizeGorgiasTicket(raw, baseContext);
+    expect(normalized.is_claim).toBe(false);
+  });
+
+  it('does not flag a ticket where only the agent mentions a refund (customer-driven)', () => {
+    const raw = {
+      id: 'g-agentrefund',
+      subject: 'Order question',
+      status: 'open',
+      tags: [],
+      customer: { email: 'shopper@example.com' },
+      messages: [
+        { body: 'Hi, can you tell me when my order will arrive?', from_agent: false },
+        { body: 'If it does not arrive we can issue a refund for you.', from_agent: true },
+        { body: 'Ok, thanks for letting me know.', from_agent: false },
+      ],
+      created_datetime: '2026-05-28T09:00:00Z',
+      updated_datetime: '2026-05-28T10:30:00Z',
+    };
+
+    const normalized = normalizeGorgiasTicket(raw, baseContext);
+    expect(normalized.is_claim).toBe(false);
+  });
+
   it('normalizes Intercom conversation with SM-0090-001', () => {
     const raw = {
       id: 'ic-77',

@@ -52,6 +52,9 @@ export function hashRawPayload(payload: unknown): string {
 const ORDER_REF_PATTERNS: Array<{ pattern: RegExp; group: number }> = [
   { pattern: /\b(ORD-\d{4}-\d+)\b/i, group: 1 },
   { pattern: /\b(SM-\d{4}-\d+)\b/i, group: 1 },
+  // "order number 1008", "order no. 1008", "order no 1008", "order num 1008".
+  // Must precede the looser "order #? <digits>" rule below so the qualifier is consumed.
+  { pattern: /\border\s*(?:number|no|num)\.?\s*:?\s*#?\s*(\d{3,})\b/i, group: 1 },
   { pattern: /\border\s*#?\s*(\d{3,})\b/i, group: 1 },
   { pattern: /#(\d{3,})\b/, group: 1 },
 ];
@@ -123,6 +126,31 @@ const upsertConnectionSchema = z.object({
   webhook_secret_rotated_at: z.string().datetime().nullable().optional(),
 });
 
+/**
+ * External-provider timestamps (Gorgias/Zendesk/etc.) arrive in assorted valid
+ * ISO-8601 forms — `Z`, numeric offsets like `+00:00`, and 6-digit microsecond
+ * fractions — that Zod's strict `.datetime()` rejects. Accept anything the JS
+ * Date parser understands and canonicalise to `…Z`. Genuinely invalid strings
+ * still fail; null/undefined pass through (handled by `.nullable().optional()`).
+ * Empty strings are normalised to `null` upstream by `asString`, so they never
+ * reach here as `''` — and if one did, Date.parse rejects it (never coerced to now).
+ *
+ * Scoped to provider timestamps only — internal/auth timestamps stay strict.
+ */
+const providerTimestamp = z
+  .string()
+  .nullable()
+  .optional()
+  .transform((value, ctx) => {
+    if (value === null || value === undefined) return value;
+    const ms = Date.parse(value);
+    if (Number.isNaN(ms)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Invalid datetime' });
+      return z.NEVER;
+    }
+    return new Date(ms).toISOString();
+  });
+
 const upsertCaseSchema = z.object({
   merchant_id: z.string().uuid(),
   provider: supportProviderSchema,
@@ -144,8 +172,8 @@ const upsertCaseSchema = z.object({
   tags: z.array(z.unknown()).default([]),
   raw_payload: z.unknown().optional(),
   raw_payload_hash: z.string().optional(),
-  created_at_provider: z.string().datetime().nullable().optional(),
-  updated_at_provider: z.string().datetime().nullable().optional(),
+  created_at_provider: providerTimestamp,
+  updated_at_provider: providerTimestamp,
   // Additive claim-intelligence signals (see classifyClaim.ts / normalizeTicket.ts).
   channel: z.string().nullable().optional(),
   message_count: z.number().int().nullable().optional(),
@@ -172,7 +200,7 @@ const appendEventSchema = z.object({
   event_summary: z.string().nullable().optional(),
   actor_type: z.string().nullable().optional(),
   actor_identifier: z.string().nullable().optional(),
-  occurred_at_provider: z.string().datetime().nullable().optional(),
+  occurred_at_provider: providerTimestamp,
   metadata: z.record(z.unknown()).default({}),
   raw_payload: z.unknown().optional(),
   raw_payload_hash: z.string().nullable().optional(),

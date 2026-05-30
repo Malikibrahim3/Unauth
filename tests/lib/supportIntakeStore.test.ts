@@ -193,12 +193,62 @@ describe('support intake store', () => {
   });
 });
 
+describe('provider timestamp normalization (upsertSupportCaseIntake)', () => {
+  const merchant = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+  const baseInput = {
+    merchant_id: merchant,
+    provider: 'gorgias' as const,
+    external_case_id: 'g-63091193',
+  };
+
+  it.each([
+    ['Z form', '2026-05-30T21:00:00Z', '2026-05-30T21:00:00.000Z'],
+    ['+00:00 offset', '2026-05-30T21:00:00+00:00', '2026-05-30T21:00:00.000Z'],
+    ['microseconds + offset', '2026-05-30T21:00:00.123456+00:00', '2026-05-30T21:00:00.123Z'],
+  ])('accepts %s and canonicalises to ISO Z', async (_label, input, expected) => {
+    const { supabase, calls } = makeUpsertSupabase();
+    await upsertSupportCaseIntake(supabase, {
+      ...baseInput,
+      created_at_provider: input,
+      updated_at_provider: input,
+    });
+    expect(calls[0].payload.created_at_provider).toBe(expected);
+    expect(calls[0].payload.updated_at_provider).toBe(expected);
+  });
+
+  it('rejects a non-date string', async () => {
+    const { supabase } = makeUpsertSupabase();
+    await expect(
+      upsertSupportCaseIntake(supabase, { ...baseInput, created_at_provider: 'not-a-date' })
+    ).rejects.toThrow();
+  });
+
+  it('rejects an empty string (never coerced to now)', async () => {
+    const { supabase } = makeUpsertSupabase();
+    await expect(
+      upsertSupportCaseIntake(supabase, { ...baseInput, created_at_provider: '' })
+    ).rejects.toThrow();
+  });
+
+  it('passes null/undefined through unchanged', async () => {
+    const { supabase, calls } = makeUpsertSupabase();
+    await upsertSupportCaseIntake(supabase, { ...baseInput, created_at_provider: null });
+    expect(calls[0].payload.created_at_provider).toBeNull();
+  });
+});
+
 describe('extractOrderRefFromText', () => {
   it.each([
     ['Please check ORD-2025-00341', 'ORD-2025-00341'],
     ['Ticket about #1007', '1007'],
     ['Customer wrote: Order 1007 never arrived', '1007'],
     ['Ref SM-0090-001 on label', 'SM-0090-001'],
+    ['Order #1008 not received', '1008'],
+    ['order #1008', '1008'],
+    ['#1008', '1008'],
+    ['order number 1008 please', '1008'],
+    ['my order no. 1008 has not arrived', '1008'],
+    ['order no 1008', '1008'],
   ])('extracts %s -> %s', (text, expected) => {
     expect(extractOrderRefFromText(text)).toBe(expected);
   });

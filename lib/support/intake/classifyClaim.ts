@@ -111,7 +111,13 @@ function normaliseText(...parts: Array<string | null | undefined>): string {
   return parts
     .filter((p): p is string => typeof p === 'string' && p.length > 0)
     .join('\n')
-    .toLowerCase();
+    .toLowerCase()
+    // Fold typographic apostrophes/quotes to ASCII so patterns like `haven'?t`
+    // match real-world text where mail clients send curly quotes ("haven’t",
+    // "I’d"). Without this, INR/refund phrases silently miss and downgrade to
+    // claim_type 'other'.
+    .replace(/[‘’ʼ′]/g, "'")
+    .replace(/[“”]/g, '"');
 }
 
 /**
