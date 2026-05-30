@@ -43,7 +43,7 @@ type WidgetReturnContext = {
 };
 
 function logBuildMarker(): void {
-  console.log(`[gorgias.widget] build_marker ${gorgiasWidgetBuildMarker()}`);
+  gorgiasWidgetLog('build_marker', { buildMarker: gorgiasWidgetBuildMarker() });
 }
 
 function isNotInNetworkFallback(body: GorgiasWidgetJsonPayload): boolean {
