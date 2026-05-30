@@ -9,7 +9,20 @@ import {
   linkSupportCaseToCommerceContext,
   type SupportLinkStatus,
 } from '@/lib/support/intake/linkSupportCase';
-import { appendSupportCaseEvent, upsertSupportCaseIntake } from '@/lib/support/intake/store';
+import {
+  appendSupportCaseEvent,
+  upsertCustomerIdentitySignals,
+  upsertOrderClaimContext,
+  upsertSupportCaseIntake,
+} from '@/lib/support/intake/store';
+import {
+  extractCommerceSignals,
+  extractOrdersAtMerchant,
+} from '@/lib/support/intake/commerceSignals';
+import { recomputeCustomerClaimSummary } from '@/lib/support/intake/claimSummary';
+import { detectIdentityLinkCandidates } from '@/lib/support/intake/identityLinking';
+import type { ClaimType } from '@/lib/support/intake/classifyClaim';
+import type { NormalizedSupportCaseIntake } from '@/lib/support/intake/normalizeTicket';
 
 export const supportIngestBodySchema = z.object({
   merchant_id: z.string().uuid(),
@@ -27,6 +40,7 @@ export type SupportIngestBody = z.infer<typeof supportIngestBodySchema>;
 export type SupportIngestSuccess = {
   ok: true;
   provider: string;
+  merchant_id: string;
   support_case_id: string;
   event_id: string;
   external_case_id: string;
@@ -37,6 +51,9 @@ export type SupportIngestSuccess = {
   shopify_order_id: string | null;
   customer_profile_id: string | null;
   merchant_claim_id: string | null;
+  is_claim: boolean;
+  claim_type: ClaimType | null;
+  claim_type_confidence: number | null;
 };
 
 export class SupportIngestError extends Error {
@@ -157,9 +174,19 @@ export async function ingestSupportCase(
     merchantId: parsed.merchant_id,
   });
 
+  if (normalized.is_claim) {
+    await captureClaimSignals(supabase, client, {
+      supportCaseId,
+      merchantId: parsed.merchant_id,
+      normalized,
+      rawTicket: parsed.raw,
+    });
+  }
+
   return {
     ok: true,
     provider: normalized.provider,
+    merchant_id: parsed.merchant_id,
     support_case_id: supportCaseId,
     event_id: eventRow.id,
     external_case_id: normalized.external_case_id,
@@ -170,5 +197,62 @@ export async function ingestSupportCase(
     shopify_order_id: linkResult.shopify_order_id,
     customer_profile_id: linkResult.customer_profile_id,
     merchant_claim_id: linkResult.merchant_claim_id,
+    is_claim: normalized.is_claim,
+    claim_type: normalized.claim_type,
+    claim_type_confidence: normalized.claim_type_confidence,
   };
+}
+
+/**
+ * Best-effort claim-intelligence capture: order context, hashed identity
+ * signals, cross-merchant link detection, and the per-merchant claim summary.
+ * Failures here never break core ticket ingestion.
+ */
+async function captureClaimSignals(
+  supabase: unknown,
+  client: Parameters<typeof upsertOrderClaimContext>[0] &
+    Parameters<typeof upsertCustomerIdentitySignals>[0],
+  input: {
+    supportCaseId: string;
+    merchantId: string;
+    normalized: NormalizedSupportCaseIntake;
+    rawTicket: unknown;
+  }
+): Promise<void> {
+  try {
+    const commerce = extractCommerceSignals(input.rawTicket);
+    const ordersAtMerchant = extractOrdersAtMerchant(input.rawTicket);
+    const emailHash = input.normalized.customer_email_hash;
+
+    await upsertOrderClaimContext(client, {
+      ...commerce.order,
+      support_case_id: input.supportCaseId,
+      merchant_id: input.merchantId,
+      order_ref: input.normalized.order_ref ?? commerce.order.order_ref,
+    });
+
+    if (emailHash) {
+      const { hashes } = await upsertCustomerIdentitySignals(client, {
+        merchant_id: input.merchantId,
+        customer_email_hash: emailHash,
+        phone: commerce.identity.phone,
+        shipping_address: commerce.identity.shipping_address,
+        billing_address: commerce.identity.billing_address,
+        ip_address: commerce.identity.ip_address,
+        device_fingerprint: commerce.identity.device_fingerprint,
+        customer_account_type: commerce.identity.customer_account_type,
+        account_created_at: commerce.identity.account_created_at,
+        claimed_at: commerce.claimed_at,
+      });
+      await detectIdentityLinkCandidates(supabase, { merchantId: input.merchantId, hashes });
+    }
+
+    await recomputeCustomerClaimSummary(supabase, {
+      merchantId: input.merchantId,
+      emailHash,
+      knownOrderCount: ordersAtMerchant,
+    });
+  } catch {
+    // Signal capture is best-effort; never break ticket ingestion.
+  }
 }

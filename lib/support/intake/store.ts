@@ -1,7 +1,12 @@
 import { createHash } from 'node:crypto';
 import { z } from 'zod';
 import { hashIdentifier } from '@/lib/identity/hash';
-import { normaliseEmail } from '@/lib/identity/normalise';
+import {
+  normaliseAddress,
+  normaliseEmail,
+  normaliseIP,
+  normalisePhone,
+} from '@/lib/identity/normalise';
 import { TABLES } from '@/lib/supabase/tables';
 import {
   SUPPORT_PROVIDER_CONNECTION_STATUSES,
@@ -141,6 +146,22 @@ const upsertCaseSchema = z.object({
   raw_payload_hash: z.string().optional(),
   created_at_provider: z.string().datetime().nullable().optional(),
   updated_at_provider: z.string().datetime().nullable().optional(),
+  // Additive claim-intelligence signals (see classifyClaim.ts / normalizeTicket.ts).
+  channel: z.string().nullable().optional(),
+  message_count: z.number().int().nullable().optional(),
+  customer_reply_count: z.number().int().nullable().optional(),
+  was_reopened: z.boolean().nullable().optional(),
+  macros_used: z.array(z.string()).default([]),
+  sentiment_score: z.number().nullable().optional(),
+  chargeback_threatened: z.boolean().optional(),
+  is_claim: z.boolean().optional(),
+  claim_type: z.enum(['INR', 'damaged', 'wrong_item', 'not_as_described', 'other']).nullable().optional(),
+  claim_type_confidence: z.number().min(0).max(1).nullable().optional(),
+  provided_evidence: z.boolean().nullable().optional(),
+  accepted_first_resolution: z.boolean().nullable().optional(),
+  resolution_type: z.string().nullable().optional(),
+  escalation_count: z.number().int().nullable().optional(),
+  time_to_first_claim_message_seconds: z.number().int().nullable().optional(),
 });
 
 const appendEventSchema = z.object({
@@ -295,4 +316,173 @@ export async function appendSupportCaseEvent(
 
   if (error) throw new Error(`insert ${TABLES.SUPPORT_CASE_EVENTS} failed: ${error.message}`);
   return data;
+}
+
+// ---------------------------------------------------------------------------
+// Claim-intelligence sibling tables
+// ---------------------------------------------------------------------------
+
+export function diffDays(fromIso: string | null | undefined, toIso: string | null | undefined): number | null {
+  if (!fromIso || !toIso) return null;
+  const from = Date.parse(fromIso);
+  const to = Date.parse(toIso);
+  if (Number.isNaN(from) || Number.isNaN(to)) return null;
+  return Math.floor((to - from) / 86_400_000);
+}
+
+export function hashPhone(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  const normalized = normalisePhone(raw);
+  return normalized ? hashIdentifier(normalized) : null;
+}
+
+export function hashAddress(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  const normalized = normaliseAddress(raw);
+  return normalized ? hashIdentifier(normalized) : null;
+}
+
+export function hashIp(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  const normalized = normaliseIP(raw);
+  return normalized ? hashIdentifier(normalized) : null;
+}
+
+const orderClaimContextSchema = z.object({
+  support_case_id: z.string().uuid(),
+  merchant_id: z.string().uuid(),
+  order_ref: z.string().nullable().optional(),
+  order_value: z.number().nullable().optional(),
+  order_created_at: z.string().nullable().optional(),
+  fulfillment_status_at_claim: z.string().nullable().optional(),
+  delivery_status_at_claim: z.string().nullable().optional(),
+  shipping_carrier: z.string().nullable().optional(),
+  tracking_number: z.string().nullable().optional(),
+  days_since_order_at_claim: z.number().int().nullable().optional(),
+  days_since_delivery_at_claim: z.number().int().nullable().optional(),
+  payment_method: z.string().nullable().optional(),
+  discount_code_used: z.boolean().nullable().optional(),
+  discount_amount: z.number().nullable().optional(),
+  is_first_order: z.boolean().nullable().optional(),
+  shipping_equals_billing: z.boolean().nullable().optional(),
+  was_refunded_previously: z.boolean().nullable().optional(),
+  refund_amount_requested: z.number().nullable().optional(),
+  refund_amount_approved: z.number().nullable().optional(),
+  partial_refund: z.boolean().nullable().optional(),
+});
+
+export type OrderClaimContextInput = z.input<typeof orderClaimContextSchema>;
+
+export async function upsertOrderClaimContext(
+  supabase: SupabaseUpsertClient,
+  input: OrderClaimContextInput
+) {
+  const parsed = orderClaimContextSchema.parse(input);
+  const { data, error } = await supabase
+    .from(TABLES.ORDER_CLAIM_CONTEXT)
+    .upsert(parsed, { onConflict: 'support_case_id' })
+    .select()
+    .single();
+
+  if (error) throw new Error(`upsert ${TABLES.ORDER_CLAIM_CONTEXT} failed: ${error.message}`);
+  return data;
+}
+
+const identitySignalsInputSchema = z.object({
+  merchant_id: z.string().uuid(),
+  customer_email_hash: z.string().min(1),
+  phone: z.string().nullable().optional(),
+  shipping_address: z.string().nullable().optional(),
+  billing_address: z.string().nullable().optional(),
+  ip_address: z.string().nullable().optional(),
+  device_fingerprint: z.string().nullable().optional(),
+  customer_account_type: z.enum(['guest', 'registered']).nullable().optional(),
+  account_created_at: z.string().nullable().optional(),
+  claimed_at: z.string().nullable().optional(),
+});
+
+export type CustomerIdentitySignalsInput = z.input<typeof identitySignalsInputSchema>;
+
+export type CustomerIdentityHashes = {
+  customer_email_hash: string;
+  phone_hash: string | null;
+  shipping_address_hash: string | null;
+  billing_address_hash: string | null;
+  ip_hash: string | null;
+  device_fingerprint: string | null;
+};
+
+/**
+ * Upsert hashed identity signals for a (merchant, customer) pair and return the
+ * computed hashes so the caller can run cross-merchant link detection.
+ *
+ * NOTE: first_seen_at is set to the claim time on every write; refining it to
+ * the earliest-ever value is left to a future DB-side LEAST() trigger.
+ */
+export async function upsertCustomerIdentitySignals(
+  supabase: SupabaseUpsertClient,
+  input: CustomerIdentitySignalsInput
+): Promise<{ row: Record<string, unknown> | null; hashes: CustomerIdentityHashes }> {
+  const parsed = identitySignalsInputSchema.parse(input);
+  const seenAt = parsed.claimed_at ?? new Date().toISOString();
+
+  const hashes: CustomerIdentityHashes = {
+    customer_email_hash: parsed.customer_email_hash,
+    phone_hash: hashPhone(parsed.phone),
+    shipping_address_hash: hashAddress(parsed.shipping_address),
+    billing_address_hash: hashAddress(parsed.billing_address),
+    ip_hash: hashIp(parsed.ip_address),
+    device_fingerprint: parsed.device_fingerprint?.trim() || null,
+  };
+
+  const payload = {
+    merchant_id: parsed.merchant_id,
+    customer_email_hash: parsed.customer_email_hash,
+    phone_hash: hashes.phone_hash,
+    shipping_address_hash: hashes.shipping_address_hash,
+    billing_address_hash: hashes.billing_address_hash,
+    ip_hash: hashes.ip_hash,
+    device_fingerprint: hashes.device_fingerprint,
+    customer_account_type: parsed.customer_account_type ?? null,
+    account_created_at: parsed.account_created_at ?? null,
+    days_between_account_creation_and_first_claim: diffDays(parsed.account_created_at, seenAt),
+    first_seen_at: seenAt,
+    last_seen_at: seenAt,
+    updated_at: new Date().toISOString(),
+  };
+
+  const { data, error } = await supabase
+    .from(TABLES.CUSTOMER_IDENTITY_SIGNALS)
+    .upsert(payload, { onConflict: 'merchant_id,customer_email_hash' })
+    .select()
+    .single();
+
+  if (error) throw new Error(`upsert ${TABLES.CUSTOMER_IDENTITY_SIGNALS} failed: ${error.message}`);
+  return { row: data, hashes };
+}
+
+const webhookLogSchema = z.object({
+  provider: z.string().min(1),
+  external_case_id: z.string().nullable().optional(),
+  merchant_id: z.string().uuid().nullable().optional(),
+  status: z.enum(['success', 'validation_error', 'error']),
+  http_status: z.number().int().nullable().optional(),
+  is_claim: z.boolean().nullable().optional(),
+  claim_type: z.string().nullable().optional(),
+  error: z.string().nullable().optional(),
+});
+
+export type WebhookLogInput = z.input<typeof webhookLogSchema>;
+
+/** Best-effort webhook delivery log. Never throws — logging must not break the response. */
+export async function logWebhookResult(
+  supabase: SupabaseInsertClient,
+  input: WebhookLogInput
+): Promise<void> {
+  try {
+    const parsed = webhookLogSchema.parse(input);
+    await supabase.from(TABLES.WEBHOOK_LOGS).insert(parsed).select('id').single();
+  } catch {
+    // Swallow — the webhook response must not depend on logging success.
+  }
 }

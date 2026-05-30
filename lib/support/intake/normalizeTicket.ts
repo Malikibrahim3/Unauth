@@ -6,6 +6,14 @@ import {
   hashSupportIdentifier,
   normalizeProviderName,
 } from '@/lib/support/intake/store';
+import {
+  classifyClaimType,
+  detectChargebackThreatened,
+  detectIsClaim,
+  inferOutcomeFromMacros,
+  scoreSentiment,
+  type ClaimType,
+} from '@/lib/support/intake/classifyClaim';
 
 export const SUPPORT_SUMMARY_MAX_LENGTH = 400;
 
@@ -50,7 +58,29 @@ export type NormalizeSupportTicketContext = {
   hashEmail?: (email: string) => string;
 };
 
-export type NormalizedSupportCaseIntake = {
+/**
+ * Provider-agnostic claim-intelligence signals derived from a ticket.
+ * All fields are additive and never replace the existing `claim_reason`.
+ */
+export type ClaimSignalFields = {
+  channel: string | null;
+  message_count: number | null;
+  customer_reply_count: number | null;
+  was_reopened: boolean | null;
+  macros_used: string[];
+  sentiment_score: number | null;
+  chargeback_threatened: boolean;
+  is_claim: boolean;
+  claim_type: ClaimType | null;
+  claim_type_confidence: number | null;
+  provided_evidence: boolean | null;
+  accepted_first_resolution: boolean | null;
+  resolution_type: string | null;
+  escalation_count: number | null;
+  time_to_first_claim_message_seconds: number | null;
+};
+
+export type NormalizedSupportCaseIntake = ClaimSignalFields & {
   merchant_id: string;
   provider: SupportProvider;
   provider_connection_id: string | null;
@@ -72,6 +102,92 @@ export type NormalizedSupportCaseIntake = {
   created_at_provider: string | null;
   updated_at_provider: string | null;
 };
+
+const RESOLUTION_TYPES = ['refund', 'replacement', 'store_credit', 'denied', 'partial_refund'] as const;
+
+function deriveResolutionType(
+  explicitOutcome: string | null,
+  inferredOutcome: string | null,
+  macros: string[],
+  tags: string[]
+): string | null {
+  const haystack = [explicitOutcome, ...macros, ...tags]
+    .filter((v): v is string => !!v)
+    .join(' ')
+    .toLowerCase();
+
+  for (const type of RESOLUTION_TYPES) {
+    if (haystack.includes(type.replace('_', ' ')) || haystack.includes(type)) return type;
+  }
+  if (/replacement|replace|reship|resend/.test(haystack)) return 'replacement';
+  if (/store credit|gift card/.test(haystack)) return 'store_credit';
+  if (/partial/.test(haystack)) return 'partial_refund';
+
+  const outcome = (explicitOutcome ?? inferredOutcome ?? '').toLowerCase();
+  if (outcome === 'approved') return 'refund';
+  if (outcome === 'denied') return 'denied';
+  return null;
+}
+
+export type DeriveClaimSignalsInput = {
+  subject?: string | null;
+  customerText?: string | null;
+  agentText?: string | null;
+  tags?: string[];
+  macros?: string[];
+  channel?: string | null;
+  messageCount?: number | null;
+  customerReplyCount?: number | null;
+  wasReopened?: boolean | null;
+  providedEvidence?: boolean | null;
+  escalationCount?: number | null;
+  timeToFirstClaimMessageSeconds?: number | null;
+  explicitOutcome?: string | null;
+};
+
+/**
+ * Compute the additive claim-intelligence signals plus a macro-inferred
+ * outcome. The inferred outcome only backfills `outcome` when no explicit
+ * outcome was provided.
+ */
+export function deriveClaimSignals(
+  input: DeriveClaimSignalsInput
+): { signals: ClaimSignalFields; inferredOutcome: string | null } {
+  const tags = input.tags ?? [];
+  const macros = input.macros ?? [];
+  const textParts = [input.subject, input.customerText, input.agentText, tags.join(' ')];
+  const isClaim = detectIsClaim(...textParts);
+  const classification = classifyClaimType(...textParts);
+  const inferredOutcome = inferOutcomeFromMacros(macros);
+  const resolutionType = deriveResolutionType(
+    input.explicitOutcome ?? null,
+    inferredOutcome,
+    macros,
+    tags
+  );
+
+  return {
+    inferredOutcome,
+    signals: {
+      channel: input.channel ?? null,
+      message_count: input.messageCount ?? null,
+      customer_reply_count: input.customerReplyCount ?? null,
+      was_reopened: input.wasReopened ?? null,
+      macros_used: macros,
+      sentiment_score: scoreSentiment(...textParts),
+      chargeback_threatened: detectChargebackThreatened(...textParts),
+      is_claim: isClaim,
+      claim_type: isClaim ? classification.claimType : null,
+      claim_type_confidence: isClaim ? classification.confidence : null,
+      provided_evidence: input.providedEvidence ?? null,
+      accepted_first_resolution:
+        input.wasReopened == null ? null : !input.wasReopened,
+      resolution_type: resolutionType,
+      escalation_count: input.escalationCount ?? null,
+      time_to_first_claim_message_seconds: input.timeToFirstClaimMessageSeconds ?? null,
+    },
+  };
+}
 
 const EXTRA_ORDER_REF_PATTERNS: Array<{ pattern: RegExp; group: number }> = [
   { pattern: /\border_number\s*[:=]\s*(\d{3,})\b/i, group: 1 },
@@ -191,6 +307,52 @@ function asString(value: unknown): string | null {
   if (typeof value === 'string' && value.trim()) return value.trim();
   if (typeof value === 'number' && Number.isFinite(value)) return String(value);
   return null;
+}
+
+function asNumber(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string' && value.trim() && Number.isFinite(Number(value))) {
+    return Number(value);
+  }
+  return null;
+}
+
+function asBoolean(value: unknown): boolean | null {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'string') {
+    const v = value.trim().toLowerCase();
+    if (v === 'true') return true;
+    if (v === 'false') return false;
+  }
+  return null;
+}
+
+const CHANNEL_MAP: Record<string, string> = {
+  email: 'email',
+  'email-deep': 'email',
+  chat: 'chat',
+  'live-chat': 'chat',
+  livechat: 'chat',
+  messenger: 'social',
+  facebook: 'social',
+  instagram: 'social',
+  twitter: 'social',
+  whatsapp: 'social',
+  social: 'social',
+  phone: 'phone',
+  voice: 'phone',
+  call: 'phone',
+  sms: 'sms',
+  'contact-form': 'contact_form',
+  contact_form: 'contact_form',
+  'help-center': 'contact_form',
+  api: 'contact_form',
+};
+
+function normalizeChannel(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  const key = raw.trim().toLowerCase();
+  return CHANNEL_MAP[key] ?? key;
 }
 
 function asStringArray(value: unknown): string[] {
@@ -382,6 +544,17 @@ export function normalizeZendeskTicket(
       ? `${context.provider_base_url.replace(/\/$/, '')}/agent/tickets/${id}`
       : null);
 
+  const { signals, inferredOutcome } = deriveClaimSignals({
+    subject,
+    customerText: customer ?? description,
+    agentText: agent,
+    tags,
+    channel: normalizeChannel(asString(readPath(ticket, ['via', 'channel']))),
+    messageCount: commentBodies.length || null,
+    customerReplyCount: commentBodies.filter((c) => !c.from_agent).length || null,
+    explicitOutcome: outcome,
+  });
+
   return buildNormalizedBase(context, 'zendesk', rawTicket, {
     external_case_id: id,
     external_url: externalUrl,
@@ -394,11 +567,12 @@ export function normalizeZendeskTicket(
     agent_notes_summary: agent,
     case_status: normalizeCaseStatusFromProvider('zendesk', asString(ticket.status)),
     decision,
-    outcome,
+    outcome: outcome ?? inferredOutcome,
     attachments_metadata: normalizeAttachments(ticket.attachments),
     tags,
     created_at_provider: asString(ticket.created_at),
     updated_at_provider: asString(ticket.updated_at),
+    ...signals,
   });
 }
 
@@ -442,6 +616,34 @@ export function normalizeGorgiasTicket(
     tags
   );
 
+  const macros = asStringArray(ticket.macros ?? ticket.macros_used);
+  const channel = normalizeChannel(
+    asString(ticket.channel) ??
+      asString(ticket.via) ??
+      asString(readPath(ticket, ['source', 'type'])) ??
+      asString(readPath(ticket, ['source', 'via']))
+  );
+  const attachmentsMeta = normalizeAttachments(ticket.attachments);
+  const providedEvidence =
+    ticket.attachments === undefined ? null : attachmentsMeta.length > 0;
+  const customerReplyCount = mappedMessages.filter((m) => !m.from_agent).length;
+  const messageCount = messages.length > 0 ? mappedMessages.length : asNumber(ticket.messages_count);
+
+  const { signals, inferredOutcome } = deriveClaimSignals({
+    subject,
+    customerText: customer,
+    agentText: agent,
+    tags,
+    macros,
+    channel,
+    messageCount,
+    customerReplyCount,
+    wasReopened: asBoolean(ticket.reopened ?? ticket.is_reopened),
+    providedEvidence,
+    escalationCount: asNumber(ticket.escalation_count),
+    explicitOutcome: outcome,
+  });
+
   return buildNormalizedBase(context, 'gorgias', rawTicket, {
     external_case_id: id,
     external_url:
@@ -458,11 +660,12 @@ export function normalizeGorgiasTicket(
     agent_notes_summary: agent,
     case_status: normalizeCaseStatusFromProvider('gorgias', asString(ticket.status)),
     decision,
-    outcome,
-    attachments_metadata: normalizeAttachments(ticket.attachments),
+    outcome: outcome ?? inferredOutcome,
+    attachments_metadata: attachmentsMeta,
     tags,
     created_at_provider: asString(ticket.created_datetime ?? ticket.created_at),
     updated_at_provider: asString(ticket.updated_datetime ?? ticket.updated_at),
+    ...signals,
   });
 }
 
@@ -511,6 +714,16 @@ export function normalizeIntercomConversation(
     asString(conversation.state) ??
     (conversation.open === true || asString(conversation.open) === 'true' ? 'open' : 'closed');
 
+  const { signals, inferredOutcome } = deriveClaimSignals({
+    customerText: latestCustomer ?? sourceBody,
+    agentText: agent,
+    tags,
+    channel: 'chat',
+    messageCount: mappedParts.length || null,
+    customerReplyCount: mappedParts.filter((p) => !p.from_agent).length || null,
+    explicitOutcome: outcome,
+  });
+
   return buildNormalizedBase(context, 'intercom', rawConversation, {
     external_case_id: id,
     external_url: context.provider_base_url
@@ -524,11 +737,12 @@ export function normalizeIntercomConversation(
     agent_notes_summary: agent,
     case_status: normalizeCaseStatusFromProvider('intercom', state),
     decision,
-    outcome,
+    outcome: outcome ?? inferredOutcome,
     attachments_metadata: normalizeAttachments(conversation.attachments),
     tags,
     created_at_provider: asString(conversation.created_at),
     updated_at_provider: asString(conversation.updated_at),
+    ...signals,
   });
 }
 
@@ -548,6 +762,13 @@ export function normalizeFreshdeskTicket(
   const orderRef = extractOrderRefFromSources(subject, description, tags.join(' '));
   const claimReason = normalizeClaimReasonFromText(`${subject}\n${description}`, tags) ?? null;
   const { decision, outcome } = extractExplicitDecisionOutcome(ticket.custom_fields, tags);
+
+  const { signals, inferredOutcome } = deriveClaimSignals({
+    subject,
+    customerText: description,
+    tags,
+    explicitOutcome: outcome,
+  });
 
   return buildNormalizedBase(context, 'freshdesk', rawTicket, {
     external_case_id: id,
@@ -569,11 +790,12 @@ export function normalizeFreshdeskTicket(
       asString(ticket.status) ?? asString(ticket.status_name)
     ),
     decision,
-    outcome,
+    outcome: outcome ?? inferredOutcome,
     attachments_metadata: normalizeAttachments(ticket.attachments),
     tags,
     created_at_provider: asString(ticket.created_at),
     updated_at_provider: asString(ticket.updated_at),
+    ...signals,
   });
 }
 
@@ -625,5 +847,20 @@ export function toSupportCaseIntakeUpsertInput(
     raw_payload_hash: normalized.raw_payload_hash,
     created_at_provider: normalized.created_at_provider,
     updated_at_provider: normalized.updated_at_provider,
+    channel: normalized.channel,
+    message_count: normalized.message_count,
+    customer_reply_count: normalized.customer_reply_count,
+    was_reopened: normalized.was_reopened,
+    macros_used: normalized.macros_used,
+    sentiment_score: normalized.sentiment_score,
+    chargeback_threatened: normalized.chargeback_threatened,
+    is_claim: normalized.is_claim,
+    claim_type: normalized.claim_type,
+    claim_type_confidence: normalized.claim_type_confidence,
+    provided_evidence: normalized.provided_evidence,
+    accepted_first_resolution: normalized.accepted_first_resolution,
+    resolution_type: normalized.resolution_type,
+    escalation_count: normalized.escalation_count,
+    time_to_first_claim_message_seconds: normalized.time_to_first_claim_message_seconds,
   };
 }
