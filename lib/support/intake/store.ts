@@ -196,7 +196,15 @@ export async function upsertSupportProviderConnection(
     ...parsed,
     provider: normalizeProviderName(parsed.provider),
     updated_at: now,
-  });
+  }) as Record<string, unknown>;
+
+  // Trusted server paths (e.g. Gorgias settings) pass encrypted provider tokens explicitly.
+  if (parsed.access_token_encrypted !== undefined) {
+    payload.access_token_encrypted = parsed.access_token_encrypted;
+  }
+  if (parsed.refresh_token_encrypted !== undefined) {
+    payload.refresh_token_encrypted = parsed.refresh_token_encrypted;
+  }
 
   const { data, error } = await supabase
     .from(TABLES.SUPPORT_PROVIDER_CONNECTIONS)

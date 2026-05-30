@@ -428,6 +428,39 @@ describe('Gorgias support connection settings API', () => {
     expect(fromAccountField.domain).toBe('acme.gorgias.com');
   });
 
+  it('update persists API credentials and registers sidebar when domain is known', async () => {
+    setupAuth(true);
+    setupPermission(MERCHANT_A);
+    const { supabase } = makeSettingsSupabase([
+      makeConnectionRow({
+        provider_account_id: GORGIAS_ACCOUNT_ID,
+        provider_base_url: `https://${GORGIAS_DOMAIN}`,
+        access_token_encrypted: null,
+        status: 'error',
+        last_error: 'Gorgias account domain is required to register the sidebar widget.',
+      }),
+    ]);
+    (createServiceClient as jest.Mock).mockReturnValue(supabase);
+
+    const res = await POST(
+      new NextRequest('http://localhost/api/settings/gorgias/support-connection', {
+        method: 'POST',
+        body: JSON.stringify({
+          account_id: GORGIAS_ACCOUNT_ID,
+          gorgias_api_email: 'agent@acme.com',
+          gorgias_api_key: 'gorgias-test-key',
+        }),
+      })
+    );
+
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.connection.gorgias_api_configured).toBe(true);
+    expect(json.connection.sidebar_widget_registered).toBe(true);
+    expect(json.sidebar_widget?.status).toBe('success');
+    expect(registerGorgiasSidebarWidget).toHaveBeenCalled();
+  });
+
   it('merchant B cannot read merchant A connection via scoped GET', async () => {
     setupAuth(true);
     setupPermission(MERCHANT_B);

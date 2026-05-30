@@ -64,7 +64,7 @@ async function POSTHandler(req: NextRequest) {
     const existing = await getMerchantGorgiasSupportConnection(service, ctx.merchantId);
 
     if (existing) {
-      const connection = await updateMerchantGorgiasSupportConnectionMetadata(
+      const updated = await updateMerchantGorgiasSupportConnectionMetadata(
         service,
         ctx.merchantId,
         parsed.data
@@ -74,15 +74,18 @@ async function POSTHandler(req: NextRequest) {
         ctx,
         action: 'update_gorgias_support_connection',
         resourceType: 'support_provider_connection',
-        resourceId: connection.id,
+        resourceId: updated.connection.id,
         metadata: {
-          provider_account_id: connection.provider_account_id,
-          status: connection.status,
+          provider_account_id: updated.connection.provider_account_id,
+          status: updated.connection.status,
         },
         ip,
       });
 
-      return NextResponse.json({ connection });
+      return NextResponse.json({
+        connection: updated.connection,
+        sidebar_widget: updated.sidebar_widget,
+      });
     }
 
     const created = await createMerchantGorgiasSupportConnection(

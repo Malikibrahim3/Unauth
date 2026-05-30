@@ -213,6 +213,15 @@ export function resolveGorgiasConnectionIdentity(input: GorgiasSupportConnection
         provider_base_url: gorgiasBaseUrlFromDomain(asDomain),
       };
     }
+    // Bare shop slug (e.g. "acme" from the reconnect form) → acme.gorgias.com
+    if (/^[a-z0-9]+$/i.test(accountId)) {
+      const slugDomain = `${accountId.toLowerCase()}.gorgias.com`;
+      return {
+        provider_account_id: slugDomain,
+        domain: slugDomain,
+        provider_base_url: gorgiasBaseUrlFromDomain(slugDomain),
+      };
+    }
     return {
       provider_account_id: accountId,
       domain: null,
@@ -237,6 +246,44 @@ export type CreateGorgiasSupportConnectionResult = {
   sidebar_widget: GorgiasSidebarWidgetSetupResult | null;
 };
 
+export type UpdateGorgiasSupportConnectionResult = {
+  connection: GorgiasSupportConnectionSettings;
+  sidebar_widget: GorgiasSidebarWidgetSetupResult;
+};
+
+function mergeGorgiasConnectionIdentityForUpdate(
+  resolved: {
+    provider_account_id: string;
+    domain: string | null;
+    provider_base_url: string | null;
+  },
+  existing: GorgiasSupportConnectionSettings
+): {
+  provider_account_id: string;
+  domain: string | null;
+  provider_base_url: string | null;
+} {
+  if (resolved.provider_base_url) {
+    return resolved;
+  }
+
+  const existingUrl = existing.provider_base_url?.trim();
+  if (!existingUrl) {
+    return resolved;
+  }
+
+  const domain = normalizeGorgiasDomain(
+    existingUrl.replace(/^https?:\/\//i, '').split('/')[0] ?? existingUrl
+  );
+
+  return {
+    provider_account_id:
+      resolved.provider_account_id || existing.provider_account_id || domain,
+    domain: resolved.domain ?? domain,
+    provider_base_url: gorgiasBaseUrlFromDomain(domain),
+  };
+}
+
 async function registerGorgiasSidebarForConnection(
   supabase: SupabaseClient,
   merchantId: string,
@@ -255,22 +302,22 @@ async function registerGorgiasSidebarForConnection(
     return { result: { status: 'error', error: 'Gorgias API credentials are required.' }, accessTokenEncrypted: null, scopes: null };
   }
 
+  const credentials = {
+    email: input.gorgias_api_email,
+    api_key: input.gorgias_api_key,
+  };
+  const accessTokenEncrypted = encryptGorgiasApiCredentials(credentials);
+
   if (!identity.provider_base_url) {
     return {
       result: {
         status: 'error',
         error: 'Gorgias account domain is required to register the sidebar widget.',
       },
-      accessTokenEncrypted: null,
+      accessTokenEncrypted,
       scopes: null,
     };
   }
-
-  const credentials = {
-    email: input.gorgias_api_email,
-    api_key: input.gorgias_api_key,
-  };
-  const accessTokenEncrypted = encryptGorgiasApiCredentials(credentials);
 
   let widgetTokenPlaintext: string;
   try {
@@ -405,9 +452,17 @@ export async function updateMerchantGorgiasSupportConnectionMetadata(
   supabase: SupabaseClient,
   merchantId: string,
   input: GorgiasSupportConnectionInput
-): Promise<GorgiasSupportConnectionSettings> {
+): Promise<UpdateGorgiasSupportConnectionResult> {
   const parsed = gorgiasSupportConnectionInputSchema.parse(input);
-  const identity = resolveGorgiasConnectionIdentity(parsed);
+  const existing = await getMerchantGorgiasSupportConnection(supabase, merchantId);
+  if (!existing) {
+    throw new Error('gorgias_connection_not_found');
+  }
+
+  const identity = mergeGorgiasConnectionIdentityForUpdate(
+    resolveGorgiasConnectionIdentity(parsed),
+    existing
+  );
 
   const sidebarRegistration = await registerGorgiasSidebarForConnection(
     supabase,
@@ -444,7 +499,7 @@ export async function updateMerchantGorgiasSupportConnectionMetadata(
   if (!connection) {
     throw new Error('gorgias_connection_missing_after_upsert');
   }
-  return connection;
+  return { connection, sidebar_widget: sidebarRegistration.result };
 }
 
 export type RotateGorgiasWebhookSecretResult = {

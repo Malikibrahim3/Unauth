@@ -90,7 +90,14 @@ export default function GorgiasSupportSyncClient({ canManage }: Props) {
         const res = await fetch('/api/settings/gorgias/support-connection', { cache: 'no-store' });
         const body = await res.json();
         if (!res.ok) throw new Error(body.error ?? 'Failed to load Gorgias support connection');
-        if (!cancelled) setConnection(body.connection ?? null);
+        if (!cancelled) {
+          const loaded = (body.connection ?? null) as GorgiasSupportConnectionSettings | null;
+          setConnection(loaded);
+          if (loaded) {
+            const host = loaded.provider_base_url?.replace(/^https?:\/\//i, '').split('/')[0];
+            setAccountOrDomain(host || loaded.provider_account_id || '');
+          }
+        }
       } catch (err) {
         if (!cancelled) {
           setMessage({
@@ -142,6 +149,7 @@ export default function GorgiasSupportSyncClient({ canManage }: Props) {
       }
 
       const sidebar = (body.sidebar_widget ?? null) as GorgiasSidebarWidgetSetupResult | null;
+      const isUpdate = !body.webhook_secret_plaintext && Boolean(body.connection);
 
       if (body.webhook_secret_plaintext) {
         setEphemeralSecret({
@@ -164,6 +172,13 @@ export default function GorgiasSupportSyncClient({ canManage }: Props) {
         setMessage({
           type: 'success',
           text: 'Gorgias credentials saved. Complete the webhook steps below to show risk data in tickets.',
+        });
+      } else if (isUpdate && sidebar?.status === 'success') {
+        setMessage({ type: 'success', text: GORGIAS_CONNECT_SUCCESS_MESSAGE });
+      } else if (isUpdate) {
+        setMessage({
+          type: 'success',
+          text: 'Gorgias API credentials saved.',
         });
       } else {
         setMessage({ type: 'success', text: GORGIAS_CONNECT_SUCCESS_MESSAGE });
