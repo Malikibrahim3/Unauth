@@ -24,7 +24,7 @@ export default function EmptyDashboardHero() {
           </p>
           <div className="flex items-center gap-3 flex-wrap">
             <Link
-              href="/upload"
+              href="/upload?welcome=1"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md text-sm font-semibold transition-colors"
               style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}
             >

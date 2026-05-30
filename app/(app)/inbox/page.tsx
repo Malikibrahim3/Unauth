@@ -5,6 +5,7 @@ import { requirePermission, PERMISSIONS, resolveDefaultAppPath } from '@/lib/per
 import Link from 'next/link';
 import InboxClient from '@/components/inbox/InboxClient';
 import TrackPageView from '@/components/common/TrackPageView';
+import { formatCurrencyNullable } from '@/lib/utils/format';
 import { signalLabel } from '@/lib/copy/signalLabels';
 import PageSizeSelect from '@/components/common/PageSizeSelect';
 import { fetchMerchantReviewQueueRows, fetchReviewQueueProfileIds } from '@/lib/supabase/merchantHelpers';
@@ -151,9 +152,9 @@ export default async function InboxPage({ searchParams }: { searchParams?: Promi
         <WorkbenchKpiStrip
           items={[
             { label: 'Active inbox', value: total.toLocaleString(), hint: 'Unresolved identity reviews' },
-            { label: 'Value at risk', value: new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(totalValueAtRisk), hint: 'Current page estimate' },
-            { label: 'Decision ready', value: items.filter((i) => i.match_status === 'definite' || (i.identity_score ?? 0) >= 85).length.toLocaleString(), hint: 'Current page' },
-            { label: 'Review recommended', value: items.filter((i) => i.match_status === 'probable' || (i.identity_score ?? 0) >= 70).length.toLocaleString(), hint: 'Current page' },
+            { label: 'Value at risk', value: formatCurrencyNullable(totalValueAtRisk), hint: 'Current page estimate' },
+            { label: 'Ready to decide', value: items.filter((i) => i.match_status === 'definite' || (i.identity_score ?? 0) >= 85).length.toLocaleString(), hint: 'High-confidence on this page' },
+            { label: 'Needs review', value: items.filter((i) => i.match_status === 'probable' || (i.identity_score ?? 0) >= 70).length.toLocaleString(), hint: 'Elevated risk on this page' },
             { label: 'Claims active', value: claimQueueCounts.active.toLocaleString(), hint: 'Unresolved claim work' },
             { label: 'Claims new/unread', value: claimQueueCounts.unread.toLocaleString(), hint: 'Not yet opened' },
             { label: 'Claims overdue', value: claimQueueCounts.overdue.toLocaleString(), hint: '>72h open' },

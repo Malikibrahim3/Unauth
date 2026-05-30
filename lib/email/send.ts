@@ -41,12 +41,12 @@ export async function sendEmail(payload: EmailPayload): Promise<EmailSendResult>
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: payload.from ?? env.AUDIT_EMAIL_FROM ?? 'Unauth <hello@unauth.app>',
+        from: payload.from ?? env.AUDIT_EMAIL_FROM ?? 'Unauth <hello@unauth.co>',
         to: asArray(payload.to),
         subject: payload.subject,
         html: payload.html,
         text: payload.text,
-        reply_to: payload.replyTo ?? 'hello@unauth.app',
+        reply_to: payload.replyTo ?? 'hello@unauth.co',
       }),
     });
 

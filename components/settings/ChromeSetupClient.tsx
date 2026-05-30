@@ -50,7 +50,7 @@ export default function ChromeSetupClient({ hasApiKeys, keyPrefixes }: Props) {
           Create a key in API &amp; Integrations, then return here to install the extension.
         </p>
         <Link
-          href="/settings/api-integrations"
+          href="/settings/integrations"
           className="mt-4 inline-flex rounded-md px-3 py-2 text-sm font-medium"
           style={{ background: 'var(--accent)', color: 'var(--accent-fg, #fff)' }}
         >
@@ -88,24 +88,21 @@ export default function ChromeSetupClient({ hasApiKeys, keyPrefixes }: Props) {
           </p>
         )}
         <p className="mt-2 text-xs" style={{ color: 'var(--text-muted)' }}>
-          Or build locally: <code className="text-xs">npm run build:extension</code>, then load{' '}
-          <code className="text-xs">extensions/chrome/dist</code> unpacked in Chrome.
+          Unzip the download on your computer, then follow the steps below in Chrome.
         </p>
       </div>
 
       <ol className="list-decimal space-y-3 pl-5 text-sm" style={{ color: 'var(--text)' }}>
-        <li>Download the extension zip above (or build into <code>extensions/chrome/dist</code>).</li>
+        <li>Download the extension zip above and unzip it.</li>
         <li>
-          Open Chrome → <strong>More tools</strong> → <strong>Extensions</strong> → enable{' '}
-          <strong>Developer mode</strong>.
+          In Chrome, open <strong>Extensions</strong> (from the puzzle icon or browser menu).
         </li>
         <li>
-          Click <strong>Load unpacked</strong> → select the <code>extensions/chrome/dist</code> folder
-          (or unzip the download and select that folder).
+          Turn on <strong>Developer mode</strong>, click <strong>Load unpacked</strong>, and select the unzipped folder.
         </li>
         <li>Pin the Unauth extension to your toolbar.</li>
         <li>
-          Click the icon → enter your API key from Settings → API &amp; Integrations → done.
+          Click the icon → paste an API key from <strong>Settings → Integrations</strong> below.
         </li>
       </ol>
 

@@ -7,7 +7,6 @@ import { createClient } from '@/lib/supabase/client';
 import { UnauthLogo } from '@/components/ui/UnauthLogo';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { ORDER_VOLUME_OPTIONS, FRAUD_CONCERN_OPTIONS } from '@/lib/constants/merchantProfile';
 
 function formatAuthError(message: string): string {
   const lower = message.toLowerCase();
@@ -28,9 +27,6 @@ function LoginPageInner() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [storeName, setStoreName] = useState('');
-  const [platform, setPlatform] = useState('');
-  const [annualVolume, setAnnualVolume] = useState('');
-  const [primaryConcern, setPrimaryConcern] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -44,7 +40,7 @@ function LoginPageInner() {
     loading ||
     !email ||
     !password ||
-    (isSignUp && (!storeName.trim() || !platform || !annualVolume || !primaryConcern));
+    (isSignUp && !storeName.trim());
   const isSuccess = error.includes('created') || error.includes('Check your email');
 
   async function handleSubmit(e: React.FormEvent) {
@@ -53,8 +49,8 @@ function LoginPageInner() {
     setError('');
 
     if (isSignUp) {
-      if (!storeName.trim() || !platform || !annualVolume || !primaryConcern) {
-        setError('Please fill in all store details.');
+      if (!storeName.trim()) {
+        setError('Please enter your store name.');
         setLoading(false);
         return;
       }
@@ -65,9 +61,6 @@ function LoginPageInner() {
         options: {
           data: {
             store_name: storeName.trim(),
-            platform,
-            monthly_order_volume: annualVolume,
-            primary_fraud_concern: primaryConcern,
           },
         },
       });
@@ -91,9 +84,6 @@ function LoginPageInner() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           storeName: storeName.trim(),
-          platform,
-          monthlyOrderVolume: annualVolume,
-          primaryFraudConcern: primaryConcern,
           setupComplete: false,
         }),
       });
@@ -130,7 +120,7 @@ function LoginPageInner() {
             {isSignUp ? 'Create account' : 'Sign in'}
           </h1>
           <p className="t-caption mb-5" style={{ color: 'var(--ink-tertiary)' }}>
-            {isSignUp ? 'Set up your fraud-ops workspace' : 'Access your merchant fraud-ops console'}
+            {isSignUp ? 'Create your store workspace' : 'Sign in to your fraud investigation workspace'}
           </p>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -171,62 +161,19 @@ function LoginPageInner() {
             )}
 
             {isSignUp && (
-              <div className="space-y-4 border-t pt-4" style={{ borderColor: 'var(--surface-border)' }}>
-                <p className="t-label" style={{ color: 'var(--ink-tertiary)' }}>Store details</p>
-                <label htmlFor="signup-store-name" className="sr-only">Store name</label>
+              <div className="space-y-2 border-t pt-4" style={{ borderColor: 'var(--surface-border)' }}>
+                <label htmlFor="signup-store-name" className="t-label block" style={{ color: 'var(--ink-tertiary)' }}>Store name</label>
                 <Input
                   id="signup-store-name"
                   type="text"
                   value={storeName}
                   onChange={(e) => setStoreName(e.target.value)}
                   required
-                  placeholder="Store name"
+                  placeholder="Your store name"
                 />
-                <label htmlFor="signup-platform" className="t-label block" style={{ color: 'var(--ink-tertiary)' }}>Platform</label>
-                <select
-                  id="signup-platform"
-                  value={platform}
-                  onChange={(e) => setPlatform(e.target.value)}
-                  required
-                  className="w-full px-3 py-2 text-sm outline-none focus:border-[var(--copper-bright)]"
-                  style={{ background: 'var(--surface-input)', border: '1px solid var(--surface-border)', borderRadius: 'var(--radius-md)', color: platform ? 'var(--ink-primary)' : 'var(--ink-tertiary)' }}
-                >
-                  <option value="">Select platform...</option>
-                  <option value="shopify">Shopify</option>
-                  <option value="woocommerce">WooCommerce</option>
-                  <option value="magento">Magento</option>
-                  <option value="bigcommerce">BigCommerce</option>
-                  <option value="custom">Custom</option>
-                  <option value="other">Other</option>
-                </select>
-                <label htmlFor="signup-volume" className="t-label block" style={{ color: 'var(--ink-tertiary)' }}>Annual order volume</label>
-                <select
-                  id="signup-volume"
-                  value={annualVolume}
-                  onChange={(e) => setAnnualVolume(e.target.value)}
-                  required
-                  className="w-full px-3 py-2 text-sm outline-none focus:border-[var(--copper-bright)]"
-                  style={{ background: 'var(--surface-input)', border: '1px solid var(--surface-border)', borderRadius: 'var(--radius-md)', color: annualVolume ? 'var(--ink-primary)' : 'var(--ink-tertiary)' }}
-                >
-                  <option value="">Annual order volume...</option>
-                  {ORDER_VOLUME_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
-                  ))}
-                </select>
-                <label htmlFor="signup-concern" className="t-label block" style={{ color: 'var(--ink-tertiary)' }}>Primary concern</label>
-                <select
-                  id="signup-concern"
-                  value={primaryConcern}
-                  onChange={(e) => setPrimaryConcern(e.target.value)}
-                  required
-                  className="w-full px-3 py-2 text-sm outline-none focus:border-[var(--copper-bright)]"
-                  style={{ background: 'var(--surface-input)', border: '1px solid var(--surface-border)', borderRadius: 'var(--radius-md)', color: primaryConcern ? 'var(--ink-primary)' : 'var(--ink-tertiary)' }}
-                >
-                  <option value="">Primary concern...</option>
-                  {FRAUD_CONCERN_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
-                  ))}
-                </select>
+                <p className="t-caption" style={{ color: 'var(--ink-tertiary)' }}>
+                  Platform and volume questions come next in onboarding — one quick step after signup.
+                </p>
               </div>
             )}
 

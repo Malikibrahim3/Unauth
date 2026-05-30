@@ -150,7 +150,7 @@ export async function POST(request: NextRequest) {
   const { error: deleteError } = await admin.auth.admin.deleteUser(user.id);
   if (deleteError) {
     console.error('[account-delete] auth.admin.deleteUser failed:', deleteError.message);
-    return NextResponse.json({ error: 'Failed to delete account. Contact support@unauth.app.' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to delete account. Contact support@unauth.co.' }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true });

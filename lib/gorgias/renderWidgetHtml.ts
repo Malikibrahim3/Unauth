@@ -225,7 +225,7 @@ function renderActions(
 
 function renderError(message: string): string {
   const appBase = env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '');
-  const settingsUrl = `${appBase}/settings/api-integrations`;
+  const settingsUrl = `${appBase}/settings/integrations`;
   return `<!DOCTYPE html>
 <html lang="en">
 <head>

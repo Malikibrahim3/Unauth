@@ -1,60 +1,46 @@
-const CURRENCY_COMPACT_SYMBOL: Record<string, string> = {
-  GBP: '£',
-  USD: '$',
-  EUR: '€',
-};
-
-function compactSymbol(currency: string): string {
-  return CURRENCY_COMPACT_SYMBOL[currency.toUpperCase()] ?? '';
-}
+const MERCHANT_DISPLAY_CURRENCY = 'USD';
+const MERCHANT_DISPLAY_LOCALE = 'en-US';
 
 export function formatRiskScore(score: number | null | undefined): string {
   if (typeof score !== 'number' || Number.isNaN(score)) return '—';
   return Math.round(score).toString();
 }
 
-export function formatCurrency(amount: number, currency = 'USD'): string {
-  const code = currency.toUpperCase();
-  const locale = code === 'GBP' ? 'en-GB' : 'en-US';
-  return new Intl.NumberFormat(locale, {
+/** Merchant UI: always USD with US locale. */
+export function formatCurrency(amount: number, _currency = 'USD'): string {
+  return new Intl.NumberFormat(MERCHANT_DISPLAY_LOCALE, {
     style: 'currency',
-    currency: code,
+    currency: MERCHANT_DISPLAY_CURRENCY,
     minimumFractionDigits: 2,
   }).format(amount);
 }
 
-export function formatCurrencyCompact(amount: number, currency = 'USD'): string {
-  const code = currency.toUpperCase();
-  const sym = compactSymbol(code);
-  if (!sym) {
-    return formatCurrency(amount, code);
-  }
-
+export function formatCurrencyCompact(amount: number, _currency = 'USD'): string {
   const sign = amount < 0 ? '-' : '';
   const abs = Math.abs(amount);
 
-  if (abs >= 1_000_000_000) return `${sign}${sym}${Math.round(abs / 1_000_000_000)}B`;
-  if (abs >= 1_000_000) return `${sign}${sym}${Math.round(abs / 1_000_000)}M`;
-  if (abs >= 1_000) return `${sign}${sym}${Math.round(abs / 1_000)}k`;
-  if (abs >= 100) return `${sign}${sym}${Math.round(abs)}`;
-  return `${sign}${sym}${abs.toFixed(abs >= 10 ? 1 : 2).replace(/\.0+$/, '').replace(/(\.\d*[1-9])0+$/, '$1')}`;
+  if (abs >= 1_000_000_000) return `${sign}$${Math.round(abs / 1_000_000_000)}B`;
+  if (abs >= 1_000_000) return `${sign}$${Math.round(abs / 1_000_000)}M`;
+  if (abs >= 1_000) return `${sign}$${Math.round(abs / 1_000)}k`;
+  if (abs >= 100) return `${sign}$${Math.round(abs)}`;
+  return `${sign}$${abs.toFixed(abs >= 10 ? 1 : 2).replace(/\.0+$/, '').replace(/(\.\d*[1-9])0+$/, '$1')}`;
 }
 
 /** Null-safe currency formatter — returns '—' for null/undefined values. */
-export function formatCurrencyNullable(amount: number | null | undefined, currency = 'USD'): string {
+export function formatCurrencyNullable(amount: number | null | undefined, _currency = 'USD'): string {
   if (amount == null) return '—';
-  return formatCurrency(amount, currency);
+  return formatCurrency(amount);
 }
 
 export function formatDate(date: Date | string): string {
   const d = typeof date === 'string' ? new Date(date) : date;
-  const parts = new Intl.DateTimeFormat('en-GB', {
+  const parts = new Intl.DateTimeFormat(MERCHANT_DISPLAY_LOCALE, {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-    timeZone: 'Europe/London',
+    timeZone: 'UTC',
   }).formatToParts(d);
 
   const lookup = Object.fromEntries(parts.map((part) => [part.type, part.value]));
@@ -70,22 +56,20 @@ export function formatDateMode(
   if (Number.isNaN(d.getTime())) return String(date);
 
   if (mode === 'table') {
-    const parts = new Intl.DateTimeFormat('en-CA', {
+    return new Intl.DateTimeFormat(MERCHANT_DISPLAY_LOCALE, {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
-      timeZone: 'Europe/London',
-    }).formatToParts(d);
-    const lookup = Object.fromEntries(parts.map((part) => [part.type, part.value]));
-    return `${lookup.year}-${lookup.month}-${lookup.day}`;
+      timeZone: 'UTC',
+    }).format(d);
   }
 
   if (mode === 'prose') {
-    return new Intl.DateTimeFormat('en-GB', {
+    return new Intl.DateTimeFormat(MERCHANT_DISPLAY_LOCALE, {
       month: 'long',
       day: 'numeric',
       year: 'numeric',
-      timeZone: 'Europe/London',
+      timeZone: 'UTC',
     }).format(d);
   }
 
@@ -108,7 +92,12 @@ export function formatDateMode(
 export function formatDateShort(date: Date | string): string {
   try {
     const d = typeof date === 'string' ? new Date(date) : date;
-    return new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(d);
+    return new Intl.DateTimeFormat(MERCHANT_DISPLAY_LOCALE, {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      timeZone: 'UTC',
+    }).format(d);
   } catch {
     return String(date);
   }

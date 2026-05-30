@@ -29,7 +29,7 @@ export default function IdentityTimeline({ entries }: IdentityTimelineProps) {
             <th style={{ padding: '8px 10px', textAlign: 'left', fontSize: 11, fontWeight: 600, letterSpacing: '0.01em', color: 'var(--ink-secondary)' }}>First Seen</th>
             <th style={{ padding: '8px 10px', textAlign: 'left', fontSize: 11, fontWeight: 600, letterSpacing: '0.01em', color: 'var(--ink-secondary)' }}>Field</th>
             <th style={{ padding: '8px 10px', textAlign: 'left', fontSize: 11, fontWeight: 600, letterSpacing: '0.01em', color: 'var(--ink-secondary)' }}>Value</th>
-            <th style={{ padding: '8px 10px', textAlign: 'left', fontSize: 11, fontWeight: 600, letterSpacing: '0.01em', color: 'var(--ink-secondary)' }}>Last seen</th>
+            <th style={{ padding: '8px 10px', textAlign: 'left', fontSize: 11, fontWeight: 600, letterSpacing: '0.01em', color: 'var(--ink-secondary)' }}>Change type</th>
           </tr>
         </thead>
         <tbody>
@@ -56,7 +56,9 @@ export default function IdentityTimeline({ entries }: IdentityTimelineProps) {
                   </div>
                 )}
               </td>
-              <td className="num" style={{ padding: '10px', fontFamily: 'var(--font-mono)', color: 'var(--data-date)' }}>{formatDateMode(entry.date, 'table')}</td>
+              <td style={{ padding: '10px', fontSize: 12, color: 'var(--ink-secondary)' }}>
+                {entry.isVariant ? 'Changed later' : 'First seen'}
+              </td>
             </tr>
           ))}
         </tbody>

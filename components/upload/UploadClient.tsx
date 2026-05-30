@@ -740,7 +740,7 @@ export default function UploadClient({ recentImports = [] }: UploadClientProps) 
                 Minimal data — results will be limited
               </p>
               <p className="text-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                Only required fields found (score: {score}/119). Results will be limited.
+                Only required fields found ({score} of 17 identity fields). Results will be limited.
               </p>
             </div>
           </div>
@@ -768,7 +768,7 @@ export default function UploadClient({ recentImports = [] }: UploadClientProps) 
               Limited identity data detected
             </p>
             <p className="text-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>
-              Your export includes {dataQuality.presentFields.length} of 17 identity fields (score: {score}/119).
+              Your export includes {dataQuality.presentFields.length} of 17 identity fields ({score}% coverage).
             </p>
             {missingHighValue.length > 0 && (
               <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>

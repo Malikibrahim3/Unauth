@@ -62,11 +62,33 @@ function tierChip(risk: string): CSSProperties {
 
 function tierLabel(risk: string): string {
   switch ((risk ?? '').toLowerCase()) {
-    case 'critical': return 'DEFINITE';
-    case 'high':     return 'PROBABLE';
-    case 'medium':   return 'CANDIDATE';
-    default:         return 'INCONCLUSIVE';
+    case 'critical': return 'High risk';
+    case 'high':     return 'Elevated risk';
+    case 'medium':   return 'Needs review';
+    default:         return 'Low signals';
   }
+}
+
+function buildPlainVerdict(
+  linkedCount: number,
+  riskScore: number,
+  riskLevel: string,
+  variantCount: number,
+  profileConfidence: number,
+): string {
+  const matchPct = Math.round(Math.min(riskScore, 100));
+  const profilePct = Math.round(profileConfidence);
+  if (linkedCount > 0) {
+    const accountWord = linkedCount === 1 ? 'account' : 'accounts';
+    return `Likely the same shopper as ${linkedCount} other ${accountWord} — ${matchPct}% confident based on your store data.`;
+  }
+  if (riskLevel === 'critical' || riskLevel === 'high') {
+    return `High-risk pattern in your store — ${matchPct}% match confidence. Review orders and claims before taking action.`;
+  }
+  if (variantCount > 0) {
+    return `Multiple identity signals on this customer (${variantCount} variant${variantCount !== 1 ? 's' : ''}) — ${profilePct}% profile confidence.`;
+  }
+  return `Review this customer’s orders and claims — ${profilePct}% profile confidence.`;
 }
 
 const OVERLINE: CSSProperties = {
@@ -551,7 +573,15 @@ function DrawerContent({
   const [status, setStatus] = useState<string>((profile as any).investigation_status ?? 'new');
   const [statusSaving, setStatusSaving] = useState(false);
 
-  const caseId = `UN-${(profile.primary_email ?? 'UNKNOWN').split('@')[0].slice(0, 6).toUpperCase().replace(/[^A-Z0-9]/g, '')}-${profile.total_orders}`;
+  const plainVerdict = buildPlainVerdict(
+    linkedAccounts.length,
+    profile.risk_score,
+    profile.risk_level,
+    variantCount,
+    profile.profile_confidence,
+  );
+  const matchConfidencePct = Math.round(Math.min(profile.risk_score, 100));
+  const profileConfidencePct = Math.round(profile.profile_confidence);
 
   async function handleStatusChange(newStatus: string) {
     const prev = status;
@@ -568,6 +598,27 @@ function DrawerContent({
 
   return (
     <div>
+      <div
+        style={{
+          background: 'var(--surface-overlay)',
+          border: '1px solid var(--surface-border)',
+          borderLeft: '3px solid var(--copper-bright)',
+          borderRadius: 4,
+          padding: '12px 14px',
+          marginBottom: 12,
+        }}
+      >
+        <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.01em', color: 'var(--ink-secondary)', marginBottom: 6 }}>
+          What this means
+        </p>
+        <p style={{ fontSize: 14, fontWeight: 600, lineHeight: 1.45, color: 'var(--ink-primary)' }}>
+          {plainVerdict}
+        </p>
+        <p style={{ fontSize: 11, color: 'var(--ink-tertiary)', marginTop: 8, lineHeight: 1.5 }}>
+          Recommended: review recent refund or chargeback claims, then compile signal data if you are preparing a dispute response.
+        </p>
+      </div>
+
       {/* ── Case file header card ────────────────────────────────── */}
       <div style={{
         background: 'var(--surface-raised)',
@@ -592,16 +643,16 @@ function DrawerContent({
               background: profile.risk_level === 'critical' ? 'var(--sev-definite)' : profile.risk_level === 'high' ? 'var(--sev-probable)' : 'var(--ink-tertiary)',
             }} aria-hidden="true" />
             <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.01em', color: 'var(--ink-secondary)' }}>
-              Case file · {caseId}
+              Customer review
             </span>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 flex-wrap justify-end">
             <span style={tierChip(profile.risk_level)}>{tierLabel(profile.risk_level)}</span>
             <span style={{ ...CHIP, background: 'var(--surface-muted)', color: 'var(--ink-secondary)', border: '1px solid var(--surface-border)' }}>
-              CONF {(Math.min(profile.risk_score, 100) / 100).toFixed(2)}
+              Match {matchConfidencePct}%
             </span>
             <span style={{ ...CHIP, background: 'var(--surface-muted)', color: 'var(--ink-secondary)', border: '1px solid var(--surface-border)' }}>
-              CONF {(profile.profile_confidence / 100).toFixed(2)}
+              Profile {profileConfidencePct}%
             </span>
             {hasProfileId && (
               <WatchlistStarButton
@@ -830,7 +881,7 @@ function DrawerContent({
             title={isEligibleForEvidence ? undefined : 'No refund or chargeback on record — you can still compile a signal report'}
           >
             <FileText style={{ width: 14, height: 14 }} />
-            Compile signal data
+            Build evidence package
           </button>
         ) : (
           <span
@@ -847,11 +898,11 @@ function DrawerContent({
             }
           >
             <FileText style={{ width: 14, height: 14 }} />
-            Compile signal data
+            Build evidence package
           </span>
         )}
         <p style={{ fontSize: 10, color: 'var(--ink-tertiary)', marginTop: 6, lineHeight: 1.5 }}>
-          Signal data may be relevant when preparing a dispute response. Verify CE 3.0 requirements with your acquirer or payment processor.
+          Signal data may help when preparing a dispute response. Confirm what your payment processor needs before you submit.
         </p>
       </div>
     </div>

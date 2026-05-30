@@ -81,7 +81,7 @@ export default async function ChargebacksPage() {
             { label: 'Packages', value: pkgs.length.toLocaleString(), hint: 'Generated reports' },
             { label: 'Prior identity match', value: pkgs.filter((pkg) => pkg.ce3_eligible).length.toLocaleString(), hint: 'Packages with matched priors' },
             { label: 'Cross-merchant', value: pkgs.filter((pkg) => pkg.cross_merchant_indicator).length.toLocaleString(), hint: 'Network-linked evidence' },
-            { label: 'Latest', value: pkgs[0]?.generated_at ? new Date(pkgs[0].generated_at).toLocaleDateString('en-GB') : '-', hint: 'Most recent package' },
+            { label: 'Latest', value: pkgs[0]?.generated_at ? new Date(pkgs[0].generated_at).toLocaleDateString('en-US') : '-', hint: 'Most recent package' },
             { label: 'Source', value: 'Customers', hint: 'Generated from customer profiles' },
           ]}
         />

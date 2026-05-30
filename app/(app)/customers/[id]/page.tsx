@@ -624,7 +624,7 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
                 title={isEligibleForEvidence ? undefined : 'Available when refund or chargeback activity is present'}
               >
                 <FileText className="h-3.5 w-3.5" />
-                Generate evidence PDF
+                Build evidence package
               </Link>
             </div>
           </div>
@@ -728,9 +728,9 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
       </section>
 
       <section className="mb-[var(--space-5)] rounded-md border p-4" style={{ background: 'var(--surface-raised)', borderColor: 'var(--surface-border)' }}>
-        <p className="text-caption font-semibold mb-3" style={{ color: 'var(--ink-secondary)' }}>Cross-merchant signals</p>
+        <p className="text-caption font-semibold mb-3" style={{ color: 'var(--ink-secondary)' }}>Cross-store signals</p>
         <div className="rounded-md border overflow-hidden" style={{ borderColor: 'var(--border-subtle)' }}>
-          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_110px_90px_140px] gap-3 px-3 py-2" style={{ background: 'var(--bg-subtle)', borderBottom: '1px solid var(--border-subtle)' }}>
+          <div className="hidden md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_110px_90px_140px] gap-3 px-3 py-2" style={{ background: 'var(--bg-subtle)', borderBottom: '1px solid var(--border-subtle)' }}>
             <span className="text-caption font-semibold" style={{ color: 'var(--text-muted)' }}>Primary identifier</span>
             <span className="text-caption font-semibold" style={{ color: 'var(--text-muted)' }}>Linked signal</span>
             <span className="text-caption font-semibold" style={{ color: 'var(--text-muted)' }}>Signal type</span>
@@ -739,22 +739,29 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
           </div>
           {identityNodes.slice(1, 4).map((node, i) => {
             const labels = ['email match', 'address match', 'device/ip match'];
+            const observed = `${formatDateMode(profile.first_seen, 'table')} → ${formatDateMode(profile.last_seen, 'table')}`;
             return (
-              <div key={`${node}-${i}`} className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_110px_90px_140px] gap-3 px-3 py-2 border-t" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)' }}>
-                <span className="font-mono text-caption truncate" style={{ color: 'var(--text)' }}>{profile.primary_email ?? profile.emails[0] ?? 'primary'}</span>
-                <span className="text-caption truncate" style={{ color: 'var(--text)' }}>{String(node)}</span>
-                <span className="text-caption" style={{ color: 'var(--text-muted)' }}>{labels[i]}</span>
-                <ConfidencePill grade={i === 0 ? 'A' : i === 1 ? 'B' : 'C'} />
-                <span className="font-mono text-caption" style={{ color: 'var(--text-muted)' }}>
-                  {formatDateMode(profile.first_seen, 'table')} → {formatDateMode(profile.last_seen, 'table')}
-                </span>
+              <div key={`${node}-${i}`}>
+                <div className="hidden md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_110px_90px_140px] gap-3 px-3 py-2 border-t" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)' }}>
+                  <span className="font-mono text-caption truncate" style={{ color: 'var(--text)' }}>{profile.primary_email ?? profile.emails[0] ?? 'primary'}</span>
+                  <span className="text-caption truncate" style={{ color: 'var(--text)' }}>{String(node)}</span>
+                  <span className="text-caption" style={{ color: 'var(--text-muted)' }}>{labels[i]}</span>
+                  <ConfidencePill grade={i === 0 ? 'A' : i === 1 ? 'B' : 'C'} />
+                  <span className="font-mono text-caption" style={{ color: 'var(--text-muted)' }}>{observed}</span>
+                </div>
+                <div className="md:hidden border-t px-3 py-3 space-y-2" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)' }}>
+                  <div><span className="text-caption" style={{ color: 'var(--text-muted)' }}>Primary</span><p className="font-mono text-caption break-all" style={{ color: 'var(--text)' }}>{profile.primary_email ?? profile.emails[0] ?? 'primary'}</p></div>
+                  <div><span className="text-caption" style={{ color: 'var(--text-muted)' }}>Linked signal</span><p className="text-caption break-all" style={{ color: 'var(--text)' }}>{String(node)}</p></div>
+                  <div className="flex items-center justify-between gap-2"><span className="text-caption" style={{ color: 'var(--text-muted)' }}>{labels[i]}</span><ConfidencePill grade={i === 0 ? 'A' : i === 1 ? 'B' : 'C'} /></div>
+                  <div><span className="text-caption" style={{ color: 'var(--text-muted)' }}>Observed</span><p className="font-mono text-caption" style={{ color: 'var(--text-muted)' }}>{observed}</p></div>
+                </div>
               </div>
             );
           })}
           {identityNodes.length <= 1 && (
             <div className="px-3 py-3 border-t" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)' }}>
               <p className="text-caption" style={{ color: 'var(--text-muted)' }}>
-                More signals appear as cross-merchant data accumulates
+                More signals appear as cross-store data accumulates
               </p>
             </div>
           )}
@@ -867,12 +874,12 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
 
           <SectionCard
             title="Network footprint"
-            description={<span className="inline-flex items-center gap-2"><span>Privacy-safe cross-merchant context</span><PrivacyBadge value="k-safe" /></span>}
+            description={<span className="inline-flex items-center gap-2"><span>Privacy-safe cross-store context</span><PrivacyBadge /></span>}
           >
             <div className="grid grid-cols-3 gap-3">
               <MetricCard label="Merchants" value={profile.total_merchants_seen_at ?? 1} density="compact" />
               <MetricCard label="Profile orders" value={profile.total_orders ?? merchantOrderCount} density="compact" />
-              <MetricCard label="Privacy" value="k-safe" density="compact" />
+              <MetricCard label="Privacy" value="Privacy-safe" density="compact" />
             </div>
             {merchantSignalPills.length === 0 ? (
               <EmptyState title="No merchant signals" description="No cross-merchant claim signals are available for this profile yet." />
@@ -952,26 +959,9 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
 
           <SectionCard title={`Linked identities (${linkedAccounts.length})`}>
             {linkedAccounts.length === 0 ? (
-              <div className="space-y-2">
-                {[0, 1].map((idx) => (
-                  <div
-                    key={idx}
-                    className="grid grid-cols-[minmax(0,1fr)_90px] items-center gap-3 rounded-md border border-dashed p-3"
-                    style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)', opacity: 0.75 }}
-                  >
-                    <div className="space-y-1">
-                      <p className="text-caption font-mono" style={{ color: 'var(--text-muted)' }}>email: placeholder@domain.com</p>
-                      <p className="text-caption" style={{ color: 'var(--text-muted)' }}>address: 12 Example Street, City</p>
-                    </div>
-                    <div className="justify-self-end">
-                      <ConfidencePill grade="D" />
-                    </div>
-                  </div>
-                ))}
-                <p className="text-caption" style={{ color: 'var(--text-muted)' }}>
-                  Linked identities appear when cross-merchant signals connect this profile to other customer records.
-                </p>
-              </div>
+              <p className="text-body-sm" style={{ color: 'var(--text-muted)' }}>
+                No linked identities yet. They appear when signals connect this profile to other customer records in your data or the network.
+              </p>
             ) : (
               <ul className="space-y-2">
                 {linkedAccounts.map((acc: any, index: number) => (

@@ -35,17 +35,17 @@ interface SavingsCardProps {
   className?: string;
 }
 
-function formatCurrency(value: number, currency: string) {
-  return new Intl.NumberFormat('en-GB', {
+function formatCurrency(value: number) {
+  return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency,
+    currency: 'USD',
     maximumFractionDigits: 0,
   }).format(value);
 }
 
 export function SavingsCard({ data, loading, className }: SavingsCardProps) {
   const animatedValue = useCountUp(data?.confirmedFraudValue ?? 0, {
-    format: (value) => formatCurrency(value, data?.currency ?? 'GBP'),
+    format: (value) => formatCurrency(value),
   });
 
   return (

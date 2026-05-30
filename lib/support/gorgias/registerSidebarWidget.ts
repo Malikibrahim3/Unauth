@@ -26,11 +26,11 @@ export function gorgiasApiBaseUrl(providerBaseUrl: string): string {
 
 export function buildGorgiasWidgetIntegrationUrl(appBaseUrl: string, widgetToken: string): string {
   const base = appBaseUrl.replace(/\/$/, '');
-  const params = new URLSearchParams({
-    widget_token: widgetToken,
-    email: '{{ticket.customer.email}}',
-  });
-  return `${base}/api/gorgias/widget?${params.toString()}`;
+  // The email param must stay the literal Gorgias placeholder `{{ticket.customer.email}}` so
+  // Gorgias substitutes the real email at trigger time. URLSearchParams would percent-encode the
+  // braces (%7B%7B…), which Gorgias never matches — so build the query string by hand and only
+  // encode the token.
+  return `${base}/api/gorgias/widget?widget_token=${encodeURIComponent(widgetToken)}&email={{ticket.customer.email}}`;
 }
 
 export function buildGorgiasSidebarWidgetTemplate(appBaseUrl: string) {
@@ -142,6 +142,7 @@ export async function registerGorgiasSidebarWidget(input: {
           triggers: {
             'ticket-created': true,
             'ticket-updated': true,
+            'ticket-message-created': true,
           },
           request_content_type: 'application/json',
           response_content_type: 'application/json',

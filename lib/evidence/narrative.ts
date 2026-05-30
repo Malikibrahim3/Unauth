@@ -10,7 +10,7 @@ import { CE3_SIGNAL_LABELS } from './ce3'
 import { formatCurrency } from '@/lib/utils/format'
 
 function fmt(d: Date): string {
-  return new Intl.DateTimeFormat('en-GB', {
+  return new Intl.DateTimeFormat('en-US', {
     day: 'numeric',
     month: 'long',
     year: 'numeric',

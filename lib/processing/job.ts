@@ -61,7 +61,7 @@ export async function updateJobTotalRows(
       total_rows: totalRows,
       status: 'processing',
       progress_pct: 0,
-      progress_message: totalRows > 0 ? `Queued 0 of ${totalRows.toLocaleString()} rows` : 'Queued for processing…',
+      progress_message: totalRows > 0 ? `Queued 0 of ${totalRows.toLocaleString('en-US')} rows` : 'Queued for processing…',
       started_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     } as any)
@@ -107,7 +107,7 @@ export async function incrementJobProgress(
             : 0,
         progress_message:
           (job?.total_rows ?? 0) > 0
-            ? `Processed ${(((job?.processed_rows ?? 0) + processedDelta + (job?.failed_rows ?? 0) + failedDelta)).toLocaleString()} of ${(job?.total_rows ?? 0).toLocaleString()} rows`
+            ? `Processed ${(((job?.processed_rows ?? 0) + processedDelta + (job?.failed_rows ?? 0) + failedDelta)).toLocaleString('en-US')} of ${(job?.total_rows ?? 0).toLocaleString('en-US')} rows`
             : 'Processing…',
         updated_at: new Date().toISOString(),
       })

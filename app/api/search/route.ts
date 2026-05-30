@@ -149,7 +149,7 @@ export async function GET(req: NextRequest) {
           id: o.id,
           label: `Order ${o.order_id}`,
           sublabel: o.order_value
-            ? new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(o.order_value)
+            ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(o.order_value)
             : undefined,
           href: `/inbox`,
           riskLevel: o.risk_level ?? undefined,

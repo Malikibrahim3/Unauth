@@ -214,7 +214,7 @@ export default async function DemoPage() {
                     {(run.flagged_count ?? 0).toLocaleString()}
                   </td>
                   <td className="px-4 py-3 text-xs text-[var(--text-muted)]">
-                    {new Date(run.created_at).toLocaleDateString('en-GB', {
+                    {new Date(run.created_at).toLocaleDateString('en-US', {
                       day: 'numeric',
                       month: 'short',
                       year: 'numeric',

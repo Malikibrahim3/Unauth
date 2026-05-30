@@ -123,11 +123,11 @@ function EvidenceNewForm({ profileId }: { profileId: string }) {
         <span style={{ color: 'var(--border)' }}>/</span>
         <Link href="/customers" className="text-sm hover:opacity-80 transition-colors" style={{ color: 'var(--text-muted)' }}>Customers</Link>
         <span style={{ color: 'var(--border)' }}>/</span>
-        <span className="text-sm" style={{ color: 'var(--text)' }}>Compile signal data</span>
+        <span className="text-sm" style={{ color: 'var(--text)' }}>Build evidence package</span>
       </div>
 
       <h1 className="text-heading-lg mb-1" style={{ color: 'var(--text)' }}>
-        Compile signal data
+        Build evidence package
       </h1>
       <p className="text-body-sm mb-2" style={{ color: 'var(--text-muted)' }}>
         Organises identity signal data from your records that may be relevant when preparing a chargeback response. Unauth surfaces the signal history — your payment processor or acquirer determines what qualifies as valid dispute evidence.
@@ -202,7 +202,7 @@ function EvidenceNewForm({ profileId }: { profileId: string }) {
               <option value="">Select an order to defend…</option>
               {orders.map(o => (
                 <option key={o.id} value={o.id}>
-                  {o.order_id} · {new Date(o.processed_at).toLocaleDateString('en-GB')}
+                  {o.order_id} · {new Date(o.processed_at).toLocaleDateString('en-US')}
                   {o.order_value != null ? ` · ${o.order_value.toFixed(2)}` : ''}
                   {o.refund_claimed ? ' ★ refund claimed' : ''}
                 </option>
@@ -330,7 +330,7 @@ function EvidenceNewForm({ profileId }: { profileId: string }) {
                 className="px-5 py-2.5 rounded-md text-sm font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}
               >
-                {loading ? 'Compiling…' : 'Compile signal data'}
+                {loading ? 'Building…' : 'Build evidence package'}
               </button>
               {!selectedOrderId && (
                 <p className="text-[11px]" style={{ color: 'var(--text-subtle)' }}>

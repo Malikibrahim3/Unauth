@@ -66,7 +66,7 @@ const STATUS_LABELS: Record<InviteStatus, string> = {
 
 function formatDate(value: string | null) {
   if (!value) return 'Not accepted yet';
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat('en-US', {
     month: 'short',
     day: 'numeric',
     hour: '2-digit',

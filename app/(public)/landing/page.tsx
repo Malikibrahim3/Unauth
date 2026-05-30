@@ -221,7 +221,7 @@ export default function LandingPage() {
               Sign in
             </a>
             <a
-              href="/audit-demo"
+              href="/audit"
               style={{
                 fontFamily: 'var(--font-dm-sans, sans-serif)',
                 fontSize: '12px',
@@ -238,7 +238,7 @@ export default function LandingPage() {
               Audit →
             </a>
             <a
-              href="/audit-demo"
+              href="/audit"
               style={{
                 fontFamily: 'var(--font-dm-sans, sans-serif)',
                 fontSize: '13px',
@@ -1560,7 +1560,7 @@ export default function LandingPage() {
                 Data handling, privacy, integration, evidence — answered directly.
               </p>
               <a
-                href="/audit-demo"
+                href="/audit"
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
@@ -1724,7 +1724,7 @@ export default function LandingPage() {
             <div>
               <p style={{ margin: 0, color: footerStyles.heading, fontWeight: 600, letterSpacing: '0.02em' }}>Contact</p>
               <div className="mt-3 flex flex-col gap-2">
-                <a href="mailto:hello@unauth.app" style={{ color: footerStyles.link }} className="hover:underline">hello@unauth.app</a>
+                <a href="mailto:hello@unauth.co" style={{ color: footerStyles.link }} className="hover:underline">hello@unauth.co</a>
                 <span style={{ color: footerStyles.link }}>London, UK</span>
                 <span style={{ color: footerStyles.link }}>Support window: Mon-Fri, 09:00-18:00 GMT</span>
               </div>

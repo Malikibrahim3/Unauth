@@ -43,7 +43,7 @@ function assertNoBannedWords(text: string): void {
 
 function formatDateShort(iso: string): string {
   try {
-    return new Intl.DateTimeFormat('en-GB', {
+    return new Intl.DateTimeFormat('en-US', {
       day: 'numeric',
       month: 'short',
       year: 'numeric',

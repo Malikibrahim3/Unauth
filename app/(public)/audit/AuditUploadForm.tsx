@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Papa from 'papaparse';
 import { autoMapHeaders, REQUIRED_FIELDS, type AutoMapResult } from '@/lib/csv/headerAliases';
@@ -60,6 +60,14 @@ export default function AuditUploadForm() {
   const [isDragging, setIsDragging] = useState(false);
   const [schemaOpen, setSchemaOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const prefill = sessionStorage.getItem('auditPrefillEmail');
+    if (prefill) {
+      setEmail(prefill);
+      sessionStorage.removeItem('auditPrefillEmail');
+    }
+  }, []);
 
   const processFile = useCallback(async (selected: File) => {
     setFileError('');
@@ -128,12 +136,12 @@ export default function AuditUploadForm() {
     setLoading(false);
 
     if (!response.ok) {
-      setSubmitError(body?.error ?? 'Something went wrong. Try again or email hello@unauth.app');
+      setSubmitError(body?.error ?? 'Something went wrong. Try again or email hello@unauth.co');
       return;
     }
     const auditId = typeof body?.auditId === 'string' ? body.auditId : null;
     if (!auditId) {
-      setSubmitError('Something went wrong. Try again or email hello@unauth.app');
+      setSubmitError('Something went wrong. Try again or email hello@unauth.co');
       return;
     }
     router.push(`/audit/submitted?audit=${encodeURIComponent(auditId)}`);

@@ -139,13 +139,12 @@ export default function AuditDemoClient({ initialEmail = '' }: { initialEmail?: 
     setProblem(value);
     setLoading(true);
     await new Promise((resolve) => setTimeout(resolve, 1500));
-    const params = new URLSearchParams({
-      email: email.trim(),
-      platform,
-      volume,
-      problem: value,
-    });
-    router.push(`/audit-demo/results?${params.toString()}`);
+    sessionStorage.setItem('auditPrefillEmail', email.trim());
+    sessionStorage.setItem(
+      'auditDemoContext',
+      JSON.stringify({ platform, volume, problem: value }),
+    );
+    router.push('/audit');
   }
 
   return (
@@ -175,7 +174,7 @@ export default function AuditDemoClient({ initialEmail = '' }: { initialEmail?: 
             marginBottom: '12px',
           }}
         >
-          {step === 0 ? 'Free audit demo' : `Step ${step} of 3`}
+          {step === 0 ? '60-second interactive demo' : `Step ${step} of 3`}
         </p>
 
         {step > 0 ? <ProgressBar step={step} /> : null}
@@ -225,7 +224,7 @@ export default function AuditDemoClient({ initialEmail = '' }: { initialEmail?: 
                   marginBottom: '20px',
                 }}
               >
-                Start with your work email and we&apos;ll tailor a quick audit walkthrough to your store.
+                Answer three quick questions, then we&apos;ll send you to the real free CSV audit for your store.
               </p>
 
               <form onSubmit={onStartAudit} className="grid grid-cols-1 gap-3">
@@ -252,7 +251,7 @@ export default function AuditDemoClient({ initialEmail = '' }: { initialEmail?: 
                     color: 'var(--landing-accent-fg)',
                   }}
                 >
-                  Run a free audit →
+                  Start interactive demo →
                 </Button>
               </form>
 
@@ -301,7 +300,7 @@ export default function AuditDemoClient({ initialEmail = '' }: { initialEmail?: 
 
               {loading ? (
                 <p style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '15px', color: 'var(--landing-ink-secondary, #574d43)' }}>
-                  Building your audit demo...
+                  Taking you to the free audit…
                 </p>
               ) : null}
 
@@ -361,12 +360,11 @@ export default function AuditDemoClient({ initialEmail = '' }: { initialEmail?: 
                                 marginBottom: '12px',
                               }}
                             >
-                              At your volume, fraud patterns are more complex and a generic demo won&apos;t do it justice.
+                              At your volume, start with the free CSV audit — you can always talk to us after you see results.
                             </p>
-                            <a
-                              href="https://cal.example.com"
-                              target="_blank"
-                              rel="noreferrer"
+                            <button
+                              type="button"
+                              onClick={() => setStep(3)}
                               style={{
                                 display: 'inline-flex',
                                 alignItems: 'center',
@@ -380,27 +378,11 @@ export default function AuditDemoClient({ initialEmail = '' }: { initialEmail?: 
                                 fontFamily: 'var(--font-dm-sans, sans-serif)',
                                 fontSize: '14px',
                                 fontWeight: 500,
-                                textDecoration: 'none',
+                                cursor: 'pointer',
                               }}
                               className="hover:bg-[var(--landing-accent-hover,#60231e)]"
                             >
-                              Book a 20-minute call →
-                            </a>
-                            <button
-                              type="button"
-                              onClick={() => setStep(3)}
-                              style={{
-                                border: 'none',
-                                background: 'transparent',
-                                marginTop: '10px',
-                                padding: 0,
-                                color: 'var(--landing-ink-tertiary, #74685c)',
-                                fontFamily: 'var(--font-dm-sans, sans-serif)',
-                                fontSize: '13px',
-                                textDecoration: 'underline',
-                              }}
-                            >
-                              continue to the demo anyway →
+                              Continue to free audit →
                             </button>
                           </div>
                         ) : null}

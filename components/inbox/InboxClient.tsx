@@ -10,6 +10,7 @@ import { FLAG_QUEUE_PRIORITISATION } from '@/lib/flags';
 import { ConfidenceBadge } from '@/components/ui/ConfidenceBadge';
 import { riskLevelToNewGrade } from '@/lib/confidence';
 import type { ClaimQueueCounts } from '@/lib/claims/queueCounts';
+import { formatCurrencyNullable } from '@/lib/utils/format';
 
 interface InboxTransaction {
   id: string;
@@ -518,7 +519,7 @@ export default function InboxClient({ initialItems, claimQueueCounts = null }: P
                       <div
                         className="mt-0.5 text-[10px] font-medium"
                         style={{ color: 'var(--accent-600, var(--accent))' }}
-                        title={`Priority score: confidence (${Math.round(tx.identity_score ?? 0)}) × order value (${tx.order_value != null ? '£' + tx.order_value.toFixed(0) : '—'}) = ${priorityScore}`}
+                        title={`Priority score: confidence (${Math.round(tx.identity_score ?? 0)}) × order value (${tx.order_value != null ? formatCurrencyNullable(tx.order_value) : '—'}) = ${priorityScore}`}
                       >
                         ★ Why this is first: highest confidence × value (priority score {priorityScore})
                       </div>
@@ -549,7 +550,7 @@ export default function InboxClient({ initialItems, claimQueueCounts = null }: P
                 {tx.identity_score != null ? Math.round(tx.identity_score) : '—'}
               </td>
               <td className="px-4 py-3 text-right font-mono text-xs" style={{ color: 'var(--text)' }}>
-                {tx.order_value != null ? new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(tx.order_value) : '—'}
+                {formatCurrencyNullable(tx.order_value ?? null)}
               </td>
               <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-muted)' }}>
                 {tx.reason ?? 'Needs manual review'}

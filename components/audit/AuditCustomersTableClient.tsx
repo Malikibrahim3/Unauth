@@ -5,6 +5,7 @@ import { ConfidenceBadge, type ConfidenceGradeValue } from '@/components/ui/Conf
 import { ArrowRight, Search, X } from 'lucide-react';
 import CustomerIntelligenceDrawer from '@/components/customers/CustomerIntelligenceDrawer';
 import type { CustomerIntelligencePanel } from '@/app/api/customers/[id]/route';
+import { formatCurrency, formatDateShort } from '@/lib/utils/format';
 
 /** Maps legacy grade strings to new A-F confidence values */
 function legacyGradeToNew(g: 'definite' | 'probable' | 'possible' | 'weak' | null | undefined): ConfidenceGradeValue {
@@ -71,11 +72,6 @@ type AuditCustomerDetail = {
   }>;
 };
 
-function formatCurrency(value: number | null): string {
-  if (value == null) return '-';
-  return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(value);
-}
-
 /** Build a full panel from the audit API response */
 function auditDetailToPanel(detail: AuditCustomerDetail): CustomerIntelligencePanel {
   const { customer, orders } = detail;
@@ -86,8 +82,8 @@ function auditDetailToPanel(detail: AuditCustomerDetail): CustomerIntelligencePa
 
   const parts: string[] = [];
   if (sortedOrders.length > 0) {
-    const from = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(firstSeen));
-    const to   = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(lastSeen));
+    const from = formatDateShort(firstSeen);
+    const to = formatDateShort(lastSeen);
     parts.push(`This customer has ${customer.orderCount} recorded order${customer.orderCount !== 1 ? 's' : ''} between ${from} and ${to}.`);
   }
   if (claimCount > 0) parts.push(`${claimCount} refund or chargeback claim${claimCount !== 1 ? 's' : ''} on record.`);

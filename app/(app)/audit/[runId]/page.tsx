@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { formatDate, formatCurrency } from '@/lib/utils/format';
 import { scoreToGrade, gradeToLetter, type ConfidenceGrade, ESTIMATED_CHARGEBACK_RATE, CONFIDENCE_THRESHOLDS } from '@/lib/engine/weights';
 import { signalLabel } from '@/lib/copy/signalLabels';
+import { CONFIDENCE_TIER_LABELS } from '@/lib/copy/merchantUx';
 import { ConfidenceBadge } from '@/components/ui/ConfidenceBadge';
 import type { ConfidenceGradeValue } from '@/lib/confidence';
 import DismissTransactionButton from '@/components/audit/DismissTransactionButton';
@@ -12,6 +13,7 @@ import FeedbackButtons from '@/components/audit/FeedbackButtons';
 import DataQualityBanner from '@/components/audit/DataQualityBanner';
 import AuditRiskChart from '@/components/audit/AuditRiskChart';
 import AuditTabs from '@/components/audit/AuditTabs';
+import { Suspense } from 'react';
 import type { DataQualityReport } from '@/lib/csv/dataQuality';
 import type { Database } from '@/lib/supabase/types';
 import PageSizeSelect from '@/components/common/PageSizeSelect';
@@ -287,6 +289,7 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
   const networkLinkedCount = summary.linkedClusters;
 
   const hasFlags = summary.flaggedTransactions > 0;
+  const isRunComplete = runData.status === 'completed';
   const totalTransactions = runData.total_rows ?? 0;
   const txPages = Math.max(1, Math.ceil(totalTransactions / txPageSize));
 
@@ -351,13 +354,13 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
       {/* ── Audit summary hero ────────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
         <Link href={`/audit/${jobId}?tab=transactions`} className="block"><MetricCard label="Orders analysed" value={runData.total_rows} /></Link>
-        <Link href={`/audit/${jobId}?tab=transactions`} className="block"><MetricCard label="Network linked" value={networkLinkedCount.toLocaleString()} hint="Cross-merchant profiles" /></Link>
+        <Link href={`/audit/${jobId}?tab=transactions`} className="block"><MetricCard label="Linked across stores" value={networkLinkedCount.toLocaleString()} hint="Shoppers seen at multiple merchants" /></Link>
         <div className="md:col-span-2">
-          <SectionCard title="Anchor metric">
+          <SectionCard title="Match strength breakdown">
             <RiskDistributionStrip definite={gradeCounts.definite} probable={gradeCounts.probable} candidate={gradeCounts.possible} weak={gradeCounts.weak} />
           </SectionCard>
         </div>
-        <Link href={`/audit/${jobId}?tab=customers&grade=definite`} className="block"><MetricCard label="Definite matches" value={gradeCounts.definite} /></Link>
+        <Link href={`/audit/${jobId}?tab=customers&grade=definite`} className="block"><MetricCard label="Strong matches" value={gradeCounts.definite} hint="Highest confidence" /></Link>
         <MetricCard label="Completed" value={formatDateMode(runData.created_at, 'recent')} hint={formatDate(runData.created_at)} />
       </div>
 
@@ -367,6 +370,7 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
       )}
 
       {/* ── Tabs ─────────────────────────────────────────────────────── */}
+      <Suspense fallback={<div className="text-body-sm" style={{ color: 'var(--text-muted)' }}>Loading…</div>}>
       <AuditTabs
         defaultTab={defaultTab}
         tabs={[
@@ -381,10 +385,10 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
               {/* Grade cards */}
               <div className="grid grid-cols-4 gap-3">
                 {([
-                  { grade: 'definite', tileLabel: 'Linked accounts' },
-                  { grade: 'probable', tileLabel: 'Probable connections' },
-                  { grade: 'possible', tileLabel: 'Possible signals found' },
-                  { grade: 'weak',     tileLabel: 'Low signals' },
+                  { grade: 'definite', tileLabel: CONFIDENCE_TIER_LABELS.definite },
+                  { grade: 'probable', tileLabel: CONFIDENCE_TIER_LABELS.probable },
+                  { grade: 'possible', tileLabel: CONFIDENCE_TIER_LABELS.possible },
+                  { grade: 'weak',     tileLabel: CONFIDENCE_TIER_LABELS.weak },
                 ] as const).map(({ grade, tileLabel }) => (
                   <Link key={grade} href={`/audit/${jobId}?tab=customers&grade=${grade}`}>
                     <div
@@ -409,7 +413,16 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
 
               <AuditRiskChart counts={gradeCounts} totalRows={runData.total_rows} totalFlagged={summary.flaggedTransactions} />
 
-              {!hasFlags && (
+              {!isRunComplete && (
+                <div className="rounded-xl px-6 py-8 text-center border space-y-3" style={{ background: 'var(--info-bg)', borderColor: 'var(--info-bd)' }}>
+                  <p className="text-body-sm font-semibold" style={{ color: 'var(--info)' }}>Still analyzing your upload</p>
+                  <p className="text-caption" style={{ color: 'var(--text-muted)' }}>
+                    Match counts and risk grades update when processing finishes. Refresh this page in a moment.
+                  </p>
+                </div>
+              )}
+
+              {isRunComplete && !hasFlags && (
                 <div className="rounded-xl px-6 py-8 text-center border space-y-3" style={{ background: 'var(--success-bg)', borderColor: 'var(--success-bd)' }}>
                   <p className="text-body-sm font-semibold" style={{ color: 'var(--success)' }}>No identity match signals were found in this upload.</p>
                   <p className="text-caption" style={{ color: 'var(--success)' }}>Upload a longer date range to surface slower repeat claim patterns.</p>
@@ -639,6 +652,7 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
           ),
         }}
       />
+      </Suspense>
     </div>
   );
 }

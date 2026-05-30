@@ -53,7 +53,7 @@ const INTEGRATIONS = [
 
 function formatDate(value: string | null) {
   if (!value) return 'Never';
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat('en-US', {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
@@ -205,7 +205,7 @@ export default function ApiIntegrationsClient() {
           <p className="px-5 py-8 text-sm" style={{ color: 'var(--text-muted)' }}>Loading keys…</p>
         ) : keys.length === 0 ? (
           <p className="px-5 py-8 text-sm" style={{ color: 'var(--text-muted)' }}>
-            No API keys yet. Create one for your Gorgias, Zendesk, or custom integration.
+            No API keys yet. Create one for the Chrome extension or custom API integrations.
           </p>
         ) : (
           <ul className="divide-y" style={{ borderColor: 'var(--surface-border)' }}>

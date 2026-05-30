@@ -28,7 +28,7 @@ export function RiskDistributionStrip({ definite, probable, candidate, weak }: R
             Anchor metric
           </div>
           <div className="t-score mt-2 num" style={{ color: 'var(--data-score)' }}>
-            {total.toLocaleString('en-GB')}
+            {total.toLocaleString('en-US')}
           </div>
         </div>
       </div>

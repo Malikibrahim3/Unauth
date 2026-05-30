@@ -86,10 +86,10 @@ export default function DataHandlingPage() {
         <div className="space-y-3 border-t border-[var(--border-subtle)] pt-8">
           <p>
             <a
-              href="mailto:privacy@unauth.io"
+              href="mailto:privacy@unauth.co"
               className="font-medium text-[var(--accent)] hover:underline"
             >
-              Contact us about data handling: privacy@unauth.io
+              Contact us about data handling: privacy@unauth.co
             </a>
           </p>
           <p>

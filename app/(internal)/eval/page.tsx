@@ -81,7 +81,7 @@ export default async function InternalEvalPage() {
               Latest Eval Run
             </h2>
             <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-              {new Date(latest.run_at).toLocaleString('en-GB')}
+              {new Date(latest.run_at).toLocaleString('en-US')}
             </span>
           </div>
 
@@ -145,7 +145,7 @@ export default async function InternalEvalPage() {
               {evalRows.map((row) => (
                 <tr key={row.id} className="border-t" style={{ borderColor: 'var(--border)' }}>
                   <td className="py-1.5 pr-4 text-xs" style={{ color: 'var(--text-muted)' }}>
-                    {new Date(row.run_at).toLocaleDateString('en-GB')}
+                    {new Date(row.run_at).toLocaleDateString('en-US')}
                   </td>
                   <td className={`py-1.5 pr-4 font-mono ${(row.f1_score ?? 0) >= 0.70 ? 'text-[var(--success)]' : 'text-[var(--risk-critical)]'}`}>
                     {row.f1_score?.toFixed(3) ?? '—'}

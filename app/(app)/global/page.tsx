@@ -117,7 +117,7 @@ export default async function GlobalGraphPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <MetricCard label="Network-linked profiles" value={crossMerchantMatches.toLocaleString()} hint="Seen at 2+ merchants" />
         <MetricCard label="Network-linked orders" value={networkLinkedOrders.toLocaleString()} hint={`${totalRows.toLocaleString()} rows scanned`} />
-        <MetricCard label="Claims in clusters" value={networkClaims.toLocaleString()} hint="Refund or dispute events" />
+        <MetricCard label="Claims on linked shoppers" value={networkClaims.toLocaleString()} hint="Refund or dispute events" />
         <MetricCard label="Widest footprint" value={maxMerchantSpan ? `${maxMerchantSpan} merchants` : '—'} hint="Names and order IDs hidden" />
       </div>
 
@@ -183,9 +183,9 @@ export default async function GlobalGraphPage() {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_380px] gap-6">
-        <SectionCard title="Flagged identity clusters">
+        <SectionCard title="Linked shoppers across stores">
           {clusterRows.length === 0 ? (
-            <p className="text-body-sm" style={{ color: 'var(--text-muted)' }}>No cross-merchant clusters are visible for this merchant yet.</p>
+            <p className="text-body-sm" style={{ color: 'var(--text-muted)' }}>No cross-store linked shoppers are visible for your account yet.</p>
           ) : (
             <div className="divide-y" style={{ borderColor: 'var(--border-subtle)' }}>
               {clusterRows.map((cluster) => {
@@ -196,7 +196,7 @@ export default async function GlobalGraphPage() {
                       <div className="flex flex-wrap items-center gap-2">
                         <GitBranch className="h-4 w-4" style={{ color: 'var(--text-muted)' }} />
                         <p className="truncate text-body-sm font-semibold" style={{ color: 'var(--text)' }}>
-                          {cluster.primary_email ?? `Cluster ${cluster.id.slice(0, 8)}`}
+                          {cluster.primary_email ?? `Shopper ${cluster.id.slice(0, 8)}`}
                         </p>
                         <ConfidenceBadge grade={gradeFromIdentityGrade(cluster.identity_confidence_grade)} size="sm" />
                       </div>

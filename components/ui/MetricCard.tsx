@@ -38,7 +38,7 @@ export function MetricCard({ label, value, delta, hint, icon, density = 'default
   const isHero = size === 'hero';
   const padding = isHero ? 20 : density === 'compact' ? 12 : 16;
   const displayValue = typeof value === 'number'
-    ? useCountUp(value, { format: (next) => Math.round(next).toLocaleString('en-GB') })
+    ? useCountUp(value, { format: (next) => Math.round(next).toLocaleString('en-US') })
     : value;
 
   return (

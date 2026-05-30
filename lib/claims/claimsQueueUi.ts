@@ -54,7 +54,7 @@ export function formatClaimsResultText(input: {
   view: ClaimsListView;
 }): string {
   const { showing, totalMatching, view } = input;
-  const pagePart = `Showing ${showing.toLocaleString()} of ${totalMatching.toLocaleString()}`;
+  const pagePart = `Showing ${showing.toLocaleString('en-US')} of ${totalMatching.toLocaleString('en-US')}`;
 
   switch (view.kind) {
     case 'active':

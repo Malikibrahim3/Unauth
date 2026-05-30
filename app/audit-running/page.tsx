@@ -56,7 +56,7 @@ export default async function AuditRunningPage({ searchParams }: AuditRunningPag
             marginBottom: '20px',
           }}
         >
-          We&apos;ll email your results to <span style={{ color: '#1A1814' }}>{email}</span> in around 20 minutes. You can close this tab.
+          We&apos;ll email your results to <span style={{ color: '#1A1814' }}>{email}</span> when processing finishes. You can also check status in the app.
         </p>
         <p
           style={{
@@ -67,7 +67,7 @@ export default async function AuditRunningPage({ searchParams }: AuditRunningPag
             margin: 0,
           }}
         >
-          We&apos;re analysing order patterns, refund clustering, and repeat identity signals across your data.
+          We&apos;re analyzing order patterns, refund behavior, and repeat shopper signals across your data.
         </p>
       </div>
     </div>

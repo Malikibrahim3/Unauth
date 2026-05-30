@@ -68,7 +68,21 @@ export default function AuditPage() {
           >
             Upload your last 90 days of orders and refunds. We&apos;ll run a fraud-resolution audit
             on your store data and email you the results — linked identities, repeat abuser
-            clusters, and risk scores.
+            patterns, and risk scores.
+          </p>
+          <p
+            style={{
+              ...sans,
+              fontSize: '15px',
+              lineHeight: 1.65,
+              color: '#574D43',
+              marginTop: '16px',
+              marginBottom: 0,
+              maxWidth: '35rem',
+            }}
+          >
+            <strong style={{ color: '#1A1814', fontWeight: 600 }}>Free audit scans your store only.</strong>{' '}
+            Approved founding merchants unlock cross-store network matching — we&apos;ll say when that applies.
           </p>
         </div>
 
@@ -108,10 +122,10 @@ export default function AuditPage() {
           >
             Questions before uploading? Email the team directly —{' '}
             <a
-              href="mailto:hello@unauth.app"
+              href="mailto:hello@unauth.co"
               style={{ color: muted, textDecoration: 'underline' }}
             >
-              hello@unauth.app
+              hello@unauth.co
             </a>{' '}
             — response within 2 hours.
           </p>

@@ -98,7 +98,7 @@ export default function NextUpPanel({ claims, inboxCount }: NextUpPanelProps) {
                     {claim.customerEmail ? ` · ${claim.customerEmail}` : ''}
                   </p>
                   <p className="text-caption mt-1" style={{ color: 'var(--text-subtle)' }}>
-                    {formatClaimAge(claim)} · Updated {claim.updatedAt ? new Date(claim.updatedAt).toLocaleDateString('en-GB') : '—'}
+                    {formatClaimAge(claim)} · Updated {claim.updatedAt ? new Date(claim.updatedAt).toLocaleDateString('en-US') : '—'}
                   </p>
                 </div>
                 <div className="self-center text-right">

@@ -64,7 +64,7 @@ export default async function HistoryPage({ searchParams }: { searchParams?: { p
             { label: 'Audits', value: total.toLocaleString(), hint: 'Visible runs' },
             { label: 'Rows processed', value: typedRuns.reduce((sum, row) => sum + row.total_rows, 0).toLocaleString(), hint: 'Current page scope' },
             { label: 'Matched', value: typedRuns.reduce((sum, row) => sum + (row.flagged_count ?? 0), 0).toLocaleString(), hint: 'Current page scope' },
-            { label: 'Last upload', value: typedRuns[0]?.created_at ? new Date(typedRuns[0].created_at).toLocaleDateString('en-GB') : '-', hint: 'Most recent run' },
+            { label: 'Last upload', value: typedRuns[0]?.created_at ? new Date(typedRuns[0].created_at).toLocaleDateString('en-US') : '-', hint: 'Most recent run' },
             { label: 'Failed', value: typedRuns.filter((row) => row.status === 'failed').length.toLocaleString(), hint: 'Current page scope' },
           ]}
         />

@@ -99,12 +99,11 @@ const s = StyleSheet.create({
 // =============================================================================
 
 function fmt(d: Date): string {
-  return new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).format(d)
+  return new Intl.DateTimeFormat('en-US', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(d)
 }
 
-function fmtCurrency(amount: number, currency = 'USD'): string {
-  const locale = currency.toUpperCase() === 'GBP' ? 'en-GB' : 'en-US'
-  return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(amount)
+function fmtCurrency(amount: number, _currency = 'USD'): string {
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount)
 }
 
 function priorMatchStrength(pkg: EvidencePackage): 'Strong' | 'Partial' | 'None' {

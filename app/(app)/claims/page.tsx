@@ -129,7 +129,7 @@ function claimNextAction(claim: ClaimRow, latestOutcome: { decision: string; out
   const owner = claim.assigned_to === currentUserId ? 'Assigned to me' : claim.assigned_to ? 'Assigned' : 'Unassigned';
   const snoozedUntil = claim.snoozed_until ? new Date(claim.snoozed_until) : null;
   if (snoozedUntil && snoozedUntil.getTime() > Date.now()) {
-    return { stage: 'Snoozed', owner, next: `Follow up ${snoozedUntil.toLocaleDateString('en-GB')}` };
+    return { stage: 'Snoozed', owner, next: `Follow up ${snoozedUntil.toLocaleDateString('en-US')}` };
   }
   switch (claim.status) {
     case 'open':
@@ -646,7 +646,7 @@ export default async function ClaimsPage({
                             {formatCurrencyNullable(c.amount_at_risk, c.currency ?? undefined)}
                           </td>
                           <td className="hidden lg:table-cell px-4 py-3 text-xs whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>
-                            {new Date(c.updated_at).toLocaleDateString('en-GB')}
+                            {new Date(c.updated_at).toLocaleDateString('en-US')}
                           </td>
                           <td
                             className="sticky right-0 px-4 py-3 text-right whitespace-nowrap group-hover:bg-[var(--bg-hover)]"

@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { formatRelativeTime } from '@/lib/utils/format';
+import { formatCurrency, formatDateShort, formatRelativeTime } from '@/lib/utils/format';
 
 export type TimelineEventType =
   | 'order'
@@ -60,7 +60,7 @@ function groupEventsByDay(events: TimelineEventItem[]): { day: string; items: Ti
 }
 
 function formatDay(iso: string) {
-  return new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(iso));
+  return formatDateShort(iso);
 }
 
 export function Timeline({ events, groupByDay = true, onEventClick, className }: TimelineProps) {
@@ -170,7 +170,7 @@ const H_TYPE_COLOR: Record<HorizontalTimelineEvent['type'], { dot: string; label
 
 function formatHorizontalDate(iso: string) {
   try {
-    return new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short' }).format(new Date(iso));
+    return new Intl.DateTimeFormat('en-US', { day: '2-digit', month: 'short', timeZone: 'UTC' }).format(new Date(iso));
   } catch {
     return iso.slice(0, 10);
   }
@@ -247,11 +247,7 @@ export function HorizontalTimeline({ events, onEventClick, className }: Horizont
                 </span>
                 {ev.amount != null && (
                   <span className="text-meta num text-[var(--text-secondary)]">
-                    {new Intl.NumberFormat('en-GB', {
-                      style: 'currency',
-                      currency: ev.currency ?? 'GBP',
-                      maximumFractionDigits: 0,
-                    }).format(ev.amount)}
+                    {formatCurrency(ev.amount, ev.currency ?? 'USD')}
                   </span>
                 )}
               </div>

@@ -81,11 +81,11 @@ export async function POST(request: NextRequest) {
   });
 
   const emailResult = await sendEmail({
-    to: 'hello@unauth.app',
+    to: 'hello@unauth.co',
     subject: `Founding merchant application — ${storeName}`,
     html: notification.html,
     text: notification.text,
-    replyTo: user.email ?? 'hello@unauth.app',
+    replyTo: user.email ?? 'hello@unauth.co',
   });
 
   if (emailResult.ok) {

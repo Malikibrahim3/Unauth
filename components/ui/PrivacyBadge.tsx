@@ -6,10 +6,11 @@ interface PrivacyBadgeProps {
   className?: string;
 }
 
-export function PrivacyBadge({ value = 'k-safe', className }: PrivacyBadgeProps) {
+export function PrivacyBadge({ value = 'Privacy-safe', className }: PrivacyBadgeProps) {
   return (
     <span
-      className={cn('inline-flex items-center gap-1 rounded-sm border px-1.5 py-0.5 font-mono text-[10px] uppercase leading-none', className)}
+      title="Cross-store comparisons use hashed identifiers only. No other merchant can see your customer list."
+      className={cn('inline-flex items-center gap-1 rounded-sm border px-1.5 py-0.5 text-[10px] font-medium leading-none', className)}
       style={{
         background: 'var(--privacy-fill)',
         borderColor: 'var(--privacy-border)',

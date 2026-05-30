@@ -273,7 +273,7 @@ status: DISPUTE_READY
 
 **API:**
 ```
-endpoint: POST https://api.unauth.app/v1/score
+endpoint: POST https://api.unauth.co/v1/score
 order_id: ORD-7F31A
 merchant_id: mrc_murmuraudio
 latency: 38ms

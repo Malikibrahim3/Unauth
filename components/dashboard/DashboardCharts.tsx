@@ -91,7 +91,7 @@ function weekKey(date: Date) {
 }
 
 function compactDate(label: string) {
-  return new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short' }).format(new Date(`${label}T00:00:00Z`));
+  return new Intl.DateTimeFormat('en-US', { day: '2-digit', month: 'short', timeZone: 'UTC' }).format(new Date(`${label}T00:00:00Z`));
 }
 
 function isFlagged(tx: TransactionChartData) {
@@ -117,7 +117,7 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
           <div key={item.dataKey ?? item.name} className="flex items-center justify-between gap-5">
             <span style={{ color: item.color ?? 'var(--ink-secondary)' }}>{item.name}</span>
             <span className="font-mono" style={{ color: 'var(--ink-primary)' }}>
-              {typeof item.value === 'number' ? item.value.toLocaleString('en-GB', { maximumFractionDigits: 2 }) : item.value}
+              {typeof item.value === 'number' ? item.value.toLocaleString('en-US', { maximumFractionDigits: 2 }) : item.value}
             </span>
           </div>
         ))}
@@ -369,7 +369,7 @@ export default function DashboardCharts({ runs, transactions }: Props) {
               <LineChart data={chargebackTrend} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                 <CartesianGrid stroke="var(--surface-border)" vertical={false} />
                 <XAxis dataKey="label" tick={{ fill: 'var(--ink-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} minTickGap={14} />
-                <YAxis tickFormatter={(v) => `${Number(v).toLocaleString('en-GB', { maximumFractionDigits: 1 })}%`} tick={{ fill: 'var(--ink-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} width={46} />
+                <YAxis tickFormatter={(v) => `${Number(v).toLocaleString('en-US', { maximumFractionDigits: 1 })}%`} tick={{ fill: 'var(--ink-tertiary)', fontSize: 11 }} axisLine={false} tickLine={false} width={46} />
                 <ReferenceLine y={1.5} stroke="var(--ink-tertiary)" strokeDasharray="4 4" label={{ value: 'benchmark', fill: 'var(--ink-tertiary)', fontSize: 10, position: 'insideTopRight' }} />
                 <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'var(--sev-probable)', strokeOpacity: 0.25 }} />
                 <Line name="Chargeback rate" type="monotone" dataKey="rate" stroke="var(--sev-probable)" strokeWidth={2.25} dot={false} activeDot={{ r: 4, fill: 'var(--sev-probable)' }} />

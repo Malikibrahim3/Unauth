@@ -69,5 +69,5 @@ export function getClaimSlaState(claim: ClaimAgeInput, now = new Date()): {
 export function formatFiledDate(claim: ClaimAgeInput): string {
   const openedAt = claimOpenedAt(claim);
   if (!openedAt) return '—';
-  return openedAt.toLocaleDateString('en-GB');
+  return openedAt.toLocaleDateString('en-US');
 }

@@ -17,8 +17,8 @@ export default function DpaPage() {
       <div className="mb-8 rounded-lg border border-[var(--info-bd)] bg-[var(--info-bg)] px-5 py-4">
         <p className="text-sm font-semibold text-[var(--info)]">
           Need a countersigned DPA for your procurement process? Contact{' '}
-          <a href="mailto:dpa@unauth.io" className="underline">
-            dpa@unauth.io
+          <a href="mailto:dpa@unauth.co" className="underline">
+            dpa@unauth.co
           </a>{' '}
           and we&apos;ll turn it around within two business days.
         </p>
@@ -109,8 +109,8 @@ export default function DpaPage() {
             portability requests within the Controller&rsquo;s statutory timeframe. Controllers may
             request deletion of all personal data associated with their account via the Settings page
             or by contacting{' '}
-            <a href="mailto:dpa@unauth.io" className="underline text-[var(--accent)]">
-              dpa@unauth.io
+            <a href="mailto:dpa@unauth.co" className="underline text-[var(--accent)]">
+              dpa@unauth.co
             </a>
             . Pseudonymous network-graph contributions (hashed identifiers and aggregate counts) are
             retained for 24 months from last contribution date; all other personal data is deleted
@@ -138,8 +138,8 @@ export default function DpaPage() {
             sub-processors (Supabase and Vercel). Standard Contractual Clauses (Module 2, Processor
             to Processor) are executed with all relevant sub-processors. Copies are available on
             request to{' '}
-            <a href="mailto:dpa@unauth.io" className="underline text-[var(--accent)]">
-              dpa@unauth.io
+            <a href="mailto:dpa@unauth.co" className="underline text-[var(--accent)]">
+              dpa@unauth.co
             </a>
             .
           </p>
@@ -149,8 +149,8 @@ export default function DpaPage() {
           <h2 className="mb-2 text-xl font-semibold text-[var(--text)]">10. Contact</h2>
           <p>
             For all data protection and DPA enquiries:{' '}
-            <a href="mailto:dpa@unauth.io" className="underline text-[var(--accent)]">
-              dpa@unauth.io
+            <a href="mailto:dpa@unauth.co" className="underline text-[var(--accent)]">
+              dpa@unauth.co
             </a>
           </p>
         </section>

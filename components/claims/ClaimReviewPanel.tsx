@@ -163,13 +163,13 @@ export function shouldAttemptClaimViewed(
   return true;
 }
 
-function formatMoney(value: number | null | undefined, currency?: string | null) {
+function formatMoney(value: number | null | undefined, _currency?: string | null) {
   if (typeof value !== 'number' || Number.isNaN(value)) return '—';
-  return new Intl.NumberFormat('en-GB', { style: 'currency', currency: currency ?? 'GBP', minimumFractionDigits: 2 }).format(value);
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }).format(value);
 }
 
 function formatOrderOption(o: OrderOption) {
-  const date = o.date ? new Date(o.date).toLocaleDateString('en-GB') : '—';
+  const date = o.date ? new Date(o.date).toLocaleDateString('en-US') : '—';
   const val = typeof o.orderValue === 'number' ? formatMoney(o.orderValue, o.currency) : '—';
   const status = o.status !== 'unknown' ? o.status : '—';
   return `${o.orderLabel} · ${val} · ${status} · ${date}`;
@@ -1074,9 +1074,9 @@ export default function ClaimReviewPanel({ profileId, initialClaimId }: { profil
                 <p className="mt-0.5 text-xs truncate" style={{ color: 'var(--text-muted)' }}>
                   {selectedClaim.shopify_order_id ?? selectedClaim.order_ref ?? '—'}
                   {' · '}{customerName}
-                  {' · '}{selectedClaim.first_viewed_at ? `Viewed ${new Date(selectedClaim.first_viewed_at).toLocaleDateString('en-GB')}` : 'Unread'}
+                  {' · '}{selectedClaim.first_viewed_at ? `Viewed ${new Date(selectedClaim.first_viewed_at).toLocaleDateString('en-US')}` : 'Unread'}
                   {' · '}{selectedClaim.assigned_to ? 'Owner assigned' : 'Unassigned'}
-                  {selectedClaim.snoozed_until ? ` · Follow-up ${new Date(selectedClaim.snoozed_until).toLocaleDateString('en-GB')}` : ''}
+                  {selectedClaim.snoozed_until ? ` · Follow-up ${new Date(selectedClaim.snoozed_until).toLocaleDateString('en-US')}` : ''}
                 </p>
               </div>
             ) : (
@@ -1144,7 +1144,7 @@ export default function ClaimReviewPanel({ profileId, initialClaimId }: { profil
                   </CaseIntelTile>
                   <CaseIntelTile label="Owner">
                     <p className="font-semibold">{selectedClaim.assigned_to ? 'Assigned' : 'Unassigned'}</p>
-                    <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{selectedClaim.first_viewed_at ? `Viewed ${new Date(selectedClaim.first_viewed_at).toLocaleDateString('en-GB')}` : 'Unread'}</p>
+                    <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{selectedClaim.first_viewed_at ? `Viewed ${new Date(selectedClaim.first_viewed_at).toLocaleDateString('en-US')}` : 'Unread'}</p>
                   </CaseIntelTile>
                   <CaseIntelTile label="Decision">
                     {latestOutcome ? (
@@ -1253,7 +1253,7 @@ export default function ClaimReviewPanel({ profileId, initialClaimId }: { profil
                     <span>{row.detail}</span>
                     <span>{row.reason}</span>
                     <span className="inline-flex items-center gap-2">
-                      <span className="font-mono" style={{ color: 'var(--text-muted)' }}>{row.date ? new Date(row.date).toLocaleDateString('en-GB') : '—'}</span>
+                      <span className="font-mono" style={{ color: 'var(--text-muted)' }}>{row.date ? new Date(row.date).toLocaleDateString('en-US') : '—'}</span>
                       <span className="rounded-full px-2 py-0.5 text-[11px] font-semibold" style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>{row.grade}</span>
                     </span>
                   </div>
@@ -1280,7 +1280,7 @@ export default function ClaimReviewPanel({ profileId, initialClaimId }: { profil
                     {OUTCOME_LABELS[latestOutcome.outcome as Outcome] ?? latestOutcome.outcome}
                   </p>
                   {latestOutcome?.updated_at && (
-                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{new Date(latestOutcome.updated_at).toLocaleString('en-GB')}</p>
+                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{new Date(latestOutcome.updated_at).toLocaleString('en-US')}</p>
                   )}
                 </div>
                 {previousOutcome && (
@@ -1319,7 +1319,7 @@ export default function ClaimReviewPanel({ profileId, initialClaimId }: { profil
                             <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{claimEventSummary(event)}</p>
                           </div>
                           <div className="text-right text-xs" style={{ color: 'var(--text-muted)' }}>
-                            <p>{event.created_at ? new Date(event.created_at).toLocaleString('en-GB') : '—'}</p>
+                            <p>{event.created_at ? new Date(event.created_at).toLocaleString('en-US') : '—'}</p>
                             {event.actor_user_id && <p>{actorLabel(event.actor_user_id)}</p>}
                           </div>
                         </div>
@@ -1364,7 +1364,7 @@ export default function ClaimReviewPanel({ profileId, initialClaimId }: { profil
                               </span>
                             </td>
                             <td className="py-2 pr-3">{h.amount_at_risk != null ? formatMoney(h.amount_at_risk, h.currency) : '—'}</td>
-                            <td className="py-2 text-xs font-mono" style={{ color: 'var(--text-muted)' }}>{h.updated_at ? new Date(h.updated_at).toLocaleDateString('en-GB') : '—'}</td>
+                            <td className="py-2 text-xs font-mono" style={{ color: 'var(--text-muted)' }}>{h.updated_at ? new Date(h.updated_at).toLocaleDateString('en-US') : '—'}</td>
                           </tr>
                         );
                       })}
@@ -1445,7 +1445,7 @@ export default function ClaimReviewPanel({ profileId, initialClaimId }: { profil
                   {selectedClaim.assigned_to ? 'Owner assigned' : 'No owner assigned'}
                   {' · '}
                   {selectedClaim.first_viewed_at
-                    ? `First viewed ${new Date(selectedClaim.first_viewed_at).toLocaleDateString('en-GB')}`
+                    ? `First viewed ${new Date(selectedClaim.first_viewed_at).toLocaleDateString('en-US')}`
                     : 'Not yet viewed'}
                 </p>
                 <div className="flex gap-2">
@@ -1493,7 +1493,7 @@ export default function ClaimReviewPanel({ profileId, initialClaimId }: { profil
               highlighted={primaryAction.railSection === 'snooze'}
               badge={selectedClaim.snoozed_until ? (
                 <span className="text-[10px] rounded-full px-1.5 py-0.5 font-semibold" style={{ background: 'var(--sev-medium-fill, #FEF3C7)', color: 'var(--sev-medium, #B45309)' }}>
-                  {new Date(selectedClaim.snoozed_until).toLocaleDateString('en-GB')}
+                  {new Date(selectedClaim.snoozed_until).toLocaleDateString('en-US')}
                 </span>
               ) : undefined}
             >

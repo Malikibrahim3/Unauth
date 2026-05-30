@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Check, Upload, Users, FileText, Plug, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { ORDER_VOLUME_OPTIONS, FRAUD_CONCERN_OPTIONS } from '@/lib/constants/merchantProfile';
 
 interface OnboardingClientProps {
   userId: string;
@@ -109,7 +110,7 @@ export default function OnboardingClient({
         platform: platform || undefined,
         monthlyOrderVolume: annualVolume || undefined,
         primaryFraudConcern: primaryConcern || undefined,
-        setupComplete: true,
+        setupComplete: false,
       }),
     });
     const payload = await response.json().catch(() => ({}));
@@ -118,7 +119,7 @@ export default function OnboardingClient({
       setError(payload.error ?? 'Could not skip setup right now. Please try again.');
       return;
     }
-    router.push('/dashboard');
+    router.push('/upload?welcome=1');
     router.refresh();
   }
 
@@ -208,24 +209,22 @@ export default function OnboardingClient({
               <Field label="Annual order volume">
                 <select value={annualVolume} onChange={(e) => setAnnualVolume(e.target.value)}>
                   <option value="">Select range...</option>
-                  <option value="under_10k">Under 10,000</option>
-                  <option value="10k_50k">10,000-50,000</option>
-                  <option value="50k_250k">50,000-250,000</option>
-                  <option value="over_250k">Over 250,000</option>
+                  {ORDER_VOLUME_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
                 </select>
               </Field>
               <Field label="Primary concern">
                 <select value={primaryConcern} onChange={(e) => setPrimaryConcern(e.target.value)}>
                   <option value="">Select concern...</option>
-                  <option value="refund_abuse">Refund abuse</option>
-                  <option value="inr_claims">INR claims</option>
-                  <option value="chargebacks">Chargebacks</option>
-                  <option value="all">All of the above</option>
+                  {FRAUD_CONCERN_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
                 </select>
               </Field>
               <div className="md:col-span-2 rounded-md border px-4 py-3" style={{ background: 'var(--privacy-fill)', borderColor: 'var(--privacy-border)' }}>
                 <p className="t-body" style={{ color: 'var(--privacy-ink)' }}>
-                  When you upload an order CSV, raw records stay scoped to your merchant workspace. Network comparison uses hashed identifiers and only exposes aggregate k-safe presence to other merchants.
+                  When you upload an order CSV, raw records stay scoped to your store. Cross-store comparison uses hashed identifiers only — other merchants never see your customer list.
                 </p>
               </div>
               {error && <p className="md:col-span-2 t-caption" style={{ color: 'var(--sev-definite)' }}>{error}</p>}

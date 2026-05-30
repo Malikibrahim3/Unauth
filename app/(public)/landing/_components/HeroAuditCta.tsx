@@ -14,8 +14,8 @@ export default function HeroAuditCta() {
     const trimmedEmail = email.trim();
     if (!trimmedEmail) return;
 
-    const params = new URLSearchParams({ email: trimmedEmail });
-    router.push(`/audit-demo?${params.toString()}`);
+    sessionStorage.setItem('auditPrefillEmail', trimmedEmail);
+    router.push('/audit');
   }
 
   return (

@@ -1,3 +1,4 @@
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 import { TABLES } from '@/lib/supabase/tables';
 import { upsertGorgiasSupportConnection } from '@/lib/support/gorgias/connectionStore';
@@ -172,20 +173,25 @@ export const gorgiasSupportConnectionInputSchema = z
     account_id: z.string().trim().min(1).optional(),
     domain: z.string().trim().min(1).optional(),
     name: z.string().trim().min(1).max(200).optional(),
-    gorgias_api_email: z.string().trim().email().optional(),
-    gorgias_api_key: z.string().trim().min(1).optional(),
+    // Required: both are needed to register the sidebar widget and are stored encrypted.
+    gorgias_api_email: z.string().trim().email(),
+    gorgias_api_key: z.string().trim().min(1),
   })
   .refine((value) => Boolean(value.account_id || value.domain), {
     message: 'account_id or domain is required',
-  })
-  .refine(
-    (value) => {
-      const hasEmail = Boolean(value.gorgias_api_email);
-      const hasKey = Boolean(value.gorgias_api_key);
-      return hasEmail === hasKey;
-    },
-    { message: 'gorgias_api_email and gorgias_api_key must be provided together' }
-  );
+  });
+
+/**
+ * Thrown when Gorgias rejects the supplied REST API credentials (HTTP 401/403).
+ * The route maps this to a friendly "check your email and key" message and no
+ * connection is persisted, so the merchant can correct the credentials and retry.
+ */
+export class GorgiasCredentialsError extends Error {
+  constructor(public readonly detail: string) {
+    super('gorgias_credentials_invalid');
+    this.name = 'GorgiasCredentialsError';
+  }
+}
 
 export type GorgiasSupportConnectionInput = z.infer<typeof gorgiasSupportConnectionInputSchema>;
 
@@ -232,7 +238,7 @@ export type CreateGorgiasSupportConnectionResult = {
 };
 
 async function registerGorgiasSidebarForConnection(
-  supabase: Parameters<typeof upsertGorgiasSupportConnection>[0],
+  supabase: SupabaseClient,
   merchantId: string,
   input: GorgiasSupportConnectionInput,
   identity: {
@@ -306,6 +312,9 @@ async function registerGorgiasSidebarForConnection(
       scopes: [sidebarScope],
     };
   } catch (error) {
+    const isAuthError =
+      error instanceof GorgiasSidebarRegistrationError &&
+      (error.status === 401 || error.status === 403);
     const detail =
       error instanceof GorgiasSidebarRegistrationError
         ? error.detail
@@ -317,6 +326,7 @@ async function registerGorgiasSidebarForConnection(
       result: {
         status: 'error',
         error: detail,
+        error_kind: isAuthError ? 'auth' : 'other',
         widget_token_plaintext: widgetTokenPlaintext,
       },
       accessTokenEncrypted,
@@ -326,7 +336,7 @@ async function registerGorgiasSidebarForConnection(
 }
 
 export async function createMerchantGorgiasSupportConnection(
-  supabase: Parameters<typeof upsertGorgiasSupportConnection>[0],
+  supabase: SupabaseClient,
   merchantId: string,
   input: GorgiasSupportConnectionInput
 ): Promise<CreateGorgiasSupportConnectionResult> {
@@ -349,6 +359,16 @@ export async function createMerchantGorgiasSupportConnection(
     parsed,
     identity
   );
+
+  // Wrong credentials = hard failure: don't persist a half-broken connection.
+  if (
+    sidebarRegistration.result.status === 'error' &&
+    sidebarRegistration.result.error_kind === 'auth'
+  ) {
+    throw new GorgiasCredentialsError(
+      sidebarRegistration.result.error ?? 'gorgias_credentials_invalid'
+    );
+  }
 
   await upsertGorgiasSupportConnection(supabase, {
     merchant_id: merchantId,
@@ -382,7 +402,7 @@ export async function createMerchantGorgiasSupportConnection(
 }
 
 export async function updateMerchantGorgiasSupportConnectionMetadata(
-  supabase: Parameters<typeof upsertGorgiasSupportConnection>[0],
+  supabase: SupabaseClient,
   merchantId: string,
   input: GorgiasSupportConnectionInput
 ): Promise<GorgiasSupportConnectionSettings> {
@@ -395,6 +415,16 @@ export async function updateMerchantGorgiasSupportConnectionMetadata(
     parsed,
     identity
   );
+
+  // Wrong credentials = hard failure: don't persist a half-broken connection.
+  if (
+    sidebarRegistration.result.status === 'error' &&
+    sidebarRegistration.result.error_kind === 'auth'
+  ) {
+    throw new GorgiasCredentialsError(
+      sidebarRegistration.result.error ?? 'gorgias_credentials_invalid'
+    );
+  }
 
   await upsertGorgiasSupportConnection(supabase, {
     merchant_id: merchantId,
@@ -426,7 +456,7 @@ export type RotateGorgiasWebhookSecretResult = {
 };
 
 export async function rotateMerchantGorgiasWebhookSecret(
-  supabase: Parameters<typeof upsertGorgiasSupportConnection>[0],
+  supabase: SupabaseClient,
   merchantId: string
 ): Promise<RotateGorgiasWebhookSecretResult> {
   const existing = await getMerchantGorgiasSupportConnection(supabase, merchantId);

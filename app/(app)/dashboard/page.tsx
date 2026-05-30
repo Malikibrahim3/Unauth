@@ -14,6 +14,7 @@ import {
 import { requirePermission, PERMISSIONS, resolveDefaultAppPath } from '@/lib/permissions';
 import TrackPageView from '@/components/common/TrackPageView';
 import DashboardCharts, { type TransactionChartData } from '@/components/dashboard/DashboardCharts';
+import EmptyDashboardHero from '@/components/EmptyDashboardHero';
 import { ConfidenceBadge } from '@/components/ui/ConfidenceBadge';
 import { Badge } from '@/components/ui/Badge';
 import { riskLevelToNewGrade } from '@/lib/confidence';
@@ -178,6 +179,15 @@ export default async function DashboardPage() {
     });
   }
 
+  if (isEmpty) {
+    return (
+      <div className="p-4 md:p-6">
+        <TrackPageView event="Dashboard Viewed" />
+        <EmptyDashboardHero />
+      </div>
+    );
+  }
+
   return (
     <div className="p-4 md:p-6">
       <TrackPageView event="Dashboard Viewed" />
@@ -194,10 +204,12 @@ export default async function DashboardPage() {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <span className="t-label flex items-center gap-2" style={{ color: 'var(--ink-tertiary)' }}>
-              <span className="ua-pulse h-2 w-2 rounded-full" style={{ background: 'var(--sev-clear)' }} />
-              Graph live
-            </span>
+            {typedRuns.some((run) => run.status === 'completed') ? (
+              <span className="t-label flex items-center gap-2" style={{ color: 'var(--ink-tertiary)' }}>
+                <span className="ua-pulse h-2 w-2 rounded-full" style={{ background: 'var(--sev-clear)' }} />
+                Data synced
+              </span>
+            ) : null}
             <Link href="/upload" className="btn-accent rounded-md px-3 py-1.5 text-caption font-semibold">
               New audit
             </Link>
@@ -207,14 +219,14 @@ export default async function DashboardPage() {
         <div className="grid grid-cols-2 border-b md:grid-cols-4" style={{ borderColor: 'var(--border-default)' }}>
           {[
             {
+              label: 'Shoppers to review',
+              value: reviewQueue === null ? 'Unavailable' : reviewQueue === 0 ? '—' : reviewQueue.toLocaleString(),
+              hint: reviewQueue === null ? 'Count could not be loaded' : 'Linked identities in your data',
+            },
+            {
               label: 'Exposure at risk',
               value: exposureAtRisk === null ? 'Unavailable' : formatCurrencyNullable(exposureAtRisk),
               hint: exposureAtRisk === null ? 'Could not be computed' : 'Flagged order value',
-            },
-            {
-              label: 'Flagged customers',
-              value: reviewQueue === null ? 'Unavailable' : reviewQueue === 0 ? '—' : reviewQueue.toLocaleString(),
-              hint: reviewQueue === null ? 'Count could not be loaded' : 'Profiles to review',
             },
             {
               label: 'Evidence packages ready',
@@ -427,7 +439,7 @@ export default async function DashboardPage() {
             {latestRun ? `Audit ${formatDateMode(latestRun.created_at, 'table')} · ${latestRun.total_rows.toLocaleString()} rows` : 'No audits yet'}
           </span>
           <span className="text-caption font-mono" style={{ color: 'var(--text-subtle)' }}>
-            k &gt;= 3 gate · HMAC-SHA256 matching · merchant-scoped data
+            Privacy-safe matching · encrypted identifiers · your store data only
           </span>
         </footer>
       </section>

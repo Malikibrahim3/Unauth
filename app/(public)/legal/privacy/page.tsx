@@ -77,8 +77,8 @@ export default function PrivacyPage() {
             Under the UK GDPR you have the right to: access the personal data we hold about you;
             request correction of inaccurate data; request deletion of your data; object to or
             restrict processing; and data portability. To exercise any of these rights, contact us at{' '}
-            <a href="mailto:privacy@unauth.io" className="underline text-[var(--accent)]">
-              privacy@unauth.io
+            <a href="mailto:privacy@unauth.co" className="underline text-[var(--accent)]">
+              privacy@unauth.co
             </a>{' '}
             or use the deletion request option in Settings.
           </p>
@@ -97,12 +97,12 @@ export default function PrivacyPage() {
           <h2 className="mb-2 text-xl font-semibold text-[var(--text)]">Contact</h2>
           <p>
             Data controller:{' '}
-            <a href="mailto:privacy@unauth.io" className="underline text-[var(--accent)]">
-              privacy@unauth.io
+            <a href="mailto:privacy@unauth.co" className="underline text-[var(--accent)]">
+              privacy@unauth.co
             </a>
             . For DPA enquiries:{' '}
-            <a href="mailto:dpa@unauth.io" className="underline text-[var(--accent)]">
-              dpa@unauth.io
+            <a href="mailto:dpa@unauth.co" className="underline text-[var(--accent)]">
+              dpa@unauth.co
             </a>
             .
           </p>

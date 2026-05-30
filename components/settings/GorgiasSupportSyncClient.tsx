@@ -3,6 +3,9 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Check, Copy, RefreshCw, Unplug } from 'lucide-react';
 import {
+  GORGIAS_CONNECT_CREDENTIALS_ERROR,
+  GORGIAS_CONNECT_CREDENTIALS_ERROR_CODE,
+  GORGIAS_CONNECT_SUCCESS_MESSAGE,
   GORGIAS_SUPPORT_SECRET_SAVE_WARNING,
   GORGIAS_SUPPORT_WEBHOOK_HEADER_NAME,
   type GorgiasSidebarWidgetSetupResult,
@@ -22,7 +25,7 @@ type Props = {
 
 function formatWhen(value: string | null) {
   if (!value) return 'Never';
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat('en-US', {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
@@ -71,12 +74,13 @@ export default function GorgiasSupportSyncClient({ canManage }: Props) {
   const [gorgiasApiEmail, setGorgiasApiEmail] = useState('');
   const [gorgiasApiKey, setGorgiasApiKey] = useState('');
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [message, setMessage] = useState<{
+    type: 'success' | 'error' | 'warning';
+    text: string;
+  } | null>(null);
   const [ephemeralSecret, setEphemeralSecret] = useState<EphemeralSecret | null>(null);
-  const [sidebarWidgetResult, setSidebarWidgetResult] = useState<GorgiasSidebarWidgetSetupResult | null>(
-    null
-  );
   const [showSetupInstructions, setShowSetupInstructions] = useState(false);
+  const [showCredHelp, setShowCredHelp] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
   useEffect(() => {
@@ -114,7 +118,6 @@ export default function GorgiasSupportSyncClient({ canManage }: Props) {
     if (!canManage) return;
     setBusy(true);
     setMessage(null);
-    setSidebarWidgetResult(null);
     try {
       const res = await fetch('/api/settings/gorgias/support-connection', {
         method: 'POST',
@@ -124,11 +127,21 @@ export default function GorgiasSupportSyncClient({ canManage }: Props) {
         ),
       });
       const body = await res.json();
-      if (!res.ok) throw new Error(body.error ?? 'Failed to create connection');
 
-      if (body.sidebar_widget) {
-        setSidebarWidgetResult(body.sidebar_widget as GorgiasSidebarWidgetSetupResult);
+      if (!res.ok) {
+        // Wrong API credentials get a specific, actionable message; anything else
+        // surfaces the server error text.
+        setMessage({
+          type: 'error',
+          text:
+            body.code === GORGIAS_CONNECT_CREDENTIALS_ERROR_CODE
+              ? GORGIAS_CONNECT_CREDENTIALS_ERROR
+              : body.error ?? 'Failed to create connection',
+        });
+        return;
       }
+
+      const sidebar = (body.sidebar_widget ?? null) as GorgiasSidebarWidgetSetupResult | null;
 
       if (body.webhook_secret_plaintext) {
         setEphemeralSecret({
@@ -138,6 +151,22 @@ export default function GorgiasSupportSyncClient({ canManage }: Props) {
           warning: body.warning ?? GORGIAS_SUPPORT_SECRET_SAVE_WARNING,
         });
         setShowSetupInstructions(true);
+      }
+
+      // The webhook + credentials always succeed here; only the sidebar widget can fail
+      // for a non-credential reason (e.g. an account ID was given instead of a domain).
+      if (sidebar && sidebar.status === 'error') {
+        setMessage({
+          type: 'warning',
+          text: `Gorgias connected and the support webhook is ready, but the sidebar widget couldn't be registered automatically (${sidebar.error ?? 'unknown error'}). Reconnect to try again.`,
+        });
+      } else if (body.webhook_secret_plaintext) {
+        setMessage({
+          type: 'success',
+          text: 'Gorgias credentials saved. Complete the webhook steps below to show risk data in tickets.',
+        });
+      } else {
+        setMessage({ type: 'success', text: GORGIAS_CONNECT_SUCCESS_MESSAGE });
       }
 
       setConnection(body.connection ?? null);
@@ -214,44 +243,6 @@ export default function GorgiasSupportSyncClient({ canManage }: Props) {
   const isActive = connection?.status === 'active';
   const isDisabledOrError =
     connection && (connection.status === 'disabled' || connection.status === 'error');
-
-  function renderSidebarWidgetPanel(result: GorgiasSidebarWidgetSetupResult) {
-    const isSuccess = result.status === 'success';
-    return (
-      <div
-        className="rounded-lg border p-4 space-y-2"
-        style={{
-          borderColor: 'var(--surface-border)',
-          background: isSuccess ? 'rgba(47, 107, 67, 0.08)' : 'rgba(180, 50, 50, 0.08)',
-        }}
-      >
-        <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>
-          {isSuccess ? 'Sidebar widget registered in Gorgias' : 'Sidebar widget registration failed'}
-        </p>
-        {isSuccess ? (
-          <>
-            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-              Unauth Fraud Intelligence should now appear in the Gorgias ticket sidebar.
-            </p>
-            {result.integration_id != null && result.widget_id != null && (
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                Integration ID {result.integration_id} · Widget ID {result.widget_id}
-              </p>
-            )}
-          </>
-        ) : (
-          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-            {result.error ?? 'Gorgias rejected the widget registration request.'}
-          </p>
-        )}
-        {result.widget_token_plaintext && (
-          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-            A new widget token was created for this integration. It is embedded in Gorgias automatically.
-          </p>
-        )}
-      </div>
-    );
-  }
 
   function renderSetupPanel(secret: EphemeralSecret) {
     return (
@@ -388,8 +379,14 @@ export default function GorgiasSupportSyncClient({ canManage }: Props) {
             disabled={!canManage || busy}
             autoComplete="off"
           />
+          <p className="mt-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+            The email you use to log into Gorgias.
+          </p>
         </div>
         <div>
+          <p className="mb-2 text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+            Your API key is stored encrypted and used only to connect Gorgias to Unauth. It is never shown to other merchants.
+          </p>
           <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
             Gorgias API key
           </label>
@@ -409,9 +406,26 @@ export default function GorgiasSupportSyncClient({ canManage }: Props) {
             autoComplete="off"
           />
           <p className="mt-2 text-xs" style={{ color: 'var(--text-muted)' }}>
-            Found in your Gorgias account under Settings → You → REST API. Used once to register the
-            Unauth sidebar widget; stored encrypted server-side.
+            Found in Gorgias under Settings → REST API → API key (password).
           </p>
+        </div>
+        <div>
+          <button
+            type="button"
+            onClick={() => setShowCredHelp((value) => !value)}
+            className="text-xs underline"
+            style={{ color: 'var(--accent)' }}
+          >
+            Where do I find this?
+          </button>
+          {showCredHelp && (
+            <p className="mt-2 text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+              In Gorgias, open <strong>Settings → REST API</strong>. The API email is the address you
+              log in with; the API key is the value labelled <strong>API key (password)</strong>.
+              Unauth uses them once to register the sidebar widget, then stores them encrypted so it
+              can keep your tickets in sync.
+            </p>
+          )}
         </div>
       </>
     );
@@ -436,7 +450,12 @@ export default function GorgiasSupportSyncClient({ canManage }: Props) {
         <p
           className="rounded-md px-3 py-2 text-sm"
           style={{
-            background: message.type === 'error' ? 'rgba(180, 50, 50, 0.08)' : 'rgba(47, 107, 67, 0.10)',
+            background:
+              message.type === 'error'
+                ? 'rgba(180, 50, 50, 0.08)'
+                : message.type === 'warning'
+                  ? 'rgba(180, 130, 40, 0.12)'
+                  : 'rgba(47, 107, 67, 0.10)',
             color: 'var(--text)',
           }}
         >
@@ -449,10 +468,7 @@ export default function GorgiasSupportSyncClient({ canManage }: Props) {
           Loading connection…
         </p>
       ) : ephemeralSecret ? (
-        <>
-          {sidebarWidgetResult && renderSidebarWidgetPanel(sidebarWidgetResult)}
-          {renderSetupPanel(ephemeralSecret)}
-        </>
+        renderSetupPanel(ephemeralSecret)
       ) : !connection ? (
         <form onSubmit={(event) => void createConnection(event)} className="space-y-4">
           <div>

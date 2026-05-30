@@ -72,7 +72,7 @@ export default function AuditHistoryTableClient({ rows: initialRows }: AuditHist
               className="text-xs font-semibold rounded px-2 py-1 disabled:opacity-50"
               style={{ background: 'var(--risk-critical-bg)', color: 'var(--risk-critical)', border: '1px solid var(--risk-critical-bd)' }}
             >
-              {bulkHiding ? 'Binning…' : 'Bin selected'}
+              {bulkHiding ? 'Removing…' : 'Remove selected'}
             </button>
             <button onClick={() => setSelectedIds(new Set())} disabled={bulkHiding} className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>
               Clear

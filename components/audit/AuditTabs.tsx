@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 interface Tab {
   id: string;
@@ -14,17 +15,26 @@ interface AuditTabsProps {
 }
 
 export default function AuditTabs({ tabs, panels, defaultTab }: AuditTabsProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [active, setActive] = useState(defaultTab ?? tabs[0]?.id ?? '');
 
-  // Sync when the server re-renders with a new defaultTab (e.g. ?tab=customers)
   useEffect(() => {
     if (defaultTab) setActive(defaultTab);
   }, [defaultTab]);
 
+  function selectTab(tabId: string) {
+    setActive(tabId);
+    const next = new URLSearchParams(searchParams.toString());
+    next.set('tab', tabId);
+    router.replace(`${pathname}?${next.toString()}`, { scroll: false });
+  }
+
   return (
     <div>
       <div
-        className="flex gap-0 mb-6 border-b"
+        className="mb-6 flex gap-0 border-b"
         style={{ borderColor: 'var(--border-subtle)' }}
         role="tablist"
       >
@@ -33,10 +43,11 @@ export default function AuditTabs({ tabs, panels, defaultTab }: AuditTabsProps) 
           return (
             <button
               key={tab.id}
+              type="button"
               role="tab"
               aria-selected={isActive}
-              onClick={() => setActive(tab.id)}
-              className="px-4 py-2.5 text-body-sm font-medium transition-colors relative"
+              onClick={() => selectTab(tab.id)}
+              className="relative px-4 py-2.5 text-body-sm font-medium transition-colors"
               style={{
                 color: isActive ? 'var(--text)' : 'var(--text-muted)',
                 borderBottom: isActive ? '2px solid var(--accent)' : '2px solid transparent',
@@ -49,9 +60,7 @@ export default function AuditTabs({ tabs, panels, defaultTab }: AuditTabsProps) 
         })}
       </div>
 
-      <div role="tabpanel">
-        {panels[active]}
-      </div>
+      <div role="tabpanel">{panels[active]}</div>
     </div>
   );
 }

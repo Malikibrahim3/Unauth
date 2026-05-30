@@ -165,10 +165,11 @@ export default function WatchlistTableClient({ rows: initialRows }: WatchlistTab
                   )}
                 </td>
                 <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-muted)' }}>
-                  {new Intl.DateTimeFormat('en-GB', {
+                  {new Intl.DateTimeFormat('en-US', {
                     day: '2-digit',
                     month: 'short',
                     year: 'numeric',
+                    timeZone: 'UTC',
                   }).format(new Date(entry.added_at))}
                 </td>
                 <td

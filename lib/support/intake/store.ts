@@ -164,7 +164,10 @@ type SupabaseUpsertClient = {
       opts: { onConflict: string }
     ) => {
       select: (columns?: string) => {
-        single: () => Promise<{ data: Record<string, unknown> | null; error: { message: string } | null }>;
+        // PromiseLike (not Promise): the real Supabase query builder is a thenable, not a
+        // full Promise. Typing it this way lets the production SupabaseClient satisfy this
+        // structural type while still accepting the async-function mocks used in tests.
+        single: () => PromiseLike<{ data: Record<string, unknown> | null; error: { message: string } | null }>;
       };
     };
   };

@@ -50,7 +50,7 @@ export function useCountUp(value: number, options: UseCountUpOptions = {}) {
   }, [duration, value]);
 
   return useMemo(
-    () => (format ? format(displayValue) : displayValue.toLocaleString('en-GB')),
+    () => (format ? format(displayValue) : displayValue.toLocaleString('en-US')),
     [displayValue, format],
   );
 }

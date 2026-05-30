@@ -32,8 +32,8 @@ export default async function DataPrivacySettingsPage() {
         <SectionCard title="Retention & deletion">
           <p className="text-body-sm" style={{ color: 'var(--ink-secondary)' }}>
             Audit runs and associated transaction data are retained according to your plan settings.
-            You can request bulk deletion from Account settings. Account deletion permanently removes
-            audits, customer profiles, watchlist entries, and notes.
+            Account deletion permanently removes audits, customer profiles, watchlist entries, and notes.
+            Contact support if you need help removing data before closing your account.
           </p>
         </SectionCard>
 

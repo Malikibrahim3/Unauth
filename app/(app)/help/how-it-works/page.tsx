@@ -98,11 +98,11 @@ export default function HowItWorksPage() {
         <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
           Questions? Contact us at{' '}
           <a
-            href="mailto:support@unauth.io"
+            href="mailto:support@unauth.co"
             className="underline underline-offset-2"
             style={{ color: 'var(--text)' }}
           >
-            support@unauth.io
+            support@unauth.co
           </a>
           .
         </p>

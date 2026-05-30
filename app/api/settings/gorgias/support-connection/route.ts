@@ -7,9 +7,14 @@ import { withRequestLogging } from '@/lib/log';
 import {
   createMerchantGorgiasSupportConnection,
   getMerchantGorgiasSupportConnection,
+  GorgiasCredentialsError,
   gorgiasSupportConnectionInputSchema,
   updateMerchantGorgiasSupportConnectionMetadata,
 } from '@/lib/support/gorgias/settingsConnection';
+import {
+  GORGIAS_CONNECT_CREDENTIALS_ERROR,
+  GORGIAS_CONNECT_CREDENTIALS_ERROR_CODE,
+} from '@/lib/support/gorgias/supportConnectionShared';
 
 async function GETHandler() {
   const userClient = createClient();
@@ -99,6 +104,12 @@ async function POSTHandler(req: NextRequest) {
 
     return NextResponse.json(created);
   } catch (err) {
+    if (err instanceof GorgiasCredentialsError) {
+      return NextResponse.json(
+        { error: GORGIAS_CONNECT_CREDENTIALS_ERROR, code: GORGIAS_CONNECT_CREDENTIALS_ERROR_CODE },
+        { status: 422 }
+      );
+    }
     if (err instanceof Error && err.message === 'gorgias_connection_already_exists') {
       return NextResponse.json({ error: 'Gorgias connection already exists' }, { status: 409 });
     }

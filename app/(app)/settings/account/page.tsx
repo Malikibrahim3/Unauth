@@ -64,7 +64,10 @@ export default function AccountSettingsPage() {
     setSaveError('');
     setSaveSuccess(false);
     try {
-      if (!merchant) throw new Error('Merchant not loaded');
+      if (!merchant) {
+        setSaveError('Still loading your store profile. Wait a moment and try again.');
+        return;
+      }
       const res = await fetch('/api/account/setup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -177,7 +180,7 @@ export default function AccountSettingsPage() {
           />
           <p className="mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>
             To change your email, contact{' '}
-            <a href="mailto:support@unauth.io" className="underline" style={{ color: 'var(--accent)' }}>support@unauth.io</a>.
+            <a href="mailto:support@unauth.co" className="underline" style={{ color: 'var(--accent)' }}>support@unauth.co</a>.
           </p>
         </div>
 
@@ -229,7 +232,7 @@ export default function AccountSettingsPage() {
         )}
 
         <div className="flex items-center gap-3">
-          <Button type="submit" loading={saving} leadingIcon={<Save className="h-3.5 w-3.5" />}>
+          <Button type="submit" loading={saving} disabled={!merchant} leadingIcon={<Save className="h-3.5 w-3.5" />}>
             {saving ? 'Saving…' : 'Save changes'}
           </Button>
           {saveSuccess && (

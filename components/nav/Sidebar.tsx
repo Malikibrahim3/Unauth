@@ -15,6 +15,8 @@ import {
   Settings,
   ChevronRight,
   ShieldCheck,
+  Inbox,
+  BarChart3,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { UnauthLogo } from '@/components/ui/UnauthLogo';
@@ -68,9 +70,11 @@ function buildGroups(watchlistCount = 0): NavGroup[] {
     {
       label: 'Investigations',
       items: [
+        { href: '/inbox', label: 'Inbox', icon: Inbox },
         { href: '/customers', label: 'Customers', icon: Users },
         { href: '/watchlist', label: 'Watchlist', icon: Star, badge: watchlistCount },
         { href: '/chargebacks', label: 'Evidence packages', icon: ShieldCheck },
+        { href: '/reports', label: 'Reports', icon: BarChart3 },
       ],
     },
   ];

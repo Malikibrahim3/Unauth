@@ -64,9 +64,9 @@ export function buildAuditResultsEmail(input: AuditEmailInput) {
       <p><a href="${applyUrl}">Apply for network access →</a></p>
       <hr style="border: none; border-top: 1px solid #D8D0BD; margin: 28px 0;" />
       <p style="font-size: 12px; color: #6B665C;">
-        Unauth · hello@unauth.app<br />
+        Unauth · hello@unauth.co<br />
         You're receiving this because you ran an audit at unauth.co.<br />
-        <a href="mailto:hello@unauth.app?subject=Unsubscribe">Unsubscribe</a>
+        <a href="mailto:hello@unauth.co?subject=Unsubscribe">Unsubscribe</a>
       </p>
     </div>
   `;
@@ -94,9 +94,9 @@ export function buildAuditResultsEmail(input: AuditEmailInput) {
     '',
     `Apply for network access: ${applyUrl}`,
     '',
-    'Unauth · hello@unauth.app',
+    'Unauth · hello@unauth.co',
     "You're receiving this because you ran an audit at unauth.co.",
-    'Unsubscribe: hello@unauth.app',
+    'Unsubscribe: hello@unauth.co',
   ].join('\n');
 
   return { html, text };
