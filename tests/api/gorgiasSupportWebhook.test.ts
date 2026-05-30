@@ -425,6 +425,38 @@ describe('Gorgias support webhook', () => {
     expect(res.status).toBe(200);
   });
 
+  it('resolves merchant by gorgias_domain query param on webhook URL', async () => {
+    disableDevMerchantFallback();
+    const mock = makeGorgiasWebhookSupabase({
+      connections: [
+        {
+          id: CONNECTION_ID,
+          merchant_id: MERCHANT_ID,
+          provider_account_id: GORGIAS_DOMAIN,
+          provider_base_url: `https://${GORGIAS_DOMAIN}`,
+          status: 'active',
+          webhook_secret_hash: CONNECTION_SECRET_HASH,
+        },
+      ],
+    });
+    createServiceClient.mockReturnValue(mock.supabase);
+
+    const res = await POST(
+      new NextRequest(
+        `http://localhost/api/gorgias/support-webhook?gorgias_domain=${encodeURIComponent(GORGIAS_DOMAIN)}`,
+        {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            [GORGIAS_SUPPORT_SECRET_HEADERS[0]]: CONNECTION_WEBHOOK_SECRET,
+          },
+          body: JSON.stringify(gorgiasTicket),
+        }
+      )
+    );
+    expect(res.status).toBe(200);
+  });
+
   it('resolves merchant by ticket uri host', async () => {
     const mock = makeGorgiasWebhookSupabase({
       connections: [

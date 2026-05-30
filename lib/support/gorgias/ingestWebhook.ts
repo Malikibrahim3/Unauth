@@ -16,7 +16,7 @@ import {
 } from '@/lib/support/gorgias/resolveConnection';
 import { resolveGorgiasDevMerchantFallback } from '@/lib/support/gorgias/resolveMerchantId';
 import {
-  readGorgiasWebhookSecretHeader,
+  readGorgiasWebhookSecret,
   verifyGorgiasWebhookAuth,
 } from '@/lib/support/gorgias/webhookAuth';
 
@@ -83,7 +83,18 @@ export type IngestGorgiasWebhookInput = {
   headers: Headers;
   body: unknown;
   shopDomain?: string | null;
+  /** Full request URL — used for domain/secret query params on the registered webhook URL. */
+  requestUrl?: string | null;
 };
+
+function webhookSearchParamsFromRequestUrl(requestUrl?: string | null): URLSearchParams {
+  if (!requestUrl?.trim()) return new URLSearchParams();
+  try {
+    return new URL(requestUrl).searchParams;
+  } catch {
+    return new URLSearchParams();
+  }
+}
 
 type ResolvedMerchantContext = {
   merchantId: string;
@@ -96,7 +107,13 @@ async function resolveMerchantContext(
   input: IngestGorgiasWebhookInput,
   ticket: Record<string, unknown>
 ): Promise<ResolvedMerchantContext> {
-  const identity = extractGorgiasAccountIdentity(input.headers, input.body, ticket);
+  const webhookSearchParams = webhookSearchParamsFromRequestUrl(input.requestUrl);
+  const identity = extractGorgiasAccountIdentity(
+    input.headers,
+    input.body,
+    ticket,
+    webhookSearchParams
+  );
 
   if (identity) {
     const connectionResolution = await resolveGorgiasSupportConnection(supabase, identity);
@@ -155,9 +172,10 @@ export async function ingestGorgiasSupportWebhook(
   const shopDomain = input.shopDomain ?? shopDomainHeader ?? undefined;
 
   const supabase = createServiceClient();
+  const webhookSearchParams = webhookSearchParamsFromRequestUrl(input.requestUrl);
   const merchantContext = await resolveMerchantContext(supabase, input, ticket);
 
-  const headerSecret = readGorgiasWebhookSecretHeader(input.headers);
+  const headerSecret = readGorgiasWebhookSecret(input.headers, webhookSearchParams);
   const auth = verifyGorgiasWebhookAuth({
     headerSecret,
     connection: merchantContext.connection,

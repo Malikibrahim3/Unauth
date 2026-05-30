@@ -4,7 +4,52 @@ import {
   extractGorgiasTicketPayload,
   ingestGorgiasSupportWebhook,
 } from '@/lib/support/gorgias/ingestWebhook';
+import { extractGorgiasAccountIdentity } from '@/lib/support/gorgias/accountIdentity';
+import { readGorgiasWebhookSecret } from '@/lib/support/gorgias/webhookAuth';
+import {
+  GORGIAS_WEBHOOK_DOMAIN_QUERY_PARAM,
+  GORGIAS_WEBHOOK_SECRET_QUERY_PARAM,
+} from '@/lib/support/gorgias/supportConnectionShared';
 import { logGorgiasWebhookResult } from '@/lib/support/intake/webhookLog';
+
+function safeWebhookRejectionContext(request: NextRequest, body: unknown): Record<string, unknown> {
+  let ticket: Record<string, unknown> | null = null;
+  try {
+    ticket = extractGorgiasTicketPayload(body);
+  } catch {
+    ticket = null;
+  }
+
+  const identity = extractGorgiasAccountIdentity(
+    request.headers,
+    body,
+    ticket ?? {},
+    new URL(request.url).searchParams
+  );
+
+  return {
+    has_ticket_id: Boolean(ticket && (typeof ticket.id === 'string' || typeof ticket.id === 'number')),
+    ticket_uri_kind:
+      ticket && typeof ticket.uri === 'string'
+        ? ticket.uri.startsWith('http')
+          ? 'absolute'
+          : ticket.uri.startsWith('/')
+            ? 'relative'
+            : 'other'
+        : 'missing',
+    identity_source: identity?.source ?? null,
+    has_domain_query: new URL(request.url).searchParams.has(GORGIAS_WEBHOOK_DOMAIN_QUERY_PARAM),
+    has_secret_header: Boolean(readGorgiasWebhookSecret(request.headers, null)),
+    has_secret_query: new URL(request.url).searchParams.has(GORGIAS_WEBHOOK_SECRET_QUERY_PARAM),
+  };
+}
+
+function formatWebhookLogError(message: string, context: Record<string, unknown>): string {
+  const parts = Object.entries(context)
+    .filter(([, value]) => value !== null && value !== undefined)
+    .map(([key, value]) => `${key}=${String(value)}`);
+  return parts.length > 0 ? `${message} (${parts.join(', ')})` : message;
+}
 
 export const runtime = 'nodejs';
 
@@ -39,6 +84,7 @@ export async function POST(request: NextRequest) {
     const result = await ingestGorgiasSupportWebhook({
       headers: request.headers,
       body,
+      requestUrl: request.url,
     });
     await logGorgiasWebhookResult({
       provider: 'gorgias',
@@ -52,14 +98,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(result);
   } catch (error) {
     if (error instanceof GorgiasWebhookError) {
+      const rejectionContext = safeWebhookRejectionContext(request, body);
       await logGorgiasWebhookResult({
         provider: 'gorgias',
         status: error.status >= 500 ? 'error' : 'validation_error',
         http_status: error.status,
         external_case_id: safeExternalCaseId(body),
-        error: error.message,
+        error: formatWebhookLogError(error.message, rejectionContext),
       });
-      return NextResponse.json({ ok: false, error: error.message }, { status: error.status });
+      return NextResponse.json(
+        { ok: false, error: error.message, rejection: rejectionContext },
+        { status: error.status }
+      );
     }
     await logGorgiasWebhookResult({
       provider: 'gorgias',

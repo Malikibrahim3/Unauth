@@ -41,6 +41,8 @@ import {
   GORGIAS_SUPPORT_WEBHOOK_PATH,
   GORGIAS_SUPPORT_WEBHOOK_HEADER_NAME,
   GORGIAS_SUPPORT_SECRET_SAVE_WARNING,
+  GORGIAS_WEBHOOK_DOMAIN_QUERY_PARAM,
+  GORGIAS_WEBHOOK_SECRET_QUERY_PARAM,
   type GorgiasSupportConnectionSettings,
   type GorgiasSidebarScopeEntry,
   type GorgiasSidebarWidgetSetupResult,
@@ -141,9 +143,27 @@ type ListableSupabase = {
   };
 };
 
-export function buildGorgiasSupportWebhookUrl(): string {
+export type BuildGorgiasSupportWebhookUrlOptions = {
+  /** Baked into the Gorgias integration URL so inbound webhooks resolve the merchant. */
+  domain?: string | null;
+  /** Only for Gorgias-side registration — never show in settings UI copy. */
+  webhookSecretPlaintext?: string | null;
+};
+
+export function buildGorgiasSupportWebhookUrl(
+  options?: BuildGorgiasSupportWebhookUrlOptions
+): string {
   const base = env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '');
-  return `${base}${GORGIAS_SUPPORT_WEBHOOK_PATH}`;
+  const url = new URL(`${base}${GORGIAS_SUPPORT_WEBHOOK_PATH}`);
+  const domain = options?.domain?.trim();
+  if (domain) {
+    url.searchParams.set(GORGIAS_WEBHOOK_DOMAIN_QUERY_PARAM, normalizeGorgiasDomain(domain));
+  }
+  const secret = options?.webhookSecretPlaintext?.trim();
+  if (secret) {
+    url.searchParams.set(GORGIAS_WEBHOOK_SECRET_QUERY_PARAM, secret);
+  }
+  return url.toString();
 }
 
 export function toGorgiasSupportConnectionSettings(
@@ -490,7 +510,10 @@ export async function createMerchantGorgiasSupportConnection(
           email: parsed.gorgias_api_email,
           api_key: parsed.gorgias_api_key,
         },
-        webhookUrl: buildGorgiasSupportWebhookUrl(),
+        webhookUrl: buildGorgiasSupportWebhookUrl({
+          domain: identity.domain,
+          webhookSecretPlaintext,
+        }),
         webhookSecretPlaintext,
         domain: identity.domain,
         previousIntegrationId: null,
@@ -649,7 +672,10 @@ export async function rotateMerchantGorgiasWebhookSecret(
         const { integrationId } = await registerGorgiasSupportWebhook({
           providerBaseUrl: existing.provider_base_url,
           credentials,
-          webhookUrl: buildGorgiasSupportWebhookUrl(),
+          webhookUrl: buildGorgiasSupportWebhookUrl({
+            domain,
+            webhookSecretPlaintext,
+          }),
           webhookSecretPlaintext,
           domain,
           previousIntegrationId: existing.support_webhook_integration_id,

@@ -1,3 +1,7 @@
+import {
+  GORGIAS_WEBHOOK_DOMAIN_QUERY_PARAM,
+} from '@/lib/support/gorgias/supportConnectionShared';
+
 export const GORGIAS_ACCOUNT_ID_HEADER = 'x-gorgias-account-id';
 export const GORGIAS_DOMAIN_HEADER = 'x-gorgias-domain';
 
@@ -76,7 +80,8 @@ function identityFromAccountId(accountId: string, source: string): GorgiasAccoun
 export function extractGorgiasAccountIdentity(
   headers: Headers | { get(name: string): string | null },
   body: unknown,
-  ticket: Record<string, unknown>
+  ticket: Record<string, unknown>,
+  webhookSearchParams?: URLSearchParams | null
 ): GorgiasAccountIdentity | null {
   const headerAccountId = asNonEmptyString(headers.get(GORGIAS_ACCOUNT_ID_HEADER));
   if (headerAccountId) {
@@ -86,6 +91,16 @@ export function extractGorgiasAccountIdentity(
   const headerDomain = asNonEmptyString(headers.get(GORGIAS_DOMAIN_HEADER));
   if (headerDomain) {
     return identityFromDomain(headerDomain, GORGIAS_DOMAIN_HEADER);
+  }
+
+  const queryDomain = asNonEmptyString(
+    webhookSearchParams?.get(GORGIAS_WEBHOOK_DOMAIN_QUERY_PARAM) ?? null
+  );
+  if (queryDomain) {
+    return identityFromDomain(
+      queryDomain,
+      `webhook_url.${GORGIAS_WEBHOOK_DOMAIN_QUERY_PARAM}`
+    );
   }
 
   const bodyRecord =

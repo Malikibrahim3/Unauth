@@ -68,6 +68,16 @@ export function claimWidgetToJson(result: GorgiasClaimWidgetResult): GorgiasWidg
   }
 
   const { thisStore, network } = result.data;
+
+  if (thisStore.orderCount === 0 && thisStore.claimCount === 0 && !network) {
+    return {
+      orders: 'No order history for this customer yet',
+      claim_rate: '—',
+      primary_reason: '—',
+      recent_activity: 'Connect Shopify or wait for the next sync',
+    };
+  }
+
   return {
     orders: formatClaimOrders(thisStore.orderCount, network),
     claim_rate: formatClaimRateField(thisStore.claimRate, network),

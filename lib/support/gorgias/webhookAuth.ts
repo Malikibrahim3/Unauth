@@ -7,7 +7,10 @@ import { isGorgiasProductionIngestMode } from '@/lib/support/gorgias/resolveMerc
 // Canonical definition lives in the client-safe shared module; re-exported here
 // for existing server-side importers.
 export { GORGIAS_SUPPORT_SECRET_HEADERS } from '@/lib/support/gorgias/supportConnectionShared';
-import { GORGIAS_SUPPORT_SECRET_HEADERS } from '@/lib/support/gorgias/supportConnectionShared';
+import {
+  GORGIAS_SUPPORT_SECRET_HEADERS,
+  GORGIAS_WEBHOOK_SECRET_QUERY_PARAM,
+} from '@/lib/support/gorgias/supportConnectionShared';
 
 export function readGorgiasWebhookSecretHeader(
   headers: Headers | { get(name: string): string | null }
@@ -17,6 +20,17 @@ export function readGorgiasWebhookSecretHeader(
     if (value?.trim()) return value.trim();
   }
   return null;
+}
+
+/** Header first, then the secret query param baked into the Gorgias integration URL. */
+export function readGorgiasWebhookSecret(
+  headers: Headers | { get(name: string): string | null },
+  webhookSearchParams?: URLSearchParams | null
+): string | null {
+  const fromHeader = readGorgiasWebhookSecretHeader(headers);
+  if (fromHeader) return fromHeader;
+  const fromQuery = webhookSearchParams?.get(GORGIAS_WEBHOOK_SECRET_QUERY_PARAM)?.trim();
+  return fromQuery || null;
 }
 
 export function isGorgiasGlobalWebhookSecretAllowed(): boolean {
