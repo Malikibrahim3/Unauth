@@ -220,30 +220,72 @@ export async function GET(request: NextRequest) {
 
   const ctx: WidgetReturnContext = { email: '', merchantId: null };
 
+  let widgetToken = '';
+  let email = '';
+  let name = '';
+  let orderId = '';
+  let returnHtml = false;
+  let requestIp = '';
+  let accept = '';
+
   try {
-    const { searchParams } = new URL(request.url);
-    const widgetToken = resolveWidgetToken(request);
-    const email = searchParams.get('email')?.trim() ?? '';
-    const name = searchParams.get('name')?.trim() ?? '';
-    const orderId = searchParams.get('order_id')?.trim() ?? '';
-    const returnHtml = wantsHtmlResponse(request);
+    const url = new URL(request.url);
+    const { searchParams } = url;
+    gorgiasWidgetLog('step_after_url_search_params', {
+      pathname: url.pathname,
+      paramKeys: Array.from(searchParams.keys()).join(','),
+    });
+
+    widgetToken = resolveWidgetToken(request);
+    const tokenFromHeader = Boolean(request.headers.get(GORGIAS_WIDGET_TOKEN_HEADER)?.trim());
+    gorgiasWidgetLog('step_after_token', {
+      hasWidgetToken: Boolean(widgetToken),
+      widgetTokenPrefix: widgetToken ? widgetTokenDisplayPrefix(widgetToken) : null,
+      tokenFromHeader,
+    });
+
+    email = searchParams.get('email')?.trim() ?? '';
+    name = searchParams.get('name')?.trim() ?? '';
+    orderId = searchParams.get('order_id')?.trim() ?? '';
+    gorgiasWidgetLog('step_after_email', {
+      email,
+      emailUnresolved: isUnresolvedGorgiasVar(email),
+      hasName: Boolean(name),
+      orderId: orderId || null,
+    });
+
+    returnHtml = wantsHtmlResponse(request);
+    gorgiasWidgetLog('step_after_return_html', { returnHtml });
 
     ctx.email = email;
 
-    const requestIp = getClientIp(request.headers);
-    const accept = request.headers.get('accept') ?? '';
+    requestIp = getClientIp(request.headers);
+    accept = request.headers.get('accept') ?? '';
 
-    gorgiasWidgetLog('request', {
+    gorgiasWidgetLog('step_before_request', {
       email,
-      emailUnresolved: isUnresolvedGorgiasVar(email),
-      orderId: orderId || null,
       returnHtml,
-      accept,
       hasWidgetToken: Boolean(widgetToken),
-      widgetTokenPrefix: widgetToken ? widgetTokenDisplayPrefix(widgetToken) : null,
-      tokenFromHeader: Boolean(request.headers.get(GORGIAS_WIDGET_TOKEN_HEADER)?.trim()),
       buildMarker: GORGIAS_WIDGET_BUILD_MARKER,
     });
+  } catch (err) {
+    gorgiasWidgetLogError('fatal_initial_parse_error', err, { buildMarker: GORGIAS_WIDGET_BUILD_MARKER });
+    return returnWidgetJson('fatal_initial_parse_error', GORGIAS_WIDGET_JSON_FALLBACK, 200, ctx);
+  }
+
+  gorgiasWidgetLog('request', {
+    email,
+    emailUnresolved: isUnresolvedGorgiasVar(email),
+    orderId: orderId || null,
+    returnHtml,
+    accept,
+    hasWidgetToken: Boolean(widgetToken),
+    widgetTokenPrefix: widgetToken ? widgetTokenDisplayPrefix(widgetToken) : null,
+    tokenFromHeader: Boolean(request.headers.get(GORGIAS_WIDGET_TOKEN_HEADER)?.trim()),
+    buildMarker: GORGIAS_WIDGET_BUILD_MARKER,
+  });
+
+  try {
 
     if (!widgetToken) {
       const model = { state: 'error' as const, message: 'Missing widget token in widget URL.' };
