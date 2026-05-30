@@ -23,7 +23,7 @@ function htmlResponse(html: string, status = 200) {
     'Content-Type': 'text/html; charset=utf-8',
     ...GORGIAS_FRAME_HEADERS,
   };
-  gorgiasWidgetLog('response_html', { status, headers });
+  gorgiasWidgetLog('response_html', { status, headers: JSON.stringify(headers) });
   return new NextResponse(html, { status, headers });
 }
 
