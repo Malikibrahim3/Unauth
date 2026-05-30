@@ -292,7 +292,8 @@ async function registerGorgiasSidebarForConnection(
     provider_account_id: string;
     domain: string | null;
     provider_base_url: string | null;
-  }
+  },
+  previous?: { integrationId: number; widgetId: number } | null
 ): Promise<{
   result: GorgiasSidebarWidgetSetupResult;
   accessTokenEncrypted: string | null;
@@ -339,6 +340,7 @@ async function registerGorgiasSidebarForConnection(
       providerBaseUrl: identity.provider_base_url,
       credentials,
       widgetToken: widgetTokenPlaintext,
+      previous: previous ?? null,
     });
 
     const sidebarScope: GorgiasSidebarScopeEntry = {
@@ -464,11 +466,17 @@ export async function updateMerchantGorgiasSupportConnectionMetadata(
     existing
   );
 
+  const previousScope =
+    existing.sidebar_integration_id != null && existing.sidebar_widget_id != null
+      ? { integrationId: existing.sidebar_integration_id, widgetId: existing.sidebar_widget_id }
+      : null;
+
   const sidebarRegistration = await registerGorgiasSidebarForConnection(
     supabase,
     merchantId,
     parsed,
-    identity
+    identity,
+    previousScope
   );
 
   // Wrong credentials = hard failure: don't persist a half-broken connection.

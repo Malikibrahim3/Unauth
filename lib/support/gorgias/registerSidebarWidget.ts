@@ -119,10 +119,48 @@ type GorgiasWidgetResponse = {
   id: number;
 };
 
+/**
+ * Deletes a previously-registered widget + integration. Best-effort: a 404 (already
+ * gone) is treated as success, and any other failure is swallowed so it can never
+ * abort a successful re-registration. The widget is deleted before its integration
+ * because the widget references the integration.
+ */
+async function deleteGorgiasSidebarWidget(
+  apiBaseUrl: string,
+  credentials: { email: string; api_key: string },
+  previous: { integrationId: number; widgetId: number }
+): Promise<void> {
+  const base = apiBaseUrl.replace(/\/$/, '');
+  const deletions: Array<{ path: string }> = [
+    { path: `/widgets/${previous.widgetId}` },
+    { path: `/integrations/${previous.integrationId}` },
+  ];
+
+  for (const { path } of deletions) {
+    try {
+      const res = await fetch(`${base}${path}`, {
+        method: 'DELETE',
+        headers: {
+          Accept: 'application/json',
+          Authorization: basicAuthHeader(credentials.email, credentials.api_key),
+        },
+      });
+      // 404 = already deleted; any non-OK is swallowed (best-effort cleanup).
+      if (!res.ok && res.status !== 404) {
+        await res.text().catch(() => '');
+      }
+    } catch {
+      // Network/other error — leave the stale resource rather than fail the reconnect.
+    }
+  }
+}
+
 export async function registerGorgiasSidebarWidget(input: {
   providerBaseUrl: string;
   credentials: { email: string; api_key: string };
   widgetToken: string;
+  /** Previously-registered integration+widget to remove after the new one is live. */
+  previous?: { integrationId: number; widgetId: number } | null;
 }): Promise<GorgiasSidebarRegistrationResult> {
   const apiBaseUrl = gorgiasApiBaseUrl(input.providerBaseUrl);
   const appBaseUrl = env.NEXT_PUBLIC_APP_URL;
@@ -170,6 +208,12 @@ export async function registerGorgiasSidebarWidget(input: {
       }),
     }
   );
+
+  // New widget is live — now remove the previous one so the merchant doesn't end up
+  // with two "Unauth Fraud Intelligence" cards. Best-effort; never aborts on failure.
+  if (input.previous) {
+    await deleteGorgiasSidebarWidget(apiBaseUrl, input.credentials, input.previous);
+  }
 
   return {
     integrationId: integration.id,
