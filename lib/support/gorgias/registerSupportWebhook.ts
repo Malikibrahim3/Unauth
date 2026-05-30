@@ -31,6 +31,15 @@ export async function registerGorgiasSupportWebhook(input: {
         http: {
           url: input.webhookUrl,
           method: 'POST',
+          // Ensure Gorgias sends valid JSON for every trigger. Without an explicit form
+          // payload, some accounts emit non-JSON/empty bodies and the webhook rejects
+          // at JSON parse time.
+          form: {
+            ticket: {
+              id: '{{ticket.id}}',
+              uri: '{{ticket.uri}}',
+            },
+          },
           headers: {
             [GORGIAS_SUPPORT_WEBHOOK_HEADER_NAME]: input.webhookSecretPlaintext,
             [GORGIAS_DOMAIN_HEADER]: input.domain,

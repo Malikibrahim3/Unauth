@@ -22,7 +22,7 @@ describe('gorgias widget integration URL', () => {
   it('buildGorgiasWidgetIntegrationUrl keeps the email placeholder unencoded', () => {
     process.env.VERCEL_GIT_COMMIT_SHA = 'abcdef1234567890';
     const url = buildGorgiasWidgetIntegrationUrl('https://app.unauth.test/', 'unauth_wt_x');
-    expect(url).toContain('email={{ticket.sender.email}}');
+    expect(url).toContain('email={{ticket.customer.email}}');
     expect(url).toContain('customer_email={{ticket.customer.email}}');
     expect(url).toContain('ticket_id={{ticket.id}}');
     expect(url).not.toContain('%7B%7B');
