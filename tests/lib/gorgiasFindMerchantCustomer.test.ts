@@ -1,18 +1,32 @@
 import { findMerchantCustomerByEmail } from '@/lib/gorgias/findMerchantCustomerByEmail';
 
+function makeSupabase(profiles: Array<Record<string, unknown>>) {
+  return {
+    from: (table: string) => {
+      if (table !== 'customer_profiles') throw new Error(`unexpected table ${table}`);
+      return {
+        select: () => ({
+          eq: async (_col: string, email: string) => ({
+            data: profiles.filter((p) => p.primary_email === email),
+            error: null,
+          }),
+          contains: async (_col: string, emails: string[]) => ({
+            data: profiles.filter(
+              (p) =>
+                Array.isArray(p.emails) &&
+                (p.emails as string[]).some((entry) => emails.includes(entry))
+            ),
+            error: null,
+          }),
+        }),
+      };
+    },
+  };
+}
+
 describe('findMerchantCustomerByEmail', () => {
-  it('matches primary_email or emails array after merchant_ids jsonb contains', async () => {
+  it('matches primary_email with merchant scope in TypeScript', async () => {
     const profiles = [
-      {
-        id: 'profile-other',
-        risk_level: 'high',
-        risk_score: 90,
-        fraud_flags: [],
-        identity_confidence_grade: null,
-        primary_email: 'other@example.com',
-        emails: ['other@example.com'],
-        merchant_ids: ['merchant-1'],
-      },
       {
         id: 'profile-1',
         risk_level: 'medium',
@@ -25,31 +39,13 @@ describe('findMerchantCustomerByEmail', () => {
       },
     ];
 
-    const supabase = {
-      from: () => ({
-        select: () => ({
-          contains: (_col: string, merchantIds: string[]) => {
-            expect(merchantIds).toEqual(['merchant-1']);
-            return {
-              order: async () => ({
-                data: profiles.filter((p) =>
-                  (p.merchant_ids as string[]).some((id) => merchantIds.includes(id))
-                ),
-                error: null,
-              }),
-            };
-          },
-        }),
-      }),
-    };
-
-    const row = await findMerchantCustomerByEmail(
-      supabase as never,
+    const { customer } = await findMerchantCustomerByEmail(
+      makeSupabase(profiles) as never,
       'merchant-1',
       'simeonmurray123@gmail.com'
     );
 
-    expect(row).toEqual({
+    expect(customer).toEqual({
       id: 'profile-1',
       risk_level: 'medium',
       risk_score: 28.3,
@@ -72,22 +68,36 @@ describe('findMerchantCustomerByEmail', () => {
       },
     ];
 
-    const supabase = {
-      from: () => ({
-        select: () => ({
-          contains: () => ({
-            order: async () => ({ data: profiles, error: null }),
-          }),
-        }),
-      }),
-    };
-
-    const row = await findMerchantCustomerByEmail(
-      supabase as never,
+    const { customer } = await findMerchantCustomerByEmail(
+      makeSupabase(profiles) as never,
       'merchant-1',
       'simeonmurray123@gmail.com'
     );
 
-    expect(row?.id).toBe('profile-2');
+    expect(customer?.id).toBe('profile-2');
+  });
+
+  it('excludes profiles for other merchants', async () => {
+    const profiles = [
+      {
+        id: 'profile-other',
+        risk_level: 'high',
+        risk_score: 99,
+        fraud_flags: [],
+        identity_confidence_grade: null,
+        primary_email: 'simeonmurray123@gmail.com',
+        emails: ['simeonmurray123@gmail.com'],
+        merchant_ids: ['other-merchant'],
+      },
+    ];
+
+    const { customer, diagnostics } = await findMerchantCustomerByEmail(
+      makeSupabase(profiles) as never,
+      'merchant-1',
+      'simeonmurray123@gmail.com'
+    );
+
+    expect(customer).toBeNull();
+    expect(diagnostics.merchantScopedRows).toBe(0);
   });
 });

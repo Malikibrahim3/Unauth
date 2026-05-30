@@ -10,19 +10,37 @@ export type MerchantCustomerByEmailRow = {
   identity_confidence_grade: string | null;
 };
 
+export type MerchantCustomerLookupDiagnostics = {
+  normEmail: string;
+  merchantId: string;
+  primaryEmailCandidateRows: number;
+  emailsContainsCandidateRows: number;
+  merchantScopedRows: number;
+  emailMatchedRows: number;
+};
+
 type CustomerProfileEmailRow = {
   id: string;
   primary_email: string | null;
   emails: unknown;
+  merchant_ids: unknown;
   risk_level: string | null;
   risk_score: number | null;
   fraud_flags: unknown;
   identity_confidence_grade: string | null;
 };
 
+const PROFILE_SELECT =
+  'id, primary_email, emails, merchant_ids, risk_level, risk_score, fraud_flags, identity_confidence_grade';
+
 function parseFraudFlags(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   return value.map((flag) => String(flag)).filter(Boolean);
+}
+
+function merchantIdsIncludes(merchantIds: unknown, merchantId: string): boolean {
+  if (!Array.isArray(merchantIds)) return false;
+  return merchantIds.some((id) => String(id) === merchantId);
 }
 
 function profileMatchesEmail(row: CustomerProfileEmailRow, normEmail: string): boolean {
@@ -31,58 +49,7 @@ function profileMatchesEmail(row: CustomerProfileEmailRow, normEmail: string): b
   return row.emails.some((entry) => String(entry).trim().toLowerCase() === normEmail);
 }
 
-/**
- * Merchant-scoped customer_profiles lookup by normalised email.
- * Matches primary_email OR emails jsonb array (not primary_email only).
- */
-export async function findMerchantCustomerByEmail(
-  service: SupabaseClient,
-  merchantId: string,
-  normEmail: string
-): Promise<MerchantCustomerByEmailRow | null> {
-  gorgiasWidgetLog('customer_lookup.started', { merchantId });
-
-  const { data: rows, error } = await service
-    .from(TABLES.CUSTOMER_PROFILES)
-    .select(
-      'id, primary_email, emails, risk_level, risk_score, fraud_flags, identity_confidence_grade'
-    )
-    .contains('merchant_ids', [merchantId])
-    .order('risk_score', { ascending: false });
-
-  if (error) {
-    gorgiasWidgetLog('customer_lookup.result', {
-      found: false,
-      profileId: null,
-      risk_level: null,
-      risk_score: null,
-      hasError: true,
-      errorMessage: error.message ?? null,
-      errorCode: error.code ?? null,
-      merchantScopedRows: 0,
-      emailMatchedRows: 0,
-    });
-    return null;
-  }
-
-  const merchantRows = (rows ?? []) as CustomerProfileEmailRow[];
-  const matched = merchantRows.filter((row) => profileMatchesEmail(row, normEmail));
-  const row = matched[0] ?? null;
-
-  gorgiasWidgetLog('customer_lookup.result', {
-    found: Boolean(row),
-    profileId: row?.id ?? null,
-    risk_level: row?.risk_level ?? null,
-    risk_score: row?.risk_score ?? null,
-    hasError: false,
-    errorMessage: null,
-    errorCode: null,
-    merchantScopedRows: merchantRows.length,
-    emailMatchedRows: matched.length,
-  });
-
-  if (!row?.id) return null;
-
+function rowToCustomer(row: CustomerProfileEmailRow): MerchantCustomerByEmailRow {
   return {
     id: row.id,
     risk_level: String(row.risk_level ?? 'unknown'),
@@ -91,4 +58,85 @@ export async function findMerchantCustomerByEmail(
     identity_confidence_grade:
       typeof row.identity_confidence_grade === 'string' ? row.identity_confidence_grade : null,
   };
+}
+
+/**
+ * Merchant-scoped customer_profiles lookup by normalised email.
+ * Uses simple eq/contains filters (no PostgREST .or json strings), then scopes by merchant_ids in TS.
+ */
+export async function findMerchantCustomerByEmail(
+  service: SupabaseClient,
+  merchantId: string,
+  normEmail: string
+): Promise<{ customer: MerchantCustomerByEmailRow | null; diagnostics: MerchantCustomerLookupDiagnostics }> {
+  const diagnostics: MerchantCustomerLookupDiagnostics = {
+    normEmail,
+    merchantId,
+    primaryEmailCandidateRows: 0,
+    emailsContainsCandidateRows: 0,
+    merchantScopedRows: 0,
+    emailMatchedRows: 0,
+  };
+
+  gorgiasWidgetLog('customer_lookup.started', { merchantId, normEmail });
+
+  const [primaryRes, emailsRes] = await Promise.all([
+    service.from(TABLES.CUSTOMER_PROFILES).select(PROFILE_SELECT).eq('primary_email', normEmail),
+    service
+      .from(TABLES.CUSTOMER_PROFILES)
+      .select(PROFILE_SELECT)
+      .contains('emails', [normEmail]),
+  ]);
+
+  if (primaryRes.error) {
+    gorgiasWidgetLog('customer_lookup.primary_email_error', {
+      message: primaryRes.error.message,
+      code: primaryRes.error.code ?? null,
+    });
+  }
+  if (emailsRes.error) {
+    gorgiasWidgetLog('customer_lookup.emails_contains_error', {
+      message: emailsRes.error.message,
+      code: emailsRes.error.code ?? null,
+    });
+  }
+
+  const primaryRows = (primaryRes.data ?? []) as CustomerProfileEmailRow[];
+  const emailsRows = (emailsRes.data ?? []) as CustomerProfileEmailRow[];
+  diagnostics.primaryEmailCandidateRows = primaryRows.length;
+  diagnostics.emailsContainsCandidateRows = emailsRows.length;
+
+  const byId = new Map<string, CustomerProfileEmailRow>();
+  for (const row of [...primaryRows, ...emailsRows]) {
+    byId.set(row.id, row);
+  }
+
+  const merchantScoped = [...byId.values()].filter((row) =>
+    merchantIdsIncludes(row.merchant_ids, merchantId)
+  );
+  diagnostics.merchantScopedRows = merchantScoped.length;
+
+  const matched = merchantScoped
+    .filter((row) => profileMatchesEmail(row, normEmail))
+    .sort((a, b) => Number(b.risk_score ?? 0) - Number(a.risk_score ?? 0));
+
+  diagnostics.emailMatchedRows = matched.length;
+  const row = matched[0] ?? null;
+
+  gorgiasWidgetLog('customer_lookup.result', {
+    found: Boolean(row),
+    profileId: row?.id ?? null,
+    risk_level: row?.risk_level ?? null,
+    risk_score: row?.risk_score ?? null,
+    primaryEmailCandidateRows: diagnostics.primaryEmailCandidateRows,
+    emailsContainsCandidateRows: diagnostics.emailsContainsCandidateRows,
+    merchantScopedRows: diagnostics.merchantScopedRows,
+    emailMatchedRows: diagnostics.emailMatchedRows,
+  });
+
+  if (!row?.id) {
+    return { customer: null, diagnostics };
+  }
+
+  return { customer: rowToCustomer(row), diagnostics };
 }

@@ -6,7 +6,10 @@ import { performV1Lookup, type LookupAuth } from '@/lib/api/v1/lookup';
 import { makeSignedToken, hashSignedToken } from '@/lib/api/signedAccess';
 import { env } from '@/lib/utils/env';
 import { gorgiasWidgetLog } from '@/lib/gorgias/widgetLog';
-import { findMerchantCustomerByEmail } from '@/lib/gorgias/findMerchantCustomerByEmail';
+import {
+  findMerchantCustomerByEmail,
+  type MerchantCustomerLookupDiagnostics,
+} from '@/lib/gorgias/findMerchantCustomerByEmail';
 
 export type MerchantProfileSummary = {
   profileId: string;
@@ -73,14 +76,14 @@ async function resolveMerchantProfile(
   merchantId: string,
   normEmail: string
 ): Promise<MerchantProfileSummary | null> {
-  const row = await findMerchantCustomerByEmail(service, merchantId, normEmail);
-  if (!row) return null;
+  const { customer } = await findMerchantCustomerByEmail(service, merchantId, normEmail);
+  if (!customer) return null;
 
-  const profile = await fetchMerchantScopedCustomerProfile(service, merchantId, row.id);
+  const profile = await fetchMerchantScopedCustomerProfile(service, merchantId, customer.id);
   if (!profile) return null;
 
   return {
-    profileId: row.id,
+    profileId: customer.id,
     riskScore: Number(profile.risk_score ?? 0),
     totalOrders: Number(profile.total_orders ?? 0),
     totalRefunds: Number(profile.total_refund_claims ?? 0),
@@ -113,27 +116,42 @@ async function issueProfileUrl(
   return `${appBase}/customers/${profileId}?view_token=${encodeURIComponent(token)}`;
 }
 
+export type BuildGorgiasWidgetResult = {
+  model: GorgiasWidgetModel;
+  lookupDiagnostics: MerchantCustomerLookupDiagnostics | null;
+};
+
 export async function buildGorgiasWidgetModel(
   service: SupabaseClient,
   auth: LookupAuth,
   params: { rawEmail: string; rawName: string; orderId: string }
-): Promise<GorgiasWidgetModel> {
+): Promise<BuildGorgiasWidgetResult> {
   const normEmail = normaliseEmail(params.rawEmail.trim());
   if (!normEmail) {
-    return { state: 'error', message: 'A valid customer email is required.' };
+    return {
+      model: { state: 'error', message: 'A valid customer email is required.' },
+      lookupDiagnostics: null,
+    };
   }
 
-  const merchantCustomer = await findMerchantCustomerByEmail(service, auth.merchantId, normEmail);
+  const { customer: merchantCustomer, diagnostics } = await findMerchantCustomerByEmail(
+    service,
+    auth.merchantId,
+    normEmail
+  );
   if (merchantCustomer) {
     const profileUrl = await issueProfileUrl(service, auth.merchantId, merchantCustomer.id);
     return {
-      state: 'merchant_profile',
-      profileId: merchantCustomer.id,
-      riskLevel: merchantCustomer.risk_level,
-      riskScore: merchantCustomer.risk_score,
-      fraudFlags: merchantCustomer.fraud_flags,
-      identityConfidenceGrade: merchantCustomer.identity_confidence_grade,
-      profileUrl,
+      model: {
+        state: 'merchant_profile',
+        profileId: merchantCustomer.id,
+        riskLevel: merchantCustomer.risk_level,
+        riskScore: merchantCustomer.risk_score,
+        fraudFlags: merchantCustomer.fraud_flags,
+        identityConfidenceGrade: merchantCustomer.identity_confidence_grade,
+        profileUrl,
+      },
+      lookupDiagnostics: diagnostics,
     };
   }
 
@@ -174,10 +192,13 @@ export async function buildGorgiasWidgetModel(
       if (merchantProfile) {
         const profileUrl = await issueProfileUrl(service, auth.merchantId, merchantProfile.profileId);
         return {
-          state: 'low_clear',
-          merchantProfile,
-          noCrossMerchant: true,
-          profileUrl,
+          model: {
+            state: 'low_clear',
+            merchantProfile,
+            noCrossMerchant: true,
+            profileUrl,
+          },
+          lookupDiagnostics: diagnostics,
         };
       }
     }
@@ -188,23 +209,29 @@ export async function buildGorgiasWidgetModel(
       : null;
 
     return {
-      state: 'risk',
-      tier,
-      lookup: {
-        risk_grade: String(body.risk_grade),
-        confidence: String(body.confidence),
-        risk_score: Number(body.risk_score),
-        signals: Array.isArray(body.signals) ? (body.signals as string[]) : [],
-        cross_merchant: crossMerchant,
+      model: {
+        state: 'risk',
+        tier,
+        lookup: {
+          risk_grade: String(body.risk_grade),
+          confidence: String(body.confidence),
+          risk_score: Number(body.risk_score),
+          signals: Array.isArray(body.signals) ? (body.signals as string[]) : [],
+          cross_merchant: crossMerchant,
+        },
+        merchantProfile,
+        showEvidence: tier === 'high' || tier === 'medium',
+        profileUrl,
       },
-      merchantProfile,
-      showEvidence: tier === 'high' || tier === 'medium',
-      profileUrl,
+      lookupDiagnostics: diagnostics,
     };
   }
 
   if (lookupResult.status === 429) {
-    return { state: 'error', message: lookupResult.error };
+    return {
+      model: { state: 'error', message: lookupResult.error },
+      lookupDiagnostics: diagnostics,
+    };
   }
 
   if (lookupResult.status === 404) {
@@ -212,22 +239,31 @@ export async function buildGorgiasWidgetModel(
     if (merchantProfile) {
       const profileUrl = await issueProfileUrl(service, auth.merchantId, merchantProfile.profileId);
       return {
-        state: 'low_clear',
-        merchantProfile,
-        noCrossMerchant: true,
-        profileUrl,
+        model: {
+          state: 'low_clear',
+          merchantProfile,
+          noCrossMerchant: true,
+          profileUrl,
+        },
+        lookupDiagnostics: diagnostics,
       };
     }
-    return { state: 'not_found' };
+    return { model: { state: 'not_found' }, lookupDiagnostics: diagnostics };
   }
 
   if (lookupResult.status === 401) {
-    return { state: 'error', message: 'Invalid API key. Check Unauth → Settings → API & Integrations.' };
+    return {
+      model: { state: 'error', message: 'Invalid API key. Check Unauth → Settings → API & Integrations.' },
+      lookupDiagnostics: diagnostics,
+    };
   }
 
   return {
-    state: 'error',
-    message: lookupResult.error || 'Could not load fraud intelligence.',
+    model: {
+      state: 'error',
+      message: lookupResult.error || 'Could not load fraud intelligence.',
+    },
+    lookupDiagnostics: diagnostics,
   };
 }
 
