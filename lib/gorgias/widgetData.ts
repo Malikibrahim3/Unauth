@@ -595,13 +595,16 @@ export async function countStoreRecentClaims(
   emailHash: string
 ): Promise<number> {
   const cutoff = ninetyDayCutoff();
+  // support_case_intake has no `created_at` column — the claim timestamp is
+  // created_at_provider. Filtering on the missing column errored and silently
+  // returned 0, so "recent 90 days" was always 0.
   const { count, error } = await service
     .from(TABLES.SUPPORT_CASE_INTAKE)
     .select('*', { count: 'exact', head: true })
     .eq('merchant_id', merchantId)
     .eq('customer_email_hash', emailHash)
     .eq('is_claim', true)
-    .gte('created_at', cutoff);
+    .gte('created_at_provider', cutoff);
 
   if (error || typeof count !== 'number') return 0;
   return count;

@@ -23,10 +23,12 @@ import { createClient } from '@supabase/supabase-js';
 loadEnv({ path: '.env.local' });
 
 // ---- Test case under investigation -----------------------------------------
+// Override email/order via argv: `… diagnose-customer-sync.ts <email> [#order]`
+// or env DIAG_EMAIL / DIAG_ORDER.
 const TARGET = {
-  email: 'simeonmurray123@gmail.com',
+  email: process.argv[2]?.trim() || process.env.DIAG_EMAIL?.trim() || 'simeonmurray123@gmail.com',
   shopDomain: 'unauth-test.myshopify.com',
-  orderName: '#1008',
+  orderName: process.argv[3]?.trim() || process.env.DIAG_ORDER?.trim() || '#1008',
   gorgiasIntegrationId: '104747',
 };
 

@@ -148,3 +148,36 @@ relevant scenario files:
 ```bash
 npx tsc --noEmit -p scripts/e2e/tsconfig.check.json
 ```
+
+## IMPORTANT: test shopper email must not collide with the Gorgias account
+
+The widget's identity resolver intentionally **excludes** the Gorgias API/account
+email, connected Gmail-channel addresses, the support-inbox address, and any
+agent/user email — so a ticket the support side touched never resolves the agent
+as the shopper (`buildGorgiasEmailExclusionSet` in
+`lib/support/gorgias/ticketCustomerEmail.ts`). This is correct and protects real
+merchants.
+
+Consequently a **test shopper email must be a distinct external address.** If you
+reuse the Gorgias API/account email (or a connected channel / the support inbox)
+as the test shopper, the widget will return *"Customer identity not resolved"* and
+no claim stats will show — even though intake, classification, and
+`customer_claim_summary` are all correct. This is a **test-setup** issue, not a bug.
+
+Likewise, a genuine customer message must be `from_agent=false`. An email sent
+**from** an address connected to the same Gorgias account as a channel is recorded
+as an agent message (`from_agent=true`) and will not classify as a customer claim.
+To create a controlled inbound customer ticket regardless of channel wiring, use
+`scripts/create-gorgias-test-ticket.ts`.
+
+### Manual single-customer diagnostics (read-only unless noted)
+
+- `scripts/diagnose-customer-sync.ts <email> [#order]` — trace one shopper across
+  merchant_identities / shopify_order_signals / customer_profiles / support_case_intake
+  / customer_claim_summary (masked emails, truncated hashes).
+- `scripts/find-gorgias-claim-ticket.ts` — find the ticket containing claim language.
+- `scripts/find-gorgias-support-inbox.ts` — list the support-inbox / channel addresses.
+- `scripts/inspect-gorgias-ticket-shape.ts <ticketId>` — message roles + claim-marker booleans (no body text).
+- `scripts/probe-live-widget.ts <ticketId> <email>` — call the live production widget as Gorgias would.
+- `scripts/reprocess-gorgias-ticket.ts <ticketId>` — re-ingest one ticket through prod `ingestSupportCase` (idempotent write).
+- `scripts/create-gorgias-test-ticket.ts` / `scripts/setup-clean-shopper-test.ts` — create a controlled customer-authored test ticket (writes).

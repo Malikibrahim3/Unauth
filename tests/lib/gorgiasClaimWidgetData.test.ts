@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { TABLES } from '@/lib/supabase/tables';
 import {
   assembleClaimWidgetData,
+  countStoreRecentClaims,
   derivePrimaryReason,
   derivePrimaryReasonFromTypes,
   type GorgiasWidgetModel,
@@ -82,6 +83,26 @@ describe('derivePrimaryReason (support_case_intake query)', () => {
 
     const reason = await derivePrimaryReason(client as unknown as SupabaseClient, hash);
     expect(reason).toEqual({ type: 'dominant', label: 'Item not received', percentage: 100 });
+  });
+});
+
+describe('countStoreRecentClaims (support_case_intake query)', () => {
+  it('filters recent claims on created_at_provider (the column that exists)', async () => {
+    const gteCalls: Array<{ column: string }> = [];
+    let countReturned = 1;
+    const builder: Record<string, unknown> = {};
+    builder.select = () => builder;
+    builder.eq = () => builder;
+    builder.gte = (column: string) => {
+      gteCalls.push({ column });
+      return Promise.resolve({ count: countReturned, error: null });
+    };
+    const service = { from: () => builder } as unknown as SupabaseClient;
+
+    const n = await countStoreRecentClaims(service, 'm1', 'emailhash-1');
+    expect(n).toBe(1);
+    // Must NOT query a non-existent `created_at` column (would error → silent 0).
+    expect(gteCalls).toEqual([{ column: 'created_at_provider' }]);
   });
 });
 
