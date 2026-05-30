@@ -1,7 +1,10 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { TABLES } from '@/lib/supabase/tables';
 import { normaliseEmail } from '@/lib/identity/normalise';
-import { fetchMerchantScopedCustomerProfile } from '@/lib/supabase/merchantHelpers';
+import {
+  fetchMerchantScopedCustomerProfile,
+  fetchMerchantScopedCustomerTransactions,
+} from '@/lib/supabase/merchantHelpers';
 import { performV1Lookup, type LookupAuth } from '@/lib/api/v1/lookup';
 import { makeSignedToken, hashSignedToken } from '@/lib/api/signedAccess';
 import { env } from '@/lib/utils/env';
@@ -10,6 +13,113 @@ import {
   findMerchantCustomerByEmail,
   type MerchantCustomerLookupDiagnostics,
 } from '@/lib/gorgias/findMerchantCustomerByEmail';
+
+// ---------------------------------------------------------------------------
+// Widget stats — the core data backing the comparison table rows
+// ---------------------------------------------------------------------------
+
+export type WidgetStats = {
+  /** Orders processed at this merchant for this customer. */
+  storeOrders: number;
+  /** Claims at this merchant. */
+  storeClaims: number;
+  /** Top claim reason if one reason accounts for ≥50% of claims; otherwise
+   *  "N different reasons"; null when no claims. */
+  primaryReason: string | null;
+  /** Claims at this merchant in the last 90 days. */
+  storeRecentClaims: number;
+  /** Total orders across all merchants (from customer_profiles.total_orders). */
+  networkOrders: number;
+  /** Total claims across all merchants. */
+  networkClaims: number;
+  /** Number of distinct merchants. */
+  networkMerchants: number;
+  /** Claims network-wide in the last 90 days (from refund_timestamps). */
+  networkRecentClaims: number;
+};
+
+// Minimal select — only what we need for stats; avoids pulling heavy JSON blobs.
+const WIDGET_TX_SELECT = 'id,refund_claimed,refund_reason,processed_at';
+
+function ninetyDayCutoff(): string {
+  return new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString();
+}
+
+function computePrimaryReason(
+  claimedTxs: Array<Record<string, unknown>>
+): string | null {
+  const reasons = claimedTxs
+    .map(tx => (typeof tx.refund_reason === 'string' && tx.refund_reason.trim() ? tx.refund_reason.trim() : null))
+    .filter((r): r is string => r !== null);
+
+  if (reasons.length === 0) return null;
+
+  const counts = new Map<string, number>();
+  for (const r of reasons) counts.set(r, (counts.get(r) ?? 0) + 1);
+
+  const sorted = [...counts.entries()].sort((a, b) => b[1] - a[1]);
+  const [topReason, topCount] = sorted[0];
+
+  if (topCount / reasons.length >= 0.5) {
+    const pct = Math.round((topCount / reasons.length) * 100);
+    return `"${topReason}" · ${pct}%`;
+  }
+
+  const n = counts.size;
+  return `${n} different ${n === 1 ? 'reason' : 'reasons'} used`;
+}
+
+async function fetchWidgetStats(
+  service: SupabaseClient,
+  merchantId: string,
+  profileId: string,
+  profile: Record<string, unknown>
+): Promise<WidgetStats> {
+  const cutoff = ninetyDayCutoff();
+
+  // Merchant-scoped transactions — gives "This Store" numbers.
+  const txs = await fetchMerchantScopedCustomerTransactions(
+    service,
+    merchantId,
+    profileId,
+    profile,
+    { select: WIDGET_TX_SELECT }
+  );
+
+  const storeOrders = txs.length;
+  const storeClaimed = txs.filter(tx => tx.refund_claimed === true);
+  const storeClaims = storeClaimed.length;
+  const storeRecentClaims = storeClaimed.filter(
+    tx => typeof tx.processed_at === 'string' && tx.processed_at >= cutoff
+  ).length;
+  const primaryReason = computePrimaryReason(storeClaimed);
+
+  // Global profile aggregates — gives "Network" numbers.
+  const networkOrders = Number(profile.total_orders ?? 0);
+  const networkClaims = Number(profile.total_refund_claims ?? 0);
+  const networkMerchants = Number(profile.total_merchants_seen_at ?? 0);
+
+  const rawTimestamps = profile.refund_timestamps;
+  const refundTimestamps: unknown[] = Array.isArray(rawTimestamps) ? rawTimestamps : [];
+  const networkRecentClaims = refundTimestamps.filter(
+    ts => typeof ts === 'string' && ts >= cutoff
+  ).length;
+
+  return {
+    storeOrders,
+    storeClaims,
+    primaryReason,
+    storeRecentClaims,
+    networkOrders,
+    networkClaims,
+    networkMerchants,
+    networkRecentClaims,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Shared types
+// ---------------------------------------------------------------------------
 
 export type MerchantProfileSummary = {
   profileId: string;
@@ -33,6 +143,8 @@ export type GorgiasWidgetModel =
       fraudFlags: string[];
       identityConfidenceGrade: string | null;
       profileUrl: string | null;
+      /** Rich stats for the comparison table. null when the profile fetch failed. */
+      stats: WidgetStats | null;
     }
   | {
       state: 'risk';
@@ -58,6 +170,10 @@ export type GorgiasWidgetModel =
       noCrossMerchant: boolean;
       profileUrl: string | null;
     };
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 
 function riskTierFromLookup(lookup: {
   risk_grade: string;
@@ -116,6 +232,10 @@ async function issueProfileUrl(
   return `${appBase}/customers/${profileId}?view_token=${encodeURIComponent(token)}`;
 }
 
+// ---------------------------------------------------------------------------
+// Public helpers used by the HTML renderer
+// ---------------------------------------------------------------------------
+
 export type BuildGorgiasWidgetResult = {
   model: GorgiasWidgetModel;
   lookupDiagnostics: MerchantCustomerLookupDiagnostics | null;
@@ -141,6 +261,13 @@ export async function buildGorgiasWidgetModel(
   );
   if (merchantCustomer) {
     const profileUrl = await issueProfileUrl(service, auth.merchantId, merchantCustomer.id);
+
+    // Fetch the full profile row (needed for network stats and the transaction helper).
+    const profile = await fetchMerchantScopedCustomerProfile(service, auth.merchantId, merchantCustomer.id);
+    const stats = profile
+      ? await fetchWidgetStats(service, auth.merchantId, merchantCustomer.id, profile)
+      : null;
+
     return {
       model: {
         state: 'merchant_profile',
@@ -150,6 +277,7 @@ export async function buildGorgiasWidgetModel(
         fraudFlags: merchantCustomer.fraud_flags,
         identityConfidenceGrade: merchantCustomer.identity_confidence_grade,
         profileUrl,
+        stats,
       },
       lookupDiagnostics: diagnostics,
     };
@@ -261,7 +389,7 @@ export async function buildGorgiasWidgetModel(
   return {
     model: {
       state: 'error',
-      message: lookupResult.error || 'Could not load fraud intelligence.',
+      message: lookupResult.error || 'Could not load identity intelligence.',
     },
     lookupDiagnostics: diagnostics,
   };

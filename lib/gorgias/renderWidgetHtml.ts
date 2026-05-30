@@ -269,7 +269,7 @@ export function renderGorgiasWidgetHtml(ctx: WidgetRenderContext): string {
   <div class="card" style="background:#1f1814;border-color:#3d2e28;">
     <div class="headline">⚪ NO PROFILE</div>
     <p class="muted" style="margin-top:8px;">Not in Unauth network yet</p>
-    <p class="muted" style="margin-top:8px;">Upload orders to build your fraud history</p>
+    <p class="muted" style="margin-top:8px;">Upload orders to build this customer's history</p>
     <div class="actions">
       <a class="btn btn-primary" href="${escapeHtml(appBase)}" target="_blank" rel="noopener noreferrer">Go to Unauth</a>
     </div>

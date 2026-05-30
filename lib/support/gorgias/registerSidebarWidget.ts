@@ -48,20 +48,20 @@ export function buildGorgiasSidebarWidgetTemplate(appBaseUrl: string) {
     widgets: [
       {
         type: 'card',
-        title: 'Unauth Fraud Intelligence',
+        title: 'Unauth Identity Intelligence',
         path: '',
         meta: {
           displayCard: true,
           link: profileLink,
           custom: {
-            links: [{ url: profileLink, label: 'View full profile in Unauth' }],
+            links: [{ url: profileLink, label: 'View full profile in Unauth →' }],
           },
         },
         widgets: [
-          { path: 'risk_level', title: 'Risk level', type: 'text' },
-          { path: 'risk_score', title: 'Risk score', type: 'text' },
-          { path: 'cross_merchant', title: 'Cross-merchant', type: 'text' },
-          { path: 'fraud_flags', title: 'Fraud flags', type: 'text' },
+          { path: 'orders', title: 'Orders', type: 'text' },
+          { path: 'claim_rate', title: 'Claim rate', type: 'text' },
+          { path: 'primary_reason', title: 'Primary reason', type: 'text' },
+          { path: 'recent_activity', title: 'Recent (90 days)', type: 'text' },
         ],
       },
     ],

@@ -1,12 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
-import { normaliseEmail } from '@/lib/identity/normalise';
 import { getClientIp } from '@/lib/ratelimit';
 import { buildGorgiasWidgetModel, type GorgiasWidgetModel } from '@/lib/gorgias/widgetData';
-import {
-  findMerchantCustomerByEmail,
-  type MerchantCustomerLookupDiagnostics,
-} from '@/lib/gorgias/findMerchantCustomerByEmail';
+import type { MerchantCustomerLookupDiagnostics } from '@/lib/gorgias/findMerchantCustomerByEmail';
 import {
   gorgiasWidgetModelToJson,
   type GorgiasWidgetJsonPayload,
@@ -31,10 +27,10 @@ const JSON_RESPONSE_HEADERS = {
 } as const;
 
 const GORGIAS_WIDGET_JSON_FALLBACK: GorgiasWidgetJsonPayload = {
-  risk_level: 'ERROR',
-  risk_score: '0',
-  cross_merchant: '—',
-  fraud_flags: 'Unauth could not load fraud intelligence for this ticket.',
+  orders: '—',
+  claim_rate: '—',
+  primary_reason: '—',
+  recent_activity: 'Could not load. Refresh the ticket to retry.',
 };
 
 type WidgetReturnContext = {
@@ -47,7 +43,7 @@ function logBuildMarker(): void {
 }
 
 function isNotInNetworkFallback(body: GorgiasWidgetJsonPayload): boolean {
-  return body.risk_level === 'NONE' && body.fraud_flags === 'Not in Unauth network';
+  return body.orders === 'Not seen at any store yet';
 }
 
 function logFallbackReturned(input: {
@@ -280,36 +276,6 @@ export async function GET(request: NextRequest) {
     }
 
     const service = createServiceClient();
-    const normEmail = normaliseEmail(email);
-
-    if (normEmail) {
-      const { customer, diagnostics } = await findMerchantCustomerByEmail(
-        service,
-        authResult.merchantId,
-        normEmail
-      );
-      if (customer) {
-        const profileModel: GorgiasWidgetModel = {
-          state: 'merchant_profile',
-          profileId: customer.id,
-          riskLevel: customer.risk_level,
-          riskScore: customer.risk_score,
-          fraudFlags: customer.fraud_flags,
-          identityConfidenceGrade: customer.identity_confidence_grade,
-          profileUrl: null,
-        };
-        gorgiasWidgetLog('customer_lookup.result', describeModelForLog(profileModel));
-        return returnJsonForModel({
-          branch: 'model_merchant_profile',
-          model: profileModel,
-          lookupDiagnostics: diagnostics,
-          ctx,
-          returnHtml,
-          widgetToken,
-          orderId,
-        });
-      }
-    }
 
     const { model, lookupDiagnostics } = await buildGorgiasWidgetModel(
       service,
@@ -341,7 +307,7 @@ export async function GET(request: NextRequest) {
     const message = err instanceof Error ? err.message : 'unknown_error';
     const body: GorgiasWidgetJsonPayload = {
       ...GORGIAS_WIDGET_JSON_FALLBACK,
-      fraud_flags: `Widget error: ${message}`.slice(0, 500),
+      recent_activity: `Error: ${message}`.slice(0, 100),
     };
     logFallbackReturned({
       reason: 'fatal_error',

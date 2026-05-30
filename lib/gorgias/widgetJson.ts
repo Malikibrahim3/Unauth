@@ -1,80 +1,104 @@
-import type { GorgiasWidgetModel } from '@/lib/gorgias/widgetData';
-import { tierHeadline } from '@/lib/gorgias/widgetData';
+import type { GorgiasWidgetModel, WidgetStats } from '@/lib/gorgias/widgetData';
 
 /** Flat root object — field paths must match buildGorgiasSidebarWidgetTemplate() exactly. */
 export type GorgiasWidgetJsonPayload = {
-  risk_level: string;
-  risk_score: string;
-  cross_merchant: string;
-  fraud_flags: string;
+  orders: string;
+  claim_rate: string;
+  primary_reason: string;
+  recent_activity: string;
 };
 
-function toWidgetJsonPayload(fields: {
-  risk_level: string;
-  risk_score: number | string;
-  cross_merchant: string;
-  fraud_flags: string;
-}): GorgiasWidgetJsonPayload {
+// ---------------------------------------------------------------------------
+// Display formatters
+// ---------------------------------------------------------------------------
+
+function pluralise(n: number, singular: string, plural: string): string {
+  return n === 1 ? singular : plural;
+}
+
+function formatOrders(s: WidgetStats): string {
+  const storeStr = `${s.storeOrders} ${pluralise(s.storeOrders, 'order', 'orders')} here`;
+  if (s.networkMerchants <= 1) return storeStr;
+  const storeCount = pluralise(s.networkMerchants, 'store', 'stores');
+  return `${storeStr} · ${s.networkOrders} across ${s.networkMerchants} ${storeCount}`;
+}
+
+function formatClaimRate(s: WidgetStats): string {
+  const storeRate = s.storeOrders > 0
+    ? Math.round((s.storeClaims / s.storeOrders) * 100)
+    : 0;
+  const storeStr = `${storeRate}% this store`;
+
+  if (s.networkMerchants <= 1 || s.networkOrders === 0) return storeStr;
+  const networkRate = Math.round((s.networkClaims / s.networkOrders) * 100);
+  return `${storeStr} · ${networkRate}% network`;
+}
+
+function formatPrimaryReason(s: WidgetStats): string {
+  if (s.storeClaims === 0) return '—';
+  return s.primaryReason ?? '—';
+}
+
+function formatRecentActivity(s: WidgetStats): string {
+  if (s.storeRecentClaims === 0) return '—';
+  return `${s.storeRecentClaims} ${pluralise(s.storeRecentClaims, 'claim', 'claims')} in last 90 days`;
+}
+
+// ---------------------------------------------------------------------------
+// Fallback rows used when no stats are available
+// ---------------------------------------------------------------------------
+
+function noDataPayload(overrides: Partial<GorgiasWidgetJsonPayload> = {}): GorgiasWidgetJsonPayload {
   return {
-    risk_level: fields.risk_level,
-    risk_score: String(fields.risk_score),
-    cross_merchant: fields.cross_merchant,
-    fraud_flags: fields.fraud_flags,
+    orders: '—',
+    claim_rate: '—',
+    primary_reason: '—',
+    recent_activity: '—',
+    ...overrides,
   };
 }
 
-function formatCrossMerchant(
-  crossMerchant: { merchant_count: number; claim_count: number } | null
-): string {
-  if (!crossMerchant || crossMerchant.merchant_count <= 0) return 'No other merchants';
-  const merchants = `${crossMerchant.merchant_count} merchant${crossMerchant.merchant_count === 1 ? '' : 's'}`;
-  const claims = `${crossMerchant.claim_count} claim${crossMerchant.claim_count === 1 ? '' : 's'}`;
-  return `${merchants} · ${claims}`;
-}
+// ---------------------------------------------------------------------------
+// Main converter
+// ---------------------------------------------------------------------------
 
 export function gorgiasWidgetModelToJson(model: GorgiasWidgetModel): GorgiasWidgetJsonPayload {
   if (model.state === 'error') {
-    return toWidgetJsonPayload({
-      risk_level: 'ERROR',
-      risk_score: 0,
-      cross_merchant: '—',
-      fraud_flags: model.message,
-    });
+    return noDataPayload({ orders: model.message.slice(0, 100) });
   }
 
   if (model.state === 'not_found') {
-    return toWidgetJsonPayload({
-      risk_level: 'NONE',
-      risk_score: 0,
-      cross_merchant: 'Not in Unauth network',
-      fraud_flags: 'No history yet',
-    });
+    return noDataPayload({ orders: 'Not seen at any store yet' });
   }
 
   if (model.state === 'merchant_profile') {
-    return toWidgetJsonPayload({
-      risk_level: model.riskLevel.trim().toUpperCase() || 'UNKNOWN',
-      risk_score: Math.round(model.riskScore),
-      cross_merchant: 'Not available',
-      fraud_flags: model.fraudFlags.length > 0 ? model.fraudFlags.join(', ') : 'None',
-    });
+    const s = model.stats;
+    if (!s) return noDataPayload();
+    return {
+      orders: formatOrders(s),
+      claim_rate: formatClaimRate(s),
+      primary_reason: formatPrimaryReason(s),
+      recent_activity: formatRecentActivity(s),
+    };
   }
 
   if (model.state === 'low_clear') {
-    return toWidgetJsonPayload({
-      risk_level: 'LOW',
-      risk_score: model.merchantProfile.riskScore,
-      cross_merchant: 'No cross-merchant flags',
-      fraud_flags: 'None',
+    const p = model.merchantProfile;
+    const storeRate = p.totalOrders > 0
+      ? Math.round((p.totalRefunds / p.totalOrders) * 100)
+      : 0;
+    return noDataPayload({
+      orders: `${p.totalOrders} ${pluralise(p.totalOrders, 'order', 'orders')} here`,
+      claim_rate: `${storeRate}% this store`,
+      recent_activity: '—',
     });
   }
 
-  const signals = model.lookup.signals.length > 0 ? model.lookup.signals.join('; ') : 'None';
-
-  return toWidgetJsonPayload({
-    risk_level: tierHeadline(model.tier),
-    risk_score: model.lookup.risk_score ?? 0,
-    cross_merchant: formatCrossMerchant(model.lookup.cross_merchant),
-    fraud_flags: signals,
-  });
+  // 'risk' state — customer is in the network but not known at this store.
+  const cm = model.lookup.cross_merchant;
+  if (cm) {
+    const networkStr = `${cm.claim_count} ${pluralise(cm.claim_count, 'claim', 'claims')} across ${cm.merchant_count} ${pluralise(cm.merchant_count, 'store', 'stores')}`;
+    return noDataPayload({ orders: `No history here · ${networkStr}` });
+  }
+  return noDataPayload({ orders: 'No history at this store' });
 }

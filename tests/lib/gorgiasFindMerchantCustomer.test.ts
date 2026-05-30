@@ -95,13 +95,15 @@ describe('findMerchantCustomerByEmail', () => {
       fraudFlags: customer!.fraud_flags,
       identityConfidenceGrade: customer!.identity_confidence_grade,
       profileUrl: null,
+      stats: null,
     });
 
+    // When stats is null (no transaction data available), all rows show dashes.
     expect(json).toEqual({
-      risk_level: 'MEDIUM',
-      risk_score: '28',
-      cross_merchant: 'Not available',
-      fraud_flags: 'velocity, paymentChurn',
+      orders: '—',
+      claim_rate: '—',
+      primary_reason: '—',
+      recent_activity: '—',
     });
   });
 
