@@ -10,9 +10,25 @@ export type MerchantCustomerByEmailRow = {
   identity_confidence_grade: string | null;
 };
 
+type CustomerProfileEmailRow = {
+  id: string;
+  primary_email: string | null;
+  emails: unknown;
+  risk_level: string | null;
+  risk_score: number | null;
+  fraud_flags: unknown;
+  identity_confidence_grade: string | null;
+};
+
 function parseFraudFlags(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   return value.map((flag) => String(flag)).filter(Boolean);
+}
+
+function profileMatchesEmail(row: CustomerProfileEmailRow, normEmail: string): boolean {
+  if (row.primary_email?.trim().toLowerCase() === normEmail) return true;
+  if (!Array.isArray(row.emails)) return false;
+  return row.emails.some((entry) => String(entry).trim().toLowerCase() === normEmail);
 }
 
 /**
@@ -26,29 +42,46 @@ export async function findMerchantCustomerByEmail(
 ): Promise<MerchantCustomerByEmailRow | null> {
   gorgiasWidgetLog('customer_lookup.started', { merchantId });
 
-  const emailMatchFilter = `primary_email.eq.${normEmail},emails.cs.${JSON.stringify([normEmail])}`;
-
   const { data: rows, error } = await service
     .from(TABLES.CUSTOMER_PROFILES)
-    .select('id, risk_level, risk_score, fraud_flags, identity_confidence_grade')
+    .select(
+      'id, primary_email, emails, risk_level, risk_score, fraud_flags, identity_confidence_grade'
+    )
     .contains('merchant_ids', [merchantId])
-    .or(emailMatchFilter)
-    .order('risk_score', { ascending: false })
-    .limit(1);
+    .order('risk_score', { ascending: false });
 
-  const row = rows?.[0] ?? null;
+  if (error) {
+    gorgiasWidgetLog('customer_lookup.result', {
+      found: false,
+      profileId: null,
+      risk_level: null,
+      risk_score: null,
+      hasError: true,
+      errorMessage: error.message ?? null,
+      errorCode: error.code ?? null,
+      merchantScopedRows: 0,
+      emailMatchedRows: 0,
+    });
+    return null;
+  }
+
+  const merchantRows = (rows ?? []) as CustomerProfileEmailRow[];
+  const matched = merchantRows.filter((row) => profileMatchesEmail(row, normEmail));
+  const row = matched[0] ?? null;
 
   gorgiasWidgetLog('customer_lookup.result', {
     found: Boolean(row),
     profileId: row?.id ?? null,
     risk_level: row?.risk_level ?? null,
     risk_score: row?.risk_score ?? null,
-    hasError: Boolean(error),
-    errorMessage: error?.message ?? null,
-    errorCode: error?.code ?? null,
+    hasError: false,
+    errorMessage: null,
+    errorCode: null,
+    merchantScopedRows: merchantRows.length,
+    emailMatchedRows: matched.length,
   });
 
-  if (error || !row?.id) return null;
+  if (!row?.id) return null;
 
   return {
     id: row.id,

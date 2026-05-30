@@ -1,8 +1,18 @@
 import { findMerchantCustomerByEmail } from '@/lib/gorgias/findMerchantCustomerByEmail';
 
 describe('findMerchantCustomerByEmail', () => {
-  it('matches primary_email or emails array with merchant_ids scope', async () => {
+  it('matches primary_email or emails array after merchant_ids jsonb contains', async () => {
     const profiles = [
+      {
+        id: 'profile-other',
+        risk_level: 'high',
+        risk_score: 90,
+        fraud_flags: [],
+        identity_confidence_grade: null,
+        primary_email: 'other@example.com',
+        emails: ['other@example.com'],
+        merchant_ids: ['merchant-1'],
+      },
       {
         id: 'profile-1',
         risk_level: 'medium',
@@ -21,18 +31,12 @@ describe('findMerchantCustomerByEmail', () => {
           contains: (_col: string, merchantIds: string[]) => {
             expect(merchantIds).toEqual(['merchant-1']);
             return {
-              or: (filter: string) => {
-                expect(filter).toContain('primary_email.eq.simeonmurray123@gmail.com');
-                expect(filter).toContain('emails.cs.');
-                return {
-                  order: () => ({
-                    limit: async () => ({
-                      data: profiles.filter((p) => p.merchant_ids.some((id) => merchantIds.includes(id))),
-                      error: null,
-                    }),
-                  }),
-                };
-              },
+              order: async () => ({
+                data: profiles.filter((p) =>
+                  (p.merchant_ids as string[]).some((id) => merchantIds.includes(id))
+                ),
+                error: null,
+              }),
             };
           },
         }),
@@ -52,5 +56,38 @@ describe('findMerchantCustomerByEmail', () => {
       fraud_flags: ['velocity', 'paymentChurn'],
       identity_confidence_grade: null,
     });
+  });
+
+  it('matches email only in emails array when primary_email differs', async () => {
+    const profiles = [
+      {
+        id: 'profile-2',
+        risk_level: 'low',
+        risk_score: 10,
+        fraud_flags: [],
+        identity_confidence_grade: null,
+        primary_email: 'simeonmurray123@hotmail.com',
+        emails: ['simeonmurray123@hotmail.com', 'simeonmurray123@gmail.com'],
+        merchant_ids: ['merchant-1'],
+      },
+    ];
+
+    const supabase = {
+      from: () => ({
+        select: () => ({
+          contains: () => ({
+            order: async () => ({ data: profiles, error: null }),
+          }),
+        }),
+      }),
+    };
+
+    const row = await findMerchantCustomerByEmail(
+      supabase as never,
+      'merchant-1',
+      'simeonmurray123@gmail.com'
+    );
+
+    expect(row?.id).toBe('profile-2');
   });
 });
