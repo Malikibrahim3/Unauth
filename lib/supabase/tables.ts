@@ -24,6 +24,11 @@ export const TABLES = {
   SUPPORT_PROVIDER_CONNECTIONS: 'support_provider_connections',
   SUPPORT_CASE_INTAKE: 'support_case_intake',
   SUPPORT_CASE_EVENTS: 'support_case_events',
+  ORDER_CLAIM_CONTEXT: 'order_claim_context',
+  CUSTOMER_IDENTITY_SIGNALS: 'customer_identity_signals',
+  CUSTOMER_CLAIM_SUMMARY: 'customer_claim_summary',
+  IDENTITY_LINK_CANDIDATES: 'identity_link_candidates',
+  WEBHOOK_LOGS: 'webhook_logs',
 } as const;
 
 export type TableName = typeof TABLES[keyof typeof TABLES];
