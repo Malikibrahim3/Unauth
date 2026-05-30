@@ -12,13 +12,22 @@ type ApiKeyRow = {
   rate_limit_per_minute: number;
 };
 
+/**
+ * `kind` drives how each tile reports status:
+ *  - 'connectable' tiles show a live Connected / Not connected indicator. Their
+ *    status is keyed off `statusKey` (which connection fetch backs them). Tiles
+ *    without a backing status source (e.g. Zendesk, not yet built) omit it and
+ *    always read as not connected.
+ *  - 'install' tiles (Chrome) have no server-side connection to detect, so they
+ *    show an Install action with no status dot.
+ */
 const INTEGRATIONS = [
   {
     id: 'gorgias',
     name: 'Gorgias',
     description: 'Surface Unauth risk scores inside your helpdesk sidebar',
-    badge: 'Connect',
-    badgeVariant: 'connect' as const,
+    kind: 'connectable' as const,
+    statusKey: 'gorgias' as const,
     href: '/settings/integrations/gorgias',
     logo: '/integrations/gorgias.png',
   },
@@ -26,8 +35,8 @@ const INTEGRATIONS = [
     id: 'zendesk',
     name: 'Zendesk',
     description: 'Flag high-risk customers while agents handle tickets',
-    badge: 'Connect',
-    badgeVariant: 'connect' as const,
+    kind: 'connectable' as const,
+    statusKey: null,
     href: '/settings/integrations/zendesk',
     logo: '/integrations/zendesk.svg',
   },
@@ -35,8 +44,8 @@ const INTEGRATIONS = [
     id: 'shopify',
     name: 'Shopify',
     description: 'Sync orders, refunds & fulfillment to enrich identity intelligence',
-    badge: 'Connect',
-    badgeVariant: 'connect' as const,
+    kind: 'connectable' as const,
+    statusKey: 'shopify' as const,
     href: '/settings/integrations',
     logo: '/integrations/shopify.svg',
   },
@@ -44,12 +53,18 @@ const INTEGRATIONS = [
     id: 'chrome',
     name: 'Chrome extension',
     description: 'Look up customers from any page with one click',
-    badge: 'Install',
-    badgeVariant: 'install' as const,
+    kind: 'install' as const,
+    statusKey: null,
     href: '/settings/integrations/chrome',
     logo: '/integrations/chrome.svg',
   },
 ] as const;
+
+type ConnectionState = { connected: boolean; detail: string | null };
+type ConnectionStatus = {
+  gorgias: ConnectionState;
+  shopify: ConnectionState;
+};
 
 function formatDate(value: string | null) {
   if (!value) return 'Never';
@@ -65,6 +80,7 @@ function formatDate(value: string | null) {
 export default function ApiIntegrationsClient() {
   const [keys, setKeys] = useState<ApiKeyRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [connStatus, setConnStatus] = useState<ConnectionStatus | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [keyName, setKeyName] = useState('');
   const [creating, setCreating] = useState(false);
@@ -92,8 +108,36 @@ export default function ApiIntegrationsClient() {
     }
   }
 
+  async function loadConnections() {
+    try {
+      const [gRes, sRes] = await Promise.all([
+        fetch('/api/settings/gorgias/support-connection', { cache: 'no-store' }),
+        fetch('/api/shopify/status', { cache: 'no-store' }),
+      ]);
+      const gBody = gRes.ok ? await gRes.json() : null;
+      const sBody = sRes.ok ? await sRes.json() : null;
+      const gConn = gBody?.connection ?? null;
+      setConnStatus({
+        gorgias: {
+          connected: Boolean(gConn && gConn.status === 'active'),
+          detail: gConn?.provider_account_name ?? gConn?.provider_account_id ?? null,
+        },
+        shopify: {
+          connected: Boolean(sBody?.connected),
+          detail: sBody?.shopDomain ?? null,
+        },
+      });
+    } catch {
+      setConnStatus({
+        gorgias: { connected: false, detail: null },
+        shopify: { connected: false, detail: null },
+      });
+    }
+  }
+
   useEffect(() => {
     loadKeys();
+    loadConnections();
   }, []);
 
   async function createKey(event: FormEvent) {
@@ -238,42 +282,87 @@ export default function ApiIntegrationsClient() {
       <section>
         <h2 className="text-sm font-semibold mb-3" style={{ color: 'var(--text)' }}>Integrations</h2>
         <div className="grid gap-3 sm:grid-cols-2">
-          {INTEGRATIONS.map((item) => (
-            <div
-              key={item.id}
-              className="flex gap-3 rounded-lg border p-4"
-              style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-raised)' }}
-            >
-              <img
-                src={item.logo}
-                alt=""
-                width={32}
-                height={32}
-                className="h-8 w-8 shrink-0 rounded-md"
-                style={{ objectFit: 'contain' }}
-              />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-start justify-between gap-2">
-                  <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>{item.name}</p>
-                  <a
-                    href={item.href}
-                    className="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium"
-                    style={
-                      item.badgeVariant === 'connect'
-                        ? { background: 'rgba(47, 107, 67, 0.12)', color: 'var(--sev-clear, #2f6b43)' }
-                        : { background: 'rgba(26, 115, 232, 0.12)', color: '#1A73E8' }
-                    }
-                  >
-                    {item.badge}
-                    {item.badgeVariant === 'install' ? <ExternalLink className="h-3 w-3" /> : null}
-                  </a>
+          {INTEGRATIONS.map((item) => {
+            const state =
+              item.statusKey && connStatus ? connStatus[item.statusKey] : null;
+            const connected = Boolean(state?.connected);
+            // Status is "known" once the fetch resolves for connectable tiles; until
+            // then we render a neutral placeholder rather than flashing "Not connected".
+            const statusKnown = item.kind !== 'connectable' || connStatus !== null;
+
+            return (
+              <div
+                key={item.id}
+                className="flex gap-3 rounded-lg border p-4"
+                style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-raised)' }}
+              >
+                <img
+                  src={item.logo}
+                  alt=""
+                  width={32}
+                  height={32}
+                  className="h-8 w-8 shrink-0 rounded-md"
+                  style={{ objectFit: 'contain' }}
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>{item.name}</p>
+                    {item.kind === 'install' ? (
+                      <a
+                        href={item.href}
+                        className="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium"
+                        style={{ background: 'rgba(26, 115, 232, 0.12)', color: '#1A73E8' }}
+                      >
+                        Install
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    ) : connected ? (
+                      <a
+                        href={item.href}
+                        className="inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium"
+                        style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}
+                      >
+                        Manage
+                      </a>
+                    ) : (
+                      <a
+                        href={item.href}
+                        className="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium"
+                        style={{ background: 'var(--accent)', color: 'var(--accent-fg, #fff)' }}
+                      >
+                        Connect
+                      </a>
+                    )}
+                  </div>
+
+                  {item.kind === 'connectable' && statusKnown && (
+                    <p className="mt-1 flex items-center gap-1.5 text-xs font-medium">
+                      <span
+                        aria-hidden
+                        className="inline-block h-1.5 w-1.5 shrink-0 rounded-full"
+                        style={{
+                          background: connected ? 'var(--sev-clear, #2f6b43)' : 'transparent',
+                          border: connected ? 'none' : '1px solid var(--text-muted)',
+                        }}
+                      />
+                      <span style={{ color: connected ? 'var(--sev-clear, #2f6b43)' : 'var(--text-muted)' }}>
+                        {connected ? 'Connected' : 'Not connected'}
+                      </span>
+                      {connected && state?.detail && (
+                        <span className="truncate" style={{ color: 'var(--text-muted)' }}>
+                          · {state.detail}
+                        </span>
+                      )}
+                    </p>
+                  )}
+
+                  <p className="mt-1 text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+                    {item.description}
+                  </p>
                 </div>
-                <p className="mt-1 text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-                  {item.description}
-                </p>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
