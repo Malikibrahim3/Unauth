@@ -35,6 +35,8 @@ export function buildGorgiasWidgetIntegrationUrl(appBaseUrl: string, widgetToken
 
 export function buildGorgiasSidebarWidgetTemplate(appBaseUrl: string) {
   const appLink = appBaseUrl.replace(/\/$/, '');
+  // HTTP integration returns flat JSON at the root; child paths (risk_level, etc.) resolve
+  // against that object. Empty card path = root (see Gorgias programmatic widgets docs).
   return {
     type: 'wrapper',
     widgets: [

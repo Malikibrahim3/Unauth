@@ -42,6 +42,16 @@ export function gorgiasWidgetModelToJson(model: GorgiasWidgetModel): GorgiasWidg
     });
   }
 
+  if (model.state === 'merchant_profile') {
+    return toWidgetJsonPayload({
+      risk_level: model.riskLevel.trim().toUpperCase() || 'UNKNOWN',
+      identity_confidence_grade: model.identityConfidenceGrade ?? 'N/A',
+      match_score: Math.round(model.riskScore),
+      fraud_flags:
+        model.fraudFlags.length > 0 ? model.fraudFlags.join(', ') : 'None',
+    });
+  }
+
   if (model.state === 'low_clear') {
     return toWidgetJsonPayload({
       risk_level: 'LOW',

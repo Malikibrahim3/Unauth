@@ -5,6 +5,8 @@ import { fetchMerchantScopedCustomerProfile } from '@/lib/supabase/merchantHelpe
 import { performV1Lookup, type LookupAuth } from '@/lib/api/v1/lookup';
 import { makeSignedToken, hashSignedToken } from '@/lib/api/signedAccess';
 import { env } from '@/lib/utils/env';
+import { gorgiasWidgetLog } from '@/lib/gorgias/widgetLog';
+import { findMerchantCustomerByEmail } from '@/lib/gorgias/findMerchantCustomerByEmail';
 
 export type MerchantProfileSummary = {
   profileId: string;
@@ -20,6 +22,15 @@ export type WidgetRiskTier = 'high' | 'medium' | 'low';
 export type GorgiasWidgetModel =
   | { state: 'error'; message: string }
   | { state: 'not_found' }
+  | {
+      state: 'merchant_profile';
+      profileId: string;
+      riskLevel: string;
+      riskScore: number;
+      fraudFlags: string[];
+      identityConfidenceGrade: string | null;
+      profileUrl: string | null;
+    }
   | {
       state: 'risk';
       tier: WidgetRiskTier;
@@ -62,17 +73,8 @@ async function resolveMerchantProfile(
   merchantId: string,
   normEmail: string
 ): Promise<MerchantProfileSummary | null> {
-  const filters = `merchant_ids.cs.${JSON.stringify([merchantId])}`;
-  const { data: row } = await service
-    .from(TABLES.CUSTOMER_PROFILES)
-    .select('id')
-    .contains('emails', JSON.stringify([normEmail]))
-    .or(filters)
-    .order('risk_score', { ascending: false })
-    .limit(1)
-    .maybeSingle() as unknown as { data: { id: string } | null };
-
-  if (!row?.id) return null;
+  const row = await findMerchantCustomerByEmail(service, merchantId, normEmail);
+  if (!row) return null;
 
   const profile = await fetchMerchantScopedCustomerProfile(service, merchantId, row.id);
   if (!profile) return null;
@@ -121,6 +123,21 @@ export async function buildGorgiasWidgetModel(
     return { state: 'error', message: 'A valid customer email is required.' };
   }
 
+  const merchantCustomer = await findMerchantCustomerByEmail(service, auth.merchantId, normEmail);
+  if (merchantCustomer) {
+    const profileUrl = await issueProfileUrl(service, auth.merchantId, merchantCustomer.id);
+    return {
+      state: 'merchant_profile',
+      profileId: merchantCustomer.id,
+      riskLevel: merchantCustomer.risk_level,
+      riskScore: merchantCustomer.risk_score,
+      fraudFlags: merchantCustomer.fraud_flags,
+      identityConfidenceGrade: merchantCustomer.identity_confidence_grade,
+      profileUrl,
+    };
+  }
+
+  gorgiasWidgetLog('v1_lookup_before', { merchantId: auth.merchantId });
   const lookupResult = await performV1Lookup(
     service,
     { ...auth, auditQueryType: 'gorgias_widget' },
@@ -132,6 +149,11 @@ export async function buildGorgiasWidgetModel(
       rawIp: '',
     }
   );
+  gorgiasWidgetLog('v1_lookup_after', {
+    merchantId: auth.merchantId,
+    ok: lookupResult.ok,
+    status: lookupResult.ok ? 200 : lookupResult.status,
+  });
 
   if (lookupResult.ok) {
     const body = lookupResult.body;

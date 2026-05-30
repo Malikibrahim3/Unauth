@@ -279,6 +279,39 @@ export function renderGorgiasWidgetHtml(ctx: WidgetRenderContext): string {
 </html>`;
   }
 
+  if (model.state === 'merchant_profile') {
+    const tier: WidgetRiskTier =
+      model.riskLevel === 'high' || model.riskLevel === 'critical'
+        ? 'high'
+        : model.riskLevel === 'medium'
+          ? 'medium'
+          : 'low';
+    const theme = tierTheme(tier);
+    const profileUrl = ctx.profileUrl ?? env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '');
+    const flags =
+      model.fraudFlags.length > 0 ? model.fraudFlags.join(', ') : 'None';
+
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Unauth</title>
+  <style>${baseStyles()}</style>
+</head>
+<body>
+  <div class="card" style="background:${theme.bg};border-color:${theme.border};color:${theme.accent};">
+    <div class="headline">${theme.icon} ${escapeHtml(model.riskLevel.toUpperCase())} RISK</div>
+    <p class="meta">Score: ${Math.round(model.riskScore)} · ${escapeHtml(flags)}</p>
+    <div class="actions">
+      <a class="btn btn-primary" href="${escapeHtml(profileUrl)}" target="_blank" rel="noopener noreferrer">View Profile</a>
+    </div>
+  </div>
+  <p class="brand">Unauth</p>
+</body>
+</html>`;
+  }
+
   if (model.state === 'low_clear') {
     const theme = tierTheme('low');
     const p = model.merchantProfile;
@@ -308,6 +341,10 @@ export function renderGorgiasWidgetHtml(ctx: WidgetRenderContext): string {
   <p class="brand">Unauth</p>
 </body>
 </html>`;
+  }
+
+  if (model.state !== 'risk') {
+    return renderError('Unsupported widget state.');
   }
 
   const theme = tierTheme(model.tier);
