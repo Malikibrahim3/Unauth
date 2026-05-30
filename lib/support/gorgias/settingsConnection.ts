@@ -19,6 +19,7 @@ import {
   GorgiasSidebarRegistrationError,
   registerGorgiasSidebarWidget,
   deleteGorgiasSidebarWidget,
+  refreshGorgiasSidebarWidgetIntegrationUrl,
   gorgiasApiBaseUrl,
 } from '@/lib/support/gorgias/registerSidebarWidget';
 import {
@@ -219,6 +220,41 @@ export async function getMerchantGorgiasSupportConnection(
   }
 
   return data ? toGorgiasSupportConnectionSettings(data) : null;
+}
+
+/**
+ * Best-effort: bump the Gorgias HTTP integration URL `_cb` so Gorgias refetches widget JSON.
+ * Gorgias caches HTTP card responses; a deploy fix alone does not update open tickets.
+ */
+export async function refreshMerchantGorgiasSidebarWidgetUrlBestEffort(
+  supabase: unknown,
+  merchantId: string
+): Promise<void> {
+  const existing = await getMerchantGorgiasSupportConnection(supabase, merchantId);
+  if (
+    !existing ||
+    existing.status !== 'active' ||
+    !existing.provider_base_url ||
+    existing.sidebar_integration_id == null
+  ) {
+    return;
+  }
+
+  const rawRow = await getGorgiasConnectionRawRow(supabase, merchantId);
+  if (!rawRow?.access_token_encrypted) {
+    return;
+  }
+
+  try {
+    const credentials = decryptGorgiasApiCredentials(rawRow.access_token_encrypted);
+    await refreshGorgiasSidebarWidgetIntegrationUrl({
+      providerBaseUrl: existing.provider_base_url,
+      credentials,
+      integrationId: existing.sidebar_integration_id,
+    });
+  } catch {
+    // Never block settings load on Gorgias cache refresh.
+  }
 }
 
 async function getGorgiasConnectionRawRow(

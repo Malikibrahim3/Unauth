@@ -24,13 +24,67 @@ export function gorgiasApiBaseUrl(providerBaseUrl: string): string {
   return `${normalized}/api`;
 }
 
+/** Busts Gorgias HTTP-integration response cache when the deploy changes. */
+export function gorgiasWidgetUrlCacheBust(): string {
+  return process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? 'dev';
+}
+
+/** Appends or replaces `_cb` without encoding `{{ticket.customer.email}}`. */
+export function withWidgetUrlCacheBust(url: string, bust: string = gorgiasWidgetUrlCacheBust()): string {
+  const withoutCb = url.replace(/([?&])_cb=[^&]*/g, '$1').replace(/[?&]$/, '');
+  const separator = withoutCb.includes('?') ? '&' : '?';
+  return `${withoutCb}${separator}_cb=${encodeURIComponent(bust)}`;
+}
+
 export function buildGorgiasWidgetIntegrationUrl(appBaseUrl: string, widgetToken: string): string {
   const base = appBaseUrl.replace(/\/$/, '');
   // The email param must stay the literal Gorgias placeholder `{{ticket.customer.email}}` so
   // Gorgias substitutes the real email at trigger time. URLSearchParams would percent-encode the
   // braces (%7B%7B…), which Gorgias never matches — so build the query string by hand and only
   // encode the token.
-  return `${base}/api/gorgias/widget?widget_token=${encodeURIComponent(widgetToken)}&email={{ticket.customer.email}}`;
+  const url = `${base}/api/gorgias/widget?widget_token=${encodeURIComponent(widgetToken)}&email={{ticket.customer.email}}`;
+  return withWidgetUrlCacheBust(url);
+}
+
+/**
+ * Updates the HTTP integration URL in Gorgias (same widget + token). Forces Gorgias to
+ * refetch widget JSON instead of serving a cached response from an older deploy.
+ */
+export async function refreshGorgiasSidebarWidgetIntegrationUrl(input: {
+  providerBaseUrl: string;
+  credentials: { email: string; api_key: string };
+  integrationId: number;
+}): Promise<void> {
+  const apiBaseUrl = gorgiasApiBaseUrl(input.providerBaseUrl);
+  const current = await gorgiasApiRequest<{ http?: { url?: string | null } }>(
+    apiBaseUrl,
+    `/integrations/${input.integrationId}`,
+    input.credentials,
+    { method: 'GET' }
+  );
+  const currentUrl = current.http?.url?.trim();
+  if (!currentUrl) {
+    throw new GorgiasSidebarRegistrationError(
+      'gorgias_sidebar_integration_missing_url',
+      404,
+      'Integration has no http.url'
+    );
+  }
+
+  const nextUrl = withWidgetUrlCacheBust(currentUrl);
+  if (nextUrl === currentUrl) {
+    return;
+  }
+
+  await gorgiasApiRequest<GorgiasIntegrationResponse>(
+    apiBaseUrl,
+    `/integrations/${input.integrationId}`,
+    input.credentials,
+    {
+      method: 'PUT',
+      body: JSON.stringify({ http: { url: nextUrl } }),
+    }
+  );
 }
 
 export function buildGorgiasSidebarWidgetTemplate(appBaseUrl: string) {

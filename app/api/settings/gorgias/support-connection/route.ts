@@ -9,6 +9,7 @@ import {
   getMerchantGorgiasSupportConnection,
   GorgiasCredentialsError,
   gorgiasSupportConnectionInputSchema,
+  refreshMerchantGorgiasSidebarWidgetUrlBestEffort,
   updateMerchantGorgiasSupportConnectionMetadata,
 } from '@/lib/support/gorgias/settingsConnection';
 import {
@@ -28,6 +29,7 @@ async function GETHandler() {
   if (denied) return denied;
 
   try {
+    await refreshMerchantGorgiasSidebarWidgetUrlBestEffort(service, ctx.merchantId);
     const connection = await getMerchantGorgiasSupportConnection(service, ctx.merchantId);
     return NextResponse.json({ connection });
   } catch (err) {
