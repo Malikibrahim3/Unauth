@@ -6,12 +6,42 @@ import { gorgiasWidgetModelToJson } from '@/lib/gorgias/widgetJson';
 const KNOWN_MERCHANT_ID = 'af070af9-df1a-46ba-89f8-29409926ef61';
 const KNOWN_EMAIL = 'simeonmurray123@gmail.com';
 
-function makeSupabase(profiles: Array<Record<string, unknown>>) {
+function makeSupabase(
+  profiles: Array<Record<string, unknown>>,
+  identities: Array<Record<string, unknown>> = []
+) {
   const containsCalls: Array<{ column: string; value: unknown }> = [];
   const rpcCalls: string[] = [];
 
   const client = {
     from: (table: string) => {
+      if (table === 'customer_profile_identities') {
+        const makeIdentityQuery = (filters: Record<string, unknown> = {}): unknown => ({
+          eq: (column: string, value: unknown) => {
+            const next = { ...filters, [column]: value };
+            if (
+              next.merchant_id !== undefined &&
+              next.identity_type !== undefined &&
+              next.identity_value !== undefined
+            ) {
+              return Promise.resolve({
+                data: identities.filter(
+                  (row) =>
+                    row.merchant_id === next.merchant_id &&
+                    row.identity_type === next.identity_type &&
+                    row.identity_value === next.identity_value
+                ),
+                error: null,
+              });
+            }
+            return makeIdentityQuery(next);
+          },
+        });
+        return {
+          select: () => makeIdentityQuery(),
+        };
+      }
+
       if (table !== 'customer_profiles') throw new Error(`unexpected table ${table}`);
       return {
         select: () => ({
@@ -19,6 +49,13 @@ function makeSupabase(profiles: Array<Record<string, unknown>>) {
             data: profiles.filter((p) => p.primary_email === email),
             error: null,
           }),
+          in: async (column: string, values: string[]) => {
+            if (column !== 'id') throw new Error(`unexpected in column ${column}`);
+            return {
+              data: profiles.filter((p) => values.includes(String(p.id))),
+              error: null,
+            };
+          },
           contains: async (column: string, value: unknown) => {
             containsCalls.push({ column, value });
             return { data: [], error: null };
@@ -130,6 +167,41 @@ describe('findMerchantCustomerByEmail', () => {
 
     expect(customer?.id).toBe('profile-2');
     expect(supabase._rpcCalls).toContain('search_customer_profiles');
+    expect(supabase._containsCalls).toHaveLength(0);
+  });
+
+  it('falls back to customer_profile_identities when the profile email list is stale', async () => {
+    const profiles = [
+      {
+        id: 'profile-linked-by-identity',
+        risk_level: 'low',
+        risk_score: 15,
+        fraud_flags: [],
+        identity_confidence_grade: 'B',
+        primary_email: 'simeonmurray123@hotmail.com',
+        emails: ['simeonmurray123@hotmail.com'],
+        merchant_ids: [KNOWN_MERCHANT_ID],
+      },
+    ];
+    const identities = [
+      {
+        merchant_id: KNOWN_MERCHANT_ID,
+        identity_type: 'email',
+        identity_value: KNOWN_EMAIL,
+        customer_profile_id: 'profile-linked-by-identity',
+      },
+    ];
+
+    const supabase = makeSupabase(profiles, identities);
+    const { customer, diagnostics } = await findMerchantCustomerByEmail(
+      supabase as never,
+      KNOWN_MERCHANT_ID,
+      KNOWN_EMAIL
+    );
+
+    expect(customer?.id).toBe('profile-linked-by-identity');
+    expect(customer?.identity_confidence_grade).toBe('B');
+    expect(diagnostics.identityLinkRows).toBe(1);
     expect(supabase._containsCalls).toHaveLength(0);
   });
 

@@ -81,6 +81,25 @@ export async function resolveWidgetCustomerIdentity(
         logResolvedIdentity(identity, { ticketEmailSource: resolved.source });
         return identity;
       }
+
+      const relaxedResolved = resolveGorgiasTicketCustomerEmail(ticket);
+      if (
+        relaxedResolved &&
+        (relaxedResolved.source === 'message_sender' ||
+          relaxedResolved.source === 'message_source_from')
+      ) {
+        const identity: ResolvedWidgetCustomerIdentity = {
+          rawEmail: relaxedResolved.email,
+          source: 'gorgias_ticket_api',
+          ticketId,
+          identityUnresolved: false,
+        };
+        logResolvedIdentity(identity, {
+          ticketEmailSource: relaxedResolved.source,
+          acceptedExcludedNonAgentSender: true,
+        });
+        return identity;
+      }
     } catch (err) {
       gorgiasWidgetLog('customer_identity.ticket_fetch_failed', {
         ticketId,

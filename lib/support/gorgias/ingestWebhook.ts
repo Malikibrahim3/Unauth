@@ -19,6 +19,8 @@ import {
   readGorgiasWebhookSecret,
   verifyGorgiasWebhookAuth,
 } from '@/lib/support/gorgias/webhookAuth';
+import { fetchGorgiasTicketById } from '@/lib/support/gorgias/fetchTicket';
+import { getActiveGorgiasMerchantApiAccess } from '@/lib/support/gorgias/merchantApiAccess';
 
 export const GORGIAS_EVENT_TYPE_HEADER = 'x-gorgias-event-type';
 
@@ -159,12 +161,48 @@ function safeConnectionErrorCode(error: unknown): string {
   return 'ingest_failed';
 }
 
+function shouldHydrateGorgiasTicket(ticket: Record<string, unknown>): boolean {
+  const hasSubject = typeof ticket.subject === 'string' && ticket.subject.trim().length > 0;
+  const hasMessages = Array.isArray(ticket.messages) && ticket.messages.length > 0;
+  return !hasSubject || !hasMessages;
+}
+
+async function hydrateGorgiasTicketForIngest(input: {
+  supabase: unknown;
+  merchantId: string;
+  ticket: Record<string, unknown>;
+}): Promise<Record<string, unknown>> {
+  if (!shouldHydrateGorgiasTicket(input.ticket)) {
+    return input.ticket;
+  }
+
+  const ticketId = input.ticket.id;
+  if (typeof ticketId !== 'string' && typeof ticketId !== 'number') {
+    return input.ticket;
+  }
+
+  const apiAccess = await getActiveGorgiasMerchantApiAccess(input.supabase, input.merchantId);
+  if (!apiAccess) {
+    throw new GorgiasWebhookError(502, 'gorgias_ticket_api_access_missing');
+  }
+
+  try {
+    return await fetchGorgiasTicketById({
+      providerBaseUrl: apiAccess.providerBaseUrl,
+      credentials: apiAccess.credentials,
+      ticketId: String(ticketId),
+    });
+  } catch {
+    throw new GorgiasWebhookError(502, 'gorgias_ticket_fetch_failed');
+  }
+}
+
 export async function ingestGorgiasSupportWebhook(
   input: IngestGorgiasWebhookInput
 ): Promise<SupportIngestSuccess> {
-  const ticket = extractGorgiasTicketPayload(input.body);
+  const initialTicket = extractGorgiasTicketPayload(input.body);
   const eventType = inferGorgiasEventType(
-    ticket,
+    initialTicket,
     input.headers.get(GORGIAS_EVENT_TYPE_HEADER)
   );
 
@@ -173,7 +211,7 @@ export async function ingestGorgiasSupportWebhook(
 
   const supabase = createServiceClient();
   const webhookSearchParams = webhookSearchParamsFromRequestUrl(input.requestUrl);
-  const merchantContext = await resolveMerchantContext(supabase, input, ticket);
+  const merchantContext = await resolveMerchantContext(supabase, input, initialTicket);
 
   const headerSecret = readGorgiasWebhookSecret(input.headers, webhookSearchParams);
   const auth = verifyGorgiasWebhookAuth({
@@ -194,6 +232,11 @@ export async function ingestGorgiasSupportWebhook(
   }
 
   const connectionId = merchantContext.providerConnectionId;
+  const ticket = await hydrateGorgiasTicketForIngest({
+    supabase,
+    merchantId: merchantContext.merchantId,
+    ticket: initialTicket,
+  });
 
   try {
     const result = await ingestSupportCase(supabase, {
