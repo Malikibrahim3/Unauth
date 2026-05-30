@@ -60,9 +60,18 @@ function rowToCustomer(row: CustomerProfileEmailRow): MerchantCustomerByEmailRow
   };
 }
 
+function logLookupQueryFailure(lookupBranch: string, error: { message: string; code?: string | null }) {
+  gorgiasWidgetLog('customer_lookup.query_failed', {
+    lookupBranch,
+    code: error.code ?? null,
+    message: error.message,
+  });
+}
+
 /**
  * Merchant-scoped customer_profiles lookup by normalised email.
- * Uses simple eq/contains filters (no PostgREST .or json strings), then scopes by merchant_ids in TS.
+ * Uses primary_email eq plus search_customer_profiles RPC (emails @> to_jsonb in SQL).
+ * Avoids PostgREST .contains on jsonb emails — that pattern causes Postgres 22P02.
  */
 export async function findMerchantCustomerByEmail(
   service: SupabaseClient,
@@ -78,36 +87,33 @@ export async function findMerchantCustomerByEmail(
     emailMatchedRows: 0,
   };
 
-  gorgiasWidgetLog('customer_lookup.started', { merchantId, normEmail });
+  gorgiasWidgetLog('customer_lookup.started', { merchantId });
 
-  const [primaryRes, emailsRes] = await Promise.all([
+  const [primaryRes, rpcRes] = await Promise.all([
     service.from(TABLES.CUSTOMER_PROFILES).select(PROFILE_SELECT).eq('primary_email', normEmail),
-    service
-      .from(TABLES.CUSTOMER_PROFILES)
-      .select(PROFILE_SELECT)
-      .contains('emails', [normEmail]),
+    service.rpc('search_customer_profiles', {
+      p_email: normEmail,
+      p_name: null,
+      p_address: null,
+      p_card: null,
+      p_ip: null,
+    }),
   ]);
 
   if (primaryRes.error) {
-    gorgiasWidgetLog('customer_lookup.primary_email_error', {
-      message: primaryRes.error.message,
-      code: primaryRes.error.code ?? null,
-    });
+    logLookupQueryFailure('primary_email_eq', primaryRes.error);
   }
-  if (emailsRes.error) {
-    gorgiasWidgetLog('customer_lookup.emails_contains_error', {
-      message: emailsRes.error.message,
-      code: emailsRes.error.code ?? null,
-    });
+  if (rpcRes.error) {
+    logLookupQueryFailure('search_customer_profiles_rpc', rpcRes.error);
   }
 
   const primaryRows = (primaryRes.data ?? []) as CustomerProfileEmailRow[];
-  const emailsRows = (emailsRes.data ?? []) as CustomerProfileEmailRow[];
+  const rpcRows = (rpcRes.data ?? []) as CustomerProfileEmailRow[];
   diagnostics.primaryEmailCandidateRows = primaryRows.length;
-  diagnostics.emailsContainsCandidateRows = emailsRows.length;
+  diagnostics.emailsContainsCandidateRows = rpcRows.length;
 
   const byId = new Map<string, CustomerProfileEmailRow>();
-  for (const row of [...primaryRows, ...emailsRows]) {
+  for (const row of [...primaryRows, ...rpcRows]) {
     byId.set(row.id, row);
   }
 
@@ -125,7 +131,7 @@ export async function findMerchantCustomerByEmail(
 
   gorgiasWidgetLog('customer_lookup.result', {
     found: Boolean(row),
-    profileId: row?.id ?? null,
+    profileFound: Boolean(row),
     risk_level: row?.risk_level ?? null,
     risk_score: row?.risk_score ?? null,
     primaryEmailCandidateRows: diagnostics.primaryEmailCandidateRows,

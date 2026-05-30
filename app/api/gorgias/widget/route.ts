@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import type { SupabaseClient } from '@supabase/supabase-js';
 import { createServiceClient } from '@/lib/supabase/server';
-import { TABLES } from '@/lib/supabase/tables';
 import { normaliseEmail } from '@/lib/identity/normalise';
 import { getClientIp } from '@/lib/ratelimit';
 import { buildGorgiasWidgetModel, type GorgiasWidgetModel } from '@/lib/gorgias/widgetData';
 import {
   findMerchantCustomerByEmail,
-  type MerchantCustomerByEmailRow,
   type MerchantCustomerLookupDiagnostics,
 } from '@/lib/gorgias/findMerchantCustomerByEmail';
 import {
@@ -27,9 +24,6 @@ export const maxDuration = 60;
 function gorgiasWidgetBuildMarker(): string {
   return process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? 'local';
 }
-
-const CUSTOMER_PROFILE_WIDGET_SELECT =
-  'id, primary_email, emails, merchant_ids, risk_level, risk_score, fraud_flags, identity_confidence_grade';
 
 const JSON_RESPONSE_HEADERS = {
   'Content-Type': 'application/json; charset=utf-8',
@@ -220,113 +214,6 @@ function returnJsonForModel(input: {
   return returnWidgetHtml(input.branch, html, status, input.ctx);
 }
 
-type CustomerProfileWidgetRow = {
-  id: string;
-  primary_email: string | null;
-  emails: unknown;
-  merchant_ids: unknown;
-  risk_level: string | null;
-  risk_score: number | null;
-  fraud_flags: unknown;
-  identity_confidence_grade: string | null;
-};
-
-function merchantIdsIncludes(merchantIds: unknown, merchantId: string): boolean {
-  if (!Array.isArray(merchantIds)) return false;
-  return merchantIds.some((id) => String(id) === merchantId);
-}
-
-function profileMatchesEmail(row: CustomerProfileWidgetRow, normEmail: string): boolean {
-  if (row.primary_email?.trim().toLowerCase() === normEmail) return true;
-  if (!Array.isArray(row.emails)) return false;
-  return row.emails.some((entry) => String(entry).trim().toLowerCase() === normEmail);
-}
-
-function parseFraudFlags(value: unknown): string[] {
-  if (!Array.isArray(value)) return [];
-  return value.map((flag) => String(flag)).filter(Boolean);
-}
-
-function rowToMerchantCustomer(row: CustomerProfileWidgetRow): MerchantCustomerByEmailRow {
-  return {
-    id: row.id,
-    risk_level: String(row.risk_level ?? 'unknown'),
-    risk_score: Number(row.risk_score ?? 0),
-    fraud_flags: parseFraudFlags(row.fraud_flags),
-    identity_confidence_grade:
-      typeof row.identity_confidence_grade === 'string' ? row.identity_confidence_grade : null,
-  };
-}
-
-/** customer_profiles emails jsonb requires JSON.stringify for PostgREST contains. */
-async function findMerchantCustomerProfileForWidget(
-  service: SupabaseClient,
-  merchantId: string,
-  normEmail: string
-): Promise<{ customer: MerchantCustomerByEmailRow | null; diagnostics: MerchantCustomerLookupDiagnostics }> {
-  const fromHelper = await findMerchantCustomerByEmail(service, merchantId, normEmail);
-  if (fromHelper.customer) {
-    return fromHelper;
-  }
-
-  const [primaryRes, emailsRes] = await Promise.all([
-    service.from(TABLES.CUSTOMER_PROFILES).select(CUSTOMER_PROFILE_WIDGET_SELECT).eq('primary_email', normEmail),
-    service
-      .from(TABLES.CUSTOMER_PROFILES)
-      .select(CUSTOMER_PROFILE_WIDGET_SELECT)
-      .contains('emails', JSON.stringify([normEmail])),
-  ]);
-
-  if (primaryRes.error) {
-    gorgiasWidgetLog('customer_lookup.primary_email_error', {
-      message: primaryRes.error.message,
-      code: primaryRes.error.code ?? null,
-    });
-  }
-  if (emailsRes.error) {
-    gorgiasWidgetLog('customer_lookup.emails_contains_error', {
-      message: emailsRes.error.message,
-      code: emailsRes.error.code ?? null,
-    });
-  }
-
-  const primaryRows = (primaryRes.data ?? []) as CustomerProfileWidgetRow[];
-  const emailsRows = (emailsRes.data ?? []) as CustomerProfileWidgetRow[];
-  const diagnostics: MerchantCustomerLookupDiagnostics = {
-    ...fromHelper.diagnostics,
-    primaryEmailCandidateRows: Math.max(fromHelper.diagnostics.primaryEmailCandidateRows, primaryRows.length),
-    emailsContainsCandidateRows: Math.max(fromHelper.diagnostics.emailsContainsCandidateRows, emailsRows.length),
-  };
-
-  const byId = new Map<string, CustomerProfileWidgetRow>();
-  for (const row of [...primaryRows, ...emailsRows]) {
-    byId.set(row.id, row);
-  }
-
-  const merchantScoped = [...byId.values()].filter((row) => merchantIdsIncludes(row.merchant_ids, merchantId));
-  diagnostics.merchantScopedRows = merchantScoped.length;
-
-  const matched = merchantScoped
-    .filter((row) => profileMatchesEmail(row, normEmail))
-    .sort((a, b) => Number(b.risk_score ?? 0) - Number(a.risk_score ?? 0));
-
-  diagnostics.emailMatchedRows = matched.length;
-  const row = matched[0] ?? null;
-
-  gorgiasWidgetLog('customer_lookup.widget_route_result', {
-    found: Boolean(row),
-    profileId: row?.id ?? null,
-    merchantScopedRows: diagnostics.merchantScopedRows,
-    emailMatchedRows: diagnostics.emailMatchedRows,
-  });
-
-  if (!row) {
-    return { customer: null, diagnostics };
-  }
-
-  return { customer: rowToMerchantCustomer(row), diagnostics };
-}
-
 export async function GET(request: NextRequest) {
   logBuildMarker();
 
@@ -429,7 +316,7 @@ export async function GET(request: NextRequest) {
     const normEmail = normaliseEmail(email);
 
     if (normEmail) {
-      const { customer, diagnostics } = await findMerchantCustomerProfileForWidget(
+      const { customer, diagnostics } = await findMerchantCustomerByEmail(
         service,
         authResult.merchantId,
         normEmail

@@ -10,15 +10,19 @@ function makeSupabase(profiles: Array<Record<string, unknown>>) {
             data: profiles.filter((p) => p.primary_email === email),
             error: null,
           }),
-          contains: async (_col: string, emails: string[]) => ({
-            data: profiles.filter(
-              (p) =>
-                Array.isArray(p.emails) &&
-                (p.emails as string[]).some((entry) => emails.includes(entry))
-            ),
-            error: null,
-          }),
         }),
+      };
+    },
+    rpc: async (fn: string, args: { p_email?: string | null }) => {
+      if (fn !== 'search_customer_profiles') throw new Error(`unexpected rpc ${fn}`);
+      const email = args.p_email ?? '';
+      return {
+        data: profiles.filter(
+          (p) =>
+            Array.isArray(p.emails) &&
+            (p.emails as string[]).some((entry) => entry === email)
+        ),
+        error: null,
       };
     },
   };
