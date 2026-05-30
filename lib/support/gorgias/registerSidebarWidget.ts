@@ -47,11 +47,14 @@ export function buildGorgiasSidebarWidgetTemplate(appBaseUrl: string) {
         meta: {
           displayCard: true,
           link: appLink,
+          custom: {
+            links: [{ url: appLink, label: 'View full profile in Unauth' }],
+          },
         },
         widgets: [
           { path: 'risk_level', title: 'Risk level', type: 'text' },
-          { path: 'identity_confidence_grade', title: 'Confidence', type: 'text' },
-          { path: 'match_score', title: 'Match score', type: 'text' },
+          { path: 'risk_score', title: 'Risk score', type: 'text' },
+          { path: 'cross_merchant', title: 'Cross-merchant', type: 'text' },
           { path: 'fraud_flags', title: 'Fraud flags', type: 'text' },
         ],
       },

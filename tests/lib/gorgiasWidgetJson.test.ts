@@ -19,8 +19,8 @@ describe('gorgiasWidgetModelToJson', () => {
 
     expect(payload).toEqual({
       risk_level: 'HIGH RISK',
-      identity_confidence_grade: 'A',
-      match_score: '82',
+      risk_score: '82',
+      cross_merchant: '2 merchants · 1 claim',
       fraud_flags: 'shared_device',
     });
     for (const value of Object.values(payload)) {
@@ -42,15 +42,15 @@ describe('gorgiasWidgetModelToJson', () => {
 
     expect(payload).toEqual({
       risk_level: 'MEDIUM',
-      identity_confidence_grade: 'N/A',
-      match_score: '28',
+      risk_score: '28',
+      cross_merchant: 'Not available',
       fraud_flags: 'velocity, paymentChurn',
     });
   });
 
   it('never returns null fields for not_found', () => {
     const payload = gorgiasWidgetModelToJson({ state: 'not_found' });
-    expect(payload.match_score).toBe('0');
+    expect(payload.risk_score).toBe('0');
     expect(Object.values(payload).every((v) => typeof v === 'string')).toBe(true);
   });
 });

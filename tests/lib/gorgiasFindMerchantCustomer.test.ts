@@ -99,8 +99,8 @@ describe('findMerchantCustomerByEmail', () => {
 
     expect(json).toEqual({
       risk_level: 'MEDIUM',
-      identity_confidence_grade: 'N/A',
-      match_score: '28',
+      risk_score: '28',
+      cross_merchant: 'Not available',
       fraud_flags: 'velocity, paymentChurn',
     });
   });

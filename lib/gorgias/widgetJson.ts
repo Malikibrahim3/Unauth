@@ -4,31 +4,40 @@ import { tierHeadline } from '@/lib/gorgias/widgetData';
 /** Flat root object — field paths must match buildGorgiasSidebarWidgetTemplate() exactly. */
 export type GorgiasWidgetJsonPayload = {
   risk_level: string;
-  identity_confidence_grade: string;
-  match_score: string;
+  risk_score: string;
+  cross_merchant: string;
   fraud_flags: string;
 };
 
 function toWidgetJsonPayload(fields: {
   risk_level: string;
-  identity_confidence_grade: string;
-  match_score: number | string;
+  risk_score: number | string;
+  cross_merchant: string;
   fraud_flags: string;
 }): GorgiasWidgetJsonPayload {
   return {
     risk_level: fields.risk_level,
-    identity_confidence_grade: fields.identity_confidence_grade,
-    match_score: String(fields.match_score),
+    risk_score: String(fields.risk_score),
+    cross_merchant: fields.cross_merchant,
     fraud_flags: fields.fraud_flags,
   };
+}
+
+function formatCrossMerchant(
+  crossMerchant: { merchant_count: number; claim_count: number } | null
+): string {
+  if (!crossMerchant || crossMerchant.merchant_count <= 0) return 'No other merchants';
+  const merchants = `${crossMerchant.merchant_count} merchant${crossMerchant.merchant_count === 1 ? '' : 's'}`;
+  const claims = `${crossMerchant.claim_count} claim${crossMerchant.claim_count === 1 ? '' : 's'}`;
+  return `${merchants} · ${claims}`;
 }
 
 export function gorgiasWidgetModelToJson(model: GorgiasWidgetModel): GorgiasWidgetJsonPayload {
   if (model.state === 'error') {
     return toWidgetJsonPayload({
       risk_level: 'ERROR',
-      identity_confidence_grade: 'N/A',
-      match_score: 0,
+      risk_score: 0,
+      cross_merchant: '—',
       fraud_flags: model.message,
     });
   }
@@ -36,28 +45,27 @@ export function gorgiasWidgetModelToJson(model: GorgiasWidgetModel): GorgiasWidg
   if (model.state === 'not_found') {
     return toWidgetJsonPayload({
       risk_level: 'NONE',
-      identity_confidence_grade: 'N/A',
-      match_score: 0,
-      fraud_flags: 'Not in Unauth network',
+      risk_score: 0,
+      cross_merchant: 'Not in Unauth network',
+      fraud_flags: 'No history yet',
     });
   }
 
   if (model.state === 'merchant_profile') {
     return toWidgetJsonPayload({
       risk_level: model.riskLevel.trim().toUpperCase() || 'UNKNOWN',
-      identity_confidence_grade: model.identityConfidenceGrade ?? 'N/A',
-      match_score: Math.round(model.riskScore),
-      fraud_flags:
-        model.fraudFlags.length > 0 ? model.fraudFlags.join(', ') : 'None',
+      risk_score: Math.round(model.riskScore),
+      cross_merchant: 'Not available',
+      fraud_flags: model.fraudFlags.length > 0 ? model.fraudFlags.join(', ') : 'None',
     });
   }
 
   if (model.state === 'low_clear') {
     return toWidgetJsonPayload({
       risk_level: 'LOW',
-      identity_confidence_grade: 'N/A',
-      match_score: model.merchantProfile.riskScore,
-      fraud_flags: 'No cross-merchant flags',
+      risk_score: model.merchantProfile.riskScore,
+      cross_merchant: 'No cross-merchant flags',
+      fraud_flags: 'None',
     });
   }
 
@@ -65,8 +73,8 @@ export function gorgiasWidgetModelToJson(model: GorgiasWidgetModel): GorgiasWidg
 
   return toWidgetJsonPayload({
     risk_level: tierHeadline(model.tier),
-    identity_confidence_grade: model.lookup.risk_grade || 'N/A',
-    match_score: model.lookup.risk_score ?? 0,
+    risk_score: model.lookup.risk_score ?? 0,
+    cross_merchant: formatCrossMerchant(model.lookup.cross_merchant),
     fraud_flags: signals,
   });
 }

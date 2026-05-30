@@ -32,8 +32,8 @@ const JSON_RESPONSE_HEADERS = {
 
 const GORGIAS_WIDGET_JSON_FALLBACK: GorgiasWidgetJsonPayload = {
   risk_level: 'ERROR',
-  identity_confidence_grade: 'N/A',
-  match_score: '0',
+  risk_score: '0',
+  cross_merchant: '—',
   fraud_flags: 'Unauth could not load fraud intelligence for this ticket.',
 };
 
