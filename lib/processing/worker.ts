@@ -26,6 +26,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../supabase/types';
 import { TABLES } from '../supabase/tables';
 import type { ParsedCsvRow, FraudTransactionInsert, ProcessCsvJobIngestion } from './types';
+import { shopifyAuditError } from '@/lib/shopify/auditLog';
 import { buildFastContext } from '../engine/fastContext';
 import { scoreBatch } from '../engine/fastScore';
 import { mergeHistoryByCluster } from '../engine/identityHistory';
@@ -971,7 +972,12 @@ export async function processCsvJob(
             completed++;
             jobLog(`transactions upsert progress: batches ${completed}/${totalBatches}, processed ${processedCount}/${allInserts.length}`);
             if (failedInBatch > 0 && errors.length <= 3) {
-              jobLog(`audit_transactions partial batch failure: ${failedInBatch}/${batch.length} rows failed after retries`);
+              jobLog(
+                `audit_transactions partial batch failure: ${failedInBatch}/${batch.length} rows failed after retries` +
+                  (upsertOnConflict === 'shop_domain,order_id'
+                    ? ` (onConflict=${upsertOnConflict}; see [shopify.audit] audit_transactions.upsert_failed)`
+                    : '')
+              );
             }
             if (rowsSinceLastFlush >= PROGRESS_INTERVAL) {
               rowsSinceLastFlush = 0;
@@ -1771,6 +1777,19 @@ async function upsertBatchNoProgress(
     if (!error) return 0;
 
     lastMessage = error.message ?? 'unknown error';
+    if (onConflict === 'shop_domain,order_id') {
+      shopifyAuditError('audit_transactions.upsert_failed', error, {
+        onConflict,
+        batchSize: inserts.length,
+        postgresCode: error.code ?? null,
+        details: error.details ?? null,
+        hint: error.hint ?? null,
+        sampleOrderIds: inserts
+          .slice(0, 5)
+          .map((r) => r.order_id)
+          .join(','),
+      });
+    }
     const retryable = isRetryableCoreUpsertError(lastMessage);
     if (!retryable || attempt === MAX_ATTEMPTS) {
       // If a large write keeps timing out, salvage progress by recursively
