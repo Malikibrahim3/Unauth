@@ -182,6 +182,73 @@ describe('assembleClaimWidgetData', () => {
     expect(result.data.network?.primaryReason).toBeNull();
   });
 
+  it('prefers Shopify order count over audit stats when both are present', () => {
+    const result = assembleClaimWidgetData({
+      model: merchantProfileModel({
+        storeOrders: 9,
+        storeClaims: 0,
+        primaryReason: null,
+        storeRecentClaims: 0,
+        networkOrders: 9,
+        networkClaims: 0,
+        networkMerchants: 1,
+        networkRecentClaims: 0,
+      }),
+      summary: null,
+      primaryReason: null,
+      profileUrl: null,
+      nowIso: NOW,
+      shopifyOrderCount: 1,
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.thisStore.orderCount).toBe(1);
+    expect(result.data.thisStore.ordersCountSource).toBe('shopify_identities');
+  });
+
+  it('uses audit transaction stats when claim summary and Shopify rows are missing', () => {
+    const result = assembleClaimWidgetData({
+      model: merchantProfileModel({
+        storeOrders: 1,
+        storeClaims: 0,
+        primaryReason: null,
+        storeRecentClaims: 0,
+        networkOrders: 1,
+        networkClaims: 0,
+        networkMerchants: 1,
+        networkRecentClaims: 0,
+      }),
+      summary: null,
+      primaryReason: null,
+      profileUrl: null,
+      nowIso: NOW,
+      shopifyOrderCount: 0,
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.thisStore.orderCount).toBe(1);
+    expect(result.data.thisStore.ordersCountSource).toBe('audit_transactions');
+    expect(result.data.thisStore.claimRate).toBe(0);
+  });
+
+  it('falls back to Shopify identity order count when summary and profile stats are unavailable', () => {
+    const result = assembleClaimWidgetData({
+      model: { ...merchantProfileModel(null), stats: null },
+      summary: null,
+      primaryReason: null,
+      profileUrl: null,
+      nowIso: NOW,
+      shopifyOrderCount: 1,
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.thisStore.orderCount).toBe(1);
+    expect(result.data.thisStore.ordersCountSource).toBe('shopify_identities');
+  });
+
   it('maps error and not_found models', () => {
     expect(
       assembleClaimWidgetData({

@@ -452,13 +452,20 @@ export type PrimaryReason =
   | { type: 'varied'; reasonCount: number }
   | null;
 
+export type ThisStoreOrdersSource =
+  | 'customer_claim_summary'
+  | 'audit_transactions'
+  | 'shopify_identities'
+  | 'merchant_profile_totals'
+  | 'none';
+
 export type ThisStoreStats = {
   orderCount: number;
   claimCount: number;
   /** 0–1, rounded to 2dp. */
   claimRate: number;
   lastClaimAt: string | null;
-  ordersCountSource: 'shopify_payload' | 'intake_count';
+  ordersCountSource: ThisStoreOrdersSource;
 };
 
 export type NetworkStats = {
@@ -496,6 +503,37 @@ type ClaimSummaryRow = {
   last_claim_at: string | null;
   updated_at: string | null;
 };
+
+/** Count Shopify order rows linked to this email at the merchant's connected shop(s). */
+export async function countShopifyOrdersAtMerchant(
+  service: SupabaseClient,
+  merchantId: string,
+  normEmail: string
+): Promise<number> {
+  const { data: connections, error } = await service
+    .from('merchant_shopify_connections' as never)
+    .select('shop_domain')
+    .eq('merchant_id', merchantId)
+    .eq('active', true);
+
+  if (error || !connections?.length) return 0;
+
+  let total = 0;
+  for (const row of connections as Array<{ shop_domain: string }>) {
+    const shopDomain = row.shop_domain?.trim();
+    if (!shopDomain) continue;
+    const { count, error: countError } = await service
+      .from('merchant_identities' as never)
+      .select('*', { count: 'exact', head: true })
+      .eq('shop_domain', shopDomain)
+      .eq('source', 'order')
+      .eq('email', normEmail);
+    if (!countError && typeof count === 'number') {
+      total += count;
+    }
+  }
+  return total;
+}
 
 async function readThisStoreSummary(
   service: SupabaseClient,
@@ -566,12 +604,85 @@ export function derivePrimaryReasonFromTypes(types: ClaimType[]): PrimaryReason 
  * Pure transform: assemble the claim-intelligence widget data from the gathered
  * model, the per-store summary row, and the network primary reason.
  */
+function thisStoreFromSummaryRow(summary: ClaimSummaryRow): ThisStoreStats {
+  return {
+    orderCount: summary.total_orders,
+    claimCount: summary.total_claims,
+    claimRate: round2(summary.claim_rate),
+    lastClaimAt: summary.last_claim_at,
+    ordersCountSource: 'customer_claim_summary',
+  };
+}
+
+function thisStoreFromWidgetStats(stats: WidgetStats): ThisStoreStats {
+  const storeOrders = stats.storeOrders;
+  const storeClaims = stats.storeClaims;
+  return {
+    orderCount: storeOrders,
+    claimCount: storeClaims,
+    claimRate: storeOrders > 0 ? round2(storeClaims / storeOrders) : 0,
+    lastClaimAt: null,
+    ordersCountSource: 'audit_transactions',
+  };
+}
+
+function thisStoreFromShopifyOrderCount(orderCount: number): ThisStoreStats {
+  return {
+    orderCount,
+    claimCount: 0,
+    claimRate: 0,
+    lastClaimAt: null,
+    ordersCountSource: 'shopify_identities',
+  };
+}
+
+function resolveThisStoreStats(input: {
+  model: GorgiasWidgetModel;
+  summary: ClaimSummaryRow | null;
+  shopifyOrderCount: number;
+}): ThisStoreStats {
+  if (input.summary) {
+    return thisStoreFromSummaryRow(input.summary);
+  }
+
+  // Ticket-email Shopify rows match what the agent sees in the Gorgias Shopify panel.
+  if (input.shopifyOrderCount > 0) {
+    return thisStoreFromShopifyOrderCount(input.shopifyOrderCount);
+  }
+
+  if (input.model.state === 'merchant_profile' && input.model.stats) {
+    return thisStoreFromWidgetStats(input.model.stats);
+  }
+
+  if (input.model.state === 'low_clear') {
+    const profile = input.model.merchantProfile;
+    const orderCount = profile.totalOrders;
+    const claimCount = profile.totalRefunds;
+    return {
+      orderCount,
+      claimCount,
+      claimRate: orderCount > 0 ? round2(claimCount / orderCount) : 0,
+      lastClaimAt: null,
+      ordersCountSource: 'merchant_profile_totals',
+    };
+  }
+
+  return {
+    orderCount: 0,
+    claimCount: 0,
+    claimRate: 0,
+    lastClaimAt: null,
+    ordersCountSource: 'none',
+  };
+}
+
 export function assembleClaimWidgetData(input: {
   model: GorgiasWidgetModel;
   summary: ClaimSummaryRow | null;
   primaryReason: PrimaryReason;
   profileUrl: string | null;
   nowIso: string;
+  shopifyOrderCount?: number;
 }): GorgiasClaimWidgetResult {
   const { model, summary, primaryReason } = input;
 
@@ -582,24 +693,11 @@ export function assembleClaimWidgetData(input: {
     return { ok: false, kind: 'not_found' };
   }
 
-  // thisStore — sourced entirely from customer_claim_summary. total_orders is
-  // the Shopify payload orders_count (per-merchant: Shopify customers are
-  // scoped per shop), floored at total_claims by the ingestion pipeline.
-  const thisStore: ThisStoreStats = summary
-    ? {
-        orderCount: summary.total_orders,
-        claimCount: summary.total_claims,
-        claimRate: round2(summary.claim_rate),
-        lastClaimAt: summary.last_claim_at,
-        ordersCountSource: 'shopify_payload',
-      }
-    : {
-        orderCount: 0,
-        claimCount: 0,
-        claimRate: 0,
-        lastClaimAt: null,
-        ordersCountSource: 'intake_count',
-      };
+  const thisStore = resolveThisStoreStats({
+    model,
+    summary,
+    shopifyOrderCount: input.shopifyOrderCount ?? 0,
+  });
 
   const network = deriveNetworkStats(model, primaryReason);
   const profileUrl =
@@ -677,12 +775,17 @@ export async function buildGorgiasClaimWidgetData(
     }
   }
 
-  const [summary, primaryReason] = emailHash
+  const shopifyOrderCountPromise = normEmail
+    ? countShopifyOrdersAtMerchant(service, auth.merchantId, normEmail)
+    : Promise.resolve(0);
+
+  const [summary, primaryReason, shopifyOrderCount] = emailHash
     ? await Promise.all([
         readThisStoreSummary(service, auth.merchantId, emailHash),
         derivePrimaryReason(service, emailHash),
+        shopifyOrderCountPromise,
       ])
-    : [null, null];
+    : [null, null, await shopifyOrderCountPromise];
 
   const profileUrl = 'profileUrl' in model ? (model.profileUrl ?? null) : null;
 
@@ -692,6 +795,19 @@ export async function buildGorgiasClaimWidgetData(
     primaryReason,
     profileUrl,
     nowIso: new Date().toISOString(),
+    shopifyOrderCount,
+  });
+
+  gorgiasWidgetLog('claim_widget.sources', {
+    modelState: model.state,
+    hasClaimSummary: Boolean(summary),
+    shopifyOrderCount,
+    thisStoreOrders: result.ok ? result.data.thisStore.orderCount : null,
+    thisStoreClaims: result.ok ? result.data.thisStore.claimCount : null,
+    ordersCountSource: result.ok ? result.data.thisStore.ordersCountSource : null,
+    hasNetwork: result.ok ? result.data.network !== null : false,
+    storeOrdersFromStats:
+      model.state === 'merchant_profile' && model.stats ? model.stats.storeOrders : null,
   });
 
   return { result, lookupDiagnostics };

@@ -1,7 +1,10 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { TABLES } from '@/lib/supabase/tables';
+import { normaliseEmail } from '@/lib/identity/normalise';
 import { processCsvJob } from '@/lib/processing/worker';
 import type { ProcessCsvJobIngestion } from '@/lib/processing/types';
+import { recomputeCustomerClaimSummary } from '@/lib/support/intake/claimSummary';
+import { hashSupportEmail } from '@/lib/support/intake/store';
 import {
   shopifyOrderToCsvRow,
   type ShopifyOrderIdentityRow,
@@ -219,8 +222,43 @@ export async function scoreShopifyOrdersIntoAudit(input: {
     isLast: true,
   }, ingestion);
 
+  await refreshClaimSummariesForShopifyEmails(supabase, {
+    merchantId,
+    shopDomain,
+    normEmails: csvRows
+      .map((row) => normaliseEmail(row.customer_email ?? ''))
+      .filter((email): email is string => Boolean(email)),
+  });
+
   shopifyAuditLog('score.pipeline_done', { shopDomain, jobId, scored: csvRows.length, skipped });
   return { scored: csvRows.length, skipped, jobId };
+}
+
+/** Keep customer_claim_summary in sync when Shopify orders are scored into audit_transactions. */
+async function refreshClaimSummariesForShopifyEmails(
+  supabase: SupabaseClient,
+  input: { merchantId: string; shopDomain: string; normEmails: string[] }
+): Promise<void> {
+  const unique = [...new Set(input.normEmails)];
+  for (const normEmail of unique) {
+    try {
+      const emailHash = hashSupportEmail(normEmail);
+      const { count, error } = await supabase
+        .from('merchant_identities' as never)
+        .select('*', { count: 'exact', head: true })
+        .eq('shop_domain', input.shopDomain)
+        .eq('source', 'order')
+        .eq('email', normEmail);
+      if (error) continue;
+      await recomputeCustomerClaimSummary(supabase, {
+        merchantId: input.merchantId,
+        emailHash,
+        knownOrderCount: count ?? 0,
+      });
+    } catch {
+      // Best-effort — widget also falls back to merchant_identities when summary is missing.
+    }
+  }
 }
 
 /**
