@@ -23,8 +23,10 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 export const maxDuration = 60;
 
-/** Deploy marker — confirms this module is live in Vercel logs. */
-const GORGIAS_WIDGET_BUILD_MARKER = '673eb81';
+/** Deploy marker — Vercel commit SHA when available (logging only). */
+function gorgiasWidgetBuildMarker(): string {
+  return process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? 'local';
+}
 
 const CUSTOMER_PROFILE_WIDGET_SELECT =
   'id, primary_email, emails, merchant_ids, risk_level, risk_score, fraud_flags, identity_confidence_grade';
@@ -47,7 +49,7 @@ type WidgetReturnContext = {
 };
 
 function logBuildMarker(): void {
-  console.log(`[gorgias.widget] build_marker ${GORGIAS_WIDGET_BUILD_MARKER}`);
+  console.log(`[gorgias.widget] build_marker ${gorgiasWidgetBuildMarker()}`);
 }
 
 function isNotInNetworkFallback(body: GorgiasWidgetJsonPayload): boolean {
@@ -352,7 +354,7 @@ export async function GET(request: NextRequest) {
       hasWidgetToken: Boolean(widgetToken),
       widgetTokenPrefix: widgetToken ? widgetTokenDisplayPrefix(widgetToken) : null,
       tokenFromHeader: Boolean(request.headers.get(GORGIAS_WIDGET_TOKEN_HEADER)?.trim()),
-      buildMarker: GORGIAS_WIDGET_BUILD_MARKER,
+      buildMarker: gorgiasWidgetBuildMarker(),
     });
 
     if (!widgetToken) {
