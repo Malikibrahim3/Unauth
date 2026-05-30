@@ -3,7 +3,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { backfillShopifyAuditTransactions } from '@/lib/shopify/auditBridge';
 import { getShopifyConnectionStatus } from '@/lib/shopify/connectionStatus';
-import { shopifyAuditError } from '@/lib/shopify/auditLog';
+import { shopifyAuditError, shopifyAuditLog } from '@/lib/shopify/auditLog';
 
 /** Allow large Shopify backfills on Vercel (same as CSV processing routes). */
 export const maxDuration = 300;
@@ -30,11 +30,24 @@ export async function POST() {
 
   const shopDomain = connection.shopDomain;
 
+  shopifyAuditLog('sync_audit.session', {
+    merchantId: ctx.merchantId,
+    userId: user.id,
+    shopDomain,
+    connected: connection.connected,
+  });
+
   try {
     const result = await backfillShopifyAuditTransactions({
       supabase: serviceClient,
       shopDomain,
       merchantId: ctx.merchantId,
+    });
+
+    shopifyAuditLog('sync_audit.complete', {
+      merchantId: ctx.merchantId,
+      shopDomain,
+      ...result,
     });
 
     return NextResponse.json({

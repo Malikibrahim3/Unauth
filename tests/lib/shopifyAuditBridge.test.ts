@@ -105,8 +105,12 @@ function makeSupabaseFixtures() {
             }),
           }),
         };
+        const countApi = {
+          eq: async () => ({ count: signals.length, error: null }),
+        };
         return {
-          select: (cols?: string) => {
+          select: (cols?: string, opts?: { count?: string; head?: boolean }) => {
+            if (opts?.count === 'exact' && opts?.head) return countApi;
             if (cols === 'shopify_order_id') return signalApi;
             return {
               eq: () => ({

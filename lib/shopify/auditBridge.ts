@@ -234,19 +234,63 @@ export async function backfillShopifyAuditTransactions(input: {
 }): Promise<{ batches: number; scored: number; skipped: number }> {
   const { supabase, shopDomain } = input;
   const batchSize = input.batchSize ?? DEFAULT_BATCH_SIZE;
-  const merchantId = input.merchantId ?? (await resolveMerchantIdForShop(supabase, shopDomain));
+  const merchantIdFromConnection = await resolveMerchantIdForShop(supabase, shopDomain);
+  const merchantId = input.merchantId ?? merchantIdFromConnection;
 
   if (!merchantId) {
-    shopifyAuditLog('backfill.no_merchant', { shopDomain });
+    shopifyAuditLog('backfill.no_merchant', {
+      shopDomain,
+      sessionMerchantId: input.merchantId ?? null,
+      connectionMerchantId: merchantIdFromConnection,
+    });
     return { batches: 0, scored: 0, skipped: 0 };
   }
 
-  shopifyAuditLog('backfill.started', { shopDomain, merchantId, batchSize });
+  if (
+    input.merchantId &&
+    merchantIdFromConnection &&
+    input.merchantId !== merchantIdFromConnection
+  ) {
+    shopifyAuditLog('backfill.merchant_id_mismatch', {
+      shopDomain,
+      sessionMerchantId: input.merchantId,
+      connectionMerchantId: merchantIdFromConnection,
+    });
+  }
+
+  const { count: totalSignalCount, error: countError } = await supabase
+    .from('shopify_order_signals' as never)
+    .select('*', { count: 'exact', head: true })
+    .eq('shop_domain', shopDomain);
+
+  if (countError) {
+    shopifyAuditError('backfill.signal_count_failed', countError, { shopDomain, merchantId });
+    throw new Error(`shopify_signal_count_failed: ${countError.message}`);
+  }
+
+  const signalRowsForShop = totalSignalCount ?? 0;
+  shopifyAuditLog('backfill.started', {
+    shopDomain,
+    merchantId,
+    sessionMerchantId: input.merchantId ?? null,
+    connectionMerchantId: merchantIdFromConnection,
+    batchSize,
+    signalRowsForShop,
+  });
+
+  if (signalRowsForShop === 0) {
+    shopifyAuditLog('backfill.no_signals_for_shop', { shopDomain, merchantId });
+    return { batches: 0, scored: 0, skipped: 0 };
+  }
 
   let offset = 0;
   let batches = 0;
   let scored = 0;
   let skipped = 0;
+  let pagesRead = 0;
+  let ordersSeen = 0;
+  let ordersAlreadyInAudit = 0;
+  let ordersPendingTotal = 0;
 
   for (;;) {
     const { data: signals, error } = await supabase
@@ -257,39 +301,122 @@ export async function backfillShopifyAuditTransactions(input: {
       .range(offset, offset + batchSize - 1);
 
     if (error) {
+      shopifyAuditError('backfill.signal_page_failed', error, {
+        shopDomain,
+        merchantId,
+        offset,
+        batchSize,
+      });
       throw new Error(`shopify_signal_page_failed: ${error.message}`);
     }
 
     const page = (signals ?? []) as Array<{ shopify_order_id: string }>;
-    if (page.length === 0) break;
+    pagesRead += 1;
+
+    shopifyAuditLog('backfill.page_loaded', {
+      shopDomain,
+      merchantId,
+      offset,
+      pageSize: page.length,
+      pagesRead,
+    });
+
+    if (page.length === 0) {
+      shopifyAuditLog('backfill.pagination_complete', {
+        shopDomain,
+        merchantId,
+        offset,
+        pagesRead,
+      });
+      break;
+    }
 
     const orderIds = page.map((s) => s.shopify_order_id);
-    const alreadyScored = await loadExistingScoredOrderIds(supabase, shopDomain, orderIds);
-    const pending = orderIds.filter((id) => !alreadyScored.has(id));
+    ordersSeen += orderIds.length;
 
-    if (pending.length > 0) {
-      shopifyAuditLog('backfill.batch', {
+    let alreadyScored: Set<string>;
+    try {
+      alreadyScored = await loadExistingScoredOrderIds(supabase, shopDomain, orderIds);
+    } catch (err) {
+      shopifyAuditError('backfill.audit_lookup_failed', err, {
         shopDomain,
-        offset,
-        pending: pending.length,
-        alreadyScored: orderIds.length - pending.length,
-      });
-      const result = await scoreShopifyOrdersIntoAudit({
-        supabase,
-        shopDomain,
-        shopifyOrderIds: pending,
         merchantId,
+        offset,
+        orderIdsInPage: orderIds.length,
       });
-      scored += result.scored;
-      skipped += result.skipped;
-      batches += 1;
+      throw err;
+    }
+
+    const alreadyScoredCount = orderIds.filter((id) => alreadyScored.has(id)).length;
+    ordersAlreadyInAudit += alreadyScoredCount;
+    const pending = orderIds.filter((id) => !alreadyScored.has(id));
+    ordersPendingTotal += pending.length;
+
+    shopifyAuditLog('backfill.page_split', {
+      shopDomain,
+      merchantId,
+      offset,
+      ordersInPage: orderIds.length,
+      alreadyScored: alreadyScoredCount,
+      pending: pending.length,
+    });
+
+    if (pending.length === 0) {
+      shopifyAuditLog('backfill.page_all_already_scored', {
+        shopDomain,
+        merchantId,
+        offset,
+        ordersInPage: orderIds.length,
+      });
+    } else {
+      try {
+        const result = await scoreShopifyOrdersIntoAudit({
+          supabase,
+          shopDomain,
+          shopifyOrderIds: pending,
+          merchantId,
+        });
+        scored += result.scored;
+        skipped += result.skipped;
+        batches += 1;
+        shopifyAuditLog('backfill.batch_done', {
+          shopDomain,
+          merchantId,
+          offset,
+          pending: pending.length,
+          scored: result.scored,
+          skipped: result.skipped,
+          jobId: result.jobId,
+        });
+      } catch (err) {
+        shopifyAuditError('backfill.batch_failed', err, {
+          shopDomain,
+          merchantId,
+          offset,
+          pending: pending.length,
+          scoredSoFar: scored,
+          skippedSoFar: skipped,
+        });
+        throw err;
+      }
     }
 
     offset += page.length;
     if (page.length < batchSize) break;
   }
 
-  shopifyAuditLog('backfill.finished', { shopDomain, batches, scored, skipped });
+  shopifyAuditLog('backfill.finished', {
+    shopDomain,
+    merchantId,
+    signalRowsForShop,
+    pagesRead,
+    ordersSeen,
+    ordersAlreadyInAudit,
+    ordersPendingTotal,
+    batches,
+    scored,
+    skipped,
+  });
   return { batches, scored, skipped };
 }
 
