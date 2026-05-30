@@ -35,6 +35,7 @@ const CLAIM_TYPE_PATTERNS: Record<Exclude<ClaimType, 'other'>, WeightedPattern[]
     { re: /\bwhere(?:'?s| is| are)? my (order|package|parcel|item|stuff|delivery)\b/, weight: 0.85 },
     { re: /\b(not|never) delivered\b/, weight: 0.85 },
     { re: /\b(did not|didn'?t|never) receive\b/, weight: 0.85 },
+    { re: /\b(hasn'?t|haven'?t) received\b/, weight: 0.9 },
     { re: /\binr\b/, weight: 0.8 },
   ],
   damaged: [

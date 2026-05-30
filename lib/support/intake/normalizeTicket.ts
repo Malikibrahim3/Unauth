@@ -6,6 +6,7 @@ import {
   hashSupportIdentifier,
   normalizeProviderName,
 } from '@/lib/support/intake/store';
+import { resolveGorgiasTicketCustomerEmail } from '@/lib/support/gorgias/ticketCustomerEmail';
 import {
   classifyClaimType,
   detectChargebackThreatened,
@@ -586,7 +587,8 @@ export function normalizeGorgiasTicket(
 
   const subject = asString(ticket.subject) ?? '';
   const tags = asStringArray(ticket.tags);
-  const customerEmail = asString(readPath(ticket, ['customer', 'email']));
+  const resolvedCustomer = resolveGorgiasTicketCustomerEmail(ticket);
+  const customerEmail = resolvedCustomer?.email ?? null;
   const messages = Array.isArray(ticket.messages) ? ticket.messages : [];
   const mappedMessages = messages.map((message) => {
     if (!message || typeof message !== 'object') return { body: null, from_agent: false };

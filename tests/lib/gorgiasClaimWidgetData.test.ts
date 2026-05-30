@@ -13,6 +13,11 @@ import { createMemoryClient } from '@/tests/lib/supabaseMemoryClient';
 
 const NOW = '2026-05-30T00:00:00.000Z';
 
+const emptyStoreClaimFields = {
+  storePrimaryReason: null,
+  storeRecentClaimCount: 0,
+} as const;
+
 function merchantProfileModel(stats: WidgetStats | null): GorgiasWidgetModel {
   return {
     state: 'merchant_profile',
@@ -96,6 +101,7 @@ describe('assembleClaimWidgetData', () => {
       summary: summaryRow({ total_orders: 1, total_claims: 0, claim_rate: 0 }),
       primaryReason: derivePrimaryReasonFromTypes(['INR', 'INR', 'INR']),
       profileUrl: 'https://app.unauth.test/customers/profile-1',
+      ...emptyStoreClaimFields,
       nowIso: NOW,
     });
 
@@ -125,6 +131,7 @@ describe('assembleClaimWidgetData', () => {
       summary: summaryRow({ total_orders: 3, total_claims: 1, claim_rate: 0.33 }),
       primaryReason: null,
       profileUrl: null,
+      ...emptyStoreClaimFields,
       nowIso: NOW,
     });
 
@@ -148,6 +155,7 @@ describe('assembleClaimWidgetData', () => {
       summary: summaryRow({ total_orders: 2, total_claims: 1, claim_rate: 0.5 }),
       primaryReason: derivePrimaryReasonFromTypes(['INR', 'INR', 'INR', 'damaged', 'wrong_item']),
       profileUrl: null,
+      ...emptyStoreClaimFields,
       nowIso: NOW,
     });
 
@@ -172,6 +180,7 @@ describe('assembleClaimWidgetData', () => {
       summary: summaryRow({ total_orders: 3, total_claims: 0, claim_rate: 0 }),
       primaryReason: null,
       profileUrl: null,
+      ...emptyStoreClaimFields,
       nowIso: NOW,
     });
 
@@ -199,6 +208,7 @@ describe('assembleClaimWidgetData', () => {
       profileUrl: null,
       nowIso: NOW,
       shopifyOrderCount: 1,
+      ...emptyStoreClaimFields,
     });
 
     expect(result.ok).toBe(true);
@@ -224,6 +234,7 @@ describe('assembleClaimWidgetData', () => {
       profileUrl: null,
       nowIso: NOW,
       shopifyOrderCount: 0,
+      ...emptyStoreClaimFields,
     });
 
     expect(result.ok).toBe(true);
@@ -241,6 +252,7 @@ describe('assembleClaimWidgetData', () => {
       profileUrl: null,
       nowIso: NOW,
       shopifyOrderCount: 1,
+      ...emptyStoreClaimFields,
     });
 
     expect(result.ok).toBe(true);
@@ -256,6 +268,7 @@ describe('assembleClaimWidgetData', () => {
         summary: null,
         primaryReason: null,
         profileUrl: null,
+        ...emptyStoreClaimFields,
         nowIso: NOW,
       })
     ).toEqual({ ok: false, kind: 'error', message: 'boom' });
@@ -266,9 +279,24 @@ describe('assembleClaimWidgetData', () => {
         summary: null,
         primaryReason: null,
         profileUrl: null,
+        ...emptyStoreClaimFields,
         nowIso: NOW,
       })
     ).toEqual({ ok: false, kind: 'not_found' });
+
+    const withShopify = assembleClaimWidgetData({
+      model: { state: 'not_found' },
+      summary: null,
+      primaryReason: null,
+      profileUrl: null,
+      ...emptyStoreClaimFields,
+      nowIso: NOW,
+      shopifyOrderCount: 1,
+    });
+    expect(withShopify.ok).toBe(true);
+    if (withShopify.ok) {
+      expect(withShopify.data.thisStore.orderCount).toBe(1);
+    }
   });
 });
 
@@ -288,6 +316,7 @@ describe('claimWidgetToJson', () => {
       summary: summaryRow({ total_orders: 1, total_claims: 1, claim_rate: 1 }),
       primaryReason: derivePrimaryReasonFromTypes(['INR', 'INR', 'INR']),
       profileUrl: null,
+      ...emptyStoreClaimFields,
       nowIso: NOW,
     });
   }
@@ -319,6 +348,7 @@ describe('claimWidgetToJson', () => {
       summary: summaryRow({ total_orders: 2, total_claims: 0, claim_rate: 0 }),
       primaryReason: null,
       profileUrl: null,
+      ...emptyStoreClaimFields,
       nowIso: NOW,
     });
     const payload = claimWidgetToJson(result);

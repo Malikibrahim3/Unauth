@@ -13,7 +13,9 @@ import {
 import { gorgiasWidgetLog, gorgiasWidgetLogError } from '@/lib/gorgias/widgetLog';
 import { GORGIAS_FRAME_HEADERS, renderGorgiasWidgetHtml } from '@/lib/gorgias/renderWidgetHtml';
 import { validateWidgetToken } from '@/lib/api/widgetTokens';
+import { resolveWidgetCustomerIdentity } from '@/lib/gorgias/resolveWidgetCustomerIdentity';
 import { GORGIAS_WIDGET_TOKEN_HEADER } from '@/lib/support/gorgias/registerSidebarWidget';
+import { isUsableWidgetEmailParam } from '@/lib/support/gorgias/ticketCustomerEmail';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -189,17 +191,19 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const widgetToken = resolveWidgetToken(request);
-    const email = searchParams.get('email')?.trim() ?? '';
+    const emailParam = searchParams.get('email')?.trim() ?? '';
+    const customerEmailParam = searchParams.get('customer_email')?.trim() ?? '';
+    const ticketIdParam = searchParams.get('ticket_id')?.trim() ?? '';
     const name = searchParams.get('name')?.trim() ?? '';
     const orderId = searchParams.get('order_id')?.trim() ?? '';
     const returnHtml = wantsHtmlResponse(request);
 
-    ctx.email = email;
-
     const requestIp = getClientIp(request.headers);
 
     gorgiasWidgetLog('request', {
-      emailUnresolved: isUnresolvedGorgiasVar(email),
+      emailUnresolved: isUnresolvedGorgiasVar(emailParam),
+      customerEmailUnresolved: isUnresolvedGorgiasVar(customerEmailParam),
+      ticketIdPresent: Boolean(ticketIdParam && !isUnresolvedGorgiasVar(ticketIdParam)),
       orderIdPresent: Boolean(orderId),
       returnHtml,
       hasWidgetToken: Boolean(widgetToken),
@@ -238,18 +242,32 @@ export async function GET(request: NextRequest) {
 
     gorgiasWidgetLog('widget_token_valid', {});
 
-    if (!email || isUnresolvedGorgiasVar(email)) {
+    const service = createServiceClient();
+
+    const resolvedIdentity = await resolveWidgetCustomerIdentity(service, {
+      merchantId: authResult.merchantId,
+      emailParam,
+      customerEmailParam,
+      ticketIdParam: isUnresolvedGorgiasVar(ticketIdParam) ? '' : ticketIdParam,
+    });
+
+    const email = resolvedIdentity.rawEmail;
+    ctx.email = email;
+
+    if (resolvedIdentity.identityUnresolved || !isUsableWidgetEmailParam(email)) {
       return returnJsonForResult({
-        branch: 'missing_or_unresolved_email',
-        result: errorResult('No customer email on this ticket yet.'),
+        branch: 'identity_unresolved',
+        result: {
+          ok: false,
+          kind: 'identity_unresolved',
+          message: 'Customer identity not resolved for this ticket.',
+        },
         lookupDiagnostics: null,
         ctx,
         returnHtml,
-        status: 400,
+        status: 200,
       });
     }
-
-    const service = createServiceClient();
 
     const { result, lookupDiagnostics } = await buildGorgiasClaimWidgetData(
       service,

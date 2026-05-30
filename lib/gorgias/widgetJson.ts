@@ -54,10 +54,23 @@ function formatRecent(network: NetworkStats | null): string {
  * inside each string — Gorgias sidebar widgets have no table primitive. No risk
  * score and no "fraud" wording is emitted.
  */
+function formatStoreRecent(count: number): string {
+  if (count === 0) return '—';
+  return `${count} ${pluralise(count, 'claim', 'claims')} in last 90 days`;
+}
+
 export function claimWidgetToJson(result: GorgiasClaimWidgetResult): GorgiasWidgetJsonPayload {
   if (!result.ok) {
     if (result.kind === 'not_found') {
       return { orders: 'Not seen at any store yet', claim_rate: '—', primary_reason: '—', recent_activity: '—' };
+    }
+    if (result.kind === 'identity_unresolved') {
+      return {
+        orders: 'Customer identity not resolved',
+        claim_rate: '—',
+        primary_reason: '—',
+        recent_activity: 'Check ticket customer in Gorgias',
+      };
     }
     return {
       orders: (result.message ?? 'Could not load identity intelligence.').slice(0, 100),
@@ -67,7 +80,7 @@ export function claimWidgetToJson(result: GorgiasClaimWidgetResult): GorgiasWidg
     };
   }
 
-  const { thisStore, network } = result.data;
+  const { thisStore, network, storePrimaryReason, storeRecentClaimCount } = result.data;
 
   if (
     thisStore.ordersCountSource === 'none' &&
@@ -83,11 +96,19 @@ export function claimWidgetToJson(result: GorgiasClaimWidgetResult): GorgiasWidg
     };
   }
 
+  const primaryReason = network
+    ? formatPrimaryReasonValue(network.primaryReason)
+    : formatPrimaryReasonValue(storePrimaryReason);
+
+  const recentActivity = network
+    ? formatRecent(network)
+    : formatStoreRecent(storeRecentClaimCount);
+
   return {
     orders: formatClaimOrders(thisStore.orderCount, network),
     claim_rate: formatClaimRateField(thisStore.claimRate, network),
-    primary_reason: network ? formatPrimaryReasonValue(network.primaryReason) : '—',
-    recent_activity: formatRecent(network),
+    primary_reason: primaryReason,
+    recent_activity: recentActivity,
   };
 }
 

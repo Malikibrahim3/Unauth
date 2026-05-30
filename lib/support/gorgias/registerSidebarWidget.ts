@@ -42,7 +42,10 @@ export function buildGorgiasWidgetIntegrationUrl(appBaseUrl: string, widgetToken
   // Gorgias substitutes the real email at trigger time. URLSearchParams would percent-encode the
   // braces (%7B%7B…), which Gorgias never matches — so build the query string by hand and only
   // encode the token.
-  const url = `${base}/api/gorgias/widget?widget_token=${encodeURIComponent(widgetToken)}&email={{ticket.customer.email}}`;
+  // sender.email = inbound message author; customer.email may be the helpdesk profile on email tickets.
+  const url =
+    `${base}/api/gorgias/widget?widget_token=${encodeURIComponent(widgetToken)}` +
+    `&email={{ticket.sender.email}}&customer_email={{ticket.customer.email}}&ticket_id={{ticket.id}}`;
   return withWidgetUrlCacheBust(url);
 }
 
@@ -71,7 +74,12 @@ export async function refreshGorgiasSidebarWidgetIntegrationUrl(input: {
     );
   }
 
-  const nextUrl = withWidgetUrlCacheBust(currentUrl);
+  const tokenMatch = currentUrl.match(/[?&]widget_token=([^&]+)/);
+  const widgetToken = tokenMatch ? decodeURIComponent(tokenMatch[1]) : null;
+  const rebuiltUrl = widgetToken
+    ? buildGorgiasWidgetIntegrationUrl(env.NEXT_PUBLIC_APP_URL, widgetToken)
+    : withWidgetUrlCacheBust(currentUrl);
+  const nextUrl = rebuiltUrl;
   if (nextUrl === currentUrl) {
     return;
   }
@@ -94,7 +102,7 @@ export function buildGorgiasSidebarWidgetTemplate(appBaseUrl: string) {
   // when signed in). `{{ticket.customer.email}}` is a Gorgias template var substituted
   // at render time — keep the braces literal (no URLSearchParams, which would
   // percent-encode them so Gorgias never matches).
-  const profileLink = `${appLink}/customers?email={{ticket.customer.email}}`;
+  const profileLink = `${appLink}/customers?email={{ticket.sender.email}}`;
   // HTTP integration returns flat JSON at the root; child paths (risk_level, etc.) resolve
   // against that object. Empty card path = root (see Gorgias programmatic widgets docs).
   return {

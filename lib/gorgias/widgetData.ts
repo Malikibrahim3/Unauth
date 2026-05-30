@@ -483,13 +483,20 @@ export type NetworkStats = {
 export type ClaimWidgetData = {
   thisStore: ThisStoreStats;
   network: NetworkStats | null;
+  /** Store-scoped primary reason when there is no network footprint. */
+  storePrimaryReason: PrimaryReason;
+  storeRecentClaimCount: number;
   profileUrl: string;
   dataFreshAt: string;
 };
 
 export type GorgiasClaimWidgetResult =
   | { ok: true; data: ClaimWidgetData }
-  | { ok: false; kind: 'error' | 'not_found'; message?: string };
+  | {
+      ok: false;
+      kind: 'error' | 'not_found' | 'identity_unresolved';
+      message?: string;
+    };
 
 function round2(value: number): number {
   return Math.round(value * 100) / 100;
@@ -561,6 +568,45 @@ async function readThisStoreSummary(
  * Network-wide adaptive primary reason, computed from claim_type counts across
  * ALL merchants for this identity in support_case_intake (is_claim = true).
  */
+export async function derivePrimaryReasonAtMerchant(
+  service: SupabaseClient,
+  merchantId: string,
+  emailHash: string
+): Promise<PrimaryReason> {
+  const { data, error } = await service
+    .from(TABLES.SUPPORT_CASE_INTAKE)
+    .select('claim_type')
+    .eq('merchant_id', merchantId)
+    .eq('customer_email_hash', emailHash)
+    .eq('is_claim', true);
+
+  if (error || !data) return null;
+
+  const types = (data as Array<{ claim_type: unknown }>)
+    .map((r) => (typeof r.claim_type === 'string' ? r.claim_type : null))
+    .filter((t): t is ClaimType => t !== null && t in CLAIM_TYPE_LABELS);
+
+  return derivePrimaryReasonFromTypes(types);
+}
+
+export async function countStoreRecentClaims(
+  service: SupabaseClient,
+  merchantId: string,
+  emailHash: string
+): Promise<number> {
+  const cutoff = ninetyDayCutoff();
+  const { count, error } = await service
+    .from(TABLES.SUPPORT_CASE_INTAKE)
+    .select('*', { count: 'exact', head: true })
+    .eq('merchant_id', merchantId)
+    .eq('customer_email_hash', emailHash)
+    .eq('is_claim', true)
+    .gte('created_at', cutoff);
+
+  if (error || typeof count !== 'number') return 0;
+  return count;
+}
+
 export async function derivePrimaryReason(
   service: SupabaseClient,
   emailHash: string
@@ -680,17 +726,16 @@ export function assembleClaimWidgetData(input: {
   model: GorgiasWidgetModel;
   summary: ClaimSummaryRow | null;
   primaryReason: PrimaryReason;
+  storePrimaryReason: PrimaryReason;
+  storeRecentClaimCount: number;
   profileUrl: string | null;
   nowIso: string;
   shopifyOrderCount?: number;
 }): GorgiasClaimWidgetResult {
-  const { model, summary, primaryReason } = input;
+  const { model, summary, primaryReason, storePrimaryReason } = input;
 
   if (model.state === 'error') {
     return { ok: false, kind: 'error', message: model.message };
-  }
-  if (model.state === 'not_found') {
-    return { ok: false, kind: 'not_found' };
   }
 
   const thisStore = resolveThisStoreStats({
@@ -698,6 +743,16 @@ export function assembleClaimWidgetData(input: {
     summary,
     shopifyOrderCount: input.shopifyOrderCount ?? 0,
   });
+
+  const hasKnownCommerce =
+    thisStore.ordersCountSource !== 'none' ||
+    thisStore.orderCount > 0 ||
+    thisStore.claimCount > 0 ||
+    Boolean(summary);
+
+  if (model.state === 'not_found' && !hasKnownCommerce) {
+    return { ok: false, kind: 'not_found' };
+  }
 
   const network = deriveNetworkStats(model, primaryReason);
   const profileUrl =
@@ -708,6 +763,8 @@ export function assembleClaimWidgetData(input: {
     data: {
       thisStore,
       network,
+      storePrimaryReason,
+      storeRecentClaimCount: input.storeRecentClaimCount,
       profileUrl: profileUrl || '',
       dataFreshAt: summary?.updated_at ?? input.nowIso,
     },
@@ -779,13 +836,16 @@ export async function buildGorgiasClaimWidgetData(
     ? countShopifyOrdersAtMerchant(service, auth.merchantId, normEmail)
     : Promise.resolve(0);
 
-  const [summary, primaryReason, shopifyOrderCount] = emailHash
-    ? await Promise.all([
-        readThisStoreSummary(service, auth.merchantId, emailHash),
-        derivePrimaryReason(service, emailHash),
-        shopifyOrderCountPromise,
-      ])
-    : [null, null, await shopifyOrderCountPromise];
+  const [summary, primaryReason, storePrimaryReason, storeRecentClaimCount, shopifyOrderCount] =
+    emailHash
+      ? await Promise.all([
+          readThisStoreSummary(service, auth.merchantId, emailHash),
+          derivePrimaryReason(service, emailHash),
+          derivePrimaryReasonAtMerchant(service, auth.merchantId, emailHash),
+          countStoreRecentClaims(service, auth.merchantId, emailHash),
+          shopifyOrderCountPromise,
+        ])
+      : [null, null, null, 0, await shopifyOrderCountPromise];
 
   const profileUrl = 'profileUrl' in model ? (model.profileUrl ?? null) : null;
 
@@ -793,6 +853,8 @@ export async function buildGorgiasClaimWidgetData(
     model,
     summary,
     primaryReason,
+    storePrimaryReason,
+    storeRecentClaimCount,
     profileUrl,
     nowIso: new Date().toISOString(),
     shopifyOrderCount,
