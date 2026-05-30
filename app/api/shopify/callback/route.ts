@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { backfillShopifyMerchantIdentities } from '@/lib/shopify/backfill';
+import { backfillShopifyAuditTransactions } from '@/lib/shopify/auditBridge';
 import { shopifyDebugLog } from '@/lib/shopify/debugLog';
 import { clearShopifyOAuthCookieOptions } from '@/lib/shopify/oauthCookies';
 import { resolveOAuthMerchantId } from '@/lib/shopify/resolveOAuthMerchantId';
@@ -177,13 +178,20 @@ export async function GET(request: NextRequest) {
 
     shopifyDebugLog('backfill.started', { callbackShopDomain: shop });
     let backfillSuccess = true;
+    let auditBackfillScored = 0;
     try {
       await backfillShopifyMerchantIdentities({
         shopDomain: shop,
         accessToken,
         supabase: serviceClient,
       });
-      shopifyDebugLog('backfill.success', { backfillSuccess: true });
+      const auditBackfill = await backfillShopifyAuditTransactions({
+        supabase: serviceClient,
+        shopDomain: shop,
+        merchantId,
+      });
+      auditBackfillScored = auditBackfill.scored;
+      shopifyDebugLog('backfill.success', { backfillSuccess: true, auditBackfillScored });
     } catch (backfillError) {
       backfillSuccess = false;
       shopifyDebugLog('backfill.success', {

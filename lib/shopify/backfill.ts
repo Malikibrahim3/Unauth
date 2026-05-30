@@ -1,12 +1,10 @@
 import { normalizeAddress, normalizeEmail, normalizePhone, upsertMerchantIdentityRows, type MerchantIdentityInsert, type ShopifyAddress } from '@/lib/shopify/identity';
 import { syncShopifyProfilesForShop } from '@/lib/shopify/profileLinking';
+import { buildShopifyOrderSignalRow, type ShopifyOrderWebhookPayload } from '@/lib/shopify/orderSignals';
 
-type ShopifyOrder = {
-  id: number;
-  email?: string | null;
+type ShopifyOrder = ShopifyOrderWebhookPayload & {
   shipping_address?: ShopifyAddress | null;
   billing_address?: ShopifyAddress | null;
-  created_at?: string | null;
 };
 
 function parseNextLink(linkHeader: string | null): string | null {
@@ -67,8 +65,7 @@ export async function backfillShopifyMerchantIdentities(input: {
 
   const base = `https://${shopDomain}/admin/api/${apiVersion}`;
   const ordersUrl =
-    `${base}/orders.json?status=any&limit=250&fields=id,email,shipping_address,billing_address,created_at&created_at_min=` +
-    encodeURIComponent(createdAtMin);
+    `${base}/orders.json?status=any&limit=250&created_at_min=` + encodeURIComponent(createdAtMin);
 
   const { rows: orders, pages } = await fetchAllPages<ShopifyOrder>(ordersUrl, accessToken, 'orders');
 
@@ -92,6 +89,19 @@ export async function backfillShopifyMerchantIdentities(input: {
   ).length;
 
   await upsertMerchantIdentityRows(supabase, rows);
+
+  const signalRows = orders.map((order) => buildShopifyOrderSignalRow(shopDomain, order));
+  const signalBatchSize = 250;
+  for (let i = 0; i < signalRows.length; i += signalBatchSize) {
+    const batch = signalRows.slice(i, i + signalBatchSize);
+    const { error: signalError } = await supabase
+      .from('shopify_order_signals' as never)
+      .upsert(batch as never, { onConflict: 'shop_domain,shopify_order_id' });
+    if (signalError) {
+      throw new Error(`shopify_order_signals_backfill_failed: ${signalError.message}`);
+    }
+  }
+
   await syncShopifyProfilesForShop({ shopDomain, supabase });
 
   return {
@@ -99,5 +109,6 @@ export async function backfillShopifyMerchantIdentities(input: {
     orders: orders.length,
     inserted: rows.length,
     orders_with_no_identity_fields: ordersWithNoIdentitySignals,
+    signals_upserted: signalRows.length,
   };
 }

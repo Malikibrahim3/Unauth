@@ -16,6 +16,10 @@ jest.mock('@/lib/shopify/backfill', () => ({
   backfillShopifyMerchantIdentities: jest.fn(async () => ({ orders: 0, inserted: 0 })),
 }));
 
+jest.mock('@/lib/shopify/auditBridge', () => ({
+  backfillShopifyAuditTransactions: jest.fn(async () => ({ batches: 0, scored: 0, skipped: 0 })),
+}));
+
 jest.mock('@/lib/shopify/webhooks', () => ({
   registerShopifyWebhooks: jest.fn(async () => {}),
 }));
@@ -59,9 +63,13 @@ function buildOAuthCallbackParams(input: {
   return params;
 }
 
+const { backfillShopifyAuditTransactions } = jest.requireMock('@/lib/shopify/auditBridge') as {
+  backfillShopifyAuditTransactions: jest.Mock;
+};
+
 describe('Shopify OAuth routes', () => {
   beforeEach(() => {
-    jest.resetAllMocks();
+    jest.clearAllMocks();
     process.env.SHOPIFY_API_KEY = 'test-api-key';
     process.env.SHOPIFY_API_SECRET = 'test-api-secret';
     process.env.NEXT_PUBLIC_APP_URL = 'http://localhost:3000';
@@ -74,6 +82,8 @@ describe('Shopify OAuth routes', () => {
       ok: true,
       json: async () => ({ access_token: 'shop-token' }),
     })) as jest.Mock;
+    backfillShopifyMerchantIdentities.mockResolvedValue({ orders: 0, inserted: 0 });
+    backfillShopifyAuditTransactions.mockResolvedValue({ batches: 0, scored: 0, skipped: 0 });
   });
 
   describe('install route', () => {

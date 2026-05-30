@@ -87,4 +87,12 @@ export interface FraudTransactionInsert {
   context_summary?: string | null;
   /** Ingestion channel: 'csv' | 'shopify' | 'zendesk' | 'gorgias' | 'api' */
   source?: string | null;
+  /** Set for Shopify-ingested rows; used with order_id for upsert dedup. */
+  shop_domain?: string | null;
 }
+
+/** Optional overrides when scoring non-CSV ingestion (e.g. Shopify webhooks). */
+export type ProcessCsvJobIngestion = {
+  source?: 'csv' | 'shopify';
+  shopDomain?: string;
+};

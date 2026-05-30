@@ -4,6 +4,8 @@ import { createServiceClient } from '@/lib/supabase/server';
 import { normalizeAddress, normalizeEmail, normalizePhone, type MerchantIdentityInsert, upsertMerchantIdentityRows } from '@/lib/shopify/identity';
 import { verifyShopifyWebhookHmac } from '@/lib/shopify/webhooks';
 import { syncShopifyProfilesForShop } from '@/lib/shopify/profileLinking';
+import { enqueueShopifyOrderAuditScore } from '@/lib/shopify/auditBridge';
+import { buildShopifyOrderSignalRow } from '@/lib/shopify/orderSignals';
 
 async function fetchShopifyCustomerIdentity(input: {
   shopDomain: string;
@@ -92,53 +94,11 @@ export async function processWebhook(rawBody: string, shopDomain: string, topic:
       updated_at: now,
     });
 
-    const shippingPrice = Array.isArray(payload.shipping_lines)
-      ? payload.shipping_lines.reduce((sum: number, line: any) => {
-          const v = Number(line?.price ?? 0);
-          return sum + (Number.isFinite(v) ? v : 0);
-        }, 0)
-      : null;
-    const riskRecommendation = payload?.risk?.recommendation ?? payload?.risk?.decision ?? null;
-    const riskLevel = payload?.risk?.level ?? payload?.risk_level ?? null;
-    const tagList = typeof payload.tags === 'string'
-      ? payload.tags.split(',').map((t: string) => t.trim()).filter(Boolean)
-      : [];
     await supabase
       .from('shopify_order_signals' as any)
-      .upsert({
-        shop_domain: shopDomain,
-        shopify_order_id: String(payload.id),
-        order_number: payload.order_number ? String(payload.order_number) : (payload.name ? String(payload.name) : null),
-        customer_id: customerId,
-        created_at_shopify: payload.created_at ?? null,
-        total_price: payload.total_price ? Number(payload.total_price) : null,
-        currency: payload.currency ?? null,
-        financial_status: payload.financial_status ?? null,
-        fulfillment_status: payload.fulfillment_status ?? null,
-        cancelled_at: payload.cancelled_at ?? null,
-        cancel_reason: payload.cancel_reason ?? null,
-        refunds_count: Array.isArray(payload.refunds) ? payload.refunds.length : 0,
-        discount_codes: Array.isArray(payload.discount_codes)
-          ? payload.discount_codes.map((d: any) => ({
-              code: d?.code ?? null,
-              amount: d?.amount ?? null,
-              type: d?.type ?? null,
-            }))
-          : [],
-        payment_gateway_names: Array.isArray(payload.payment_gateway_names) ? payload.payment_gateway_names : [],
-        shipping_country: payload.shipping_address?.country_code ?? payload.shipping_address?.country ?? null,
-        billing_country: payload.billing_address?.country_code ?? payload.billing_address?.country ?? null,
-        line_items_count: Array.isArray(payload.line_items) ? payload.line_items.length : 0,
-        shipping_price: shippingPrice,
-        source_name: payload.source_name ?? null,
-        tags: tagList,
-        landing_site: payload.landing_site ?? null,
-        referring_site: payload.referring_site ?? null,
-        risk_recommendation: riskRecommendation,
-        risk_level: riskLevel,
-        raw_payload_hash: payloadHash,
-        updated_at: now,
-      }, { onConflict: 'shop_domain,shopify_order_id' });
+      .upsert(buildShopifyOrderSignalRow(shopDomain, payload, rawBody), {
+        onConflict: 'shop_domain,shopify_order_id',
+      });
   }
 
   if (topic === 'refunds/create') {
@@ -232,6 +192,14 @@ export async function processWebhook(rawBody: string, shopDomain: string, topic:
       profilesLinked: syncResult.profilesLinked,
       identitiesUpserted: syncResult.identitiesUpserted,
     });
+
+    if (orderId) {
+      enqueueShopifyOrderAuditScore({
+        supabase,
+        shopDomain,
+        shopifyOrderId: orderId,
+      });
+    }
   }
 }
 

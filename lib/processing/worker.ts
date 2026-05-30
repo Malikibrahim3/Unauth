@@ -25,7 +25,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../supabase/types';
 import { TABLES } from '../supabase/tables';
-import type { ParsedCsvRow, FraudTransactionInsert } from './types';
+import type { ParsedCsvRow, FraudTransactionInsert, ProcessCsvJobIngestion } from './types';
 import { buildFastContext } from '../engine/fastContext';
 import { scoreBatch } from '../engine/fastScore';
 import { mergeHistoryByCluster } from '../engine/identityHistory';
@@ -457,7 +457,8 @@ function rowToFraudTransaction(
   },
   identity: PersistedIdentityResult | undefined,
   jobId: string,
-  source: FraudTransactionInsert['source'] = 'csv'
+  source: FraudTransactionInsert['source'] = 'csv',
+  shopDomain: string | null = null
 ): FraudTransactionInsert {
   const flags = scored.signals.filter((s) => s.fired).map((s) => s.name);
   const imr = identity?.identityMatchResult;
@@ -513,6 +514,7 @@ function rowToFraudTransaction(
     confirmed_identity_id: identity?.confirmedIdentityId ?? null,
     false_positive_reported: false,
     source,
+    shop_domain: shopDomain,
     // ── New pure-identity contract fields ───────────────────────────────────────
     identity_match_score: imr?.identity_match_score ?? null,
     identity_match_grade: imr?.identity_match_grade ?? null,
@@ -549,8 +551,13 @@ export async function processCsvJob(
   serviceClient: SupabaseClient<Database>,
   concurrency = DEFAULT_CONCURRENCY,
   merchantId?: string,
-  chunkInfo?: ChunkInfo
+  chunkInfo?: ChunkInfo,
+  ingestion?: ProcessCsvJobIngestion
 ): Promise<ScoredOrder[]> {
+  const ingestionSource = ingestion?.source ?? 'csv';
+  const shopDomain = ingestion?.shopDomain ?? null;
+  const upsertOnConflict =
+    ingestionSource === 'shopify' && shopDomain ? 'shop_domain,order_id' : 'job_id,order_id';
   const jobLog = (msg: string) => console.log(`[job ${jobId}] ${new Date().toISOString()} ${msg}`);
   const checkpoint = (
     stage: string,
@@ -902,7 +909,14 @@ export async function processCsvJob(
   // wall-clock time roughly in half vs the previous sequential approach.
   // -----------------------------------------------------------------------
   const allInserts: FraudTransactionInsert[] = scored.map((s, i) =>
-    rowToFraudTransaction(validPairs[i].parsed, s, identityResultsByOrder.get(s.order.orderId), jobId)
+    rowToFraudTransaction(
+      validPairs[i].parsed,
+      s,
+      identityResultsByOrder.get(s.order.orderId),
+      jobId,
+      ingestionSource,
+      shopDomain
+    )
   );
 
   const dbBatches = splitIntoBatches(allInserts, BATCH_SIZE);
@@ -945,7 +959,7 @@ export async function processCsvJob(
         }
         const batch = batchQueue.shift()!;
         active++;
-        upsertBatchNoProgress(batch, jobId, serviceClient)
+        upsertBatchNoProgress(batch, jobId, serviceClient, upsertOnConflict)
           .then(async (failedRows) => {
             const failedInBatch = Math.max(0, Math.min(batch.length, failedRows));
             const succeededRows = batch.length - failedInBatch;
@@ -1719,7 +1733,8 @@ async function writeIdentityClusters(
 async function upsertBatchNoProgress(
   inserts: FraudTransactionInsert[],
   jobId: string,
-  serviceClient: SupabaseClient<Database>
+  serviceClient: SupabaseClient<Database>,
+  onConflict = 'job_id,order_id'
 ): Promise<number> {
   const isRetryableCoreUpsertError = (message: string): boolean => {
     const msg = message.toLowerCase();
@@ -1751,7 +1766,7 @@ async function upsertBatchNoProgress(
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     const { error } = await serviceClient
       .from(TABLES.AUDIT_TRANSACTIONS)
-      .upsert(inserts as any, { onConflict: 'job_id,order_id' });
+      .upsert(inserts as any, { onConflict });
 
     if (!error) return 0;
 
@@ -1765,8 +1780,8 @@ async function upsertBatchNoProgress(
         const left = inserts.slice(0, mid);
         const right = inserts.slice(mid);
         const [leftFailed, rightFailed] = await Promise.all([
-          upsertBatchNoProgress(left, jobId, serviceClient),
-          upsertBatchNoProgress(right, jobId, serviceClient),
+          upsertBatchNoProgress(left, jobId, serviceClient, onConflict),
+          upsertBatchNoProgress(right, jobId, serviceClient, onConflict),
         ]);
         return leftFailed + rightFailed;
       }
