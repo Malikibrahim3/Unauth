@@ -84,7 +84,6 @@ function returnWidgetJson(
   status: number,
   ctx: WidgetReturnContext
 ): NextResponse {
-  console.log('[gorgias.widget] before_final_return');
   gorgiasWidgetLog('final_return', {
     branch,
     email: ctx.email,
@@ -330,7 +329,6 @@ async function findMerchantCustomerProfileForWidget(
 
 export async function GET(request: NextRequest) {
   logBuildMarker();
-  console.log('[gorgias.widget] after_build_marker');
 
   const ctx: WidgetReturnContext = { email: '', merchantId: null };
 
@@ -347,7 +345,6 @@ export async function GET(request: NextRequest) {
     const requestIp = getClientIp(request.headers);
     const accept = request.headers.get('accept') ?? '';
 
-    console.log('[gorgias.widget] before_request_log');
     gorgiasWidgetLog('request', {
       email,
       emailUnresolved: isUnresolvedGorgiasVar(email),
@@ -359,7 +356,6 @@ export async function GET(request: NextRequest) {
       tokenFromHeader: Boolean(request.headers.get(GORGIAS_WIDGET_TOKEN_HEADER)?.trim()),
       buildMarker: gorgiasWidgetBuildMarker(),
     });
-    console.log('[gorgias.widget] after_request_log');
 
     if (!widgetToken) {
       const model = { state: 'error' as const, message: 'Missing widget token in widget URL.' };
@@ -380,9 +376,7 @@ export async function GET(request: NextRequest) {
       widgetTokenPrefix: widgetTokenDisplayPrefix(widgetToken),
     });
 
-    console.log('[gorgias.widget] before_token_validation');
     const authResult = await validateWidgetToken(widgetToken);
-    console.log('[gorgias.widget] after_token_validation');
 
     gorgiasWidgetLog('after_validate_widget_token', {
       ok: !('status' in authResult),
