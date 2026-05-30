@@ -94,6 +94,7 @@ function returnWidgetJson(
   status: number,
   ctx: WidgetReturnContext
 ): NextResponse {
+  console.log('GORGIAS_RETURN_WIDGET_JSON_6442E11');
   widgetDirectTrace('return_widget_json_enter', { branch, status });
   gorgiasWidgetLog('final_return', {
     branch,
@@ -234,6 +235,7 @@ function returnJsonForModel(input: {
 
 export async function GET(request: NextRequest) {
   logBuildMarker();
+  console.log('GORGIAS_AFTER_MARKER_6442E11');
 
   const ctx: WidgetReturnContext = { email: '', merchantId: null };
 
