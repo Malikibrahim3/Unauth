@@ -1,6 +1,6 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
-import { X } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Loader2, X } from 'lucide-react';
 import { formatRelativeTime } from '@/lib/utils/format';
 import { normalizeShopInput } from '@/lib/shopify/normalizeShopInput';
 
@@ -174,23 +174,47 @@ function ConnectModal({
 export default function SyncStatusCard() {
   const [status, setStatus] = useState<ShopifyStatus | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
+
+  const loadStatus = useCallback(() => {
+    return fetch('/api/shopify/status')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d) setStatus(d);
+        return d;
+      })
+      .catch(() => null);
+  }, []);
 
   useEffect(() => {
-    function loadStatus() {
-      fetch('/api/shopify/status')
-        .then((r) => (r.ok ? r.json() : null))
-        .then((d) => setStatus(d))
-        .catch(() => {});
-    }
     loadStatus();
     const params = new URLSearchParams(window.location.search);
     if (params.get('shopify_connected') === '1') {
       // Audit scoring runs in after() post-OAuth; poll until counts update.
-      const timers = [300, 3000, 12000, 30000].map((ms) => window.setTimeout(loadStatus, ms));
+      const timers = [300, 3000, 12000, 30000].map((ms) => window.setTimeout(() => loadStatus(), ms));
       return () => timers.forEach((id) => window.clearTimeout(id));
     }
     return undefined;
-  }, []);
+  }, [loadStatus]);
+
+  async function handleSyncNow() {
+    setSyncing(true);
+    setSyncError(null);
+    try {
+      const res = await fetch('/api/shopify/sync-audit', { method: 'POST' });
+      const body = (await res.json().catch(() => null)) as { error?: string } | null;
+      if (!res.ok) {
+        setSyncError(body?.error ?? 'Sync failed. Try again or reconnect Shopify.');
+        return;
+      }
+      await loadStatus();
+    } catch {
+      setSyncError('Sync failed. Check your connection and try again.');
+    } finally {
+      setSyncing(false);
+    }
+  }
 
   if (!status) return null;
 
@@ -308,15 +332,41 @@ export default function SyncStatusCard() {
               </p>
             </div>
           </div>
-          <button
-            onClick={() => setModalOpen(true)}
-            className="text-xs hover:underline flex-shrink-0"
-            style={{ color: 'var(--text-muted)' }}
-            data-testid="reconnect-shopify"
-          >
-            Reconnect
-          </button>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button
+              type="button"
+              onClick={() => void handleSyncNow()}
+              disabled={syncing}
+              className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold disabled:opacity-60"
+              style={{ background: 'var(--accent)', color: '#fff' }}
+              data-testid="shopify-sync-now"
+            >
+              {syncing ? (
+                <>
+                  <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
+                  Syncing…
+                </>
+              ) : (
+                'Sync now'
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => setModalOpen(true)}
+              className="text-xs hover:underline"
+              style={{ color: 'var(--text-muted)' }}
+              data-testid="reconnect-shopify"
+            >
+              Reconnect
+            </button>
+          </div>
         </div>
+
+        {syncError && (
+          <p className="text-xs" style={{ color: 'var(--risk-high, #DC2626)' }} role="alert">
+            {syncError}
+          </p>
+        )}
 
         <div className="grid grid-cols-2 gap-3 text-xs">
           <div>
