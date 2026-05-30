@@ -16,6 +16,16 @@ jest.mock('@/lib/shopify/backfill', () => ({
   backfillShopifyMerchantIdentities: jest.fn(async () => ({ orders: 0, inserted: 0 })),
 }));
 
+jest.mock('next/server', () => {
+  const actual = jest.requireActual('next/server');
+  return {
+    ...actual,
+    after: (task: () => void | Promise<void>) => {
+      void Promise.resolve().then(() => task());
+    },
+  };
+});
+
 jest.mock('@/lib/shopify/auditBridge', () => ({
   backfillShopifyAuditTransactions: jest.fn(async () => ({ batches: 0, scored: 0, skipped: 0 })),
 }));

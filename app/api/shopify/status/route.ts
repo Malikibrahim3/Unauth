@@ -13,16 +13,7 @@ export async function GET() {
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_INBOX);
   if (denied) return denied;
 
-  const [connection, signalResult] = await Promise.all([
-    getShopifyConnectionStatus(serviceClient, ctx.merchantId),
-    serviceClient
-      .from('shopify_order_signals' as never)
-      .select('created_at_shopify')
-      .eq('merchant_id', ctx.merchantId)
-      .order('created_at_shopify', { ascending: false })
-      .limit(1)
-      .maybeSingle(),
-  ]);
+  const connection = await getShopifyConnectionStatus(serviceClient, ctx.merchantId);
 
   if (!connection.connected || !connection.shopDomain) {
     return NextResponse.json({
@@ -36,11 +27,24 @@ export async function GET() {
 
   const shopDomain = connection.shopDomain;
 
-  const [countResult, webhookResult, webhookHealthResult, recentWebhooksResult] = await Promise.all([
+  const [countResult, signalResult, auditCountResult, webhookResult, webhookHealthResult, recentWebhooksResult] =
+    await Promise.all([
     serviceClient
       .from('shopify_order_signals' as never)
       .select('id', { count: 'exact', head: true })
-      .eq('merchant_id', ctx.merchantId),
+      .eq('shop_domain', shopDomain),
+    serviceClient
+      .from('shopify_order_signals' as never)
+      .select('created_at_shopify')
+      .eq('shop_domain', shopDomain)
+      .order('created_at_shopify', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    serviceClient
+      .from('audit_transactions' as never)
+      .select('id', { count: 'exact', head: true })
+      .eq('shop_domain', shopDomain)
+      .eq('source', 'shopify'),
     serviceClient
       .from('processed_webhooks' as never)
       .select('created_at,topic,status')
@@ -62,6 +66,15 @@ export async function GET() {
   ]);
 
   const lastSignal = signalResult.data as { created_at_shopify?: string | null } | null;
+  const signalCountError = countResult.error;
+  const lastSignalError = signalResult.error;
+  if (signalCountError || lastSignalError) {
+    console.error('shopify status signal query failed', {
+      shopDomain,
+      signalCountError: signalCountError?.message,
+      lastSignalError: lastSignalError?.message,
+    });
+  }
   const lastWebhook = webhookResult.data as { created_at?: string; topic?: string | null; status?: string | null } | null;
   const recentWebhooks = (recentWebhooksResult.data ?? []) as Array<{
     created_at: string;
@@ -78,6 +91,7 @@ export async function GET() {
     lastWebhookTopic: lastWebhook?.topic ?? null,
     lastWebhookStatus: lastWebhook?.status ?? null,
     orderCount: countResult.count ?? 0,
+    auditTransactionCount: auditCountResult.count ?? 0,
     lastError: connection.lastError,
     scopes: [...SHOPIFY_SCOPES],
     dataSources: ['Shopify live sync', 'CSV historical import'],

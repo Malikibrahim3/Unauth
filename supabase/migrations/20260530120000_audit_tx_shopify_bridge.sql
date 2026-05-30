@@ -1,4 +1,8 @@
 -- Shopify → audit_transactions bridge: shop_domain for dedup and backfill queries.
+-- Also ensures `source` exists (normally added in 20260529010000_audit_tx_source.sql).
+
+ALTER TABLE audit_transactions
+  ADD COLUMN IF NOT EXISTS source text;
 
 ALTER TABLE audit_transactions
   ADD COLUMN IF NOT EXISTS shop_domain text;

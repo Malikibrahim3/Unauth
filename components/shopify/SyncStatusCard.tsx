@@ -19,6 +19,7 @@ interface ShopifyStatus {
   lastWebhookTopic?: string | null;
   lastWebhookStatus?: string | null;
   orderCount?: number;
+  auditTransactionCount?: number;
   lastError?: string | null;
   scopes?: string[];
   dataSources?: string[];
@@ -184,8 +185,9 @@ export default function SyncStatusCard() {
     loadStatus();
     const params = new URLSearchParams(window.location.search);
     if (params.get('shopify_connected') === '1') {
-      const timer = window.setTimeout(loadStatus, 300);
-      return () => window.clearTimeout(timer);
+      // Audit scoring runs in after() post-OAuth; poll until counts update.
+      const timers = [300, 3000, 12000, 30000].map((ms) => window.setTimeout(loadStatus, ms));
+      return () => timers.forEach((id) => window.clearTimeout(id));
     }
     return undefined;
   }, []);
@@ -298,7 +300,11 @@ export default function SyncStatusCard() {
                 {status.shopDomain}
               </p>
               <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                {status.orderCount?.toLocaleString() ?? '—'} orders synced · read-only connection
+                {status.orderCount?.toLocaleString() ?? '—'} orders synced
+                {typeof status.auditTransactionCount === 'number'
+                  ? ` · ${status.auditTransactionCount.toLocaleString()} scored for fraud`
+                  : ''}{' '}
+                · read-only connection
               </p>
             </div>
           </div>

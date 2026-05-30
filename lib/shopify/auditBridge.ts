@@ -7,6 +7,7 @@ import {
   type ShopifyOrderIdentityRow,
   type ShopifyOrderSignalRow,
 } from '@/lib/shopify/shopifyOrderToCsvRow';
+import { shopifyAuditError, shopifyAuditLog } from '@/lib/shopify/auditLog';
 
 const SHOPIFY_JOB_LABEL_PREFIX = 'shopify:';
 const DEFAULT_BATCH_SIZE = 50;
@@ -157,12 +158,15 @@ export async function scoreShopifyOrdersIntoAudit(input: {
     return { scored: 0, skipped: 0, jobId: '' };
   }
 
+  shopifyAuditLog('score.started', { shopDomain, orderCount: uniqueIds.length });
+
   const merchantId = input.merchantId ?? (await resolveMerchantIdForShop(supabase, shopDomain));
   if (!merchantId) {
     throw new Error('shopify_merchant_not_connected');
   }
 
   const jobId = await ensureShopifyProcessingJob(supabase, merchantId, shopDomain);
+  shopifyAuditLog('score.job_ready', { shopDomain, jobId });
 
   const { data: signals, error: signalError } = await supabase
     .from('shopify_order_signals' as never)
@@ -178,6 +182,7 @@ export async function scoreShopifyOrdersIntoAudit(input: {
 
   const signalRows = (signals ?? []) as ShopifyOrderSignalRow[];
   if (signalRows.length === 0) {
+    shopifyAuditLog('score.no_signals', { shopDomain, requested: uniqueIds.length });
     return { scored: 0, skipped: uniqueIds.length, jobId };
   }
 
@@ -200,11 +205,13 @@ export async function scoreShopifyOrdersIntoAudit(input: {
   }
 
   if (csvRows.length === 0) {
+    shopifyAuditLog('score.all_skipped_no_email', { shopDomain, skipped, signalCount: signalRows.length });
     return { scored: 0, skipped, jobId };
   }
 
   const ingestion: ProcessCsvJobIngestion = { source: 'shopify', shopDomain };
 
+  shopifyAuditLog('score.pipeline_start', { shopDomain, jobId, rowCount: csvRows.length, skipped });
   await processCsvJob(csvRows, jobId, supabase, 2, merchantId, {
     index: 0,
     totalChunks: 1,
@@ -212,6 +219,7 @@ export async function scoreShopifyOrdersIntoAudit(input: {
     isLast: true,
   }, ingestion);
 
+  shopifyAuditLog('score.pipeline_done', { shopDomain, jobId, scored: csvRows.length, skipped });
   return { scored: csvRows.length, skipped, jobId };
 }
 
@@ -229,8 +237,11 @@ export async function backfillShopifyAuditTransactions(input: {
   const merchantId = input.merchantId ?? (await resolveMerchantIdForShop(supabase, shopDomain));
 
   if (!merchantId) {
+    shopifyAuditLog('backfill.no_merchant', { shopDomain });
     return { batches: 0, scored: 0, skipped: 0 };
   }
+
+  shopifyAuditLog('backfill.started', { shopDomain, merchantId, batchSize });
 
   let offset = 0;
   let batches = 0;
@@ -257,6 +268,12 @@ export async function backfillShopifyAuditTransactions(input: {
     const pending = orderIds.filter((id) => !alreadyScored.has(id));
 
     if (pending.length > 0) {
+      shopifyAuditLog('backfill.batch', {
+        shopDomain,
+        offset,
+        pending: pending.length,
+        alreadyScored: orderIds.length - pending.length,
+      });
       const result = await scoreShopifyOrdersIntoAudit({
         supabase,
         shopDomain,
@@ -272,6 +289,7 @@ export async function backfillShopifyAuditTransactions(input: {
     if (page.length < batchSize) break;
   }
 
+  shopifyAuditLog('backfill.finished', { shopDomain, batches, scored, skipped });
   return { batches, scored, skipped };
 }
 
@@ -288,10 +306,9 @@ export function enqueueShopifyOrderAuditScore(input: {
     shopDomain: input.shopDomain,
     shopifyOrderIds: [input.shopifyOrderId],
   }).catch((err) => {
-    console.error('Shopify audit score failed', {
+    shopifyAuditError('enqueue.failed', err, {
       shopDomain: input.shopDomain,
       shopifyOrderId: input.shopifyOrderId,
-      message: err instanceof Error ? err.message : String(err),
     });
   });
 }

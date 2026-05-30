@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { after } from 'next/server';
 import crypto from 'crypto';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { backfillShopifyMerchantIdentities } from '@/lib/shopify/backfill';
@@ -7,6 +8,7 @@ import { shopifyDebugLog } from '@/lib/shopify/debugLog';
 import { clearShopifyOAuthCookieOptions } from '@/lib/shopify/oauthCookies';
 import { resolveOAuthMerchantId } from '@/lib/shopify/resolveOAuthMerchantId';
 import { registerShopifyWebhooks } from '@/lib/shopify/webhooks';
+import { shopifyAuditError } from '@/lib/shopify/auditLog';
 import { getAppUrl } from '@/lib/utils/appUrl';
 
 const SHOP_REGEX = /^[a-zA-Z0-9][a-zA-Z0-9-]*\.myshopify\.com$/;
@@ -176,29 +178,48 @@ export async function GET(request: NextRequest) {
       merchantConnectionActive: true,
     });
 
-    shopifyDebugLog('backfill.started', { callbackShopDomain: shop });
-    let backfillSuccess = true;
-    let auditBackfillScored = 0;
+    shopifyDebugLog('backfill.identity.started', { callbackShopDomain: shop });
+    let identityBackfillSuccess = true;
     try {
-      await backfillShopifyMerchantIdentities({
+      const identityResult = await backfillShopifyMerchantIdentities({
         shopDomain: shop,
         accessToken,
         supabase: serviceClient,
       });
-      const auditBackfill = await backfillShopifyAuditTransactions({
-        supabase: serviceClient,
-        shopDomain: shop,
-        merchantId,
+      shopifyDebugLog('backfill.identity.success', {
+        callbackShopDomain: shop,
+        orders: identityResult.orders,
+        signalsUpserted: identityResult.signals_upserted,
       });
-      auditBackfillScored = auditBackfill.scored;
-      shopifyDebugLog('backfill.success', { backfillSuccess: true, auditBackfillScored });
     } catch (backfillError) {
-      backfillSuccess = false;
-      shopifyDebugLog('backfill.success', {
-        backfillSuccess: false,
-        message: backfillError instanceof Error ? backfillError.message : 'unknown',
-      });
+      identityBackfillSuccess = false;
+      const message = backfillError instanceof Error ? backfillError.message : 'unknown';
+      console.error('Shopify identity backfill failed', { shop, message });
+      shopifyDebugLog('backfill.identity.failed', { callbackShopDomain: shop, message });
     }
+
+    // Score into audit_transactions after the redirect so OAuth does not hit serverless timeouts.
+    after(async () => {
+      try {
+        const auditBackfill = await backfillShopifyAuditTransactions({
+          supabase: serviceClient,
+          shopDomain: shop,
+          merchantId,
+        });
+        shopifyDebugLog('backfill.audit.finished', {
+          callbackShopDomain: shop,
+          scored: auditBackfill.scored,
+          skipped: auditBackfill.skipped,
+          batches: auditBackfill.batches,
+        });
+      } catch (auditError) {
+        shopifyAuditError('backfill.audit.failed', auditError, { shopDomain: shop, merchantId });
+        shopifyDebugLog('backfill.audit.failed', {
+          callbackShopDomain: shop,
+          message: auditError instanceof Error ? auditError.message : 'unknown',
+        });
+      }
+    });
 
     shopifyDebugLog('webhook_registration.started', { callbackShopDomain: shop });
     let webhookRegistrationSuccess = true;
@@ -220,7 +241,7 @@ export async function GET(request: NextRequest) {
       shopify_connected: '1',
       shop: shop,
     };
-    if (!backfillSuccess) successParams.shopify_warning = 'backfill_failed';
+    if (!identityBackfillSuccess) successParams.shopify_warning = 'backfill_failed';
     if (!webhookRegistrationSuccess) successParams.shopify_warning = 'webhook_registration_failed';
 
     const response = integrationsRedirect(request, successParams);
