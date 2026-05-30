@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { createServiceClient } from '@/lib/supabase/server';
+import { TABLES } from '@/lib/supabase/tables';
+import { normaliseEmail } from '@/lib/identity/normalise';
 import { getClientIp } from '@/lib/ratelimit';
 import { buildGorgiasWidgetModel, type GorgiasWidgetModel } from '@/lib/gorgias/widgetData';
-import type { MerchantCustomerLookupDiagnostics } from '@/lib/gorgias/findMerchantCustomerByEmail';
+import {
+  findMerchantCustomerByEmail,
+  type MerchantCustomerByEmailRow,
+  type MerchantCustomerLookupDiagnostics,
+} from '@/lib/gorgias/findMerchantCustomerByEmail';
 import {
   gorgiasWidgetModelToJson,
   type GorgiasWidgetJsonPayload,
@@ -19,8 +26,8 @@ export const maxDuration = 60;
 /** Deploy marker — confirms this module is live in Vercel logs. */
 const GORGIAS_WIDGET_BUILD_MARKER = '673eb81';
 
-const DEBUG_PROOF_EMAIL = 'simeonmurray123@gmail.com';
-const DEBUG_PROOF_MERCHANT_ID = 'af070af9-df1a-46ba-89f8-29409926ef61';
+const CUSTOMER_PROFILE_WIDGET_SELECT =
+  'id, primary_email, emails, merchant_ids, risk_level, risk_score, fraud_flags, identity_confidence_grade';
 
 const JSON_RESPONSE_HEADERS = {
   'Content-Type': 'application/json; charset=utf-8',
@@ -111,10 +118,6 @@ function wantsHtmlResponse(request: NextRequest): boolean {
 
 function isUnresolvedGorgiasVar(value: string): boolean {
   return value.includes('{{') || value.includes('}}');
-}
-
-function normalizeEmailParam(email: string): string {
-  return email.trim().toLowerCase();
 }
 
 function resolveWidgetToken(request: NextRequest): string {
@@ -215,101 +218,142 @@ function returnJsonForModel(input: {
   return returnWidgetHtml(input.branch, html, status, input.ctx);
 }
 
-/** TEMPORARY: set GORGIAS_WIDGET_EMERGENCY_PROOF=0 to disable after Gorgias proof. */
-function gorgiasWidgetEmergencyProofEnabled(): boolean {
-  return process.env.GORGIAS_WIDGET_EMERGENCY_PROOF !== '0';
+type CustomerProfileWidgetRow = {
+  id: string;
+  primary_email: string | null;
+  emails: unknown;
+  merchant_ids: unknown;
+  risk_level: string | null;
+  risk_score: number | null;
+  fraud_flags: unknown;
+  identity_confidence_grade: string | null;
+};
+
+function merchantIdsIncludes(merchantIds: unknown, merchantId: string): boolean {
+  if (!Array.isArray(merchantIds)) return false;
+  return merchantIds.some((id) => String(id) === merchantId);
+}
+
+function profileMatchesEmail(row: CustomerProfileWidgetRow, normEmail: string): boolean {
+  if (row.primary_email?.trim().toLowerCase() === normEmail) return true;
+  if (!Array.isArray(row.emails)) return false;
+  return row.emails.some((entry) => String(entry).trim().toLowerCase() === normEmail);
+}
+
+function parseFraudFlags(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.map((flag) => String(flag)).filter(Boolean);
+}
+
+function rowToMerchantCustomer(row: CustomerProfileWidgetRow): MerchantCustomerByEmailRow {
+  return {
+    id: row.id,
+    risk_level: String(row.risk_level ?? 'unknown'),
+    risk_score: Number(row.risk_score ?? 0),
+    fraud_flags: parseFraudFlags(row.fraud_flags),
+    identity_confidence_grade:
+      typeof row.identity_confidence_grade === 'string' ? row.identity_confidence_grade : null,
+  };
+}
+
+/** customer_profiles emails jsonb requires JSON.stringify for PostgREST contains. */
+async function findMerchantCustomerProfileForWidget(
+  service: SupabaseClient,
+  merchantId: string,
+  normEmail: string
+): Promise<{ customer: MerchantCustomerByEmailRow | null; diagnostics: MerchantCustomerLookupDiagnostics }> {
+  const fromHelper = await findMerchantCustomerByEmail(service, merchantId, normEmail);
+  if (fromHelper.customer) {
+    return fromHelper;
+  }
+
+  const [primaryRes, emailsRes] = await Promise.all([
+    service.from(TABLES.CUSTOMER_PROFILES).select(CUSTOMER_PROFILE_WIDGET_SELECT).eq('primary_email', normEmail),
+    service
+      .from(TABLES.CUSTOMER_PROFILES)
+      .select(CUSTOMER_PROFILE_WIDGET_SELECT)
+      .contains('emails', JSON.stringify([normEmail])),
+  ]);
+
+  if (primaryRes.error) {
+    gorgiasWidgetLog('customer_lookup.primary_email_error', {
+      message: primaryRes.error.message,
+      code: primaryRes.error.code ?? null,
+    });
+  }
+  if (emailsRes.error) {
+    gorgiasWidgetLog('customer_lookup.emails_contains_error', {
+      message: emailsRes.error.message,
+      code: emailsRes.error.code ?? null,
+    });
+  }
+
+  const primaryRows = (primaryRes.data ?? []) as CustomerProfileWidgetRow[];
+  const emailsRows = (emailsRes.data ?? []) as CustomerProfileWidgetRow[];
+  const diagnostics: MerchantCustomerLookupDiagnostics = {
+    ...fromHelper.diagnostics,
+    primaryEmailCandidateRows: Math.max(fromHelper.diagnostics.primaryEmailCandidateRows, primaryRows.length),
+    emailsContainsCandidateRows: Math.max(fromHelper.diagnostics.emailsContainsCandidateRows, emailsRows.length),
+  };
+
+  const byId = new Map<string, CustomerProfileWidgetRow>();
+  for (const row of [...primaryRows, ...emailsRows]) {
+    byId.set(row.id, row);
+  }
+
+  const merchantScoped = [...byId.values()].filter((row) => merchantIdsIncludes(row.merchant_ids, merchantId));
+  diagnostics.merchantScopedRows = merchantScoped.length;
+
+  const matched = merchantScoped
+    .filter((row) => profileMatchesEmail(row, normEmail))
+    .sort((a, b) => Number(b.risk_score ?? 0) - Number(a.risk_score ?? 0));
+
+  diagnostics.emailMatchedRows = matched.length;
+  const row = matched[0] ?? null;
+
+  gorgiasWidgetLog('customer_lookup.widget_route_result', {
+    found: Boolean(row),
+    profileId: row?.id ?? null,
+    merchantScopedRows: diagnostics.merchantScopedRows,
+    emailMatchedRows: diagnostics.emailMatchedRows,
+  });
+
+  if (!row) {
+    return { customer: null, diagnostics };
+  }
+
+  return { customer: rowToMerchantCustomer(row), diagnostics };
 }
 
 export async function GET(request: NextRequest) {
   logBuildMarker();
 
-  if (gorgiasWidgetEmergencyProofEnabled()) {
-    console.log('[gorgias.widget] emergency_proof_return');
-    return NextResponse.json(
-      {
-        risk_level: 'MEDIUM',
-        identity_confidence_grade: 'N/A',
-        match_score: '28',
-        fraud_flags: 'velocity, paymentChurn',
-      },
-      {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json; charset=utf-8',
-          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-        },
-      }
-    );
-  }
-
   const ctx: WidgetReturnContext = { email: '', merchantId: null };
 
-  let widgetToken = '';
-  let email = '';
-  let name = '';
-  let orderId = '';
-  let returnHtml = false;
-  let requestIp = '';
-  let accept = '';
-
   try {
-    const url = new URL(request.url);
-    const { searchParams } = url;
-    gorgiasWidgetLog('step_after_url_search_params', {
-      pathname: url.pathname,
-      paramKeys: Array.from(searchParams.keys()).join(','),
-    });
-
-    widgetToken = resolveWidgetToken(request);
-    const tokenFromHeader = Boolean(request.headers.get(GORGIAS_WIDGET_TOKEN_HEADER)?.trim());
-    gorgiasWidgetLog('step_after_token', {
-      hasWidgetToken: Boolean(widgetToken),
-      widgetTokenPrefix: widgetToken ? widgetTokenDisplayPrefix(widgetToken) : null,
-      tokenFromHeader,
-    });
-
-    email = searchParams.get('email')?.trim() ?? '';
-    name = searchParams.get('name')?.trim() ?? '';
-    orderId = searchParams.get('order_id')?.trim() ?? '';
-    gorgiasWidgetLog('step_after_email', {
-      email,
-      emailUnresolved: isUnresolvedGorgiasVar(email),
-      hasName: Boolean(name),
-      orderId: orderId || null,
-    });
-
-    returnHtml = wantsHtmlResponse(request);
-    gorgiasWidgetLog('step_after_return_html', { returnHtml });
+    const { searchParams } = new URL(request.url);
+    const widgetToken = resolveWidgetToken(request);
+    const email = searchParams.get('email')?.trim() ?? '';
+    const name = searchParams.get('name')?.trim() ?? '';
+    const orderId = searchParams.get('order_id')?.trim() ?? '';
+    const returnHtml = wantsHtmlResponse(request);
 
     ctx.email = email;
 
-    requestIp = getClientIp(request.headers);
-    accept = request.headers.get('accept') ?? '';
+    const requestIp = getClientIp(request.headers);
+    const accept = request.headers.get('accept') ?? '';
 
-    gorgiasWidgetLog('step_before_request', {
+    gorgiasWidgetLog('request', {
       email,
+      emailUnresolved: isUnresolvedGorgiasVar(email),
+      orderId: orderId || null,
       returnHtml,
+      accept,
       hasWidgetToken: Boolean(widgetToken),
+      widgetTokenPrefix: widgetToken ? widgetTokenDisplayPrefix(widgetToken) : null,
+      tokenFromHeader: Boolean(request.headers.get(GORGIAS_WIDGET_TOKEN_HEADER)?.trim()),
       buildMarker: GORGIAS_WIDGET_BUILD_MARKER,
     });
-  } catch (err) {
-    gorgiasWidgetLogError('fatal_initial_parse_error', err, { buildMarker: GORGIAS_WIDGET_BUILD_MARKER });
-    return returnWidgetJson('fatal_initial_parse_error', GORGIAS_WIDGET_JSON_FALLBACK, 200, ctx);
-  }
-
-  gorgiasWidgetLog('request', {
-    email,
-    emailUnresolved: isUnresolvedGorgiasVar(email),
-    orderId: orderId || null,
-    returnHtml,
-    accept,
-    hasWidgetToken: Boolean(widgetToken),
-    widgetTokenPrefix: widgetToken ? widgetTokenDisplayPrefix(widgetToken) : null,
-    tokenFromHeader: Boolean(request.headers.get(GORGIAS_WIDGET_TOKEN_HEADER)?.trim()),
-    buildMarker: GORGIAS_WIDGET_BUILD_MARKER,
-  });
-
-  try {
 
     if (!widgetToken) {
       const model = { state: 'error' as const, message: 'Missing widget token in widget URL.' };
@@ -365,24 +409,6 @@ export async function GET(request: NextRequest) {
       tokenId: authResult.tokenId,
     });
 
-    if (
-      !returnHtml &&
-      normalizeEmailParam(email) === DEBUG_PROOF_EMAIL &&
-      authResult.merchantId === DEBUG_PROOF_MERCHANT_ID
-    ) {
-      return returnWidgetJson(
-        'debug_hardcoded_profile',
-        {
-          risk_level: 'MEDIUM',
-          identity_confidence_grade: 'N/A',
-          match_score: '28',
-          fraud_flags: 'velocity, paymentChurn',
-        },
-        200,
-        ctx
-      );
-    }
-
     if (!email || isUnresolvedGorgiasVar(email)) {
       const model = { state: 'error' as const, message: 'No customer email on this ticket yet.' };
       return returnJsonForModel({
@@ -397,9 +423,40 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    const service = createServiceClient();
+    const normEmail = normaliseEmail(email);
+
+    if (normEmail) {
+      const { customer, diagnostics } = await findMerchantCustomerProfileForWidget(
+        service,
+        authResult.merchantId,
+        normEmail
+      );
+      if (customer) {
+        const profileModel: GorgiasWidgetModel = {
+          state: 'merchant_profile',
+          profileId: customer.id,
+          riskLevel: customer.risk_level,
+          riskScore: customer.risk_score,
+          fraudFlags: customer.fraud_flags,
+          identityConfidenceGrade: customer.identity_confidence_grade,
+          profileUrl: null,
+        };
+        gorgiasWidgetLog('customer_lookup.result', describeModelForLog(profileModel));
+        return returnJsonForModel({
+          branch: 'model_merchant_profile',
+          model: profileModel,
+          lookupDiagnostics: diagnostics,
+          ctx,
+          returnHtml,
+          widgetToken,
+          orderId,
+        });
+      }
+    }
+
     gorgiasWidgetLog('before_build_gorgias_widget_model', { merchantId: authResult.merchantId, email });
 
-    const service = createServiceClient();
     const { model, lookupDiagnostics } = await buildGorgiasWidgetModel(
       service,
       {
