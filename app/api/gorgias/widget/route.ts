@@ -2,31 +2,43 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
 import { getClientIp } from '@/lib/ratelimit';
 import { buildGorgiasWidgetModel } from '@/lib/gorgias/widgetData';
-import { gorgiasWidgetModelToJson } from '@/lib/gorgias/widgetJson';
+import {
+  gorgiasWidgetModelToJson,
+  type GorgiasWidgetJsonPayload,
+} from '@/lib/gorgias/widgetJson';
+import { gorgiasWidgetLog } from '@/lib/gorgias/widgetLog';
 import { GORGIAS_FRAME_HEADERS, renderGorgiasWidgetHtml } from '@/lib/gorgias/renderWidgetHtml';
-import { validateWidgetToken } from '@/lib/api/widgetTokens';
+import { validateWidgetToken, widgetTokenDisplayPrefix } from '@/lib/api/widgetTokens';
 import { GORGIAS_WIDGET_TOKEN_HEADER } from '@/lib/support/gorgias/registerSidebarWidget';
 
 export const dynamic = 'force-dynamic';
 
+const JSON_RESPONSE_HEADERS = {
+  'Content-Type': 'application/json; charset=utf-8',
+  'Cache-Control': 'no-store',
+} as const;
+
 function htmlResponse(html: string, status = 200) {
-  return new NextResponse(html, {
+  const headers = {
+    'Content-Type': 'text/html; charset=utf-8',
+    ...GORGIAS_FRAME_HEADERS,
+  };
+  gorgiasWidgetLog('response_html', { status, headers });
+  return new NextResponse(html, { status, headers });
+}
+
+function jsonResponse(body: GorgiasWidgetJsonPayload, status = 200) {
+  gorgiasWidgetLog('response_json', {
     status,
-    headers: {
-      'Content-Type': 'text/html; charset=utf-8',
-      ...GORGIAS_FRAME_HEADERS,
-    },
+    headers: JSON.stringify(JSON_RESPONSE_HEADERS),
+    body: JSON.stringify(body),
   });
+  return NextResponse.json(body, { status, headers: JSON_RESPONSE_HEADERS });
 }
 
-function jsonResponse(body: Record<string, unknown>, status = 200) {
-  return NextResponse.json(body, { status });
-}
-
-function wantsJsonResponse(request: NextRequest): boolean {
-  const accept = request.headers.get('accept') ?? '';
-  if (accept.includes('application/json')) return true;
-  return request.nextUrl.searchParams.get('format') === 'json';
+/** Gorgias HTTP integrations expect JSON; HTML is opt-in for manual preview. */
+function wantsHtmlResponse(request: NextRequest): boolean {
+  return request.nextUrl.searchParams.get('format') === 'html';
 }
 
 function isUnresolvedGorgiasVar(value: string): boolean {
@@ -39,40 +51,59 @@ function resolveWidgetToken(request: NextRequest): string {
   return request.nextUrl.searchParams.get('widget_token')?.trim() ?? '';
 }
 
+function describeModelForLog(model: Awaited<ReturnType<typeof buildGorgiasWidgetModel>>): {
+  state: string;
+  customerProfileFound: boolean;
+  profileId: string | null;
+} {
+  if (model.state === 'low_clear') {
+    return {
+      state: model.state,
+      customerProfileFound: true,
+      profileId: model.merchantProfile.profileId,
+    };
+  }
+  if (model.state === 'risk') {
+    return {
+      state: model.state,
+      customerProfileFound: model.merchantProfile !== null,
+      profileId: model.merchantProfile?.profileId ?? null,
+    };
+  }
+  return {
+    state: model.state,
+    customerProfileFound: false,
+    profileId: null,
+  };
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const widgetToken = resolveWidgetToken(request);
   const email = searchParams.get('email')?.trim() ?? '';
   const name = searchParams.get('name')?.trim() ?? '';
   const orderId = searchParams.get('order_id')?.trim() ?? '';
-  const returnJson = wantsJsonResponse(request);
+  const returnHtml = wantsHtmlResponse(request);
 
   const requestIp = getClientIp(request.headers);
+  const accept = request.headers.get('accept') ?? '';
+
+  gorgiasWidgetLog('request', {
+    email,
+    emailUnresolved: isUnresolvedGorgiasVar(email),
+    orderId: orderId || null,
+    returnHtml,
+    accept,
+    hasWidgetToken: Boolean(widgetToken),
+    widgetTokenPrefix: widgetToken ? widgetTokenDisplayPrefix(widgetToken) : null,
+    tokenFromHeader: Boolean(request.headers.get(GORGIAS_WIDGET_TOKEN_HEADER)?.trim()),
+  });
 
   if (!widgetToken) {
     const model = { state: 'error' as const, message: 'Missing widget token in widget URL.' };
-    if (returnJson) {
-      return jsonResponse(gorgiasWidgetModelToJson(model), 401);
-    }
-    return htmlResponse(
-      renderGorgiasWidgetHtml({
-        model,
-        profileUrl: null,
-        widgetTokenJson: '""',
-        emailJson: '""',
-        orderIdJson: '""',
-      })
-    );
-  }
-
-  const authResult = await validateWidgetToken(widgetToken);
-  if ('status' in authResult) {
-    const model = {
-      state: 'error' as const,
-      message: 'Invalid widget token. Check Unauth \u2192 Settings \u2192 API & Integrations.',
-    };
-    if (returnJson) {
-      return jsonResponse(gorgiasWidgetModelToJson(model), authResult.status === 500 ? 500 : 401);
+    const body = gorgiasWidgetModelToJson(model);
+    if (!returnHtml) {
+      return jsonResponse(body, 401);
     }
     return htmlResponse(
       renderGorgiasWidgetHtml({
@@ -82,14 +113,24 @@ export async function GET(request: NextRequest) {
         emailJson: '""',
         orderIdJson: '""',
       }),
-      authResult.status === 500 ? 500 : 401
+      401
     );
   }
 
-  if (!email || isUnresolvedGorgiasVar(email)) {
-    const model = { state: 'error' as const, message: 'No customer email on this ticket yet.' };
-    if (returnJson) {
-      return jsonResponse(gorgiasWidgetModelToJson(model), 400);
+  const authResult = await validateWidgetToken(widgetToken);
+  if ('status' in authResult) {
+    gorgiasWidgetLog('widget_token_invalid', {
+      status: authResult.status,
+      message: authResult.message,
+    });
+    const model = {
+      state: 'error' as const,
+      message: 'Invalid widget token. Check Unauth \u2192 Settings \u2192 API & Integrations.',
+    };
+    const status = authResult.status === 500 ? 500 : 401;
+    const body = gorgiasWidgetModelToJson(model);
+    if (!returnHtml) {
+      return jsonResponse(body, status);
     }
     return htmlResponse(
       renderGorgiasWidgetHtml({
@@ -98,7 +139,32 @@ export async function GET(request: NextRequest) {
         widgetTokenJson: '""',
         emailJson: '""',
         orderIdJson: '""',
-      })
+      }),
+      status
+    );
+  }
+
+  gorgiasWidgetLog('widget_token_valid', {
+    merchantId: authResult.merchantId,
+    apiKeyId: authResult.apiKeyId,
+    tokenId: authResult.tokenId,
+  });
+
+  if (!email || isUnresolvedGorgiasVar(email)) {
+    const model = { state: 'error' as const, message: 'No customer email on this ticket yet.' };
+    const body = gorgiasWidgetModelToJson(model);
+    if (!returnHtml) {
+      return jsonResponse(body, 400);
+    }
+    return htmlResponse(
+      renderGorgiasWidgetHtml({
+        model,
+        profileUrl: null,
+        widgetTokenJson: '""',
+        emailJson: '""',
+        orderIdJson: '""',
+      }),
+      400
     );
   }
 
@@ -117,8 +183,13 @@ export async function GET(request: NextRequest) {
     }
   );
 
-  if (returnJson) {
-    return jsonResponse(gorgiasWidgetModelToJson(model));
+  const modelLog = describeModelForLog(model);
+  gorgiasWidgetLog('customer_lookup', modelLog);
+
+  const body = gorgiasWidgetModelToJson(model);
+
+  if (!returnHtml) {
+    return jsonResponse(body);
   }
 
   const html = renderGorgiasWidgetHtml({
