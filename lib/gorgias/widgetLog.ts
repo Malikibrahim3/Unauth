@@ -4,3 +4,9 @@ type GorgiasWidgetLogPayload = Record<string, string | number | boolean | null |
 export function gorgiasWidgetLog(event: string, payload: GorgiasWidgetLogPayload = {}): void {
   console.log(`[gorgias.widget] ${event}`, payload);
 }
+
+export function gorgiasWidgetLogError(event: string, err: unknown, payload: GorgiasWidgetLogPayload = {}): void {
+  const message = err instanceof Error ? err.message : String(err);
+  const stack = err instanceof Error ? err.stack : undefined;
+  console.error(`[gorgias.widget] ${event}`, { ...payload, message, stack });
+}
