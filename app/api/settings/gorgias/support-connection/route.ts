@@ -63,7 +63,10 @@ async function POSTHandler(req: NextRequest) {
   try {
     const existing = await getMerchantGorgiasSupportConnection(service, ctx.merchantId);
 
-    if (existing) {
+    // Route a cleanly disabled+wiped connection through create (re-registers webhook + secret).
+    // Any other existing connection (active, error, or disabled with credentials still stored)
+    // goes through the update path.
+    if (existing && !(existing.status === 'disabled' && !existing.gorgias_api_configured)) {
       const updated = await updateMerchantGorgiasSupportConnectionMetadata(
         service,
         ctx.merchantId,

@@ -34,16 +34,24 @@ jest.mock('@/lib/support/gorgias/ensureWidgetToken', () => ({
 
 jest.mock('@/lib/support/gorgias/registerSidebarWidget', () => ({
   registerGorgiasSidebarWidget: jest.fn(),
+  deleteGorgiasSidebarWidget: jest.fn().mockResolvedValue(undefined),
+  gorgiasApiBaseUrl: (url: string) => `${url.replace(/\/$/, '')}/api`,
   GorgiasSidebarRegistrationError: class GorgiasSidebarRegistrationError extends Error {
     status = 400;
     detail = 'mock';
   },
 }));
 
+jest.mock('@/lib/support/gorgias/registerSupportWebhook', () => ({
+  registerGorgiasSupportWebhook: jest.fn(),
+  deleteGorgiasSupportWebhookIntegration: jest.fn().mockResolvedValue(undefined),
+}));
+
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission } from '@/lib/permissions';
 import { createWidgetTokenForGorgiasSidebar } from '@/lib/support/gorgias/ensureWidgetToken';
 import { registerGorgiasSidebarWidget } from '@/lib/support/gorgias/registerSidebarWidget';
+import { registerGorgiasSupportWebhook } from '@/lib/support/gorgias/registerSupportWebhook';
 import { GET, POST } from '@/app/api/settings/gorgias/support-connection/route';
 import { POST as rotatePost } from '@/app/api/settings/gorgias/support-connection/rotate-secret/route';
 import { POST as disablePost } from '@/app/api/settings/gorgias/support-connection/disable/route';
@@ -235,6 +243,9 @@ describe('Gorgias support connection settings API', () => {
       integrationId: 101,
       widgetId: 202,
     });
+    (registerGorgiasSupportWebhook as jest.Mock).mockResolvedValue({
+      integrationId: 301,
+    });
   });
 
   it('rejects unauthenticated GET', async () => {
@@ -317,6 +328,15 @@ describe('Gorgias support connection settings API', () => {
     expect(json.sidebar_widget?.integration_id).toBe(101);
     expect(json.sidebar_widget?.widget_id).toBe(202);
     expect(registerGorgiasSidebarWidget).toHaveBeenCalled();
+    expect(registerGorgiasSupportWebhook).toHaveBeenCalledWith(
+      expect.objectContaining({
+        domain: GORGIAS_DOMAIN,
+        webhookUrl: expect.stringContaining('/api/gorgias/support-webhook'),
+      })
+    );
+    expect(json.support_webhook_auto_registered).toBe(true);
+    expect(json.connection.support_webhook_registered).toBe(true);
+    expect(json.connection.support_webhook_integration_id).toBe(301);
   });
 
   it('GET after create does not return plaintext or hash', async () => {
@@ -342,9 +362,13 @@ describe('Gorgias support connection settings API', () => {
     expect(got.connection.webhook_secret_configured).toBe(true);
     expect(got.connection.sidebar_widget_registered).toBe(true);
     expect(got.connection.sidebar_integration_id).toBe(101);
+    expect(got.connection.support_webhook_registered).toBe(true);
+    expect(got.connection.support_webhook_integration_id).toBe(301);
     expect(got.connection.webhook_secret_plaintext).toBeUndefined();
     expect(got.connection.webhook_secret_hash).toBeUndefined();
-    expect(created.webhook_secret_plaintext).toBeTruthy();
+    // Webhook auto-registered, so the plaintext secret is still returned (for rotation use)
+    // but the UI won't show the manual setup panel.
+    expect(created.support_webhook_auto_registered).toBe(true);
   });
 
   it('rotate returns new plaintext once and invalidates old secret', async () => {
@@ -400,7 +424,7 @@ describe('Gorgias support connection settings API', () => {
     expect(resolution).toEqual({ error: 'not_found' });
   });
 
-  it('disable sets status without deleting connection row', async () => {
+  it('disable sets status, wipes credentials, and keeps the row', async () => {
     setupAuth(true);
     setupPermission(MERCHANT_A);
     const { supabase, rows } = makeSettingsSupabase([makeConnectionRow()]);
@@ -415,6 +439,9 @@ describe('Gorgias support connection settings API', () => {
     const json = await res.json();
     expect(json.connection.status).toBe('disabled');
     expect(rows).toHaveLength(1);
+    // Credentials and webhook secret wiped on clean disconnect.
+    expect(rows[0].access_token_encrypted).toBeNull();
+    expect(rows[0].webhook_secret_hash).toBeNull();
   });
 
   it('normalizes domain and account identifiers', () => {

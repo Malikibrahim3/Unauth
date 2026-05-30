@@ -10,12 +10,21 @@ import {
   generateGorgiasWebhookSecret,
   isGorgiasWebhookSecretSufficientLength,
 } from '@/lib/support/gorgias/webhookSecret';
-import { encryptGorgiasApiCredentials } from '@/lib/support/gorgias/credentialCrypto';
+import {
+  encryptGorgiasApiCredentials,
+  decryptGorgiasApiCredentials,
+} from '@/lib/support/gorgias/credentialCrypto';
 import { createWidgetTokenForGorgiasSidebar } from '@/lib/support/gorgias/ensureWidgetToken';
 import {
   GorgiasSidebarRegistrationError,
   registerGorgiasSidebarWidget,
+  deleteGorgiasSidebarWidget,
+  gorgiasApiBaseUrl,
 } from '@/lib/support/gorgias/registerSidebarWidget';
+import {
+  registerGorgiasSupportWebhook,
+  deleteGorgiasSupportWebhookIntegration,
+} from '@/lib/support/gorgias/registerSupportWebhook';
 import { env } from '@/lib/utils/env';
 
 // Client-safe constants/type live in the shared module so the client component
@@ -35,6 +44,7 @@ import {
   type GorgiasSupportConnectionSettings,
   type GorgiasSidebarScopeEntry,
   type GorgiasSidebarWidgetSetupResult,
+  type GorgiasSupportWebhookScopeEntry,
 } from '@/lib/support/gorgias/supportConnectionShared';
 
 type GorgiasConnectionDbRow = {
@@ -68,6 +78,26 @@ function readSidebarScopeEntry(scopes: unknown): GorgiasSidebarScopeEntry | null
       if (
         typeof candidate.integration_id === 'number' &&
         typeof candidate.widget_id === 'number' &&
+        typeof candidate.registered_at === 'string'
+      ) {
+        return candidate;
+      }
+    }
+  }
+  return null;
+}
+
+function readGorgiasWebhookScopeEntry(scopes: unknown): GorgiasSupportWebhookScopeEntry | null {
+  if (!Array.isArray(scopes)) return null;
+  for (const entry of scopes) {
+    if (
+      entry &&
+      typeof entry === 'object' &&
+      (entry as GorgiasSupportWebhookScopeEntry).kind === 'gorgias_support_webhook'
+    ) {
+      const candidate = entry as GorgiasSupportWebhookScopeEntry;
+      if (
+        typeof candidate.integration_id === 'number' &&
         typeof candidate.registered_at === 'string'
       ) {
         return candidate;
@@ -128,6 +158,7 @@ export function toGorgiasSupportConnectionSettings(
   } = row;
 
   const sidebarScope = readSidebarScopeEntry(scopes);
+  const webhookScope = readGorgiasWebhookScopeEntry(scopes);
 
   return {
     id: rest.id,
@@ -145,6 +176,8 @@ export function toGorgiasSupportConnectionSettings(
     sidebar_widget_registered: Boolean(sidebarScope),
     sidebar_integration_id: sidebarScope?.integration_id ?? null,
     sidebar_widget_id: sidebarScope?.widget_id ?? null,
+    support_webhook_registered: Boolean(webhookScope),
+    support_webhook_integration_id: webhookScope?.integration_id ?? null,
   };
 }
 
@@ -166,6 +199,25 @@ export async function getMerchantGorgiasSupportConnection(
   }
 
   return data ? toGorgiasSupportConnectionSettings(data) : null;
+}
+
+async function getGorgiasConnectionRawRow(
+  supabase: unknown,
+  merchantId: string
+): Promise<GorgiasConnectionDbRow | null> {
+  const { data, error } = await (supabase as ListableSupabase)
+    .from(TABLES.SUPPORT_PROVIDER_CONNECTIONS)
+    .select(CONNECTION_SETTINGS_SELECT)
+    .eq('merchant_id', merchantId)
+    .eq('provider', 'gorgias')
+    .order('updated_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`get_gorgias_raw_row_failed: ${error.message}`);
+  }
+  return data;
 }
 
 export const gorgiasSupportConnectionInputSchema = z
@@ -244,6 +296,7 @@ export type CreateGorgiasSupportConnectionResult = {
   header_name: string;
   warning: string;
   sidebar_widget: GorgiasSidebarWidgetSetupResult | null;
+  support_webhook_auto_registered: boolean;
 };
 
 export type UpdateGorgiasSupportConnectionResult = {
@@ -393,7 +446,9 @@ export async function createMerchantGorgiasSupportConnection(
   const identity = resolveGorgiasConnectionIdentity(parsed);
 
   const existing = await getMerchantGorgiasSupportConnection(supabase, merchantId);
-  if (existing) {
+  // Block if there's an active/error connection or one that still has stored credentials.
+  // A cleanly disabled+wiped row (status='disabled', no credentials) can be reactivated here.
+  if (existing && !(existing.status === 'disabled' && !existing.gorgias_api_configured)) {
     throw new Error('gorgias_connection_already_exists');
   }
 
@@ -419,6 +474,44 @@ export async function createMerchantGorgiasSupportConnection(
     );
   }
 
+  // Auto-register the inbound webhook integration in Gorgias. Best-effort: a failure
+  // gracefully falls back to the manual one-time-secret panel — connect still succeeds.
+  let webhookScope: GorgiasSupportWebhookScopeEntry | null = null;
+  let supportWebhookAutoRegistered = false;
+  if (
+    identity.provider_base_url &&
+    identity.domain &&
+    sidebarRegistration.accessTokenEncrypted
+  ) {
+    try {
+      const { integrationId } = await registerGorgiasSupportWebhook({
+        providerBaseUrl: identity.provider_base_url,
+        credentials: {
+          email: parsed.gorgias_api_email,
+          api_key: parsed.gorgias_api_key,
+        },
+        webhookUrl: buildGorgiasSupportWebhookUrl(),
+        webhookSecretPlaintext,
+        domain: identity.domain,
+        previousIntegrationId: null,
+      });
+      webhookScope = {
+        kind: 'gorgias_support_webhook',
+        integration_id: integrationId,
+        registered_at: new Date().toISOString(),
+      };
+      supportWebhookAutoRegistered = true;
+    } catch {
+      // Graceful fallback — merchant gets the one-time secret panel for manual setup.
+      supportWebhookAutoRegistered = false;
+    }
+  }
+
+  const mergedScopes: unknown[] = [
+    ...(sidebarRegistration.scopes ?? []),
+    ...(webhookScope ? [webhookScope] : []),
+  ];
+
   await upsertGorgiasSupportConnection(supabase, {
     merchant_id: merchantId,
     provider_account_id: identity.provider_account_id,
@@ -432,7 +525,7 @@ export async function createMerchantGorgiasSupportConnection(
     ...(sidebarRegistration.accessTokenEncrypted
       ? { accessTokenEncrypted: sidebarRegistration.accessTokenEncrypted }
       : {}),
-    ...(sidebarRegistration.scopes ? { scopes: sidebarRegistration.scopes } : {}),
+    ...(mergedScopes.length > 0 ? { scopes: mergedScopes } : {}),
   });
 
   const connection = await getMerchantGorgiasSupportConnection(supabase, merchantId);
@@ -447,6 +540,7 @@ export async function createMerchantGorgiasSupportConnection(
     header_name: GORGIAS_SUPPORT_WEBHOOK_HEADER_NAME,
     warning: GORGIAS_SUPPORT_SECRET_SAVE_WARNING,
     sidebar_widget: sidebarRegistration.result,
+    support_webhook_auto_registered: supportWebhookAutoRegistered,
   };
 }
 
@@ -532,6 +626,61 @@ export async function rotateMerchantGorgiasWebhookSecret(
     throw new Error('generated_webhook_secret_invalid');
   }
 
+  // Re-register the Gorgias webhook integration with the new secret so Gorgias starts
+  // sending the new secret immediately. Best-effort: failure falls back to manual.
+  let updatedWebhookScope: GorgiasSupportWebhookScopeEntry | null =
+    existing.support_webhook_integration_id != null
+      ? {
+          kind: 'gorgias_support_webhook',
+          integration_id: existing.support_webhook_integration_id,
+          registered_at: new Date().toISOString(),
+        }
+      : null;
+
+  if (existing.provider_base_url && existing.support_webhook_integration_id != null) {
+    const rawRow = await getGorgiasConnectionRawRow(supabase, merchantId);
+    if (rawRow?.access_token_encrypted) {
+      try {
+        const credentials = decryptGorgiasApiCredentials(rawRow.access_token_encrypted);
+        const domain =
+          existing.provider_base_url
+            .replace(/^https?:\/\//i, '')
+            .split('/')[0] ?? '';
+        const { integrationId } = await registerGorgiasSupportWebhook({
+          providerBaseUrl: existing.provider_base_url,
+          credentials,
+          webhookUrl: buildGorgiasSupportWebhookUrl(),
+          webhookSecretPlaintext,
+          domain,
+          previousIntegrationId: existing.support_webhook_integration_id,
+        });
+        updatedWebhookScope = {
+          kind: 'gorgias_support_webhook',
+          integration_id: integrationId,
+          registered_at: new Date().toISOString(),
+        };
+      } catch {
+        // Best-effort — still rotate the local secret; merchant may need to reconfigure.
+      }
+    }
+  }
+
+  // Rebuild scopes preserving the existing sidebar scope and replacing the webhook scope.
+  const sidebarScope: GorgiasSidebarScopeEntry | null =
+    existing.sidebar_integration_id != null && existing.sidebar_widget_id != null
+      ? {
+          kind: 'gorgias_sidebar_widget',
+          integration_id: existing.sidebar_integration_id,
+          widget_id: existing.sidebar_widget_id,
+          registered_at: new Date().toISOString(),
+        }
+      : null;
+
+  const updatedScopes: unknown[] = [
+    ...(sidebarScope ? [sidebarScope] : []),
+    ...(updatedWebhookScope ? [updatedWebhookScope] : []),
+  ];
+
   await upsertGorgiasSupportConnection(supabase, {
     merchant_id: merchantId,
     provider_account_id: existing.provider_account_id,
@@ -545,6 +694,7 @@ export async function rotateMerchantGorgiasWebhookSecret(
         : 'active',
     webhookSecretPlaintext,
     rotateWebhookSecret: true,
+    ...(updatedScopes.length > 0 ? { scopes: updatedScopes } : {}),
   });
 
   const connection = await getMerchantGorgiasSupportConnection(supabase, merchantId);
@@ -570,10 +720,51 @@ export async function disableMerchantGorgiasSupportConnection(
     throw new Error('gorgias_connection_not_found');
   }
 
+  // Best-effort remote cleanup: deregister sidebar widget + webhook integration in Gorgias.
+  // Failures must never block the local wipe — swallow everything.
+  if (existing.provider_base_url) {
+    const rawRow = await getGorgiasConnectionRawRow(supabase, merchantId);
+    if (rawRow?.access_token_encrypted) {
+      try {
+        const credentials = decryptGorgiasApiCredentials(rawRow.access_token_encrypted);
+        const apiBaseUrl = gorgiasApiBaseUrl(existing.provider_base_url);
+
+        if (
+          existing.sidebar_integration_id != null &&
+          existing.sidebar_widget_id != null
+        ) {
+          await deleteGorgiasSidebarWidget(apiBaseUrl, credentials, {
+            integrationId: existing.sidebar_integration_id,
+            widgetId: existing.sidebar_widget_id,
+          });
+        }
+
+        if (existing.support_webhook_integration_id != null) {
+          await deleteGorgiasSupportWebhookIntegration(
+            apiBaseUrl,
+            credentials,
+            existing.support_webhook_integration_id
+          );
+        }
+      } catch {
+        // Remote cleanup failed — proceed with local wipe regardless.
+      }
+    }
+  }
+
   const now = new Date().toISOString();
   const { data, error } = await (supabase as ListableSupabase)
     .from(TABLES.SUPPORT_PROVIDER_CONNECTIONS)
-    .update({ status: 'disabled', updated_at: now })
+    .update({
+      status: 'disabled',
+      access_token_encrypted: null,
+      webhook_secret_hash: null,
+      webhook_secret_created_at: null,
+      webhook_secret_rotated_at: null,
+      scopes: [],
+      last_error: null,
+      updated_at: now,
+    })
     .eq('id', existing.id)
     .eq('merchant_id', merchantId)
     .select(CONNECTION_SETTINGS_SELECT)

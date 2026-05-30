@@ -65,6 +65,22 @@ export type SupportCaseIntakeRow = {
   updated_at_provider: string | null;
   ingested_at: string;
   updated_at: string;
+  // Additive claim-intelligence signals (migration 20260530150000).
+  channel: string | null;
+  message_count: number | null;
+  customer_reply_count: number | null;
+  was_reopened: boolean | null;
+  macros_used: unknown[];
+  sentiment_score: number | null;
+  chargeback_threatened: boolean;
+  is_claim: boolean;
+  claim_type: string | null;
+  claim_type_confidence: number | null;
+  provided_evidence: boolean | null;
+  accepted_first_resolution: boolean | null;
+  resolution_type: string | null;
+  escalation_count: number | null;
+  time_to_first_claim_message_seconds: number | null;
 };
 
 export type SupportCaseEventRow = {

@@ -38,6 +38,12 @@ export type GorgiasSidebarScopeEntry = {
   registered_at: string;
 };
 
+export type GorgiasSupportWebhookScopeEntry = {
+  kind: 'gorgias_support_webhook';
+  integration_id: number;
+  registered_at: string;
+};
+
 export type GorgiasSupportConnectionSettings = {
   id: string;
   provider_account_id: string | null;
@@ -54,6 +60,8 @@ export type GorgiasSupportConnectionSettings = {
   sidebar_widget_registered: boolean;
   sidebar_integration_id: number | null;
   sidebar_widget_id: number | null;
+  support_webhook_registered: boolean;
+  support_webhook_integration_id: number | null;
 };
 
 export type GorgiasSidebarWidgetSetupResult = {

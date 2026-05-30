@@ -68,7 +68,7 @@ export function buildGorgiasSidebarWidgetTemplate(appBaseUrl: string) {
   };
 }
 
-function basicAuthHeader(email: string, apiKey: string): string {
+export function basicAuthHeader(email: string, apiKey: string): string {
   return `Basic ${Buffer.from(`${email}:${apiKey}`, 'utf8').toString('base64')}`;
 }
 
@@ -88,7 +88,7 @@ async function parseGorgiasErrorResponse(res: Response): Promise<string> {
   return text.slice(0, 500);
 }
 
-async function gorgiasApiRequest<T>(
+export async function gorgiasApiRequest<T>(
   apiBaseUrl: string,
   path: string,
   credentials: { email: string; api_key: string },
@@ -131,7 +131,7 @@ type GorgiasWidgetResponse = {
  * abort a successful re-registration. The widget is deleted before its integration
  * because the widget references the integration.
  */
-async function deleteGorgiasSidebarWidget(
+export async function deleteGorgiasSidebarWidget(
   apiBaseUrl: string,
   credentials: { email: string; api_key: string },
   previous: { integrationId: number; widgetId: number }
@@ -179,8 +179,8 @@ export async function registerGorgiasSidebarWidget(input: {
     {
       method: 'POST',
       body: JSON.stringify({
-        name: 'Unauth Fraud Intelligence',
-        description: 'Unauth fraud intelligence for Gorgias support tickets',
+        name: 'Unauth Identity Intelligence',
+        description: 'Unauth identity intelligence for Gorgias support tickets',
         type: 'http',
         http: {
           url: widgetUrl,
@@ -216,7 +216,7 @@ export async function registerGorgiasSidebarWidget(input: {
   );
 
   // New widget is live — now remove the previous one so the merchant doesn't end up
-  // with two "Unauth Fraud Intelligence" cards. Best-effort; never aborts on failure.
+  // with two "Unauth Identity Intelligence" cards. Best-effort; never aborts on failure.
   if (input.previous) {
     await deleteGorgiasSidebarWidget(apiBaseUrl, input.credentials, input.previous);
   }

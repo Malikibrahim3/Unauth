@@ -151,7 +151,10 @@ export default function GorgiasSupportSyncClient({ canManage }: Props) {
       const sidebar = (body.sidebar_widget ?? null) as GorgiasSidebarWidgetSetupResult | null;
       const isUpdate = !body.webhook_secret_plaintext && Boolean(body.connection);
 
-      if (body.webhook_secret_plaintext) {
+      const webhookAutoRegistered = Boolean(body.support_webhook_auto_registered);
+
+      // Only show the one-time secret panel if the webhook was NOT auto-registered.
+      if (body.webhook_secret_plaintext && !webhookAutoRegistered) {
         setEphemeralSecret({
           secret: body.webhook_secret_plaintext,
           webhookUrl: body.webhook_url,
@@ -161,13 +164,13 @@ export default function GorgiasSupportSyncClient({ canManage }: Props) {
         setShowSetupInstructions(true);
       }
 
-      // The webhook + credentials always succeed here; only the sidebar widget can fail
-      // for a non-credential reason (e.g. an account ID was given instead of a domain).
       if (sidebar && sidebar.status === 'error') {
         setMessage({
           type: 'warning',
-          text: `Gorgias connected and the support webhook is ready, but the sidebar widget couldn't be registered automatically (${sidebar.error ?? 'unknown error'}). Reconnect to try again.`,
+          text: `Gorgias connected${webhookAutoRegistered ? ' and ticket sync is active' : ''}, but the sidebar widget couldn't be registered automatically (${sidebar.error ?? 'unknown error'}). Reconnect to try again.`,
         });
+      } else if (webhookAutoRegistered) {
+        setMessage({ type: 'success', text: GORGIAS_CONNECT_SUCCESS_MESSAGE });
       } else if (body.webhook_secret_plaintext) {
         setMessage({
           type: 'success',
@@ -527,8 +530,9 @@ export default function GorgiasSupportSyncClient({ canManage }: Props) {
           </div>
           {renderCredentialFields(true)}
           <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-            This creates the webhook connection and registers the Unauth sidebar widget in Gorgias
-            automatically using your REST API credentials.
+            Registers the Unauth sidebar widget and ticket webhook in Gorgias automatically using
+            your REST API credentials. If the domain cannot be resolved, you will be given a
+            one-time secret to configure the webhook manually.
           </p>
           <button
             type="submit"
@@ -579,6 +583,12 @@ export default function GorgiasSupportSyncClient({ canManage }: Props) {
               <dt style={{ color: 'var(--text-muted)' }}>Sidebar widget</dt>
               <dd style={{ color: 'var(--text)' }}>
                 {connection.sidebar_widget_registered ? 'Registered in Gorgias' : 'Not registered'}
+              </dd>
+            </div>
+            <div className="flex justify-between gap-4">
+              <dt style={{ color: 'var(--text-muted)' }}>Ticket webhook</dt>
+              <dd style={{ color: 'var(--text)' }}>
+                {connection.support_webhook_registered ? 'Registered in Gorgias' : 'Manual setup required'}
               </dd>
             </div>
             {connection.sidebar_integration_id != null && (

@@ -1,4 +1,10 @@
-import type { GorgiasWidgetModel, WidgetStats } from '@/lib/gorgias/widgetData';
+import type {
+  GorgiasClaimWidgetResult,
+  GorgiasWidgetModel,
+  NetworkStats,
+  PrimaryReason,
+  WidgetStats,
+} from '@/lib/gorgias/widgetData';
 
 /** Flat root object — field paths must match buildGorgiasSidebarWidgetTemplate() exactly. */
 export type GorgiasWidgetJsonPayload = {
@@ -7,6 +13,68 @@ export type GorgiasWidgetJsonPayload = {
   primary_reason: string;
   recent_activity: string;
 };
+
+const NO_NETWORK_LABEL = 'No network history found';
+
+function wholePct(rate0to1: number): string {
+  return `${Math.round(rate0to1 * 100)}%`;
+}
+
+function formatPrimaryReasonValue(reason: PrimaryReason): string {
+  if (!reason) return '—';
+  if (reason.type === 'dominant') return `${reason.label} · ${reason.percentage}%`;
+  return `${reason.reasonCount} different ${reason.reasonCount === 1 ? 'reason' : 'reasons'} used`;
+}
+
+function formatClaimOrders(thisStoreOrders: number, network: NetworkStats | null): string {
+  const storePart = `${thisStoreOrders} ${pluralise(thisStoreOrders, 'order', 'orders')} here`;
+  if (!network) return `${storePart} · ${NO_NETWORK_LABEL}`;
+  const merchants = pluralise(network.merchantCount, 'merchant', 'merchants');
+  if (network.orderCount > 0) {
+    return `${storePart} · ${network.orderCount} across ${network.merchantCount} ${merchants}`;
+  }
+  // Network present but order denominator unknown (cross-merchant detect only).
+  return `${storePart} · seen at ${network.merchantCount} ${merchants}`;
+}
+
+function formatClaimRateField(thisStoreRate: number, network: NetworkStats | null): string {
+  const storePart = `${wholePct(thisStoreRate)} this store`;
+  if (!network || network.orderCount === 0) return storePart;
+  return `${storePart} · ${wholePct(network.claimRate)} network`;
+}
+
+function formatRecent(network: NetworkStats | null): string {
+  if (!network || network.recentClaimCount === 0) return '—';
+  return `${network.recentClaimCount} ${pluralise(network.recentClaimCount, 'claim', 'claims')} in last 90 days`;
+}
+
+/**
+ * Map the claim-intelligence widget data to the four native text fields the
+ * Gorgias card renders. Two-column (This Store · Network) semantics are encoded
+ * inside each string — Gorgias sidebar widgets have no table primitive. No risk
+ * score and no "fraud" wording is emitted.
+ */
+export function claimWidgetToJson(result: GorgiasClaimWidgetResult): GorgiasWidgetJsonPayload {
+  if (!result.ok) {
+    if (result.kind === 'not_found') {
+      return { orders: 'Not seen at any store yet', claim_rate: '—', primary_reason: '—', recent_activity: '—' };
+    }
+    return {
+      orders: (result.message ?? 'Could not load identity intelligence.').slice(0, 100),
+      claim_rate: '—',
+      primary_reason: '—',
+      recent_activity: '—',
+    };
+  }
+
+  const { thisStore, network } = result.data;
+  return {
+    orders: formatClaimOrders(thisStore.orderCount, network),
+    claim_rate: formatClaimRateField(thisStore.claimRate, network),
+    primary_reason: network ? formatPrimaryReasonValue(network.primaryReason) : '—',
+    recent_activity: formatRecent(network),
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Display formatters
