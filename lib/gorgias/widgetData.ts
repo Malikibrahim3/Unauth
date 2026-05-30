@@ -13,6 +13,8 @@ import {
   findMerchantCustomerByEmail,
   type MerchantCustomerLookupDiagnostics,
 } from '@/lib/gorgias/findMerchantCustomerByEmail';
+import { hashSupportEmail } from '@/lib/support/intake/store';
+import type { ClaimType } from '@/lib/support/intake/classifyClaim';
 
 // ---------------------------------------------------------------------------
 // Widget stats — the core data backing the comparison table rows
@@ -23,7 +25,7 @@ export type WidgetStats = {
   storeOrders: number;
   /** Claims at this merchant. */
   storeClaims: number;
-  /** Top claim reason if one reason accounts for ≥50% of claims; otherwise
+  /** Top claim reason if one reason accounts for >50% of claims; otherwise
    *  "N different reasons"; null when no claims. */
   primaryReason: string | null;
   /** Claims at this merchant in the last 90 days. */
@@ -418,4 +420,279 @@ export function tierHeadline(tier: WidgetRiskTier): string {
   if (tier === 'high') return 'HIGH RISK';
   if (tier === 'medium') return 'ELEVATED RISK';
   return 'LOW RISK';
+}
+
+// ===========================================================================
+// Claim-intelligence widget data layer
+//
+// Sources the rendered widget from the claim-intelligence tables:
+//   • thisStore  ← customer_claim_summary (per-merchant rollup)
+//   • network    ← the identity-graph engine (v1 lookup + customer_profiles
+//                  aggregates surfaced through GorgiasWidgetModel). The v1
+//                  lookup remains the cross-merchant detector; customer_profiles
+//                  supplies the network order/claim aggregates.
+//   • primaryReason ← support_case_intake.claim_type across all merchants
+//
+// No risk score and no "fraud" wording is emitted from this layer (see the
+// JSON/HTML renderers). claim_events is deliberately NOT queried: it is the
+// append-only status-transition log and carries neither customer_email_hash
+// nor claim_type.
+// ===========================================================================
+
+export const CLAIM_TYPE_LABELS: Record<ClaimType, string> = {
+  INR: 'Item not received',
+  damaged: 'Item arrived damaged',
+  wrong_item: 'Wrong item received',
+  not_as_described: 'Item not as described',
+  other: 'Other',
+};
+
+export type PrimaryReason =
+  | { type: 'dominant'; label: string; percentage: number }
+  | { type: 'varied'; reasonCount: number }
+  | null;
+
+export type ThisStoreStats = {
+  orderCount: number;
+  claimCount: number;
+  /** 0–1, rounded to 2dp. */
+  claimRate: number;
+  lastClaimAt: string | null;
+  ordersCountSource: 'shopify_payload' | 'intake_count';
+};
+
+export type NetworkStats = {
+  merchantCount: number;
+  orderCount: number;
+  claimCount: number;
+  /** 0–1, rounded to 2dp. 0 when the order denominator is unknown. */
+  claimRate: number;
+  lastClaimAt: string | null;
+  primaryReason: PrimaryReason;
+  recentClaimCount: number;
+  recentWindowDays: 90;
+};
+
+export type ClaimWidgetData = {
+  thisStore: ThisStoreStats;
+  network: NetworkStats | null;
+  profileUrl: string;
+  dataFreshAt: string;
+};
+
+export type GorgiasClaimWidgetResult =
+  | { ok: true; data: ClaimWidgetData }
+  | { ok: false; kind: 'error' | 'not_found'; message?: string };
+
+function round2(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
+/** customer_claim_summary row shape we read (subset). */
+type ClaimSummaryRow = {
+  total_orders: number;
+  total_claims: number;
+  claim_rate: number;
+  last_claim_at: string | null;
+  updated_at: string | null;
+};
+
+async function readThisStoreSummary(
+  service: SupabaseClient,
+  merchantId: string,
+  emailHash: string
+): Promise<ClaimSummaryRow | null> {
+  const { data, error } = await service
+    .from(TABLES.CUSTOMER_CLAIM_SUMMARY)
+    .select('total_orders, total_claims, claim_rate, last_claim_at, updated_at')
+    .eq('merchant_id', merchantId)
+    .eq('customer_email_hash', emailHash)
+    .maybeSingle();
+
+  if (error || !data) return null;
+  return {
+    total_orders: Number(data.total_orders ?? 0),
+    total_claims: Number(data.total_claims ?? 0),
+    claim_rate: Number(data.claim_rate ?? 0),
+    last_claim_at: typeof data.last_claim_at === 'string' ? data.last_claim_at : null,
+    updated_at: typeof data.updated_at === 'string' ? data.updated_at : null,
+  };
+}
+
+/**
+ * Network-wide adaptive primary reason, computed from claim_type counts across
+ * ALL merchants for this identity in support_case_intake (is_claim = true).
+ */
+export async function derivePrimaryReason(
+  service: SupabaseClient,
+  emailHash: string
+): Promise<PrimaryReason> {
+  const { data, error } = await service
+    .from(TABLES.SUPPORT_CASE_INTAKE)
+    .select('claim_type')
+    .eq('customer_email_hash', emailHash)
+    .eq('is_claim', true);
+
+  if (error || !data) return null;
+
+  const types = (data as Array<{ claim_type: unknown }>)
+    .map((r) => (typeof r.claim_type === 'string' ? r.claim_type : null))
+    .filter((t): t is ClaimType => t !== null && t in CLAIM_TYPE_LABELS);
+
+  return derivePrimaryReasonFromTypes(types);
+}
+
+/** Pure: adaptive primary-reason from a list of claim types. */
+export function derivePrimaryReasonFromTypes(types: ClaimType[]): PrimaryReason {
+  if (types.length === 0) return null;
+
+  const counts = new Map<ClaimType, number>();
+  for (const t of types) counts.set(t, (counts.get(t) ?? 0) + 1);
+
+  const sorted = [...counts.entries()].sort((a, b) => b[1] - a[1]);
+  const [topType, topCount] = sorted[0];
+
+  if (topCount / types.length > 0.5) {
+    return {
+      type: 'dominant',
+      label: CLAIM_TYPE_LABELS[topType],
+      percentage: Math.round((topCount / types.length) * 100),
+    };
+  }
+  return { type: 'varied', reasonCount: counts.size };
+}
+
+/**
+ * Pure transform: assemble the claim-intelligence widget data from the gathered
+ * model, the per-store summary row, and the network primary reason.
+ */
+export function assembleClaimWidgetData(input: {
+  model: GorgiasWidgetModel;
+  summary: ClaimSummaryRow | null;
+  primaryReason: PrimaryReason;
+  profileUrl: string | null;
+  nowIso: string;
+}): GorgiasClaimWidgetResult {
+  const { model, summary, primaryReason } = input;
+
+  if (model.state === 'error') {
+    return { ok: false, kind: 'error', message: model.message };
+  }
+  if (model.state === 'not_found') {
+    return { ok: false, kind: 'not_found' };
+  }
+
+  // thisStore — sourced entirely from customer_claim_summary. total_orders is
+  // the Shopify payload orders_count (per-merchant: Shopify customers are
+  // scoped per shop), floored at total_claims by the ingestion pipeline.
+  const thisStore: ThisStoreStats = summary
+    ? {
+        orderCount: summary.total_orders,
+        claimCount: summary.total_claims,
+        claimRate: round2(summary.claim_rate),
+        lastClaimAt: summary.last_claim_at,
+        ordersCountSource: 'shopify_payload',
+      }
+    : {
+        orderCount: 0,
+        claimCount: 0,
+        claimRate: 0,
+        lastClaimAt: null,
+        ordersCountSource: 'intake_count',
+      };
+
+  const network = deriveNetworkStats(model, primaryReason);
+  const profileUrl =
+    input.profileUrl ?? ('profileUrl' in model ? (model.profileUrl ?? '') : '') ?? '';
+
+  return {
+    ok: true,
+    data: {
+      thisStore,
+      network,
+      profileUrl: profileUrl || '',
+      dataFreshAt: summary?.updated_at ?? input.nowIso,
+    },
+  };
+}
+
+function deriveNetworkStats(
+  model: GorgiasWidgetModel,
+  primaryReason: PrimaryReason
+): NetworkStats | null {
+  if (model.state === 'merchant_profile') {
+    const s = model.stats;
+    // No cross-merchant footprint → no network history.
+    if (!s || s.networkMerchants <= 1) return null;
+    return {
+      merchantCount: s.networkMerchants,
+      orderCount: s.networkOrders,
+      claimCount: s.networkClaims,
+      claimRate: s.networkOrders > 0 ? round2(s.networkClaims / s.networkOrders) : 0,
+      lastClaimAt: null,
+      primaryReason,
+      recentClaimCount: s.networkRecentClaims,
+      recentWindowDays: 90,
+    };
+  }
+
+  if (model.state === 'risk' && model.lookup.cross_merchant) {
+    const cm = model.lookup.cross_merchant;
+    return {
+      merchantCount: cm.merchant_count,
+      orderCount: 0, // network order denominator not exposed by the lookup
+      claimCount: cm.claim_count,
+      claimRate: 0,
+      lastClaimAt: null,
+      primaryReason,
+      recentClaimCount: 0,
+      recentWindowDays: 90,
+    };
+  }
+
+  // low_clear / risk-without-cross-merchant → no network history.
+  return null;
+}
+
+/**
+ * Build the claim-intelligence widget data. Reuses buildGorgiasWidgetModel as
+ * the network-engine gatherer (v1 lookup + profile resolution + signed profile
+ * URL), then assembles the claim-intelligence shape with thisStore from
+ * customer_claim_summary and the network primary reason from support_case_intake.
+ */
+export async function buildGorgiasClaimWidgetData(
+  service: SupabaseClient,
+  auth: LookupAuth,
+  params: { rawEmail: string; rawName: string; orderId: string }
+): Promise<{ result: GorgiasClaimWidgetResult; lookupDiagnostics: MerchantCustomerLookupDiagnostics | null }> {
+  const { model, lookupDiagnostics } = await buildGorgiasWidgetModel(service, auth, params);
+
+  const normEmail = normaliseEmail(params.rawEmail.trim());
+  let emailHash: string | null = null;
+  if (normEmail) {
+    try {
+      emailHash = hashSupportEmail(normEmail);
+    } catch {
+      emailHash = null;
+    }
+  }
+
+  const [summary, primaryReason] = emailHash
+    ? await Promise.all([
+        readThisStoreSummary(service, auth.merchantId, emailHash),
+        derivePrimaryReason(service, emailHash),
+      ])
+    : [null, null];
+
+  const profileUrl = 'profileUrl' in model ? (model.profileUrl ?? null) : null;
+
+  const result = assembleClaimWidgetData({
+    model,
+    summary,
+    primaryReason,
+    profileUrl,
+    nowIso: new Date().toISOString(),
+  });
+
+  return { result, lookupDiagnostics };
 }
