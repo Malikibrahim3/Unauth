@@ -10,18 +10,34 @@ type WidgetLogLevel = 'info' | 'error';
  * console.info which does not appear in the same log stream/filter as build_marker.
  */
 function emitWidgetLog(level: WidgetLogLevel, message: string, payload: Record<string, unknown> = {}): void {
-  const entry = redactSensitiveData({
-    timestamp: new Date().toISOString(),
-    level,
-    message,
-    route: WIDGET_ROUTE,
-    ...payload,
-  });
-  const line = JSON.stringify(entry);
-  if (level === 'error') {
-    console.error(line);
-  } else {
-    console.log(line);
+  try {
+    const entry = redactSensitiveData({
+      timestamp: new Date().toISOString(),
+      level,
+      message,
+      route: WIDGET_ROUTE,
+      ...payload,
+    });
+    const line = JSON.stringify(entry);
+    if (level === 'error') {
+      console.error(line);
+    } else {
+      console.log(line);
+    }
+  } catch (err) {
+    const fallback = JSON.stringify({
+      timestamp: new Date().toISOString(),
+      level,
+      message,
+      route: WIDGET_ROUTE,
+      logEmitFailed: true,
+      logEmitError: err instanceof Error ? err.message : String(err),
+    });
+    if (level === 'error') {
+      console.error(fallback);
+    } else {
+      console.log(fallback);
+    }
   }
 }
 

@@ -42,6 +42,22 @@ type WidgetReturnContext = {
   merchantId: string | null;
 };
 
+/** Minimal direct trace — safe field names only (avoids log redaction / oversized payloads). */
+function widgetDirectTrace(
+  step: string,
+  fields: Record<string, string | number | boolean | null> = {}
+): void {
+  console.log(
+    JSON.stringify({
+      message: '[gorgias.widget] trace',
+      step,
+      route: '/api/gorgias/widget',
+      buildMarker: gorgiasWidgetBuildMarker(),
+      ...fields,
+    })
+  );
+}
+
 function logBuildMarker(): void {
   gorgiasWidgetLog('build_marker', { buildMarker: gorgiasWidgetBuildMarker() });
 }
@@ -78,6 +94,7 @@ function returnWidgetJson(
   status: number,
   ctx: WidgetReturnContext
 ): NextResponse {
+  widgetDirectTrace('return_widget_json_enter', { branch, status });
   gorgiasWidgetLog('final_return', {
     branch,
     email: ctx.email,
@@ -85,6 +102,7 @@ function returnWidgetJson(
     body: JSON.stringify(body),
     status,
   });
+  widgetDirectTrace('return_widget_json_response', { branch, status });
   return NextResponse.json(body, { status, headers: JSON_RESPONSE_HEADERS });
 }
 
@@ -232,6 +250,12 @@ export async function GET(request: NextRequest) {
     const requestIp = getClientIp(request.headers);
     const accept = request.headers.get('accept') ?? '';
 
+    widgetDirectTrace('after_request_parse', {
+      wtPresent: Boolean(widgetToken),
+      returnHtml,
+      unresolvedAddr: isUnresolvedGorgiasVar(email),
+    });
+
     gorgiasWidgetLog('request', {
       email,
       emailUnresolved: isUnresolvedGorgiasVar(email),
@@ -316,11 +340,16 @@ export async function GET(request: NextRequest) {
     const normEmail = normaliseEmail(email);
 
     if (normEmail) {
+      widgetDirectTrace('before_customer_lookup', { authOk: true });
       const { customer, diagnostics } = await findMerchantCustomerByEmail(
         service,
         authResult.merchantId,
         normEmail
       );
+      widgetDirectTrace('after_customer_lookup', {
+        authOk: true,
+        profileFound: Boolean(customer),
+      });
       if (customer) {
         const profileModel: GorgiasWidgetModel = {
           state: 'merchant_profile',
