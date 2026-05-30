@@ -178,7 +178,7 @@ export default function SyncStatusCard() {
   const [syncError, setSyncError] = useState<string | null>(null);
 
   const loadStatus = useCallback(() => {
-    return fetch('/api/shopify/status')
+    return fetch('/api/shopify/status', { cache: 'no-store', credentials: 'include' })
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
         if (d) setStatus(d);
@@ -186,6 +186,42 @@ export default function SyncStatusCard() {
       })
       .catch(() => null);
   }, []);
+
+  const handleSyncNow = useCallback(async () => {
+    setSyncing(true);
+    setSyncError(null);
+    try {
+      console.log('[shopify] POST /api/shopify/sync-audit');
+      const res = await fetch('/api/shopify/sync-audit', {
+        method: 'POST',
+        credentials: 'include',
+        cache: 'no-store',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{}',
+      });
+      const text = await res.text();
+      let body: { error?: string } | null = null;
+      try {
+        body = text ? (JSON.parse(text) as { error?: string }) : null;
+      } catch {
+        console.error('[shopify] sync-audit non-JSON response:', res.status, text.slice(0, 200));
+        setSyncError(`Sync failed (${res.status}). The API may not be deployed yet.`);
+        return;
+      }
+      if (!res.ok) {
+        console.warn('[shopify] sync-audit failed:', res.status, body);
+        setSyncError(body?.error ?? `Sync failed (${res.status}). Try again or reconnect Shopify.`);
+        return;
+      }
+      console.log('[shopify] sync-audit ok:', body);
+      await loadStatus();
+    } catch (err) {
+      console.error('[shopify] sync-audit request error:', err);
+      setSyncError('Sync failed. Check your connection and try again.');
+    } finally {
+      setSyncing(false);
+    }
+  }, [loadStatus]);
 
   useEffect(() => {
     loadStatus();
@@ -197,24 +233,6 @@ export default function SyncStatusCard() {
     }
     return undefined;
   }, [loadStatus]);
-
-  async function handleSyncNow() {
-    setSyncing(true);
-    setSyncError(null);
-    try {
-      const res = await fetch('/api/shopify/sync-audit', { method: 'POST' });
-      const body = (await res.json().catch(() => null)) as { error?: string } | null;
-      if (!res.ok) {
-        setSyncError(body?.error ?? 'Sync failed. Try again or reconnect Shopify.');
-        return;
-      }
-      await loadStatus();
-    } catch {
-      setSyncError('Sync failed. Check your connection and try again.');
-    } finally {
-      setSyncing(false);
-    }
-  }
 
   if (!status) return null;
 
@@ -335,7 +353,10 @@ export default function SyncStatusCard() {
           <div className="flex items-center gap-2 flex-shrink-0">
             <button
               type="button"
-              onClick={() => void handleSyncNow()}
+              onClick={(e) => {
+                e.preventDefault();
+                void handleSyncNow();
+              }}
               disabled={syncing}
               className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold disabled:opacity-60"
               style={{ background: 'var(--accent)', color: '#fff' }}

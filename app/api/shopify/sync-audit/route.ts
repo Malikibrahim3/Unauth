@@ -5,10 +5,14 @@ import { backfillShopifyAuditTransactions } from '@/lib/shopify/auditBridge';
 import { getShopifyConnectionStatus } from '@/lib/shopify/connectionStatus';
 import { shopifyAuditError } from '@/lib/shopify/auditLog';
 
+/** Allow large Shopify backfills on Vercel (same as CSV processing routes). */
+export const maxDuration = 300;
+
 /**
  * Score existing shopify_order_signals into audit_transactions (manual / reconnect follow-up).
  */
 export async function POST() {
+  console.log('[shopify.sync-audit] POST handler hit');
   const userClient = createClient();
   const {
     data: { user },
