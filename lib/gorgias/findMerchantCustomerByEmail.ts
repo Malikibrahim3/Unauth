@@ -87,7 +87,7 @@ export async function findMerchantCustomerByEmail(
     emailMatchedRows: 0,
   };
 
-  gorgiasWidgetLog('customer_lookup.started', { merchantId });
+  gorgiasWidgetLog('customer_lookup.started', {});
 
   const [primaryRes, rpcRes] = await Promise.all([
     service.from(TABLES.CUSTOMER_PROFILES).select(PROFILE_SELECT).eq('primary_email', normEmail),
