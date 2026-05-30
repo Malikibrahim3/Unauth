@@ -97,6 +97,7 @@ const activeConnection: GorgiasSupportConnectionRow = {
 
 function makeGorgiasWebhookSupabase(options?: {
   connections?: GorgiasSupportConnectionRow[];
+  shopifyConnections?: Array<{ merchant_id: string; shop_domain: string | null; active: boolean }>;
   failCaseUpsert?: boolean;
 }) {
   let caseUpserts = 0;
@@ -104,10 +105,38 @@ function makeGorgiasWebhookSupabase(options?: {
   const lastCasePayloads: Record<string, unknown>[] = [];
   const connectionUpdates: Array<{ id: string; values: Record<string, unknown> }> = [];
   const connections = options?.connections ?? [activeConnection];
+  const shopifyConnections = options?.shopifyConnections ?? [
+    {
+      merchant_id: MERCHANT_ID,
+      shop_domain: 'unauth-test.myshopify.com',
+      active: true,
+    },
+  ];
   const linkingTables = supportLinkingLookupTables();
 
   const supabase = {
     from: (table: string) => {
+      if (table === TABLES.MERCHANT_SHOPIFY_CONNECTIONS) {
+        return {
+          select: () => ({
+            eq: (column: string, value: string | boolean) => ({
+              eq: (column2: string, value2: string | boolean) => ({
+                order: () => ({
+                  limit: async () => ({
+                    data: shopifyConnections.filter(
+                      (row) =>
+                        row[column as 'merchant_id' | 'active'] === value &&
+                        row[column2 as 'merchant_id' | 'active'] === value2
+                    ),
+                    error: null,
+                  }),
+                }),
+              }),
+            }),
+          }),
+        };
+      }
+
       if (table === TABLES.SUPPORT_PROVIDER_CONNECTIONS) {
         return {
           select: () => ({
@@ -483,6 +512,7 @@ describe('Gorgias support webhook', () => {
     expect(json.is_claim).toBe(true);
     expect(json.claim_type).toBe('other');
     expect(mock.lastCasePayload().customer_email_hash).toBeTruthy();
+    expect(mock.lastCasePayload().shop_domain).toBe('unauth-test.myshopify.com');
   });
 
   it('resolves merchant by gorgias_domain query param on webhook URL', async () => {

@@ -21,6 +21,7 @@ import {
 } from '@/lib/support/gorgias/webhookAuth';
 import { fetchGorgiasTicketById } from '@/lib/support/gorgias/fetchTicket';
 import { getActiveGorgiasMerchantApiAccess } from '@/lib/support/gorgias/merchantApiAccess';
+import { TABLES } from '@/lib/supabase/tables';
 
 export const GORGIAS_EVENT_TYPE_HEADER = 'x-gorgias-event-type';
 
@@ -161,6 +162,52 @@ function safeConnectionErrorCode(error: unknown): string {
   return 'ingest_failed';
 }
 
+async function resolveShopDomainForGorgiasIngest(input: {
+  supabase: unknown;
+  merchantId: string;
+  explicitShopDomain?: string | null;
+}): Promise<string | undefined> {
+  const explicit = input.explicitShopDomain?.trim();
+  if (explicit) return explicit;
+
+  const { data, error } = await (input.supabase as {
+    from: (table: string) => {
+      select: (columns: string) => {
+        eq: (column: string, value: string | boolean) => {
+          eq: (column2: string, value2: string | boolean) => {
+            order: (
+              column: string,
+              options: { ascending: boolean }
+            ) => {
+              limit: (count: number) => Promise<{
+                data: Array<{ shop_domain: string | null }> | null;
+                error: { message: string } | null;
+              }>;
+            };
+          };
+        };
+      };
+    };
+  })
+    .from(TABLES.MERCHANT_SHOPIFY_CONNECTIONS)
+    .select('shop_domain')
+    .eq('merchant_id', input.merchantId)
+    .eq('active', true)
+    .order('updated_at', { ascending: false })
+    .limit(2);
+
+  if (error) return undefined;
+
+  const domains = Array.from(
+    new Set(
+      (data ?? [])
+        .map((row) => row.shop_domain?.trim())
+        .filter((domain): domain is string => Boolean(domain))
+    )
+  );
+  return domains.length === 1 ? domains[0] : undefined;
+}
+
 function shouldHydrateGorgiasTicket(ticket: Record<string, unknown>): boolean {
   const hasSubject = typeof ticket.subject === 'string' && ticket.subject.trim().length > 0;
   const hasMessages = Array.isArray(ticket.messages) && ticket.messages.length > 0;
@@ -207,11 +254,16 @@ export async function ingestGorgiasSupportWebhook(
   );
 
   const shopDomainHeader = input.headers.get('x-unauth-shop-domain')?.trim();
-  const shopDomain = input.shopDomain ?? shopDomainHeader ?? undefined;
+  const explicitShopDomain = input.shopDomain ?? shopDomainHeader ?? undefined;
 
   const supabase = createServiceClient();
   const webhookSearchParams = webhookSearchParamsFromRequestUrl(input.requestUrl);
   const merchantContext = await resolveMerchantContext(supabase, input, initialTicket);
+  const shopDomain = await resolveShopDomainForGorgiasIngest({
+    supabase,
+    merchantId: merchantContext.merchantId,
+    explicitShopDomain,
+  });
 
   const headerSecret = readGorgiasWebhookSecret(input.headers, webhookSearchParams);
   const auth = verifyGorgiasWebhookAuth({

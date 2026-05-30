@@ -23,6 +23,7 @@ export const TABLES = {
   PROFILE_VIEW_TOKENS: 'profile_view_tokens',
   MERCHANT_WIDGET_TOKENS: 'merchant_widget_tokens',
   SUPPORT_PROVIDER_CONNECTIONS: 'support_provider_connections',
+  MERCHANT_SHOPIFY_CONNECTIONS: 'merchant_shopify_connections',
   SUPPORT_CASE_INTAKE: 'support_case_intake',
   SUPPORT_CASE_EVENTS: 'support_case_events',
   ORDER_CLAIM_CONTEXT: 'order_claim_context',
