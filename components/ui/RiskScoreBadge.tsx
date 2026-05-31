@@ -42,9 +42,9 @@ export function RiskScoreBadge({ score, level, size = 'md', className }: RiskSco
         whiteSpace: 'nowrap',
         ...chipStyle,
       }}
-      title={`Signal confidence ${score}/100`}
+      title={`Risk score ${score}/100`}
     >
-      Conf {formatScore(score)}
+      Risk {formatScore(score)}
     </span>
   );
 }

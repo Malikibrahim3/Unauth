@@ -19,20 +19,58 @@ export type PublicSupportCaseContext = {
 };
 
 const SAFE_CASE_COLUMNS =
-  'id, provider, external_case_id, external_url, case_status, claim_reason, customer_message_summary, agent_notes_summary, tags, link_status, shopify_order_id, order_ref, link_metadata, merchant_claim_id, updated_at_provider';
+  'id, provider, external_case_id, external_url, case_status, claim_reason, customer_message_summary, agent_notes_summary, tags, link_status, shopify_order_id, order_ref, link_metadata, merchant_claim_id, updated_at_provider, provider_connection_id';
 
-function toHumanHelpdeskUrl(provider: string, externalUrl: unknown, externalCaseId: unknown): string | null {
+/** Human-facing ticket path for a provider, given a base origin and ticket id. */
+function humanTicketPath(provider: string, base: string, id: string): string | null {
+  const origin = base.replace(/\/$/, '');
+  if (provider === 'zendesk') return `${origin}/agent/tickets/${encodeURIComponent(id)}`;
+  if (provider === 'gorgias') return `${origin}/app/ticket/${encodeURIComponent(id)}`;
+  return null;
+}
+
+/**
+ * Resolves the human helpdesk URL for a support case.
+ *
+ * The stored `external_url` is unreliable: legacy rows hold relative API paths
+ * (e.g. `/api/tickets/63308351/`), some hold absolute API URLs, and some hold
+ * the correct human URL. We rebuild deterministically:
+ *   1. If we know the provider connection's base origin, build the canonical
+ *      human path from base + provider + case id (authoritative).
+ *   2. Otherwise, if the stored URL is absolute, repair its path to the human
+ *      route (preserving its origin).
+ *   3. Otherwise there is nothing safe to link to → null.
+ */
+function toHumanHelpdeskUrl(
+  provider: string,
+  externalUrl: unknown,
+  externalCaseId: unknown,
+  baseUrl: string | null,
+): string | null {
+  const id = String(externalCaseId ?? '').trim();
+
+  // 1. Authoritative: rebuild from the connection's base origin.
+  if (baseUrl && id) {
+    try {
+      const built = humanTicketPath(provider, new URL(baseUrl).origin, id);
+      if (built) return built;
+    } catch {
+      // Malformed base URL on the connection — fall through to repair below.
+    }
+  }
+
   if (typeof externalUrl !== 'string' || !externalUrl.trim()) return null;
+
+  // 2. Repair an absolute stored URL (relative paths throw here → caught).
   try {
     const url = new URL(externalUrl.trim());
     if (url.protocol !== 'https:' && url.protocol !== 'http:') return null;
 
-    const id = String(externalCaseId ?? '').trim();
-    if (provider === 'zendesk' && id && !url.pathname.includes('/agent/tickets/')) {
-      return `${url.origin}/agent/tickets/${encodeURIComponent(id)}`;
-    }
-    if (provider === 'gorgias' && id && !url.pathname.includes('/app/ticket/')) {
-      return `${url.origin}/app/ticket/${encodeURIComponent(id)}`;
+    if (id) {
+      const repaired = humanTicketPath(provider, url.origin, id);
+      if (repaired && !url.pathname.includes('/agent/tickets/') && !url.pathname.includes('/app/ticket/')) {
+        return repaired;
+      }
     }
     return url.toString();
   } catch {
@@ -40,7 +78,13 @@ function toHumanHelpdeskUrl(provider: string, externalUrl: unknown, externalCase
   }
 }
 
-function toPublicSupportCase(row: Record<string, unknown>): PublicSupportCaseContext {
+function toPublicSupportCase(
+  row: Record<string, unknown>,
+  baseUrlByConnection: Map<string, string>,
+): PublicSupportCaseContext {
+  const connectionId =
+    typeof row.provider_connection_id === 'string' ? row.provider_connection_id : null;
+  const baseUrl = connectionId ? baseUrlByConnection.get(connectionId) ?? null : null;
   const linkMetadata =
     row.link_metadata && typeof row.link_metadata === 'object' && !Array.isArray(row.link_metadata)
       ? (row.link_metadata as Record<string, unknown>)
@@ -50,7 +94,7 @@ function toPublicSupportCase(row: Record<string, unknown>): PublicSupportCaseCon
     id: String(row.id),
     provider: String(row.provider),
     external_case_id: String(row.external_case_id),
-    external_url: toHumanHelpdeskUrl(String(row.provider), row.external_url, row.external_case_id),
+    external_url: toHumanHelpdeskUrl(String(row.provider), row.external_url, row.external_case_id, baseUrl),
     case_status: typeof row.case_status === 'string' ? row.case_status : null,
     claim_reason: typeof row.claim_reason === 'string' ? row.claim_reason : null,
     customer_message_summary:
@@ -72,6 +116,47 @@ function toPublicSupportCase(row: Record<string, unknown>): PublicSupportCaseCon
 type FilterClient = {
   from: (table: string) => Record<string, unknown>;
 };
+
+type ConnectionBaseClient = {
+  from: (table: string) => {
+    select: (cols: string) => {
+      eq: (col: string, val: string) => Promise<{
+        data: Array<Record<string, unknown>> | null;
+        error: { message: string } | null;
+      }>;
+    };
+  };
+};
+
+/**
+ * Best-effort lookup of each provider connection's base origin for a merchant.
+ * Used to rebuild canonical human helpdesk URLs at read time. Failures (e.g.
+ * a client mock without the connections table) degrade to an empty map rather
+ * than blocking the support-case list.
+ */
+async function fetchConnectionBaseUrls(
+  supabase: unknown,
+  merchantId: string,
+): Promise<Map<string, string>> {
+  const map = new Map<string, string>();
+  try {
+    const { data } = await (supabase as ConnectionBaseClient)
+      .from(TABLES.SUPPORT_PROVIDER_CONNECTIONS)
+      .select('id, provider_base_url')
+      .eq('merchant_id', merchantId);
+    for (const row of data ?? []) {
+      const id = typeof row.id === 'string' ? row.id : null;
+      const base =
+        typeof row.provider_base_url === 'string' && row.provider_base_url.trim()
+          ? row.provider_base_url.trim()
+          : null;
+      if (id && base) map.set(id, base);
+    }
+  } catch {
+    // Best-effort: no base origins resolved.
+  }
+  return map;
+}
 
 export async function listSupportCasesForCustomerProfile(
   supabase: unknown,
@@ -97,7 +182,8 @@ export async function listSupportCasesForCustomerProfile(
     .order('updated_at_provider', { ascending: false });
 
   if (error) throw new Error(`list_support_cases_failed: ${error.message}`);
-  return (data ?? []).map(toPublicSupportCase);
+  const baseUrls = await fetchConnectionBaseUrls(supabase, merchantId);
+  return (data ?? []).map((row) => toPublicSupportCase(row, baseUrls));
 }
 
 export async function listSupportCasesForMerchantClaim(
@@ -124,7 +210,8 @@ export async function listSupportCasesForMerchantClaim(
     .order('updated_at_provider', { ascending: false });
 
   if (error) throw new Error(`list_claim_support_cases_failed: ${error.message}`);
-  return (data ?? []).map(toPublicSupportCase);
+  const baseUrls = await fetchConnectionBaseUrls(supabase, merchantId);
+  return (data ?? []).map((row) => toPublicSupportCase(row, baseUrls));
 }
 
 export async function listSupportCasesForClaimContext(
@@ -199,9 +286,6 @@ export async function listSupportCasesForClaimContext(
 
   if (error) throw new Error(`list_claim_context_support_cases_failed: ${error.message}`);
 
-  const rows = (data ?? []).map(toPublicSupportCase);
-  if (input.shopDomain) {
-    return rows;
-  }
-  return rows;
+  const baseUrls = await fetchConnectionBaseUrls(supabase, merchantId);
+  return (data ?? []).map((row) => toPublicSupportCase(row, baseUrls));
 }
