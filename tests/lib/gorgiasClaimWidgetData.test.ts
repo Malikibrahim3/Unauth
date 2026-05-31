@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { TABLES } from '@/lib/supabase/tables';
 import {
   assembleClaimWidgetData,
+  countShopifyOrdersAtMerchant,
   countStoreRecentClaims,
   derivePrimaryReason,
   derivePrimaryReasonFromTypes,
@@ -103,6 +104,193 @@ describe('countStoreRecentClaims (support_case_intake query)', () => {
     expect(n).toBe(1);
     // Must NOT query a non-existent `created_at` column (would error → silent 0).
     expect(gteCalls).toEqual([{ column: 'created_at_provider' }]);
+  });
+});
+
+describe('countShopifyOrdersAtMerchant', () => {
+  it('counts all Shopify orders through the linked Shopify customer id', async () => {
+    const client = createMemoryClient();
+    const store = client.__store;
+    store.set('merchant_shopify_connections', [
+      { merchant_id: 'm1', shop_domain: 's.myshopify.com', active: true },
+    ]);
+    store.set(TABLES.CUSTOMER_PROFILE_IDENTITIES, [
+      {
+        merchant_id: 'm1',
+        identity_type: 'email',
+        identity_value: 'shopper@example.com',
+        customer_profile_id: 'profile-1',
+      },
+      {
+        merchant_id: 'm1',
+        identity_type: 'shopify_customer_id',
+        identity_value: 'shopify-customer-1',
+        customer_profile_id: 'profile-1',
+      },
+    ]);
+    store.set(
+      'shopify_order_signals',
+      Array.from({ length: 7 }, (_, i) => ({
+        shop_domain: 's.myshopify.com',
+        shopify_order_id: `order-${i + 1}`,
+        order_number: String(1000 + i + 1),
+        customer_id: 'shopify-customer-1',
+      }))
+    );
+    store.set('merchant_identities', [
+      {
+        shop_domain: 's.myshopify.com',
+        source: 'order',
+        source_id: 'order-1',
+        email: 'shopper@example.com',
+      },
+    ]);
+
+    await expect(
+      countShopifyOrdersAtMerchant(
+        client as unknown as SupabaseClient,
+        'm1',
+        'shopper@example.com'
+      )
+    ).resolves.toBe(7);
+  });
+
+  it('uses the ticket email customer id before broader merged profile customer ids', async () => {
+    const client = createMemoryClient();
+    const store = client.__store;
+    store.set('merchant_shopify_connections', [
+      { merchant_id: 'm1', shop_domain: 's.myshopify.com', active: true },
+    ]);
+    store.set(TABLES.CUSTOMER_PROFILE_IDENTITIES, [
+      {
+        merchant_id: 'm1',
+        identity_type: 'email',
+        identity_value: 'shopper@example.com',
+        customer_profile_id: 'profile-1',
+      },
+      {
+        merchant_id: 'm1',
+        identity_type: 'shopify_customer_id',
+        identity_value: 'ticket-email-customer',
+        customer_profile_id: 'profile-1',
+      },
+      {
+        merchant_id: 'm1',
+        identity_type: 'shopify_customer_id',
+        identity_value: 'merged-other-email-customer',
+        customer_profile_id: 'profile-1',
+      },
+    ]);
+    store.set('merchant_identities', [
+      {
+        shop_domain: 's.myshopify.com',
+        source: 'order',
+        source_id: 'order-1',
+        email: 'shopper@example.com',
+        customer_id: 'ticket-email-customer',
+      },
+    ]);
+    store.set('shopify_order_signals', [
+      ...Array.from({ length: 7 }, (_, i) => ({
+        shop_domain: 's.myshopify.com',
+        shopify_order_id: `ticket-order-${i + 1}`,
+        order_number: String(1000 + i + 1),
+        customer_id: 'ticket-email-customer',
+      })),
+      ...Array.from({ length: 5 }, (_, i) => ({
+        shop_domain: 's.myshopify.com',
+        shopify_order_id: `other-order-${i + 1}`,
+        order_number: String(2000 + i + 1),
+        customer_id: 'merged-other-email-customer',
+      })),
+    ]);
+
+    await expect(
+      countShopifyOrdersAtMerchant(
+        client as unknown as SupabaseClient,
+        'm1',
+        'shopper@example.com'
+      )
+    ).resolves.toBe(7);
+  });
+
+  it('ignores synthetic non-Shopify order-number rows in signal counts', async () => {
+    const client = createMemoryClient();
+    const store = client.__store;
+    store.set('merchant_shopify_connections', [
+      { merchant_id: 'm1', shop_domain: 's.myshopify.com', active: true },
+    ]);
+    store.set(TABLES.CUSTOMER_PROFILE_IDENTITIES, []);
+    store.set('merchant_identities', [
+      {
+        shop_domain: 's.myshopify.com',
+        source: 'order',
+        source_id: 'real-order-1',
+        email: 'shopper@example.com',
+        customer_id: 'ticket-email-customer',
+      },
+      {
+        shop_domain: 's.myshopify.com',
+        source: 'order',
+        source_id: 'synthetic-order-1',
+        email: 'shopper@example.com',
+        customer_id: 'ticket-email-customer',
+      },
+    ]);
+    store.set('shopify_order_signals', [
+      {
+        shop_domain: 's.myshopify.com',
+        shopify_order_id: 'real-order-1',
+        order_number: '1011',
+        customer_id: 'ticket-email-customer',
+      },
+      {
+        shop_domain: 's.myshopify.com',
+        shopify_order_id: 'synthetic-order-1',
+        order_number: 'T-865935',
+        customer_id: 'ticket-email-customer',
+      },
+    ]);
+
+    await expect(
+      countShopifyOrdersAtMerchant(
+        client as unknown as SupabaseClient,
+        'm1',
+        'shopper@example.com'
+      )
+    ).resolves.toBe(1);
+  });
+
+  it('falls back to direct merchant identity email rows when no profile link exists', async () => {
+    const client = createMemoryClient();
+    const store = client.__store;
+    store.set('merchant_shopify_connections', [
+      { merchant_id: 'm1', shop_domain: 's.myshopify.com', active: true },
+    ]);
+    store.set(TABLES.CUSTOMER_PROFILE_IDENTITIES, []);
+    store.set('shopify_order_signals', []);
+    store.set('merchant_identities', [
+      {
+        shop_domain: 's.myshopify.com',
+        source: 'order',
+        source_id: 'order-1',
+        email: 'shopper@example.com',
+      },
+      {
+        shop_domain: 's.myshopify.com',
+        source: 'order',
+        source_id: 'order-2',
+        email: 'shopper@example.com',
+      },
+    ]);
+
+    await expect(
+      countShopifyOrdersAtMerchant(
+        client as unknown as SupabaseClient,
+        'm1',
+        'shopper@example.com'
+      )
+    ).resolves.toBe(2);
   });
 });
 
@@ -236,6 +424,41 @@ describe('assembleClaimWidgetData', () => {
     if (!result.ok) return;
     expect(result.data.thisStore.orderCount).toBe(1);
     expect(result.data.thisStore.ordersCountSource).toBe('shopify_identities');
+  });
+
+  it('uses Shopify order count as the denominator when claim summary order count is stale', () => {
+    const result = assembleClaimWidgetData({
+      model: merchantProfileModel({
+        storeOrders: 12,
+        storeClaims: 1,
+        primaryReason: null,
+        storeRecentClaims: 1,
+        networkOrders: 12,
+        networkClaims: 1,
+        networkMerchants: 1,
+        networkRecentClaims: 1,
+      }),
+      summary: summaryRow({ total_orders: 1, total_claims: 1, claim_rate: 1 }),
+      primaryReason: null,
+      storePrimaryReason: derivePrimaryReasonFromTypes(['INR']),
+      storeRecentClaimCount: 1,
+      profileUrl: null,
+      nowIso: NOW,
+      shopifyOrderCount: 7,
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.thisStore.orderCount).toBe(7);
+    expect(result.data.thisStore.claimCount).toBe(1);
+    expect(result.data.thisStore.claimRate).toBe(0.14);
+    expect(result.data.thisStore.ordersCountSource).toBe('shopify_identities');
+
+    const payload = claimWidgetToJson(result);
+    expect(payload.orders).toBe('7 orders here · No network history found');
+    expect(payload.claim_rate).toBe('14% this store');
+    expect(payload.primary_reason).toBe('Item not received · 100%');
+    expect(payload.recent_activity).toBe('1 claim in last 90 days');
   });
 
   it('uses audit transaction stats when claim summary and Shopify rows are missing', () => {

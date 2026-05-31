@@ -525,21 +525,109 @@ export async function countShopifyOrdersAtMerchant(
 
   if (error || !connections?.length) return 0;
 
-  let total = 0;
+  const directEmailOrderIds = new Set<string>();
+  const directEmailCustomerIdsByShop = new Map<string, Set<string>>();
+  const countSignalRowsForCustomerIds = async (customerIdsByShop: Map<string, Set<string>>) => {
+    const orderIds = new Set<string>();
+    for (const [shopDomain, customerIds] of customerIdsByShop.entries()) {
+      const ids = [...customerIds];
+      if (!ids.length) continue;
+      const { data: signalRows } = await service
+        .from('shopify_order_signals' as never)
+        .select('shopify_order_id, order_number')
+        .eq('shop_domain', shopDomain)
+        .in('customer_id', ids);
+
+      for (const signal of (signalRows ?? []) as Array<{
+        shopify_order_id?: string | number | null;
+        order_number?: string | number | null;
+      }>) {
+        const orderNumber = signal.order_number == null ? null : String(signal.order_number).trim();
+        if (orderNumber && !/^\d+$/.test(orderNumber)) continue;
+        if (signal.shopify_order_id != null) {
+          orderIds.add(`${shopDomain}:${String(signal.shopify_order_id)}`);
+        }
+      }
+    }
+    return orderIds;
+  };
+
   for (const row of connections as Array<{ shop_domain: string }>) {
     const shopDomain = row.shop_domain?.trim();
     if (!shopDomain) continue;
-    const { count, error: countError } = await service
+
+    const { data: identityRows } = await service
       .from('merchant_identities' as never)
-      .select('*', { count: 'exact', head: true })
+      .select('source_id, customer_id')
       .eq('shop_domain', shopDomain)
       .eq('source', 'order')
       .eq('email', normEmail);
-    if (!countError && typeof count === 'number') {
-      total += count;
+
+    for (const identity of (identityRows ?? []) as Array<{
+      source_id?: string | number | null;
+      customer_id?: string | number | null;
+    }>) {
+      if (identity.source_id != null) {
+        directEmailOrderIds.add(`${shopDomain}:${String(identity.source_id)}`);
+      }
+      if (identity.customer_id != null) {
+        const customerIds = directEmailCustomerIdsByShop.get(shopDomain) ?? new Set<string>();
+        customerIds.add(String(identity.customer_id));
+        directEmailCustomerIdsByShop.set(shopDomain, customerIds);
+      }
     }
   }
-  return total;
+
+  const directEmailSignalOrderIds = await countSignalRowsForCustomerIds(directEmailCustomerIdsByShop);
+  if (directEmailSignalOrderIds.size > 0) {
+    return directEmailSignalOrderIds.size;
+  }
+
+  const { data: emailIdentityRows } = await service
+    .from(TABLES.CUSTOMER_PROFILE_IDENTITIES)
+    .select('customer_profile_id')
+    .eq('merchant_id', merchantId)
+    .eq('identity_type', 'email')
+    .eq('identity_value', normEmail);
+
+  const profileIds = Array.from(
+    new Set(
+      ((emailIdentityRows ?? []) as Array<{ customer_profile_id?: string | null }>)
+        .map((row) => row.customer_profile_id?.trim())
+        .filter((id): id is string => Boolean(id))
+    )
+  );
+
+  const profileCustomerIdsByShop = new Map<string, Set<string>>();
+  if (profileIds.length > 0) {
+    const { data: customerIdentityRows } = await service
+      .from(TABLES.CUSTOMER_PROFILE_IDENTITIES)
+      .select('identity_value')
+      .eq('merchant_id', merchantId)
+      .eq('identity_type', 'shopify_customer_id')
+      .in('customer_profile_id', profileIds);
+
+    const profileCustomerIds = Array.from(
+      new Set(
+        ((customerIdentityRows ?? []) as Array<{ identity_value?: string | null }>)
+          .map((row) => row.identity_value?.trim())
+          .filter((id): id is string => Boolean(id))
+      )
+    );
+    if (profileCustomerIds.length > 0) {
+      for (const row of connections as Array<{ shop_domain: string }>) {
+        const shopDomain = row.shop_domain?.trim();
+        if (shopDomain) profileCustomerIdsByShop.set(shopDomain, new Set(profileCustomerIds));
+      }
+    }
+  }
+
+  const profileSignalOrderIds = await countSignalRowsForCustomerIds(profileCustomerIdsByShop);
+  if (profileSignalOrderIds.size > 0) {
+    return profileSignalOrderIds.size;
+  }
+
+  return directEmailOrderIds.size;
 }
 
 async function readThisStoreSummary(
@@ -663,6 +751,19 @@ function thisStoreFromSummaryRow(summary: ClaimSummaryRow): ThisStoreStats {
   };
 }
 
+function thisStoreFromSummaryWithShopifyOrderCount(
+  summary: ClaimSummaryRow,
+  orderCount: number
+): ThisStoreStats {
+  return {
+    orderCount,
+    claimCount: summary.total_claims,
+    claimRate: orderCount > 0 ? round2(summary.total_claims / orderCount) : 0,
+    lastClaimAt: summary.last_claim_at,
+    ordersCountSource: 'shopify_identities',
+  };
+}
+
 function thisStoreFromWidgetStats(stats: WidgetStats): ThisStoreStats {
   const storeOrders = stats.storeOrders;
   const storeClaims = stats.storeClaims;
@@ -691,6 +792,9 @@ function resolveThisStoreStats(input: {
   shopifyOrderCount: number;
 }): ThisStoreStats {
   if (input.summary) {
+    if (input.shopifyOrderCount > input.summary.total_orders) {
+      return thisStoreFromSummaryWithShopifyOrderCount(input.summary, input.shopifyOrderCount);
+    }
     return thisStoreFromSummaryRow(input.summary);
   }
 
