@@ -530,7 +530,8 @@ function DrawerContent({
   const visibleOrders = ordersExpanded ? orderHistory : orderHistory.slice(0, 6);
   const variantCount = identityTimeline.filter((e) => e.isVariant).length;
   const identitySignals = ((profile as any).identity_signals ?? profile.fraud_flags ?? []) as string[];
-  const totalOrderValue = orderHistory.reduce((sum, o) => sum + (o.orderValue ?? 0), 0);
+  const totalOrderValue = Number(profile.commerce_total_value ?? 0) ||
+    orderHistory.reduce((sum, o) => sum + (o.orderValue ?? 0), 0);
   const totalRefundValue = orderHistory.reduce((sum, o) => sum + (o.refundAmount ?? 0), 0);
   const claimCount = orderHistory.filter((o) => o.refundRequested || o.returnRequested || o.chargebackFiled).length;
   const displayName = profile.names[0] ?? profile.primary_email ?? 'Unknown customer';

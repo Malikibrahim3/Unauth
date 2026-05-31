@@ -8,6 +8,10 @@ import { buildBehavioralNarrative } from '@/lib/customers/narrative';
 import { scoreToRiskLevel } from '@/components/ui/RiskScoreBadge';
 import { withRequestLogging } from '@/lib/log';
 import { fetchMerchantScopedCustomerProfile } from '@/lib/supabase/merchantHelpers';
+import {
+  countShopifyCommerceOrdersForProfile,
+  deriveCanonicalCommerceOrderStats,
+} from '@/lib/customers/commerceOrders';
 
 export const dynamic = 'force-dynamic';
 
@@ -71,6 +75,8 @@ export interface CustomerIntelligencePanel {
     risk_level: string;
     fraud_flags: string[];
     total_orders: number;
+    commerce_total_value?: number;
+    commerce_order_source?: string;
     total_refund_claims: number;
     total_chargebacks: number;
     total_merchants_seen_at: number;
@@ -430,13 +436,26 @@ async function GETHandler(
   }
 
   // -------------------------------------------------------------------------
-  // 8. Recompute aggregate stats from visible-job order history.
-  //    The stored profile fields (total_orders, refund_rate, etc.) reflect ALL
-  //    audit runs ever processed for this customer, including runs the merchant
-  //    has since hidden. Recomputing from orderHistory ensures the panel only
-  //    reflects what is currently visible to this merchant.
+  // 8. Recompute aggregate stats from canonical commerce records.
+  //    Integration rows are the source of truth when connected (Shopify today),
+  //    then visible CSV/audit rows, then stored profile totals. Identity anchors
+  //    remain evidence, not customer-facing order counts.
   // -------------------------------------------------------------------------
-  const computedTotalOrders = orderHistory.length;
+  const shopifyCommerceStats = await countShopifyCommerceOrdersForProfile(
+    serviceClient,
+    ctx.merchantId,
+    profile.id
+  );
+  const commerceStats = deriveCanonicalCommerceOrderStats({
+    shopifyOrderCount: shopifyCommerceStats.orderCount,
+    shopifyTotalValue: shopifyCommerceStats.totalValue,
+    auditTransactions: orderHistory.map((order) => ({
+      order_id: order.orderId,
+      order_value: order.orderValue,
+    })),
+    profileTotalOrders: profile.total_orders,
+  });
+  const computedTotalOrders = commerceStats.orderCount;
   const computedRefundClaims = orderHistory.filter((o) => o.refundRequested || o.returnRequested).length;
   const computedChargebacks = orderHistory.filter((o) => o.chargebackFiled).length;
   const computedRefundRate = computedTotalOrders > 0 ? computedRefundClaims / computedTotalOrders : 0;
@@ -478,6 +497,8 @@ async function GETHandler(
       risk_level: profile.risk_level,
       fraud_flags: profile.fraud_flags,
       total_orders: computedTotalOrders,
+      commerce_total_value: commerceStats.totalValue,
+      commerce_order_source: commerceStats.source,
       total_refund_claims: computedRefundClaims,
       total_chargebacks: computedChargebacks,
       total_merchants_seen_at: profile.total_merchants_seen_at,

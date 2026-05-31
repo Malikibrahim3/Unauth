@@ -24,6 +24,10 @@ import {
   TX_SAFE_SELECT,
 } from '@/lib/supabase/merchantHelpers';
 import { buildBehavioralNarrative } from '@/lib/customers/narrative';
+import {
+  countShopifyCommerceOrdersForProfile,
+  deriveCanonicalCommerceOrderStats,
+} from '@/lib/customers/commerceOrders';
 import WatchlistStarButton from '@/components/audit/WatchlistStarButton';
 import CustomerNotes from '@/components/audit/CustomerNotes';
 import CustomerSupportCasesSection from '@/components/customers/CustomerSupportCasesSection';
@@ -478,12 +482,22 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
   // -------------------------------------------------------------------------
   const refundRate = Math.round(profile.refund_rate * 100);
   const isEligibleForEvidence = transactions.some((tx: any) => tx.refund_claimed || tx.chargeback_filed) || profile.total_chargebacks > 0;
-  const totalOrderValue = transactions.reduce((sum: number, tx: any) => sum + (Number(tx.order_value) || 0), 0);
+  const shopifyCommerceStats = await countShopifyCommerceOrdersForProfile(svc, merchantId, profileId);
+  const commerceStats = deriveCanonicalCommerceOrderStats({
+    shopifyOrderCount: shopifyCommerceStats.orderCount,
+    shopifyTotalValue: shopifyCommerceStats.totalValue,
+    auditTransactions: transactions.map((tx: any) => ({
+      order_id: tx.order_id,
+      order_value: tx.order_value,
+    })),
+    profileTotalOrders: profile.total_orders,
+  });
+  const totalOrderValue = commerceStats.totalValue;
   const totalRefundedValue = transactions
     .filter((tx: any) => tx.refund_claimed || tx.chargeback_filed)
     .reduce((sum: number, tx: any) => sum + (Number(tx.order_value) || 0), 0);
   const claimCount = transactions.filter((tx: any) => tx.refund_claimed || tx.chargeback_filed).length;
-  const merchantOrderCount = transactions.length || profile.total_orders;
+  const merchantOrderCount = commerceStats.orderCount;
   const merchantClaimCount = transactions.length > 0 ? claimCount : profile.total_refund_claims;
   const merchantRefundRate = merchantOrderCount > 0 ? Math.round((merchantClaimCount / merchantOrderCount) * 100) : refundRate;
   const identitySignals = ((profile as any).identity_signals ?? profile.fraud_flags ?? []) as string[];
