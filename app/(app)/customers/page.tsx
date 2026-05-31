@@ -10,10 +10,10 @@ import PageSizeSelect from '@/components/common/PageSizeSelect';
 import { Button, WorkbenchActionBar, WorkbenchEmptyState, WorkbenchKpiStrip, WorkbenchPage } from '@/components/ui';
 import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
 import { RISK_TIER_COPY } from '@/lib/copy/riskTiers';
-import { escapePostgrestFilterValue } from '@/lib/supabase/merchantHelpers';
 import { STATUS_LABELS } from '@/lib/utils/investigationStatus';
 import { getMerchantOwnedJobIds } from '@/lib/supabase/merchantHelpers';
 import { isOrderReferenceSearchTerm, orderReferenceIlike } from '@/lib/customers/orderSearch';
+import { findCustomerProfileIdsByText } from '@/lib/customers/profileSearch';
 
 // Helper: build a URL with one search param removed
 function buildRemoveHref(sp: Record<string, string | undefined>, key: string) {
@@ -164,6 +164,7 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
   ].join(',');
   const isOrderReferenceSearch = isOrderReferenceSearchTerm(q);
   let orderMatchedProfileIds: string[] | null = null;
+  let textMatchedProfileIds: string[] | null = null;
 
   if (isOrderReferenceSearch) {
     const ids = new Set<string>();
@@ -211,6 +212,12 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
     }
 
     orderMatchedProfileIds = Array.from(ids);
+  } else if (q.length >= 2) {
+    textMatchedProfileIds = await findCustomerProfileIdsByText(svc, {
+      merchantIds: [ctx.merchantId, user.id],
+      merchantFilter,
+      query: q,
+    });
   }
 
   let query = svc
@@ -228,18 +235,9 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
         ? query.in('id', orderMatchedProfileIds)
         : query.eq('id', '00000000-0000-0000-0000-000000000000');
     } else {
-      // Use shared escape helper — prevents PostgREST filter injection via
-      // ( ) ' % , { } " \ and other control characters.
-      const safeQ = escapePostgrestFilterValue(q);
-      query = query.or(
-        [
-          `primary_email.ilike.%${safeQ}%`,
-          `emails::text.ilike.%${safeQ}%`,
-          `names::text.ilike.%${safeQ}%`,
-          `phones::text.ilike.%${safeQ}%`,
-          `addresses::text.ilike.%${safeQ}%`,
-        ].join(',')
-      );
+      query = textMatchedProfileIds && textMatchedProfileIds.length > 0
+        ? query.in('id', textMatchedProfileIds)
+        : query.eq('id', '00000000-0000-0000-0000-000000000000');
     }
   }
 

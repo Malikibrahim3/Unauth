@@ -155,7 +155,7 @@ describe('countShopifyOrdersAtMerchant', () => {
     ).resolves.toBe(7);
   });
 
-  it('uses the ticket email customer id before broader merged profile customer ids', async () => {
+  it('uses the broader merged profile count when the ticket email has fewer direct orders', async () => {
     const client = createMemoryClient();
     const store = client.__store;
     store.set('merchant_shopify_connections', [
@@ -211,7 +211,7 @@ describe('countShopifyOrdersAtMerchant', () => {
         'm1',
         'shopper@example.com'
       )
-    ).resolves.toBe(7);
+    ).resolves.toBe(12);
   });
 
   it('ignores synthetic non-Shopify order-number rows in signal counts', async () => {
@@ -455,7 +455,7 @@ describe('assembleClaimWidgetData', () => {
     expect(result.data.thisStore.ordersCountSource).toBe('shopify_identities');
 
     const payload = claimWidgetToJson(result);
-    expect(payload.orders).toBe('7 orders here · No network history found');
+    expect(payload.orders).toBe('7 linked orders here · No cross-store history found');
     expect(payload.claim_rate).toBe('14% this store');
     expect(payload.primary_reason).toBe('Item not received · 100%');
     expect(payload.recent_activity).toBe('1 claim in last 90 days');
@@ -577,7 +577,7 @@ describe('claimWidgetToJson', () => {
     }
   });
 
-  it('renders "No network history found" when network is null', () => {
+  it('renders "No network history found" when network is null and the count is not Shopify-linked', () => {
     const result = assembleClaimWidgetData({
       model: merchantProfileModel({
         storeOrders: 2,

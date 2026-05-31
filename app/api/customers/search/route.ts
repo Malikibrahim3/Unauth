@@ -5,6 +5,7 @@ import { createScopedClient } from '@/lib/supabase/scoped';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { escapePostgrestFilterValue } from '@/lib/supabase/merchantHelpers';
 import { withRequestLogging } from '@/lib/log';
+import { findCustomerProfileIdsByText } from '@/lib/customers/profileSearch';
 
 export const dynamic = 'force-dynamic';
 
@@ -72,6 +73,33 @@ async function GETHandler(req: NextRequest) {
     if (!seen.has(row.id)) {
       seen.add(row.id);
       merged.push(row);
+    }
+  }
+
+  const merchantFilter = `merchant_ids.cs.${JSON.stringify([ctx.merchantId])}`;
+  const identityMatchedIds = await findCustomerProfileIdsByText(serviceClient, {
+    merchantIds: [ctx.merchantId],
+    merchantFilter,
+    query: q,
+    limit: 100,
+  });
+
+  if (identityMatchedIds.length > 0 && merged.length < limit) {
+    const { data: identityProfiles } = await (scopedClient
+      .from(TABLES.CUSTOMER_PROFILES)
+      .select('id, names, primary_email, risk_level')
+      .in('id', identityMatchedIds)
+      .order('risk_score', { ascending: false })
+      .limit(limit) as unknown as Promise<{
+      data: CustomerSearchRow[] | null;
+      error: { message: string } | null;
+    }>);
+
+    for (const row of identityProfiles ?? []) {
+      if (seen.has(row.id)) continue;
+      seen.add(row.id);
+      merged.push(row);
+      if (merged.length >= limit) break;
     }
   }
 

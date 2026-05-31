@@ -3,6 +3,7 @@ import type {
   GorgiasWidgetModel,
   NetworkStats,
   PrimaryReason,
+  ThisStoreOrdersSource,
   WidgetStats,
 } from '@/lib/gorgias/widgetData';
 
@@ -15,6 +16,7 @@ export type GorgiasWidgetJsonPayload = {
 };
 
 const NO_NETWORK_LABEL = 'No network history found';
+const NO_CROSS_STORE_LABEL = 'No cross-store history found';
 
 function wholePct(rate0to1: number): string {
   return `${Math.round(rate0to1 * 100)}%`;
@@ -26,9 +28,16 @@ function formatPrimaryReasonValue(reason: PrimaryReason): string {
   return `${reason.reasonCount} different ${reason.reasonCount === 1 ? 'reason' : 'reasons'} used`;
 }
 
-function formatClaimOrders(thisStoreOrders: number, network: NetworkStats | null): string {
-  const storePart = `${thisStoreOrders} ${pluralise(thisStoreOrders, 'order', 'orders')} here`;
-  if (!network) return `${storePart} · ${NO_NETWORK_LABEL}`;
+function formatClaimOrders(
+  thisStoreOrders: number,
+  network: NetworkStats | null,
+  source?: ThisStoreOrdersSource
+): string {
+  const isLinkedShopifyCount = source === 'shopify_identities';
+  const storePart = isLinkedShopifyCount
+    ? `${thisStoreOrders} ${pluralise(thisStoreOrders, 'linked order', 'linked orders')} here`
+    : `${thisStoreOrders} ${pluralise(thisStoreOrders, 'order', 'orders')} here`;
+  if (!network) return `${storePart} · ${isLinkedShopifyCount ? NO_CROSS_STORE_LABEL : NO_NETWORK_LABEL}`;
   const merchants = pluralise(network.merchantCount, 'merchant', 'merchants');
   if (network.orderCount > 0) {
     return `${storePart} · ${network.orderCount} across ${network.merchantCount} ${merchants}`;
@@ -105,7 +114,7 @@ export function claimWidgetToJson(result: GorgiasClaimWidgetResult): GorgiasWidg
     : formatStoreRecent(storeRecentClaimCount);
 
   return {
-    orders: formatClaimOrders(thisStore.orderCount, network),
+    orders: formatClaimOrders(thisStore.orderCount, network, thisStore.ordersCountSource),
     claim_rate: formatClaimRateField(thisStore.claimRate, network),
     primary_reason: primaryReason,
     recent_activity: recentActivity,

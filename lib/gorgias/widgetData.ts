@@ -579,9 +579,6 @@ export async function countShopifyOrdersAtMerchant(
   }
 
   const directEmailSignalOrderIds = await countSignalRowsForCustomerIds(directEmailCustomerIdsByShop);
-  if (directEmailSignalOrderIds.size > 0) {
-    return directEmailSignalOrderIds.size;
-  }
 
   const { data: emailIdentityRows } = await service
     .from(TABLES.CUSTOMER_PROFILE_IDENTITIES)
@@ -623,11 +620,8 @@ export async function countShopifyOrdersAtMerchant(
   }
 
   const profileSignalOrderIds = await countSignalRowsForCustomerIds(profileCustomerIdsByShop);
-  if (profileSignalOrderIds.size > 0) {
-    return profileSignalOrderIds.size;
-  }
-
-  return directEmailOrderIds.size;
+  const signalOrderCount = Math.max(directEmailSignalOrderIds.size, profileSignalOrderIds.size);
+  return signalOrderCount > 0 ? signalOrderCount : directEmailOrderIds.size;
 }
 
 async function readThisStoreSummary(
