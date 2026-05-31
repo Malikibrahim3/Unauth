@@ -9,6 +9,7 @@ export interface NormalisedOrderWithRawEmail extends NormalisedOrder {
   _rawEmail: string;
   _rawIP?: string | null;
   _rawAddress?: string | null;
+  _rawBillingAddress?: string | null;
   _rawPhone?: string | null;
   _rawPostcode?: string | null;
   _rawCardLast4?: string | null;
@@ -136,6 +137,7 @@ export function normaliseRow(row: CsvRow): NormalisedOrderWithRawEmail {
     _rawEmail: row.customer_email,
     _rawIP: normIp,
     _rawAddress: normAddress,
+    _rawBillingAddress: normBilling,
     _rawPhone: normPhone,
     _rawPostcode: row.shipping_postcode?.trim() || row.postcode?.trim() || null,
     _rawCardLast4: normLast4,

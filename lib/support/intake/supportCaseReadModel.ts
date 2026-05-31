@@ -21,6 +21,25 @@ export type PublicSupportCaseContext = {
 const SAFE_CASE_COLUMNS =
   'id, provider, external_case_id, external_url, case_status, claim_reason, customer_message_summary, agent_notes_summary, tags, link_status, shopify_order_id, order_ref, link_metadata, merchant_claim_id, updated_at_provider';
 
+function toHumanHelpdeskUrl(provider: string, externalUrl: unknown, externalCaseId: unknown): string | null {
+  if (typeof externalUrl !== 'string' || !externalUrl.trim()) return null;
+  try {
+    const url = new URL(externalUrl.trim());
+    if (url.protocol !== 'https:' && url.protocol !== 'http:') return null;
+
+    const id = String(externalCaseId ?? '').trim();
+    if (provider === 'zendesk' && id && !url.pathname.includes('/agent/tickets/')) {
+      return `${url.origin}/agent/tickets/${encodeURIComponent(id)}`;
+    }
+    if (provider === 'gorgias' && id && !url.pathname.includes('/app/ticket/')) {
+      return `${url.origin}/app/ticket/${encodeURIComponent(id)}`;
+    }
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
 function toPublicSupportCase(row: Record<string, unknown>): PublicSupportCaseContext {
   const linkMetadata =
     row.link_metadata && typeof row.link_metadata === 'object' && !Array.isArray(row.link_metadata)
@@ -31,7 +50,7 @@ function toPublicSupportCase(row: Record<string, unknown>): PublicSupportCaseCon
     id: String(row.id),
     provider: String(row.provider),
     external_case_id: String(row.external_case_id),
-    external_url: typeof row.external_url === 'string' ? row.external_url : null,
+    external_url: toHumanHelpdeskUrl(String(row.provider), row.external_url, row.external_case_id),
     case_status: typeof row.case_status === 'string' ? row.case_status : null,
     claim_reason: typeof row.claim_reason === 'string' ? row.claim_reason : null,
     customer_message_summary:

@@ -416,6 +416,7 @@ export const TX_SAFE_SELECT =
   'id,job_id,order_id,customer_email,customer_name,shipping_address,' +
   'device_ip,card_last4,order_value,match_score,fraud_flags,risk_level,' +
   'identity_confidence_grade,identity_score,match_status,' +
+  'identity_match_score,identity_match_grade,' +
   'refund_claimed,refund_reason,chargeback_filed,' +
   'processed_at,cluster_id,signals_matched,' +
   'dismissed_by_merchant,' +

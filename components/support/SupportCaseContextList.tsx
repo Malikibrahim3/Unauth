@@ -22,10 +22,22 @@ function formatTags(tags: unknown[]): string {
   return values.length > 0 ? values.join(', ') : '—';
 }
 
+function safeHelpdeskUrl(value: string | null): string | null {
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' || url.protocol === 'http:' ? url.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
 function SupportCaseCards({ cases }: { cases: PublicSupportCaseContext[] }) {
   return (
     <div className="space-y-3">
-      {cases.map((supportCase) => (
+      {cases.map((supportCase) => {
+        const helpdeskUrl = safeHelpdeskUrl(supportCase.external_url);
+        return (
           <div
             key={supportCase.id}
             className="rounded-md border p-3 text-sm"
@@ -36,11 +48,11 @@ function SupportCaseCards({ cases }: { cases: PublicSupportCaseContext[] }) {
                 {PROVIDER_LABELS[supportCase.provider] ?? supportCase.provider} ·{' '}
                 {supportCase.external_case_id}
               </p>
-              {supportCase.external_url ? (
+              {helpdeskUrl ? (
                 <a
-                  href={supportCase.external_url}
+                  href={helpdeskUrl}
                   target="_blank"
-                  rel="noreferrer"
+                  rel="noopener noreferrer"
                   className="text-xs underline"
                   style={{ color: 'var(--accent)' }}
                 >
@@ -83,7 +95,8 @@ function SupportCaseCards({ cases }: { cases: PublicSupportCaseContext[] }) {
               {supportCase.claim_candidate ? ' · Claim candidate (review only)' : ''}
             </p>
           </div>
-        ))}
+        );
+      })}
     </div>
   );
 }

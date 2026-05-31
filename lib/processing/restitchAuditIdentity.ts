@@ -45,6 +45,7 @@ function rawIds(order: NormalisedOrder) {
     _rawPostcode?: string | null;
     _rawIP?: string | null;
     _rawAddress?: string | null;
+    _rawBillingAddress?: string | null;
     _rawCardLast4?: string | null;
     _rawCardBin?: string | null;
     _rawCardFingerprint?: string | null;
@@ -62,6 +63,7 @@ function buildLinkerInput(orders: NormalisedOrder[]): LinkerOrderInput[] {
       phone: ids._rawPhone || null,
       address: ids._rawAddress || null,
       shipping_address: ids._rawAddress || null,
+      billing_address: ids._rawBillingAddress || null,
       postcode: ids._rawPostcode || null,
       ip: ids._rawIP || null,
       card_last4: ids._rawCardLast4 || null,

@@ -28,11 +28,11 @@ import {
   countShopifyCommerceOrdersForProfile,
   deriveCanonicalCommerceOrderStats,
 } from '@/lib/customers/commerceOrders';
+import { deriveProfileIdentityConfidence } from '@/lib/customers/identityConfidence';
 import WatchlistStarButton from '@/components/audit/WatchlistStarButton';
 import CustomerNotes from '@/components/audit/CustomerNotes';
 import CustomerSupportCasesSection from '@/components/customers/CustomerSupportCasesSection';
 import { ConfidenceBadge } from '@/components/ui/ConfidenceBadge';
-import { riskLevelToNewGrade } from '@/lib/confidence';
 import { RiskScoreBadge } from '@/components/ui/RiskScoreBadge';
 import { SectionCard } from '@/components/ui/SectionCard';
 import { MetricCard } from '@/components/ui/MetricCard';
@@ -152,6 +152,12 @@ const SOURCE_LABELS: Record<string, string> = {
   gorgias: 'Gorgias',
   api: 'API',
 };
+
+function firstArrayValue(value: unknown): string | null {
+  return Array.isArray(value) && typeof value[0] === 'string' && value[0].trim()
+    ? value[0].trim()
+    : null;
+}
 
 function RoadmapOrderCard({ tx, isLast }: { tx: any; isLast: boolean }) {
   const hasClaim = !!(tx.refund_claimed ?? tx.chargeback_filed);
@@ -542,7 +548,8 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
     fraudFlags: profile.identity_signals ?? profile.fraud_flags,
     linkedAccountCount: 0,
   });
-  const profileGrade = riskLevelToNewGrade(profile.risk_level);
+  const identityConfidence = deriveProfileIdentityConfidence(profile, transactions);
+  const profileGrade = identityConfidence.letter;
   const merchantSignalCount = Math.max(0, Number(profile.total_merchants_seen_at ?? 1));
   let { data: profileClaims, error: profileClaimsError } = await svc
     .from('merchant_claims' as any)
@@ -577,12 +584,25 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
     }))
     : [];
 
-  const identityNodes = [
-    profile.primary_email ?? profile.emails[0],
-    profile.addresses[0],
-    profile.phones?.[0],
-    profile.ips?.[0],
-  ].filter(Boolean) as string[];
+  const primaryIdentifier = profile.primary_email ?? firstArrayValue(profile.emails) ?? 'primary';
+  const identitySignalRows = [
+    ...((Array.isArray(profile.emails) ? profile.emails : []) as string[])
+      .filter((email) => email && email !== profile.primary_email)
+      .map((email) => ({
+        value: email,
+        signalType: 'email variant',
+        grade: 'B',
+      })),
+    firstArrayValue(profile.addresses)
+      ? { value: firstArrayValue(profile.addresses)!, signalType: 'address match', grade: 'B' }
+      : null,
+    firstArrayValue(profile.phones)
+      ? { value: firstArrayValue(profile.phones)!, signalType: 'phone match', grade: 'A' }
+      : null,
+    firstArrayValue(profile.ips)
+      ? { value: firstArrayValue(profile.ips)!, signalType: 'device/ip match', grade: 'C' }
+      : null,
+  ].filter(Boolean) as Array<{ value: string; signalType: string; grade: string }>;
 
   return (
     <div className="mx-auto max-w-7xl px-3 py-5 sm:px-5">
@@ -643,10 +663,11 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-px overflow-hidden rounded-md border md:grid-cols-5" style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-border)' }}>
+          <div className="grid grid-cols-2 gap-px overflow-hidden rounded-md border md:grid-cols-6" style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-border)' }}>
             {[
-              { label: 'Risk grade', value: profileGrade, color: 'var(--data-score)' },
-              { label: 'Confidence', value: `${Math.round(profile.risk_score)} / 100`, color: 'var(--data-score)' },
+              { label: 'Identity grade', value: profileGrade, color: 'var(--data-score)' },
+              { label: 'Identity confidence', value: `${identityConfidence.score} / 100`, color: 'var(--data-score)' },
+              { label: 'Risk score', value: `${Math.round(profile.risk_score)} / 100`, color: 'var(--data-score)' },
               { label: 'Cross-merchant', value: merchantsSeen > 1 ? `${merchantsSeen} merchants` : 'This store only', color: 'var(--data-score)' },
               { label: 'Exposure', value: formatCurrencyNullable(totalOrderValue), color: 'var(--data-currency)' },
               { label: 'Last seen', value: formatDateMode(profile.last_seen, 'table'), color: 'var(--data-date)', mono: true },
@@ -751,28 +772,27 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
             <span className="text-caption font-semibold" style={{ color: 'var(--text-muted)' }}>Confidence</span>
             <span className="text-caption font-semibold" style={{ color: 'var(--text-muted)' }}>Observed</span>
           </div>
-          {identityNodes.slice(1, 4).map((node, i) => {
-            const labels = ['email match', 'address match', 'device/ip match'];
+          {identitySignalRows.map((signal, i) => {
             const observed = `${formatDateMode(profile.first_seen, 'table')} → ${formatDateMode(profile.last_seen, 'table')}`;
             return (
-              <div key={`${node}-${i}`}>
+              <div key={`${signal.value}-${i}`}>
                 <div className="hidden md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_110px_90px_140px] gap-3 px-3 py-2 border-t" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)' }}>
-                  <span className="font-mono text-caption truncate" style={{ color: 'var(--text)' }}>{profile.primary_email ?? profile.emails[0] ?? 'primary'}</span>
-                  <span className="text-caption truncate" style={{ color: 'var(--text)' }}>{String(node)}</span>
-                  <span className="text-caption" style={{ color: 'var(--text-muted)' }}>{labels[i]}</span>
-                  <ConfidencePill grade={i === 0 ? 'A' : i === 1 ? 'B' : 'C'} />
+                  <span className="font-mono text-caption truncate" style={{ color: 'var(--text)' }}>{primaryIdentifier}</span>
+                  <span className="text-caption truncate" style={{ color: 'var(--text)' }}>{signal.value}</span>
+                  <span className="text-caption" style={{ color: 'var(--text-muted)' }}>{signal.signalType}</span>
+                  <ConfidencePill grade={signal.grade} />
                   <span className="font-mono text-caption" style={{ color: 'var(--text-muted)' }}>{observed}</span>
                 </div>
                 <div className="md:hidden border-t px-3 py-3 space-y-2" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)' }}>
-                  <div><span className="text-caption" style={{ color: 'var(--text-muted)' }}>Primary</span><p className="font-mono text-caption break-all" style={{ color: 'var(--text)' }}>{profile.primary_email ?? profile.emails[0] ?? 'primary'}</p></div>
-                  <div><span className="text-caption" style={{ color: 'var(--text-muted)' }}>Linked signal</span><p className="text-caption break-all" style={{ color: 'var(--text)' }}>{String(node)}</p></div>
-                  <div className="flex items-center justify-between gap-2"><span className="text-caption" style={{ color: 'var(--text-muted)' }}>{labels[i]}</span><ConfidencePill grade={i === 0 ? 'A' : i === 1 ? 'B' : 'C'} /></div>
+                  <div><span className="text-caption" style={{ color: 'var(--text-muted)' }}>Primary</span><p className="font-mono text-caption break-all" style={{ color: 'var(--text)' }}>{primaryIdentifier}</p></div>
+                  <div><span className="text-caption" style={{ color: 'var(--text-muted)' }}>Linked signal</span><p className="text-caption break-all" style={{ color: 'var(--text)' }}>{signal.value}</p></div>
+                  <div className="flex items-center justify-between gap-2"><span className="text-caption" style={{ color: 'var(--text-muted)' }}>{signal.signalType}</span><ConfidencePill grade={signal.grade} /></div>
                   <div><span className="text-caption" style={{ color: 'var(--text-muted)' }}>Observed</span><p className="font-mono text-caption" style={{ color: 'var(--text-muted)' }}>{observed}</p></div>
                 </div>
               </div>
             );
           })}
-          {identityNodes.length <= 1 && (
+          {identitySignalRows.length === 0 && (
             <div className="px-3 py-3 border-t" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)' }}>
               <p className="text-caption" style={{ color: 'var(--text-muted)' }}>
                 More signals appear as cross-store data accumulates
@@ -802,7 +822,7 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
 
               <div className="mt-[var(--space-4)]">
                 <div className="flex items-center justify-between text-caption mb-1" style={{ color: 'var(--text-muted)' }}>
-                  <span>Signal strength</span>
+                  <span>Behavioural signal strength</span>
                   <span className="font-semibold" style={{ color: 'var(--text)' }}>{Math.round(profile.risk_score)} / 100</span>
                 </div>
                 <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--bg-subtle)' }}>

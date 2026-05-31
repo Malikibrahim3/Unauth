@@ -398,6 +398,46 @@ function readPath(obj: unknown, path: string[]): unknown {
   return current;
 }
 
+function absoluteHttpUrl(value: string | null | undefined): string | null {
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' || url.protocol === 'http:' ? url.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
+function providerBaseUrl(context: NormalizeSupportTicketContext): string | null {
+  return absoluteHttpUrl(context.provider_base_url ?? null)?.replace(/\/$/, '') ?? null;
+}
+
+function buildZendeskTicketUrl(
+  ticket: Record<string, unknown>,
+  id: string,
+  context: NormalizeSupportTicketContext,
+): string | null {
+  const base = providerBaseUrl(context);
+  if (base) return `${base}/agent/tickets/${encodeURIComponent(id)}`;
+
+  const existing = absoluteHttpUrl(asString(ticket.url ?? ticket.external_url));
+  if (!existing) return null;
+  return existing.includes('/agent/tickets/') ? existing : null;
+}
+
+function buildGorgiasTicketUrl(
+  ticket: Record<string, unknown>,
+  id: string,
+  context: NormalizeSupportTicketContext,
+): string | null {
+  const base = providerBaseUrl(context);
+  if (base) return `${base}/app/ticket/${encodeURIComponent(id)}`;
+
+  const existing = absoluteHttpUrl(asString(ticket.uri ?? ticket.external_url ?? ticket.url));
+  if (!existing) return null;
+  return existing.includes('/app/ticket/') ? existing : null;
+}
+
 function normalizeAttachments(raw: unknown): SupportAttachmentMetadata[] {
   if (!Array.isArray(raw)) return [];
 
@@ -570,11 +610,7 @@ export function normalizeZendeskTicket(
     normalizeClaimReasonFromText(`${subject}\n${description}\n${customer ?? ''}`, tags) ?? null;
   const { decision, outcome } = extractExplicitDecisionOutcome(ticket.custom_fields, tags);
 
-  const externalUrl =
-    asString(ticket.url) ??
-    (context.provider_base_url
-      ? `${context.provider_base_url.replace(/\/$/, '')}/agent/tickets/${id}`
-      : null);
+  const externalUrl = buildZendeskTicketUrl(ticket, id, context);
 
   const { signals, inferredOutcome } = deriveClaimSignals({
     subject,
@@ -689,12 +725,7 @@ export function normalizeGorgiasTicket(
 
   return buildNormalizedBase(context, 'gorgias', rawTicket, {
     external_case_id: id,
-    external_url:
-      asString(ticket.uri) ??
-      asString(ticket.external_url) ??
-      (context.provider_base_url
-        ? `${context.provider_base_url.replace(/\/$/, '')}/app/ticket/${id}`
-        : null),
+    external_url: buildGorgiasTicketUrl(ticket, id, context),
     customer_email_hash: customerEmail ? hashEmailForContext(context, customerEmail) : null,
     customer_identifier: customerEmail ? hashSupportIdentifier(customerEmail) : null,
     order_ref: orderRef,

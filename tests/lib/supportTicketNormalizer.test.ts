@@ -94,6 +94,21 @@ describe('support ticket normalizer', () => {
     expect(normalized.raw_payload_hash).toBe(hashRawPayload(raw));
   });
 
+  it('builds a Zendesk agent URL instead of storing the provider API URL', () => {
+    const raw = {
+      id: 99102,
+      url: 'https://acme.zendesk.com/api/v2/tickets/99102.json',
+      subject: 'Missing parcel',
+      description: 'Customer reports parcel not received.',
+      requester: { email: 'buyer@example.com' },
+      created_at: '2026-05-28T10:00:00Z',
+      updated_at: '2026-05-28T11:00:00Z',
+    };
+
+    const normalized = normalizeZendeskTicket(raw, baseContext);
+    expect(normalized.external_url).toBe('https://acme.zendesk.com/agent/tickets/99102');
+  });
+
   it('normalizes Gorgias refund ticket with Shopify order #1007', () => {
     const raw = {
       id: 'g-500',
@@ -128,6 +143,24 @@ describe('support ticket normalizer', () => {
     expect(normalized.tags).toEqual(['refund', 'shopify']);
     expect(normalized.customer_message_summary).not.toContain('A'.repeat(600));
     expect(normalized.agent_notes_summary?.length).toBeLessThanOrEqual(SUPPORT_SUMMARY_MAX_LENGTH);
+  });
+
+  it('builds a Gorgias app ticket URL instead of storing the provider API URL', () => {
+    const raw = {
+      id: '63091193',
+      uri: 'https://acme.gorgias.com/api/tickets/63091193',
+      subject: 'Order #1008 not received',
+      customer: { email: 'shopper@example.com' },
+      messages: [{ body: 'Still not received.', from_agent: false }],
+      created_datetime: '2026-05-28T09:00:00Z',
+      updated_datetime: '2026-05-28T09:30:00Z',
+    };
+
+    const normalized = normalizeGorgiasTicket(raw, {
+      ...baseContext,
+      provider_base_url: 'https://acme.gorgias.com',
+    });
+    expect(normalized.external_url).toBe('https://acme.gorgias.com/app/ticket/63091193');
   });
 
   // Regression for the real Gorgias INR ticket (external case 63091193) that was
