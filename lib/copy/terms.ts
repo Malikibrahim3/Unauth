@@ -1,7 +1,7 @@
 /**
  * lib/copy/terms.ts
  *
- * Canonical user-facing copy constants for ParcelClaim.
+ * Canonical user-facing copy constants for Unauth.
  *
  * PRODUCT DIRECTION: This app is an identity intelligence and evidence review
  * tool. It identifies order/identity matches and presents evidence for merchant
@@ -15,7 +15,7 @@
 // ---------------------------------------------------------------------------
 
 export const DISCLAIMER =
-  'ParcelClaim identifies identity and order-pattern matches. Final decisions should be made by the merchant using the underlying evidence.';
+  'Unauth identifies identity and order-pattern matches. Final decisions should be made by the merchant using the underlying evidence.';
 
 export const DISCLAIMER_SHORT =
   'Matches are indicative only. Merchant review required before action.';

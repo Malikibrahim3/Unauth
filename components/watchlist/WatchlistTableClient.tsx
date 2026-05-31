@@ -5,7 +5,6 @@ import { ConfidenceBadge } from '@/components/ui/ConfidenceBadge';
 import { riskLevelToNewGrade } from '@/lib/confidence';
 import RemoveButton from '@/components/watchlist/RemoveButton';
 import CustomerIntelligenceDrawer from '@/components/customers/CustomerIntelligenceDrawer';
-import { RiskTrendBadge } from '@/components/ui/RiskTrendBadge';
 
 interface WatchlistEntry {
   id: string;
@@ -158,11 +157,7 @@ export default function WatchlistTableClient({ rows: initialRows }: WatchlistTab
                   )}
                 </td>
                 <td className="px-4 py-3">
-                  {entry.risk_trend_scores && entry.risk_trend_scores.length >= 2 ? (
-                    <RiskTrendBadge scores={entry.risk_trend_scores} />
-                  ) : (
-                    <span className="text-xs" style={{ color: 'var(--text-subtle)' }}>—</span>
-                  )}
+                  <span className="text-xs" style={{ color: 'var(--text-subtle)' }}>—</span>
                 </td>
                 <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-muted)' }}>
                   {new Intl.DateTimeFormat('en-US', {

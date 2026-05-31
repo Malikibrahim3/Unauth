@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { APP_ORIGIN } from '../shared/types';
 import type { EvidenceResponse, LookupResponse } from '../shared/types';
-import { confidenceLabel, maskApiKey, riskVisualForLookup } from './risk';
+import { claimsLine, maskApiKey, gradeVisualForLookup } from './risk';
 import { errorMessage, sendMessage } from './messaging';
 
 type Screen = 'setup' | 'lookup' | 'loading' | 'results' | 'error' | 'settings';
@@ -269,7 +269,7 @@ function App() {
         <Header connected={!!apiKey} showSettings={false} onSettings={() => {}} />
         <div className="loading">
           <div className="loading-logo">U</div>
-          <p>Checking identity…</p>
+          <p>Checking identity network…</p>
         </div>
       </div>
     );
@@ -290,45 +290,41 @@ function App() {
   }
 
   if (screen === 'results' && lookup) {
-    const visual = riskVisualForLookup(lookup);
+    const visual = gradeVisualForLookup(lookup);
+    const crossMerchant = lookup.claims_record.cross_merchant;
     return (
       <div className="app">
         <Header connected showSettings onSettings={() => setScreen('settings')} />
         <div className="body results">
-          <div className={`risk-banner ${visual.className}`}>
+          <div className={`grade-banner ${visual.className}`}>
             <h2>{visual.label}</h2>
-            <div className="risk-meta">
-              Confidence: {confidenceLabel(lookup.confidence)}
-              <br />
-              Risk score: {lookup.risk_score}/100
+            <div className="grade-meta">
+              {lookup.matched_on.length > 0
+                ? `Matched on ${lookup.matched_on.join(', ')}`
+                : 'Identity match'}
             </div>
           </div>
 
-          {lookup.signals.length > 0 && (
-            <div>
-              <p className="section-title">Signals</p>
-              <ul className="signals">
-                {lookup.signals.map((signal) => (
-                  <li key={signal}>{signal}</li>
-                ))}
-              </ul>
-            </div>
-          )}
+          <div>
+            <p className="section-title">Claims on record</p>
+            <p style={{ margin: 0 }}>{claimsLine(lookup.claims_record)}</p>
+          </div>
 
-          {lookup.cross_merchant && (
+          {crossMerchant && (
             <div className="cross-merchant">
               <p className="section-title">Cross-merchant</p>
               <p style={{ margin: 0 }}>
-                Seen at {lookup.cross_merchant.merchant_count} merchants
+                Seen at {crossMerchant.merchant_count} merchants
                 <br />
-                {lookup.cross_merchant.claim_count} total claims
-                {lookup.cross_merchant.flagged ? (
-                  <>
-                    <br />
-                    Flagged in network
-                  </>
-                ) : null}
+                {crossMerchant.claim_count} total claims
               </p>
+            </div>
+          )}
+
+          {lookup.ce3_evidence_available && (
+            <div className="ce3">
+              <p className="section-title">CE 3.0</p>
+              <p style={{ margin: 0 }}>CE 3.0 evidence available</p>
             </div>
           )}
 

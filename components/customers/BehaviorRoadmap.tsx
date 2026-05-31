@@ -126,7 +126,6 @@ export default function BehaviorRoadmap({ events }: BehaviorRoadmapProps) {
         {events.map((event, index) => {
           const glyph = GLYPHS[event.type];
           const expanded = expandedId === event.id;
-          const riskTag = glyph.tag ?? (event.tier === 'critical' || event.tier === 'high' ? 'HIGH' : event.tier === 'low' ? 'LOW' : null);
 
           return (
             <li
@@ -171,8 +170,6 @@ export default function BehaviorRoadmap({ events }: BehaviorRoadmapProps) {
                 )}
               </button>
               <div className="flex items-center gap-2 pt-0.5">
-                {riskTag === 'HIGH' && <Badge tone="danger" size="sm">HIGH</Badge>}
-                {riskTag === 'LOW' && <span className="t-label" style={{ color: 'var(--ink-tertiary)' }}>LOW</span>}
                 {event.source && (
                   <span className="rounded-sm border px-1.5 py-0.5 text-[10px] font-medium uppercase" style={{ background: 'var(--surface-muted)', borderColor: 'var(--surface-border)', color: 'var(--ink-tertiary)' }}>
                     {event.source}

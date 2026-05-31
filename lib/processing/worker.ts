@@ -450,7 +450,6 @@ function rowToFraudTransaction(
   row: CsvRow,
   scored: {
     totalScore: number;
-    riskTier: 'low' | 'medium' | 'high' | 'critical';
     flagged: boolean;
     signals: { name: string; fired: boolean }[];
     order: Pick<
@@ -461,7 +460,9 @@ function rowToFraudTransaction(
   identity: PersistedIdentityResult | undefined,
   jobId: string,
   source: FraudTransactionInsert['source'] = 'csv',
-  shopDomain: string | null = null
+  shopDomain: string | null = null,
+  /** Set only when cross-job dedup is active (flag on + migration applied). */
+  merchantId?: string
 ): FraudTransactionInsert {
   const flags = scored.signals.filter((s) => s.fired).map((s) => s.name);
   const imr = identity?.identityMatchResult;
@@ -475,6 +476,8 @@ function rowToFraudTransaction(
 
   return {
     job_id: jobId,
+    // Only emitted when AUDIT_TX_MERCHANT_DEDUP is on (column exists post-migration).
+    ...(merchantId ? { merchant_id: merchantId } : {}),
     order_id: row.order_id,
     order_date: orderDateIso,
     customer_email: row.customer_email ?? '',
@@ -491,9 +494,10 @@ function rowToFraudTransaction(
     refund_claimed: refundClaimed,
     refund_reason: row.refund_reason,
     chargeback_filed: null,
-    match_score: scored.totalScore,
+    // Repurposed: identity-only match score (NOT a fraud/risk score). The
+    // surfaced source of truth is identity_confidence_grade below.
+    match_score: imr?.identity_match_score ?? identity?.identityScore ?? 0,
     fraud_flags: flags,
-    risk_level: scored.riskTier,
     identity_confidence_grade: identity?.grade ?? null,
     identity_score: identity?.identityScore ?? null,
     signals_matched: identity?.signalsMatched ?? [],
@@ -508,7 +512,6 @@ function rowToFraudTransaction(
         identity?.grade === 'probable' ||
         identity?.grade === 'possible') &&
       (identity?.behaviouralFlags?.length ?? 0) > 0,
-    recommended_action: identity?.recommendedAction ?? null,
     ce3_eligible: identity?.ce3Eligible ?? false,
     ce3_qualifying_transactions: identity?.ce3QualifyingTransactions ?? [],
     cluster_id: identity?.clusterId ?? null,
@@ -559,8 +562,20 @@ export async function processCsvJob(
 ): Promise<ScoredOrder[]> {
   const ingestionSource = ingestion?.source ?? 'csv';
   const shopDomain = ingestion?.shopDomain ?? null;
+  // Cross-job dedup (#21): only after the merchant_id migration is applied AND
+  // the flag is set. Requires a resolved merchant_id; never applies to Shopify
+  // (which keeps its own shop_domain,order_id arbiter index).
+  const merchantDedup =
+    env.AUDIT_TX_MERCHANT_DEDUP === 'true' &&
+    ingestionSource !== 'shopify' &&
+    !!merchantId;
   const upsertOnConflict =
-    ingestionSource === 'shopify' && shopDomain ? 'shop_domain,order_id' : 'job_id,order_id';
+    ingestionSource === 'shopify' && shopDomain
+      ? 'shop_domain,order_id'
+      : merchantDedup
+        ? 'merchant_id,order_id,source'
+        : 'job_id,order_id';
+  const dedupMerchantId = merchantDedup ? merchantId : undefined;
   const jobLog = (msg: string) => console.log(`[job ${jobId}] ${new Date().toISOString()} ${msg}`);
   const checkpoint = (
     stage: string,
@@ -918,7 +933,8 @@ export async function processCsvJob(
       identityResultsByOrder.get(s.order.orderId),
       jobId,
       ingestionSource,
-      shopDomain
+      shopDomain,
+      dedupMerchantId
     )
   );
 

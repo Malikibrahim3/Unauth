@@ -51,12 +51,6 @@ export default function CustomersTableClient({ rows }: CustomersTableClientProps
       render: (p: CustomerRow) => <ConfidenceBadge grade={riskLevelToNewGrade(p.risk_level)} size="sm" />,
     },
     {
-      key: 'score',
-      header: 'Score',
-      align: 'right' as const,
-      render: (p: CustomerRow) => <span className="num" style={{ fontFamily: 'var(--font-mono)' }}>{Math.round(p.risk_score)}</span>,
-    },
-    {
       key: 'network',
       header: 'Network',
       align: 'right' as const,
@@ -128,8 +122,6 @@ export default function CustomersTableClient({ rows }: CustomersTableClientProps
               <ConfidenceBadge grade={riskLevelToNewGrade(p.risk_level)} size="sm" />
             </div>
             <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--text-muted)' }}>
-              <span><span className="font-semibold font-mono" style={{ color: 'var(--text)' }}>{Math.round(p.risk_score)}</span> score</span>
-              <span style={{ color: 'var(--border)' }}>·</span>
               <span><span className="font-semibold font-mono" style={{ color: p.total_merchants_seen_at > 1 ? 'var(--accent)' : 'var(--text)' }}>{p.total_merchants_seen_at}</span> merchants</span>
               <span style={{ color: 'var(--border)' }}>·</span>
               <span><span className="font-semibold font-mono" style={{ color: 'var(--text)' }}>{p.total_orders}</span> orders</span>

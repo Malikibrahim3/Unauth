@@ -75,7 +75,7 @@ export default function OnboardingClient({
   const router = useRouter();
 
   async function saveAndContinue() {
-    if (!storeName.trim() || !platform || !annualVolume || !primaryConcern) return;
+    // Store profile fields are optional — never block reaching first value.
     setLoading(true);
     setError('');
     const response = await fetch('/api/account/setup', {
@@ -125,7 +125,7 @@ export default function OnboardingClient({
 
   const current = STEPS[activeStep];
   const CurrentIcon = current.icon;
-  const canStart = !!storeName.trim() && !!platform && !!annualVolume && !!primaryConcern;
+  const canStart = true;
 
   return (
     <main className="min-h-screen p-4 md:p-8" style={{ background: 'var(--surface-base)' }}>

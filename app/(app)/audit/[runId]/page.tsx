@@ -118,7 +118,7 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
 
   const { data: run } = await serviceClient
     .from(TABLES.PROCESSING_JOBS)
-    .select('id,status,filename,total_rows,processed_rows,created_at,data_quality')
+    .select('id,status,filename,total_rows,processed_rows,failed_rows,created_at,data_quality')
     .eq('id', resolvedParams.runId)
     .eq('merchant_id', ctx.merchantId)
     .single();
@@ -313,6 +313,43 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
         breadcrumbs={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'Audit result' }]}
         actions={statusBadge}
       />
+
+      {/* ── First insight + ingestion summary (#16/#45/#46) ───────────── */}
+      <SectionCard title="First insight" className="border-[var(--border)]">
+        <p className="text-body-sm" style={{ color: 'var(--text)' }}>
+          {networkLinkedCount > 0 ? (
+            <>
+              We found <strong>{networkLinkedCount.toLocaleString()}</strong> linked{' '}
+              {networkLinkedCount === 1 ? 'identity' : 'identities'} in your order history — shoppers who appear to
+              operate multiple accounts. Connect to the network to also see customers seen at other merchants.
+            </>
+          ) : (
+            <>No linked identities in your order history yet. Connect to the network to expand coverage across merchants.</>
+          )}
+        </p>
+        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-caption" style={{ color: 'var(--text-muted)' }}>
+          <span><strong style={{ color: 'var(--text)' }}>{(runData.processed_rows ?? runData.total_rows ?? 0).toLocaleString()}</strong> orders ingested</span>
+          <span style={{ color: 'var(--border)' }}>·</span>
+          <span><strong style={{ color: 'var(--text)' }}>{networkLinkedCount.toLocaleString()}</strong> identities linked</span>
+          <span style={{ color: 'var(--border)' }}>·</span>
+          <span><strong style={{ color: 'var(--text)' }}>{summary.flaggedTransactions.toLocaleString()}</strong> with prior claim history</span>
+          {((runData as unknown as { failed_rows?: number }).failed_rows ?? 0) > 0 && (
+            <>
+              <span style={{ color: 'var(--border)' }}>·</span>
+              <span>{(runData as unknown as { failed_rows?: number }).failed_rows!.toLocaleString()} rows skipped (could not be parsed)</span>
+            </>
+          )}
+        </div>
+        <div className="mt-4">
+          <Link
+            href="/settings/integrations"
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-md transition-colors"
+            style={{ border: '1px solid var(--border-default)', color: 'var(--text)', background: 'transparent' }}
+          >
+            Connect your helpdesk (Zendesk / Gorgias) →
+          </Link>
+        </div>
+      </SectionCard>
 
       {/* ── Action bar ───────────────────────────────────────────────── */}
       {hasFlags && (

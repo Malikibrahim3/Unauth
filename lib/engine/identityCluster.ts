@@ -307,37 +307,10 @@ function buildMerchantDisplay(
     behaviorSummary += ', no refund claims';
   }
 
-  // Recommended action
-  let recommendedAction: MerchantDisplay['recommendedAction'] = 'no_action';
-  let actionReason = 'No strong identity signals detected — no action needed.';
-
-  if (grade === 'definite') {
-    if (
-      behavioral.refundRate > 0.5 ||
-      behavioral.totalRefundClaims >= 3
-    ) {
-      recommendedAction = 'escalate';
-      actionReason =
-        'High-confidence identity match with elevated refund activity across linked accounts.';
-    } else {
-      recommendedAction = 'manual_verify';
-      actionReason = 'High-confidence identity match across multiple accounts — verify manually.';
-    }
-  } else if (grade === 'probable') {
-    recommendedAction = 'review';
-    actionReason = 'Probable identity match — worth reviewing before approving any refund claims.';
-  } else if (grade === 'possible') {
-    recommendedAction = 'review';
-    actionReason =
-      'Possible identity match — review if a refund or chargeback is involved.';
-  }
-
   const display: MerchantDisplay = {
     headline: headlines[grade],
     confidenceLine,
     behaviorSummary,
-    recommendedAction,
-    actionReason,
   };
 
   if (missingFields.length > 0) {

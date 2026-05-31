@@ -18,12 +18,15 @@ function legacyGradeToNew(g: 'definite' | 'probable' | 'possible' | 'weak' | nul
   }
 }
 
+// Identity confidence grade passthrough (the drawer renders grades, not risk tiers).
 function gradeToRiskLevel(grade: string | null): string {
   switch (grade) {
-    case 'definite': return 'critical';
-    case 'probable': return 'high';
-    case 'possible': return 'medium';
-    default:         return 'low';
+    case 'definite':
+    case 'probable':
+    case 'possible':
+      return grade;
+    default:
+      return 'weak';
   }
 }
 

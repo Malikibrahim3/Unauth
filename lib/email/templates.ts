@@ -48,7 +48,7 @@ export function buildAuditResultsEmail(input: AuditEmailInput) {
         ${escapeHtml(formatUsd(input.estimatedExposure))} estimated exposure across flagged orders
       </p>
       <p>
-        Your full report — including cluster IDs, individual risk scores, and signal breakdowns — is ready to view.
+        Your full report — including linked identities, confidence grades, and claims history — is ready to view.
       </p>
       <p><a href="${reportUrl}">View full report →</a></p>
       <hr style="border: none; border-top: 1px solid #D8D0BD; margin: 28px 0;" />
@@ -79,7 +79,7 @@ export function buildAuditResultsEmail(input: AuditEmailInput) {
     `${input.inrFlaggedAccounts} accounts flagged for INR behaviour`,
     `${formatUsd(input.estimatedExposure)} estimated exposure across flagged orders`,
     '',
-    'Your full report - including cluster IDs, individual risk scores, and signal breakdowns - is ready to view.',
+    'Your full report - including linked identities, confidence grades, and claims history - is ready to view.',
     '',
     `View full report: ${reportUrl}`,
     '',

@@ -127,6 +127,12 @@ async function GETHandler(
           : 'Processing…',
       rowCount: job.total_rows,
       flaggedCount,
+      // Skipped (malformed) rows — surfaced to the merchant on completion.
+      skippedRows: job.failed_rows ?? 0,
+      skippedReason:
+        (job.failed_rows ?? 0) > 0
+          ? (firstError ?? 'Some rows could not be parsed and were skipped.')
+          : null,
       hasGroundTruth: job.has_ground_truth ?? false,
       errorMessage: effectiveError,
       canRecover,

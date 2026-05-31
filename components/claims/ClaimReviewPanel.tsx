@@ -14,6 +14,8 @@ import {
 } from '@/lib/claims/workflowClient';
 import { signalLabel } from '@/lib/copy/signalLabels';
 import { formatRiskScore } from '@/lib/utils/format';
+import { scoreToGrade } from '@/lib/engine/weights';
+import { GRADE_LABELS } from '@/lib/utils/confidenceStyles';
 import { buildCustomerResponse } from '@/lib/claims/customerResponses';
 import { claimEventLabel, claimEventSummary, claimHasEvidence } from '@/lib/claims/events';
 import { pickPriorityClaim } from '@/lib/claims/priority';
@@ -1006,7 +1008,8 @@ export default function ClaimReviewPanel({ profileId, initialClaimId }: { profil
 
   const busy = state === 'busy';
   const riskNumeric = riskScore != null ? Math.max(0, Math.min(100, Math.round(Number(riskScore)))) : null;
-  const riskBand = riskNumeric == null ? '—' : riskNumeric <= 30 ? 'Low confidence' : riskNumeric <= 60 ? 'Medium confidence' : 'High confidence';
+  // Identity confidence grade (who the person is) — never a risk band/score.
+  const confidenceLabel = riskNumeric == null ? '—' : GRADE_LABELS[scoreToGrade(riskNumeric)];
   const withinStoreSignals = useMemo(() => {
     const linked = Array.isArray(data?.linkedAccounts) ? data.linkedAccounts : [];
     return linked.slice(0, 8).map((row: any, i: number) => ({
@@ -1178,18 +1181,11 @@ export default function ClaimReviewPanel({ profileId, initialClaimId }: { profil
                   Evidence suggests these records belong to the same identity based on matching data points. Unauth shows context; the merchant owns the action.
                 </p>
               </div>
-              <span className="rounded-full px-2 py-0.5 text-xs font-semibold" style={{ background: 'var(--bg-inset)', color: 'var(--text-muted)', border: '1px solid var(--border-subtle)' }}>
-                Review recommended
-              </span>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
               <div>
-                <p className="text-xs mb-0.5" style={{ color: 'var(--text-muted)' }}>Confidence score</p>
-                <p className="font-semibold text-lg font-mono" style={{ color: 'var(--text)' }}>{riskNumeric ?? '—'}</p>
-                <div className="mt-1 h-2 rounded-full overflow-hidden" style={{ background: 'linear-gradient(to right, #16A34A 0%, #16A34A 30%, #D97706 30%, #D97706 60%, #7C1D1D 60%, #7C1D1D 100%)' }}>
-                  <div className="h-full" style={{ width: `${riskNumeric ?? 0}%`, background: 'rgba(17,24,39,0.45)' }} />
-                </div>
-                <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{riskBand}</p>
+                <p className="text-xs mb-0.5" style={{ color: 'var(--text-muted)' }}>Identity confidence</p>
+                <p className="font-semibold text-lg" style={{ color: 'var(--text)' }}>{confidenceLabel}</p>
               </div>
               <div>
                 <p className="text-xs mb-0.5" style={{ color: 'var(--text-muted)' }}>Linked accounts</p>

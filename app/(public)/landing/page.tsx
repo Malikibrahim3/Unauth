@@ -375,7 +375,7 @@ export default function LandingPage() {
 
             <LandingScreenshotFrame
               src="/screenshots/inbox.png"
-              alt="Unauth inbox showing 25 open identity-flagged cases with risk scores, values, and crossmerchant signals"
+              alt="Unauth inbox showing 25 open identity-matched cases with confidence grades, values, and crossmerchant signals"
             />
 
             <div className="hidden lg:w-full lg:max-h-[720px] overflow-hidden">
@@ -1214,7 +1214,7 @@ export default function LandingPage() {
               fontSize: 'clamp(15px, 1.1vw, 17px)',
               lineHeight: 1.55, color: t.inkSecondary, margin: 0,
             }}>
-              Flagged identities, risk scores, evidence packets, and network exposure — all in one audit view.
+              Linked identities, confidence grades, claims history, evidence packets, and network exposure — all in one audit view.
             </p>
           </Reveal>
           <Reveal delay={120}>

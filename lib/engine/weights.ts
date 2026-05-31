@@ -30,12 +30,6 @@ export const SIGNAL_WEIGHTS = {
   networkDeviceLinkActive: 25,  // Fix 5 — strong evidence variant when current order itself is active
 } as const;
 
-export const RISK_TIER_THRESHOLDS = {
-  medium: 25,
-  high: 50,
-  critical: 75,
-} as const;
-
 // Merchant-safe default. Can still be overridden per environment.
 // Set conservatively to reduce false positives on clean merchant datasets.
 // Current benchmark calibration:

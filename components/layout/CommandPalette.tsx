@@ -4,8 +4,8 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { FLAG_COMMAND_CENTER } from '@/lib/flags';
-import { RISK_LEVEL_COLORS } from '@/lib/utils/riskStyles';
-import type { RiskLevel } from '@/lib/utils/riskStyles';
+import { GRADE_COLOURS, GRADE_LABELS } from '@/lib/utils/confidenceStyles';
+import type { ConfidenceGrade } from '@/lib/engine/weights';
 
 interface NavItem {
   label: string;
@@ -133,7 +133,7 @@ const NAV_ITEMS: NavItem[] = [
   },
 ];
 
-// RISK_LEVEL_COLORS is imported from @/lib/utils/riskStyles (single source of truth)
+// Grade colours come from @/lib/utils/confidenceStyles (single source of truth)
 
 interface CommandPaletteProps {
   isOpen: boolean;
@@ -406,9 +406,9 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
                   </div>
                   <span
                     className="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded shrink-0"
-                    style={{ color: RISK_LEVEL_COLORS[c.risk_level as RiskLevel] ?? 'var(--text-muted)', background: 'var(--bg-subtle)' }}
+                    style={{ color: GRADE_COLOURS[c.risk_level as ConfidenceGrade] ?? 'var(--text-muted)', background: 'var(--bg-subtle)' }}
                   >
-                    {c.risk_level}
+                    {GRADE_LABELS[c.risk_level as ConfidenceGrade] ?? c.risk_level}
                   </span>
                 </button>
               ))}

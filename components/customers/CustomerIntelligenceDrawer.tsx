@@ -25,7 +25,6 @@ import WatchlistStarButton from '@/components/audit/WatchlistStarButton';
 import CustomerNotes from '@/components/audit/CustomerNotes';
 import type { CustomerIntelligencePanel, OrderHistoryEntry } from '@/app/api/customers/[id]/route';
 import { STATUS_LABELS, STATUS_OPTIONS, statusStyle } from '@/lib/utils/investigationStatus';
-import { riskTok } from '@/lib/utils/riskStyles';
 import { formatCurrencyNullable, formatDate } from '@/lib/utils/format';
 import IdentityTimeline from '@/components/customers/IdentityTimeline';
 import BehaviorRoadmap from '@/components/customers/BehaviorRoadmap';
@@ -51,44 +50,40 @@ const CHIP: CSSProperties = {
   whiteSpace: 'nowrap',
 };
 
-function tierChip(risk: string): CSSProperties {
-  switch ((risk ?? '').toLowerCase()) {
-    case 'critical': return { ...CHIP, background: 'var(--sev-definite-fill)', color: 'var(--sev-definite)', border: '1px solid color-mix(in srgb, var(--sev-definite) 40%, transparent)' };
-    case 'high':     return { ...CHIP, background: 'var(--sev-probable-fill)', color: 'var(--sev-probable)', border: '1px solid color-mix(in srgb, var(--sev-probable) 40%, transparent)' };
-    case 'medium':   return { ...CHIP, background: 'var(--sev-neutral-fill)',  color: 'var(--sev-neutral)',  border: '1px solid color-mix(in srgb, var(--sev-neutral) 40%, transparent)' };
+// Identity confidence grade chip — reflects who the person is, never risk.
+function tierChip(grade: string): CSSProperties {
+  switch ((grade ?? '').toLowerCase()) {
+    case 'definite': return { ...CHIP, background: 'var(--sev-definite-fill)', color: 'var(--sev-definite)', border: '1px solid color-mix(in srgb, var(--sev-definite) 40%, transparent)' };
+    case 'probable': return { ...CHIP, background: 'var(--sev-probable-fill)', color: 'var(--sev-probable)', border: '1px solid color-mix(in srgb, var(--sev-probable) 40%, transparent)' };
+    case 'possible': return { ...CHIP, background: 'var(--sev-neutral-fill)',  color: 'var(--sev-neutral)',  border: '1px solid color-mix(in srgb, var(--sev-neutral) 40%, transparent)' };
     default:         return { ...CHIP, background: 'var(--surface-muted)',      color: 'var(--ink-tertiary)', border: '1px solid var(--surface-border)' };
   }
 }
 
-function tierLabel(risk: string): string {
-  switch ((risk ?? '').toLowerCase()) {
-    case 'critical': return 'High risk';
-    case 'high':     return 'Elevated risk';
-    case 'medium':   return 'Needs review';
-    default:         return 'Low signals';
+function tierLabel(grade: string): string {
+  switch ((grade ?? '').toLowerCase()) {
+    case 'definite': return 'Definite match';
+    case 'probable': return 'Probable match';
+    case 'possible': return 'Possible match';
+    default:         return 'Weak signals';
   }
 }
 
 function buildPlainVerdict(
   linkedCount: number,
-  riskScore: number,
-  riskLevel: string,
+  _riskScore: number,
+  _grade: string,
   variantCount: number,
-  profileConfidence: number,
+  _profileConfidence: number,
 ): string {
-  const matchPct = Math.round(Math.min(riskScore, 100));
-  const profilePct = Math.round(profileConfidence);
   if (linkedCount > 0) {
     const accountWord = linkedCount === 1 ? 'account' : 'accounts';
-    return `Likely the same shopper as ${linkedCount} other ${accountWord} — ${matchPct}% confident based on your store data.`;
-  }
-  if (riskLevel === 'critical' || riskLevel === 'high') {
-    return `High-risk pattern in your store — ${matchPct}% match confidence. Review orders and claims before taking action.`;
+    return `Resolves to the same shopper as ${linkedCount} other ${accountWord}, based on your store data.`;
   }
   if (variantCount > 0) {
-    return `Multiple identity signals on this customer (${variantCount} variant${variantCount !== 1 ? 's' : ''}) — ${profilePct}% profile confidence.`;
+    return `Multiple identity signals on this customer (${variantCount} variant${variantCount !== 1 ? 's' : ''}) in your store data.`;
   }
-  return `Review this customer’s orders and claims — ${profilePct}% profile confidence.`;
+  return `Identity resolved from your store data — no linked accounts found.`;
 }
 
 const OVERLINE: CSSProperties = {
@@ -204,7 +199,6 @@ function flagLabel(flag: string) {
 function lifecycleTitle(order: OrderHistoryEntry) {
   if (order.chargebackFiled) return 'Chargeback filed';
   if (order.refundRequested) return 'Refund or return claim';
-  if (riskTok(order.riskLevel) === 'critical' || riskTok(order.riskLevel) === 'high') return 'Order requiring review';
   return 'Order placed';
 }
 
@@ -328,9 +322,8 @@ function OrderRoadmapCard({ order, isLast }: { order: OrderHistoryEntry; isLast:
 // Signal summary
 // ---------------------------------------------------------------------------
 
-function signalSummary(riskScore: number, claimCount: number, variantCount: number): string {
+function signalSummary(_riskScore: number, claimCount: number, variantCount: number): string {
   const parts: string[] = [];
-  if (riskScore >= 80) parts.push(`confidence score ${Math.round(riskScore)}/100`);
   if (claimCount > 0) parts.push(`${claimCount} claim${claimCount !== 1 ? 's' : ''} on record`);
   if (variantCount > 0) parts.push(`${variantCount} identity variant${variantCount !== 1 ? 's' : ''} observed`);
   if (parts.length === 0) return 'No overlapping signals detected in this dataset.';
@@ -581,9 +574,6 @@ function DrawerContent({
     variantCount,
     profile.profile_confidence,
   );
-  const matchConfidencePct = Math.round(Math.min(profile.risk_score, 100));
-  const profileConfidencePct = Math.round(profile.profile_confidence);
-
   async function handleStatusChange(newStatus: string) {
     const prev = status;
     setStatus(newStatus);
@@ -616,7 +606,7 @@ function DrawerContent({
           {plainVerdict}
         </p>
         <p style={{ fontSize: 11, color: 'var(--ink-tertiary)', marginTop: 8, lineHeight: 1.5 }}>
-          Recommended: review recent refund or chargeback claims, then compile signal data if you are preparing a dispute response.
+          Refund and chargeback claims on record are listed below, with their source. Compile the signal data into an evidence package if you need documentation.
         </p>
       </div>
 
@@ -641,7 +631,7 @@ function DrawerContent({
           <div className="flex items-center gap-2">
             <span style={{
               width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
-              background: profile.risk_level === 'critical' ? 'var(--sev-definite)' : profile.risk_level === 'high' ? 'var(--sev-probable)' : 'var(--ink-tertiary)',
+              background: profile.risk_level === 'definite' ? 'var(--sev-definite)' : profile.risk_level === 'probable' ? 'var(--sev-probable)' : 'var(--ink-tertiary)',
             }} aria-hidden="true" />
             <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.01em', color: 'var(--ink-secondary)' }}>
               Customer review
@@ -649,12 +639,6 @@ function DrawerContent({
           </div>
           <div className="flex items-center gap-1.5 flex-wrap justify-end">
             <span style={tierChip(profile.risk_level)}>{tierLabel(profile.risk_level)}</span>
-            <span style={{ ...CHIP, background: 'var(--surface-muted)', color: 'var(--ink-secondary)', border: '1px solid var(--surface-border)' }}>
-              Match {matchConfidencePct}%
-            </span>
-            <span style={{ ...CHIP, background: 'var(--surface-muted)', color: 'var(--ink-secondary)', border: '1px solid var(--surface-border)' }}>
-              Profile {profileConfidencePct}%
-            </span>
             {hasProfileId && (
               <WatchlistStarButton
                 customerProfileId={profile.id}

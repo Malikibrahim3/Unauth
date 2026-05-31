@@ -66,9 +66,9 @@ export default function AuditPage() {
               marginBottom: 0,
             }}
           >
-            Upload your last 90 days of orders and refunds. We&apos;ll run a fraud-resolution audit
-            on your store data and email you the results — linked identities, repeat abuser
-            patterns, and risk scores.
+            Upload your last 90 days of orders and refunds. We&apos;ll resolve repeat identities
+            in your store data and email you the results — linked identities, their confidence
+            grades, and a factual claims history.
           </p>
           <p
             style={{

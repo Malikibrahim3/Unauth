@@ -29,6 +29,7 @@ async function GETHandler(request: NextRequest) {
       rawAddress: searchParams.get('address')?.trim() ?? '',
       rawCard: searchParams.get('card')?.trim() ?? '',
       rawIp: searchParams.get('ip')?.trim() ?? '',
+      rawPhone: searchParams.get('phone')?.trim() ?? '',
     }
   );
 

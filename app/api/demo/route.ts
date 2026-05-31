@@ -290,7 +290,6 @@ async function POSTHandler(_request: NextRequest) {
       refund_claimed: s.order.refundStatus !== 'none',
       refund_reason: s.order.refundReason,
       match_score: s.totalScore,
-      risk_level: s.riskTier,
       fraud_flags: s.signals.filter((sig) => sig.fired).map((sig) => sig.name) as unknown as Database['public']['Tables']['audit_transactions']['Insert']['fraud_flags'],
       source: 'demo',
     }));

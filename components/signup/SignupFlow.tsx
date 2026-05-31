@@ -313,7 +313,7 @@ export default function SignupFlow() {
 
           <div className="mt-16 max-w-xl">
             <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: '#78889C' }}>
-              Tier 1 · siloed audit
+              Start with your own data
             </p>
             <h1
               className="mt-4"
@@ -336,7 +336,7 @@ export default function SignupFlow() {
                 color: '#4A4640',
               }}
             >
-              Create your account, upload your last 90 days of orders and refunds, and we&apos;ll run a siloed fraud-resolution audit on your store data only.
+              Create your account, upload your last 90 days of orders and refunds, and we&apos;ll resolve repeat identities and surface their claims history from your store data — then grow into the network.
             </p>
 
             <div className="mt-10 space-y-4">

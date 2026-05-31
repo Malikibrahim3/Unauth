@@ -25,7 +25,7 @@ const INTEGRATIONS = [
   {
     id: 'gorgias',
     name: 'Gorgias',
-    description: 'Surface Unauth risk scores inside your helpdesk sidebar',
+    description: 'Surface identity confidence and claims history inside your helpdesk sidebar',
     kind: 'connectable' as const,
     statusKey: 'gorgias' as const,
     href: '/settings/integrations/gorgias',
@@ -34,7 +34,7 @@ const INTEGRATIONS = [
   {
     id: 'zendesk',
     name: 'Zendesk',
-    description: 'Flag high-risk customers while agents handle tickets',
+    description: 'Show identity matches and claims history while agents handle tickets',
     kind: 'connectable' as const,
     statusKey: null,
     href: '/settings/integrations/zendesk',

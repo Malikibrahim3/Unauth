@@ -35,6 +35,10 @@ function baseStyles(): string {
     table.cmp thead th { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.7; }
     table.cmp tbody th { font-weight: 600; opacity: 0.85; white-space: nowrap; }
     table.cmp td { opacity: 0.95; }
+    .grade { font-size: 15px; font-weight: 700; letter-spacing: 0.04em; margin-bottom: 4px; }
+    .claims { font-size: 12px; opacity: 0.9; margin-bottom: 10px; }
+    .ce3 { margin-top: 10px; font-size: 11px; color: #8fb7d6; }
+    .clean { color: #6fcf97; }
     .no-network { color: #6fcf97; font-size: 12px; }
     .cta { display: block; margin-top: 12px; text-align: center; padding: 8px 10px;
            border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none;
@@ -92,7 +96,10 @@ export function renderGorgiasWidgetHtml(ctx: ClaimWidgetRenderContext): string {
   const primaryReason = network ? dash(json.primary_reason) : '<span class="no-network">No network history found</span>';
   const recent = network ? dash(json.recent_activity) : '<span class="no-network">No network history found</span>';
 
+  const cleanClaims = json.claims === 'No prior claims on record';
   const inner = `
+    <div class="grade">${escapeHtml(json.identity)}</div>
+    <div class="claims${cleanClaims ? ' clean' : ''}">${escapeHtml(json.claims)}</div>
     <table class="cmp">
       <thead>
         <tr><th></th><th>This Store</th><th>Network (All-time)</th></tr>
@@ -120,6 +127,7 @@ export function renderGorgiasWidgetHtml(ctx: ClaimWidgetRenderContext): string {
         </tr>
       </tbody>
     </table>
+    ${json.ce3_evidence && json.ce3_evidence !== '—' ? `<div class="ce3">${escapeHtml(json.ce3_evidence)}</div>` : ''}
     ${profileUrl ? `<a class="cta" href="${escapeHtml(profileUrl)}" target="_blank" rel="noopener noreferrer">View full profile in Unauth →</a>` : ''}
   `;
 

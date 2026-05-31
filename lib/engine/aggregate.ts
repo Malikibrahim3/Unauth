@@ -11,7 +11,6 @@ export interface CustomerAggregate {
   inrRate: number;
   maxScore: number;
   flaggedCount: number;
-  riskTier: 'low' | 'medium' | 'high' | 'critical';
   topSignals: string[];
 }
 
@@ -46,11 +45,6 @@ export function aggregateCustomers(scoredOrders: ScoredOrder[]): CustomerAggrega
       .slice(0, 3)
       .map(([name]) => name);
 
-    let riskTier: 'low' | 'medium' | 'high' | 'critical' = 'low';
-    if (maxScore >= 75) riskTier = 'critical';
-    else if (maxScore >= 50) riskTier = 'high';
-    else if (maxScore >= 25) riskTier = 'medium';
-
     aggregates.push({
       emailHash,
       orderCount: orders.length,
@@ -62,7 +56,6 @@ export function aggregateCustomers(scoredOrders: ScoredOrder[]): CustomerAggrega
       inrRate: inrCount / orders.length,
       maxScore,
       flaggedCount: flaggedOrders.length,
-      riskTier,
       topSignals,
     });
   }

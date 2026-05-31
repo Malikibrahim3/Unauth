@@ -44,7 +44,6 @@ import BehaviorRoadmap from '@/components/customers/BehaviorRoadmap';
 import CaseSummaryStrip from '@/components/customers/CaseSummaryStrip';
 import type { CustomerIntelligencePanel } from '@/app/api/customers/[id]/route';
 import { labelFor } from '@/lib/copy/labels';
-import { riskBadgeStyle, riskTok } from '@/lib/utils/riskStyles';
 import { formatCurrencyNullable, formatDate, formatDateMode } from '@/lib/utils/format';
 import { getEventStream } from '@/lib/analysis/customerIntelligence';
 import { FLAG_EXPERIENCE_POLISH_V1 } from '@/lib/flags';
@@ -99,8 +98,6 @@ function IdentityDatum({ label, children }: { label: string; children: ReactNode
 function roadmapTitle(tx: any) {
   if (tx.chargeback_filed) return 'Chargeback filed';
   if (tx.refund_claimed) return 'Refund claim recorded';
-  const tier = riskTok(tx.risk_level);
-  if (tier === 'critical' || tier === 'high') return 'Order requiring review';
   return 'Order placed';
 }
 
@@ -189,9 +186,6 @@ function RoadmapOrderCard({ tx, isLast }: { tx: any; isLast: boolean }) {
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="text-h2" style={{ color: 'var(--text-primary)' }}>{roadmapTitle(tx)}</h3>
-              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-caption font-semibold" style={riskBadgeStyle(tx.risk_level)}>
-                {tx.risk_level}
-              </span>
               {tx.source && (
                 <span className="inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-medium" style={{ background: 'var(--bg-subtle)', borderColor: 'var(--border-subtle)', color: 'var(--text-muted)' }}>
                   {SOURCE_LABELS[tx.source] ?? tx.source}
@@ -212,7 +206,6 @@ function RoadmapOrderCard({ tx, isLast }: { tx: any; isLast: boolean }) {
           <TimelineDetail icon={MapPin} label="Shipping address" value={tx.shipping_address} />
           <TimelineDetail icon={CreditCard} label={labelFor('card')} value={tx.card_last4 ? `•••• ${tx.card_last4}` : null} mono />
           <TimelineDetail icon={GitBranch} label={labelFor('device_ip')} value={tx.device_ip} mono />
-          <TimelineDetail icon={ShieldCheck} label="Match score" value={tx.match_score != null ? `${Math.round(tx.match_score)} / 100` : null} />
           <TimelineDetail icon={ReceiptText} label="Processed timestamp" value={formatDate(tx.processed_at)} />
         </div>
 
@@ -664,7 +657,6 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
           <div className="grid grid-cols-2 gap-px overflow-hidden rounded-md border md:grid-cols-5" style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-border)' }}>
             {[
               { label: 'Identity grade', value: profileGrade, color: 'var(--data-score)' },
-              { label: 'Identity confidence', value: `${identityConfidence.score} / 100`, color: 'var(--data-score)' },
               { label: 'Cross-merchant', value: merchantsSeen > 1 ? `${merchantsSeen} merchants` : 'This store only', color: 'var(--data-score)' },
               { label: 'Exposure', value: formatCurrencyNullable(totalOrderValue), color: 'var(--data-currency)' },
               { label: 'Last seen', value: formatDateMode(profile.last_seen, 'table'), color: 'var(--data-date)', mono: true },

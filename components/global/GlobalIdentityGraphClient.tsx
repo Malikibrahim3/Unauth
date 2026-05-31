@@ -296,7 +296,6 @@ export default function GlobalIdentityGraphClient({ profiles }: Props) {
 
             <dl className="grid grid-cols-2 gap-2">
               {[
-                ['Risk score', Math.round(selectedProfile.risk_score).toLocaleString()],
                 ['Merchants', selectedProfile.total_merchants_seen_at.toLocaleString()],
                 ['Orders', selectedProfile.total_orders.toLocaleString()],
                 ['Claims', selectedProfile.total_refund_claims.toLocaleString()],

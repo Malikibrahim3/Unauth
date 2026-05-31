@@ -65,13 +65,11 @@ export interface IdentityAlert {
     avgDaysToClaim: number | null;
     merchantsSeenAt: number;
   } | null;
-  recommendation: 'review' | 'flag' | 'block';
 }
 
 export interface ScoredOrder {
   order: NormalisedOrder;
   totalScore: number;
-  riskTier: 'low' | 'medium' | 'high' | 'critical';
   /**
    * §5.1 / §5.2 — Grade derived from score AND identifier diversity.
    * null = below scoring threshold (totalScore < 25).
@@ -156,8 +154,6 @@ export interface MerchantDisplay {
   headline: string;           // e.g. "3 accounts appear to be the same customer"
   confidenceLine: string;     // e.g. "Matched on: same card, address, and email pattern"
   behaviorSummary: string;    // e.g. "4 refund claims across 6 orders, avg 1.8 days to claim"
-  recommendedAction: 'no_action' | 'review' | 'manual_verify' | 'escalate';
-  actionReason: string;       // plain English reason for recommendation
   dataGapNote?: string;       // present when optional fields are missing
 }
 

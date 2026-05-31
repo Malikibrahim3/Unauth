@@ -185,7 +185,6 @@ export function generateIdentityAlert(
       confidence: 0,
       matchReasons: [],
       historicalRiskSummary: null,
-      recommendation: 'review',
     };
   }
 
@@ -210,30 +209,10 @@ export function generateIdentityAlert(
     };
   }
 
-  let recommendation: 'review' | 'flag' | 'block' = 'review';
-  if (cluster.confidence >= 80 && historicalRiskSummary) {
-    if (historicalRiskSummary.totalChargebacks >= 2 || historicalRiskSummary.refundRate > 0.5) {
-      recommendation = 'block';
-    } else if (historicalRiskSummary.totalChargebacks >= 1 || historicalRiskSummary.refundRate > 0.3) {
-      recommendation = 'flag';
-    } else {
-      recommendation = 'review';
-    }
-  } else if (cluster.confidence >= 70 && historicalRiskSummary) {
-    if (historicalRiskSummary.totalChargebacks >= 1 || historicalRiskSummary.refundRate > 0.3) {
-      recommendation = 'flag';
-    } else {
-      recommendation = 'review';
-    }
-  } else if (cluster.confidence >= 40) {
-    recommendation = 'review';
-  }
-
   return {
     hasMatch: true,
     confidence: cluster.confidence,
     matchReasons: cluster.matchReasons,
     historicalRiskSummary,
-    recommendation,
   };
 }

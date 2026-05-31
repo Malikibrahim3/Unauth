@@ -253,46 +253,48 @@ a {
   gap: 12px;
 }
 
-.risk-banner {
+/* Identity confidence grade banner — calm, confidence-keyed palette. A clean
+   DEFINITE match is a green confirmation, never a red warning. No risk colours. */
+.grade-banner {
   padding: 12px;
   border-radius: 8px;
   border: 1px solid;
 }
 
-.risk-banner h2 {
+.grade-banner h2 {
   margin: 0 0 4px;
   font-size: 15px;
   font-weight: 700;
   letter-spacing: 0.02em;
 }
 
-.risk-meta {
+.grade-meta {
   font-size: 12px;
   opacity: 0.9;
 }
 
-.risk-critical {
-  background: #3d0e0a;
-  border-color: #e8362a;
-  color: #fde8e6;
-}
-
-.risk-high {
-  background: #3d1a0a;
-  border-color: #e85d2a;
-  color: #fdeee6;
-}
-
-.risk-medium {
-  background: #3d2f0a;
-  border-color: #d4a72c;
-  color: #fdf6e6;
-}
-
-.risk-low {
+.grade-definite {
   background: #0f2a18;
   border-color: #6fcf97;
   color: #e6f7ed;
+}
+
+.grade-probable {
+  background: #102433;
+  border-color: #5a9bd4;
+  color: #e6f1fb;
+}
+
+.grade-possible {
+  background: #1f1814;
+  border-color: #8a7a52;
+  color: #f5efe2;
+}
+
+.grade-weak {
+  background: #1f1814;
+  border-color: #3d2e28;
+  color: #d8ccc4;
 }
 
 .section-title {

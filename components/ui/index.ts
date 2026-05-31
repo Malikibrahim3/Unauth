@@ -19,8 +19,6 @@ export type { ConfidenceGradeValue } from '@/lib/confidence';
 export { PrivacyBadge } from './PrivacyBadge';
 export { SensitiveField } from './SensitiveField';
 
-export { RiskScoreBadge, scoreToRiskLevel } from './RiskScoreBadge';
-export type { RiskLevel } from './RiskScoreBadge';
 
 export { SignalBadge, SIGNAL_META } from './SignalBadge';
 export type { SignalType, SignalStrength } from './SignalBadge';
@@ -42,8 +40,6 @@ export { LinkedIdentityList } from './LinkedIdentityList';
 export { Timeline } from './Timeline';
 export type { TimelineEventItem, TimelineEventType, TimelineEventSeverity } from './Timeline';
 export { ActionBar } from './ActionBar';
-export { RecommendedActionCard } from './RecommendedActionCard';
-export type { RecommendedActionKey } from './RecommendedActionCard';
 export { WorkbenchPage } from '@/components/workbench/WorkbenchPage';
 export { WorkbenchNav } from '@/components/workbench/WorkbenchNav';
 export type { WorkbenchNavItem } from '@/components/workbench/WorkbenchNav';

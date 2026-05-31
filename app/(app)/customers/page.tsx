@@ -9,7 +9,8 @@ import CustomersTableClient from '@/components/customers/CustomersTableClient';
 import PageSizeSelect from '@/components/common/PageSizeSelect';
 import { Button, WorkbenchActionBar, WorkbenchEmptyState, WorkbenchKpiStrip, WorkbenchPage } from '@/components/ui';
 import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
-import { RISK_TIER_COPY } from '@/lib/copy/riskTiers';
+import { GRADE_LABELS } from '@/lib/utils/confidenceStyles';
+import type { ConfidenceGrade } from '@/lib/engine/weights';
 import { STATUS_LABELS } from '@/lib/utils/investigationStatus';
 import { getMerchantOwnedJobIds } from '@/lib/supabase/merchantHelpers';
 import { isOrderReferenceSearchTerm, orderReferenceIlike } from '@/lib/customers/orderSearch';
@@ -437,7 +438,7 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
       {!noFilters && (
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-caption" style={{ color: 'var(--text-muted)' }}>Active filters:</span>
-          {riskFilter && <FilterChip label={`Match confidence: ${RISK_TIER_COPY[riskFilter as keyof typeof RISK_TIER_COPY]?.label ?? riskFilter}`} removeHref={buildRemoveHref(sp, 'risk')} />}
+          {riskFilter && <FilterChip label={`Match confidence: ${GRADE_LABELS[riskFilter as ConfidenceGrade] ?? riskFilter}`} removeHref={buildRemoveHref(sp, 'risk')} />}
           {statusFilter && <FilterChip label={`Status: ${STATUS_LABELS[statusFilter as keyof typeof STATUS_LABELS] ?? statusFilter}`} removeHref={buildRemoveHref(sp, 'status')} />}
           {hasRefunds && <FilterChip label="Has refunds" removeHref={buildRemoveHref(sp, 'hasRefunds')} />}
           {hasChargebacks && <FilterChip label="Has chargebacks" removeHref={buildRemoveHref(sp, 'hasChargebacks')} />}

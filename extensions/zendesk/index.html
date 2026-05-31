@@ -129,28 +129,42 @@
           .replace(/"/g, '&quot;');
       }
 
-      function tierFromLookup(lookup) {
-        var grade = lookup.risk_grade;
-        var confidence = lookup.confidence;
-        var score = Number(lookup.risk_score || 0);
-        if (grade === 'A' || confidence === 'definite' || score >= 75) return 'high';
-        if (grade === 'B' || confidence === 'probable' || score >= 55) return 'medium';
-        return 'low';
+      // Identity confidence grade theming — reflects how certain we are about
+      // WHO the person is, never how risky they are. A clean DEFINITE match is a
+      // calm green confirmation, not a warning. No risk score, no risk band.
+      function gradeTheme(grade) {
+        if (grade === 'definite') {
+          return { bg: '#0f2a18', border: '#6fcf97', accent: '#e6f7ed', icon: '🟢', label: 'DEFINITE' };
+        }
+        if (grade === 'probable') {
+          return { bg: '#102433', border: '#5a9bd4', accent: '#e6f1fb', icon: '🔵', label: 'PROBABLE' };
+        }
+        if (grade === 'possible') {
+          return { bg: '#1f1814', border: '#8a7a52', accent: '#f5efe2', icon: '⚪', label: 'POSSIBLE' };
+        }
+        return { bg: '#1f1814', border: '#3d2e28', accent: '#d8ccc4', icon: '⚪', label: 'WEAK' };
       }
 
-      function tierTheme(tier) {
-        if (tier === 'high') {
-          return { bg: '#3d0e0a', border: '#e8362a', accent: '#fde8e6', icon: '🔴', label: 'HIGH RISK' };
-        }
-        if (tier === 'medium') {
-          return { bg: '#3d2a0a', border: '#d4a72c', accent: '#fdf6e6', icon: '🟡', label: 'MEDIUM RISK' };
-        }
-        return { bg: '#0f2a18', border: '#6fcf97', accent: '#e6f7ed', icon: '✅', label: 'LOW RISK' };
+      function formatClaimDate(iso) {
+        if (!iso) return '';
+        var d = new Date(iso);
+        if (isNaN(d.getTime())) return '';
+        return d.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
       }
 
-      function confidenceLabel(confidence) {
-        if (!confidence) return 'Unknown';
-        return confidence.charAt(0).toUpperCase() + confidence.slice(1);
+      function claimsLine(claims) {
+        if (!claims) return 'No prior claims on record';
+        var refunds = Number(claims.refunds || 0);
+        var chargebacks = Number(claims.chargebacks || 0);
+        if (refunds + chargebacks === 0) return 'No prior claims on record';
+        var src = claims.source === 'network' ? 'across network' : 'your store';
+        var parts = [];
+        if (refunds > 0) parts.push(refunds + ' ' + (refunds === 1 ? 'refund' : 'refunds'));
+        if (chargebacks > 0) parts.push(chargebacks + ' ' + (chargebacks === 1 ? 'chargeback' : 'chargebacks'));
+        if (claims.refund_value != null) parts.push('$' + Number(claims.refund_value).toLocaleString() + ' at your store');
+        var date = formatClaimDate(claims.last_claim_at);
+        if (date) parts.push('last ' + date);
+        return parts.join(' · ') + ' — ' + src;
       }
 
       function profileUrl(email) {
@@ -179,7 +193,7 @@
       function renderLoading() {
         root.innerHTML =
           '<div class="card loading-card" style="border:1px solid #3d2e28;">' +
-          '<p class="muted">Checking identity…</p></div>';
+          '<p class="muted">Checking identity network…</p></div>';
       }
 
       function renderError(message) {
@@ -292,86 +306,61 @@
         });
       }
 
-      function renderLowClear(profileUrlValue, customer) {
-        var theme = tierTheme('low');
+      // Clean customer: identity confirmed (or store-known) with no claims on
+      // record. Renders as a calm green confirmation — never a warning.
+      function renderClean(profileUrlValue, grade, customer) {
+        var theme = gradeTheme(grade || 'definite');
         var bh = (customer && customer.behavioral_history) || {};
         var orders = bh.total_orders != null ? bh.total_orders : '—';
-        var refunds = bh.refund_claims != null ? bh.refund_claims : '—';
         root.innerHTML =
           '<div class="card" style="background:' +
-          theme.bg +
-          ';border-color:' +
-          theme.border +
-          ';color:' +
-          theme.accent +
-          ';">' +
-          '<div class="headline">' +
-          theme.icon +
-          ' ' +
-          theme.label +
-          '</div>' +
-          '<p class="meta">No cross-merchant flags</p>' +
-          '<div class="section">' +
-          '<p class="muted">Orders: ' +
-          esc(String(orders)) +
-          ' · Refunds: ' +
-          esc(String(refunds)) +
-          '</p></div>' +
+          theme.bg + ';border-color:' + theme.border + ';color:' + theme.accent + ';">' +
+          '<div class="headline">' + theme.icon + ' ' + theme.label + '</div>' +
+          '<p class="meta">Identity confirmed · No prior claims on record</p>' +
+          '<div class="section"><p class="muted">Orders at your store: ' + esc(String(orders)) + '</p></div>' +
           '<div class="actions">' +
           '<button type="button" class="btn btn-primary" id="unauth-profile-btn">View Profile</button>' +
           '</div></div>';
         bindProfileBtn(profileUrlValue);
       }
 
-      function renderRisk(profileUrlValue, email, lookup, tier, apiKey, orderId, showEvidence) {
-        var theme = tierTheme(tier);
-        var signals = Array.isArray(lookup.signals) ? lookup.signals : [];
-        var signalsHtml =
-          signals.length > 0
-            ? '<div class="section"><p class="section-title">Signals</p><ul class="signals">' +
-              signals.map(function (s) {
-                return '<li>' + esc(s) + '</li>';
-              }).join('') +
-              '</ul></div>'
-            : '';
-        var cross = lookup.cross_merchant;
+      // Network/identity match with claim history. Grade is the primary element;
+      // a plain, sourced claims record sits beneath it. No risk score/band.
+      function renderMatch(profileUrlValue, email, lookup, apiKey, orderId) {
+        var theme = gradeTheme(lookup.confidence);
+        var claims = lookup.claims_record || {};
+        var matchedOn = Array.isArray(lookup.matched_on) ? lookup.matched_on : [];
+        var matchedHtml = matchedOn.length > 0
+          ? '<p class="meta">Matched on ' + esc(matchedOn.join(', ')) + '</p>'
+          : '';
+        var cross = claims.cross_merchant;
         var crossHtml = cross
           ? '<div class="section cross"><p class="section-title">Cross-merchant</p><p>' +
-            esc(String(cross.merchant_count)) +
-            ' merchants · ' +
-            esc(String(cross.claim_count)) +
-            ' claims</p></div>'
+            esc(String(cross.merchant_count)) + ' merchants · ' +
+            esc(String(cross.claim_count)) + ' claims</p></div>'
           : '';
-        var evidenceHtml = showEvidence
+        var ce3 = lookup.ce3_evidence_available;
+        var ce3Html = ce3
+          ? '<div class="section"><p class="section-title">CE 3.0</p><p>CE 3.0 evidence available</p></div>'
+          : '';
+        var evidenceHtml = ce3
           ? '<button type="button" class="btn btn-ghost" id="unauth-pdf-btn">Get PDF</button>' +
             '<div class="evidence-result" id="unauth-pdf-result" hidden></div>'
           : '';
         root.innerHTML =
           '<div class="card" style="background:' +
-          theme.bg +
-          ';border-color:' +
-          theme.border +
-          ';color:' +
-          theme.accent +
-          ';">' +
-          '<div class="headline">' +
-          theme.icon +
-          ' ' +
-          theme.label +
-          '</div>' +
-          '<p class="meta">Confidence: ' +
-          esc(confidenceLabel(lookup.confidence)) +
-          ' · Score: ' +
-          esc(String(lookup.risk_score)) +
-          '</p>' +
-          signalsHtml +
+          theme.bg + ';border-color:' + theme.border + ';color:' + theme.accent + ';">' +
+          '<div class="headline">' + theme.icon + ' ' + theme.label + '</div>' +
+          matchedHtml +
+          '<div class="section"><p class="section-title">Claims on record</p><p>' + esc(claimsLine(claims)) + '</p></div>' +
           crossHtml +
+          ce3Html +
           '<div class="actions">' +
           '<button type="button" class="btn btn-primary" id="unauth-profile-btn">View Profile</button>' +
           evidenceHtml +
           '</div></div>';
         bindProfileBtn(profileUrlValue);
-        if (showEvidence) bindPdfBtn(apiKey, email, orderId);
+        if (ce3) bindPdfBtn(apiKey, email, orderId);
       }
 
       function apiFetch(path, apiKey) {
@@ -456,7 +445,8 @@
               return null;
             });
             if (customerOnMiss) {
-              renderLowClear(generatedProfileUrl, customerOnMiss);
+              // Known at this store, not in the cross-merchant network → clean.
+              renderClean(generatedProfileUrl, 'definite', customerOnMiss);
             } else {
               renderNotFound();
             }
@@ -469,21 +459,21 @@
           }
 
           var lookup = lookupRes.body;
-          var tier = tierFromLookup(lookup);
-          var cross = lookup.cross_merchant;
+          var claims = lookup.claims_record || {};
+          var refunds = Number(claims.refunds || 0);
+          var chargebacks = Number(claims.chargebacks || 0);
+          var cross = claims.cross_merchant;
 
-          if (tier === 'low' && !cross) {
+          // Identity resolved but nothing on record → clean confirmation.
+          if (refunds + chargebacks === 0 && !cross) {
             var customer = await fetchCustomer(email, apiKey).catch(function () {
               return null;
             });
-            if (customer) {
-              renderLowClear(generatedProfileUrl, customer);
-              return;
-            }
+            renderClean(generatedProfileUrl, lookup.confidence, customer);
+            return;
           }
 
-          var showEvidence = tier === 'high' || tier === 'medium';
-          renderRisk(generatedProfileUrl, email, lookup, tier, apiKey, orderId, showEvidence);
+          renderMatch(generatedProfileUrl, email, lookup, apiKey, orderId);
         } catch (err) {
           renderError(err && err.message ? err.message : 'Could not load ticket data');
         }

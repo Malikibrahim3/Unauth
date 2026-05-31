@@ -7,7 +7,6 @@ import { signalCopy } from '@/lib/copy/signals';
 import { ConfidenceBadge } from '@/components/ui/ConfidenceBadge';
 import type { ConfidenceGradeValue } from '@/lib/confidence';
 import { gradeToLetter, type ConfidenceGrade } from '@/lib/engine/weights';
-import RecommendedAction from '@/components/audit/RecommendedAction';
 import type { Database } from '@/lib/supabase/types';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { fetchMerchantScopedTransaction } from '@/lib/supabase/merchantHelpers';
@@ -49,17 +48,12 @@ export default async function TransactionDetailPage({ params }: Props) {
   const txData = tx as unknown as AuditTxRow & {
     signals_matched?: string[] | null;
     behavioural_flags?: string[] | null;
-    recommended_action?: string | null;
     identity_confidence_grade?: string | null;
     identity_score?: number | null;
     cluster_id?: string | null;
-    risk_level?: string | null;
   };
   const signals = Array.isArray(txData.signals_matched) ? txData.signals_matched : [];
   const flags = Array.isArray(txData.behavioural_flags) ? txData.behavioural_flags : [];
-  const riskTier = txData.risk_level === 'low' || txData.risk_level === 'medium' || txData.risk_level === 'high' || txData.risk_level === 'critical'
-    ? txData.risk_level
-    : 'low';
 
   return (
     <div className="p-8 max-w-4xl space-y-6">
@@ -89,13 +83,12 @@ export default async function TransactionDetailPage({ params }: Props) {
       <div className="grid grid-cols-3 gap-4">
         <div className="rounded-lg px-5 py-4 border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
           <div className="text-caption mb-1" style={{ color: 'var(--text-muted)' }}>Identity confidence</div>
-          <div className="text-display-sm font-bold" style={{ color: 'var(--text)' }}>{Math.round((txData.identity_score ?? txData.match_score) ?? 0)} / 100</div>
           {(() => {
             const idGrade = txData.identity_confidence_grade as 'definite' | 'probable' | 'possible' | 'weak' | null | undefined;
             const letter: ConfidenceGradeValue | null = idGrade
               ? gradeToLetter(idGrade as ConfidenceGrade)
               : null;
-            return <div className="mt-1">{letter ? <ConfidenceBadge grade={letter} /> : <span className="text-xs" style={{ color: 'var(--text-subtle)' }}>Ungraded</span>}</div>;
+            return <div>{letter ? <ConfidenceBadge grade={letter} /> : <span className="text-xs" style={{ color: 'var(--text-subtle)' }}>Ungraded</span>}</div>;
           })()}
         </div>
         <div className="rounded-lg px-5 py-4 border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
@@ -117,7 +110,6 @@ export default async function TransactionDetailPage({ params }: Props) {
             { label: 'Order ID', value: txData.order_id },
             { label: 'Customer', value: txData.customer_email ?? '—' },
             { label: 'Identity confidence grade', value: txData.identity_confidence_grade ?? '—' },
-            { label: 'Signal grade', value: txData.recommended_action ?? '—' },
             { label: 'Refund reason', value: txData.refund_reason ?? '—' },
           ].map(({ label, value }) => (
             <div key={label} className="flex justify-between py-1.5" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
@@ -158,11 +150,6 @@ export default async function TransactionDetailPage({ params }: Props) {
         )}
       </div>
 
-      <RecommendedAction
-        tier={riskTier}
-        topSignalName={signals[0]}
-        customersHref={`/audit/${resolvedParams.runId}/customers`}
-      />
     </div>
   );
 }

@@ -121,10 +121,13 @@ export function buildGorgiasSidebarWidgetTemplate(appBaseUrl: string) {
           },
         },
         widgets: [
+          { path: 'identity', title: 'Identity match', type: 'text' },
+          { path: 'claims', title: 'Claims on record', type: 'text' },
           { path: 'orders', title: 'Orders', type: 'text' },
           { path: 'claim_rate', title: 'Claim rate', type: 'text' },
           { path: 'primary_reason', title: 'Primary reason', type: 'text' },
           { path: 'recent_activity', title: 'Recent (90 days)', type: 'text' },
+          { path: 'ce3_evidence', title: 'CE 3.0', type: 'text' },
         ],
       },
     ],

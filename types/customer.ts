@@ -10,11 +10,9 @@
 
 import type { SignalType, SignalStrength } from '@/components/ui/SignalBadge';
 import type { ConfidenceGradeValue } from '@/lib/confidence';
-import type { RiskLevel } from '@/components/ui/RiskScoreBadge';
-import type { RecommendedActionKey } from '@/components/ui/RecommendedActionCard';
 import type { TimelineEventItem } from '@/components/ui/Timeline';
 
-export type { ConfidenceGradeValue, RiskLevel, RecommendedActionKey, SignalType, SignalStrength };
+export type { ConfidenceGradeValue, SignalType, SignalStrength };
 
 // ---------------------------------------------------------------------------
 // Sub-types
@@ -72,7 +70,6 @@ export interface Transaction {
   refund: { status: 'none' | 'partial' | 'full'; amount: number; reason: string | null };
   chargeback: { filed: boolean; date?: string; reason?: string };
   delivery: { status: 'pending' | 'shipped' | 'delivered' | 'failed' };
-  riskScore: number;
   matchedSignals: SignalType[];
 }
 
@@ -121,18 +118,6 @@ export interface CustomerIntelligence {
     avatarInitials: string; // derived from name or email
   };
   confidence: { grade: ConfidenceGradeValue; score: number };
-  risk: { level: RiskLevel; score: number };
-  recommendation: {
-    action: RecommendedActionKey;
-    confidence: ConfidenceGradeValue;
-    rationale: string; // 1–2 sentences
-    supportingEvidenceIds: string[];
-    falsePositiveRisk: {
-      level: 'low' | 'medium' | 'high';
-      contradictingEvidenceIds: string[];
-      explanation: string;
-    };
-  };
   metrics: {
     totalOrderValue: number;
     totalRefundedValue: number;

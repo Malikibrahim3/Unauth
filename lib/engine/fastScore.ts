@@ -1,5 +1,5 @@
 import type { NormalisedOrder, SignalResult, ScoredOrder, ConfidenceGrade } from './types';
-import { SIGNAL_WEIGHTS, RISK_TIER_THRESHOLDS, FLAG_THRESHOLD, BROAD_OVERLAP_SIGNALS, STRONG_FRAUD_EVIDENCE_SIGNALS, STRONG_EVIDENCE_BY_SCORE, BEHAVIORAL_FRAUD_SIGNALS } from './weights';
+import { SIGNAL_WEIGHTS, FLAG_THRESHOLD, BROAD_OVERLAP_SIGNALS, STRONG_FRAUD_EVIDENCE_SIGNALS, STRONG_EVIDENCE_BY_SCORE, BEHAVIORAL_FRAUD_SIGNALS } from './weights';
 import type { FastScoringContext } from './fastContext';
 import { generateIdentityAlert, type IdentityClusterMap } from './identityMatching';
 import { normaliseEmail, normaliseIP, normaliseAddress, normaliseCard } from '../identity/normalise';
@@ -840,13 +840,6 @@ function computeScore(signals: SignalResult[]): number {
   return Math.min(100, Math.max(0, corroboratedScore));
 }
 
-function getRiskTier(score: number): 'low' | 'medium' | 'high' | 'critical' {
-  if (score >= RISK_TIER_THRESHOLDS.critical) return 'critical';
-  if (score >= RISK_TIER_THRESHOLDS.high) return 'high';
-  if (score >= RISK_TIER_THRESHOLDS.medium) return 'medium';
-  return 'low';
-}
-
 /**
  * Apply adaptive signal weight adjustments learned from merchant feedback.
  * Multiplier is clamped to [0, 2] per the constraints.
@@ -896,11 +889,6 @@ export function scoreBatch(
     const hasStrongDispute = signals.some((s) => s.fired && s.name === 'disputeHistory');
     const fairnessEligible = tenureDays >= 120 && customerOrders.length >= 20 && cleanOrderCount >= 15 && lifetimeSpend >= 1500;
     const adjustedScore = fairnessEligible && !hasStrongDispute ? totalScore * 0.82 : totalScore;
-    const independentSignals = new Set(signals.filter((s) => s.fired && s.score >= 25).map((s) => s.name));
-    let riskTier = getRiskTier(adjustedScore);
-    if ((riskTier === 'high' || riskTier === 'critical') && !hasStrongDispute && independentSignals.size < 2) {
-      riskTier = adjustedScore >= RISK_TIER_THRESHOLDS.medium ? 'medium' : 'low';
-    }
     const baseFlagged = adjustedScore >= FLAG_THRESHOLD;
 
     // §5.1 — Data completeness cap
@@ -987,7 +975,6 @@ export function scoreBatch(
     return {
       order,
       totalScore: adjustedScore,
-      riskTier,
       confidenceGrade,
       flagged,
       signals,

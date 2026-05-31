@@ -5,7 +5,7 @@ import { createScopedClient } from '@/lib/supabase/scoped';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { logAction } from '@/lib/permissions/audit';
 import { buildBehavioralNarrative } from '@/lib/customers/narrative';
-import { scoreToRiskLevel } from '@/components/ui/RiskScoreBadge';
+import { scoreToGrade } from '@/lib/engine/weights';
 import { withRequestLogging } from '@/lib/log';
 import { fetchMerchantScopedCustomerProfile } from '@/lib/supabase/merchantHelpers';
 import {
@@ -306,7 +306,8 @@ async function GETHandler(
     cardLast4: tx.card_last4,
     orderValue: tx.order_value,
     fraudScore: tx.match_score,
-    riskLevel: tx.risk_level,
+    // Repurposed: per-order identity confidence grade.
+    riskLevel: scoreToGrade(Number(tx.match_score ?? 0)),
     fraudFlags: Array.isArray(tx.fraud_flags) ? tx.fraud_flags : [],
     refundStatus: null,
     refundRequested: !!tx.refund_claimed,
@@ -337,7 +338,8 @@ async function GETHandler(
       card_last4s: uniqueValues(orderHistory.map((order) => order.cardLast4)),
       phones: [],
       risk_score: maxScore,
-      risk_level: scoreToRiskLevel(maxScore),
+      // Repurposed: identity confidence grade (definite/probable/possible/weak).
+      risk_level: scoreToGrade(maxScore),
       fraud_flags: uniqueValues(orderHistory.flatMap((order) => order.fraudFlags)),
       total_orders: orderHistory.length,
       total_refund_claims: orderHistory.filter((order) => order.refundRequested).length,
@@ -494,7 +496,8 @@ async function GETHandler(
       card_last4s: profile.card_last4s,
       phones: profile.phones,
       risk_score: profile.risk_score,
-      risk_level: profile.risk_level,
+      // Repurposed: identity confidence grade (definite/probable/possible/weak).
+      risk_level: scoreToGrade(Number(profile.risk_score ?? 0)),
       fraud_flags: profile.fraud_flags,
       total_orders: computedTotalOrders,
       commerce_total_value: commerceStats.totalValue,

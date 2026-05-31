@@ -175,16 +175,14 @@ function highestRisk(levels: string[]): string {
   return max;
 }
 
+// Identity confidence grade passthrough (consumers render grades, not risk tiers).
 function gradeToRiskLevel(grade: string | null | undefined): string | null {
   switch (grade) {
     case 'weak':
-      return 'low';
     case 'possible':
-      return 'medium';
     case 'probable':
-      return 'high';
     case 'definite':
-      return 'critical';
+      return grade;
     default:
       return null;
   }

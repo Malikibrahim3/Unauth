@@ -86,14 +86,14 @@ export default function ZendeskSetupClient() {
           >
             <div
               className="rounded-md p-3 border"
-              style={{ background: '#3d0e0a', borderColor: '#e8362a', color: '#fde8e6' }}
+              style={{ background: '#0f2a18', borderColor: '#6fcf97', color: '#e6f7ed' }}
             >
-              <p className="font-bold text-sm">🔴 HIGH RISK</p>
-              <p className="mt-1 opacity-90">Confidence: Definite · Score: 87</p>
-              <p className="mt-3 text-[10px] uppercase opacity-60">Signals</p>
+              <p className="font-bold text-sm">🟢 DEFINITE</p>
+              <p className="mt-1 opacity-90">Matched on email + shipping address</p>
+              <p className="mt-3 text-[10px] uppercase opacity-60">Claims on record</p>
               <ul className="mt-1 space-y-0.5 list-disc pl-4">
-                <li>Refund abuse, 4 merchants</li>
-                <li>Address cluster</li>
+                <li>2 refunds · your store</li>
+                <li>4 refunds across 3 merchants</li>
               </ul>
               <div
                 className="mt-3 rounded px-2 py-1.5"

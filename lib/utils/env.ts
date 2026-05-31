@@ -25,6 +25,10 @@ const envSchema = z.object({
   SKIP_OPTIONAL_BACKGROUND_WRITES: z.string().optional(),
   VERCEL_URL: z.string().optional(),
   SKIP_CROSS_MERCHANT_CONTEXT: z.string().optional(),
+  // Enable after applying 20260531000000_audit_tx_merchant_id_dedup.sql. When
+  // 'true', CSV/manual ingest writes merchant_id and upserts on
+  // (merchant_id, order_id, source) so re-uploads dedupe across jobs.
+  AUDIT_TX_MERCHANT_DEDUP: z.string().optional(),
   SUPABASE_DB_USAGE_LIMIT_MB: z.coerce.number().optional(),
   SUPABASE_DB_USAGE_HEADROOM_MB: z.coerce.number().optional(),
   AUDIT_EMAIL_FROM: z.string().optional(),

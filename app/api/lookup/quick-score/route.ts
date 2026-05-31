@@ -165,7 +165,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       score: scored.totalScore,
-      riskTier: scored.riskTier,
       flagged: scored.flagged,
       signals: scored.signals.filter((s) => s.fired).map((s) => ({
         name: s.name,

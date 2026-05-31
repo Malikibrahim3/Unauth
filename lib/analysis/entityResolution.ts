@@ -34,7 +34,6 @@ import {
   normaliseAddress,
   normaliseCard,
 } from '../identity/normalise';
-import { RISK_TIER_THRESHOLDS } from '../engine/weights';
 import { dbSlot, withRetry } from '../engine/dbSemaphore';
 import { withProfileHashArrays } from '@/lib/identity/profileHashes';
 
@@ -53,8 +52,8 @@ export interface CustomerProfileRow {
   card_last4s: string[];
   phones: string[];
   names: string[];
+  /** Internal merge-gate score only — never surfaced as a product risk score. */
   risk_score: number;
-  risk_level: string;
   fraud_flags: string[];
   total_orders: number;
   total_refund_claims: number;
@@ -94,16 +93,6 @@ interface ResolveResult {
   confidence: number;
 }
 
-// ---------------------------------------------------------------------------
-// Risk level helper — mirrors fastScore.ts getRiskTier
-// ---------------------------------------------------------------------------
-
-function getRiskLevel(score: number): 'low' | 'medium' | 'high' | 'critical' {
-  if (score >= RISK_TIER_THRESHOLDS.critical) return 'critical';
-  if (score >= RISK_TIER_THRESHOLDS.high) return 'high';
-  if (score >= RISK_TIER_THRESHOLDS.medium) return 'medium';
-  return 'low';
-}
 
 function mergeStrings(a: string[], b: string[]): string[] {
   return Array.from(new Set([...(a ?? []), ...(b ?? [])].filter(Boolean)));
@@ -365,7 +354,6 @@ export async function createCustomerProfile(
       phones: [],
       names: normName ? [normName] : [],
       risk_score: score.finalScore,
-      risk_level: getRiskLevel(score.finalScore),
       fraud_flags: score.flags,
       total_orders: 1,
       total_refund_claims: isRefund ? 1 : 0,
@@ -454,7 +442,6 @@ export async function updateCustomerProfile(
       merchant_ids: mergedMerchants,
       fraud_flags: mergedFlags,
       risk_score: newRiskScore,
-      risk_level: getRiskLevel(newRiskScore),
       total_orders: newTotalOrders,
       total_refund_claims: newRefundClaims,
       total_chargebacks: newChargebacks,
@@ -714,7 +701,6 @@ export async function processProfilesForBatch(
       }
       p.refund_rate   = p.total_orders > 0 ? p.total_refund_claims / p.total_orders : 0;
       p.risk_score    = p.risk_score * 0.6 + od.scoredOrder.totalScore * 0.4;
-      p.risk_level    = getRiskLevel(p.risk_score);
       // Use Math.max so a returning customer with a stronger signal (e.g. email
       // match after a previous IP-only skeleton) upgrades the profile confidence
       // rather than dragging it down.
@@ -770,7 +756,6 @@ export async function processProfilesForBatch(
       merchant_ids:              p.merchant_ids,
       fraud_flags:               p.fraud_flags,
       risk_score:                p.risk_score,
-      risk_level:                p.risk_level,
       total_orders:              p.total_orders,
       total_refund_claims:       p.total_refund_claims,
       total_chargebacks:         p.total_chargebacks,
@@ -849,7 +834,6 @@ export async function processProfilesForBatch(
       phones:                  [] as string[],
       names:                   [] as string[],
       risk_score:              maxScore,
-      risk_level:              getRiskLevel(maxScore),
       fraud_flags:             [...allFlags],
       total_orders:            totalOrders,
       total_refund_claims:     totalRefunds,

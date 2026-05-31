@@ -27,6 +27,8 @@ export interface ParsedCsvRow {
 
 export interface FraudTransactionInsert {
   job_id: string;
+  /** Set only when cross-job dedup is active (AUDIT_TX_MERCHANT_DEDUP + migration). */
+  merchant_id?: string;
   order_id: string;
   /** Order date from the merchant CSV (ISO 8601). Null when unparseable/absent. */
   order_date?: string | null;
@@ -44,16 +46,15 @@ export interface FraudTransactionInsert {
   refund_claimed?: boolean;
   refund_reason?: string;
   chargeback_filed?: boolean | null;
+  /** Repurposed: identity-only match score (0–100). Never a fraud/risk score. */
   match_score: number;
   fraud_flags: string[];
-  risk_level: 'low' | 'medium' | 'high' | 'critical';
   identity_confidence_grade?: 'weak' | 'possible' | 'probable' | 'definite' | null;
   identity_score?: number | null;
   signals_matched?: string[];
   behavioural_flags?: string[];
   /** Real identity match AND suspicious behaviour — drives the review queue. */
   review_worthy?: boolean;
-  recommended_action?: string | null;
   ce3_eligible?: boolean;
   ce3_qualifying_transactions?: string[];
   ce3_signal_hashes?: Record<string, string>;

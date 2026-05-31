@@ -42,8 +42,8 @@ function signalsText(value: unknown): string {
 }
 
 function scoreText(row: ReportRow): string {
-  if (typeof row.identity_match_score === 'number') return row.identity_match_score.toFixed(2);
-  return row.identity_confidence_grade ?? '—';
+  const grade = row.identity_confidence_grade;
+  return grade ? grade.charAt(0).toUpperCase() + grade.slice(1) : '—';
 }
 
 export default async function PublicAuditReportPage({ params }: ReportPageProps) {
@@ -130,7 +130,7 @@ export default async function PublicAuditReportPage({ params }: ReportPageProps)
               <table className="w-full text-left">
                 <thead style={{ background: '#FAF6EF' }}>
                   <tr>
-                    {['Cluster ID', 'Flagged identities', 'Risk score', 'Signals fired', 'Order count / exposure'].map((label) => (
+                    {['Cluster ID', 'Linked identities', 'Confidence grade', 'Signals fired', 'Order count / exposure'].map((label) => (
                       <th key={label} className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: '#7A7265' }}>
                         {label}
                       </th>

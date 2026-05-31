@@ -6,6 +6,7 @@ import {
   fetchMerchantScopedCustomerTransactions,
 } from '@/lib/supabase/merchantHelpers';
 import { performV1Lookup, type LookupAuth } from '@/lib/api/v1/lookup';
+import type { ConfidenceGrade } from '@/lib/engine/weights';
 import { makeSignedToken, hashSignedToken } from '@/lib/api/signedAccess';
 import { env } from '@/lib/utils/env';
 import { gorgiasWidgetLog } from '@/lib/gorgias/widgetLog';
@@ -125,14 +126,21 @@ async function fetchWidgetStats(
 
 export type MerchantProfileSummary = {
   profileId: string;
-  riskScore: number;
+  /** Identity confidence grade — who the person is, NOT how risky they are. */
+  confidenceGrade: ConfidenceGrade | null;
   totalOrders: number;
   totalRefunds: number;
   firstSeen: string | null;
   lastSeen: string | null;
 };
 
-export type WidgetRiskTier = 'high' | 'medium' | 'low';
+/** A factual, sourced claims record — what the person has done. No risk scoring. */
+export type WidgetClaimsRecord = {
+  refunds: number;
+  chargebacks: number;
+  source: 'your_store' | 'network';
+  cross_merchant: { merchant_count: number; claim_count: number } | null;
+};
 
 export type GorgiasWidgetModel =
   | { state: 'error'; message: string }
@@ -140,30 +148,20 @@ export type GorgiasWidgetModel =
   | {
       state: 'merchant_profile';
       profileId: string;
-      riskLevel: string;
-      riskScore: number;
-      fraudFlags: string[];
-      identityConfidenceGrade: string | null;
+      /** Identity confidence grade — who the person is, NOT how risky. */
+      confidenceGrade: ConfidenceGrade | null;
       profileUrl: string | null;
       /** Rich stats for the comparison table. null when the profile fetch failed. */
       stats: WidgetStats | null;
     }
   | {
-      state: 'risk';
-      tier: WidgetRiskTier;
-      lookup: {
-        risk_grade: string;
-        confidence: string;
-        risk_score: number;
-        signals: string[];
-        cross_merchant: {
-          merchant_count: number;
-          claim_count: number;
-          flagged?: boolean;
-        } | null;
-      };
+      /** Customer is in the network but not (yet) known at this store. */
+      state: 'network_match';
+      confidenceGrade: ConfidenceGrade;
+      matchedOn: string[];
+      claimsRecord: WidgetClaimsRecord;
+      ce3EvidenceAvailable: boolean;
       merchantProfile: MerchantProfileSummary | null;
-      showEvidence: boolean;
       profileUrl: string | null;
     }
   | {
@@ -177,16 +175,12 @@ export type GorgiasWidgetModel =
 // Helpers
 // ---------------------------------------------------------------------------
 
-function riskTierFromLookup(lookup: {
-  risk_grade: string;
-  confidence: string;
-  risk_score: number;
-}): WidgetRiskTier {
-  const { risk_grade: grade, confidence, risk_score: score } = lookup;
-
-  if (grade === 'A' || confidence === 'definite' || score >= 75) return 'high';
-  if (grade === 'B' || confidence === 'probable' || score >= 55) return 'medium';
-  return 'low';
+/** Normalise a stored grade string to a ConfidenceGrade, or null. */
+function toConfidenceGrade(value: unknown): ConfidenceGrade | null {
+  if (value === 'definite' || value === 'probable' || value === 'possible' || value === 'weak') {
+    return value;
+  }
+  return null;
 }
 
 async function resolveMerchantProfile(
@@ -202,7 +196,7 @@ async function resolveMerchantProfile(
 
   return {
     profileId: customer.id,
-    riskScore: Number(profile.risk_score ?? 0),
+    confidenceGrade: toConfidenceGrade(profile.identity_confidence_grade),
     totalOrders: Number(profile.total_orders ?? 0),
     totalRefunds: Number(profile.total_refund_claims ?? 0),
     firstSeen: typeof profile.first_seen === 'string' ? profile.first_seen : null,
@@ -274,10 +268,7 @@ export async function buildGorgiasWidgetModel(
       model: {
         state: 'merchant_profile',
         profileId: merchantCustomer.id,
-        riskLevel: merchantCustomer.risk_level,
-        riskScore: merchantCustomer.risk_score,
-        fraudFlags: merchantCustomer.fraud_flags,
-        identityConfidenceGrade: merchantCustomer.identity_confidence_grade,
+        confidenceGrade: toConfidenceGrade(merchantCustomer.identity_confidence_grade),
         profileUrl,
         stats,
       },
@@ -305,19 +296,12 @@ export async function buildGorgiasWidgetModel(
 
   if (lookupResult.ok) {
     const body = lookupResult.body;
-    const tier = riskTierFromLookup({
-      risk_grade: String(body.risk_grade),
-      confidence: String(body.confidence),
-      risk_score: Number(body.risk_score),
-    });
+    const crossMerchant = body.claims_record.cross_merchant;
+    const hasClaims = body.claims_record.refunds + body.claims_record.chargebacks > 0;
 
-    const crossMerchant = body.cross_merchant as {
-      merchant_count: number;
-      claim_count: number;
-      flagged?: boolean;
-    } | null;
-
-    if (tier === 'low' && !crossMerchant) {
+    // No cross-merchant footprint and no claims on record → resolve as the
+    // merchant's own clean customer (green "no prior claims" confirmation).
+    if (!crossMerchant && !hasClaims) {
       const merchantProfile = await resolveMerchantProfile(service, auth.merchantId, normEmail);
       if (merchantProfile) {
         const profileUrl = await issueProfileUrl(service, auth.merchantId, merchantProfile.profileId);
@@ -340,17 +324,12 @@ export async function buildGorgiasWidgetModel(
 
     return {
       model: {
-        state: 'risk',
-        tier,
-        lookup: {
-          risk_grade: String(body.risk_grade),
-          confidence: String(body.confidence),
-          risk_score: Number(body.risk_score),
-          signals: Array.isArray(body.signals) ? (body.signals as string[]) : [],
-          cross_merchant: crossMerchant,
-        },
+        state: 'network_match',
+        confidenceGrade: body.confidence,
+        matchedOn: body.matched_on,
+        claimsRecord: body.claims_record,
+        ce3EvidenceAvailable: body.ce3_evidence_available,
         merchantProfile,
-        showEvidence: tier === 'high' || tier === 'medium',
         profileUrl,
       },
       lookupDiagnostics: diagnostics,
@@ -412,14 +391,15 @@ export function formatRelativeFirstSeen(iso: string | null): string {
   return years === 1 ? '1 year ago' : `${years} years ago`;
 }
 
-export function confidenceLabel(confidence: string): string {
-  return confidence.charAt(0).toUpperCase() + confidence.slice(1);
-}
-
-export function tierHeadline(tier: WidgetRiskTier): string {
-  if (tier === 'high') return 'HIGH RISK';
-  if (tier === 'medium') return 'ELEVATED RISK';
-  return 'LOW RISK';
+/** Plain-English label for an identity confidence grade (DEFINITE/PROBABLE/…). */
+export function gradeHeadline(grade: ConfidenceGrade | null): string {
+  switch (grade) {
+    case 'definite': return 'DEFINITE';
+    case 'probable': return 'PROBABLE';
+    case 'possible': return 'POSSIBLE';
+    case 'weak': return 'WEAK';
+    default: return 'NO MATCH';
+  }
 }
 
 // ===========================================================================
@@ -481,8 +461,16 @@ export type NetworkStats = {
 };
 
 export type ClaimWidgetData = {
+  /** Identity confidence grade — the PRIMARY element. Who the person is. */
+  confidenceGrade: ConfidenceGrade | null;
+  /** Factual identifiers this match was established on, e.g. "email address". */
+  matchedOn: string[];
+  /** True when documented cross-merchant prior-transaction history exists. */
+  ce3EvidenceAvailable: boolean;
   thisStore: ThisStoreStats;
   network: NetworkStats | null;
+  /** Total refund value of this store's own claims (own data; null if none). */
+  storeClaimValue: number | null;
   /** Store-scoped primary reason when there is no network footprint. */
   storePrimaryReason: PrimaryReason;
   storeRecentClaimCount: number;
@@ -500,6 +488,43 @@ export type GorgiasClaimWidgetResult =
 
 function round2(value: number): number {
   return Math.round(value * 100) / 100;
+}
+
+/**
+ * Total refund value of THIS merchant's own claims for the customer, from
+ * order_claim_context joined to support_case_intake. Store-scoped (own data)
+ * only — never aggregated across the network.
+ */
+async function sumStoreClaimAmount(
+  service: SupabaseClient,
+  merchantId: string,
+  emailHash: string
+): Promise<number | null> {
+  const { data, error } = await service
+    .from('order_claim_context')
+    .select(
+      'refund_amount_approved, refund_amount_requested, order_value, support_case_intake!inner(customer_email_hash, merchant_id, is_claim)'
+    )
+    .eq('merchant_id', merchantId)
+    .eq('support_case_intake.customer_email_hash', emailHash)
+    .eq('support_case_intake.is_claim', true);
+
+  if (error || !Array.isArray(data) || data.length === 0) return null;
+
+  let total = 0;
+  let has = false;
+  for (const row of data as Array<{
+    refund_amount_approved?: number | null;
+    refund_amount_requested?: number | null;
+    order_value?: number | null;
+  }>) {
+    const amt = row.refund_amount_approved ?? row.refund_amount_requested ?? row.order_value ?? null;
+    if (amt != null) {
+      total += Number(amt);
+      has = true;
+    }
+  }
+  return has ? Math.round(total) : null;
 }
 
 /** customer_claim_summary row shape we read (subset). */
@@ -832,6 +857,7 @@ export function assembleClaimWidgetData(input: {
   profileUrl: string | null;
   nowIso: string;
   shopifyOrderCount?: number;
+  storeClaimValue?: number | null;
 }): GorgiasClaimWidgetResult {
   const { model, summary, primaryReason, storePrimaryReason } = input;
 
@@ -859,11 +885,27 @@ export function assembleClaimWidgetData(input: {
   const profileUrl =
     input.profileUrl ?? ('profileUrl' in model ? (model.profileUrl ?? '') : '') ?? '';
 
+  // Identity confidence grade — independent of any claim history.
+  let confidenceGrade: ConfidenceGrade | null = null;
+  let matchedOn: string[] = [];
+  if (model.state === 'merchant_profile') confidenceGrade = model.confidenceGrade;
+  else if (model.state === 'network_match') { confidenceGrade = model.confidenceGrade; matchedOn = model.matchedOn; }
+  else if (model.state === 'low_clear') confidenceGrade = model.merchantProfile.confidenceGrade;
+
+  const ce3EvidenceAvailable =
+    model.state === 'network_match'
+      ? model.ce3EvidenceAvailable
+      : Boolean(network && network.claimCount > 0 && network.merchantCount > 1);
+
   return {
     ok: true,
     data: {
+      confidenceGrade,
+      matchedOn,
+      ce3EvidenceAvailable,
       thisStore,
       network,
+      storeClaimValue: input.storeClaimValue ?? null,
       storePrimaryReason,
       storeRecentClaimCount: input.storeRecentClaimCount,
       profileUrl: profileUrl || '',
@@ -892,8 +934,8 @@ function deriveNetworkStats(
     };
   }
 
-  if (model.state === 'risk' && model.lookup.cross_merchant) {
-    const cm = model.lookup.cross_merchant;
+  if (model.state === 'network_match' && model.claimsRecord.cross_merchant) {
+    const cm = model.claimsRecord.cross_merchant;
     return {
       merchantCount: cm.merchant_count,
       orderCount: 0, // network order denominator not exposed by the lookup
@@ -937,7 +979,7 @@ export async function buildGorgiasClaimWidgetData(
     ? countShopifyOrdersAtMerchant(service, auth.merchantId, normEmail)
     : Promise.resolve(0);
 
-  const [summary, primaryReason, storePrimaryReason, storeRecentClaimCount, shopifyOrderCount] =
+  const [summary, primaryReason, storePrimaryReason, storeRecentClaimCount, shopifyOrderCount, storeClaimValue] =
     emailHash
       ? await Promise.all([
           readThisStoreSummary(service, auth.merchantId, emailHash),
@@ -945,8 +987,9 @@ export async function buildGorgiasClaimWidgetData(
           derivePrimaryReasonAtMerchant(service, auth.merchantId, emailHash),
           countStoreRecentClaims(service, auth.merchantId, emailHash),
           shopifyOrderCountPromise,
+          sumStoreClaimAmount(service, auth.merchantId, emailHash),
         ])
-      : [null, null, null, 0, await shopifyOrderCountPromise];
+      : [null, null, null, 0, await shopifyOrderCountPromise, null];
 
   const profileUrl = 'profileUrl' in model ? (model.profileUrl ?? null) : null;
 
@@ -959,6 +1002,7 @@ export async function buildGorgiasClaimWidgetData(
     profileUrl,
     nowIso: new Date().toISOString(),
     shopifyOrderCount,
+    storeClaimValue: typeof storeClaimValue === 'number' ? storeClaimValue : null,
   });
 
   gorgiasWidgetLog('claim_widget.sources', {

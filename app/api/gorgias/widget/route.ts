@@ -32,10 +32,13 @@ const JSON_RESPONSE_HEADERS = {
 } as const;
 
 const GORGIAS_WIDGET_JSON_FALLBACK: GorgiasWidgetJsonPayload = {
+  identity: '—',
+  claims: '—',
   orders: '—',
   claim_rate: '—',
   primary_reason: '—',
   recent_activity: 'Could not load. Refresh the ticket to retry.',
+  ce3_evidence: '—',
 };
 
 type WidgetReturnContext = {
