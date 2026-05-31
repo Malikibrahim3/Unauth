@@ -33,7 +33,6 @@ import WatchlistStarButton from '@/components/audit/WatchlistStarButton';
 import CustomerNotes from '@/components/audit/CustomerNotes';
 import CustomerSupportCasesSection from '@/components/customers/CustomerSupportCasesSection';
 import { ConfidenceBadge } from '@/components/ui/ConfidenceBadge';
-import { RiskScoreBadge } from '@/components/ui/RiskScoreBadge';
 import { SectionCard } from '@/components/ui/SectionCard';
 import { MetricCard } from '@/components/ui/MetricCard';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -45,7 +44,7 @@ import BehaviorRoadmap from '@/components/customers/BehaviorRoadmap';
 import CaseSummaryStrip from '@/components/customers/CaseSummaryStrip';
 import type { CustomerIntelligencePanel } from '@/app/api/customers/[id]/route';
 import { labelFor } from '@/lib/copy/labels';
-import { riskBadgeStyle, riskBarStyle, riskTok } from '@/lib/utils/riskStyles';
+import { riskBadgeStyle, riskTok } from '@/lib/utils/riskStyles';
 import { formatCurrencyNullable, formatDate, formatDateMode } from '@/lib/utils/format';
 import { getEventStream } from '@/lib/analysis/customerIntelligence';
 import { FLAG_EXPERIENCE_POLISH_V1 } from '@/lib/flags';
@@ -634,7 +633,6 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
             <div className="flex flex-wrap items-center gap-3">
               <h1 className="t-heading truncate" style={{ color: 'var(--ink-primary)' }}>{displayName}</h1>
               <ConfidenceBadge grade={profileGrade} />
-              <RiskScoreBadge score={Math.round(profile.risk_score)} level={profile.risk_level} />
             </div>
             <p className="mt-2 t-mono break-all" style={{ color: 'var(--data-id)' }}>
               {profile.primary_email ?? profile.id}
@@ -663,11 +661,10 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-px overflow-hidden rounded-md border md:grid-cols-6" style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-border)' }}>
+          <div className="grid grid-cols-2 gap-px overflow-hidden rounded-md border md:grid-cols-5" style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-border)' }}>
             {[
               { label: 'Identity grade', value: profileGrade, color: 'var(--data-score)' },
               { label: 'Identity confidence', value: `${identityConfidence.score} / 100`, color: 'var(--data-score)' },
-              { label: 'Risk score', value: `${Math.round(profile.risk_score)} / 100`, color: 'var(--data-score)' },
               { label: 'Cross-merchant', value: merchantsSeen > 1 ? `${merchantsSeen} merchants` : 'This store only', color: 'var(--data-score)' },
               { label: 'Exposure', value: formatCurrencyNullable(totalOrderValue), color: 'var(--data-currency)' },
               { label: 'Last seen', value: formatDateMode(profile.last_seen, 'table'), color: 'var(--data-date)', mono: true },
@@ -818,16 +815,6 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
               <div className="flex items-start gap-3">
                 <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" style={{ color: 'var(--text-muted)' }} />
                 <p className="text-body-sm leading-relaxed" style={{ color: 'var(--text)' }}>{merchantNarrative}</p>
-              </div>
-
-              <div className="mt-[var(--space-4)]">
-                <div className="flex items-center justify-between text-caption mb-1" style={{ color: 'var(--text-muted)' }}>
-                  <span>Behavioural signal strength</span>
-                  <span className="font-semibold" style={{ color: 'var(--text)' }}>{Math.round(profile.risk_score)} / 100</span>
-                </div>
-                <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--bg-subtle)' }}>
-                  <div className="h-full rounded-full" style={{ ...riskBarStyle(profile.risk_level), width: `${Math.min(profile.risk_score, 100)}%` }} />
-                </div>
               </div>
 
               {identitySignals.length > 0 && (
