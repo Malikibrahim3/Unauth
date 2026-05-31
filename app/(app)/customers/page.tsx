@@ -231,7 +231,15 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
       // Use shared escape helper — prevents PostgREST filter injection via
       // ( ) ' % , { } " \ and other control characters.
       const safeQ = escapePostgrestFilterValue(q);
-      query = query.or(`primary_email.ilike.%${safeQ}%,names.cs.["${safeQ}"]`);
+      query = query.or(
+        [
+          `primary_email.ilike.%${safeQ}%`,
+          `emails::text.ilike.%${safeQ}%`,
+          `names::text.ilike.%${safeQ}%`,
+          `phones::text.ilike.%${safeQ}%`,
+          `addresses::text.ilike.%${safeQ}%`,
+        ].join(',')
+      );
     }
   }
 
