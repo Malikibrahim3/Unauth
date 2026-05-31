@@ -1,3 +1,5 @@
+import { normaliseAddress as normaliseAddressCanonical } from '@/lib/identity/normalise';
+
 export type ShopifyAddress = {
   name?: string | null;
   address1?: string | null;
@@ -37,10 +39,10 @@ export function normalizePhone(value: string | null | undefined): string | null 
 
 export function normalizeAddress(address: ShopifyAddress | null | undefined): string | null {
   if (!address) return null;
-  const parts = [address.name, address.address1, address.address2, address.city, address.province, address.zip, address.country]
+  const parts = [address.address1, address.address2, address.city, address.province, address.zip, address.country]
     .map((p) => normalizeText(p))
     .filter(Boolean) as string[];
-  return parts.length ? parts.join(', ') : null;
+  return parts.length ? normaliseAddressCanonical(parts.join(', ')) : null;
 }
 
 export async function upsertMerchantIdentityRows(supabase: any, rows: MerchantIdentityInsert[]) {

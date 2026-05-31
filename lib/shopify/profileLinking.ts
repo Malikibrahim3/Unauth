@@ -20,6 +20,17 @@ type OrderSignalRow = {
 };
 
 type Anchor = { identity_type: 'email'|'phone'|'shopify_customer_id'|'shopify_order_id'|'address_hash'; identity_value: string };
+type ProfileCandidate = {
+  id: string;
+  merchant_ids?: string[] | null;
+  emails?: string[] | null;
+  phones?: string[] | null;
+  addresses?: string[] | null;
+  total_orders?: number | null;
+  total_refund_claims?: number | null;
+  first_seen?: string | null;
+  last_seen?: string | null;
+};
 
 function uniq(values: Array<string | null | undefined>): string[] {
   return Array.from(new Set(values.filter((v): v is string => !!v && v.trim().length > 0).map((v) => v.trim())));
@@ -30,9 +41,155 @@ function hashAddress(value: string | null): string | null {
   return createHash('sha256').update(value.trim().toLowerCase(), 'utf8').digest('hex');
 }
 
+function chooseCanonicalProfile(candidates: ProfileCandidate[]): string | null {
+  const sorted = [...candidates]
+    .filter((row) => row.id)
+    .sort((a, b) => {
+      const ordersDelta = Number(b.total_orders ?? 0) - Number(a.total_orders ?? 0);
+      if (ordersDelta !== 0) return ordersDelta;
+      const aFirst = a.first_seen ?? '';
+      const bFirst = b.first_seen ?? '';
+      return aFirst.localeCompare(bFirst);
+    });
+  return sorted[0]?.id ?? null;
+}
+
 async function resolveMerchantIdsForShop(service: any, shopDomain: string): Promise<string[]> {
   const { data } = await service.from('merchant_shopify_connections' as any).select('merchant_id').eq('shop_domain', shopDomain).eq('active', true);
   return uniq((data ?? []).map((r: any) => r.merchant_id));
+}
+
+async function findProfileCandidates(input: {
+  service: any;
+  merchantIds: string[];
+  anchors: Anchor[];
+  emails: string[];
+}): Promise<ProfileCandidate[]> {
+  const { service, merchantIds, anchors, emails } = input;
+  const profileIds = new Set<string>();
+
+  for (const merchantId of merchantIds) {
+    const grouped = anchors.reduce((acc, a) => {
+      (acc[a.identity_type] ||= []).push(a.identity_value);
+      return acc;
+    }, {} as Record<string, string[]>);
+    for (const [t, vals] of Object.entries(grouped)) {
+      const { data } = await service
+        .from('customer_profile_identities' as any)
+        .select('customer_profile_id')
+        .eq('merchant_id', merchantId)
+        .eq('identity_type', t)
+        .in('identity_value', uniq(vals));
+      for (const row of data ?? []) {
+        if (row?.customer_profile_id) profileIds.add(row.customer_profile_id);
+      }
+    }
+  }
+
+  for (const email of emails) {
+    const [primaryRes, emailArrayRes] = await Promise.all([
+      service
+        .from('customer_profiles' as any)
+        .select('id,merchant_ids,emails,phones,addresses,total_orders,total_refund_claims,first_seen,last_seen')
+        .eq('primary_email', email),
+      service
+        .from('customer_profiles' as any)
+        .select('id,merchant_ids,emails,phones,addresses,total_orders,total_refund_claims,first_seen,last_seen')
+        .contains('emails', [email]),
+    ]);
+    for (const row of [...(primaryRes.data ?? []), ...(emailArrayRes.data ?? [])]) {
+      const rowMerchantIds = Array.isArray(row.merchant_ids) ? row.merchant_ids : [];
+      if (rowMerchantIds.some((merchantId: string) => merchantIds.includes(merchantId))) {
+        profileIds.add(row.id);
+      }
+    }
+  }
+
+  if (profileIds.size === 0) return [];
+
+  const { data } = await service
+    .from('customer_profiles' as any)
+    .select('id,merchant_ids,emails,phones,addresses,total_orders,total_refund_claims,first_seen,last_seen')
+    .in('id', [...profileIds]);
+  return (data ?? []) as ProfileCandidate[];
+}
+
+async function mergeDuplicateProfiles(input: {
+  service: any;
+  canonicalProfileId: string;
+  duplicateProfileIds: string[];
+}): Promise<void> {
+  const { service, canonicalProfileId, duplicateProfileIds } = input;
+  const duplicates = uniq(duplicateProfileIds);
+  if (duplicates.length === 0) return;
+
+  const { data: duplicateIdentities } = await service
+    .from('customer_profile_identities' as any)
+    .select('merchant_id,shop_domain,identity_type,identity_value,source')
+    .in('customer_profile_id', duplicates);
+
+  for (const identity of duplicateIdentities ?? []) {
+    await service.from('customer_profile_identities' as any).upsert({
+      customer_profile_id: canonicalProfileId,
+      merchant_id: identity.merchant_id,
+      shop_domain: identity.shop_domain,
+      identity_type: identity.identity_type,
+      identity_value: identity.identity_value,
+      source: identity.source ?? 'shopify',
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'merchant_id,identity_type,identity_value' });
+  }
+
+  await service
+    .from('customer_profile_identities' as any)
+    .delete()
+    .in('customer_profile_id', duplicates);
+
+  await service
+    .from('customer_profiles' as any)
+    .delete()
+    .in('id', duplicates);
+}
+
+async function countRealShopifyOrdersForProfile(input: {
+  service: any;
+  merchantIds: string[];
+  shopDomain: string;
+  profileId: string;
+  currentOrderIds: string[];
+}): Promise<{ totalOrders: number; totalRefundClaims: number }> {
+  const { service, merchantIds, shopDomain, profileId, currentOrderIds } = input;
+  const { data: orderIdentities } = await service
+    .from('customer_profile_identities' as any)
+    .select('identity_value')
+    .eq('identity_type', 'shopify_order_id')
+    .in('merchant_id', merchantIds)
+    .eq('customer_profile_id', profileId);
+
+  const orderIds = uniq([
+    ...((orderIdentities ?? []).map((row: any) => row.identity_value)),
+    ...currentOrderIds,
+  ]);
+  if (orderIds.length === 0) return { totalOrders: 0, totalRefundClaims: 0 };
+
+  const { data: signalRows } = await service
+    .from('shopify_order_signals' as any)
+    .select('shopify_order_id,order_number,refunds_count')
+    .eq('shop_domain', shopDomain)
+    .in('shopify_order_id', orderIds);
+
+  const realOrderIds = new Set<string>();
+  let totalRefundClaims = 0;
+  for (const row of signalRows ?? []) {
+    const orderNumber = row.order_number == null ? null : String(row.order_number).trim();
+    if (orderNumber && !/^\d+$/.test(orderNumber)) continue;
+    if (row.shopify_order_id != null) {
+      realOrderIds.add(String(row.shopify_order_id));
+      totalRefundClaims += Number(row.refunds_count ?? 0);
+    }
+  }
+
+  return { totalOrders: realOrderIds.size, totalRefundClaims };
 }
 
 export async function syncShopifyProfilesForShop(input: { shopDomain: string; supabase?: any; onlyOrderIds?: string[]; }) {
@@ -117,25 +274,16 @@ export async function syncShopifyProfilesForShop(input: { shopDomain: string; su
       ...uniq(addresses.map(hashAddress)).map((v) => ({ identity_type: 'address_hash' as const, identity_value: v })),
     ];
 
-    let profileId: string | null = null;
-    for (const merchantId of merchantIds) {
-      const grouped = anchors.reduce((acc, a) => {
-        (acc[a.identity_type] ||= []).push(a.identity_value);
-        return acc;
-      }, {} as Record<string, string[]>);
-      for (const [t, vals] of Object.entries(grouped)) {
-        const { data } = await service.from('customer_profile_identities' as any).select('customer_profile_id').eq('merchant_id', merchantId).eq('identity_type', t).in('identity_value', uniq(vals)).limit(1).maybeSingle();
-        if (data?.customer_profile_id) {
-          profileId = data.customer_profile_id;
-          break;
-        }
-      }
-      if (profileId) break;
-    }
-
-    if (!profileId && emails.length) {
-      const { data } = await service.from('customer_profiles' as any).select('id,merchant_ids').contains('emails', [emails[0]]).limit(1).maybeSingle();
-      if (data && (data.merchant_ids ?? []).some((m: string) => merchantIds.includes(m))) profileId = data.id;
+    const profileCandidates = await findProfileCandidates({ service, merchantIds, anchors, emails });
+    let profileId: string | null = chooseCanonicalProfile(profileCandidates);
+    if (profileId) {
+      await mergeDuplicateProfiles({
+        service,
+        canonicalProfileId: profileId,
+        duplicateProfileIds: profileCandidates
+          .map((candidate) => candidate.id)
+          .filter((id) => id !== profileId),
+      });
     }
 
     const createdTs = signals.map((r) => r.created_at_shopify).filter(Boolean).sort();
@@ -152,14 +300,24 @@ export async function syncShopifyProfilesForShop(input: { shopDomain: string; su
       profileId = ins.data?.id ?? null;
       if (profileId) profilesCreated += 1;
     } else {
-      const existing = await service.from('customer_profiles' as any).select('merchant_ids,emails,phones,addresses').eq('id', profileId).single();
+      const existing = await service.from('customer_profiles' as any).select('merchant_ids,emails,phones,addresses,total_orders,total_refund_claims,first_seen').eq('id', profileId).single();
       const row = existing.data;
+      const counts = await countRealShopifyOrdersForProfile({
+        service,
+        merchantIds,
+        shopDomain: input.shopDomain,
+        profileId,
+        currentOrderIds: orderIds,
+      });
       await service.from('customer_profiles' as any).update({
         merchant_ids: uniq([...(row?.merchant_ids ?? []), ...merchantIds]),
         emails: uniq([...(row?.emails ?? []), ...emails]),
         phones: uniq([...(row?.phones ?? []), ...phones]),
         addresses: uniq([...(row?.addresses ?? []), ...addresses]),
         primary_email: emails[0] ?? null,
+        total_orders: counts.totalOrders > 0 ? counts.totalOrders : Number(row?.total_orders ?? 0),
+        total_refund_claims: counts.totalOrders > 0 ? counts.totalRefundClaims : Number(row?.total_refund_claims ?? 0),
+        first_seen: row?.first_seen ?? firstSeen,
         last_seen: lastSeen,
       }).eq('id', profileId);
       profilesLinked += 1;
