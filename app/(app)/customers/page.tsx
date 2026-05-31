@@ -384,28 +384,6 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
               <CustomersFilterSheet />
             </Suspense>
           }
-          right={
-            <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
-              <Suspense fallback={<span className="text-xs" style={{ color: 'var(--text-muted)' }}>Rows per page…</span>}>
-                <PageSizeSelect pathname="/customers" pageSize={PAGE_SIZE} />
-              </Suspense>
-              {totalPages > 1 && (
-                <>
-                  <span>Page {page} of {totalPages}</span>
-                  {page > 1 && (
-                    <Link href={customersListHref(sp, { page: String(page - 1), pageSize: String(PAGE_SIZE) })}>
-                      <Button variant="secondary" size="sm">Prev</Button>
-                    </Link>
-                  )}
-                  {page < totalPages && (
-                    <Link href={customersListHref(sp, { page: String(page + 1), pageSize: String(PAGE_SIZE) })}>
-                      <Button variant="secondary" size="sm">Next</Button>
-                    </Link>
-                  )}
-                </>
-              )}
-            </div>
-          }
         />
       }
       main={
@@ -485,28 +463,26 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
                 ? 'No customers match your filters.'
                 : `Showing ${from}–${to} of ${total.toLocaleString()} customers`}
             </p>
-                {totalPages > 1 && (
-              <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
-              <span>Page {page} of {totalPages}</span>
-                <Suspense fallback={null}>
-                  <PageSizeSelect pathname="/customers" pageSize={PAGE_SIZE} />
-                </Suspense>
-                {page > 1 && (
-                  <Link
-                    href={customersListHref(sp, { page: String(page - 1), pageSize: String(PAGE_SIZE) })}
-                    className="px-2 py-1 rounded border"
-                    style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}
-                  >← Prev</Link>
-                )}
-                {page < totalPages && (
-                  <Link
-                    href={customersListHref(sp, { page: String(page + 1), pageSize: String(PAGE_SIZE) })}
-                    className="px-2 py-1 rounded border"
-                    style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}
-                  >Next ›</Link>
-                )}
-              </div>
-            )}
+            <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+              <Suspense fallback={null}>
+                <PageSizeSelect pathname="/customers" pageSize={PAGE_SIZE} />
+              </Suspense>
+              {totalPages > 1 && (
+                <>
+                  <span>Page {page} of {totalPages}</span>
+                  {page > 1 && (
+                    <Link href={customersListHref(sp, { page: String(page - 1), pageSize: String(PAGE_SIZE) })}>
+                      <Button variant="secondary" size="sm">Prev</Button>
+                    </Link>
+                  )}
+                  {page < totalPages && (
+                    <Link href={customersListHref(sp, { page: String(page + 1), pageSize: String(PAGE_SIZE) })}>
+                      <Button variant="secondary" size="sm">Next</Button>
+                    </Link>
+                  )}
+                </>
+              )}
+            </div>
           </div>
 
           {rows.length > 0 && <CustomersTableClient rows={rows} />}
