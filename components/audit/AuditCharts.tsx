@@ -1,6 +1,7 @@
 'use client';
 
 import { SectionCard } from '@/components/ui/SectionCard';
+import { GRADE_COLOURS } from '@/lib/utils/confidenceStyles';
 
 interface Props {
   counts: {
@@ -14,10 +15,10 @@ interface Props {
 }
 
 const TIERS = [
-  { key: 'definite', label: 'Definite', color: 'var(--sev-definite)' },
-  { key: 'probable', label: 'Probable', color: 'var(--sev-probable)' },
-  { key: 'possible', label: 'Possible', color: 'var(--copper-mid)' },
-  { key: 'weak',     label: 'Weak',     color: 'var(--copper-dim)' },
+  { key: 'definite', label: 'Definite', color: GRADE_COLOURS.definite },
+  { key: 'probable', label: 'Probable', color: GRADE_COLOURS.probable },
+  { key: 'possible', label: 'Possible', color: GRADE_COLOURS.possible },
+  { key: 'weak', label: 'Weak', color: GRADE_COLOURS.weak },
 ] as const;
 
 export default function AuditCharts({ counts, totalRows, totalFlagged }: Props) {

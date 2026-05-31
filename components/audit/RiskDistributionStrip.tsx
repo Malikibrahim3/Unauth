@@ -10,10 +10,10 @@ interface RiskDistributionStripProps {
 }
 
 const ROWS = [
-  { key: 'definite', label: 'Definite', color: 'var(--sev-definite)' },
+  { key: 'definite', label: 'Definite', color: 'var(--sev-clear)' },
   { key: 'probable', label: 'Probable', color: 'var(--sev-probable)' },
-  { key: 'candidate', label: 'Possible', color: 'var(--copper-mid)' },
-  { key: 'weak', label: 'Weak', color: 'var(--copper-dim)' },
+  { key: 'candidate', label: 'Possible', color: 'var(--sev-neutral)' },
+  { key: 'weak', label: 'Weak', color: 'var(--ink-tertiary)' },
 ] as const;
 
 export function RiskDistributionStrip({ definite, probable, candidate, weak }: RiskDistributionStripProps) {
@@ -25,7 +25,7 @@ export function RiskDistributionStrip({ definite, probable, candidate, weak }: R
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="t-label" style={{ color: 'var(--ink-secondary)' }}>
-            Anchor metric
+            Matched profiles
           </div>
           <div className="t-score mt-2 num" style={{ color: 'var(--data-score)' }}>
             {total.toLocaleString('en-US')}

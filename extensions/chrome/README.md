@@ -1,6 +1,6 @@
 # Unauth Chrome Extension
 
-Merchant-facing browser extension for instant fraud intelligence on any customer email — Gorgias, Zendesk, Shopify, Gmail, and the open web.
+Merchant-facing browser extension for identity confidence and claims history on any customer email — Gorgias, Zendesk, Shopify, Gmail, and the open web.
 
 Uses the Unauth public API (`/api/v1/*`) with a merchant API key. No session cookies or in-extension login.
 

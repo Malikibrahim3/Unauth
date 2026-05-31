@@ -146,7 +146,7 @@ export default async function EvidenceDetailPage({ params }: Props) {
           </div>
           {pkg.customer_profile_id ? (
             <div>
-              <p className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Customer dossier</p>
+              <p className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Customer record</p>
               <Link
                 href={`/customers/${pkg.customer_profile_id}`}
                 className="text-sm font-semibold mt-1 inline-block hover:underline"

@@ -118,7 +118,7 @@ export default async function PublicAuditReportPage({ params }: ReportPageProps)
               </div>
               <div style={{ textAlign: 'right' }}>
                 <p style={{ margin: 0, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.14em', color: '#7A7265', fontFamily: 'var(--font-dm-sans, sans-serif)' }}>
-                  Estimated exposure
+                  Order value linked
                 </p>
                 <p style={{ margin: '4px 0 0', fontSize: '24px', fontFamily: 'var(--font-dm-sans, sans-serif)', fontWeight: 500 }}>
                   {formatCurrency(summaryExposure, 'USD')}
@@ -130,7 +130,7 @@ export default async function PublicAuditReportPage({ params }: ReportPageProps)
               <table className="w-full text-left">
                 <thead style={{ background: '#FAF6EF' }}>
                   <tr>
-                    {['Cluster ID', 'Linked identities', 'Confidence grade', 'Signals fired', 'Order count / exposure'].map((label) => (
+                    {['Cluster ID', 'Linked identities', 'Confidence grade', 'Signals fired', 'Orders / order value'].map((label) => (
                       <th key={label} className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: '#7A7265' }}>
                         {label}
                       </th>
@@ -141,7 +141,7 @@ export default async function PublicAuditReportPage({ params }: ReportPageProps)
                   {rows.length === 0 ? (
                     <tr>
                       <td colSpan={5} className="px-4 py-8 text-center text-sm" style={{ color: '#7A7265' }}>
-                        No flagged rows yet for this audit.
+                        No matched rows yet for this audit.
                       </td>
                     </tr>
                   ) : (

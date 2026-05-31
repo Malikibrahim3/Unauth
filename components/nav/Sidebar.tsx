@@ -68,7 +68,7 @@ function buildGroups(watchlistCount = 0): NavGroup[] {
       ],
     },
     {
-      label: 'Investigations',
+      label: 'Review',
       items: [
         { href: '/inbox', label: 'Inbox', icon: Inbox },
         { href: '/customers', label: 'Customers', icon: Users },

@@ -75,12 +75,12 @@ export function queueMeta(tx: InboxTransaction) {
   const decisionReady = tx.match_status === 'definite' || (tx.identity_score ?? 0) >= 85;
   const dueHours = Math.ceil(REVIEW_SLA_HOURS - ageHours);
   const dueLabel = overdue ? 'Overdue' : dueHours <= 24 ? `Due in ${Math.max(1, dueHours)}h` : `Due in ${Math.ceil(dueHours / 24)}d`;
-  const stage = !viewed ? 'New / unread' : decisionReady ? 'Decision ready' : 'Viewed';
+  const stage = !viewed ? 'New / unread' : decisionReady ? 'High confidence' : 'Viewed';
   const nextAction = !viewed
     ? 'Open identity evidence'
     : decisionReady
       ? 'Record merchant decision'
-      : 'Review behaviour pattern';
+      : 'Review identity details';
 
   return { viewed, overdue, decisionReady, dueLabel, stage, nextAction };
 }
@@ -313,7 +313,7 @@ export default function InboxClient({ initialItems, claimQueueCounts = null }: P
         <EmptyState
           icon={inboxIcon}
           title="You're all caught up"
-          description="No identity-flagged transactions need review right now."
+          description="No matched orders need review right now."
           action={
             <Link
               href="/upload"
@@ -370,8 +370,8 @@ export default function InboxClient({ initialItems, claimQueueCounts = null }: P
               className="rounded border px-2 py-1 text-xs"
               style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)', color: 'var(--text)' }}
             >
-              <option value="priority">Priority (score x value)</option>
-              <option value="score">Identity score</option>
+              <option value="priority">Priority (confidence × value)</option>
+              <option value="score">Match strength</option>
               <option value="value">Order value</option>
               <option value="date">Most recent</option>
             </select>
@@ -384,7 +384,7 @@ export default function InboxClient({ initialItems, claimQueueCounts = null }: P
             { key: 'new' as QueueFilter, label: 'New / unread', icon: Eye },
             { key: 'viewed' as QueueFilter, label: 'Viewed', icon: CheckCircle2 },
             { key: 'overdue' as QueueFilter, label: 'Overdue', icon: AlertTriangle },
-            { key: 'decision_ready' as QueueFilter, label: 'Decision ready', icon: CheckCircle2 },
+            { key: 'decision_ready' as QueueFilter, label: 'High confidence', icon: CheckCircle2 },
             { key: 'unassigned' as QueueFilter, label: 'Unassigned', icon: UserCircle2 },
           ].map((filter) => {
             const active = queueFilter === filter.key;
@@ -435,7 +435,7 @@ export default function InboxClient({ initialItems, claimQueueCounts = null }: P
               onClick={bulkDismissSelected}
               disabled={bulkDismissing}
               className="rounded px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
-              style={{ background: 'var(--sev-definite)', color: 'var(--ink-primary)', border: '1px solid var(--sev-definite)' }}
+              style={{ background: 'var(--surface-muted)', color: 'var(--ink-primary)', border: '1px solid var(--surface-border)' }}
             >
               {bulkDismissing ? 'Dismissing…' : 'Dismiss selected'}
             </button>
@@ -473,8 +473,7 @@ export default function InboxClient({ initialItems, claimQueueCounts = null }: P
             <th className="text-left px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Queue state</th>
             <th className="text-left px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Owner</th>
             <th className="text-left px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Confidence</th>
-            <th className="text-right px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Score</th>
-            <th className="text-right px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Value</th>
+            <th className="text-right px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Order value</th>
             <th className="text-left px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Match signals</th>
             <th className="text-left px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Due / next action</th>
             <th className="px-4 py-2.5" />
@@ -545,9 +544,6 @@ export default function InboxClient({ initialItems, claimQueueCounts = null }: P
                   grade={riskLevelToNewGrade(tx.identity_confidence_grade ?? tx.match_status)}
                   size="sm"
                 />
-              </td>
-              <td className="px-4 py-3 text-right font-mono font-semibold" style={{ color: 'var(--text)' }}>
-                {tx.identity_score != null ? Math.round(tx.identity_score) : '—'}
               </td>
               <td className="px-4 py-3 text-right font-mono text-xs" style={{ color: 'var(--text)' }}>
                 {formatCurrencyNullable(tx.order_value ?? null)}

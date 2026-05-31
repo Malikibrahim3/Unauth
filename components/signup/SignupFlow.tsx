@@ -397,6 +397,9 @@ export default function SignupFlow() {
                     <p className="mt-3 text-sm" style={TEXT_MUTED}>
                       Free to start. No card required.
                     </p>
+                    <p className="mt-4 text-sm" style={TEXT_MUTED}>
+                      By creating an account, you agree to use Unauth for authorised business use only.
+                    </p>
                   </div>
                 </form>
               </>

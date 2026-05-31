@@ -44,8 +44,8 @@ export function buildAuditResultsEmail(input: AuditEmailInput) {
       <p>
         ${input.repeatIdentityClusters} repeat identities clustered<br />
         ${input.refundPatternOrders} orders linked to known refund patterns<br />
-        ${input.inrFlaggedAccounts} accounts flagged for INR behaviour<br />
-        ${escapeHtml(formatUsd(input.estimatedExposure))} estimated exposure across flagged orders
+        ${input.inrFlaggedAccounts} accounts with INR behaviour patterns<br />
+        ${escapeHtml(formatUsd(input.estimatedExposure))} order value linked to matched orders
       </p>
       <p>
         Your full report — including linked identities, confidence grades, and claims history — is ready to view.
@@ -76,8 +76,8 @@ export function buildAuditResultsEmail(input: AuditEmailInput) {
     '',
     `${input.repeatIdentityClusters} repeat identities clustered`,
     `${input.refundPatternOrders} orders linked to known refund patterns`,
-    `${input.inrFlaggedAccounts} accounts flagged for INR behaviour`,
-    `${formatUsd(input.estimatedExposure)} estimated exposure across flagged orders`,
+    `${input.inrFlaggedAccounts} accounts with INR behaviour patterns`,
+    `${formatUsd(input.estimatedExposure)} order value linked to matched orders`,
     '',
     'Your full report - including linked identities, confidence grades, and claims history - is ready to view.',
     '',

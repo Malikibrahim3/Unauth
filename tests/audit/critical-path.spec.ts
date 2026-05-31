@@ -68,7 +68,7 @@ test.describe('Critical path — merchant first use', () => {
       'The merchant knows what to do next without being told explicitly',
       'Confidence grade labels use only: Definite, Probable, Possible, Weak',
       'No technical terms like signal, entity, hash, or algorithm are visible',
-      'The estimated exposure figure is clearly labelled and explained',
+      'The linked order value figure is clearly labelled and explained',
     ])
     assertEvaluation(evaluation, 'Audit results page', 75)
   })
@@ -85,7 +85,7 @@ test.describe('Critical path — merchant first use', () => {
       'The behavioral context uses factual language only — no inference about intent',
       'The merchant can immediately understand what this customer has done',
       'The activity log or order history is visible and chronological',
-      'The investigation status is visible and changeable',
+      'The review status is visible and changeable',
       'There is a clear option to generate a chargeback evidence package',
       'Confidence grade uses only: Definite, Probable, Possible, or Weak',
     ])

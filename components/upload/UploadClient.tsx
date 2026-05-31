@@ -1430,8 +1430,8 @@ export default function UploadClient({ recentImports = [] }: UploadClientProps) 
                 },
                 {
                   value: 'investigation',
-                  title: 'Customer investigation',
-                  description: 'Targeted analysis for a specific customer or incident. Doesn\'t affect population statistics.',
+                  title: 'Customer lookup',
+                  description: 'Targeted analysis for a specific customer. Doesn\'t affect population statistics.',
                 },
               ] as const
             ).map((opt) => (

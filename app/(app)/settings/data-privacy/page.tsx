@@ -23,8 +23,8 @@ export default async function DataPrivacySettingsPage() {
       <div className="mt-6 space-y-4">
         <SectionCard title="Data scope">
           <p className="text-body-sm" style={{ color: 'var(--ink-secondary)' }}>
-            Unauth processes order exports and Shopify sync data solely to support fraud investigation,
-            identity matching, and claim review for your store. Cross-merchant signals are aggregated
+            Unauth processes order exports and Shopify sync data to support identity matching and claim
+            review for your store. Cross-merchant signals are aggregated
             and anonymised before network comparison.
           </p>
         </SectionCard>

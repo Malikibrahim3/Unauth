@@ -38,8 +38,8 @@ export default function IdentityTimeline({ entries }: IdentityTimelineProps) {
               key={idx}
               style={{
                 borderBottom: '1px solid var(--surface-border)',
-                borderLeft: entry.isVariant ? '2px solid var(--sev-probable)' : '2px solid transparent',
-                background: entry.isVariant ? 'var(--sev-probable-fill)' : 'var(--surface-raised)',
+                borderLeft: entry.isVariant ? '2px solid var(--surface-border)' : '2px solid transparent',
+                background: 'var(--surface-raised)',
               }}
             >
               <td className="num" style={{ padding: '10px', fontFamily: 'var(--font-mono)', color: 'var(--data-date)' }}>{formatDateMode(entry.date, 'table')}</td>
@@ -50,8 +50,8 @@ export default function IdentityTimeline({ entries }: IdentityTimelineProps) {
                 <div className="font-mono break-all" style={{ color: 'var(--data-id)' }}>{entry.value}</div>
                 {entry.isVariant && (
                   <div className="mt-1">
-                    <span style={{ display: 'inline-flex', height: 18, alignItems: 'center', padding: '0 7px', borderRadius: 3, background: 'var(--sev-probable-fill)', color: 'var(--sev-probable)', border: '1px solid color-mix(in srgb, var(--sev-probable) 40%, transparent)', fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                      ▲ Variant
+                    <span style={{ display: 'inline-flex', height: 18, alignItems: 'center', padding: '0 7px', borderRadius: 3, background: 'var(--sev-neutral-fill)', color: 'var(--sev-neutral)', border: '1px solid var(--surface-border)', fontSize: 10, fontWeight: 600 }}>
+                      Updated
                     </span>
                   </div>
                 )}

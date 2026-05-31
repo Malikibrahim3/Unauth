@@ -34,7 +34,7 @@ interface UnifiedResult {
 const NAV_ITEMS: NavItem[] = [
   {
     label: 'Investigation dashboard',
-    description: 'Flagged customers, evidence, and audit activity',
+    description: 'Matched customers, evidence, and audit activity',
     href: '/dashboard',
     icon: (
       <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">

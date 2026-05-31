@@ -1,4 +1,5 @@
 import { notFound, redirect } from 'next/navigation';
+import { Suspense } from 'react';
 import Link from 'next/link';
 import type { ComponentType, CSSProperties, ReactNode } from 'react';
 import {
@@ -39,9 +40,11 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Badge } from '@/components/ui/Badge';
 import { PrivacyBadge } from '@/components/ui/PrivacyBadge';
 import InvestigationStatusSelect from '@/components/customers/InvestigationStatusSelect';
-import IdentityTimeline from '@/components/customers/IdentityTimeline';
+import IdentityChangesDisclosure from '@/components/customers/IdentityChangesDisclosure';
 import BehaviorRoadmap from '@/components/customers/BehaviorRoadmap';
+import { letterGradeTone } from '@/lib/utils/confidenceStyles';
 import CaseSummaryStrip from '@/components/customers/CaseSummaryStrip';
+import { CustomerProfileEvidenceTrigger } from '@/components/evidence/CustomerProfileEvidenceTrigger';
 import type { CustomerIntelligencePanel } from '@/app/api/customers/[id]/route';
 import { labelFor } from '@/lib/copy/labels';
 import { formatCurrencyNullable, formatDate, formatDateMode } from '@/lib/utils/format';
@@ -52,7 +55,9 @@ import { parseAndVerifySignedToken, hashSignedToken } from '@/lib/api/signedAcce
 
 interface PageProps {
   params: Promise<{ id: string }> | { id: string };
-  searchParams: Promise<{ audit?: string; view_token?: string }> | { audit?: string; view_token?: string };
+  searchParams:
+    | Promise<{ audit?: string; view_token?: string; buildEvidence?: string; disputedOrder?: string }>
+    | { audit?: string; view_token?: string; buildEvidence?: string; disputedOrder?: string };
 }
 
 // TX_SAFE_SELECT is imported from merchantHelpers — it includes identity fields
@@ -121,20 +126,12 @@ const CLAIM_STATUS_LABELS: Record<string, string> = {
   closed: 'Closed',
 };
 
-function confidenceTone(grade: string) {
-  const g = grade.toUpperCase();
-  if (g === 'A') return { label: 'Definite', bg: 'var(--sev-definite-fill)', fg: 'var(--sev-definite)' };
-  if (g === 'B') return { label: 'Probable', bg: 'var(--sev-probable-fill)', fg: 'var(--sev-probable)' };
-  if (g === 'C') return { label: 'Possible', bg: 'var(--sev-neutral-fill)', fg: 'var(--sev-neutral)' };
-  return { label: 'Weak', bg: 'var(--surface-muted)', fg: 'var(--ink-tertiary)' };
-}
-
 function ConfidencePill({ grade }: { grade: string }) {
-  const tone = confidenceTone(grade);
+  const tone = letterGradeTone(grade);
   return (
     <span
       className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold"
-      style={{ background: tone.bg, color: tone.fg }}
+      style={{ background: tone.fill, color: tone.fg }}
     >
       {tone.label}
     </span>
@@ -498,6 +495,7 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
   const merchantOrderCount = commerceStats.orderCount;
   const merchantClaimCount = transactions.length > 0 ? claimCount : profile.total_refund_claims;
   const merchantRefundRate = merchantOrderCount > 0 ? Math.round((merchantClaimCount / merchantOrderCount) * 100) : refundRate;
+  const hasCleanRecord = merchantClaimCount === 0 && profile.total_chargebacks === 0;
   const identitySignals = ((profile as any).identity_signals ?? profile.fraud_flags ?? []) as string[];
   const networkSignalCount = transactions.filter((tx: any) => {
     const signals = [...(Array.isArray(tx.signals_matched) ? tx.signals_matched : []), ...(Array.isArray(tx.fraud_flags) ? tx.fraud_flags : [])];
@@ -627,6 +625,28 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
               <h1 className="t-heading truncate" style={{ color: 'var(--ink-primary)' }}>{displayName}</h1>
               <ConfidenceBadge grade={profileGrade} />
             </div>
+            {hasCleanRecord ? (
+              <p
+                className="mt-3 inline-flex items-center gap-2 rounded-md border px-3 py-2 text-body-sm"
+                style={{
+                  background: 'var(--sev-clear-fill)',
+                  borderColor: 'color-mix(in srgb, var(--sev-clear) 35%, transparent)',
+                  color: 'var(--sev-clear)',
+                }}
+              >
+                <ShieldCheck className="h-4 w-4 shrink-0" aria-hidden />
+                Clean record — no claims or chargebacks in your data.
+              </p>
+            ) : (
+              <p className="mt-3 text-body-sm" style={{ color: 'var(--ink-primary)' }}>
+                <span className="font-semibold">This store:</span>{' '}
+                {merchantClaimCount.toLocaleString()} of {merchantOrderCount.toLocaleString()} orders had claims
+                {merchantOrderCount > 0 ? ` (${localClaimRatePct.toFixed(1)}%)` : ''}
+                <span style={{ color: 'var(--ink-tertiary)' }}> · </span>
+                <span className="font-semibold">Merchant-wide:</span>{' '}
+                {profile.total_chargebacks.toLocaleString()} chargeback{profile.total_chargebacks === 1 ? '' : 's'}
+              </p>
+            )}
             <p className="mt-2 t-mono break-all" style={{ color: 'var(--data-id)' }}>
               {profile.primary_email ?? profile.id}
             </p>
@@ -642,23 +662,40 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
                 lastSeenRisk={profile.risk_level}
                 initialWatchlisted={!!watchlistRow}
               />
-              <Link
-                href={`/customers/${profile.id}/evidence/new`}
-                className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors btn-accent"
-                style={!isEligibleForEvidence ? { opacity: 0.85 } : undefined}
-                title={isEligibleForEvidence ? undefined : 'Available when refund or chargeback activity is present'}
+              <Suspense
+                fallback={
+                  <span
+                    className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold btn-accent"
+                    style={{ opacity: 0.85 }}
+                  >
+                    <FileText className="h-3.5 w-3.5" />
+                    Build evidence package
+                  </span>
+                }
               >
-                <FileText className="h-3.5 w-3.5" />
-                Build evidence package
-              </Link>
+                <CustomerProfileEvidenceTrigger
+                  profileId={profile.id}
+                  className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors btn-accent"
+                  style={!isEligibleForEvidence ? { opacity: 0.85 } : undefined}
+                  title={isEligibleForEvidence ? undefined : 'Available when refund or chargeback activity is present'}
+                >
+                  <FileText className="h-3.5 w-3.5" />
+                  Build evidence package
+                </CustomerProfileEvidenceTrigger>
+              </Suspense>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-px overflow-hidden rounded-md border md:grid-cols-5" style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-border)' }}>
             {[
-              { label: 'Identity grade', value: profileGrade, color: 'var(--data-score)' },
-              { label: 'Cross-merchant', value: merchantsSeen > 1 ? `${merchantsSeen} merchants` : 'This store only', color: 'var(--data-score)' },
-              { label: 'Exposure', value: formatCurrencyNullable(totalOrderValue), color: 'var(--data-currency)' },
+              { label: 'Identity grade', value: profileGrade, color: letterGradeTone(profileGrade).fg },
+              {
+                label: 'Cross-merchant',
+                value: merchantsSeen > 1 ? `${merchantsSeen} merchants` : 'This store only',
+                color: 'var(--data-score)',
+              },
+              { label: 'Order value', value: formatCurrencyNullable(totalOrderValue), color: 'var(--data-score)' },
+              { label: 'Claims', value: merchantClaimCount.toLocaleString(), color: 'var(--data-score)' },
               { label: 'Last seen', value: formatDateMode(profile.last_seen, 'table'), color: 'var(--data-date)', mono: true },
             ].map((metric) => (
               <div key={metric.label} className="p-4" style={{ background: 'var(--surface-raised)' }}>
@@ -679,7 +716,7 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
               <span
                 key={index}
                 className="h-2 flex-1 rounded-sm"
-                style={{ background: value > 0 ? 'var(--copper-bright)' : 'var(--surface-muted)', opacity: value > 0 ? 0.9 : 0.55 }}
+                style={{ background: value > 0 ? 'var(--ink-tertiary)' : 'var(--surface-muted)', opacity: value > 0 ? 0.85 : 0.55 }}
               />
             ))}
           </div>
@@ -689,7 +726,7 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
         </div>
       </section>
 
-      {FLAG_EXPERIENCE_POLISH_V1 && (
+      {FLAG_EXPERIENCE_POLISH_V1 && !hasCleanRecord && (
         <div className="mb-[var(--space-5)]">
           <CaseSummaryStrip
             flaggedAt={profile.first_seen}
@@ -721,7 +758,7 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
               <span className="font-mono text-right" style={{ color: 'var(--text)' }}>
                 {merchantClaimCount.toLocaleString()} ({localClaimRatePct.toFixed(1)}%)
               </span>
-              <span style={{ color: 'var(--text-muted)' }}>Exposure</span>
+              <span style={{ color: 'var(--text-muted)' }}>Order value</span>
               <span className="font-mono text-right" style={{ color: 'var(--text)' }}>{formatCurrencyNullable(totalOrderValue)}</span>
               <span style={{ color: 'var(--text-muted)' }}>Refunded</span>
               <span className="font-mono text-right" style={{ color: 'var(--text)' }}>{formatCurrencyNullable(totalRefundedValue)}</span>
@@ -796,44 +833,51 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
 
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-[var(--space-6)]">
         <div className="xl:col-span-8 space-y-[var(--space-5)]">
-          {identityTimeline.length > 0 && (
-            <SectionCard title="Identity timeline" description={variantCount > 0 ? `${variantCount} identifier change${variantCount > 1 ? 's' : ''} across orders` : 'How identifiers evolved over time'}>
-              <IdentityTimeline entries={identityTimeline} />
+          {!hasCleanRecord && (
+            <SectionCard title="Order & claim history" description="Chronological orders and claim events — use this narrative in your helpdesk reply.">
+              <div className="mb-[var(--space-5)] rounded-lg border p-[var(--space-4)]" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)' }}>
+                <div className="flex items-start gap-3">
+                  <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" style={{ color: 'var(--text-muted)' }} />
+                  <p className="text-body-sm leading-relaxed" style={{ color: 'var(--text)' }}>{merchantNarrative}</p>
+                </div>
+
+                {identitySignals.length > 0 && (
+                  <div className="mt-[var(--space-3)] flex flex-wrap gap-[var(--space-2)]">
+                    {identitySignals.map((flag, index) => (
+                      <Badge key={index} tone="neutral" variant="subtle" size="sm">{labelize(flag)}</Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {transactions.length === 0 ? (
+                <EmptyState title="No orders in dataset" description="No transactions found for this customer in the current dataset." />
+              ) : FLAG_EXPERIENCE_POLISH_V1 ? (
+                <>
+                  <BehaviorRoadmap events={roadmapEvents} />
+                  {identityTimeline.length > 0 && (
+                    <div className="mt-[var(--space-4)]">
+                      <IdentityChangesDisclosure entries={identityTimeline} variantCount={variantCount} />
+                    </div>
+                  )}
+                </>
+              ) : (
+                <ol>
+                  {transactions.map((tx: any, index: number) => (
+                    <RoadmapOrderCard key={`${tx.order_id}-${index}`} tx={tx} isLast={index === transactions.length - 1} />
+                  ))}
+                </ol>
+              )}
             </SectionCard>
           )}
 
-          <SectionCard title="Behavioral history" description="Chronological orders and claim events — use this narrative in your helpdesk reply.">
-            <div className="mb-[var(--space-5)] rounded-lg border p-[var(--space-4)]" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)' }}>
-              <div className="flex items-start gap-3">
-                <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" style={{ color: 'var(--text-muted)' }} />
-                <p className="text-body-sm leading-relaxed" style={{ color: 'var(--text)' }}>{merchantNarrative}</p>
-              </div>
-
-              {identitySignals.length > 0 && (
-                <div className="mt-[var(--space-3)] flex flex-wrap gap-[var(--space-2)]">
-                  {identitySignals.map((flag, index) => (
-                    <Badge key={index} tone="neutral" variant="subtle" size="sm">{labelize(flag)}</Badge>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {transactions.length === 0 ? (
-              <EmptyState title="No orders in dataset" description="No transactions found for this customer in the current dataset." />
-            ) : FLAG_EXPERIENCE_POLISH_V1 ? (
-              <BehaviorRoadmap events={roadmapEvents} />
-            ) : (
-              <ol>
-                {transactions.map((tx: any, index: number) => (
-                  <RoadmapOrderCard key={`${tx.order_id}-${index}`} tx={tx} isLast={index === transactions.length - 1} />
-                ))}
-              </ol>
-            )}
-          </SectionCard>
+          {hasCleanRecord && identityTimeline.length > 0 && (
+            <IdentityChangesDisclosure entries={identityTimeline} variantCount={variantCount} />
+          )}
         </div>
 
-        <div className="xl:col-span-4 space-y-[var(--space-5)]">
-          <SectionCard title="Merchant dossier">
+        <div className="xl:col-span-4 space-y-[var(--space-5)] xl:sticky xl:top-4 xl:self-start">
+          <SectionCard title="Record">
             <div className="grid grid-cols-2 gap-[var(--space-3)] mb-[var(--space-4)]">
               <MetricCard label="Merchant orders" value={merchantOrderCount} hint={formatCurrencyNullable(totalOrderValue)} density="compact" />
               <MetricCard label="Merchant claims" value={merchantClaimCount} hint={`${merchantRefundRate}% refund rate`} density="compact" />
@@ -844,15 +888,6 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
             </div>
 
             <div className="space-y-3 pt-[var(--space-4)]" style={{ borderTop: '1px solid var(--border-subtle)' }}>
-              <div>
-                <div className="flex items-center justify-between text-caption mb-1" style={{ color: 'var(--text-muted)' }}>
-                  <span>Profile confidence</span>
-                  <span className="font-semibold" style={{ color: 'var(--text)' }}>{profile.profile_confidence}%</span>
-                </div>
-                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--bg-subtle)' }}>
-                  <div className="h-full rounded-full" style={{ width: `${profile.profile_confidence}%`, background: 'var(--info)' }} />
-                </div>
-              </div>
               <div className="grid grid-cols-2 gap-3 text-caption">
                 <div>
                   <p style={{ color: 'var(--text-muted)' }}>First seen</p>
@@ -999,7 +1034,7 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
             <CustomerNotes customerProfileId={profile.id} />
           </SectionCard>
 
-          <SectionCard title="Case activity">
+          <SectionCard title="Activity">
             {activityLog.length === 0 ? (
               <EmptyState title="No activity yet" description="Actions and changes will appear here." />
             ) : (

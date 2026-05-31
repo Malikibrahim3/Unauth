@@ -393,7 +393,7 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
         <div className="flex h-auto min-h-10 flex-wrap items-center gap-2 rounded-md border px-3 py-2" style={{ background: 'var(--surface-raised)', borderColor: 'var(--surface-border)' }}>
           <span className="t-label mr-1" style={{ color: 'var(--ink-tertiary)' }}>Filters</span>
           {[
-            { label: 'New to review', href: '?risk=high&status=new', highlight: true },
+            { label: 'New', href: '?risk=high&status=new', highlight: true },
             { label: 'Has refunds', href: '?hasRefunds=1' },
             { label: 'Has chargebacks', href: '?hasChargebacks=1' },
             { label: 'Watchlisted', href: '?watchlisted=1' },
@@ -418,10 +418,10 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
       <div className="flex items-center gap-2 flex-wrap">
         <span className="t-label" style={{ color: 'var(--ink-tertiary)' }}>Saved views</span>
         {[
-          { label: 'High-confidence unresolved', href: '?risk=high&status=new' },
-          { label: 'Repeat refund claims', href: '?hasRefunds=1&sort=refundRate' },
+          { label: 'High confidence · new', href: '?risk=high&status=new' },
+          { label: 'Most refund claims', href: '?hasRefunds=1&sort=refundRate' },
           { label: 'Linked identities', href: '?merchantsMin=2' },
-          { label: 'Fast claimants', href: '?fastestClaimMax=3' },
+          { label: 'Fastest claims', href: '?fastestClaimMax=3' },
         ].map(({ label, href }) => (
           <Link
             key={label}
@@ -484,7 +484,12 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
             </div>
           </div>
 
-          {rows.length > 0 && <CustomersTableClient rows={rows} />}
+          {rows.length > 0 && (
+            <CustomersTableClient
+              rows={rows}
+              watchlistFilterActive={sp?.watchlisted === '1'}
+            />
+          )}
         </>
       )}
         </div>

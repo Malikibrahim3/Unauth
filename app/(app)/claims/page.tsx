@@ -441,7 +441,7 @@ export default async function ClaimsPage({
             { label: 'Overdue', value: queueCounts.overdue.toLocaleString(), hint: '>72h open' },
             { label: 'Resolved', value: queueCounts.resolved.toLocaleString(), hint: 'History' },
             { label: 'Total claims', value: queueCounts.total.toLocaleString(), hint: 'All time' },
-            { label: 'Total at risk', value: formatCurrencyNullable(totalAtRisk || null), hint: 'All claims' },
+            { label: 'Open claim value', value: formatCurrencyNullable(totalAtRisk || null), hint: 'All claims' },
           ]}
         />
       }

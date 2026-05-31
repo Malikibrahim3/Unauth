@@ -103,7 +103,7 @@ export default function AuditDemoClient({ initialEmail = '' }: { initialEmail?: 
 
   const subtitle = useMemo(() => {
     if (step === 1) return "We'll tailor the demo to your setup.";
-    if (step === 2) return 'This helps us show you a relevant scale of fraud patterns.';
+    if (step === 2) return 'This helps us show you a relevant scale of identity matches.';
     return "We'll lead with the patterns most relevant to you.";
   }, [step]);
 
@@ -212,7 +212,7 @@ export default function AuditDemoClient({ initialEmail = '' }: { initialEmail?: 
                   marginBottom: '12px',
                 }}
               >
-                See what&apos;s hiding in your data.
+                See which identities repeat in your data.
               </h1>
 
               <p

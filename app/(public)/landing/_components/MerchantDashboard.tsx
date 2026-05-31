@@ -115,7 +115,7 @@ const ACTIVITY = [
   {
     type: 'DISPUTE FILED', typeColor: 'red',
     title: 'ord_7891023 — Northrun chargeback risk',
-    detail: '#u_kessler.07 · $440 at risk · 2nd dispute',
+    detail: '#u_kessler.07 · $440 order value · 2nd dispute',
     time: '2h ago',
   },
   {
@@ -602,7 +602,7 @@ export default function MerchantDashboard() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)' }}>
           {[
             { label: 'Total exposure',   value: '$2,760',          sub: 'across 4 active cases',  trend: '↑ 18%',  tC: t.orange },
-            { label: 'Orders flagged',   value: '11',              sub: 'this audit cycle',        trend: '↑ 4',    tC: t.inkTertiary        },
+            { label: 'Orders matched',   value: '11',              sub: 'this audit cycle',        trend: '↑ 4',    tC: t.inkTertiary        },
             { label: 'Cases open',       value: `${openCases}`,    sub: '2 need action',           trend: null,     tC: null      },
             { label: 'Evidence ready',   value: `${evidenceReady}`,sub: 'packet assembled',        trend: '→',      tC: t.accent    },
             { label: 'Avg refund rate',  value: '62%',             sub: 'vs 18% at cycle start',   trend: '↑ 44pp', tC: t.orange },

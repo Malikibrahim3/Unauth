@@ -9,11 +9,11 @@ export const LABELS = {
   disputeHistory: 'Claim history',
   cluster_id: 'Linked profile ID',
   signals_matched: 'Review reasons',
-  elevated_refund_rate: 'High refund claim rate',
+  elevated_refund_rate: 'Refund rate elevated',
   value_escalation: 'Unusually high order value',
-  crossMerchantSignal: 'Cross-merchant identity link',
-  networkDeviceLink: 'Network device link',
-  ipCluster: 'IP cluster',
+  crossMerchantSignal: 'Matches across merchants',
+  networkDeviceLink: 'Shared device',
+  ipCluster: 'Shared IP address',
 
   email: 'Email',
   emails: 'Emails',
@@ -44,6 +44,18 @@ export const LABELS = {
   address_mismatch: 'Address mismatch',
   name_variant: 'Name variation',
   behavioral_anomaly: 'Unusual order behaviour',
+
+  crossmerchant: 'Matches across merchants',
+  crossmerchant_identity_match: 'Matches across merchants',
+  refund_rate: 'Refund rate elevated',
+  refund_rate_over_60pct: 'Refund rate 60%',
+  payment_fingerprint_match: 'Shared payment card',
+  address_normalization_match: 'Shared address',
+  address_clustering: 'Shared address',
+  card_reuse_observed: 'Shared payment card',
+  refund_velocity_14d: 'Fast repeat claims',
+  network_device_link: 'Shared device',
+  ip_cluster: 'Shared IP address',
 } as const;
 
 export function labelFor(key: string): string {

@@ -146,9 +146,6 @@ export default async function WatchlistPage({ searchParams }: { searchParams?: {
           items={[
             { label: 'Watchlisted', value: total.toLocaleString(), hint: 'Total entries' },
             { label: 'Appeared 30d', value: (appeared30dCount ?? 0).toLocaleString(), hint: 'Watchlisted profiles' },
-            { label: 'Search', value: searchQuery ? 'On' : 'Off', hint: searchQuery || 'No query' },
-            { label: 'Page size', value: pageSize.toLocaleString(), hint: 'Rows per page' },
-            { label: 'Pages', value: totalPages.toLocaleString(), hint: 'Result pages' },
           ]}
         />
       }

@@ -315,17 +315,20 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
       />
 
       {/* ── First insight + ingestion summary (#16/#45/#46) ───────────── */}
-      <SectionCard title="First insight" className="border-[var(--border)]">
+      <SectionCard title="Summary" className="border-[var(--border)]">
         <p className="text-body-sm" style={{ color: 'var(--text)' }}>
+          <strong>{summary.flaggedTransactions.toLocaleString()}</strong> of{' '}
+          <strong>{(runData.processed_rows ?? runData.total_rows ?? 0).toLocaleString()}</strong> orders matched a known
+          identity in this upload
           {networkLinkedCount > 0 ? (
             <>
-              We found <strong>{networkLinkedCount.toLocaleString()}</strong> linked{' '}
-              {networkLinkedCount === 1 ? 'identity' : 'identities'} in your order history — shoppers who appear to
-              operate multiple accounts. Connect to the network to also see customers seen at other merchants.
+              {' '}
+              · <strong>{networkLinkedCount.toLocaleString()}</strong> linked across other merchants
             </>
           ) : (
-            <>No linked identities in your order history yet. Connect to the network to expand coverage across merchants.</>
+            <> · 0 linked across other merchants</>
           )}
+          .
         </p>
         <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-caption" style={{ color: 'var(--text-muted)' }}>
           <span><strong style={{ color: 'var(--text)' }}>{(runData.processed_rows ?? runData.total_rows ?? 0).toLocaleString()}</strong> orders ingested</span>
@@ -434,7 +437,7 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
                         background: 'var(--surface-raised)',
                         borderColor: 'var(--surface-border)',
                         borderTop: `3px solid ${
-                          grade === 'definite' ? 'var(--sev-definite)' :
+                          grade === 'definite' ? 'var(--sev-clear)' :
                           grade === 'probable' ? 'var(--sev-probable)' :
                           'var(--sev-neutral)'
                         }`,
@@ -484,7 +487,7 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
                           <th className="text-left px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Customer</th>
                           <th className="text-right px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Orders ↓</th>
                           <th className="text-right px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Total spend</th>
-                          <th className="text-right px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Max score ↓</th>
+                          <th className="text-right px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Confidence ↓</th>
                           <th className="px-4 py-2.5"></th>
                         </tr>
                       </thead>
@@ -675,8 +678,8 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
                     { label: 'Total rows', value: runData.total_rows.toLocaleString() },
                     { label: 'Processed', value: `${runData.processed_rows.toLocaleString()} (${runData.total_rows > 0 ? ((runData.processed_rows / runData.total_rows) * 100).toFixed(1) : 0}%)` },
                     { label: 'Matched rows', value: summary.flaggedTransactions.toLocaleString() },
-                    { label: 'Order value under review', value: formatCurrency(valueAtRisk) },
-                    { label: 'Estimated exposure', value: formatCurrency(estimatedExposure) },
+                    { label: 'Order value (matched)', value: formatCurrency(valueAtRisk) },
+                    { label: 'Linked order value est.', value: formatCurrency(estimatedExposure) },
                   ].map(({ label, value }) => (
                     <div key={label}>
                       <p className="text-caption mb-0.5" style={{ color: 'var(--text-muted)' }}>{label}</p>

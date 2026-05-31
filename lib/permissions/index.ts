@@ -133,7 +133,7 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   manage_watchlist:        'Manage Watchlist',
   generate_evidence:       'Generate Evidence Packages',
   submit_fraud_feedback:   'Submit Fraud Feedback',
-  dismiss_transaction:     'Dismiss Flagged Transactions',
+  dismiss_transaction:     'Dismiss matched transactions',
   hide_job:                'Hide Upload Jobs',
   bulk_delete:             'Bulk Delete Data',
   manage_team:             'Manage Team Members',

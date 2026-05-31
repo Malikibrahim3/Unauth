@@ -1,7 +1,7 @@
 import UploadClient from '@/components/upload/UploadClient';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { Button, WorkbenchKpiStrip, WorkbenchPage } from '@/components/ui';
+import { Button, WorkbenchPage } from '@/components/ui';
 import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
@@ -69,20 +69,8 @@ export default async function UploadPage({ searchParams }: UploadPageProps) {
       navItems={WORKBENCH_NAV_ITEMS}
       activeNavKey="audits"
       actions={<Link href="/history"><Button variant="secondary" size="sm">View history</Button></Link>}
-      kpiStrip={
-        <WorkbenchKpiStrip
-          colsClassName="grid-cols-2 md:grid-cols-3 xl:grid-cols-5"
-          items={[
-            { label: 'Step', value: 'Upload', hint: 'Source CSV' },
-            { label: 'Max file', value: '200 MB', hint: 'Per upload' },
-            { label: 'Max rows', value: '500k', hint: 'Per file' },
-            { label: 'Flow', value: 'Map & run', hint: 'Column mapping' },
-            { label: 'Output', value: 'Audit run', hint: 'Review queue' },
-          ]}
-        />
-      }
       main={
-        <div className="p-4 lg:max-w-4xl">
+        <div className="mx-auto w-full max-w-3xl p-4">
           {isWelcome && (
             <div
               className="mb-6 rounded-[var(--radius-2)] px-5 py-4"
@@ -95,6 +83,9 @@ export default async function UploadPage({ searchParams }: UploadPageProps) {
             </div>
           )}
           <UploadClient recentImports={recentImports} />
+          <p className="mt-6 text-center text-caption" style={{ color: 'var(--ink-tertiary)' }}>
+            CSV only · up to 200 MB · 500k rows per file · map columns, then run your audit
+          </p>
         </div>
       }
     />

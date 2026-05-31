@@ -16,12 +16,7 @@ interface Props {
   totalFlagged?: number;
 }
 
-export default function AuditRiskChart({ counts, totalRows, totalFlagged }: Props) {
-  const summed = counts.definite + counts.probable + counts.possible + counts.weak;
-  const finalTotalFlagged = typeof totalFlagged === 'number' ? totalFlagged : summed;
-  const finalTotalRows = typeof totalRows === 'number' ? totalRows : finalTotalFlagged;
-
-  return (
-    <AuditCharts counts={counts} totalRows={finalTotalRows} totalFlagged={finalTotalFlagged} />
-  );
+/** Duplicate distribution widgets removed — match strength breakdown is shown in the audit hero. */
+export default function AuditRiskChart(_props: Props) {
+  return null;
 }

@@ -1,6 +1,6 @@
 # Unauth Zendesk sidebar app
 
-Private Zendesk Support app that shows fraud intelligence on every ticket.
+Private Zendesk Support app that shows identity confidence and claims history on every ticket.
 
 ## Installation
 

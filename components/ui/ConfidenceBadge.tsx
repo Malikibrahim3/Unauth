@@ -1,6 +1,7 @@
 'use client';
 
 import { type ConfidenceGradeValue } from '@/lib/confidence';
+import { letterGradeTone } from '@/lib/utils/confidenceStyles';
 
 interface ConfidenceBadgeProps {
   grade: ConfidenceGradeValue;
@@ -10,54 +11,21 @@ interface ConfidenceBadgeProps {
   showLabel?: boolean;
 }
 
-const GRADE_TONE = {
-  A: {
-    fg: 'var(--sev-definite)',
-    fill: 'var(--sev-definite-fill)',
-    label: 'Definite',
-    dashed: false,
-  },
-  B: {
-    fg: 'var(--sev-probable)',
-    fill: 'var(--sev-probable-fill)',
-    label: 'Probable',
-    dashed: false,
-  },
-  C: {
-    fg: 'var(--sev-neutral)',
-    fill: 'var(--sev-neutral-fill)',
-    label: 'Possible',
-    dashed: false,
-  },
-  D: {
-    fg: 'color-mix(in srgb, var(--sev-neutral) 60%, transparent)',
-    fill: 'var(--sev-neutral-fill)',
-    label: 'Weak',
-    dashed: true,
-  },
-  F: {
-    fg: 'var(--ink-tertiary)',
-    fill: 'var(--surface-muted)',
-    label: 'Weak',
-    dashed: true,
-  },
-} as const;
-
-const GRADE_LABEL = {
+const GRADE_LABEL: Record<ConfidenceGradeValue, string> = {
   A: 'Grade A — definite identity match',
   B: 'Grade B — probable identity match',
   C: 'Grade C — possible identity match',
   D: 'Grade D — weak match signals',
   F: 'Grade F — insufficient signals',
-} as const;
+};
 
 export function ConfidenceBadge({
   grade,
   size = 'md',
   showLabel = true,
 }: ConfidenceBadgeProps) {
-  const tone = GRADE_TONE[grade] ?? GRADE_TONE.F;
-  const title = GRADE_LABEL[grade];
+  const tone = letterGradeTone(grade);
+  const title = GRADE_LABEL[grade] ?? GRADE_LABEL.F;
 
   const compact = size === 'sm' || !showLabel;
   const label = tone.label;
@@ -87,20 +55,18 @@ export function ConfidenceBadge({
         {grade}
       </span>
       {!compact && (
-        <>
-          <span
-            className="flex-1 truncate font-sans"
-            style={{
-              color: 'var(--ink-secondary)',
-              fontSize: 10,
-              fontWeight: 600,
-              letterSpacing: '0.01em',
-              lineHeight: 1,
-            }}
-          >
-            {label}
-          </span>
-        </>
+        <span
+          className="flex-1 truncate font-sans"
+          style={{
+            color: 'var(--ink-secondary)',
+            fontSize: 10,
+            fontWeight: 600,
+            letterSpacing: '0.01em',
+            lineHeight: 1,
+          }}
+        >
+          {label}
+        </span>
       )}
     </span>
   );

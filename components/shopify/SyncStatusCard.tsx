@@ -344,7 +344,7 @@ export default function SyncStatusCard() {
               <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
                 {status.orderCount?.toLocaleString() ?? '—'} orders synced
                 {typeof status.auditTransactionCount === 'number'
-                  ? ` · ${status.auditTransactionCount.toLocaleString()} scored for fraud`
+                  ? ` · ${status.auditTransactionCount.toLocaleString()} scored for identity matches`
                   : ''}{' '}
                 · read-only connection
               </p>

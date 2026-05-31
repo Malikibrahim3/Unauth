@@ -26,7 +26,7 @@ function formatDateRange(start?: string | null, end?: string | null): string {
 const UPLOAD_TYPE_LABELS: Record<string, string> = {
   standard: 'Regular',
   historical: 'Historical',
-  investigation: 'Investigation',
+  investigation: 'Customer lookup',
 };
 
 export default function AuditHistoryTableClient({ rows: initialRows }: AuditHistoryTableClientProps) {

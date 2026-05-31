@@ -7,7 +7,7 @@ const ACTION_LABELS: Record<string, string> = {
   lookup_customer: 'Customer lookup performed',
   quick_score: 'Quick score run',
   view_customer: 'Customer profile viewed',
-  update_customer_status: 'Investigation status updated',
+  update_customer_status: 'Review status updated',
   add_customer_note: 'Customer note added',
   delete_customer_note: 'Customer note deleted',
   add_to_watchlist: 'Added to watchlist',

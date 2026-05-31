@@ -38,7 +38,7 @@ const STEPS = [
     headline: 'Identity grade, claims history, and evidence packet — ready to act on.',
     body: 'You get the identity confidence grade, every signal that fired, a factual claims history, and a formatted evidence packet — ready to review, act on, or submit for dispute.',
     screenshot: '/screenshots/pipeline-casefile-v3.png',
-    alt: 'Unauth Customer case file — Nora Kessler, DEFINITE verdict, CONF 0.99, full-page view with exposure, customer roadmap, merchant dossier, and fired signals',
+    alt: 'Unauth customer profile — Nora Kessler, DEFINITE match, confidence 0.99, order value, order history, merchant record, and identity signals',
   },
 ] as const;
 

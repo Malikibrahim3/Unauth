@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ComponentType, CSSProperties, ReactNode } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import {
   AlertTriangle,
   CalendarDays,
@@ -31,6 +30,14 @@ import BehaviorRoadmap from '@/components/customers/BehaviorRoadmap';
 import CaseSummaryStrip from '@/components/customers/CaseSummaryStrip';
 import { getEventStream } from '@/lib/analysis/customerIntelligence';
 import { formatDateMode } from '@/lib/utils/format';
+import {
+  GRADE_COLOURS,
+  GRADE_FILL_COLOURS,
+  GRADE_LABELS,
+} from '@/lib/utils/confidenceStyles';
+import type { ConfidenceGrade } from '@/lib/engine/weights';
+import { BuildEvidencePackageDrawer } from '@/components/evidence/BuildEvidencePackageDrawer';
+import { labelFor } from '@/lib/copy/labels';
 
 // ---------------------------------------------------------------------------
 // Design constants
@@ -50,23 +57,36 @@ const CHIP: CSSProperties = {
   whiteSpace: 'nowrap',
 };
 
-// Identity confidence grade chip — reflects who the person is, never risk.
-function tierChip(grade: string): CSSProperties {
-  switch ((grade ?? '').toLowerCase()) {
-    case 'definite': return { ...CHIP, background: 'var(--sev-definite-fill)', color: 'var(--sev-definite)', border: '1px solid color-mix(in srgb, var(--sev-definite) 40%, transparent)' };
-    case 'probable': return { ...CHIP, background: 'var(--sev-probable-fill)', color: 'var(--sev-probable)', border: '1px solid color-mix(in srgb, var(--sev-probable) 40%, transparent)' };
-    case 'possible': return { ...CHIP, background: 'var(--sev-neutral-fill)',  color: 'var(--sev-neutral)',  border: '1px solid color-mix(in srgb, var(--sev-neutral) 40%, transparent)' };
-    default:         return { ...CHIP, background: 'var(--surface-muted)',      color: 'var(--ink-tertiary)', border: '1px solid var(--surface-border)' };
+function riskLevelToConfidenceGrade(riskLevel: string): ConfidenceGrade {
+  switch ((riskLevel ?? '').toLowerCase()) {
+    case 'definite':
+      return 'definite';
+    case 'probable':
+      return 'probable';
+    case 'possible':
+    case 'candidate':
+      return 'possible';
+    default:
+      return 'weak';
   }
 }
 
+// Identity confidence grade chip — certainty colours, not fraud severity.
+function tierChip(grade: string): CSSProperties {
+  const mapped = riskLevelToConfidenceGrade(grade);
+  const fg = GRADE_COLOURS[mapped];
+  return {
+    ...CHIP,
+    background: GRADE_FILL_COLOURS[mapped],
+    color: fg,
+    border: `1px solid color-mix(in srgb, ${fg} 40%, transparent)`,
+  };
+}
+
 function tierLabel(grade: string): string {
-  switch ((grade ?? '').toLowerCase()) {
-    case 'definite': return 'Definite match';
-    case 'probable': return 'Probable match';
-    case 'possible': return 'Possible match';
-    default:         return 'Weak signals';
-  }
+  const mapped = riskLevelToConfidenceGrade(grade);
+  const base = GRADE_LABELS[mapped];
+  return mapped === 'weak' ? 'Weak signals' : `${base} match`;
 }
 
 function buildPlainVerdict(
@@ -193,7 +213,7 @@ function DetailLine({
 // ---------------------------------------------------------------------------
 
 function flagLabel(flag: string) {
-  return flag.replace(/[_-]/g, ' ').replace(/\b\w/g, (m) => m.toUpperCase());
+  return labelFor(flag);
 }
 
 function lifecycleTitle(order: OrderHistoryEntry) {
@@ -355,6 +375,8 @@ export default function CustomerIntelligenceDrawer({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ordersExpanded, setOrdersExpanded] = useState(false);
+  const [evidenceOpen, setEvidenceOpen] = useState(false);
+  const [evidenceOrderId, setEvidenceOrderId] = useState<string | undefined>();
   const drawerRef = useRef<HTMLDivElement>(null);
   const isNotFoundError = error?.startsWith('HTTP 404');
 
@@ -405,7 +427,7 @@ export default function CustomerIntelligenceDrawer({
         ref={drawerRef}
         role="dialog"
         aria-modal="true"
-        aria-label="Customer case file"
+        aria-label="Customer summary"
         style={{
           position: 'fixed', top: 0, right: 0, zIndex: 50,
           height: '100%', width: '100%', maxWidth: 629,
@@ -433,7 +455,7 @@ export default function CustomerIntelligenceDrawer({
           <div>
             <div style={OVERLINE}>
               <span aria-hidden="true" className="ua-section-dot" />
-              Customer case file
+              Customer summary
             </div>
             <p style={{ fontSize: 12, color: 'var(--ink-secondary)', marginTop: 2 }}>
               What happened, in order
@@ -495,10 +517,23 @@ export default function CustomerIntelligenceDrawer({
               ordersExpanded={ordersExpanded}
               onToggleOrders={() => setOrdersExpanded((v) => !v)}
               onClose={onClose}
+              onBuildEvidence={(orderId) => {
+                setEvidenceOrderId(orderId);
+                setEvidenceOpen(true);
+              }}
             />
           )}
         </div>
       </div>
+
+      {resolvedProfileId && (
+        <BuildEvidencePackageDrawer
+          open={evidenceOpen}
+          onClose={() => setEvidenceOpen(false)}
+          profileId={resolvedProfileId}
+          preselectedOrderId={evidenceOrderId}
+        />
+      )}
     </>
   );
 }
@@ -512,13 +547,14 @@ function DrawerContent({
   ordersExpanded,
   onToggleOrders,
   onClose,
+  onBuildEvidence,
 }: {
   panel: CustomerIntelligencePanel;
   ordersExpanded: boolean;
   onToggleOrders: () => void;
   onClose: () => void;
+  onBuildEvidence: (preselectedOrderId?: string) => void;
 }) {
-  const router = useRouter();
   const { profile, orderHistory, identityTimeline, linkedAccounts, narrative } = panel;
   const visibleOrders = ordersExpanded ? orderHistory : orderHistory.slice(0, 6);
   const variantCount = identityTimeline.filter((e) => e.isVariant).length;
@@ -527,6 +563,7 @@ function DrawerContent({
     orderHistory.reduce((sum, o) => sum + (o.orderValue ?? 0), 0);
   const totalRefundValue = orderHistory.reduce((sum, o) => sum + (o.refundAmount ?? 0), 0);
   const claimCount = orderHistory.filter((o) => o.refundRequested || o.returnRequested || o.chargebackFiled).length;
+  const hasCleanRecord = claimCount === 0 && profile.total_chargebacks === 0;
   const displayName = profile.names[0] ?? profile.primary_email ?? 'Unknown customer';
   const summary = signalSummary(profile.risk_score, claimCount, variantCount);
   const hasProfileId = Boolean(profile.id?.trim());
@@ -537,16 +574,9 @@ function DrawerContent({
   const disputedOrder = orderHistory.find(
     (o) => o.refundRequested || o.chargebackFiled,
   );
-  const evidenceHref = hasProfileId
-    ? `/customers/${profile.id}/evidence/new${
-        disputedOrder?.transactionId ? `?disputedOrder=${encodeURIComponent(disputedOrder.transactionId)}` : ''
-      }`
-    : null;
-
   function openEvidenceCompile() {
-    if (!evidenceHref) return;
-    onClose();
-    router.push(evidenceHref);
+    if (!hasProfileId) return;
+    onBuildEvidence(disputedOrder?.transactionId);
   }
   const density = Array.from({ length: 12 }, () => 0);
   for (const order of orderHistory) {
@@ -606,9 +636,24 @@ function DrawerContent({
           {plainVerdict}
         </p>
         <p style={{ fontSize: 11, color: 'var(--ink-tertiary)', marginTop: 8, lineHeight: 1.5 }}>
-          Refund and chargeback claims on record are listed below, with their source. Compile the signal data into an evidence package if you need documentation.
+          {hasCleanRecord
+            ? 'No claims or chargebacks in your data for this customer. Identity details are below.'
+            : 'Refund and chargeback claims on record are listed below, with their source. Compile the signal data into an evidence package if you need documentation.'}
         </p>
       </div>
+
+      {hasCleanRecord && (
+        <p
+          className="mb-3 rounded-md border px-3 py-2 text-body-sm"
+          style={{
+            background: 'var(--sev-clear-fill)',
+            borderColor: 'color-mix(in srgb, var(--sev-clear) 35%, transparent)',
+            color: 'var(--sev-clear)',
+          }}
+        >
+          Clean record — no claims or chargebacks in your data.
+        </p>
+      )}
 
       {/* ── Case file header card ────────────────────────────────── */}
       <div style={{
@@ -631,7 +676,7 @@ function DrawerContent({
           <div className="flex items-center gap-2">
             <span style={{
               width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
-              background: profile.risk_level === 'definite' ? 'var(--sev-definite)' : profile.risk_level === 'probable' ? 'var(--sev-probable)' : 'var(--ink-tertiary)',
+              background: GRADE_COLOURS[riskLevelToConfidenceGrade(profile.risk_level)],
             }} aria-hidden="true" />
             <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.01em', color: 'var(--ink-secondary)' }}>
               Customer review
@@ -706,7 +751,7 @@ function DrawerContent({
         </div>
       </div>
 
-      {/* ── Investigation status ─────────────────────────────────── */}
+      {/* ── Review status ────────────────────────────────────────── */}
       {hasProfileId && (
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
@@ -716,7 +761,7 @@ function DrawerContent({
           borderRadius: 4,
           marginBottom: 4,
         }}>
-          <span style={{ fontSize: 11, color: 'var(--ink-secondary)' }}>Investigation status</span>
+          <span style={{ fontSize: 11, color: 'var(--ink-secondary)' }}>Review status</span>
           <select
             value={status}
             onChange={(e) => handleStatusChange(e.target.value)}
@@ -758,7 +803,7 @@ function DrawerContent({
             <ShieldCheck style={{ marginTop: 1, width: 14, height: 14, flexShrink: 0, color: 'var(--copper-bright)' }} />
             <p style={{ fontSize: 12, color: 'var(--ink-primary)', lineHeight: 1.6 }}>{narrative}</p>
           </div>
-          {identitySignals.length > 0 && (
+          {!hasCleanRecord && identitySignals.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-1">
               {identitySignals.map((flag) => (
                 <span key={flag} style={{ ...CHIP, background: 'var(--surface-muted)', color: 'var(--ink-secondary)', border: '1px solid var(--surface-border)' }}>
@@ -770,17 +815,19 @@ function DrawerContent({
         </div>
       </Section>
 
-      <CaseSummaryStrip
-        flaggedAt={profile.first_seen}
-        orders={profile.total_orders}
-        exposure={totalOrderValue}
-        cadence={Math.min(5, Math.max(1, Math.ceil(profile.total_orders / 3)))}
-        lastSeen={profile.last_seen}
-        density={density}
-      />
+      {!hasCleanRecord && (
+        <CaseSummaryStrip
+          flaggedAt={profile.first_seen}
+          orders={profile.total_orders}
+          exposure={totalOrderValue}
+          cadence={Math.min(5, Math.max(1, Math.ceil(profile.total_orders / 3)))}
+          lastSeen={profile.last_seen}
+          density={density}
+        />
+      )}
 
-      {/* ── Behavior roadmap ─────────────────────────────────────── */}
-      <Section title={`Customer roadmap`} count={orderHistory.length}>
+      {!hasCleanRecord && (
+      <Section title="Order & claim history" count={orderHistory.length}>
         {orderHistory.length === 0 ? (
           <p style={{ fontSize: 12, color: 'var(--ink-secondary)', fontStyle: 'italic' }}>No orders in current dataset.</p>
         ) : (
@@ -802,6 +849,7 @@ function DrawerContent({
           </>
         )}
       </Section>
+      )}
 
       {/* ── Identity trail ───────────────────────────────────────── */}
       {(identityTimeline.length > 0 || linkedAccounts.length > 0) && (

@@ -72,7 +72,7 @@ export const COPY = {
 
   // Filter labels
   allCustomers: 'All customers',
-  flaggedForReview: 'Flagged for review',
+  flaggedForReview: 'Matched for review',
   linkedAccounts: 'Linked accounts',
   highRefundRate: 'High refund rate',
   withMatchSignals: 'With match signals',

@@ -27,9 +27,9 @@ const STEPS = [
   },
   {
     id: 'review',
-    label: 'Review flagged customers',
+    label: 'Review matched customers',
     icon: Users,
-    body: 'Analysts work the queue by confidence grade, exposure, and network footprint rather than scanning every transaction manually.',
+    body: 'Work the queue by confidence grade, order value, and network footprint rather than scanning every transaction manually.',
   },
   {
     id: 'evidence',

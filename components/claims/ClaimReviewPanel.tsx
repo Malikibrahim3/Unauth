@@ -1125,7 +1125,7 @@ export default function ClaimReviewPanel({ profileId, initialClaimId }: { profil
         <div className="space-y-4 min-w-0 order-1 min-[1100px]:col-start-1 min-[1100px]:row-start-1">
 
           <section className="rounded-xl p-4 border" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}>
-            <p className="text-caption font-semibold mb-3" style={{ color: 'var(--ink-secondary)' }}>Case intelligence</p>
+            <p className="text-caption font-semibold mb-3" style={{ color: 'var(--ink-secondary)' }}>Claim context</p>
             {selectedClaim ? (
               <>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">

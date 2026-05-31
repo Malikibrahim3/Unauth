@@ -276,7 +276,6 @@ export default function AuditCustomersTableClient({
               <th className="text-left px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Customer</th>
               <th className="text-right px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Orders ↓</th>
               <th className="text-right px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Spend</th>
-              <th className="text-right px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Max score ↓</th>
               <th className="px-4 py-2.5" />
             </tr>
           </thead>
@@ -298,7 +297,6 @@ export default function AuditCustomersTableClient({
                 </td>
                 <td className="px-4 py-2.5 text-right font-mono" style={{ color: 'var(--text)' }}>{row.orderCount}</td>
                 <td className="px-4 py-2.5 text-right font-mono" style={{ color: 'var(--text)' }}>{formatCurrency(row.totalSpend)}</td>
-                <td className="px-4 py-2.5 text-right font-mono font-semibold" style={{ color: 'var(--text)' }}>{Math.round(row.maxScore)}</td>
                 <td className="px-4 py-2.5 text-right">
                   <button
                     onClick={(e) => { e.stopPropagation(); openDrawerForRow(row); }}
@@ -313,7 +311,7 @@ export default function AuditCustomersTableClient({
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
+                <td colSpan={4} className="px-4 py-6 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
                   No customers match your filters.
                 </td>
               </tr>
@@ -339,7 +337,6 @@ export default function AuditCustomersTableClient({
               <div className="flex items-center gap-3 mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>
                 <span>{row.orderCount} orders</span>
                 <span>{formatCurrency(row.totalSpend)}</span>
-                <span className="font-semibold font-mono" style={{ color: 'var(--text)' }}>Score {Math.round(row.maxScore)}</span>
               </div>
             </div>
             <button

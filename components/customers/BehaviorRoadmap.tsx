@@ -34,8 +34,8 @@ interface BehaviorRoadmapProps {
 
 const GLYPHS: Record<BehaviorRoadmapEventType, { symbol: string; color: string; tag?: string }> = {
   order_placed: { symbol: '■', color: 'var(--sev-neutral)' },
-  order_refunded: { symbol: '●', color: 'var(--sev-definite)', tag: 'HIGH' },
-  chargeback_filed: { symbol: '✕', color: 'var(--sev-definite)', tag: 'HIGH' },
+  order_refunded: { symbol: '●', color: 'var(--sev-probable)' },
+  chargeback_filed: { symbol: '✕', color: 'var(--sev-probable)' },
   identity_change: { symbol: '◆', color: 'var(--sev-probable)' },
   watchlist_add: { symbol: '✓', color: 'var(--sev-clear)' },
   cross_merchant_signal: { symbol: '◆', color: 'color-mix(in srgb, var(--sev-neutral) 60%, transparent)' },
@@ -61,7 +61,7 @@ function DensitySvg({ events }: { events: BehaviorRoadmapEvent[] }) {
     <svg className="h-5 w-full" viewBox="0 0 180 20" preserveAspectRatio="none" aria-hidden="true">
       {buckets.map((bucket, index) => {
         const height = Math.max(2, (bucket.total / max) * 18);
-        const fill = bucket.high > 0 ? 'var(--sev-definite)' : bucket.total > 1 ? 'var(--sev-probable)' : 'var(--sev-neutral)';
+        const fill = bucket.total > 0 ? 'var(--ink-tertiary)' : 'var(--surface-muted)';
         return (
           <rect
             key={index}
@@ -85,10 +85,7 @@ export default function BehaviorRoadmap({ events }: BehaviorRoadmapProps) {
     const tags = new Set<string>();
     for (const event of events) {
       for (const evidence of event.evidence ?? []) {
-        const label = labelFor(evidence).toUpperCase();
-        if (label.includes('ADDRESS')) tags.add('ADDRESS CLUSTERING');
-        if (label.includes('MERCHANT') || label.includes('NETWORK')) tags.add('CROSS-MERCHANT IDENTITY LINK');
-        if (label.includes('DEVICE') || label.includes('IP')) tags.add('NETWORK DEVICE LINK');
+        tags.add(labelFor(evidence));
       }
     }
     return Array.from(tags).slice(0, 4);
@@ -98,12 +95,12 @@ export default function BehaviorRoadmap({ events }: BehaviorRoadmapProps) {
     <div className="overflow-hidden rounded-md border" style={{ background: 'var(--surface-raised)', borderColor: 'var(--surface-border)' }}>
       <div className="border-b px-4 py-3" style={{ borderColor: 'var(--surface-border)' }}>
         <div className="flex items-center justify-between gap-3">
-          <p className="text-[13px] font-semibold" style={{ color: 'var(--ink-primary)' }}>Behavior roadmap</p>
+          <p className="text-[13px] font-semibold" style={{ color: 'var(--ink-primary)' }}>Order & claim history</p>
           <p className="t-mono" style={{ color: 'var(--ink-secondary)' }}>{events.length} events</p>
         </div>
         <div
           className="mt-2 cursor-help"
-          title="Event density over 90 days — each bar is a 5-day window; red = refunds or chargebacks, amber = regular orders"
+          title="Event density over 90 days — each bar is a 5-day window of orders and claims"
         >
           <DensitySvg events={events} />
         </div>

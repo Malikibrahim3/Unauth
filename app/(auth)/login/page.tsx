@@ -120,7 +120,7 @@ function LoginPageInner() {
             {isSignUp ? 'Create account' : 'Sign in'}
           </h1>
           <p className="t-caption mb-5" style={{ color: 'var(--ink-tertiary)' }}>
-            {isSignUp ? 'Create your store workspace' : 'Sign in to your fraud investigation workspace'}
+            {isSignUp ? 'Create your store workspace' : 'Sign in to your identity and claims workspace'}
           </p>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -213,7 +213,7 @@ function LoginPageInner() {
             </button>
           </p>
           <p className="mt-4 text-center t-caption" style={{ color: 'var(--ink-tertiary)' }}>
-            By signing in, you agree to use Unauth for authorised investigations only.
+            By {isSignUp ? 'creating an account' : 'signing in'}, you agree to use Unauth for authorised business use only.
           </p>
         </section>
       </div>

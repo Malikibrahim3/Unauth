@@ -40,9 +40,9 @@ function variantStyle(variant: ButtonVariant): React.CSSProperties {
   switch (variant) {
     case 'primary':
       return {
-        background: 'var(--copper-bright)',
+        background: 'var(--accent)',
         color: 'var(--ink-inverse)',
-        border: '1px solid var(--copper-bright)',
+        border: '1px solid var(--accent)',
         boxShadow: 'inset 0 1px 0 rgba(240,235,227,0.18)',
       };
     case 'secondary':

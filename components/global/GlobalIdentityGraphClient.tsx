@@ -10,6 +10,7 @@ import ReactFlow, {
 } from 'reactflow';
 import { ConfidenceBadge } from '@/components/ui/ConfidenceBadge';
 import { Button } from '@/components/ui/Button';
+import { GRADE_COLOURS } from '@/lib/utils/confidenceStyles';
 
 export type GlobalGraphProfile = {
   id: string;
@@ -46,10 +47,10 @@ function gradeLabel(grade: string | null | undefined) {
 }
 
 function gradeColor(grade: string | null | undefined) {
-  if (grade === 'definite') return 'var(--sev-definite)';
-  if (grade === 'probable') return 'var(--sev-probable)';
-  if (grade === 'possible') return 'var(--sev-neutral)';
-  return 'var(--ink-tertiary)';
+  if (grade === 'definite') return GRADE_COLOURS.definite;
+  if (grade === 'probable') return GRADE_COLOURS.probable;
+  if (grade === 'possible') return GRADE_COLOURS.possible;
+  return GRADE_COLOURS.weak;
 }
 
 function profileName(profile: GlobalGraphProfile) {

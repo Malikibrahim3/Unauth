@@ -53,6 +53,30 @@ function signalList(row: QueueRow): string[] {
   return row.signals_matched.filter((s): s is string => typeof s === 'string' && s.length > 0);
 }
 
+type DedupedQueueEntry = {
+  row: QueueRow;
+  profileId: string | undefined;
+  extraOrders: number;
+};
+
+function dedupeQueueByCustomer(
+  rows: QueueRow[],
+  profileIdByTx: Map<string, string>,
+): DedupedQueueEntry[] {
+  const byKey = new Map<string, DedupedQueueEntry>();
+  for (const row of rows) {
+    const profileId = profileIdByTx.get(row.id);
+    const key = profileId ?? row.customer_email ?? row.customer_name ?? row.id;
+    const existing = byKey.get(key);
+    if (!existing) {
+      byKey.set(key, { row, profileId, extraOrders: 0 });
+    } else {
+      existing.extraOrders += 1;
+    }
+  }
+  return Array.from(byKey.values());
+}
+
 function gradeFromQueueRow(row: QueueRow): 'A' | 'B' | 'C' | 'D' | 'F' {
   if (row.identity_confidence_grade) {
     return riskLevelToNewGrade(row.identity_confidence_grade);
@@ -189,7 +213,7 @@ export default async function DashboardPage() {
           <div className="min-w-0">
             <h1 className="t-heading" style={{ color: 'var(--ink-primary)' }}>Dashboard</h1>
             <p className="text-body-sm mt-1" style={{ color: 'var(--ink-secondary)' }}>
-              Investigation intelligence — look up customers, export evidence, and take findings back to your helpdesk.
+              Look up customers, review linked identities, and export evidence for your helpdesk.
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -208,21 +232,21 @@ export default async function DashboardPage() {
         <div className="flex items-center gap-2 border-b px-4 py-2" style={{ borderColor: 'var(--border-default)', background: 'var(--bg-surface-alt)' }}>
           <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: 'var(--sev-neutral)' }} aria-hidden="true" />
           <span className="t-caption" style={{ color: 'var(--ink-secondary)' }}>
-            Operating in Siloed Mode — analysing your store data only. Connect to the network to expand coverage.
+            Showing your store&apos;s data only. Connect more sources to widen identity coverage.
           </span>
         </div>
 
         <div className="grid grid-cols-2 border-b md:grid-cols-4" style={{ borderColor: 'var(--border-default)' }}>
           {[
             {
-              label: 'Shoppers to review',
+              label: 'Linked identities',
               value: reviewQueue === null ? 'Unavailable' : reviewQueue === 0 ? '—' : reviewQueue.toLocaleString(),
-              hint: reviewQueue === null ? 'Count could not be loaded' : 'Linked identities in your data',
+              hint: reviewQueue === null ? 'Count could not be loaded' : 'Profiles with identity matches in your data',
             },
             {
-              label: 'Exposure at risk',
+              label: 'Order value linked',
               value: exposureAtRisk === null ? 'Unavailable' : formatCurrencyNullable(exposureAtRisk),
-              hint: exposureAtRisk === null ? 'Could not be computed' : 'Flagged order value',
+              hint: exposureAtRisk === null ? 'Could not be computed' : 'Order value linked to matched identities',
             },
             {
               label: 'Evidence packages ready',
@@ -245,7 +269,7 @@ export default async function DashboardPage() {
               }}
             >
               <p className="t-label" style={{ color: 'var(--ink-tertiary)' }}>{metric.label}</p>
-              <p className="t-display mt-1 num" style={{ color: metric.label.toLowerCase().includes('exposure') ? 'var(--data-currency)' : 'var(--data-score)' }}>{metric.value}</p>
+              <p className="t-display mt-1 num" style={{ color: 'var(--data-score)' }}>{metric.value}</p>
               <p className="t-caption mt-1" style={{ color: 'var(--ink-tertiary)' }}>{metric.hint}</p>
             </div>
           ))}
@@ -255,7 +279,7 @@ export default async function DashboardPage() {
           <section className="border-r" style={{ borderColor: 'var(--border-default)' }}>
             <div className="flex items-center justify-between border-b px-4 py-2" style={{ borderColor: 'var(--border-default)', background: 'var(--bg-surface-alt)' }}>
               <div>
-                <p className="text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Flagged customers to review</p>
+                <p className="text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Customers with claim history</p>
                 <p className="text-caption" style={{ color: 'var(--text-subtle)' }}>
                   Look up by email, then take intelligence back to Gorgias or Zendesk
                 </p>
@@ -279,15 +303,14 @@ export default async function DashboardPage() {
               </div>
             ) : (
               <div>
-                {reviewRows.map((row) => {
+                {dedupeQueueByCustomer(reviewRows, profileIdByTx).map(({ row, profileId, extraOrders }) => {
                   const score = row.identity_score === null ? null : Math.round(row.identity_score);
-                  const profileId = profileIdByTx.get(row.id);
                   const href = profileId ? `/customers/${profileId}` : `/audit/${row.job_id}/transaction/${row.id}`;
                   const signalCount = signalList(row).length;
                   const networkLinked = signalList(row).some((signal) => signal.toLowerCase().includes('crossmerchant'));
                   return (
                     <Link
-                      key={row.id}
+                      key={profileId ?? row.id}
                       href={href}
                       className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 border-b px-4 py-3 hover-bg-subtle"
                       style={{ borderColor: 'var(--border-subtle)' }}
@@ -305,6 +328,7 @@ export default async function DashboardPage() {
                           {row.order_id ?? row.id} · {formatCurrencyNullable(toNumber(row.order_value))}
                         </p>
                         <p className="text-caption mt-1" style={{ color: 'var(--text-subtle)' }}>
+                          {extraOrders > 0 ? `+${extraOrders} more order${extraOrders === 1 ? '' : 's'} · ` : ''}
                           {signalCount > 0 ? `${signalCount} signal${signalCount === 1 ? '' : 's'} matched` : 'No signal breakdown'} · {formatDateMode(row.processed_at, 'recent')}
                         </p>
                       </div>
@@ -374,18 +398,6 @@ export default async function DashboardPage() {
                   ))}
                 </div>
               )}
-            </div>
-
-            <div className="border-b px-4 py-2" style={{ borderColor: 'var(--border-default)', background: 'var(--bg-surface-alt)' }}>
-              <p className="text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Exposure at risk</p>
-            </div>
-            <div className="border-b px-4 py-2" style={{ borderColor: 'var(--border-subtle)' }}>
-              <p className="t-display num" style={{ color: 'var(--data-currency)' }}>
-                {exposureAtRisk === null ? '—' : formatCurrencyNullable(exposureAtRisk)}
-              </p>
-              <p className="text-caption mt-1" style={{ color: 'var(--text-muted)' }}>
-                Estimated value tied to flagged identities in your current dataset.
-              </p>
             </div>
 
             <div className="border-b px-4 py-2" style={{ borderColor: 'var(--border-default)', background: 'var(--bg-surface-alt)' }}>

@@ -55,9 +55,8 @@ export default function HowItWorksPage() {
             routine gives you a continuously updated picture of your customer base.
           </p>
           <p>
-            You can also run a one-off investigation upload for a specific customer — export every order associated
-            with their email from your platform and upload it. Unauth will focus entirely on building that
-            customer&apos;s profile.
+            You can also run a one-off customer lookup upload — export every order associated with their email from
+            your platform and upload it. Unauth will focus entirely on building that customer&apos;s profile.
           </p>
         </div>
       </section>
@@ -84,7 +83,7 @@ export default function HowItWorksPage() {
             is highlighted in the identity evidence export.
           </p>
           <p>
-            We present fraud intelligence and identity match data for your review. We do not claim any export is
+            We present identity confidence and claims history for your review. We do not claim any export is
             card-network compliant or guarantees a dispute outcome. Merchants decide how to use the report with
             their acquirer or processor.
           </p>

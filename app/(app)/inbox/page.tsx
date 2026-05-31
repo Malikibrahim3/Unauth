@@ -139,7 +139,7 @@ export default async function InboxPage({ searchParams }: { searchParams?: Promi
   return (
     <WorkbenchPage
       title="Inbox"
-      subtitle="Identity-flagged transactions awaiting review"
+      subtitle="Matched orders awaiting identity review"
       navItems={WORKBENCH_NAV_ITEMS}
       activeNavKey="inbox"
       actions={
@@ -152,9 +152,9 @@ export default async function InboxPage({ searchParams }: { searchParams?: Promi
         <WorkbenchKpiStrip
           items={[
             { label: 'Active inbox', value: total.toLocaleString(), hint: 'Unresolved identity reviews' },
-            { label: 'Value at risk', value: formatCurrencyNullable(totalValueAtRisk), hint: 'Current page estimate' },
-            { label: 'Ready to decide', value: items.filter((i) => i.match_status === 'definite' || (i.identity_score ?? 0) >= 85).length.toLocaleString(), hint: 'High-confidence on this page' },
-            { label: 'Needs review', value: items.filter((i) => i.match_status === 'probable' || (i.identity_score ?? 0) >= 70).length.toLocaleString(), hint: 'Elevated risk on this page' },
+            { label: 'Order value', value: formatCurrencyNullable(totalValueAtRisk), hint: 'Current page total' },
+            { label: 'High confidence', value: items.filter((i) => i.match_status === 'definite' || (i.identity_score ?? 0) >= 85).length.toLocaleString(), hint: 'Definite matches on this page' },
+            { label: 'Probable matches', value: items.filter((i) => i.match_status === 'probable' || (i.identity_score ?? 0) >= 70).length.toLocaleString(), hint: 'Probable tier on this page' },
             { label: 'Claims active', value: claimQueueCounts.active.toLocaleString(), hint: 'Unresolved claim work' },
             { label: 'Claims new/unread', value: claimQueueCounts.unread.toLocaleString(), hint: 'Not yet opened' },
             { label: 'Claims overdue', value: claimQueueCounts.overdue.toLocaleString(), hint: '>72h open' },
@@ -202,7 +202,7 @@ export default async function InboxPage({ searchParams }: { searchParams?: Promi
       main={items.length === 0 ? (
         <WorkbenchEmptyState
           title="You're all caught up"
-          description="No flagged identity matches need review right now."
+          description="No matched orders need review right now."
           action={<Link href="/upload" className="text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>Upload a CSV to get started</Link>}
         />
       ) : (

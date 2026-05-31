@@ -36,6 +36,7 @@ export default function InvestigationStatusSelect({ profileId, initialStatus }: 
       value={status}
       onChange={handleChange}
       disabled={saving}
+      aria-label="Review status"
       className="text-sm rounded-md px-2.5 py-1 font-medium focus:outline-none cursor-pointer disabled:opacity-60"
       style={statusStyle(status)}
     >

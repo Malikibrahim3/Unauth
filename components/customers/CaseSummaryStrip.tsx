@@ -28,12 +28,12 @@ export default function CaseSummaryStrip({
     <div style={{ background: 'var(--surface-raised)', border: '1px solid var(--surface-border)', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-sm)' }}>
       <div style={{ borderBottom: '1px solid var(--surface-border)', padding: '10px 14px' }}>
         <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink-primary)', lineHeight: 1 }}>
-          Case at a glance
+          Summary
         </div>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4 p-4">
         <div>
-          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.01em', color: 'var(--ink-secondary)' }}>Flagged</div>
+          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.01em', color: 'var(--ink-secondary)' }}>First seen</div>
           <div className="mt-1 num" style={{ fontFamily: 'var(--font-mono)', color: 'var(--data-date)' }}>{formatDateMode(flaggedAt, 'table')}</div>
         </div>
         <div>
@@ -41,8 +41,8 @@ export default function CaseSummaryStrip({
           <div className="mt-1 num" style={{ fontFamily: 'var(--font-mono)', color: 'var(--data-score)' }}>{orders}</div>
         </div>
         <div>
-          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.01em', color: 'var(--ink-secondary)' }}>Exposure</div>
-          <div className="mt-1 num" style={{ fontFamily: 'var(--font-mono)', color: 'var(--data-currency)' }}>{formatCurrencyCompact(exposure)}</div>
+          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.01em', color: 'var(--ink-secondary)' }}>Order value</div>
+          <div className="mt-1 num" style={{ fontFamily: 'var(--font-mono)', color: 'var(--data-score)' }}>{formatCurrencyCompact(exposure)}</div>
         </div>
         <div>
           <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.01em', color: 'var(--ink-secondary)' }}>Cadence</div>
@@ -62,7 +62,7 @@ export default function CaseSummaryStrip({
       </div>
       <div
         className="flex gap-1 px-4 pb-4 cursor-help"
-        title="Weekly order activity — each bar is one week; darker red = higher volume of flagged orders or refund claims"
+        title="Weekly order activity — each bar is one week of orders and claims in your data"
       >
         {density.map((value, index) => (
           <span
@@ -72,7 +72,7 @@ export default function CaseSummaryStrip({
               flex: 1,
               height: 10,
               borderRadius: 2,
-              background: value > maxDensity * 0.65 ? 'var(--sev-definite)' : value > 0 ? 'var(--copper-bright)' : 'var(--surface-muted)',
+              background: value > 0 ? 'var(--ink-tertiary)' : 'var(--surface-muted)',
               opacity: value > 0 ? 0.9 : 0.45,
             }}
           />

@@ -25,7 +25,7 @@ test.describe('Claim Review Panel — accordion/rail regression', () => {
     test.skip(!href, 'No active claims available');
 
     // Case intelligence section must be visible
-    const intelligenceSection = page.getByText('Case intelligence');
+    const intelligenceSection = page.getByText('Claim context');
     await expect(intelligenceSection).toBeVisible();
 
     // Edit form should be collapsed (button present, form fields hidden)

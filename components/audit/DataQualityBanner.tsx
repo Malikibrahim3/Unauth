@@ -29,7 +29,7 @@ export default function DataQualityBanner({ report, runId }: Props) {
   const warnings = report.pipelineWarnings;
   const warningMessages = [
     warnings?.fastContextReadFailures
-      ? `Historical fraud-entity lookups failed for ${warnings.fastContextReadFailures} batch${warnings.fastContextReadFailures === 1 ? '' : 'es'}. Some cross-batch matches may be missing.`
+      ? `Historical identity-entity lookups failed for ${warnings.fastContextReadFailures} batch${warnings.fastContextReadFailures === 1 ? '' : 'es'}. Some cross-batch matches may be missing.`
       : null,
     warnings?.fastContextReadRetries
       ? `Historical lookups needed ${warnings.fastContextReadRetries} retry attempt${warnings.fastContextReadRetries === 1 ? '' : 's'}.`

@@ -37,7 +37,7 @@ export default async function GorgiasIntegrationPage() {
           </h1>
         </div>
         <p className="mt-1 text-sm" style={{ color: 'var(--text-muted)' }}>
-          Add Unauth fraud intelligence to every support ticket
+          Show identity confidence and claims history on every support ticket.
         </p>
       </div>
 

@@ -36,7 +36,7 @@ const INTEGRATIONS = [
     name: 'Zendesk',
     description: 'Show identity matches and claims history while agents handle tickets',
     kind: 'connectable' as const,
-    statusKey: null,
+    statusKey: 'zendesk' as const,
     href: '/settings/integrations/zendesk',
     logo: '/integrations/zendesk.svg',
   },
@@ -64,6 +64,7 @@ type ConnectionState = { connected: boolean; detail: string | null };
 type ConnectionStatus = {
   gorgias: ConnectionState;
   shopify: ConnectionState;
+  zendesk: ConnectionState;
 };
 
 function formatDate(value: string | null) {
@@ -110,12 +111,14 @@ export default function ApiIntegrationsClient() {
 
   async function loadConnections() {
     try {
-      const [gRes, sRes] = await Promise.all([
+      const [gRes, sRes, zRes] = await Promise.all([
         fetch('/api/settings/gorgias/support-connection', { cache: 'no-store' }),
         fetch('/api/shopify/status', { cache: 'no-store' }),
+        fetch('/api/settings/zendesk/connection', { cache: 'no-store' }),
       ]);
       const gBody = gRes.ok ? await gRes.json() : null;
       const sBody = sRes.ok ? await sRes.json() : null;
+      const zBody = zRes.ok ? await zRes.json() : null;
       const gConn = gBody?.connection ?? null;
       setConnStatus({
         gorgias: {
@@ -126,11 +129,16 @@ export default function ApiIntegrationsClient() {
           connected: Boolean(sBody?.connected),
           detail: sBody?.shopDomain ?? null,
         },
+        zendesk: {
+          connected: Boolean(zBody?.connected),
+          detail: null,
+        },
       });
     } catch {
       setConnStatus({
         gorgias: { connected: false, detail: null },
         shopify: { connected: false, detail: null },
+        zendesk: { connected: false, detail: null },
       });
     }
   }

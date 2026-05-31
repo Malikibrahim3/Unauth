@@ -104,8 +104,7 @@ export default function WatchlistTableClient({ rows: initialRows }: WatchlistTab
                 />
               </th>
               <th className="text-left px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Customer</th>
-              <th className="text-left px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Last risk</th>
-              <th className="text-left px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Trend</th>
+              <th className="text-left px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Confidence</th>
               <th className="text-left px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Added</th>
               <th className="px-4 py-2.5" />
             </tr>
@@ -155,9 +154,6 @@ export default function WatchlistTableClient({ rows: initialRows }: WatchlistTab
                   ) : (
                     <span className="text-xs" style={{ color: 'var(--text-subtle)' }}>—</span>
                   )}
-                </td>
-                <td className="px-4 py-3">
-                  <span className="text-xs" style={{ color: 'var(--text-subtle)' }}>—</span>
                 </td>
                 <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-muted)' }}>
                   {new Intl.DateTimeFormat('en-US', {

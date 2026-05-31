@@ -8,6 +8,7 @@ import { MetricCard, SectionCard, WorkbenchPage } from '@/components/ui';
 import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
 import { buildClaimOpsMetrics } from '@/lib/claims/reporting';
 import ExportMenu from '@/components/reports/ExportMenu';
+import { GRADE_COLOURS, GRADE_LABELS } from '@/lib/utils/confidenceStyles';
 
 type ClaimRow = {
   id: string;
@@ -33,10 +34,10 @@ type TxGradeRow = {
 };
 
 const GRADE_META: Record<GradeBucket, { label: string; color: string }> = {
-  definite: { label: 'A · Definite', color: 'var(--sev-definite)' },
-  probable: { label: 'B · Probable', color: 'var(--sev-probable)' },
-  possible: { label: 'C · Possible', color: 'var(--copper-mid)' },
-  weak: { label: 'D · Weak', color: 'var(--ink-tertiary)' },
+  definite: { label: `A · ${GRADE_LABELS.definite}`, color: GRADE_COLOURS.definite },
+  probable: { label: `B · ${GRADE_LABELS.probable}`, color: GRADE_COLOURS.probable },
+  possible: { label: `C · ${GRADE_LABELS.possible}`, color: GRADE_COLOURS.possible },
+  weak: { label: `D · ${GRADE_LABELS.weak}`, color: GRADE_COLOURS.weak },
 };
 
 function gradeFromTransaction(row: TxGradeRow): GradeBucket {
@@ -245,7 +246,7 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
           <p className="text-body-sm mt-2 max-w-3xl" style={{ color: 'var(--ink-secondary)' }}>
             {range === 'all' ? 'All time' : `Last ${range.replace('d', ' days')}`}: {claimMetrics.totalClaims.toLocaleString()} claims filed,{' '}
             {claimMetrics.openClaims.toLocaleString()} still open, {claimMetrics.overdueClaims.toLocaleString()} overdue SLA,{' '}
-            {formatCurrencyNullable(claimMetrics.valueAtRisk || null)} at risk with{' '}
+            {formatCurrencyNullable(claimMetrics.valueAtRisk || null)} open claim value with{' '}
             {formatCurrencyNullable(claimMetrics.amountRefunded || null)} refunded or recovered.
             Resolution rate is {Math.round(claimMetrics.resolutionRate * 100)}%.
           </p>
@@ -261,7 +262,7 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
               <MetricCard label="Resolved" value={claimMetrics.resolvedClaims.toLocaleString()} density="compact" hint={metricHint('Closed outcomes', claimMetrics.resolvedClaims, priorMetrics, 'resolvedClaims')} />
               <MetricCard label="Denied" value={claimMetrics.deniedClaims.toLocaleString()} density="compact" hint="Latest decisions" />
               <MetricCard label="Approved" value={claimMetrics.approvedClaims.toLocaleString()} density="compact" hint="Latest decisions" />
-              <MetricCard label="Value at risk" value={formatCurrencyNullable(claimMetrics.valueAtRisk || null)} density="compact" hint={metricHintCurrency('Open exposure', claimMetrics.valueAtRisk, priorMetrics)} />
+              <MetricCard label="Open claim value" value={formatCurrencyNullable(claimMetrics.valueAtRisk || null)} density="compact" hint={metricHintCurrency('Unresolved claim value', claimMetrics.valueAtRisk, priorMetrics)} />
               <MetricCard label="Recovered / refunded" value={formatCurrencyNullable(claimMetrics.amountRefunded || null)} density="compact" hint="Outcome totals" />
               <MetricCard
                 label="Resolution rate"
@@ -308,9 +309,9 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
           <SectionCard title="Loss vs recovery" description="Financial impact for selected date range">
             <div className="grid grid-cols-2 gap-3">
               <MetricCard
-                label="Value at risk"
+                label="Open claim value"
                 value={formatCurrencyNullable(claimMetrics.valueAtRisk || null)}
-                hint="Outstanding claim exposure"
+                hint="Unresolved claim value"
               />
               <MetricCard
                 label="Recovered / refunded"
@@ -319,15 +320,15 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
               />
             </div>
             <p className="t-caption mt-3" style={{ color: 'var(--ink-tertiary)' }}>
-              Net exposure estimate: {formatCurrencyNullable(Math.max(0, claimMetrics.valueAtRisk - claimMetrics.amountRefunded) || null)}
+              Net claim value (open minus recovered): {formatCurrencyNullable(Math.max(0, claimMetrics.valueAtRisk - claimMetrics.amountRefunded) || null)}
             </p>
           </SectionCard>
 
           <SectionCard title="Audit signal performance" description={`${totalRows.toLocaleString()} rows analysed · ${matchRate.toFixed(1)}% match rate`}>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-3 mb-4">
-              <MetricCard label="Total flagged" value={totalFlagged.toLocaleString()} hint={`${totalRows.toLocaleString()} rows analysed`} density="compact" />
+              <MetricCard label="Matched orders" value={totalFlagged.toLocaleString()} hint={`${totalRows.toLocaleString()} rows analysed`} density="compact" />
               <MetricCard label="Match rate" value={`${matchRate.toFixed(1)}%`} hint={`Peak axis ${maxRate.toFixed(1)}%`} density="compact" />
-              <MetricCard label="Queue exposure" value={exposureAtRisk === null ? 'Unavailable' : formatCurrencyNullable(exposureAtRisk)} hint="Current review queue" density="compact" />
+              <MetricCard label="Order value in queue" value={exposureAtRisk === null ? 'Unavailable' : formatCurrencyNullable(exposureAtRisk)} hint="Matched orders in review queue" density="compact" />
             </div>
           </SectionCard>
 

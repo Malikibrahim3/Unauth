@@ -25,9 +25,11 @@ interface CustomerRow {
 
 interface CustomersTableClientProps {
   rows: CustomerRow[];
+  /** When the list is filtered to watchlisted customers only, hide per-row Watched badges. */
+  watchlistFilterActive?: boolean;
 }
 
-export default function CustomersTableClient({ rows }: CustomersTableClientProps) {
+export default function CustomersTableClient({ rows, watchlistFilterActive = false }: CustomersTableClientProps) {
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
   const columns = [
     {
@@ -39,7 +41,7 @@ export default function CustomersTableClient({ rows }: CustomersTableClientProps
             <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>
               {p.names?.[0] ?? '—'}
             </span>
-            {p.on_watchlist && <Badge tone="neutral" size="sm">Watched</Badge>}
+            {p.on_watchlist && !watchlistFilterActive && <Badge tone="neutral" size="sm">Watched</Badge>}
           </div>
           <div className="text-xs font-mono" style={{ color: 'var(--text-muted)' }}>{p.primary_email ?? '—'}</div>
         </div>
@@ -83,7 +85,7 @@ export default function CustomersTableClient({ rows }: CustomersTableClientProps
       key: 'open',
       header: '',
       align: 'right' as const,
-      render: () => <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--copper-bright)' }}>Review →</span>,
+      render: () => <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--accent)' }}>View →</span>,
     },
   ];
 
@@ -113,7 +115,7 @@ export default function CustomersTableClient({ rows }: CustomersTableClientProps
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <span className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{p.names?.[0] ?? '—'}</span>
-                  {p.on_watchlist && (
+                  {p.on_watchlist && !watchlistFilterActive && (
                     <span className="text-[10px] px-1.5 py-0.5 rounded-sm border font-medium" style={{ background: 'var(--watchlist-bg)', color: 'var(--watchlist)', borderColor: 'var(--watchlist-bd)' }}>watched</span>
                   )}
                 </div>
