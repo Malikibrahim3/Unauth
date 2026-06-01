@@ -1,0 +1,172 @@
+# 01-dashboard
+URL: http://localhost:3000/dashboard
+TITLE: Unauth — Order Identity Review
+
+Dashboard
+
+Investigation intelligence — look up customers, export evidence, and take findings back to your helpdesk.
+
+Data synced
+New audit
+Operating in Siloed Mode — analysing your store data only. Connect to the network to expand coverage.
+
+Shoppers to review
+
+4
+
+Linked identities in your data
+
+Exposure at risk
+
+$8,852.57
+
+Flagged order value
+
+Evidence packages ready
+
+6
+
+6 with prior identity match
+
+Recent audit runs
+
+3
+
+27d ago
+
+Flagged customers to review
+
+Look up by email, then take intelligence back to Gorgias or Zendesk
+
+View all
+
+Nora Kessler
+
+A
+DEFINITE
+NETWORK
+
+ELARA-000-0008 · $161.23
+
+5 signals matched · 114d ago
+
+Open →
+
+Nora Kessler
+
+A
+DEFINITE
+NETWORK
+
+ELARA-000-0009 · $330.75
+
+5 signals matched · 153d ago
+
+Open →
+
+Nora Kessler
+
+A
+DEFINITE
+NETWORK
+
+ELARA-000-0002 · $181.33
+
+6 signals matched · 162d ago
+
+Open →
+
+Nora Kessler
+
+A
+DEFINITE
+NETWORK
+
+ELARA-000-0005 · $343.14
+
+4 signals matched · 124d ago
+
+Open →
+
+Miles Calder
+
+A
+DEFINITE
+NETWORK
+
+ELARA-001-0004 · $288.88
+
+6 signals matched · 111d ago
+
+Open →
+
+Nora Kessler
+
+A
+DEFINITE
+NETWORK
+
+ELARA-000-0012 · $236.13
+
+5 signals matched · 129d ago
+
+Open →
+
+Helpdesk integrations
+
+Connect your helpdesk — Gorgias and Zendesk available now.
+
+Evidence packages ready
+
+View all →
+
+6
+
+6 include prior identity matches — export for dispute review.
+
+Recent audit runs
+
+History →
+
+elaraandco-com-orders-2026-05-04.csv
+
+8 flagged · 27d ago
+
+elaraandco-com-orders-2026-03-11.csv
+
+13 flagged · 81d ago
+
+elaraandco-com-orders-2026-01-10.csv
+
+26 flagged · 141d ago
+
+Exposure at risk
+
+$8,852.57
+
+Estimated value tied to flagged identities in your current dataset.
+
+Activity
+
+Audit
+
+elaraandco-com-orders-2026-05-04.csv · 8 flagged
+
+27d ago
+Queue
+
+Nora Kessler · definite
+
+114d ago
+Evidence
+
+6 evidence reports with prior identity match
+
+current
+Watchlist
+
+5 watchlist appearances pending
+
+current
+Audit 05/04/2026 · 69 rows
+Privacy-safe matching · encrypted identifiers · your store data only

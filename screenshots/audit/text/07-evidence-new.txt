@@ -1,0 +1,68 @@
+# 07-evidence-new
+URL: http://localhost:3000/customers/9fc2df09-9af0-4fca-97e0-6d924efa15b4/evidence/new
+TITLE: Unauth — Order Identity Review
+
+Back to Profile
+/
+Customers
+/
+Build evidence package
+Build evidence package
+
+Organises identity signal data from your records that may be relevant when preparing a chargeback response. Unauth surfaces the signal history — your payment processor or acquirer determines what qualifies as valid dispute evidence.
+
+This export presents identity match data for your review. How you use it in a dispute is at your discretion — follow your acquirer or processor guidelines.
+
+Disputed order *
+Select an order to defend…
+ELARA-000-0013 · 12/16/2025 · 183.62
+ELARA-000-0001 · 12/17/2025 · 278.95 ★ refund claimed
+ELARA-000-0004 · 12/19/2025 · 217.79 ★ refund claimed
+ELARA-000-0002 · 12/20/2025 · 181.33
+ELARA-000-0007 · 12/25/2025 · 295.63 ★ refund claimed
+ELARA-000-0009 · 12/29/2025 · 330.75 ★ refund claimed
+ELARA-000-0006 · 1/5/2026 · 83.73 ★ refund claimed
+ELARA-000-0015 · 1/17/2026 · 230.20 ★ refund claimed
+ELARA-000-0012 · 1/22/2026 · 236.13
+ELARA-000-0005 · 1/27/2026 · 343.14
+ELARA-000-0014 · 1/29/2026 · 240.91
+ELARA-000-0003 · 2/1/2026 · 61.20 ★ refund claimed
+ELARA-000-0008 · 2/6/2026 · 161.23 ★ refund claimed
+ELARA-000-0011 · 3/27/2026 · 208.25 ★ refund claimed
+ELARA-000-0010 · 5/5/2026 · 57.79 ★ refund claimed
+ELARA-002-0001 · 12/30/2025 · 37.13
+ELARA-001-0001 · 1/12/2026 · 326.39 ★ refund claimed
+ELARA-001-0006 · 1/28/2026 · 49.97
+ELARA-001-0011 · 2/12/2026 · 110.21 ★ refund claimed
+ELARA-002-0006 · 2/22/2026 · 188.23
+ELARA-006-0006 · 2/23/2026 · 97.09
+ELARA-004-0001 · 3/15/2026 · 297.11 ★ refund claimed
+ELARA-006-0011 · 3/22/2026 · 111.20 ★ refund claimed
+ELARA-004-0006 · 3/27/2026 · 204.88
+ELARA-006-0001 · 4/19/2026 · 222.46
+ELARA-004-0011 · 5/11/2026 · 222.66
+ELARA-002-0011 · 5/14/2026 · 225.30
+⚠
+
+No prior matching transactions detected
+
+No prior transactions with matching signals were found in your records for this customer.
+
+This package will include
+
+✓
+Customer identity record
+✓
+Order history (all known orders)
+✓
+Identity signals observed
+–
+Prior matching transactions (if any)
+–
+Merchant notes(add notes below)
+Merchant note (optional · appears in the package · max 500 characters)
+
+0/500
+
+← Cancel
+Build evidence package

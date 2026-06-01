@@ -599,7 +599,7 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
   ].filter(Boolean) as Array<{ value: string; signalType: string; grade: string }>;
 
   return (
-    <PageConnectionGate requires="both" connection={connectionState} pageName="Customer profile" pageDescription="This profile shows order patterns and identity signals from Shopify, but claim data comes from your helpdesk. An incomplete profile can be misleading — you may see orders with no claim history, not because the customer is clean, but because claim data isn't syncing yet.">
+    <PageConnectionGate requires="both" connection={connectionState} pageName="Customer profile" pageDescription="This profile shows order patterns and identity signals from Shopify, but claim data comes from your helpdesk. An incomplete profile can be misleading — you may see orders with no claim history, not because the customer is clean, but because claim data isn't syncing yet." hasData={true}>
     <div className="mx-auto max-w-7xl px-3 py-5 sm:px-5">
       {/* Back navigation — context-aware: returns to audit if ?audit=runId is set */}
       <div className="flex items-center gap-3 mb-6">

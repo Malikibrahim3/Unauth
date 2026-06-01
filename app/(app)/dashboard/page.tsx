@@ -198,7 +198,7 @@ export default async function DashboardPage() {
 
   if (isEmpty) {
     return (
-      <PageConnectionGate requires="both" connection={connectionState} pageName="Dashboard">
+      <PageConnectionGate requires="both" connection={connectionState} pageName="Dashboard" hasData={false}>
         <div className="p-4 md:p-6">
           <TrackPageView event="Dashboard Viewed" />
           <EmptyDashboardHero />
@@ -208,7 +208,7 @@ export default async function DashboardPage() {
   }
 
   return (
-    <PageConnectionGate requires="both" connection={connectionState} pageName="Dashboard">
+    <PageConnectionGate requires="both" connection={connectionState} pageName="Dashboard" hasData={true}>
     <div className="p-4 md:p-6">
       <TrackPageView event="Dashboard Viewed" />
 

@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { Store, MessageSquare, Plug } from 'lucide-react';
+import { Plug } from 'lucide-react';
 import type { ConnectionState } from '@/lib/connections/getConnectionState';
+import { ConnectionPromptStrip } from './ConnectionPromptStrip';
 
 type Requires = 'both' | 'shopify' | 'helpdesk';
 
@@ -11,51 +12,39 @@ interface PageConnectionGateProps {
   connection: ConnectionState;
   pageName: string;
   pageDescription?: string;
+  /** When true and connections are missing, show data + strip instead of full gate. */
+  hasData?: boolean;
   children: React.ReactNode;
 }
 
-function missingFor(requires: Requires, connection: ConnectionState): 'shopify' | 'helpdesk' | 'both' | null {
+function missingFor(requires: Requires, connection: ConnectionState): 'helpdesk' | 'both' | null {
   if (requires === 'both') {
     if (connection.bothConnected) return null;
+    // Shopify-only: only helpdesk missing
     if (connection.shopifyOnlyConnected) return 'helpdesk';
-    if (connection.helpdeskOnlyConnected) return 'shopify';
+    // Neither, or helpdesk-only: treat as both missing (always need both)
     return 'both';
   }
-  if (requires === 'shopify' && !connection.shopify) return 'shopify';
-  if (requires === 'helpdesk' && !connection.helpdesk) return 'helpdesk';
+  if (requires === 'helpdesk' && !connection.helpdesk) return 'both';
   return null;
 }
 
 function GatePanel({ missing, pageName, pageDescription }: {
-  missing: 'shopify' | 'helpdesk' | 'both';
+  missing: 'helpdesk' | 'both';
   pageName: string;
   pageDescription?: string;
 }) {
-  const isPartial = missing === 'helpdesk'; // Shopify connected, helpdesk missing — the dangerous state
+  const isDangerous = missing === 'helpdesk'; // Shopify connected, helpdesk missing
 
-  const headline =
-    missing === 'both'
-      ? `Connect your store and helpdesk to use ${pageName}`
-      : missing === 'shopify'
-        ? `Connect your Shopify store to use ${pageName}`
-        : `Shopify connected — add your helpdesk to see ${pageName}`;
+  const headline = isDangerous
+    ? `Shopify is connected — add your helpdesk to see ${pageName}`
+    : `Connect your Shopify store and helpdesk to use ${pageName}`;
 
-  const body =
-    pageDescription ??
-    (missing === 'both'
-      ? `${pageName} requires both your Shopify store and a helpdesk (Gorgias or Zendesk) to be connected. Without both, the data shown here would be incomplete and potentially misleading.`
-      : missing === 'shopify'
-        ? `${pageName} requires your Shopify store to be connected so order and identity data can sync.`
-        : `Your Shopify orders are syncing, but claim data comes from your helpdesk. Without it, ${pageName.toLowerCase()} would show order patterns with no claim history — an incomplete picture you can't act on.`);
-
-  const ctaLabel =
-    missing === 'both'
-      ? 'Connect store and helpdesk'
-      : missing === 'shopify'
-        ? 'Connect Shopify'
-        : 'Connect your helpdesk';
-
-  const Icon = missing === 'shopify' ? Store : missing === 'helpdesk' ? MessageSquare : Plug;
+  const body = pageDescription ?? (
+    isDangerous
+      ? `Your orders are syncing from Shopify, but claim data comes from your helpdesk. Without it, ${pageName.toLowerCase()} shows order patterns with no claim history — an incomplete picture you can't act on.`
+      : `${pageName} requires both your Shopify store and a helpdesk (Gorgias or Zendesk). Without both, the data here would be incomplete and potentially misleading.`
+  );
 
   return (
     <div className="flex items-center justify-center min-h-[55vh] p-8">
@@ -63,17 +52,14 @@ function GatePanel({ missing, pageName, pageDescription }: {
         className="max-w-md w-full rounded-lg border p-8 space-y-5"
         style={{
           background: 'var(--surface-raised)',
-          borderColor: isPartial ? 'var(--warning-bd, var(--border-default))' : 'var(--border-default)',
+          borderColor: 'var(--border-default)',
         }}
       >
         <div
           className="inline-flex h-10 w-10 items-center justify-center rounded-lg"
-          style={{
-            background: 'var(--surface-overlay)',
-            border: '1px solid var(--border-default)',
-          }}
+          style={{ background: 'var(--surface-overlay)', border: '1px solid var(--border-default)' }}
         >
-          <Icon className="h-5 w-5" style={{ color: 'var(--ink-secondary)' }} />
+          <Plug className="h-5 w-5" style={{ color: 'var(--ink-secondary)' }} />
         </div>
 
         <div className="space-y-2">
@@ -96,7 +82,7 @@ function GatePanel({ missing, pageName, pageDescription }: {
           className="inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
           style={{ background: '#2563EB' }}
         >
-          {ctaLabel}
+          {isDangerous ? 'Connect your helpdesk' : 'Connect Shopify and helpdesk'}
         </Link>
       </div>
     </div>
@@ -108,11 +94,24 @@ export function PageConnectionGate({
   connection,
   pageName,
   pageDescription,
+  hasData = false,
   children,
 }: PageConnectionGateProps) {
   const missing = missingFor(requires, connection);
-  if (missing) {
-    return <GatePanel missing={missing} pageName={pageName} pageDescription={pageDescription} />;
+
+  // Both connected — clean render
+  if (!missing) return <>{children}</>;
+
+  // Has existing data (CSV or otherwise): show data + strip, never a full gate
+  if (hasData) {
+    return (
+      <>
+        <ConnectionPromptStrip connection={connection} />
+        {children}
+      </>
+    );
   }
-  return <>{children}</>;
+
+  // No data, not connected: full gate
+  return <GatePanel missing={missing} pageName={pageName} pageDescription={pageDescription} />;
 }

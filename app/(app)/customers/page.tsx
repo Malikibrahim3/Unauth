@@ -364,7 +364,7 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
     !firstSeenFrom && !firstSeenTo && !lastSeenFrom && !lastSeenTo && !flagFilter && !statusFilter;
 
   return (
-    <PageConnectionGate requires="both" connection={connectionState} pageName="Customers" pageDescription="Customer profiles show order patterns, identity confidence, and claim history. Without both Shopify and your helpdesk connected, claim counts may be zero because data is missing — not because the customer has no history.">
+    <PageConnectionGate requires="both" connection={connectionState} pageName="Customers" pageDescription="Customer profiles show order patterns, identity confidence, and claim history. Without both Shopify and your helpdesk connected, claim counts may be zero because data is missing — not because the customer has no history." hasData={total > 0}>
     <WorkbenchPage
       title="Customers"
       subtitle="Search, filter, and act on customer identity profiles."

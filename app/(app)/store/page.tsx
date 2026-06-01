@@ -46,17 +46,18 @@ export default async function StorePage() {
           </svg>
         </div>
         <h1 className="text-heading-lg font-semibold" style={{ color: 'var(--ink-primary)' }}>
-          Connect your Shopify store
+          Connect your store and helpdesk
         </h1>
         <p className="text-body-sm" style={{ color: 'var(--ink-secondary)' }}>
-          Once connected, your store intelligence — identity grades, flagged customers, signal breakdowns, and claim patterns — will appear here automatically.
+          Store intelligence requires both your Shopify store and a helpdesk (Gorgias or Zendesk). Orders come from Shopify — claim history comes from your helpdesk. Without both, the data here would be incomplete.
         </p>
         <div className="flex items-center justify-center gap-3 pt-2">
           <Link
             href="/settings/integrations"
-            className="inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition-colors btn-accent"
+            className="inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition-colors"
+            style={{ background: '#2563EB', color: '#fff' }}
           >
-            Connect Shopify
+            Set up integrations
           </Link>
           <Link
             href="/upload"

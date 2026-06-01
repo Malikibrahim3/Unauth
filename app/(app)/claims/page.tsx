@@ -428,7 +428,7 @@ export default async function ClaimsPage({
   const isEmpty = queueCounts.total === 0;
 
   return (
-    <PageConnectionGate requires="helpdesk" connection={connectionState} pageName="Claims" pageDescription="Claim data comes from your helpdesk integration. Connect Gorgias or Zendesk to see and manage disputes here.">
+    <PageConnectionGate requires="helpdesk" connection={connectionState} pageName="Claims" pageDescription="Claim data comes from your helpdesk integration. Connect Gorgias or Zendesk to see and manage disputes here." hasData={queueCounts.total > 0}>
     <WorkbenchPage
       title="Claims"
       subtitle="Track active claim work and merchant-recorded outcomes"

@@ -1,0 +1,11 @@
+# 23-public-audit-demo
+URL: http://localhost:3000/audit-demo
+TITLE: Unauth — Order Identity Review
+
+60-second interactive demo
+
+See what's hiding in your data.
+
+Answer three quick questions, then we'll send you to the real free CSV audit for your store.
+
+Start interactive demo →

@@ -219,7 +219,7 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
     : buildClaimOpsMetrics(priorClaims, priorOutcomeResult.data ?? []);
 
   return (
-    <PageConnectionGate requires="both" connection={connectionState} pageName="Reports" pageDescription="Report metrics combine Shopify order data with helpdesk claim data. Without both connected, claim counts, dispute rates, and outcome summaries will be incomplete or zero.">
+    <PageConnectionGate requires="both" connection={connectionState} pageName="Reports" pageDescription="Report metrics combine Shopify order data with helpdesk claim data. Without both connected, claim counts, dispute rates, and outcome summaries will be incomplete or zero." hasData={rows.length > 0}>
     <WorkbenchPage
       title="Reports"
       subtitle="Network signal performance and evidence readiness over time."

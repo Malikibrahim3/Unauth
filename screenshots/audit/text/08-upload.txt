@@ -1,0 +1,84 @@
+# 08-upload
+URL: http://localhost:3000/upload
+TITLE: Unauth — Order Identity Review
+
+New audit
+Overview
+Customers
+Audit history
+Evidence packages
+
+Upload a CSV export of your orders to detect identity matches and repeated claim patterns.
+
+View history
+
+Step
+
+Upload
+
+Source CSV
+
+Max file
+
+200 MB
+
+Per upload
+
+Max rows
+
+500k
+
+Per file
+
+Flow
+
+Map & run
+
+Column mapping
+
+Output
+
+Audit run
+
+Review queue
+
+Recent imports
+
+View all
+
+Elara & Co Apparel current audit
+
+May 4, 2026 · 69 rows · 8 matched
+
+Completed
+
+Elara & Co Apparel spring audit
+
+Mar 11, 2026 · 85 rows · 13 matched
+
+Completed
+
+Elara & Co Apparel winter audit
+
+Jan 10, 2026 · 138 rows · 26 matched
+
+Completed
+
+Upload
+
+Map fields
+
+Confirm & run
+
+How do I export this from your platform?
+
+Drop one or more CSVs here, or click to browse
+
+Accepted formats: CSV. Batch upload supported. Max 200 MB per file.
+
+Your uploaded data is processed to identify patterns within your own order history. Data handling details are available in your merchant agreement.
+
+Choose file
+Download template
+
+Exporting from WooCommerce, BigCommerce or Magento? Any CSV with orders, customers and refund info will work — we'll help you match the columns.

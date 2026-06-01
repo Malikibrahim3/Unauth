@@ -1,0 +1,100 @@
+# 10-audit-customers
+URL: http://localhost:3000/audit/dfd4b07f-f4ad-40a4-989a-6b47a81a621d?tab=customers
+TITLE: Unauth — Order Identity Review
+
+Dashboard
+/
+Audit result
+Audit results
+
+elaraandco-com-orders-2026-05-04.csv · 04 May 2026, 10:00
+
+completed
+First insight
+
+No linked identities in your order history yet. Connect to the network to expand coverage across merchants.
+
+69 orders ingested
+·
+0 identities linked
+·
+10 with prior claim history
+Connect your helpdesk (Zendesk / Gorgias) →
+Status
+
+10 orders with likely identity links.
+
+Review likely identities
+Export CSV
+View all transactions
+Orders analysed
+69
+Linked across stores
+0
+
+Shoppers seen at multiple merchants
+
+Match strength breakdown
+Anchor metric
+69
+Definite
+3 · 4%
+Probable
+5 · 7%
+Possible
+6 · 9%
+Weak
+55 · 80%
+Strong matches
+3
+
+Highest confidence
+
+Completed
+27d ago
+
+04 May 2026, 10:00
+
+Overview
+Customers
+Transactions (69)
+Data quality
+Showing 1–5 of 5 customers
+Customers per page
+25
+50
+100
+All confidence
+Definite
+Probable
+Possible
+Weak
+5 of 5
+CUSTOMER	ORDERS ↓	SPEND	MAX SCORE ↓	
+
+nora.kessler.elara@examplemail.com
+A
+	1	$57.79	93	View
+
+
+miles.calder.elara@northpostmail.com
+A
+	2	$353.20	91	View
+
+
+arun.shaw18.elara@customer-mail.example
+A
+	2	$334.75	85	View
+
+
++alias10.elara@elaraandco.com
+B
+	2	$447.96	83	View
+
+
+amara.vale.elara@fastmail.example
+B
+	3	$828.51	69	View
+Customer case file
+
+What happened, in order

@@ -1,0 +1,733 @@
+# 03-customer-claims-heavy
+URL: http://localhost:3000/customers/9fc2df09-9af0-4fca-97e0-6d924efa15b4
+TITLE: Unauth — Order Identity Review
+
+Back to Customers
+/
+Nora Kessler
+Nora Kessler
+A
+Definite
+
+nora.kessler@examplemail.com
+
+Take this intelligence back to your Gorgias or Zendesk ticket. Use an evidence package in your Shopify dispute or bank portal when you need documentation.
+
+New
+Under review
+Contacted
+Resolved
+Cleared
+Watch
+Build evidence package
+
+Identity grade
+
+A
+
+Cross-merchant
+
+6 merchants
+
+Exposure
+
+$5,203.28
+
+Last seen
+
+05/20/2026
+
+Last seen 11d ago
+Case at a glance
+Flagged
+11/28/2025
+Orders
+27
+Exposure
+$5k
+Cadence
+Activity cadence: each square = 1 week
+Last seen
+11d ago
+
+Evidence scope
+
+Compare what was observed in this store vs merchant-wide network exposure
+
+This store
+
+Orders
+27 (27.0%)
+Claims
+14 (51.9%)
+Exposure
+$5,203.28
+Refunded
+$2,770.43
+
+Merchant-wide network
+
+Merchants seen
+6 (this store 16.7%)
+Profile orders
+100 (100%)
+Chargebacks
+8 (8.0%)
+First seen → last seen
+11/28/2025 → 05/20/2026
+
+Cross-store signals
+
+Primary identifier
+Linked signal
+Signal type
+Confidence
+Observed
+nora.kessler@examplemail.com
++alias0.elara@elaraandco.com
+email variant
+Probable
+11/28/2025 → 05/20/2026
+nora.kessler@examplemail.com
+nora.kessler.elara@examplemail.com
+email variant
+Probable
+11/28/2025 → 05/20/2026
+nora.kessler@examplemail.com
++alias5.elara@elaraandco.com
+email variant
+Probable
+11/28/2025 → 05/20/2026
+nora.kessler@examplemail.com
++alias10.elara@elaraandco.com
+email variant
+Probable
+11/28/2025 → 05/20/2026
+nora.kessler@examplemail.com
++alias0.northline@northline-electronics.co.uk
+email variant
+Probable
+11/28/2025 → 05/20/2026
+nora.kessler@examplemail.com
+nora.kessler.northline@examplemail.com
+email variant
+Probable
+11/28/2025 → 05/20/2026
+nora.kessler@examplemail.com
++alias5.northline@northline-electronics.co.uk
+email variant
+Probable
+11/28/2025 → 05/20/2026
+nora.kessler@examplemail.com
+610 Crescent Avenue, London
+address match
+Probable
+11/28/2025 → 05/20/2026
+nora.kessler@examplemail.com
++44 7759904296
+phone match
+Definite
+11/28/2025 → 05/20/2026
+nora.kessler@examplemail.com
+82.20.146.185
+device/ip match
+Possible
+11/28/2025 → 05/20/2026
+
+Signals are derived from merchant-scoped audit records. “Observed” shows when this profile first and most recently carried the linked signal in your available dataset.
+
+Identity timeline
+
+85 identifier changes across orders
+
+First Seen	Field	Value	Change type
+12/16/2025	
+Email
+	
+nora.kessler.elara@examplemail.com
+	First seen
+12/16/2025	
+Name
+	
+Nora Kessler
+	First seen
+12/16/2025	
+Address
+	
+204 Newington Green, London
+	First seen
+12/16/2025	
+IP address
+	
+82.20.117.216
+	First seen
+12/16/2025	
+Card ending
+	
+4199
+	First seen
+12/17/2025	
+Email
+	
++alias0.elara@elaraandco.com
+▲ VARIANT
+	Changed later
+12/17/2025	
+Address
+	
+610 Crescent Avenue, London
+▲ VARIANT
+	Changed later
+12/17/2025	
+IP address
+	
+82.20.146.185
+▲ VARIANT
+	Changed later
+12/17/2025	
+Card ending
+	
+4715
+▲ VARIANT
+	Changed later
+12/19/2025	
+Address
+	
+44 Market Street, London
+▲ VARIANT
+	Changed later
+12/19/2025	
+IP address
+	
+82.20.52.112
+▲ VARIANT
+	Changed later
+12/19/2025	
+Card ending
+	
+7340
+▲ VARIANT
+	Changed later
+12/20/2025	
+Address
+	
+877 Dale Street, London
+▲ VARIANT
+	Changed later
+12/20/2025	
+IP address
+	
+82.20.77.183
+▲ VARIANT
+	Changed later
+12/20/2025	
+Card ending
+	
+6325
+▲ VARIANT
+	Changed later
+12/25/2025	
+Address
+	
+156 Station Road, London
+▲ VARIANT
+	Changed later
+12/25/2025	
+IP address
+	
+82.20.70.213
+▲ VARIANT
+	Changed later
+12/25/2025	
+Card ending
+	
+5267
+▲ VARIANT
+	Changed later
+12/29/2025	
+Address
+	
+609 Larkspur Lane, London
+▲ VARIANT
+	Changed later
+12/29/2025	
+IP address
+	
+82.20.72.127
+▲ VARIANT
+	Changed later
+12/29/2025	
+Card ending
+	
+7493
+▲ VARIANT
+	Changed later
+12/30/2025	
+Name
+	
+Priya Shah
+▲ VARIANT
+	Changed later
+12/30/2025	
+Address
+	
+423 Crescent Avenue, London
+▲ VARIANT
+	Changed later
+12/30/2025	
+IP address
+	
+82.20.56.111
+▲ VARIANT
+	Changed later
+12/30/2025	
+Card ending
+	
+4143
+▲ VARIANT
+	Changed later
+01/05/2026	
+Email
+	
++alias5.elara@elaraandco.com
+▲ VARIANT
+	Changed later
+01/05/2026	
+Address
+	
+663 Brixton Hill, London
+▲ VARIANT
+	Changed later
+01/05/2026	
+IP address
+	
+82.20.142.40
+▲ VARIANT
+	Changed later
+01/05/2026	
+Card ending
+	
+8842
+▲ VARIANT
+	Changed later
+01/12/2026	
+Name
+	
+Miles Calder
+▲ VARIANT
+	Changed later
+01/12/2026	
+Address
+	
+498 Larkspur Lane, London
+▲ VARIANT
+	Changed later
+01/12/2026	
+IP address
+	
+82.20.158.38
+▲ VARIANT
+	Changed later
+01/12/2026	
+Card ending
+	
+4563
+▲ VARIANT
+	Changed later
+01/17/2026	
+Address
+	
+871 Dale Street, London
+▲ VARIANT
+	Changed later
+01/17/2026	
+IP address
+	
+82.20.175.115
+▲ VARIANT
+	Changed later
+01/17/2026	
+Card ending
+	
+8909
+▲ VARIANT
+	Changed later
+01/22/2026	
+Address
+	
+549 Larkspur Lane, London
+▲ VARIANT
+	Changed later
+01/22/2026	
+IP address
+	
+82.20.37.178
+▲ VARIANT
+	Changed later
+01/22/2026	
+Card ending
+	
+8101
+▲ VARIANT
+	Changed later
+01/27/2026	
+Address
+	
+879 Brixton Hill, London
+▲ VARIANT
+	Changed later
+01/27/2026	
+IP address
+	
+82.20.124.109
+▲ VARIANT
+	Changed later
+01/27/2026	
+Card ending
+	
+5326
+▲ VARIANT
+	Changed later
+01/28/2026	
+Address
+	
+490 Granby Row, London
+▲ VARIANT
+	Changed later
+01/28/2026	
+IP address
+	
+82.20.29.132
+▲ VARIANT
+	Changed later
+01/28/2026	
+Card ending
+	
+8061
+▲ VARIANT
+	Changed later
+01/29/2026	
+Address
+	
+371 Crescent Avenue, London
+▲ VARIANT
+	Changed later
+01/29/2026	
+IP address
+	
+82.20.134.199
+▲ VARIANT
+	Changed later
+01/29/2026	
+Card ending
+	
+7669
+▲ VARIANT
+	Changed later
+02/01/2026	
+Address
+	
+348 Moorfield Drive, London
+▲ VARIANT
+	Changed later
+02/01/2026	
+IP address
+	
+82.20.108.89
+▲ VARIANT
+	Changed later
+02/01/2026	
+Card ending
+	
+7991
+▲ VARIANT
+	Changed later
+02/06/2026	
+Address
+	
+515 Moorfield Drive, London
+▲ VARIANT
+	Changed later
+02/06/2026	
+IP address
+	
+82.20.149.109
+▲ VARIANT
+	Changed later
+02/06/2026	
+Card ending
+	
+4231
+▲ VARIANT
+	Changed later
+02/12/2026	
+Address
+	
+393 Hawthorn Road, London
+▲ VARIANT
+	Changed later
+02/12/2026	
+IP address
+	
+82.20.218.45
+▲ VARIANT
+	Changed later
+02/12/2026	
+Card ending
+	
+5280
+▲ VARIANT
+	Changed later
+02/22/2026	
+Address
+	
+26 Hawthorn Road, London
+▲ VARIANT
+	Changed later
+02/22/2026	
+IP address
+	
+82.20.12.74
+▲ VARIANT
+	Changed later
+02/22/2026	
+Card ending
+	
+4978
+▲ VARIANT
+	Changed later
+02/23/2026	
+Name
+	
+Grace Lin
+▲ VARIANT
+	Changed later
+02/23/2026	
+Address
+	
+239 Granby Row, London
+▲ VARIANT
+	Changed later
+02/23/2026	
+IP address
+	
+82.20.192.29
+▲ VARIANT
+	Changed later
+02/23/2026	
+Card ending
+	
+4150
+▲ VARIANT
+	Changed later
+03/15/2026	
+Name
+	
+Amara Vale
+▲ VARIANT
+	Changed later
+03/15/2026	
+Address
+	
+250 Brixton Hill, London
+▲ VARIANT
+	Changed later
+03/15/2026	
+IP address
+	
+82.20.169.193
+▲ VARIANT
+	Changed later
+03/15/2026	
+Card ending
+	
+9513
+▲ VARIANT
+	Changed later
+03/22/2026	
+Address
+	
+44 Crescent Avenue, London
+▲ VARIANT
+	Changed later
+03/22/2026	
+IP address
+	
+82.20.156.90
+▲ VARIANT
+	Changed later
+03/22/2026	
+Card ending
+	
+4303
+▲ VARIANT
+	Changed later
+03/27/2026	
+Email
+	
++alias10.elara@elaraandco.com
+▲ VARIANT
+	Changed later
+03/27/2026	
+Address
+	
+582 Market Street, London
+▲ VARIANT
+	Changed later
+03/27/2026	
+IP address
+	
+82.20.123.50
+▲ VARIANT
+	Changed later
+03/27/2026	
+Card ending
+	
+8206
+▲ VARIANT
+	Changed later
+03/27/2026	
+Address
+	
+840 Brixton Hill, London
+▲ VARIANT
+	Changed later
+03/27/2026	
+IP address
+	
+82.20.199.69
+▲ VARIANT
+	Changed later
+03/27/2026	
+Card ending
+	
+4412
+▲ VARIANT
+	Changed later
+04/19/2026	
+Address
+	
+142 Larkspur Lane, London
+▲ VARIANT
+	Changed later
+04/19/2026	
+IP address
+	
+82.20.134.120
+▲ VARIANT
+	Changed later
+04/19/2026	
+Card ending
+	
+5089
+▲ VARIANT
+	Changed later
+05/05/2026	
+Address
+	
+198 Dale Street, London
+▲ VARIANT
+	Changed later
+05/05/2026	
+IP address
+	
+82.20.67.166
+▲ VARIANT
+	Changed later
+05/05/2026	
+Card ending
+	
+6915
+▲ VARIANT
+	Changed later
+05/11/2026	
+Address
+	
+732 Crescent Avenue, London
+▲ VARIANT
+	Changed later
+05/11/2026	
+IP address
+	
+82.20.113.201
+▲ VARIANT
+	Changed later
+05/11/2026	
+Card ending
+	
+4555
+▲ VARIANT
+	Changed later
+05/14/2026	
+Address
+	
+668 Station Road, London
+▲ VARIANT
+	Changed later
+05/14/2026	
+IP address
+	
+82.20.5.6
+▲ VARIANT
+	Changed later
+05/14/2026	
+Card ending
+	
+4496
+▲ VARIANT
+	Changed later
+Behavioral history
+
+Chronological orders and claim events — use this narrative in your helpdesk reply.
+
+This profile has 27 recorded orders between Dec 16, 2025 and May 14, 2026. 14 of those orders were followed by a refund claim (52% rate), with the quickest claim submitted within 3 days of purchase. The time between order and refund claim has decreased across multiple orders.
+
+CROSSMERCHANT IDENTITY MATCH
+REFUND RATE OVER 60PCT
+PAYMENT FINGERPRINT MATCH
+ADDRESS NORMALIZATION MATCH
+
+Behavior roadmap
+
+112 events
+
+CROSS-MERCHANT IDENTITY LINK
+ADDRESS CLUSTERING
+NETWORK DEVICE LINK
+05/14/2026
+■
+Order ELARA-002-0011
+$225.30
+
+668 Station Road, London
+
+05/14/2026
+◆
+New address: 668 Station Road, London
+
+Identity change observed
+
+05/14/2026
+◆
+New IP address: 82.20.5.6
+
+Identity change observed
+
+05/14/2026
+◆
+New card ending: 4496
+
+Identity change observed
+
+05/11/2026
+■
+Order ELARA-004-0011
+$222.66
+
+732 Crescent Avenue, London
+
+05/11/2026
+◆
+New address: 732 Crescent Avenue, London
+
+Identity
