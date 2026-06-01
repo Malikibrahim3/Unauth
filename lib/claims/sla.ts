@@ -1,5 +1,13 @@
-export const ACTIVE_CLAIM_STATUSES = ['open', 'under_review', 'evidence_requested', 'pending', 'escalated'] as const;
-export const FINAL_CLAIM_STATUSES = ['resolved', 'closed'] as const;
+export const ACTIVE_CLAIM_STATUSES = ['pending', 'open', 'escalated'] as const;
+export const FINAL_CLAIM_STATUSES = [
+  'resolved_refunded',
+  'resolved_won',
+  'resolved_lost',
+  'resolved_denied',
+  'resolved_exchanged',
+  'voided',
+  'stale',
+] as const;
 export const CLAIM_STATUSES = [...ACTIVE_CLAIM_STATUSES, ...FINAL_CLAIM_STATUSES] as const;
 
 export type ClaimStatus = (typeof CLAIM_STATUSES)[number];

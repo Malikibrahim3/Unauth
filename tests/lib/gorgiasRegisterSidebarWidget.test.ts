@@ -2,7 +2,7 @@ jest.mock('@/lib/utils/env', () => ({
   env: { NEXT_PUBLIC_APP_URL: 'https://app.unauth.test' },
 }));
 
-import { registerGorgiasSidebarWidget } from '@/lib/support/gorgias/registerSidebarWidget';
+import { gorgiasApiRequest, registerGorgiasSidebarWidget } from '@/lib/support/gorgias/registerSidebarWidget';
 
 type FetchCall = { url: string; method: string };
 
@@ -82,5 +82,21 @@ describe('registerGorgiasSidebarWidget', () => {
     });
 
     expect(result).toEqual({ integrationId: 1, widgetId: 2 });
+  });
+
+  it('retries Gorgias API requests after a 429 Retry-After response', async () => {
+    const mock = jest
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ error: 'rate limited' }), {
+        status: 429,
+        headers: { 'Retry-After': '0' },
+      }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ ok: true }), { status: 200 }));
+    (global as unknown as { fetch: typeof fetch }).fetch = mock as unknown as typeof fetch;
+
+    await expect(
+      gorgiasApiRequest('https://acme.gorgias.com/api', '/tickets/1', baseInput.credentials, { method: 'GET' })
+    ).resolves.toEqual({ ok: true });
+    expect(mock).toHaveBeenCalledTimes(2);
   });
 });

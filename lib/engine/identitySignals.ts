@@ -11,6 +11,7 @@
  */
 
 import type { NormalisedOrder, IdentitySignalResult } from './types';
+import { normaliseAddressTokens, normaliseEmail } from '@/lib/identity/normalise';
 
 // Internal helper type for orders that carry their raw/normalised string values
 type OrderWithRaw = NormalisedOrder & {
@@ -24,18 +25,12 @@ type OrderWithRaw = NormalisedOrder & {
 // =============================================================================
 
 /**
- * Strip plus-alias and collapse dots (gmail-style normalisation applied broadly).
- * Used to detect deliberate email obfuscation — not the canonical normaliser.
+ * Strip plus-alias and collapse dots only where the canonical normaliser says
+ * that behavior is mailbox-equivalent. This keeps Gmail aliases comparable
+ * without treating dots/plus tags as interchangeable on custom domains.
  */
 export function stripEmailVariants(email: string): string {
-  const lower = email.toLowerCase().trim();
-  const atIdx = lower.indexOf('@');
-  if (atIdx === -1) return lower;
-  const local = lower.slice(0, atIdx);
-  const domain = lower.slice(atIdx + 1);
-  // strip dots from local (gmail-style, applied broadly for matching)
-  const stripped = local.replace(/\./g, '').split('+')[0];
-  return `${stripped}@${domain}`;
+  return normaliseEmail(email) ?? email.toLowerCase().trim();
 }
 
 /**
@@ -296,8 +291,10 @@ export function addressCluster(
     };
   }
 
-  const wordsA = new Set(a._rawAddress.split(/\s+/).filter((w) => w.length > 1));
-  const wordsB = new Set(b._rawAddress.split(/\s+/).filter((w) => w.length > 1));
+  const tokensA = normaliseAddressTokens(a._rawAddress);
+  const tokensB = normaliseAddressTokens(b._rawAddress);
+  const wordsA = new Set(tokensA.filter((w) => w.length > 1));
+  const wordsB = new Set(tokensB.filter((w) => w.length > 1));
 
   if (wordsA.size === 0 || wordsB.size === 0) {
     return {
@@ -305,6 +302,19 @@ export function addressCluster(
       fired: false,
       confidence: 0,
       evidence: 'address too short to compare',
+      dataPointsUsed: ['shipping_address'],
+      dataPointsMissing: [],
+    };
+  }
+
+  const unitsA = new Set(tokensA.filter((w) => w.startsWith('unit:')));
+  const unitsB = new Set(tokensB.filter((w) => w.startsWith('unit:')));
+  if (unitsA.size > 0 && unitsB.size > 0 && ![...unitsA].some((unit) => unitsB.has(unit))) {
+    return {
+      signal: 'addressCluster',
+      fired: false,
+      confidence: 0,
+      evidence: 'different secondary address units',
       dataPointsUsed: ['shipping_address'],
       dataPointsMissing: [],
     };

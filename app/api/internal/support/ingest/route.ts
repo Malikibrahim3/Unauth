@@ -9,6 +9,7 @@ import {
   SupportIngestError,
   supportIngestBodySchema,
 } from '@/lib/support/intake/ingestSupportCase';
+import { enforceRateLimit, getClientIp, limitFromEnv, rateLimitKey } from '@/lib/ratelimit';
 
 export const runtime = 'nodejs';
 
@@ -21,6 +22,12 @@ function badRequest(message: string) {
 }
 
 export async function POST(request: NextRequest) {
+  const limited = await enforceRateLimit(
+    rateLimitKey('webhook', 'support-ingest', getClientIp(request.headers)),
+    limitFromEnv('SUPPORT_INGEST_RATE_LIMIT', 1000, 60)
+  );
+  if (limited) return limited;
+
   const secret = request.headers.get(SUPPORT_INGEST_SECRET_HEADER);
   if (!verifySupportIngestSecret(secret)) {
     return unauthorized();

@@ -19,6 +19,7 @@ type MemoryCounter = {
 };
 
 const memoryCounters = new Map<string, MemoryCounter>();
+let warnedInMemoryFallback = false;
 
 function envFlag(name: string): boolean {
   const value = process.env[name]?.toLowerCase();
@@ -116,7 +117,10 @@ export async function rateLimit(
     if (vercelEnv === 'production' || vercelEnv === 'preview') {
       throw new Error('Upstash Redis rate limiting is not configured — set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN');
     }
-    console.warn('[ratelimit] Upstash not configured — falling back to in-memory rate limiting (not suitable for production)');
+    if (!warnedInMemoryFallback) {
+      warnedInMemoryFallback = true;
+      console.warn('[ratelimit] Upstash not configured — falling back to in-memory rate limiting (not suitable for production)');
+    }
     return inMemoryRateLimit(redisKey, max, retryAfter);
   }
 

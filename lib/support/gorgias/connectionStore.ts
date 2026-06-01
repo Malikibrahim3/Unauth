@@ -114,3 +114,23 @@ export async function recordGorgiasSupportConnectionError(
     throw new Error(`record_gorgias_connection_error_failed: ${error.message}`);
   }
 }
+
+export async function markGorgiasSupportConnectionRevoked(
+  supabase: unknown,
+  connectionId: string,
+  safeErrorCode = 'gorgias_api_credentials_revoked'
+): Promise<void> {
+  const now = new Date().toISOString();
+  const { error } = await (supabase as PatchableSupabase)
+    .from(TABLES.SUPPORT_PROVIDER_CONNECTIONS)
+    .update({
+      status: 'revoked',
+      last_error: safeErrorCode.slice(0, 500),
+      updated_at: now,
+    })
+    .eq('id', connectionId);
+
+  if (error) {
+    throw new Error(`mark_gorgias_connection_revoked_failed: ${error.message}`);
+  }
+}

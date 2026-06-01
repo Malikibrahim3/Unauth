@@ -75,11 +75,12 @@ describe('derivePrimaryReason (support_case_intake query)', () => {
     const hash = 'emailhash-1';
     const store = client.__store;
     store.set(TABLES.SUPPORT_CASE_INTAKE, [
-      { customer_email_hash: hash, claim_type: 'INR', is_claim: true, merchant_id: 'm1' },
-      { customer_email_hash: hash, claim_type: 'INR', is_claim: true, merchant_id: 'm2' },
-      { customer_email_hash: hash, claim_type: 'INR', is_claim: true, merchant_id: 'm2' },
-      { customer_email_hash: 'other', claim_type: 'damaged', is_claim: true, merchant_id: 'm1' },
-      { customer_email_hash: hash, claim_type: 'damaged', is_claim: false, merchant_id: 'm1' },
+      { customer_email_hash: hash, claim_type: 'INR', is_claim: true, merchant_id: 'm1', requires_merchant_review: false },
+      { customer_email_hash: hash, claim_type: 'INR', is_claim: true, merchant_id: 'm2', requires_merchant_review: false },
+      { customer_email_hash: hash, claim_type: 'INR', is_claim: true, merchant_id: 'm2', requires_merchant_review: false },
+      { customer_email_hash: hash, claim_type: 'damaged', is_claim: true, merchant_id: 'm3', requires_merchant_review: true },
+      { customer_email_hash: 'other', claim_type: 'damaged', is_claim: true, merchant_id: 'm1', requires_merchant_review: false },
+      { customer_email_hash: hash, claim_type: 'damaged', is_claim: false, merchant_id: 'm1', requires_merchant_review: false },
     ]);
 
     const reason = await derivePrimaryReason(client as unknown as SupabaseClient, hash);

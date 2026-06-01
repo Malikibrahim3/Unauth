@@ -13,6 +13,7 @@ function makeSupabaseCapture() {
         return {
           select: () => ({
             single: async () => ({ data: payload, error: null }),
+            maybeSingle: async () => ({ data: payload, error: null }),
           }),
         };
       },
@@ -25,6 +26,7 @@ describe('claims store', () => {
   it('creating claim works and links to shopify_order_id', async () => {
     const { supabase, calls } = makeSupabaseCapture();
     await upsertMerchantClaim(supabase, {
+      merchant_id: '550e8400-e29b-41d4-a716-446655440000',
       shop_domain: 'unit-test.myshopify.com',
       shopify_order_id: '1001',
       claim_type: 'missing_parcel',
@@ -34,6 +36,7 @@ describe('claims store', () => {
     });
     expect(calls).toHaveLength(1);
     expect(calls[0].table).toBe('merchant_claims');
+    expect(calls[0].opts.onConflict).toBe('merchant_id,shopify_order_id');
     expect(calls[0].payload.shopify_order_id).toBe('1001');
     expect(calls[0].payload.customer_email).toBeUndefined();
   });
@@ -67,6 +70,7 @@ describe('claims store', () => {
     const { supabase } = makeSupabaseCapture();
     await expect(
       upsertMerchantClaim(supabase, {
+        merchant_id: '550e8400-e29b-41d4-a716-446655440000',
         shop_domain: 'unit-test.myshopify.com',
         claim_type: 'fake_reason' as any,
       })
@@ -92,10 +96,45 @@ describe('claims store', () => {
     const { supabase } = makeSupabaseCapture();
     await expect(
       upsertMerchantClaim(supabase, {
+        merchant_id: '550e8400-e29b-41d4-a716-446655440000',
         shop_domain: 'unit-test.myshopify.com',
         shopify_order_id: '1002',
         claim_type: 'other',
       })
     ).resolves.toBeTruthy();
+  });
+
+  it('can ignore duplicates atomically on merchant/order conflict', async () => {
+    const { supabase, calls } = makeSupabaseCapture();
+    await upsertMerchantClaim(
+      supabase,
+      {
+        merchant_id: '550e8400-e29b-41d4-a716-446655440000',
+        shopify_order_id: '1002',
+        claim_type: 'other',
+      },
+      { ignoreDuplicates: true }
+    );
+    expect(calls[0].opts).toMatchObject({
+      onConflict: 'merchant_id,shopify_order_id',
+      ignoreDuplicates: true,
+    });
+  });
+
+  it('rejects claims without a merchant id or order identity', async () => {
+    const { supabase } = makeSupabaseCapture();
+    await expect(
+      upsertMerchantClaim(supabase, {
+        shopify_order_id: '1003',
+        claim_type: 'other',
+      })
+    ).rejects.toThrow(/merchant_id is required/);
+
+    await expect(
+      upsertMerchantClaim(supabase, {
+        merchant_id: '550e8400-e29b-41d4-a716-446655440000',
+        claim_type: 'other',
+      })
+    ).rejects.toThrow(/Select an order/);
   });
 });

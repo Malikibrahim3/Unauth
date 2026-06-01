@@ -8,7 +8,7 @@ describe('claim SLA helpers', () => {
   });
 
   it('marks 48-72h claims as approaching SLA', () => {
-    expect(getClaimSlaState({ status: 'under_review', submitted_at: '2026-05-25T08:00:00.000Z' }, now).state).toBe('approaching');
+    expect(getClaimSlaState({ status: 'open', submitted_at: '2026-05-25T08:00:00.000Z' }, now).state).toBe('approaching');
   });
 
   it('marks newer claims as normal', () => {
@@ -16,7 +16,7 @@ describe('claim SLA helpers', () => {
   });
 
   it('does not mark resolved claims as open overdue', () => {
-    const claim = { status: 'resolved', submitted_at: '2026-05-20T12:00:00.000Z' };
+    const claim = { status: 'resolved_refunded', submitted_at: '2026-05-20T12:00:00.000Z' };
     expect(getClaimSlaState(claim, now).state).toBe('resolved');
     expect(formatClaimAge(claim, now)).toContain('Resolved in');
   });

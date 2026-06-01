@@ -1,7 +1,10 @@
 import { z } from 'zod';
+import { CANONICAL_CLAIM_STATUSES } from '@/lib/claims/statusMachine';
 
 const claimTypeSchema = z.enum(['missing_parcel', 'damaged', 'wrong_item', 'refund_request', 'chargeback', 'return_abuse', 'other']);
-const claimStatusSchema = z.enum(['open', 'under_review', 'evidence_requested', 'pending', 'escalated', 'resolved', 'closed']);
+const claimStatusSchema = z.enum(CANONICAL_CLAIM_STATUSES);
+const detectionMethodSchema = z.enum(['tag', 'keyword_fallback', 'manual', 'shopify_dispute']);
+const refundTypeSchema = z.enum(['full', 'partial', 'unknown']);
 const outcomeDecisionSchema = z.enum(['approved', 'denied', 'escalated', 'partial_refund', 'full_refund', 'chargeback_disputed', 'blacklist', 'no_action']);
 const outcomeSchema = z.enum(['loss', 'recovered', 'pending', 'chargeback_won', 'chargeback_lost', 'customer_verified', 'suspected_fraud', 'legitimate']);
 const evidenceTypeSchema = z.enum(['tracking', 'proof_of_delivery', 'customer_message', 'support_ticket', 'return_label', 'warehouse_scan', 'payment_dispute', 'note', 'other']);
@@ -24,6 +27,12 @@ export const createClaimSchema = z.object({
   currency: z.string().nullable().optional(),
   submitted_at: z.string().datetime().optional(),
   actor_user_id: z.string().uuid().nullable().optional(),
+  detection_method: detectionMethodSchema.default('manual'),
+  trigger_tag: z.string().nullable().optional(),
+  trigger_tags: z.array(z.string()).default([]),
+  requires_merchant_review: z.boolean().default(false),
+  merchant_confirmed_at: z.string().datetime().nullable().optional(),
+  refund_type: refundTypeSchema.nullable().optional(),
 }).refine(
   (d) => !!(d.shopify_order_id || d.order_ref || d.audit_transaction_id),
   { message: 'Select an order before saving the claim.' },
@@ -54,15 +63,63 @@ export const createEvidenceItemSchema = z.object({
   actor_user_id: z.string().uuid().nullable().optional(),
 });
 
-export async function upsertMerchantClaim(supabase: any, input: z.input<typeof createClaimSchema>) {
-  const payload = createClaimSchema.parse(input);
+type MerchantClaimConflictTarget = 'id' | 'merchant_id,shopify_order_id' | 'merchant_id,order_ref' | 'merchant_id,audit_transaction_id';
+
+function merchantClaimConflictTarget(payload: z.output<typeof createClaimSchema>): MerchantClaimConflictTarget {
+  if (payload.id) return 'id';
+  if (payload.shopify_order_id) return 'merchant_id,shopify_order_id';
+  if (payload.order_ref) return 'merchant_id,order_ref';
+  return 'merchant_id,audit_transaction_id';
+}
+
+async function fetchExistingMerchantClaim(
+  supabase: any,
+  payload: z.output<typeof createClaimSchema>,
+  conflictTarget: MerchantClaimConflictTarget
+) {
+  if (conflictTarget === 'id') {
+    const { data, error } = await supabase
+      .from('merchant_claims' as any)
+      .select()
+      .eq('id', payload.id)
+      .maybeSingle();
+    if (error) throw new Error(`select merchant_claims failed: ${error.message}`);
+    return data;
+  }
+
+  const [merchantColumn, orderColumn] = conflictTarget.split(',');
   const { data, error } = await supabase
     .from('merchant_claims' as any)
-    .upsert(payload, { onConflict: 'id' })
     .select()
-    .single();
-  if (error) throw new Error(`upsert merchant_claims failed: ${error.message}`);
+    .eq(merchantColumn, payload.merchant_id)
+    .eq(orderColumn, payload[orderColumn as keyof typeof payload])
+    .maybeSingle();
+  if (error) throw new Error(`select merchant_claims failed: ${error.message}`);
   return data;
+}
+
+export async function upsertMerchantClaim(
+  supabase: any,
+  input: z.input<typeof createClaimSchema>,
+  options: { ignoreDuplicates?: boolean } = {}
+) {
+  const payload = createClaimSchema.parse(input);
+  if (!payload.merchant_id) {
+    throw new Error('merchant_id is required to create or update a claim');
+  }
+
+  const onConflict = merchantClaimConflictTarget(payload);
+  const { data, error } = await supabase
+    .from('merchant_claims' as any)
+    .upsert(payload, { onConflict, ignoreDuplicates: options.ignoreDuplicates === true })
+    .select()
+    .maybeSingle();
+  if (error) throw new Error(`upsert merchant_claims failed: ${error.message}`);
+  if (data) return data;
+
+  const existing = await fetchExistingMerchantClaim(supabase, payload, onConflict);
+  if (!existing) throw new Error('upsert merchant_claims failed: no row returned');
+  return existing;
 }
 
 export async function upsertMerchantCaseOutcome(supabase: any, input: z.input<typeof createOutcomeSchema>) {

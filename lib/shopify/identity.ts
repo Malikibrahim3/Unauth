@@ -1,4 +1,8 @@
-import { normaliseAddress as normaliseAddressCanonical } from '@/lib/identity/normalise';
+import {
+  normaliseAddress as normaliseAddressCanonical,
+  normaliseEmail as normaliseEmailCanonical,
+  normalisePhone as normalisePhoneCanonical,
+} from '@/lib/identity/normalise';
 
 export type ShopifyAddress = {
   name?: string | null;
@@ -28,13 +32,11 @@ function normalizeText(value: string | null | undefined): string | null {
 }
 
 export function normalizeEmail(value: string | null | undefined): string | null {
-  const v = normalizeText(value);
-  return v ? v.toLowerCase() : null;
+  return normaliseEmailCanonical(value);
 }
 
 export function normalizePhone(value: string | null | undefined): string | null {
-  const v = normalizeText(value);
-  return v ? v.replace(/\s+/g, '') : null;
+  return normalisePhoneCanonical(value);
 }
 
 export function normalizeAddress(address: ShopifyAddress | null | undefined): string | null {

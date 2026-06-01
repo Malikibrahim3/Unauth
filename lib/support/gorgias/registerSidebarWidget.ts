@@ -138,6 +138,19 @@ export function basicAuthHeader(email: string, apiKey: string): string {
   return `Basic ${Buffer.from(`${email}:${apiKey}`, 'utf8').toString('base64')}`;
 }
 
+function retryAfterMs(value: string | null): number | null {
+  if (!value?.trim()) return null;
+  const seconds = Number(value);
+  if (Number.isFinite(seconds) && seconds >= 0) return seconds * 1000;
+  const dateMs = Date.parse(value);
+  if (!Number.isNaN(dateMs)) return Math.max(0, dateMs - Date.now());
+  return null;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function parseGorgiasErrorResponse(res: Response): Promise<string> {
   const text = await res.text();
   if (!text.trim()) return `HTTP ${res.status}`;
@@ -161,15 +174,29 @@ export async function gorgiasApiRequest<T>(
   init: RequestInit
 ): Promise<T> {
   const url = `${apiBaseUrl.replace(/\/$/, '')}${path.startsWith('/') ? path : `/${path}`}`;
-  const res = await fetch(url, {
-    ...init,
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-      Authorization: basicAuthHeader(credentials.email, credentials.api_key),
-      ...(init.headers ?? {}),
-    },
-  });
+  let res: Response | null = null;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    res = await fetch(url, {
+      ...init,
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: basicAuthHeader(credentials.email, credentials.api_key),
+        ...(init.headers ?? {}),
+      },
+    });
+
+    if (res.status !== 429 || attempt === 2) break;
+    await sleep(retryAfterMs(res.headers.get('retry-after')) ?? 2 ** attempt * 500);
+  }
+
+  if (!res) {
+    throw new GorgiasSidebarRegistrationError(
+      'gorgias_sidebar_registration_failed',
+      0,
+      'request_failed'
+    );
+  }
 
   if (!res.ok) {
     const detail = await parseGorgiasErrorResponse(res);

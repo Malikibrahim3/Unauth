@@ -36,20 +36,22 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const claim = loaded.claim!;
   if (!isFinalClaimStatus(claim.status)) {
-    return NextResponse.json({ error: 'Only resolved or closed claims can be reopened.' }, { status: 409 });
+    return NextResponse.json({ error: 'Only final claims can be reopened.' }, { status: 409 });
   }
 
   try {
-    const updated = await updateClaimStatus(serviceClient, claim, ctx.merchantId, 'under_review');
+    const updated = await updateClaimStatus(serviceClient, claim, ctx.merchantId, 'open', { allowReopen: true });
     await appendClaimEvent(serviceClient, {
       claim_id: claimId,
       merchant_id: ctx.merchantId,
       shop_domain: claim.shop_domain,
       event_type: 'claim_reopened',
       previous_status: claim.status,
-      new_status: 'under_review',
+      new_status: 'open',
       note: parsed.data.note,
       actor_user_id: user.id,
+      triggered_by: 'merchant_manual_reopen',
+      metadata: { triggered_by: 'merchant_manual_reopen' },
     });
     return NextResponse.json({ claim: { id: updated.id, status: updated.status } });
   } catch {

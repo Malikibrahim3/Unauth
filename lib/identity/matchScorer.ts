@@ -17,7 +17,8 @@
  *
  * Grade gates (evidence-first):
  *   confirmed  : Two independent strong anchors.
- *   probable   : At least one strong anchor, plus additional support.
+ *   probable   : At least one strong anchor, plus additional support, or an
+ *                exact normalised email with conflicting stable surface data.
  *   candidate  : Medium-anchor evidence or weakly corroborated identity hints.
  *   none       : Single soft signal, name-only, postcode-only, IP-only,
  *                address-only, BIN+last4-only, or no anchor at all.
@@ -101,8 +102,9 @@ const SIGNAL_DEFS: Record<
   device:           { tier: 'strong',       points: 30, anchor: true,  label: 'same device fingerprint',   changedLabel: 'different device fingerprint' },
   account:          { tier: 'strong',       points: 25, anchor: true,  label: 'same account ID',            changedLabel: 'different account ID' },
   phone:            { tier: 'strong',       points: 30, anchor: true,  label: 'same phone number',          changedLabel: 'different phone number' },
-  // Email is a medium anchor (normalized form strips plus-aliases)
-  email:            { tier: 'medium',       points: 20, anchor: true,  label: 'same email address',         changedLabel: 'new email surface form' },
+  // Exact normalised email is strong, but address/phone/account conflicts cap
+  // it at probable below to avoid over-merging changed household/business data.
+  email:            { tier: 'strong',       points: 35, anchor: true,  label: 'same email address',         changedLabel: 'new email surface form' },
   // Full shipping/billing address is a medium anchor per product spec
   shipping_address: { tier: 'medium',       points: 18, anchor: true,  label: 'same shipping address',      changedLabel: 'different shipping address' },
   billing_address:  { tier: 'medium',       points: 18, anchor: true,  label: 'same billing address',       changedLabel: 'different billing address' },
@@ -181,7 +183,22 @@ function isNameVariantMatch(a: string, b: string): boolean {
 
 function isAddressVariantMatch(a: string, b: string): boolean {
   if (a === b) return true;
+  if (hasConflictingUnitTokens(a, b)) return false;
   return addressTokenOverlap(a, b) >= ADDRESS_TOKEN_OVERLAP_THRESHOLD;
+}
+
+function unitTokens(value: string): Set<string> {
+  return new Set(value.split(' ').filter((token) => token.startsWith('unit:')));
+}
+
+function hasConflictingUnitTokens(a: string, b: string): boolean {
+  const aUnits = unitTokens(a);
+  const bUnits = unitTokens(b);
+  if (aUnits.size === 0 || bUnits.size === 0) return false;
+  for (const unit of aUnits) {
+    if (bUnits.has(unit)) return false;
+  }
+  return true;
 }
 
 // ---------------------------------------------------------------------------
@@ -201,6 +218,7 @@ function isAddressVariantMatch(a: string, b: string): boolean {
  *   - Two medium anchors (no strong anchor) → 'candidate'
  *   - One strong anchor + ≥1 corroborator → 'probable'
  *   - One strong anchor alone → 'candidate'
+ *   - Exact normalised email with no stable-surface conflict → 'confirmed'
  *   - Two independent strong anchors → 'confirmed'
  *   - One strong anchor + many corroborators still cannot reach 'confirmed'
  */
@@ -236,6 +254,33 @@ function applyGateCaps(evidence: IdentityEvidence[]): MatchGrade {
   if (mediumAnchors.length === 1) return 'candidate';
 
   return 'none';
+}
+
+const GRADE_RANK: Record<MatchGrade, number> = {
+  none: 0,
+  candidate: 1,
+  probable: 2,
+  confirmed: 3,
+};
+
+function maxGrade(a: MatchGrade, b: MatchGrade): MatchGrade {
+  return GRADE_RANK[a] >= GRADE_RANK[b] ? a : b;
+}
+
+const EMAIL_CONFLICT_LABELS = new Set([
+  'different device fingerprint',
+  'different account ID',
+  'different phone number',
+  'different shipping address',
+  'different billing address',
+  'different card last4',
+]);
+
+function applyExactEmailGrade(evidence: IdentityEvidence[], changed: string[], baseGrade: MatchGrade): MatchGrade {
+  const hasExactEmail = evidence.some((item) => item.signal === 'email' && item.matchType === 'exact');
+  if (!hasExactEmail) return baseGrade;
+  const hasStableConflict = changed.some((label) => EMAIL_CONFLICT_LABELS.has(label));
+  return hasStableConflict ? maxGrade(baseGrade, 'probable') : 'confirmed';
 }
 
 // ---------------------------------------------------------------------------
@@ -378,12 +423,18 @@ export function scoreIdentityMatch(
     }
   }
 
-  // Apply evidence-first grade gate
-  const grade = applyGateCaps(evidence);
-
   // Numeric score (capped at 100) — secondary to grade gate
   const rawScore = evidence.reduce((sum, e) => sum + e.points, 0);
   const identity_match_score = Math.min(rawScore, 100);
+
+  // Matched datapoints (human-readable)
+  const matched_datapoints = evidence.map((e) => e.matchedValueLabel);
+
+  // Changed datapoints
+  const changed_datapoints = computeChangedDatapoints(rowValues, others, matchedSignals);
+
+  // Apply evidence-first grade gate, including exact-email conflict handling.
+  const grade = applyExactEmailGrade(evidence, changed_datapoints, applyGateCaps(evidence));
 
   // Determine match_status from grade
   const statusMap: Record<MatchGrade, MatchStatus> = {
@@ -393,12 +444,6 @@ export function scoreIdentityMatch(
     confirmed: 'confirmed',
   };
   const match_status: MatchStatus = statusMap[grade];
-
-  // Matched datapoints (human-readable)
-  const matched_datapoints = evidence.map((e) => e.matchedValueLabel);
-
-  // Changed datapoints
-  const changed_datapoints = computeChangedDatapoints(rowValues, others, matchedSignals);
 
   // Evidence summary
   const evidence_summary = buildEvidenceSummary(grade, matched_datapoints, changed_datapoints);

@@ -44,6 +44,7 @@ function body(merchantId: string, ticket: Record<string, unknown>) {
   return {
     merchant_id: merchantId,
     provider: 'gorgias' as const,
+    shop_domain: 'unit-test.myshopify.com',
     event_type: 'ticket_created',
     raw: ticket,
   };
@@ -53,9 +54,36 @@ function caseRows(client: MemoryClient) {
   return rowsOf(client, TABLES.SUPPORT_CASE_INTAKE);
 }
 
+function seedShopifyOrder(client: MemoryClient, order: { id: string; orderNumber?: string; customerId?: string | null }) {
+  const rows = rowsOf(client, 'shopify_order_signals');
+  rows.push({
+    id: `sig-${order.id}`,
+    shop_domain: 'unit-test.myshopify.com',
+    shopify_order_id: order.id,
+    order_number: order.orderNumber ?? order.id,
+    customer_id: order.customerId ?? null,
+  });
+  client.__store.set('shopify_order_signals', rows);
+}
+
+function seedClaimTagConfig(client: MemoryClient, merchantId: string, triggerTag = 'parcel-claim') {
+  const rows = rowsOf(client, 'merchant_claim_tag_configs');
+  rows.push({
+    id: `${merchantId}-claim-tag-config`,
+    merchant_id: merchantId,
+    helpdesk_platform: 'gorgias',
+    claim_trigger_tags: [triggerTag],
+    outcome_tags: {},
+    void_tags: [],
+    keyword_fallback_enabled: true,
+  });
+  client.__store.set('merchant_claim_tag_configs', rows);
+}
+
 describe('ingestSupportCase — claim intelligence', () => {
   it('inserts a valid claim into intake, order context, and claim summary', async () => {
     const client = createMemoryClient();
+    seedClaimTagConfig(client, MERCHANT_A);
     const result = await ingestSupportCase(
       client,
       body(
@@ -65,6 +93,7 @@ describe('ingestSupportCase — claim intelligence', () => {
           subject: 'Where is my order',
           body: 'my package never arrived',
           email: 'alice@example.com',
+          tags: ['parcel-claim'],
           order: { id: '1007', total_price: 90, payment_method: 'credit_card', customer: { orders_count: 1 } },
         })
       )
@@ -88,6 +117,31 @@ describe('ingestSupportCase — claim intelligence', () => {
     expect(summary[0].total_orders).toBe(1);
     expect(summary[0].claim_rate).toBe(1.0);
     expect(summary[0].primary_reason).toBe('INR');
+  });
+
+  it('does not count unconfirmed keyword fallback claims in the confirmed summary', async () => {
+    const client = createMemoryClient();
+    const result = await ingestSupportCase(
+      client,
+      body(
+        MERCHANT_A,
+        gorgiasTicket({
+          id: 'g-keyword-summary',
+          body: 'my package never arrived',
+          email: 'fallback@example.com',
+          order: { id: '1008', customer: { orders_count: 2 } },
+        })
+      )
+    );
+
+    expect(result.is_claim).toBe(true);
+    expect(result.detection_method).toBe('keyword_fallback');
+    expect(result.requires_merchant_review).toBe(true);
+    const summary = rowsOf(client, TABLES.CUSTOMER_CLAIM_SUMMARY);
+    expect(summary).toHaveLength(1);
+    expect(summary[0].total_claims).toBe(0);
+    expect(summary[0].total_orders).toBe(2);
+    expect(summary[0].claim_rate).toBe(0);
   });
 
   it('upserts a duplicate ticket id instead of duplicating', async () => {
@@ -118,11 +172,12 @@ describe('ingestSupportCase — claim intelligence', () => {
 
   it('increments the summary and recalculates claim_rate as claims grow', async () => {
     const client = createMemoryClient();
+    seedClaimTagConfig(client, MERCHANT_A);
     const email = 'grow@example.com';
 
     await ingestSupportCase(
       client,
-      body(MERCHANT_A, gorgiasTicket({ id: 'g-1', email, body: 'never arrived', order: { id: '1', customer: { orders_count: 4 } } }))
+      body(MERCHANT_A, gorgiasTicket({ id: 'g-1', email, body: 'never arrived', tags: ['parcel-claim'], order: { id: '1', customer: { orders_count: 4 } } }))
     );
     let summary = rowsOf(client, TABLES.CUSTOMER_CLAIM_SUMMARY)[0];
     expect(summary.total_claims).toBe(1);
@@ -131,7 +186,7 @@ describe('ingestSupportCase — claim intelligence', () => {
 
     await ingestSupportCase(
       client,
-      body(MERCHANT_A, gorgiasTicket({ id: 'g-2', email, body: 'package never arrived again', order: { id: '2', customer: { orders_count: 4 } } }))
+      body(MERCHANT_A, gorgiasTicket({ id: 'g-2', email, body: 'package never arrived again', tags: ['parcel-claim'], order: { id: '2', customer: { orders_count: 4 } } }))
     );
     summary = rowsOf(client, TABLES.CUSTOMER_CLAIM_SUMMARY)[0];
     expect(summary.total_claims).toBe(2);
@@ -227,13 +282,15 @@ describe('ingestSupportCase — claim intelligence', () => {
 
   it('reflects cross-merchant network totals (4 orders / 2 merchants / 3 claims => 0.75)', async () => {
     const client = createMemoryClient();
+    seedClaimTagConfig(client, MERCHANT_A);
+    seedClaimTagConfig(client, MERCHANT_B);
     const email = 'network@example.com';
 
     // Merchant A: 2 claims, 2 orders at A.
-    await ingestSupportCase(client, body(MERCHANT_A, gorgiasTicket({ id: 'a-1', email, body: 'never arrived', order: { id: 'a1', customer: { orders_count: 2 } } })));
-    await ingestSupportCase(client, body(MERCHANT_A, gorgiasTicket({ id: 'a-2', email, body: 'item not received', order: { id: 'a2', customer: { orders_count: 2 } } })));
+    await ingestSupportCase(client, body(MERCHANT_A, gorgiasTicket({ id: 'a-1', email, body: 'never arrived', tags: ['parcel-claim'], order: { id: 'a1', customer: { orders_count: 2 } } })));
+    await ingestSupportCase(client, body(MERCHANT_A, gorgiasTicket({ id: 'a-2', email, body: 'item not received', tags: ['parcel-claim'], order: { id: 'a2', customer: { orders_count: 2 } } })));
     // Merchant B: 1 claim, 2 orders at B.
-    await ingestSupportCase(client, body(MERCHANT_B, gorgiasTicket({ id: 'b-1', email, body: 'package never arrived', order: { id: 'b1', customer: { orders_count: 2 } } })));
+    await ingestSupportCase(client, body(MERCHANT_B, gorgiasTicket({ id: 'b-1', email, body: 'package never arrived', tags: ['parcel-claim'], order: { id: 'b1', customer: { orders_count: 2 } } })));
 
     const network = await getNetworkClaimSummary(client, hashSupportEmail(email));
     expect(network.total_orders).toBe(4);
@@ -241,5 +298,73 @@ describe('ingestSupportCase — claim intelligence', () => {
     expect(network.claim_rate).toBe(0.75);
     expect(network.primary_reason).toBe('INR');
     expect(network.merchant_count).toBe(2);
+  });
+
+  it('dedupes multiple helpdesk tickets for the same Shopify order into one claim', async () => {
+    const client = createMemoryClient();
+    seedShopifyOrder(client, { id: '1001', orderNumber: '1001' });
+
+    await ingestSupportCase(
+      client,
+      body(MERCHANT_A, gorgiasTicket({ id: 'g-dupe-1', subject: 'Order #1001', tags: ['chargeback'], order: { id: '1001' } }))
+    );
+    await ingestSupportCase(
+      client,
+      body(MERCHANT_A, gorgiasTicket({ id: 'g-dupe-2', subject: 'Order #1001', tags: ['chargeback'], order: { id: '1001' } }))
+    );
+
+    expect(rowsOf(client, 'merchant_claims')).toHaveLength(1);
+    expect(rowsOf(client, 'merchant_claims')[0]).toMatchObject({
+      merchant_id: MERCHANT_A,
+      shopify_order_id: '1001',
+      detection_method: 'tag',
+      trigger_tag: 'chargeback',
+    });
+  });
+
+  it('creates separate claims for different orders from the same customer', async () => {
+    const client = createMemoryClient();
+    seedShopifyOrder(client, { id: '1001', orderNumber: '1001' });
+    seedShopifyOrder(client, { id: '1002', orderNumber: '1002' });
+
+    await ingestSupportCase(
+      client,
+      body(MERCHANT_A, gorgiasTicket({ id: 'g-order-1', email: 'same@example.com', subject: 'Order #1001', tags: ['chargeback'], order: { id: '1001' } }))
+    );
+    await ingestSupportCase(
+      client,
+      body(MERCHANT_A, gorgiasTicket({ id: 'g-order-2', email: 'same@example.com', subject: 'Order #1002', tags: ['chargeback'], order: { id: '1002' } }))
+    );
+
+    expect(rowsOf(client, 'merchant_claims')).toHaveLength(2);
+  });
+
+  it('does not create a merchant claim when no order can be linked', async () => {
+    const client = createMemoryClient();
+    await ingestSupportCase(
+      client,
+      body(MERCHANT_A, gorgiasTicket({ id: 'g-unlinked', tags: ['chargeback'], body: 'I will file a chargeback' }))
+    );
+
+    expect(rowsOf(client, 'merchant_claims')).toHaveLength(0);
+    expect(caseRows(client)[0].is_claim).toBe(true);
+    expect(caseRows(client)[0].merchant_claim_id).toBeNull();
+  });
+
+  it('tag re-add on the same ticket is a no-op for claims and logs another claim event', async () => {
+    const client = createMemoryClient();
+    seedShopifyOrder(client, { id: '1003', orderNumber: '1003' });
+    const ticket = gorgiasTicket({ id: 'g-readd', subject: 'Order #1003', tags: ['chargeback'], order: { id: '1003' } });
+
+    await ingestSupportCase(client, body(MERCHANT_A, ticket));
+    await ingestSupportCase(client, body(MERCHANT_A, { ...ticket, tags: [] }));
+    await ingestSupportCase(client, body(MERCHANT_A, ticket));
+
+    expect(rowsOf(client, 'merchant_claims')).toHaveLength(1);
+    const claimEvents = rowsOf(client, 'claim_events');
+    expect(claimEvents.length).toBeGreaterThanOrEqual(2);
+    expect(claimEvents.map((event) => event.event_type)).toEqual(
+      expect.arrayContaining(['claim_created', 'claim_updated'])
+    );
   });
 });

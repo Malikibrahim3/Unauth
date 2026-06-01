@@ -39,8 +39,6 @@ export function claimsListTotalForView(view: ClaimsListView, counts: ClaimQueueC
     case 'history': return counts.resolved;
     case 'status':
       if (view.status === 'open') return counts.open;
-      if (view.status === 'under_review') return counts.underReview;
-      if (view.status === 'evidence_requested') return counts.awaitingEvidence;
       if (view.status === 'pending') return counts.awaitingInfo;
       if (view.status === 'escalated') return counts.escalated;
       return counts.active;
@@ -74,12 +72,15 @@ export function formatClaimsResultText(input: {
     case 'status': {
       const labels: Record<string, string> = {
         open: 'open claims',
-        under_review: 'claims under review',
-        evidence_requested: 'claims awaiting evidence',
         pending: 'claims awaiting info',
         escalated: 'escalated claims',
-        resolved: 'resolved claims',
-        closed: 'closed claims',
+        resolved_refunded: 'refunded claims',
+        resolved_won: 'won claims',
+        resolved_lost: 'lost claims',
+        resolved_denied: 'denied claims',
+        resolved_exchanged: 'exchanged claims',
+        voided: 'voided claims',
+        stale: 'stale claims',
       };
       return `${pagePart} ${labels[view.status] ?? view.status.replace(/_/g, ' ')}`;
     }

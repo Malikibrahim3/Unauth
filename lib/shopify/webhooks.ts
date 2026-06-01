@@ -9,6 +9,7 @@ const WEBHOOK_TOPICS = [
   'fulfillments/create',
   'fulfillments/update',
   'disputes/create',
+  'disputes/updated',
   'app/uninstalled',
 ] as const;
 

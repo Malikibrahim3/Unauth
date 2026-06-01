@@ -366,9 +366,159 @@ describe('shopify webhook p0', () => {
     expect(res.status).toBe(200);
     expect(refundUpserts.length).toBe(1);
     expect(refundUpserts[0].opts.onConflict).toBe('shop_domain,refund_id');
+    expect(refundUpserts[0].payload.refund_type).toBe('partial');
     expect(refundUpserts[0].payload.tracking_number).toBeUndefined();
     expect(refundUpserts[0].payload.email).toBeUndefined();
     expect(updates.some((u) => u.status === 'completed')).toBe(true);
+  });
+
+  it('test orders are ignored before production tables are written', async () => {
+    const writes: string[] = [];
+    const supabase = {
+      from: (table: string) => {
+        writes.push(table);
+        return { upsert: async () => ({ error: null }) };
+      },
+    };
+    await processWebhook(JSON.stringify({ id: 10, test: true, email: 'test@example.com' }), 'unit-test.myshopify.com', 'orders/create', supabase);
+    expect(writes).toHaveLength(0);
+  });
+
+  it('disputes/create creates a Shopify-dispute claim idempotently', async () => {
+    const claimUpserts: any[] = [];
+    const claimEvents: any[] = [];
+    const supabase = {
+      from: (table: string) => {
+        if (table === 'merchant_shopify_connections') {
+          return { select: () => ({ eq: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { merchant_id: '550e8400-e29b-41d4-a716-446655440000' }, error: null }) }) }) }) };
+        }
+        if (table === 'merchant_claims') {
+          return {
+            upsert: (payload: any, opts: any) => {
+              claimUpserts.push({ payload, opts });
+              return { select: () => ({ maybeSingle: async () => ({ data: { id: 'claim-1', ...payload }, error: null }) }) };
+            },
+          };
+        }
+        if (table === 'claim_events') {
+          return {
+            insert: (payload: any) => {
+              claimEvents.push(payload);
+              return { select: () => ({ single: async () => ({ data: { id: `ev-${claimEvents.length}`, ...payload }, error: null }) }) };
+            },
+          };
+        }
+        if (table === 'merchant_identities') return { upsert: async () => ({ error: null }) };
+        return { upsert: async () => ({ error: null }) };
+      },
+    };
+
+    await processWebhook(
+      JSON.stringify({ id: 91, order_id: 9001, status: 'needs_response', amount: '42.50', currency: 'USD' }),
+      'unit-test.myshopify.com',
+      'disputes/create',
+      supabase
+    );
+
+    expect(claimUpserts).toHaveLength(1);
+    expect(claimUpserts[0].payload).toMatchObject({
+      merchant_id: '550e8400-e29b-41d4-a716-446655440000',
+      shopify_order_id: '9001',
+      claim_type: 'chargeback',
+      status: 'escalated',
+      detection_method: 'shopify_dispute',
+      requires_merchant_review: false,
+    });
+    expect(claimUpserts[0].opts).toMatchObject({
+      onConflict: 'merchant_id,shopify_order_id',
+      ignoreDuplicates: true,
+    });
+    expect(claimEvents).toEqual(expect.arrayContaining([
+      expect.objectContaining({ claim_id: 'claim-1', event_type: 'claim_created', triggered_by: 'shopify_dispute' }),
+    ]));
+  });
+
+  it('disputes/updated can resolve an existing Shopify-dispute claim', async () => {
+    const claimUpserts: any[] = [];
+    const claimEvents: any[] = [];
+    const supabase = {
+      from: (table: string) => {
+        if (table === 'merchant_shopify_connections') {
+          return { select: () => ({ eq: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { merchant_id: '550e8400-e29b-41d4-a716-446655440000' }, error: null }) }) }) }) };
+        }
+        if (table === 'merchant_claims') {
+          return {
+            upsert: (payload: any, opts: any) => {
+              claimUpserts.push({ payload, opts });
+              return { select: () => ({ maybeSingle: async () => ({ data: { id: 'claim-1', ...payload }, error: null }) }) };
+            },
+          };
+        }
+        if (table === 'claim_events') {
+          return {
+            insert: (payload: any) => {
+              claimEvents.push(payload);
+              return { select: () => ({ single: async () => ({ data: { id: `ev-${claimEvents.length}`, ...payload }, error: null }) }) };
+            },
+          };
+        }
+        if (table === 'merchant_identities') return { upsert: async () => ({ error: null }) };
+        return { upsert: async () => ({ error: null }) };
+      },
+    };
+
+    await processWebhook(
+      JSON.stringify({ id: 92, order_id: 9002, status: 'won', amount: '50.00', currency: 'USD' }),
+      'unit-test.myshopify.com',
+      'disputes/updated',
+      supabase
+    );
+
+    expect(claimUpserts[0].payload.status).toBe('resolved_won');
+    expect(claimUpserts[0].payload.detection_method).toBe('shopify_dispute');
+    expect(claimUpserts[0].opts.ignoreDuplicates).toBe(false);
+    expect(claimEvents).toEqual(expect.arrayContaining([
+      expect.objectContaining({ claim_id: 'claim-1', event_type: 'status_changed', triggered_by: 'shopify_dispute' }),
+    ]));
+  });
+
+  it('orders/cancelled voids any open claim for the order', async () => {
+    const claimUpdates: any[] = [];
+    const claimEvents: any[] = [];
+    const supabase = {
+      from: (table: string) => {
+        if (table === 'merchant_shopify_connections') {
+          return { select: () => ({ eq: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { merchant_id: '550e8400-e29b-41d4-a716-446655440000' }, error: null }) }) }) }) };
+        }
+        if (table === 'merchant_claims') {
+          const chain: any = {
+            eq: () => chain,
+            select: async () => ({ data: [{ id: 'claim-void-1', status: 'open' }], error: null }),
+          };
+          return {
+            update: (payload: any) => {
+              claimUpdates.push(payload);
+              return chain;
+            },
+          };
+        }
+        if (table === 'claim_events') {
+          return {
+            insert: (payload: any) => {
+              claimEvents.push(payload);
+              return { select: () => ({ single: async () => ({ data: { id: `ev-${claimEvents.length}`, ...payload }, error: null }) }) };
+            },
+          };
+        }
+        return { upsert: async () => ({ error: null }) };
+      },
+    };
+
+    await processWebhook(JSON.stringify({ id: 9003 }), 'unit-test.myshopify.com', 'orders/cancelled', supabase);
+    expect(claimUpdates).toEqual(expect.arrayContaining([expect.objectContaining({ status: 'voided' })]));
+    expect(claimEvents).toEqual(expect.arrayContaining([
+      expect.objectContaining({ claim_id: 'claim-void-1', event_type: 'status_changed', new_status: 'voided', triggered_by: 'shopify_order_cancelled' }),
+    ]));
   });
 
   it('fulfillment webhook inserts fulfillment event with hashed tracking only', async () => {

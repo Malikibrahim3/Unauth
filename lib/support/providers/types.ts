@@ -81,6 +81,11 @@ export type SupportCaseIntakeRow = {
   resolution_type: string | null;
   escalation_count: number | null;
   time_to_first_claim_message_seconds: number | null;
+  detection_method: string;
+  trigger_tag: string | null;
+  trigger_tags: unknown[];
+  requires_merchant_review: boolean;
+  keyword_matched: string | null;
 };
 
 export type SupportCaseEventRow = {

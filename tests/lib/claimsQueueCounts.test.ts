@@ -26,7 +26,7 @@ describe('claim queue count semantics', () => {
 
   it('excludes viewed claims from unread but keeps them in active queue', () => {
     const row = {
-      status: 'under_review',
+      status: 'open',
       first_viewed_at: '2026-05-26T11:00:00.000Z',
       snoozed_until: null,
       submitted_at: '2026-05-20T12:00:00.000Z',
@@ -49,7 +49,7 @@ describe('claim queue count semantics', () => {
 
   it('excludes resolved claims from active and unread counts', () => {
     const row = {
-      status: 'resolved',
+      status: 'resolved_refunded',
       first_viewed_at: null,
       snoozed_until: null,
       submitted_at: '2026-05-20T12:00:00.000Z',
@@ -89,7 +89,7 @@ describe('claim queue count semantics', () => {
         { status: 'open', first_viewed_at: null, snoozed_until: null, submitted_at: '2026-05-20T12:00:00.000Z' },
         { status: 'open', first_viewed_at: '2026-05-26T11:00:00.000Z', snoozed_until: null, submitted_at: '2026-05-26T12:00:00.000Z' },
         { status: 'open', first_viewed_at: null, snoozed_until: '2026-05-30T12:00:00.000Z', submitted_at: '2026-05-26T12:00:00.000Z' },
-        { status: 'resolved', first_viewed_at: null, snoozed_until: null, submitted_at: '2026-05-20T12:00:00.000Z' },
+        { status: 'resolved_refunded', first_viewed_at: null, snoozed_until: null, submitted_at: '2026-05-20T12:00:00.000Z' },
       ],
       userId,
       now,

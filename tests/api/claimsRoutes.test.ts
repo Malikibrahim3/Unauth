@@ -113,7 +113,7 @@ function setupServiceClient(opts: {
           return resolve({ data: ownsShop ? [{ merchant_id: 'm-1', shop_domain: 'unit-test.myshopify.com', active: true }] : [], error: null });
         }
         if (table === 'merchant_claims') {
-          const isDuplicateProbe = filters.some((f) => f.column === 'claim_type');
+          const isDuplicateProbe = filters.some((f) => f.column === 'shopify_order_id' || f.column === 'order_ref');
           return resolve({ data: isDuplicateProbe ? (opts.duplicateClaims ?? []) : [], error: null });
         }
         return resolve({ data: [], error: null });
@@ -137,7 +137,7 @@ function setupServiceClient(opts: {
             const row = async () => ({
               data: {
                 id: '550e8400-e29b-41d4-a716-446655440000',
-                status: updateChain.status ?? 'resolved',
+                status: updateChain.status ?? claimStatus,
                 first_viewed_at: updateChain.payload?.first_viewed_at ?? firstViewedAt,
                 first_viewed_by: updateChain.payload?.first_viewed_by ?? (firstViewedAt ? 'user-1' : null),
                 assigned_to: Object.prototype.hasOwnProperty.call(updateChain.payload ?? {}, 'assigned_to') ? updateChain.payload.assigned_to : assignedTo,
@@ -156,7 +156,7 @@ function setupServiceClient(opts: {
             shop_domain: 'unit-test.myshopify.com',
             shopify_order_id: 'ORD-2025-00501',
             claim_type: 'missing_parcel',
-            status: 'under_review',
+            status: 'open',
           },
           error: null,
         });
@@ -247,7 +247,7 @@ describe('claims routes', () => {
     setupAuth(true);
     setupPermission();
     setupServiceClient({
-      duplicateClaims: [{ id: 'dupe-c1', status: 'under_review', shopify_order_id: '1001', customer_id: 'p1' }],
+      duplicateClaims: [{ id: 'dupe-c1', status: 'open', shopify_order_id: '1001', customer_id: 'p1' }],
     });
     (upsertMerchantClaim as jest.Mock).mockResolvedValue({ id: 'c1' });
     const res = await claimsPost(mkReq('http://localhost/api/claims', { shop_domain: 'unit-test.myshopify.com', shopify_order_id: '1001', claim_type: 'missing_parcel', status: 'open' }));
@@ -261,7 +261,7 @@ describe('claims routes', () => {
     setupAuth(true);
     setupPermission();
     setupServiceClient({
-      duplicateClaims: [{ id: 'resolved-c1', status: 'resolved', shopify_order_id: '1001', customer_id: 'p1' }],
+      duplicateClaims: [{ id: 'resolved-c1', status: 'resolved_refunded', shopify_order_id: '1001', customer_id: 'p1' }],
     });
     const res = await claimsPost(mkReq('http://localhost/api/claims', { shop_domain: 'unit-test.myshopify.com', shopify_order_id: '1001', claim_type: 'missing_parcel', status: 'open' }));
     const body = await res.json();
@@ -281,7 +281,7 @@ describe('claims routes', () => {
       order_ref: 'ORD-2025-00501',
       order_source: 'csv',
       claim_type: 'missing_parcel',
-      status: 'under_review',
+      status: 'open',
     });
 
     const res = await claimsPost(mkReq('http://localhost/api/claims', {
@@ -289,7 +289,7 @@ describe('claims routes', () => {
       order_ref: 'ORD-2025-00501',
       order_source: 'csv',
       claim_type: 'missing_parcel',
-      status: 'under_review',
+      status: 'open',
     }));
 
     expect(res.status).toBe(200);
@@ -314,7 +314,7 @@ describe('claims routes', () => {
       order_ref: 'ORD-2025-00501',
       order_source: 'csv',
       claim_type: 'missing_parcel',
-      status: 'under_review',
+      status: 'open',
     }));
     const body = await res.json();
 
@@ -372,19 +372,19 @@ describe('claims routes', () => {
   it('resolved claim can be reopened and writes event', async () => {
     setupAuth(true);
     setupPermission();
-    const { claimEvents } = setupServiceClient({ claimStatus: 'resolved' });
+    const { claimEvents } = setupServiceClient({ claimStatus: 'resolved_refunded' });
     const res = await reopenPost(
       mkReq('http://localhost/api/claims/c1/reopen', { note: 'Carrier correction received' }),
       { params: Promise.resolve({ claimId: '550e8400-e29b-41d4-a716-446655440000' }) }
     );
     expect(res.status).toBe(200);
-    expect(claimEvents).toEqual(expect.arrayContaining([expect.objectContaining({ event_type: 'claim_reopened', previous_status: 'resolved', new_status: 'under_review' })]));
+    expect(claimEvents).toEqual(expect.arrayContaining([expect.objectContaining({ event_type: 'claim_reopened', previous_status: 'resolved_refunded', new_status: 'open' })]));
   });
 
   it('decision reversal preserves previous outcome in event', async () => {
     setupAuth(true);
     setupPermission();
-    const { claimEvents } = setupServiceClient({ claimStatus: 'resolved', latestOutcome: { id: 'old-o1', decision: 'denied', outcome: 'suspected_fraud', updated_at: new Date().toISOString() } });
+    const { claimEvents } = setupServiceClient({ claimStatus: 'resolved_refunded', latestOutcome: { id: 'old-o1', decision: 'denied', outcome: 'suspected_fraud', updated_at: new Date().toISOString() } });
     (upsertMerchantCaseOutcome as jest.Mock).mockResolvedValue({ id: 'new-o1', claim_id: 'c1', decision: 'approved', outcome: 'legitimate' });
     const res = await reversePost(
       mkReq('http://localhost/api/claims/c1/reverse', { decision: 'approved', outcome: 'legitimate', note: 'Carrier confirmed misdelivery' }),
@@ -400,7 +400,7 @@ describe('claims routes', () => {
     })]));
   });
 
-  it('claim can be set to pending external evidence', async () => {
+  it('claim cannot be moved backward from open to pending', async () => {
     setupAuth(true);
     setupPermission();
     const { claimEvents } = setupServiceClient();
@@ -408,8 +408,8 @@ describe('claims routes', () => {
       mkReq('http://localhost/api/claims/c1/status', { status: 'pending', note: 'Awaiting carrier photo proof' }),
       { params: Promise.resolve({ claimId: '550e8400-e29b-41d4-a716-446655440000' }) }
     );
-    expect(res.status).toBe(200);
-    expect(claimEvents).toEqual(expect.arrayContaining([expect.objectContaining({ event_type: 'status_changed', new_status: 'pending' })]));
+    expect(res.status).toBe(409);
+    expect(claimEvents).toHaveLength(0);
   });
 
   it('wrong merchant cannot mutate claim', async () => {

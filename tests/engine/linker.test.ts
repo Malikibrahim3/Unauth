@@ -32,8 +32,9 @@ describe('normaliseEmail', () => {
     ['james.harrison+orders@gmail.com', 'jamesharrison@gmail.com'],
     ['JAMES.HARRISON+ORDERS+NESTED@gmail.com', 'jamesharrison@gmail.com'],
     ['  James.Harrison@gmail.com  ', 'jamesharrison@gmail.com'],
-    ['a.b.c@proton.me', 'abc@proton.me'],
-    ['user+anything@icloud.com', 'user@icloud.com'],
+    ['a.b.c@proton.me', 'a.b.c@proton.me'],
+    ['user+anything@icloud.com', 'user+anything@icloud.com'],
+    ['first.last+team@company.com', 'first.last+team@company.com'],
   ])('%s → %s', (input, expected) => {
     expect(normaliseEmail(input)).toBe(expected);
   });
@@ -51,12 +52,13 @@ describe('normaliseEmail', () => {
 
 describe('normalisePhone', () => {
   test.each([
-    ['+44 7700 900123', '7700900123'],
-    ['+447700900123', '7700900123'],
-    ['07700 900123', '7700900123'],
-    ['07700-900-123', '7700900123'],
-    ['0044 7700 900123', '7700900123'],
-    ['+1 (555) 010-0100', '5550100100'],
+    ['+44 7700 900123', '+447700900123'],
+    ['+447700900123', '+447700900123'],
+    ['07700 900123', '+447700900123'],
+    ['07700-900-123', '+447700900123'],
+    ['0044 7700 900123', '+447700900123'],
+    ['+1 (555) 010-0100', '+15550100100'],
+    ['555-123-4567', '+15551234567'],
   ])('%s → %s', (input, expected) => {
     expect(normalisePhone(input)).toBe(expected);
   });
@@ -102,7 +104,10 @@ describe('normaliseAddress', () => {
   test('expands abbreviations and sorts tokens', () => {
     expect(normaliseAddress('23 Baker St.')).toEqual(['23', 'baker', 'street']);
     expect(normaliseAddress('23 Baker Street')).toEqual(['23', 'baker', 'street']);
-    expect(normaliseAddress('Flat 4, 12 Oak Rd.')).toEqual(['12', '4', 'flat', 'oak', 'road']);
+    expect(normaliseAddress('Flat 4, 12 Oak Rd.')).toEqual(['12', 'oak', 'road', 'unit:4']);
+    expect(normaliseAddress('123 Main St Apt 4')).toEqual(['123', 'main', 'street', 'unit:4']);
+    expect(normaliseAddress('123 Main Street #4')).toEqual(['123', 'main', 'street', 'unit:4']);
+    expect(normaliseAddress('123 Main Street Ste 4')).toEqual(['123', 'main', 'street', 'unit:4']);
   });
   test('empty input yields empty array', () => {
     expect(normaliseAddress('')).toEqual([]);

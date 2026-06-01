@@ -65,14 +65,17 @@ describe('levenshtein', () => {
 });
 
 describe('stripEmailVariants', () => {
-  it('strips plus alias', () => {
-    expect(stripEmailVariants('john+test@example.com')).toBe('john@example.com');
+  it('strips Gmail plus alias', () => {
+    expect(stripEmailVariants('john+test@gmail.com')).toBe('john@gmail.com');
   });
-  it('strips dots from local part', () => {
-    expect(stripEmailVariants('j.o.h.n@example.com')).toBe('john@example.com');
+  it('strips Gmail dots from local part', () => {
+    expect(stripEmailVariants('j.o.h.n@gmail.com')).toBe('john@gmail.com');
   });
   it('handles combined dots and alias', () => {
     expect(stripEmailVariants('j.o.h.n+promo@gmail.com')).toBe('john@gmail.com');
+  });
+  it('preserves plus and dots on non-Gmail domains', () => {
+    expect(stripEmailVariants('j.o.h.n+promo@example.com')).toBe('j.o.h.n+promo@example.com');
   });
 });
 
@@ -182,11 +185,18 @@ describe('cardMatch signal', () => {
 
 describe('emailVariant signal', () => {
   it('fires with confidence 12 for plus-alias variant', () => {
-    const a = makeOrder({ _rawEmail: 'john@example.com' });
-    const b = makeOrder({ _rawEmail: 'john+test@example.com' });
+    const a = makeOrder({ _rawEmail: 'john@gmail.com' });
+    const b = makeOrder({ _rawEmail: 'j.o.h.n+test@gmail.com' });
     const result = emailVariant(a, b);
     expect(result.fired).toBe(true);
     expect(result.confidence).toBe(12);
+  });
+
+  it('does not fire for non-Gmail plus aliases', () => {
+    const a = makeOrder({ _rawEmail: 'john@example.com' });
+    const b = makeOrder({ _rawEmail: 'john+test@example.com' });
+    const result = emailVariant(a, b);
+    expect(result.fired).toBe(false);
   });
 
   it('fires with confidence 10 for numeric suffix variant', () => {
@@ -231,6 +241,14 @@ describe('addressCluster signal', () => {
     const result = addressCluster(a, b);
     expect(result.fired).toBe(true);
     expect(result.confidence).toBe(15);
+  });
+
+  it('does not fire for the same apartment building with different units', () => {
+    const a = makeOrder({ _rawAddress: '123 Main St Apt 4 Austin TX' });
+    const b = makeOrder({ _rawAddress: '123 Main Street Unit 5 Austin TX' });
+    const result = addressCluster(a, b);
+    expect(result.fired).toBe(false);
+    expect(result.evidence).toBe('different secondary address units');
   });
 
   it('fires with confidence 8 for 60–79% word overlap', () => {

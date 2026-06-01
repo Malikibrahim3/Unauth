@@ -8,27 +8,13 @@
  * See ARCHITECTURE.md and CLAUDE.md for the full rules.
  */
 
-/**
- * Consumer email providers that ignore dots in the local part. Only for these
- * domains do we strip dots — for business/custom domains, dots distinguish
- * different people (john.doe@acmecorp.com ≠ johndoe@acmecorp.com).
- */
-const DOT_IGNORING_DOMAINS = new Set([
-  'gmail.com', 'googlemail.com',
-  'icloud.com', 'me.com', 'mac.com',
-  'proton.me', 'protonmail.com', 'pm.me',
-  'fastmail.com', 'fastmail.fm',
-  'outlook.com', 'hotmail.com', 'hotmail.co.uk', 'live.com', 'live.co.uk', 'msn.com',
-  'yahoo.com', 'yahoo.co.uk', 'ymail.com',
-]);
+const GMAIL_DOMAINS = new Set(['gmail.com', 'googlemail.com']);
 
 /**
- * Email: strip plus aliases, lowercase. Remove dots before @ only for
- * consumer providers known to ignore them (Gmail, iCloud, Proton, etc.).
- * For business/custom domains dots are significant — stripping them would
- * create false-positive identity links between different employees.
- *
- * Plus-alias stripping is universal (RFC 5233 sub-addressing).
+ * Email: lowercase every address. For Gmail/Googlemail only, strip plus
+ * aliases and remove dots before @ because Google treats those as one mailbox.
+ * For all other domains, preserve the local part after lowercasing; dots and
+ * plus tags may be significant on business/custom domains.
  *
  * Returns null for invalid/empty input.
  */
@@ -37,11 +23,11 @@ export function normaliseEmail(raw: string | null | undefined): string | null {
   const lower = raw.trim().toLowerCase();
   const at = lower.indexOf('@');
   if (at < 1 || at === lower.length - 1) return null;
-  const plusStripped = lower.slice(0, at).split('+')[0];
   const domain = lower.slice(at + 1);
-  const localPart = DOT_IGNORING_DOMAINS.has(domain)
-    ? plusStripped.replace(/\./g, '')
-    : plusStripped;
+  const rawLocal = lower.slice(0, at);
+  const localPart = GMAIL_DOMAINS.has(domain)
+    ? rawLocal.split('+')[0].replace(/\./g, '')
+    : rawLocal;
   if (!localPart) return null;
   return `${localPart}@${domain}`;
 }
@@ -59,13 +45,16 @@ const ADDRESS_ABBREVIATIONS: Record<string, string> = {
   ct: 'court',
   pl: 'place',
   sq: 'square',
-  apt: 'apartment',
 };
 
+const UNIT_DESIGNATORS = '(?:apt|apartment|unit|suite|ste|flat|fl)';
+
 /**
- * Address: lowercase, expand common UK/US abbreviations to full form,
- * strip punctuation, collapse whitespace, return the token array sorted
- * alphabetically.
+ * Address: lowercase, canonicalise common UK/US street and unit terms, strip
+ * punctuation, collapse whitespace, return the token array sorted
+ * alphabetically. Secondary-unit markers are preserved as unit:<value> tokens
+ * so "Apt 4", "Unit 4", "Ste 4", and "#4" compare consistently while
+ * different units in the same building remain distinguishable.
  *
  * Sorting tokens means "23 Baker Street" and "Baker Street 23" produce
  * identical arrays — the rare cases where sort order actually carries
@@ -74,9 +63,12 @@ const ADDRESS_ABBREVIATIONS: Record<string, string> = {
  */
 export function normaliseAddressTokens(raw: string | null | undefined): string[] {
   if (!raw) return [];
-  const cleaned = raw
+  const unitNormalised = raw
     .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/#\s*([a-z0-9-]+)/g, ' unit:$1 ')
+    .replace(new RegExp(`\\b${UNIT_DESIGNATORS}\\.?\\s*#?\\s*([a-z0-9-]+)\\b`, 'g'), ' unit:$1 ');
+  const cleaned = unitNormalised
+    .replace(/[^a-z0-9:\s]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
   if (!cleaned) return [];
@@ -106,13 +98,45 @@ export const normaliseCard = (card: string | null | undefined): string => {
   return card.trim().replace(/\D/g, '').slice(-4);
 };
 
+function isPlausibleE164Digits(digits: string): boolean {
+  return digits.length >= 8 && digits.length <= 15;
+}
+
 /**
- * Phone: strip non-digits; use the last 10 digits as the canonical local number.
- * Stable across +44/07, +1, and formatting variants — used for hashing and entity matching.
+ * Phone: normalise to E.164 where possible. US/Canada 10-digit local numbers
+ * default to +1; UK local numbers beginning with 0 are preserved for legacy
+ * UK imports as +44. Bare international country-code numbers are accepted when
+ * they are already long enough to be plausible E.164 digits.
  */
 export function normalisePhone(raw: string | null | undefined): string | null {
   if (!raw) return null;
-  const digits = raw.replace(/\D/g, '');
-  if (digits.length < 7) return null;
-  return digits.slice(-10);
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  const withoutExtension = trimmed.replace(/\b(?:ext|extension|x)\.?\s*\d+\s*$/i, '');
+  const digits = withoutExtension.replace(/\D/g, '');
+  if (!digits) return null;
+
+  if (withoutExtension.trim().startsWith('+')) {
+    return isPlausibleE164Digits(digits) ? `+${digits}` : null;
+  }
+
+  if (digits.startsWith('00')) {
+    const international = digits.slice(2);
+    return isPlausibleE164Digits(international) ? `+${international}` : null;
+  }
+
+  if (digits.startsWith('011')) {
+    const international = digits.slice(3);
+    return isPlausibleE164Digits(international) ? `+${international}` : null;
+  }
+
+  if (digits.length === 10) return `+1${digits}`;
+  if (digits.length === 11 && digits.startsWith('1')) return `+${digits}`;
+  if ((digits.length === 10 || digits.length === 11) && digits.startsWith('0')) {
+    const ukNational = digits.replace(/^0+/, '');
+    return isPlausibleE164Digits(`44${ukNational}`) ? `+44${ukNational}` : null;
+  }
+  if (digits.length > 11 && digits.length <= 15) return `+${digits}`;
+
+  return null;
 }

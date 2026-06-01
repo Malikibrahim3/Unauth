@@ -15,6 +15,7 @@ import {
   scoreSentiment,
   type ClaimType,
 } from '@/lib/support/intake/classifyClaim';
+import type { ClaimDetectionMethod } from '@/lib/support/intake/tagClaimDetection';
 
 export const SUPPORT_SUMMARY_MAX_LENGTH = 400;
 
@@ -79,6 +80,11 @@ export type ClaimSignalFields = {
   resolution_type: string | null;
   escalation_count: number | null;
   time_to_first_claim_message_seconds: number | null;
+  detection_method: ClaimDetectionMethod;
+  trigger_tag: string | null;
+  trigger_tags: string[];
+  requires_merchant_review: boolean;
+  keyword_matched: string | null;
 };
 
 export type NormalizedSupportCaseIntake = ClaimSignalFields & {
@@ -153,6 +159,14 @@ export type DeriveClaimSignalsInput = {
   escalationCount?: number | null;
   timeToFirstClaimMessageSeconds?: number | null;
   explicitOutcome?: string | null;
+  claimDetectionOverride?: {
+    isClaim: boolean;
+    detectionMethod: ClaimDetectionMethod;
+    triggerTag: string | null;
+    triggerTags?: string[];
+    requiresMerchantReview: boolean;
+    keywordMatched?: string | null;
+  };
 };
 
 /**
@@ -174,8 +188,9 @@ export function deriveClaimSignals(
     input.customerTexts !== undefined
       ? [input.subject, ...customerTexts, tags.join(' ')]
       : [input.subject, input.customerText, input.agentText, tags.join(' ')];
-  const isClaim = detectIsClaim(...textParts);
   const classification = classifyClaimType(...textParts);
+  const override = input.claimDetectionOverride;
+  const isClaim = override?.isClaim ?? detectIsClaim(...textParts);
   const inferredOutcome = inferOutcomeFromMacros(macros);
   const resolutionType = deriveResolutionType(
     input.explicitOutcome ?? null,
@@ -203,6 +218,11 @@ export function deriveClaimSignals(
       resolution_type: resolutionType,
       escalation_count: input.escalationCount ?? null,
       time_to_first_claim_message_seconds: input.timeToFirstClaimMessageSeconds ?? null,
+      detection_method: override?.detectionMethod ?? 'keyword_fallback',
+      trigger_tag: override?.triggerTag ?? null,
+      trigger_tags: override?.triggerTags ?? [],
+      requires_merchant_review: override?.requiresMerchantReview ?? false,
+      keyword_matched: override?.keywordMatched ?? null,
     },
   };
 }
@@ -937,5 +957,10 @@ export function toSupportCaseIntakeUpsertInput(
     resolution_type: normalized.resolution_type,
     escalation_count: normalized.escalation_count,
     time_to_first_claim_message_seconds: normalized.time_to_first_claim_message_seconds,
+    detection_method: normalized.detection_method,
+    trigger_tag: normalized.trigger_tag,
+    trigger_tags: normalized.trigger_tags,
+    requires_merchant_review: normalized.requires_merchant_review,
+    keyword_matched: normalized.keyword_matched,
   };
 }

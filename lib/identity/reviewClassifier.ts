@@ -1,5 +1,6 @@
 import type { LinkerOrderInput } from '../linker';
 import type { IdentityMatchResult } from './matchScorer';
+import { normaliseEmail } from './normalise';
 
 export type ReviewDecision = {
   reviewWorthy: boolean;
@@ -16,7 +17,7 @@ function signalSet(identity: IdentityMatchResult | null): Set<string> {
 }
 
 function hasCrossSurfaceChange(row: LinkerOrderInput, clusterRows: LinkerOrderInput[]): boolean {
-  const rowEmail = norm(row.email);
+  const rowEmail = normaliseEmail(row.email);
   const rowAccount = norm(row.account_id);
 
   let differentEmail = false;
@@ -24,7 +25,7 @@ function hasCrossSurfaceChange(row: LinkerOrderInput, clusterRows: LinkerOrderIn
 
   for (const other of clusterRows) {
     if (other.order_id === row.order_id) continue;
-    const otherEmail = norm(other.email);
+    const otherEmail = normaliseEmail(other.email);
     const otherAccount = norm(other.account_id);
     if (rowEmail && otherEmail && otherEmail !== rowEmail) differentEmail = true;
     if (rowAccount && otherAccount && otherAccount !== rowAccount) differentAccount = true;
@@ -71,4 +72,3 @@ export function classifyIdentityReview(
 
   return { reviewWorthy: false, reason: 'insufficient_review_risk' };
 }
-

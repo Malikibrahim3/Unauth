@@ -32,6 +32,7 @@ class QueryBuilder {
   private payload: Row | Row[] | null = null;
   private values: Row | null = null;
   private onConflict: string[] = [];
+  private ignoreDuplicates = false;
   private executed: Row[] | null = null;
 
   constructor(
@@ -50,10 +51,11 @@ class QueryBuilder {
     return this;
   }
 
-  upsert(payload: Row | Row[], opts: { onConflict: string }): this {
+  upsert(payload: Row | Row[], opts: { onConflict: string; ignoreDuplicates?: boolean }): this {
     this.mode = 'upsert';
     this.payload = payload;
     this.onConflict = opts.onConflict.split(',').map((s) => s.trim());
+    this.ignoreDuplicates = opts.ignoreDuplicates === true;
     return this;
   }
 
@@ -79,6 +81,14 @@ class QueryBuilder {
 
   in(col: string, vals: unknown[]): this {
     this.filters.push(['in', col, vals]);
+    return this;
+  }
+
+  order(_col: string, _opts?: { ascending?: boolean }): this {
+    return this;
+  }
+
+  limit(_count: number): this {
     return this;
   }
 
@@ -112,6 +122,7 @@ class QueryBuilder {
         const key = this.conflictKey(item);
         const existing = rows.find((r) => this.conflictKey(r) === key);
         if (existing) {
+          if (this.ignoreDuplicates) return existing;
           Object.assign(existing, item);
           return existing;
         }

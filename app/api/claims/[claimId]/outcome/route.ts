@@ -4,6 +4,7 @@ import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { createOutcomeSchema, upsertMerchantCaseOutcome } from '@/lib/claims/store';
 import { appendClaimEvent } from '@/lib/claims/events';
 import { loadClaimForMerchant, updateClaimStatus } from '@/lib/claims/access';
+import { claimStatusForOutcome } from '@/lib/claims/statusMachine';
 
 async function latestOutcome(serviceClient: any, claimId: string) {
   const { data } = await serviceClient
@@ -47,7 +48,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       ...parsed.data,
       actor_user_id: parsed.data.actor_user_id ?? user.id,
     });
-    const newStatus = parsed.data.decision === 'escalated' ? 'escalated' : 'resolved';
+    const newStatus = claimStatusForOutcome(parsed.data);
     await updateClaimStatus(serviceClient, claim, ctx.merchantId, newStatus);
     await appendClaimEvent(serviceClient, {
       claim_id: claimId,
@@ -62,7 +63,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       new_outcome: outcome.outcome,
       note: parsed.data.notes ?? null,
       actor_user_id: user.id,
+      triggered_by: 'merchant_manual',
       metadata: {
+        triggered_by: 'merchant_manual',
         outcome_id: outcome.id,
         amount_refunded: outcome.amount_refunded ?? null,
         amount_recovered: outcome.amount_recovered ?? null,
@@ -79,10 +82,14 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       new_outcome: outcome.outcome,
       note: parsed.data.notes ?? null,
       actor_user_id: user.id,
-      metadata: { outcome_id: outcome.id },
+      triggered_by: 'merchant_manual',
+      metadata: { triggered_by: 'merchant_manual', outcome_id: outcome.id },
     });
     return NextResponse.json({ outcome: { id: outcome.id, claim_id: outcome.claim_id, decision: outcome.decision, outcome: outcome.outcome } });
-  } catch {
+  } catch (err) {
+    if (err instanceof Error && err.message.startsWith('illegal_claim_status_transition:')) {
+      return NextResponse.json({ error: 'Illegal claim status transition.' }, { status: 409 });
+    }
     return NextResponse.json({ error: 'Failed to add outcome' }, { status: 500 });
   }
 }

@@ -6,7 +6,18 @@ import { loadClaimForMerchant, updateClaimStatus } from '@/lib/claims/access';
 import { appendClaimEvent } from '@/lib/claims/events';
 
 const statusBodySchema = z.object({
-  status: z.enum(['open', 'under_review', 'evidence_requested', 'pending', 'escalated', 'resolved', 'closed']),
+  status: z.enum([
+    'pending',
+    'open',
+    'escalated',
+    'resolved_refunded',
+    'resolved_won',
+    'resolved_lost',
+    'resolved_denied',
+    'resolved_exchanged',
+    'voided',
+    'stale',
+  ]),
   note: z.string().trim().min(3),
 });
 
@@ -46,9 +57,14 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       new_status: parsed.data.status,
       note: parsed.data.note,
       actor_user_id: user.id,
+      triggered_by: 'merchant_manual',
+      metadata: { triggered_by: 'merchant_manual' },
     });
     return NextResponse.json({ claim: { id: updated.id, status: updated.status } });
-  } catch {
+  } catch (err) {
+    if (err instanceof Error && err.message.startsWith('illegal_claim_status_transition:')) {
+      return NextResponse.json({ error: 'Illegal claim status transition.' }, { status: 409 });
+    }
     return NextResponse.json({ error: 'Failed to update claim status' }, { status: 500 });
   }
 }

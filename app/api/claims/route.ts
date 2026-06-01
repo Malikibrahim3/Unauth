@@ -20,16 +20,6 @@ async function merchantOwnsShopDomain(serviceClient: any, merchantId: string, sh
   return shops.includes(shopDomain);
 }
 
-const CLAIM_TYPE_LABELS: Record<string, string> = {
-  missing_parcel: 'missing parcel',
-  damaged: 'damaged item',
-  wrong_item: 'wrong item',
-  refund_request: 'refund request',
-  chargeback: 'chargeback',
-  return_abuse: 'return abuse',
-  other: 'other',
-};
-
 type DuplicateClaimRow = {
   id: string;
   status: string;
@@ -42,7 +32,6 @@ type DuplicateClaimRow = {
 async function queryDuplicateClaimsByColumn(
   serviceClient: any,
   merchantId: string,
-  claimType: string,
   column: 'shopify_order_id' | 'order_ref',
   orderKey: string,
   shopDomain: string | null | undefined,
@@ -51,7 +40,6 @@ async function queryDuplicateClaimsByColumn(
     .from('merchant_claims' as any)
     .select('id,status,customer_id,shopify_order_id,order_ref,updated_at')
     .eq('merchant_id', merchantId)
-    .eq('claim_type', claimType)
     .eq(column, orderKey)
     .limit(10);
   if (shopDomain) query = query.eq('shop_domain', shopDomain);
@@ -63,15 +51,14 @@ async function queryDuplicateClaimsByColumn(
 async function findDuplicateClaim(
   serviceClient: any,
   merchantId: string,
-  claimType: string,
   orderKey: string | null,
   shopDomain: string | null | undefined,
   currentClaimId?: string,
 ) {
   if (!orderKey) return null;
   const rows = [
-    ...await queryDuplicateClaimsByColumn(serviceClient, merchantId, claimType, 'shopify_order_id', orderKey, shopDomain),
-    ...await queryDuplicateClaimsByColumn(serviceClient, merchantId, claimType, 'order_ref', orderKey, shopDomain),
+    ...await queryDuplicateClaimsByColumn(serviceClient, merchantId, 'shopify_order_id', orderKey, shopDomain),
+    ...await queryDuplicateClaimsByColumn(serviceClient, merchantId, 'order_ref', orderKey, shopDomain),
   ];
   const uniqueRows = Array.from(new Map(rows.map((row) => [row.id, row])).values())
     .filter((row) => row.id !== currentClaimId);
@@ -253,31 +240,20 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  const rawBody = (body && typeof body === 'object') ? body as Record<string, unknown> : {};
-  const confirmResolvedDuplicate = rawBody.confirm_duplicate_resolved === true;
   const duplicateOrderKey = parsed.data.shopify_order_id ?? parsed.data.order_ref ?? parsed.data.audit_transaction_id ?? null;
   const duplicate = await findDuplicateClaim(
     serviceClient,
     ctx.merchantId,
-    parsed.data.claim_type,
     duplicateOrderKey,
     parsed.data.shop_domain,
     parsed.data.id,
   );
-  if (duplicate?.kind === 'active') {
-    const label = CLAIM_TYPE_LABELS[parsed.data.claim_type] ?? parsed.data.claim_type;
+  if (duplicate) {
+    const duplicateCode =
+      duplicate.kind === 'active' ? 'duplicate_active_claim' : 'duplicate_resolved_claim';
     return NextResponse.json({
-      error: `An active ${label} claim already exists for this order.`,
-      code: 'duplicate_active_claim',
-      existingClaimId: duplicate.row.id,
-      existingStatus: duplicate.row.status,
-    }, { status: 409 });
-  }
-  if (duplicate?.kind === 'resolved' && !confirmResolvedDuplicate) {
-    const label = CLAIM_TYPE_LABELS[parsed.data.claim_type] ?? parsed.data.claim_type;
-    return NextResponse.json({
-      error: `A resolved ${label} claim already exists for this order. Reopen the existing claim if new evidence changes the decision.`,
-      code: 'duplicate_resolved_claim',
+      error: 'A claim already exists for this order. Reopen the existing claim if new evidence changes the decision.',
+      code: duplicateCode,
       existingClaimId: duplicate.row.id,
       existingStatus: duplicate.row.status,
     }, { status: 409 });
@@ -316,6 +292,7 @@ export async function POST(request: NextRequest) {
         currency: parsed.data.currency,
         submitted_at: parsed.data.submitted_at,
         actor_user_id: parsed.data.actor_user_id ?? user.id,
+        detection_method: parsed.data.detection_method ?? 'manual',
       };
 
       const { data, error: fallbackError } = await serviceClient
@@ -333,7 +310,9 @@ export async function POST(request: NextRequest) {
       event_type: wasUpdate ? 'claim_updated' : 'claim_created',
       new_status: claim.status ?? parsed.data.status,
       actor_user_id: user.id,
+      triggered_by: 'merchant_manual',
       metadata: {
+        triggered_by: 'merchant_manual',
         claim_type: claim.claim_type ?? parsed.data.claim_type,
         order_ref: claim.order_ref ?? parsed.data.order_ref ?? claim.shopify_order_id ?? parsed.data.shopify_order_id ?? null,
         order_source: claim.order_source ?? parsed.data.order_source ?? null,

@@ -1,4 +1,5 @@
 import { createHash } from 'crypto';
+import { normaliseEmail } from '@/lib/identity/normalise';
 import { createServiceClient } from '../supabase/server';
 
 type IdentityRow = {
@@ -253,7 +254,7 @@ export async function syncShopifyProfilesForShop(input: { shopDomain: string; su
 
   for (const rows of groupMap.values()) {
     const orderIds = uniq(rows.map((r) => String(r.source_id)));
-    const emails = uniq(rows.map((r) => r.email?.toLowerCase() ?? null));
+    const emails = uniq(rows.map((r) => normaliseEmail(r.email)));
     const phones = uniq(rows.map((r) => r.phone));
     const addresses = uniq(rows.flatMap((r) => [r.shipping_address, r.billing_address]));
     const customerIds = uniq(rows.map((r) => r.customer_id));

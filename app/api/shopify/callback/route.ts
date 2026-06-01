@@ -163,7 +163,7 @@ export async function GET(request: NextRequest) {
           uninstalled_at: null,
           updated_at: now,
         },
-        { onConflict: 'merchant_id' },
+        { onConflict: 'merchant_id,shop_domain' },
       );
 
     if (mappingError) {

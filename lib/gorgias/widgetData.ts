@@ -503,11 +503,12 @@ async function sumStoreClaimAmount(
   const { data, error } = await service
     .from('order_claim_context')
     .select(
-      'refund_amount_approved, refund_amount_requested, order_value, support_case_intake!inner(customer_email_hash, merchant_id, is_claim)'
+      'refund_amount_approved, refund_amount_requested, order_value, support_case_intake!inner(customer_email_hash, merchant_id, is_claim, requires_merchant_review)'
     )
     .eq('merchant_id', merchantId)
     .eq('support_case_intake.customer_email_hash', emailHash)
-    .eq('support_case_intake.is_claim', true);
+    .eq('support_case_intake.is_claim', true)
+    .eq('support_case_intake.requires_merchant_review', false);
 
   if (error || !Array.isArray(data) || data.length === 0) return null;
 
@@ -685,7 +686,8 @@ export async function derivePrimaryReasonAtMerchant(
     .select('claim_type')
     .eq('merchant_id', merchantId)
     .eq('customer_email_hash', emailHash)
-    .eq('is_claim', true);
+    .eq('is_claim', true)
+    .eq('requires_merchant_review', false);
 
   if (error || !data) return null;
 
@@ -711,6 +713,7 @@ export async function countStoreRecentClaims(
     .eq('merchant_id', merchantId)
     .eq('customer_email_hash', emailHash)
     .eq('is_claim', true)
+    .eq('requires_merchant_review', false)
     .gte('created_at_provider', cutoff);
 
   if (error || typeof count !== 'number') return 0;
@@ -725,7 +728,8 @@ export async function derivePrimaryReason(
     .from(TABLES.SUPPORT_CASE_INTAKE)
     .select('claim_type')
     .eq('customer_email_hash', emailHash)
-    .eq('is_claim', true);
+    .eq('is_claim', true)
+    .eq('requires_merchant_review', false);
 
   if (error || !data) return null;
 

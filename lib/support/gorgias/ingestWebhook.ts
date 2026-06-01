@@ -7,6 +7,7 @@ import {
 } from '@/lib/support/intake/ingestSupportCase';
 import { extractGorgiasAccountIdentity } from '@/lib/support/gorgias/accountIdentity';
 import {
+  markGorgiasSupportConnectionRevoked,
   recordGorgiasSupportConnectionError,
   touchGorgiasSupportConnectionSync,
 } from '@/lib/support/gorgias/connectionStore';
@@ -21,6 +22,7 @@ import {
 } from '@/lib/support/gorgias/webhookAuth';
 import { fetchGorgiasTicketById } from '@/lib/support/gorgias/fetchTicket';
 import { getActiveGorgiasMerchantApiAccess } from '@/lib/support/gorgias/merchantApiAccess';
+import { GorgiasSidebarRegistrationError } from '@/lib/support/gorgias/registerSidebarWidget';
 import { TABLES } from '@/lib/supabase/tables';
 
 export const GORGIAS_EVENT_TYPE_HEADER = 'x-gorgias-event-type';
@@ -217,6 +219,7 @@ function shouldHydrateGorgiasTicket(ticket: Record<string, unknown>): boolean {
 async function hydrateGorgiasTicketForIngest(input: {
   supabase: unknown;
   merchantId: string;
+  connectionId?: string | null;
   ticket: Record<string, unknown>;
 }): Promise<Record<string, unknown>> {
   if (!shouldHydrateGorgiasTicket(input.ticket)) {
@@ -239,7 +242,19 @@ async function hydrateGorgiasTicketForIngest(input: {
       credentials: apiAccess.credentials,
       ticketId: String(ticketId),
     });
-  } catch {
+  } catch (error) {
+    if (
+      input.connectionId &&
+      error instanceof GorgiasSidebarRegistrationError &&
+      (error.status === 401 || error.status === 403)
+    ) {
+      await markGorgiasSupportConnectionRevoked(
+        input.supabase,
+        input.connectionId,
+        'gorgias_api_credentials_revoked'
+      );
+      throw new GorgiasWebhookError(502, 'gorgias_api_credentials_revoked');
+    }
     throw new GorgiasWebhookError(502, 'gorgias_ticket_fetch_failed');
   }
 }
@@ -287,6 +302,7 @@ export async function ingestGorgiasSupportWebhook(
   const ticket = await hydrateGorgiasTicketForIngest({
     supabase,
     merchantId: merchantContext.merchantId,
+    connectionId,
     ticket: initialTicket,
   });
 

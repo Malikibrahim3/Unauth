@@ -4,8 +4,22 @@ import { createServiceClient } from '@/lib/supabase/server';
 import { normalizeAddress, normalizeEmail, normalizePhone, type MerchantIdentityInsert, upsertMerchantIdentityRows } from '@/lib/shopify/identity';
 import { verifyShopifyWebhookHmac } from '@/lib/shopify/webhooks';
 import { syncShopifyProfilesForShop } from '@/lib/shopify/profileLinking';
-import { enqueueShopifyOrderAuditScore } from '@/lib/shopify/auditBridge';
+import { enqueueShopifyOrderAuditScore, resolveMerchantIdForShop } from '@/lib/shopify/auditBridge';
 import { buildShopifyOrderSignalRow } from '@/lib/shopify/orderSignals';
+import { upsertMerchantClaim } from '@/lib/claims/store';
+import { appendClaimEvent } from '@/lib/claims/events';
+import { enforceRateLimit, getClientIp, limitFromEnv, rateLimitKey } from '@/lib/ratelimit';
+
+async function markShopifyTokenRevoked(supabase: any, shopDomain: string, now = new Date().toISOString()) {
+  await supabase
+    .from('shopify_merchants' as any)
+    .update({ access_token: null, updated_at: now })
+    .eq('shop_domain', shopDomain);
+  await supabase
+    .from('merchant_shopify_connections' as any)
+    .update({ active: false, updated_at: now })
+    .eq('shop_domain', shopDomain);
+}
 
 async function fetchShopifyCustomerIdentity(input: {
   shopDomain: string;
@@ -29,9 +43,87 @@ async function fetchShopifyCustomerIdentity(input: {
     },
     cache: 'no-store',
   });
+  if (res.status === 401 || res.status === 403) {
+    await markShopifyTokenRevoked(supabase, shopDomain);
+    return null;
+  }
   if (!res.ok) return null;
   const payload = (await res.json()) as any;
   return payload?.customer ?? null;
+}
+
+function moneyValue(value: unknown): number | null {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+function detectRefundType(payload: any, refundedAmount: number): 'full' | 'partial' | 'unknown' {
+  const refundLineItems = Array.isArray(payload.refund_line_items) ? payload.refund_line_items : [];
+  const orderLineItems = Array.isArray(payload.order?.line_items) ? payload.order.line_items : [];
+  if (refundLineItems.length > 0 && orderLineItems.length > 0) {
+    return refundLineItems.length >= orderLineItems.length ? 'full' : 'partial';
+  }
+
+  const total = moneyValue(payload.order?.total_price ?? payload.order?.current_total_price);
+  if (total !== null && refundedAmount > 0) {
+    return refundedAmount >= total ? 'full' : 'partial';
+  }
+
+  return refundLineItems.length > 0 ? 'partial' : 'unknown';
+}
+
+function mapDisputeStatusToClaimStatus(status: unknown): 'escalated' | 'resolved_won' | 'resolved_lost' {
+  const normalized = typeof status === 'string' ? status.trim().toLowerCase() : '';
+  if (['won', 'charge_won', 'resolved_won'].includes(normalized)) return 'resolved_won';
+  if (['lost', 'accepted', 'charge_refunded', 'resolved_lost'].includes(normalized)) return 'resolved_lost';
+  return 'escalated';
+}
+
+async function upsertShopifyDisputeClaim(input: {
+  supabase: any;
+  shopDomain: string;
+  payload: any;
+  topic: string;
+  now: string;
+}) {
+  const orderId = input.payload.order_id ?? input.payload.order?.id ?? null;
+  if (!orderId) return null;
+
+  const merchantId = await resolveMerchantIdForShop(input.supabase, input.shopDomain);
+  if (!merchantId) return null;
+
+  const claim = await upsertMerchantClaim(
+    input.supabase,
+    {
+      merchant_id: merchantId,
+      shop_domain: input.shopDomain,
+      shopify_order_id: String(orderId),
+      claim_type: 'chargeback',
+      status: mapDisputeStatusToClaimStatus(input.payload.status),
+      customer_claim_reason: input.payload.reason ?? input.payload.dispute_reason ?? null,
+      normalized_reason: 'dispute',
+      amount_at_risk: moneyValue(input.payload.amount ?? input.payload.disputed_amount),
+      currency: input.payload.currency ?? null,
+      submitted_at: input.payload.created_at ?? input.now,
+      detection_method: 'shopify_dispute',
+      requires_merchant_review: false,
+    },
+    { ignoreDuplicates: input.topic === 'disputes/create' }
+  );
+  await appendClaimEvent(input.supabase, {
+    claim_id: claim.id,
+    merchant_id: merchantId,
+    shop_domain: input.shopDomain,
+    event_type: input.topic === 'disputes/create' ? 'claim_created' : 'status_changed',
+    new_status: claim.status,
+    triggered_by: 'shopify_dispute',
+    metadata: {
+      triggered_by: 'shopify_dispute',
+      shopify_dispute_id: input.payload.id ? String(input.payload.id) : null,
+      topic: input.topic,
+    },
+  });
+  return claim;
 }
 
 export async function processWebhook(rawBody: string, shopDomain: string, topic: string, supabaseClient?: any) {
@@ -60,6 +152,8 @@ export async function processWebhook(rawBody: string, shopDomain: string, topic:
       .eq('shop_domain', shopDomain);
     return;
   }
+
+  if (payload?.test === true) return;
 
   if (topic === 'orders/create' || topic === 'orders/updated') {
     const customerId = payload.customer?.id ? String(payload.customer.id) : null;
@@ -106,6 +200,7 @@ export async function processWebhook(rawBody: string, shopDomain: string, topic:
       const amount = Number(tx?.amount ?? 0);
       return sum + (Number.isFinite(amount) ? amount : 0);
     }, 0) ?? 0);
+    const refundType = detectRefundType(payload, Number.isFinite(refundedAmount) ? refundedAmount : 0);
     await supabase
       .from('shopify_refund_events' as any)
       .upsert({
@@ -115,6 +210,7 @@ export async function processWebhook(rawBody: string, shopDomain: string, topic:
         refunded_amount: Number.isFinite(refundedAmount) ? refundedAmount : 0,
         currency: payload.currency ?? null,
         refund_reason: payload.note ?? payload.reason ?? null,
+        refund_type: refundType,
         refunded_line_items_count: Array.isArray(payload.refund_line_items) ? payload.refund_line_items.length : 0,
         created_at_shopify: payload.created_at ?? null,
         raw_payload_hash: payloadHash,
@@ -158,7 +254,38 @@ export async function processWebhook(rawBody: string, shopDomain: string, topic:
       }, { onConflict: 'shop_domain,fulfillment_id' });
   }
 
-  if (topic === 'disputes/create') {
+  if (topic === 'orders/cancelled') {
+    const merchantId = await resolveMerchantIdForShop(supabase, shopDomain);
+    const orderId = payload?.id ? String(payload.id) : null;
+    if (merchantId && orderId) {
+      const { data: voidedClaims } = await supabase
+        .from('merchant_claims' as any)
+        .update({
+          status: 'voided',
+          updated_at: now,
+        })
+        .eq('merchant_id', merchantId)
+        .eq('shop_domain', shopDomain)
+        .eq('shopify_order_id', orderId)
+        .select('id,status');
+      for (const claim of voidedClaims ?? []) {
+        await appendClaimEvent(supabase, {
+          claim_id: claim.id,
+          merchant_id: merchantId,
+          shop_domain: shopDomain,
+          event_type: 'status_changed',
+          new_status: 'voided',
+          triggered_by: 'shopify_order_cancelled',
+          metadata: {
+            triggered_by: 'shopify_order_cancelled',
+            shopify_order_id: orderId,
+          },
+        });
+      }
+    }
+  }
+
+  if (topic === 'disputes/create' || topic === 'disputes/updated') {
     rows.push({
       shop_domain: shopDomain,
       source: 'dispute',
@@ -170,6 +297,7 @@ export async function processWebhook(rawBody: string, shopDomain: string, topic:
       customer_id: payload.customer_id ? String(payload.customer_id) : null,
       updated_at: now,
     });
+    await upsertShopifyDisputeClaim({ supabase, shopDomain, payload, topic, now });
   }
 
   if (rows.length) {
@@ -204,11 +332,17 @@ export async function processWebhook(rawBody: string, shopDomain: string, topic:
 }
 
 export async function POST(request: NextRequest) {
-  const rawBody = await request.text();
   const hmac = request.headers.get('x-shopify-hmac-sha256');
   const shopDomain = request.headers.get('x-shopify-shop-domain');
   const topic = request.headers.get('x-shopify-topic');
   const webhookId = request.headers.get('x-shopify-webhook-id');
+  const limited = await enforceRateLimit(
+    rateLimitKey('webhook', 'shopify', shopDomain ?? getClientIp(request.headers)),
+    limitFromEnv('SHOPIFY_WEBHOOK_RATE_LIMIT', 1000, 60)
+  );
+  if (limited) return limited;
+
+  const rawBody = await request.text();
 
   if (!verifyShopifyWebhookHmac(rawBody, hmac)) {
     return NextResponse.json({ error: 'Invalid HMAC signature' }, { status: 401 });

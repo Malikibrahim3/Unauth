@@ -217,13 +217,13 @@ describe('Positive identity fixtures: genuine links must surface', () => {
     expect(result.clusterGrade).toBe('probable');
   });
 
-  it('same email + same billing address → candidate (no strong anchor)', () => {
+  it('same email + same billing address → confirmed', () => {
     const cluster = [
       makeOrder('a', { email: 'customer@domain.com', billing_address: '100 Oxford St, London' }),
       makeOrder('b', { email: 'customer@domain.com', billing_address: '100 Oxford St, London' }),
     ];
     const result = scoreClusterIdentity(cluster);
-    expect(result.clusterGrade).toBe('candidate');
+    expect(result.clusterGrade).toBe('confirmed');
   });
 
   it('matched_datapoints contains human-readable labels', () => {
@@ -275,10 +275,10 @@ describe('Positive identity fixtures: genuine links must surface', () => {
 // ---------------------------------------------------------------------------
 
 describe('Grade gate: numeric score cannot override evidence rules', () => {
-  it('probable requires at least one strong anchor', () => {
+  it('medium address plus corroborators stays candidate without a strong anchor', () => {
     const cluster = [
-      makeOrder('a', { email: 'sam@example.com', postcode: 'W1 1AA', name: 'Sam Doe' }),
-      makeOrder('b', { email: 'sam@example.com', postcode: 'W1 1AA', name: 'Sam Doe' }),
+      makeOrder('a', { shipping_address: '10 King St, London', postcode: 'W1 1AA', name: 'Sam Doe' }),
+      makeOrder('b', { shipping_address: '10 King Street, London', postcode: 'W1 1AA', name: 'Sam Doe' }),
     ];
     const result = scoreClusterIdentity(cluster);
     expect(result.clusterGrade).toBe('candidate');
@@ -319,6 +319,57 @@ describe('Grade gate: numeric score cannot override evidence rules', () => {
       makeOrder('b', { card_bin: '555555', card_last4: '0000', postcode: 'CF10 1AA' }),
     ];
     // Card is medium (no anchor=false), postcode is corroborator, no strong anchor
+    const result = scoreClusterIdentity(cluster);
+    expect(result.clusterGrade).toBe('none');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Area 4 audit regression fixtures
+// ---------------------------------------------------------------------------
+
+describe('Area 4 identity confidence regression fixtures', () => {
+  it('same normalized Gmail address → confirmed/definite', () => {
+    const cluster = [
+      makeOrder('a', { email: 'm.a.l.i.k+shopping@gmail.com' }),
+      makeOrder('b', { email: 'malik@gmail.com' }),
+    ];
+    const result = scoreClusterIdentity(cluster);
+    expect(result.clusterGrade).toBe('confirmed');
+  });
+
+  it('same address with different email → candidate/possible', () => {
+    const cluster = [
+      makeOrder('a', { email: 'a@example.com', shipping_address: '123 Main St Apt 4' }),
+      makeOrder('b', { email: 'b@example.com', shipping_address: '123 Main Street Apartment 4' }),
+    ];
+    const result = scoreClusterIdentity(cluster);
+    expect(result.clusterGrade).toBe('candidate');
+  });
+
+  it('same normalized email with different address → probable', () => {
+    const cluster = [
+      makeOrder('a', { email: 'Malik@Gmail.COM', shipping_address: '123 Main St Apt 4' }),
+      makeOrder('b', { email: 'm.a.l.i.k@gmail.com', shipping_address: '500 Elm St Apt 8' }),
+    ];
+    const result = scoreClusterIdentity(cluster);
+    expect(result.clusterGrade).toBe('probable');
+  });
+
+  it('same normalized email and address → confirmed/definite', () => {
+    const cluster = [
+      makeOrder('a', { email: 'malik+orders@gmail.com', shipping_address: '123 Main St Apt 4' }),
+      makeOrder('b', { email: 'm.a.l.i.k@gmail.com', shipping_address: '123 Main Street #4' }),
+    ];
+    const result = scoreClusterIdentity(cluster);
+    expect(result.clusterGrade).toBe('confirmed');
+  });
+
+  it('same apartment building with different units → none/weak', () => {
+    const cluster = [
+      makeOrder('a', { shipping_address: '123 Main St Apt 4' }),
+      makeOrder('b', { shipping_address: '123 Main Street Unit 5' }),
+    ];
     const result = scoreClusterIdentity(cluster);
     expect(result.clusterGrade).toBe('none');
   });

@@ -11,6 +11,7 @@ import {
   GORGIAS_WEBHOOK_SECRET_QUERY_PARAM,
 } from '@/lib/support/gorgias/supportConnectionShared';
 import { logGorgiasWebhookResult } from '@/lib/support/intake/webhookLog';
+import { enforceRateLimit, getClientIp, limitFromEnv, rateLimitKey } from '@/lib/ratelimit';
 
 function safeWebhookRejectionContext(request: NextRequest, body: unknown): Record<string, unknown> {
   let ticket: Record<string, unknown> | null = null;
@@ -72,6 +73,18 @@ function safeExternalCaseId(body: unknown): string | null {
 }
 
 export async function POST(request: NextRequest) {
+  const searchParams = new URL(request.url).searchParams;
+  const rateLimitIdentity =
+    request.headers.get('x-gorgias-account-id') ??
+    request.headers.get('x-gorgias-domain') ??
+    searchParams.get(GORGIAS_WEBHOOK_DOMAIN_QUERY_PARAM) ??
+    getClientIp(request.headers);
+  const limited = await enforceRateLimit(
+    rateLimitKey('webhook', 'gorgias', rateLimitIdentity),
+    limitFromEnv('GORGIAS_WEBHOOK_RATE_LIMIT', 1000, 60)
+  );
+  if (limited) return limited;
+
   let body: unknown;
   try {
     body = await request.json();

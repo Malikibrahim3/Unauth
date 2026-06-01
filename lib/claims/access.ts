@@ -1,3 +1,5 @@
+import { assertClaimStatusTransition } from '@/lib/claims/statusMachine';
+
 export type ClaimForAction = {
   id: string;
   merchant_id: string | null;
@@ -147,10 +149,12 @@ export async function updateClaimStatus(
   claim: ClaimForAction,
   merchantId: string,
   status: string,
+  options: { allowReopen?: boolean } = {},
 ) {
+  const nextStatus = assertClaimStatusTransition(claim.status, status, options);
   let query = serviceClient
     .from('merchant_claims' as any)
-    .update({ status, updated_at: new Date().toISOString() })
+    .update({ status: nextStatus, updated_at: new Date().toISOString() })
     .eq('id', claim.id);
 
   if (claim.merchant_id) query = query.eq('merchant_id', merchantId);

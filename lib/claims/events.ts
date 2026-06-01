@@ -36,15 +36,26 @@ export type ClaimEventInput = {
   note?: string | null;
   actor_user_id?: string | null;
   actor_email_hash?: string | null;
+  triggered_by?: string | null;
+  triggered_at?: string | null;
   metadata?: Record<string, unknown>;
 };
 
 export async function appendClaimEvent(supabase: any, input: ClaimEventInput) {
+  const metadata = input.metadata ?? {};
+  const triggeredBy =
+    input.triggered_by ??
+    (typeof metadata.triggered_by === 'string' ? metadata.triggered_by : null) ??
+    input.event_type;
   const payload = {
     claim_id: input.claim_id,
     merchant_id: input.merchant_id ?? null,
     shop_domain: input.shop_domain ?? null,
     event_type: input.event_type,
+    from_state: input.previous_status ?? null,
+    to_state: input.new_status ?? null,
+    triggered_by: triggeredBy,
+    triggered_at: input.triggered_at ?? new Date().toISOString(),
     previous_status: input.previous_status ?? null,
     new_status: input.new_status ?? null,
     previous_decision: input.previous_decision ?? null,
@@ -54,7 +65,7 @@ export async function appendClaimEvent(supabase: any, input: ClaimEventInput) {
     note: input.note ?? null,
     actor_user_id: input.actor_user_id ?? null,
     actor_email_hash: input.actor_email_hash ?? null,
-    metadata: input.metadata ?? {},
+    metadata,
   };
 
   const { data, error } = await supabase
@@ -102,12 +113,15 @@ type ClaimEventSummaryInput = {
 
 const STATUS_LABELS: Record<string, string> = {
   open: 'Open',
-  under_review: 'Under review',
-  evidence_requested: 'Evidence requested',
   pending: 'Pending external evidence',
   escalated: 'Escalated',
-  resolved: 'Resolved',
-  closed: 'Closed',
+  resolved_refunded: 'Resolved: refunded',
+  resolved_won: 'Resolved: won',
+  resolved_lost: 'Resolved: lost',
+  resolved_denied: 'Resolved: denied',
+  resolved_exchanged: 'Resolved: exchanged',
+  voided: 'Voided',
+  stale: 'Stale',
 };
 
 const DECISION_LABELS: Record<string, string> = {

@@ -12,7 +12,7 @@ import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
 import { GRADE_LABELS } from '@/lib/utils/confidenceStyles';
 import type { ConfidenceGrade } from '@/lib/engine/weights';
 import { STATUS_LABELS } from '@/lib/utils/investigationStatus';
-import { getMerchantOwnedJobIds } from '@/lib/supabase/merchantHelpers';
+import { escapePostgrestFilterValue, getMerchantOwnedJobIds } from '@/lib/supabase/merchantHelpers';
 import { isOrderReferenceSearchTerm, orderReferenceIlike } from '@/lib/customers/orderSearch';
 import { findCustomerProfileIdsByText } from '@/lib/customers/profileSearch';
 
@@ -247,13 +247,13 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
     query = query.filter('ips', 'cs', JSON.stringify([ipFilter]));
   }
   if (addressFilter.length >= 4) {
-    query = (query as any).ilike('addresses::text', `%${addressFilter}%`);
+    query = (query as any).ilike('addresses::text', `%${escapePostgrestFilterValue(addressFilter)}%`);
   }
   if (cardFilter.length >= 2) {
     query = query.filter('card_last4s', 'cs', JSON.stringify([cardFilter]));
   }
   if (phoneFilter.length >= 4) {
-    query = (query as any).ilike('phones::text', `%${phoneFilter}%`);
+    query = (query as any).ilike('phones::text', `%${escapePostgrestFilterValue(phoneFilter)}%`);
   }
 
   // Risk level
@@ -288,7 +288,7 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
 
   // Fraud flag substring
   if (flagFilter.length >= 2) {
-    query = (query as any).ilike('identity_signals::text', `%${flagFilter}%`);
+    query = (query as any).ilike('identity_signals::text', `%${escapePostgrestFilterValue(flagFilter)}%`);
   }
 
   // Investigation status

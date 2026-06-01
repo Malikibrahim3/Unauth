@@ -248,8 +248,6 @@ async function findExistingMerchantClaim(
 
   if (error) throw new Error(`find_merchant_claim_failed: ${error.message}`);
 
-  const suggestedType = input.claimReason ? CLAIM_REASON_TO_TYPE[input.claimReason] : null;
-
   const matches = (data ?? []).filter((claim) => {
     const claimShopifyOrderId = asString(claim.shopify_order_id);
     const claimShopDomain = asString(claim.shop_domain);
@@ -260,7 +258,6 @@ async function findExistingMerchantClaim(
       !input.shopifyOrderId;
     if (!shopifyMatch && !orderRefMatch) return false;
     if (input.shopDomain && claimShopDomain && claimShopDomain !== input.shopDomain) return false;
-    if (suggestedType && asString(claim.claim_type) !== suggestedType) return false;
     return true;
   });
 

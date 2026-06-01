@@ -38,6 +38,7 @@ import {
   supportCaseIntakeTableWithLinking,
   supportLinkingLookupTables,
 } from '@/tests/lib/supportIngestLinkingMock';
+import { GorgiasSidebarRegistrationError } from '@/lib/support/gorgias/registerSidebarWidget';
 
 jest.mock('@/lib/supabase/server', () => ({
   createServiceClient: jest.fn(),
@@ -487,7 +488,7 @@ describe('Gorgias support webhook', () => {
       providerBaseUrl: `https://${GORGIAS_DOMAIN}`,
       credentials: { email: 'agent@example.com', api_key: 'gorgias-api-key' },
     });
-    fetchGorgiasTicketById.mockResolvedValue(gorgiasTicket);
+    fetchGorgiasTicketById.mockResolvedValue({ ...gorgiasTicket, tags: ['refund-request'] });
 
     const res = await POST(
       new NextRequest(
@@ -513,6 +514,52 @@ describe('Gorgias support webhook', () => {
     expect(json.claim_type).toBe('other');
     expect(mock.lastCasePayload().customer_email_hash).toBeTruthy();
     expect(mock.lastCasePayload().shop_domain).toBe('unauth-test.myshopify.com');
+  });
+
+  it('marks the Gorgias connection revoked when ticket hydration gets 401', async () => {
+    disableDevMerchantFallback();
+    const mock = makeGorgiasWebhookSupabase({
+      connections: [
+        {
+          id: CONNECTION_ID,
+          merchant_id: MERCHANT_ID,
+          provider_account_id: GORGIAS_DOMAIN,
+          provider_base_url: `https://${GORGIAS_DOMAIN}`,
+          status: 'active',
+          webhook_secret_hash: CONNECTION_SECRET_HASH,
+        },
+      ],
+    });
+    createServiceClient.mockReturnValue(mock.supabase);
+    getActiveGorgiasMerchantApiAccess.mockResolvedValue({
+      providerBaseUrl: `https://${GORGIAS_DOMAIN}`,
+      credentials: { email: 'agent@example.com', api_key: 'expired-key' },
+    });
+    fetchGorgiasTicketById.mockRejectedValue(
+      new GorgiasSidebarRegistrationError('gorgias_sidebar_registration_failed', 401, 'unauthorized')
+    );
+
+    const res = await POST(
+      new NextRequest(
+        `http://localhost/api/gorgias/support-webhook?gorgias_domain=${encodeURIComponent(GORGIAS_DOMAIN)}&unauth_whsec=${encodeURIComponent(CONNECTION_WEBHOOK_SECRET)}`,
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ ticket: { id: 'g-500', uri: '/api/tickets/g-500/' } }),
+        }
+      )
+    );
+
+    expect(res.status).toBe(502);
+    expect(mock.connectionUpdates()).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        id: CONNECTION_ID,
+        values: expect.objectContaining({
+          status: 'revoked',
+          last_error: 'gorgias_api_credentials_revoked',
+        }),
+      }),
+    ]));
   });
 
   it('resolves merchant by gorgias_domain query param on webhook URL', async () => {

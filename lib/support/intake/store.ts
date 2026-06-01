@@ -190,6 +190,11 @@ const upsertCaseSchema = z.object({
   resolution_type: z.string().nullable().optional(),
   escalation_count: z.number().int().nullable().optional(),
   time_to_first_claim_message_seconds: z.number().int().nullable().optional(),
+  detection_method: z.enum(['tag', 'keyword_fallback', 'manual', 'shopify_dispute']).default('keyword_fallback'),
+  trigger_tag: z.string().nullable().optional(),
+  trigger_tags: z.array(z.string()).default([]),
+  requires_merchant_review: z.boolean().optional(),
+  keyword_matched: z.string().nullable().optional(),
 });
 
 const appendEventSchema = z.object({

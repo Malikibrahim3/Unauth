@@ -18,7 +18,7 @@ export const dynamic = 'force-dynamic';
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
 const DEFAULT_PAGE_SIZE = 25;
-const FINAL_CLAIM_STATUSES = ['resolved', 'closed'] as const;
+const FINAL_CLAIM_STATUSES = ['resolved_refunded', 'resolved_won', 'resolved_lost', 'resolved_denied', 'resolved_exchanged', 'voided', 'stale'] as const;
 
 /** Columns that exist on all deployed merchant_claims schemas (order_ref may be absent). */
 const CLAIM_LIST_SELECT =
@@ -47,15 +47,18 @@ const DECISION_LABELS: Record<string, string> = {
 
 const STATUS_META: Record<string, { label: string; bg: string; text: string }> = {
   open:               { label: 'Open',               bg: 'var(--bg-subtle)',                   text: 'var(--text-muted)' },
-  under_review:       { label: 'Under review',        bg: 'var(--sev-medium-fill,#FEF3C7)',     text: 'var(--sev-medium,#B45309)' },
-  evidence_requested: { label: 'Evidence requested',  bg: 'var(--sev-high-fill,#FEE2E2)',       text: 'var(--sev-high,#991B1B)' },
   pending:            { label: 'Pending external evidence', bg: 'var(--sev-medium-fill,#FEF3C7)', text: 'var(--sev-medium,#B45309)' },
   escalated:          { label: 'Escalated',           bg: 'var(--risk-critical-bg,#FEE2E2)',    text: 'var(--risk-critical,#991B1B)' },
-  resolved:           { label: 'Resolved',            bg: 'var(--sev-clear-fill,#DCFCE7)',      text: 'var(--sev-clear,#166534)' },
-  closed:             { label: 'Closed',              bg: 'var(--bg-subtle)',                   text: 'var(--text-muted)' },
+  resolved_refunded:  { label: 'Resolved: refunded',  bg: 'var(--sev-clear-fill,#DCFCE7)',      text: 'var(--sev-clear,#166534)' },
+  resolved_won:       { label: 'Resolved: won',       bg: 'var(--sev-clear-fill,#DCFCE7)',      text: 'var(--sev-clear,#166534)' },
+  resolved_lost:      { label: 'Resolved: lost',      bg: 'var(--sev-high-fill,#FEE2E2)',       text: 'var(--sev-high,#991B1B)' },
+  resolved_denied:    { label: 'Resolved: denied',    bg: 'var(--bg-subtle)',                   text: 'var(--text-muted)' },
+  resolved_exchanged: { label: 'Resolved: exchanged', bg: 'var(--sev-clear-fill,#DCFCE7)',      text: 'var(--sev-clear,#166534)' },
+  voided:             { label: 'Voided',              bg: 'var(--bg-subtle)',                   text: 'var(--text-muted)' },
+  stale:              { label: 'Stale',               bg: 'var(--bg-subtle)',                   text: 'var(--text-muted)' },
 };
 
-const ALLOWED_STATUSES = ['open', 'under_review', 'evidence_requested', 'pending', 'escalated', 'resolved', 'closed'] as const;
+const ALLOWED_STATUSES = ['pending', 'open', 'escalated', ...FINAL_CLAIM_STATUSES] as const;
 type ClaimStatus = (typeof ALLOWED_STATUSES)[number];
 
 type ClaimRow = {
@@ -134,18 +137,20 @@ function claimNextAction(claim: ClaimRow, latestOutcome: { decision: string; out
   switch (claim.status) {
     case 'open':
       return { stage: claim.first_viewed_at ? 'Viewed' : 'New / unread', owner, next: 'Review linked identity evidence' };
-    case 'under_review':
-      return { stage: 'Investigating', owner, next: latestOutcome ? 'Prepare customer response' : 'Record merchant decision' };
-    case 'evidence_requested':
-      return { stage: 'Awaiting evidence', owner, next: 'Check delivery or support evidence' };
     case 'pending':
       return { stage: 'Awaiting info', owner, next: 'Wait for carrier or customer update' };
     case 'escalated':
       return { stage: 'Escalated', owner, next: 'Review escalation context' };
-    case 'resolved':
+    case 'resolved_refunded':
+    case 'resolved_won':
+    case 'resolved_lost':
+    case 'resolved_denied':
+    case 'resolved_exchanged':
       return { stage: 'Outcome recorded', owner: 'Merchant', next: 'In history' };
-    case 'closed':
-      return { stage: 'Closed', owner: 'Merchant', next: 'Archived' };
+    case 'voided':
+      return { stage: 'Voided', owner: 'Merchant', next: 'Archived' };
+    case 'stale':
+      return { stage: 'Stale', owner: 'System', next: 'Reopen if new evidence arrives' };
     default:
       return { stage: 'Review', owner, next: 'Record next action' };
   }
@@ -389,12 +394,6 @@ export default async function ClaimsPage({
       count: queueCounts.overdue,
       href: `/claims${buildClaimsQueryString(sp, { sla: 'overdue', sort: 'age', viewed: undefined, owner: undefined, status: undefined, queue: undefined, page: '1' })}`,
       active: slaFilter === 'overdue',
-    },
-    {
-      label: 'Awaiting evidence',
-      count: queueCounts.awaitingEvidence,
-      href: `/claims${buildClaimsQueryString(sp, { status: 'evidence_requested', viewed: undefined, owner: undefined, queue: undefined, sla: undefined, page: '1' })}`,
-      active: listView.kind === 'status' && listView.status === 'evidence_requested',
     },
     {
       label: 'Awaiting info',

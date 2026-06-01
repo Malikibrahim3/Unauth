@@ -5,6 +5,7 @@ import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { upsertMerchantCaseOutcome } from '@/lib/claims/store';
 import { loadClaimForMerchant, updateClaimStatus } from '@/lib/claims/access';
 import { appendClaimEvent } from '@/lib/claims/events';
+import { claimStatusForOutcome } from '@/lib/claims/statusMachine';
 
 const reverseBodySchema = z.object({
   decision: z.enum(['approved', 'denied', 'escalated', 'partial_refund', 'full_refund', 'chargeback_disputed', 'blacklist', 'no_action']),
@@ -64,7 +65,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       notes: parsed.data.note,
       actor_user_id: user.id,
     });
-    const status = parsed.data.decision === 'escalated' ? 'escalated' : 'resolved';
+    const status = claimStatusForOutcome(parsed.data);
     await updateClaimStatus(serviceClient, claim, ctx.merchantId, status);
     await appendClaimEvent(serviceClient, {
       claim_id: claimId,
@@ -79,10 +80,14 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       new_outcome: outcome.outcome,
       note: parsed.data.note,
       actor_user_id: user.id,
-      metadata: { previous_outcome_id: previous.id, outcome_id: outcome.id },
+      triggered_by: 'merchant_manual',
+      metadata: { triggered_by: 'merchant_manual', previous_outcome_id: previous.id, outcome_id: outcome.id },
     });
     return NextResponse.json({ outcome: { id: outcome.id, claim_id: outcome.claim_id, decision: outcome.decision, outcome: outcome.outcome } });
-  } catch {
+  } catch (err) {
+    if (err instanceof Error && err.message.startsWith('illegal_claim_status_transition:')) {
+      return NextResponse.json({ error: 'Illegal claim status transition.' }, { status: 409 });
+    }
     return NextResponse.json({ error: 'Failed to reverse decision' }, { status: 500 });
   }
 }

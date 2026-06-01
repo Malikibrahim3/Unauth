@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { TABLES } from '@/lib/supabase/tables';
 import { gorgiasWidgetLog } from '@/lib/gorgias/widgetLog';
+import { normaliseEmail } from '@/lib/identity/normalise';
 
 export type MerchantCustomerByEmailRow = {
   id: string;
@@ -49,9 +50,9 @@ function merchantIdsIncludes(merchantIds: unknown, merchantId: string): boolean 
 }
 
 function profileMatchesEmail(row: CustomerProfileEmailRow, normEmail: string): boolean {
-  if (row.primary_email?.trim().toLowerCase() === normEmail) return true;
+  if (normaliseEmail(row.primary_email) === normEmail) return true;
   if (!Array.isArray(row.emails)) return false;
-  return row.emails.some((entry) => String(entry).trim().toLowerCase() === normEmail);
+  return row.emails.some((entry) => normaliseEmail(String(entry)) === normEmail);
 }
 
 function rowToCustomer(row: CustomerProfileEmailRow): MerchantCustomerByEmailRow {

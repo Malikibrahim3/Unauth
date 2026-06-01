@@ -118,7 +118,7 @@ export interface LinkerResult {
 // normaliseEmail and normaliseAddress* are imported from @/lib/identity/normalise
 // (single source of truth). Re-exported below for backwards compat.
 
-/** Phone normalisation lives in @/lib/identity/normalise (last-10-digit canonical form). */
+/** Phone normalisation lives in @/lib/identity/normalise (E.164 canonical form). */
 
 /**
  * Postcode: uppercase, remove all whitespace.
@@ -687,6 +687,20 @@ function jaccardTokens(a: string[], b: string[]): number {
   return union === 0 ? 0 : inter / union;
 }
 
+function unitTokens(tokens: string[]): Set<string> {
+  return new Set(tokens.filter((token) => token.startsWith('unit:')));
+}
+
+function hasConflictingUnitTokens(a: string[], b: string[]): boolean {
+  const aUnits = unitTokens(a);
+  const bUnits = unitTokens(b);
+  if (aUnits.size === 0 || bUnits.size === 0) return false;
+  for (const unit of aUnits) {
+    if (bUnits.has(unit)) return false;
+  }
+  return true;
+}
+
 /**
  * Score a pair by walking both orders and picking the strongest tier per
  * family that matches. Returns the final score, the broad family signals,
@@ -723,16 +737,20 @@ function scorePair(
   if (a.shipping_full && b.shipping_full && a.shipping_full === b.shipping_full) {
     addFiredSignal(fired, 'shipping_address', 'exact', 22, indexFrequency(ix.shipping_full, a.shipping_full), applyFrequencyPenalty);
   } else if (a.shipping_tokens.length > 0 && b.shipping_tokens.length > 0) {
-    const ov = jaccardTokens(a.shipping_tokens, b.shipping_tokens);
-    if (ov >= 0.75) addFiredSignal(fired, 'shipping_address', 'partial', 12, 0, applyFrequencyPenalty);
+    if (!hasConflictingUnitTokens(a.shipping_tokens, b.shipping_tokens)) {
+      const ov = jaccardTokens(a.shipping_tokens, b.shipping_tokens);
+      if (ov >= 0.75) addFiredSignal(fired, 'shipping_address', 'partial', 12, 0, applyFrequencyPenalty);
+    }
   }
 
   // billing_address
   if (a.billing_full && b.billing_full && a.billing_full === b.billing_full) {
     addFiredSignal(fired, 'billing_address', 'exact', 22, indexFrequency(ix.billing_full, a.billing_full), applyFrequencyPenalty);
   } else if (a.billing_tokens.length > 0 && b.billing_tokens.length > 0) {
-    const ov = jaccardTokens(a.billing_tokens, b.billing_tokens);
-    if (ov >= 0.75) addFiredSignal(fired, 'billing_address', 'partial', 12, 0, applyFrequencyPenalty);
+    if (!hasConflictingUnitTokens(a.billing_tokens, b.billing_tokens)) {
+      const ov = jaccardTokens(a.billing_tokens, b.billing_tokens);
+      if (ov >= 0.75) addFiredSignal(fired, 'billing_address', 'partial', 12, 0, applyFrequencyPenalty);
+    }
   }
 
   // shipping↔billing cross-match bonus
