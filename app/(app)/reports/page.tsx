@@ -1,6 +1,8 @@
 import { redirect } from 'next/navigation';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { getConnectionState } from '@/lib/connections/getConnectionState';
+import { getMerchantDataPresence } from '@/lib/supabase/getMerchantDataPresence';
+import { resolveMerchantSetupState } from '@/lib/connections/getMerchantSetupState';
 import { PageConnectionGate } from '@/components/connections/PageConnectionGate';
 import { TABLES } from '@/lib/supabase/tables';
 import { requirePermission, PERMISSIONS, resolveDefaultAppPath } from '@/lib/permissions';
@@ -144,6 +146,11 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
   if (denied) redirect(await resolveDefaultAppPath(serviceClient, user.id));
 
   const connectionState = await getConnectionState(serviceClient, ctx.merchantId);
+  // Canonical, source-complete data presence — not just the rows/claims loaded
+  // for the current range — so the page never full-gates a merchant that has
+  // customer/Shopify/evidence data outside this view.
+  const dataPresence = await getMerchantDataPresence(serviceClient, ctx.merchantId, user.id);
+  const setupState = resolveMerchantSetupState(connectionState, dataPresence);
 
   const resolvedSearchParams = (await searchParams) ?? {};
   const range = resolvedSearchParams.range === '7d' || resolvedSearchParams.range === '90d' || resolvedSearchParams.range === 'all'
@@ -255,7 +262,7 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
     ? null
     : buildClaimOpsMetrics(priorClaims, priorOutcomeResult.data ?? []);
 
-  const hasAnyData = rows.length > 0 || claims.length > 0;
+  const hasAnyData = dataPresence.hasAnyData;
 
   // ── Tab content ──────────────────────────────────────────────────────────
 
@@ -548,7 +555,7 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
   const tabContent = activeTab === 'csv' ? CsvTab : activeTab === 'integration' ? LiveTab : OverviewTab;
 
   return (
-    <PageConnectionGate requires="both" connection={connectionState} pageName="Reports" pageDescription="Report metrics combine Shopify order data with helpdesk claim data. Without both connected, claim counts, dispute rates, and outcome summaries will be incomplete or zero." hasData={hasAnyData}>
+    <PageConnectionGate requires="both" connection={connectionState} pageName="Reports" pageDescription="Report metrics combine Shopify order data with helpdesk claim data. Without both connected, claim counts, dispute rates, and outcome summaries will be incomplete or zero." setupState={setupState} hasData={hasAnyData}>
     <WorkbenchPage
       title="Reports"
       subtitle="Audit signal performance and claim operations over time."

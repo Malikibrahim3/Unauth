@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { Plug } from 'lucide-react';
 import type { ConnectionState } from '@/lib/connections/getConnectionState';
+import { type MerchantSetupState, shouldFullGate } from '@/lib/connections/getMerchantSetupState';
 import { ConnectionPromptStrip } from './ConnectionPromptStrip';
 
 type Requires = 'both' | 'shopify' | 'helpdesk';
@@ -12,7 +13,14 @@ interface PageConnectionGateProps {
   connection: ConnectionState;
   pageName: string;
   pageDescription?: string;
-  /** When true and connections are missing, show data + non-blocking strip instead of full gate. */
+  /**
+   * Canonical setup state. When provided, it is the source of truth for whether
+   * a full gate is shown — the page is fully gated only when no useful data
+   * exists and a required source is missing. Otherwise the page renders content
+   * with a non-blocking completeness strip. Prefer this over hasData.
+   */
+  setupState?: MerchantSetupState;
+  /** Legacy fallback when setupState is not supplied: show data + strip instead of a full gate. */
   hasData?: boolean;
   /**
    * Pass true when customer_profiles exist but neither integration is active.
@@ -96,6 +104,7 @@ export function PageConnectionGate({
   connection,
   pageName,
   pageDescription,
+  setupState,
   hasData = false,
   hasExistingProfiles = false,
   children,
@@ -105,8 +114,12 @@ export function PageConnectionGate({
   // Both connected — clean render
   if (!missing) return <>{children}</>;
 
-  // Has existing data: show data + non-blocking strip, never a full gate
-  if (hasData) {
+  // When the canonical setup state is supplied it decides gating: a full gate is
+  // only ever shown when no useful data exists and a required source is missing.
+  // Otherwise (any useful data present) we render content + a non-blocking strip.
+  const fullGate = setupState !== undefined ? shouldFullGate(setupState) : !hasData;
+
+  if (!fullGate) {
     return (
       <>
         <ConnectionPromptStrip connection={connection} hasExistingProfiles={hasExistingProfiles} />
@@ -115,6 +128,6 @@ export function PageConnectionGate({
     );
   }
 
-  // No data, not fully connected: full gate
+  // No useful data, not fully connected: full gate
   return <GatePanel missing={missing} pageName={pageName} pageDescription={pageDescription} />;
 }

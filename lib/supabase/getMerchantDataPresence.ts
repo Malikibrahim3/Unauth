@@ -3,31 +3,56 @@ import { TABLES } from './tables';
 
 export type MerchantDataPresence = {
   hasAnyData: boolean;
+  hasCustomerProfiles: boolean;
+  hasOrders: boolean;
+  hasShopifySignals: boolean;
+  hasHelpdeskClaims: boolean;
+  hasEvidencePackages: boolean;
+  hasWatchlist: boolean;
+  hasCustomerActivity: boolean;
+  hasCsvImports: boolean;
+  hasLiveIntegrationReports: boolean;
   sources: {
     customerProfiles: number;
-    csvJobs: number;
-    claims: number;
+    auditTransactions: number;
+    processingJobs: number;
+    csvImports: number;
+    shopifyOrderSignals: number;
+    merchantClaims: number;
+    supportCases: number;
     evidencePackages: number;
+    watchlistEntries: number;
+    customerActivity: number;
   };
 };
 
 /**
- * Checks all merchant-owned tables for any useful data.
+ * Canonical "what data does this merchant have?" contract.
  *
- * customer_profiles has no merchant_id scalar — it uses merchant_ids (Json array).
- * We use PostgREST containment filters to match both the current merchantId and,
- * for legacy profiles created before the merchants table, the auth userId.
+ * Every authenticated product page should read its data-presence truth from
+ * here rather than inferring it from a single page-local query. All counts are
+ * cheap existence counts (head: true, count: 'exact') and explicitly scoped to
+ * the merchant.
  *
- * public_audits is excluded — it is a landing-page free-audit table, not merchant data.
+ * Scoping notes (verified against the schema, not guessed):
+ * - customer_profiles has no scalar merchant_id — it uses merchant_ids (jsonb
+ *   array). We match the current merchantId and, for legacy profiles created
+ *   before the merchants table, the auth userId.
+ * - shopify_order_signals is keyed by shop_domain only, so we resolve
+ *   merchant_shopify_connections (merchant_id -> shop_domain) first.
+ * - audit_transactions, processing_jobs, merchant_claims, support_case_intake,
+ *   evidence_packages, watchlist_entries and customer_activity_log all carry a
+ *   scalar merchant_id referencing merchants(id).
+ * - public_audits is intentionally excluded: it is the public free-audit intake
+ *   table and must not count as merchant workspace data until claimed and
+ *   re-tenanted.
  */
 export async function getMerchantDataPresence(
   serviceClient: SupabaseClient,
   merchantId: string,
   userId?: string,
 ): Promise<MerchantDataPresence> {
-  // Build the containment filter for customer_profiles.
-  // New profiles: merchant_ids contains merchantId.
-  // Legacy profiles (pre-merchants-table): merchant_ids contains userId.
+  // Containment filter for customer_profiles (current + legacy id).
   const profileFilter =
     userId && userId !== merchantId
       ? [
@@ -36,43 +61,119 @@ export async function getMerchantDataPresence(
         ].join(',')
       : `merchant_ids.cs.${JSON.stringify([merchantId])}`;
 
+  // Resolve the merchant's Shopify shop_domain first; shopify_order_signals is
+  // keyed by shop_domain, not merchant_id.
+  const { data: shopifyConn } = await serviceClient
+    .from(TABLES.MERCHANT_SHOPIFY_CONNECTIONS)
+    .select('shop_domain')
+    .eq('merchant_id', merchantId)
+    .maybeSingle();
+  const shopDomain = (shopifyConn as { shop_domain?: string } | null)?.shop_domain ?? null;
+
   const [
     { count: customerProfiles },
-    { count: csvJobs },
+    { count: auditTransactions },
+    { count: processingJobs },
+    { count: csvImports },
+    { count: merchantClaims },
+    { count: supportCases },
     { count: evidencePackages },
-    { count: claims },
+    { count: watchlistEntries },
+    { count: customerActivity },
+    { count: shopifyOrderSignals },
   ] = await Promise.all([
     serviceClient
       .from(TABLES.CUSTOMER_PROFILES)
       .select('id', { count: 'exact', head: true })
       .or(profileFilter),
     serviceClient
+      .from(TABLES.AUDIT_TRANSACTIONS)
+      .select('id', { count: 'exact', head: true })
+      .eq('merchant_id', merchantId),
+    serviceClient
       .from(TABLES.PROCESSING_JOBS)
       .select('id', { count: 'exact', head: true })
       .eq('merchant_id', merchantId)
       .eq('hidden_by_merchant', false),
+    // CSV/import jobs only — Shopify-sourced jobs use upload_type = 'shopify'.
     serviceClient
-      .from('evidence_packages' as never)
+      .from(TABLES.PROCESSING_JOBS)
       .select('id', { count: 'exact', head: true })
-      .eq('merchant_id', merchantId),
+      .eq('merchant_id', merchantId)
+      .eq('hidden_by_merchant', false)
+      .neq('upload_type', 'shopify'),
     serviceClient
       .from('merchant_claims' as never)
       .select('id', { count: 'exact', head: true })
       .eq('merchant_id', merchantId),
+    serviceClient
+      .from(TABLES.SUPPORT_CASE_INTAKE)
+      .select('id', { count: 'exact', head: true })
+      .eq('merchant_id', merchantId),
+    serviceClient
+      .from(TABLES.EVIDENCE_PACKAGES)
+      .select('id', { count: 'exact', head: true })
+      .eq('merchant_id', merchantId),
+    serviceClient
+      .from(TABLES.WATCHLIST_ENTRIES)
+      .select('id', { count: 'exact', head: true })
+      .eq('merchant_id', merchantId)
+      .eq('removed_by_merchant', false),
+    serviceClient
+      .from('customer_activity_log' as never)
+      .select('id', { count: 'exact', head: true })
+      .eq('merchant_id', merchantId),
+    shopDomain
+      ? serviceClient
+          .from('shopify_order_signals' as never)
+          .select('id', { count: 'exact', head: true })
+          .eq('shop_domain', shopDomain)
+      : Promise.resolve({ count: 0 } as { count: number }),
   ]);
 
   const sources = {
     customerProfiles: customerProfiles ?? 0,
-    csvJobs: csvJobs ?? 0,
+    auditTransactions: auditTransactions ?? 0,
+    processingJobs: processingJobs ?? 0,
+    csvImports: csvImports ?? 0,
+    shopifyOrderSignals: shopifyOrderSignals ?? 0,
+    merchantClaims: merchantClaims ?? 0,
+    supportCases: supportCases ?? 0,
     evidencePackages: evidencePackages ?? 0,
-    claims: claims ?? 0,
+    watchlistEntries: watchlistEntries ?? 0,
+    customerActivity: customerActivity ?? 0,
   };
 
-  const hasAnyData =
-    sources.customerProfiles > 0 ||
-    sources.csvJobs > 0 ||
-    sources.claims > 0 ||
-    sources.evidencePackages > 0;
+  const hasCustomerProfiles = sources.customerProfiles > 0;
+  const hasShopifySignals = sources.shopifyOrderSignals > 0;
+  const hasOrders = sources.auditTransactions > 0 || hasShopifySignals;
+  const hasHelpdeskClaims = sources.merchantClaims > 0 || sources.supportCases > 0;
+  const hasEvidencePackages = sources.evidencePackages > 0;
+  const hasWatchlist = sources.watchlistEntries > 0;
+  const hasCustomerActivity = sources.customerActivity > 0;
+  const hasCsvImports = sources.csvImports > 0;
+  const hasLiveIntegrationReports = hasShopifySignals || hasHelpdeskClaims;
 
-  return { hasAnyData, sources };
+  const hasAnyData =
+    hasCustomerProfiles ||
+    hasOrders ||
+    hasHelpdeskClaims ||
+    hasEvidencePackages ||
+    hasWatchlist ||
+    hasCustomerActivity ||
+    hasCsvImports;
+
+  return {
+    hasAnyData,
+    hasCustomerProfiles,
+    hasOrders,
+    hasShopifySignals,
+    hasHelpdeskClaims,
+    hasEvidencePackages,
+    hasWatchlist,
+    hasCustomerActivity,
+    hasCsvImports,
+    hasLiveIntegrationReports,
+    sources,
+  };
 }

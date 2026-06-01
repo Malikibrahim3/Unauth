@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { TABLES } from '@/lib/supabase/tables';
+import { getMerchantSetupState } from '@/lib/connections/getMerchantSetupState';
 import Link from 'next/link';
 
 /**
@@ -33,7 +34,39 @@ export default async function StorePage() {
     redirect(`/audit/${job.id}?source=shopify`);
   }
 
-  // No Shopify job yet — prompt to connect
+  // No Shopify-sourced processing job. That alone does NOT mean the merchant is
+  // empty — they may have Shopify signals, imported profiles, or claims with no
+  // current job row. Only show the first-run connect prompt when there is no
+  // useful data at all; otherwise point to the live intelligence surfaces.
+  const { presence } = await getMerchantSetupState(serviceClient, ctx.merchantId, user.id);
+
+  if (presence.hasAnyData) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh] p-8">
+        <div className="max-w-md w-full text-center space-y-4">
+          <h1 className="text-heading-lg font-semibold" style={{ color: 'var(--ink-primary)' }}>
+            Store overview is being prepared
+          </h1>
+          <p className="text-body-sm" style={{ color: 'var(--ink-secondary)' }}>
+            We have data for your store, but a dedicated Shopify store view hasn&apos;t been generated yet. In the meantime, review your customers and reports — they already reflect the data we have.
+          </p>
+          <div className="flex items-center justify-center gap-3 pt-2">
+            <Link
+              href="/customers"
+              className="btn-accent inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition-colors"
+            >
+              Review customers
+            </Link>
+            <Link href="/reports" className="text-sm font-medium hover:underline" style={{ color: 'var(--ink-tertiary)' }}>
+              View reports →
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // No Shopify job and no useful data — prompt to connect
   return (
     <div className="flex items-center justify-center min-h-[60vh] p-8">
       <div className="max-w-md w-full text-center space-y-4">

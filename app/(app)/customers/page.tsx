@@ -1,6 +1,8 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
 import { getConnectionState } from '@/lib/connections/getConnectionState';
+import { getMerchantDataPresence } from '@/lib/supabase/getMerchantDataPresence';
+import { resolveMerchantSetupState } from '@/lib/connections/getMerchantSetupState';
 import { PageConnectionGate } from '@/components/connections/PageConnectionGate';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
@@ -111,6 +113,10 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
   if (denied) return redirect(await resolveDefaultAppPath(svc, user.id));
 
   const connectionState = await getConnectionState(svc, ctx.merchantId);
+  // Data presence is computed unfiltered so an active filter that returns zero
+  // rows never collapses the page into a first-run connection gate.
+  const dataPresence = await getMerchantDataPresence(svc, ctx.merchantId, user.id);
+  const setupState = resolveMerchantSetupState(connectionState, dataPresence);
 
   // `searchParams` may be a Promise in newer Next.js versions — await to normalize.
   const sp = (await Promise.resolve(searchParams)) ?? {};
@@ -364,7 +370,7 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
     !firstSeenFrom && !firstSeenTo && !lastSeenFrom && !lastSeenTo && !flagFilter && !statusFilter;
 
   return (
-    <PageConnectionGate requires="both" connection={connectionState} pageName="Customers" pageDescription="Customer profiles show order patterns, identity confidence, and claim history. Without both Shopify and your helpdesk connected, claim counts may be zero because data is missing — not because the customer has no history." hasData={total > 0}>
+    <PageConnectionGate requires="both" connection={connectionState} pageName="Customers" pageDescription="Customer profiles show order patterns, identity confidence, and claim history. Without both Shopify and your helpdesk connected, claim counts may be zero because data is missing — not because the customer has no history." setupState={setupState} hasData={dataPresence.hasCustomerProfiles}>
     <WorkbenchPage
       title="Customers"
       subtitle="Search, filter, and act on customer identity profiles."

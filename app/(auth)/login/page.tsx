@@ -4,6 +4,10 @@ import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+<<<<<<< Updated upstream
+=======
+import { useRouter, useSearchParams } from 'next/navigation';
+>>>>>>> Stashed changes
 import { UnauthLogo } from '@/components/ui/UnauthLogo';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -33,6 +37,7 @@ function LoginPageInner() {
   const supabase = createClient();
   const router = useRouter();
   const searchParams = useSearchParams();
+<<<<<<< Updated upstream
   const requestedNextPath = searchParams.get('next');
   const [isSignUp, setIsSignUp] = useState(() => searchParams.get('signup') === '1');
   const nextPath = !requestedNextPath || requestedNextPath === '/dashboard' ? '/upload' : requestedNextPath;
@@ -42,6 +47,9 @@ function LoginPageInner() {
     !password ||
     (isSignUp && !storeName.trim());
   const isSuccess = error.includes('created') || error.includes('Check your email');
+=======
+  const nextPath = searchParams.get('next') || '/dashboard';
+>>>>>>> Stashed changes
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -89,11 +97,44 @@ function LoginPageInner() {
       });
       const bootstrapBody = await bootstrapRes.json().catch(() => ({}));
       setLoading(false);
+<<<<<<< Updated upstream
       if (!bootstrapRes.ok) {
         setError(bootstrapBody.error ?? 'Could not prepare your account.');
         return;
       }
       router.push('/onboarding');
+=======
+      if (merchantError) { setError(merchantError.message); return; }
+      router.push(nextPath);
+      router.refresh();
+    } else {
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (signInError) {
+        setError(signInError.message);
+        setLoading(false);
+        return;
+      }
+
+      const pending = localStorage.getItem('pendingMerchant');
+      if (pending) {
+        const { storeName, annualVolume, primaryConcern } = JSON.parse(pending);
+        await supabase.from('merchants').insert({
+          user_id: signInData.user!.id,
+          name: storeName.trim(),
+          monthly_order_volume: annualVolume,
+          primary_fraud_concern: primaryConcern,
+          setup_complete: true,
+        });
+        localStorage.removeItem('pendingMerchant');
+      }
+
+      setLoading(false);
+      router.push(nextPath);
+>>>>>>> Stashed changes
       router.refresh();
       return;
     }
