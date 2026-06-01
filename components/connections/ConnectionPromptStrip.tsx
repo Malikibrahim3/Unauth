@@ -37,7 +37,7 @@ export function ConnectionPromptStrip({ connection }: ConnectionPromptStripProps
       <Link
         href="/settings/integrations"
         className="shrink-0 text-sm font-semibold whitespace-nowrap hover:opacity-80 transition-opacity"
-        style={{ color: '#2563EB' }}
+        style={{ color: 'var(--accent)' }}
       >
         Complete setup →
       </Link>

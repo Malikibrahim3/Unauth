@@ -105,16 +105,25 @@ export default async function DashboardPage() {
 
   const connectionState = await getConnectionState(serviceClient, ctx.merchantId);
 
-  const { data: runs } = await serviceClient
-    .from(TABLES.PROCESSING_JOBS)
-    .select('*')
-    .eq('merchant_id', ctx.merchantId)
-    .eq('hidden_by_merchant', false)
-    .order('created_at', { ascending: false })
-    .limit(50);
+  const [{ data: runs }, { count: profileCount }] = await Promise.all([
+    serviceClient
+      .from(TABLES.PROCESSING_JOBS)
+      .select('*')
+      .eq('merchant_id', ctx.merchantId)
+      .eq('hidden_by_merchant', false)
+      .order('created_at', { ascending: false })
+      .limit(50),
+    serviceClient
+      .from(TABLES.CUSTOMER_PROFILES)
+      .select('id', { count: 'exact', head: true })
+      .eq('merchant_id', ctx.merchantId)
+      .limit(1),
+  ]);
   const typedRuns = (runs ?? []) as unknown as RunRow[];
   const latestRun = typedRuns[0] ?? null;
-  const isEmpty = typedRuns.length === 0;
+  // isEmpty only when there are no processing jobs AND no customer profiles
+  // (profiles exist from Shopify webhooks even before a processing job is created)
+  const isEmpty = typedRuns.length === 0 && (profileCount ?? 0) === 0;
 
   const jobIds = typedRuns.map((run) => run.id);
 

@@ -54,8 +54,7 @@ export default async function StorePage() {
         <div className="flex items-center justify-center gap-3 pt-2">
           <Link
             href="/settings/integrations"
-            className="inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition-colors"
-            style={{ background: '#2563EB', color: '#fff' }}
+            className="btn-accent inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition-colors"
           >
             Set up integrations
           </Link>

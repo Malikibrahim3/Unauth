@@ -79,8 +79,7 @@ function GatePanel({ missing, pageName, pageDescription }: {
 
         <Link
           href="/settings/integrations"
-          className="inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-          style={{ background: '#2563EB' }}
+          className="btn-accent inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition-opacity hover:opacity-90"
         >
           {isDangerous ? 'Connect your helpdesk' : 'Connect Shopify and helpdesk'}
         </Link>
