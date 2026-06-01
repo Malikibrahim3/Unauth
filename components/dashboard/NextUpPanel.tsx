@@ -57,7 +57,7 @@ export default function NextUpPanel({ claims, inboxCount }: NextUpPanelProps) {
         <div className="px-4 py-6">
           <p className="text-body-sm" style={{ color: 'var(--text)' }}>No open claims need immediate review.</p>
           <p className="text-caption mt-1" style={{ color: 'var(--text-muted)' }}>
-            Check the inbox queue or upload a new audit to surface fresh cases.
+            Check the inbox queue as new claims arrive from Shopify and your helpdesk.
           </p>
           <Link href="/inbox" className="mt-3 inline-block text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
             Open inbox →

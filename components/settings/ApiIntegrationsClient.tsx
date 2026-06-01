@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, type FormEvent } from 'react';
-import { Copy, KeyRound, Trash2, ExternalLink } from 'lucide-react';
+import { Copy, KeyRound, Trash2, ExternalLink, Headphones, CheckCircle2, ArrowRight } from 'lucide-react';
 
 type ApiKeyRow = {
   id: string;
@@ -12,22 +12,23 @@ type ApiKeyRow = {
   rate_limit_per_minute: number;
 };
 
-/**
- * `kind` drives how each tile reports status:
- *  - 'connectable' tiles show a live Connected / Not connected indicator. Their
- *    status is keyed off `statusKey` (which connection fetch backs them). Tiles
- *    without a backing status source (e.g. Zendesk, not yet built) omit it and
- *    always read as not connected.
- *  - 'install' tiles (Chrome) have no server-side connection to detect, so they
- *    show an Install action with no status dot.
- */
-const INTEGRATIONS = [
+type HelpdeskOption = {
+  id: 'gorgias' | 'zendesk';
+  name: string;
+  description: string;
+  statusKey: 'gorgias' | 'zendesk';
+  href: string;
+  logo: string;
+};
+
+// Helpdesk providers are OPTIONS under the single "Helpdesk" requirement —
+// connecting either one satisfies the claims & dispute-context source.
+const HELPDESK_OPTIONS: HelpdeskOption[] = [
   {
     id: 'gorgias',
     name: 'Gorgias',
     description: 'Surface identity confidence and claims history inside your helpdesk sidebar',
-    kind: 'connectable' as const,
-    statusKey: 'gorgias' as const,
+    statusKey: 'gorgias',
     href: '/settings/integrations/gorgias',
     logo: '/integrations/gorgias.png',
   },
@@ -35,30 +36,11 @@ const INTEGRATIONS = [
     id: 'zendesk',
     name: 'Zendesk',
     description: 'Show identity matches and claims history while agents handle tickets',
-    kind: 'connectable' as const,
-    statusKey: 'zendesk' as const,
+    statusKey: 'zendesk',
     href: '/settings/integrations/zendesk',
     logo: '/integrations/zendesk.svg',
   },
-  {
-    id: 'shopify',
-    name: 'Shopify',
-    description: 'Sync orders, refunds & fulfillment to enrich identity intelligence',
-    kind: 'connectable' as const,
-    statusKey: 'shopify' as const,
-    href: '/settings/integrations',
-    logo: '/integrations/shopify.svg',
-  },
-  {
-    id: 'chrome',
-    name: 'Chrome extension',
-    description: 'Look up customers from any page with one click',
-    kind: 'install' as const,
-    statusKey: null,
-    href: '/settings/integrations/chrome',
-    logo: '/integrations/chrome.svg',
-  },
-] as const;
+];
 
 type ConnectionState = { connected: boolean; detail: string | null };
 type ConnectionStatus = {
@@ -78,7 +60,11 @@ function formatDate(value: string | null) {
   }).format(new Date(value));
 }
 
-export default function ApiIntegrationsClient() {
+export default function ApiIntegrationsClient({
+  section = 'advanced',
+}: {
+  section?: 'helpdesk' | 'advanced';
+}) {
   const [keys, setKeys] = useState<ApiKeyRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [connStatus, setConnStatus] = useState<ConnectionStatus | null>(null);
@@ -216,8 +202,156 @@ export default function ApiIntegrationsClient() {
     setCopied(false);
   }
 
+  /* ---------- Helpdesk requirement card (right half of the required pair) ---------- */
+  if (section === 'helpdesk') {
+    const statusKnown = connStatus !== null;
+    const gorgiasConnected = Boolean(connStatus?.gorgias.connected);
+    const zendeskConnected = Boolean(connStatus?.zendesk.connected);
+    const helpdeskConnected = gorgiasConnected || zendeskConnected;
+    const shopifyConnected = Boolean(connStatus?.shopify.connected);
+    // Strongly guide to connect helpdesk when Shopify is live but claims have no source.
+    const guideToHelpdesk = statusKnown && shopifyConnected && !helpdeskConnected;
+
+    const cardBorder = guideToHelpdesk
+      ? 'color-mix(in srgb, var(--warning) 35%, var(--surface-border))'
+      : 'var(--surface-border)';
+    const cardBg = guideToHelpdesk
+      ? 'color-mix(in srgb, var(--warning) 6%, var(--surface-raised))'
+      : 'var(--surface-raised)';
+
+    return (
+      <div className="space-y-2.5">
+        <div className="flex items-center gap-2">
+          <Headphones className="h-4 w-4" style={{ color: 'var(--icon-muted)' }} />
+          <div>
+            <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Helpdesk</p>
+            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Claims &amp; dispute context</p>
+          </div>
+        </div>
+
+        <div
+          className="rounded-xl border p-5 space-y-4"
+          style={{ borderColor: cardBorder, background: cardBg }}
+        >
+          {/* Requirement status header */}
+          <div className="flex items-start gap-3">
+            <div
+              className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full"
+              style={{
+                background: helpdeskConnected
+                  ? 'var(--sev-clear, #2f6b43)'
+                  : guideToHelpdesk
+                    ? 'var(--warning)'
+                    : 'var(--text-muted)',
+              }}
+            />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
+                {helpdeskConnected
+                  ? 'Helpdesk connected'
+                  : guideToHelpdesk
+                    ? 'Connect your helpdesk to finish setup'
+                    : 'No helpdesk connected'}
+              </p>
+              <p className="text-xs mt-0.5" style={{ color: guideToHelpdesk ? 'var(--warning)' : 'var(--text-muted)' }}>
+                {helpdeskConnected
+                  ? 'Claims and dispute context are syncing. Tie each claim back to its Shopify order.'
+                  : guideToHelpdesk
+                    ? 'Shopify is live, but claim and dispute context comes from your helpdesk. Until you connect one, claim metrics read as incomplete — not zero.'
+                    : 'Choose one provider below. Either one supplies claim history and dispute context.'}
+              </p>
+            </div>
+          </div>
+
+          {/* Provider options */}
+          <div className="space-y-2.5">
+            {HELPDESK_OPTIONS.map((item) => {
+              const state = connStatus ? connStatus[item.statusKey] : null;
+              const connected = Boolean(state?.connected);
+              return (
+                <div
+                  key={item.id}
+                  className="flex gap-3 rounded-lg border p-3"
+                  style={{ borderColor: 'var(--surface-border)', background: 'var(--bg-surface)' }}
+                >
+                  <img
+                    src={item.logo}
+                    alt=""
+                    width={28}
+                    height={28}
+                    className="h-7 w-7 shrink-0 rounded-md"
+                    style={{ objectFit: 'contain' }}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>{item.name}</p>
+                      {connected ? (
+                        <a
+                          href={item.href}
+                          className="inline-flex shrink-0 items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium"
+                          style={{ borderColor: 'var(--surface-border)', color: 'var(--text-muted)' }}
+                        >
+                          Manage
+                        </a>
+                      ) : (
+                        <a
+                          href={item.href}
+                          className="inline-flex shrink-0 items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold"
+                          style={{ background: 'var(--accent)', color: 'var(--accent-fg, #fff)' }}
+                        >
+                          Connect
+                          {guideToHelpdesk && <ArrowRight className="h-3 w-3" />}
+                        </a>
+                      )}
+                    </div>
+                    {statusKnown && (
+                      <p className="mt-1 flex items-center gap-1.5 text-xs font-medium">
+                        <span
+                          aria-hidden
+                          className="inline-block h-1.5 w-1.5 shrink-0 rounded-full"
+                          style={{
+                            background: connected ? 'var(--sev-clear, #2f6b43)' : 'transparent',
+                            border: connected ? 'none' : '1px solid var(--text-muted)',
+                          }}
+                        />
+                        <span style={{ color: connected ? 'var(--sev-clear, #2f6b43)' : 'var(--text-muted)' }}>
+                          {connected ? 'Connected' : 'Not connected'}
+                        </span>
+                        {connected && state?.detail && (
+                          <span className="truncate" style={{ color: 'var(--text-muted)' }}>· {state.detail}</span>
+                        )}
+                      </p>
+                    )}
+                    <p className="mt-1 text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+                      {item.description}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {helpdeskConnected && (
+            <p className="flex items-center gap-1.5 text-xs font-medium" style={{ color: 'var(--sev-clear, #2f6b43)' }}>
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              Required helpdesk source satisfied
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  /* ---------- Advanced section (lower priority) ---------- */
   return (
-    <div className="space-y-8">
+    <div className="space-y-5">
+      <div>
+        <h2 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Advanced</h2>
+        <p className="mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>
+          Browser tooling and API keys for custom integrations. Optional — not required for core monitoring.
+        </p>
+      </div>
+
       {message && (
         <p
           className="rounded-md px-3 py-2 text-sm"
@@ -287,90 +421,33 @@ export default function ApiIntegrationsClient() {
         )}
       </section>
 
-      <section>
-        <h2 className="text-sm font-semibold mb-3" style={{ color: 'var(--text)' }}>Integrations</h2>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {INTEGRATIONS.map((item) => {
-            const state =
-              item.statusKey && connStatus ? connStatus[item.statusKey] : null;
-            const connected = Boolean(state?.connected);
-            // Status is "known" once the fetch resolves for connectable tiles; until
-            // then we render a neutral placeholder rather than flashing "Not connected".
-            const statusKnown = item.kind !== 'connectable' || connStatus !== null;
-
-            return (
-              <div
-                key={item.id}
-                className="flex gap-3 rounded-lg border p-4"
-                style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-raised)' }}
-              >
-                <img
-                  src={item.logo}
-                  alt=""
-                  width={32}
-                  height={32}
-                  className="h-8 w-8 shrink-0 rounded-md"
-                  style={{ objectFit: 'contain' }}
-                />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>{item.name}</p>
-                    {item.kind === 'install' ? (
-                      <a
-                        href={item.href}
-                        className="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium"
-                        style={{ background: 'rgba(26, 115, 232, 0.12)', color: '#1A73E8' }}
-                      >
-                        Install
-                        <ExternalLink className="h-3 w-3" />
-                      </a>
-                    ) : connected ? (
-                      <a
-                        href={item.href}
-                        className="inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium"
-                        style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}
-                      >
-                        Manage
-                      </a>
-                    ) : (
-                      <a
-                        href={item.href}
-                        className="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium"
-                        style={{ background: 'var(--accent)', color: 'var(--accent-fg, #fff)' }}
-                      >
-                        Connect
-                      </a>
-                    )}
-                  </div>
-
-                  {item.kind === 'connectable' && statusKnown && (
-                    <p className="mt-1 flex items-center gap-1.5 text-xs font-medium">
-                      <span
-                        aria-hidden
-                        className="inline-block h-1.5 w-1.5 shrink-0 rounded-full"
-                        style={{
-                          background: connected ? 'var(--sev-clear, #2f6b43)' : 'transparent',
-                          border: connected ? 'none' : '1px solid var(--text-muted)',
-                        }}
-                      />
-                      <span style={{ color: connected ? 'var(--sev-clear, #2f6b43)' : 'var(--text-muted)' }}>
-                        {connected ? 'Connected' : 'Not connected'}
-                      </span>
-                      {connected && state?.detail && (
-                        <span className="truncate" style={{ color: 'var(--text-muted)' }}>
-                          · {state.detail}
-                        </span>
-                      )}
-                    </p>
-                  )}
-
-                  <p className="mt-1 text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-                    {item.description}
-                  </p>
-                </div>
-              </div>
-            );
-          })}
+      <section
+        className="flex gap-3 rounded-lg border p-4"
+        style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-raised)' }}
+      >
+        <img
+          src="/integrations/chrome.svg"
+          alt=""
+          width={32}
+          height={32}
+          className="h-8 w-8 shrink-0 rounded-md"
+          style={{ objectFit: 'contain' }}
+        />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>Chrome extension</p>
+            <a
+              href="/settings/integrations/chrome"
+              className="inline-flex shrink-0 items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium"
+              style={{ borderColor: 'var(--surface-border)', color: 'var(--text)' }}
+            >
+              Install
+              <ExternalLink className="h-3 w-3" />
+            </a>
+          </div>
+          <p className="mt-1 text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+            Look up customers from any page with one click.
+          </p>
         </div>
       </section>
 

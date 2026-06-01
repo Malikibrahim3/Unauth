@@ -224,26 +224,26 @@ export default function AppHeader({
 function deriveFromPathname(pathname: string): BreadcrumbSegment[] {
   const segmentMap: Record<string, string> = {
     dashboard:   'Dashboard',
-    upload:      'New audit',
-    audits:      'Audit history',
+    upload:      'Import CSV',
+    audits:      'Import history',
     customers:   'Customers',
     claims:      'Claims',
     watchlist:   'Watchlist',
-    history:     'Audit history',
+    history:     'Import history',
     inbox:       'Inbox',
     onboarding:  'Onboarding',
     help:        'Help',
     settings:    'Settings',
     saved:       'Saved Views',
     audit:       'Audit results',
-    new:         'New audit',
+    new:         'Import CSV',
   };
   const pathMap: Record<string, string> = {
     'settings/audit-trail': 'Audit trail',
     'settings/data-privacy': 'Data & privacy',
     chargebacks: 'Evidence packages',
-    'new-audit': 'New audit',
-    'audit-history': 'Audit history',
+    'new-audit': 'Import CSV',
+    'audit-history': 'Import history',
     'evidence-packages': 'Evidence packages',
   };
 

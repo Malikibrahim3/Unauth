@@ -67,9 +67,9 @@ export default async function ChargebacksPage() {
   return (
     <WorkbenchPage
       title="Evidence packages"
-      subtitle="Signal data compiled from your records for disputed orders."
+      subtitle="Dispute-ready evidence artifacts compiled from order, customer, and identity-match context."
       navItems={WORKBENCH_NAV_ITEMS}
-      activeNavKey="customers"
+      activeNavKey="evidence"
       actions={
         <Link href="/customers">
           <Button variant="secondary" size="sm">View customers</Button>
@@ -78,11 +78,11 @@ export default async function ChargebacksPage() {
       kpiStrip={
         <WorkbenchKpiStrip
           items={[
-            { label: 'Packages', value: pkgs.length.toLocaleString(), hint: 'Generated reports' },
-            { label: 'Prior identity match', value: pkgs.filter((pkg) => pkg.ce3_eligible).length.toLocaleString(), hint: 'Packages with matched priors' },
+            { label: 'Packages', value: pkgs.length.toLocaleString(), hint: 'Evidence artifacts compiled' },
+            { label: 'Dispute-ready', value: pkgs.filter((pkg) => pkg.ce3_eligible).length.toLocaleString(), hint: 'Prior identity match found' },
             { label: 'Cross-merchant', value: pkgs.filter((pkg) => pkg.cross_merchant_indicator).length.toLocaleString(), hint: 'Network-linked evidence' },
-            { label: 'Latest', value: pkgs[0]?.generated_at ? new Date(pkgs[0].generated_at).toLocaleDateString('en-US') : '-', hint: 'Most recent package' },
-            { label: 'Source', value: 'Customers', hint: 'Generated from customer profiles' },
+            { label: 'With narrative', value: pkgs.filter((pkg) => Boolean(pkg.narrative_summary)).length.toLocaleString(), hint: 'Include summary narrative' },
+            { label: 'Last generated', value: pkgs[0]?.generated_at ? new Date(pkgs[0].generated_at).toLocaleDateString('en-US') : '—', hint: 'Most recent artifact' },
           ]}
         />
       }
@@ -99,15 +99,15 @@ export default async function ChargebacksPage() {
       pkgs.length === 0 ? (
         <WorkbenchEmptyState
           title="No evidence packages yet"
-          description="Compile identity evidence from customer profiles to support dispute review. Prior matching transactions are highlighted when found."
-          action={<Link href="/customers" className="text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>View customers</Link>}
+          description="Compile a dispute-ready evidence artifact from a customer profile when an order is disputed. Prior matching transactions and cross-merchant links are highlighted when found."
+          action={<Link href="/customers" className="text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>Generate from a customer</Link>}
         />
       ) : (
         <div className="w-full overflow-x-auto">
           <table className="w-full border-collapse text-sm" style={{ background: 'var(--bg-surface)' }}>
             <thead>
               <tr className="border-b" style={{ background: 'var(--bg-surface-alt)', borderColor: 'var(--border-default)' }}>
-                {['Reference', 'Customer', 'Generated', 'Prior match', 'Cross-merchant', ''].map((header) => (
+                {['Reference', 'Customer', 'Readiness', 'Last generated', 'Prior match', 'Cross-merchant', ''].map((header) => (
                   <th key={header} className="px-4 py-2.5 text-left text-overline" style={{ color: 'var(--text-muted)' }}>
                     {header}
                   </th>
@@ -126,6 +126,11 @@ export default async function ChargebacksPage() {
                     <span className="text-xs" style={{ color: 'var(--text)' }}>
                       {pkg.customer_profile_id ? (profileMap[pkg.customer_profile_id]?.maskedEmail ?? '—') : '—'}
                     </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    {pkg.ce3_eligible
+                      ? <Badge tone="success" size="sm">Dispute-ready</Badge>
+                      : <Badge tone="warning" size="sm">In progress</Badge>}
                   </td>
                   <td className="px-4 py-3">
                     <span className="text-xs font-mono" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>

@@ -1,8 +1,8 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
-import { getConnectionState } from '@/lib/connections/getConnectionState';
+import { getConnectionState, type ConnectionState } from '@/lib/connections/getConnectionState';
 import { getMerchantDataPresence } from '@/lib/supabase/getMerchantDataPresence';
-import { resolveMerchantSetupState } from '@/lib/connections/getMerchantSetupState';
+import { resolveMerchantSetupState, type MerchantSetupState } from '@/lib/connections/getMerchantSetupState';
 import { PageConnectionGate } from '@/components/connections/PageConnectionGate';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
@@ -45,6 +45,50 @@ function FilterChip({ label, removeHref }: { label: string; removeHref: string }
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
 const DEFAULT_PAGE_SIZE = 25;
+
+const INTEGRATIONS_HREF = '/settings/integrations';
+
+/**
+ * Resolves the page-level primary action by connection/setup state.
+ * When both sources are connected the primary action is a product action
+ * (jump to the high-confidence review queue), never "New audit". CSV/import
+ * is always a quiet secondary. When setup is incomplete the primary action is
+ * the state-correct connect/reconnect CTA.
+ */
+function resolveCustomerActions(
+  setupState: MerchantSetupState,
+  connection: ConnectionState,
+): { primary: { label: string; href: string }; subtitle: string } {
+  if (connection.bothConnected) {
+    return {
+      primary: { label: 'Review queue', href: '/customers?risk=high&status=new' },
+      subtitle: 'Customer intelligence across your Shopify orders and helpdesk claims — identity confidence, claim history, and linked accounts.',
+    };
+  }
+  if (connection.shopifyOnlyConnected) {
+    return {
+      primary: { label: 'Connect helpdesk', href: INTEGRATIONS_HREF },
+      subtitle: 'Customer intelligence from your Shopify orders. Connect your helpdesk to add claim history and dispute context.',
+    };
+  }
+  if (connection.helpdeskOnlyConnected) {
+    return {
+      primary: { label: 'Connect Shopify', href: INTEGRATIONS_HREF },
+      subtitle: 'Customer intelligence from your helpdesk claims. Connect Shopify to add order and purchase context.',
+    };
+  }
+  // Neither connected, but useful data exists (csv_only / stale_existing_data).
+  if (setupState === 'csv_only') {
+    return {
+      primary: { label: 'Connect Shopify and your helpdesk', href: INTEGRATIONS_HREF },
+      subtitle: 'Customer intelligence from your imported history. Connect Shopify and your helpdesk for live monitoring.',
+    };
+  }
+  return {
+    primary: { label: 'Reconnect sources', href: INTEGRATIONS_HREF },
+    subtitle: 'Customer intelligence from your existing data. Reconnect Shopify and your helpdesk to keep it current.',
+  };
+}
 
 export const dynamic = 'force-dynamic';
 
@@ -369,22 +413,33 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
     chargebacksMin === null && merchantsMin === null && fastestClaimMax === null &&
     !firstSeenFrom && !firstSeenTo && !lastSeenFrom && !lastSeenTo && !flagFilter && !statusFilter;
 
+  const { primary: primaryAction, subtitle: pageSubtitle } = resolveCustomerActions(setupState, connectionState);
+
   return (
-    <PageConnectionGate requires="both" connection={connectionState} pageName="Customers" pageDescription="Customer profiles show order patterns, identity confidence, and claim history. Without both Shopify and your helpdesk connected, claim counts may be zero because data is missing — not because the customer has no history." setupState={setupState} hasData={dataPresence.hasCustomerProfiles}>
+    <PageConnectionGate requires="both" connection={connectionState} pageName="Customer intelligence" pageDescription="Customer profiles show order patterns, identity confidence, and claim history. Without both Shopify and your helpdesk connected, claim counts may be zero because data is missing — not because the customer has no history." setupState={setupState} hasData={dataPresence.hasCustomerProfiles}>
     <WorkbenchPage
-      title="Customers"
-      subtitle="Search, filter, and act on customer identity profiles."
+      title="Customer intelligence"
+      subtitle={pageSubtitle}
       navItems={WORKBENCH_NAV_ITEMS}
       activeNavKey="customers"
-      actions={<Link href="/upload"><Button size="sm">New audit</Button></Link>}
+      actions={
+        <>
+          <Link href="/upload">
+            <Button variant="secondary" size="sm">Import CSV</Button>
+          </Link>
+          <Link href={primaryAction.href}>
+            <Button size="sm">{primaryAction.label}</Button>
+          </Link>
+        </>
+      }
       kpiStrip={
         <WorkbenchKpiStrip
           items={[
-            { label: 'Profiles', value: total.toLocaleString(), hint: 'Filtered result set' },
-            { label: 'Watchlisted', value: rows.filter((r) => r.on_watchlist).length.toLocaleString(), hint: 'Current page' },
-            { label: 'New status', value: rows.filter((r) => r.investigation_status === 'new').length.toLocaleString(), hint: 'Current page' },
-            { label: 'Has refunds', value: rows.filter((r) => r.total_refund_claims > 0).length.toLocaleString(), hint: 'Current page' },
-            { label: 'Linked identities', value: rows.filter((r) => r.total_merchants_seen_at >= 2).length.toLocaleString(), hint: 'Current page' },
+            { label: 'Matching profiles', value: total.toLocaleString(), hint: noFilters ? 'All customers' : 'Match current filters' },
+            { label: 'Watchlisted', value: rows.filter((r) => r.on_watchlist).length.toLocaleString(), hint: 'Shown on page' },
+            { label: 'New status', value: rows.filter((r) => r.investigation_status === 'new').length.toLocaleString(), hint: 'Shown on page' },
+            { label: 'Has refund claims', value: rows.filter((r) => r.total_refund_claims > 0).length.toLocaleString(), hint: 'Shown on page' },
+            { label: 'Seen at 2+ stores', value: rows.filter((r) => r.total_merchants_seen_at >= 2).length.toLocaleString(), hint: 'Shown on page' },
           ]}
         />
       }
@@ -463,16 +518,37 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
       {rows.length === 0 && noFilters ? (
         <WorkbenchEmptyState
           title="No customer profiles yet"
-          description="Run an audit to populate this list. Customer profiles are built from your uploaded transaction data."
-          action={<Link href="/upload" className="text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>Upload a CSV</Link>}
+          description={
+            connectionState.bothConnected
+              ? 'Shopify and your helpdesk are connected. Customer profiles appear here as orders and claims sync.'
+              : 'Customer profiles are built from your connected sources. Finish setup to start monitoring customers.'
+          }
+          action={
+            <div className="flex items-center gap-4">
+              <Link href={primaryAction.href} className="text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
+                {primaryAction.label} →
+              </Link>
+              <Link href="/upload" className="text-caption font-medium hover:underline" style={{ color: 'var(--ink-tertiary)' }}>
+                Import CSV
+              </Link>
+            </div>
+          }
+        />
+      ) : rows.length === 0 && !noFilters ? (
+        <WorkbenchEmptyState
+          title="No customers match filters"
+          description="No customer profiles match the filters you've applied. Adjust or clear them to see more."
+          action={
+            <Link href="/customers" className="text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
+              Clear all filters →
+            </Link>
+          }
         />
       ) : (
         <>
           <div className="flex items-center justify-between">
             <p className="text-caption" style={{ color: 'var(--text-muted)' }}>
-              {total === 0
-                ? 'No customers match your filters.'
-                : `Showing ${from}–${to} of ${total.toLocaleString()} customers`}
+              {`Showing ${from}–${to} of ${total.toLocaleString()} customers`}
             </p>
             <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
               <Suspense fallback={null}>

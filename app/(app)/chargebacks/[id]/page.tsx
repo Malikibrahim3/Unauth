@@ -11,7 +11,7 @@ import { DisputeReadinessPanel } from '@/components/evidence/DisputeReadinessPan
 import { EvidencePackagePreview } from '@/components/evidence/EvidencePackagePreview'
 import { requirePermission, hasPermission, PERMISSIONS, resolveDefaultAppPath } from '@/lib/permissions'
 import { SensitiveField } from '@/components/ui/SensitiveField'
-import { SectionCard } from '@/components/ui'
+import { SectionCard, Badge } from '@/components/ui'
 
 interface Props {
   params: Promise<{ id: string }>
@@ -105,11 +105,18 @@ export default async function EvidenceDetailPage({ params }: Props) {
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-heading-lg" style={{ color: 'var(--text)' }}>
-            Evidence Package
-          </h1>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-heading-lg" style={{ color: 'var(--text)' }}>
+              Evidence package
+            </h1>
+            {pkg.ce3_eligible
+              ? <Badge tone="success" size="sm">Dispute-ready</Badge>
+              : <Badge tone="warning" size="sm">In progress</Badge>}
+            {pkg.cross_merchant_indicator ? <Badge tone="info" size="sm">Network</Badge> : null}
+          </div>
           <p className="text-body-sm font-mono mt-0.5" style={{ color: 'var(--text-muted)' }}>
             {pkg.reference_number}
+            {pkg.generated_for_order_id ? ` · Order ${pkg.generated_for_order_id.slice(0, 20)}` : ''}
           </p>
         </div>
         <div className="flex items-center gap-3">

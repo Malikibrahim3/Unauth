@@ -8,6 +8,7 @@ import PageSizeSelect from '@/components/common/PageSizeSelect';
 import { Button, WorkbenchPage, WorkbenchActionBar, WorkbenchEmptyState, WorkbenchKpiStrip } from '@/components/ui';
 import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
 import { requirePermission, PERMISSIONS, resolveDefaultAppPath } from '@/lib/permissions';
+import { getConnectionState } from '@/lib/connections/getConnectionState';
 import { redirect } from 'next/navigation';
 
 type RunRow = Database['public']['Tables']['processing_jobs']['Row'];
@@ -42,6 +43,8 @@ export default async function HistoryPage({ searchParams }: { searchParams?: { p
     .order('created_at', { ascending: false })
     .range(offset, offset + pageSize - 1);
 
+  const connection = await getConnectionState(serviceClient, ctx.merchantId);
+
   const typedRuns = (runs ?? []) as unknown as RunRow[];
   const total = count ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -49,22 +52,22 @@ export default async function HistoryPage({ searchParams }: { searchParams?: { p
 
   return (
     <WorkbenchPage
-      title="Audit history"
-      subtitle={`Showing ${total === 0 ? 0 : offset + 1}-${Math.min(offset + pageSize, total)} of ${total.toLocaleString()} runs`}
+      title="Import history"
+      subtitle={`Showing ${total === 0 ? 0 : offset + 1}-${Math.min(offset + pageSize, total)} of ${total.toLocaleString()} imports`}
       navItems={WORKBENCH_NAV_ITEMS}
       activeNavKey="audits"
       actions={
         <Link href="/upload">
-          <Button size="sm">New audit</Button>
+          <Button size="sm">Import CSV</Button>
         </Link>
       }
       kpiStrip={
         <WorkbenchKpiStrip
           items={[
-            { label: 'Audits', value: total.toLocaleString(), hint: 'Visible runs' },
+            { label: 'Imports', value: total.toLocaleString(), hint: 'Visible imports' },
             { label: 'Rows processed', value: typedRuns.reduce((sum, row) => sum + row.total_rows, 0).toLocaleString(), hint: 'Current page scope' },
             { label: 'Matched', value: typedRuns.reduce((sum, row) => sum + (row.flagged_count ?? 0), 0).toLocaleString(), hint: 'Current page scope' },
-            { label: 'Last upload', value: typedRuns[0]?.created_at ? new Date(typedRuns[0].created_at).toLocaleDateString('en-US') : '-', hint: 'Most recent run' },
+            { label: 'Last import', value: typedRuns[0]?.created_at ? new Date(typedRuns[0].created_at).toLocaleDateString('en-US') : '-', hint: 'Most recent import' },
             { label: 'Failed', value: typedRuns.filter((row) => row.status === 'failed').length.toLocaleString(), hint: 'Current page scope' },
           ]}
         />
@@ -98,9 +101,15 @@ export default async function HistoryPage({ searchParams }: { searchParams?: { p
       main={
         typedRuns.length === 0 ? (
           <WorkbenchEmptyState
-            title="No audits yet"
-            description="Upload your first CSV to start reviewing identity match patterns."
-            action={<Link href="/upload" className="text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>Upload your first CSV</Link>}
+            title="No CSV imports yet"
+            description={
+              connection.bothConnected
+                ? 'Your live Shopify and helpdesk sources are your primary feed. CSV import is optional — use it to backfill historical orders that predate your connection.'
+                : connection.shopify || connection.helpdesk
+                  ? 'CSV import is an optional backfill. Connect both Shopify and your helpdesk for live monitoring, or import a historical order export here.'
+                  : 'Import a historical order export to backfill identity matching. For live monitoring, connect Shopify and your helpdesk.'
+            }
+            action={<Link href="/upload" className="text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>Import CSV</Link>}
           />
         ) : (
           <AuditHistoryTableClient rows={typedRuns} />

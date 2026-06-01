@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { ConfidenceBadge } from '@/components/ui/ConfidenceBadge';
 import { riskLevelToNewGrade } from '@/lib/confidence';
 import RemoveButton from '@/components/watchlist/RemoveButton';
@@ -104,9 +105,9 @@ export default function WatchlistTableClient({ rows: initialRows }: WatchlistTab
                 />
               </th>
               <th className="text-left px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Customer</th>
-              <th className="text-left px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Confidence</th>
-              <th className="text-left px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Added</th>
-              <th className="px-4 py-2.5" />
+              <th className="text-left px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Last seen risk</th>
+              <th className="text-left px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Monitoring since</th>
+              <th className="px-4 py-2.5 text-overline text-right" style={{ color: 'var(--text-muted)' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -167,7 +168,18 @@ export default function WatchlistTableClient({ rows: initialRows }: WatchlistTab
                   className="px-4 py-3 text-right"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <RemoveButton id={entry.id} onRemoved={handleRemoved} />
+                  <div className="flex items-center justify-end gap-3">
+                    {entry.customer_profile_id ? (
+                      <Link
+                        href={`/customers/${entry.customer_profile_id}`}
+                        className="text-xs font-semibold hover:underline whitespace-nowrap"
+                        style={{ color: 'var(--accent)' }}
+                      >
+                        Open dossier →
+                      </Link>
+                    ) : null}
+                    <RemoveButton id={entry.id} onRemoved={handleRemoved} />
+                  </div>
                 </td>
               </tr>
             ))}

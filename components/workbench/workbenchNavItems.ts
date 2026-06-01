@@ -4,6 +4,8 @@ import type { WorkbenchNavItem } from './WorkbenchNav';
 export const WORKBENCH_NAV_ITEMS: WorkbenchNavItem[] = [
   { key: 'overview', label: 'Overview', href: '/dashboard' },
   { key: 'customers', label: 'Customers', href: '/customers' },
-  { key: 'audits', label: 'Audit history', href: '/history' },
+  { key: 'watchlist', label: 'Watchlist', href: '/watchlist' },
   { key: 'evidence', label: 'Evidence packages', href: '/chargebacks' },
+  { key: 'reports', label: 'Reports', href: '/reports' },
+  { key: 'audits', label: 'Import history', href: '/history' },
 ];

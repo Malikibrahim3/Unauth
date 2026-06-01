@@ -43,7 +43,6 @@ const nextConfig = {
     return [
       { source: '/inbox', destination: '/customers', permanent: false },
       { source: '/claims', destination: '/customers', permanent: false },
-      { source: '/reports', destination: '/dashboard', permanent: false },
       { source: '/saved', destination: '/dashboard', permanent: false },
     ];
   },

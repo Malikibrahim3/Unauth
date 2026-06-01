@@ -8,12 +8,57 @@ import { TABLES } from '@/lib/supabase/tables';
 import { requirePermission, PERMISSIONS, resolveDefaultAppPath } from '@/lib/permissions';
 import { getExposureAtRisk } from '@/lib/supabase/merchantHelpers';
 import { formatCurrencyNullable, formatDateMode } from '@/lib/utils/format';
-import { MetricCard, SectionCard, WorkbenchPage } from '@/components/ui';
+import { MetricCard, SectionCard, WorkbenchPage, Badge } from '@/components/ui';
 import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
 import { buildClaimOpsMetrics } from '@/lib/claims/reporting';
 import ExportMenu from '@/components/reports/ExportMenu';
 import { GRADE_COLOURS, GRADE_LABELS } from '@/lib/utils/confidenceStyles';
+import type { ConnectionState } from '@/lib/connections/getConnectionState';
 import Link from 'next/link';
+import { Headphones, ShoppingBag, FileSpreadsheet, Radio } from 'lucide-react';
+
+const GRADE_SAMPLE_LIMIT = 2000;
+
+/**
+ * State-aware "finish setup" copy for the Live reports surface. Mirrors the
+ * canonical CTA logic used on the dashboard so a data-present merchant always
+ * sees existing context plus the right next step — never a dead empty gate.
+ */
+function liveSetupCta(connection: ConnectionState): { title: string; body: string; label: string } | null {
+  if (connection.bothConnected) return null;
+  if (connection.shopifyOnlyConnected) {
+    return {
+      title: 'Connect your helpdesk to complete live reporting',
+      body: 'Shopify order data is flowing. Add your helpdesk to layer in claim history, dispute outcomes, and SLA tracking — the metrics below stay incomplete until then.',
+      label: 'Connect helpdesk',
+    };
+  }
+  if (connection.helpdeskOnlyConnected) {
+    return {
+      title: 'Connect Shopify to complete live reporting',
+      body: 'Claim history is flowing from your helpdesk. Add Shopify to tie claims to real orders and customer purchase context.',
+      label: 'Connect Shopify',
+    };
+  }
+  return {
+    title: 'Connect Shopify and your helpdesk for live reports',
+    body: 'Live reporting combines Shopify order data with helpdesk claim history. Reconnect your live sources to monitor new orders, claims, and outcomes as they happen.',
+    label: 'Connect Shopify and your helpdesk',
+  };
+}
+
+/** Source tag shown on every report section so the two data lineages never blur together. */
+function SourceTag({ source }: { source: 'csv' | 'live' }) {
+  return source === 'csv' ? (
+    <Badge tone="neutral" size="sm" className="gap-1">
+      <FileSpreadsheet className="h-3 w-3" /> CSV import
+    </Badge>
+  ) : (
+    <Badge tone="accent" size="sm" className="gap-1">
+      <Radio className="h-3 w-3" /> Live source
+    </Badge>
+  );
+}
 
 type ClaimRow = {
   id: string;
@@ -109,30 +154,48 @@ function metricHintCurrency(
 const TABS = ['overview', 'csv', 'integration'] as const;
 type Tab = typeof TABS[number];
 
-function TabBar({ active, range }: { active: Tab; range: string }) {
-  const labels: Record<Tab, string> = {
-    overview: 'Overview',
-    csv: 'CSV audits',
-    integration: 'Live reports',
-  };
+const TAB_META: Record<Tab, { label: string; icon: typeof Radio | null }> = {
+  overview: { label: 'Overview', icon: null },
+  csv: { label: 'CSV audits', icon: FileSpreadsheet },
+  integration: { label: 'Live reports', icon: Radio },
+};
+
+function TabBar({ active, range, csvCount }: { active: Tab; range: string; csvCount: number }) {
   return (
     <div
-      className="flex gap-0.5 border-b px-4"
+      className="flex gap-1 border-b px-4"
       style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-overlay)' }}
     >
-      {TABS.map((tab) => (
-        <Link
-          key={tab}
-          href={`/reports?tab=${tab}&range=${range}`}
-          className="px-3 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors"
-          style={{
-            borderColor: active === tab ? 'var(--copper-bright)' : 'transparent',
-            color: active === tab ? 'var(--ink-primary)' : 'var(--ink-tertiary)',
-          }}
-        >
-          {labels[tab]}
-        </Link>
-      ))}
+      {TABS.map((tab) => {
+        const Icon = TAB_META[tab].icon;
+        const isActive = active === tab;
+        return (
+          <Link
+            key={tab}
+            href={`/reports?tab=${tab}&range=${range}`}
+            className="inline-flex items-center gap-1.5 px-3 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors"
+            style={{
+              borderColor: isActive ? 'var(--copper-bright)' : 'transparent',
+              color: isActive ? 'var(--ink-primary)' : 'var(--ink-tertiary)',
+              fontWeight: isActive ? 600 : 500,
+            }}
+          >
+            {Icon ? <Icon className="h-3.5 w-3.5" /> : null}
+            {TAB_META[tab].label}
+            {tab === 'csv' && csvCount > 0 ? (
+              <span
+                className="num inline-flex h-4 min-w-4 items-center justify-center rounded px-1 text-[10px] font-bold"
+                style={{
+                  background: isActive ? 'var(--copper-glow)' : 'var(--surface-muted)',
+                  color: isActive ? 'var(--copper-bright)' : 'var(--ink-tertiary)',
+                }}
+              >
+                {csvCount}
+              </span>
+            ) : null}
+          </Link>
+        );
+      })}
     </div>
   );
 }
@@ -263,6 +326,9 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
     : buildClaimOpsMetrics(priorClaims, priorOutcomeResult.data ?? []);
 
   const hasAnyData = dataPresence.hasAnyData;
+  const liveCta = liveSetupCta(connectionState);
+  const gradeSampled = (txRows ?? []).length >= GRADE_SAMPLE_LIMIT;
+  const analysedRows = (txRows ?? []).length;
 
   // ── Tab content ──────────────────────────────────────────────────────────
 
@@ -284,8 +350,8 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
         />
         <MetricCard
           label="Live reports"
-          value={claims.length > 0 ? '1 active' : '—'}
-          hint="From Shopify + helpdesk"
+          value={claims.length > 0 ? '1 active' : connectionState.bothConnected ? '—' : 'Setup needed'}
+          hint={connectionState.bothConnected ? 'From Shopify + helpdesk' : 'Connect both live sources'}
           density="compact"
         />
         <MetricCard
@@ -296,9 +362,13 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
         />
       </div>
 
-      {/* Two recent lists */}
+      {/* Two recent lists — kept source-distinct, never one mixed table */}
       <div className="grid gap-4 xl:grid-cols-2">
-        <SectionCard title="Recent CSV audits" description="Uploaded files processed for fraud signals">
+        <SectionCard
+          title="Recent CSV audits"
+          description="Uploaded files processed for fraud signals"
+          actions={<SourceTag source="csv" />}
+        >
           {rows.length === 0 ? (
             <p className="t-caption py-4" style={{ color: 'var(--ink-tertiary)' }}>No CSV audits yet. <Link href="/upload" className="font-semibold hover:underline" style={{ color: 'var(--accent)' }}>Upload a file →</Link></p>
           ) : (
@@ -323,26 +393,38 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
           )}
         </SectionCard>
 
-        <SectionCard title="Recent live reports" description="Data from connected Shopify + helpdesk">
-          {!connectionState.bothConnected && claims.length === 0 ? (
-            <div className="py-4 space-y-2">
-              <p className="t-caption" style={{ color: 'var(--ink-tertiary)' }}>
-                Connect Shopify and your helpdesk to generate live reports.
-              </p>
-              <Link href="/settings/integrations" className="t-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>Complete setup →</Link>
-            </div>
-          ) : claims.length === 0 ? (
-            <p className="t-caption py-4" style={{ color: 'var(--ink-tertiary)' }}>No integration data in this period.</p>
-          ) : (
-            <div className="space-y-2">
+        <SectionCard
+          title="Recent live reports"
+          description="Data from connected Shopify + helpdesk"
+          actions={<SourceTag source="live" />}
+        >
+          <div className="space-y-2">
+            {claims.length > 0 ? (
               <div className="rounded border px-3 py-2" style={{ borderColor: 'var(--surface-border)' }}>
                 <p className="t-body-sm font-medium" style={{ color: 'var(--ink-primary)' }}>Helpdesk claims — {range === 'all' ? 'all time' : `last ${range.replace('d', ' days')}`}</p>
                 <p className="t-caption font-mono" style={{ color: 'var(--ink-tertiary)' }}>
                   {claimMetrics.totalClaims.toLocaleString()} claims · {claimMetrics.openClaims.toLocaleString()} open · {formatCurrencyNullable(claimMetrics.valueAtRisk || null)} at risk
                 </p>
               </div>
-            </div>
-          )}
+            ) : connectionState.bothConnected ? (
+              <p className="t-caption py-2" style={{ color: 'var(--ink-tertiary)' }}>No live report data in this period. Adjust the date range or wait for new claims to sync.</p>
+            ) : null}
+
+            {liveCta ? (
+              <div
+                className="rounded border px-3 py-2.5"
+                style={{
+                  background: 'color-mix(in srgb, var(--warning) 7%, var(--surface-raised))',
+                  borderColor: 'color-mix(in srgb, var(--warning) 30%, var(--surface-border))',
+                }}
+              >
+                <p className="t-caption font-semibold" style={{ color: 'var(--ink-primary)' }}>{liveCta.title}</p>
+                <Link href="/settings/integrations" className="t-caption mt-1 inline-block font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
+                  {liveCta.label} →
+                </Link>
+              </div>
+            ) : null}
+          </div>
         </SectionCard>
       </div>
     </div>
@@ -350,7 +432,23 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
 
   const CsvTab = (
     <div className="p-4 space-y-4">
-      <SectionCard title="CSV audit history" description={`${rows.length} files processed · ${totalRows.toLocaleString()} total rows · ${totalFlagged.toLocaleString()} flagged`}>
+      <div
+        className="rounded border px-4 py-2.5 flex items-center gap-2"
+        style={{ background: 'var(--surface-overlay)', borderColor: 'var(--surface-border)' }}
+      >
+        <FileSpreadsheet className="h-4 w-4 shrink-0" style={{ color: 'var(--ink-tertiary)' }} />
+        <p className="t-caption" style={{ color: 'var(--ink-secondary)' }}>
+          <span className="font-semibold" style={{ color: 'var(--ink-primary)' }}>Historical import.</span>{' '}
+          These reports come from uploaded CSV files — backfill, not live monitoring. For ongoing coverage, connect Shopify and your helpdesk under{' '}
+          <Link href="/settings/integrations" className="font-semibold hover:underline" style={{ color: 'var(--accent)' }}>Live reports</Link>.
+        </p>
+      </div>
+
+      <SectionCard
+        title="CSV audit history"
+        description={`${rows.length} files processed · ${totalRows.toLocaleString()} total rows · ${totalFlagged.toLocaleString()} flagged`}
+        actions={<SourceTag source="csv" />}
+      >
         {rows.length === 0 ? (
           <div className="py-6 text-center space-y-2">
             <p className="t-body-sm" style={{ color: 'var(--ink-secondary)' }}>No CSV audits yet.</p>
@@ -409,7 +507,13 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
           </svg>
         </SectionCard>
 
-        <SectionCard title="Flag distribution by grade">
+        <SectionCard
+          title="Flag distribution by grade"
+          description={gradeSampled
+            ? `Sampled from the most recent ${GRADE_SAMPLE_LIMIT.toLocaleString()} analysed rows`
+            : `Across ${analysedRows.toLocaleString()} analysed rows`}
+          actions={gradeSampled ? <Badge tone="warning" size="sm">Sampled</Badge> : <SourceTag source="csv" />}
+        >
           <div className="flex h-56 flex-col justify-between gap-5">
             <div>
               <div className="flex h-5 overflow-hidden rounded-[3px] border" style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-muted)' }}>
@@ -433,12 +537,17 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
                     <div className="mt-2 h-1 rounded-full" style={{ background: 'var(--surface-muted)' }}>
                       <div className="h-1 rounded-full" style={{ width: `${bucket.pct}%`, background: bucket.color }} />
                     </div>
-                    <p className="t-caption mt-1" style={{ color: 'var(--ink-tertiary)' }}>{bucket.pct.toFixed(1)}% of analysed rows</p>
+                    <p className="t-caption mt-1" style={{ color: 'var(--ink-tertiary)' }}>{bucket.pct.toFixed(1)}% of {gradeSampled ? 'sample' : 'analysed rows'}</p>
                   </div>
                 ))}
               </div>
             </div>
-            <div className="border-t pt-3" style={{ borderColor: 'var(--surface-border)' }}>
+            <div className="border-t pt-3 space-y-1" style={{ borderColor: 'var(--surface-border)' }}>
+              {gradeSampled && (
+                <p className="t-caption font-medium" style={{ color: 'var(--warning)' }}>
+                  Percentages reflect a {GRADE_SAMPLE_LIMIT.toLocaleString()}-row sample, not every audited row — treat as indicative, not exact.
+                </p>
+              )}
               <p className="t-caption" style={{ color: 'var(--ink-tertiary)' }}>
                 Distribution is derived from merchant-owned audit transactions only; cross-merchant identifiers remain aggregate.
               </p>
@@ -451,26 +560,43 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
 
   const LiveTab = (
     <div className="p-4 space-y-4">
-      {!connectionState.bothConnected && claims.length === 0 && (
+      {/* State-aware completeness banner — never an empty gate. Existing context
+          (any metrics below) always renders; this nudges the missing source. */}
+      {liveCta && (
         <div
-          className="rounded border px-4 py-3 flex items-center justify-between gap-4"
+          className="rounded border px-4 py-3 flex flex-wrap items-center justify-between gap-3"
           style={{
-            background: 'color-mix(in srgb, var(--warning, #b45309) 8%, var(--surface-raised))',
-            borderColor: 'color-mix(in srgb, var(--warning, #b45309) 20%, transparent)',
+            background: 'color-mix(in srgb, var(--warning) 8%, var(--surface-raised))',
+            borderColor: 'color-mix(in srgb, var(--warning) 28%, var(--surface-border))',
           }}
         >
-          <div className="flex items-center gap-2">
-            <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: 'var(--warning, #b45309)' }} />
-            <p className="t-body-sm" style={{ color: 'var(--ink-primary)' }}>
-              Connect Shopify and your helpdesk to generate live reports.
-              {' '}Shopify provides order data; your helpdesk provides claim history. One without the other is incomplete.
-            </p>
+          <div className="flex items-start gap-2.5 min-w-0">
+            <span
+              className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded"
+              style={{ background: 'color-mix(in srgb, var(--warning) 15%, transparent)' }}
+            >
+              {connectionState.shopifyOnlyConnected ? (
+                <Headphones className="h-3.5 w-3.5" style={{ color: 'var(--warning)' }} />
+              ) : (
+                <ShoppingBag className="h-3.5 w-3.5" style={{ color: 'var(--warning)' }} />
+              )}
+            </span>
+            <div className="min-w-0">
+              <p className="t-body-sm font-semibold" style={{ color: 'var(--ink-primary)' }}>{liveCta.title}</p>
+              <p className="t-caption mt-0.5 leading-snug" style={{ color: 'var(--ink-secondary)' }}>{liveCta.body}</p>
+            </div>
           </div>
-          <Link href="/settings/integrations" className="t-caption shrink-0 font-semibold hover:underline" style={{ color: 'var(--accent)' }}>Complete setup →</Link>
+          <Link href="/settings/integrations" className="btn-accent shrink-0 inline-flex items-center gap-1.5 rounded-md px-3.5 py-1.5 text-caption font-semibold">
+            {liveCta.label} →
+          </Link>
         </div>
       )}
 
-      <SectionCard title="Live report — claims operations" description={`Claim metrics for ${range === 'all' ? 'all time' : `last ${range.replace('d', ' days')}`} · source: Shopify + helpdesk`}>
+      <SectionCard
+        title="Live report — claims operations"
+        description={`Claim metrics for ${range === 'all' ? 'all time' : `last ${range.replace('d', ' days')}`}`}
+        actions={<SourceTag source="live" />}
+      >
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           <MetricCard label="Total claims" value={claimMetrics.totalClaims.toLocaleString()} density="compact" hint={metricHint('Filed in range', claimMetrics.totalClaims, priorMetrics, 'totalClaims')} />
           <MetricCard label="Open claims" value={claimMetrics.openClaims.toLocaleString()} density="compact" hint={metricHint('Needs action', claimMetrics.openClaims, priorMetrics, 'openClaims')} />
@@ -499,7 +625,7 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
       </SectionCard>
 
       <div className="grid gap-4 xl:grid-cols-2">
-        <SectionCard title="Resolution funnel" description="Claim volume by current status">
+        <SectionCard title="Resolution funnel" description="Claim volume by current status" actions={<SourceTag source="live" />}>
           <div className="space-y-3">
             {[
               { label: 'Open', value: claimMetrics.openClaims, color: 'var(--ink-tertiary)' },
@@ -523,7 +649,7 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
           </div>
         </SectionCard>
 
-        <SectionCard title="Loss vs recovery" description="Financial impact for selected date range">
+        <SectionCard title="Loss vs recovery" description="Financial impact for selected date range" actions={<SourceTag source="live" />}>
           <div className="grid grid-cols-2 gap-3">
             <MetricCard
               label="Open claim value"
@@ -542,7 +668,7 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
         </SectionCard>
       </div>
 
-      <SectionCard title="Order value in review queue" description="Matched orders with open claim exposure">
+      <SectionCard title="Order value in review queue" description="Matched orders with open claim exposure · source: Shopify" actions={<SourceTag source="live" />}>
         <MetricCard
           label="Order value linked"
           value={exposureAtRisk === null ? 'Unavailable' : formatCurrencyNullable(exposureAtRisk)}
@@ -558,7 +684,7 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
     <PageConnectionGate requires="both" connection={connectionState} pageName="Reports" pageDescription="Report metrics combine Shopify order data with helpdesk claim data. Without both connected, claim counts, dispute rates, and outcome summaries will be incomplete or zero." setupState={setupState} hasData={hasAnyData}>
     <WorkbenchPage
       title="Reports"
-      subtitle="Audit signal performance and claim operations over time."
+      subtitle="Live reporting from Shopify + helpdesk, plus CSV import audits — each clearly labelled by source."
       navItems={WORKBENCH_NAV_ITEMS}
       activeNavKey="reports"
       actions={
@@ -582,7 +708,7 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
           <ExportMenu range={range} />
         </div>
       }
-      kpiStrip={<TabBar active={activeTab} range={range} />}
+      kpiStrip={<TabBar active={activeTab} range={range} csvCount={rows.length} />}
       main={tabContent}
     />
     </PageConnectionGate>

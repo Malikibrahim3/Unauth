@@ -667,6 +667,16 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
                 lastSeenRisk={profile.risk_level}
                 initialWatchlisted={!!watchlistRow}
               />
+              {!viewToken && (
+                <Link
+                  href={`/customers/${profile.id}/claims`}
+                  className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-semibold transition-colors hover:opacity-80"
+                  style={{ borderColor: 'var(--border-default)', background: 'var(--bg-surface)', color: 'var(--ink-secondary)' }}
+                >
+                  <ReceiptText className="h-3.5 w-3.5" />
+                  {openClaimCount > 0 ? `Review claims (${openClaimCount})` : 'Review claims'}
+                </Link>
+              )}
               <Suspense
                 fallback={
                   <span
@@ -794,7 +804,7 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
       </section>
 
       <section className="mb-[var(--space-5)] rounded-md border p-4" style={{ background: 'var(--surface-raised)', borderColor: 'var(--surface-border)' }}>
-        <p className="text-caption font-semibold mb-3" style={{ color: 'var(--ink-secondary)' }}>Cross-store signals</p>
+        <p className="text-caption font-semibold mb-3" style={{ color: 'var(--ink-secondary)' }}>Identity confidence · cross-store signals</p>
         <div className="rounded-md border overflow-hidden" style={{ borderColor: 'var(--border-subtle)' }}>
           <div className="hidden md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_110px_90px_140px] gap-3 px-3 py-2" style={{ background: 'var(--bg-subtle)', borderBottom: '1px solid var(--border-subtle)' }}>
             <span className="text-caption font-semibold" style={{ color: 'var(--text-muted)' }}>Primary identifier</span>

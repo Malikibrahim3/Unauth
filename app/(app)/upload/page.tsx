@@ -64,11 +64,11 @@ export default async function UploadPage({ searchParams }: UploadPageProps) {
   const isWelcome = sp.welcome === '1';
   return (
     <WorkbenchPage
-      title="New audit"
-      subtitle="Upload a CSV export of your orders to detect identity matches and repeated claim patterns."
+      title="Import CSV"
+      subtitle="Backfill historical orders to detect identity matches and repeated claim patterns. CSV import is optional — your live Shopify and helpdesk sources stay your primary feed."
       navItems={WORKBENCH_NAV_ITEMS}
       activeNavKey="audits"
-      actions={<Link href="/history"><Button variant="secondary" size="sm">View history</Button></Link>}
+      actions={<Link href="/history"><Button variant="secondary" size="sm">Import history</Button></Link>}
       main={
         <div className="mx-auto w-full max-w-3xl p-4">
           {isWelcome && (
@@ -78,13 +78,13 @@ export default async function UploadPage({ searchParams }: UploadPageProps) {
             >
               <p className="text-h3" style={{ color: 'var(--risk-low-fg)' }}>Welcome to Unauth — your account is set up.</p>
               <p className="text-caption mt-0.5" style={{ color: 'var(--risk-low-fg)' }}>
-                Upload your first order export below to run identity matching.
+                Import a historical order export below to backfill identity matching, or connect Shopify and your helpdesk for live monitoring.
               </p>
             </div>
           )}
           <UploadClient recentImports={recentImports} />
           <p className="mt-6 text-center text-caption" style={{ color: 'var(--ink-tertiary)' }}>
-            CSV only · up to 200 MB · 500k rows per file · map columns, then run your audit
+            CSV only · up to 200 MB · 500k rows per file · map columns, then import
           </p>
         </div>
       }

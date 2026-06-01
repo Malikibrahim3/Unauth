@@ -181,11 +181,11 @@ function StatusPill({ status }: { status: string }) {
   const label = STATUS_LABELS[status] ?? status;
   const colourMap: Record<string, { bg: string; text: string }> = {
     open: { bg: 'var(--bg-subtle)', text: 'var(--text-muted)' },
-    under_review: { bg: 'var(--sev-medium-fill, #FEF3C7)', text: 'var(--sev-medium, #B45309)' },
-    evidence_requested: { bg: 'var(--sev-high-fill, #FEE2E2)', text: 'var(--sev-high, #991B1B)' },
-    pending: { bg: 'var(--sev-medium-fill, #FEF3C7)', text: 'var(--sev-medium, #B45309)' },
-    escalated: { bg: 'var(--risk-critical-bg, #FEE2E2)', text: 'var(--risk-critical, #991B1B)' },
-    resolved: { bg: 'var(--sev-clear-fill, #DCFCE7)', text: 'var(--sev-clear, #166534)' },
+    under_review: { bg: 'var(--warning-bg)', text: 'var(--warning)' },
+    evidence_requested: { bg: 'var(--sev-probable-fill)', text: 'var(--sev-probable)' },
+    pending: { bg: 'var(--warning-bg)', text: 'var(--warning)' },
+    escalated: { bg: 'var(--risk-critical-bg)', text: 'var(--risk-critical)' },
+    resolved: { bg: 'var(--success-bg)', text: 'var(--success)' },
     closed: { bg: 'var(--bg-subtle)', text: 'var(--text-muted)' },
   };
   const c = colourMap[status] ?? { bg: 'var(--bg-subtle)', text: 'var(--text-muted)' };
@@ -200,9 +200,9 @@ function SlaBadge({ claim }: { claim: any }) {
   const sla = getClaimSlaState(claim);
   const colourMap: Record<string, { bg: string; text: string }> = {
     normal: { bg: 'var(--bg-subtle)', text: 'var(--text-muted)' },
-    approaching: { bg: 'var(--sev-medium-fill, #FEF3C7)', text: 'var(--sev-medium, #B45309)' },
-    overdue: { bg: 'var(--sev-high-fill, #FEE2E2)', text: 'var(--sev-high, #991B1B)' },
-    resolved: { bg: 'var(--sev-clear-fill, #DCFCE7)', text: 'var(--sev-clear, #166534)' },
+    approaching: { bg: 'var(--warning-bg)', text: 'var(--warning)' },
+    overdue: { bg: 'var(--sev-probable-fill)', text: 'var(--sev-probable)' },
+    resolved: { bg: 'var(--success-bg)', text: 'var(--success)' },
   };
   const c = colourMap[sla.state] ?? colourMap.normal;
   return (
@@ -1042,9 +1042,9 @@ export default function ClaimReviewPanel({ profileId, initialClaimId }: { profil
           <p
             className="text-sm px-4 py-2.5 rounded-lg border shadow-md flex items-center gap-2"
             style={{
-              color: messageTone === 'success' ? '#166534' : messageTone === 'error' ? '#991b1b' : 'var(--text-muted)',
-              borderColor: messageTone === 'success' ? '#86efac' : messageTone === 'error' ? '#fca5a5' : 'var(--border-subtle)',
-              background: messageTone === 'success' ? '#dcfce7' : messageTone === 'error' ? '#fee2e2' : 'var(--bg-surface)',
+              color: messageTone === 'success' ? 'var(--success)' : messageTone === 'error' ? 'var(--sev-definite)' : 'var(--text-muted)',
+              borderColor: messageTone === 'success' ? 'var(--success-bd)' : messageTone === 'error' ? 'var(--risk-critical-bd)' : 'var(--border-subtle)',
+              background: messageTone === 'success' ? 'var(--success-bg)' : messageTone === 'error' ? 'var(--risk-critical-bg)' : 'var(--bg-surface)',
             }}
           >
             <span className="flex-1">{message}</span>
@@ -1142,7 +1142,7 @@ export default function ClaimReviewPanel({ profileId, initialClaimId }: { profil
                     <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{formatClaimAge(selectedClaim)} · {formatFiledDate(selectedClaim)}</p>
                   </CaseIntelTile>
                   <CaseIntelTile label="Evidence">
-                    <p className="font-semibold" style={{ color: evidenceRecorded ? '#166534' : 'var(--text)' }}>{evidenceRecorded ? 'On record' : 'Missing'}</p>
+                    <p className="font-semibold" style={{ color: evidenceRecorded ? 'var(--success)' : 'var(--text)' }}>{evidenceRecorded ? 'On record' : 'Missing'}</p>
                     <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{evidenceRecorded ? 'Ready for merchant decision' : 'Add evidence in action rail'}</p>
                   </CaseIntelTile>
                   <CaseIntelTile label="Owner">
@@ -1203,7 +1203,7 @@ export default function ClaimReviewPanel({ profileId, initialClaimId }: { profil
             {fraudFlags.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-1.5">
                 {fraudFlags.slice(0, 5).map((f) => (
-                  <span key={f} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs" style={{ background: 'var(--sev-medium-fill, #FEF3C7)', color: 'var(--sev-medium, #B45309)' }}>
+                  <span key={f} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs" style={{ background: 'var(--warning-bg)', color: 'var(--warning)' }}>
                     {signalLabel(f).short}
                   </span>
                 ))}
@@ -1346,7 +1346,7 @@ export default function ClaimReviewPanel({ profileId, initialClaimId }: { profil
                     <tbody>
                       {history.map((h) => {
                         const sla = getSlaVisual(h);
-                        const tone = sla.tone === 'red' ? { bg: '#FEE2E2', text: '#991B1B' } : sla.tone === 'amber' ? { bg: '#FEF3C7', text: '#B45309' } : { bg: '#F3F4F6', text: '#4B5563' };
+                        const tone = sla.tone === 'red' ? { bg: 'var(--risk-critical-bg)', text: 'var(--risk-critical)' } : sla.tone === 'amber' ? { bg: 'var(--warning-bg)', text: 'var(--warning)' } : { bg: 'var(--bg-subtle)', text: 'var(--text-muted)' };
                         return (
                           <tr key={h.id} className="border-t cursor-pointer hover:bg-[var(--bg-subtle)]" style={{ borderColor: 'var(--border-subtle)' }} onClick={() => setClaimId(h.id)}>
                             <td className="py-2 pr-3 font-mono text-xs">{h.shopify_order_id ?? h.order_ref ?? '—'}</td>
@@ -1417,7 +1417,7 @@ export default function ClaimReviewPanel({ profileId, initialClaimId }: { profil
                 ] as Array<[string, boolean]>).map(([label, done], i) => (
                   <div key={label} className="flex items-center gap-1">
                     {i > 0 && <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>›</span>}
-                    <span className="text-[10px] font-semibold" style={{ color: done ? '#166534' : 'var(--text-muted)' }}>
+                    <span className="text-[10px] font-semibold" style={{ color: done ? 'var(--success)' : 'var(--text-muted)' }}>
                       {done ? '✓ ' : ''}{label}
                     </span>
                   </div>
@@ -1429,7 +1429,7 @@ export default function ClaimReviewPanel({ profileId, initialClaimId }: { profil
 
           {/* Completion banner — shown after decision recorded */}
           {(nextClaimHref || noMoreClaims) && primaryAction.key !== 'close' && (
-            <div className="rounded-lg px-3 py-2 border text-xs" style={{ borderColor: '#86efac', background: '#dcfce7', color: '#166534' }}>
+            <div className="rounded-lg px-3 py-2 border text-xs" style={{ borderColor: 'var(--success-bd)', background: 'var(--success-bg)', color: 'var(--success)' }}>
               {noMoreClaims ? 'Queue complete.' : 'Outcome recorded — continue in queue.'}
             </div>
           )}
@@ -1488,7 +1488,7 @@ export default function ClaimReviewPanel({ profileId, initialClaimId }: { profil
               onToggle={(id) => setRailOpen((p) => ({ ...p, [id]: !p[id] }))}
               highlighted={primaryAction.railSection === 'snooze'}
               badge={selectedClaim.snoozed_until ? (
-                <span className="text-[10px] rounded-full px-1.5 py-0.5 font-semibold" style={{ background: 'var(--sev-medium-fill, #FEF3C7)', color: 'var(--sev-medium, #B45309)' }}>
+                <span className="text-[10px] rounded-full px-1.5 py-0.5 font-semibold" style={{ background: 'var(--warning-bg)', color: 'var(--warning)' }}>
                   {new Date(selectedClaim.snoozed_until).toLocaleDateString('en-US')}
                 </span>
               ) : undefined}
@@ -1524,7 +1524,7 @@ export default function ClaimReviewPanel({ profileId, initialClaimId }: { profil
             onToggle={(id) => setRailOpen((p) => ({ ...p, [id]: !p[id] }))}
             highlighted={primaryAction.railSection === 'evidence'}
             badge={evidenceRecorded ? (
-              <span className="text-[10px] rounded-full px-1.5 py-0.5 font-semibold" style={{ background: '#dcfce7', color: '#166534' }}>On record</span>
+              <span className="text-[10px] rounded-full px-1.5 py-0.5 font-semibold" style={{ background: 'var(--success-bg)', color: 'var(--success)' }}>On record</span>
             ) : undefined}
           >
             {!claimId && (
@@ -1591,7 +1591,7 @@ export default function ClaimReviewPanel({ profileId, initialClaimId }: { profil
               onToggle={(id) => setRailOpen((p) => ({ ...p, [id]: !p[id] }))}
               highlighted={primaryAction.railSection === 'decision'}
               badge={latestOutcome ? (
-                <span className="text-[10px] rounded-full px-1.5 py-0.5 font-semibold" style={{ background: '#dcfce7', color: '#166534' }}>Recorded</span>
+                <span className="text-[10px] rounded-full px-1.5 py-0.5 font-semibold" style={{ background: 'var(--success-bg)', color: 'var(--success)' }}>Recorded</span>
               ) : undefined}
             >
               <p className="text-xs mb-2" style={{ color: 'var(--text-muted)' }}>Unauth surfaces evidence. Merchant decides.</p>
@@ -1634,7 +1634,7 @@ export default function ClaimReviewPanel({ profileId, initialClaimId }: { profil
             onToggle={(id) => setRailOpen((p) => ({ ...p, [id]: !p[id] }))}
             highlighted={primaryAction.railSection === 'response'}
             badge={responseRecorded ? (
-              <span className="text-[10px] rounded-full px-1.5 py-0.5 font-semibold" style={{ background: '#dcfce7', color: '#166534' }}>Sent</span>
+              <span className="text-[10px] rounded-full px-1.5 py-0.5 font-semibold" style={{ background: 'var(--success-bg)', color: 'var(--success)' }}>Sent</span>
             ) : undefined}
           >
             <textarea className="w-full px-2 py-2 rounded-md text-xs resize-none mb-2" style={inputStyle()} rows={4} value={customerResponse} readOnly />
@@ -1744,7 +1744,7 @@ export default function ClaimReviewPanel({ profileId, initialClaimId }: { profil
                 </div>
               </div>
               {activeDuplicateClaim && (
-                <p className="text-xs rounded-md px-2 py-1.5" style={{ border: '1px solid #fca5a5', background: '#fee2e2', color: '#991b1b' }}>
+                <p className="text-xs rounded-md px-2 py-1.5" style={{ border: '1px solid var(--risk-critical-bd)', background: 'var(--risk-critical-bg)', color: 'var(--risk-critical)' }}>
                   Active claim exists. <button type="button" onClick={() => setClaimId(activeDuplicateClaim.id)} className="font-semibold underline">Open it</button>
                 </p>
               )}

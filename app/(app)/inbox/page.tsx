@@ -150,7 +150,7 @@ export default async function InboxPage({ searchParams }: { searchParams?: Promi
       actions={
         <div className="flex items-center gap-2">
           <a href="/api/inbox/export"><Button variant="secondary" size="sm">Export queue</Button></a>
-          <Link href="/upload"><Button size="sm">New audit</Button></Link>
+          <Link href="/upload"><Button variant="secondary" size="sm">Import CSV</Button></Link>
         </div>
       }
       kpiStrip={

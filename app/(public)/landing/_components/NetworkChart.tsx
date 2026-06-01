@@ -92,11 +92,7 @@ export default function NetworkChart() {
             gap: '20px',
             fontFamily: 'var(--font-dm-mono, monospace)',
             fontSize: '11px',
-<<<<<<< Updated upstream
             color: t.darkMid,
-=======
-            color: '#A59F8E',
->>>>>>> Stashed changes
           }}
         >
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
@@ -110,7 +106,6 @@ export default function NetworkChart() {
         </div>
       </div>
 
-<<<<<<< Updated upstream
       <svg viewBox={`0 0 ${chart.width} ${chart.height}`} role="img" aria-label="Projected identity clusters and network coverage over 12 weeks" style={{ display: 'block', width: '100%', height: 240 }}>
         <defs>
           <linearGradient id="cluster-line" x1="0" x2="1" y1="0" y2="0">
@@ -238,63 +233,6 @@ export default function NetworkChart() {
           <circle key={point.week} cx={xPosition(data.indexOf(point))} cy={yPosition(point.abusers)} r="3.5" fill="var(--landing-accent)" />
         ))}
       </svg>
-=======
-      <ResponsiveContainer width="100%" height={240}>
-        <LineChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
-          <CartesianGrid stroke="#2B2922" strokeDasharray="0" vertical={false} />
-          <XAxis
-            dataKey="week"
-            tick={axisStyle}
-            tickLine={false}
-            axisLine={{ stroke: '#2B2922' }}
-            interval={1}
-          />
-          <YAxis
-            tick={axisStyle}
-            tickLine={false}
-            axisLine={false}
-            width={56}
-            tickFormatter={fmt}
-          />
-          <Tooltip
-            cursor={{ stroke: '#3A372E', strokeDasharray: '2 2' }}
-            contentStyle={{
-              background: '#15140F',
-              border: '1px solid #3A372E',
-              borderRadius: 0,
-              fontFamily: 'var(--font-dm-mono, monospace)',
-              fontSize: '12px',
-              color: '#E8E4D8',
-              padding: '8px 10px',
-            }}
-            labelStyle={{ color: '#8A8472', marginBottom: 4 }}
-            itemStyle={{ color: '#E8E4D8' }}
-            formatter={(value: number, name: string) => [
-              value.toLocaleString(),
-              name === 'clusters' ? 'identity clusters' : 'network-known abusers',
-            ]}
-          />
-          <Line
-            type="monotone"
-            dataKey="clusters"
-            stroke="#D1C9B9"
-            strokeWidth={1.25}
-            dot={false}
-            isAnimationActive={false}
-            activeDot={{ r: 3, fill: '#D1C9B9', stroke: 'none' }}
-          />
-          <Line
-            type="monotone"
-            dataKey="abusers"
-            stroke="#A95B39"
-            strokeWidth={1.25}
-            dot={false}
-            isAnimationActive={false}
-            activeDot={{ r: 3, fill: '#A95B39', stroke: 'none' }}
-          />
-        </LineChart>
-      </ResponsiveContainer>
->>>>>>> Stashed changes
     </div>
   );
 }

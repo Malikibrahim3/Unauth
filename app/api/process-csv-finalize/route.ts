@@ -1,11 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-<<<<<<< Updated upstream
 import { env } from '@/lib/utils/env';
 import { createAdminClient, createServiceClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
-=======
-import { createAdminClient, createServiceClient } from '@/lib/supabase/server';
->>>>>>> Stashed changes
 import { completeJob } from '@/lib/processing/job';
 import {
   CHUNK_BUCKET,
@@ -20,10 +16,7 @@ import { tryClaimJobFinalize } from '@/lib/processing/chunkQueue';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { summarizeAuditResults } from '@/lib/audit/resultsSummary';
 import { sendEmail } from '@/lib/email/send';
-<<<<<<< Updated upstream
 import { GRADE_ORDER, type ConfidenceGrade } from '@/lib/engine/weights';
-=======
->>>>>>> Stashed changes
 import { buildAuditResultsEmail } from '@/lib/email/templates';
 
 export const maxDuration = 300;
@@ -110,11 +103,7 @@ async function maybeSendAuditResultsEmail(
   merchantId: string
 ): Promise<void> {
   const { data: jobMeta } = await supabase
-<<<<<<< Updated upstream
     .from(TABLES.PROCESSING_JOBS)
-=======
-    .from('processing_jobs')
->>>>>>> Stashed changes
     .select('results_email_sent_at')
     .eq('id', jobId)
     .maybeSingle();
@@ -124,11 +113,7 @@ async function maybeSendAuditResultsEmail(
   }
 
   const { data: publicAudit } = await supabase
-<<<<<<< Updated upstream
     .from(TABLES.PUBLIC_AUDITS) // TODO: add public_audits to Supabase generated types
-=======
-    .from('public_audits' as any)
->>>>>>> Stashed changes
     .select('id, submitted_email')
     .eq('processing_job_id', jobId)
     .maybeSingle();
@@ -138,22 +123,14 @@ async function maybeSendAuditResultsEmail(
     recipientEmail = (publicAudit as { submitted_email: string }).submitted_email;
   } else {
     const { data: merchant } = await supabase
-<<<<<<< Updated upstream
       .from(TABLES.MERCHANTS)
-=======
-      .from('merchants')
->>>>>>> Stashed changes
       .select('name, user_id')
       .eq('id', merchantId)
       .maybeSingle();
     const merchantRecord = merchant as { user_id?: string } | null;
     if (!merchantRecord?.user_id) {
       await supabase
-<<<<<<< Updated upstream
         .from(TABLES.PROCESSING_JOBS)
-=======
-        .from('processing_jobs')
->>>>>>> Stashed changes
         .update({ results_email_error: 'Missing merchant owner for audit email.' } as any)
         .eq('id', jobId);
       return;
@@ -165,17 +142,12 @@ async function maybeSendAuditResultsEmail(
 
   if (!recipientEmail) {
     await supabase
-<<<<<<< Updated upstream
       .from(TABLES.PROCESSING_JOBS)
-=======
-      .from('processing_jobs')
->>>>>>> Stashed changes
       .update({ results_email_error: 'Missing recipient email for audit results.' } as any)
       .eq('id', jobId);
     return;
   }
 
-<<<<<<< Updated upstream
   const rows = await paginateAll<{
     cluster_id: string | null;
     order_value: number | string | null;
@@ -204,17 +176,6 @@ async function maybeSendAuditResultsEmail(
   );
 
   const summary = summarizeAuditResults(rows as Array<{
-=======
-  const { data: rows } = await supabase
-    .from('audit_transactions')
-    .select('cluster_id, order_value, fraud_flags, behavioural_flags, signals_matched, context_flags')
-    .eq('job_id', jobId)
-    .or('identity_confidence_grade.in.(probable,definite),match_status.in.(probable,definite)')
-    .not('dismissed_by_merchant', 'is', true)
-    .limit(5000);
-
-  const summary = summarizeAuditResults((rows ?? []) as Array<{
->>>>>>> Stashed changes
     cluster_id: string | null;
     order_value: number | string | null;
     fraud_flags: unknown;
@@ -249,21 +210,13 @@ async function maybeSendAuditResultsEmail(
       };
 
   await supabase
-<<<<<<< Updated upstream
     .from(TABLES.PROCESSING_JOBS)
-=======
-    .from('processing_jobs')
->>>>>>> Stashed changes
     .update(emailUpdate as any)
     .eq('id', jobId);
 
   if (publicAudit) {
     await supabase
-<<<<<<< Updated upstream
       .from(TABLES.PUBLIC_AUDITS) // TODO: add public_audits to Supabase generated types
-=======
-      .from('public_audits' as any)
->>>>>>> Stashed changes
       .update({
         status: 'completed',
         updated_at: new Date().toISOString(),
@@ -272,7 +225,6 @@ async function maybeSendAuditResultsEmail(
   }
 }
 
-<<<<<<< Updated upstream
 async function finalizeJob(
   jobId: string,
   totalChunks: number,
@@ -345,8 +297,6 @@ async function finalizeJob(
   }
 }
 
-=======
->>>>>>> Stashed changes
 export async function POST(request: NextRequest) {
   let body: ChunkDispatchPayload;
   try {
@@ -393,58 +343,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Job rows are not fully processed yet' }, { status: 409 });
   }
 
-<<<<<<< Updated upstream
   const claimed = await tryClaimJobFinalize(sc, jobId);
   if (!claimed) {
     log('Finalize already claimed or chunks incomplete — skipping');
     return NextResponse.json({ skipped: true, reason: 'finalize_not_ready' });
-=======
-  try {
-    log('Finalising job');
-    await checkWatchlistAppearances(merchantId, jobId, sc);
-    const flaggedCount = await countReviewWorthyTransactions(sc, jobId, merchantId);
-    await completeJob(sc, jobId, true, undefined, flaggedCount);
-    log(`Job marked completed: flaggedCount=${flaggedCount}`);
-
-    const totalRows = job.total_rows ?? 0;
-    if (totalRows > 0 && totalRows <= INLINE_RESTITCH_MAX_ROWS) {
-      try {
-        const restitch = await restitchAuditIdentityFromChunks(sc, jobId, totalChunks);
-        log(`Identity restitch complete: updated ${restitch.updated}/${restitch.linkedRows} linked rows`);
-      } catch (err) {
-        const restitchMessage = formatError(err);
-        console.warn(`[finalize ${jobId}] identity restitch non-fatal failure:`, restitchMessage);
-        log(`Identity restitch skipped after failure: ${restitchMessage}`);
-      }
-    } else {
-      log(`Identity restitch skipped inline for ${totalRows} rows (limit ${INLINE_RESTITCH_MAX_ROWS})`);
-    }
-
-    try {
-      await maybeSendAuditResultsEmail(sc, jobId, merchantId);
-    } catch (err) {
-      const emailMessage = formatError(err);
-      console.warn(`[finalize ${jobId}] results email non-fatal failure:`, emailMessage);
-      await sc
-        .from('processing_jobs')
-        .update({ results_email_error: emailMessage } as any)
-        .eq('id', jobId);
-    }
-
-    await deleteChunkArtifacts(sc, jobId, totalChunks);
-    if (storagePath) {
-      const { error: rmErr } = await sc.storage.from(CHUNK_BUCKET).remove([storagePath]);
-      if (rmErr) console.warn('[finalize] CSV cleanup non-fatal error:', rmErr.message);
-    }
-
-    log(`Job finalised: flaggedCount=${flaggedCount}`);
-    return NextResponse.json({ ok: true, finalised: true, flaggedCount });
-  } catch (err) {
-    const message = formatError(err);
-    console.error(`[finalize ${jobId}] FAILED:`, message);
-    await completeJob(sc, jobId, false, [{ message: `Finalisation failed: ${message}` }]);
-    return NextResponse.json({ error: message }, { status: 500 });
->>>>>>> Stashed changes
   }
 
   void finalizeJob(jobId, totalChunks, merchantId, storagePath, job.total_rows ?? 0).catch((err) => {

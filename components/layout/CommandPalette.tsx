@@ -57,8 +57,8 @@ const NAV_ITEMS: NavItem[] = [
     ),
   },
   {
-    label: 'New audit',
-    description: 'Upload a CSV and run analysis',
+    label: 'Import CSV',
+    description: 'Import a CSV for historical backfill',
     href: '/upload',
     icon: (
       <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">

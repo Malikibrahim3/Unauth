@@ -6,6 +6,7 @@ import { riskLevelToNewGrade } from '@/lib/confidence';
 import CustomerIntelligenceDrawer from '@/components/customers/CustomerIntelligenceDrawer';
 import { Badge } from '@/components/ui/Badge';
 import { DataTable } from '@/components/ui/DataTable';
+import { Tooltip } from '@/components/ui/Tooltip';
 
 
 interface CustomerRow {
@@ -54,19 +55,21 @@ export default function CustomersTableClient({ rows, watchlistFilterActive = fal
     },
     {
       key: 'network',
-      header: 'Network',
+      header: 'Stores seen',
       align: 'right' as const,
       render: (p: CustomerRow) => (
-        <span
-          className="num"
-          style={{
-            fontFamily: 'var(--font-mono)',
-            color: p.total_merchants_seen_at > 1 ? 'var(--accent)' : 'var(--text-muted)',
-            fontWeight: p.total_merchants_seen_at > 1 ? 700 : 500,
-          }}
-        >
-          {p.total_merchants_seen_at}
-        </span>
+        <Tooltip content="Distinct stores this identity has been seen at. 2+ means a cross-store linked identity.">
+          <span
+            className="num"
+            style={{
+              fontFamily: 'var(--font-mono)',
+              color: p.total_merchants_seen_at > 1 ? 'var(--accent)' : 'var(--text-muted)',
+              fontWeight: p.total_merchants_seen_at > 1 ? 700 : 500,
+            }}
+          >
+            {p.total_merchants_seen_at}
+          </span>
+        </Tooltip>
       ),
     },
     {
@@ -99,6 +102,7 @@ export default function CustomersTableClient({ rows, watchlistFilterActive = fal
           getRowKey={(row) => row.id}
           onRowClick={(row) => setSelectedProfileId(row.id)}
           selectedKey={selectedProfileId ?? undefined}
+          density="relaxed"
         />
       </div>
 
@@ -124,7 +128,7 @@ export default function CustomersTableClient({ rows, watchlistFilterActive = fal
               <ConfidenceBadge grade={riskLevelToNewGrade(p.risk_level)} size="sm" />
             </div>
             <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--text-muted)' }}>
-              <span><span className="font-semibold font-mono" style={{ color: p.total_merchants_seen_at > 1 ? 'var(--accent)' : 'var(--text)' }}>{p.total_merchants_seen_at}</span> merchants</span>
+              <span><span className="font-semibold font-mono" style={{ color: p.total_merchants_seen_at > 1 ? 'var(--accent)' : 'var(--text)' }}>{p.total_merchants_seen_at}</span> stores seen</span>
               <span style={{ color: 'var(--border)' }}>·</span>
               <span><span className="font-semibold font-mono" style={{ color: 'var(--text)' }}>{p.total_orders}</span> orders</span>
               <span style={{ color: 'var(--border)' }}>·</span>

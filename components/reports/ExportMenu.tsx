@@ -40,6 +40,12 @@ export default function ExportMenu({ range }: ExportMenuProps) {
           className="absolute right-0 z-20 mt-1 min-w-[220px] rounded-md border py-1 shadow-lg"
           style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-raised)' }}
         >
+          <p
+            className="px-3 pb-1 pt-1.5 text-[10px] font-bold uppercase tracking-wider"
+            style={{ color: 'var(--ink-tertiary)' }}
+          >
+            Live reports — Shopify + helpdesk
+          </p>
           <a
             role="menuitem"
             href={`/api/reports/claims?range=${range}`}
@@ -60,6 +66,14 @@ export default function ExportMenu({ range }: ExportMenuProps) {
             Outcomes CSV
             <span className="ml-1 opacity-60">— decisions, refunds</span>
           </a>
+
+          <div className="my-1 border-t" style={{ borderColor: 'var(--surface-border)' }} />
+          <p
+            className="px-3 pb-1 pt-0.5 text-[10px] font-bold uppercase tracking-wider"
+            style={{ color: 'var(--ink-tertiary)' }}
+          >
+            Activity log
+          </p>
           <a
             role="menuitem"
             href="/api/audit-trail?format=csv&limit=200"
