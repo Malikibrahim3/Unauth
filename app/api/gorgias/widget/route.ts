@@ -39,6 +39,7 @@ const GORGIAS_WIDGET_JSON_FALLBACK: GorgiasWidgetJsonPayload = {
   primary_reason: '—',
   recent_activity: 'Could not load. Refresh the ticket to retry.',
   ce3_evidence: '—',
+  watchlisted: '—',
 };
 
 type WidgetReturnContext = {

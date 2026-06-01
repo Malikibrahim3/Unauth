@@ -52,6 +52,8 @@ import { getEventStream } from '@/lib/analysis/customerIntelligence';
 import { FLAG_EXPERIENCE_POLISH_V1 } from '@/lib/flags';
 import { ACTIVE_CLAIM_STATUSES, formatFiledDate } from '@/lib/claims/sla';
 import { parseAndVerifySignedToken, hashSignedToken } from '@/lib/api/signedAccess';
+import { getConnectionState } from '@/lib/connections/getConnectionState';
+import { PageConnectionGate } from '@/components/connections/PageConnectionGate';
 
 interface PageProps {
   params: Promise<{ id: string }> | { id: string };
@@ -327,6 +329,8 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
     permissionUserId = ctx.userId;
   }
 
+  const connectionState = await getConnectionState(svc, merchantId);
+
   // ── Fetch profile (merchant-scoped) ────────────────────────────────────
   const profileRow = await fetchMerchantScopedCustomerProfile(svc, merchantId, profileId, permissionUserId);
   if (!profileRow) {
@@ -595,6 +599,7 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
   ].filter(Boolean) as Array<{ value: string; signalType: string; grade: string }>;
 
   return (
+    <PageConnectionGate requires="both" connection={connectionState} pageName="Customer profile" pageDescription="This profile shows order patterns and identity signals from Shopify, but claim data comes from your helpdesk. An incomplete profile can be misleading — you may see orders with no claim history, not because the customer is clean, but because claim data isn't syncing yet.">
     <div className="mx-auto max-w-7xl px-3 py-5 sm:px-5">
       {/* Back navigation — context-aware: returns to audit if ?audit=runId is set */}
       <div className="flex items-center gap-3 mb-6">
@@ -831,8 +836,18 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
         </p>
       </section>
 
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-[var(--space-6)]">
-        <div className="xl:col-span-8 space-y-[var(--space-5)]">
+      {/*
+        LAYOUT RULES (enforced here):
+        1. No column may be empty below the fold — both columns carry content to scroll depth.
+        2. Sidebar = sticky contextual metadata only (Record stats, Dispute context). Max ~500px before sticking.
+        3. Long-scrolling content (lists, tables, history) goes in the main column.
+        4. Sidebar is position:sticky below nav height; overflows independently via overflow-y:auto.
+        5. Grid is [1fr 380px] — main content gets majority width.
+        6. Section order: summary → context → detail → action.
+      */}
+      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_380px] gap-[var(--space-6)]">
+        {/* ── Main column: all scrolling content ── */}
+        <div className="min-w-0 space-y-[var(--space-5)]">
           {!hasCleanRecord && (
             <SectionCard title="Order & claim history" description="Chronological orders and claim events — use this narrative in your helpdesk reply.">
               <div className="mb-[var(--space-5)] rounded-lg border p-[var(--space-4)]" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)' }}>
@@ -874,51 +889,6 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
           {hasCleanRecord && identityTimeline.length > 0 && (
             <IdentityChangesDisclosure entries={identityTimeline} variantCount={variantCount} />
           )}
-        </div>
-
-        <div className="xl:col-span-4 space-y-[var(--space-5)] xl:sticky xl:top-4 xl:self-start">
-          <SectionCard title="Record">
-            <div className="grid grid-cols-2 gap-[var(--space-3)] mb-[var(--space-4)]">
-              <MetricCard label="Merchant orders" value={merchantOrderCount} hint={formatCurrencyNullable(totalOrderValue)} density="compact" />
-              <MetricCard label="Merchant claims" value={merchantClaimCount} hint={`${merchantRefundRate}% refund rate`} density="compact" />
-              <MetricCard label="Refunded" value={formatCurrencyNullable(totalRefundedValue)} density="compact" />
-              <MetricCard label="Chargebacks" value={profile.total_chargebacks} density="compact" />
-              <MetricCard label="Fastest claim" value={profile.fastest_claim_days != null ? `${profile.fastest_claim_days}d` : '—'} density="compact" />
-              <MetricCard label="Avg claim" value={profile.avg_claim_days != null ? `${Math.round(profile.avg_claim_days)}d` : '—'} density="compact" />
-            </div>
-
-            <div className="space-y-3 pt-[var(--space-4)]" style={{ borderTop: '1px solid var(--border-subtle)' }}>
-              <div className="grid grid-cols-2 gap-3 text-caption">
-                <div>
-                  <p style={{ color: 'var(--text-muted)' }}>First seen</p>
-                  <p className="font-medium" style={{ color: 'var(--text)' }}>{formatDate(profile.first_seen)}</p>
-                </div>
-                <div>
-                  <p style={{ color: 'var(--text-muted)' }}>Last seen</p>
-                  <p className="font-medium" style={{ color: 'var(--text)' }}>{formatDate(profile.last_seen)}</p>
-                </div>
-              </div>
-            </div>
-          </SectionCard>
-
-          <SectionCard title="Dispute context" description="Summary you can reference when responding in Gorgias, Zendesk, or Shopify.">
-            {latestClaim ? (
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <MetricCard label="Open disputes" value={openClaimCount.toLocaleString()} density="compact" />
-                  <MetricCard label="Latest status" value={CLAIM_STATUS_LABELS[latestClaim.status] ?? latestClaim.status} density="compact" />
-                </div>
-                <div className="rounded-md border p-3" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)' }}>
-                  <p className="text-caption" style={{ color: 'var(--text-muted)' }}>Latest dispute signal</p>
-                  <p className="text-body-sm font-semibold" style={{ color: 'var(--text)' }}>{CLAIM_TYPE_LABELS[latestClaim.claim_type] ?? latestClaim.claim_type}</p>
-                  <p className="font-mono text-caption" style={{ color: 'var(--text-muted)' }}>{latestClaim.shopify_order_id ?? latestClaim.order_ref ?? latestClaim.id.slice(0, 8)}</p>
-                  <p className="mt-2 text-caption" style={{ color: 'var(--text-muted)' }}>Filed {formatFiledDate(latestClaim)}</p>
-                </div>
-              </div>
-            ) : (
-              <EmptyState title="No dispute signals" description="When Shopify or your PSP reports a claim, context will appear here for your helpdesk ticket." />
-            )}
-          </SectionCard>
 
           <SectionCard
             title="Network footprint"
@@ -1068,7 +1038,54 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
             )}
           </SectionCard>
         </div>
+
+        {/* ── Sidebar: sticky contextual metadata only ── */}
+        <div className="space-y-[var(--space-5)] xl:sticky xl:top-16 xl:self-start xl:max-h-[calc(100vh-4rem)] xl:overflow-y-auto">
+          <SectionCard title="Record">
+            <div className="grid grid-cols-2 gap-[var(--space-3)] mb-[var(--space-4)]">
+              <MetricCard label="Merchant orders" value={merchantOrderCount} hint={formatCurrencyNullable(totalOrderValue)} density="compact" />
+              <MetricCard label="Merchant claims" value={merchantClaimCount} hint={`${merchantRefundRate}% refund rate`} density="compact" />
+              <MetricCard label="Refunded" value={formatCurrencyNullable(totalRefundedValue)} density="compact" />
+              <MetricCard label="Chargebacks" value={profile.total_chargebacks} density="compact" />
+              <MetricCard label="Fastest claim" value={profile.fastest_claim_days != null ? `${profile.fastest_claim_days}d` : '—'} density="compact" />
+              <MetricCard label="Avg claim" value={profile.avg_claim_days != null ? `${Math.round(profile.avg_claim_days)}d` : '—'} density="compact" />
+            </div>
+
+            <div className="space-y-3 pt-[var(--space-4)]" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+              <div className="grid grid-cols-2 gap-3 text-caption">
+                <div>
+                  <p style={{ color: 'var(--text-muted)' }}>First seen</p>
+                  <p className="font-medium" style={{ color: 'var(--text)' }}>{formatDate(profile.first_seen)}</p>
+                </div>
+                <div>
+                  <p style={{ color: 'var(--text-muted)' }}>Last seen</p>
+                  <p className="font-medium" style={{ color: 'var(--text)' }}>{formatDate(profile.last_seen)}</p>
+                </div>
+              </div>
+            </div>
+          </SectionCard>
+
+          <SectionCard title="Dispute context" description="Summary you can reference when responding in Gorgias, Zendesk, or Shopify.">
+            {latestClaim ? (
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <MetricCard label="Open disputes" value={openClaimCount.toLocaleString()} density="compact" />
+                  <MetricCard label="Latest status" value={CLAIM_STATUS_LABELS[latestClaim.status] ?? latestClaim.status} density="compact" />
+                </div>
+                <div className="rounded-md border p-3" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)' }}>
+                  <p className="text-caption" style={{ color: 'var(--text-muted)' }}>Latest dispute signal</p>
+                  <p className="text-body-sm font-semibold" style={{ color: 'var(--text)' }}>{CLAIM_TYPE_LABELS[latestClaim.claim_type] ?? latestClaim.claim_type}</p>
+                  <p className="font-mono text-caption" style={{ color: 'var(--text-muted)' }}>{latestClaim.shopify_order_id ?? latestClaim.order_ref ?? latestClaim.id.slice(0, 8)}</p>
+                  <p className="mt-2 text-caption" style={{ color: 'var(--text-muted)' }}>Filed {formatFiledDate(latestClaim)}</p>
+                </div>
+              </div>
+            ) : (
+              <EmptyState title="No dispute signals" description="When Shopify or your PSP reports a claim, context will appear here for your helpdesk ticket." />
+            )}
+          </SectionCard>
+        </div>
       </div>
     </div>
+    </PageConnectionGate>
   );
 }

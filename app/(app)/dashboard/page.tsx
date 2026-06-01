@@ -17,6 +17,8 @@ import EmptyDashboardHero from '@/components/EmptyDashboardHero';
 import { ConfidenceBadge } from '@/components/ui/ConfidenceBadge';
 import { Badge } from '@/components/ui/Badge';
 import { riskLevelToNewGrade } from '@/lib/confidence';
+import { getConnectionState } from '@/lib/connections/getConnectionState';
+import { PageConnectionGate } from '@/components/connections/PageConnectionGate';
 
 type RunRow = Database['public']['Tables']['processing_jobs']['Row'];
 
@@ -100,6 +102,8 @@ export default async function DashboardPage() {
   if (denied) {
     redirect(await resolveDefaultAppPath(serviceClient, user.id, { exclude: ['/dashboard'] }));
   }
+
+  const connectionState = await getConnectionState(serviceClient, ctx.merchantId);
 
   const { data: runs } = await serviceClient
     .from(TABLES.PROCESSING_JOBS)
@@ -194,14 +198,17 @@ export default async function DashboardPage() {
 
   if (isEmpty) {
     return (
-      <div className="p-4 md:p-6">
-        <TrackPageView event="Dashboard Viewed" />
-        <EmptyDashboardHero />
-      </div>
+      <PageConnectionGate requires="both" connection={connectionState} pageName="Dashboard">
+        <div className="p-4 md:p-6">
+          <TrackPageView event="Dashboard Viewed" />
+          <EmptyDashboardHero />
+        </div>
+      </PageConnectionGate>
     );
   }
 
   return (
+    <PageConnectionGate requires="both" connection={connectionState} pageName="Dashboard">
     <div className="p-4 md:p-6">
       <TrackPageView event="Dashboard Viewed" />
 
@@ -441,5 +448,6 @@ export default async function DashboardPage() {
         </footer>
       </section>
     </div>
+    </PageConnectionGate>
   );
 }

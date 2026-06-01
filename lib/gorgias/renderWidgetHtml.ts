@@ -44,6 +44,8 @@ function baseStyles(): string {
            border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none;
            background: #c8763a; color: #fff; }
     .brand { font-size: 10px; color: #6b5c54; margin-top: 10px; text-align: right; }
+    .watchlist { font-size: 12px; margin-top: 6px; }
+    .warn { color: #f2994a; font-weight: 600; font-size: 12px; margin-top: 6px; }
   `;
 }
 
@@ -128,6 +130,7 @@ export function renderGorgiasWidgetHtml(ctx: ClaimWidgetRenderContext): string {
       </tbody>
     </table>
     ${json.ce3_evidence && json.ce3_evidence !== '—' ? `<div class="ce3">${escapeHtml(json.ce3_evidence)}</div>` : ''}
+    ${json.watchlisted && json.watchlisted !== '—' ? `<div class="watchlist${json.watchlisted.startsWith('⚠') ? ' warn' : ''}">${escapeHtml(json.watchlisted)}</div>` : ''}
     ${profileUrl ? `<a class="cta" href="${escapeHtml(profileUrl)}" target="_blank" rel="noopener noreferrer">View full profile in Unauth →</a>` : ''}
   `;
 

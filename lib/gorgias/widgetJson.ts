@@ -24,6 +24,7 @@ export type GorgiasWidgetJsonPayload = {
   recent_activity: string;
   /** CE 3.0 evidence indicator, or '—'. */
   ce3_evidence: string;
+  watchlisted: string;
 };
 
 const NO_NETWORK_LABEL = 'No network history found';
@@ -100,6 +101,7 @@ export function claimWidgetToJson(result: GorgiasClaimWidgetResult): GorgiasWidg
         primary_reason: '—',
         recent_activity: '—',
         ce3_evidence: '—',
+        watchlisted: '—',
       };
     }
     if (result.kind === 'identity_unresolved') {
@@ -111,6 +113,7 @@ export function claimWidgetToJson(result: GorgiasClaimWidgetResult): GorgiasWidg
         primary_reason: '—',
         recent_activity: '—',
         ce3_evidence: '—',
+        watchlisted: '—',
       };
     }
     return {
@@ -121,6 +124,7 @@ export function claimWidgetToJson(result: GorgiasClaimWidgetResult): GorgiasWidg
       primary_reason: '—',
       recent_activity: '—',
       ce3_evidence: '—',
+      watchlisted: '—',
     };
   }
 
@@ -149,6 +153,7 @@ export function claimWidgetToJson(result: GorgiasClaimWidgetResult): GorgiasWidg
       primary_reason: '—',
       recent_activity: 'Connect Shopify or wait for the next order sync',
       ce3_evidence: '—',
+      watchlisted: '—',
     };
   }
 
@@ -177,6 +182,7 @@ export function claimWidgetToJson(result: GorgiasClaimWidgetResult): GorgiasWidg
     ce3_evidence: ce3EvidenceAvailable
       ? 'CE 3.0 evidence available — documented cross-merchant history'
       : '—',
+    watchlisted: result.data.watchlisted ? '⚠ On watchlist' : 'Not on watchlist',
   };
 }
 

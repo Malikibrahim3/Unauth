@@ -1,5 +1,7 @@
 import { redirect } from 'next/navigation';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { getConnectionState } from '@/lib/connections/getConnectionState';
+import { PageConnectionGate } from '@/components/connections/PageConnectionGate';
 import { TABLES } from '@/lib/supabase/tables';
 import { requirePermission, PERMISSIONS, resolveDefaultAppPath } from '@/lib/permissions';
 import { getExposureAtRisk } from '@/lib/supabase/merchantHelpers';
@@ -106,6 +108,9 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
   if (!user) redirect('/login');
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_DASHBOARD);
   if (denied) redirect(await resolveDefaultAppPath(serviceClient, user.id));
+
+  const connectionState = await getConnectionState(serviceClient, ctx.merchantId);
+
   const resolvedSearchParams = (await searchParams) ?? {};
   const range = resolvedSearchParams.range === '7d' || resolvedSearchParams.range === '90d' || resolvedSearchParams.range === 'all'
     ? resolvedSearchParams.range
@@ -214,6 +219,7 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
     : buildClaimOpsMetrics(priorClaims, priorOutcomeResult.data ?? []);
 
   return (
+    <PageConnectionGate requires="both" connection={connectionState} pageName="Reports" pageDescription="Report metrics combine Shopify order data with helpdesk claim data. Without both connected, claim counts, dispute rates, and outcome summaries will be incomplete or zero.">
     <WorkbenchPage
       title="Reports"
       subtitle="Network signal performance and evidence readiness over time."
@@ -392,5 +398,6 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
         </div>
       }
     />
+    </PageConnectionGate>
   );
 }

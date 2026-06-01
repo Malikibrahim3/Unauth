@@ -1,5 +1,7 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
+import { getConnectionState } from '@/lib/connections/getConnectionState';
+import { PageConnectionGate } from '@/components/connections/PageConnectionGate';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
@@ -107,6 +109,9 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
   const svc = createServiceClient();
   const { denied, ctx } = await requirePermission(svc, user.id, PERMISSIONS.VIEW_CUSTOMERS);
   if (denied) return redirect(await resolveDefaultAppPath(svc, user.id));
+
+  const connectionState = await getConnectionState(svc, ctx.merchantId);
+
   // `searchParams` may be a Promise in newer Next.js versions — await to normalize.
   const sp = (await Promise.resolve(searchParams)) ?? {};
 
@@ -359,6 +364,7 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
     !firstSeenFrom && !firstSeenTo && !lastSeenFrom && !lastSeenTo && !flagFilter && !statusFilter;
 
   return (
+    <PageConnectionGate requires="both" connection={connectionState} pageName="Customers" pageDescription="Customer profiles show order patterns, identity confidence, and claim history. Without both Shopify and your helpdesk connected, claim counts may be zero because data is missing — not because the customer has no history.">
     <WorkbenchPage
       title="Customers"
       subtitle="Search, filter, and act on customer identity profiles."
@@ -495,5 +501,6 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
         </div>
       }
     />
+    </PageConnectionGate>
   );
 }

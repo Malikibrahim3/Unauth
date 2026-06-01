@@ -118,14 +118,14 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
 
   const { data: run } = await serviceClient
     .from(TABLES.PROCESSING_JOBS)
-    .select('id,status,filename,total_rows,processed_rows,failed_rows,created_at,data_quality')
+    .select('id,status,filename,upload_type,total_rows,processed_rows,failed_rows,created_at,data_quality')
     .eq('id', resolvedParams.runId)
     .eq('merchant_id', ctx.merchantId)
     .single();
 
   if (!run) notFound();
 
-  const runData = run as unknown as RunRow;
+  const runData = run as unknown as RunRow & { upload_type?: string };
   const dataQuality = (run as unknown as { data_quality?: DataQualityReport }).data_quality ?? null;
   const jobId = resolvedParams.runId;
 
@@ -308,9 +308,17 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
   return (
     <div className="p-6 md:p-8 space-y-6">
       <PageHeader
-        title="Audit results"
-        subtitle={`${runData.filename} · ${formatDate(runData.created_at)}`}
-        breadcrumbs={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'Audit result' }]}
+        title={runData.upload_type === 'shopify' ? 'Store intelligence' : 'Audit results'}
+        subtitle={
+          runData.upload_type === 'shopify'
+            ? `${runData.filename.replace(/^shopify-/, '')} · synced ${formatDate(runData.created_at)}`
+            : `${runData.filename} · ${formatDate(runData.created_at)}`
+        }
+        breadcrumbs={
+          runData.upload_type === 'shopify'
+            ? [{ label: 'Store overview', href: '/store' }, { label: 'Intelligence' }]
+            : [{ label: 'Dashboard', href: '/dashboard' }, { label: 'Audit result' }]
+        }
         actions={statusBadge}
       />
 

@@ -10,6 +10,8 @@ import { createServiceClient } from '@/lib/supabase/server';
 import { shouldRequireOnboarding } from '@/lib/account/onboardingGate';
 import { ensureMerchantContextForUser } from '@/lib/account/ensureMerchantContext';
 import { getShopifyConnectionStatus } from '@/lib/shopify/connectionStatus';
+import { getConnectionState } from '@/lib/connections/getConnectionState';
+import { ConnectionStateProvider } from '@/components/connections/ConnectionStateContext';
 
 export const dynamic = 'force-dynamic';
 
@@ -48,7 +50,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const shopifyPromise = ctx
     ? getShopifyConnectionStatus(serviceClient, ctx.merchantId)
     : Promise.resolve({ connected: false, linkState: 'not_connected' as const, shopDomain: null, lastError: null });
-  const [{ data: merchantProfile }, { data: jobs }, shopifyStatus] = await Promise.all([merchantPromise, jobsPromise, shopifyPromise]);
+  const connectionPromise = ctx
+    ? getConnectionState(serviceClient, ctx.merchantId)
+    : Promise.resolve({ shopify: false, helpdesk: false, helpdeskProvider: null, bothConnected: false, neitherConnected: true, shopifyOnlyConnected: false, helpdeskOnlyConnected: false });
+  const [{ data: merchantProfile }, { data: jobs }, shopifyStatus, connectionState] = await Promise.all([merchantPromise, jobsPromise, shopifyPromise, connectionPromise]);
 
   if (!isOnboarding) {
     const merchantComplete =
@@ -83,7 +88,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       className="flex h-screen overflow-hidden bg-[var(--surface-base)] text-[var(--ink-primary)]"
     >
       {/* ── Sidebar ── */}
-      <Sidebar merchantName={displayMerchantName ?? null} userEmail={user.email ?? ''} />
+      <Sidebar
+        merchantName={displayMerchantName ?? null}
+        userEmail={user.email ?? ''}
+        shopifyConnected={connectionState.shopify}
+        helpdeskConnected={connectionState.helpdesk}
+      />
 
       {/* Amplitude — initialise after session confirmed */}
       <AmplitudeInit
@@ -113,7 +123,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
         {/* Scrollable page body */}
         <main className="flex-1 overflow-y-auto overflow-x-hidden">
-          {children}
+          <ConnectionStateProvider value={connectionState}>
+            {children}
+          </ConnectionStateProvider>
         </main>
       </div>
     </div>

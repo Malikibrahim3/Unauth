@@ -1,6 +1,8 @@
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { getConnectionState } from '@/lib/connections/getConnectionState';
+import { PageConnectionGate } from '@/components/connections/PageConnectionGate';
 import { requirePermission, PERMISSIONS, resolveDefaultAppPath } from '@/lib/permissions';
 import Link from 'next/link';
 import InboxClient from '@/components/inbox/InboxClient';
@@ -46,6 +48,8 @@ export default async function InboxPage({ searchParams }: { searchParams?: Promi
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_INBOX);
   // Permission denied: route to the best available app page instead of chaining through /dashboard.
   if (denied) redirect(await resolveDefaultAppPath(serviceClient, user.id));
+
+  const connectionState = await getConnectionState(serviceClient, ctx.merchantId);
 
   let items: Array<{
     id: string;
@@ -137,6 +141,7 @@ export default async function InboxPage({ searchParams }: { searchParams?: Promi
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   return (
+    <PageConnectionGate requires="both" connection={connectionState} pageName="Inbox" pageDescription="The inbox shows matched orders awaiting identity review, linked to active claim work from your helpdesk. Without both sources connected, this queue will be empty or missing claim context.">
     <WorkbenchPage
       title="Inbox"
       subtitle="Matched orders awaiting identity review"
@@ -209,5 +214,6 @@ export default async function InboxPage({ searchParams }: { searchParams?: Promi
         <InboxClient initialItems={items} claimQueueCounts={claimQueueCounts} />
       )}
     />
+    </PageConnectionGate>
   );
 }

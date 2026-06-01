@@ -128,6 +128,7 @@ export function buildGorgiasSidebarWidgetTemplate(appBaseUrl: string) {
           { path: 'primary_reason', title: 'Primary reason', type: 'text' },
           { path: 'recent_activity', title: 'Recent (90 days)', type: 'text' },
           { path: 'ce3_evidence', title: 'CE 3.0', type: 'text' },
+          { path: 'watchlisted', title: 'Watchlist', type: 'text' },
         ],
       },
     ],

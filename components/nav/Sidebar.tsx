@@ -1,13 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import {
   Home,
   ListChecks,
-  PlusSquare,
+  Upload,
   Users,
   Star,
   LogOut,
@@ -15,8 +15,8 @@ import {
   Settings,
   ChevronRight,
   ShieldCheck,
-  Inbox,
   BarChart3,
+  Store,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { UnauthLogo } from '@/components/ui/UnauthLogo';
@@ -46,6 +46,8 @@ interface SidebarProps {
   merchantName: string | null;
   userEmail: string;
   watchlistCount?: number;
+  shopifyConnected?: boolean;
+  helpdeskConnected?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -61,20 +63,20 @@ function buildGroups(watchlistCount = 0): NavGroup[] {
       items: [{ href: '/dashboard', label: 'Dashboard', icon: Home }],
     },
     {
-      label: 'Audits',
-      items: [
-        { href: '/upload', label: 'New audit', icon: PlusSquare, isPrimary: true },
-        { href: '/history', label: 'Audit history', icon: ListChecks },
-      ],
-    },
-    {
       label: 'Review',
       items: [
-        { href: '/inbox', label: 'Inbox', icon: Inbox },
+        { href: '/store', label: 'Store overview', icon: Store },
         { href: '/customers', label: 'Customers', icon: Users },
         { href: '/watchlist', label: 'Watchlist', icon: Star, badge: watchlistCount },
         { href: '/chargebacks', label: 'Evidence packages', icon: ShieldCheck },
         { href: '/reports', label: 'Reports', icon: BarChart3 },
+      ],
+    },
+    {
+      label: 'Data import',
+      items: [
+        { href: '/upload', label: 'Upload CSV', icon: Upload, isPrimary: false },
+        { href: '/history', label: 'Import history', icon: ListChecks },
       ],
     },
   ];
@@ -183,8 +185,11 @@ export default function Sidebar({
   merchantName,
   userEmail,
   watchlistCount = 0,
+  shopifyConnected = false,
+  helpdeskConnected = false,
 }: SidebarProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const supabase = createClient();
 
@@ -217,7 +222,10 @@ export default function Sidebar({
   }
 
   const groups = buildGroups(watchlistCount);
-  const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
+  const isActive = (href: string) => {
+    if (href === '/store' && pathname.startsWith('/audit') && searchParams.get('source') === 'shopify') return true;
+    return pathname === href || pathname.startsWith(href + '/');
+  };
 
   const isCollapsed = collapsed && !hoverExpanded;
 
@@ -282,6 +290,20 @@ export default function Sidebar({
           >
             {merchantName}
           </div>
+        )}
+
+        {!isCollapsed && (!shopifyConnected || !helpdeskConnected) && (
+          <Link
+            href="/settings/integrations"
+            className="flex w-full items-center gap-1.5 rounded-sm px-2 py-1 text-[11px] font-medium leading-tight hover:opacity-80 transition-opacity"
+            style={{ background: 'color-mix(in srgb, var(--warning, #b45309) 10%, transparent)', color: 'var(--warning, #b45309)', border: '1px solid color-mix(in srgb, var(--warning, #b45309) 25%, transparent)' }}
+            title="Setup incomplete — click to connect"
+          >
+            <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: 'var(--warning, #b45309)' }} aria-hidden="true" />
+            <span className="truncate">
+              {!shopifyConnected && !helpdeskConnected ? 'Setup incomplete' : !helpdeskConnected ? 'Helpdesk not connected' : 'Store not connected'}
+            </span>
+          </Link>
         )}
 
         {isCollapsed && merchantName && (

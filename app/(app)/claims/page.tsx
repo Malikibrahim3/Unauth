@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
+import { getConnectionState } from '@/lib/connections/getConnectionState';
+import { PageConnectionGate } from '@/components/connections/PageConnectionGate';
 import { WorkbenchPage, WorkbenchKpiStrip, WorkbenchEmptyState, Button } from '@/components/ui';
 import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
 import { TABLES } from '@/lib/supabase/tables';
@@ -185,6 +187,8 @@ export default async function ClaimsPage({
   const serviceClient = createServiceClient();
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.SUBMIT_FRAUD_FEEDBACK);
   if (denied) redirect('/dashboard');
+
+  const connectionState = await getConnectionState(serviceClient, ctx.merchantId);
 
   const resolvedParams = (await searchParams) ?? {};
   const sp: Record<string, string | undefined> = { ...resolvedParams };
@@ -424,6 +428,7 @@ export default async function ClaimsPage({
   const isEmpty = queueCounts.total === 0;
 
   return (
+    <PageConnectionGate requires="helpdesk" connection={connectionState} pageName="Claims" pageDescription="Claim data comes from your helpdesk integration. Connect Gorgias or Zendesk to see and manage disputes here.">
     <WorkbenchPage
       title="Claims"
       subtitle="Track active claim work and merchant-recorded outcomes"
@@ -690,5 +695,6 @@ export default async function ClaimsPage({
         )
       }
     />
+    </PageConnectionGate>
   );
 }
