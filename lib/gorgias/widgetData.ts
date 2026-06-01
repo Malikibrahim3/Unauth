@@ -650,7 +650,7 @@ export async function countShopifyOrdersAtMerchant(
   return signalOrderCount > 0 ? signalOrderCount : directEmailOrderIds.size;
 }
 
-async function readThisStoreSummary(
+export async function readThisStoreSummary(
   service: SupabaseClient,
   merchantId: string,
   emailHash: string
@@ -663,11 +663,41 @@ async function readThisStoreSummary(
     .maybeSingle();
 
   if (error || !data) return null;
+
+  const { data: confirmedClaims, error: confirmedError } = await service
+    .from(TABLES.SUPPORT_CASE_INTAKE)
+    .select('created_at_provider, updated_at_provider')
+    .eq('merchant_id', merchantId)
+    .eq('customer_email_hash', emailHash)
+    .eq('is_claim', true)
+    .eq('requires_merchant_review', false);
+
+  if (confirmedError || !Array.isArray(confirmedClaims)) {
+    return {
+      total_orders: Number(data.total_orders ?? 0),
+      total_claims: Number(data.total_claims ?? 0),
+      claim_rate: Number(data.claim_rate ?? 0),
+      last_claim_at: typeof data.last_claim_at === 'string' ? data.last_claim_at : null,
+      updated_at: typeof data.updated_at === 'string' ? data.updated_at : null,
+    };
+  }
+
+  const confirmedClaimCount = confirmedClaims.length;
+  const totalOrders = Math.max(Number(data.total_orders ?? 0), confirmedClaimCount);
+  const lastConfirmedClaimAt = confirmedClaims
+    .map((row: Record<string, unknown>) => {
+      const createdAt = typeof row.created_at_provider === 'string' ? row.created_at_provider : null;
+      const updatedAt = typeof row.updated_at_provider === 'string' ? row.updated_at_provider : null;
+      return createdAt ?? updatedAt;
+    })
+    .filter((value): value is string => Boolean(value))
+    .sort((a, b) => Date.parse(b) - Date.parse(a))[0] ?? null;
+
   return {
-    total_orders: Number(data.total_orders ?? 0),
-    total_claims: Number(data.total_claims ?? 0),
-    claim_rate: Number(data.claim_rate ?? 0),
-    last_claim_at: typeof data.last_claim_at === 'string' ? data.last_claim_at : null,
+    total_orders: totalOrders,
+    total_claims: confirmedClaimCount,
+    claim_rate: totalOrders > 0 ? round2(confirmedClaimCount / totalOrders) : 0,
+    last_claim_at: lastConfirmedClaimAt,
     updated_at: typeof data.updated_at === 'string' ? data.updated_at : null,
   };
 }

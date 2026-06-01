@@ -6,6 +6,7 @@ import {
   countStoreRecentClaims,
   derivePrimaryReason,
   derivePrimaryReasonFromTypes,
+  readThisStoreSummary,
   type GorgiasWidgetModel,
   type WidgetStats,
 } from '@/lib/gorgias/widgetData';
@@ -105,6 +106,91 @@ describe('countStoreRecentClaims (support_case_intake query)', () => {
     expect(n).toBe(1);
     // Must NOT query a non-existent `created_at` column (would error → silent 0).
     expect(gteCalls).toEqual([{ column: 'created_at_provider' }]);
+  });
+});
+
+describe('readThisStoreSummary', () => {
+  it('does not trust stale cached claims that now require merchant review', async () => {
+    const client = createMemoryClient();
+    const store = client.__store;
+    const hash = 'emailhash-1';
+    store.set(TABLES.CUSTOMER_CLAIM_SUMMARY, [
+      summaryRow({
+        total_orders: 10,
+        total_claims: 1,
+        claim_rate: 0.1,
+        last_claim_at: '2026-05-31T09:42:00.000Z',
+      }) as unknown as Record<string, unknown>,
+    ]);
+    store.get(TABLES.CUSTOMER_CLAIM_SUMMARY)![0].merchant_id = 'm1';
+    store.get(TABLES.CUSTOMER_CLAIM_SUMMARY)![0].customer_email_hash = hash;
+    store.set(TABLES.SUPPORT_CASE_INTAKE, [
+      {
+        merchant_id: 'm1',
+        customer_email_hash: hash,
+        is_claim: true,
+        requires_merchant_review: true,
+        claim_type: 'INR',
+        created_at_provider: '2026-05-31T09:42:00.000Z',
+      },
+    ]);
+
+    const summary = await readThisStoreSummary(client as unknown as SupabaseClient, 'm1', hash);
+
+    expect(summary).toMatchObject({
+      total_orders: 10,
+      total_claims: 0,
+      claim_rate: 0,
+      last_claim_at: null,
+    });
+  });
+
+  it('recomputes cached claim counts from confirmed support-intake rows', async () => {
+    const client = createMemoryClient();
+    const store = client.__store;
+    const hash = 'emailhash-1';
+    store.set(TABLES.CUSTOMER_CLAIM_SUMMARY, [
+      {
+        ...summaryRow({ total_orders: 10, total_claims: 3, claim_rate: 0.3 }),
+        merchant_id: 'm1',
+        customer_email_hash: hash,
+      },
+    ]);
+    store.set(TABLES.SUPPORT_CASE_INTAKE, [
+      {
+        merchant_id: 'm1',
+        customer_email_hash: hash,
+        is_claim: true,
+        requires_merchant_review: false,
+        claim_type: 'INR',
+        created_at_provider: '2026-05-29T09:42:00.000Z',
+      },
+      {
+        merchant_id: 'm1',
+        customer_email_hash: hash,
+        is_claim: true,
+        requires_merchant_review: false,
+        claim_type: 'damaged',
+        created_at_provider: '2026-05-31T09:42:00.000Z',
+      },
+      {
+        merchant_id: 'm1',
+        customer_email_hash: hash,
+        is_claim: true,
+        requires_merchant_review: true,
+        claim_type: 'wrong_item',
+        created_at_provider: '2026-06-01T09:42:00.000Z',
+      },
+    ]);
+
+    const summary = await readThisStoreSummary(client as unknown as SupabaseClient, 'm1', hash);
+
+    expect(summary).toMatchObject({
+      total_orders: 10,
+      total_claims: 2,
+      claim_rate: 0.2,
+      last_claim_at: '2026-05-31T09:42:00.000Z',
+    });
   });
 });
 
