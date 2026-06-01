@@ -212,4 +212,49 @@ describe('evidence tenant isolation', () => {
       )
     ).rejects.toThrow('Disputed order not found or not owned by merchant');
   });
+
+  it('includes only the caller merchant notes for a shared customer profile', async () => {
+    // A shared profile carries notes from both merchants plus a soft-deleted
+    // note from the caller. The evidence package must only surface the caller's
+    // active notes — never another merchant's, never deleted ones.
+    rowsByTable.customer_notes = [
+      {
+        merchant_id: 'merchant-a',
+        customer_profile_id: 'profile-shared',
+        body: 'Merchant A active note',
+        deleted_by_merchant: false,
+        created_at: '2026-01-03T00:00:00.000Z',
+      },
+      {
+        merchant_id: 'merchant-a',
+        customer_profile_id: 'profile-shared',
+        body: 'Merchant A deleted note',
+        deleted_by_merchant: true,
+        created_at: '2026-01-02T00:00:00.000Z',
+      },
+      {
+        merchant_id: 'merchant-b',
+        customer_profile_id: 'profile-shared',
+        body: 'Merchant B private note',
+        deleted_by_merchant: false,
+        created_at: '2026-01-04T00:00:00.000Z',
+      },
+    ];
+
+    try {
+      const pkg = await buildEvidencePackage(
+        'merchant-a',
+        'profile-shared',
+        'tx-a',
+        makeSupabase() as any,
+        'legacy-user-a'
+      );
+
+      expect(pkg.merchantNotes).toContain('Merchant A active note');
+      expect(pkg.merchantNotes).not.toContain('Merchant B private note');
+      expect(pkg.merchantNotes).not.toContain('Merchant A deleted note');
+    } finally {
+      rowsByTable.customer_notes = [];
+    }
+  });
 });

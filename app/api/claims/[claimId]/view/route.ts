@@ -22,15 +22,26 @@ export async function POST(_request: Request, { params }: { params: Promise<{ cl
   try {
     const firstView = !claim.first_viewed_at;
     const updated = firstView ? await markClaimViewed(serviceClient, claim, ctx.merchantId, user.id) : claim;
-    if (firstView) {
-      await appendClaimEvent(serviceClient, {
-        claim_id: claimId,
-        merchant_id: ctx.merchantId,
-        shop_domain: claim.shop_domain,
-        event_type: 'claim_viewed',
-        actor_user_id: user.id,
-        metadata: { first_view: true },
-      });
+    if (firstView && updated._viewRecorded) {
+      // The view has already been persisted at this point. Treat the timeline
+      // event append as best-effort so an event-log failure cannot turn a
+      // successful view-record into a user-facing 500.
+      try {
+        await appendClaimEvent(serviceClient, {
+          claim_id: claimId,
+          merchant_id: ctx.merchantId,
+          shop_domain: claim.shop_domain,
+          event_type: 'claim_viewed',
+          actor_user_id: user.id,
+          metadata: { first_view: true },
+        });
+      } catch (eventError) {
+        console.error('[claims.view] claim_viewed event append failed (non-fatal)', {
+          claimId,
+          merchantId: ctx.merchantId,
+          message: eventError instanceof Error ? eventError.message : String(eventError),
+        });
+      }
     }
     return NextResponse.json({
       claim: {

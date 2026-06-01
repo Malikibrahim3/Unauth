@@ -26,7 +26,7 @@ async function GETHandler(_req: NextRequest) {
   const { data, error } = await serviceClient
     .from(TABLES.WATCHLIST_ENTRIES)
     .select('*')
-    .eq('merchant_id', user.id)
+    .eq('merchant_id', ctx.merchantId)
     .eq('removed_by_merchant', false)
     .order('added_at', { ascending: false });
 
@@ -58,7 +58,7 @@ async function POSTHandler(req: NextRequest) {
   const { data, error } = await serviceClient
     .from(TABLES.WATCHLIST_ENTRIES)
     .upsert({
-      merchant_id: user.id,
+      merchant_id: ctx.merchantId,
       customer_profile_id: customerProfileId ?? null,
       email_hash: emailHash ?? null,
       display_name: displayName ?? null,

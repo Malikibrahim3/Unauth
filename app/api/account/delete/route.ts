@@ -130,11 +130,12 @@ export async function POST(request: NextRequest) {
       'normalisation_learning',
     ];
     for (const table of tables) {
-      const ownerColumnValue = table === 'watchlist_entries' ? user.id : merchantId;
+      // All merchant-owned tables (incl. watchlist_entries after the tenancy
+      // alignment migration) key off merchants.id.
       const { error } = await service
         .from(table as any)
         .delete()
-        .eq('merchant_id', ownerColumnValue);
+        .eq('merchant_id', merchantId);
       if (error) console.warn(`[account-delete] non-fatal: ${table}:`, error.message);
     }
 

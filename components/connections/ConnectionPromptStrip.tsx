@@ -5,16 +5,30 @@ import type { ConnectionState } from '@/lib/connections/getConnectionState';
 
 interface ConnectionPromptStripProps {
   connection: ConnectionState;
+  /** Pass true when customer_profiles exist but neither integration is active.
+   *  Surfaces an honest "stale Shopify data" message instead of the CSV-only copy. */
+  hasExistingProfiles?: boolean;
 }
 
-export function ConnectionPromptStrip({ connection }: ConnectionPromptStripProps) {
+export function ConnectionPromptStrip({ connection, hasExistingProfiles }: ConnectionPromptStripProps) {
   if (connection.bothConnected) return null;
 
-  const message = connection.shopifyOnlyConnected
-    ? 'Shopify is connected but your helpdesk is not — claim data is missing. Some numbers shown here may be zero because data isn\'t syncing, not because there\'s no history.'
-    : connection.helpdeskOnlyConnected
-      ? 'Your helpdesk is connected but Shopify is not — order data is missing. Connect both to see the full picture.'
-      : 'Connect your Shopify store and helpdesk to see complete data. What\'s shown here is based on CSV imports only and may be incomplete.';
+  let message: string;
+
+  if (connection.shopifyOnlyConnected) {
+    message =
+      'Shopify is connected but your helpdesk is not — claim data is missing. Some numbers shown here may be zero because data isn\'t syncing, not because the customer has no history.';
+  } else if (connection.helpdeskOnlyConnected) {
+    message =
+      'Your helpdesk is connected but Shopify is not — order data is missing. Connect both to see the full picture.';
+  } else if (hasExistingProfiles) {
+    // Neither connected, but merchant has profiles (likely from a previous Shopify sync)
+    message =
+      'Showing existing Shopify data. Reconnect Shopify and your helpdesk to keep this analysis current and add claim context.';
+  } else {
+    message =
+      'Connect Shopify and your helpdesk to see complete data. What\'s shown here is based on CSV imports only and may be incomplete.';
+  }
 
   return (
     <div

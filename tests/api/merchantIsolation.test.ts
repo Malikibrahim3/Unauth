@@ -332,24 +332,26 @@ describe('paginateAll', () => {
 // Watchlist isolation — merchantId vs userId
 // ---------------------------------------------------------------------------
 describe('Watchlist uses merchantId not userId', () => {
-  it('watchlist route file does not use ctx.userId for merchant_id filter', async () => {
+  it('watchlist route/page files scope merchant_id by merchantId, never user.id', async () => {
     const fs = await import('fs');
     const path = await import('path');
-    const routeContent = fs.readFileSync(
-      path.join(process.cwd(), 'app/api/watchlist/route.ts'),
-      'utf-8'
-    );
-    const deletedRouteContent = fs.readFileSync(
-      path.join(process.cwd(), 'app/api/watchlist/[id]/route.ts'),
-      'utf-8'
-    );
+    const read = (rel: string) => fs.readFileSync(path.join(process.cwd(), rel), 'utf-8');
 
-    // Must not have merchant_id: ctx.userId anywhere
-    expect(routeContent).not.toContain('merchant_id: ctx.userId');
-    expect(deletedRouteContent).not.toContain('merchant_id: ctx.userId');
-    // Must have merchant_id: ctx.merchantId
-    expect(routeContent).toContain('ctx.merchantId');
-    expect(deletedRouteContent).toContain('ctx.merchantId');
+    const files = {
+      route: read('app/api/watchlist/route.ts'),
+      deleteRoute: read('app/api/watchlist/[id]/route.ts'),
+      page: read('app/(app)/watchlist/page.tsx'),
+    };
+
+    for (const content of Object.values(files)) {
+      // The original tenancy bug keyed merchant_id off the auth user id.
+      // Guard against every shape it took: ctx.userId, user.id, and the
+      // upsert object form `merchant_id: user.id`.
+      expect(content).not.toMatch(/merchant_id['"]?\s*[:,]\s*ctx\.userId/);
+      expect(content).not.toMatch(/merchant_id['"]?\s*[:,]\s*user\.id/);
+      // And it must scope by the merchant tenant key.
+      expect(content).toMatch(/\.merchantId/);
+    }
   });
 });
 

@@ -245,15 +245,20 @@ export async function buildEvidencePackage(
   // -------------------------------------------------------------------------
   // 8. Merchant notes
   // -------------------------------------------------------------------------
+  // Scope notes to this merchant. A customer_profile can be shared across
+  // merchants, so filtering by customer_profile_id alone would leak another
+  // merchant's notes into this merchant's evidence package.
   const { data: noteRows } = await supabaseServiceRole
     .from('customer_notes')
-    .select('note, created_at')
+    .select('body, created_at')
+    .eq('merchant_id', merchantId)
     .eq('customer_profile_id', customerProfileId)
+    .eq('deleted_by_merchant', false)
     .order('created_at', { ascending: false })
-    .limit(3) as unknown as { data: Array<{ note: string; created_at: string }> | null }
+    .limit(3) as unknown as { data: Array<{ body: string; created_at: string }> | null }
 
   const merchantNotes =
-    (noteRows ?? []).map(n => n.note).filter(Boolean).join('\n\n') || undefined
+    (noteRows ?? []).map(n => n.body).filter(Boolean).join('\n\n') || undefined
 
   // -------------------------------------------------------------------------
   // 9. Reference number

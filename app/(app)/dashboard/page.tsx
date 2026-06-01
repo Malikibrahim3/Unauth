@@ -19,6 +19,8 @@ import { Badge } from '@/components/ui/Badge';
 import { riskLevelToNewGrade } from '@/lib/confidence';
 import { getConnectionState } from '@/lib/connections/getConnectionState';
 import { PageConnectionGate } from '@/components/connections/PageConnectionGate';
+import { getMerchantDataPresence } from '@/lib/supabase/getMerchantDataPresence';
+import PartialSetupHero from '@/components/PartialSetupHero';
 
 type RunRow = Database['public']['Tables']['processing_jobs']['Row'];
 
@@ -105,7 +107,7 @@ export default async function DashboardPage() {
 
   const connectionState = await getConnectionState(serviceClient, ctx.merchantId);
 
-  const [{ data: runs }, { count: profileCount }] = await Promise.all([
+  const [{ data: runs }, dataPresence] = await Promise.all([
     serviceClient
       .from(TABLES.PROCESSING_JOBS)
       .select('*')
@@ -113,17 +115,16 @@ export default async function DashboardPage() {
       .eq('hidden_by_merchant', false)
       .order('created_at', { ascending: false })
       .limit(50),
-    serviceClient
-      .from(TABLES.CUSTOMER_PROFILES)
-      .select('id', { count: 'exact', head: true })
-      .eq('merchant_id', ctx.merchantId)
-      .limit(1),
+    // Pass user.id so legacy profiles stored with auth-user UUID are counted.
+    getMerchantDataPresence(serviceClient, ctx.merchantId, user.id),
   ]);
   const typedRuns = (runs ?? []) as unknown as RunRow[];
   const latestRun = typedRuns[0] ?? null;
-  // isEmpty only when there are no processing jobs AND no customer profiles
-  // (profiles exist from Shopify webhooks even before a processing job is created)
-  const isEmpty = typedRuns.length === 0 && (profileCount ?? 0) === 0;
+
+  // isFresh: no data from any source AND no active connections
+  const isFresh = !dataPresence.hasAnyData && connectionState.neitherConnected;
+  // partialSetup: at least one integration active but no data has arrived yet
+  const partialSetup = !dataPresence.hasAnyData && !connectionState.neitherConnected && !connectionState.bothConnected;
 
   const jobIds = typedRuns.map((run) => run.id);
 
@@ -205,19 +206,38 @@ export default async function DashboardPage() {
     });
   }
 
-  if (isEmpty) {
+  if (isFresh) {
     return (
-      <PageConnectionGate requires="both" connection={connectionState} pageName="Dashboard" hasData={false}>
-        <div className="p-4 md:p-6">
-          <TrackPageView event="Dashboard Viewed" />
-          <EmptyDashboardHero />
-        </div>
-      </PageConnectionGate>
+      <div className="p-4 md:p-6">
+        <TrackPageView event="Dashboard Viewed" />
+        <EmptyDashboardHero />
+      </div>
     );
   }
 
+  if (partialSetup) {
+    return (
+      <div className="p-4 md:p-6">
+        <TrackPageView event="Dashboard Viewed" />
+        <PartialSetupHero connection={connectionState} />
+      </div>
+    );
+  }
+
+  // Has data (any source) or both connections active — show real dashboard.
+  // hasExistingProfiles: customer_profiles exist but neither integration is connected,
+  // meaning the profiles came from a previous Shopify sync that is no longer active.
+  const hasExistingProfiles =
+    dataPresence.sources.customerProfiles > 0 && connectionState.neitherConnected;
+
   return (
-    <PageConnectionGate requires="both" connection={connectionState} pageName="Dashboard" hasData={true}>
+    <PageConnectionGate
+      requires="both"
+      connection={connectionState}
+      pageName="Dashboard"
+      hasData={dataPresence.hasAnyData}
+      hasExistingProfiles={hasExistingProfiles}
+    >
     <div className="p-4 md:p-6">
       <TrackPageView event="Dashboard Viewed" />
 
@@ -239,30 +259,52 @@ export default async function DashboardPage() {
                 Data synced
               </span>
             ) : null}
-            <Link href="/upload" className="btn-accent rounded-md px-3 py-1.5 text-caption font-semibold">
-              New audit
-            </Link>
+            {connectionState.shopifyOnlyConnected ? (
+              <Link href="/settings/integrations" className="btn-accent rounded-md px-3 py-1.5 text-caption font-semibold">
+                Connect helpdesk
+              </Link>
+            ) : connectionState.helpdeskOnlyConnected ? (
+              <Link href="/settings/integrations" className="btn-accent rounded-md px-3 py-1.5 text-caption font-semibold">
+                Connect Shopify
+              </Link>
+            ) : !connectionState.bothConnected && dataPresence.sources.customerProfiles > 0 ? (
+              <Link href="/settings/integrations" className="btn-accent rounded-md px-3 py-1.5 text-caption font-semibold">
+                Reconnect integrations
+              </Link>
+            ) : (
+              <Link href="/upload" className="btn-accent rounded-md px-3 py-1.5 text-caption font-semibold">
+                New audit
+              </Link>
+            )}
           </div>
         </div>
 
-        <div className="flex items-center gap-2 border-b px-4 py-2" style={{ borderColor: 'var(--border-default)', background: 'var(--bg-surface-alt)' }}>
-          <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: 'var(--sev-neutral)' }} aria-hidden="true" />
-          <span className="t-caption" style={{ color: 'var(--ink-secondary)' }}>
-            Showing your store&apos;s data only. Connect more sources to widen identity coverage.
-          </span>
-        </div>
+        {!connectionState.bothConnected && (
+          <div className="flex items-center gap-2 border-b px-4 py-2" style={{ borderColor: 'var(--border-default)', background: 'var(--bg-surface-alt)' }}>
+            <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: 'var(--warning, #b45309)' }} aria-hidden="true" />
+            <span className="t-caption" style={{ color: 'var(--ink-secondary)' }}>
+              {connectionState.shopifyOnlyConnected
+                ? 'Shopify is connected. Connect your helpdesk to add claim history and dispute context.'
+                : connectionState.helpdeskOnlyConnected
+                  ? 'Your helpdesk is connected. Connect Shopify to add order data.'
+                  : dataPresence.sources.customerProfiles > 0
+                    ? 'Showing existing Shopify data. Reconnect Shopify and your helpdesk to keep this current.'
+                    : 'Connect Shopify and your helpdesk to see complete data.'}
+            </span>
+          </div>
+        )}
 
         <div className="grid grid-cols-2 border-b md:grid-cols-4" style={{ borderColor: 'var(--border-default)' }}>
           {[
             {
-              label: 'Linked identities',
-              value: reviewQueue === null ? 'Unavailable' : reviewQueue === 0 ? '—' : reviewQueue.toLocaleString(),
-              hint: reviewQueue === null ? 'Count could not be loaded' : 'Profiles with identity matches in your data',
+              label: 'Customer profiles',
+              value: dataPresence.sources.customerProfiles === 0 ? '—' : dataPresence.sources.customerProfiles.toLocaleString(),
+              hint: dataPresence.sources.customerProfiles > 0 ? 'Synced profiles across all sources' : 'Profiles appear once Shopify or CSV data is imported',
             },
             {
-              label: 'Order value linked',
-              value: exposureAtRisk === null ? 'Unavailable' : formatCurrencyNullable(exposureAtRisk),
-              hint: exposureAtRisk === null ? 'Could not be computed' : 'Order value linked to matched identities',
+              label: 'Linked identities',
+              value: reviewQueue === null ? 'Unavailable' : reviewQueue === 0 ? '—' : reviewQueue.toLocaleString(),
+              hint: reviewQueue === null ? 'Count could not be loaded' : reviewQueue === 0 ? 'No high-confidence matches yet — run identity analysis via CSV or Shopify' : 'Profiles with high-confidence identity matches',
             },
             {
               label: 'Evidence packages ready',
@@ -270,9 +312,13 @@ export default async function DashboardPage() {
               hint: priorMatchPackages > 0 ? `${priorMatchPackages} with prior identity match` : 'Export for dispute review',
             },
             {
-              label: 'Recent audit runs',
+              label: 'CSV audit runs',
               value: typedRuns.length.toLocaleString(),
-              hint: latestRun ? formatDateMode(latestRun.created_at, 'recent') : 'Upload a CSV to start',
+              hint: latestRun
+                ? formatDateMode(latestRun.created_at, 'recent')
+                : dataPresence.sources.customerProfiles > 0
+                  ? 'Customer data active via Shopify — CSV is optional for backfills'
+                  : 'Upload a CSV for offline or historical analysis',
             },
           ].map((metric, idx) => (
             <div
@@ -308,14 +354,25 @@ export default async function DashboardPage() {
             {reviewRows.length === 0 ? (
               <div className="px-4 py-8">
                 <p className="text-body-sm font-medium" style={{ color: 'var(--text)' }}>
-                  {isEmpty ? 'Run your first audit to populate the queue.' : 'No review cases in the queue right now.'}
+                  No high-confidence identity matches in the queue.
                 </p>
                 <p className="text-caption mt-1" style={{ color: 'var(--text-muted)' }}>
-                  {isEmpty ? 'Upload a CSV to start generating cases, clusters, and evidence signals.' : 'Current high-confidence identities are resolved.'}
+                  {dataPresence.sources.customerProfiles > 0
+                    ? 'Your customers are imported. Identity matches appear after audit analysis runs.'
+                    : 'Identity matches appear after audit analysis runs against your customer data.'}
                 </p>
-                <Link href="/upload" className="mt-3 inline-block text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
-                  Upload a CSV
-                </Link>
+                <div className="mt-3 flex items-center gap-4">
+                  {dataPresence.sources.customerProfiles > 0 && (
+                    <Link href="/customers" className="text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
+                      Browse customers →
+                    </Link>
+                  )}
+                  {!connectionState.shopify && (
+                    <Link href="/upload" className="text-caption hover:underline" style={{ color: 'var(--ink-tertiary)' }}>
+                      Upload CSV
+                    </Link>
+                  )}
+                </div>
               </div>
             ) : (
               <div>
@@ -360,18 +417,29 @@ export default async function DashboardPage() {
 
           <aside>
             <div className="border-b px-4 py-3" style={{ borderColor: 'var(--border-default)', background: 'var(--bg-surface-alt)' }}>
-              <p className="text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Helpdesk integrations</p>
-              <p className="text-caption mt-1" style={{ color: 'var(--text-muted)' }}>
-                Connect your helpdesk —{' '}
-                <Link href="/settings/integrations/gorgias" className="font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
-                  Gorgias
-                </Link>
-                {' '}and{' '}
-                <Link href="/settings/integrations/zendesk" className="font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
-                  Zendesk
-                </Link>
-                {' '}available now.
+              <p className="text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>
+                {connectionState.helpdesk ? 'Helpdesk connected' : 'Connect your helpdesk'}
               </p>
+              {connectionState.helpdesk ? (
+                <p className="text-caption mt-1" style={{ color: 'var(--sev-clear)' }}>
+                  Claim history is syncing from {connectionState.helpdeskProvider ?? 'your helpdesk'}.
+                </p>
+              ) : (
+                <>
+                  <p className="text-caption mt-1" style={{ color: 'var(--text-muted)' }}>
+                    {connectionState.shopify
+                      ? 'Shopify is connected. Add your helpdesk to bring in claim history and dispute signals.'
+                      : 'Gorgias and Zendesk available. Connects claim history directly to customer profiles.'}
+                  </p>
+                  <Link
+                    href="/settings/integrations"
+                    className="mt-2 inline-flex items-center gap-1 text-caption font-semibold hover:underline"
+                    style={{ color: 'var(--accent)' }}
+                  >
+                    {connectionState.shopify ? 'Connect helpdesk →' : 'Set up integrations →'}
+                  </Link>
+                </>
+              )}
             </div>
 
             <div className="border-b px-4 py-2" style={{ borderColor: 'var(--border-default)', background: 'var(--bg-surface-alt)' }}>
@@ -393,7 +461,7 @@ export default async function DashboardPage() {
 
             <div className="border-b px-4 py-2" style={{ borderColor: 'var(--border-default)', background: 'var(--bg-surface-alt)' }}>
               <div className="flex items-center justify-between gap-2">
-                <p className="text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Recent audit runs</p>
+                <p className="text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>CSV audit runs</p>
                 <Link href="/history" className="text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
                   History →
                 </Link>
@@ -401,7 +469,11 @@ export default async function DashboardPage() {
             </div>
             <div className="border-b px-4 py-2" style={{ borderColor: 'var(--border-subtle)' }}>
               {recentRuns.length === 0 ? (
-                <p className="text-caption" style={{ color: 'var(--text-subtle)' }}>No audits yet.</p>
+                <p className="text-caption" style={{ color: 'var(--text-subtle)' }}>
+                  {dataPresence.sources.customerProfiles > 0
+                    ? 'No CSV audits. Customer data is synced from Shopify.'
+                    : 'No audits yet.'}
+                </p>
               ) : (
                 <div className="space-y-2">
                   {recentRuns.map((run) => (
@@ -446,6 +518,25 @@ export default async function DashboardPage() {
 
           </aside>
         </div>
+
+        {process.env.NODE_ENV === 'development' && (
+          <details className="border-t px-4 py-2 text-[10px] font-mono" style={{ borderColor: 'var(--border-default)', color: 'var(--ink-tertiary)' }}>
+            <summary className="cursor-pointer">debug: data presence</summary>
+            <pre className="mt-1 whitespace-pre-wrap">
+              {JSON.stringify({
+                customerProfiles: dataPresence.sources.customerProfiles,
+                csvJobs: dataPresence.sources.csvJobs,
+                claims: dataPresence.sources.claims,
+                evidencePackages: dataPresence.sources.evidencePackages,
+                hasAnyData: dataPresence.hasAnyData,
+                shopify: connectionState.shopify,
+                helpdesk: connectionState.helpdesk,
+                bothConnected: connectionState.bothConnected,
+                neitherConnected: connectionState.neitherConnected,
+              }, null, 2)}
+            </pre>
+          </details>
+        )}
 
         <footer className="flex flex-wrap items-center justify-between gap-2 border-t px-4 py-2" style={{ borderColor: 'var(--border-default)', background: 'var(--bg-surface-alt)' }}>
           <span className="text-caption font-mono" style={{ color: 'var(--text-subtle)' }}>

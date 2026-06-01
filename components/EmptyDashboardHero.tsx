@@ -14,7 +14,7 @@ function ShopifyMark() {
 function GorgiasZendeskMark() {
   return (
     <svg viewBox="0 0 40 40" fill="none" className="h-8 w-8" aria-hidden="true">
-      <rect width="40" height="40" rx="8" fill="#1F73B7" />
+      <rect width="40" height="40" rx="8" fill="#7B2D26" />
       <path d="M20 10c-5.5 0-10 4.5-10 10s4.5 10 10 10h10V20c0-5.5-4.5-10-10-10zm0 15c-2.8 0-5-2.2-5-5s2.2-5 5-5 5 2.2 5 5-2.2 5-5 5z" fill="white"/>
     </svg>
   );
@@ -37,7 +37,7 @@ export default function EmptyDashboardHero() {
       {/* Headline */}
       <div>
         <h2 className="font-semibold mb-1.5" style={{ fontSize: '20px', color: 'var(--ink-primary)', fontFamily: 'DM Sans, system-ui, sans-serif' }}>
-          Connect your store and helpdesk to get started
+          Connect Shopify and your helpdesk to get started
         </h2>
         <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-secondary)', fontFamily: 'DM Sans, system-ui, sans-serif' }}>
           Unauth needs both. Shopify provides order data — your helpdesk provides claim history. One without the other is an incomplete picture.

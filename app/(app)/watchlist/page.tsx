@@ -48,7 +48,7 @@ export default async function WatchlistPage({ searchParams }: { searchParams?: {
       let q = serviceClient
         .from(TABLES.WATCHLIST_ENTRIES)
         .select('*', { count: 'exact' })
-        .eq('merchant_id', user.id)
+        .eq('merchant_id', resolvedCtx.merchantId)
         .eq('removed_by_merchant', false)
         .order('added_at', { ascending: false })
         .range(offset, offset + pageSize - 1);
@@ -62,7 +62,7 @@ export default async function WatchlistPage({ searchParams }: { searchParams?: {
     serviceClient
       .from(TABLES.WATCHLIST_ENTRIES)
       .select('customer_profile_id')
-      .eq('merchant_id', user.id)
+      .eq('merchant_id', resolvedCtx.merchantId)
       .eq('removed_by_merchant', false),
     serviceClient
       .from('customer_profile_audit_appearances')

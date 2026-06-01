@@ -46,7 +46,7 @@ export default async function StorePage() {
           </svg>
         </div>
         <h1 className="text-heading-lg font-semibold" style={{ color: 'var(--ink-primary)' }}>
-          Connect your store and helpdesk
+          Connect Shopify and your helpdesk
         </h1>
         <p className="text-body-sm" style={{ color: 'var(--ink-secondary)' }}>
           Store intelligence requires both your Shopify store and a helpdesk (Gorgias or Zendesk). Orders come from Shopify — claim history comes from your helpdesk. Without both, the data here would be incomplete.

@@ -12,17 +12,20 @@ interface PageConnectionGateProps {
   connection: ConnectionState;
   pageName: string;
   pageDescription?: string;
-  /** When true and connections are missing, show data + strip instead of full gate. */
+  /** When true and connections are missing, show data + non-blocking strip instead of full gate. */
   hasData?: boolean;
+  /**
+   * Pass true when customer_profiles exist but neither integration is active.
+   * Forwards to ConnectionPromptStrip to surface the "stale Shopify data" message.
+   */
+  hasExistingProfiles?: boolean;
   children: React.ReactNode;
 }
 
 function missingFor(requires: Requires, connection: ConnectionState): 'helpdesk' | 'both' | null {
   if (requires === 'both') {
     if (connection.bothConnected) return null;
-    // Shopify-only: only helpdesk missing
     if (connection.shopifyOnlyConnected) return 'helpdesk';
-    // Neither, or helpdesk-only: treat as both missing (always need both)
     return 'both';
   }
   if (requires === 'helpdesk' && !connection.helpdesk) return 'both';
@@ -34,16 +37,16 @@ function GatePanel({ missing, pageName, pageDescription }: {
   pageName: string;
   pageDescription?: string;
 }) {
-  const isDangerous = missing === 'helpdesk'; // Shopify connected, helpdesk missing
+  const isDangerous = missing === 'helpdesk';
 
   const headline = isDangerous
     ? `Shopify is connected — add your helpdesk to see ${pageName}`
-    : `Connect your Shopify store and helpdesk to use ${pageName}`;
+    : `Connect Shopify and your helpdesk to use ${pageName}`;
 
   const body = pageDescription ?? (
     isDangerous
       ? `Your orders are syncing from Shopify, but claim data comes from your helpdesk. Without it, ${pageName.toLowerCase()} shows order patterns with no claim history — an incomplete picture you can't act on.`
-      : `${pageName} requires both your Shopify store and a helpdesk (Gorgias or Zendesk). Without both, the data here would be incomplete and potentially misleading.`
+      : `${pageName} requires both Shopify and a helpdesk (Gorgias or Zendesk). Shopify gives order data; your helpdesk gives claim history. One without the other is incomplete.`
   );
 
   return (
@@ -81,7 +84,7 @@ function GatePanel({ missing, pageName, pageDescription }: {
           href="/settings/integrations"
           className="btn-accent inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition-opacity hover:opacity-90"
         >
-          {isDangerous ? 'Connect your helpdesk' : 'Connect Shopify and helpdesk'}
+          {isDangerous ? 'Connect your helpdesk' : 'Connect Shopify and your helpdesk'}
         </Link>
       </div>
     </div>
@@ -94,6 +97,7 @@ export function PageConnectionGate({
   pageName,
   pageDescription,
   hasData = false,
+  hasExistingProfiles = false,
   children,
 }: PageConnectionGateProps) {
   const missing = missingFor(requires, connection);
@@ -101,16 +105,16 @@ export function PageConnectionGate({
   // Both connected — clean render
   if (!missing) return <>{children}</>;
 
-  // Has existing data (CSV or otherwise): show data + strip, never a full gate
+  // Has existing data: show data + non-blocking strip, never a full gate
   if (hasData) {
     return (
       <>
-        <ConnectionPromptStrip connection={connection} />
+        <ConnectionPromptStrip connection={connection} hasExistingProfiles={hasExistingProfiles} />
         {children}
       </>
     );
   }
 
-  // No data, not connected: full gate
+  // No data, not fully connected: full gate
   return <GatePanel missing={missing} pageName={pageName} pageDescription={pageDescription} />;
 }

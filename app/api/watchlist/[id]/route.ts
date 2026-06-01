@@ -32,14 +32,14 @@ async function DELETEHandler(req: NextRequest, { params }: { params: Promise<{ i
     .from(TABLES.WATCHLIST_ENTRIES)
     .select('id, customer_profile_id')
     .eq('id', resolvedParams.id)
-    .eq('merchant_id', user.id)
+    .eq('merchant_id', ctx.merchantId)
     .maybeSingle();
 
   const { error } = await serviceClient
     .from(TABLES.WATCHLIST_ENTRIES)
     .update({ removed_by_merchant: true } as any)
     .eq('id', resolvedParams.id)
-    .eq('merchant_id', user.id);
+    .eq('merchant_id', ctx.merchantId);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
