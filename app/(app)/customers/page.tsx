@@ -11,7 +11,7 @@ import { requirePermission, PERMISSIONS, resolveDefaultAppPath } from '@/lib/per
 import CustomersFilterSheet from '@/components/customers/CustomersFilterSheet';
 import CustomersTableClient from '@/components/customers/CustomersTableClient';
 import PageSizeSelect from '@/components/common/PageSizeSelect';
-import { Button, WorkbenchActionBar, WorkbenchEmptyState, WorkbenchKpiStrip, WorkbenchPage } from '@/components/ui';
+import { ButtonLink, WorkbenchActionBar, WorkbenchEmptyState, WorkbenchKpiStrip, WorkbenchPage } from '@/components/ui';
 import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
 import { GRADE_LABELS } from '@/lib/utils/confidenceStyles';
 import type { ConfidenceGrade } from '@/lib/engine/weights';
@@ -19,6 +19,8 @@ import { STATUS_LABELS } from '@/lib/utils/investigationStatus';
 import { escapePostgrestFilterValue, getMerchantOwnedJobIds } from '@/lib/supabase/merchantHelpers';
 import { isOrderReferenceSearchTerm, orderReferenceIlike } from '@/lib/customers/orderSearch';
 import { findCustomerProfileIdsByText } from '@/lib/customers/profileSearch';
+import GradeDistBar from '@/components/charts/GradeDistBar';
+import type { GradeDistEntry } from '@/components/charts/GradeDistBar';
 
 // Helper: build a URL with one search param removed
 function buildRemoveHref(sp: Record<string, string | undefined>, key: string) {
@@ -424,12 +426,7 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
       activeNavKey="customers"
       actions={
         <>
-          <Link href="/upload">
-            <Button variant="secondary" size="sm">Import CSV</Button>
-          </Link>
-          <Link href={primaryAction.href}>
-            <Button size="sm">{primaryAction.label}</Button>
-          </Link>
+          <ButtonLink href={primaryAction.href} size="sm">{primaryAction.label}</ButtonLink>
         </>
       }
       kpiStrip={
@@ -454,6 +451,54 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
       }
       main={
         <div className="p-4 space-y-4">
+
+      {/* ── Risk overview row ──────────────────────────────────────── */}
+      {rows.length > 0 && (() => {
+        const gradeCounts: Record<string, number> = { high: 0, medium: 0, low: 0 };
+        for (const r of rows) {
+          const lvl = r.risk_level?.toLowerCase() ?? '';
+          if (lvl === 'critical' || lvl === 'high') gradeCounts.high += 1;
+          else if (lvl === 'medium') gradeCounts.medium += 1;
+          else gradeCounts.low += 1;
+        }
+        const gradeDist: GradeDistEntry[] = [
+          { key: 'high', label: 'High risk', count: gradeCounts.high, color: 'var(--sev-definite)' },
+          { key: 'medium', label: 'Medium', count: gradeCounts.medium, color: 'var(--sev-probable)' },
+          { key: 'low', label: 'Low', count: gradeCounts.low, color: 'var(--sev-clear)' },
+        ];
+        const watchlistedCount = rows.filter((r) => r.on_watchlist).length;
+        const multiMerchant = rows.filter((r) => r.total_merchants_seen_at >= 2).length;
+        return (
+          <div
+            className="rounded-lg border p-4"
+            style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-default)' }}
+          >
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+              <p className="text-body-sm font-semibold" style={{ color: 'var(--ink-primary)' }}>
+                Risk profile — {noFilters ? 'all customers' : 'current page'}
+              </p>
+              <div className="flex items-center gap-4">
+                {watchlistedCount > 0 && (
+                  <Link href="/watchlist" className="text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
+                    {watchlistedCount} watchlisted →
+                  </Link>
+                )}
+                {multiMerchant > 0 && (
+                  <span className="text-caption" style={{ color: 'var(--sev-probable)' }}>
+                    {multiMerchant} seen at 2+ stores
+                  </span>
+                )}
+                {!connectionState.helpdesk && (
+                  <span className="text-caption" style={{ color: 'var(--warning)' }}>
+                    Claim counts incomplete — helpdesk not connected
+                  </span>
+                )}
+              </div>
+            </div>
+            <GradeDistBar grades={gradeDist} />
+          </div>
+        );
+      })()}
 
       {/* ── Compact filter bar ─────────────────────────────────────── */}
       {total > 0 && (
@@ -528,9 +573,6 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
               <Link href={primaryAction.href} className="text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
                 {primaryAction.label} →
               </Link>
-              <Link href="/upload" className="text-caption font-medium hover:underline" style={{ color: 'var(--ink-tertiary)' }}>
-                Import CSV
-              </Link>
             </div>
           }
         />
@@ -558,14 +600,10 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
                 <>
                   <span>Page {page} of {totalPages}</span>
                   {page > 1 && (
-                    <Link href={customersListHref(sp, { page: String(page - 1), pageSize: String(PAGE_SIZE) })}>
-                      <Button variant="secondary" size="sm">Prev</Button>
-                    </Link>
+                    <ButtonLink href={customersListHref(sp, { page: String(page - 1), pageSize: String(PAGE_SIZE) })} variant="secondary" size="sm">Prev</ButtonLink>
                   )}
                   {page < totalPages && (
-                    <Link href={customersListHref(sp, { page: String(page + 1), pageSize: String(PAGE_SIZE) })}>
-                      <Button variant="secondary" size="sm">Next</Button>
-                    </Link>
+                    <ButtonLink href={customersListHref(sp, { page: String(page + 1), pageSize: String(PAGE_SIZE) })} variant="secondary" size="sm">Next</ButtonLink>
                   )}
                 </>
               )}

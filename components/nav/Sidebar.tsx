@@ -5,102 +5,56 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import {
-  Home,
-  ListChecks,
-  Upload,
-  Users,
-  Star,
   LogOut,
   HelpCircle,
   Settings,
   ChevronRight,
-  ShieldCheck,
-  BarChart3,
-  Store,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { UnauthLogo } from '@/components/ui/UnauthLogo';
-import ThemeToggle from '@/components/common/ThemeToggle';
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-interface NavItem {
-  href: string;
-  label: string;
-  icon: React.ElementType;
-  badge?: number;
-  /** Accessible label for count badges (e.g. unread queue). */
-  badgeTitle?: string;
-  /** When true, renders with a filled/verb visual treatment */
-  isPrimary?: boolean;
-}
-
-interface NavGroup {
-  label: string;
-  items: NavItem[];
-}
+import { getSidebarNavItems, type AppRoute } from '@/lib/navigation/appRoutes';
+import AppNavLink from '@/components/navigation/AppNavLink';
 
 interface SidebarProps {
   merchantName: string | null;
   userEmail: string;
   watchlistCount?: number;
+  claimsCount?: number;
   shopifyConnected?: boolean;
   helpdeskConnected?: boolean;
 }
 
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
 const STORAGE_KEY = 'unauth.sidebar.collapsed';
 
-function buildGroups(watchlistCount = 0): NavGroup[] {
-  return [
-    {
-      label: 'Workspace',
-      items: [{ href: '/dashboard', label: 'Dashboard', icon: Home }],
-    },
-    {
-      label: 'Review',
-      items: [
-        { href: '/store', label: 'Store overview', icon: Store },
-        { href: '/customers', label: 'Customers', icon: Users },
-        { href: '/watchlist', label: 'Watchlist', icon: Star, badge: watchlistCount },
-        { href: '/chargebacks', label: 'Evidence packages', icon: ShieldCheck },
-        { href: '/reports', label: 'Reports', icon: BarChart3 },
-      ],
-    },
-    {
-      label: 'Data import',
-      items: [
-        { href: '/upload', label: 'Upload CSV', icon: Upload, isPrimary: false },
-        { href: '/history', label: 'Import history', icon: ListChecks },
-      ],
-    },
-  ];
-}
-
-// ---------------------------------------------------------------------------
-// Sub-components
-// ---------------------------------------------------------------------------
+type NavItemView = {
+  href: string;
+  label: string;
+  icon: AppRoute['icon'];
+  badge?: number;
+  badgeTitle?: string;
+  isPrimary?: boolean;
+};
 
 function SidebarItem({
   item,
   collapsed,
   active,
+  onNavigate,
 }: {
-  item: NavItem;
+  item: NavItemView;
   collapsed: boolean;
   active: boolean;
+  onNavigate?: () => void;
 }) {
   const Icon = item.icon;
+  if (!Icon) return null;
 
   return (
-    <Link
+    <AppNavLink
       href={item.href}
       title={collapsed ? item.label : undefined}
+      active={active}
+      onNavigate={onNavigate}
       className={cn(
         'group relative flex h-8 items-center gap-3 rounded-md px-2',
         'text-[13px] font-medium',
@@ -159,7 +113,7 @@ function SidebarItem({
           aria-label={item.badgeTitle ? `${item.badgeTitle}: ${item.badge}` : `${item.badge} items`}
         />
       )}
-    </Link>
+    </AppNavLink>
   );
 }
 
@@ -177,14 +131,11 @@ function GroupLabel({ label, collapsed }: { label: string; collapsed: boolean })
   );
 }
 
-// ---------------------------------------------------------------------------
-// Main component
-// ---------------------------------------------------------------------------
-
 export default function Sidebar({
   merchantName,
   userEmail,
-  watchlistCount = 0,
+  watchlistCount: initialWatchlistCount = 0,
+  claimsCount: initialClaimsCount = 0,
   shopifyConnected = false,
   helpdeskConnected = false,
 }: SidebarProps) {
@@ -196,6 +147,8 @@ export default function Sidebar({
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [hoverExpanded, setHoverExpanded] = useState(false);
+  const [watchlistCount, setWatchlistCount] = useState(initialWatchlistCount);
+  const [claimsCount, setClaimsCount] = useState(initialClaimsCount);
 
   useEffect(() => {
     try {
@@ -205,7 +158,16 @@ export default function Sidebar({
   }, []);
 
   useEffect(() => {
-    setMobileOpen(false);
+    let cancelled = false;
+    fetch('/api/nav-counts')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { watchlistCount?: number; claimsCount?: number } | null) => {
+        if (cancelled || !data) return;
+        setWatchlistCount(data.watchlistCount ?? 0);
+        setClaimsCount(data.claimsCount ?? 0);
+      })
+      .catch(() => { /* non-blocking badges */ });
+    return () => { cancelled = true; };
   }, [pathname]);
 
   function toggleCollapse() {
@@ -221,13 +183,29 @@ export default function Sidebar({
     router.push('/login');
   }
 
-  const groups = buildGroups(watchlistCount);
+  const groups = getSidebarNavItems().map((group) => ({
+    label: group.label,
+    items: group.items.map((route): NavItemView => ({
+      href: route.href,
+      label: route.label,
+      icon: route.icon,
+      badge:
+        route.key === 'claims'
+          ? claimsCount || undefined
+          : route.key === 'watchlist'
+            ? watchlistCount || undefined
+            : undefined,
+      badgeTitle: route.key === 'claims' ? 'Open claims' : route.key === 'watchlist' ? 'Watched identities' : undefined,
+    })),
+  }));
+
   const isActive = (href: string) => {
     if (href === '/store' && pathname.startsWith('/audit') && searchParams.get('source') === 'shopify') return true;
     return pathname === href || pathname.startsWith(href + '/');
   };
 
   const isCollapsed = collapsed && !hoverExpanded;
+  const closeMobile = () => setMobileOpen(false);
 
   const sidebarContent = (isMobile = false) => (
     <aside
@@ -257,6 +235,7 @@ export default function Sidebar({
             href="/dashboard"
             className="flex min-w-0 flex-shrink-0 items-center gap-2"
             title="Unauth"
+            onClick={closeMobile}
           >
             <UnauthLogo variant="auto" size={isCollapsed ? 9 : 22} />
             {!isCollapsed && (
@@ -295,6 +274,7 @@ export default function Sidebar({
         {!isCollapsed && (!shopifyConnected || !helpdeskConnected) && (
           <Link
             href="/settings/integrations"
+            onClick={closeMobile}
             className="flex w-full items-center gap-1.5 rounded-sm px-2 py-1 text-[11px] font-medium leading-tight hover:opacity-80 transition-opacity"
             style={{ background: 'color-mix(in srgb, var(--warning, #b45309) 10%, transparent)', color: 'var(--warning, #b45309)', border: '1px solid color-mix(in srgb, var(--warning, #b45309) 25%, transparent)' }}
             title="Setup incomplete — click to connect"
@@ -330,6 +310,7 @@ export default function Sidebar({
                   item={item}
                   collapsed={isCollapsed}
                   active={isActive(item.href)}
+                  onNavigate={isMobile ? closeMobile : undefined}
                 />
               ))}
             </div>
@@ -352,6 +333,7 @@ export default function Sidebar({
         <Link
           href="/help"
           title={isCollapsed ? 'Help' : undefined}
+          onClick={closeMobile}
           className={cn(
             'flex h-8 items-center gap-3 rounded-sm px-2',
             'text-body-sm text-[var(--ink-secondary)] hover:text-[var(--ink-primary)]',
@@ -367,6 +349,7 @@ export default function Sidebar({
         <Link
           href="/settings"
           title={isCollapsed ? 'Settings' : undefined}
+          onClick={closeMobile}
           className={cn(
             'flex h-8 items-center gap-3 rounded-sm px-2',
             'text-body-sm text-[var(--ink-secondary)] hover:text-[var(--ink-primary)]',
@@ -378,10 +361,6 @@ export default function Sidebar({
           <Settings className="h-4 w-4 flex-shrink-0 text-[var(--ink-tertiary)]" aria-hidden="true" />
           {!isCollapsed && <span>Settings</span>}
         </Link>
-
-        <div className={cn('px-2 py-1', isCollapsed && 'flex justify-center px-0')}>
-          <ThemeToggle className={isCollapsed ? 'h-8 w-8' : undefined} />
-        </div>
 
         <button
           type="button"

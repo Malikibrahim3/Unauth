@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { getShopifyConnectionStatus } from '@/lib/shopify/connectionStatus';
+import { getShopifyConnectionStatus, type ShopifyLinkState } from '@/lib/shopify/connectionStatus';
 import { TABLES } from '@/lib/supabase/tables';
 
 export type HelpdeskProvider = 'gorgias' | 'zendesk';
@@ -12,6 +12,8 @@ export type ConnectionState = {
   neitherConnected: boolean;
   shopifyOnlyConnected: boolean;
   helpdeskOnlyConnected: boolean;
+  shopDomain: string | null;
+  linkState: ShopifyLinkState;
 };
 
 export async function getConnectionState(
@@ -42,5 +44,7 @@ export async function getConnectionState(
     neitherConnected: !shopify && !helpdesk,
     shopifyOnlyConnected: shopify && !helpdesk,
     helpdeskOnlyConnected: !shopify && helpdesk,
+    shopDomain: shopifyStatus.shopDomain,
+    linkState: shopifyStatus.linkState,
   };
 }

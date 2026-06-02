@@ -171,7 +171,7 @@ function ConnectModal({
   );
 }
 
-export default function SyncStatusCard() {
+export default function SyncStatusCard({ variant = 'card' }: { variant?: 'card' | 'inline' }) {
   const [status, setStatus] = useState<ShopifyStatus | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [syncing, setSyncing] = useState(false);
@@ -255,6 +255,29 @@ export default function SyncStatusCard() {
         ? 'Reconnect Shopify'
         : 'Connect Shopify';
 
+    if (variant === 'inline') {
+      return (
+        <>
+          <div className="pt-3 mt-3 border-t space-y-3" style={{ borderColor: 'var(--surface-border)' }}>
+            <button
+              onClick={() => setModalOpen(true)}
+              className="inline-flex items-center rounded-md px-3 py-1.5 text-xs font-semibold"
+              style={{ background: 'var(--accent)', color: '#fff' }}
+              data-testid="open-connect-shopify-modal"
+            >
+              {actionLabel}
+            </button>
+          </div>
+          {modalOpen && (
+            <ConnectModal
+              initialValue={status.shopDomain ?? ''}
+              onClose={() => setModalOpen(false)}
+            />
+          )}
+        </>
+      );
+    }
+
     return (
       <>
         <div
@@ -322,72 +345,46 @@ export default function SyncStatusCard() {
   const hasError = !!status.lastError;
   const webhookHealthy = (status.webhookFailures ?? 0) === 0;
 
-  return (
+  const syncContent = (
     <>
-      <div
-        className="rounded-xl p-5 border space-y-4"
-        style={{
-          borderColor: hasError ? 'var(--risk-high-bd, #FCA5A5)' : 'var(--border-subtle)',
-          background: 'var(--bg-surface)',
-        }}
-      >
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-start gap-3">
-            <div
-              className="h-2.5 w-2.5 rounded-full mt-1 flex-shrink-0"
-              style={{ background: hasError ? 'var(--risk-high, #DC2626)' : 'var(--success, #16A34A)' }}
-            />
-            <div>
-              <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
-                {status.shopDomain}
-              </p>
-              <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                {status.orderCount?.toLocaleString() ?? '—'} orders synced
-                {typeof status.auditTransactionCount === 'number'
-                  ? ` · ${status.auditTransactionCount.toLocaleString()} scored for identity matches`
-                  : ''}{' '}
-                · read-only connection
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                void handleSyncNow();
-              }}
-              disabled={syncing}
-              className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold disabled:opacity-60"
-              style={{ background: 'var(--accent)', color: '#fff' }}
-              data-testid="shopify-sync-now"
-            >
-              {syncing ? (
-                <>
-                  <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
-                  Syncing…
-                </>
-              ) : (
-                'Sync now'
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={() => setModalOpen(true)}
-              className="text-xs hover:underline"
-              style={{ color: 'var(--text-muted)' }}
-              data-testid="reconnect-shopify"
-            >
-              Reconnect
-            </button>
-          </div>
-        </div>
-
-        {syncError && (
-          <p className="text-xs" style={{ color: 'var(--risk-high, #DC2626)' }} role="alert">
-            {syncError}
+      {/* Status row — order count left, Sync now right */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+            {status.orderCount?.toLocaleString() ?? '—'} orders synced
+            {typeof status.auditTransactionCount === 'number'
+              ? ` · ${status.auditTransactionCount.toLocaleString()} scored`
+              : ''}{' '}
+            · read-only
           </p>
-        )}
+        </div>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            void handleSyncNow();
+          }}
+          disabled={syncing}
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold disabled:opacity-60"
+          style={{ background: 'var(--accent)', color: '#fff' }}
+          data-testid="shopify-sync-now"
+        >
+          {syncing ? (
+            <>
+              <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
+              Syncing…
+            </>
+          ) : (
+            'Sync now'
+          )}
+        </button>
+      </div>
+
+      {syncError && (
+        <p className="text-xs" style={{ color: 'var(--risk-high, #DC2626)' }} role="alert">
+          {syncError}
+        </p>
+      )}
 
         <div className="grid grid-cols-2 gap-3 text-xs">
           <div>
@@ -471,15 +468,41 @@ export default function SyncStatusCard() {
           >
             <p className="font-semibold mb-0.5">Sync error</p>
             <p>{status.lastError}</p>
-            <button
-              onClick={() => setModalOpen(true)}
-              className="font-semibold underline mt-1 inline-block"
-            >
-              Reconnect Shopify
-            </button>
           </div>
         )}
-      </div>
+
+        {/* Reconnect — repair action, visually separated from normal operation */}
+        <div className="pt-2 border-t" style={{ borderColor: 'var(--surface-border)' }}>
+          <button
+            type="button"
+            onClick={() => setModalOpen(true)}
+            className="text-xs"
+            style={{ color: 'var(--text-muted)' }}
+            data-testid="reconnect-shopify"
+          >
+            {hasError ? 'Reconnect to fix sync error →' : 'Re-authorize connection'}
+          </button>
+        </div>
+    </>
+  );
+
+  return (
+    <>
+      {variant === 'inline' ? (
+        <div className="pt-3 mt-3 border-t space-y-4" style={{ borderColor: 'var(--surface-border)' }}>
+          {syncContent}
+        </div>
+      ) : (
+        <div
+          className="rounded-xl p-5 border space-y-4"
+          style={{
+            borderColor: hasError ? 'var(--risk-high-bd, #FCA5A5)' : 'var(--border-subtle)',
+            background: 'var(--bg-surface)',
+          }}
+        >
+          {syncContent}
+        </div>
+      )}
 
       {modalOpen && (
         <ConnectModal

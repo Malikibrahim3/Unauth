@@ -43,8 +43,8 @@ export default function NextUpPanel({ claims, inboxCount }: NextUpPanelProps) {
         </div>
         <div className="flex items-center gap-2">
           {inboxCount > 0 && (
-            <Link href="/inbox" className="text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
-              {inboxCount} inbox {inboxCount === 1 ? 'case' : 'cases'} →
+            <Link href="/claims" className="text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
+              {inboxCount} open {inboxCount === 1 ? 'claim' : 'claims'} →
             </Link>
           )}
           <Link href="/claims?sla=overdue&sort=age" className="text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
@@ -59,8 +59,8 @@ export default function NextUpPanel({ claims, inboxCount }: NextUpPanelProps) {
           <p className="text-caption mt-1" style={{ color: 'var(--text-muted)' }}>
             Check the inbox queue as new claims arrive from Shopify and your helpdesk.
           </p>
-          <Link href="/inbox" className="mt-3 inline-block text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
-            Open inbox →
+          <Link href="/claims" className="mt-3 inline-block text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
+            Open claims →
           </Link>
         </div>
       ) : (

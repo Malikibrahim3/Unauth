@@ -1,8 +1,6 @@
-import { ShoppingBag } from 'lucide-react';
-import Link from 'next/link';
 import { Suspense } from 'react';
-import SyncStatusCard from '@/components/shopify/SyncStatusCard';
 import ShopifyIntegrationBanner from '@/components/shopify/ShopifyIntegrationBanner';
+import OrderSourceClient from '@/components/settings/OrderSourceClient';
 import ApiIntegrationsClient from '@/components/settings/ApiIntegrationsClient';
 import { PageHeader } from '@/components/ui/PageHeader';
 
@@ -12,7 +10,7 @@ export default function IntegrationsPage() {
       <PageHeader
         eyebrow="Settings"
         title="Integrations"
-        subtitle="Unauth needs two live sources: Shopify for order and customer data, and a helpdesk for claims and dispute context."
+        subtitle="Unauth needs two live sources: an order platform for transaction data, and a helpdesk for claims and dispute context."
         breadcrumbs={[
           { label: 'Settings', href: '/settings/account' },
           { label: 'Integrations' },
@@ -20,7 +18,7 @@ export default function IntegrationsPage() {
       />
 
       <div className="p-6 lg:p-8 max-w-5xl space-y-8">
-        {/* Required data pair — Shopify on the left, helpdesk on the right */}
+        {/* Required data pair — order source on the left, helpdesk on the right */}
         <section className="space-y-3">
           <div className="flex items-center gap-2">
             <h2 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
@@ -41,22 +39,15 @@ export default function IntegrationsPage() {
           </p>
 
           <div className="grid gap-4 lg:grid-cols-2">
-            {/* Shopify — order & customer data */}
+            {/* Order source — ecommerce platform */}
             <div className="space-y-2.5">
-              <div className="flex items-center gap-2">
-                <ShoppingBag className="h-4 w-4" style={{ color: 'var(--icon-muted)' }} />
-                <div>
-                  <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Shopify</p>
-                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Order &amp; customer data</p>
-                </div>
-              </div>
               <Suspense fallback={null}>
                 <ShopifyIntegrationBanner />
               </Suspense>
-              <SyncStatusCard />
+              <OrderSourceClient />
             </div>
 
-            {/* Helpdesk — claims & dispute context (rendered by client component) */}
+            {/* Helpdesk — claims & dispute context */}
             <ApiIntegrationsClient section="helpdesk" />
           </div>
         </section>

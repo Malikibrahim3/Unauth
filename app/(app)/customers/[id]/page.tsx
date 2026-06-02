@@ -701,7 +701,7 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-px overflow-hidden rounded-md border md:grid-cols-5" style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-border)' }}>
+          <div className="grid grid-cols-2 gap-px overflow-hidden rounded-md border sm:grid-cols-3 lg:grid-cols-5" style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-border)' }}>
             {[
               { label: 'Identity grade', value: profileGrade, color: letterGradeTone(profileGrade).fg },
               {
@@ -713,9 +713,9 @@ export default async function CustomerProfilePage({ params, searchParams }: Page
               { label: 'Claims', value: merchantClaimCount.toLocaleString(), color: 'var(--data-score)' },
               { label: 'Last seen', value: formatDateMode(profile.last_seen, 'table'), color: 'var(--data-date)', mono: true },
             ].map((metric) => (
-              <div key={metric.label} className="p-4" style={{ background: 'var(--surface-raised)' }}>
+              <div key={metric.label} className="min-w-0 p-4" style={{ background: 'var(--surface-raised)' }}>
                 <p className="t-label" style={{ color: 'var(--ink-tertiary)' }}>{metric.label}</p>
-                <p className={metric.mono ? 't-mono-md mt-2 num' : 't-display mt-1 num'} style={{ color: metric.color }}>
+                <p className={`mt-1 break-words leading-tight font-semibold text-xl num ${metric.mono ? 'font-mono' : ''}`} style={{ color: metric.color }}>
                   {metric.value}
                 </p>
               </div>

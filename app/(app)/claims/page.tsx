@@ -5,7 +5,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { getConnectionState } from '@/lib/connections/getConnectionState';
 import { PageConnectionGate } from '@/components/connections/PageConnectionGate';
-import { WorkbenchPage, WorkbenchKpiStrip, WorkbenchEmptyState, Button } from '@/components/ui';
+import { WorkbenchPage, WorkbenchKpiStrip, WorkbenchEmptyState, ButtonLink } from '@/components/ui';
 import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
 import { TABLES } from '@/lib/supabase/tables';
 import { ConfidenceBadge } from '@/components/ui/ConfidenceBadge';
@@ -185,7 +185,7 @@ export default async function ClaimsPage({
   if (!user) redirect('/login');
 
   const serviceClient = createServiceClient();
-  const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.SUBMIT_FRAUD_FEEDBACK);
+  const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_INBOX);
   if (denied) redirect('/dashboard');
 
   const connectionState = await getConnectionState(serviceClient, ctx.merchantId);
@@ -432,10 +432,7 @@ export default async function ClaimsPage({
     <WorkbenchPage
       title="Claims"
       subtitle="Track active claim work and merchant-recorded outcomes"
-      navItems={[
-        ...WORKBENCH_NAV_ITEMS,
-        { key: 'claims', label: 'Claims', href: '/claims' },
-      ]}
+      navItems={WORKBENCH_NAV_ITEMS}
       activeNavKey="claims"
       kpiStrip={
         <WorkbenchKpiStrip
@@ -680,14 +677,10 @@ export default async function ClaimsPage({
               <div className="flex flex-wrap items-center justify-end gap-2 pt-2 text-xs" style={{ color: 'var(--text-muted)' }}>
                 <span>Page {page} of {totalPages}</span>
                 {page > 1 && (
-                  <Link href={`/claims${buildClaimsQueryString(sp, { page: String(page - 1) })}`}>
-                    <Button variant="secondary" size="sm">Previous</Button>
-                  </Link>
+                  <ButtonLink href={`/claims${buildClaimsQueryString(sp, { page: String(page - 1) })}`} variant="secondary" size="sm">Previous</ButtonLink>
                 )}
                 {page < totalPages && (
-                  <Link href={`/claims${buildClaimsQueryString(sp, { page: String(page + 1) })}`}>
-                    <Button variant="secondary" size="sm">Next</Button>
-                  </Link>
+                  <ButtonLink href={`/claims${buildClaimsQueryString(sp, { page: String(page + 1) })}`} variant="secondary" size="sm">Next</ButtonLink>
                 )}
               </div>
             )}

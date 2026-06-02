@@ -5,6 +5,7 @@
 
 export { Button } from './Button';
 export type { ButtonVariant, ButtonSize } from './Button';
+export { ButtonLink } from './ButtonLink';
 export { Input } from './Input';
 export { Select } from './Select';
 export { FilterChip } from './FilterChip';

@@ -160,7 +160,7 @@ export default function EmptyDashboardHero() {
             className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-semibold transition-colors"
             style={{ background: 'var(--surface-raised)', border: '1px solid var(--border-default)', color: 'var(--ink-primary)' }}
           >
-            Upload CSV
+            Historical import
           </Link>
           <Link href="/demo" className="text-sm font-medium hover:underline" style={{ color: 'var(--ink-tertiary)' }}>
             View sample →

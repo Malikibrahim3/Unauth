@@ -1,7 +1,6 @@
 import UploadClient from '@/components/upload/UploadClient';
-import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { Button, WorkbenchPage } from '@/components/ui';
+import { ButtonLink, WorkbenchPage } from '@/components/ui';
 import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
@@ -64,11 +63,11 @@ export default async function UploadPage({ searchParams }: UploadPageProps) {
   const isWelcome = sp.welcome === '1';
   return (
     <WorkbenchPage
-      title="Import CSV"
+      title="Historical import"
       subtitle="Backfill historical orders to detect identity matches and repeated claim patterns. CSV import is optional — your live Shopify and helpdesk sources stay your primary feed."
       navItems={WORKBENCH_NAV_ITEMS}
       activeNavKey="audits"
-      actions={<Link href="/history"><Button variant="secondary" size="sm">Import history</Button></Link>}
+      actions={<ButtonLink href="/history" variant="secondary" size="sm">Import history</ButtonLink>}
       main={
         <div className="mx-auto w-full max-w-3xl p-4">
           {isWelcome && (

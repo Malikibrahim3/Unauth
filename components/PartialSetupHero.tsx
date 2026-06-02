@@ -120,7 +120,7 @@ export default function PartialSetupHero({ connection }: PartialSetupHeroProps) 
           className="shrink-0 inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-semibold transition-colors"
           style={{ background: 'var(--surface-raised)', border: '1px solid var(--border-default)', color: 'var(--ink-primary)' }}
         >
-          Upload CSV
+          Historical import
         </Link>
       </div>
     </div>

@@ -698,6 +698,11 @@
   100% { background-position: -200% 0; }
 }
 
+@keyframes nav-progress {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
+
 .skeleton {
   background: linear-gradient(
     90deg,

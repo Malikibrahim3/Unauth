@@ -9,6 +9,8 @@ import { getMerchantDataPresence, type MerchantDataPresence } from '@/lib/supaba
 import { resolveMerchantSetupState, type MerchantSetupState } from '@/lib/connections/getMerchantSetupState';
 import { PageHeader, MetricCard, SectionCard, EmptyState, Badge } from '@/components/ui';
 import TrackPageView from '@/components/common/TrackPageView';
+import WeeklyTrendChart from '@/components/charts/WeeklyTrendChart';
+import type { TrendDataPoint } from '@/components/charts/WeeklyTrendChart';
 import {
   ShoppingBag,
   Headphones,
@@ -249,7 +251,9 @@ export default async function StorePage() {
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_AUDIT);
   if (denied) redirect('/dashboard');
 
-  const [connectionState, dataPresence, { data: latestShopifyJob }] = await Promise.all([
+  const cutoff8w = new Date(Date.now() - 56 * 24 * 3600 * 1000).toISOString();
+
+  const [connectionState, dataPresence, { data: latestShopifyJob }, orderTrendRaw] = await Promise.all([
     getConnectionState(serviceClient, ctx.merchantId),
     getMerchantDataPresence(serviceClient, ctx.merchantId, user.id),
     serviceClient
@@ -261,7 +265,17 @@ export default async function StorePage() {
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle(),
+    serviceClient
+      .from(TABLES.AUDIT_TRANSACTIONS)
+      .select('processed_at')
+      .eq('merchant_id' as never, ctx.merchantId as never)
+      .gte('processed_at' as never, cutoff8w as never)
+      .then((r: { data: Array<{ processed_at: string }> | null; error: unknown }) => r.error ? [] : (r.data ?? [])),
   ]);
+
+  const orderTrend: TrendDataPoint[] = buildWeeklyOrderTrend(
+    orderTrendRaw as Array<{ processed_at: string }>,
+  );
 
   const setupState = resolveMerchantSetupState(connectionState, dataPresence);
 
@@ -364,6 +378,30 @@ export default async function StorePage() {
       {/* Body */}
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-5">
+          {/* Order volume trend */}
+          <section className="rounded-lg border p-4" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-default)' }}>
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-body-sm font-semibold" style={{ color: 'var(--ink-primary)' }}>Order volume</p>
+                <p className="text-caption" style={{ color: 'var(--ink-tertiary)' }}>8-week Shopify sync trend</p>
+              </div>
+            </div>
+            {orderTrend.some((pt) => pt.value > 0) ? (
+              <WeeklyTrendChart data={orderTrend} color="var(--accent)" primaryLabel="Orders" height={130} />
+            ) : (
+              <div
+                className="flex h-[130px] items-center justify-center rounded-md"
+                style={{ background: 'var(--bg-surface-alt)', border: '1px dashed var(--border-default)' }}
+              >
+                <p className="text-caption text-center px-4" style={{ color: 'var(--ink-tertiary)' }}>
+                  {connectionState.shopify
+                    ? 'No order signals in the past 8 weeks'
+                    : 'Connect Shopify to see order trends'}
+                </p>
+              </div>
+            )}
+          </section>
+
           {/* Data detected */}
           <SectionCard
             title="Store data detected"
@@ -491,6 +529,21 @@ export default async function StorePage() {
       </div>
     </div>
   );
+}
+
+function buildWeeklyOrderTrend(rows: Array<{ processed_at: string }>): TrendDataPoint[] {
+  const NOW = Date.now();
+  const WEEK_MS = 7 * 24 * 3600 * 1000;
+  const counts = new Array<number>(8).fill(0);
+  for (const row of rows) {
+    const ts = new Date(row.processed_at).getTime();
+    const weeksAgo = Math.floor((NOW - ts) / WEEK_MS);
+    if (weeksAgo >= 0 && weeksAgo < 8) counts[7 - weeksAgo] += 1;
+  }
+  return counts.map((value, i) => ({
+    label: i === 7 ? 'Now' : i === 6 ? '1w' : `${8 - i}w`,
+    value,
+  }));
 }
 
 function DataPresenceRow({

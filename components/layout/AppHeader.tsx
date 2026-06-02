@@ -8,7 +8,6 @@ import { cn } from '@/lib/utils';
 import CommandPalette from './CommandPalette';
 import { MerchantEnvChip } from './MerchantEnvChip';
 import { AvatarMenu } from './AvatarMenu';
-import ThemeToggle from '@/components/common/ThemeToggle';
 
 export interface BreadcrumbSegment {
   label: string;
@@ -27,9 +26,6 @@ interface AppHeaderProps {
   environment?: string;
   /** Authenticated user email for the avatar menu */
   userEmail?: string | null;
-  shopifyConnected?: boolean;
-  shopifyShopDomain?: string | null;
-  shopifyLinkState?: 'connected' | 'not_connected' | 'disconnected' | 'installed_unlinked';
 }
 
 /**
@@ -44,9 +40,6 @@ export default function AppHeader({
   merchantName,
   environment,
   userEmail,
-  shopifyConnected = false,
-  shopifyShopDomain = null,
-  shopifyLinkState = 'not_connected',
 }: AppHeaderProps) {
   const pathname = usePathname();
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -168,24 +161,6 @@ export default function AppHeader({
 
       {/* MerchantEnvChip — left of search */}
       <MerchantEnvChip merchantName={merchantName ?? null} environment={environment} />
-      <Link
-        href="/settings/integrations"
-        className={cn(
-          'hidden md:inline-flex h-7 items-center px-2 border text-caption',
-          shopifyConnected
-            ? 'border-[var(--sev-clear)] text-[var(--sev-clear)]'
-            : 'border-[var(--surface-border)] text-[var(--ink-secondary)] hover:text-[var(--ink-primary)]',
-        )}
-        style={{ background: 'var(--surface-input)', borderRadius: 6 }}
-      >
-        {shopifyConnected
-          ? `Shopify connected${shopifyShopDomain ? `: ${shopifyShopDomain}` : ''}`
-          : shopifyLinkState === 'installed_unlinked'
-            ? `Shopify not linked${shopifyShopDomain ? `: ${shopifyShopDomain}` : ''}`
-            : shopifyLinkState === 'disconnected'
-              ? 'Shopify disconnected'
-              : 'Shopify not connected'}
-      </Link>
 
       {/* ⌘K trigger */}
       <button
@@ -208,8 +183,6 @@ export default function AppHeader({
         <kbd className="hidden sm:inline font-mono text-[10px] opacity-60">⌘K</kbd>
       </button>
 
-      {/* AvatarMenu — right of search */}
-      <ThemeToggle />
       <AvatarMenu email={userEmail} />
 
       <CommandPalette isOpen={paletteOpen} onClose={closePalette} />
@@ -230,11 +203,14 @@ function deriveFromPathname(pathname: string): BreadcrumbSegment[] {
     claims:      'Claims',
     watchlist:   'Watchlist',
     history:     'Import history',
-    inbox:       'Inbox',
+    inbox:       'Claims',
+    store:       'Store overview',
+    reports:     'Reports',
+    chargebacks: 'Evidence packages',
     onboarding:  'Onboarding',
     help:        'Help',
     settings:    'Settings',
-    saved:       'Saved Views',
+    saved:       'Import history',
     audit:       'Audit results',
     new:         'Import CSV',
   };

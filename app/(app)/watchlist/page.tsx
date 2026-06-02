@@ -8,7 +8,7 @@ import WatchlistTableClient from '@/components/watchlist/WatchlistTableClient';
 import WatchlistSearchInput from '@/components/watchlist/WatchlistSearchInput';
 import { formatDate } from '@/lib/utils/format';
 import PageSizeSelect from '@/components/common/PageSizeSelect';
-import { Button, PageHeader, MetricCard, SectionCard, EmptyState } from '@/components/ui';
+import { ButtonLink, PageHeader, MetricCard, SectionCard, EmptyState } from '@/components/ui';
 import { createServiceClient } from '@/lib/supabase/server';
 import { resolveCallerContext } from '@/lib/permissions';
 import { Eye, Activity, Users, ArrowRight, ArrowUpRight } from 'lucide-react';
@@ -149,11 +149,9 @@ export default async function WatchlistPage({ searchParams }: { searchParams?: {
         title="Watchlist"
         subtitle="Identities you're actively monitoring. We flag them the moment they reappear in new orders, claims, or evidence workflows."
         primaryAction={
-          <Link href="/customers">
-            <Button size="sm" leadingIcon={<Users className="h-3.5 w-3.5" />}>
-              Browse customers
-            </Button>
-          </Link>
+          <ButtonLink href="/customers" size="sm" leadingIcon={<Users className="h-3.5 w-3.5" />}>
+            Browse customers
+          </ButtonLink>
         }
         className="rounded-lg"
       />
@@ -258,11 +256,9 @@ export default async function WatchlistPage({ searchParams }: { searchParams?: {
             }
             action={
               !searchQuery ? (
-                <Link href="/customers">
-                  <Button size="sm" leadingIcon={<Users className="h-3.5 w-3.5" />}>
-                    Browse customers
-                  </Button>
-                </Link>
+                <ButtonLink href="/customers" size="sm" leadingIcon={<Users className="h-3.5 w-3.5" />}>
+                  Browse customers
+                </ButtonLink>
               ) : undefined
             }
           />
@@ -282,14 +278,10 @@ export default async function WatchlistPage({ searchParams }: { searchParams?: {
                 <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
                   <span>Page {page} of {totalPages}</span>
                   {page > 1 && (
-                    <Link href={pageHref(page - 1)}>
-                      <Button variant="secondary" size="sm">Prev</Button>
-                    </Link>
+                    <ButtonLink href={pageHref(page - 1)} variant="secondary" size="sm">Prev</ButtonLink>
                   )}
                   {page < totalPages && (
-                    <Link href={pageHref(page + 1)}>
-                      <Button variant="secondary" size="sm">Next</Button>
-                    </Link>
+                    <ButtonLink href={pageHref(page + 1)} variant="secondary" size="sm">Next</ButtonLink>
                   )}
                 </div>
               )}

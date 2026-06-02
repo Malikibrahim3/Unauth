@@ -5,6 +5,7 @@ import { User, ArrowLeft, Save, AlertTriangle, Check, Eye, EyeOff } from 'lucide
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { Button, Input, Select, SectionCard } from '@/components/ui';
+import AppearanceSettings from '@/components/settings/AppearanceSettings';
 import { ORDER_VOLUME_OPTIONS, FRAUD_CONCERN_OPTIONS } from '@/lib/constants/merchantProfile';
 
 interface MerchantData {
@@ -243,6 +244,8 @@ export default function AccountSettingsPage() {
         </div>
       </form>
       </SectionCard>
+
+      <AppearanceSettings />
 
       {/* Password Change */}
       <SectionCard title="Security" description="Password and access controls">

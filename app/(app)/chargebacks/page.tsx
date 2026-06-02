@@ -6,9 +6,10 @@ import { TABLES } from '@/lib/supabase/tables'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { formatDate } from '@/lib/utils/format'
-import { Badge, Button, WorkbenchActionBar, WorkbenchEmptyState, WorkbenchKpiStrip, WorkbenchPage } from '@/components/ui'
+import { Badge, ButtonLink, WorkbenchActionBar, WorkbenchEmptyState, WorkbenchKpiStrip, WorkbenchPage } from '@/components/ui'
 import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems'
 import { requirePermission, PERMISSIONS, resolveDefaultAppPath } from '@/lib/permissions'
+import ReadinessFunnel from '@/components/charts/ReadinessFunnel'
 
 export const metadata = {
   title: 'Evidence Packages — Unauth',
@@ -71,9 +72,7 @@ export default async function ChargebacksPage() {
       navItems={WORKBENCH_NAV_ITEMS}
       activeNavKey="evidence"
       actions={
-        <Link href="/customers">
-          <Button variant="secondary" size="sm">View customers</Button>
-        </Link>
+        <ButtonLink href="/customers" variant="secondary" size="sm">View customers</ButtonLink>
       }
       kpiStrip={
         <WorkbenchKpiStrip
@@ -89,9 +88,7 @@ export default async function ChargebacksPage() {
       actionBar={
         <WorkbenchActionBar
           right={
-            <Link href="/customers">
-              <Button size="sm">Generate From Customer</Button>
-            </Link>
+            <ButtonLink href="/customers" size="sm">Generate From Customer</ButtonLink>
           }
         />
       }
@@ -103,6 +100,20 @@ export default async function ChargebacksPage() {
           action={<Link href="/customers" className="text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>Generate from a customer</Link>}
         />
       ) : (
+        <div>
+          {/* Readiness distribution */}
+          <div className="border-b px-4 py-4" style={{ borderColor: 'var(--border-default)' }}>
+            <p className="text-body-sm font-semibold mb-3" style={{ color: 'var(--ink-primary)' }}>Package readiness</p>
+            <ReadinessFunnel
+              total={pkgs.length}
+              ready={pkgs.filter((p) => p.ce3_eligible).length}
+              inProgress={pkgs.filter((p) => !p.ce3_eligible && Boolean(p.narrative_summary)).length}
+              missing={pkgs.filter((p) => !p.ce3_eligible && !p.narrative_summary).length}
+            />
+            <p className="text-caption mt-2" style={{ color: 'var(--ink-tertiary)' }}>
+              Dispute-ready packages have a confirmed prior identity match. In-progress packages have a narrative summary but no prior match yet.
+            </p>
+          </div>
         <div className="w-full overflow-x-auto">
           <table className="w-full border-collapse text-sm" style={{ background: 'var(--bg-surface)' }}>
             <thead>
@@ -170,6 +181,7 @@ export default async function ChargebacksPage() {
               ))}
             </tbody>
           </table>
+        </div>
         </div>
       )}
     />

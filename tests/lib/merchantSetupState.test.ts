@@ -24,6 +24,8 @@ function connection(over: Partial<ConnectionState>): ConnectionState {
     neitherConnected: !shopify && !helpdesk,
     shopifyOnlyConnected: shopify && !helpdesk,
     helpdeskOnlyConnected: !shopify && helpdesk,
+    shopDomain: null,
+    linkState: 'not_connected',
     ...over,
   };
 }

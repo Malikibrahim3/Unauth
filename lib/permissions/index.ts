@@ -255,7 +255,7 @@ export async function hasPermission(
 
 const DEFAULT_APP_DESTINATIONS: Array<{ permission: Permission; href: string }> = [
   { permission: PERMISSIONS.VIEW_DASHBOARD, href: '/dashboard' },
-  { permission: PERMISSIONS.VIEW_INBOX, href: '/inbox' },
+  { permission: PERMISSIONS.VIEW_INBOX, href: '/claims' },
   { permission: PERMISSIONS.VIEW_CUSTOMERS, href: '/customers' },
   { permission: PERMISSIONS.VIEW_HISTORY, href: '/history' },
   { permission: PERMISSIONS.VIEW_CHARGEBACKS, href: '/chargebacks' },

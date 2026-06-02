@@ -41,9 +41,7 @@ const nextConfig = {
   },
   async redirects() {
     return [
-      { source: '/inbox', destination: '/customers', permanent: false },
-      { source: '/claims', destination: '/customers', permanent: false },
-      { source: '/saved', destination: '/dashboard', permanent: false },
+      { source: '/inbox', destination: '/claims', permanent: false },
     ];
   },
   // SECURITY: Explicit image optimizer allowlist — mitigates GHSA-9g9p-9gw9-jx7f.

@@ -11,6 +11,8 @@ const ConnectionStateContext = createContext<ConnectionState>({
   neitherConnected: true,
   shopifyOnlyConnected: false,
   helpdeskOnlyConnected: false,
+  shopDomain: null,
+  linkState: 'not_connected',
 });
 
 export function ConnectionStateProvider({

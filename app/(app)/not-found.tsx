@@ -18,11 +18,11 @@ export default function AppNotFound() {
                 Back to dashboard
               </Link>
               <Link
-                href="/inbox"
+                href="/claims"
                 className="inline-flex items-center rounded-md border px-4 py-2 text-sm font-semibold hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1"
                 style={{ borderColor: 'var(--border-subtle)', color: 'var(--text)', outlineColor: 'var(--accent)' }}
               >
-                Open inbox
+                Open claims
               </Link>
             </div>
           }

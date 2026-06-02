@@ -5,7 +5,7 @@ import Link from 'next/link';
 import AuditHistoryTableClient from '@/components/audit/AuditHistoryTableClient';
 import type { Database } from '@/lib/supabase/types';
 import PageSizeSelect from '@/components/common/PageSizeSelect';
-import { Button, WorkbenchPage, WorkbenchActionBar, WorkbenchEmptyState, WorkbenchKpiStrip } from '@/components/ui';
+import { ButtonLink, WorkbenchPage, WorkbenchActionBar, WorkbenchEmptyState, WorkbenchKpiStrip } from '@/components/ui';
 import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
 import { requirePermission, PERMISSIONS, resolveDefaultAppPath } from '@/lib/permissions';
 import { getConnectionState } from '@/lib/connections/getConnectionState';
@@ -57,9 +57,7 @@ export default async function HistoryPage({ searchParams }: { searchParams?: { p
       navItems={WORKBENCH_NAV_ITEMS}
       activeNavKey="audits"
       actions={
-        <Link href="/upload">
-          <Button size="sm">Import CSV</Button>
-        </Link>
+        <ButtonLink href="/upload" size="sm">Import CSV</ButtonLink>
       }
       kpiStrip={
         <WorkbenchKpiStrip
@@ -84,14 +82,10 @@ export default async function HistoryPage({ searchParams }: { searchParams?: { p
               <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
                 <span>Page {page} of {totalPages}</span>
                 {page > 1 && (
-                  <Link href={`/history?${new URLSearchParams({ ...baseSearchParams, page: String(page - 1), pageSize: String(pageSize) }).toString()}`}>
-                    <Button variant="secondary" size="sm">Prev</Button>
-                  </Link>
+                  <ButtonLink href={`/history?${new URLSearchParams({ ...baseSearchParams, page: String(page - 1), pageSize: String(pageSize) }).toString()}`} variant="secondary" size="sm">Prev</ButtonLink>
                 )}
                 {page < totalPages && (
-                  <Link href={`/history?${new URLSearchParams({ ...baseSearchParams, page: String(page + 1), pageSize: String(pageSize) }).toString()}`}>
-                    <Button variant="secondary" size="sm">Next</Button>
-                  </Link>
+                  <ButtonLink href={`/history?${new URLSearchParams({ ...baseSearchParams, page: String(page + 1), pageSize: String(pageSize) }).toString()}`} variant="secondary" size="sm">Next</ButtonLink>
                 )}
               </div>
             ) : null

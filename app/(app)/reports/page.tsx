@@ -298,26 +298,29 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
   if (priorCutoff) priorClaimsQuery = priorClaimsQuery.gte('submitted_at', priorCutoff);
   if (priorEnd) priorClaimsQuery = priorClaimsQuery.lte('submitted_at', priorEnd);
 
-  const [{ data: claimRows }, priorClaimResult] = await Promise.all([
-    claimsQuery,
-    range === 'all' ? Promise.resolve({ data: [] as ClaimRow[] | null }) : priorClaimsQuery,
+  const [claimsResult, priorClaimResult] = await Promise.all([
+    claimsQuery.then((r: { data: ClaimRow[] | null; error: unknown }) => ({ data: r.error ? [] as ClaimRow[] : (r.data ?? []) })),
+    range === 'all' ? Promise.resolve({ data: [] as ClaimRow[] }) : priorClaimsQuery.then((r: { data: ClaimRow[] | null; error: unknown }) => ({ data: r.error ? [] as ClaimRow[] : (r.data ?? []) })),
   ]);
-  const claims = (claimRows ?? []) as ClaimRow[];
+  const claims = claimsResult.data;
   const priorClaims = (priorClaimResult.data ?? []) as ClaimRow[];
 
+  type OutcomeRow = { claim_id: string; decision: string | null; outcome: string | null; amount_refunded: number | null; decided_at: string | null; created_at: string | null; updated_at: string | null };
   const [outcomeResult, priorOutcomeResult] = await Promise.all([
     claims.length > 0
       ? serviceClient
         .from('merchant_case_outcomes' as never)
         .select('claim_id,decision,outcome,amount_refunded,decided_at,created_at,updated_at')
-        .in('claim_id', claims.map((claim) => claim.id))
-      : Promise.resolve({ data: [] }),
+        .in('claim_id', claims.map((claim: ClaimRow) => claim.id))
+        .then((r: { data: OutcomeRow[] | null; error: unknown }) => ({ data: r.error ? [] as OutcomeRow[] : (r.data ?? []) }))
+      : Promise.resolve({ data: [] as OutcomeRow[] }),
     priorClaims.length > 0
       ? serviceClient
         .from('merchant_case_outcomes' as never)
         .select('claim_id,decision,outcome,amount_refunded,decided_at,created_at,updated_at')
         .in('claim_id', priorClaims.map((c) => c.id))
-      : Promise.resolve({ data: [] }),
+        .then((r: { data: OutcomeRow[] | null; error: unknown }) => ({ data: r.error ? [] as OutcomeRow[] : (r.data ?? []) }))
+      : Promise.resolve({ data: [] as OutcomeRow[] }),
   ]);
 
   const claimMetrics = buildClaimOpsMetrics(claims, outcomeResult.data ?? []);
@@ -333,100 +336,152 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
   // ── Tab content ──────────────────────────────────────────────────────────
 
   const OverviewTab = (
-    <div className="p-4 space-y-4">
-      {/* Summary cards */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <MetricCard
-          label="Total reports"
-          value={(rows.length + (claims.length > 0 ? 1 : 0)).toLocaleString()}
-          hint="CSV audits + integration data"
-          density="compact"
-        />
-        <MetricCard
-          label="CSV audits"
-          value={rows.length.toLocaleString()}
-          hint="From uploaded files"
-          density="compact"
-        />
-        <MetricCard
-          label="Live reports"
-          value={claims.length > 0 ? '1 active' : connectionState.bothConnected ? '—' : 'Setup needed'}
-          hint={connectionState.bothConnected ? 'From Shopify + helpdesk' : 'Connect both live sources'}
-          density="compact"
-        />
-        <MetricCard
-          label="Latest generated"
-          value={rows[0] ? formatDateMode(rows[0].created_at, 'recent') : claims[0]?.submitted_at ? formatDateMode(claims[0].submitted_at, 'recent') : '—'}
-          hint="Most recent report"
-          density="compact"
-        />
+    <div className="p-4 space-y-5">
+
+      {/* ── Source health bands — always first ───────────────────────────── */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {/* Live sources */}
+        <div
+          className="rounded-lg border p-4"
+          style={{
+            background: connectionState.bothConnected
+              ? 'color-mix(in srgb, var(--sev-clear) 6%, var(--surface-raised))'
+              : 'color-mix(in srgb, var(--warning) 6%, var(--surface-raised))',
+            borderColor: connectionState.bothConnected
+              ? 'color-mix(in srgb, var(--sev-clear) 25%, var(--surface-border))'
+              : 'color-mix(in srgb, var(--warning) 25%, var(--surface-border))',
+          }}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <p className="t-body-sm font-semibold" style={{ color: 'var(--ink-primary)' }}>Live sources</p>
+            <SourceTag source="live" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <p className="t-caption" style={{ color: 'var(--ink-tertiary)' }}>Shopify</p>
+              <p className="text-sm font-semibold mt-0.5" style={{ color: connectionState.shopify ? 'var(--sev-clear)' : 'var(--warning)' }}>
+                {connectionState.shopify ? 'Connected' : 'Not connected'}
+              </p>
+            </div>
+            <div>
+              <p className="t-caption" style={{ color: 'var(--ink-tertiary)' }}>Helpdesk</p>
+              <p className="text-sm font-semibold mt-0.5" style={{ color: connectionState.helpdesk ? 'var(--sev-clear)' : 'var(--warning)' }}>
+                {connectionState.helpdesk ? 'Connected' : 'Not connected'}
+              </p>
+            </div>
+          </div>
+          {claims.length > 0 && (
+            <p className="t-caption mt-3" style={{ color: 'var(--ink-secondary)' }}>
+              {claimMetrics.totalClaims.toLocaleString()} claims · {claimMetrics.openClaims.toLocaleString()} open · {formatCurrencyNullable(claimMetrics.valueAtRisk || null)} at risk
+            </p>
+          )}
+          {liveCta && (
+            <Link href="/settings/integrations" className="t-caption mt-2 inline-block font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
+              {liveCta.label} →
+            </Link>
+          )}
+        </div>
+
+        {/* Historical import */}
+        <div
+          className="rounded-lg border p-4"
+          style={{ background: 'var(--surface-raised)', borderColor: 'var(--surface-border)' }}
+        >
+          <div className="flex items-center justify-between mb-2">
+            <p className="t-body-sm font-semibold" style={{ color: 'var(--ink-primary)' }}>Historical imports</p>
+            <SourceTag source="csv" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <p className="t-caption" style={{ color: 'var(--ink-tertiary)' }}>Files processed</p>
+              <p className="num text-lg font-semibold mt-0.5" style={{ color: 'var(--ink-primary)' }}>{rows.length.toLocaleString()}</p>
+            </div>
+            <div>
+              <p className="t-caption" style={{ color: 'var(--ink-tertiary)' }}>Rows flagged</p>
+              <p className="num text-lg font-semibold mt-0.5" style={{ color: 'var(--ink-primary)' }}>{totalFlagged.toLocaleString()}</p>
+            </div>
+          </div>
+          {rows.length > 0 && (
+            <Link href="?tab=csv" className="t-caption mt-2 inline-block font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
+              View all audits →
+            </Link>
+          )}
+        </div>
       </div>
 
-      {/* Two recent lists — kept source-distinct, never one mixed table */}
+      {/* ── Match rate trend + grade distribution ────────────────────────── */}
       <div className="grid gap-4 xl:grid-cols-2">
-        <SectionCard
-          title="Recent CSV audits"
-          description="Uploaded files processed for fraud signals"
-          actions={<SourceTag source="csv" />}
-        >
-          {rows.length === 0 ? (
-            <p className="t-caption py-4" style={{ color: 'var(--ink-tertiary)' }}>No CSV audits yet. <Link href="/upload" className="font-semibold hover:underline" style={{ color: 'var(--accent)' }}>Upload a file →</Link></p>
-          ) : (
-            <div className="space-y-2">
-              {rows.slice(0, 5).map((run) => (
-                <Link
-                  key={run.id}
-                  href={`/audit/${run.id}`}
-                  className="flex items-center justify-between gap-3 rounded border px-3 py-2 hover-bg-subtle"
-                  style={{ borderColor: 'var(--surface-border)' }}
-                >
-                  <div className="min-w-0">
-                    <p className="t-body-sm truncate font-medium" style={{ color: 'var(--ink-primary)' }}>{run.filename ?? run.id}</p>
-                    <p className="t-caption font-mono" style={{ color: 'var(--ink-tertiary)' }}>
-                      {(run.flagged_count ?? 0).toLocaleString()} flagged of {run.total_rows.toLocaleString()} rows · {formatDateMode(run.created_at, 'recent')}
-                    </p>
-                  </div>
-                  <span className="t-caption shrink-0 font-semibold" style={{ color: 'var(--accent)' }}>Open →</span>
-                </Link>
-              ))}
-            </div>
-          )}
+        <SectionCard title="Match rate over time" actions={<SourceTag source="csv" />}>
+          <svg className="h-44 w-full" viewBox="0 0 520 200" preserveAspectRatio="none" role="img" aria-label="Match rate over time">
+            {[40, 90, 140, 190].map((y) => (
+              <line key={y} x1="22" x2="498" y1={y} y2={y} stroke="var(--surface-border)" strokeOpacity="0.7" vectorEffect="non-scaling-stroke" />
+            ))}
+            {areaPath && <path d={areaPath} fill="var(--copper-glow)" />}
+            {linePath && <path d={linePath} fill="none" stroke="var(--copper-bright)" strokeWidth="3" strokeLinecap="square" strokeLinejoin="miter" vectorEffect="non-scaling-stroke" />}
+            {points.slice(points.length > 1 ? -1 : 0).map((point, index) => (
+              <g key={`${point.x}-${index}`}>
+                <circle cx={point.x} cy={point.y} r="5" fill="var(--copper-bright)" />
+                <text x={Math.min(460, point.x + 12)} y={Math.max(20, point.y - 10)} className="t-label" fill="var(--ink-tertiary)">
+                  {point.rate.toFixed(1)}%
+                </text>
+              </g>
+            ))}
+            {points.length === 0 && (
+              <text x="260" y="112" textAnchor="middle" className="t-label" fill="var(--ink-tertiary)">AWAITING AUDIT DATA</text>
+            )}
+          </svg>
         </SectionCard>
 
         <SectionCard
-          title="Recent live reports"
-          description="Data from connected Shopify + helpdesk"
-          actions={<SourceTag source="live" />}
+          title="Flag distribution by grade"
+          description={gradeSampled
+            ? `Sampled from ${GRADE_SAMPLE_LIMIT.toLocaleString()} rows`
+            : `Across ${analysedRows.toLocaleString()} rows`}
+          actions={<SourceTag source="csv" />}
         >
-          <div className="space-y-2">
-            {claims.length > 0 ? (
-              <div className="rounded border px-3 py-2" style={{ borderColor: 'var(--surface-border)' }}>
-                <p className="t-body-sm font-medium" style={{ color: 'var(--ink-primary)' }}>Helpdesk claims — {range === 'all' ? 'all time' : `last ${range.replace('d', ' days')}`}</p>
-                <p className="t-caption font-mono" style={{ color: 'var(--ink-tertiary)' }}>
-                  {claimMetrics.totalClaims.toLocaleString()} claims · {claimMetrics.openClaims.toLocaleString()} open · {formatCurrencyNullable(claimMetrics.valueAtRisk || null)} at risk
-                </p>
-              </div>
-            ) : connectionState.bothConnected ? (
-              <p className="t-caption py-2" style={{ color: 'var(--ink-tertiary)' }}>No live report data in this period. Adjust the date range or wait for new claims to sync.</p>
-            ) : null}
-
-            {liveCta ? (
-              <div
-                className="rounded border px-3 py-2.5"
-                style={{
-                  background: 'color-mix(in srgb, var(--warning) 7%, var(--surface-raised))',
-                  borderColor: 'color-mix(in srgb, var(--warning) 30%, var(--surface-border))',
-                }}
-              >
-                <p className="t-caption font-semibold" style={{ color: 'var(--ink-primary)' }}>{liveCta.title}</p>
-                <Link href="/settings/integrations" className="t-caption mt-1 inline-block font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
-                  {liveCta.label} →
-                </Link>
-              </div>
-            ) : null}
+          <div className="space-y-3">
+            <div className="flex h-5 overflow-hidden rounded-[3px] border" style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-muted)' }}>
+              {buckets.map((bucket) => (
+                <div key={bucket.key} style={{ width: `${Math.max(bucket.count > 0 ? 4 : 0, bucket.pct)}%`, background: bucket.color }} />
+              ))}
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {buckets.map((bucket) => (
+                <div key={bucket.key} className="rounded-sm border px-3 py-2" style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-overlay)' }}>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="t-label" style={{ color: bucket.color }}>{bucket.label}</span>
+                    <span className="t-mono-md num" style={{ color: 'var(--ink-primary)' }}>{bucket.count.toLocaleString()}</span>
+                  </div>
+                  <div className="mt-1.5 h-1 rounded-full" style={{ background: 'var(--surface-muted)' }}>
+                    <div className="h-1 rounded-full" style={{ width: `${bucket.pct}%`, background: bucket.color }} />
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </SectionCard>
       </div>
+
+      {/* ── Live claims summary ───────────────────────────────────────────── */}
+      {(claims.length > 0 || connectionState.helpdesk) && (
+        <SectionCard
+          title="Live claims summary"
+          description={`From your helpdesk · ${range === 'all' ? 'all time' : `last ${range.replace('d', ' days')}`}`}
+          actions={<SourceTag source="live" />}
+        >
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            <MetricCard label="Total claims" value={claimMetrics.totalClaims.toLocaleString()} density="compact" hint="Filed in range" />
+            <MetricCard label="Open" value={claimMetrics.openClaims.toLocaleString()} density="compact" hint="Needs action" />
+            <MetricCard label="Resolved" value={claimMetrics.resolvedClaims.toLocaleString()} density="compact" hint="Closed" />
+            <MetricCard label="Open value" value={formatCurrencyNullable(claimMetrics.valueAtRisk || null)} density="compact" hint="At risk" />
+          </div>
+          <div className="mt-3">
+            <Link href="?tab=integration" className="t-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
+              Full live report →
+            </Link>
+          </div>
+        </SectionCard>
+      )}
     </div>
   );
 

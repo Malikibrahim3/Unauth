@@ -914,12 +914,12 @@ async function ensureEvidencePackage(merchantId, profileId, txId, index, profile
   return data.id;
 }
 
-async function ensureWatchlist(userId, profileId, profile) {
+async function ensureWatchlist(merchantId, profileId, profile) {
   if (!profile.watchlist) return null;
   const { data, error } = await supabase
     .from('watchlist_entries')
     .upsert({
-      merchant_id: userId,
+      merchant_id: merchantId,
       customer_profile_id: profileId,
       email_hash: sha(profile.email).slice(0, 32),
       display_name: profile.name,
@@ -938,7 +938,7 @@ async function ensureNotes(merchantId, userId, profileId, profile) {
   const { data: existing } = await supabase
     .from('customer_notes')
     .select('id')
-    .eq('merchant_id', userId)
+    .eq('merchant_id', merchantId)
     .eq('customer_profile_id', profileId)
     .ilike('body', '%Design audit seed%')
     .limit(1)
@@ -947,7 +947,7 @@ async function ensureNotes(merchantId, userId, profileId, profile) {
   const { data, error } = await supabase
       .from('customer_notes')
       .insert({
-      merchant_id: userId,
+      merchant_id: merchantId,
       customer_profile_id: profileId,
       body: `Design audit seed note: ${profile.note}`,
       deleted_by_merchant: false,
@@ -1076,7 +1076,7 @@ async function main() {
       latest_order: `AU-${1001 + profileIndex}-${String(Math.min(profile.orders, 6)).padStart(3, '0')}`,
     };
 
-    const watchlistId = await ensureWatchlist(user.id, ensured.id, profile);
+    const watchlistId = await ensureWatchlist(merchant.id, ensured.id, profile);
     if (watchlistId) seedLog.watchlist_entries.push(watchlistId);
     await ensureNotes(merchant.id, user.id, ensured.id, profile);
 

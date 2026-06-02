@@ -40,7 +40,9 @@ export type AuditAction =
   | 'create_gorgias_support_connection'
   | 'update_gorgias_support_connection'
   | 'rotate_gorgias_webhook_secret'
-  | 'disable_gorgias_support_connection';
+  | 'disable_gorgias_support_connection'
+  | 'connect_shopify'
+  | 'disconnect_shopify';
 
 export interface LogActionParams {
   ctx:          CallerContext;

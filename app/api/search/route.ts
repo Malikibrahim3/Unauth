@@ -151,7 +151,7 @@ export async function GET(req: NextRequest) {
           sublabel: o.order_value
             ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(o.order_value)
             : undefined,
-          href: `/inbox`,
+          href: `/claims`,
           riskLevel: o.risk_level ?? undefined,
         });
       }

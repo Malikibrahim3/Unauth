@@ -4,6 +4,10 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { formatDateMode } from '@/lib/utils/format';
 import { formatCurrencyNullable } from '@/lib/utils/format';
+import WeeklyTrendChart from '@/components/charts/WeeklyTrendChart';
+import GradeDistBar from '@/components/charts/GradeDistBar';
+import type { TrendDataPoint } from '@/components/charts/WeeklyTrendChart';
+import type { GradeDistEntry } from '@/components/charts/GradeDistBar';
 import type { Database } from '@/lib/supabase/types';
 import {
   countMerchantReviewQueueProfiles,
@@ -177,7 +181,7 @@ function buildConfig(state: MerchantSetupState, connection: ConnectionState): Da
       return {
         subtitle: 'Shopify orders and customers are syncing. Add your helpdesk to complete claim context.',
         primaryCta: { label: 'Connect helpdesk', href: integrations },
-        secondaryCta: { label: 'Import CSV', href: '/upload' },
+        secondaryCta: undefined,
         banner: {
           tone: 'incomplete',
           title: 'Shopify is connected. Connect your helpdesk to finish setup.',
@@ -188,7 +192,7 @@ function buildConfig(state: MerchantSetupState, connection: ConnectionState): Da
       return {
         subtitle: 'Claim history is syncing from your helpdesk. Add Shopify for order and customer context.',
         primaryCta: { label: 'Connect Shopify', href: integrations },
-        secondaryCta: { label: 'Import CSV', href: '/upload' },
+        secondaryCta: undefined,
         banner: {
           tone: 'incomplete',
           title: 'Your helpdesk is connected. Connect Shopify to add order context.',
@@ -210,7 +214,7 @@ function buildConfig(state: MerchantSetupState, connection: ConnectionState): Da
       return {
         subtitle: 'Showing your existing customer and order intelligence.',
         primaryCta: { label: 'Reconnect sources', href: integrations },
-        secondaryCta: { label: 'Import CSV', href: '/upload' },
+        secondaryCta: undefined,
         banner: {
           tone: 'stale',
           title: 'Showing existing data.',
@@ -281,7 +285,7 @@ export default async function DashboardPage() {
   /* ---- Cockpit (data-present states) ---- */
   const config = buildConfig(setupState, connectionState);
 
-  const [{ data: runs }, evidenceCounts, claimsNeedingAction] = await Promise.all([
+  const [{ data: runs }, evidenceCounts, claimsNeedingAction, claimTrendRaw, exposureRaw] = await Promise.all([
     serviceClient
       .from(TABLES.PROCESSING_JOBS)
       .select('*')
@@ -291,7 +295,29 @@ export default async function DashboardPage() {
       .limit(20),
     countEvidence(serviceClient, ctx.merchantId),
     countClaimsNeedingAction(serviceClient, ctx.merchantId),
+    serviceClient
+      .from('merchant_claims' as never)
+      .select('submitted_at,created_at,amount_at_risk')
+      .eq('merchant_id' as never, ctx.merchantId as never)
+      .gte('submitted_at' as never, new Date(Date.now() - 56 * 24 * 3600 * 1000).toISOString() as never)
+      .then((r: { data: Array<{ submitted_at: string | null; created_at: string; amount_at_risk: number | null }> | null; error: unknown }) => r.error ? [] : (r.data ?? [])),
+    serviceClient
+      .from('merchant_claims' as never)
+      .select('amount_at_risk')
+      .eq('merchant_id' as never, ctx.merchantId as never)
+      .in('status' as never, ['open', 'under_review', 'evidence_requested', 'pending', 'escalated'] as never)
+      .then((r: { data: Array<{ amount_at_risk: number | null }> | null; error: unknown }) => r.error ? [] : (r.data ?? [])),
   ]);
+
+  // Build 8-week claim trend
+  const claimTrend: TrendDataPoint[] = buildWeeklyTrend(
+    claimTrendRaw as Array<{ submitted_at: string | null; created_at: string }>,
+  );
+  // Exposure at risk = sum of open claim amounts
+  const exposureAtRisk = (exposureRaw as Array<{ amount_at_risk: number | null }>).reduce(
+    (sum, r) => sum + (r.amount_at_risk ?? 0),
+    0,
+  );
 
   const typedRuns = (runs ?? []) as unknown as RunRow[];
   const latestRun = typedRuns[0] ?? null;
@@ -376,6 +402,7 @@ export default async function DashboardPage() {
   });
 
   const customerCount = dataPresence.sources.customerProfiles;
+  const gradeDist = buildGradeDist(reviewRows);
 
   return (
     <div className="p-4 md:p-6 space-y-5">
@@ -416,6 +443,47 @@ export default async function DashboardPage() {
         {kpis.map((kpi) => (
           <MetricCard key={kpi.label} {...kpi} />
         ))}
+      </div>
+
+      {/* Trend row — claims over time + exposure snapshot */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
+        <section className="rounded-lg border p-4" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-default)' }}>
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <p className="text-body-sm font-semibold" style={{ color: 'var(--ink-primary)' }}>Claims over time</p>
+              <p className="text-caption" style={{ color: 'var(--ink-tertiary)' }}>8-week trend from your helpdesk</p>
+            </div>
+            <Link href="/claims" className="text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>View claims →</Link>
+          </div>
+          {connectionState.helpdesk && claimTrend.some((pt) => pt.value > 0) ? (
+            <WeeklyTrendChart data={claimTrend} color="var(--accent)" primaryLabel="Claims" height={130} />
+          ) : (
+            <div
+              className="flex h-[130px] items-center justify-center rounded-md"
+              style={{ background: 'var(--bg-surface-alt)', border: '1px dashed var(--border-default)' }}
+            >
+              <p className="text-caption text-center px-4" style={{ color: 'var(--ink-tertiary)' }}>
+                {connectionState.helpdesk ? 'No claims in the past 8 weeks' : 'Connect your helpdesk to see claim trends'}
+              </p>
+            </div>
+          )}
+        </section>
+
+        <section className="rounded-lg border p-4 flex flex-col gap-4" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-default)' }}>
+          <div>
+            <p className="text-caption" style={{ color: 'var(--ink-tertiary)' }}>Exposure at risk</p>
+            <p className="num font-semibold mt-1" style={{ fontSize: 26, color: exposureAtRisk > 0 ? 'var(--sev-definite)' : 'var(--data-score)' }}>
+              {exposureAtRisk > 0 ? formatCurrencyNullable(exposureAtRisk) : '—'}
+            </p>
+            <p className="text-caption mt-0.5" style={{ color: 'var(--ink-secondary)' }}>
+              {exposureAtRisk > 0 ? 'Open claims with amounts' : 'No open claim exposure'}
+            </p>
+          </div>
+          <div>
+            <p className="text-caption mb-2" style={{ color: 'var(--ink-tertiary)' }}>Identity grade distribution</p>
+            <GradeDistBar grades={gradeDist} />
+          </div>
+        </section>
       </div>
 
       {/* Main cockpit grid */}
@@ -717,7 +785,7 @@ function SyncWaitingHero({ connection }: { connection: ConnectionState }) {
           Check sync status
         </Link>
         <Link href="/upload" className="text-sm font-medium hover:underline" style={{ color: 'var(--ink-tertiary)' }}>
-          Import CSV instead →
+          Historical import →
         </Link>
       </div>
     </div>
@@ -813,6 +881,39 @@ function buildKpis(
     default:
       return [customers, reviewQueue, claims, evidence, syncHealth];
   }
+}
+
+// Build an 8-week trend array from rows that have submitted_at or created_at
+function buildWeeklyTrend(
+  rows: Array<{ submitted_at: string | null; created_at: string }>,
+): TrendDataPoint[] {
+  const NOW = Date.now();
+  const WEEK_MS = 7 * 24 * 3600 * 1000;
+  const counts = new Array<number>(8).fill(0);
+  for (const row of rows) {
+    const ts = new Date(row.submitted_at ?? row.created_at).getTime();
+    const weeksAgo = Math.floor((NOW - ts) / WEEK_MS);
+    if (weeksAgo >= 0 && weeksAgo < 8) counts[7 - weeksAgo] += 1;
+  }
+  return counts.map((value, i) => ({
+    label: i === 7 ? 'Now' : i === 6 ? '1w' : `${8 - i}w`,
+    value,
+  }));
+}
+
+// Build grade distribution array from review queue rows
+function buildGradeDist(rows: QueueRow[]): GradeDistEntry[] {
+  const counts = { A: 0, B: 0, C: 0, D: 0 };
+  for (const row of rows) {
+    const g = gradeFromQueueRow(row);
+    if (g in counts) counts[g as keyof typeof counts] += 1;
+  }
+  return [
+    { key: 'A', label: 'A · Definite', count: counts.A, color: 'var(--sev-definite)' },
+    { key: 'B', label: 'B · Probable', count: counts.B, color: 'var(--sev-probable)' },
+    { key: 'C', label: 'C · Possible', count: counts.C, color: 'var(--sev-possible)' },
+    { key: 'D', label: 'D · Weak',     count: counts.D, color: 'var(--sev-clear)' },
+  ];
 }
 
 async function countEvidence(

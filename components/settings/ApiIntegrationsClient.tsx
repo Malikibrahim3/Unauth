@@ -272,7 +272,10 @@ export default function ApiIntegrationsClient({
                 <div
                   key={item.id}
                   className="flex gap-3 rounded-lg border p-3"
-                  style={{ borderColor: 'var(--surface-border)', background: 'var(--bg-surface)' }}
+                  style={{
+                    borderColor: connected ? 'var(--sev-clear, #2f6b43)' : 'var(--surface-border)',
+                    background: connected ? 'color-mix(in srgb, var(--sev-clear, #2f6b43) 4%, var(--bg-surface))' : 'var(--bg-surface)',
+                  }}
                 >
                   <img
                     src={item.logo}
