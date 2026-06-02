@@ -10,8 +10,11 @@ import {
   GORGIAS_WEBHOOK_DOMAIN_QUERY_PARAM,
   GORGIAS_WEBHOOK_SECRET_QUERY_PARAM,
 } from '@/lib/support/gorgias/supportConnectionShared';
+import { getActiveGorgiasMerchantApiAccess } from '@/lib/support/gorgias/merchantApiAccess';
+import { nudgeGorgiasTicketWidgetRefreshBestEffort } from '@/lib/support/gorgias/widgetRefreshNudge';
 import { logGorgiasWebhookResult } from '@/lib/support/intake/webhookLog';
 import { enforceRateLimit, getClientIp, limitFromEnv, rateLimitKey } from '@/lib/ratelimit';
+import { createServiceClient } from '@/lib/supabase/server';
 
 function safeWebhookRejectionContext(request: NextRequest, body: unknown): Record<string, unknown> {
   let ticket: Record<string, unknown> | null = null;
@@ -108,6 +111,25 @@ export async function POST(request: NextRequest) {
       is_claim: result.is_claim,
       claim_type: result.claim_type,
     });
+    const access = await getActiveGorgiasMerchantApiAccess(
+      createServiceClient(),
+      result.merchant_id
+    );
+    if (access) {
+      await nudgeGorgiasTicketWidgetRefreshBestEffort({
+        ...access,
+        ticketId: result.external_case_id,
+        reason: 'support_webhook_ingested',
+        payload: {
+          event: 'support_webhook_ingested',
+          ticket_id: result.external_case_id,
+          is_claim: result.is_claim,
+          claim_type: result.claim_type,
+          // Each ingested Gorgias event should be eligible to refresh after the throttle window.
+          ingested_at: new Date().toISOString(),
+        },
+      });
+    }
     return NextResponse.json(result);
   } catch (error) {
     if (error instanceof GorgiasWebhookError) {

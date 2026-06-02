@@ -50,6 +50,7 @@ import {
   type GorgiasSidebarWidgetSetupResult,
   type GorgiasSupportWebhookScopeEntry,
 } from '@/lib/support/gorgias/supportConnectionShared';
+import { nudgeRecentGorgiasTicketsForMerchantBestEffort } from '@/lib/support/gorgias/widgetRefreshNudge';
 
 type GorgiasConnectionDbRow = {
   id: string;
@@ -789,6 +790,19 @@ export async function disableMerchantGorgiasSupportConnection(
   const existing = await getMerchantGorgiasSupportConnection(supabase, merchantId);
   if (!existing) {
     throw new Error('gorgias_connection_not_found');
+  }
+
+  if (existing.status === 'active') {
+    await nudgeRecentGorgiasTicketsForMerchantBestEffort({
+      supabase: supabase as SupabaseClient,
+      merchantId,
+      reason: 'gorgias_connection_disabled',
+      payload: {
+        event: 'gorgias_connection_disabled',
+        merchant_id: merchantId,
+        disabled_at: new Date().toISOString(),
+      },
+    });
   }
 
   // Best-effort remote cleanup: deregister sidebar widget + webhook integration in Gorgias.
