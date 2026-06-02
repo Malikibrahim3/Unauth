@@ -13,6 +13,7 @@ import {
 } from '@/components/settings/ApiIntegrationsKeyDialogs';
 import { ApiKeyCreateDialog } from '@/components/settings/ApiKeyCreateDialog';
 import { ApiKeyRevokeDialog } from '@/components/settings/ApiKeyRevokeDialog';
+import { FeatureGate } from '@/components/product/FeatureGate';
 
 export default function ApiIntegrationsAdvancedSection() {
   const [state, dispatch] = useReducer(apiIntegrationsReducer, initialApiIntegrationsState);
@@ -148,14 +149,16 @@ export default function ApiIntegrationsAdvancedSection() {
         </p>
       ) : null}
 
-      <ApiKeysListSection
-        keys={keys}
-        loading={loading}
-        keysError={keysError}
-        busyId={state.busyId}
-        onOpenCreateModal={openCreateModal}
-        onOpenRevokeModal={openRevokeModal}
-      />
+      <FeatureGate entitlement="SIGNAL_API" plan="enterprise">
+        <ApiKeysListSection
+          keys={keys}
+          loading={loading}
+          keysError={keysError}
+          busyId={state.busyId}
+          onOpenCreateModal={openCreateModal}
+          onOpenRevokeModal={openRevokeModal}
+        />
+      </FeatureGate>
 
       <ApiIntegrationsChromeSection />
 

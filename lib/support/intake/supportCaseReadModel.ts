@@ -26,6 +26,7 @@ function humanTicketPath(provider: string, base: string, id: string): string | n
   const origin = base.replace(/\/$/, '');
   if (provider === 'zendesk') return `${origin}/agent/tickets/${encodeURIComponent(id)}`;
   if (provider === 'gorgias') return `${origin}/app/ticket/${encodeURIComponent(id)}`;
+  if (provider === 'freshdesk') return `${origin}/a/tickets/${encodeURIComponent(id)}`;
   return null;
 }
 

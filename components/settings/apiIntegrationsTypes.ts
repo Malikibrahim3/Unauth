@@ -8,10 +8,10 @@ export type ApiKeyRow = {
 };
 
 export type HelpdeskOption = {
-  id: 'gorgias' | 'zendesk';
+  id: 'gorgias' | 'zendesk' | 'freshdesk';
   name: string;
   description: string;
-  statusKey: 'gorgias' | 'zendesk';
+  statusKey: 'gorgias' | 'zendesk' | 'freshdesk';
   href: string;
   logo: string;
 };
@@ -21,4 +21,5 @@ export type ConnectionStatus = {
   gorgias: ConnectionState;
   shopify: ConnectionState;
   zendesk: ConnectionState;
+  freshdesk: ConnectionState;
 };

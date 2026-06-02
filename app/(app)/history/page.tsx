@@ -76,7 +76,7 @@ export default async function HistoryPage({ searchParams }: { searchParams?: { p
             description={
               connection.bothConnected
                 ? 'Your live Shopify and helpdesk sources are your primary feed. CSV import is optional — use it to backfill historical orders that predate your connection.'
-                : connection.shopify || connection.helpdesk
+                : connection.orderSourceConnected || connection.helpdesk
                   ? 'CSV import is an optional backfill. Connect both Shopify and your helpdesk for live monitoring, or import a historical order export here.'
                   : 'Import a historical order export to backfill identity matching. For live monitoring, connect Shopify and your helpdesk.'
             }

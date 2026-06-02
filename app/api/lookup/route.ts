@@ -1,3 +1,4 @@
+// TODO(product-gating): require LIVE_LOOKUP_API entitlement when ENFORCE_PRODUCT_GATES is enabled.
 import { NextRequest, NextResponse } from 'next/server';
 import { performMerchantLookup } from '@/lib/api/lookup/performMerchantLookup';
 

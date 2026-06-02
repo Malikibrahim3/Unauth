@@ -21,28 +21,28 @@ export function LandingHeroSection({ todayISO }: { todayISO: string }) {
 
         <Reveal delay={40} className="lg:pt-6">
           <p className="ua-landing-hero-eyebrow-inline">
-            Cross-merchant fraud graph · ecommerce
+            Merchant-side trust network · ecommerce
             <span className="ua-landing-hero-eyebrow-date">
               Issue 04 · {todayISO}
             </span>
           </p>
 
           <h1 className="ua-landing-headline">
-            Catch serial refund fraud before it{' '}
+            Free chargeback evidence. Paid claim confidence.{' '}
             <span className="ua-landing-headline-accent">
-              costs you again.
+              Network intelligence for ecommerce trust.
             </span>
           </h1>
 
           <p className="ua-landing-hero-subprose">
-            Upload your orders. We link refund abuse, INR claims, and friendly fraud across merchants - and hand you a scored case file.{' '}
-            <span className="ua-landing-hero-subprose-strong">Free. No account. No integration.</span>
+            Unauth helps merchants turn order, delivery, support, and dispute data into evidence packs, claim-confidence workflows, and privacy-preserving network signals — without turning genuine customers into false positives.{' '}
+            <span className="ua-landing-hero-subprose-strong">Start with free evidence. Upgrade when you need claim confidence.</span>
           </p>
 
           <div className="flex w-full flex-col gap-3">
             <HeroAuditCta />
-            <Link href="#how-it-works" className="ua-landing-hero-cta-secondary">
-              See how it works →
+            <Link href="#pricing" className="ua-landing-hero-cta-secondary">
+              Pro claim confidence · see plans →
             </Link>
           </div>
         </Reveal>

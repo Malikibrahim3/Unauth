@@ -1,3 +1,4 @@
+// TODO(product-gating): require QUICK_SCORE entitlement when ENFORCE_PRODUCT_GATES is enabled.
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';

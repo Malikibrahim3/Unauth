@@ -1,3 +1,4 @@
+import { ce3DetailStatusLabel } from '@/lib/evidence/ce3PackageLabels'
 import Link from 'next/link'
 import { formatDate } from '@/lib/utils/format'
 import { EvidenceStrengthMeter } from '@/components/evidence/EvidenceStrengthMeter'
@@ -71,9 +72,16 @@ export function EvidenceDetailPageView({
             <h1 className="text-heading-lg" style={{ color: 'var(--text)' }}>
               Evidence package
             </h1>
-            {pkg.ce3_eligible
-              ? <Badge tone="success" size="sm">Dispute-ready</Badge>
-              : <Badge tone="warning" size="sm">In progress</Badge>}
+            {(() => {
+              const label = ce3DetailStatusLabel(pkg.ce3_eligible, identityMatchLevel);
+              const tone =
+                label === 'CE 3.0 ready'
+                  ? 'success'
+                  : label === 'Needs stronger checkout-time data'
+                    ? 'neutral'
+                    : 'warning';
+              return <Badge tone={tone} size="sm">{label}</Badge>;
+            })()}
             {pkg.cross_merchant_indicator ? <Badge tone="info" size="sm">Network</Badge> : null}
           </div>
           <p className="text-body-sm font-mono mt-0.5" style={{ color: 'var(--text-muted)' }}>

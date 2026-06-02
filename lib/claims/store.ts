@@ -3,7 +3,14 @@ import { CANONICAL_CLAIM_STATUSES } from '@/lib/claims/statusMachine';
 
 const claimTypeSchema = z.enum(['missing_parcel', 'damaged', 'wrong_item', 'refund_request', 'chargeback', 'return_abuse', 'other']);
 const claimStatusSchema = z.enum(CANONICAL_CLAIM_STATUSES);
-const detectionMethodSchema = z.enum(['tag', 'keyword_fallback', 'manual', 'shopify_dispute']);
+const detectionMethodSchema = z.enum([
+  'tag',
+  'keyword_fallback',
+  'manual',
+  'shopify_dispute',
+  'woocommerce_refund',
+  'bigcommerce_refund',
+]);
 const refundTypeSchema = z.enum(['full', 'partial', 'unknown']);
 const outcomeDecisionSchema = z.enum(['approved', 'denied', 'escalated', 'partial_refund', 'full_refund', 'chargeback_disputed', 'blacklist', 'no_action']);
 const outcomeSchema = z.enum(['loss', 'recovered', 'pending', 'chargeback_won', 'chargeback_lost', 'customer_verified', 'suspected_fraud', 'legitimate']);

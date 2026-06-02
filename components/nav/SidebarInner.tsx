@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useFetchJson } from '@/lib/react/useFetchJson';
 import { cn } from '@/lib/utils';
 import { getSidebarNavItems } from '@/lib/navigation/appRoutes';
+import { parseProductGateEnv } from '@/lib/product/envFlags';
 import { SidebarAside } from '@/components/nav/SidebarAside';
 import type { NavItemView } from '@/components/nav/SidebarNavItem';
 
@@ -76,12 +77,17 @@ function SidebarInnerContent({
     router.push('/login');
   }
 
+  const enforceGates = parseProductGateEnv(process.env.NEXT_PUBLIC_ENFORCE_PRODUCT_GATES);
   const groups = getSidebarNavItems().map((group) => ({
     label: group.label,
     items: group.items.map((route): NavItemView => ({
       href: route.href,
       label: route.label,
       icon: route.icon,
+      tier: route.tier,
+      tierLabel: route.tierLabel,
+      tierFuture: route.future,
+      showDevAccess: !enforceGates && Boolean(route.tier),
       badge:
         route.key === 'claims'
           ? claimsCount || undefined

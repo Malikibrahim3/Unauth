@@ -155,7 +155,7 @@ export function buildKpis(
   const evidence: Kpi = {
     label: 'Evidence ready',
     value: fmt(metrics.totalPackages),
-    hint: 'Dispute-ready packages',
+    hint: 'CE 3.0 readiness where data exists',
     icon: ShieldCheck,
   };
   const reviewQueue: Kpi = {

@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { Headphones, CheckCircle2, ArrowRight } from 'lucide-react';
+import { FeatureTierBadge } from '@/components/product/FeatureTierBadge';
 import { useAsyncResource } from '@/lib/react/useFetchJson';
 import type { ConnectionStatus, HelpdeskOption } from '@/components/settings/apiIntegrationsTypes';
 
@@ -23,18 +24,29 @@ const HELPDESK_OPTIONS: HelpdeskOption[] = [
     href: '/settings/integrations/zendesk',
     logo: '/integrations/zendesk.svg',
   },
+  {
+    id: 'freshdesk',
+    name: 'Freshdesk',
+    description: 'Sync support tickets for claim detection and dispute context',
+    statusKey: 'freshdesk',
+    href: '/settings/integrations/freshdesk',
+    logo: '/integrations/freshdesk.svg',
+  },
 ];
 
 async function fetchConnectionStatus(): Promise<ConnectionStatus> {
-  const [gRes, sRes, zRes] = await Promise.all([
+  const [gRes, sRes, zRes, fRes] = await Promise.all([
     fetch('/api/settings/gorgias/support-connection', { cache: 'no-store' }),
     fetch('/api/shopify/status', { cache: 'no-store' }),
     fetch('/api/settings/zendesk/connection', { cache: 'no-store' }),
+    fetch('/api/settings/freshdesk/support-connection', { cache: 'no-store' }),
   ]);
   const gBody = gRes.ok ? await gRes.json() : null;
   const sBody = sRes.ok ? await sRes.json() : null;
   const zBody = zRes.ok ? await zRes.json() : null;
+  const fBody = fRes.ok ? await fRes.json() : null;
   const gConn = gBody?.connection ?? null;
+  const fConn = fBody?.connection ?? null;
   return {
     gorgias: {
       connected: Boolean(gConn && gConn.status === 'active'),
@@ -48,6 +60,10 @@ async function fetchConnectionStatus(): Promise<ConnectionStatus> {
       connected: Boolean(zBody?.connected),
       detail: null,
     },
+    freshdesk: {
+      connected: Boolean(fConn && fConn.status === 'active'),
+      detail: fConn?.provider_account_name ?? fConn?.provider_account_id ?? null,
+    },
   };
 }
 
@@ -57,7 +73,8 @@ export default function ApiIntegrationsHelpdeskSection() {
   const statusKnown = connStatus !== null;
   const gorgiasConnected = Boolean(connStatus?.gorgias.connected);
   const zendeskConnected = Boolean(connStatus?.zendesk.connected);
-  const helpdeskConnected = gorgiasConnected || zendeskConnected;
+  const freshdeskConnected = Boolean(connStatus?.freshdesk.connected);
+  const helpdeskConnected = gorgiasConnected || zendeskConnected || freshdeskConnected;
   const shopifyConnected = Boolean(connStatus?.shopify.connected);
   const guideToHelpdesk = statusKnown && shopifyConnected && !helpdeskConnected;
 
@@ -72,9 +89,12 @@ export default function ApiIntegrationsHelpdeskSection() {
     <div className="space-y-2.5">
       <div className="flex items-center gap-2">
         <Headphones className="h-4 w-4" style={{ color: 'var(--icon-muted)' }} />
-        <div>
-          <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Helpdesk</p>
-          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Claims &amp; dispute context</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <div>
+            <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Helpdesk</p>
+            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Claims &amp; dispute context</p>
+          </div>
+          <FeatureTierBadge entitlement="HELPDESK_WIDGET" />
         </div>
       </div>
 

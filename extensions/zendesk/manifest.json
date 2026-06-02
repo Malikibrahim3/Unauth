@@ -23,8 +23,8 @@
       "name": "api_key",
       "type": "text",
       "secure": true,
-      "required": false,
-      "description": "Optional override. Leave blank — this app ships pre-configured with your Unauth key."
+      "required": true,
+      "description": "Your Unauth API key from Settings → API & Integrations in the Unauth dashboard."
     }
   ]
 }

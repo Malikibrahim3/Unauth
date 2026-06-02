@@ -11,8 +11,10 @@ import {
   BarChart3,
   Store,
   FileWarning,
+  GitBranch,
 } from 'lucide-react';
 import { PERMISSIONS, type Permission } from '@/lib/permissions';
+import type { ProductTier } from '@/lib/product/tiers';
 import { ROUTE_ALIASES } from './aliases';
 
 export type AppRouteKey =
@@ -26,7 +28,9 @@ export type AppRouteKey =
   | 'upload'
   | 'history'
   | 'settings'
-  | 'help';
+  | 'help'
+  | 'global'
+  | 'lookup';
 
 export type AppRoute = {
   key: AppRouteKey;
@@ -44,6 +48,12 @@ export type AppRoute = {
   commandPalette?: boolean;
   commandDescription?: string;
   badgeKey?: 'claims' | 'watchlist';
+  /** Informational product tier badge (Phase 0 — does not gate navigation). */
+  tier?: ProductTier;
+  /** Short tier badge label override, e.g. "Evidence" or "Network". */
+  tierLabel?: string;
+  /** Planned capability — show "Future" on the tier badge. */
+  future?: boolean;
 };
 
 export const APP_ROUTES = {
@@ -74,6 +84,8 @@ export const APP_ROUTES = {
     label: 'Customers',
     pageTitle: 'Customer intelligence',
     permission: PERMISSIONS.VIEW_CUSTOMERS,
+    tier: 'pro',
+    tierLabel: 'Claim Confidence',
     icon: Users,
     sidebar: true,
     workbench: true,
@@ -87,6 +99,8 @@ export const APP_ROUTES = {
     pageTitle: 'Claims',
     permission: PERMISSIONS.VIEW_INBOX,
     aliases: ['/inbox'],
+    tier: 'pro',
+    tierLabel: 'Claim Review',
     icon: FileWarning,
     sidebar: true,
     workbench: true,
@@ -100,6 +114,7 @@ export const APP_ROUTES = {
     label: 'Watchlist',
     pageTitle: 'Watchlist',
     permission: PERMISSIONS.VIEW_WATCHLIST,
+    tier: 'pro',
     icon: Star,
     sidebar: true,
     workbench: true,
@@ -113,6 +128,8 @@ export const APP_ROUTES = {
     label: 'Evidence packages',
     pageTitle: 'Evidence packages',
     permission: PERMISSIONS.VIEW_CHARGEBACKS,
+    tier: 'free',
+    tierLabel: 'Evidence',
     icon: ShieldCheck,
     sidebar: true,
     workbench: true,
@@ -125,6 +142,7 @@ export const APP_ROUTES = {
     label: 'Reports',
     pageTitle: 'Reports',
     permission: PERMISSIONS.VIEW_AUDIT,
+    tier: 'pro',
     icon: BarChart3,
     sidebar: true,
     workbench: true,
@@ -169,6 +187,32 @@ export const APP_ROUTES = {
     pageTitle: 'Help',
     icon: HelpCircle,
   },
+  global: {
+    key: 'global',
+    href: '/global',
+    label: 'Network graph',
+    pageTitle: 'Network graph',
+    permission: PERMISSIONS.VIEW_CUSTOMERS,
+    tier: 'advanced',
+    tierLabel: 'Network',
+    icon: GitBranch,
+    sidebar: true,
+    workbench: false,
+    commandPalette: true,
+    commandDescription: 'Cross-merchant identity network view',
+  },
+  lookup: {
+    key: 'lookup',
+    href: '/lookup',
+    label: 'Live lookup',
+    pageTitle: 'Live lookup',
+    permission: PERMISSIONS.VIEW_CUSTOMERS,
+    tier: 'advanced',
+    icon: Users,
+    sidebar: false,
+    commandPalette: true,
+    commandDescription: 'API-style customer lookup (redirects to search)',
+  },
 } satisfies Record<AppRouteKey, AppRoute>;
 
 /** Command palette shortcuts that are not primary nav routes. */
@@ -191,13 +235,14 @@ export const SIDEBAR_NAV_GROUPS: Array<{ label: string; routeKeys: AppRouteKey[]
     label: 'Review',
     routeKeys: ['store', 'customers', 'claims', 'watchlist', 'evidencePackages', 'reports'],
   },
+  { label: 'Network', routeKeys: ['global'] },
   { label: 'Backfill', routeKeys: ['upload', 'history'] },
 ];
 
-export function getSidebarNavItems() {
+export function getSidebarNavItems(): Array<{ label: string; items: AppRoute[] }> {
   return SIDEBAR_NAV_GROUPS.map((group) => ({
     label: group.label,
-    items: group.routeKeys.map((key) => APP_ROUTES[key]),
+    items: group.routeKeys.map((key) => APP_ROUTES[key] as AppRoute),
   }));
 }
 

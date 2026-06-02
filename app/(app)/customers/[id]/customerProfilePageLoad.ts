@@ -1,3 +1,4 @@
+// TODO(product-gating): require CUSTOMER_DOSSIER entitlement when ENFORCE_PRODUCT_GATES is enabled.
 import { notFound, redirect } from 'next/navigation';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';

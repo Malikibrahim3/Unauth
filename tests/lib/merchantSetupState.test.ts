@@ -14,16 +14,22 @@ import {
 } from '@/lib/connections/getMerchantSetupState';
 
 function connection(over: Partial<ConnectionState>): ConnectionState {
-  const shopify = over.shopify ?? false;
+  const orderSourceConnected = over.orderSourceConnected ?? over.shopify ?? false;
   const helpdesk = over.helpdesk ?? false;
+  const orderSourcePlatform =
+    over.orderSourcePlatform ??
+    (orderSourceConnected ? 'shopify' : null);
   return {
-    shopify,
+    orderSourceConnected,
+    orderSourcePlatform,
+    orderSourceStoreKey: over.orderSourceStoreKey ?? null,
+    shopify: over.shopify ?? orderSourcePlatform === 'shopify' && orderSourceConnected,
     helpdesk,
     helpdeskProvider: helpdesk ? 'gorgias' : null,
-    bothConnected: shopify && helpdesk,
-    neitherConnected: !shopify && !helpdesk,
-    shopifyOnlyConnected: shopify && !helpdesk,
-    helpdeskOnlyConnected: !shopify && helpdesk,
+    bothConnected: orderSourceConnected && helpdesk,
+    neitherConnected: !orderSourceConnected && !helpdesk,
+    shopifyOnlyConnected: orderSourceConnected && !helpdesk,
+    helpdeskOnlyConnected: !orderSourceConnected && helpdesk,
     shopDomain: null,
     linkState: 'not_connected',
     ...over,

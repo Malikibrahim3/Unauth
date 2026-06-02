@@ -1,8 +1,10 @@
 'use client';
 
 import AppNavLink from '@/components/navigation/AppNavLink';
+import { PlanBadge } from '@/components/product/PlanBadge';
 import { cn } from '@/lib/utils';
 import type { AppRoute } from '@/lib/navigation/appRoutes';
+import type { ProductTier } from '@/lib/product/tiers';
 
 export type NavItemView = {
   href: string;
@@ -11,6 +13,10 @@ export type NavItemView = {
   badge?: number;
   badgeTitle?: string;
   isPrimary?: boolean;
+  tier?: ProductTier;
+  tierLabel?: string;
+  tierFuture?: boolean;
+  showDevAccess?: boolean;
 };
 
 export function SidebarNavItem({
@@ -67,6 +73,15 @@ export function SidebarNavItem({
       {!collapsed && (
         <>
           <span className="flex-1 truncate">{item.label}</span>
+          {item.tier ? (
+            <PlanBadge
+              tier={item.tier}
+              label={item.tierLabel}
+              future={item.tierFuture}
+              devAccess={item.showDevAccess}
+              className="shrink-0"
+            />
+          ) : null}
           {!!item.badge && item.badge > 0 && (
             <span
               title={item.badgeTitle ?? `${item.badge} items`}

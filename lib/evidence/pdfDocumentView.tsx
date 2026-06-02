@@ -146,12 +146,12 @@ function PDFPriorMatchBanner({ pkg }: { pkg: EvidencePackage }) {
   return (
     <View style={s.highlightBox}>
       <Text style={s.highlightTitle}>
-        {strength === 'Strong' ? 'STRONG PRIOR IDENTITY MATCH' : 'PARTIAL PRIOR IDENTITY MATCH'}
+        {strength === 'Strong' ? 'CE 3.0 READINESS — STRONG PRIOR MATCH' : 'CE 3.0 READINESS — PARTIAL PRIOR MATCH'}
       </Text>
       <Text style={s.highlightText}>
         {strength === 'Strong'
           ? `Prior orders in your records share multiple identity signals with the disputed transaction (${pkg.ce3.priorTransactions.length} matched prior${pkg.ce3.priorTransactions.length === 1 ? '' : 's'} identified).`
-          : 'Some prior orders or identity signals align with the disputed transaction. Review the match matrix and order history below.'}
+          : 'Some prior orders or identity signals align with the disputed transaction where required data is available. Full CE 3.0 qualification may require checkout-time IP/device signals. Review the match matrix and order history below.'}
       </Text>
     </View>
   )

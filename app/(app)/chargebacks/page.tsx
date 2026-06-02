@@ -1,6 +1,7 @@
 // app/(app)/chargebacks/page.tsx
 // Evidence packages list — shows all generated packages for this merchant.
 
+import { ce3ListStatusLabel } from '@/lib/evidence/ce3PackageLabels'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { TABLES } from '@/lib/supabase/tables'
 import { redirect } from 'next/navigation'
@@ -69,14 +70,14 @@ export default async function ChargebacksPage() {
   return (
     <ChargebacksPageWorkbench
       title="Evidence packages"
-      subtitle="Dispute-ready evidence artifacts compiled from order, customer, and identity-match context."
+      subtitle="Chargeback evidence packs and CE 3.0 readiness checks — where required data exists in your records."
       navItems={WORKBENCH_NAV_ITEMS}
       actions={
         <ButtonLink href="/customers" variant="secondary" size="sm">View customers</ButtonLink>
       }
       kpiItems={[
         { label: 'Packages', value: pkgs.length.toLocaleString(), hint: 'Evidence artifacts compiled' },
-        { label: 'Dispute-ready', value: pkgs.filter((pkg) => pkg.ce3_eligible).length.toLocaleString(), hint: 'Prior identity match found' },
+        { label: 'CE 3.0 ready', value: pkgs.filter((pkg) => pkg.ce3_eligible).length.toLocaleString(), hint: 'Prior identity match where required fields exist' },
         { label: 'Cross-merchant', value: pkgs.filter((pkg) => pkg.cross_merchant_indicator).length.toLocaleString(), hint: 'Network-linked evidence' },
         { label: 'With narrative', value: pkgs.filter((pkg) => Boolean(pkg.narrative_summary)).length.toLocaleString(), hint: 'Include summary narrative' },
         { label: 'Last generated', value: pkgs[0]?.generated_at ? new Date(pkgs[0].generated_at).toLocaleDateString('en-US') : '-', hint: 'Most recent artifact' },
@@ -100,7 +101,7 @@ export default async function ChargebacksPage() {
               missing={pkgs.filter((p) => !p.ce3_eligible && !p.narrative_summary).length}
             />
             <p className="text-caption mt-2" style={{ color: 'var(--ink-tertiary)' }}>
-              Dispute-ready packages have a confirmed prior identity match. In-progress packages have a narrative summary but no prior match yet.
+              CE 3.0-ready packages have a confirmed prior identity match where required data exists. Other packages may still be evidence-ready or missing IP/device checkout-time signals.
             </p>
           </div>
         <div className="w-full overflow-x-auto">
@@ -128,9 +129,11 @@ export default async function ChargebacksPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    {pkg.ce3_eligible
-                      ? <Badge tone="success" size="sm">Dispute-ready</Badge>
-                      : <Badge tone="warning" size="sm">In progress</Badge>}
+                    {(() => {
+                      const label = ce3ListStatusLabel(pkg.ce3_eligible, Boolean(pkg.narrative_summary));
+                      const tone = pkg.ce3_eligible ? 'success' : pkg.narrative_summary ? 'warning' : 'neutral';
+                      return <Badge tone={tone} size="sm">{label}</Badge>;
+                    })()}
                   </td>
                   <td className="px-4 py-3">
                     <span className="text-xs font-mono" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>

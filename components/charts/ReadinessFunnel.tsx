@@ -11,7 +11,7 @@ export default function ReadinessFunnel({ total, ready, inProgress, missing }: R
   if (total === 0) return null;
 
   const segments = [
-    { label: 'Dispute-ready', count: ready, color: 'var(--sev-clear)' },
+    { label: 'CE 3.0 ready', count: ready, color: 'var(--sev-clear)' },
     { label: 'In progress', count: inProgress, color: 'var(--sev-probable)' },
     { label: 'Needs attention', count: missing, color: 'var(--border-default)' },
   ];

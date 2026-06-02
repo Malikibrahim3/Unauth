@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+// TODO(product-gating): require CLAIM_REVIEW_QUEUE entitlement when ENFORCE_PRODUCT_GATES is enabled.
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { getConnectionState } from '@/lib/connections/getConnectionState';

@@ -117,8 +117,7 @@
   <p class="brand">Unauth</p>
   <script>
     (function () {
-      var APP_BASE = '__UNAUTH_APP_BASE__';
-      var BAKED_API_KEY = '__UNAUTH_API_KEY__';
+      var APP_BASE = 'https://app.unauth.co';
       var root = document.getElementById('root');
 
       function esc(s) {
@@ -406,15 +405,13 @@
             'ticket.externalId',
           ]);
           var meta = await client.metadata();
-          // The app ships with a baked-in key from the download flow. An admin
-          // can still override it via the app's (optional) api_key setting.
-          var apiKey = (meta.settings && meta.settings.api_key) || BAKED_API_KEY || '';
+          var apiKey = (meta.settings && meta.settings.api_key) || '';
           var email = (data['ticket.requester.email'] || '').trim();
           var name = (data['ticket.requester.name'] || '').trim();
           var orderId = (data['ticket.externalId'] || '').trim();
 
           if (!apiKey) {
-            renderError('App key missing. Re-download the Unauth app from Settings → Integrations → Zendesk.');
+            renderError('API key missing. Add your Unauth API key in the Zendesk app install settings (Settings → API & Integrations in Unauth).');
             return;
           }
           if (!email) {

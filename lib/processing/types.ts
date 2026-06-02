@@ -94,6 +94,6 @@ export interface FraudTransactionInsert {
 
 /** Optional overrides when scoring non-CSV ingestion (e.g. Shopify webhooks). */
 export type ProcessCsvJobIngestion = {
-  source?: 'csv' | 'shopify';
+  source?: 'csv' | 'shopify' | 'woocommerce' | 'bigcommerce';
   shopDomain?: string;
 };

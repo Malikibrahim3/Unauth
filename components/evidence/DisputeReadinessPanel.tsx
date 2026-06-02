@@ -57,11 +57,11 @@ export function DisputeReadinessPanel({
 
   const checks: CheckItem[] = [
     {
-      label: 'Prior identity match',
+      label: 'CE 3.0 readiness (prior identity match)',
       passed: pkg.ce3_eligible ? true : false,
       detail: pkg.ce3_eligible
-        ? 'Prior transactions with matching identity signals found in this record'
-        : 'No prior transactions with matching identity signals detected',
+        ? 'Prior transactions with matching identity signals found where required data exists'
+        : 'No qualifying prior match yet — missing evidence fields or IP/device checkout-time signals may apply',
     },
     {
       label: 'Narrative summary present',
@@ -162,7 +162,7 @@ export function DisputeReadinessPanel({
       >
         <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" style={{ color: 'var(--text-subtle)' }} />
         <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-          Read-only checklist based on signal data in your records. Use this report alongside your acquirer or processor guidelines when preparing a dispute response.
+          Read-only CE 3.0 readiness checklist based on signal data in your records. Full CE 3.0 qualification may require checkout-time IP/device capture. Use alongside your acquirer guidelines when preparing a dispute response.
         </p>
       </div>
     </div>

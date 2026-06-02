@@ -18,13 +18,13 @@ export function LandingDashboardSection() {
               § 4 - MERCHANT DASHBOARD
             </p>
             <h2 className="ua-landing-section-title">
-              Your fraud exposure,{' '}
+              Claim confidence and evidence,{' '}
               <span className="ua-landing-section-title-italic">
-                ranked and ready to act on.
+                in one merchant workspace.
               </span>
             </h2>
             <p className="ua-landing-section-body">
-              Linked identities, confidence grades, claims history, evidence packets, and network exposure - all in one audit view.
+              Identity patterns, confidence grades, claims history, evidence packs, and thresholded network signals — merchant-controlled review, not auto-blocks.
             </p>
           </Reveal>
           <Reveal delay={120}>
@@ -39,7 +39,7 @@ export function LandingDashboardSection() {
             <div className="ua-hover-glow ua-landing-dashboard-frame hidden sm:block">
               <Image
                 src="/screenshots/dashboard.png"
-                alt="Unauth merchant dashboard showing fraud rate, transaction volume, chargeback trend, and identity match breakdown"
+                alt="Unauth merchant dashboard showing claim metrics, transaction volume, chargeback trend, and identity match breakdown"
                 width={2880}
                 height={1800}
                 className="ua-landing-dashboard-img"

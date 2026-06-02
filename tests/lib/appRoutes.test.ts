@@ -66,6 +66,7 @@ describe('app route registry', () => {
   "Watchlist",
   "Evidence packages",
   "Reports",
+  "Network graph",
   "Historical import",
   "Import history",
 ]

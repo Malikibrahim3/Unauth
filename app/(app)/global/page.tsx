@@ -1,3 +1,4 @@
+// TODO(product-gating): require NETWORK_GRAPH entitlement when ENFORCE_PRODUCT_GATES is enabled.
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { ArrowRight, GitBranch } from 'lucide-react';

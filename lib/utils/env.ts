@@ -39,6 +39,14 @@ const envSchema = z.object({
   GORGIAS_SUPPORT_ALLOW_GLOBAL_SECRET: z.string().optional(),
   GORGIAS_SUPPORT_TEST_MERCHANT_ID: z.string().uuid().optional(),
   GORGIAS_SUPPORT_ALLOW_ENV_MERCHANT: z.string().optional(),
+  FRESHDESK_SUPPORT_WEBHOOK_SECRET: z.string().min(32).optional(),
+  FRESHDESK_SUPPORT_ALLOW_GLOBAL_SECRET: z.string().optional(),
+  FRESHDESK_SUPPORT_TEST_MERCHANT_ID: z.string().uuid().optional(),
+  FRESHDESK_SUPPORT_ALLOW_ENV_MERCHANT: z.string().optional(),
+  BIGCOMMERCE_CLIENT_ID: z.string().min(1).optional(),
+  BIGCOMMERCE_CLIENT_SECRET: z.string().min(1).optional(),
+  ENFORCE_PRODUCT_GATES: z.string().optional(),
+  NEXT_PUBLIC_ENFORCE_PRODUCT_GATES: z.string().optional(),
 }).superRefine((env, ctx) => {
   if (!env.NEXT_PUBLIC_SUPABASE_ANON_KEY && !env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) {
     ctx.addIssue({

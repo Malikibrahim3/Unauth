@@ -1,3 +1,4 @@
+// TODO(product-gating): require WATCHLIST entitlement when ENFORCE_PRODUCT_GATES is enabled.
 import { Suspense } from 'react';
 import { createClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';

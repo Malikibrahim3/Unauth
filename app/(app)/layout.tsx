@@ -44,6 +44,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const connectionPromise = ctx
     ? getConnectionState(serviceClient, ctx.merchantId)
     : Promise.resolve({
+        orderSourceConnected: false,
+        orderSourcePlatform: null,
+        orderSourceStoreKey: null,
         shopify: false,
         helpdesk: false,
         helpdeskProvider: null,
@@ -77,9 +80,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     (jobs as unknown as Array<{ is_demo: boolean }>).every((j) => j.is_demo);
 
   const merchantName = ((merchantProfile as { name?: string | null })?.name) ?? null;
-  const connectedShopDomain = connectionState.shopDomain;
-  const displayMerchantName = connectedShopDomain
-    ? connectedShopDomain.replace(/^www\./i, '').split('.')[0]?.replace(/[-_]/g, ' ') ?? merchantName
+  const connectedStoreKey =
+    connectionState.orderSourceStoreKey ?? connectionState.shopDomain;
+  const displayMerchantName = connectedStoreKey
+    ? connectedStoreKey.replace(/^www\./i, '').split('.')[0]?.replace(/[-_]/g, ' ') ?? merchantName
     : merchantName;
 
   return (
@@ -90,7 +94,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <Sidebar
           merchantName={displayMerchantName ?? null}
           userEmail={user.email ?? ''}
-          shopifyConnected={connectionState.shopify}
+          shopifyConnected={connectionState.orderSourceConnected}
           helpdeskConnected={connectionState.helpdesk}
         />
 

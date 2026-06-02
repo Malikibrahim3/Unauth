@@ -1,3 +1,4 @@
+// TODO(product-gating): require CUSTOMER_SEARCH / CUSTOMER_DOSSIER entitlements when ENFORCE_PRODUCT_GATES is enabled.
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { TABLES } from '@/lib/supabase/tables';
 import { normaliseEmail } from '@/lib/identity/normalise';

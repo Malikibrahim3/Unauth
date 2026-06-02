@@ -42,7 +42,12 @@ export type AuditAction =
   | 'rotate_gorgias_webhook_secret'
   | 'disable_gorgias_support_connection'
   | 'connect_shopify'
-  | 'disconnect_shopify';
+  | 'disconnect_shopify'
+  | 'create_woocommerce_connection'
+  | 'update_woocommerce_connection'
+  | 'disable_woocommerce_connection'
+  | 'connect_bigcommerce'
+  | 'disconnect_bigcommerce';
 
 export interface LogActionParams {
   ctx:          CallerContext;

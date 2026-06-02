@@ -106,7 +106,7 @@ export function buildNarrative(pkg: EvidencePackage): string {
     )
   } else if (ce3.disqualifyingFactors.length > 0) {
     lines.push(
-      `No prior transactions with a strong multi-signal match to the disputed order were identified (${ce3.disqualifyingFactors[0]}). The identity evidence and purchase history in this report may still support dispute review at your discretion.`
+      `CE 3.0 readiness is partial: no prior transactions with a strong multi-signal match to the disputed order were identified (${ce3.disqualifyingFactors[0]}). Missing IP/device checkout-time data may limit full qualification. The identity evidence and purchase history in this report may still support dispute review at your discretion.`
     )
   } else {
     lines.push(

@@ -4,6 +4,9 @@ import { createContext, useContext } from 'react';
 import type { ConnectionState } from '@/lib/connections/getConnectionState';
 
 const ConnectionStateContext = createContext<ConnectionState>({
+  orderSourceConnected: false,
+  orderSourcePlatform: null,
+  orderSourceStoreKey: null,
   shopify: false,
   helpdesk: false,
   helpdeskProvider: null,

@@ -7,14 +7,15 @@ import { LandingShopifySection } from './_components/sections/LandingShopifySect
 import { LandingPatternSection } from './_components/sections/LandingPatternSection';
 import { LandingDataSchemaSection } from './_components/sections/LandingDataSchemaSection';
 import { LandingDashboardSection } from './_components/sections/LandingDashboardSection';
+import { LandingProductTierSection } from './_components/sections/LandingProductTierSection';
 import { LandingComparisonSection } from './_components/sections/LandingComparisonSection';
 import { LandingFaqSection } from './_components/sections/LandingFaqSection';
 import { LandingFooterSection } from './_components/sections/LandingFooterSection';
 
 export const metadata = {
-  title: 'Unauth — Fraud Intelligence for Ecommerce',
+  title: 'Unauth — Chargeback Evidence & Claim Confidence for Ecommerce',
   description:
-    'Find repeat refund abuse and INR rings hiding across stores. Upload a CSV and get a free fraud graph audit.',
+    'Free chargeback evidence packs and CE 3.0 readiness checks. Upgrade to claim-confidence workflows and privacy-preserving network intelligence.',
 };
 
 export default function LandingPage() {
@@ -23,6 +24,7 @@ export default function LandingPage() {
     <div className="ua-landing-shell ua-landing-page-root">
       <LandingHeaderSection />
       <LandingHeroSection todayISO={todayISO} />
+      <LandingProductTierSection />
       <LandingShopifySection />
       <LandingPatternSection />
       <VerdictTicker />

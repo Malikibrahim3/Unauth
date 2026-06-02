@@ -17,7 +17,17 @@ export function DashboardSyncWaitingHero({ connection }: { connection: Connectio
         </p>
       </div>
       <div className="rounded-xl border p-5 space-y-3" style={{ background: 'var(--surface-raised)', borderColor: 'var(--border-default)' }}>
-        <DashboardSyncRow label="Shopify" connected={connection.shopify} icon={ShoppingBag} />
+        <DashboardSyncRow
+          label={
+            connection.orderSourcePlatform === 'woocommerce'
+              ? 'WooCommerce'
+              : connection.orderSourcePlatform === 'bigcommerce'
+                ? 'BigCommerce'
+                : 'Shopify'
+          }
+          connected={connection.orderSourceConnected}
+          icon={ShoppingBag}
+        />
         <DashboardSyncRow
           label={connection.helpdeskProvider ? capitalize(connection.helpdeskProvider) : 'Helpdesk'}
           connected={connection.helpdesk}

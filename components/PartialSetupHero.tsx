@@ -25,7 +25,7 @@ function HelpdeskMark() {
 }
 
 export default function PartialSetupHero({ connection }: PartialSetupHeroProps) {
-  const shopifyDone = connection.shopify || connection.shopifyOnlyConnected;
+  const shopifyDone = connection.orderSourceConnected || connection.shopifyOnlyConnected;
   const helpdeskDone = connection.helpdesk || connection.helpdeskOnlyConnected;
 
   const heading = shopifyDone

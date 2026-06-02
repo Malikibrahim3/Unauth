@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { CheckCircle2, ArrowRight, Store } from 'lucide-react';
 import { useFetchJson } from '@/lib/react/useFetchJson';
 
@@ -18,7 +19,7 @@ const PLATFORM_OPTIONS: PlatformOption[] = [
     id: 'shopify',
     name: 'Shopify',
     description: 'Sync orders, customers, refunds and fulfilment events in real time',
-    href: '#',
+    href: '/settings/integrations/shopify',
     logo: '/integrations/shopify.svg',
     available: true,
   },
@@ -26,17 +27,17 @@ const PLATFORM_OPTIONS: PlatformOption[] = [
     id: 'woocommerce',
     name: 'WooCommerce',
     description: 'Pull order and customer data from your WordPress store',
-    href: '#',
+    href: '/settings/integrations/woocommerce',
     logo: '/integrations/woocommerce.svg',
-    available: false,
+    available: true,
   },
   {
     id: 'bigcommerce',
     name: 'BigCommerce',
     description: 'Sync orders and customers from your BigCommerce storefront',
-    href: '#',
+    href: '/settings/integrations/bigcommerce',
     logo: '/integrations/bigcommerce.svg',
-    available: false,
+    available: true,
   },
   {
     id: 'magento',
@@ -53,13 +54,33 @@ type ShopifyStatusResponse = {
   shopDomain?: string | null;
 };
 
+type WooCommerceStatusResponse = {
+  connected?: boolean;
+  storeKey?: string | null;
+};
+
+type BigCommerceStatusResponse = {
+  connected?: boolean;
+  storeKey?: string | null;
+};
+
 export default function OrderSourceClient() {
   const { data: shopifyData } = useFetchJson<ShopifyStatusResponse>('/api/shopify/status', {
     parse: async (response) => (response.ok ? response.json() : { connected: false, shopDomain: null }),
   });
+  const { data: wooData } = useFetchJson<WooCommerceStatusResponse>('/api/woocommerce/status', {
+    parse: async (response) => (response.ok ? response.json() : { connected: false, storeKey: null }),
+  });
+  const { data: bcData } = useFetchJson<BigCommerceStatusResponse>('/api/bigcommerce/status', {
+    parse: async (response) => (response.ok ? response.json() : { connected: false, storeKey: null }),
+  });
 
-  const statusKnown = shopifyData !== undefined;
+  const statusKnown =
+    shopifyData !== undefined && wooData !== undefined && bcData !== undefined;
   const shopifyConnected = Boolean(shopifyData?.connected);
+  const wooConnected = Boolean(wooData?.connected);
+  const bcConnected = Boolean(bcData?.connected);
+  const orderSourceConnected = shopifyConnected || wooConnected || bcConnected;
 
   return (
     <div className="space-y-2.5">
@@ -79,17 +100,17 @@ export default function OrderSourceClient() {
           <div
             className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full"
             style={{
-              background: shopifyConnected
+              background: orderSourceConnected
                 ? 'var(--sev-clear, #2f6b43)'
                 : 'var(--text-muted)',
             }}
           />
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
-              {shopifyConnected ? 'Order source connected' : 'No order source connected'}
+              {orderSourceConnected ? 'Order source connected' : 'No order source connected'}
             </p>
             <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-              {shopifyConnected
+              {orderSourceConnected
                 ? 'Orders and customer data are syncing. Every flagged order traces back to a real transaction.'
                 : 'Connect your ecommerce platform to begin syncing orders and customer identity.'}
             </p>
@@ -98,9 +119,18 @@ export default function OrderSourceClient() {
 
         <div className="space-y-2.5">
           {PLATFORM_OPTIONS.map((platform) => {
-            const isShopify = platform.id === 'shopify';
-            const connected = isShopify && shopifyConnected;
-            const detail = isShopify ? shopifyData?.shopDomain : null;
+            const connected =
+              (platform.id === 'shopify' && shopifyConnected) ||
+              (platform.id === 'woocommerce' && wooConnected) ||
+              (platform.id === 'bigcommerce' && bcConnected);
+            const detail =
+              platform.id === 'shopify'
+                ? shopifyData?.shopDomain
+                : platform.id === 'woocommerce'
+                  ? wooData?.storeKey
+                  : platform.id === 'bigcommerce'
+                    ? bcData?.storeKey
+                    : null;
 
             return (
               <div key={platform.id}>
@@ -108,7 +138,9 @@ export default function OrderSourceClient() {
                   className="flex gap-3 rounded-lg border p-3"
                   style={{
                     borderColor: connected ? 'var(--sev-clear, #2f6b43)' : 'var(--surface-border)',
-                    background: connected ? 'color-mix(in srgb, var(--sev-clear, #2f6b43) 4%, var(--bg-surface))' : 'var(--bg-surface)',
+                    background: connected
+                      ? 'color-mix(in srgb, var(--sev-clear, #2f6b43) 4%, var(--bg-surface))'
+                      : 'var(--bg-surface)',
                   }}
                 >
                   <Image
@@ -125,22 +157,22 @@ export default function OrderSourceClient() {
                       </p>
                       {platform.available ? (
                         connected ? (
-                          <a
-                            href={`/settings/integrations/${platform.id}`}
+                          <Link
+                            href={platform.href}
                             className="inline-flex shrink-0 items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium"
                             style={{ borderColor: 'var(--surface-border)', color: 'var(--text-muted)' }}
                           >
                             Manage
-                          </a>
+                          </Link>
                         ) : (
-                          <button
-                            type="button"
+                          <Link
+                            href={platform.href}
                             className="inline-flex shrink-0 items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold"
                             style={{ background: 'var(--accent)', color: 'var(--accent-fg, #fff)' }}
                           >
                             Connect
                             <ArrowRight className="h-3 w-3" />
-                          </button>
+                          </Link>
                         )
                       ) : (
                         <span
@@ -184,7 +216,7 @@ export default function OrderSourceClient() {
           })}
         </div>
 
-        {shopifyConnected && (
+        {orderSourceConnected && (
           <p className="flex items-center gap-1.5 text-xs font-medium" style={{ color: 'var(--sev-clear, #2f6b43)' }}>
             <CheckCircle2 className="h-3.5 w-3.5" />
             Required order source satisfied

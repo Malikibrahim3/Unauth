@@ -145,7 +145,7 @@ function buildKpis(
   const evidence: Kpi = {
     label: 'Evidence ready',
     value: fmt(s.evidencePackages),
-    hint: 'Dispute-ready packages',
+    hint: 'CE 3.0 readiness where data exists',
     icon: <ShieldCheck className="h-4 w-4" />,
   };
   const syncHealth: Kpi = {

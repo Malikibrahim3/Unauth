@@ -60,7 +60,9 @@ function VerdictChip({ id, grade, score, signals, action }: VerdictEntry) {
         <span key={s} style={{ color: '#E8E4D8' }}>{s}{i < signals.length - 1 ? ' ' : ''}</span>
       ))}
       <span style={{ opacity: 0.55 }}>·</span>
-      <span style={{ color: '#E8E4D8' }}>{action.toUpperCase()}</span>
+      <span style={{ color: '#E8E4D8' }}>
+        {action === 'block' ? 'CHALLENGE' : action.toUpperCase()}
+      </span>
     </span>
   );
 }
