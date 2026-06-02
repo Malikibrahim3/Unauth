@@ -29,14 +29,29 @@ function baseStyles(): string {
       background: #14100e; padding: 12px; max-width: 320px;
     }
     .card { border-radius: 8px; border: 1px solid #3d2e28; padding: 12px; background: #1c1714; }
-    .title { font-size: 14px; font-weight: 700; margin-bottom: 10px; }
-    table.cmp { width: 100%; border-collapse: collapse; }
-    table.cmp th, table.cmp td { text-align: left; padding: 6px 4px; font-size: 12px; vertical-align: top; }
+    .title { font-size: 14px; font-weight: 700; margin-bottom: 10px; line-height: 1.3; }
+    table.cmp { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    table.cmp th, table.cmp td {
+      text-align: left;
+      padding: 6px 4px;
+      font-size: 12px;
+      vertical-align: top;
+      white-space: normal;
+      overflow-wrap: break-word;
+      word-break: normal;
+      hyphens: auto;
+    }
     table.cmp thead th { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.7; }
-    table.cmp tbody th { font-weight: 600; opacity: 0.85; white-space: nowrap; }
+    table.cmp tbody th { font-weight: 600; opacity: 0.85; width: 34%; }
     table.cmp td { opacity: 0.95; }
-    .grade { font-size: 15px; font-weight: 700; letter-spacing: 0.04em; margin-bottom: 4px; }
-    .claims { font-size: 12px; opacity: 0.9; margin-bottom: 10px; }
+    .grade, .claims, .ce3, .no-network, .watchlist {
+      white-space: normal;
+      overflow-wrap: break-word;
+      word-break: normal;
+      hyphens: auto;
+    }
+    .grade { font-size: 15px; font-weight: 700; letter-spacing: 0.04em; margin-bottom: 4px; line-height: 1.3; }
+    .claims { font-size: 12px; opacity: 0.9; margin-bottom: 10px; line-height: 1.4; }
     .ce3 { margin-top: 10px; font-size: 11px; color: #8fb7d6; }
     .clean { color: #6fcf97; }
     .no-network { color: #6fcf97; font-size: 12px; }

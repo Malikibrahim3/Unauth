@@ -117,14 +117,13 @@ export function claimWidgetToJson(result: GorgiasClaimWidgetResult): GorgiasWidg
       };
     }
     if (result.kind === 'helpdesk_disconnected') {
-      const message = result.message ?? 'Gorgias is not connected to Unauth.';
       return {
         identity: 'Helpdesk not connected',
-        claims: 'Claim history unavailable',
-        orders: message,
-        claim_rate: 'Incomplete until Gorgias is reconnected',
+        claims: 'Reconnect Gorgias',
+        orders: 'Not connected',
+        claim_rate: 'Unavailable',
         primary_reason: '—',
-        recent_activity: 'Reconnect Gorgias in Unauth settings',
+        recent_activity: 'Reconnect in Unauth',
         ce3_evidence: '—',
         watchlisted: '—',
       };
