@@ -231,18 +231,18 @@ async function applyExistingClaimTagAction(
   if (!claimId) return null;
 
   const status = input.detection.action === 'void' ? 'voided' : input.detection.newStatus;
-  await (supabase as { from: (table: string) => any })
-    .from('merchant_claims')
-    .update({
-      status,
-      trigger_tag: input.detection.triggerTag,
-      requires_merchant_review: input.detection.requiresMerchantReview,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', claimId)
-    .eq('merchant_id', input.merchantId);
-
-  await appendClaimEvent(supabase as any, {
+  await Promise.all([
+    (supabase as { from: (table: string) => any })
+      .from('merchant_claims')
+      .update({
+        status,
+        trigger_tag: input.detection.triggerTag,
+        requires_merchant_review: input.detection.requiresMerchantReview,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', claimId)
+      .eq('merchant_id', input.merchantId),
+    appendClaimEvent(supabase as any, {
     claim_id: claimId,
     merchant_id: input.merchantId,
     shop_domain: input.normalized.shop_domain,
@@ -254,7 +254,8 @@ async function applyExistingClaimTagAction(
       trigger_tag: input.detection.triggerTag,
       support_case_id: input.normalized.external_case_id,
     },
-  });
+  }),
+  ]);
 
   await (supabase as { from: (table: string) => any })
     .from('support_case_intake')

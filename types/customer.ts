@@ -8,9 +8,9 @@
  * `lib/adapters/customer.ts` — do NOT duplicate fields here.
  */
 
-import type { SignalType, SignalStrength } from '@/components/ui/SignalBadge';
+import type { SignalType, SignalStrength } from '@/lib/ui/signalBadgeMeta';
 import type { ConfidenceGradeValue } from '@/lib/confidence';
-import type { TimelineEventItem } from '@/components/ui/Timeline';
+import type { TimelineEventItem } from '@/components/ui/timelineTypes';
 
 export type { ConfidenceGradeValue, SignalType, SignalStrength };
 

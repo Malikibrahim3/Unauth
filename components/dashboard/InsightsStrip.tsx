@@ -14,19 +14,20 @@ interface InsightsStripProps {
   insights: Insight[];
 }
 
+function colorFor(level: Insight['level']) {
+  if (level === 'warn') return { bg: 'var(--warning-bg, #F7F0DA)', border: 'var(--warning-bd, #CDB258)', text: 'var(--warning, #8B6A14)', dot: 'var(--warning)' };
+  if (level === 'positive') return { bg: 'var(--success-bg)', border: 'var(--success-bd)', text: 'var(--success)', dot: 'var(--success)' };
+  return { bg: 'var(--info-bg)', border: 'var(--info-bd)', text: 'var(--info)', dot: 'var(--info)' };
+}
+
 export default function InsightsStrip({ insights }: InsightsStripProps) {
   if (!insights.length) return null;
 
-  function colorFor(level: Insight['level']) {
-    if (level === 'warn') return { bg: 'var(--warning-bg, #F7F0DA)', border: 'var(--warning-bd, #CDB258)', text: 'var(--warning, #8B6A14)', dot: 'var(--warning)' };
-    if (level === 'positive') return { bg: 'var(--success-bg)', border: 'var(--success-bd)', text: 'var(--success)', dot: 'var(--success)' };
-    return { bg: 'var(--info-bg)', border: 'var(--info-bd)', text: 'var(--info)', dot: 'var(--info)' };
-  }
-
   return (
     <div className="mb-6 space-y-2">
-      {insights.map((ins, i) => {
+      {insights.map((ins) => {
         const c = colorFor(ins.level);
+        const insightKey = ins.href ?? ins.text;
         const inner = (
           <div
             className={`flex items-start gap-2.5 px-4 py-2.5 rounded-lg border text-body-sm ${ins.href ? 'cursor-pointer hover:brightness-95 transition-[filter]' : ''}`}
@@ -42,11 +43,11 @@ export default function InsightsStrip({ insights }: InsightsStripProps) {
           </div>
         );
         return ins.href ? (
-          <Link key={i} href={ins.href} className="block">
+          <Link key={insightKey} href={ins.href} className="block">
             {inner}
           </Link>
         ) : (
-          <div key={i}>{inner}</div>
+          <div key={insightKey}>{inner}</div>
         );
       })}
     </div>

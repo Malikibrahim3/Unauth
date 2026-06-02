@@ -10,6 +10,8 @@ interface BuildEvidencePackageTriggerProps {
   title?: string;
   className?: string;
   style?: React.CSSProperties;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   children: ReactNode;
 }
 
@@ -20,9 +22,13 @@ export function BuildEvidencePackageTrigger({
   title,
   className,
   style,
+  open: openProp,
+  onOpenChange,
   children,
 }: BuildEvidencePackageTriggerProps) {
-  const [open, setOpen] = useState(false);
+  const [openUncontrolled, setOpenUncontrolled] = useState(false);
+  const open = openProp ?? openUncontrolled;
+  const setOpen = onOpenChange ?? setOpenUncontrolled;
 
   return (
     <>

@@ -1,9 +1,14 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useReducer } from 'react';
 import { useRouter } from 'next/navigation';
 import Papa from 'papaparse';
-import { autoMapHeaders, REQUIRED_FIELDS, type AutoMapResult } from '@/lib/csv/headerAliases';
+import { autoMapHeaders, type AutoMapResult } from '@/lib/csv/headerAliases';
+import {
+  auditUploadFormReducer,
+  createAuditUploadInitialState,
+} from '@/app/(public)/audit/auditUploadFormReducer';
+import styles from '@/app/(public)/audit/AuditUploadForm.module.css';
 
 const SCHEMA_REQUIRED = [
   'order_id', 'customer_email', 'order_date', 'order_value',
@@ -16,7 +21,7 @@ const SCHEMA_OPTIONAL = [
   'browser_fingerprint',
 ];
 
-const MAX_FILE_BYTES = 50 * 1024 * 1024; // 50 MB
+const MAX_FILE_BYTES = 50 * 1024 * 1024;
 
 function detectCsv(file: File): Promise<{ rowCount: number; columnMap: AutoMapResult }> {
   return new Promise((resolve, reject) => {
@@ -49,56 +54,39 @@ function detectCsv(file: File): Promise<{ rowCount: number; columnMap: AutoMapRe
 
 export default function AuditUploadForm() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [emailError, setEmailError] = useState('');
-  const [file, setFile] = useState<File | null>(null);
-  const [fileError, setFileError] = useState('');
-  const [rowCount, setRowCount] = useState<number | null>(null);
-  const [columnMap, setColumnMap] = useState<AutoMapResult | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [submitError, setSubmitError] = useState('');
-  const [isDragging, setIsDragging] = useState(false);
-  const [schemaOpen, setSchemaOpen] = useState(false);
+  const [state, dispatch] = useReducer(auditUploadFormReducer, undefined, createAuditUploadInitialState);
+  const columnMapRef = useRef<AutoMapResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    const prefill = sessionStorage.getItem('auditPrefillEmail');
-    if (prefill) {
-      setEmail(prefill);
-      sessionStorage.removeItem('auditPrefillEmail');
-    }
-  }, []);
-
   const processFile = useCallback(async (selected: File) => {
-    setFileError('');
-    setSubmitError('');
-    setFile(null);
-    setRowCount(null);
-    setColumnMap(null);
+    dispatch({ type: 'patch', patch: { fileError: '', submitError: '', file: null, rowCount: null } });
+    columnMapRef.current = null;
 
     if (!selected.name.toLowerCase().endsWith('.csv')) {
-      setFileError('CSV files only. Export your orders as .csv and try again.');
+      dispatch({ type: 'patch', patch: { fileError: 'CSV files only. Export your orders as .csv and try again.' } });
       return;
     }
     if (selected.size > MAX_FILE_BYTES) {
-      setFileError('File too large. Maximum 50 MB. Split into smaller exports and try again.');
+      dispatch({ type: 'patch', patch: { fileError: 'File too large. Maximum 50 MB. Split into smaller exports and try again.' } });
       return;
     }
     try {
-      const { rowCount: rc, columnMap: cm } = await detectCsv(selected);
-      setFile(selected);
-      setRowCount(rc);
-      setColumnMap(cm);
+      const { rowCount, columnMap } = await detectCsv(selected);
+      columnMapRef.current = columnMap;
+      dispatch({ type: 'fileDetected', file: selected, rowCount });
     } catch (err) {
-      setFileError(err instanceof Error ? err.message : 'Could not read CSV.');
+      dispatch({
+        type: 'patch',
+        patch: { fileError: err instanceof Error ? err.message : 'Could not read CSV.' },
+      });
     }
   }, []);
 
-  const onDragOver = useCallback((e: React.DragEvent) => { e.preventDefault(); setIsDragging(true); }, []);
-  const onDragLeave = useCallback((e: React.DragEvent) => { e.preventDefault(); setIsDragging(false); }, []);
+  const onDragOver = useCallback((e: React.DragEvent) => { e.preventDefault(); dispatch({ type: 'patch', patch: { isDragging: true } }); }, []);
+  const onDragLeave = useCallback((e: React.DragEvent) => { e.preventDefault(); dispatch({ type: 'patch', patch: { isDragging: false } }); }, []);
   const onDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
-    setIsDragging(false);
+    dispatch({ type: 'patch', patch: { isDragging: false } });
     const dropped = e.dataTransfer.files[0];
     if (dropped) processFile(dropped);
   }, [processFile]);
@@ -108,212 +96,153 @@ export default function AuditUploadForm() {
     if (selected) processFile(selected);
   }
 
+  function activateDropZone() {
+    fileInputRef.current?.click();
+  }
+
+  function onDropZoneKeyDown(e: React.KeyboardEvent<HTMLButtonElement>) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      activateDropZone();
+    }
+  }
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setEmailError('');
-    setSubmitError('');
-    setFileError((c) => c === 'Please upload your order export to continue.' ? '' : c);
+    dispatch({ type: 'patch', patch: { emailError: '', submitError: '' } });
+    if (state.fileError === 'Please upload your order export to continue.') {
+      dispatch({ type: 'patch', patch: { fileError: '' } });
+    }
 
     let valid = true;
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setEmailError('We need your email to send you the results.');
+    if (!state.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(state.email)) {
+      dispatch({ type: 'patch', patch: { emailError: 'We need your email to send you the results.' } });
       valid = false;
     }
-    if (!file) {
-      setFileError('Please upload your order export to continue.');
+    if (!state.file) {
+      dispatch({ type: 'patch', patch: { fileError: 'Please upload your order export to continue.' } });
       valid = false;
     }
     if (!valid) return;
 
-    setLoading(true);
+    dispatch({ type: 'patch', patch: { loading: true } });
     const formData = new FormData();
-    formData.append('email', email.trim());
-    formData.append('file', file!);
-    formData.append('columnMap', JSON.stringify(columnMap ?? {}));
+    formData.append('email', state.email.trim());
+    formData.append('file', state.file as File);
+    formData.append('columnMap', JSON.stringify(columnMapRef.current ?? {}));
 
     const response = await fetch('/api/public-audit/submit', { method: 'POST', body: formData });
     const body = await response.json().catch(() => ({}));
-    setLoading(false);
+    dispatch({ type: 'patch', patch: { loading: false } });
 
     if (!response.ok) {
-      setSubmitError(body?.error ?? 'Something went wrong. Try again or email hello@unauth.co');
+      dispatch({ type: 'patch', patch: { submitError: body?.error ?? 'Something went wrong. Try again or email hello@unauth.co' } });
       return;
     }
     const auditId = typeof body?.auditId === 'string' ? body.auditId : null;
     if (!auditId) {
-      setSubmitError('Something went wrong. Try again or email hello@unauth.co');
+      dispatch({ type: 'patch', patch: { submitError: 'Something went wrong. Try again or email hello@unauth.co' } });
       return;
     }
     router.push(`/audit/submitted?audit=${encodeURIComponent(auditId)}`);
   }
 
-  const mono: React.CSSProperties = { fontFamily: 'var(--font-dm-mono, monospace)' };
-  const sans: React.CSSProperties = { fontFamily: 'var(--font-dm-sans, sans-serif)' };
-  const serif: React.CSSProperties = { fontFamily: 'var(--font-serif, serif)' };
-  const muted = '#6B6455';
-  const subtle = '#9A9080';
-
   return (
-    <form onSubmit={onSubmit} noValidate style={{ width: '100%' }}>
-      <div style={{ marginBottom: '26px' }}>
-        <label
-          htmlFor="audit-email"
-          style={{ ...mono, display: 'block', fontSize: '11px', letterSpacing: '0.08em', color: muted, marginBottom: '6px' }}
-        >
+    <form onSubmit={onSubmit} noValidate className={styles.form}>
+      <div className={styles.fieldGroup}>
+        <label htmlFor="audit-email" className={styles.label}>
           EMAIL
         </label>
         <input
           id="audit-email"
           type="email"
-          value={email}
-          onChange={(e) => { setEmail(e.target.value); setEmailError(''); }}
+          value={state.email}
+          onChange={(e) => dispatch({ type: 'patch', patch: { email: e.target.value, emailError: '' } })}
           placeholder="your@store.com"
-          style={{
-            ...serif,
-            width: '100%',
-            background: 'rgba(236, 229, 212, 0.48)',
-            border: 'none',
-            color: '#1A1814',
-            padding: '14px 16px',
-            fontSize: '18px',
-            outline: 'none',
-            boxSizing: 'border-box',
-            borderRadius: 0,
-          }}
+          className={styles.emailInput}
         />
-        {emailError && (
-          <p style={{ ...mono, fontSize: '12px', color: '#9F1D1D', marginTop: '6px', marginBottom: 0 }}>
-            {emailError}
-          </p>
-        )}
+        {state.emailError ? <p className={styles.errorMono}>{state.emailError}</p> : null}
       </div>
 
-      <div style={{ marginBottom: '20px' }}>
-        <label
-          style={{ ...mono, display: 'block', fontSize: '11px', letterSpacing: '0.08em', color: muted, marginBottom: '6px' }}
-        >
+      <div className={styles.fieldGroupTight}>
+        <label htmlFor="audit-upload-order-export" className={styles.label}>
           ORDER EXPORT
         </label>
-        <div
-          onClick={() => fileInputRef.current?.click()}
+        <button
+          type="button"
+          onClick={activateDropZone}
+          onKeyDown={onDropZoneKeyDown}
           onDragOver={onDragOver}
           onDragLeave={onDragLeave}
           onDrop={onDrop}
-          style={{
-            border: `1px dashed ${isDragging ? '#7B2D26' : '#C8B89A'}`,
-            padding: '28px 20px',
-            cursor: 'pointer',
-            textAlign: 'center',
-            background: isDragging ? 'rgba(123,45,38,0.04)' : 'transparent',
-            transition: 'border-color 0.15s, background 0.15s',
-          }}
+          className={`${styles.dropZone} ${state.isDragging ? styles.dropZoneDragging : ''}`}
         >
           <input
+            id="audit-upload-order-export"
             ref={fileInputRef}
             type="file"
             accept=".csv,text/csv"
-            style={{ display: 'none' }}
+            className={styles.hiddenFileInput}
             onChange={onFileInputChange}
+            tabIndex={-1}
+            aria-hidden
           />
-          {file && rowCount !== null ? (
-            <p style={{ ...mono, fontSize: '13px', color: '#1A1814', margin: 0 }}>
-              {file.name} · {rowCount.toLocaleString()} rows detected
+          {state.file && state.rowCount !== null ? (
+            <p className={`${styles.mono} ${styles.hintMono}`} style={{ color: '#1a1814', margin: 0 }}>
+              {state.file.name} · {state.rowCount.toLocaleString()} rows detected
             </p>
-          ) : fileError && fileError !== 'Please upload your order export to continue.' ? (
-            <p style={{ ...mono, fontSize: '13px', color: '#9F1D1D', margin: 0 }}>
-              {fileError}
-            </p>
+          ) : state.fileError && state.fileError !== 'Please upload your order export to continue.' ? (
+            <p className={styles.errorMono} style={{ margin: 0 }}>{state.fileError}</p>
           ) : (
             <>
-              <p style={{ ...mono, fontSize: '13px', color: muted, margin: '0 0 6px' }}>
-                Drop your CSV here, or click to browse
-              </p>
-              <p style={{ ...mono, fontSize: '11px', color: subtle, margin: 0 }}>
+              <p className={styles.hintMono}>Drop your CSV here, or click to browse</p>
+              <p className={styles.hintMonoSmall}>
                 Shopify · WooCommerce · custom OMS · Stripe exports accepted · max 50 MB
               </p>
             </>
           )}
-        </div>
-        {fileError === 'Please upload your order export to continue.' && (
-          <p style={{ ...sans, fontSize: '13px', color: '#9F1D1D', marginTop: '6px', marginBottom: 0 }}>
-            {fileError}
-          </p>
-        )}
+        </button>
+        {state.fileError === 'Please upload your order export to continue.' ? (
+          <p className={styles.errorSans}>{state.fileError}</p>
+        ) : null}
       </div>
 
       <button
         type="submit"
-        disabled={loading}
-        style={{
-          ...sans,
-          display: 'block',
-          width: '100%',
-          background: loading ? '#5C2219' : '#7B2D26',
-          color: '#FFFFFF',
-          fontSize: '15px',
-          fontWeight: 500,
-          padding: '15px 20px',
-          border: 'none',
-          cursor: loading ? 'not-allowed' : 'pointer',
-          letterSpacing: '0.01em',
-        }}
-        onMouseEnter={(e) => { if (!loading) (e.currentTarget as HTMLButtonElement).style.background = '#6A251F'; }}
-        onMouseLeave={(e) => { if (!loading) (e.currentTarget as HTMLButtonElement).style.background = '#7B2D26'; }}
+        disabled={state.loading}
+        className={styles.submitButton}
       >
-        {loading ? 'Uploading...' : 'Run free audit →'}
+        {state.loading ? 'Uploading…' : 'Run free audit →'}
       </button>
 
-      {submitError && (
-        <p style={{ ...sans, fontSize: '13px', color: '#9F1D1D', marginTop: '10px', marginBottom: 0 }}>
-          {submitError}
-        </p>
-      )}
+      {state.submitError ? <p className={styles.errorSans} style={{ marginTop: '10px' }}>{state.submitError}</p> : null}
 
       <div style={{ marginTop: '28px' }}>
         <button
           type="button"
-          onClick={() => setSchemaOpen((v) => !v)}
-          style={{
-            ...mono,
-            background: 'none',
-            border: 'none',
-            padding: 0,
-            cursor: 'pointer',
-            fontSize: '12px',
-            color: muted,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-          }}
+          onClick={() => dispatch({ type: 'patch', patch: { schemaOpen: !state.schemaOpen } })}
+          className={styles.schemaToggle}
         >
           What fields do we need?
         </button>
 
-        {schemaOpen && (
-          <div style={{ marginTop: '16px' }}>
+        {state.schemaOpen ? (
+          <div className={styles.schemaPanel}>
             <div className="grid gap-6 md:grid-cols-2">
               <div>
-                <p style={{ ...mono, fontSize: '10px', letterSpacing: '0.1em', color: subtle, marginTop: 0, marginBottom: '10px' }}>
-                  REQUIRED
-                </p>
-                <p style={{ ...mono, fontSize: '12px', color: muted, lineHeight: 1.8, margin: 0 }}>
-                  {SCHEMA_REQUIRED.join(' · ')}
-                </p>
+                <p className={styles.schemaHeading}>REQUIRED</p>
+                <p className={styles.bodyMono}>{SCHEMA_REQUIRED.join(' · ')}</p>
               </div>
               <div>
-                <p style={{ ...mono, fontSize: '10px', letterSpacing: '0.1em', color: subtle, marginTop: 0, marginBottom: '10px' }}>
-                  OPTIONAL — ENRICHMENT
-                </p>
-                <p style={{ ...mono, fontSize: '12px', color: muted, lineHeight: 1.8, margin: 0 }}>
-                  {SCHEMA_OPTIONAL.join(' · ')}
-                </p>
+                <p className={styles.schemaHeading}>OPTIONAL - ENRICHMENT</p>
+                <p className={styles.bodyMono}>{SCHEMA_OPTIONAL.join(' · ')}</p>
               </div>
             </div>
-            <p style={{ ...sans, fontSize: '12px', color: subtle, marginTop: '16px', marginBottom: 0 }}>
+            <p className={styles.bodySans}>
               Don&apos;t have every field? Upload what you have. The engine works with partial data.
             </p>
           </div>
-        )}
+        ) : null}
       </div>
     </form>
   );

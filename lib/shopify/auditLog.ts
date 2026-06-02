@@ -1,4 +1,4 @@
-import { redactSensitiveData } from '@/lib/log';
+import { redactSensitiveData } from '@/lib/log/redactSensitiveData';
 
 type ShopifyAuditPayload = Record<string, string | number | boolean | null | undefined>;
 

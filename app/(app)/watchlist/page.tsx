@@ -133,7 +133,7 @@ export default async function WatchlistPage({ searchParams }: { searchParams?: {
     if (!trendScoresMap.has(r.profile_id)) trendScoresMap.set(r.profile_id, []);
     trendScoresMap.get(r.profile_id)!.push(r.score_at_time);
   }
-  // recentRaw is newest-first — reverse so scores are oldest-first for trend calc
+  // recentRaw is newest-first - reverse so scores are oldest-first for trend calc
   trendScoresMap.forEach((scores, key) => trendScoresMap.set(key, scores.slice().reverse()));
 
   const total = count ?? 0;
@@ -197,7 +197,7 @@ export default async function WatchlistPage({ searchParams }: { searchParams?: {
                   <th className="text-left px-3 py-2 text-overline" style={{ color: 'var(--text-muted)' }}>Appeared in</th>
                   <th className="text-right px-3 py-2 text-overline" style={{ color: 'var(--text-muted)' }}>Score</th>
                   <th className="text-left px-3 py-2 text-overline" style={{ color: 'var(--text-muted)' }}>Risk</th>
-                  <th className="px-3 py-2" />
+                  <th className="px-3 py-2" aria-label="Actions" />
                 </tr>
               </thead>
               <tbody>
@@ -207,19 +207,19 @@ export default async function WatchlistPage({ searchParams }: { searchParams?: {
                     className="border-b transition-colors hover-bg-subtle"
                     style={{ borderColor: 'var(--border-subtle)' }}
                   >
-                    <td className="px-3 py-3">
-                      <div className="text-body-sm font-semibold" style={{ color: 'var(--text)' }}>{r.customer_profiles.names?.[0] ?? '—'}</div>
-                      <div className="text-caption" style={{ color: 'var(--text-muted)' }}>{r.customer_profiles.primary_email ?? '—'}</div>
+                    <td className="p-3">
+                      <div className="text-body-sm font-semibold" style={{ color: 'var(--text)' }}>{r.customer_profiles.names?.[0] ?? '-'}</div>
+                      <div className="text-caption" style={{ color: 'var(--text-muted)' }}>{r.customer_profiles.primary_email ?? '-'}</div>
                     </td>
-                    <td className="px-3 py-3 text-xs" style={{ color: 'var(--text-muted)' }}>
+                    <td className="p-3 text-xs" style={{ color: 'var(--text-muted)' }}>
                       {formatDate(r.processing_jobs.created_at)}
                       <span className="ml-1" style={{ color: 'var(--text-subtle)' }}>({r.processing_jobs.total_rows.toLocaleString()} rows)</span>
                     </td>
-                    <td className="px-3 py-3 text-right font-mono font-semibold" style={{ color: 'var(--text)' }}>{Math.round(r.score_at_time)}</td>
-                    <td className="px-3 py-3">
+                    <td className="p-3 text-right font-mono font-semibold" style={{ color: 'var(--text)' }}>{Math.round(r.score_at_time)}</td>
+                    <td className="p-3">
                       <ConfidenceBadge grade={riskLevelToNewGrade(r.customer_profiles.risk_level)} size="sm" />
                     </td>
-                    <td className="px-3 py-3 text-right">
+                    <td className="p-3 text-right">
                       <Link
                         href={`/customers/${r.profile_id}`}
                         className="text-xs font-semibold hover:underline whitespace-nowrap"
@@ -288,8 +288,7 @@ export default async function WatchlistPage({ searchParams }: { searchParams?: {
             </div>
           }
         >
-          <WatchlistTableClient rows={rows.map((r) => ({
-            ...r,
+          <WatchlistTableClient rows={rows.map((r) => ({ ...r,
             risk_trend_scores: r.customer_profile_id
               ? (trendScoresMap.get(r.customer_profile_id) ?? [])
               : [],

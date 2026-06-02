@@ -39,9 +39,9 @@ export default function FeedbackButtons({ transactionId, signalsThatFired }: Fee
         {submitted === null && (
           <>
             <button
-              onClick={() => submit('same_customer')}
+type="button"               onClick={() => submit('same_customer')}
               disabled={loading}
-              className="text-[10px] px-1.5 py-0.5 rounded border disabled:opacity-50 transition-colors"
+              className="text-xs px-1.5 py-0.5 rounded border disabled:opacity-50 transition-colors"
               style={{ borderColor: 'var(--risk-critical-bd)', color: 'var(--risk-critical)', background: 'transparent' }}
               onMouseEnter={e => (e.currentTarget.style.background = 'var(--risk-critical-bg)')}
               onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
@@ -49,27 +49,27 @@ export default function FeedbackButtons({ transactionId, signalsThatFired }: Fee
               Same customer confirmed
             </button>
             <button
-              onClick={() => submit('different_customer')}
+type="button"               onClick={() => submit('different_customer')}
               disabled={loading}
-              className="text-[10px] px-1.5 py-0.5 rounded-sm border transition-colors disabled:opacity-50" style={{ borderColor: 'var(--border-subtle)', color: 'var(--text-muted)', background: 'transparent' }} onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-subtle)')} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+              className="text-xs px-1.5 py-0.5 rounded-sm border transition-colors disabled:opacity-50" style={{ borderColor: 'var(--border-subtle)', color: 'var(--text-muted)', background: 'transparent' }} onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-subtle)')} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
             >
               Different customers confirmed
             </button>
           </>
         )}
         {submitted === 'same_customer' && (
-          <span className="text-[10px] px-1.5 py-0.5 rounded border flex items-center gap-1" style={{ borderColor: 'var(--risk-critical-bd)', background: 'var(--risk-critical-bg)', color: 'var(--risk-critical)' }}>
+          <span className="text-xs px-1.5 py-0.5 rounded border flex items-center gap-1" style={{ borderColor: 'var(--risk-critical-bd)', background: 'var(--risk-critical-bg)', color: 'var(--risk-critical)' }}>
             ✓ Saved
           </span>
         )}
         {submitted === 'different_customer' && (
-          <span className="text-[10px] px-1.5 py-0.5 rounded border flex items-center gap-1" style={{ borderColor: 'var(--border)', background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
+          <span className="text-xs px-1.5 py-0.5 rounded border flex items-center gap-1" style={{ borderColor: 'var(--border)', background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
             ✓ Saved
           </span>
         )}
       </div>
       {submitted === null && (
-        <p className="text-[9px] leading-tight" style={{ color: 'var(--text-subtle)' }}>Your feedback trains the identity matching engine</p>
+        <p className="text-xs leading-tight" style={{ color: 'var(--text-subtle)' }}>Your feedback trains the identity matching engine</p>
       )}
     </div>
   );

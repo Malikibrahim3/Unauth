@@ -29,7 +29,7 @@ export function PageHeader({ title, subtitle, breadcrumbs, actions }: PageHeader
         {breadcrumbs && breadcrumbs.length > 0 && (
           <nav className="flex items-center gap-1.5 text-body-sm mb-1" style={{ color: 'var(--text-muted)' }}>
             {breadcrumbs.map((crumb, i) => (
-              <span key={i} className="flex items-center gap-1.5">
+              <span key={crumb.href ?? crumb.label} className="flex items-center gap-1.5">
                 {i > 0 && <span className="opacity-40">/</span>}
                 {crumb.href ? (
                   <Link href={crumb.href} className="inline-flex items-center gap-1 hover:opacity-80 transition-colors">

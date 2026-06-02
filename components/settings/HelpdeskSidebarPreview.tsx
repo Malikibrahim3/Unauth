@@ -24,7 +24,7 @@ export default function HelpdeskSidebarPreview({ providerLabel }: HelpdeskSideba
           >
             <p className="text-sm font-bold">DEFINITE</p>
             <p className="mt-1 opacity-90">Matched on email + shipping address</p>
-            <p className="mt-3 text-[10px] font-semibold uppercase tracking-wide opacity-70">Claims on record</p>
+            <p className="mt-3 text-xs font-semibold uppercase tracking-wide opacity-70">Claims on record</p>
             <ul className="mt-1 list-disc space-y-0.5 pl-4 normal-case opacity-90">
               <li>2 refunds · your store</li>
               <li>4 refunds across 3 merchants</li>
@@ -37,13 +37,13 @@ export default function HelpdeskSidebarPreview({ providerLabel }: HelpdeskSideba
             </div>
             <div className="mt-3 flex flex-col gap-1.5">
               <span
-                className="block rounded py-1.5 text-center text-[11px] font-semibold"
+                className="block rounded py-1.5 text-center text-xs font-semibold"
                 style={{ background: 'var(--accent)', color: 'var(--ink-inverse)' }}
               >
                 View Profile
               </span>
               <span
-                className="block rounded border py-1.5 text-center text-[11px] font-semibold"
+                className="block rounded border py-1.5 text-center text-xs font-semibold"
                 style={{ borderColor: 'color-mix(in srgb, var(--sev-clear) 50%, transparent)', color: 'var(--sev-clear)' }}
               >
                 Get PDF

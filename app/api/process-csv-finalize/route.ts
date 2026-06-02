@@ -58,8 +58,7 @@ async function checkWatchlistAppearances(
     .eq('removed_by_merchant', false);
   if (!watchlisted || watchlisted.length === 0) return;
   const ids = (watchlisted as { customer_profile_id: string | null }[])
-    .map((w) => w.customer_profile_id)
-    .filter(Boolean) as string[];
+    .flatMap((w) => (w.customer_profile_id ? [w.customer_profile_id] : [])) as string[];
   if (ids.length === 0) return;
 
   const { data: appearances } = await supabase

@@ -5,7 +5,7 @@
  * Renders an inline PDF preview of the evidence package via the existing
  * /api/evidence/[id]/pdf endpoint.
  *
- * - iframe sandbox="allow-same-origin allow-scripts" (no allow-top-navigation)
+ * - Inline PDF via embed (same-origin API route)
  * - Aspect ratio 8.5 × 11 (US Letter) — responsive width
  * - Download button links to the same endpoint
  *
@@ -41,12 +41,12 @@ export function EvidencePackagePreview({ packageId, referenceNumber }: EvidenceP
         <div className="flex items-center gap-2 min-w-0">
           <FileText className="h-4 w-4 shrink-0" style={{ color: 'var(--text-muted)' }} />
           <div className="min-w-0">
-            <p className="text-[10px] font-semibold truncate uppercase tracking-[0.12em]" style={{ color: 'var(--text-muted)' }}>
+            <p className="text-xs font-semibold truncate uppercase tracking-[0.12em]" style={{ color: 'var(--text-muted)' }}>
               <span aria-hidden="true" className="ua-section-dot" />
               Evidence Package
             </p>
             {referenceNumber && (
-              <p className="text-[11px] font-mono truncate" style={{ color: 'var(--text-muted)' }}>
+              <p className="text-xs font-mono truncate" style={{ color: 'var(--text-muted)' }}>
                 {referenceNumber} · Draft preview
               </p>
             )}
@@ -76,12 +76,12 @@ export function EvidencePackagePreview({ packageId, referenceNumber }: EvidenceP
         </div>
       </div>
 
-      <div className="px-4 py-2 flex items-center justify-between text-[10px] uppercase tracking-[0.12em]" style={{ color: 'var(--text-muted)', borderBottom: '1px solid var(--border-subtle)' }}>
+      <div className="px-4 py-2 flex items-center justify-between text-xs uppercase tracking-[0.12em]" style={{ color: 'var(--text-muted)', borderBottom: '1px solid var(--border-subtle)' }}>
         <span>Document preview</span>
         <span>01 / 04</span>
       </div>
 
-      {/* PDF frame — letter aspect ratio */}
+      {/* PDF frame - letter aspect ratio */}
       <div className="relative w-full" style={{ paddingBottom: `${LETTER_ASPECT_RATIO}%` }}>
         {/* Loading state */}
         {!loaded && !errored && (
@@ -121,19 +121,18 @@ export function EvidencePackagePreview({ packageId, referenceNumber }: EvidenceP
           </div>
         )}
 
-        {/* iframe */}
         <iframe
           src={pdfUrl}
           title={`Evidence package PDF${referenceNumber ? ` — ${referenceNumber}` : ''}`}
-          // security: no top-navigation, no forms, no popups
-          sandbox="allow-same-origin allow-scripts"
+          aria-label={`Evidence package PDF preview${referenceNumber ? ` for ${referenceNumber}` : ''}`}
+          sandbox=""
           className="absolute inset-0 w-full h-full border-0"
           onLoad={() => setLoaded(true)}
           onError={() => setErrored(true)}
           style={{ display: errored ? 'none' : 'block' }}
         />
       </div>
-      <div className="px-4 py-2 flex items-center justify-between text-[10px] uppercase tracking-[0.12em]" style={{ color: 'var(--text-muted)', borderTop: '1px solid var(--border-subtle)', background: 'var(--bg-inset)' }}>
+      <div className="px-4 py-2 flex items-center justify-between text-xs uppercase tracking-[0.12em]" style={{ color: 'var(--text-muted)', borderTop: '1px solid var(--border-subtle)', background: 'var(--bg-inset)' }}>
         <span>Generated evidence package</span>
         <span>{referenceNumber ?? 'Draft'}</span>
       </div>

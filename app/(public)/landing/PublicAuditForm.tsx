@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useReducer, useRef } from 'react';
 import Papa from 'papaparse';
 import { t } from './_tokens';
 import { autoMapHeaders, REQUIRED_FIELDS, type RequiredField } from '@/lib/csv/headerAliases';
@@ -101,60 +101,111 @@ async function hashCsv(file: File): Promise<{
   };
 }
 
+type FormState = {
+  email: string;
+  file: File | null;
+  rowCount: number | null;
+  hashedFile: File | null;
+  loading: boolean;
+  error: string;
+};
+
+type FormAction =
+  | { type: 'SET_EMAIL'; email: string }
+  | { type: 'CLEAR_FILE' }
+  | { type: 'FILE_READY'; file: File; rowCount: number; hashedFile: File }
+  | { type: 'FILE_ERROR'; error: string }
+  | { type: 'SUBMIT_START' }
+  | { type: 'SUBMIT_END'; error?: string };
+
+const initialState: FormState = {
+  email: '',
+  file: null,
+  rowCount: null,
+  hashedFile: null,
+  loading: false,
+  error: '',
+};
+
+function formReducer(state: FormState, action: FormAction): FormState {
+  switch (action.type) {
+    case 'SET_EMAIL':
+      return { ...state, email: action.email };
+    case 'CLEAR_FILE':
+      return { ...state, file: null, rowCount: null, hashedFile: null, error: '' };
+    case 'FILE_READY':
+      return {
+        ...state,
+        file: action.file,
+        rowCount: action.rowCount,
+        hashedFile: action.hashedFile,
+        error: '',
+      };
+    case 'FILE_ERROR':
+      return { ...state, file: null, rowCount: null, hashedFile: null, error: action.error };
+    case 'SUBMIT_START':
+      return { ...state, loading: true, error: '' };
+    case 'SUBMIT_END':
+      return { ...state, loading: false, error: action.error ?? '' };
+    default:
+      return state;
+  }
+}
+
 export default function PublicAuditForm() {
-  const [email, setEmail] = useState('');
-  const [file, setFile] = useState<File | null>(null);
-  const [rowCount, setRowCount] = useState<number | null>(null);
-  const [columnMap, setColumnMap] = useState<Partial<Record<RequiredField, string>>>({});
-  const [hashedFile, setHashedFile] = useState<File | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [state, dispatch] = useReducer(formReducer, initialState);
+  const columnMapRef = useRef<Partial<Record<RequiredField, string>>>({});
 
   async function onFileSelect(nextFile: File | null) {
-    setError('');
-    setFile(nextFile);
-    setRowCount(null);
-    setColumnMap({});
-    setHashedFile(null);
+    dispatch({ type: 'CLEAR_FILE' });
+    columnMapRef.current = {};
     if (!nextFile) return;
     if (!nextFile.name.toLowerCase().endsWith('.csv')) {
-      setError('Please upload a CSV file.');
+      dispatch({ type: 'FILE_ERROR', error: 'Please upload a CSV file.' });
       return;
     }
     try {
       const hashed = await hashCsv(nextFile);
-      setRowCount(hashed.rowCount);
-      setColumnMap(hashed.columnMap);
-      setHashedFile(hashed.hashedFile);
+      columnMapRef.current = hashed.columnMap;
+      dispatch({
+        type: 'FILE_READY',
+        file: nextFile,
+        rowCount: hashed.rowCount,
+        hashedFile: hashed.hashedFile,
+      });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not prepare CSV.');
+      dispatch({
+        type: 'FILE_ERROR',
+        error: err instanceof Error ? err.message : 'Could not prepare CSV.',
+      });
     }
   }
 
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
-    if (!hashedFile) return;
-    setLoading(true);
-    setError('');
+    if (!state.hashedFile) return;
+    dispatch({ type: 'SUBMIT_START' });
     const formData = new FormData();
-    formData.append('email', email.trim());
-    formData.append('file', hashedFile);
-    formData.append('columnMap', JSON.stringify(columnMap));
+    formData.append('email', state.email.trim());
+    formData.append('file', state.hashedFile);
+    formData.append('columnMap', JSON.stringify(columnMapRef.current));
 
     const response = await fetch('/api/public-audit/submit', {
       method: 'POST',
       body: formData,
     });
     const body = await response.json().catch(() => ({}));
-    setLoading(false);
 
     if (!response.ok) {
-      setError(typeof body?.error === 'string' ? body.error : 'Could not submit audit.');
+      dispatch({
+        type: 'SUBMIT_END',
+        error: typeof body?.error === 'string' ? body.error : 'Could not submit audit.',
+      });
       return;
     }
     const auditId = typeof body?.auditId === 'string' ? body.auditId : null;
     if (!auditId) {
-      setError('Audit submission failed.');
+      dispatch({ type: 'SUBMIT_END', error: 'Audit submission failed.' });
       return;
     }
     window.location.href = `/audit/${auditId}/submitted`;
@@ -166,8 +217,9 @@ export default function PublicAuditForm() {
         <input
           type="email"
           required
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
+          aria-label="Email address"
+          value={state.email}
+          onChange={(event) => dispatch({ type: 'SET_EMAIL', email: event.target.value })}
           placeholder="your@store.com"
           style={{
             width: '100%',
@@ -201,37 +253,25 @@ export default function PublicAuditForm() {
           <p style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '12px', color: t.inkTertiary, marginTop: '6px', marginBottom: 0 }}>
             .csv only
           </p>
-          {file ? (
-            <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '11px', color: t.darkMuted, marginTop: '10px', marginBottom: 0 }}>
-              {file.name} · {rowCount !== null ? `${rowCount.toLocaleString()} rows` : 'preparing...'}
+          {state.file ? (
+            <p style={{ fontFamily: 'var(--font-dm-mono, monospace)', fontSize: '12px', color: t.darkMuted, marginTop: '10px', marginBottom: 0 }}>
+              {state.file.name} · {state.rowCount !== null ? `${state.rowCount.toLocaleString()} rows` : 'preparing…'}
             </p>
           ) : null}
         </label>
 
         <button
           type="submit"
-          disabled={loading || !hashedFile}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: t.darkBright,
-            color: t.darkBg,
-            fontFamily: 'var(--font-dm-sans, sans-serif)',
-            fontSize: '15px',
-            fontWeight: 500,
-            padding: '12px 16px',
-            border: `1px solid ${t.darkBright}`,
-            opacity: loading || !hashedFile ? 0.7 : 1,
-          }}
+          disabled={state.loading || !state.hashedFile}
+          className="ua-landing-public-audit-submit"
         >
-          {loading ? 'Starting audit...' : 'Run free audit →'}
+          {state.loading ? 'Starting audit…' : 'Run free audit →'}
         </button>
       </div>
 
-      {error ? (
+      {state.error ? (
         <p style={{ color: t.errorFg, fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '13px', marginTop: '10px', marginBottom: 0 }}>
-          {error}
+          {state.error}
         </p>
       ) : null}
     </form>

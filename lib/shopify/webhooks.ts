@@ -29,15 +29,17 @@ export async function registerShopifyWebhooks(input: { shopDomain: string; acces
   const { shopDomain, accessToken } = input;
   const address = `${getAppUrl()}/api/shopify/webhooks`;
   const apiVersion = '2025-10';
-  for (const topic of WEBHOOK_TOPICS) {
-    await fetch(`https://${shopDomain}/admin/api/${apiVersion}/webhooks.json`, {
-      method: 'POST',
-      headers: {
-        'X-Shopify-Access-Token': accessToken,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ webhook: { topic, address, format: 'json' } }),
-      cache: 'no-store',
-    });
-  }
+  await Promise.all(
+    WEBHOOK_TOPICS.map((topic) =>
+      fetch(`https://${shopDomain}/admin/api/${apiVersion}/webhooks.json`, {
+        method: 'POST',
+        headers: {
+          'X-Shopify-Access-Token': accessToken,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ webhook: { topic, address, format: 'json' } }),
+        cache: 'no-store',
+      })
+    )
+  );
 }

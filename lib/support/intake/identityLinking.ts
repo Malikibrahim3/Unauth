@@ -120,9 +120,15 @@ export async function detectIdentityLinkCandidates(
   const seen = new Set<string>();
 
   try {
-    for (const def of definitions) {
-      if (!def.value) continue;
-      const matches = await matchOtherMerchants(client, def.field, def.value, merchantId);
+    const activeDefinitions = definitions.filter((def) => Boolean(def.value));
+    const definitionMatches = await Promise.all(
+      activeDefinitions.map(async (def) => ({
+        def,
+        matches: await matchOtherMerchants(client, def.field, def.value as string, merchantId),
+      })),
+    );
+    const candidatesToInsert: IdentityLinkCandidate[] = [];
+    for (const { def, matches } of definitionMatches) {
       for (const match of matches) {
         const candidate: IdentityLinkCandidate = {
           primary_customer_email_hash: hashes.customer_email_hash,
@@ -135,10 +141,11 @@ export async function detectIdentityLinkCandidates(
         const dedupeKey = `${candidate.linked_customer_email_hash}|${candidate.merchant_id_b}|${candidate.link_type}`;
         if (seen.has(dedupeKey)) continue;
         seen.add(dedupeKey);
-        await insertCandidate(client, candidate);
-        created.push(candidate);
+        candidatesToInsert.push(candidate);
       }
     }
+    await Promise.all(candidatesToInsert.map((candidate) => insertCandidate(client, candidate)));
+    created.push(...candidatesToInsert);
   } catch {
     // Linking is best-effort; swallow and return whatever was recorded.
   }

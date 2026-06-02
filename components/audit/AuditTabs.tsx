@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 interface Tab {
@@ -14,15 +14,17 @@ interface AuditTabsProps {
   defaultTab?: string;
 }
 
-export default function AuditTabs({ tabs, panels, defaultTab }: AuditTabsProps) {
+function AuditTabsInner({ tabs, panels, defaultTab }: AuditTabsProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [active, setActive] = useState(defaultTab ?? tabs[0]?.id ?? '');
+  const prevDefaultTabRef = useRef(defaultTab);
 
-  useEffect(() => {
+  if (defaultTab !== prevDefaultTabRef.current) {
+    prevDefaultTabRef.current = defaultTab;
     if (defaultTab) setActive(defaultTab);
-  }, [defaultTab]);
+  }
 
   function selectTab(tabId: string) {
     setActive(tabId);
@@ -34,8 +36,8 @@ export default function AuditTabs({ tabs, panels, defaultTab }: AuditTabsProps) 
   return (
     <div>
       <div
-        className="mb-6 flex gap-0 border-b"
-        style={{ borderColor: 'var(--border-subtle)' }}
+        className="flex gap-0 border-b"
+        style={{ borderColor: 'var(--surface-border)' }}
         role="tablist"
       >
         {tabs.map((tab) => {
@@ -49,8 +51,8 @@ export default function AuditTabs({ tabs, panels, defaultTab }: AuditTabsProps) 
               onClick={() => selectTab(tab.id)}
               className="relative px-4 py-2.5 text-body-sm font-medium transition-colors"
               style={{
-                color: isActive ? 'var(--text)' : 'var(--text-muted)',
-                borderBottom: isActive ? '2px solid var(--accent)' : '2px solid transparent',
+                color: isActive ? 'var(--ink-primary)' : 'var(--ink-tertiary)',
+                borderBottom: isActive ? '2px solid var(--copper-bright)' : '2px solid transparent',
                 marginBottom: '-1px',
               }}
             >
@@ -59,8 +61,16 @@ export default function AuditTabs({ tabs, panels, defaultTab }: AuditTabsProps) 
           );
         })}
       </div>
+      <div className="mt-4" role="tabpanel">{panels[active]}</div>
 
-      <div role="tabpanel">{panels[active]}</div>
     </div>
+  );
+}
+
+export default function AuditTabs(props: AuditTabsProps) {
+  return (
+    <Suspense fallback={<div className="text-body-sm" style={{ color: 'var(--text-muted)' }}>Loading…</div>}>
+      <AuditTabsInner {...props} />
+    </Suspense>
   );
 }

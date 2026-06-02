@@ -165,18 +165,18 @@ function rowSignals(row, context, scoringWeights) {
 
 function unionFind() {
   const parent = new Map();
-  function find(x) {
+  function resolve(x) {
     if (!parent.has(x)) parent.set(x, x);
     const p = parent.get(x);
-    if (p !== x) parent.set(x, find(p));
+    if (p !== x) parent.set(x, resolve(p));
     return parent.get(x);
   }
   function union(a, b) {
-    const ra = find(a);
-    const rb = find(b);
+    const ra = resolve(a);
+    const rb = resolve(b);
     if (ra !== rb) parent.set(rb, ra);
   }
-  return { find, union, parent };
+  return { resolve, union, parent };
 }
 
 // Signal weights for identity merging. Two independent signals are required
@@ -237,13 +237,11 @@ function buildIdentityPredictions(rows, features) {
 
   // Only union pairs whose combined confidence meets the threshold.
   const uf = unionFind();
-  for (const row of rows) uf.find(row.order_id);
+  for (const row of rows) uf.resolve(row.order_id);
 
   for (const [edgeKey, confidence] of edgeWeights) {
     if (confidence < IDENTITY_MERGE_THRESHOLD) continue;
-    const sep = edgeKey.indexOf("|");
-    const a = edgeKey.slice(0, sep);
-    const b = edgeKey.slice(sep + 1);
+    const [a, b] = edgeKey.split("|", 2);
     // Anti-merge: if the only reason to merge is a shared mobile/office ISP, skip it.
     const rowA = rowByOrder.get(a);
     const rowB = rowByOrder.get(b);
@@ -262,7 +260,7 @@ function buildIdentityPredictions(rows, features) {
   // highest-confidence sub-clusters by iterating edges in descending confidence.
   const clusterMembers = new Map();
   for (const row of rows) {
-    const root = uf.find(row.order_id);
+    const root = uf.resolve(row.order_id);
     if (!clusterMembers.has(root)) clusterMembers.set(root, []);
     clusterMembers.get(root).push(row.order_id);
   }
@@ -271,7 +269,7 @@ function buildIdentityPredictions(rows, features) {
     if (members.length <= MAX_CLUSTER) continue;
     // Re-run union-find for just this oversized cluster using only high-confidence edges.
     const subUf = unionFind();
-    for (const m of members) subUf.find(m);
+    for (const m of members) subUf.resolve(m);
     const edges = [];
     for (let i = 0; i < members.length; i += 1) {
       for (let j = i + 1; j < members.length; j += 1) {
@@ -285,16 +283,16 @@ function buildIdentityPredictions(rows, features) {
     edges.sort((x, y) => y[2] - x[2]);
     // Use Kruskal-style to build sub-clusters up to MAX_CLUSTER size.
     for (const [a, b] of edges) {
-      const ra = subUf.find(a);
-      const rb = subUf.find(b);
+      const ra = subUf.resolve(a);
+      const rb = subUf.resolve(b);
       if (ra === rb) continue;
-      const sizeA = [...subUf.parent.keys()].filter((k) => subUf.find(k) === ra).length;
-      const sizeB = [...subUf.parent.keys()].filter((k) => subUf.find(k) === rb).length;
+      const sizeA = [...subUf.parent.keys()].filter((k) => subUf.resolve(k) === ra).length;
+      const sizeB = [...subUf.parent.keys()].filter((k) => subUf.resolve(k) === rb).length;
       if (sizeA + sizeB <= MAX_CLUSTER) subUf.union(a, b);
     }
     // Remap the main uf for this cluster's members using subUf roots.
     for (const m of members) {
-      const subRoot = subUf.find(m);
+      const subRoot = subUf.resolve(m);
       if (subRoot !== m) uf.union(subRoot, m);
     }
   }
@@ -302,7 +300,7 @@ function buildIdentityPredictions(rows, features) {
   const clusterByOrder = new Map();
   const clusters = new Map();
   for (const row of rows) {
-    const root = uf.find(row.order_id);
+    const root = uf.resolve(row.order_id);
     const predId = stableId("pcid", root, 10);
     clusterByOrder.set(row.order_id, predId);
     if (!clusters.has(predId)) clusters.set(predId, []);
@@ -341,7 +339,7 @@ function evaluateIdentity(identityTruth, identityPred) {
 
   const falseMerges = [];
   for (const [predId, orderIds] of identityPred.clusters) {
-    const truthIds = new Set(orderIds.map((id) => truthByOrder.get(id)).filter(Boolean));
+    const truthIds = new Set(orderIds.flatMap((id) => { const v = truthByOrder.get(id); return v ? [v] : []; }));
     if (truthIds.size > 1) {
       falseMerges.push({ predicted_identity_id: predId, sample_order_ids: orderIds.slice(0, 12), truth_customer_count: truthIds.size });
       if (falseMerges.length >= 25) break;
@@ -651,12 +649,13 @@ async function evaluateOne(options) {
   const falsePositiveRate = fp + tn === 0 ? 0 : fp / (fp + tn);
 
   const rowsById = new Map(rows.map((r) => [r.order_id, r]));
+  const predictionByOrderId = new Map(predictions.map((p) => [p.order_id, p]));
   const missed = [];
   for (const orderId of fraudSet) {
     if (predictionByOrder.get(orderId)) continue;
     const strategy = truth.fraud_strategies?.[orderId]?.strategy || "unknown";
     const expected = truth.expected_signals?.[orderId] || [];
-    const pred = predictions.find((p) => p.order_id === orderId);
+    const pred = predictionByOrderId.get(orderId);
     missed.push({
       order_id: orderId,
       canonical_customer_id: truth.fraud_strategies?.[orderId]?.canonical_customer_id || "",
@@ -677,13 +676,32 @@ async function evaluateOne(options) {
     return { ...p, why };
   });
 
+  const strategySignalPatterns = new Map(
+    FRAUD_STRATEGIES.map((strategy) => {
+      const strategyPrefix = strategy.split("_")[0];
+      return [
+        strategy,
+        new RegExp(`\\b${strategyPrefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`),
+      ];
+    }),
+  );
   const patternMetrics = [];
   for (const strategy of FRAUD_STRATEGIES) {
-    const truthOrders = Object.entries(truth.fraud_strategies || {}).filter(([, v]) => v.strategy === strategy).map(([id]) => id);
-    const predictedStrategyOrders = predictions.filter((p) => p.risk_score >= threshold && truthOrders.includes(p.order_id));
-    const strategyTp = predictedStrategyOrders.length;
+    const truthOrders = [];
+    for (const [id, v] of Object.entries(truth.fraud_strategies || {})) {
+      if (v.strategy === strategy) truthOrders.push(id);
+    }
+    const truthOrderSet = new Set(truthOrders);
+    const strategySignalPattern = strategySignalPatterns.get(strategy)!;
+    let predictedStrategyOrders = 0;
+    let strategyFp = 0;
+    for (const p of predictions) {
+      if (p.risk_score < threshold) continue;
+      if (truthOrderSet.has(p.order_id)) predictedStrategyOrders += 1;
+      else if (!fraudSet.has(p.order_id) && strategySignalPattern.test(p.signals || "")) strategyFp += 1;
+    }
+    const strategyTp = predictedStrategyOrders;
     const strategyFn = Math.max(0, truthOrders.length - strategyTp);
-    const strategyFp = predictions.filter((p) => p.risk_score >= threshold && !fraudSet.has(p.order_id) && (p.signals || "").includes(strategy.split("_")[0])).length;
     patternMetrics.push({
       strategy,
       truth: truthOrders.length,
@@ -754,17 +772,20 @@ async function evaluateAll(options) {
   const tierOne = path.join(outputDir, "merchant_dataset_tier1.csv");
   const usingDefaultInput = input === path.resolve(defaultOptions.input);
   if (fs.existsSync(input) && !(usingDefaultInput && fs.existsSync(tierOne))) return [await evaluateOne(options)];
-  const summaries = [];
-  for (const tier of [1, 2, 3]) {
-    const tierInput = path.join(outputDir, `merchant_dataset_tier${tier}.csv`);
-    if (!fs.existsSync(tierInput)) continue;
-    summaries.push(await evaluateOne({
-      ...options,
-      input: tierInput,
-      truth: path.join(outputDir, `merchant_truth_tier${tier}.json`),
-      "identity-truth": path.join(outputDir, `identity_truth_tier${tier}.json`),
-    }));
-  }
+  const summaries = (
+    await Promise.all(
+      [1, 2, 3].map(async (tier) => {
+        const tierInput = path.join(outputDir, `merchant_dataset_tier${tier}.csv`);
+        if (!fs.existsSync(tierInput)) return null;
+        return evaluateOne({
+          ...options,
+          input: tierInput,
+          truth: path.join(outputDir, `merchant_truth_tier${tier}.json`),
+          "identity-truth": path.join(outputDir, `identity_truth_tier${tier}.json`),
+        });
+      })
+    )
+  ).filter((summary) => summary !== null);
   if (!summaries.length) throw new Error(`No dataset found at ${input} or tiered merchant_dataset_tier*.csv files in ${outputDir}`);
   if (summaries.length > 1) {
     const lines = [];

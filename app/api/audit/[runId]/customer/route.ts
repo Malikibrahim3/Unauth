@@ -28,7 +28,14 @@ type AuditTx = {
 };
 
 function uniq(values: Array<string | null | undefined>) {
-  return Array.from(new Set(values.map((v) => v?.trim()).filter(Boolean) as string[]));
+  return Array.from(
+    new Set(
+      values.flatMap((value) => {
+        const trimmed = value?.trim();
+        return trimmed ? [trimmed] : [];
+      }),
+    ),
+  );
 }
 
 /**
@@ -164,9 +171,9 @@ export async function GET(
         .eq('audit_id', runId)
         .eq('profile_id', profileIdParam);
 
-      const txIds = (appRows ?? [])
-        .map((r: { transaction_id: string }) => r.transaction_id)
-        .filter(Boolean);
+      const txIds = (appRows ?? []).flatMap((r: { transaction_id: string }) =>
+        r.transaction_id ? [r.transaction_id] : [],
+      );
 
       direct = await loadTransactionsById(serviceClient, runId, txIds);
       if (direct.length === 0) {

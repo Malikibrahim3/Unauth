@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Star, AlertCircle } from 'lucide-react';
+import { useAdjustStateWhenPropChanges } from '@/lib/react/adjustStateWhenPropChanges';
 
 const UNDO_SECONDS = 5;
 
@@ -25,29 +26,36 @@ export default function WatchlistStarButton({
   initialWatchlisted = false,
   watchlistEntryId: initialEntryId = null,
 }: WatchlistStarButtonProps) {
-  const [watchlisted, setWatchlisted] = useState(initialWatchlisted);
-  const [entryId, setEntryId] = useState<string | null>(initialEntryId);
+  const [watchlisted, setWatchlisted] = useAdjustStateWhenPropChanges(
+    initialWatchlisted,
+    (value) => value,
+    initialWatchlisted,
+  );
+  const entryIdRef = useRef<string | null>(initialEntryId);
+  const prevInitialEntryIdRef = useRef(initialEntryId);
+  if (initialEntryId !== prevInitialEntryIdRef.current) {
+    prevInitialEntryIdRef.current = initialEntryId;
+    entryIdRef.current = initialEntryId;
+  }
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // undo state: counting down before the DELETE fires
   const [undoCountdown, setUndoCountdown] = useState<number | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const deleteRef = useRef<string | null>(null); // entryId to delete
+  const deleteRef = useRef<string | null>(null);
 
-  // Clear interval on unmount
   useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); }, []);
 
   function commitRemove(id: string) {
     fetch(`/api/watchlist/${id}`, { method: 'DELETE' }).catch(() => {});
     setWatchlisted(false);
-    setEntryId(null);
+    entryIdRef.current = null;
     deleteRef.current = null;
   }
 
   function startUndo(id: string) {
     deleteRef.current = id;
     setUndoCountdown(UNDO_SECONDS);
-    // Optimistically show as un-watchlisted immediately
     setWatchlisted(false);
     timerRef.current = setInterval(() => {
       setUndoCountdown((prev) => {
@@ -66,7 +74,7 @@ export default function WatchlistStarButton({
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
     deleteRef.current = null;
     setUndoCountdown(null);
-    setWatchlisted(true); // restore
+    setWatchlisted(true);
   }
 
   async function toggle() {
@@ -74,17 +82,15 @@ export default function WatchlistStarButton({
     setError(null);
 
     if (watchlisted) {
-      // Remove with undo countdown
+      const entryId = entryIdRef.current;
       if (entryId) {
         startUndo(entryId);
       } else {
-        // No entryId available — just optimistically remove (entry was added this session)
         setWatchlisted(false);
       }
       return;
     }
 
-    // Add
     setLoading(true);
     const res = await fetch('/api/watchlist', {
       method: 'POST',
@@ -93,7 +99,7 @@ export default function WatchlistStarButton({
     });
     if (res.ok) {
       const json = await res.json();
-      setEntryId(json.entry?.id ?? null);
+      entryIdRef.current = json.entry?.id ?? null;
       setWatchlisted(true);
     } else {
       setError('Failed to add to watchlist');
@@ -101,7 +107,6 @@ export default function WatchlistStarButton({
     setLoading(false);
   }
 
-  // Show undo bar while countdown is active
   if (undoCountdown !== null) {
     return (
       <span className="inline-flex flex-col items-end gap-0.5">
@@ -143,7 +148,7 @@ export default function WatchlistStarButton({
         {loading ? '…' : watchlisted ? 'Watchlisted' : 'Watch'}
       </button>
       {error && (
-        <span className="flex items-center gap-1 text-[10px]" style={{ color: 'var(--risk-critical)' }}>
+        <span className="flex items-center gap-1 text-xs" style={{ color: 'var(--risk-critical)' }}>
           <AlertCircle className="h-3 w-3" />{error}
         </span>
       )}

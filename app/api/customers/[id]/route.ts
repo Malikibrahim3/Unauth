@@ -15,6 +15,13 @@ import {
 
 export const dynamic = 'force-dynamic';
 
+function uniqueProfileValues(values: Array<string | null | undefined>): string[] {
+  return Array.from(new Set(values.flatMap((value) => {
+    const v = value?.trim();
+    return v ? [v] : [];
+  })));
+}
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -213,7 +220,7 @@ async function GETHandler(
     // primary path above, but loops until exhausted (no hard limit).
     const rows: Array<any> = [];
     const PAGE = 1000;
-    for (let offset = 0; ; offset += PAGE) {
+    const fetchIdentityPage = async (offset: number): Promise<void> => {
       const { data: page } = await (serviceClient
         .from(TABLES.AUDIT_TRANSACTIONS)
         .select(TX_SELECT)
@@ -221,10 +228,12 @@ async function GETHandler(
         .in(identityField, identityValues)
         .order('processed_at', { ascending: true })
         .range(offset, offset + PAGE - 1)) as unknown as { data: Array<any> | null };
-      if (!page || page.length === 0) break;
+      if (!page || page.length === 0) return;
       rows.push(...page);
-      if (page.length < PAGE) break;
-    }
+      if (page.length < PAGE) return;
+      return fetchIdentityPage(offset + PAGE);
+    };
+    await fetchIdentityPage(0);
     return rows;
   }
 
@@ -241,7 +250,7 @@ async function GETHandler(
   if (transactionIds.length > 0) {
     // Paginate to remove the 1000-row cap; always include job_id scope.
     const BATCH = 1000;
-    for (let offset = 0; ; offset += BATCH) {
+    const fetchAppearancePage = async (offset: number): Promise<void> => {
       const { data: txByAppearance } = await serviceClient
         .from(TABLES.AUDIT_TRANSACTIONS)
         .select(TX_SELECT)
@@ -250,10 +259,12 @@ async function GETHandler(
         .order('processed_at', { ascending: true })
         .range(offset, offset + BATCH - 1) as unknown as { data: Array<any> | null };
       const rows = txByAppearance ?? [];
-      if (rows.length === 0) break;
+      if (rows.length === 0) return;
       pushRows(rows);
-      if (rows.length < BATCH) break;
-    }
+      if (rows.length < BATCH) return;
+      return fetchAppearancePage(offset + BATCH);
+    };
+    await fetchAppearancePage(0);
   }
 
   if (transactions.length < (profile?.total_orders ?? 0) && auditIds.length > 0) {
@@ -321,12 +332,16 @@ async function GETHandler(
   }));
 
   if (!profile) {
-    const uniqueValues = (values: Array<string | null | undefined>) =>
-      Array.from(new Set(values.map((value) => value?.trim()).filter(Boolean) as string[]));
+    const uniqueValues = uniqueProfileValues;
     const scores = orderHistory.map((order) => order.fraudScore ?? 0);
     const maxScore = scores.length > 0 ? Math.max(...scores) : 0;
-    const firstSeen = orderHistory.map((order) => order.processedAt).filter(Boolean).sort()[0] ?? new Date().toISOString();
-    const lastSeen = orderHistory.map((order) => order.processedAt).filter(Boolean).sort().slice(-1)[0] ?? firstSeen;
+    const processedAts = orderHistory.flatMap((order) => (order.processedAt ? [order.processedAt] : []));
+    const firstSeen = processedAts.length > 0
+      ? processedAts.reduce((min, t) => (t < min ? t : min))
+      : new Date().toISOString();
+    const lastSeen = processedAts.length > 0
+      ? processedAts.reduce((max, t) => (t > max ? t : max))
+      : firstSeen;
 
     profile = {
       id: profileId,
@@ -427,7 +442,7 @@ async function GETHandler(
   }
 
   // Also count distinct orders across this merchant's jobs as a corroboration signal.
-  const distinctJobIds = new Set(transactions.map((tx: any) => tx.job_id).filter(Boolean));
+  const distinctJobIds = new Set(transactions.flatMap((tx: any) => (tx.job_id ? [tx.job_id] : [])));
   if (distinctJobIds.size > 1) {
     linkedAccounts.push({
       entityType: 'job',
@@ -461,10 +476,13 @@ async function GETHandler(
   const computedRefundClaims = orderHistory.filter((o) => o.refundRequested || o.returnRequested).length;
   const computedChargebacks = orderHistory.filter((o) => o.chargebackFiled).length;
   const computedRefundRate = computedTotalOrders > 0 ? computedRefundClaims / computedTotalOrders : 0;
-  const computedFirstSeen =
-    orderHistory.map((o) => o.processedAt).filter(Boolean).sort()[0] ?? profile.first_seen;
-  const computedLastSeen =
-    orderHistory.map((o) => o.processedAt).filter(Boolean).sort().slice(-1)[0] ?? profile.last_seen;
+  const computedProcessedAts = orderHistory.flatMap((o) => (o.processedAt ? [o.processedAt] : []));
+  const computedFirstSeen = computedProcessedAts.length > 0
+    ? computedProcessedAts.reduce((min, t) => (t < min ? t : min))
+    : profile.first_seen;
+  const computedLastSeen = computedProcessedAts.length > 0
+    ? computedProcessedAts.reduce((max, t) => (t > max ? t : max))
+    : profile.last_seen;
 
   // -------------------------------------------------------------------------
   // 9. Build behavioral narrative

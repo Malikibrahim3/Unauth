@@ -22,6 +22,12 @@ import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 
 export const dynamic = 'force-dynamic';
 
+const searchCurrencyFormatter = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+  maximumFractionDigits: 0,
+});
+
 // ---------------------------------------------------------------------------
 // Input schema
 // ---------------------------------------------------------------------------
@@ -113,7 +119,7 @@ export async function GET(req: NextRequest) {
                   .in('processing_job_id', merchantJobIds.slice(0, 100))
                   .not('customer_profile_id', 'is', null)
                   .limit(500)
-              ).data?.map((r: { customer_profile_id: string }) => r.customer_profile_id).filter(Boolean) ?? []
+              ).data?.flatMap((r: { customer_profile_id: string }) => (r.customer_profile_id ? [r.customer_profile_id] : [])) ?? []
             : [],
         )
         .limit(limit)
@@ -149,7 +155,7 @@ export async function GET(req: NextRequest) {
           id: o.id,
           label: `Order ${o.order_id}`,
           sublabel: o.order_value
-            ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(o.order_value)
+            ? searchCurrencyFormatter.format(o.order_value)
             : undefined,
           href: `/claims`,
           riskLevel: o.risk_level ?? undefined,

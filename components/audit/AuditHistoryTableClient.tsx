@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Trash2 } from 'lucide-react';
+import DeleteAuditButton from '@/components/audit/DeleteAuditButton';
 import { formatDate } from '@/lib/utils/format';
 import type { Database } from '@/lib/supabase/types';
 
@@ -67,14 +68,14 @@ export default function AuditHistoryTableClient({ rows: initialRows }: AuditHist
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={hideSelected}
+type="button"               onClick={hideSelected}
               disabled={bulkHiding}
               className="text-xs font-semibold rounded px-2 py-1 disabled:opacity-50"
               style={{ background: 'var(--risk-critical-bg)', color: 'var(--risk-critical)', border: '1px solid var(--risk-critical-bd)' }}
             >
               {bulkHiding ? 'Removing…' : 'Remove selected'}
             </button>
-            <button onClick={() => setSelectedIds(new Set())} disabled={bulkHiding} className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>
+            <button type="button" onClick={() => setSelectedIds(new Set())} disabled={bulkHiding} className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>
               Clear
             </button>
           </div>
@@ -103,7 +104,7 @@ export default function AuditHistoryTableClient({ rows: initialRows }: AuditHist
               <th className="text-right px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Rows</th>
               <th className="text-right px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Matched</th>
               <th className="text-left px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Uploaded</th>
-              <th className="px-4 py-2.5"></th>
+              <th className="px-4 py-2.5" aria-label="Actions" />
             </tr>
           </thead>
           <tbody>
@@ -162,11 +163,14 @@ export default function AuditHistoryTableClient({ rows: initialRows }: AuditHist
                   </td>
                   <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-muted)' }}>{formatDate(run.created_at)}</td>
                   <td className="px-4 py-3 text-right">
-                    {(run.status === 'complete' || run.status === 'completed') && (
-                      <Link href={`/audit/${run.id}`} className="text-sm font-medium hover:underline" style={{ color: 'var(--text)' }}>
-                        View &rarr;
-                      </Link>
-                    )}
+                    <div className="inline-flex items-center justify-end gap-2">
+                      {(run.status === 'complete' || run.status === 'completed') && (
+                        <Link href={`/audit/${run.id}`} className="text-sm font-medium hover:underline" style={{ color: 'var(--text)' }}>
+                          View &rarr;
+                        </Link>
+                      )}
+                      <DeleteAuditButton jobId={run.id} />
+                    </div>
                   </td>
                 </tr>
               );

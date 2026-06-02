@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react';
 
 type Props = {
   children: ReactNode;
@@ -12,7 +12,7 @@ type Props = {
   once?: boolean;
   threshold?: number;
   rootMargin?: string;
-  /** Don't apply ua-reveal fade — just toggle is-visible for descendant animations. */
+  /** Don't apply ua-reveal fade - just toggle is-visible for descendant animations. */
   noFade?: boolean;
   [key: `data-${string}`]: string | number | undefined;
 };
@@ -30,11 +30,10 @@ export default function Reveal({
   once = true,
   threshold = 0.12,
   rootMargin = '0px 0px -8% 0px',
-  noFade = false,
-  ...dataAttributes
+  noFade = false, ...dataAttributes
 }: Props) {
   const ref = useRef<HTMLElement | null>(null);
-  const [visible, setVisible] = useState(false);
+  const observerConfigKey = `${once}|${threshold}|${rootMargin}`;
 
   // Activate motion layer once per page (skipped if reduced-motion)
   useEffect(() => {
@@ -48,18 +47,22 @@ export default function Reveal({
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
+    const revealOnce = once;
+    el.classList.remove('is-visible');
     if (typeof IntersectionObserver === 'undefined') {
-      const frame = window.requestAnimationFrame(() => setVisible(true));
+      const frame = window.requestAnimationFrame(() => {
+        el.classList.add('is-visible');
+      });
       return () => window.cancelAnimationFrame(frame);
     }
     const obs = new IntersectionObserver(
       (entries) => {
         for (const e of entries) {
           if (e.isIntersecting) {
-            setVisible(true);
-            if (once) obs.disconnect();
-          } else if (!once) {
-            setVisible(false);
+            el.classList.add('is-visible');
+            if (revealOnce) obs.disconnect();
+          } else if (!revealOnce) {
+            el.classList.remove('is-visible');
           }
         }
       },
@@ -67,12 +70,11 @@ export default function Reveal({
     );
     obs.observe(el);
     return () => obs.disconnect();
-  }, [once, threshold, rootMargin]);
+  }, [observerConfigKey, once, threshold, rootMargin]);
 
   const Tag = as as unknown as 'div';
-  const cls = `${noFade ? '' : 'ua-reveal'} ${visible ? 'is-visible' : ''} ${className}`.trim();
-  const styleWithDelay: CSSProperties = {
-    ...style,
+  const cls = `${noFade ? '' : 'ua-reveal'} ${className}`.trim();
+  const styleWithDelay: CSSProperties = { ...style,
     ...(delay ? ({ ['--ua-reveal-delay' as string]: `${delay}ms` } as CSSProperties) : {}),
     ...(duration ? ({ ['--ua-reveal-duration' as string]: `${duration}ms` } as CSSProperties) : {}),
   };

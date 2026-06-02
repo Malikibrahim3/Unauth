@@ -1,4 +1,5 @@
 import type { IdentityTimelineEntry } from '@/app/api/customers/[id]/route';
+import { IDENTITY_VARIANT_BADGE_STYLE } from '@/components/customers/identityTimelineStyles';
 import { labelFor } from '@/lib/copy/labels';
 import { formatDateMode } from '@/lib/utils/format';
 
@@ -26,16 +27,16 @@ export default function IdentityTimeline({ entries }: IdentityTimelineProps) {
       <table className="w-full border-collapse" style={{ fontSize: 12 }}>
         <thead>
           <tr style={{ background: 'var(--surface-base)', borderBottom: '1px solid var(--surface-border)' }}>
-            <th style={{ padding: '8px 10px', textAlign: 'left', fontSize: 11, fontWeight: 600, letterSpacing: '0.01em', color: 'var(--ink-secondary)' }}>First Seen</th>
-            <th style={{ padding: '8px 10px', textAlign: 'left', fontSize: 11, fontWeight: 600, letterSpacing: '0.01em', color: 'var(--ink-secondary)' }}>Field</th>
-            <th style={{ padding: '8px 10px', textAlign: 'left', fontSize: 11, fontWeight: 600, letterSpacing: '0.01em', color: 'var(--ink-secondary)' }}>Value</th>
-            <th style={{ padding: '8px 10px', textAlign: 'left', fontSize: 11, fontWeight: 600, letterSpacing: '0.01em', color: 'var(--ink-secondary)' }}>Change type</th>
+            <th style={{ padding: '8px 10px', textAlign: 'left', fontSize: 12, fontWeight: 600, letterSpacing: '0.01em', color: 'var(--ink-secondary)' }}>First Seen</th>
+            <th style={{ padding: '8px 10px', textAlign: 'left', fontSize: 12, fontWeight: 600, letterSpacing: '0.01em', color: 'var(--ink-secondary)' }}>Field</th>
+            <th style={{ padding: '8px 10px', textAlign: 'left', fontSize: 12, fontWeight: 600, letterSpacing: '0.01em', color: 'var(--ink-secondary)' }}>Value</th>
+            <th style={{ padding: '8px 10px', textAlign: 'left', fontSize: 12, fontWeight: 600, letterSpacing: '0.01em', color: 'var(--ink-secondary)' }}>Change type</th>
           </tr>
         </thead>
         <tbody>
-          {entries.map((entry, idx) => (
+          {entries.map((entry) => (
             <tr
-              key={idx}
+              key={`${entry.field}-${entry.date}-${entry.value}`}
               style={{
                 borderBottom: '1px solid var(--surface-border)',
                 borderLeft: entry.isVariant ? '2px solid var(--surface-border)' : '2px solid transparent',
@@ -44,13 +45,13 @@ export default function IdentityTimeline({ entries }: IdentityTimelineProps) {
             >
               <td className="num" style={{ padding: '10px', fontFamily: 'var(--font-mono)', color: 'var(--data-date)' }}>{formatDateMode(entry.date, 'table')}</td>
               <td style={{ padding: '10px' }}>
-                <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.01em', color: 'var(--ink-secondary)' }}>{FIELD_LABELS[entry.field]}</div>
+                <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.01em', color: 'var(--ink-secondary)' }}>{FIELD_LABELS[entry.field]}</div>
               </td>
               <td style={{ padding: '10px' }}>
                 <div className="font-mono break-all" style={{ color: 'var(--data-id)' }}>{entry.value}</div>
                 {entry.isVariant && (
                   <div className="mt-1">
-                    <span style={{ display: 'inline-flex', height: 18, alignItems: 'center', padding: '0 7px', borderRadius: 3, background: 'var(--sev-neutral-fill)', color: 'var(--sev-neutral)', border: '1px solid var(--surface-border)', fontSize: 10, fontWeight: 600 }}>
+                    <span style={IDENTITY_VARIANT_BADGE_STYLE}>
                       Updated
                     </span>
                   </div>

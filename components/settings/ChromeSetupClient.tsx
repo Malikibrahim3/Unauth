@@ -122,7 +122,7 @@ export default function ChromeSetupClient({ hasApiKeys, keyPrefixes }: Props) {
           </p>
         )}
         <p className="mt-2 text-xs" style={{ color: 'var(--text-muted)' }}>
-          Paste the full secret you saved when the key was created — only the prefix is shown here.
+          Paste the full secret you saved when the key was created - only the prefix is shown here.
         </p>
       </div>
     </div>

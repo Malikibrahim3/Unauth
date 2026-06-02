@@ -69,7 +69,7 @@ export default function ConfidenceGradesPage() {
         </h1>
         <p className="text-body-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>
           Every flagged customer in Unauth receives a confidence grade rather than a numeric score. Grades are
-          designed to translate directly into operational decisions — they answer the question{' '}
+          designed to translate directly into operational decisions - they answer the question{' '}
           <em>"how certain should I be, and what should I do?"</em> without requiring an analyst to interpret a
           percentage or calibrate a threshold.
         </p>
@@ -122,7 +122,7 @@ export default function ConfidenceGradesPage() {
         <div className="space-y-3 text-body-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>
           <p>
             Grades are determined by the number and quality of matching signals, not a raw score. Signal quality
-            is weighted by uniqueness — a card fingerprint is harder to share accidentally than an IP address, so
+            is weighted by uniqueness - a card fingerprint is harder to share accidentally than an IP address, so
             it carries more weight. Convergence across independent signal types (card + device + network) produces
             a higher grade than depth on a single type.
           </p>
@@ -132,7 +132,7 @@ export default function ConfidenceGradesPage() {
             accounts, they will reappear in your review queue with the updated grade.
           </p>
           <p>
-            Unauth does not use machine learning to assign grades. The logic is deterministic and auditable — you
+            Unauth does not use machine learning to assign grades. The logic is deterministic and auditable - you
             can always see exactly which signals produced a given grade in the customer detail view.
           </p>
         </div>
@@ -148,7 +148,7 @@ export default function ConfidenceGradesPage() {
           Higher confidence grades reflect stronger cross-signal overlap across a customer&apos;s history. Unauth surfaces
           prior matching transactions and identity signals from your own records that you may use when preparing a dispute
           response. Prior-match detection is strongest at Definite grade, where multiple independent signal types align.
-          How you use this data in a chargeback is at your discretion — follow your acquirer or processor guidelines.
+          How you use this data in a chargeback is at your discretion - follow your acquirer or processor guidelines.
         </p>
       </section>
 

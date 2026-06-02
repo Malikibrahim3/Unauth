@@ -60,25 +60,25 @@ export interface ClusterBatchResult {
 class UnionFind {
   private parent = new Map<string, string>();
 
-  find(id: string): string {
+  findRoot(id: string): string {
     if (!this.parent.has(id)) this.parent.set(id, id);
     const p = this.parent.get(id)!;
     if (p !== id) {
-      this.parent.set(id, this.find(p)); // path compression
+      this.parent.set(id, this.findRoot(p)); // path compression
     }
     return this.parent.get(id)!;
   }
 
   union(a: string, b: string): void {
-    const ra = this.find(a);
-    const rb = this.find(b);
+    const ra = this.findRoot(a);
+    const rb = this.findRoot(b);
     if (ra !== rb) this.parent.set(rb, ra);
   }
 
   getGroups(ids: string[]): Map<string, string[]> {
     const groups = new Map<string, string[]>();
     for (const id of ids) {
-      const root = this.find(id);
+      const root = this.findRoot(id);
       const g = groups.get(root) ?? [];
       g.push(id);
       groups.set(root, g);
@@ -210,9 +210,11 @@ function buildBehavioralContext(orders: NormalisedOrder[]): BehavioralContext {
       : null;
   const fastestClaimDays = claimDays.length > 0 ? Math.min(...claimDays) : null;
 
-  const refundReasons = [
-    ...new Set(orders.filter((o) => o.refundReason).map((o) => o.refundReason!)),
-  ];
+  const refundReasonSet = new Set<string>();
+  for (const o of orders) {
+    if (o.refundReason) refundReasonSet.add(o.refundReason);
+  }
+  const refundReasons = [...refundReasonSet];
 
   const totals = orders.map((o) => o.orderTotal);
   const orderValueRange = {
@@ -221,15 +223,17 @@ function buildBehavioralContext(orders: NormalisedOrder[]): BehavioralContext {
     avg: totals.reduce((a, b) => a + b, 0) / totals.length,
   };
 
-  const sorted = [...orders].sort(
+  const sorted = orders.toSorted(
     (a, b) => a.orderDate.getTime() - b.orderDate.getTime()
   );
   const firstSeen = sorted[0].orderDate.toISOString();
   const lastSeen = sorted[sorted.length - 1].orderDate.toISOString();
 
-  const paymentMethodsUsed = [
-    ...new Set(orders.filter((o) => o.paymentMethod).map((o) => o.paymentMethod!)),
-  ];
+  const paymentMethodSet = new Set<string>();
+  for (const o of orders) {
+    if (o.paymentMethod) paymentMethodSet.add(o.paymentMethod);
+  }
+  const paymentMethodsUsed = [...paymentMethodSet];
 
   return {
     totalOrders,
@@ -428,7 +432,7 @@ export function clusterBatch(
   if (orders.length === 0) return { clusters: [], unconfirmedOverlaps: [] };
 
   const uf = new UnionFind();
-  for (const o of orders) uf.find(o.orderId); // initialise singletons
+  for (const o of orders) uf.findRoot(o.orderId); // initialise singletons
 
   const unconfirmedOverlaps: UnconfirmedOverlap[] = [];
   const orderMap = new Map<string, NormalisedOrder>(
@@ -492,7 +496,7 @@ export function clusterBatch(
     if (!a || !b) continue;
 
     // Skip if already in same cluster from Pass 1
-    if (uf.find(a.orderId) === uf.find(b.orderId)) continue;
+    if (uf.findRoot(a.orderId) === uf.findRoot(b.orderId)) continue;
 
     const { firedSignals, grade, ipOnly } = evaluatePair(a, b, ctx);
 
@@ -571,13 +575,29 @@ export function clusterBatch(
     );
 
     // Use representative pair (first two different-email orders) for grade caps
+    const uniqueEmailHashList = [...uniqueEmailHashes];
+    const firstDifferentEmailByHash = new Map<string, string | undefined>();
+    const [primaryEmailHash, ...otherEmailHashes] = uniqueEmailHashList;
+    const alternateEmailHash = otherEmailHashes[0];
+    for (const hash of uniqueEmailHashList) {
+      firstDifferentEmailByHash.set(
+        hash,
+        hash === primaryEmailHash ? alternateEmailHash : primaryEmailHash,
+      );
+    }
     const crossOrders = clusterOrders.filter(
       (o, idx) =>
         idx === 0 ||
-        o.emailHash !== clusterOrders.find((x) => x.emailHash !== o.emailHash)?.emailHash
+        o.emailHash !== firstDifferentEmailByHash.get(o.emailHash)
     );
     const repA = crossOrders[0];
-    const repB = crossOrders.find((o) => o.emailHash !== repA.emailHash) ?? crossOrders[1];
+    let repB = crossOrders[1];
+    for (let i = 1; i < crossOrders.length; i += 1) {
+      if (crossOrders[i].emailHash !== repA.emailHash) {
+        repB = crossOrders[i];
+        break;
+      }
+    }
     const repCompleteness = repB ? computeDataCompleteness(repA, repB) : maxCompleteness;
 
     let grade = gradeFromScore(rawScore);

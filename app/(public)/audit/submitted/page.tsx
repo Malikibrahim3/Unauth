@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import type { CSSProperties } from 'react';
 import { UnauthLogo } from '@/components/ui/UnauthLogo';
 import { createServiceClient } from '@/lib/supabase/server';
 
@@ -8,8 +9,12 @@ interface SubmittedPageProps {
 }
 
 export const metadata = {
-  title: 'Audit running — Unauth',
+  title: 'Audit running - Unauth',
 };
+
+const SANS_FONT: CSSProperties = { fontFamily: 'var(--font-dm-sans, sans-serif)' };
+const SERIF_FONT: CSSProperties = { fontFamily: 'var(--font-serif, serif)' };
+const MONO_FONT: CSSProperties = { fontFamily: 'var(--font-dm-mono, monospace)' };
 
 export default async function SubmittedPage({ searchParams }: SubmittedPageProps) {
   const { audit: auditId } = await searchParams;
@@ -25,10 +30,6 @@ export default async function SubmittedPage({ searchParams }: SubmittedPageProps
   if (!audit) notFound();
   const email = (audit as { submitted_email: string }).submitted_email;
 
-  const sans: React.CSSProperties = { fontFamily: 'var(--font-dm-sans, sans-serif)' };
-  const serif: React.CSSProperties = { fontFamily: 'var(--font-serif, serif)' };
-  const mono: React.CSSProperties = { fontFamily: 'var(--font-dm-mono, monospace)' };
-
   return (
     <div style={{ minHeight: '100vh', background: '#F8F5EE', color: '#1A1814' }}>
       <header className="px-6 pt-5 md:px-10">
@@ -41,7 +42,7 @@ export default async function SubmittedPage({ searchParams }: SubmittedPageProps
         <div className="max-w-[34rem]">
           <h1
             style={{
-              ...serif,
+              ...SERIF_FONT,
               fontSize: 'clamp(38px, 6vw, 62px)',
               fontWeight: 400,
               lineHeight: 0.98,
@@ -54,7 +55,7 @@ export default async function SubmittedPage({ searchParams }: SubmittedPageProps
 
           <p
             style={{
-              ...sans,
+              ...SANS_FONT,
               fontSize: '18px',
               lineHeight: 1.65,
               color: '#3A3530',
@@ -68,10 +69,10 @@ export default async function SubmittedPage({ searchParams }: SubmittedPageProps
 
           <p
             style={{
-              ...mono,
+              ...MONO_FONT,
               fontSize: '12px',
               lineHeight: 1.7,
-              letterSpacing: '0.06em',
+              letterSpacing: '0.02em',
               color: '#6B6455',
               marginTop: '18px',
               marginBottom: 0,
@@ -82,7 +83,7 @@ export default async function SubmittedPage({ searchParams }: SubmittedPageProps
 
           <p
             style={{
-              ...sans,
+              ...SANS_FONT,
               fontSize: '14px',
               lineHeight: 1.6,
               color: '#8A8472',

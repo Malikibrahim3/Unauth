@@ -558,10 +558,13 @@ function summarizeMessages(
 function collectCustomerTexts(
   messages: Array<{ body?: string | null; from_agent?: boolean }>
 ): string[] {
-  return messages
-    .filter((message) => !message.from_agent)
-    .map((message) => asString(message.body))
-    .filter((body): body is string => !!body);
+  const texts: string[] = [];
+  for (const message of messages) {
+    if (message.from_agent) continue;
+    const body = asString(message.body);
+    if (body) texts.push(body);
+  }
+  return texts;
 }
 
 function buildNormalizedBase(
@@ -596,17 +599,16 @@ export function normalizeZendeskTicket(
   const tags = asStringArray(ticket.tags);
   const requesterEmail = asString(readPath(ticket, ['requester', 'email']));
   const comments = Array.isArray(ticket.comments) ? ticket.comments : [];
-  const commentBodies = comments
-    .map((comment) => {
-      if (!comment || typeof comment !== 'object') return null;
-      const row = comment as Record<string, unknown>;
-      return {
-        body: asString(row.body ?? row.plain_body),
-        from_agent: row.public === false ? true : row.author_id !== readPath(ticket, ['requester', 'id']),
-        public: row.public !== false,
-      };
-    })
-    .filter(Boolean) as Array<{ body?: string | null; from_agent?: boolean; public?: boolean }>;
+  const commentBodies: Array<{ body?: string | null; from_agent?: boolean; public?: boolean }> = [];
+  for (const comment of comments) {
+    if (!comment || typeof comment !== 'object') continue;
+    const row = comment as Record<string, unknown>;
+    commentBodies.push({
+      body: asString(row.body ?? row.plain_body),
+      from_agent: row.public === false ? true : row.author_id !== readPath(ticket, ['requester', 'id']),
+      public: row.public !== false,
+    });
+  }
 
   const { customer, agent } = summarizeMessages(commentBodies);
   const customFieldText = Array.isArray(ticket.custom_fields)

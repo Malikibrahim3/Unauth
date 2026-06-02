@@ -40,7 +40,7 @@ export default async function TransactionDetailPage({ params }: Props) {
   }
 
   // Verify runId belongs to this merchant AND fetch transaction scoped by both
-  // id AND job_id — prevents cross-merchant transaction lookup by UUID.
+  // id AND job_id - prevents cross-merchant transaction lookup by UUID.
   const tx = await fetchMerchantScopedTransaction(svc, ctx.merchantId, resolvedParams.id, resolvedParams.runId);
 
   if (!tx) notFound();
@@ -108,9 +108,9 @@ export default async function TransactionDetailPage({ params }: Props) {
         <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
           {[
             { label: 'Order ID', value: txData.order_id },
-            { label: 'Customer', value: txData.customer_email ?? '—' },
-            { label: 'Identity confidence grade', value: txData.identity_confidence_grade ?? '—' },
-            { label: 'Refund reason', value: txData.refund_reason ?? '—' },
+            { label: 'Customer', value: txData.customer_email ?? '-' },
+            { label: 'Identity confidence grade', value: txData.identity_confidence_grade ?? '-' },
+            { label: 'Refund reason', value: txData.refund_reason ?? '-' },
           ].map(({ label, value }) => (
             <div key={label} className="flex justify-between py-1.5" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
               <dt style={{ color: 'var(--text-muted)' }}>{label}</dt>

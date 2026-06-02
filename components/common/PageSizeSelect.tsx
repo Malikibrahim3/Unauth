@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 
 const PAGE_SIZES = [25, 50, 100] as const;
@@ -19,7 +20,7 @@ function buildHref(
   return qs ? `${pathname}?${qs}` : pathname;
 }
 
-export default function PageSizeSelect({
+function PageSizeSelectInner({
   pathname,
   pageSize,
   label = 'Rows per page',
@@ -61,5 +62,19 @@ export default function PageSizeSelect({
         })}
       </div>
     </div>
+  );
+}
+
+export default function PageSizeSelect(props: {
+  pathname: string;
+  pageSize: number;
+  label?: string;
+  pageSizeParam?: string;
+  pageParam?: string;
+}) {
+  return (
+    <Suspense fallback={<span className="text-xs" style={{ color: 'var(--text-muted)' }}>Rows per page…</span>}>
+      <PageSizeSelectInner {...props} />
+    </Suspense>
   );
 }

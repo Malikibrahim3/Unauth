@@ -1,4 +1,4 @@
-import { countInboxQueues, matchesInboxQueueFilter } from '@/components/inbox/InboxClient';
+import { countInboxQueues, matchesInboxQueueFilter } from '@/components/inbox/inboxQueueFilters';
 
 describe('inbox queue filters', () => {
   const oldUnassigned = {

@@ -8,7 +8,7 @@ export default function InvestigationStatusSelect({ profileId, initialStatus }: 
   const [status, setStatus] = useState<string>(initialStatus ?? 'new');
   const [saving, setSaving] = useState(false);
 
-  async function handleChange(e: React.ChangeEvent<HTMLSelectElement>) {
+  async function updateInvestigationStatus(e: React.ChangeEvent<HTMLSelectElement>) {
     const newStatus = e.target.value;
     const prev = status;
     setStatus(newStatus);
@@ -34,7 +34,7 @@ export default function InvestigationStatusSelect({ profileId, initialStatus }: 
   return (
     <select
       value={status}
-      onChange={handleChange}
+      onChange={updateInvestigationStatus}
       disabled={saving}
       aria-label="Review status"
       className="text-sm rounded-md px-2.5 py-1 font-medium focus:outline-none cursor-pointer disabled:opacity-60"

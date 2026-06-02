@@ -1,19 +1,9 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import { cn } from '@/lib/utils';
-import { FLAG_COMMAND_CENTER } from '@/lib/flags';
-import { GRADE_COLOURS, GRADE_LABELS } from '@/lib/utils/confidenceStyles';
-import type { ConfidenceGrade } from '@/lib/engine/weights';
+import { useEffect, useRef } from 'react';
 import { COMMAND_PALETTE_FILTERS, getCommandPaletteNavItems } from '@/lib/navigation/appRoutes';
-
-interface NavItem {
-  label: string;
-  description: string;
-  href: string;
-  icon: React.ReactNode;
-}
+import type { NavItem } from '@/components/layout/commandPaletteReducer';
+import CommandPaletteSurface from '@/components/layout/CommandPaletteSurface';
 
 const PALETTE_ICONS: Record<string, React.ReactNode> = {
   '/dashboard': (
@@ -94,26 +84,7 @@ function buildCommandPaletteNavItems(): NavItem[] {
   return [...routes, ...filters];
 }
 
-interface CustomerResult {
-  id: string;
-  name: string;
-  email: string | null;
-  risk_level: string;
-}
-
-/** Phase E-5 — unified search result (orders, evidence, customers) */
-interface UnifiedResult {
-  type: 'customer' | 'order' | 'evidence';
-  id: string;
-  label: string;
-  sublabel?: string;
-  href: string;
-  riskLevel?: string;
-}
-
 const NAV_ITEMS: NavItem[] = buildCommandPaletteNavItems();
-
-// Grade colours come from @/lib/utils/confidenceStyles (single source of truth)
 
 interface CommandPaletteProps {
   isOpen: boolean;
@@ -121,377 +92,48 @@ interface CommandPaletteProps {
 }
 
 export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
-  const router = useRouter();
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [query, setQuery] = useState('');
-  const [activeIdx, setActiveIdx] = useState(0);
-  const [customerResults, setCustomerResults] = useState<CustomerResult[]>([]);
-  const [unifiedResults, setUnifiedResults] = useState<UnifiedResult[]>([]);
-  const [searchingCustomers, setSearchingCustomers] = useState(false);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null!);
+  const openGenerationRef = useRef(0);
+  const prevIsOpenRef = useRef(isOpen);
 
-  const filteredNav = query.trim()
-    ? NAV_ITEMS.filter(
-        (item) =>
-          item.label.toLowerCase().includes(query.toLowerCase()) ||
-          item.description.toLowerCase().includes(query.toLowerCase()),
-      )
-    : NAV_ITEMS;
+  if (isOpen && !prevIsOpenRef.current) {
+    openGenerationRef.current += 1;
+  }
+  prevIsOpenRef.current = isOpen;
 
-  // Search customers when query has ≥2 chars
   useEffect(() => {
-    if (!query.trim() || query.trim().length < 2) {
-      setCustomerResults([]);
-      setUnifiedResults([]);
-      return;
-    }
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    setSearchingCustomers(true);
-    debounceRef.current = setTimeout(() => {
-      if (FLAG_COMMAND_CENTER) {
-        // Phase E-5: unified search across customers, orders, evidence
-        fetch(`/api/search?q=${encodeURIComponent(query.trim())}&limit=6`)
-          .then(r => r.ok ? r.json() : { results: [] })
-          .then((data: { results?: UnifiedResult[] }) => {
-            setUnifiedResults(data.results ?? []);
-            // Also populate customerResults for backward-compat keyboard nav
-            const customers = (data.results ?? [])
-              .filter((r) => r.type === 'customer')
-              .map((r) => ({ id: r.id, name: r.label, email: r.sublabel ?? null, risk_level: r.riskLevel ?? '' }));
-            setCustomerResults(customers);
-          })
-          .catch(() => { setUnifiedResults([]); setCustomerResults([]); })
-          .finally(() => setSearchingCustomers(false));
-      } else {
-        // Existing customer-only search
-        fetch(`/api/customers/search?q=${encodeURIComponent(query.trim())}&limit=5`)
-          .then(r => r.ok ? r.json() : { results: [] })
-          .then((data: { results?: CustomerResult[] }) => setCustomerResults(data.results ?? []))
-          .catch(() => setCustomerResults([]))
-          .finally(() => setSearchingCustomers(false));
-      }
-    }, 250);
-    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
-  }, [query]);
-
-  // Total items: customer results + nav items (+ 1 for the search action row when query present)
-  const totalItems = (query.trim() ? 1 : 0) + customerResults.length + filteredNav.length;
-
-  // Reset state when opened
-  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
     if (isOpen) {
-      setQuery('');
-      setActiveIdx(0);
-      setCustomerResults([]);
-      setUnifiedResults([]);
-      setTimeout(() => inputRef.current?.focus(), 30);
+      if (!dialog.open) dialog.showModal();
+      const focusTimer = window.setTimeout(() => inputRef.current?.focus(), 30);
+      return () => window.clearTimeout(focusTimer);
     }
+    if (dialog.open) dialog.close();
+    return undefined;
   }, [isOpen]);
 
-  const handleSelect = useCallback(
-    (item: NavItem) => {
-      onClose();
-      router.push(item.href);
-    },
-    [router, onClose],
-  );
-
-  const handleCustomerSelect = useCallback(
-    (customer: CustomerResult) => {
-      onClose();
-      router.push(`/customers/${customer.id}`);
-    },
-    [router, onClose],
-  );
-
-  const handleSearchSubmit = useCallback(() => {
-    if (query.trim()) {
-      onClose();
-      router.push(`/customers?q=${encodeURIComponent(query.trim())}`);
-    } else if (filteredNav.length > 0) {
-      handleSelect(filteredNav[activeIdx] ?? filteredNav[0]);
-    }
-  }, [query, filteredNav, activeIdx, onClose, router, handleSelect]);
-
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        setActiveIdx((i) => Math.min(i + 1, totalItems - 1));
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        setActiveIdx((i) => Math.max(i - 1, 0));
-      } else if (e.key === 'Enter') {
-        e.preventDefault();
-        if (query.trim()) {
-          // index 0 = search action
-          if (activeIdx === 0) { handleSearchSubmit(); return; }
-          // indices 1..customerResults.length = customers
-          const customerOffset = 1;
-          if (activeIdx < customerOffset + customerResults.length) {
-            handleCustomerSelect(customerResults[activeIdx - customerOffset]);
-            return;
-          }
-          // rest = nav
-          const navOffset = customerOffset + customerResults.length;
-          const navItem = filteredNav[activeIdx - navOffset];
-          if (navItem) handleSelect(navItem);
-        } else {
-          const navItem = filteredNav[activeIdx];
-          if (navItem) handleSelect(navItem);
-        }
-      } else if (e.key === 'Escape') {
-        onClose();
-      }
-    },
-    [filteredNav, activeIdx, query, customerResults, handleSelect, handleCustomerSelect, handleSearchSubmit, onClose, totalItems],
-  );
-
-  // Keep active index in bounds when filter changes
-  useEffect(() => {
-    setActiveIdx(0);
-  }, [query]);
-
-  if (!isOpen) return null;
-
-  // Build a flat index for active highlight
-  let globalIdx = 0;
-  const searchRowIdx = query.trim() ? globalIdx++ : -1;
-  const customerStartIdx = globalIdx;
-  globalIdx += customerResults.length;
-  const navStartIdx = globalIdx;
-
   return (
-    <>
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
-        aria-hidden="true"
-        onClick={onClose}
-      />
-
-      {/* Panel */}
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label="Command palette"
-        className="fixed left-1/2 top-[20%] z-50 w-full max-w-lg -translate-x-1/2 rounded-xl shadow-2xl overflow-hidden"
-        style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
-      >
-        {/* Search input */}
-        <div
-          className="flex items-center gap-3 px-4 py-3"
-          style={{ borderBottom: '1px solid var(--border-subtle)' }}
-        >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
-            aria-hidden="true"
-            style={{ color: 'var(--icon-muted)', flexShrink: 0 }}
-          >
-            <circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" strokeWidth="1.4" />
-            <path d="M11 11L14 14" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-          </svg>
-          <input
-            ref={inputRef}
-            type="text"
-            placeholder="Search customers, audits, evidence packages…"
-            value={query}
-            onChange={(e) => { setQuery(e.target.value); }}
-            onKeyDown={handleKeyDown}
-            className="flex-1 bg-transparent text-sm outline-none placeholder:opacity-50"
-            style={{ color: 'var(--text)' }}
-            autoComplete="off"
-            spellCheck={false}
-          />
-          {searchingCustomers && (
-            <div className="w-3 h-3 rounded-full border border-t-transparent animate-spin" style={{ borderColor: 'var(--border)', borderTopColor: 'var(--accent)' }} />
-          )}
-          {query && (
-            <button
-              type="button"
-              onClick={() => setQuery('')}
-              className="text-xs px-1.5 py-0.5 rounded"
-              style={{ color: 'var(--text-subtle)', background: 'var(--bg-subtle)' }}
-            >
-              Clear
-            </button>
-          )}
-          <kbd
-            className="hidden sm:inline font-mono text-[10px] px-1.5 py-0.5 rounded"
-            style={{ color: 'var(--text-subtle)', background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
-          >
-            esc
-          </kbd>
-        </div>
-
-        {/* Results */}
-        <div className="max-h-80 overflow-y-auto py-2">
-          {/* Search-all row */}
-          {query.trim() && (
-            <button
-              type="button"
-              className={cn('flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors')}
-              style={{ background: activeIdx === searchRowIdx ? 'var(--bg-subtle)' : 'transparent' }}
-              onClick={handleSearchSubmit}
-              onMouseEnter={() => setActiveIdx(searchRowIdx)}
-            >
-              <span
-                className="flex h-7 w-7 items-center justify-center rounded-md shrink-0"
-                style={{ background: 'var(--bg-subtle)', color: 'var(--icon-muted)' }}
-              >
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                  <circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" strokeWidth="1.4" />
-                  <path d="M11 11L14 14" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-                </svg>
-              </span>
-              <div className="min-w-0">
-                <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>
-                  Search customers for &ldquo;{query}&rdquo;
-                </p>
-                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Browse all matching profiles</p>
-              </div>
-              <span className="ml-auto shrink-0">
-                <kbd className="font-mono text-[10px] px-1.5 py-0.5 rounded" style={{ color: 'var(--text-subtle)', background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>↵</kbd>
-              </span>
-            </button>
-          )}
-
-          {/* Customer results */}
-          {customerResults.length > 0 && (
-            <>
-              <p className="px-4 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--text-subtle)' }}>
-                {FLAG_COMMAND_CENTER ? 'Customers' : 'Customers'}
-              </p>
-              {customerResults.map((c, i) => (
-                <button
-                  key={c.id}
-                  type="button"
-                  className="flex w-full items-center gap-3 px-4 py-2 text-left transition-colors"
-                  style={{ background: activeIdx === customerStartIdx + i ? 'var(--bg-subtle)' : 'transparent' }}
-                  onMouseEnter={() => setActiveIdx(customerStartIdx + i)}
-                  onClick={() => handleCustomerSelect(c)}
-                >
-                  <span
-                    className="flex h-7 w-7 items-center justify-center rounded-full shrink-0 text-xs font-bold"
-                    style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}
-                  >
-                    {(c.name?.[0] ?? '?').toUpperCase()}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium truncate" style={{ color: 'var(--text)' }}>{c.name}</p>
-                    {c.email && <p className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>{c.email}</p>}
-                  </div>
-                  <span
-                    className="text-[10px] font-semibold uppercase px-1.5 py-0.5 rounded shrink-0"
-                    style={{ color: GRADE_COLOURS[c.risk_level as ConfidenceGrade] ?? 'var(--text-muted)', background: 'var(--bg-subtle)' }}
-                  >
-                    {GRADE_LABELS[c.risk_level as ConfidenceGrade] ?? c.risk_level}
-                  </span>
-                </button>
-              ))}
-            </>
-          )}
-
-          {/* Phase E-5 — Unified results (orders + evidence) when FLAG_COMMAND_CENTER */}
-          {FLAG_COMMAND_CENTER && unifiedResults.filter((r) => r.type !== 'customer').length > 0 && (
-            <>
-              {(['order', 'evidence'] as const).map((type) => {
-                const group = unifiedResults.filter((r) => r.type === type);
-                if (!group.length) return null;
-                const groupLabel = type === 'order' ? 'Orders' : 'Evidence packages';
-                const baseIdx = customerStartIdx + customerResults.length +
-                  unifiedResults.filter((r) => r.type !== 'customer').indexOf(group[0]);
-                return (
-                  <div key={type}>
-                    <p className="px-4 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--text-subtle)' }}>{groupLabel}</p>
-                    {group.map((item, i) => (
-                      <button
-                        key={item.id}
-                        type="button"
-                        className="flex w-full items-center gap-3 px-4 py-2 text-left transition-colors"
-                        style={{ background: activeIdx === baseIdx + i ? 'var(--bg-subtle)' : 'transparent' }}
-                        onMouseEnter={() => setActiveIdx(baseIdx + i)}
-                        onClick={() => { onClose(); router.push(item.href); }}
-                      >
-                        <span
-                          className="flex h-7 w-7 items-center justify-center rounded-md shrink-0 text-[10px]"
-                          style={{ background: 'var(--bg-subtle)', color: 'var(--icon-muted)' }}
-                        >
-                          {type === 'order' ? '#' : '📄'}
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-medium truncate" style={{ color: 'var(--text)' }}>{item.label}</p>
-                          {item.sublabel && <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{item.sublabel}</p>}
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                );
-              })}
-            </>
-          )}
-
-          {/* Nav items */}
-          {(filteredNav.length > 0 || !query.trim()) && (
-            <>
-              {(customerResults.length > 0 || query.trim()) && (
-                <p className="px-4 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--text-subtle)' }}>Navigate</p>
-              )}
-              {filteredNav.map((item, i) => (
-                <button
-                  key={item.href}
-                  type="button"
-                  className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors"
-                  style={{ background: activeIdx === navStartIdx + i ? 'var(--bg-subtle)' : 'transparent' }}
-                  onMouseEnter={() => setActiveIdx(navStartIdx + i)}
-                  onClick={() => handleSelect(item)}
-                >
-                  <span
-                    className="flex h-7 w-7 items-center justify-center rounded-md shrink-0"
-                    style={{ background: 'var(--bg-subtle)', color: 'var(--icon-muted)' }}
-                  >
-                    {item.icon}
-                  </span>
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>{item.label}</p>
-                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{item.description}</p>
-                  </div>
-                  <span className="ml-auto shrink-0">
-                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ color: 'var(--text-subtle)' }} aria-hidden="true">
-                      <path d="M3 6h6M7 4l2 2-2 2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </span>
-                </button>
-              ))}
-            </>
-          )}
-
-          {filteredNav.length === 0 && customerResults.length === 0 && query.trim() && !searchingCustomers && (
-            <p className="px-4 py-6 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
-              No results for &ldquo;{query}&rdquo;
-            </p>
-          )}
-        </div>
-
-        {/* Footer hint */}
-        <div
-          className="flex items-center gap-4 px-4 py-2"
-          style={{ borderTop: '1px solid var(--border-subtle)', background: 'var(--bg-subtle)' }}
-        >
-          <span className="text-[11px]" style={{ color: 'var(--text-subtle)' }}>
-            <kbd className="font-mono mr-1">↑↓</kbd>navigate
-          </span>
-          <span className="text-[11px]" style={{ color: 'var(--text-subtle)' }}>
-            <kbd className="font-mono mr-1">↵</kbd>open
-          </span>
-          <span className="text-[11px]" style={{ color: 'var(--text-subtle)' }}>
-            <kbd className="font-mono mr-1">esc</kbd>close
-          </span>
-        </div>
-      </div>
-    </>
+    <dialog
+      ref={dialogRef}
+      aria-label="Command palette"
+      className="fixed left-1/2 top-[20%] z-50 w-full max-w-lg -translate-x-1/2 rounded-xl border-0 p-0 shadow-2xl overflow-hidden backdrop:bg-black/40"
+      style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
+      onClose={onClose}
+      onCancel={(e) => {
+        e.preventDefault();
+        onClose();
+      }}
+    >
+      {isOpen ? (
+        <CommandPaletteSurface
+          key={openGenerationRef.current}
+          navItems={NAV_ITEMS}
+          onClose={onClose}
+          inputRef={inputRef}
+        />
+      ) : null}
+    </dialog>
   );
 }

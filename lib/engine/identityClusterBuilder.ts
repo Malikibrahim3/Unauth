@@ -92,7 +92,14 @@ export function buildIdentityClusterMapFromLinkerResult(
     const hasMissing = emailOrders.some((o) => map[o.orderId] === null);
     if (!hasMissing) continue;
 
-    const existing = emailOrders.map((o) => map[o.orderId]).find((c) => c !== null) ?? null;
+    let existing: IdentityCluster | null = null;
+    for (const o of emailOrders) {
+      const cluster = map[o.orderId];
+      if (cluster !== null) {
+        existing = cluster;
+        break;
+      }
+    }
     const syntheticClusterId = existing?.clusterId ?? crypto.randomUUID();
     const record: IdentityCluster = existing ?? {
       clusterId: syntheticClusterId,

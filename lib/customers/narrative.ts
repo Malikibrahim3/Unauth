@@ -32,22 +32,24 @@ const BANNED_WORDS = [
   'scam',
 ];
 
+const BANNED_WORD_PATTERN = new RegExp(`\\b(?:${BANNED_WORDS.join('|')})\\b`, 'i');
+
 function assertNoBannedWords(text: string): void {
-  const lower = text.toLowerCase();
-  for (const word of BANNED_WORDS) {
-    if (lower.includes(word)) {
-      throw new Error(`Narrative contains banned word: "${word}"`);
-    }
+  const match = text.match(BANNED_WORD_PATTERN);
+  if (match) {
+    throw new Error(`Narrative contains banned word: "${match[0]}"`);
   }
 }
 
+const customerNarrativeDateFormatter = new Intl.DateTimeFormat('en-US', {
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric',
+});
+
 function formatDateShort(iso: string): string {
   try {
-    return new Intl.DateTimeFormat('en-US', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    }).format(new Date(iso));
+    return customerNarrativeDateFormatter.format(new Date(iso));
   } catch {
     return iso;
   }
@@ -127,7 +129,7 @@ export function buildBehavioralNarrative(ctx: NarrativeContext): string {
     const safe = sentences
       .filter((s) => {
         const lower = s.toLowerCase();
-        return !BANNED_WORDS.some((w) => lower.includes(w));
+        return !BANNED_WORD_PATTERN.test(lower);
       })
       .join(' ');
     return safe || `This profile has ${ctx.totalOrders} recorded ${pluralise(ctx.totalOrders, 'order', 'orders')}.`;

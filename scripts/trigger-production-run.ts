@@ -144,7 +144,7 @@ async function main() {
         jobId,
         totalRows,
         totalChunks,
-        completedChunks: [...completed].sort((a, b) => a - b),
+        completedChunks: completed.toSorted((a, b) => a - b),
         resumeFromChunk: startChunkIndex,
         note: 'Read-only dry run: no writes, no dispatch.',
       }, null, 2));

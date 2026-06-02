@@ -202,23 +202,29 @@ export function getSidebarNavItems() {
 }
 
 export function getWorkbenchNavItems() {
-  return (Object.values(APP_ROUTES) as AppRoute[])
-    .filter((r) => r.workbench)
-    .map((r) => ({
+  const items: Array<{ key: string; label: string; href: string }> = [];
+  for (const r of Object.values(APP_ROUTES) as AppRoute[]) {
+    if (!r.workbench) continue;
+    items.push({
       key: r.key === 'evidencePackages' ? 'evidence' : r.key === 'history' ? 'audits' : r.key,
       label: r.key === 'history' ? 'Import history' : r.label,
       href: r.href,
-    }));
+    });
+  }
+  return items;
 }
 
 export function getCommandPaletteNavItems() {
-  return (Object.values(APP_ROUTES) as AppRoute[])
-    .filter((r) => r.commandPalette)
-    .map((r) => ({
+  const items: Array<{ label: string; description: string; href: string }> = [];
+  for (const r of Object.values(APP_ROUTES) as AppRoute[]) {
+    if (!r.commandPalette) continue;
+    items.push({
       label: r.key === 'dashboard' ? 'Investigation dashboard' : r.label,
       description: r.commandDescription ?? r.label,
       href: r.href,
-    }));
+    });
+  }
+  return items;
 }
 
 export function getPageTitleForPath(pathname: string): string | undefined {

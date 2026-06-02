@@ -17,12 +17,14 @@ export function Bone({
   );
 }
 
-export const workbenchSectionStyle: React.CSSProperties = {
-  borderColor: 'var(--surface-border)',
-  borderRadius: 'var(--radius-md)',
-  background: 'var(--surface-raised)',
-  boxShadow: 'var(--shadow-1)',
-};
+const METRIC_CARD_KEYS = ['metric-1', 'metric-2', 'metric-3', 'metric-4', 'metric-5', 'metric-6', 'metric-7', 'metric-8', 'metric-9', 'metric-10'] as const;
+const TABLE_ROW_KEYS = ['row-1', 'row-2', 'row-3', 'row-4', 'row-5', 'row-6', 'row-7', 'row-8', 'row-9', 'row-10', 'row-11', 'row-12'] as const;
+
+function skeletonColumnKey(index: number, col: { width?: string | number; className?: string }) {
+  if (col.className) return `${index}-${col.className}`;
+  if (col.width != null) return `${index}-${String(col.width)}`;
+  return `col-${index}`;
+}
 
 export function MetricCardGridSkeleton({
   count = 5,
@@ -33,9 +35,9 @@ export function MetricCardGridSkeleton({
 }) {
   return (
     <div className={cn('grid gap-3', colsClassName)}>
-      {[...Array(count)].map((_, i) => (
+      {METRIC_CARD_KEYS.slice(0, count).map((cardKey) => (
         <div
-          key={i}
+          key={cardKey}
           className="rounded-lg border p-4 space-y-2"
           style={{ borderColor: 'var(--border-default)', background: 'var(--bg-surface)' }}
         >
@@ -63,17 +65,17 @@ export function TableSkeleton({
         <thead style={{ background: 'var(--bg-subtle)' }}>
           <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
             {columns.map((col, i) => (
-              <th key={i} className={cn('px-4 py-2.5 text-left', col.className)} style={{ width: col.width }}>
+              <th key={skeletonColumnKey(i, col)} className={cn('px-4 py-2.5 text-left', col.className)} style={{ width: col.width }}>
                 <Bone className="h-3 w-16" />
               </th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {[...Array(rows)].map((_, rowIdx) => (
-            <tr key={rowIdx} className="border-t" style={{ borderColor: 'var(--border-subtle)' }}>
+          {TABLE_ROW_KEYS.slice(0, rows).map((rowKey) => (
+            <tr key={rowKey} className="border-t" style={{ borderColor: 'var(--border-subtle)' }}>
               {columns.map((col, colIdx) => (
-                <td key={colIdx} className={cn('px-4 py-3', col.className)}>
+                <td key={`${rowKey}-${skeletonColumnKey(colIdx, col)}`} className={cn('px-4 py-3', col.className)}>
                   <Bone className={cn('h-4', colIdx === 0 ? 'w-36' : 'w-20')} />
                   {colIdx === 0 && <Bone className="mt-1.5 h-3 w-28" />}
                 </td>

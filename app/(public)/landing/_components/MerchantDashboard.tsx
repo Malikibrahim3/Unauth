@@ -79,7 +79,7 @@ const CASES = [
   },
   {
     id: '#u_james.08', verdict: 'CLEARED', risk: 0.22, conf: 0.41,
-    exposure: '—', merchants: 2, k: 2, sigFired: 1, sigTotal: 12,
+    exposure: '-', merchants: 2, k: 2, sigFired: 1, sigTotal: 12,
     card: '••5540', disputes: 0, lastSeen: '3w ago',
     email: 'james.t@gmail.co…', deviceHash: '3d91..fc22',
     orders: [
@@ -114,7 +114,7 @@ const ACTIVITY = [
   },
   {
     type: 'DISPUTE FILED', typeColor: 'red',
-    title: 'ord_7891023 — Northrun chargeback risk',
+    title: 'ord_7891023 - Northrun chargeback risk',
     detail: '#u_kessler.07 · $440 order value · 2nd dispute',
     time: '2h ago',
   },
@@ -142,7 +142,7 @@ const NETWORK = [
   { name: 'Oakshelf',    exposure: '$440', disputes: 1 },
   { name: 'Bridleworks', exposure: '$280', disputes: 1 },
   { name: 'Prime & Co',  exposure: '$300', disputes: 1 },
-  { name: 'Vantage Co',  exposure: '—',    disputes: 0 },
+  { name: 'Vantage Co',  exposure: '-',    disputes: 0 },
 ];
 
 const SPARKLINE = [18, 24, 22, 31, 28, 38, 45, 62];
@@ -192,23 +192,14 @@ function CaseCard({ c }: { c: typeof CASES[0] }) {
       }}
     >
       {/* Chrome header */}
-      <div
-        style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '8px 14px',
-          background: t.cardHd,
-          borderBottom: `1px solid ${t.darkBorder}`,
-          gap: '8px', flexWrap: 'wrap',
-        }}
-      >
+      <div className="ua-landing-dash-case-chrome">
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{ fontFamily: t.mono, fontSize: '11.5px', letterSpacing: '0.01em', color: t.darkBright, fontWeight: 500 }}>
+          <span style={{ fontFamily: t.mono, fontSize: '12px', letterSpacing: '0.01em', color: t.darkBright, fontWeight: 500 }}>
             {c.id}
           </span>
           <span
+            className="ua-landing-dash-verdict-badge"
             style={{
-              fontFamily: t.mono, fontSize: '8.5px', letterSpacing: '0.1em',
-              padding: '2px 8px',
               background: `${vColor(c.verdict)}1A`,
               color: vColor(c.verdict),
               border: `1px solid ${vColor(c.verdict)}40`,
@@ -216,14 +207,14 @@ function CaseCard({ c }: { c: typeof CASES[0] }) {
           >
             {c.verdict}
           </span>
-          <span style={{ fontFamily: t.mono, fontSize: '9px', color: t.darkSubtle }}>CONF {c.conf.toFixed(2)}</span>
-          <span style={{ fontFamily: t.mono, fontSize: '9px', color: t.darkSubtle }}>k = {c.k}</span>
+          <span style={{ fontFamily: t.mono, fontSize: '12px', color: t.darkSubtle }}>CONF {c.conf.toFixed(2)}</span>
+          <span style={{ fontFamily: t.mono, fontSize: '12px', color: t.darkSubtle }}>k = {c.k}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span style={{ fontFamily: t.mono, fontSize: '9px', color: t.inkSecondary }}>{c.lastSeen}</span>
+          <span style={{ fontFamily: t.mono, fontSize: '12px', color: t.inkSecondary }}>{c.lastSeen}</span>
           <span
             style={{
-              fontFamily: t.mono, fontSize: '8.5px', letterSpacing: '0.08em',
+              fontFamily: t.mono, fontSize: '12px', letterSpacing: '0.02em',
               color: statusColor(c.statusType),
             }}
           >
@@ -236,12 +227,7 @@ function CaseCard({ c }: { c: typeof CASES[0] }) {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
         {/* Orders */}
         <div style={{ padding: '10px 14px', borderRight: `1px solid ${t.darkBorder}` }}>
-          <div
-            style={{
-              fontFamily: t.mono, fontSize: '8px', letterSpacing: '0.1em', textTransform: 'uppercase',
-              color: t.inkSecondary, marginBottom: '7px',
-            }}
-          >
+          <div className="ua-landing-dash-orders-header">
             Orders · {c.orders.length} in cluster
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -253,10 +239,10 @@ function CaseCard({ c }: { c: typeof CASES[0] }) {
                   gap: '8px', alignItems: 'baseline',
                 }}
               >
-                <span style={{ fontFamily: t.mono, fontSize: '9px', color: t.darkSubtle }}>{o.id}</span>
+                <span style={{ fontFamily: t.mono, fontSize: '12px', color: t.darkSubtle }}>{o.id}</span>
                 <span
                   style={{
-                    fontFamily: t.mono, fontSize: '9px', color: t.darkWarm,
+                    fontFamily: t.mono, fontSize: '12px', color: t.darkWarm,
                     textAlign: 'right', fontVariantNumeric: 'tabular-nums',
                   }}
                 >
@@ -264,7 +250,7 @@ function CaseCard({ c }: { c: typeof CASES[0] }) {
                 </span>
                 <span
                   style={{
-                    fontFamily: t.mono, fontSize: '8.5px',
+                    fontFamily: t.mono, fontSize: '12px',
                     color: orderStatusColor(o.status),
                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                   }}
@@ -274,7 +260,7 @@ function CaseCard({ c }: { c: typeof CASES[0] }) {
               </div>
             ))}
           </div>
-          <div style={{ fontFamily: t.mono, fontSize: '8px', color: t.inkSecondary, marginTop: '6px' }}>
+          <div style={{ fontFamily: t.mono, fontSize: '12px', color: t.inkSecondary, marginTop: '6px' }}>
             {c.orders[0].store}{c.merchants > 1 ? ` + ${c.merchants - 1} more` : ''}
           </div>
         </div>
@@ -283,7 +269,7 @@ function CaseCard({ c }: { c: typeof CASES[0] }) {
         <div style={{ padding: '10px 14px' }}>
           <div
             style={{
-              fontFamily: t.mono, fontSize: '8px', letterSpacing: '0.1em', textTransform: 'uppercase',
+              fontFamily: t.mono, fontSize: '12px', letterSpacing: '0.1em', textTransform: 'uppercase',
               color: t.inkSecondary, marginBottom: '7px',
             }}
           >
@@ -297,7 +283,7 @@ function CaseCard({ c }: { c: typeof CASES[0] }) {
               >
                 <span
                   style={{
-                    fontFamily: t.mono, fontSize: '9px',
+                    fontFamily: t.mono, fontSize: '12px',
                     color: s.fired ? t.inkTertiary : t.inkSecondary,
                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                   }}
@@ -314,7 +300,7 @@ function CaseCard({ c }: { c: typeof CASES[0] }) {
                 </div>
                 <span
                   style={{
-                    fontFamily: t.mono, fontSize: '8.5px',
+                    fontFamily: t.mono, fontSize: '12px',
                     color: s.fired ? vColor(c.verdict) : t.inkSecondary,
                     textAlign: 'right',
                   }}
@@ -352,21 +338,13 @@ function CaseCard({ c }: { c: typeof CASES[0] }) {
               minWidth: 0,
             }}
           >
-            <div
-              style={{
-                fontFamily: t.mono, fontSize: '7.5px',
-                letterSpacing: '0.08em', textTransform: 'uppercase', color: t.inkSecondary,
-              }}
-            >
+            <div className="ua-landing-dash-stat-cell-label">
               {stat.k}
             </div>
             <div
+              className="ua-landing-dash-stat-cell-value"
               style={{
-                fontFamily: t.mono, fontSize: '9.5px',
                 color: stat.hi ? t.accent : stat.k === 'exposure' ? t.darkWarm : t.darkSubtle,
-                marginTop: '2px',
-                fontVariantNumeric: 'tabular-nums',
-                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
               }}
             >
               {stat.v}
@@ -397,22 +375,20 @@ function ActivityCard({ a }: { a: typeof ACTIVITY[0] }) {
         }}
       >
         <span
-          style={{
-            fontFamily: t.mono, fontSize: '9px', letterSpacing: '0.1em',
-            textTransform: 'uppercase', color: actColor(a.typeColor),
-          }}
+          className="ua-landing-dash-activity-type"
+          style={{ color: actColor(a.typeColor) }}
         >
           {a.type}
         </span>
-        <span style={{ fontFamily: t.mono, fontSize: '9px', color: t.inkSecondary, letterSpacing: '0.04em' }}>
+        <span style={{ fontFamily: t.mono, fontSize: '12px', color: t.inkSecondary, letterSpacing: '0.04em' }}>
           {a.time}
         </span>
       </div>
       <figcaption style={{ padding: '8px 12px 7px' }}>
-        <p style={{ fontFamily: t.sans, fontSize: '11.5px', fontWeight: 500, color: t.darkWarm, lineHeight: 1.35, margin: '0 0 3px' }}>
+        <p style={{ fontFamily: t.sans, fontSize: '12px', fontWeight: 500, color: t.darkWarm, lineHeight: 1.35, margin: '0 0 3px' }}>
           {a.title}
         </p>
-        <p style={{ fontFamily: t.mono, fontSize: '9px', color: t.darkSubtle, lineHeight: 1.5, margin: 0 }}>
+        <p style={{ fontFamily: t.mono, fontSize: '12px', color: t.darkSubtle, lineHeight: 1.5, margin: 0 }}>
           {a.detail}
         </p>
       </figcaption>
@@ -430,10 +406,10 @@ function ClusterNetwork() {
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         }}
       >
-        <span style={{ fontFamily: t.mono, fontSize: '9px', letterSpacing: '0.1em', textTransform: 'uppercase', color: t.inkTertiary }}>
+        <span style={{ fontFamily: t.mono, fontSize: '12px', letterSpacing: '0.1em', textTransform: 'uppercase', color: t.inkTertiary }}>
           Network exposure
         </span>
-        <span style={{ fontFamily: t.mono, fontSize: '9px', color: t.inkSecondary }}>7 merchants</span>
+        <span style={{ fontFamily: t.mono, fontSize: '12px', color: t.inkSecondary }}>7 merchants</span>
       </div>
       <div style={{ padding: '9px 14px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
         {NETWORK.map((m) => (
@@ -451,7 +427,7 @@ function ClusterNetwork() {
               />
               <span
                 style={{
-                  fontFamily: t.mono, fontSize: '10px', color: t.inkTertiary,
+                  fontFamily: t.mono, fontSize: '12px', color: t.inkTertiary,
                   overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                 }}
               >
@@ -459,11 +435,11 @@ function ClusterNetwork() {
               </span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
-              <span style={{ fontFamily: t.mono, fontSize: '9.5px', color: t.darkSubtle, fontVariantNumeric: 'tabular-nums' }}>
+              <span style={{ fontFamily: t.mono, fontSize: '12px', color: t.darkSubtle, fontVariantNumeric: 'tabular-nums' }}>
                 {m.exposure}
               </span>
               {m.disputes > 0 && (
-                <span style={{ fontFamily: t.mono, fontSize: '8.5px', color: t.accent }}>
+                <span style={{ fontFamily: t.mono, fontSize: '12px', color: t.accent }}>
                   {m.disputes}×
                 </span>
               )}
@@ -495,9 +471,9 @@ function TrendSparkline() {
           <stop offset="100%" stopColor={t.accent} stopOpacity="0" />
         </linearGradient>
       </defs>
-      {[0.25, 0.5, 0.75].map((frac, i) => (
+      {[0.25, 0.5, 0.75].map((frac) => (
         <line
-          key={i}
+          key={frac}
           x1={PL} x2={W - PR}
           y1={PT + frac * (H - PT - PB)} y2={PT + frac * (H - PT - PB)}
           stroke={t.darkBorder} strokeWidth="1" strokeDasharray="2 3"
@@ -505,11 +481,11 @@ function TrendSparkline() {
       ))}
       <path d={area} fill="url(#ua-spark-m)" />
       <path d={line} fill="none" stroke={t.accent} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-      {pts.filter((_, i) => i % 2 === 0).map((p, idx) => (
-        <text key={idx} x={p.x} y={H} textAnchor="middle" fill={t.inkSecondary} fontFamily={t.mono} fontSize="8">
-          W{idx * 2 + 1}
+      {pts.map((p, i) => (i % 2 === 0 ? (
+        <text key={p.x} x={p.x} y={H} textAnchor="middle" fill={t.inkSecondary} fontFamily={t.mono} fontSize="12">
+          W{i / 2 * 2 + 1}
         </text>
-      ))}
+      ) : null))}
       <circle cx={pts[pts.length - 1].x} cy={pts[pts.length - 1].y} r="3" fill={t.accent} />
       <text
         x={pts[pts.length - 1].x - 5}
@@ -517,7 +493,7 @@ function TrendSparkline() {
         textAnchor="end"
         fill={t.accent}
         fontFamily={t.mono}
-        fontSize="9"
+        fontSize="12"
         fontWeight="600"
       >
         62%
@@ -533,14 +509,7 @@ export default function MerchantDashboard() {
   const evidenceReady = CASES.filter(c => c.statusType === 'ready').length;
 
   return (
-    <div
-      style={{
-        border: `1px solid ${t.darkBorder}`,
-        boxShadow:
-          '0 2px 0 rgba(48,44,36,0.4), 0 22px 54px -26px rgba(0,0,0,0.6), 0 44px 96px -48px rgba(123,45,38,0.22)',
-        overflow: 'hidden',
-      }}
-    >
+    <div className="ua-landing-merchant-dashboard-root">
       {/* ── App header ──────────────────────────────────────────────────────── */}
       <div style={{ background: t.darkBg, borderBottom: `1px solid ${t.darkBorder}` }}>
         {/* Nav bar */}
@@ -554,7 +523,7 @@ export default function MerchantDashboard() {
           <div style={{ display: 'flex', alignItems: 'center' }}>
             <span
               style={{
-                fontFamily: t.mono, fontSize: '12.5px', letterSpacing: '0.1em', color: t.darkBright,
+                fontFamily: t.mono, fontSize: '12.5px', letterSpacing: '0.02em', color: t.darkBright,
                 padding: '11px 20px 11px 0', borderRight: `1px solid ${t.darkBorder}`, marginRight: '20px',
               }}
             >
@@ -563,15 +532,7 @@ export default function MerchantDashboard() {
             {['Overview', 'Cases', 'Clusters', 'Audits', 'Reports'].map((n, i) => (
               <span
                 key={n}
-                style={{
-                  fontFamily: t.sans, fontSize: '12.5px',
-                  color: i === 1 ? t.darkBright : t.darkSubtle,
-                  padding: '11px 14px',
-                  borderBottom: i === 1 ? `2px solid ${t.accent}` : '2px solid transparent',
-                  cursor: 'pointer',
-                  letterSpacing: '-0.005em',
-                  marginBottom: '-1px',
-                }}
+                className={`ua-landing-dash-nav-tab ${i === 1 ? 'ua-landing-dash-nav-tab--active' : 'ua-landing-dash-nav-tab--idle'}`}
               >
                 {n}
               </span>
@@ -580,18 +541,15 @@ export default function MerchantDashboard() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
               <span style={{ width: 6, height: 6, borderRadius: '50%', background: t.greenBright, display: 'inline-block' }} />
-              <span style={{ fontFamily: t.mono, fontSize: '9.5px', color: t.darkSubtle, letterSpacing: '0.06em' }}>GRAPH LIVE</span>
+              <span style={{ fontFamily: t.mono, fontSize: '12px', color: t.darkSubtle, letterSpacing: '0.02em' }}>GRAPH LIVE</span>
             </div>
             <span style={{ width: 1, height: 14, background: t.darkBorder, display: 'inline-block' }} />
             <span style={{ fontFamily: t.sans, fontSize: '12.5px', fontWeight: 500, color: t.inkTertiary }}>Kessler.com</span>
             <span style={{ width: 1, height: 14, background: t.darkBorder, display: 'inline-block' }} />
-            <span style={{ fontFamily: t.mono, fontSize: '9.5px', color: t.darkSubtle, letterSpacing: '0.06em' }}>MAY 2026</span>
+            <span style={{ fontFamily: t.mono, fontSize: '12px', color: t.darkSubtle, letterSpacing: '0.02em' }}>MAY 2026</span>
             <button
-              style={{
-                fontFamily: t.mono, fontSize: '9.5px', color: t.accent,
-                background: `${t.accent}1A`, border: `1px solid ${t.accent}40`,
-                padding: '5px 12px', letterSpacing: '0.08em', cursor: 'pointer',
-              }}
+              type="button"
+              className="ua-landing-dash-export-btn"
             >
               + NEW AUDIT
             </button>
@@ -607,10 +565,10 @@ export default function MerchantDashboard() {
             { label: 'Evidence ready',   value: `${evidenceReady}`,sub: 'packet assembled',        trend: '→',      tC: t.accent    },
             { label: 'Avg refund rate',  value: '62%',             sub: 'vs 18% at cycle start',   trend: '↑ 44pp', tC: t.orange },
           ].map((k, i) => (
-            <div key={i} style={{ padding: '13px 18px', borderRight: i < 4 ? `1px solid ${t.darkBorder}` : 'none' }}>
+            <div key={k.label} style={{ padding: '13px 18px', borderRight: i < 4 ? `1px solid ${t.darkBorder}` : 'none' }}>
               <div
                 style={{
-                  fontFamily: t.mono, fontSize: '8px', letterSpacing: '0.1em',
+                  fontFamily: t.mono, fontSize: '12px', letterSpacing: '0.1em',
                   textTransform: 'uppercase', color: t.inkSecondary, marginBottom: '5px',
                 }}
               >
@@ -629,10 +587,10 @@ export default function MerchantDashboard() {
                   {k.value}
                 </span>
                 {k.trend && (
-                  <span style={{ fontFamily: t.mono, fontSize: '9px', color: k.tC ?? t.darkSubtle }}>{k.trend}</span>
+                  <span style={{ fontFamily: t.mono, fontSize: '12px', color: k.tC ?? t.darkSubtle }}>{k.trend}</span>
                 )}
               </div>
-              <div style={{ fontFamily: t.mono, fontSize: '8px', color: t.inkSecondary, marginTop: '3px' }}>{k.sub}</div>
+              <div style={{ fontFamily: t.mono, fontSize: '12px', color: t.inkSecondary, marginTop: '3px' }}>{k.sub}</div>
             </div>
           ))}
         </div>
@@ -643,21 +601,15 @@ export default function MerchantDashboard() {
         style={{ display: 'grid', gridTemplateColumns: '1fr 272px', background: t.darkBg }}
         className="ua-dash-grid"
       >
-        {/* LEFT — case list */}
+        {/* LEFT - case list */}
         <div style={{ borderRight: `1px solid ${t.darkBorder}` }}>
           {/* Section header */}
-          <div
-            style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              padding: '10px 14px', borderBottom: `1px solid ${t.darkBorder}`,
-              background: t.darkShell2, gap: '10px', flexWrap: 'wrap',
-            }}
-          >
+          <div className="ua-landing-dash-cases-header">
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ fontFamily: t.mono, fontSize: '9px', letterSpacing: '0.12em', textTransform: 'uppercase', color: t.inkTertiary }}>
+              <span style={{ fontFamily: t.mono, fontSize: '12px', letterSpacing: '0.02em', textTransform: 'uppercase', color: t.inkTertiary }}>
                 Cases
               </span>
-              <span style={{ fontFamily: t.mono, fontSize: '9px', color: t.darkSubtle }}>
+              <span style={{ fontFamily: t.mono, fontSize: '12px', color: t.darkSubtle }}>
                 {CASES.length} total · {openCases} open
               </span>
             </div>
@@ -665,12 +617,10 @@ export default function MerchantDashboard() {
               {['ALL', 'DEFINITE', 'POSSIBLE', 'WATCH'].map((f, i) => (
                 <span
                   key={f}
+                  className="ua-landing-dash-filter-chip"
                   style={{
-                    fontFamily: t.mono, fontSize: '8.5px', letterSpacing: '0.07em',
-                    padding: '3px 9px', cursor: 'pointer',
                     background: i === 0 ? t.darkBorder : 'transparent',
                     color: i === 0 ? t.darkWarm : t.darkSubtle,
-                    border: `1px solid ${i === 0 ? t.darkBorder : t.darkBorder}`,
                   }}
                 >
                   {f}
@@ -691,16 +641,16 @@ export default function MerchantDashboard() {
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             }}
           >
-            <span style={{ fontFamily: t.mono, fontSize: '8.5px', color: t.inkSecondary }}>
+            <span style={{ fontFamily: t.mono, fontSize: '12px', color: t.inkSecondary }}>
               Audit: 2026-05-20 09:42 EST · 11 rows · 38ms
             </span>
-            <span style={{ fontFamily: t.mono, fontSize: '8.5px', color: t.inkSecondary }}>
+            <span style={{ fontFamily: t.mono, fontSize: '12px', color: t.inkSecondary }}>
               k ≥ 3 gate · HMAC-SHA256
             </span>
           </div>
         </div>
 
-        {/* RIGHT — sidebar */}
+        {/* RIGHT - sidebar */}
         <div style={{ display: 'flex', flexDirection: 'column' }}>
 
           {/* Cluster network exposure */}
@@ -716,20 +666,20 @@ export default function MerchantDashboard() {
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               }}
             >
-              <span style={{ fontFamily: t.mono, fontSize: '9px', letterSpacing: '0.1em', textTransform: 'uppercase', color: t.inkTertiary }}>
+              <span style={{ fontFamily: t.mono, fontSize: '12px', letterSpacing: '0.1em', textTransform: 'uppercase', color: t.inkTertiary }}>
                 Activity
               </span>
-              <span style={{ fontFamily: t.mono, fontSize: '9px', color: t.darkSubtle, letterSpacing: '0.06em' }}>LIVE</span>
+              <span style={{ fontFamily: t.mono, fontSize: '12px', color: t.darkSubtle, letterSpacing: '0.02em' }}>LIVE</span>
             </div>
             <div style={{ background: t.darkBg, padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              {ACTIVITY.map((a, i) => <ActivityCard key={i} a={a} />)}
+              {ACTIVITY.map((a) => <ActivityCard key={`${a.type}-${a.title}`} a={a} />)}
             </div>
           </div>
 
           {/* Top signals */}
           <div style={{ background: t.darkShell2, borderTop: `1px solid ${t.darkBorder}`, borderBottom: `1px solid ${t.darkBorder}` }}>
             <div style={{ padding: '9px 14px', borderBottom: `1px solid ${t.darkBorder}` }}>
-              <span style={{ fontFamily: t.mono, fontSize: '9px', letterSpacing: '0.1em', textTransform: 'uppercase', color: t.inkTertiary }}>
+              <span style={{ fontFamily: t.mono, fontSize: '12px', letterSpacing: '0.1em', textTransform: 'uppercase', color: t.inkTertiary }}>
                 Top signals this cycle
               </span>
             </div>
@@ -741,7 +691,7 @@ export default function MerchantDashboard() {
                 >
                   <span
                     style={{
-                      fontFamily: t.mono, fontSize: '9px', color: t.darkSubtle,
+                      fontFamily: t.mono, fontSize: '12px', color: t.darkSubtle,
                       overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                     }}
                   >
@@ -750,7 +700,7 @@ export default function MerchantDashboard() {
                   <div style={{ height: '2px', background: t.darkBorder }}>
                     <div style={{ width: `${s.v * 100}%`, height: '100%', background: t.accent }} />
                   </div>
-                  <span style={{ fontFamily: t.mono, fontSize: '9px', color: t.darkSubtle, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                  <span style={{ fontFamily: t.mono, fontSize: '12px', color: t.darkSubtle, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
                     {s.cases}×
                   </span>
                 </div>
@@ -766,17 +716,17 @@ export default function MerchantDashboard() {
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               }}
             >
-              <span style={{ fontFamily: t.mono, fontSize: '9px', letterSpacing: '0.1em', textTransform: 'uppercase', color: t.inkTertiary }}>
+              <span style={{ fontFamily: t.mono, fontSize: '12px', letterSpacing: '0.1em', textTransform: 'uppercase', color: t.inkTertiary }}>
                 Refund rate
               </span>
-              <span style={{ fontFamily: t.mono, fontSize: '9px', color: t.inkSecondary }}>8-week trend</span>
+              <span style={{ fontFamily: t.mono, fontSize: '12px', color: t.inkSecondary }}>8-week trend</span>
             </div>
             <div style={{ padding: '10px 14px 4px' }}>
               <TrendSparkline />
             </div>
             <div style={{ padding: '0 14px 10px', display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ fontFamily: t.mono, fontSize: '8.5px', color: t.inkSecondary }}>18% → 62%</span>
-              <span style={{ fontFamily: t.mono, fontSize: '8.5px', color: t.accent }}>+44pp ↑</span>
+              <span style={{ fontFamily: t.mono, fontSize: '12px', color: t.inkSecondary }}>18% → 62%</span>
+              <span style={{ fontFamily: t.mono, fontSize: '12px', color: t.accent }}>+44pp ↑</span>
             </div>
           </div>
 
@@ -784,14 +734,7 @@ export default function MerchantDashboard() {
       </div>
 
       {/* ── Status bar ──────────────────────────────────────────────────────── */}
-      <div
-        style={{
-          background: t.darkShell2,
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '7px 20px', borderTop: `1px solid ${t.darkBorder}`,
-          flexWrap: 'wrap', gap: '8px',
-        }}
-      >
+      <div className="ua-landing-dash-status-bar">
         <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
           {[
             ['graph', 'LIVE'],
@@ -799,12 +742,12 @@ export default function MerchantDashboard() {
             ['last sync', '4m ago'],
             ['merchants in network', '42'],
           ].map(([label, value]) => (
-            <span key={label} style={{ fontFamily: t.mono, fontSize: '9px', color: t.inkSecondary, letterSpacing: '0.06em' }}>
+            <span key={label} style={{ fontFamily: t.mono, fontSize: '12px', color: t.inkSecondary, letterSpacing: '0.02em' }}>
               {label} <span style={{ color: t.inkTertiary }}>{value}</span>
             </span>
           ))}
         </div>
-        <span style={{ fontFamily: t.mono, fontSize: '9px', color: t.inkSecondary, letterSpacing: '0.06em' }}>
+        <span style={{ fontFamily: t.mono, fontSize: '12px', color: t.inkSecondary, letterSpacing: '0.02em' }}>
           HMAC-SHA256 MATCHING · MERCHANT-SCOPED DATA · SOC 2 IN PROGRESS
         </span>
       </div>

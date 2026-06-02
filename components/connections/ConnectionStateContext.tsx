@@ -29,6 +29,6 @@ export function ConnectionStateProvider({
   );
 }
 
-export function useConnectionState(): ConnectionState {
+function useConnectionState(): ConnectionState {
   return useContext(ConnectionStateContext);
 }

@@ -11,6 +11,9 @@ import {
   fetchMerchantScopedCustomerTransactions,
 } from '@/lib/supabase/merchantHelpers'
 
+const txDate = (tx: { order_date: string | null; processed_at: string }): string =>
+  tx.order_date ?? tx.processed_at
+
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
@@ -54,9 +57,6 @@ export async function GET(request: NextRequest) {
 
   // Prefer the merchant-supplied order date; fall back to ingestion time only for
   // legacy rows ingested before order_date existed.
-  const txDate = (tx: { order_date: string | null; processed_at: string }): string =>
-    tx.order_date ?? tx.processed_at
-
   const disputedSignalHashes = extractCe3AcceptedHashes(disputedTx.ce3_signal_hashes)
   const orderHistoryForCE3 = txRows.map(tx => ({
     order_id: tx.order_id ?? tx.id,

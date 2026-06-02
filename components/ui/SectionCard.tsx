@@ -55,7 +55,7 @@ export function SectionCard({
           {description && (
               <p
               className="mt-1 truncate"
-              style={{ fontSize: 11, color: 'var(--ink-secondary)' }}
+              style={{ fontSize: 12, color: 'var(--ink-secondary)' }}
             >
               {description}
             </p>

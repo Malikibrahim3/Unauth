@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Reveal from './Reveal';
 import { t } from '../_tokens';
 
@@ -18,12 +19,13 @@ export default function LandingScreenshotFrame({ src, alt, delay = 0 }: Props) {
           boxShadow: '0 10px 36px rgba(0,0,0,0.14), 0 2px 6px rgba(0,0,0,0.07)',
         }}
       >
-        <img
+        <Image
           src={src}
           alt={alt}
           loading="lazy"
           width={2880}
           height={1800}
+          sizes="100vw"
           style={{ display: 'block', width: '100%', height: 'auto' }}
         />
       </div>

@@ -1,0 +1,160 @@
+.form {
+  width: 100%;
+}
+
+.fieldGroup {
+  margin-bottom: 26px;
+}
+
+.fieldGroupTight {
+  margin-bottom: 20px;
+}
+
+.label {
+  display: block;
+  font-family: var(--font-dm-mono, monospace);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  color: #6b6455;
+  margin-bottom: 6px;
+}
+
+.emailInput {
+  width: 100%;
+  background: rgba(236, 229, 212, 0.48);
+  border: none;
+  color: #1a1814;
+  padding: 14px 16px;
+  font-size: 18px;
+  box-sizing: border-box;
+  border-radius: 0;
+  font-family: var(--font-serif, serif);
+}
+
+.emailInput:focus-visible {
+  outline: 2px solid #7b2d26;
+  outline-offset: 2px;
+}
+
+.dropZone {
+  border: 1px dashed #c8b89a;
+  padding: 28px 20px;
+  cursor: pointer;
+  text-align: center;
+  background: transparent;
+  transition: border-color 0.15s, background 0.15s;
+  width: 100%;
+  font: inherit;
+}
+
+.dropZoneDragging {
+  border-color: #7b2d26;
+  background: rgba(123, 45, 38, 0.04);
+}
+
+.hiddenFileInput {
+  display: none;
+}
+
+.submitButton {
+  display: block;
+  width: 100%;
+  background: #7b2d26;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 500;
+  padding: 15px 20px;
+  border: none;
+  cursor: pointer;
+  letter-spacing: 0.01em;
+  font-family: var(--font-dm-sans, sans-serif);
+}
+
+.submitButton:disabled {
+  background: #5c2219;
+  cursor: not-allowed;
+}
+
+.schemaToggle {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-size: 12px;
+  color: #6b6455;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-dm-mono, monospace);
+}
+
+.schemaHeading {
+  font-family: var(--font-dm-mono, monospace);
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  color: #9a9080;
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.errorMono {
+  font-family: var(--font-dm-mono, monospace);
+  font-size: 12px;
+  color: #9f1d1d;
+  margin-top: 6px;
+  margin-bottom: 0;
+}
+
+.errorSans {
+  font-family: var(--font-dm-sans, sans-serif);
+  font-size: 13px;
+  color: #9f1d1d;
+  margin-top: 6px;
+  margin-bottom: 0;
+}
+
+.hintMono {
+  font-family: var(--font-dm-mono, monospace);
+  font-size: 13px;
+  color: #6b6455;
+  margin: 0 0 6px;
+}
+
+.hintMonoSmall {
+  font-family: var(--font-dm-mono, monospace);
+  font-size: 12px;
+  color: #9a9080;
+  margin: 0;
+}
+
+.bodyMono {
+  font-family: var(--font-dm-mono, monospace);
+  font-size: 12px;
+  color: #6b6455;
+  line-height: 1.8;
+  margin: 0;
+}
+
+.bodySans {
+  font-family: var(--font-dm-sans, sans-serif);
+  font-size: 12px;
+  color: #9a9080;
+  margin-top: 16px;
+  margin-bottom: 0;
+}
+
+.schemaPanel {
+  margin-top: 16px;
+}
+
+.mono {
+  font-family: var(--font-dm-mono, monospace);
+}
+
+.sans {
+  font-family: var(--font-dm-sans, sans-serif);
+}
+
+.serif {
+  font-family: var(--font-serif, serif);
+}

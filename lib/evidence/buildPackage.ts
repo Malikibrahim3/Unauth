@@ -96,26 +96,25 @@ export async function buildEvidencePackage(
   // -------------------------------------------------------------------------
   // 3. All orders for this customer — scoped to merchant-owned jobs only
   // -------------------------------------------------------------------------
-  const txRows = await fetchMerchantScopedCustomerTransactions(
-    supabaseServiceRole,
-    merchantId,
-    customerProfileId,
-    profile,
-    { select: 'id,order_id,order_date,customer_email,customer_name,shipping_address,device_ip,card_last4,order_value,match_score,risk_level,signals_matched,ce3_signal_hashes,refund_claimed,refund_reason,processed_at,job_id' }
-  )
-
-  // -------------------------------------------------------------------------
-  // 3b. Verify disputed order belongs to this merchant
-  // -------------------------------------------------------------------------
-  const ownedJobIds = await getMerchantOwnedJobIds(supabaseServiceRole, merchantId)
-  const allTxs = txRows
+  const [txRows, ownedJobIds] = await Promise.all([
+    fetchMerchantScopedCustomerTransactions(
+      supabaseServiceRole,
+      merchantId,
+      customerProfileId,
+      profile,
+      { select: 'id,order_id,order_date,customer_email,customer_name,shipping_address,device_ip,card_last4,order_value,match_score,risk_level,signals_matched,ce3_signal_hashes,refund_claimed,refund_reason,processed_at,job_id' },
+    ),
+    getMerchantOwnedJobIds(supabaseServiceRole, merchantId),
+  ]);
+  const allTxs = txRows;
+  const ownedJobIdSet = new Set(ownedJobIds);
 
   // -------------------------------------------------------------------------
   // 4. Identify disputed order — must belong to this merchant's jobs
   // -------------------------------------------------------------------------
   const disputedTx = allTxs.find(tx =>
     (tx.id === disputedOrderId || tx.order_id === disputedOrderId) &&
-    ownedJobIds.includes(tx.job_id as string)
+    ownedJobIdSet.has(tx.job_id as string),
   )
   if (!disputedTx) throw new Error(`Disputed order not found or not owned by merchant: ${disputedOrderId}`)
 
@@ -138,9 +137,11 @@ export async function buildEvidencePackage(
   // Earliest order date across the customer's history (real order dates, not
   // ingestion time). Falls back to the profile's stored first_seen, then to the
   // disputed order date.
-  const orderDateMs = allTxs
-    .map(tx => new Date(txDate(tx)).getTime())
-    .filter(ms => !Number.isNaN(ms))
+  const orderDateMs: number[] = [];
+  for (const tx of allTxs) {
+    const ms = new Date(txDate(tx)).getTime();
+    if (!Number.isNaN(ms)) orderDateMs.push(ms);
+  }
   const firstSeenDate =
     orderDateMs.length > 0
       ? new Date(Math.min(...orderDateMs))
@@ -258,7 +259,7 @@ export async function buildEvidencePackage(
     .limit(3) as unknown as { data: Array<{ body: string; created_at: string }> | null }
 
   const merchantNotes =
-    (noteRows ?? []).map(n => n.body).filter(Boolean).join('\n\n') || undefined
+    (noteRows ?? []).flatMap(n => (n.body ? [n.body] : [])).join('\n\n') || undefined
 
   // -------------------------------------------------------------------------
   // 9. Reference number

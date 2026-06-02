@@ -31,7 +31,7 @@ export function SensitiveField({
         {!revealed && <PrivacyBadge value="PII masked" />}
         {revealed && (
           <span
-            className="inline-flex items-center gap-1 rounded-sm border px-1.5 py-0.5 font-mono text-[10px] uppercase leading-none"
+            className="inline-flex items-center gap-1 rounded-sm border px-1.5 py-0.5 font-mono text-xs uppercase leading-none"
             style={{
               background: 'var(--risk-medium-bg)',
               borderColor: 'var(--risk-medium-line)',
@@ -49,7 +49,7 @@ export function SensitiveField({
           <button
             type="button"
             onClick={() => setRevealed((v) => !v)}
-            className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1"
+            className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1"
             style={{
               borderColor: 'var(--border-subtle)',
               color: 'var(--text-muted)',

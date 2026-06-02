@@ -31,13 +31,14 @@ async function GETHandler(req: NextRequest) {
   const includeAudit = req ? new URL(req.url).searchParams.get('includeAudit') === 'true' : false;
   const includeOwner = req ? new URL(req.url).searchParams.get('includeOwner') === 'true' : false;
 
-  const { data: merchant } = await serviceClient
-    .from(TABLES.MERCHANTS).select('id, name, user_id').eq('id', ctx.merchantId).single();
-
-  const { data: members, error } = await scopedClient
-    .from(TABLES.MERCHANT_MEMBERS).select('*')
-    .neq('invite_status', 'revoked')
-    .order('created_at', { ascending: true });
+  const [{ data: merchant }, { data: members, error }] = await Promise.all([
+    serviceClient.from(TABLES.MERCHANTS).select('id, name, user_id').eq('id', ctx.merchantId).single(),
+    scopedClient
+      .from(TABLES.MERCHANT_MEMBERS)
+      .select('*')
+      .neq('invite_status', 'revoked')
+      .order('created_at', { ascending: true }),
+  ]);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 

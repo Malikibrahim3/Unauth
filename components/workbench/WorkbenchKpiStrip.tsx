@@ -20,7 +20,7 @@ export function WorkbenchKpiStrip({ items, colsClassName = 'grid-cols-2 md:grid-
       {items.map((item, idx) => (
         <div
           key={item.label}
-          className="min-w-0 px-3 py-3 md:px-4"
+          className="min-w-0 p-3 md:px-4"
           style={{
             borderRightColor: 'var(--surface-border)',
             borderRightWidth: idx === items.length - 1 ? 0 : 1,

@@ -1,4 +1,4 @@
-import { shouldAttemptClaimViewed } from '@/components/claims/ClaimReviewPanel';
+import { shouldAttemptClaimViewed } from '@/components/claims/claimReviewDraft';
 
 describe('claim viewed guard', () => {
   it('allows first attempt for unread claim', () => {

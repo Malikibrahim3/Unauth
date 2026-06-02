@@ -488,14 +488,16 @@ export async function linkSupportCaseByOrderRef(
   }
 
   const order = orderMatches[0];
-  const customerResolution = await resolveCustomerProfileFromOrder(client, input.merchantId, order);
-  const claimResolution = await findExistingMerchantClaim(client, {
-    merchantId: input.merchantId,
-    shopDomain: input.shopDomain,
-    shopifyOrderId: order.shopify_order_id,
-    orderRef: input.orderRef,
-    claimReason: supportCase.claim_reason,
-  });
+  const [customerResolution, claimResolution] = await Promise.all([
+    resolveCustomerProfileFromOrder(client, input.merchantId, order),
+    findExistingMerchantClaim(client, {
+      merchantId: input.merchantId,
+      shopDomain: input.shopDomain,
+      shopifyOrderId: order.shopify_order_id,
+      orderRef: input.orderRef,
+      claimReason: supportCase.claim_reason,
+    }),
+  ]);
 
   return buildLinkResultFromOrder(supportCase, order, customerResolution, claimResolution);
 }

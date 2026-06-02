@@ -1,5 +1,11 @@
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+
+export const metadata: Metadata = {
+  title: 'Audit running | Unauth',
+  description: 'Your identity audit is in progress.',
+};
 
 interface AuditRunningPageProps {
   searchParams: Promise<{ email?: string }>;
@@ -25,7 +31,7 @@ export default async function AuditRunningPage({ searchParams }: AuditRunningPag
         <p
           style={{
             fontFamily: 'var(--font-dm-sans, sans-serif)',
-            fontSize: '11px',
+            fontSize: '12px',
             fontWeight: 600,
             letterSpacing: '0.16em',
             textTransform: 'uppercase',

@@ -1,4 +1,10 @@
+import type { Metadata } from 'next';
 import AuditDemoClient from './AuditDemoClient';
+
+export const metadata: Metadata = {
+  title: 'Audit demo | Unauth',
+  description: 'Try a siloed identity audit without signing in.',
+};
 
 export default async function AuditDemoPage({
   searchParams,

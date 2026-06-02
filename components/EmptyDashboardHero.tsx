@@ -24,7 +24,7 @@ function PreviewRow({ email, grade, orders, claims, gradeColor }: { email: strin
   return (
     <div className="flex items-center justify-between px-3 py-2 border-b last:border-0 text-xs" style={{ borderColor: 'var(--border-subtle)' }}>
       <span className="font-mono truncate max-w-[140px]" style={{ color: 'var(--ink-secondary)' }}>{email}</span>
-      <span className="font-bold px-1.5 py-0.5 rounded text-[10px]" style={{ background: gradeColor + '22', color: gradeColor }}>{grade}</span>
+      <span className="font-bold px-1.5 py-0.5 rounded text-xs" style={{ background: gradeColor + '22', color: gradeColor }}>{grade}</span>
       <span style={{ color: 'var(--ink-tertiary)' }}>{orders} orders</span>
       <span style={{ color: claims > 0 ? 'var(--sev-high, #DC2626)' : 'var(--ink-tertiary)' }}>{claims} claims</span>
     </div>
@@ -40,7 +40,7 @@ export default function EmptyDashboardHero() {
           Connect Shopify and your helpdesk to get started
         </h2>
         <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-secondary)', fontFamily: 'DM Sans, system-ui, sans-serif' }}>
-          Unauth needs both. Shopify provides order data — your helpdesk provides claim history. One without the other is an incomplete picture.
+          Unauth needs both. Shopify provides order data - your helpdesk provides claim history. One without the other is an incomplete picture.
         </p>
       </div>
 
@@ -96,13 +96,13 @@ export default function EmptyDashboardHero() {
           {/* Arrow to preview */}
           <ArrowRight className="h-4 w-4 shrink-0" style={{ color: 'var(--ink-tertiary)' }} />
 
-          {/* What you get — mini preview */}
+          {/* What you get - mini preview */}
           <div
             className="flex-1 rounded-lg overflow-hidden"
             style={{ background: 'var(--surface-base)', border: '1px solid var(--border-default)' }}
           >
             <div className="px-3 py-2 border-b" style={{ borderColor: 'var(--border-subtle)', background: 'var(--surface-overlay)' }}>
-              <p className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: 'var(--ink-tertiary)' }}>Your customers</p>
+              <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--ink-tertiary)' }}>Your customers</p>
             </div>
             <PreviewRow email="jane@acme.co" grade="A" orders={14} claims={3} gradeColor="#7B2D26" />
             <PreviewRow email="anon+1032@gmail.com" grade="B" orders={7} claims={1} gradeColor="#B45309" />
@@ -135,12 +135,12 @@ export default function EmptyDashboardHero() {
           >
             <Icon className="h-4 w-4" style={{ color: 'var(--ink-tertiary)' }} />
             <p className="text-xs font-semibold leading-snug" style={{ color: 'var(--ink-primary)' }}>{label}</p>
-            <p className="text-[11px]" style={{ color: 'var(--ink-tertiary)' }}>{sub}</p>
+            <p className="text-xs" style={{ color: 'var(--ink-tertiary)' }}>{sub}</p>
           </div>
         ))}
       </div>
 
-      {/* Secondary — CSV */}
+      {/* Secondary - CSV */}
       <div
         className="flex flex-wrap items-center justify-between gap-3 rounded-lg px-4 py-3"
         style={{ background: 'var(--surface-overlay)', border: '1px solid var(--border-default)' }}
@@ -150,7 +150,7 @@ export default function EmptyDashboardHero() {
           <div>
             <p className="text-sm font-medium" style={{ color: 'var(--ink-primary)' }}>Not ready to connect yet?</p>
             <p className="text-xs" style={{ color: 'var(--ink-secondary)' }}>
-              Upload a CSV export to explore what Unauth surfaces — integrations can be added later.
+              Upload a CSV export to explore what Unauth surfaces - integrations can be added later.
             </p>
           </div>
         </div>

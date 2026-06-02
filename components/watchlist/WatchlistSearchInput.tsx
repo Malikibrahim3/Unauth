@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useTransition } from 'react';
+import { Suspense, useCallback, useRef, useState, useTransition } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { Search } from 'lucide-react';
 
@@ -8,7 +8,7 @@ interface WatchlistSearchInputProps {
   defaultValue?: string;
 }
 
-export default function WatchlistSearchInput({ defaultValue = '' }: WatchlistSearchInputProps) {
+function WatchlistSearchInputInner({ defaultValue = '' }: WatchlistSearchInputProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -16,26 +16,24 @@ export default function WatchlistSearchInput({ defaultValue = '' }: WatchlistSea
   const [, startTransition] = useTransition();
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => {
-      const params = new URLSearchParams(searchParams.toString());
-      if (value.trim()) {
-        params.set('q', value.trim());
-      } else {
-        params.delete('q');
-      }
-      // Reset to page 1 on new search
-      params.delete('page');
-      startTransition(() => {
-        router.push(`${pathname}?${params.toString()}`);
-      });
-    }, 250);
-    return () => {
+  const syncQueryToUrl = useCallback(
+    (nextValue: string) => {
       if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value]);
+      timerRef.current = setTimeout(() => {
+        const params = new URLSearchParams(searchParams.toString());
+        if (nextValue.trim()) {
+          params.set('q', nextValue.trim());
+        } else {
+          params.delete('q');
+        }
+        params.delete('page');
+        startTransition(() => {
+          router.replace(`${pathname}?${params.toString()}`);
+        });
+      }, 250);
+    },
+    [pathname, router, searchParams],
+  );
 
   return (
     <div className="relative">
@@ -47,7 +45,11 @@ export default function WatchlistSearchInput({ defaultValue = '' }: WatchlistSea
       <input
         type="search"
         value={value}
-        onChange={(e) => setValue(e.target.value)}
+        onChange={(e) => {
+          const nextValue = e.target.value;
+          setValue(nextValue);
+          syncQueryToUrl(nextValue);
+        }}
         placeholder="Search by name or email…"
         className="rounded-md border pl-8 pr-3 py-1.5 text-sm outline-none transition-colors focus:ring-1"
         style={{
@@ -61,5 +63,22 @@ export default function WatchlistSearchInput({ defaultValue = '' }: WatchlistSea
         aria-label="Search watchlist"
       />
     </div>
+  );
+}
+
+export default function WatchlistSearchInput(props: WatchlistSearchInputProps) {
+  return (
+    <Suspense
+      fallback={
+        <div
+          className="rounded-md border pl-8 pr-3 py-1.5 text-sm"
+          style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)', width: 220, color: 'var(--text-muted)' }}
+        >
+          Search…
+        </div>
+      }
+    >
+      <WatchlistSearchInputInner {...props} />
+    </Suspense>
   );
 }

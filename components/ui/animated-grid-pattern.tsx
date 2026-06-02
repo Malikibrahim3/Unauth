@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
-import { motion } from "motion/react";
+import { useId, useMemo, useState, useSyncExternalStore } from "react";
+import { LazyMotion, domAnimation, m } from "motion/react";
 import { cn } from "@/lib/utils";
 
 interface AnimatedGridPatternProps {
@@ -18,6 +18,60 @@ interface AnimatedGridPatternProps {
   className?: string;
 }
 
+type GridSquare = {
+  id: number;
+  pos: [number, number];
+  delay: number;
+};
+
+function subscribeClientOnly() {
+  return () => {};
+}
+
+function getClientSnapshot() {
+  return true;
+}
+
+function getServerSnapshot() {
+  return false;
+}
+
+function buildSquares(
+  count: number,
+  gridWidth: number,
+  gridHeight: number,
+  cellWidth: number,
+  cellHeight: number,
+  seed: number,
+): GridSquare[] {
+  const random = (index: number) => {
+    const value = Math.sin(seed * 997 + index * 131) * 10000;
+    return value - Math.floor(value);
+  };
+
+  return Array.from({ length: count }, (_, id) => ({
+    id,
+    pos: [
+      Math.floor((random(id) * gridWidth) / cellWidth),
+      Math.floor((random(id + 1) * gridHeight) / cellHeight),
+    ],
+    delay: random(id + 2) * 2,
+  }));
+}
+
+function subscribeElementSize(node: SVGSVGElement | null, onStoreChange: () => void) {
+  if (!node) return () => {};
+  const observer = new ResizeObserver(onStoreChange);
+  observer.observe(node);
+  return () => observer.disconnect();
+}
+
+function getElementSizeSnapshot(node: SVGSVGElement | null) {
+  if (!node) return { width: 0, height: 0 };
+  const rect = node.getBoundingClientRect();
+  return { width: rect.width, height: rect.height };
+}
+
 export function AnimatedGridPattern({
   width = 56,
   height = 56,
@@ -32,80 +86,67 @@ export function AnimatedGridPattern({
   className,
 }: AnimatedGridPatternProps) {
   const id = useId();
-  const containerRef = useRef<SVGSVGElement>(null);
-  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
-  const [squares, setSquares] = useState(() => generateSquares(numSquares));
+  const [containerNode, setContainerNode] = useState<SVGSVGElement | null>(null);
+  const mounted = useSyncExternalStore(subscribeClientOnly, getClientSnapshot, getServerSnapshot);
+  const dimensions = useSyncExternalStore(
+    (onStoreChange) => subscribeElementSize(containerNode, onStoreChange),
+    () => getElementSizeSnapshot(containerNode),
+    () => ({ width: 0, height: 0 }),
+  );
+  const [squareRevision, setSquareRevision] = useState(0);
 
-  function getPos() {
-    return [
-      Math.floor((Math.random() * dimensions.width) / width),
-      Math.floor((Math.random() * dimensions.height) / height),
-    ];
-  }
-
-  function generateSquares(count: number) {
-    return Array.from({ length: count }, (_, i) => ({
-      id: i,
-      pos: getPos(),
-    }));
-  }
-
-  function updateSquarePosition(id: number) {
-    setSquares((prev) =>
-      prev.map((sq) => (sq.id === id ? { ...sq, pos: getPos() } : sq))
+  const squares = useMemo(() => {
+    if (!mounted || !dimensions.width || !dimensions.height) return [];
+    return buildSquares(
+      numSquares,
+      dimensions.width,
+      dimensions.height,
+      width,
+      height,
+      squareRevision,
     );
-  }
+  }, [mounted, dimensions.width, dimensions.height, numSquares, width, height, squareRevision]);
 
-  useEffect(() => {
-    if (dimensions.width && dimensions.height) {
-      setSquares(generateSquares(numSquares));
-    }
-  }, [dimensions, numSquares]);
-
-  useEffect(() => {
-    const obs = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        setDimensions({ width: entry.contentRect.width, height: entry.contentRect.height });
-      }
-    });
-    if (containerRef.current) obs.observe(containerRef.current);
-    return () => obs.disconnect();
-  }, [containerRef]);
+  const updateSquarePosition = () => {
+    setSquareRevision((revision) => revision + 1);
+  };
 
   return (
-    <svg
-      ref={containerRef}
-      aria-hidden
-      className={cn("pointer-events-none absolute inset-0 h-full w-full fill-none stroke-current", className)}
-    >
-      <defs>
-        <pattern id={id} width={width} height={height} patternUnits="userSpaceOnUse" x={x} y={y}>
-          <path d={`M.5 ${height}V.5H${width}`} fill="none" strokeDasharray={strokeDasharray} strokeWidth={strokeWidth} />
-        </pattern>
-      </defs>
-      <rect width="100%" height="100%" fill={`url(#${id})`} strokeWidth={0} />
-      {squares.map(({ pos: [col, row], id: sqId }) => (
-        <motion.rect
-          key={`${col}-${row}-${sqId}`}
-          width={width - 1}
-          height={height - 1}
-          x={col * width + 1}
-          y={row * height + 1}
-          fill="currentColor"
-          strokeWidth={0}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: maxOpacity }}
-          transition={{
-            duration,
-            repeat: 1,
-            delay: Math.random() * 2,
-            repeatType: "reverse",
-            ease: "easeInOut",
-            repeatDelay,
-          }}
-          onAnimationComplete={() => updateSquarePosition(sqId)}
-        />
-      ))}
-    </svg>
+    <LazyMotion features={domAnimation}>
+      <svg
+        ref={setContainerNode}
+        aria-hidden
+        className={cn("pointer-events-none absolute inset-0 h-full w-full fill-none stroke-current", className)}
+      >
+        <defs>
+          <pattern id={id} width={width} height={height} patternUnits="userSpaceOnUse" x={x} y={y}>
+            <path d={`M.5 ${height}V.5H${width}`} fill="none" strokeDasharray={strokeDasharray} strokeWidth={strokeWidth} />
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill={`url(#${id})`} strokeWidth={0} />
+        {squares.map(({ pos: [col, row], id: sqId, delay }) => (
+          <m.rect
+            key={`${col}-${row}-${sqId}-${squareRevision}`}
+            width={width - 1}
+            height={height - 1}
+            x={col * width + 1}
+            y={row * height + 1}
+            fill="currentColor"
+            strokeWidth={0}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: maxOpacity }}
+            transition={{
+              duration,
+              repeat: 1,
+              delay,
+              repeatType: "reverse",
+              ease: "easeInOut",
+              repeatDelay,
+            }}
+            onAnimationComplete={() => updateSquarePosition()}
+          />
+        ))}
+      </svg>
+    </LazyMotion>
   );
 }

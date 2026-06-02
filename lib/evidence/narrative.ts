@@ -9,12 +9,14 @@ import type { EvidencePackage } from './types'
 import { CE3_SIGNAL_LABELS } from './ce3'
 import { formatCurrency } from '@/lib/utils/format'
 
+const evidenceNarrativeDateFormatter = new Intl.DateTimeFormat('en-US', {
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+});
+
 function fmt(d: Date): string {
-  return new Intl.DateTimeFormat('en-US', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  }).format(d)
+  return evidenceNarrativeDateFormatter.format(d)
 }
 
 function plural(n: number, singular: string, plural_: string = `${singular}s`): string {

@@ -21,6 +21,16 @@ function logError(type, msg) {
 }
 
 let ssIndex = 1;
+async function visitElementsSequentially(elements, visit) {
+  const step = async (index) => {
+    if (index >= elements.length) return undefined;
+    const result = await visit(elements[index], index);
+    if (result !== undefined && result !== false) return result;
+    return step(index + 1);
+  };
+  return step(0);
+}
+
 async function screenshot(page, name) {
   const padded = String(ssIndex).padStart(2, '0');
   const filename = `r${padded}_${name}.png`;
@@ -132,14 +142,14 @@ async function main() {
 
       // Look for signup toggle
       const toggleBtns = await page.$$('button');
-      for (const btn of toggleBtns) {
+      await visitElementsSequentially(toggleBtns, async (btn) => {
         const txt = await btn.innerText().catch(() => '');
         if (txt.toLowerCase().includes('create account') || txt.toLowerCase().includes('sign up')) {
           await btn.click();
           await page.waitForTimeout(500);
-          break;
+          return true;
         }
-      }
+      });
 
       const emailInput = await page.$('input[type="email"], input[name="email"]');
       if (emailInput) await emailInput.fill(EMAIL);
@@ -203,13 +213,13 @@ async function main() {
     // Look for and click sample data button
     const allBtns = await page.$$('button, a');
     let sampleBtn = null;
-    for (const btn of allBtns) {
+    const matchedSampleBtn = await visitElementsSequentially(allBtns, async (btn) => {
       const txt = await btn.innerText().catch(() => '');
       if (txt.toLowerCase().includes('sample') || txt.toLowerCase().includes('demo data') || txt.toLowerCase().includes('try ')) {
-        sampleBtn = btn;
-        break;
+        return btn;
       }
-    }
+    });
+    sampleBtn = matchedSampleBtn ?? null;
 
     if (sampleBtn) {
       await sampleBtn.click();
@@ -257,10 +267,12 @@ async function main() {
   // Check header pill / dashboard link
   await page.goto(`${BASE_URL}/dashboard`, { waitUntil: 'networkidle' });
   await page.waitForTimeout(800);
-  const dashboardText = await page.evaluate(() => document.body.innerText);
-  const dashboardLinks = await page.$$eval('a', els => els.map(a => ({ href: a.href, text: a.innerText.trim() })));
+  const [dashboardText, dashboardLinks] = await Promise.all([
+    page.evaluate(() => document.body.innerText),
+    page.$$eval('a', (els) => els.map((a) => ({ href: a.href, text: a.innerText.trim() }))),
+  ]);
   results.headerPillToIntegrations = dashboardLinks.some(l => l.href.includes('/settings/integrations') || l.href.includes('integrations'));
-  results.headerPillText = dashboardLinks.filter(l => l.href.includes('integrations')).map(l => l.text).join(', ');
+  results.headerPillText = dashboardLinks.flatMap((l) => (l.href.includes('integrations') ? [l.text] : [])).join(', ');
 
   await screenshot(page, 'dashboard_header_pill');
 
@@ -325,15 +337,14 @@ async function main() {
       // Navigate to claims tab
       const claimsLinks = await page.$$('a[href*="/claims"], button');
       let claimsTabFound = false;
-      for (const link of claimsLinks) {
+      claimsTabFound = Boolean(await visitElementsSequentially(claimsLinks, async (link) => {
         const txt = await link.innerText().catch(() => '');
         if (txt.toLowerCase().includes('claim')) {
           await link.click();
           await page.waitForTimeout(1000);
-          claimsTabFound = true;
-          break;
+          return true;
         }
-      }
+      }));
 
       if (!claimsTabFound) {
         // Try navigating directly
@@ -360,23 +371,21 @@ async function main() {
       // Try to fill claim type
       const claimTypeSelects = await page.$$('select, [role="combobox"], [role="listbox"]');
       let claimTypeSet = false;
-      for (const sel of claimTypeSelects) {
+      claimTypeSet = Boolean(await visitElementsSequentially(claimTypeSelects, async (sel) => {
         const label = await sel.evaluate(el => {
           const label = document.querySelector(`label[for="${el.id}"]`);
           return label?.innerText || el.getAttribute('aria-label') || el.getAttribute('placeholder') || '';
         });
         if (label.toLowerCase().includes('type') || label.toLowerCase().includes('claim')) {
-          // Try selecting "Missing parcel" or similar
           try {
             await sel.selectOption({ label: 'Missing parcel' });
-            claimTypeSet = true;
+            return true;
           } catch {
-            try { await sel.selectOption({ label: 'missing_parcel' }); claimTypeSet = true; } catch {}
-            try { await sel.selectOption({ index: 1 }); claimTypeSet = true; } catch {}
+            try { await sel.selectOption({ label: 'missing_parcel' }); return true; } catch {}
+            try { await sel.selectOption({ index: 1 }); return true; } catch {}
           }
-          break;
         }
-      }
+      }));
 
       // Also try clicking a select with combobox
       if (!claimTypeSet) {
@@ -435,15 +444,14 @@ async function main() {
       // Click Save
       const saveButtons = await page.$$('button[type="submit"], button');
       let saveClicked = false;
-      for (const btn of saveButtons) {
+      saveClicked = Boolean(await visitElementsSequentially(saveButtons, async (btn) => {
         const txt = await btn.innerText().catch(() => '');
         if (txt.toLowerCase().includes('save') || txt.toLowerCase().includes('submit')) {
           await btn.click();
-          saveClicked = true;
           await page.waitForTimeout(2000);
-          break;
+          return true;
         }
-      }
+      }));
 
       if (saveClicked) {
         await screenshot(page, 'claim_save_result');
@@ -526,7 +534,7 @@ async function main() {
     text: a.innerText.trim()
   })));
   results.claimsInNav = navLinks.some(l => l.href?.includes('/claims') || l.text.toLowerCase() === 'claims');
-  results.claimsNavText = navLinks.filter(l => l.href?.includes('/claims')).map(l => l.text).join(', ');
+  results.claimsNavText = navLinks.flatMap((l) => (l.href?.includes('/claims') ? [l.text] : [])).join(', ');
 
   await screenshot(page, 'claims_nav_check');
 
@@ -570,7 +578,9 @@ async function main() {
   ];
 
   results.navResults = {};
-  for (const area of navAreas) {
+  const visitNavArea = async (index) => {
+    if (index >= navAreas.length) return;
+    const area = navAreas[index];
     currentRoute = area.route;
     try {
       await page.goto(`${BASE_URL}${area.route}`, { waitUntil: 'networkidle', timeout: 8000 });
@@ -587,14 +597,18 @@ async function main() {
     } catch (e) {
       results.navResults[area.name] = { error: e.message };
     }
-  }
+    return visitNavArea(index + 1);
+  };
+  await visitNavArea(0);
 
   // Check /help specifically for tab bar
   currentRoute = '/help';
   await page.goto(`${BASE_URL}/help`, { waitUntil: 'networkidle' });
   await page.waitForTimeout(800);
-  const helpText = await page.evaluate(() => document.body.innerText);
-  const helpHTML = await page.evaluate(() => document.body.innerHTML);
+  const [helpText, helpHTML] = await Promise.all([
+    page.evaluate(() => document.body.innerText),
+    page.evaluate(() => document.body.innerHTML),
+  ]);
   results.helpHasTabBar = helpHTML.includes('tab') && (helpText.includes('Inbox') || helpText.includes('Upload') || helpText.includes('Chargebacks'));
   results.helpHasBreadcrumb = helpText.toLowerCase().includes('help') && (helpHTML.includes('breadcrumb') || helpHTML.includes('nav'));
   results.helpIsClean = !results.helpHasTabBar;

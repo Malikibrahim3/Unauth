@@ -1,155 +1,26 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
-import { getConnectionState, type ConnectionState } from '@/lib/connections/getConnectionState';
+import { getConnectionState } from '@/lib/connections/getConnectionState';
 import { getMerchantDataPresence } from '@/lib/supabase/getMerchantDataPresence';
-import { resolveMerchantSetupState, type MerchantSetupState } from '@/lib/connections/getMerchantSetupState';
-import { PageConnectionGate } from '@/components/connections/PageConnectionGate';
-import Link from 'next/link';
+import { resolveMerchantSetupState } from '@/lib/connections/getMerchantSetupState';
 import { redirect } from 'next/navigation';
-import { Suspense } from 'react';
 import { requirePermission, PERMISSIONS, resolveDefaultAppPath } from '@/lib/permissions';
-import CustomersFilterSheet from '@/components/customers/CustomersFilterSheet';
-import CustomersTableClient from '@/components/customers/CustomersTableClient';
-import PageSizeSelect from '@/components/common/PageSizeSelect';
-import { ButtonLink, WorkbenchActionBar, WorkbenchEmptyState, WorkbenchKpiStrip, WorkbenchPage } from '@/components/ui';
-import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
-import { GRADE_LABELS } from '@/lib/utils/confidenceStyles';
-import type { ConfidenceGrade } from '@/lib/engine/weights';
-import { STATUS_LABELS } from '@/lib/utils/investigationStatus';
 import { escapePostgrestFilterValue, getMerchantOwnedJobIds } from '@/lib/supabase/merchantHelpers';
 import { isOrderReferenceSearchTerm, orderReferenceIlike } from '@/lib/customers/orderSearch';
 import { findCustomerProfileIdsByText } from '@/lib/customers/profileSearch';
-import GradeDistBar from '@/components/charts/GradeDistBar';
-import type { GradeDistEntry } from '@/components/charts/GradeDistBar';
+import { CustomersOverviewPageView } from '@/app/(app)/customers/CustomersOverviewPageView';
+import { resolveCustomerActions } from '@/app/(app)/customers/customersOverviewPageUtils';
 
-// Helper: build a URL with one search param removed
-function buildRemoveHref(sp: Record<string, string | undefined>, key: string) {
-  const copy = { ...sp };
-  delete copy[key];
-  delete copy['page'];
-  const qs = new URLSearchParams(copy as Record<string, string>).toString();
-  return `/customers${qs ? `?${qs}` : ''}`;
-}
-
-// Small inline filter chip component
-function FilterChip({ label, removeHref }: { label: string; removeHref: string }) {
-  return (
-    <Link
-      href={removeHref}
-      className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-[3px] border transition-colors hover:bg-[var(--surface-overlay)]"
-      style={{ borderColor: 'var(--copper-bright)', color: 'var(--copper-bright)', background: 'var(--copper-glow)' }}
-    >
-      {label}
-      <span aria-hidden="true" style={{ fontWeight: 700 }}>×</span>
-    </Link>
-  );
-}
+export const dynamic = 'force-dynamic';
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
 const DEFAULT_PAGE_SIZE = 25;
 
-const INTEGRATIONS_HREF = '/settings/integrations';
-
-/**
- * Resolves the page-level primary action by connection/setup state.
- * When both sources are connected the primary action is a product action
- * (jump to the high-confidence review queue), never "New audit". CSV/import
- * is always a quiet secondary. When setup is incomplete the primary action is
- * the state-correct connect/reconnect CTA.
- */
-function resolveCustomerActions(
-  setupState: MerchantSetupState,
-  connection: ConnectionState,
-): { primary: { label: string; href: string }; subtitle: string } {
-  if (connection.bothConnected) {
-    return {
-      primary: { label: 'Review queue', href: '/customers?risk=high&status=new' },
-      subtitle: 'Customer intelligence across your Shopify orders and helpdesk claims — identity confidence, claim history, and linked accounts.',
-    };
-  }
-  if (connection.shopifyOnlyConnected) {
-    return {
-      primary: { label: 'Connect helpdesk', href: INTEGRATIONS_HREF },
-      subtitle: 'Customer intelligence from your Shopify orders. Connect your helpdesk to add claim history and dispute context.',
-    };
-  }
-  if (connection.helpdeskOnlyConnected) {
-    return {
-      primary: { label: 'Connect Shopify', href: INTEGRATIONS_HREF },
-      subtitle: 'Customer intelligence from your helpdesk claims. Connect Shopify to add order and purchase context.',
-    };
-  }
-  // Neither connected, but useful data exists (csv_only / stale_existing_data).
-  if (setupState === 'csv_only') {
-    return {
-      primary: { label: 'Connect Shopify and your helpdesk', href: INTEGRATIONS_HREF },
-      subtitle: 'Customer intelligence from your imported history. Connect Shopify and your helpdesk for live monitoring.',
-    };
-  }
-  return {
-    primary: { label: 'Reconnect sources', href: INTEGRATIONS_HREF },
-    subtitle: 'Customer intelligence from your existing data. Reconnect Shopify and your helpdesk to keep it current.',
-  };
-}
-
-export const dynamic = 'force-dynamic';
-
-function customersListHref(
-  sp: Record<string, string | undefined>,
-  overrides: Record<string, string | undefined> = {},
-) {
-  const params = new URLSearchParams();
-  for (const [key, value] of Object.entries({ ...sp, ...overrides })) {
-    if (value != null && value !== '') params.set(key, value);
-  }
-  const qs = params.toString();
-  return qs ? `/customers?${qs}` : '/customers';
-}
-
-interface PageProps {
-  searchParams: Promise<{
-    // Basic
-    q?: string;
-    /** Alias for q= — used by Gorgias widget and Chrome extension deep links */
-    email?: string;
-    risk?: string;
-    hasRefunds?: string;
-    hasChargebacks?: string;
-    watchlisted?: string;
-    manuallyReviewed?: string;
-    sort?: string;
-    page?: string;
-    pageSize?: string;
-    // Identity
-    ip?: string;
-    address?: string;
-    card?: string;
-    phone?: string;
-    // Numeric ranges
-    riskMin?: string;
-    riskMax?: string;
-    refundRateMin?: string;
-    refundRateMax?: string;
-    ordersMin?: string;
-    ordersMax?: string;
-    claimsMin?: string;
-    claimsMax?: string;
-    chargebacksMin?: string;
-    merchantsMin?: string;
-    fastestClaimMax?: string;
-    // Date ranges
-    firstSeenFrom?: string;
-    firstSeenTo?: string;
-    lastSeenFrom?: string;
-    lastSeenTo?: string;
-    // Fraud flag
-    flag?: string;
-    // Investigation status
-    status?: string;
-  }>;
-}
-
-export default async function CustomersOverviewPage({ searchParams }: PageProps) {
+export default async function CustomersOverviewPage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | undefined>> | Record<string, string | undefined>;
+}) {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
@@ -158,13 +29,13 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
   const { denied, ctx } = await requirePermission(svc, user.id, PERMISSIONS.VIEW_CUSTOMERS);
   if (denied) return redirect(await resolveDefaultAppPath(svc, user.id));
 
-  const connectionState = await getConnectionState(svc, ctx.merchantId);
-  // Data presence is computed unfiltered so an active filter that returns zero
-  // rows never collapses the page into a first-run connection gate.
-  const dataPresence = await getMerchantDataPresence(svc, ctx.merchantId, user.id);
+  const [connectionState, dataPresence] = await Promise.all([
+    getConnectionState(svc, ctx.merchantId),
+    getMerchantDataPresence(svc, ctx.merchantId, user.id),
+  ]);
   const setupState = resolveMerchantSetupState(connectionState, dataPresence);
 
-  // `searchParams` may be a Promise in newer Next.js versions — await to normalize.
+  // `searchParams` may be a Promise in newer Next.js versions - await to normalize.
   const sp = (await Promise.resolve(searchParams)) ?? {};
 
   const page = Math.max(1, parseInt(sp.page ?? '1', 10));
@@ -214,7 +85,7 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
   // Investigation status
   const statusFilter = sp.status?.trim() ?? '';
 
-  // Scope to profiles this merchant owns — accepts both the auth-user UUID
+  // Scope to profiles this merchant owns - accepts both the auth-user UUID
   // (legacy, pre-merchants-table uploads) and the merchants-table UUID (current).
   const merchantFilter = [
     `merchant_ids.cs.${JSON.stringify([ctx.merchantId])}`,
@@ -415,212 +286,30 @@ export default async function CustomersOverviewPage({ searchParams }: PageProps)
     chargebacksMin === null && merchantsMin === null && fastestClaimMax === null &&
     !firstSeenFrom && !firstSeenTo && !lastSeenFrom && !lastSeenTo && !flagFilter && !statusFilter;
 
+
   const { primary: primaryAction, subtitle: pageSubtitle } = resolveCustomerActions(setupState, connectionState);
 
   return (
-    <PageConnectionGate requires="both" connection={connectionState} pageName="Customer intelligence" pageDescription="Customer profiles show order patterns, identity confidence, and claim history. Without both Shopify and your helpdesk connected, claim counts may be zero because data is missing — not because the customer has no history." setupState={setupState} hasData={dataPresence.hasCustomerProfiles}>
-    <WorkbenchPage
-      title="Customer intelligence"
-      subtitle={pageSubtitle}
-      navItems={WORKBENCH_NAV_ITEMS}
-      activeNavKey="customers"
-      actions={
-        <>
-          <ButtonLink href={primaryAction.href} size="sm">{primaryAction.label}</ButtonLink>
-        </>
-      }
-      kpiStrip={
-        <WorkbenchKpiStrip
-          items={[
-            { label: 'Matching profiles', value: total.toLocaleString(), hint: noFilters ? 'All customers' : 'Match current filters' },
-            { label: 'Watchlisted', value: rows.filter((r) => r.on_watchlist).length.toLocaleString(), hint: 'Shown on page' },
-            { label: 'New status', value: rows.filter((r) => r.investigation_status === 'new').length.toLocaleString(), hint: 'Shown on page' },
-            { label: 'Has refund claims', value: rows.filter((r) => r.total_refund_claims > 0).length.toLocaleString(), hint: 'Shown on page' },
-            { label: 'Seen at 2+ stores', value: rows.filter((r) => r.total_merchants_seen_at >= 2).length.toLocaleString(), hint: 'Shown on page' },
-          ]}
-        />
-      }
-      actionBar={
-        <WorkbenchActionBar
-          left={
-            <Suspense fallback={<div className="h-10 w-full max-w-xl animate-pulse rounded-lg" style={{ background: 'var(--bg-subtle)' }} />}>
-              <CustomersFilterSheet />
-            </Suspense>
-          }
-        />
-      }
-      main={
-        <div className="p-4 space-y-4">
-
-      {/* ── Risk overview row ──────────────────────────────────────── */}
-      {rows.length > 0 && (() => {
-        const gradeCounts: Record<string, number> = { high: 0, medium: 0, low: 0 };
-        for (const r of rows) {
-          const lvl = r.risk_level?.toLowerCase() ?? '';
-          if (lvl === 'critical' || lvl === 'high') gradeCounts.high += 1;
-          else if (lvl === 'medium') gradeCounts.medium += 1;
-          else gradeCounts.low += 1;
-        }
-        const gradeDist: GradeDistEntry[] = [
-          { key: 'high', label: 'High risk', count: gradeCounts.high, color: 'var(--sev-definite)' },
-          { key: 'medium', label: 'Medium', count: gradeCounts.medium, color: 'var(--sev-probable)' },
-          { key: 'low', label: 'Low', count: gradeCounts.low, color: 'var(--sev-clear)' },
-        ];
-        const watchlistedCount = rows.filter((r) => r.on_watchlist).length;
-        const multiMerchant = rows.filter((r) => r.total_merchants_seen_at >= 2).length;
-        return (
-          <div
-            className="rounded-lg border p-4"
-            style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-default)' }}
-          >
-            <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-              <p className="text-body-sm font-semibold" style={{ color: 'var(--ink-primary)' }}>
-                Risk profile — {noFilters ? 'all customers' : 'current page'}
-              </p>
-              <div className="flex items-center gap-4">
-                {watchlistedCount > 0 && (
-                  <Link href="/watchlist" className="text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
-                    {watchlistedCount} watchlisted →
-                  </Link>
-                )}
-                {multiMerchant > 0 && (
-                  <span className="text-caption" style={{ color: 'var(--sev-probable)' }}>
-                    {multiMerchant} seen at 2+ stores
-                  </span>
-                )}
-                {!connectionState.helpdesk && (
-                  <span className="text-caption" style={{ color: 'var(--warning)' }}>
-                    Claim counts incomplete — helpdesk not connected
-                  </span>
-                )}
-              </div>
-            </div>
-            <GradeDistBar grades={gradeDist} />
-          </div>
-        );
-      })()}
-
-      {/* ── Compact filter bar ─────────────────────────────────────── */}
-      {total > 0 && (
-        <div className="flex h-auto min-h-10 flex-wrap items-center gap-2 rounded-md border px-3 py-2" style={{ background: 'var(--surface-raised)', borderColor: 'var(--surface-border)' }}>
-          <span className="t-label mr-1" style={{ color: 'var(--ink-tertiary)' }}>Filters</span>
-          {[
-            { label: 'New', href: '?risk=high&status=new', highlight: true },
-            { label: 'Has refunds', href: '?hasRefunds=1' },
-            { label: 'Has chargebacks', href: '?hasChargebacks=1' },
-            { label: 'Watchlisted', href: '?watchlisted=1' },
-          ].map(({ label, href, highlight }) => (
-            <Link
-              key={label}
-              href={href}
-              className="rounded-sm border px-2.5 py-1 t-label transition-colors"
-              style={{
-                background: highlight ? 'var(--copper-dim)' : 'var(--surface-muted)',
-                borderColor: highlight ? 'var(--copper-bright)' : 'var(--surface-border)',
-                color: highlight ? 'var(--copper-bright)' : 'var(--ink-secondary)',
-              }}
-            >
-              {label}
-            </Link>
-          ))}
-        </div>
-      )}
-
-      {/* ── Saved views strip ─────────────────────────────────────── */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className="t-label" style={{ color: 'var(--ink-tertiary)' }}>Saved views</span>
-        {[
-          { label: 'High confidence · new', href: '?risk=high&status=new' },
-          { label: 'Most refund claims', href: '?hasRefunds=1&sort=refundRate' },
-          { label: 'Linked identities', href: '?merchantsMin=2' },
-          { label: 'Fastest claims', href: '?fastestClaimMax=3' },
-        ].map(({ label, href }) => (
-          <Link
-            key={label}
-            href={href}
-            className="t-label rounded-sm border px-2.5 py-1 transition-colors hover:bg-[var(--surface-overlay)]"
-            style={{ borderColor: 'var(--surface-border)', color: 'var(--ink-secondary)' }}
-          >
-            {label}
-          </Link>
-        ))}
-      </div>
-
-      {/* ── Active filter chips ───────────────────────────────────── */}
-      {!noFilters && (
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-caption" style={{ color: 'var(--text-muted)' }}>Active filters:</span>
-          {riskFilter && <FilterChip label={`Match confidence: ${GRADE_LABELS[riskFilter as ConfidenceGrade] ?? riskFilter}`} removeHref={buildRemoveHref(sp, 'risk')} />}
-          {statusFilter && <FilterChip label={`Status: ${STATUS_LABELS[statusFilter as keyof typeof STATUS_LABELS] ?? statusFilter}`} removeHref={buildRemoveHref(sp, 'status')} />}
-          {hasRefunds && <FilterChip label="Has refunds" removeHref={buildRemoveHref(sp, 'hasRefunds')} />}
-          {hasChargebacks && <FilterChip label="Has chargebacks" removeHref={buildRemoveHref(sp, 'hasChargebacks')} />}
-          {watchlistedOnly && <FilterChip label="Watchlisted" removeHref={buildRemoveHref(sp, 'watchlisted')} />}
-          {q && <FilterChip label={`Search: "${q}"`} removeHref={buildRemoveHref(sp, 'q')} />}
-          <Link href="/customers" className="text-xs hover:underline" style={{ color: 'var(--text-muted)' }}>Clear all</Link>
-        </div>
-      )}
-
-      {rows.length === 0 && noFilters ? (
-        <WorkbenchEmptyState
-          title="No customer profiles yet"
-          description={
-            connectionState.bothConnected
-              ? 'Shopify and your helpdesk are connected. Customer profiles appear here as orders and claims sync.'
-              : 'Customer profiles are built from your connected sources. Finish setup to start monitoring customers.'
-          }
-          action={
-            <div className="flex items-center gap-4">
-              <Link href={primaryAction.href} className="text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
-                {primaryAction.label} →
-              </Link>
-            </div>
-          }
-        />
-      ) : rows.length === 0 && !noFilters ? (
-        <WorkbenchEmptyState
-          title="No customers match filters"
-          description="No customer profiles match the filters you've applied. Adjust or clear them to see more."
-          action={
-            <Link href="/customers" className="text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
-              Clear all filters →
-            </Link>
-          }
-        />
-      ) : (
-        <>
-          <div className="flex items-center justify-between">
-            <p className="text-caption" style={{ color: 'var(--text-muted)' }}>
-              {`Showing ${from}–${to} of ${total.toLocaleString()} customers`}
-            </p>
-            <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
-              <Suspense fallback={null}>
-                <PageSizeSelect pathname="/customers" pageSize={PAGE_SIZE} />
-              </Suspense>
-              {totalPages > 1 && (
-                <>
-                  <span>Page {page} of {totalPages}</span>
-                  {page > 1 && (
-                    <ButtonLink href={customersListHref(sp, { page: String(page - 1), pageSize: String(PAGE_SIZE) })} variant="secondary" size="sm">Prev</ButtonLink>
-                  )}
-                  {page < totalPages && (
-                    <ButtonLink href={customersListHref(sp, { page: String(page + 1), pageSize: String(PAGE_SIZE) })} variant="secondary" size="sm">Next</ButtonLink>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
-
-          {rows.length > 0 && (
-            <CustomersTableClient
-              rows={rows}
-              watchlistFilterActive={sp?.watchlisted === '1'}
-            />
-          )}
-        </>
-      )}
-        </div>
-      }
+    <CustomersOverviewPageView
+      connectionState={connectionState}
+      setupState={setupState}
+      hasData={dataPresence.hasCustomerProfiles}
+      pageActions={{ primary: primaryAction, subtitle: pageSubtitle }}
+      sp={sp}
+      rows={rows}
+      totalCount={total}
+      page={page}
+      PAGE_SIZE={PAGE_SIZE}
+      totalPages={totalPages}
+      from={from}
+      to={to}
+      noFilters={noFilters}
+      q={q}
+      riskFilter={riskFilter}
+      statusFilter={statusFilter}
+      hasRefunds={hasRefunds}
+      hasChargebacks={hasChargebacks}
+      watchlistedOnly={watchlistedOnly}
     />
-    </PageConnectionGate>
   );
 }

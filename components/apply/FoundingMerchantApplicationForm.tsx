@@ -1,34 +1,45 @@
 'use client';
 
-import { useState } from 'react';
+import { useReducer } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import {
+  foundingMerchantApplicationReducer,
+  initialFoundingMerchantApplicationState,
+} from '@/components/apply/foundingMerchantApplicationReducer';
 
 const FIELD_STYLE = {
   fontFamily: 'var(--font-dm-sans, sans-serif)',
 };
 
 export default function FoundingMerchantApplicationForm({ defaultStoreName }: { defaultStoreName: string }) {
-  const [storeName, setStoreName] = useState(defaultStoreName);
-  const [monthlyOrderVolume, setMonthlyOrderVolume] = useState('');
-  const [refundVolume, setRefundVolume] = useState('');
-  const [fraudProblem, setFraudProblem] = useState('');
-  const [agreed, setAgreed] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [submitted, setSubmitted] = useState(false);
+  const [state, dispatch] = useReducer(
+    foundingMerchantApplicationReducer,
+    defaultStoreName,
+    initialFoundingMerchantApplicationState,
+  );
+  const {
+    storeName,
+    monthlyOrderVolume,
+    refundVolume,
+    fraudProblem,
+    agreed,
+    loading,
+    error,
+    submitted,
+  } = state;
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setError('');
+    dispatch({ type: 'patch', patch: { error: '' } });
 
     if (!storeName.trim() || !monthlyOrderVolume || !fraudProblem.trim() || !agreed) {
-      setError('Please complete every required field.');
+      dispatch({ type: 'patch', patch: { error: 'Please complete every required field.' } });
       return;
     }
 
-    setLoading(true);
+    dispatch({ type: 'patch', patch: { loading: true } });
 
     const response = await fetch('/api/founding-merchant-applications', {
       method: 'POST',
@@ -44,14 +55,17 @@ export default function FoundingMerchantApplicationForm({ defaultStoreName }: { 
 
     const body = await response.json().catch(() => ({}));
 
-    setLoading(false);
+    dispatch({ type: 'patch', patch: { loading: false } });
 
     if (!response.ok) {
-      setError(typeof body?.error === 'string' ? body.error : 'We could not submit your application.');
+      dispatch({
+        type: 'patch',
+        patch: { error: typeof body?.error === 'string' ? body.error : 'We could not submit your application.' },
+      });
       return;
     }
 
-    setSubmitted(true);
+    dispatch({ type: 'patch', patch: { submitted: true } });
   }
 
   if (submitted) {
@@ -78,13 +92,13 @@ export default function FoundingMerchantApplicationForm({ defaultStoreName }: { 
 
       <div className="mt-8 space-y-5">
         <Field label="Store name">
-          <Input value={storeName} onChange={(event) => setStoreName(event.target.value)} required style={FIELD_STYLE} />
+          <Input value={storeName} onChange={(event) => dispatch({ type: 'patch', patch: { storeName: event.target.value } })} required style={FIELD_STYLE} />
         </Field>
 
         <Field label="Monthly order volume">
           <select
             value={monthlyOrderVolume}
-            onChange={(event) => setMonthlyOrderVolume(event.target.value)}
+            onChange={(event) => dispatch({ type: 'patch', patch: { monthlyOrderVolume: event.target.value } })}
             required
             className="w-full rounded-[4px] border px-3 py-2 text-sm focus:outline-none"
             style={{ ...FIELD_STYLE, background: '#FAF6EF', borderColor: '#D2C9B5', color: '#1A1814' }}
@@ -100,7 +114,7 @@ export default function FoundingMerchantApplicationForm({ defaultStoreName }: { 
         <Field label="Monthly refund/chargeback volume">
           <Input
             value={refundVolume}
-            onChange={(event) => setRefundVolume(event.target.value)}
+            onChange={(event) => dispatch({ type: 'patch', patch: { refundVolume: event.target.value } })}
             placeholder="Optional"
             style={FIELD_STYLE}
           />
@@ -109,7 +123,8 @@ export default function FoundingMerchantApplicationForm({ defaultStoreName }: { 
         <Field label="What fraud problem are you trying to solve?">
           <textarea
             value={fraudProblem}
-            onChange={(event) => setFraudProblem(event.target.value)}
+            onChange={(event) => dispatch({ type: 'patch', patch: { fraudProblem: event.target.value } })}
+            aria-label="What fraud problem are you trying to solve?"
             rows={3}
             required
             className="w-full rounded-[4px] border px-3 py-2 text-sm focus:outline-none"
@@ -121,7 +136,7 @@ export default function FoundingMerchantApplicationForm({ defaultStoreName }: { 
           <input
             type="checkbox"
             checked={agreed}
-            onChange={(event) => setAgreed(event.target.checked)}
+            onChange={(event) => dispatch({ type: 'patch', patch: { agreed: event.target.checked } })}
             className="mt-1"
           />
           <span>

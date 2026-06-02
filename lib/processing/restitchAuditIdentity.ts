@@ -281,7 +281,7 @@ async function fetchExistingAuditRows(
   const rows: ExistingAuditRow[] = [];
   const pageSize = 1000;
 
-  for (let from = 0; ; from += pageSize) {
+  const fetchPage = async (from: number): Promise<void> => {
     const read = await withReadRetry(async () => {
       const { data, error } = await serviceClient
         .from(TABLES.AUDIT_TRANSACTIONS)
@@ -299,8 +299,10 @@ async function fetchExistingAuditRows(
     }
     const page = read.value;
     rows.push(...page);
-    if (page.length < pageSize) break;
-  }
+    if (page.length < pageSize) return;
+    return fetchPage(from + pageSize);
+  };
+  await fetchPage(0);
 
   return rows;
 }
@@ -357,9 +359,10 @@ async function upsertAuditTransactionsAdaptive(
   };
 
   const initialBatchSize = 250;
-  for (let i = 0; i < rows.length; i += initialBatchSize) {
-    await flush(rows.slice(i, i + initialBatchSize));
-  }
+  const batches = Array.from({ length: Math.ceil(rows.length / initialBatchSize) }, (_, i) =>
+    rows.slice(i * initialBatchSize, i * initialBatchSize + initialBatchSize)
+  );
+  await Promise.all(batches.map((batch) => flush(batch)));
 }
 
 /**
@@ -373,8 +376,10 @@ export async function restitchAuditIdentityFromChunks(
   totalChunks: number,
 ): Promise<{ updated: number; linkedRows: number }> {
   const validRows: any[] = [];
-  for (let i = 0; i < totalChunks; i++) {
-    const chunkRows = await downloadChunkRowsWithRetry(serviceClient, jobId, i);
+  const chunkRowGroups = await Promise.all(
+    Array.from({ length: totalChunks }, (_, i) => downloadChunkRowsWithRetry(serviceClient, jobId, i))
+  );
+  for (const chunkRows of chunkRowGroups) {
     for (const row of chunkRows) {
       const parsed = csvRowSchema.safeParse(cleanRow(row));
       if (parsed.success) validRows.push(parsed.data);
@@ -426,7 +431,7 @@ export async function restitchAuditIdentityFromChunks(
   for (const cluster of [...linkerResult.clusters, ...expansion.promotedClusters]) {
     const ids = clusterMembers.get(cluster.cluster_id);
     if (!ids || ids.size < 2) continue;
-    preConsolidationClusters.push({ ...cluster, order_ids: [...ids].sort() });
+    preConsolidationClusters.push({ ...cluster, order_ids: [...ids].toSorted() });
   }
 
   const consolidatedClusters = consolidateClusterAssignments(preConsolidationClusters, inputByOrderId);

@@ -358,6 +358,17 @@ export function scoreIdentityMatch(
     'shipping_address', 'billing_address', 'postcode', 'ip', 'name',
   ];
 
+  const otherValueMaps = others.map((o) => getRowValues(o));
+
+  function findMemberIndex(
+    predicate: (otherVals: Map<IdentitySignalKind, string>) => boolean,
+  ): number {
+    for (let i = 0; i < otherValueMaps.length; i++) {
+      if (predicate(otherValueMaps[i])) return i;
+    }
+    return -1;
+  }
+
   for (const signal of signalOrder) {
     const rowVal = rowValues.get(signal);
     if (!rowVal) continue;
@@ -367,12 +378,9 @@ export function scoreIdentityMatch(
       : SIGNAL_DEFS[signal];
 
     // Check for exact match against any cluster member
-    const matchingMember = others.find((o) => {
-      const otherVals = getRowValues(o);
-      return otherVals.get(signal) === rowVal;
-    });
+    const matchingMemberIndex = findMemberIndex((otherVals) => otherVals.get(signal) === rowVal);
 
-    if (matchingMember) {
+    if (matchingMemberIndex !== -1) {
       evidence.push({
         signal,
         tier: def.tier,
@@ -386,11 +394,11 @@ export function scoreIdentityMatch(
     }
 
     if (signal === 'name') {
-      const fuzzyMember = others.find((o) => {
-        const otherVal = getRowValues(o).get('name');
+      const fuzzyMemberIndex = findMemberIndex((otherVals) => {
+        const otherVal = otherVals.get('name');
         return otherVal ? isNameVariantMatch(rowVal, otherVal) : false;
       });
-      if (fuzzyMember) {
+      if (fuzzyMemberIndex !== -1) {
         evidence.push({
           signal,
           tier: def.tier,
@@ -405,11 +413,11 @@ export function scoreIdentityMatch(
     }
 
     if (signal === 'shipping_address' || signal === 'billing_address') {
-      const partialMember = others.find((o) => {
-        const otherVal = getRowValues(o).get(signal);
+      const partialMemberIndex = findMemberIndex((otherVals) => {
+        const otherVal = otherVals.get(signal);
         return otherVal ? isAddressVariantMatch(rowVal, otherVal) : false;
       });
-      if (partialMember) {
+      if (partialMemberIndex !== -1) {
         evidence.push({
           signal,
           tier: def.tier,
@@ -519,12 +527,13 @@ export function scoreClusterIdentity(
 
   // Cluster grade = best row grade
   const gradeOrder: MatchGrade[] = ['none', 'candidate', 'probable', 'confirmed'];
+  const gradeRank = new Map(gradeOrder.map((grade, index) => [grade, index]));
   let clusterGrade: MatchGrade = 'none';
   let clusterScore = 0;
 
   for (const result of byOrderId.values()) {
-    const idx = gradeOrder.indexOf(result.identity_match_grade);
-    if (idx > gradeOrder.indexOf(clusterGrade)) {
+    const idx = gradeRank.get(result.identity_match_grade) ?? 0;
+    if (idx > (gradeRank.get(clusterGrade) ?? 0)) {
       clusterGrade = result.identity_match_grade;
     }
     if (result.identity_match_score > clusterScore) {

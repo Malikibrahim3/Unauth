@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo, type CSSProperties } from "react";
 import { cn } from "@/lib/utils";
 
 interface MeteorsProps {
@@ -9,18 +9,17 @@ interface MeteorsProps {
   color?: string;
 }
 
-export function Meteors({ number = 8, className, color = "#B85C4A" }: MeteorsProps) {
-  const [meteorStyles, setMeteorStyles] = useState<Array<React.CSSProperties>>([]);
+function createMeteorStyles(number: number): Array<CSSProperties> {
+  return Array.from({ length: number }, () => ({
+    top: Math.random() * 100 + "%",
+    left: Math.random() * 100 + "%",
+    animationDelay: Math.random() * 6 + "s",
+    animationDuration: Math.random() * 6 + 6 + "s",
+  }));
+}
 
-  useEffect(() => {
-    const styles = Array.from({ length: number }, () => ({
-      top: Math.random() * 100 + "%",
-      left: Math.random() * 100 + "%",
-      animationDelay: Math.random() * 6 + "s",
-      animationDuration: Math.random() * 6 + 6 + "s",
-    }));
-    setMeteorStyles(styles);
-  }, [number]);
+export function Meteors({ number = 8, className, color = "#B85C4A" }: MeteorsProps) {
+  const meteorStyles = useMemo(() => createMeteorStyles(number), [number]);
 
   return (
     <div

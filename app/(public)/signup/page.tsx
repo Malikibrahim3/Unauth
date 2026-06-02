@@ -1,5 +1,10 @@
-import { redirect } from 'next/navigation';
+import type { Metadata } from 'next';
+import SignupFlow from '@/components/signup/SignupFlow';
+
+export const metadata: Metadata = {
+  title: 'Sign up | Unauth',
+};
 
 export default function SignupPage() {
-  redirect('/login?signup=1');
+  return <SignupFlow />;
 }

@@ -259,15 +259,11 @@ function parseArgs(defaults = {}) {
   const args = process.argv.slice(2);
   for (let i = 0; i < args.length; i += 1) {
     const arg = args[i];
-    if (!arg.startsWith("--")) continue;
-    const eq = arg.indexOf("=");
-    let key;
-    let value;
-    if (eq >= 0) {
-      key = arg.slice(2, eq);
-      value = arg.slice(eq + 1);
-    } else {
-      key = arg.slice(2);
+    const flagMatch = /^--([^=]+)(?:=(.*))?$/.exec(arg);
+    if (!flagMatch) continue;
+    const key = flagMatch[1];
+    let value = flagMatch[2];
+    if (value == null) {
       value = args[i + 1] && !args[i + 1].startsWith("--") ? args[++i] : "true";
     }
     if (/^-?\d+(\.\d+)?$/.test(value)) value = Number(value);

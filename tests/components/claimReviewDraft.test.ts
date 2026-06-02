@@ -1,4 +1,4 @@
-import { clearClaimDraft, loadClaimDraft, saveClaimDraft } from '@/components/claims/ClaimReviewPanel';
+import { clearClaimDraft, loadClaimDraft, saveClaimDraft } from '@/components/claims/claimReviewDraft';
 
 describe('claim review draft persistence', () => {
   const storage: Record<string, string> = {};

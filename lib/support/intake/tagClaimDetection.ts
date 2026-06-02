@@ -121,6 +121,11 @@ const FALLBACK_KEYWORDS = [
   'package never came',
 ];
 
+const FALLBACK_KEYWORD_PATTERN = new RegExp(
+  FALLBACK_KEYWORDS.map((keyword) => keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'),
+  'i',
+);
+
 function normalizeTag(value: string): string {
   return value.trim().toLowerCase();
 }
@@ -148,8 +153,8 @@ export function detectClaimFromKeywords(ticket: HelpdeskTicketForClaimDetection)
 
   for (const message of customerMessages) {
     const body = (message.body_text ?? message.body_html ?? message.body ?? '').toLowerCase();
-    const matched = FALLBACK_KEYWORDS.find((keyword) => body.includes(keyword));
-    if (matched) return matched;
+    const matched = body.match(FALLBACK_KEYWORD_PATTERN);
+    if (matched) return matched[0].toLowerCase();
   }
 
   return null;
@@ -179,9 +184,10 @@ export function detectClaimFromTags(
     }
   }
 
-  const triggerTags = effectiveConfig.claim_trigger_tags
-    .map(normalizeTag)
-    .filter((tag) => tagSet.has(tag));
+  const triggerTags = effectiveConfig.claim_trigger_tags.flatMap((tag) => {
+    const normalized = normalizeTag(tag);
+    return tagSet.has(normalized) ? [normalized] : [];
+  });
   if (triggerTags.length > 0) {
     const createdAt = ticket.created_at_provider ? Date.parse(ticket.created_at_provider) : NaN;
     const now = options.now ?? new Date();

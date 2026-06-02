@@ -110,7 +110,9 @@ async function GETHandler(req: NextRequest) {
   const MAX_SCAN = 5000;
   let scanned = 0;
   let namePoolError: { message: string } | null = null;
-  for (let offset = 0; scanned < MAX_SCAN && merged.length < limit; offset += PAGE) {
+  const scanNamePoolPage = async (offset: number): Promise<void> => {
+    if (scanned >= MAX_SCAN || merged.length >= limit || namePoolError) return;
+
     const { data, error } = await (scopedClient
       .from(TABLES.CUSTOMER_PROFILES)
       .select('id, names, primary_email, risk_level')
@@ -122,7 +124,7 @@ async function GETHandler(req: NextRequest) {
 
     if (error) {
       namePoolError = error;
-      break;
+      return;
     }
 
     const page = data ?? [];
@@ -135,10 +137,14 @@ async function GETHandler(req: NextRequest) {
       if (!matchesName) continue;
       seen.add(row.id);
       merged.push(row);
-      if (merged.length >= limit) break;
+      if (merged.length >= limit) return;
     }
 
-    if (page.length < PAGE) break;
+    if (page.length < PAGE) return;
+    return scanNamePoolPage(offset + PAGE);
+  };
+  if (merged.length < limit) {
+    await scanNamePoolPage(0);
   }
 
   if (emailRes.error && namePoolError) {

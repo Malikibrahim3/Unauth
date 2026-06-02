@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react';
+import { isValidElement, type ReactNode } from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 
@@ -47,9 +47,9 @@ export function PageHeader({
         <nav aria-label="Breadcrumb" className="flex items-center gap-1 mb-2">
           {breadcrumbs.map((crumb, i) => (
             <span
-              key={i}
+              key={crumb.href ?? crumb.label}
               className="flex items-center gap-1"
-              style={{ fontSize: 11, color: 'var(--text-subtle)' }}
+              style={{ fontSize: 12, color: 'var(--text-subtle)' }}
             >
               {i > 0 && <span aria-hidden="true" style={{ opacity: 0.4 }}>›</span>}
               {crumb.href ? (
@@ -73,7 +73,7 @@ export function PageHeader({
         <div
           className="mb-1"
           style={{
-            fontSize: 10,
+            fontSize: 12,
             fontWeight: 600,
             letterSpacing: '0.12em',
             textTransform: 'uppercase',
@@ -114,7 +114,19 @@ export function PageHeader({
         </div>
         {(primaryAction || (secondaryActions && secondaryActions.length > 0)) && (
           <div className="flex items-center gap-2 shrink-0">
-            {secondaryActions?.map((action, i) => <span key={i}>{action}</span>)}
+            {secondaryActions?.map((action) => (
+              <span
+                key={
+                  isValidElement(action) && action.key != null
+                    ? String(action.key)
+                    : typeof action === 'string'
+                      ? action
+                      : 'secondary-action'
+                }
+              >
+                {action}
+              </span>
+            ))}
             {primaryAction}
           </div>
         )}

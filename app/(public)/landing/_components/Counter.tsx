@@ -38,8 +38,15 @@ export default function Counter({
   delay = 0,
 }: Props) {
   const ref = useRef<HTMLSpanElement | null>(null);
-  const [display, setDisplay] = useState<number>(value);
+  const [display, setDisplay] = useState(0);
+  const prevValueRef = useRef(value);
   const startedRef = useRef(false);
+
+  if (value !== prevValueRef.current) {
+    prevValueRef.current = value;
+    setDisplay(value);
+    startedRef.current = false;
+  }
 
   useEffect(() => {
     const el = ref.current;

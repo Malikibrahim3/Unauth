@@ -82,7 +82,7 @@ export default async function DemoPage() {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-canvas)' }}>
-      {/* Permanent demo banner — non-dismissable */}
+      {/* Permanent demo banner - non-dismissable */}
       <div className="sticky top-0 z-50 flex items-center justify-between gap-4 bg-[var(--warning-bg)] px-6 py-2.5">
         <p className="text-sm font-semibold text-[var(--warning)]">
           You&rsquo;re viewing the Unauth demo on synthetic data. Sign up free to use it with your
@@ -99,7 +99,7 @@ export default async function DemoPage() {
       <div className="mx-auto max-w-5xl px-6 py-10 space-y-8">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-[var(--text)]">Demo Merchant — Audit Runs</h1>
+            <h1 className="text-2xl font-bold text-[var(--text)]">Demo Merchant - Audit Runs</h1>
             <p className="mt-1 max-w-2xl text-sm text-[var(--text-muted)]">
               Synthetic ASOS-style order history only. Every identity, chargeback, and evidence
               package on this page is fictional and reset nightly.
@@ -155,7 +155,7 @@ export default async function DemoPage() {
             return (
               <div
                 key={scenario.rows}
-                className="rounded-xl border px-5 py-5"
+                className="rounded-xl border p-5"
                 style={{
                   backgroundColor: seeded ? 'var(--bg-surface)' : 'var(--bg-inset)',
                   borderColor: seeded ? 'var(--border)' : 'var(--border-subtle)',
@@ -164,7 +164,7 @@ export default async function DemoPage() {
                 <div className="flex items-center justify-between gap-3">
                   <h2 className="text-sm font-semibold text-[var(--text)]">{scenario.title}</h2>
                   <span
-                    className="rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide"
+                    className="rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-wide"
                     style={{
                       backgroundColor: seeded ? 'var(--success-bg)' : 'var(--bg-subtle)',
                       color: seeded ? 'var(--success)' : 'var(--text-muted)',
@@ -222,7 +222,7 @@ export default async function DemoPage() {
                   </td>
                   <td className="px-4 py-3 text-right">
                     <span
-                      className="rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide"
+                      className="rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-wide"
                       style={{
                         backgroundColor: run.status === 'completed' ? 'var(--info-bg)' : 'var(--bg-subtle)',
                         color: run.status === 'completed' ? 'var(--info)' : 'var(--text-muted)',
@@ -236,7 +236,7 @@ export default async function DemoPage() {
               {typedRuns.length === 0 && (
                 <tr>
                   <td colSpan={6} className="px-4 py-8 text-center text-sm text-[var(--text-subtle)]">
-                    Demo data is being seeded — check back shortly.
+                    Demo data is being seeded - check back shortly.
                   </td>
                 </tr>
               )}
@@ -245,7 +245,7 @@ export default async function DemoPage() {
         </div>
 
         {/* CTA */}
-        <div className="rounded-xl border border-[var(--info-bd)] bg-[var(--info-bg)] px-6 py-6 flex items-center justify-between gap-6">
+        <div className="rounded-xl border border-[var(--info-bd)] bg-[var(--info-bg)] p-6 flex items-center justify-between gap-6">
           <div>
             <h2 className="font-semibold text-[var(--text-primary)] text-lg">Ready to run it on your data?</h2>
             <p className="mt-1 text-sm text-[var(--info)]">

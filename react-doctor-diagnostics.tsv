@@ -1,0 +1,389 @@
+jsx-no-jsx-as-prop	app/(app)/history/page.tsx:63:7	This child redraws every render because the prop gets brand new JSX each time.
+jsx-no-jsx-as-prop	app/(app)/history/page.tsx:74:7	This child redraws every render because the prop gets brand new JSX each time.
+prefer-module-scope-static-value	app/(app)/claims/page.tsx:116:9	`colourMap` inside `SlaPill` uses no local state but is rebuilt every render, so
+no-giant-component	app/(app)/claims/page.tsx:178:31	Component "ClaimsPage" is 534 lines long, which is hard to read & change. Split 
+jsx-no-jsx-as-prop	app/(app)/claims/page.tsx:455:7	This child redraws every render because the prop gets brand new JSX each time.
+no-giant-component	app/(app)/customers/[id]/page.tsx:255:31	Component "CustomerProfilePage" is 854 lines long, which is hard to read & chang
+no-inline-exhaustive-style	app/(auth)/reset/page.tsx:140:24	This inline style has 11 properties, which is hard to read & rebuilds every rend
+prefer-module-scope-static-value	app/(app)/help/identity-matching/page.tsx:18:9	`map` inside `UniquenessChip` uses no local state but is rebuilt every render, s
+no-giant-component	app/(app)/dashboard/page.tsx:237:31	Component "DashboardPage" is 457 lines long, which is hard to read & change. Spl
+no-giant-component	app/(app)/customers/page.tsx:152:31	Component "CustomersOverviewPage" is 475 lines long, which is hard to read & cha
+jsx-no-jsx-as-prop	app/(app)/customers/page.tsx:432:7	This child redraws every render because the prop gets brand new JSX each time.
+jsx-no-jsx-as-prop	app/(app)/customers/page.tsx:443:7	This child redraws every render because the prop gets brand new JSX each time.
+js-tosorted-immutable	app/(app)/audit/[runId]/page.tsx:91:10	This wastes work because [...array].sort() copies the array just to sort it, so 
+no-giant-component	app/(app)/audit/[runId]/page.tsx:100:31	Component "AuditRunPage" is 609 lines long, which is hard to read & change. Spli
+no-giant-component	app/(app)/reports/page.tsx:203:31	Component "ReportsPage" is 567 lines long, which is hard to read & change. Split
+jsx-no-jsx-as-prop	app/(app)/reports/page.tsx:764:7	This child redraws every render because the prop gets brand new JSX each time.
+prefer-module-scope-static-value	components/internal/NetworkMetricsChartsClient.tsx:71:9	`sectionStyle` inside `NetworkMetricsChartsClient` uses no local state but is re
+no-inline-exhaustive-style	app/(auth)/reset/update/page.tsx:143:22	This inline style has 11 properties, which is hard to read & rebuilds every rend
+no-giant-component	app/(app)/chargebacks/[id]/page.tsx:20:31	Component "EvidenceDetailPage" is 317 lines long, which is hard to read & change
+no-giant-component	app/(app)/settings/account/page.tsx:19:25	Component "AccountSettingsPage" is 335 lines long, which is hard to read & chang
+prefer-useReducer	app/(app)/settings/account/page.tsx:19:47	17 useState calls in "AccountSettingsPage" can each trigger a separate render.
+nextjs-no-client-fetch-for-server-data	app/(app)/settings/account/page.tsx:44:3	useEffect + fetch in a page/layout makes your users wait through an extra round 
+no-derived-state	app/(app)/settings/account/page.tsx:59:5	Storing "merchant" in state when you can derive it from other values costs an ex
+no-event-handler	app/(app)/settings/account/page.tsx:48:69	Faking an event handler with state plus a useEffect costs an extra render & runs
+no-fetch-in-effect	app/(app)/settings/account/page.tsx:44:3	fetch() inside useEffect races, double-fires & leaks for your users.
+no-initialize-state	app/(app)/settings/account/page.tsx:59:5	Your users see an extra render with empty "merchant" because a useEffect sets it
+jsx-no-jsx-as-prop	app/(app)/chargebacks/page.tsx:77:7	This child redraws every render because the prop gets brand new JSX each time.
+jsx-no-jsx-as-prop	app/(app)/chargebacks/page.tsx:88:7	This child redraws every render because the prop gets brand new JSX each time.
+prefer-module-scope-static-value	app/api/cron/purge-expired-audits/route.ts:58:11	`tables` inside `POST` uses no local state but is rebuilt every render, so it lo
+js-combine-iterations	app/api/lookup/quick-score/route.ts:169:16	This loops over your list twice because .filter().map() makes two passes, so do 
+prefer-module-scope-static-value	app/(public)/landing/_components/VerdictTicker.tsx:67:9	`doubled` inside `VerdictTicker` uses no local state but is rebuilt every render
+prefer-module-scope-static-value	app/api/audit/[runId]/progress/route.ts:97:9	`statusMap` inside `GETHandler` uses no local state but is rebuilt every render,
+prefer-module-scope-pure-function	app/api/evidence/ce3-check/route.ts:57:18	`txDate` inside `GET` uses no local state but is rebuilt on every render, so it 
+prefer-module-scope-static-value	app/api/settings/bulk-delete/route.ts:45:9	`SOFT_DELETE_FIELD` inside `POSTHandler` uses no local state but is rebuilt ever
+prefer-module-scope-static-value	app/api/inbox/export/route.ts:57:9	`headers` inside `GET` uses no local state but is rebuilt every render, so it lo
+js-flatmap-filter	app/api/audit/[runId]/customer/route.ts:174:21	This loops over your list twice because .map().filter(Boolean) makes two passes,
+no-inline-exhaustive-style	app/(public)/landing/AuditForm.tsx:64:18	This inline style has 10 properties, which is hard to read & rebuilds every rend
+no-outline-none	app/(public)/landing/AuditForm.tsx:73:13	Your keyboard users can't tell where they are because outline: none hides the fo
+click-events-have-key-events	app/(public)/landing/AuditForm.tsx:82:8	Keyboard users can't trigger this click handler because there's no keyboard one,
+no-static-element-interactions	app/(public)/landing/AuditForm.tsx:82:8	Screen reader users can't tell this click handler is interactive because it has 
+no-inline-exhaustive-style	app/(public)/landing/AuditForm.tsx:130:16	This inline style has 14 properties, which is hard to read & rebuilds every rend
+no-giant-component	app/(public)/landing/_components/PipelineTabs.tsx:45:25	Component "PipelineTabs" is 350 lines long, which is hard to read & change. Spli
+no-inline-exhaustive-style	app/(public)/landing/_components/PipelineTabs.tsx:111:22	This inline style has 10 properties, which is hard to read & rebuilds every rend
+no-inline-exhaustive-style	app/(public)/landing/_components/PipelineTabs.tsx:122:21	This inline style has 8 properties, which is hard to read & rebuilds every rende
+no-inline-exhaustive-style	app/(public)/landing/_components/PipelineTabs.tsx:158:28	This inline style has 12 properties, which is hard to read & rebuilds every rend
+no-inline-exhaustive-style	app/(public)/landing/_components/PipelineTabs.tsx:243:26	This inline style has 9 properties, which is hard to read & rebuilds every rende
+js-combine-iterations	app/(public)/landing/_components/NetworkChart.tsx:163:10	This loops over your list twice because .filter().map() makes two passes, so do 
+no-giant-component	app/(public)/landing/page.tsx:86:25	Component "LandingPage" is 1543 lines long, which is hard to read & change. Spli
+prefer-module-scope-static-value	app/(public)/landing/page.tsx:121:9	`heroSubjectFields` inside `LandingPage` uses no local state but is rebuilt ever
+prefer-module-scope-pure-function	app/(public)/landing/page.tsx:182:31	`heroSubjectRowDelay` inside `LandingPage` uses no local state but is rebuilt on
+no-inline-exhaustive-style	app/(public)/landing/page.tsx:533:73	This inline style has 8 properties, which is hard to read & rebuilds every rende
+no-inline-exhaustive-style	app/(public)/landing/page.tsx:817:26	This inline style has 8 properties, which is hard to read & rebuilds every rende
+no-inline-exhaustive-style	app/(public)/landing/page.tsx:864:24	This inline style has 9 properties, which is hard to read & rebuilds every rende
+no-inline-exhaustive-style	app/(public)/landing/page.tsx:871:24	This inline style has 9 properties, which is hard to read & rebuilds every rende
+no-inline-exhaustive-style	app/(public)/landing/page.tsx:961:28	This inline style has 8 properties, which is hard to read & rebuilds every rende
+no-inline-exhaustive-style	app/(public)/landing/page.tsx:1016:25	This inline style has 8 properties, which is hard to read & rebuilds every rende
+no-inline-exhaustive-style	app/(public)/landing/page.tsx:1023:23	This inline style has 8 properties, which is hard to read & rebuilds every rende
+no-inline-exhaustive-style	app/(public)/landing/page.tsx:1040:69	This inline style has 9 properties, which is hard to read & rebuilds every rende
+no-inline-exhaustive-style	app/(public)/landing/page.tsx:1049:25	This inline style has 8 properties, which is hard to read & rebuilds every rende
+no-inline-exhaustive-style	app/(public)/landing/page.tsx:1053:65	This inline style has 9 properties, which is hard to read & rebuilds every rende
+no-inline-exhaustive-style	app/(public)/landing/page.tsx:1056:23	This inline style has 9 properties, which is hard to read & rebuilds every rende
+no-inline-exhaustive-style	app/(public)/landing/page.tsx:1067:23	This inline style has 8 properties, which is hard to read & rebuilds every rende
+nextjs-no-img-element	app/(public)/landing/page.tsx:1123:15	Plain <img> ships unoptimized, oversized images to your users.
+no-inline-exhaustive-style	app/(public)/landing/page.tsx:1143:23	This inline style has 8 properties, which is hard to read & rebuilds every rende
+no-inline-exhaustive-style	app/(public)/landing/page.tsx:1331:29	This inline style has 8 properties, which is hard to read & rebuilds every rende
+no-inline-exhaustive-style	app/(public)/landing/page.tsx:1359:34	This inline style has 10 properties, which is hard to read & rebuilds every rend
+no-inline-exhaustive-style	app/(public)/landing/page.tsx:1410:24	This inline style has 8 properties, which is hard to read & rebuilds every rende
+no-inline-exhaustive-style	app/(public)/landing/page.tsx:1438:24	This inline style has 10 properties, which is hard to read & rebuilds every rend
+no-inline-exhaustive-style	app/(public)/landing/page.tsx:1471:26	This inline style has 12 properties, which is hard to read & rebuilds every rend
+no-inline-exhaustive-style	app/(public)/landing/page.tsx:1490:28	This inline style has 13 properties, which is hard to read & rebuilds every rend
+async-parallel	app/api/account/delete/route.ts:102:5	These 3 sequential await statements run one after another even though they look 
+prefer-module-scope-static-value	app/api/account/delete/route.ts:147:11	`tables` inside `POST` uses no local state but is rebuilt every render, so it lo
+no-uncontrolled-input	app/(public)/audit/[runId]/report/ClaimGate.tsx:91:11	Your users can't type in this <input value={...}> because it has no `onChange` o
+prefer-useReducer	app/(public)/audit/[runId]/report/ClaimGate.tsx:6:91	5 useState calls in "ClaimGate" can each trigger a separate render.
+prefer-useReducer	app/(public)/audit/AuditUploadForm.tsx:50:43	10 useState calls in "AuditUploadForm" can each trigger a separate render.
+rerender-state-only-in-handlers	app/(public)/audit/AuditUploadForm.tsx:57:9	Each update to "columnMap" redraws your component for nothing because this useSt
+no-initialize-state	app/(public)/audit/AuditUploadForm.tsx:67:7	Your users see an extra render with empty "email" because a useEffect sets its s
+prefer-module-scope-static-value	app/(public)/audit/AuditUploadForm.tsx:150:9	`mono` inside `AuditUploadForm` uses no local state but is rebuilt every render,
+prefer-module-scope-static-value	app/(public)/audit/AuditUploadForm.tsx:151:9	`sans` inside `AuditUploadForm` uses no local state but is rebuilt every render,
+prefer-module-scope-static-value	app/(public)/audit/AuditUploadForm.tsx:152:9	`serif` inside `AuditUploadForm` uses no local state but is rebuilt every render
+no-inline-exhaustive-style	app/(public)/audit/AuditUploadForm.tsx:171:18	This inline style has 9 properties, which is hard to read & rebuilds every rende
+no-outline-none	app/(public)/audit/AuditUploadForm.tsx:178:13	Your keyboard users can't tell where they are because outline: none hides the fo
+click-events-have-key-events	app/(public)/audit/AuditUploadForm.tsx:197:10	Keyboard users can't trigger this click handler because there's no keyboard one,
+no-static-element-interactions	app/(public)/audit/AuditUploadForm.tsx:197:10	Screen reader users can't tell this click handler is interactive because it has 
+no-inline-exhaustive-style	app/(public)/audit/AuditUploadForm.tsx:249:16	This inline style has 10 properties, which is hard to read & rebuilds every rend
+no-inline-exhaustive-style	app/(public)/audit/AuditUploadForm.tsx:278:18	This inline style has 9 properties, which is hard to read & rebuilds every rende
+no-wide-letter-spacing	app/(public)/audit/AuditUploadForm.tsx:297:56	Your users find body text harder to read at 0.10em letter spacing, so save wide 
+no-wide-letter-spacing	app/(public)/audit/AuditUploadForm.tsx:305:56	Your users find body text harder to read at 0.10em letter spacing, so save wide 
+no-inline-exhaustive-style	app/(public)/landing/_components/MerchantDashboard.tsx:196:16	This inline style has 8 properties, which is hard to read & rebuilds every rende
+no-wide-letter-spacing	app/(public)/landing/_components/MerchantDashboard.tsx:210:53	Your users find body text harder to read at 0.10em letter spacing, so save wide 
+no-inline-exhaustive-style	app/(public)/landing/_components/MerchantDashboard.tsx:364:22	This inline style has 8 properties, which is hard to read & rebuilds every rende
+js-combine-iterations	app/(public)/landing/_components/MerchantDashboard.tsx:508:8	This loops over your list twice because .filter().map() makes two passes, so do 
+no-wide-letter-spacing	app/(public)/landing/_components/MerchantDashboard.tsx:557:57	Your users find body text harder to read at 0.10em letter spacing, so save wide 
+no-inline-exhaustive-style	app/(public)/landing/_components/MerchantDashboard.tsx:566:24	This inline style has 8 properties, which is hard to read & rebuilds every rende
+no-inline-exhaustive-style	app/(public)/landing/_components/MerchantDashboard.tsx:590:36	This inline style has 8 properties, which is hard to read & rebuilds every rende
+no-inline-exhaustive-style	app/(public)/landing/_components/MerchantDashboard.tsx:650:20	This inline style has 8 properties, which is hard to read & rebuilds every rende
+no-inline-exhaustive-style	app/(public)/landing/_components/MerchantDashboard.tsx:668:26	This inline style has 8 properties, which is hard to read & rebuilds every rende
+no-inline-exhaustive-style	app/(public)/landing/_components/MerchantDashboard.tsx:788:16	This inline style has 8 properties, which is hard to read & rebuilds every rende
+prefer-module-scope-static-value	app/api/audit/[runId]/export/route.ts:127:9	`headers` inside `GETHandler` uses no local state but is rebuilt every render, s
+no-wide-letter-spacing	app/(public)/audit/page.tsx:37:15	Your users find body text harder to read at 0.14em letter spacing, so save wide 
+prefer-module-scope-static-value	app/(public)/audit/submitted/page.tsx:28:9	`sans` inside `SubmittedPage` uses no local state but is rebuilt every render, s
+prefer-module-scope-static-value	app/(public)/audit/submitted/page.tsx:29:9	`serif` inside `SubmittedPage` uses no local state but is rebuilt every render, 
+prefer-module-scope-static-value	app/(public)/audit/submitted/page.tsx:30:9	`mono` inside `SubmittedPage` uses no local state but is rebuilt every render, s
+prefer-useReducer	app/(public)/landing/PublicAuditForm.tsx:104:43	7 useState calls in "PublicAuditForm" can each trigger a separate render.
+rerender-state-only-in-handlers	app/(public)/landing/PublicAuditForm.tsx:108:9	Each update to "columnMap" redraws your component for nothing because this useSt
+no-inline-exhaustive-style	app/(public)/landing/PublicAuditForm.tsx:215:18	This inline style has 11 properties, which is hard to read & rebuilds every rend
+no-layout-transition-inline	app/(public)/audit-demo/AuditDemoClient.tsx:51:13	Your users see janky, stuttering animation because "width" relayouts the page ev
+no-inline-exhaustive-style	app/(public)/audit-demo/AuditDemoClient.tsx:72:14	This inline style has 10 properties, which is hard to read & rebuilds every rend
+no-giant-component	app/(public)/audit-demo/AuditDemoClient.tsx:91:25	Component "AuditDemoClient" is 323 lines long, which is hard to read & change. S
+prefer-useReducer	app/(public)/audit-demo/AuditDemoClient.tsx:91:91	8 useState calls in "AuditDemoClient" can each trigger a separate render.
+client-localstorage-no-version	app/(public)/audit-demo/AuditDemoClient.tsx:144:7	sessionStorage.setItem("auditDemoContext", JSON.stringify(...)) has no version, 
+no-inline-exhaustive-style	app/(public)/audit-demo/AuditDemoClient.tsx:368:38	This inline style has 13 properties, which is hard to read & rebuilds every rend
+prefer-module-scope-static-value	app/api/customers/[id]/cross-merchant/route.ts:81:9	`SIGNAL_TYPE_MAP` inside `GET` uses no local state but is rebuilt every render, 
+async-defer-await	app/api/customers/search/route.ts:146:3	This await blocks the function before an early-return that doesn't use the await
+prefer-module-scope-pure-function	app/api/customers/[id]/route.ts:328:26	`uniqueValues` inside `GETHandler` uses no local state but is rebuilt on every r
+js-combine-iterations	components/global/GlobalIdentityGraphClient.tsx:95:12	This loops over your list twice because .filter().filter() makes two passes, so 
+js-hoist-intl	components/claims/ClaimReviewPanel.tsx:145:10	This is slow because new Intl.NumberFormat() rebuilds on every call inside a fun
+prefer-module-scope-static-value	components/claims/ClaimReviewPanel.tsx:157:9	`colourMap` inside `StatusPill` uses no local state but is rebuilt every render,
+prefer-module-scope-static-value	components/claims/ClaimReviewPanel.tsx:176:9	`colourMap` inside `SlaBadge` uses no local state but is rebuilt every render, s
+control-has-associated-label	components/claims/ClaimReviewPanel.tsx:282:9	Blind users can't tell what this control does because screen readers find no lab
+prefer-tag-over-role	components/claims/ClaimReviewPanel.tsx:339:45	Screen reader users get more reliable semantics from `<address>` than `role="gro
+no-effect-chain	components/claims/ClaimReviewPanel.tsx:565:3	Your screen redraws several times from a single action because one useEffect cha
+no-effect-chain	components/claims/ClaimReviewPanel.tsx:616:3	Your screen redraws several times from a single action because one useEffect cha
+no-effect-chain	components/claims/ClaimReviewPanel.tsx:671:3	Your screen redraws several times from a single action because one useEffect cha
+no-giant-component	components/claims/ClaimReviewPanel.tsx:474:25	Component "ClaimReviewPanel" is 1302 lines long, which is hard to read & change.
+prefer-useReducer	components/claims/ClaimReviewPanel.tsx:474:128	40 useState calls in "ClaimReviewPanel" can each trigger a separate render.
+rerender-lazy-ref-init	components/claims/ClaimReviewPanel.tsx:524:50	useRef(new Set()) rebuilds this value on every render & throws it away.
+no-cascading-set-state	components/claims/ClaimReviewPanel.tsx:530:3	5 setState calls in one useEffect redraw your screen each time they run together
+no-fetch-in-effect	components/claims/ClaimReviewPanel.tsx:530:3	fetch() inside useEffect races, double-fires & leaks for your users.
+no-cascading-set-state	components/claims/ClaimReviewPanel.tsx:543:3	17 setState calls in one useEffect redraw your screen each time they run togethe
+no-derived-state	components/claims/ClaimReviewPanel.tsx:546:52	Storing "selectedOrderId" in state when you can derive it from other values cost
+no-derived-state	components/claims/ClaimReviewPanel.tsx:547:46	Storing "claimType" in state when you can derive it from other values costs an e
+no-derived-state	components/claims/ClaimReviewPanel.tsx:548:51	Storing "customerReason" in state when you can derive it from other values costs
+no-derived-state	components/claims/ClaimReviewPanel.tsx:549:42	Storing "notes" in state when you can derive it from other values costs an extra
+no-derived-state	components/claims/ClaimReviewPanel.tsx:550:44	Storing "claimId" in state when you can derive it from other values costs an ext
+no-derived-state	components/claims/ClaimReviewPanel.tsx:551:45	Storing "decision" in state when you can derive it from other values costs an ex
+no-derived-state	components/claims/ClaimReviewPanel.tsx:552:44	Storing "outcome" in state when you can derive it from other values costs an ext
+no-derived-state	components/claims/ClaimReviewPanel.tsx:553:49	Storing "evidenceType" in state when you can derive it from other values costs a
+no-derived-state	components/claims/ClaimReviewPanel.tsx:554:43	Storing "source" in state when you can derive it from other values costs an extr
+no-derived-state	components/claims/ClaimReviewPanel.tsx:555:48	Storing "evidenceUrl" in state when you can derive it from other values costs an
+no-derived-state	components/claims/ClaimReviewPanel.tsx:556:49	Storing "evidenceHash" in state when you can derive it from other values costs a
+no-derived-state	components/claims/ClaimReviewPanel.tsx:557:69	Storing "metaRows" in state when you can derive it from other values costs an ex
+no-derived-state	components/claims/ClaimReviewPanel.tsx:558:51	Storing "manualOrderRef" in state when you can derive it from other values costs
+no-derived-state	components/claims/ClaimReviewPanel.tsx:559:54	Storing "manualOrderSource" in state when you can derive it from other values co
+no-derived-state	components/claims/ClaimReviewPanel.tsx:560:56	Storing "manualModeExplicit" in state when you can derive it from other values c
+no-derived-state	components/claims/ClaimReviewPanel.tsx:561:47	Storing "orderValue" in state when you can derive it from other values costs an 
+no-derived-state	components/claims/ClaimReviewPanel.tsx:562:48	Storing "statusToSet" in state when you can derive it from other values costs an
+no-event-handler	components/claims/ClaimReviewPanel.tsx:544:34	Faking an event handler with a prop plus a useEffect costs an extra render & run
+no-derived-state	components/claims/ClaimReviewPanel.tsx:619:7	Storing "selectedOrderId" in state when you can derive it from other values cost
+no-derived-state	components/claims/ClaimReviewPanel.tsx:625:9	Storing "selectedOrderId" in state when you can derive it from other values cost
+no-event-handler	components/claims/ClaimReviewPanel.tsx:622:10	Faking an event handler with state plus a useEffect costs an extra render & runs
+no-event-handler	components/claims/ClaimReviewPanel.tsx:571:21	Faking an event handler with state plus a useEffect costs an extra render & runs
+no-event-handler	components/claims/ClaimReviewPanel.tsx:584:21	Faking an event handler with state plus a useEffect costs an extra render & runs
+no-event-handler	components/claims/ClaimReviewPanel.tsx:597:21	Faking an event handler with state plus a useEffect costs an extra render & runs
+no-fetch-in-effect	components/claims/ClaimReviewPanel.tsx:639:3	fetch() inside useEffect races, double-fires & leaks for your users.
+no-derived-state	components/claims/ClaimReviewPanel.tsx:675:5	Storing "claimId" in state when you can derive it from other values costs an ext
+exhaustive-deps	components/claims/ClaimReviewPanel.tsx:735:6	`useEffect` can run with a stale `selectedClaim` & show your users old data.
+no-derived-state	components/claims/ClaimReviewPanel.tsx:723:5	Storing "history" in state when you can derive it from other values costs an ext
+prefer-module-scope-pure-function	components/claims/ClaimReviewPanel.tsx:1028:22	`actorLabel` inside `ClaimReviewPanel` uses no local state but is rebuilt on eve
+prefer-module-scope-pure-function	components/claims/ClaimReviewPanel.tsx:1029:24	`getSlaVisual` inside `ClaimReviewPanel` uses no local state but is rebuilt on e
+nextjs-no-a-element	components/claims/ClaimReviewPanel.tsx:1110:13	Plain <a> reloads the whole page on internal links.
+control-has-associated-label	components/claims/ClaimReviewPanel.tsx:1558:17	Blind users can't tell what this control does because screen readers find no lab
+control-has-associated-label	components/claims/ClaimReviewPanel.tsx:1567:21	Blind users can't tell what this control does because screen readers find no lab
+no-array-index-key	components/claims/ClaimReviewPanel.tsx:1570:26	Your users can see & submit the wrong data when this list reorders.
+no-array-index-as-key	components/claims/ClaimReviewPanel.tsx:1570:26	Your users can see & submit the wrong data when this list reorders or filters, s
+control-has-associated-label	components/claims/ClaimReviewPanel.tsx:1571:23	Blind users can't tell what this control does because screen readers find no lab
+control-has-associated-label	components/claims/ClaimReviewPanel.tsx:1572:23	Blind users can't tell what this control does because screen readers find no lab
+control-has-associated-label	components/claims/ClaimReviewPanel.tsx:1644:13	Blind users can't tell what this control does because screen readers find no lab
+control-has-associated-label	components/claims/ClaimReviewPanel.tsx:1668:17	Blind users can't tell what this control does because screen readers find no lab
+control-has-associated-label	components/claims/ClaimReviewPanel.tsx:1698:25	Blind users can't tell what this control does because screen readers find no lab
+control-has-associated-label	components/claims/ClaimReviewPanel.tsx:1718:23	Blind users can't tell what this control does because screen readers find no lab
+control-has-associated-label	components/claims/ClaimReviewPanel.tsx:1739:19	Blind users can't tell what this control does because screen readers find no lab
+control-has-associated-label	components/claims/ClaimReviewPanel.tsx:1743:19	Blind users can't tell what this control does because screen readers find no lab
+control-has-associated-label	components/claims/ClaimReviewPanel.tsx:1747:19	Blind users can't tell what this control does because screen readers find no lab
+server-sequential-independent-await	audit/run-reaudit.js:271:3	This await doesn't use the previous result, so your users wait twice as long for
+server-sequential-independent-await	audit/run-reaudit.js:607:3	This await doesn't use the previous result, so your users wait twice as long for
+js-combine-iterations	audit/run-reaudit.js:273:28	This loops over your list twice because .filter().map() makes two passes, so do 
+js-combine-iterations	audit/run-reaudit.js:535:27	This loops over your list twice because .filter().map() makes two passes, so do 
+no-giant-component	components/customers/CustomersFilterSheet.tsx:43:25	Component "CustomersFilterSheet" is 359 lines long, which is hard to read & chan
+rerender-defer-reads-hook	components/customers/CustomersFilterSheet.tsx:45:9	usePathname() redraws your component on every URL change even though it's only r
+nextjs-no-use-search-params-without-suspense	components/customers/CustomersFilterSheet.tsx:46:24	useSearchParams() without a <Suspense> boundary forces the whole page into clien
+prefer-module-scope-static-value	components/customers/CustomersFilterSheet.tsx:91:9	`advancedKeys` inside `CustomersFilterSheet` uses no local state but is rebuilt 
+control-has-associated-label	components/customers/CustomersFilterSheet.tsx:338:25	Blind users can't tell what this control does because screen readers find no lab
+prefer-useReducer	components/audit/AuditCustomersTableClient.tsx:162:4	6 useState calls in "AuditCustomersTableClient" can each trigger a separate rend
+exhaustive-deps	components/audit/AuditCustomersTableClient.tsx:217:6	`useEffect` can run with a stale `initialEmail, openDrawerForEmail` & show your 
+no-event-handler	components/audit/AuditCustomersTableClient.tsx:216:9	Faking an event handler with a prop plus a useEffect costs an extra render & run
+no-initialize-state	components/audit/AuditCustomersTableClient.tsx:216:23	Your users see an extra render with empty "drawerOpen" because a useEffect sets 
+no-pass-data-to-parent	components/audit/AuditCustomersTableClient.tsx:216:23	Handing data back to a parent from a useEffect costs your users an extra render.
+click-events-have-key-events	components/audit/AuditCustomersTableClient.tsx:328:12	Keyboard users can't trigger this click handler because there's no keyboard one,
+no-static-element-interactions	components/audit/AuditCustomersTableClient.tsx:328:12	Screen reader users can't tell this click handler is interactive because it has 
+no-generic-handler-names	components/dashboard/LoadDemoButton.tsx:40:23	The handler name "handleClick" says when it runs, not what it does, so name it a
+click-events-have-key-events	components/customers/CustomersTableClient.tsx:112:12	Keyboard users can't trigger this click handler because there's no keyboard one,
+no-static-element-interactions	components/customers/CustomersTableClient.tsx:112:12	Screen reader users can't tell this click handler is interactive because it has 
+prefer-tag-over-role	components/evidence/EvidenceStrengthMeter.tsx:52:47	Screen reader users get more reliable semantics from `<img>` than `role="img"`, 
+no-inline-exhaustive-style	components/customers/IdentityTimeline.tsx:53:34	This inline style has 10 properties, which is hard to read & rebuilds every rend
+prefer-module-scope-static-value	components/audit/DataQualityBanner.tsx:59:9	`bannerStyle` inside `DataQualityBanner` uses no local state but is rebuilt ever
+control-has-associated-label	components/evidence/EvidencePackagePreview.tsx:124:9	Blind users can't tell what this control does because screen readers find no lab
+no-unknown-property	components/evidence/EvidencePackagePreview.tsx:129:11	React ignores `onLoad` here because it only works on these tags: script, img, li
+no-unknown-property	components/evidence/EvidencePackagePreview.tsx:130:11	React ignores `onError` here because it only works on these tags: audio, video, 
+no-giant-component	components/nav/Sidebar.tsx:144:10	Component "SidebarInner" is 308 lines long, which is hard to read & change. Spli
+async-parallel	audit/run-reaudit-v2.js:256:3	These 4 sequential await statements run one after another even though they look 
+async-parallel	audit/run-reaudit-v2.js:135:5	These 4 sequential await statements run one after another even though they look 
+server-sequential-independent-await	audit/run-reaudit-v2.js:149:7	This await doesn't use the previous result, so your users wait twice as long for
+js-combine-iterations	audit/run-reaudit-v2.js:279:12	This loops over your list twice because .filter().map() makes two passes, so do 
+async-parallel	audit/run-reaudit-v2.js:447:5	These 4 sequential await statements run one after another even though they look 
+server-sequential-independent-await	audit/run-reaudit-v2.js:328:7	This await doesn't use the previous result, so your users wait twice as long for
+server-sequential-independent-await	audit/run-reaudit-v2.js:371:7	This await doesn't use the previous result, so your users wait twice as long for
+server-sequential-independent-await	audit/run-reaudit-v2.js:383:7	This await doesn't use the previous result, so your users wait twice as long for
+async-parallel	audit/run-reaudit-v2.js:382:7	These 3 sequential await statements run one after another even though they look 
+js-combine-iterations	components/audit/AuditCharts.tsx:68:16	This loops over your list twice because .filter().map() makes two passes, so do 
+no-inline-exhaustive-style	components/customers/CustomerIntelligenceDrawer.tsx:249:16	This inline style has 12 properties, which is hard to read & rebuilds every rend
+prefer-useReducer	components/customers/CustomerIntelligenceDrawer.tsx:373:37	8 useState calls in "CustomerIntelligenceDrawer" can each trigger a separate ren
+rerender-state-only-in-handlers	components/customers/CustomerIntelligenceDrawer.tsx:383:9	Each update to "prevProfileId" redraws your component for nothing because this u
+rerender-state-only-in-handlers	components/customers/CustomerIntelligenceDrawer.tsx:384:9	Each update to "prevPrefetchedPanel" redraws your component for nothing because 
+no-derived-useState	components/customers/CustomerIntelligenceDrawer.tsx:374:29	Your users see a stale value when prop "prefetchedPanel" changes because useStat
+no-derived-useState	components/customers/CustomerIntelligenceDrawer.tsx:383:45	Your users see a stale value when prop "profileId" changes because useState copi
+no-derived-useState	components/customers/CustomerIntelligenceDrawer.tsx:384:57	Your users see a stale value when prop "prefetchedPanel" changes because useStat
+no-cascading-set-state	components/customers/CustomerIntelligenceDrawer.tsx:404:3	4 setState calls in one useEffect redraw your screen each time they run together
+no-effect-event-handler	components/customers/CustomerIntelligenceDrawer.tsx:404:3	This useEffect is simulating an event handler, which costs an extra render & run
+no-fetch-in-effect	components/customers/CustomerIntelligenceDrawer.tsx:404:3	fetch() inside useEffect races, double-fires & leaks for your users.
+advanced-event-handler-refs	components/customers/CustomerIntelligenceDrawer.tsx:427:3	useEffect re-adds the "handleKeyDown" listener every time the handler changes.
+prefer-html-dialog	components/customers/CustomerIntelligenceDrawer.tsx:456:9	Keyboard users can tab out of this `role="dialog"` modal because it has no built
+prefer-tag-over-role	components/customers/CustomerIntelligenceDrawer.tsx:456:9	Screen reader users get more reliable semantics from `<dialog>` than `role="dial
+no-inline-exhaustive-style	components/customers/CustomerIntelligenceDrawer.tsx:459:16	This inline style has 15 properties, which is hard to read & rebuilds every rend
+no-inline-exhaustive-style	components/customers/CustomerIntelligenceDrawer.tsx:473:21	This inline style has 10 properties, which is hard to read & rebuilds every rend
+no-inline-exhaustive-style	components/customers/CustomerIntelligenceDrawer.tsx:497:24	This inline style has 14 properties, which is hard to read & rebuilds every rend
+no-inline-exhaustive-style	components/customers/CustomerIntelligenceDrawer.tsx:514:22	This inline style has 10 properties, which is hard to read & rebuilds every rend
+no-giant-component	components/customers/CustomerIntelligenceDrawer.tsx:573:10	Component "DrawerContent" is 398 lines long, which is hard to read & change. Spl
+no-side-tab-border	components/customers/CustomerIntelligenceDrawer.tsx:654:11	Your users see an off, dated thick border on one side (left: 3px), so use a soft
+no-side-tab-border	components/customers/CustomerIntelligenceDrawer.tsx:765:11	Your users see an off, dated thick border on one side (left: 3px), so use a soft
+no-inline-exhaustive-style	components/customers/CustomerIntelligenceDrawer.tsx:784:21	This inline style has 9 properties, which is hard to read & rebuilds every rende
+no-outline-none	components/customers/CustomerIntelligenceDrawer.tsx:803:15	Your keyboard users can't tell where they are because outline: none hides the fo
+no-inline-exhaustive-style	components/customers/CustomerIntelligenceDrawer.tsx:866:24	This inline style has 10 properties, which is hard to read & rebuilds every rend
+no-inline-exhaustive-style	components/customers/CustomerIntelligenceDrawer.tsx:933:20	This inline style has 15 properties, which is hard to read & rebuilds every rend
+no-inline-exhaustive-style	components/customers/CustomerIntelligenceDrawer.tsx:948:20	This inline style has 14 properties, which is hard to read & rebuilds every rend
+prefer-useReducer	components/apply/FoundingMerchantApplicationForm.tsx:12:109	8 useState calls in "FoundingMerchantApplicationForm" can each trigger a separat
+no-giant-component	components/layout/CommandPalette.tsx:122:25	Component "CommandPalette" is 382 lines long, which is hard to read & change. Sp
+prefer-useReducer	components/layout/CommandPalette.tsx:122:82	6 useState calls in "CommandPalette" can each trigger a separate render.
+rerender-state-only-in-handlers	components/layout/CommandPalette.tsx:179:9	Each update to "prevIsOpen" redraws your component for nothing because this useS
+no-cascading-set-state	components/layout/CommandPalette.tsx:141:3	9 setState calls in one useEffect redraw your screen each time they run together
+no-fetch-in-effect	components/layout/CommandPalette.tsx:141:3	fetch() inside useEffect races, double-fires & leaks for your users.
+js-combine-iterations	components/layout/CommandPalette.tsx:157:31	This loops over your list twice because .filter().map() makes two passes, so do 
+no-derived-useState	components/layout/CommandPalette.tsx:179:39	Your users see a stale value when prop "isOpen" changes because useState copies 
+no-chain-state-updates	components/layout/CommandPalette.tsx:257:5	Chaining state updates triggers an extra render each step.
+no-derived-state-effect	components/layout/CommandPalette.tsx:256:3	Your users briefly see stale state on every prop change.
+prefer-html-dialog	components/layout/CommandPalette.tsx:280:9	Keyboard users can tab out of this `role="dialog"` modal because it has no built
+prefer-tag-over-role	components/layout/CommandPalette.tsx:280:9	Screen reader users get more reliable semantics from `<dialog>` than `role="dial
+prefer-module-scope-pure-function	components/dashboard/InsightsStrip.tsx:20:3	`colorFor` inside `InsightsStrip` uses no local state but is rebuilt on every re
+prefer-useReducer	components/OnboardingClient.tsx:65:27	8 useState calls in "OnboardingClient" can each trigger a separate render.
+no-giant-component	components/evidence/EvidencePackageForm.tsx:33:17	Component "EvidencePackageForm" is 376 lines long, which is hard to read & chang
+prefer-useReducer	components/audit/CustomerNotes.tsx:26:82	8 useState calls in "CustomerNotes" can each trigger a separate render.
+no-cascading-set-state	components/audit/CustomerNotes.tsx:36:3	3 setState calls in one useEffect redraw your screen each time they run together
+no-fetch-in-effect	components/audit/CustomerNotes.tsx:36:3	fetch() inside useEffect races, double-fires & leaks for your users.
+no-generic-handler-names	components/customers/InvestigationStatusSelect.tsx:37:7	The handler name "handleChange" says when it runs, not what it does, so name it 
+prefer-tag-over-role	components/settings/AppearanceSettings.tsx:44:11	Screen reader users get more reliable semantics from `<address>` than `role="gro
+no-giant-component	components/settings/ApiIntegrationsClient.tsx:94:25	Component "ApiIntegrationsClient" is 540 lines long, which is hard to read & cha
+prefer-useReducer	components/settings/ApiIntegrationsClient.tsx:98:4	8 useState calls in "ApiIntegrationsClient" can each trigger a separate render.
+click-events-have-key-events	components/settings/ApiIntegrationsClient.tsx:473:8	Keyboard users can't trigger this click handler because there's no keyboard one,
+no-noninteractive-element-interactions	components/settings/ApiIntegrationsClient.tsx:473:8	Keyboard & screen reader users can't trigger this `<dialog>` because it isn't in
+design-no-vague-button-label	components/settings/ApiIntegrationsClient.tsx:535:19	Screen reader & unsure users can't tell what "Done" does.
+click-events-have-key-events	components/settings/ApiIntegrationsClient.tsx:588:8	Keyboard users can't trigger this click handler because there's no keyboard one,
+no-noninteractive-element-interactions	components/settings/ApiIntegrationsClient.tsx:588:8	Keyboard & screen reader users can't trigger this `<dialog>` because it isn't in
+no-giant-component	components/upload/UploadClient.tsx:105:25	Component "UploadClient" is 1704 lines long, which is hard to read & change. Spl
+prefer-useReducer	components/upload/UploadClient.tsx:105:81	27 useState calls in "UploadClient" can each trigger a separate render.
+rerender-memo-with-default-value	components/upload/UploadClient.tsx:105:56	This keeps redrawing children that compare props because default prop value [] m
+rerender-state-only-in-handlers	components/upload/UploadClient.tsx:117:9	Each update to "runId" redraws your component for nothing because this useState 
+rerender-state-only-in-handlers	components/upload/UploadClient.tsx:127:9	Each update to "fileHash" redraws your component for nothing because this useSta
+no-initialize-state	components/upload/UploadClient.tsx:137:28	Your users see an extra render with empty "exportGuideOpen" because a useEffect 
+rerender-lazy-ref-init	components/upload/UploadClient.tsx:145:55	useRef(new Set()) rebuilds this value on every render & throws it away.
+prefer-module-scope-pure-function	components/upload/UploadClient.tsx:164:3	`validateCsvFile` inside `UploadClient` uses no local state but is rebuilt on ev
+js-combine-iterations	components/upload/UploadClient.tsx:173:31	This loops over your list twice because .map().filter() makes two passes, so do 
+prefer-module-scope-pure-function	components/upload/UploadClient.tsx:201:3	`checkDuplicateFile` inside `UploadClient` uses no local state but is rebuilt on
+prefer-module-scope-pure-function	components/upload/UploadClient.tsx:225:3	`hashFile` inside `UploadClient` uses no local state but is rebuilt on every ren
+exhaustive-deps	components/upload/UploadClient.tsx:297:6	`useCallback` can run with a stale `handleFile` & show your users old data.
+no-derived-state	components/upload/UploadClient.tsx:355:30	Storing "dataQuality" in state when you can derive it from other values costs an
+no-event-handler	components/upload/UploadClient.tsx:355:9	Faking an event handler with state plus a useEffect costs an extra render & runs
+nextjs-no-client-side-redirect	components/upload/UploadClient.tsx:620:11	router.push() in useEffect flashes the wrong page before redirecting.
+no-fetch-in-effect	components/upload/UploadClient.tsx:604:3	fetch() inside useEffect races, double-fires & leaks for your users.
+prefer-module-scope-pure-function	components/upload/UploadClient.tsx:671:3	`downloadTemplate` inside `UploadClient` uses no local state but is rebuilt on e
+prefer-tag-over-role	components/upload/UploadClient.tsx:949:11	Screen reader users get more reliable semantics from `<button>` than `role="butt
+js-combine-iterations	components/upload/UploadClient.tsx:1099:12	This loops over your list twice because .filter().map() makes two passes, so do 
+js-combine-iterations	components/upload/UploadClient.tsx:1175:12	This loops over your list twice because .filter().map() makes two passes, so do 
+no-render-in-render	components/upload/UploadClient.tsx:1251:12	Your users lose state because "renderDataQualityPanel()" builds UI from an inlin
+nextjs-no-img-element	components/settings/OrderSourceClient.tsx:113:19	Plain <img> ships unoptimized, oversized images to your users.
+no-aria-hidden-on-focusable	components/ui/DataTable.tsx:44:25	Screen reader users tab to this focusable element but hear nothing because `aria
+no-inline-exhaustive-style	components/ui/DataTable.tsx:105:24	This inline style has 11 properties, which is hard to read & rebuilds every rend
+no-inline-exhaustive-style	components/ui/ConfidenceBadge.tsx:36:14	This inline style has 8 properties, which is hard to read & rebuilds every rende
+no-inline-exhaustive-style	components/ui/Badge.tsx:69:14	This inline style has 9 properties, which is hard to read & rebuilds every rende
+no-multi-comp	extensions/chrome/popup/popup.tsx:28:17	This file is harder to navigate with more than one component.
+no-multi-comp	extensions/chrome/popup/popup.tsx:62:17	This file is harder to navigate with more than one component.
+no-giant-component	extensions/chrome/popup/popup.tsx:62:17	Component "App" is 426 lines long, which is hard to read & change. Split it into
+prefer-useReducer	extensions/chrome/popup/popup.tsx:62:23	17 useState calls in "App" can each trigger a separate render.
+no-inline-exhaustive-style	components/ui/KbdHint.tsx:19:18	This inline style has 9 properties, which is hard to read & rebuilds every rende
+use-lazy-motion	components/ui/animated-grid-pattern.tsx:4:1	Importing "motion" ships about 30 kb of extra code to your users & slows page lo
+exhaustive-deps	components/ui/animated-grid-pattern.tsx:63:6	`useEffect` can run with a stale `generateSquares` & show your users old data.
+no-derived-state	components/ui/animated-grid-pattern.tsx:61:7	Storing "squares" in state when you can derive it from other values costs an ext
+no-event-handler	components/ui/animated-grid-pattern.tsx:60:9	Faking an event handler with state plus a useEffect costs an extra render & runs
+rendering-hydration-mismatch-time	components/ui/animated-grid-pattern.tsx:101:20	This breaks hydration because Math.random() reached from JSX gives a different v
+nextjs-no-use-search-params-without-suspense	components/shopify/ShopifyIntegrationBanner.tsx:24:24	useSearchParams() without a <Suspense> boundary forces the whole page into clien
+nextjs-no-client-side-redirect	components/shopify/ShopifyIntegrationBanner.tsx:65:5	router.replace() in useEffect flashes the wrong page before redirecting.
+prefer-tag-over-role	components/shopify/ShopifyIntegrationBanner.tsx:81:7	Screen reader users get more reliable semantics from `<output>` than `role="stat
+no-giant-component	components/signup/SignupFlow.tsx:125:25	Component "SignupFlow" is 345 lines long, which is hard to read & change. Split 
+prefer-useReducer	components/signup/SignupFlow.tsx:125:38	14 useState calls in "SignupFlow" can each trigger a separate render.
+rerender-state-only-in-handlers	components/signup/SignupFlow.tsx:138:9	Each update to "columnMap" redraws your component for nothing because this useSt
+no-giant-component	components/settings/GorgiasSupportSyncClient.tsx:72:25	Component "GorgiasSupportSyncClient" is 655 lines long, which is hard to read & 
+prefer-useReducer	components/settings/GorgiasSupportSyncClient.tsx:72:72	10 useState calls in "GorgiasSupportSyncClient" can each trigger a separate rend
+no-render-in-render	components/settings/GorgiasSupportSyncClient.tsx:534:12	Your users lose state because "renderCredentialFields()" builds UI from an inlin
+no-render-in-render	components/settings/GorgiasSupportSyncClient.tsx:711:16	Your users lose state because "renderCredentialFields()" builds UI from an inlin
+prefer-tag-over-role	components/ui/UnauthLogo.tsx:46:7	Screen reader users get more reliable semantics from `<img>` than `role="img"`, 
+no-large-animated-blur	components/ui/spotlight.tsx:32:11	This can run out of GPU memory on phones because blur(48px) gets heavier as the 
+js-combine-iterations	lib/analysis/customerIntelligence.ts:444:19	This loops over your list twice because .filter().map() makes two passes, so do 
+no-event-handler	components/ui/Drawer.tsx:34:15	Faking an event handler with a prop plus a useEffect costs an extra render & run
+click-events-have-key-events	components/ui/Drawer.tsx:77:6	Keyboard users can't trigger this click handler because there's no keyboard one,
+no-noninteractive-element-interactions	components/ui/Drawer.tsx:77:6	Keyboard & screen reader users can't trigger this `<dialog>` because it isn't in
+no-giant-component	components/settings/TeamManagementClient.tsx:103:25	Component "TeamManagementClient" is 328 lines long, which is hard to read & chan
+prefer-useReducer	components/settings/TeamManagementClient.tsx:103:48	6 useState calls in "TeamManagementClient" can each trigger a separate render.
+prefer-tag-over-role	components/settings/TeamManagementClient.tsx:305:11	Screen reader users get more reliable semantics from `<output>` than `role="stat
+click-events-have-key-events	components/shopify/SyncStatusCard.tsx:90:6	Keyboard users can't trigger this click handler because there's no keyboard one,
+no-noninteractive-element-interactions	components/shopify/SyncStatusCard.tsx:90:6	Keyboard & screen reader users can't trigger this `<dialog>` because it isn't in
+no-giant-component	components/shopify/SyncStatusCard.tsx:186:25	Component "SyncStatusCard" is 342 lines long, which is hard to read & change. Sp
+js-combine-iterations	lib/evidence/ce3.ts:103:21	This loops over your list twice because .filter().map() makes two passes, so do 
+js-combine-iterations	lib/evidence/ce3.ts:155:41	This loops over your list twice because .filter().flatMap() makes two passes, so
+js-tosorted-immutable	lib/gorgias/widgetData.ts:63:18	This wastes work because [...array].sort() copies the array just to sort it, so 
+js-tosorted-immutable	lib/gorgias/widgetData.ts:793:18	This wastes work because [...array].sort() copies the array just to sort it, so 
+js-index-maps	lib/engine/identityCluster.ts:581:25	This gets slow as your list grows because array.find() runs inside a loop, so bu
+js-index-maps	lib/engine/identityCluster.ts:584:18	This gets slow as your list grows because array.find() runs inside a loop, so bu
+only-export-components	lib/evidence/pdf.tsx:484:23	Fast Refresh stops working when a file exports non-components.
+prefer-dynamic-import	lib/evidence/pdf.tsx:11:1	"@react-pdf/renderer" ships extra code to your users up front & slows page load.
+prefer-module-scope-static-value	lib/evidence/pdf.tsx:164:9	`colWidths` inside `PDFIdentityEvidenceTable` uses no local state but is rebuilt
+prefer-module-scope-static-value	lib/evidence/pdf.tsx:188:9	`colWidths` inside `PDFOrderHistoryTable` uses no local state but is rebuilt eve
+js-index-maps	lib/identity/matchScorer.ts:370:28	This gets slow as your list grows because array.find() runs inside a loop, so bu
+js-index-maps	lib/identity/matchScorer.ts:389:27	This gets slow as your list grows because array.find() runs inside a loop, so bu
+js-index-maps	lib/identity/matchScorer.ts:408:29	This gets slow as your list grows because array.find() runs inside a loop, so bu
+js-set-map-lookups	lib/identity/matchScorer.ts:526:17	This gets slow because array.indexOf() inside a loop scans the whole list every 
+js-set-map-lookups	lib/identity/matchScorer.ts:527:15	This gets slow because array.indexOf() inside a loop scans the whole list every 
+js-set-map-lookups	lib/engine/fastContext.ts:309:12	This gets slow because array.includes() inside a loop scans the whole list every
+js-combine-iterations	lib/navigation/appRoutes.ts:205:10	This loops over your list twice because .filter().map() makes two passes, so do 
+js-combine-iterations	lib/navigation/appRoutes.ts:215:10	This loops over your list twice because .filter().map() makes two passes, so do 
+js-index-maps	lib/engine/identityMatching.ts:142:22	This gets slow as your list grows because array.find() runs inside a loop, so bu
+js-combine-iterations	lib/customers/commerceOrders.ts:121:5	This loops over your list twice because .filter().map() makes two passes, so do 
+js-combine-iterations	lib/customers/commerceOrders.ts:126:5	This loops over your list twice because .filter().map() makes two passes, so do 
+js-set-map-lookups	lib/customers/narrative.ts:38:9	This gets slow because array.includes() inside a loop scans the whole list every
+js-combine-iterations	lib/evidence/buildPackage.ts:140:23	This loops over your list twice because .map().filter() makes two passes, so do 
+js-index-maps	lib/csv/headerAliases.ts:566:19	This gets slow as your list grows because array.findIndex() runs inside a loop, 
+js-combine-iterations	lib/csv/headerAliases.ts:577:21	This loops over your list twice because .map().filter() makes two passes, so do 
+js-combine-iterations	lib/processing/worker.ts:468:17	This loops over your list twice because .filter().map() makes two passes, so do 
+js-index-maps	lib/processing/worker.ts:850:15	This gets slow as your list grows because array.find() runs inside a loop, so bu
+js-combine-iterations	lib/support/intake/identityLinking.ts:124:7	This loops over your list twice because .filter().map() makes two passes, so do 
+async-defer-await	lib/supabase/merchantHelpers.ts:241:3	This await blocks the function before an early-return that doesn't use the await
+js-flatmap-filter	lib/supabase/merchantHelpers.ts:512:7	This loops over your list twice because .map().filter(Boolean) makes two passes,
+async-defer-await	lib/supabase/merchantHelpers.ts:727:3	This await blocks the function before an early-return that doesn't use the await
+js-flatmap-filter	lib/processing/clusterExpansion.ts:533:26	This loops over your list twice because .map().filter(Boolean) makes two passes,
+js-set-map-lookups	lib/processing/clusterExpansion.ts:607:34	This gets slow because array.includes() inside a loop scans the whole list every
+js-set-map-lookups	lib/processing/clusterExpansion.ts:631:9	This gets slow because array.includes() inside a loop scans the whole list every
+js-set-map-lookups	lib/processing/clusterExpansion.ts:632:10	This gets slow because array.includes() inside a loop scans the whole list every
+js-flatmap-filter	lib/processing/clusterExpansion.ts:649:30	This loops over your list twice because .map().filter(Boolean) makes two passes,
+js-set-map-lookups	lib/shopify/profileLinking.ts:115:55	This gets slow because array.includes() inside a loop scans the whole list every
+async-parallel	lib/shopify/profileLinking.ts:139:3	These 4 sequential await statements run one after another even though they look 
+js-index-maps	lib/shopify/profileLinking.ts:257:25	This gets slow as your list grows because array.find() runs inside a loop, so bu
+js-combine-iterations	lib/shopify/profileLinking.ts:304:30	This loops over your list twice because .map().filter() makes two passes, so do 
+js-index-maps	lib/support/intake/tagClaimDetection.ts:151:21	This gets slow as your list grows because array.find() runs inside a loop, so bu
+js-set-map-lookups	lib/support/intake/tagClaimDetection.ts:151:57	This gets slow because array.includes() inside a loop scans the whole list every
+js-set-map-lookups	lib/support/gorgias/accountIdentity.ts:140:17	This gets slow because array.includes() inside a loop scans the whole list every
+js-combine-iterations	lib/support/intake/claimSummary.ts:100:10	This loops over your list twice because .filter().map() makes two passes, so do 
+rerender-memo-with-default-value	registry/magicui/dotted-map.tsx:39:13	This keeps redrawing children that compare props because default prop value [] m
+js-combine-iterations	lib/support/intake/normalizeTicket.ts:561:10	This loops over your list twice because .filter().map() makes two passes, so do 
+js-flatmap-filter	lib/support/intake/normalizeTicket.ts:599:25	This loops over your list twice because .map().filter(Boolean) makes two passes,
+js-set-map-lookups	synthetic-lab/common.ts:263:16	This gets slow because array.indexOf() inside a loop scans the whole list every 
+js-index-maps	synthetic-lab/evaluate.ts:240:27	This gets slow as your list grows because array.find() runs inside a loop, so bu
+js-set-map-lookups	synthetic-lab/evaluate.ts:244:17	This gets slow because array.indexOf() inside a loop scans the whole list every 
+js-index-maps	synthetic-lab/evaluate.ts:265:18	This gets slow as your list grows because array.find() runs inside a loop, so bu
+js-index-maps	synthetic-lab/evaluate.ts:274:30	This gets slow as your list grows because array.find() runs inside a loop, so bu
+js-index-maps	synthetic-lab/evaluate.ts:288:18	This gets slow as your list grows because array.find() runs inside a loop, so bu
+js-index-maps	synthetic-lab/evaluate.ts:289:18	This gets slow as your list grows because array.find() runs inside a loop, so bu
+js-index-maps	synthetic-lab/evaluate.ts:291:60	This gets slow as your list grows because array.find() runs inside a loop, so bu
+js-index-maps	synthetic-lab/evaluate.ts:292:60	This gets slow as your list grows because array.find() runs inside a loop, so bu
+js-index-maps	synthetic-lab/evaluate.ts:297:23	This gets slow as your list grows because array.find() runs inside a loop, so bu
+js-index-maps	synthetic-lab/evaluate.ts:305:18	This gets slow as your list grows because array.find() runs inside a loop, so bu
+js-index-maps	synthetic-lab/evaluate.ts:659:18	This gets slow as your list grows because array.find() runs inside a loop, so bu
+js-combine-iterations	synthetic-lab/evaluate.ts:682:25	This loops over your list twice because .filter().map() makes two passes, so do 
+js-set-map-lookups	synthetic-lab/evaluate.ts:683:92	This gets slow because array.includes() inside a loop scans the whole list every
+js-set-map-lookups	synthetic-lab/evaluate.ts:686:108	This gets slow because array.includes() inside a loop scans the whole list every
+js-set-map-lookups	synthetic-lab/iterate.ts:167:57	This gets slow because array.includes() inside a loop scans the whole list every
+js-combine-iterations	synthetic-lab/iterate.ts:243:20	This loops over your list twice because .map().filter() makes two passes, so do 
+js-flatmap-filter	synthetic-lab/iterate.ts:355:17	This loops over your list twice because .map().filter(Boolean) makes two passes,
+js-set-map-lookups	synthetic-lab/iterate.ts:528:21	This gets slow because array.includes() inside a loop scans the whole list every
+unused-export	components/inbox/inboxQueueFilters.ts:29:7	Unused export: `queueMeta`
+unused-export	components/ui/KbdHint.tsx:7:7	Unused export: `KbdHint`
+unused-export	components/ui/SignalBadge.tsx:39:7	Unused export: `SignalBadge`

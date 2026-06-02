@@ -1,0 +1,4919 @@
+# React Doctor Fix Output
+
+Generated: 2026-06-02T02:20:57.260Z
+
+Source report: `react-doctor-report.json`
+
+## Summary
+
+- Total diagnostics: 1365
+- Errors: 30
+- Warnings: 1335
+- Affected files: 260
+- Framework: nextjs
+- React version: ^18
+- Scan mode: full
+
+## Files With The Most Diagnostics
+
+- app/(public)/landing/page.tsx: 115
+- components/claims/ClaimReviewPanel.tsx: 105
+- app/(public)/landing/_components/MerchantDashboard.tsx: 71
+- components/upload/UploadClient.tsx: 53
+- components/customers/CustomerIntelligenceDrawer.tsx: 52
+- lib/evidence/pdf.tsx: 29
+- app/(public)/audit/AuditUploadForm.tsx: 24
+- app/(app)/customers/[id]/page.tsx: 24
+- audit/run-reaudit-v2.js: 20
+- components/evidence/EvidencePackageForm.tsx: 19
+- components/settings/GorgiasSupportSyncClient.tsx: 17
+- components/layout/CommandPalette.tsx: 17
+- app/(public)/landing/_components/PipelineTabs.tsx: 16
+- components/customers/CustomersFilterSheet.tsx: 16
+- components/inbox/InboxClient.tsx: 16
+- synthetic-lab/evaluate.ts: 16
+- package.json: 16
+- components/settings/ApiIntegrationsClient.tsx: 14
+- components/audit/AuditCustomersTableClient.tsx: 14
+- lib/analysis/customerIntelligence.ts: 13
+- app/(app)/settings/account/page.tsx: 12
+- app/(public)/audit/[runId]/report/ClaimGate.tsx: 11
+- app/(public)/landing/_components/HeroNotificationArtifact.tsx: 11
+- app/(public)/landing/AuditForm.tsx: 11
+- app/api/customers/[id]/route.ts: 11
+- audit/run-reaudit.js: 11
+- lib/linker.ts: 11
+- components/ui/Timeline.tsx: 10
+- components/customers/IdentityTimeline.tsx: 9
+- components/OnboardingClient.tsx: 9
+- components/audit/CustomerNotes.tsx: 9
+- extensions/chrome/popup/popup.tsx: 9
+- lib/engine/identityCluster.ts: 9
+- app/(app)/claims/page.tsx: 8
+- app/(app)/help/csv-export/page.tsx: 8
+- app/(public)/audit/page.tsx: 8
+- app/(public)/audit-demo/AuditDemoClient.tsx: 8
+- app/api/account/delete/route.ts: 8
+- components/shopify/SyncStatusCard.tsx: 8
+- lib/analysis/entityResolution.ts: 8
+
+## Rule Index
+
+- [react-doctor:no-adjust-state-on-prop-change](#react-doctor-no-adjust-state-on-prop-change) - 23 error
+- [react-doctor:nextjs-no-side-effect-in-get-handler](#react-doctor-nextjs-no-side-effect-in-get-handler) - 4 error
+- [react-doctor:effect-needs-cleanup](#react-doctor-effect-needs-cleanup) - 2 error
+- [react-doctor:rules-of-hooks](#react-doctor-rules-of-hooks) - 1 error
+- [react-doctor:no-tiny-text](#react-doctor-no-tiny-text) - 162 warning
+- [react-doctor:design-no-em-dash-in-jsx-text](#react-doctor-design-no-em-dash-in-jsx-text) - 107 warning
+- [react-doctor:async-await-in-loop](#react-doctor-async-await-in-loop) - 78 warning
+- [react-doctor:no-inline-exhaustive-style](#react-doctor-no-inline-exhaustive-style) - 67 warning
+- [react-doctor:button-has-type](#react-doctor-button-has-type) - 63 warning
+- [react-doctor:control-has-associated-label](#react-doctor-control-has-associated-label) - 56 warning
+- [react-doctor:js-flatmap-filter](#react-doctor-js-flatmap-filter) - 48 warning
+- [react-doctor:js-combine-iterations](#react-doctor-js-combine-iterations) - 47 warning
+- [react-doctor:no-derived-state](#react-doctor-no-derived-state) - 41 warning
+- [react-doctor:js-index-maps](#react-doctor-js-index-maps) - 36 warning
+- [deslop:unused-file](#deslop-unused-file) - 36 warning
+- [react-doctor:no-array-index-as-key](#react-doctor-no-array-index-as-key) - 29 warning
+- [react-doctor:no-wide-letter-spacing](#react-doctor-no-wide-letter-spacing) - 29 warning
+- [react-doctor:prefer-module-scope-static-value](#react-doctor-prefer-module-scope-static-value) - 28 warning
+- [react-doctor:no-array-index-key](#react-doctor-no-array-index-key) - 26 warning
+- [react-doctor:no-giant-component](#react-doctor-no-giant-component) - 25 warning
+- [deslop:unused-export](#deslop-unused-export) - 25 warning
+- [react-doctor:prefer-useReducer](#react-doctor-prefer-usereducer) - 24 warning
+- [react-doctor:only-export-components](#react-doctor-only-export-components) - 22 warning
+- [react-doctor:js-set-map-lookups](#react-doctor-js-set-map-lookups) - 21 warning
+- [react-doctor:label-has-associated-control](#react-doctor-label-has-associated-control) - 21 warning
+- [react-doctor:js-hoist-intl](#react-doctor-js-hoist-intl) - 20 warning
+- [react-doctor:no-event-handler](#react-doctor-no-event-handler) - 20 warning
+- [react-doctor:server-sequential-independent-await](#react-doctor-server-sequential-independent-await) - 17 warning
+- [react-doctor:js-tosorted-immutable](#react-doctor-js-tosorted-immutable) - 16 warning
+- [react-doctor:nextjs-no-a-element](#react-doctor-nextjs-no-a-element) - 16 warning
+- [react-doctor:no-cascading-set-state](#react-doctor-no-cascading-set-state) - 15 warning
+- [react-doctor:no-fetch-in-effect](#react-doctor-no-fetch-in-effect) - 14 warning
+- [react-doctor:prefer-tag-over-role](#react-doctor-prefer-tag-over-role) - 14 warning
+- [deslop:unused-dependency](#deslop-unused-dependency) - 14 warning
+- [react-doctor:design-no-redundant-padding-axes](#react-doctor-design-no-redundant-padding-axes) - 12 warning
+- [react-doctor:no-multi-comp](#react-doctor-no-multi-comp) - 10 warning
+- [react-doctor:prefer-module-scope-pure-function](#react-doctor-prefer-module-scope-pure-function) - 10 warning
+- [react-doctor:async-parallel](#react-doctor-async-parallel) - 9 warning
+- [react-doctor:click-events-have-key-events](#react-doctor-click-events-have-key-events) - 9 warning
+- [react-doctor:exhaustive-deps](#react-doctor-exhaustive-deps) - 9 warning
+- [react-doctor:no-initialize-state](#react-doctor-no-initialize-state) - 9 warning
+- [react-doctor:jsx-no-jsx-as-prop](#react-doctor-jsx-no-jsx-as-prop) - 8 warning
+- [react-doctor:no-chain-state-updates](#react-doctor-no-chain-state-updates) - 8 warning
+- [react-doctor:rerender-state-only-in-handlers](#react-doctor-rerender-state-only-in-handlers) - 8 warning
+- [react-doctor:nextjs-missing-metadata](#react-doctor-nextjs-missing-metadata) - 7 warning
+- [react-doctor:nextjs-no-use-search-params-without-suspense](#react-doctor-nextjs-no-use-search-params-without-suspense) - 7 warning
+- [react-doctor:no-static-element-interactions](#react-doctor-no-static-element-interactions) - 7 warning
+- [react-doctor:nextjs-no-img-element](#react-doctor-nextjs-no-img-element) - 6 warning
+- [react-doctor:prefer-html-dialog](#react-doctor-prefer-html-dialog) - 6 warning
+- [react-doctor:no-derived-useState](#react-doctor-no-derived-usestate) - 5 warning
+- [react-doctor:design-no-three-period-ellipsis](#react-doctor-design-no-three-period-ellipsis) - 4 warning
+- [react-doctor:js-min-max-loop](#react-doctor-js-min-max-loop) - 4 warning
+- [react-doctor:no-effect-chain](#react-doctor-no-effect-chain) - 4 warning
+- [react-doctor:no-outline-none](#react-doctor-no-outline-none) - 4 warning
+- [react-doctor:async-defer-await](#react-doctor-async-defer-await) - 3 warning
+- [react-doctor:nextjs-no-client-side-redirect](#react-doctor-nextjs-no-client-side-redirect) - 3 warning
+- [react-doctor:no-derived-state-effect](#react-doctor-no-derived-state-effect) - 3 warning
+- [react-doctor:no-large-animated-blur](#react-doctor-no-large-animated-blur) - 3 warning
+- [react-doctor:no-noninteractive-element-interactions](#react-doctor-no-noninteractive-element-interactions) - 3 warning
+- [react-doctor:no-render-in-render](#react-doctor-no-render-in-render) - 3 warning
+- [react-doctor:prefer-dynamic-import](#react-doctor-prefer-dynamic-import) - 3 warning
+- [react-doctor:advanced-event-handler-refs](#react-doctor-advanced-event-handler-refs) - 2 warning
+- [react-doctor:js-cache-property-access](#react-doctor-js-cache-property-access) - 2 warning
+- [react-doctor:no-generic-handler-names](#react-doctor-no-generic-handler-names) - 2 warning
+- [react-doctor:no-side-tab-border](#react-doctor-no-side-tab-border) - 2 warning
+- [react-doctor:rerender-lazy-ref-init](#react-doctor-rerender-lazy-ref-init) - 2 warning
+- [react-doctor:rerender-memo-with-default-value](#react-doctor-rerender-memo-with-default-value) - 2 warning
+- [react-doctor:server-fetch-without-revalidate](#react-doctor-server-fetch-without-revalidate) - 2 warning
+- [deslop:unused-dev-dependency](#deslop-unused-dev-dependency) - 2 warning
+- [deslop:circular-dependency](#deslop-circular-dependency) - 1 warning
+- [react-doctor:client-localstorage-no-version](#react-doctor-client-localstorage-no-version) - 1 warning
+- [react-doctor:design-no-vague-button-label](#react-doctor-design-no-vague-button-label) - 1 warning
+- [react-doctor:iframe-missing-sandbox](#react-doctor-iframe-missing-sandbox) - 1 warning
+- [react-doctor:js-hoist-regexp](#react-doctor-js-hoist-regexp) - 1 warning
+- [react-doctor:nextjs-no-client-fetch-for-server-data](#react-doctor-nextjs-no-client-fetch-for-server-data) - 1 warning
+- [react-doctor:no-layout-transition-inline](#react-doctor-no-layout-transition-inline) - 1 warning
+- [react-doctor:no-mirror-prop-effect](#react-doctor-no-mirror-prop-effect) - 1 warning
+- [react-doctor:no-pass-data-to-parent](#react-doctor-no-pass-data-to-parent) - 1 warning
+- [react-doctor:no-redundant-roles](#react-doctor-no-redundant-roles) - 1 warning
+- [react-doctor:no-transition-all](#react-doctor-no-transition-all) - 1 warning
+- [react-doctor:no-uncontrolled-input](#react-doctor-no-uncontrolled-input) - 1 warning
+- [react-doctor:rendering-hydration-mismatch-time](#react-doctor-rendering-hydration-mismatch-time) - 1 warning
+- [react-doctor:rerender-defer-reads-hook](#react-doctor-rerender-defer-reads-hook) - 1 warning
+- [react-doctor:use-lazy-motion](#react-doctor-use-lazy-motion) - 1 warning
+
+## react-doctor:no-adjust-state-on-prop-change
+
+- Severity: error
+- Category: Bugs
+- Count: 23
+- Title: State synced to a prop inside an effect
+- Fix guidance: Adjust the state inline during render with a `prev`-prop comparison (`if (prop !== prevProp) { setPrevProp(prop); setX(...); }`), or refactor to remove the duplicated state. Routing the adjustment through a useEffect forces an extra render with a stale UI between the two commits. See https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes
+
+- app/(public)/landing/_components/Reveal.tsx:68:5
+  - State synced to a prop inside an effect
+  - Your users briefly see the wrong value when the prop changes.
+- components/audit/DataQualityBanner.tsx:24:7
+  - State synced to a prop inside an effect
+  - Your users briefly see the wrong value when the prop changes.
+- components/claims/ClaimReviewPanel.tsx:625:7
+  - State synced to a prop inside an effect
+  - Your users briefly see the wrong value when the prop changes.
+- components/claims/ClaimReviewPanel.tsx:658:19
+  - State synced to a prop inside an effect
+  - Your users briefly see the wrong value when the prop changes.
+- components/claims/ClaimReviewPanel.tsx:664:7
+  - State synced to a prop inside an effect
+  - Your users briefly see the wrong value when the prop changes.
+- components/claims/ClaimReviewPanel.tsx:693:7
+  - State synced to a prop inside an effect
+  - Your users briefly see the wrong value when the prop changes.
+- components/claims/ClaimReviewPanel.tsx:696:7
+  - State synced to a prop inside an effect
+  - Your users briefly see the wrong value when the prop changes.
+- components/customers/CrossMerchantSignalCard.tsx:119:5
+  - State synced to a prop inside an effect
+  - Your users briefly see the wrong value when the prop changes.
+- components/customers/CrossMerchantSignalCard.tsx:120:5
+  - State synced to a prop inside an effect
+  - Your users briefly see the wrong value when the prop changes.
+- components/customers/CustomerIntelligenceDrawer.tsx:386:7
+  - State synced to a prop inside an effect
+  - Your users briefly see the wrong value when the prop changes.
+- components/customers/CustomerIntelligenceDrawer.tsx:386:25
+  - State synced to a prop inside an effect
+  - Your users briefly see the wrong value when the prop changes.
+- components/customers/CustomerIntelligenceDrawer.tsx:386:57
+  - State synced to a prop inside an effect
+  - Your users briefly see the wrong value when the prop changes.
+- components/customers/CustomerIntelligenceDrawer.tsx:394:55
+  - State synced to a prop inside an effect
+  - Your users briefly see the wrong value when the prop changes.
+- components/customers/CustomerIntelligenceDrawer.tsx:394:74
+  - State synced to a prop inside an effect
+  - Your users briefly see the wrong value when the prop changes.
+- components/customers/CustomerIntelligenceDrawer.tsx:395:21
+  - State synced to a prop inside an effect
+  - Your users briefly see the wrong value when the prop changes.
+- components/customers/CustomerIntelligenceDrawer.tsx:395:40
+  - State synced to a prop inside an effect
+  - Your users briefly see the wrong value when the prop changes.
+- components/customers/CustomerSupportCasesSection.tsx:14:5
+  - State synced to a prop inside an effect
+  - Your users briefly see the wrong value when the prop changes.
+- components/evidence/EvidencePackageForm.tsx:62:7
+  - State synced to a prop inside an effect
+  - Your users briefly see the wrong value when the prop changes.
+- components/evidence/EvidencePackageForm.tsx:65:5
+  - State synced to a prop inside an effect
+  - Your users briefly see the wrong value when the prop changes.
+- components/layout/CommandPalette.tsx:183:7
+  - State synced to a prop inside an effect
+  - Your users briefly see the wrong value when the prop changes.
+- components/layout/CommandPalette.tsx:184:7
+  - State synced to a prop inside an effect
+  - Your users briefly see the wrong value when the prop changes.
+- components/layout/CommandPalette.tsx:185:7
+  - State synced to a prop inside an effect
+  - Your users briefly see the wrong value when the prop changes.
+- components/layout/CommandPalette.tsx:186:7
+  - State synced to a prop inside an effect
+  - Your users briefly see the wrong value when the prop changes.
+
+## react-doctor:nextjs-no-side-effect-in-get-handler
+
+- Severity: error
+- Category: Security
+- Count: 4
+- Title: Side effect in GET handler
+- Fix guidance: GET requests can be prefetched and are open to CSRF. Move the side effect to a POST handler.
+
+- app/api/lookup/route.ts:31:1
+  - Side effect in GET handler
+  - This GET handler's side effect (.insert()) is prone to CSRF vulnerabilities, since prefetching or a forged request can trigger it.
+- app/api/shopify/callback/route.ts:53:1
+  - Side effect in GET handler
+  - This GET handler's side effect (fetch() with method POST) is prone to CSRF vulnerabilities, since prefetching or a forged request can trigger it.
+- app/api/v1/evidence/[id]/download/route.ts:86:1
+  - Side effect in GET handler
+  - This GET handler's side effect (.update()) is prone to CSRF vulnerabilities, since prefetching or a forged request can trigger it.
+- app/api/v1/evidence/[id]/signed-url/route.ts:66:1
+  - Side effect in GET handler
+  - This GET handler's side effect (.insert()) is prone to CSRF vulnerabilities, since prefetching or a forged request can trigger it.
+
+## react-doctor:effect-needs-cleanup
+
+- Severity: error
+- Category: Bugs
+- Count: 2
+- Title: Effect subscription or timer never cleaned up
+- Fix guidance: Return a cleanup function that stops the subscription or timer: `return () => target.removeEventListener(name, handler)` for listeners, `return () => clearInterval(id)` or `clearTimeout(id)` for timers, or `return unsubscribe` if the subscribe call already gave you one.
+
+- components/layout/CommandPalette.tsx:181:3
+  - Effect subscription or timer never cleaned up
+  - `setTimeout(...)` leaks memory because useEffect schedules it but never cleans it up.
+- components/upload/UploadClient.tsx:595:3
+  - Effect subscription or timer never cleaned up
+  - `setTimeout(...)` leaks memory because useEffect schedules it but never cleans it up.
+
+## react-doctor:rules-of-hooks
+
+- Severity: error
+- Category: Bugs
+- Count: 1
+- Title: Hook called conditionally
+- Fix guidance: Call hooks at the top level of a React function component or a custom Hook.
+
+- components/ui/MetricCard.tsx:41:7
+  - Hook called conditionally
+  - `useCountUp` crashes when you call it conditionally.
+
+## react-doctor:no-tiny-text
+
+- Severity: warning
+- Category: Accessibility
+- Count: 162
+- Title: Text is too small
+- Fix guidance: Use at least 12px for body text, and 16px is best. Small text is hard to read, especially on phones.
+
+- app/(auth)/reset/page.tsx:76:17
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- app/(auth)/reset/update/page.tsx:86:17
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/audit/AuditUploadForm.tsx:161:47
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/audit/AuditUploadForm.tsx:193:47
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/audit/AuditUploadForm.tsx:231:36
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/audit/AuditUploadForm.tsx:296:38
+  - Text is too small
+  - Your users strain to read 10px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/audit/AuditUploadForm.tsx:304:38
+  - Text is too small
+  - Your users strain to read 10px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/audit/page.tsx:36:15
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/audit/page.tsx:139:13
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/HeroNotificationArtifact.tsx:79:13
+  - Text is too small
+  - Your users strain to read 9.5px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/HeroNotificationArtifact.tsx:90:13
+  - Text is too small
+  - Your users strain to read 9px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/HeroNotificationArtifact.tsx:106:13
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/HeroNotificationArtifact.tsx:125:13
+  - Text is too small
+  - Your users strain to read 9.5px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/HeroNotificationArtifact.tsx:183:48
+  - Text is too small
+  - Your users strain to read 9px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/HeroNotificationArtifact.tsx:186:48
+  - Text is too small
+  - Your users strain to read 8.5px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/HeroNotificationArtifact.tsx:190:43
+  - Text is too small
+  - Your users strain to read 10.5px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/HeroNotificationArtifact.tsx:194:48
+  - Text is too small
+  - Your users strain to read 9px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/MerchantDashboard.tsx:205:46
+  - Text is too small
+  - Your users strain to read 11.5px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/MerchantDashboard.tsx:210:35
+  - Text is too small
+  - Your users strain to read 8.5px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/MerchantDashboard.tsx:219:46
+  - Text is too small
+  - Your users strain to read 9px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/MerchantDashboard.tsx:220:46
+  - Text is too small
+  - Your users strain to read 9px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/MerchantDashboard.tsx:223:46
+  - Text is too small
+  - Your users strain to read 9px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/MerchantDashboard.tsx:226:35
+  - Text is too small
+  - Your users strain to read 8.5px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/MerchantDashboard.tsx:241:35
+  - Text is too small
+  - Your users strain to read 8px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/MerchantDashboard.tsx:256:52
+  - Text is too small
+  - Your users strain to read 9px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/MerchantDashboard.tsx:259:41
+  - Text is too small
+  - Your users strain to read 9px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/MerchantDashboard.tsx:267:41
+  - Text is too small
+  - Your users strain to read 8.5px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/MerchantDashboard.tsx:277:45
+  - Text is too small
+  - Your users strain to read 8px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/MerchantDashboard.tsx:286:35
+  - Text is too small
+  - Your users strain to read 8px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/MerchantDashboard.tsx:300:41
+  - Text is too small
+  - Your users strain to read 9px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/MerchantDashboard.tsx:317:41
+  - Text is too small
+  - Your users strain to read 8.5px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/MerchantDashboard.tsx:357:37
+  - Text is too small
+  - Your users strain to read 7.5px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/MerchantDashboard.tsx:365:37
+  - Text is too small
+  - Your users strain to read 9.5px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/MerchantDashboard.tsx:401:33
+  - Text is too small
+  - Your users strain to read 9px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/MerchantDashboard.tsx:407:44
+  - Text is too small
+  - Your users strain to read 9px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/MerchantDashboard.tsx:412:41
+  - Text is too small
+  - Your users strain to read 11.5px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/MerchantDashboard.tsx:415:41
+  - Text is too small
+  - Your users strain to read 9px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/MerchantDashboard.tsx:433:44
+  - Text is too small
+  - Your users strain to read 9px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/MerchantDashboard.tsx:436:44
+  - Text is too small
+  - Your users strain to read 9px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/MerchantDashboard.tsx:454:39
+  - Text is too small
+  - Your users strain to read 10px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/MerchantDashboard.tsx:462:50
+  - Text is too small
+  - Your users strain to read 9.5px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/MerchantDashboard.tsx:466:52
+  - Text is too small
+  - Your users strain to read 8.5px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/MerchantDashboard.tsx:583:50
+  - Text is too small
+  - Your users strain to read 9.5px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/MerchantDashboard.tsx:588:48
+  - Text is too small
+  - Your users strain to read 9.5px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/MerchantDashboard.tsx:591:37
+  - Text is too small
+  - Your users strain to read 9.5px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/MerchantDashboard.tsx:613:39
+  - Text is too small
+  - Your users strain to read 8px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/MerchantDashboard.tsx:632:54
+  - Text is too small
+  - Your users strain to read 9px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/MerchantDashboard.tsx:635:49
+  - Text is too small
+  - Your users strain to read 8px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/MerchantDashboard.tsx:657:50
+  - Text is too small
+  - Your users strain to read 9px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/MerchantDashboard.tsx:660:50
+  - Text is too small
+  - Your users strain to read 9px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/MerchantDashboard.tsx:669:41
+  - Text is too small
+  - Your users strain to read 8.5px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/MerchantDashboard.tsx:694:48
+  - Text is too small
+  - Your users strain to read 8.5px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/MerchantDashboard.tsx:697:48
+  - Text is too small
+  - Your users strain to read 8.5px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/MerchantDashboard.tsx:719:50
+  - Text is too small
+  - Your users strain to read 9px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/MerchantDashboard.tsx:722:50
+  - Text is too small
+  - Your users strain to read 9px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/MerchantDashboard.tsx:732:50
+  - Text is too small
+  - Your users strain to read 9px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/MerchantDashboard.tsx:744:43
+  - Text is too small
+  - Your users strain to read 9px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/MerchantDashboard.tsx:753:54
+  - Text is too small
+  - Your users strain to read 9px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/MerchantDashboard.tsx:769:50
+  - Text is too small
+  - Your users strain to read 9px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/MerchantDashboard.tsx:772:50
+  - Text is too small
+  - Your users strain to read 9px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/MerchantDashboard.tsx:778:50
+  - Text is too small
+  - Your users strain to read 8.5px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/MerchantDashboard.tsx:779:50
+  - Text is too small
+  - Your users strain to read 8.5px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/MerchantDashboard.tsx:802:60
+  - Text is too small
+  - Your users strain to read 9px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/MerchantDashboard.tsx:807:44
+  - Text is too small
+  - Your users strain to read 9px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/NetworkChart.tsx:79:13
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/NetworkChart.tsx:94:13
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/PipelineTabs.tsx:105:33
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/PipelineTabs.tsx:172:43
+  - Text is too small
+  - Your users strain to read 10px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/PipelineTabs.tsx:184:43
+  - Text is too small
+  - Your users strain to read 10px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/PipelineTabs.tsx:261:54
+  - Text is too small
+  - Your users strain to read 9px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/_components/PipelineTabs.tsx:266:39
+  - Text is too small
+  - Your users strain to read 9px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/AuditForm.tsx:45:11
+  - Text is too small
+  - Your users strain to read 10.5px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/AuditForm.tsx:114:13
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/page.tsx:281:15
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/page.tsx:297:17
+  - Text is too small
+  - Your users strain to read 10px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/page.tsx:366:17
+  - Text is too small
+  - Your users strain to read 10.5px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/page.tsx:413:21
+  - Text is too small
+  - Your users strain to read 11.5px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/page.tsx:427:23
+  - Text is too small
+  - Your users strain to read 10px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/page.tsx:442:23
+  - Text is too small
+  - Your users strain to read 10px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/page.tsx:456:23
+  - Text is too small
+  - Your users strain to read 10px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/page.tsx:477:23
+  - Text is too small
+  - Your users strain to read 10px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/page.tsx:555:23
+  - Text is too small
+  - Your users strain to read 10px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/page.tsx:619:37
+  - Text is too small
+  - Your users strain to read 10px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/page.tsx:639:23
+  - Text is too small
+  - Your users strain to read 10px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/page.tsx:675:86
+  - Text is too small
+  - Your users strain to read 10.5px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/page.tsx:748:23
+  - Text is too small
+  - Your users strain to read 10px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/page.tsx:760:23
+  - Text is too small
+  - Your users strain to read 10px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/page.tsx:772:21
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/page.tsx:824:53
+  - Text is too small
+  - Your users strain to read 10px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/page.tsx:854:21
+  - Text is too small
+  - Your users strain to read 11.5px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/page.tsx:866:21
+  - Text is too small
+  - Your users strain to read 10.5px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/page.tsx:899:21
+  - Text is too small
+  - Your users strain to read 10.5px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/page.tsx:910:21
+  - Text is too small
+  - Your users strain to read 10.5px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/page.tsx:922:136
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/page.tsx:945:21
+  - Text is too small
+  - Your users strain to read 10.5px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/page.tsx:971:71
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/page.tsx:982:103
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/page.tsx:983:103
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/page.tsx:984:103
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/page.tsx:1013:80
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/page.tsx:1041:17
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/page.tsx:1106:23
+  - Text is too small
+  - Your users strain to read 10px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/page.tsx:1135:73
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/page.tsx:1145:78
+  - Text is too small
+  - Your users strain to read 10.5px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/page.tsx:1147:76
+  - Text is too small
+  - Your users strain to read 10px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/page.tsx:1162:80
+  - Text is too small
+  - Your users strain to read 10px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/page.tsx:1166:117
+  - Text is too small
+  - Your users strain to read 11.5px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/page.tsx:1175:73
+  - Text is too small
+  - Your users strain to read 10px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/page.tsx:1179:113
+  - Text is too small
+  - Your users strain to read 11.5px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/page.tsx:1195:15
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/page.tsx:1239:51
+  - Text is too small
+  - Your users strain to read 9px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/page.tsx:1271:15
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/page.tsx:1385:84
+  - Text is too small
+  - Your users strain to read 10.5px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/page.tsx:1388:129
+  - Text is too small
+  - Your users strain to read 10.5px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/page.tsx:1426:82
+  - Text is too small
+  - Your users strain to read 11.5px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/page.tsx:1457:186
+  - Text is too small
+  - Your users strain to read 10.5px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/page.tsx:1499:88
+  - Text is too small
+  - Your users strain to read 9px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/page.tsx:1525:19
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/page.tsx:1697:19
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- app/(public)/landing/PublicAuditForm.tsx:205:71
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- app/audit-running/page.tsx:28:13
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- components/customers/CaseSummaryStrip.tsx:36:25
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- components/customers/CaseSummaryStrip.tsx:40:25
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- components/customers/CaseSummaryStrip.tsx:44:25
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- components/customers/CaseSummaryStrip.tsx:48:25
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- components/customers/CaseSummaryStrip.tsx:59:25
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- components/customers/CustomerIntelligenceDrawer.tsx:177:28
+  - Text is too small
+  - Your users strain to read 10px text, so use at least 12px for body text, & 16px is best.
+- components/customers/CustomerIntelligenceDrawer.tsx:202:21
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- components/customers/CustomerIntelligenceDrawer.tsx:283:25
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- components/customers/CustomerIntelligenceDrawer.tsx:309:25
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- components/customers/CustomerIntelligenceDrawer.tsx:312:25
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- components/customers/CustomerIntelligenceDrawer.tsx:332:30
+  - Text is too small
+  - Your users strain to read 10px text, so use at least 12px for body text, & 16px is best.
+- components/customers/CustomerIntelligenceDrawer.tsx:473:19
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- components/customers/CustomerIntelligenceDrawer.tsx:632:21
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- components/customers/CustomerIntelligenceDrawer.tsx:638:21
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- components/customers/CustomerIntelligenceDrawer.tsx:681:28
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- components/customers/CustomerIntelligenceDrawer.tsx:707:25
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- components/customers/CustomerIntelligenceDrawer.tsx:741:15
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- components/customers/CustomerIntelligenceDrawer.tsx:747:25
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- components/customers/CustomerIntelligenceDrawer.tsx:764:26
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- components/customers/CustomerIntelligenceDrawer.tsx:771:15
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- components/customers/CustomerIntelligenceDrawer.tsx:840:33
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- components/customers/CustomerIntelligenceDrawer.tsx:871:33
+  - Text is too small
+  - Your users strain to read 10px text, so use at least 12px for body text, & 16px is best.
+- components/customers/CustomerIntelligenceDrawer.tsx:937:21
+  - Text is too small
+  - Your users strain to read 10px text, so use at least 12px for body text, & 16px is best.
+- components/customers/IdentityTimeline.tsx:29:66
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- components/customers/IdentityTimeline.tsx:30:66
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- components/customers/IdentityTimeline.tsx:31:66
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- components/customers/IdentityTimeline.tsx:32:66
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- components/customers/IdentityTimeline.tsx:47:31
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- components/customers/IdentityTimeline.tsx:53:240
+  - Text is too small
+  - Your users strain to read 10px text, so use at least 12px for body text, & 16px is best.
+- components/ui/Badge.tsx:74:9
+  - Text is too small
+  - Your users strain to read 10px text, so use at least 12px for body text, & 16px is best.
+- components/ui/ConfidenceBadge.tsx:51:11
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- components/ui/ConfidenceBadge.tsx:62:13
+  - Text is too small
+  - Your users strain to read 10px text, so use at least 12px for body text, & 16px is best.
+- components/ui/DataTable.tsx:107:19
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- components/ui/KbdHint.tsx:25:13
+  - Text is too small
+  - Your users strain to read 10px text, so use at least 12px for body text, & 16px is best.
+- components/ui/MetricCard.tsx:58:13
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- components/ui/MetricCard.tsx:90:20
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- components/ui/MetricCard.tsx:104:38
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- components/ui/PageHeader.tsx:52:24
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- components/ui/PageHeader.tsx:76:13
+  - Text is too small
+  - Your users strain to read 10px text, so use at least 12px for body text, & 16px is best.
+- components/ui/SectionCard.tsx:58:24
+  - Text is too small
+  - Your users strain to read 11px text, so use at least 12px for body text, & 16px is best.
+- components/ui/Tabs.tsx:59:19
+  - Text is too small
+  - Your users strain to read 10px text, so use at least 12px for body text, & 16px is best.
+
+## react-doctor:design-no-em-dash-in-jsx-text
+
+- Severity: warning
+- Category: Maintainability
+- Count: 107
+- Title: Em dash in JSX text
+- Fix guidance: Replace em dashes in UI text with commas, colons, semicolons, or parentheses so the copy reads less like AI output.
+
+- app/(app)/chargebacks/[id]/page.tsx:257:30
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(app)/chargebacks/page.tsx:154:96
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(app)/chargebacks/page.tsx:159:96
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(app)/claims/page.tsx:609:76
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(app)/claims/page.tsx:665:96
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(app)/customers/[id]/page.tsx:642:73
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(app)/customers/[id]/page.tsx:932:85
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(app)/customers/page.tsx:477:97
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(app)/customers/page.tsx:492:86
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(app)/help/confidence-grades/page.tsx:70:92
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(app)/help/confidence-grades/page.tsx:123:14
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(app)/help/confidence-grades/page.tsx:134:14
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(app)/help/confidence-grades/page.tsx:147:92
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(app)/help/csv-export/page.tsx:37:76
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(app)/help/csv-export/page.tsx:175:44
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(app)/help/csv-export/page.tsx:186:25
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(app)/help/csv-export/page.tsx:190:48
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(app)/help/csv-export/page.tsx:194:43
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(app)/help/csv-export/page.tsx:198:50
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(app)/help/csv-export/page.tsx:203:76
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(app)/help/csv-export/page.tsx:238:98
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(app)/help/how-it-works/page.tsx:23:14
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(app)/help/how-it-works/page.tsx:29:14
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(app)/help/how-it-works/page.tsx:48:14
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(app)/help/how-it-works/page.tsx:57:14
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(app)/help/identity-matching/page.tsx:86:14
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(app)/help/identity-matching/page.tsx:96:14
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(app)/help/identity-matching/page.tsx:156:14
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(app)/help/identity-matching/page.tsx:163:98
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(app)/help/identity-matching/page.tsx:187:92
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(app)/reports/page.tsx:496:113
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(app)/reports/page.tsx:603:78
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(app)/settings/integrations/chrome/page.tsx:53:76
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(app)/upload/page.tsx:78:78
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(auth)/login/page.tsx:137:88
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(auth)/login/page.tsx:174:83
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(auth)/reset/page.tsx:110:14
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(internal)/eval/page.tsx:60:77
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(internal)/network-metrics/page.tsx:64:81
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(public)/audit-demo/AuditDemoClient.tsx:362:30
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(public)/audit/AuditUploadForm.tsx:304:133
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(public)/audit/page.tsx:68:12
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(public)/audit/page.tsx:84:114
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(public)/audit/page.tsx:122:12
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(public)/audit/page.tsx:129:22
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(public)/landing/_components/PipelineTabs.tsx:108:14
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(public)/landing/_components/PipelineTabs.tsx:126:14
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(public)/landing/page.tsx:337:12
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(public)/landing/page.tsx:645:20
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(public)/landing/page.tsx:971:200
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(public)/landing/page.tsx:1048:14
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(public)/landing/page.tsx:1135:202
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(public)/landing/page.tsx:1145:188
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(public)/landing/page.tsx:1149:190
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(public)/landing/page.tsx:1175:206
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(public)/landing/page.tsx:1182:231
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(public)/landing/page.tsx:1198:16
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(public)/landing/page.tsx:1216:16
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(public)/landing/page.tsx:1274:16
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(public)/landing/page.tsx:1532:16
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(public)/landing/page.tsx:1559:16
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(public)/legal/data-handling/page.tsx:79:31
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(public)/legal/dpa/page.tsx:99:31
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(public)/legal/privacy/page.tsx:23:14
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(public)/legal/privacy/page.tsx:47:14
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- app/(public)/legal/privacy/page.tsx:53:62
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- components/claims/ClaimReviewPanel.tsx:306:71
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- components/claims/ClaimReviewPanel.tsx:1531:82
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- components/claims/ClaimReviewPanel.tsx:1557:57
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- components/claims/ClaimReviewPanel.tsx:1617:84
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- components/customers/CustomerIntelligenceDrawer.tsx:653:10
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- components/customers/IdentityChangesDisclosure.tsx:32:80
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- components/customers/IdentityClusterGraph.tsx:66:61
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- components/dashboard/SavingsCard.tsx:91:82
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- components/EmptyDashboardHero.tsx:42:136
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- components/EmptyDashboardHero.tsx:152:78
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- components/evidence/EvidencePackageForm.tsx:143:83
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- components/evidence/EvidencePackageForm.tsx:151:12
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- components/inbox/InboxClient.tsx:356:82
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- components/OnboardingClient.tsx:226:79
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- components/PartialSetupHero.tsx:115:74
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- components/reports/ExportMenu.tsx:46:12
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- components/reports/ExportMenu.tsx:57:47
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- components/reports/ExportMenu.tsx:67:47
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- components/reports/ExportMenu.tsx:85:47
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- components/settings/ApiIntegrationsClient.tsx:353:76
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- components/settings/ChromeSetupClient.tsx:124:76
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- components/settings/GorgiasSupportSyncClient.tsx:371:10
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- components/settings/GorgiasSupportSyncClient.tsx:509:80
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- components/settings/ZendeskSetupClient.tsx:56:13
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- components/settings/ZendeskSetupClient.tsx:61:13
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- components/shopify/ShopifyDisconnectClient.tsx:34:94
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- components/signup/SignupFlow.tsx:338:14
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- components/signup/SignupFlow.tsx:412:126
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- components/upload/UploadClient.tsx:722:47
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- components/upload/UploadClient.tsx:739:85
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- components/upload/UploadClient.tsx:912:55
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- components/upload/UploadClient.tsx:1047:38
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- components/upload/UploadClient.tsx:1119:40
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- components/upload/UploadClient.tsx:1203:44
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- components/upload/UploadClient.tsx:1348:76
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- components/upload/UploadClient.tsx:1409:76
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- components/upload/UploadClient.tsx:1569:84
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- components/upload/UploadClient.tsx:1740:76
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- components/upload/UploadClient.tsx:1778:70
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- components/watchlist/WatchlistTableClient.tsx:156:87
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+- lib/evidence/pdf.tsx:374:36
+  - Em dash in JSX text
+  - Em dash (—) in UI text reads like AI output to your users.
+
+## react-doctor:async-await-in-loop
+
+- Severity: warning
+- Category: Performance
+- Count: 78
+- Title: await inside a loop
+- Fix guidance: Collect the items, then use `await Promise.all(items.map(...))` so independent work runs at the same time
+
+- app/(app)/audit/[runId]/page.tsx:262:33
+  - await inside a loop
+  - This makes the for-loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- app/api/account/delete/route.ts:17:38
+  - await inside a loop
+  - This makes the while-loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- app/api/account/delete/route.ts:35:23
+  - await inside a loop
+  - This makes the for-loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- app/api/account/delete/route.ts:49:23
+  - await inside a loop
+  - This makes the for-loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- app/api/account/delete/route.ts:100:7
+  - await inside a loop
+  - This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- app/api/account/delete/route.ts:135:25
+  - await inside a loop
+  - This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- app/api/audit/[runId]/export/route.ts:102:38
+  - await inside a loop
+  - This makes the for-loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- app/api/cron/process-csv-queue/route.ts:43:23
+  - await inside a loop
+  - This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- app/api/cron/purge-expired-audits/route.ts:66:25
+  - await inside a loop
+  - This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- app/api/cron/purge-expired-audits/route.ts:97:29
+  - await inside a loop
+  - This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- app/api/customers/[id]/cross-merchant/route.ts:126:36
+  - await inside a loop
+  - This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- app/api/customers/[id]/route.ts:217:30
+  - await inside a loop
+  - This makes the for-loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- app/api/customers/[id]/route.ts:245:40
+  - await inside a loop
+  - This makes the for-loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- app/api/customers/search/route.ts:114:29
+  - await inside a loop
+  - This makes the for-loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- app/api/settings/bulk-delete/route.ts:59:25
+  - await inside a loop
+  - This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- app/api/settings/chrome/download/route.ts:19:7
+  - await inside a loop
+  - This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- app/api/shopify/webhooks/route.ts:272:9
+  - await inside a loop
+  - This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- audit/run-reaudit-v2.js:127:17
+  - await inside a loop
+  - This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- audit/run-reaudit-v2.js:138:17
+  - await inside a loop
+  - This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- audit/run-reaudit-v2.js:224:15
+  - await inside a loop
+  - This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- audit/run-reaudit-v2.js:315:19
+  - await inside a loop
+  - This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- audit/run-reaudit-v2.js:329:21
+  - await inside a loop
+  - This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- audit/run-reaudit-v2.js:360:18
+  - await inside a loop
+  - This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- audit/run-reaudit-v2.js:374:20
+  - await inside a loop
+  - This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- audit/run-reaudit-v2.js:392:9
+  - await inside a loop
+  - This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- audit/run-reaudit-v2.js:401:20
+  - await inside a loop
+  - This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- audit/run-reaudit-v2.js:416:20
+  - await inside a loop
+  - This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- audit/run-reaudit-v2.js:445:19
+  - await inside a loop
+  - This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- audit/run-reaudit-v2.js:572:7
+  - await inside a loop
+  - This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- audit/run-reaudit.js:136:21
+  - await inside a loop
+  - This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- audit/run-reaudit.js:207:19
+  - await inside a loop
+  - This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- audit/run-reaudit.js:329:21
+  - await inside a loop
+  - This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- audit/run-reaudit.js:364:23
+  - await inside a loop
+  - This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- audit/run-reaudit.js:439:21
+  - await inside a loop
+  - This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- audit/run-reaudit.js:576:7
+  - await inside a loop
+  - This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- components/upload/UploadClient.tsx:269:17
+  - await inside a loop
+  - Async callback in .forEach silently drops every await, so the work never finishes before the loop moves on. Use a `for…of` loop, or `await Promise.all(items.map(async (item) => {...}))`
+- components/upload/UploadClient.tsx:543:35
+  - await inside a loop
+  - This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- lib/analysis/entityResolution.ts:119:24
+  - await inside a loop
+  - This makes the while-loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- lib/analysis/entityResolution.ts:157:14
+  - await inside a loop
+  - This makes the for-loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- lib/claims/stale.ts:22:29
+  - await inside a loop
+  - This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- lib/customers/commerceOrders.ts:136:35
+  - await inside a loop
+  - This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- lib/engine/dbSemaphore.ts:53:14
+  - await inside a loop
+  - This makes the for-loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- lib/engine/dbSemaphore.ts:97:21
+  - await inside a loop
+  - This makes the for-loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- lib/gorgias/widgetData.ts:562:36
+  - await inside a loop
+  - This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- lib/gorgias/widgetData.ts:586:36
+  - await inside a loop
+  - This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- lib/identity/globalIdentityStore.ts:153:31
+  - await inside a loop
+  - This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- lib/identity/globalIdentityStore.ts:185:29
+  - await inside a loop
+  - This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- lib/identity/globalIdentityStore.ts:212:23
+  - await inside a loop
+  - This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- lib/permissions/index.ts:284:9
+  - await inside a loop
+  - This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- lib/processing/chunkedDispatch.ts:72:29
+  - await inside a loop
+  - This makes the for-loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- lib/processing/job.ts:158:23
+  - await inside a loop
+  - This makes the for-loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- lib/processing/restitchAuditIdentity.ts:285:18
+  - await inside a loop
+  - This makes the for-loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- lib/processing/restitchAuditIdentity.ts:361:5
+  - await inside a loop
+  - This makes the for-loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- lib/processing/restitchAuditIdentity.ts:377:23
+  - await inside a loop
+  - This makes the for-loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- lib/processing/streamParser.ts:158:17
+  - await inside a loop
+  - This makes the for-loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- lib/processing/streamParser.ts:197:9
+  - await inside a loop
+  - This makes the for-loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- lib/processing/worker.ts:87:7
+  - await inside a loop
+  - This makes the while-loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- lib/processing/worker.ts:112:14
+  - await inside a loop
+  - This makes the for-loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- lib/shopify/auditBridge.ts:130:29
+  - await inside a loop
+  - This makes the for-loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- lib/shopify/auditBridge.ts:246:32
+  - await inside a loop
+  - This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- lib/shopify/backfill.ts:97:36
+  - await inside a loop
+  - This makes the for-loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- lib/shopify/identity.ts:55:23
+  - await inside a loop
+  - This makes the for-loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- lib/shopify/profileLinking.ts:78:24
+  - await inside a loop
+  - This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- lib/shopify/profileLinking.ts:91:41
+  - await inside a loop
+  - This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- lib/shopify/profileLinking.ts:133:5
+  - await inside a loop
+  - This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- lib/shopify/profileLinking.ts:330:27
+  - await inside a loop
+  - This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- lib/shopify/webhooks.ts:33:5
+  - await inside a loop
+  - This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- lib/supabase/merchantHelpers.ts:200:29
+  - await inside a loop
+  - This makes the for-loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- lib/supabase/merchantHelpers.ts:221:29
+  - await inside a loop
+  - This makes the for-loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- lib/supabase/merchantHelpers.ts:246:29
+  - await inside a loop
+  - This makes the for-loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- lib/supabase/merchantHelpers.ts:334:29
+  - await inside a loop
+  - This makes the for-loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- lib/supabase/merchantHelpers.ts:705:23
+  - await inside a loop
+  - This makes the for-loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- lib/supabase/merchantHelpers.ts:957:34
+  - await inside a loop
+  - This makes the while-loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- lib/support/gorgias/registerSidebarWidget.ts:241:19
+  - await inside a loop
+  - This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- lib/support/intake/identityLinking.ts:125:23
+  - await inside a loop
+  - This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- lib/support/intake/identityLinking.ts:138:9
+  - await inside a loop
+  - This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- synthetic-lab/evaluate.ts:761:20
+  - await inside a loop
+  - This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+- synthetic-lab/generate.ts:635:18
+  - await inside a loop
+  - This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`
+
+## react-doctor:no-inline-exhaustive-style
+
+- Severity: warning
+- Category: Maintainability
+- Count: 67
+- Title: Too many inline style properties
+- Fix guidance: Move the styles to a CSS class, CSS module, Tailwind utilities, or a styled component. Big inline objects are hard to read and rebuild on every update.
+
+- app/(auth)/reset/page.tsx:139:24
+  - Too many inline style properties
+  - This inline style has 11 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- app/(auth)/reset/update/page.tsx:141:22
+  - Too many inline style properties
+  - This inline style has 11 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- app/(public)/audit-demo/AuditDemoClient.tsx:72:14
+  - Too many inline style properties
+  - This inline style has 10 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- app/(public)/audit-demo/AuditDemoClient.tsx:368:38
+  - Too many inline style properties
+  - This inline style has 13 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- app/(public)/audit/[runId]/report/ClaimGate.tsx:118:16
+  - Too many inline style properties
+  - This inline style has 10 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- app/(public)/audit/AuditUploadForm.tsx:171:18
+  - Too many inline style properties
+  - This inline style has 9 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- app/(public)/audit/AuditUploadForm.tsx:247:16
+  - Too many inline style properties
+  - This inline style has 10 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- app/(public)/audit/AuditUploadForm.tsx:276:18
+  - Too many inline style properties
+  - This inline style has 9 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- app/(public)/landing/_components/MerchantDashboard.tsx:196:16
+  - Too many inline style properties
+  - This inline style has 8 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- app/(public)/landing/_components/MerchantDashboard.tsx:364:22
+  - Too many inline style properties
+  - This inline style has 8 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- app/(public)/landing/_components/MerchantDashboard.tsx:566:24
+  - Too many inline style properties
+  - This inline style has 8 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- app/(public)/landing/_components/MerchantDashboard.tsx:590:22
+  - Too many inline style properties
+  - This inline style has 8 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- app/(public)/landing/_components/MerchantDashboard.tsx:650:20
+  - Too many inline style properties
+  - This inline style has 8 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- app/(public)/landing/_components/MerchantDashboard.tsx:668:26
+  - Too many inline style properties
+  - This inline style has 8 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- app/(public)/landing/_components/MerchantDashboard.tsx:788:16
+  - Too many inline style properties
+  - This inline style has 8 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- app/(public)/landing/_components/PipelineTabs.tsx:111:22
+  - Too many inline style properties
+  - This inline style has 10 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- app/(public)/landing/_components/PipelineTabs.tsx:122:21
+  - Too many inline style properties
+  - This inline style has 8 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- app/(public)/landing/_components/PipelineTabs.tsx:158:28
+  - Too many inline style properties
+  - This inline style has 12 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- app/(public)/landing/_components/PipelineTabs.tsx:243:26
+  - Too many inline style properties
+  - This inline style has 9 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- app/(public)/landing/AuditForm.tsx:63:18
+  - Too many inline style properties
+  - This inline style has 10 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- app/(public)/landing/AuditForm.tsx:128:16
+  - Too many inline style properties
+  - This inline style has 14 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- app/(public)/landing/page.tsx:225:22
+  - Too many inline style properties
+  - This inline style has 9 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- app/(public)/landing/page.tsx:242:22
+  - Too many inline style properties
+  - This inline style has 10 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- app/(public)/landing/page.tsx:279:20
+  - Too many inline style properties
+  - This inline style has 11 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- app/(public)/landing/page.tsx:310:20
+  - Too many inline style properties
+  - This inline style has 8 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- app/(public)/landing/page.tsx:399:24
+  - Too many inline style properties
+  - This inline style has 8 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- app/(public)/landing/page.tsx:425:28
+  - Too many inline style properties
+  - This inline style has 9 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- app/(public)/landing/page.tsx:440:28
+  - Too many inline style properties
+  - This inline style has 8 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- app/(public)/landing/page.tsx:454:28
+  - Too many inline style properties
+  - This inline style has 8 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- app/(public)/landing/page.tsx:659:73
+  - Too many inline style properties
+  - This inline style has 8 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- app/(public)/landing/page.tsx:943:26
+  - Too many inline style properties
+  - This inline style has 8 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- app/(public)/landing/page.tsx:990:24
+  - Too many inline style properties
+  - This inline style has 9 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- app/(public)/landing/page.tsx:997:24
+  - Too many inline style properties
+  - This inline style has 9 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- app/(public)/landing/page.tsx:1087:28
+  - Too many inline style properties
+  - This inline style has 8 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- app/(public)/landing/page.tsx:1142:25
+  - Too many inline style properties
+  - This inline style has 8 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- app/(public)/landing/page.tsx:1149:23
+  - Too many inline style properties
+  - This inline style has 8 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- app/(public)/landing/page.tsx:1166:69
+  - Too many inline style properties
+  - This inline style has 9 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- app/(public)/landing/page.tsx:1175:25
+  - Too many inline style properties
+  - This inline style has 8 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- app/(public)/landing/page.tsx:1179:65
+  - Too many inline style properties
+  - This inline style has 9 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- app/(public)/landing/page.tsx:1182:23
+  - Too many inline style properties
+  - This inline style has 9 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- app/(public)/landing/page.tsx:1193:23
+  - Too many inline style properties
+  - This inline style has 8 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- app/(public)/landing/page.tsx:1269:23
+  - Too many inline style properties
+  - This inline style has 8 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- app/(public)/landing/page.tsx:1457:29
+  - Too many inline style properties
+  - This inline style has 8 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- app/(public)/landing/page.tsx:1485:34
+  - Too many inline style properties
+  - This inline style has 10 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- app/(public)/landing/page.tsx:1536:24
+  - Too many inline style properties
+  - This inline style has 8 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- app/(public)/landing/page.tsx:1564:24
+  - Too many inline style properties
+  - This inline style has 10 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- app/(public)/landing/page.tsx:1597:26
+  - Too many inline style properties
+  - This inline style has 12 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- app/(public)/landing/page.tsx:1616:28
+  - Too many inline style properties
+  - This inline style has 13 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- app/(public)/landing/PublicAuditForm.tsx:214:18
+  - Too many inline style properties
+  - This inline style has 11 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- components/customers/CustomerIntelligenceDrawer.tsx:249:16
+  - Too many inline style properties
+  - This inline style has 12 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- components/customers/CustomerIntelligenceDrawer.tsx:431:16
+  - Too many inline style properties
+  - This inline style has 15 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- components/customers/CustomerIntelligenceDrawer.tsx:445:21
+  - Too many inline style properties
+  - This inline style has 10 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- components/customers/CustomerIntelligenceDrawer.tsx:469:24
+  - Too many inline style properties
+  - This inline style has 14 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- components/customers/CustomerIntelligenceDrawer.tsx:486:22
+  - Too many inline style properties
+  - This inline style has 10 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- components/customers/CustomerIntelligenceDrawer.tsx:756:21
+  - Too many inline style properties
+  - This inline style has 9 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- components/customers/CustomerIntelligenceDrawer.tsx:839:24
+  - Too many inline style properties
+  - This inline style has 10 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- components/customers/CustomerIntelligenceDrawer.tsx:906:20
+  - Too many inline style properties
+  - This inline style has 15 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- components/customers/CustomerIntelligenceDrawer.tsx:921:20
+  - Too many inline style properties
+  - This inline style has 14 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- components/customers/IdentityTimeline.tsx:53:34
+  - Too many inline style properties
+  - This inline style has 10 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- components/ui/Badge.tsx:69:14
+  - Too many inline style properties
+  - This inline style has 9 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- components/ui/ConfidenceBadge.tsx:36:14
+  - Too many inline style properties
+  - This inline style has 8 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- components/ui/DataTable.tsx:105:24
+  - Too many inline style properties
+  - This inline style has 11 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- components/ui/FilterBar.tsx:48:20
+  - Too many inline style properties
+  - This inline style has 10 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- components/ui/FilterChip.tsx:25:14
+  - Too many inline style properties
+  - This inline style has 10 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- components/ui/KbdHint.tsx:19:18
+  - Too many inline style properties
+  - This inline style has 9 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- components/ui/Tabs.tsx:33:20
+  - Too many inline style properties
+  - This inline style has 13 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+- components/ui/Tabs.tsx:53:24
+  - Too many inline style properties
+  - This inline style has 9 properties, which is hard to read & rebuilds every render. Move it to a CSS class, CSS module, or styled component.
+
+## react-doctor:button-has-type
+
+- Severity: warning
+- Category: Bugs
+- Count: 63
+- Title: Button missing explicit type
+- Fix guidance: Always set a `type` on a `<button>`: `type="button"`, `"submit"`, or `"reset"`.
+
+- app/(public)/landing/_components/MerchantDashboard.tsx:589:14
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- app/(public)/landing/_components/PipelineTabs.tsx:155:20
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- app/(public)/landing/_components/PipelineTabs.tsx:240:18
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/audit/AuditCustomersTableClient.tsx:240:14
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/audit/AuditCustomersTableClient.tsx:258:12
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/audit/AuditCustomersTableClient.tsx:301:20
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/audit/AuditCustomersTableClient.tsx:342:14
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/audit/AuditHistoryTableClient.tsx:69:14
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/audit/AuditHistoryTableClient.tsx:77:14
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/audit/CustomerNotes.tsx:97:14
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/audit/CustomerNotes.tsx:105:14
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/audit/CustomerNotes.tsx:148:14
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/audit/CustomerNotes.tsx:171:12
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/audit/DataQualityBanner.tsx:76:10
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/audit/DataQualityBanner.tsx:114:10
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/audit/DataQualityBanner.tsx:152:8
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/audit/DeleteAuditButton.tsx:21:10
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/audit/DeleteAuditButton.tsx:29:10
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/audit/DeleteAuditButton.tsx:40:6
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/audit/DismissTransactionButton.tsx:37:10
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/audit/DismissTransactionButton.tsx:45:10
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/audit/DismissTransactionButton.tsx:56:6
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/audit/FeedbackButtons.tsx:41:14
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/audit/FeedbackButtons.tsx:51:14
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/claims/ClaimReviewPanel.tsx:1051:14
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/claims/ClaimReviewPanel.tsx:1299:16
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/claims/ClaimReviewPanel.tsx:1300:16
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/claims/ClaimReviewPanel.tsx:1571:20
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/claims/ClaimReviewPanel.tsx:1575:14
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/claims/ClaimReviewPanel.tsx:1619:16
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/claims/ClaimReviewPanel.tsx:1642:14
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/claims/ClaimReviewPanel.tsx:1665:18
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/claims/ClaimReviewPanel.tsx:1756:16
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/customers/CustomerIntelligenceDrawer.tsx:483:14
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/customers/CustomerIntelligenceDrawer.tsx:837:16
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/customers/CustomersFilterSheet.tsx:247:14
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/customers/CustomersTableClient.tsx:138:16
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/dashboard/LoadDemoButton.tsx:39:8
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/inbox/InboxClient.tsx:434:14
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/inbox/InboxClient.tsx:442:14
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/settings/BulkDeleteClient.tsx:62:10
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/settings/BulkDeleteClient.tsx:85:10
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/shopify/SyncStatusCard.tsx:92:10
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/shopify/SyncStatusCard.tsx:262:14
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/shopify/SyncStatusCard.tsx:304:16
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/ui/Button.tsx:54:8
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/ui/Drawer.tsx:113:14
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/ui/LinkedIdentityList.tsx:92:18
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/ui/Tabs.tsx:27:12
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/upload/UploadClient.tsx:885:10
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/upload/UploadClient.tsx:1156:16
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/upload/UploadClient.tsx:1235:16
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/upload/UploadClient.tsx:1254:16
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/upload/UploadClient.tsx:1515:14
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/upload/UploadClient.tsx:1525:16
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/upload/UploadClient.tsx:1536:16
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/upload/UploadClient.tsx:1549:16
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/upload/UploadClient.tsx:1751:12
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/upload/UploadClient.tsx:1765:12
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/watchlist/RemoveButton.tsx:47:10
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/watchlist/RemoveButton.tsx:59:6
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/watchlist/WatchlistTableClient.tsx:68:14
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+- components/watchlist/WatchlistTableClient.tsx:76:14
+  - Button missing explicit type
+  - Your users can submit the form by accident because a `<button>` with no `type` defaults to submit.
+
+## react-doctor:control-has-associated-label
+
+- Severity: warning
+- Category: Accessibility
+- Count: 56
+- Title: Control missing accessible label
+- Fix guidance: Give every interactive control a label screen readers can read.
+
+- app/(app)/audit/[runId]/page.tsx:499:27
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- app/(app)/audit/[runId]/page.tsx:610:27
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- app/(app)/watchlist/page.tsx:200:19
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- app/(auth)/reset/page.tsx:122:17
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- app/(auth)/reset/update/page.tsx:112:15
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- app/(auth)/reset/update/page.tsx:124:15
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- app/(public)/audit/[runId]/report/ClaimGate.tsx:91:11
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- app/(public)/audit/[runId]/report/ClaimGate.tsx:97:11
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- app/(public)/audit/[runId]/report/ClaimGate.tsx:103:11
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- app/(public)/audit/[runId]/report/ClaimGate.tsx:109:11
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- app/(public)/audit/AuditUploadForm.tsx:211:11
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- app/(public)/landing/AuditForm.tsx:57:9
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- app/(public)/landing/AuditForm.tsx:104:9
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- app/(public)/landing/PublicAuditForm.tsx:166:9
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- components/apply/FoundingMerchantApplicationForm.tsx:110:11
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- components/audit/AuditCustomersTableClient.tsx:231:11
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- components/audit/AuditCustomersTableClient.tsx:279:15
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- components/audit/AuditHistoryTableClient.tsx:106:15
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- components/audit/CustomerNotes.tsx:162:9
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- components/claims/ClaimReviewPanel.tsx:307:9
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- components/claims/ClaimReviewPanel.tsx:1554:17
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- components/claims/ClaimReviewPanel.tsx:1563:21
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- components/claims/ClaimReviewPanel.tsx:1567:23
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- components/claims/ClaimReviewPanel.tsx:1568:23
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- components/claims/ClaimReviewPanel.tsx:1640:13
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- components/claims/ClaimReviewPanel.tsx:1664:17
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- components/claims/ClaimReviewPanel.tsx:1694:25
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- components/claims/ClaimReviewPanel.tsx:1714:23
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- components/claims/ClaimReviewPanel.tsx:1735:19
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- components/claims/ClaimReviewPanel.tsx:1739:19
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- components/claims/ClaimReviewPanel.tsx:1743:19
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- components/customers/CustomersFilterSheet.tsx:106:9
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- components/customers/CustomersFilterSheet.tsx:269:23
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- components/customers/CustomersFilterSheet.tsx:288:21
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- components/customers/CustomersFilterSheet.tsx:297:21
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- components/customers/CustomersFilterSheet.tsx:320:27
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- components/customers/CustomersFilterSheet.tsx:322:27
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- components/customers/CustomersFilterSheet.tsx:333:25
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- components/customers/CustomersFilterSheet.tsx:350:27
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- components/customers/CustomersFilterSheet.tsx:352:27
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- components/customers/CustomersFilterSheet.tsx:362:19
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- components/inbox/InboxClient.tsx:479:13
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- components/layout/CommandPalette.tsx:297:11
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- components/OnboardingClient.tsx:196:17
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- components/OnboardingClient.tsx:261:23
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- components/settings/GorgiasSupportSyncClient.tsx:385:11
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- components/settings/GorgiasSupportSyncClient.tsx:411:11
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- components/settings/GorgiasSupportSyncClient.tsx:496:13
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- components/settings/GorgiasSupportSyncClient.tsx:518:13
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- components/settings/GorgiasSupportSyncClient.tsx:694:15
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- components/ui/DataTable.tsx:44:13
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- components/ui/FilterBar.tsx:42:11
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- components/upload/UploadClient.tsx:940:11
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- components/upload/UploadClient.tsx:1358:13
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- components/upload/UploadClient.tsx:1383:15
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+- components/upload/UploadClient.tsx:1396:15
+  - Control missing accessible label
+  - Blind users can't tell what this control does because screen readers find no label, so add visible text, `aria-label`, or `aria-labelledby`.
+
+## react-doctor:js-flatmap-filter
+
+- Severity: warning
+- Category: Performance
+- Count: 48
+- Title: .map().filter(Boolean) loops twice
+- Fix guidance: Use `.flatMap(item => condition ? [value] : [])` to change and drop items in one pass, instead of building a throwaway array in between
+
+- app/(app)/chargebacks/page.tsx:49:34
+  - .map().filter(Boolean) loops twice
+  - This loops over your list twice because .map().filter(Boolean) makes two passes, so use .flatMap() to change & drop items in one pass
+- app/(app)/claims/page.tsx:290:42
+  - .map().filter(Boolean) loops twice
+  - This loops over your list twice because .map().filter(Boolean) makes two passes, so use .flatMap() to change & drop items in one pass
+- app/(app)/claims/page.tsx:302:40
+  - .map().filter(Boolean) loops twice
+  - This loops over your list twice because .map().filter(Boolean) makes two passes, so use .flatMap() to change & drop items in one pass
+- app/api/audit-trail/route.ts:95:32
+  - .map().filter(Boolean) loops twice
+  - This loops over your list twice because .map().filter(Boolean) makes two passes, so use .flatMap() to change & drop items in one pass
+- app/api/audit-trail/route.ts:143:34
+  - .map().filter(Boolean) loops twice
+  - This loops over your list twice because .map().filter(Boolean) makes two passes, so use .flatMap() to change & drop items in one pass
+- app/api/audit/[runId]/customer/route.ts:31:29
+  - .map().filter(Boolean) loops twice
+  - This loops over your list twice because .map().filter(Boolean) makes two passes, so use .flatMap() to change & drop items in one pass
+- app/api/audit/[runId]/customer/route.ts:167:21
+  - .map().filter(Boolean) loops twice
+  - This loops over your list twice because .map().filter(Boolean) makes two passes, so use .flatMap() to change & drop items in one pass
+- app/api/claims/route.ts:127:20
+  - .map().filter(Boolean) loops twice
+  - This loops over your list twice because .map().filter(Boolean) makes two passes, so use .flatMap() to change & drop items in one pass
+- app/api/customers/[id]/route.ts:325:26
+  - .map().filter(Boolean) loops twice
+  - This loops over your list twice because .map().filter(Boolean) makes two passes, so use .flatMap() to change & drop items in one pass
+- app/api/customers/[id]/route.ts:328:23
+  - .map().filter(Boolean) loops twice
+  - This loops over your list twice because .map().filter(Boolean) makes two passes, so use .flatMap() to change & drop items in one pass
+- app/api/customers/[id]/route.ts:329:22
+  - .map().filter(Boolean) loops twice
+  - This loops over your list twice because .map().filter(Boolean) makes two passes, so use .flatMap() to change & drop items in one pass
+- app/api/customers/[id]/route.ts:430:34
+  - .map().filter(Boolean) loops twice
+  - This loops over your list twice because .map().filter(Boolean) makes two passes, so use .flatMap() to change & drop items in one pass
+- app/api/customers/[id]/route.ts:465:5
+  - .map().filter(Boolean) loops twice
+  - This loops over your list twice because .map().filter(Boolean) makes two passes, so use .flatMap() to change & drop items in one pass
+- app/api/customers/[id]/route.ts:467:5
+  - .map().filter(Boolean) loops twice
+  - This loops over your list twice because .map().filter(Boolean) makes two passes, so use .flatMap() to change & drop items in one pass
+- app/api/customers/[id]/shopify-orders/route.ts:39:39
+  - .map().filter(Boolean) loops twice
+  - This loops over your list twice because .map().filter(Boolean) makes two passes, so use .flatMap() to change & drop items in one pass
+- app/api/inbox/bulk-dismiss/route.ts:35:30
+  - .map().filter(Boolean) loops twice
+  - This loops over your list twice because .map().filter(Boolean) makes two passes, so use .flatMap() to change & drop items in one pass
+- app/api/inbox/route.ts:98:7
+  - .map().filter(Boolean) loops twice
+  - This loops over your list twice because .map().filter(Boolean) makes two passes, so use .flatMap() to change & drop items in one pass
+- app/api/process-csv-finalize/route.ts:60:15
+  - .map().filter(Boolean) loops twice
+  - This loops over your list twice because .map().filter(Boolean) makes two passes, so use .flatMap() to change & drop items in one pass
+- app/api/process-csv-job/route.ts:43:26
+  - .map().filter(Boolean) loops twice
+  - This loops over your list twice because .map().filter(Boolean) makes two passes, so use .flatMap() to change & drop items in one pass
+- app/api/search/route.ts:109:15
+  - .map().filter(Boolean) loops twice
+  - This loops over your list twice because .map().filter(Boolean) makes two passes, so use .flatMap() to change & drop items in one pass
+- lib/analysis/customerIntelligence.ts:303:30
+  - .map().filter(Boolean) loops twice
+  - This loops over your list twice because .map().filter(Boolean) makes two passes, so use .flatMap() to change & drop items in one pass
+- lib/analysis/customerIntelligence.ts:304:24
+  - .map().filter(Boolean) loops twice
+  - This loops over your list twice because .map().filter(Boolean) makes two passes, so use .flatMap() to change & drop items in one pass
+- lib/analysis/customerIntelligence.ts:310:35
+  - .map().filter(Boolean) loops twice
+  - This loops over your list twice because .map().filter(Boolean) makes two passes, so use .flatMap() to change & drop items in one pass
+- lib/analysis/entityResolution.ts:954:29
+  - .map().filter(Boolean) loops twice
+  - This loops over your list twice because .map().filter(Boolean) makes two passes, so use .flatMap() to change & drop items in one pass
+- lib/api/v1/customers.ts:154:17
+  - .map().filter(Boolean) loops twice
+  - This loops over your list twice because .map().filter(Boolean) makes two passes, so use .flatMap() to change & drop items in one pass
+- lib/api/v1/customers.ts:155:20
+  - .map().filter(Boolean) loops twice
+  - This loops over your list twice because .map().filter(Boolean) makes two passes, so use .flatMap() to change & drop items in one pass
+- lib/api/v1/customers.ts:156:16
+  - .map().filter(Boolean) loops twice
+  - This loops over your list twice because .map().filter(Boolean) makes two passes, so use .flatMap() to change & drop items in one pass
+- lib/claims/reporting.ts:56:18
+  - .map().filter(Boolean) loops twice
+  - This loops over your list twice because .map().filter(Boolean) makes two passes, so use .flatMap() to change & drop items in one pass
+- lib/engine/fastContext.ts:334:40
+  - .map().filter(Boolean) loops twice
+  - This loops over your list twice because .map().filter(Boolean) makes two passes, so use .flatMap() to change & drop items in one pass
+- lib/engine/signals/emailPattern.ts:13:9
+  - .map().filter(Boolean) loops twice
+  - This loops over your list twice because .map().filter(Boolean) makes two passes, so use .flatMap() to change & drop items in one pass
+- lib/evidence/buildPackage.ts:261:5
+  - .map().filter(Boolean) loops twice
+  - This loops over your list twice because .map().filter(Boolean) makes two passes, so use .flatMap() to change & drop items in one pass
+- lib/gorgias/findMerchantCustomerByEmail.ts:44:10
+  - .map().filter(Boolean) loops twice
+  - This loops over your list twice because .map().filter(Boolean) makes two passes, so use .flatMap() to change & drop items in one pass
+- lib/identity/globalIdentityStore.ts:194:23
+  - .map().filter(Boolean) loops twice
+  - This loops over your list twice because .map().filter(Boolean) makes two passes, so use .flatMap() to change & drop items in one pass
+- lib/linker.ts:186:19
+  - .map().filter(Boolean) loops twice
+  - This loops over your list twice because .map().filter(Boolean) makes two passes, so use .flatMap() to change & drop items in one pass
+- lib/privacy/mask.ts:24:17
+  - .map().filter(Boolean) loops twice
+  - This loops over your list twice because .map().filter(Boolean) makes two passes, so use .flatMap() to change & drop items in one pass
+- lib/processing/clusterExpansion.ts:533:26
+  - .map().filter(Boolean) loops twice
+  - This loops over your list twice because .map().filter(Boolean) makes two passes, so use .flatMap() to change & drop items in one pass
+- lib/processing/clusterExpansion.ts:649:30
+  - .map().filter(Boolean) loops twice
+  - This loops over your list twice because .map().filter(Boolean) makes two passes, so use .flatMap() to change & drop items in one pass
+- lib/shopify/auditBridge.ts:159:33
+  - .map().filter(Boolean) loops twice
+  - This loops over your list twice because .map().filter(Boolean) makes two passes, so use .flatMap() to change & drop items in one pass
+- lib/shopify/orderSignals.ts:56:9
+  - .map().filter(Boolean) loops twice
+  - This loops over your list twice because .map().filter(Boolean) makes two passes, so use .flatMap() to change & drop items in one pass
+- lib/shopify/profileLinking.ts:290:23
+  - .map().filter(Boolean) loops twice
+  - This loops over your list twice because .map().filter(Boolean) makes two passes, so use .flatMap() to change & drop items in one pass
+- lib/shopify/shopifyOrderToCsvRow.ts:32:10
+  - .map().filter(Boolean) loops twice
+  - This loops over your list twice because .map().filter(Boolean) makes two passes, so use .flatMap() to change & drop items in one pass
+- lib/supabase/merchantHelpers.ts:506:7
+  - .map().filter(Boolean) loops twice
+  - This loops over your list twice because .map().filter(Boolean) makes two passes, so use .flatMap() to change & drop items in one pass
+- lib/supabase/merchantHelpers.ts:713:38
+  - .map().filter(Boolean) loops twice
+  - This loops over your list twice because .map().filter(Boolean) makes two passes, so use .flatMap() to change & drop items in one pass
+- lib/support/intake/normalizeTicket.ts:599:25
+  - .map().filter(Boolean) loops twice
+  - This loops over your list twice because .map().filter(Boolean) makes two passes, so use .flatMap() to change & drop items in one pass
+- synthetic-lab/evaluate.ts:344:30
+  - .map().filter(Boolean) loops twice
+  - This loops over your list twice because .map().filter(Boolean) makes two passes, so use .flatMap() to change & drop items in one pass
+- synthetic-lab/generate.ts:446:27
+  - .map().filter(Boolean) loops twice
+  - This loops over your list twice because .map().filter(Boolean) makes two passes, so use .flatMap() to change & drop items in one pass
+- synthetic-lab/iterate.ts:355:17
+  - .map().filter(Boolean) loops twice
+  - This loops over your list twice because .map().filter(Boolean) makes two passes, so use .flatMap() to change & drop items in one pass
+- synthetic-lab/iterate.ts:368:15
+  - .map().filter(Boolean) loops twice
+  - This loops over your list twice because .map().filter(Boolean) makes two passes, so use .flatMap() to change & drop items in one pass
+
+## react-doctor:js-combine-iterations
+
+- Severity: warning
+- Category: Performance
+- Count: 47
+- Title: Chained array iterations
+- Fix guidance: Combine `.map().filter()` style chains into one pass with `.reduce()` or a `for...of` loop, so you only loop over the list once
+
+- app/(app)/audit/[runId]/page.tsx:206:9
+  - Chained array iterations
+  - This loops over your list twice because .filter().map() makes two passes, so do it in one pass with .reduce() or a for...of loop
+- app/(app)/customers/[id]/page.tsx:583:8
+  - Chained array iterations
+  - This loops over your list twice because .filter().map() makes two passes, so do it in one pass with .reduce() or a for...of loop
+- app/(app)/dashboard/page.tsx:346:19
+  - Chained array iterations
+  - This loops over your list twice because .map().filter() makes two passes, so do it in one pass with .reduce() or a for...of loop
+- app/(public)/landing/_components/MerchantDashboard.tsx:508:8
+  - Chained array iterations
+  - This loops over your list twice because .filter().map() makes two passes, so do it in one pass with .reduce() or a for...of loop
+- app/(public)/landing/_components/NetworkChart.tsx:155:10
+  - Chained array iterations
+  - This loops over your list twice because .filter().map() makes two passes, so do it in one pass with .reduce() or a for...of loop
+- app/api/inbox/bulk-dismiss/route.ts:43:31
+  - Chained array iterations
+  - This loops over your list twice because .filter().map() makes two passes, so do it in one pass with .reduce() or a for...of loop
+- app/api/inbox/bulk-dismiss/route.ts:44:22
+  - Chained array iterations
+  - This loops over your list twice because .filter().map() makes two passes, so do it in one pass with .reduce() or a for...of loop
+- app/api/lookup/quick-score/route.ts:169:16
+  - Chained array iterations
+  - This loops over your list twice because .filter().map() makes two passes, so do it in one pass with .reduce() or a for...of loop
+- audit/run-reaudit-v2.js:269:12
+  - Chained array iterations
+  - This loops over your list twice because .filter().map() makes two passes, so do it in one pass with .reduce() or a for...of loop
+- audit/run-reaudit.js:263:28
+  - Chained array iterations
+  - This loops over your list twice because .filter().map() makes two passes, so do it in one pass with .reduce() or a for...of loop
+- audit/run-reaudit.js:529:27
+  - Chained array iterations
+  - This loops over your list twice because .filter().map() makes two passes, so do it in one pass with .reduce() or a for...of loop
+- components/audit/AuditCharts.tsx:68:16
+  - Chained array iterations
+  - This loops over your list twice because .filter().map() makes two passes, so do it in one pass with .reduce() or a for...of loop
+- components/global/GlobalIdentityGraphClient.tsx:95:12
+  - Chained array iterations
+  - This loops over your list twice because .filter().filter() makes two passes, so do it in one pass with .reduce() or a for...of loop
+- components/layout/CommandPalette.tsx:158:31
+  - Chained array iterations
+  - This loops over your list twice because .filter().map() makes two passes, so do it in one pass with .reduce() or a for...of loop
+- components/upload/UploadClient.tsx:173:31
+  - Chained array iterations
+  - This loops over your list twice because .map().filter() makes two passes, so do it in one pass with .reduce() or a for...of loop
+- components/upload/UploadClient.tsx:1078:12
+  - Chained array iterations
+  - This loops over your list twice because .filter().map() makes two passes, so do it in one pass with .reduce() or a for...of loop
+- components/upload/UploadClient.tsx:1154:12
+  - Chained array iterations
+  - This loops over your list twice because .filter().map() makes two passes, so do it in one pass with .reduce() or a for...of loop
+- lib/analysis/customerIntelligence.ts:306:7
+  - Chained array iterations
+  - This loops over your list twice because .map().filter() makes two passes, so do it in one pass with .reduce() or a for...of loop
+- lib/analysis/customerIntelligence.ts:338:30
+  - Chained array iterations
+  - This loops over your list twice because .map().filter() makes two passes, so do it in one pass with .reduce() or a for...of loop
+- lib/analysis/customerIntelligence.ts:349:30
+  - Chained array iterations
+  - This loops over your list twice because .map().filter() makes two passes, so do it in one pass with .reduce() or a for...of loop
+- lib/analysis/customerIntelligence.ts:360:30
+  - Chained array iterations
+  - This loops over your list twice because .map().filter() makes two passes, so do it in one pass with .reduce() or a for...of loop
+- lib/analysis/customerIntelligence.ts:425:19
+  - Chained array iterations
+  - This loops over your list twice because .filter().map() makes two passes, so do it in one pass with .reduce() or a for...of loop
+- lib/analysis/entityResolution.ts:526:23
+  - Chained array iterations
+  - This loops over your list twice because .filter().map() makes two passes, so do it in one pass with .reduce() or a for...of loop
+- lib/analysis/entityResolution.ts:546:36
+  - Chained array iterations
+  - This loops over your list twice because .map().filter() makes two passes, so do it in one pass with .reduce() or a for...of loop
+- lib/analysis/entityResolution.ts:963:26
+  - Chained array iterations
+  - This loops over your list twice because .filter().map() makes two passes, so do it in one pass with .reduce() or a for...of loop
+- lib/csv/headerAliases.ts:577:21
+  - Chained array iterations
+  - This loops over your list twice because .map().filter() makes two passes, so do it in one pass with .reduce() or a for...of loop
+- lib/customers/commerceOrders.ts:121:5
+  - Chained array iterations
+  - This loops over your list twice because .filter().map() makes two passes, so do it in one pass with .reduce() or a for...of loop
+- lib/customers/commerceOrders.ts:126:5
+  - Chained array iterations
+  - This loops over your list twice because .filter().map() makes two passes, so do it in one pass with .reduce() or a for...of loop
+- lib/engine/identityCluster.ts:214:16
+  - Chained array iterations
+  - This loops over your list twice because .filter().map() makes two passes, so do it in one pass with .reduce() or a for...of loop
+- lib/engine/identityCluster.ts:231:16
+  - Chained array iterations
+  - This loops over your list twice because .filter().map() makes two passes, so do it in one pass with .reduce() or a for...of loop
+- lib/evidence/buildPackage.ts:141:23
+  - Chained array iterations
+  - This loops over your list twice because .map().filter() makes two passes, so do it in one pass with .reduce() or a for...of loop
+- lib/evidence/ce3.ts:103:21
+  - Chained array iterations
+  - This loops over your list twice because .filter().map() makes two passes, so do it in one pass with .reduce() or a for...of loop
+- lib/evidence/ce3.ts:155:41
+  - Chained array iterations
+  - This loops over your list twice because .filter().flatMap() makes two passes, so do it in one pass with .reduce() or a for...of loop
+- lib/identity/globalIdentityStore.ts:151:20
+  - Chained array iterations
+  - This loops over your list twice because .filter().map() makes two passes, so do it in one pass with .reduce() or a for...of loop
+- lib/identity/profileHashes.ts:24:7
+  - Chained array iterations
+  - This loops over your list twice because .filter().map() makes two passes, so do it in one pass with .reduce() or a for...of loop
+- lib/identity/profileHashes.ts:41:7
+  - Chained array iterations
+  - This loops over your list twice because .filter().map() makes two passes, so do it in one pass with .reduce() or a for...of loop
+- lib/identity/profileHashes.ts:49:7
+  - Chained array iterations
+  - This loops over your list twice because .filter().map() makes two passes, so do it in one pass with .reduce() or a for...of loop
+- lib/identity/profileHashes.ts:57:7
+  - Chained array iterations
+  - This loops over your list twice because .filter().map() makes two passes, so do it in one pass with .reduce() or a for...of loop
+- lib/navigation/appRoutes.ts:205:10
+  - Chained array iterations
+  - This loops over your list twice because .filter().map() makes two passes, so do it in one pass with .reduce() or a for...of loop
+- lib/navigation/appRoutes.ts:215:10
+  - Chained array iterations
+  - This loops over your list twice because .filter().map() makes two passes, so do it in one pass with .reduce() or a for...of loop
+- lib/processing/worker.ts:467:17
+  - Chained array iterations
+  - This loops over your list twice because .filter().map() makes two passes, so do it in one pass with .reduce() or a for...of loop
+- lib/shopify/profileLinking.ts:284:30
+  - Chained array iterations
+  - This loops over your list twice because .map().filter() makes two passes, so do it in one pass with .reduce() or a for...of loop
+- lib/support/intake/claimSummary.ts:100:10
+  - Chained array iterations
+  - This loops over your list twice because .filter().map() makes two passes, so do it in one pass with .reduce() or a for...of loop
+- lib/support/intake/normalizeTicket.ts:561:10
+  - Chained array iterations
+  - This loops over your list twice because .filter().map() makes two passes, so do it in one pass with .reduce() or a for...of loop
+- lib/support/intake/tagClaimDetection.ts:182:23
+  - Chained array iterations
+  - This loops over your list twice because .map().filter() makes two passes, so do it in one pass with .reduce() or a for...of loop
+- synthetic-lab/evaluate.ts:682:25
+  - Chained array iterations
+  - This loops over your list twice because .filter().map() makes two passes, so do it in one pass with .reduce() or a for...of loop
+- synthetic-lab/iterate.ts:243:20
+  - Chained array iterations
+  - This loops over your list twice because .map().filter() makes two passes, so do it in one pass with .reduce() or a for...of loop
+
+## react-doctor:no-derived-state
+
+- Severity: warning
+- Category: Bugs
+- Count: 41
+- Title: Derived value copied into state
+- Fix guidance: Work out the value while rendering (or with useMemo if it's expensive) instead of copying it into useState through a useEffect. See https://react.dev/learn/you-might-not-need-an-effect#updating-state-based-on-props-or-state
+
+- app/(app)/settings/account/page.tsx:59:5
+  - Derived value copied into state
+  - Storing "merchant" in state when you can derive it from other values costs an extra render.
+- components/claims/ClaimReviewPanel.tsx:534:52
+  - Derived value copied into state
+  - Storing "selectedOrderId" in state when you can derive it from other values costs an extra render.
+- components/claims/ClaimReviewPanel.tsx:535:46
+  - Derived value copied into state
+  - Storing "claimType" in state when you can derive it from other values costs an extra render.
+- components/claims/ClaimReviewPanel.tsx:536:51
+  - Derived value copied into state
+  - Storing "customerReason" in state when you can derive it from other values costs an extra render.
+- components/claims/ClaimReviewPanel.tsx:537:42
+  - Derived value copied into state
+  - Storing "notes" in state when you can derive it from other values costs an extra render.
+- components/claims/ClaimReviewPanel.tsx:538:44
+  - Derived value copied into state
+  - Storing "claimId" in state when you can derive it from other values costs an extra render.
+- components/claims/ClaimReviewPanel.tsx:539:45
+  - Derived value copied into state
+  - Storing "decision" in state when you can derive it from other values costs an extra render.
+- components/claims/ClaimReviewPanel.tsx:540:44
+  - Derived value copied into state
+  - Storing "outcome" in state when you can derive it from other values costs an extra render.
+- components/claims/ClaimReviewPanel.tsx:541:49
+  - Derived value copied into state
+  - Storing "evidenceType" in state when you can derive it from other values costs an extra render.
+- components/claims/ClaimReviewPanel.tsx:542:43
+  - Derived value copied into state
+  - Storing "source" in state when you can derive it from other values costs an extra render.
+- components/claims/ClaimReviewPanel.tsx:543:48
+  - Derived value copied into state
+  - Storing "evidenceUrl" in state when you can derive it from other values costs an extra render.
+- components/claims/ClaimReviewPanel.tsx:544:49
+  - Derived value copied into state
+  - Storing "evidenceHash" in state when you can derive it from other values costs an extra render.
+- components/claims/ClaimReviewPanel.tsx:545:69
+  - Derived value copied into state
+  - Storing "metaRows" in state when you can derive it from other values costs an extra render.
+- components/claims/ClaimReviewPanel.tsx:546:51
+  - Derived value copied into state
+  - Storing "manualOrderRef" in state when you can derive it from other values costs an extra render.
+- components/claims/ClaimReviewPanel.tsx:547:54
+  - Derived value copied into state
+  - Storing "manualOrderSource" in state when you can derive it from other values costs an extra render.
+- components/claims/ClaimReviewPanel.tsx:548:56
+  - Derived value copied into state
+  - Storing "manualModeExplicit" in state when you can derive it from other values costs an extra render.
+- components/claims/ClaimReviewPanel.tsx:549:47
+  - Derived value copied into state
+  - Storing "orderValue" in state when you can derive it from other values costs an extra render.
+- components/claims/ClaimReviewPanel.tsx:550:48
+  - Derived value copied into state
+  - Storing "statusToSet" in state when you can derive it from other values costs an extra render.
+- components/claims/ClaimReviewPanel.tsx:607:7
+  - Derived value copied into state
+  - Storing "selectedOrderId" in state when you can derive it from other values costs an extra render.
+- components/claims/ClaimReviewPanel.tsx:613:9
+  - Derived value copied into state
+  - Storing "selectedOrderId" in state when you can derive it from other values costs an extra render.
+- components/claims/ClaimReviewPanel.tsx:653:5
+  - Derived value copied into state
+  - Storing "claimId" in state when you can derive it from other values costs an extra render.
+- components/claims/ClaimReviewPanel.tsx:673:5
+  - Derived value copied into state
+  - Storing "railOpen" in state when you can derive it from other values costs an extra render.
+- components/claims/ClaimReviewPanel.tsx:687:35
+  - Derived value copied into state
+  - Storing "claimType" in state when you can derive it from other values costs an extra render.
+- components/claims/ClaimReviewPanel.tsx:688:46
+  - Derived value copied into state
+  - Storing "customerReason" in state when you can derive it from other values costs an extra render.
+- components/claims/ClaimReviewPanel.tsx:689:42
+  - Derived value copied into state
+  - Storing "notes" in state when you can derive it from other values costs an extra render.
+- components/claims/ClaimReviewPanel.tsx:692:7
+  - Derived value copied into state
+  - Storing "selectedOrderId" in state when you can derive it from other values costs an extra render.
+- components/claims/ClaimReviewPanel.tsx:695:7
+  - Derived value copied into state
+  - Storing "manualOrderRef" in state when you can derive it from other values costs an extra render.
+- components/claims/ClaimReviewPanel.tsx:699:7
+  - Derived value copied into state
+  - Storing "orderValue" in state when you can derive it from other values costs an extra render.
+- components/claims/ClaimReviewPanel.tsx:702:7
+  - Derived value copied into state
+  - Storing "decision" in state when you can derive it from other values costs an extra render.
+- components/claims/ClaimReviewPanel.tsx:705:7
+  - Derived value copied into state
+  - Storing "outcome" in state when you can derive it from other values costs an extra render.
+- components/claims/ClaimReviewPanel.tsx:708:7
+  - Derived value copied into state
+  - Storing "statusToSet" in state when you can derive it from other values costs an extra render.
+- components/claims/ClaimReviewPanel.tsx:719:5
+  - Derived value copied into state
+  - Storing "history" in state when you can derive it from other values costs an extra render.
+- components/customers/CustomerIntelligenceDrawer.tsx:386:41
+  - Derived value copied into state
+  - Storing "panel" in state when you can derive it from other values costs an extra render.
+- components/customers/CustomerIntelligenceDrawer.tsx:394:28
+  - Derived value copied into state
+  - Storing "panel" in state when you can derive it from other values costs an extra render.
+- components/customers/CustomerIntelligenceDrawer.tsx:395:5
+  - Derived value copied into state
+  - Storing "panel" in state when you can derive it from other values costs an extra render.
+- components/evidence/EvidencePackageForm.tsx:42:5
+  - Derived value copied into state
+  - Storing "selectedOrderId" in state when you can derive it from other values costs an extra render.
+- components/inbox/InboxClient.tsx:127:5
+  - Derived value copied into state
+  - Storing "items" in state when you can derive it from other values costs an extra render.
+- components/settings/AuditTrailClient.tsx:101:5
+  - Derived value copied into state
+  - Storing "loading" in state when you can derive it from other values costs an extra render.
+- components/ui/animated-grid-pattern.tsx:61:7
+  - Derived value copied into state
+  - Storing "squares" in state when you can derive it from other values costs an extra render.
+- components/ui/meteors.tsx:22:5
+  - Derived value copied into state
+  - Storing "meteorStyles" in state when you can derive it from other values costs an extra render.
+- components/upload/UploadClient.tsx:353:30
+  - Derived value copied into state
+  - Storing "dataQuality" in state when you can derive it from other values costs an extra render.
+
+## react-doctor:js-index-maps
+
+- Severity: warning
+- Category: Performance
+- Count: 36
+- Title: array.find() inside a loop
+- Fix guidance: Build a `Map` once before the loop instead of calling `array.find(...)` inside it
+
+- app/(app)/claims/page.tsx:332:39
+  - array.find() inside a loop
+  - This gets slow as your list grows because array.find() runs inside a loop, so build a Map once before the loop for instant lookups
+- lib/analysis/customerIntelligence.ts:288:18
+  - array.find() inside a loop
+  - This gets slow as your list grows because array.find() runs inside a loop, so build a Map once before the loop for instant lookups
+- lib/csv/headerAliases.ts:566:19
+  - array.find() inside a loop
+  - This gets slow as your list grows because array.findIndex() runs inside a loop, so build a Map once before the loop for instant lookups
+- lib/engine/identityCluster.ts:81:20
+  - array.find() inside a loop
+  - This gets slow as your list grows because array.find() runs inside a loop, so build a Map once before the loop for instant lookups
+- lib/engine/identityCluster.ts:431:27
+  - array.find() inside a loop
+  - This gets slow as your list grows because array.find() runs inside a loop, so build a Map once before the loop for instant lookups
+- lib/engine/identityCluster.ts:495:9
+  - array.find() inside a loop
+  - This gets slow as your list grows because array.find() runs inside a loop, so build a Map once before the loop for instant lookups
+- lib/engine/identityCluster.ts:495:32
+  - array.find() inside a loop
+  - This gets slow as your list grows because array.find() runs inside a loop, so build a Map once before the loop for instant lookups
+- lib/engine/identityCluster.ts:577:25
+  - array.find() inside a loop
+  - This gets slow as your list grows because array.find() runs inside a loop, so build a Map once before the loop for instant lookups
+- lib/engine/identityCluster.ts:580:18
+  - array.find() inside a loop
+  - This gets slow as your list grows because array.find() runs inside a loop, so build a Map once before the loop for instant lookups
+- lib/engine/identityClusterBuilder.ts:95:22
+  - array.find() inside a loop
+  - This gets slow as your list grows because array.find() runs inside a loop, so build a Map once before the loop for instant lookups
+- lib/engine/identityMatching.ts:142:22
+  - array.find() inside a loop
+  - This gets slow as your list grows because array.find() runs inside a loop, so build a Map once before the loop for instant lookups
+- lib/identity/matchScorer.ts:370:28
+  - array.find() inside a loop
+  - This gets slow as your list grows because array.find() runs inside a loop, so build a Map once before the loop for instant lookups
+- lib/identity/matchScorer.ts:389:27
+  - array.find() inside a loop
+  - This gets slow as your list grows because array.find() runs inside a loop, so build a Map once before the loop for instant lookups
+- lib/identity/matchScorer.ts:408:29
+  - array.find() inside a loop
+  - This gets slow as your list grows because array.find() runs inside a loop, so build a Map once before the loop for instant lookups
+- lib/linker.ts:1184:18
+  - array.find() inside a loop
+  - This gets slow as your list grows because array.find() runs inside a loop, so build a Map once before the loop for instant lookups
+- lib/linker.ts:1204:19
+  - array.find() inside a loop
+  - This gets slow as your list grows because array.find() runs inside a loop, so build a Map once before the loop for instant lookups
+- lib/linker.ts:1205:19
+  - array.find() inside a loop
+  - This gets slow as your list grows because array.find() runs inside a loop, so build a Map once before the loop for instant lookups
+- lib/linker.ts:1245:20
+  - array.find() inside a loop
+  - This gets slow as your list grows because array.find() runs inside a loop, so build a Map once before the loop for instant lookups
+- lib/linker.ts:1294:20
+  - array.find() inside a loop
+  - This gets slow as your list grows because array.find() runs inside a loop, so build a Map once before the loop for instant lookups
+- lib/linker.ts:1306:21
+  - array.find() inside a loop
+  - This gets slow as your list grows because array.find() runs inside a loop, so build a Map once before the loop for instant lookups
+- lib/linker.ts:1307:21
+  - array.find() inside a loop
+  - This gets slow as your list grows because array.find() runs inside a loop, so build a Map once before the loop for instant lookups
+- lib/linker.ts:1322:23
+  - array.find() inside a loop
+  - This gets slow as your list grows because array.find() runs inside a loop, so build a Map once before the loop for instant lookups
+- lib/linker.ts:1341:18
+  - array.find() inside a loop
+  - This gets slow as your list grows because array.find() runs inside a loop, so build a Map once before the loop for instant lookups
+- lib/processing/worker.ts:849:15
+  - array.find() inside a loop
+  - This gets slow as your list grows because array.find() runs inside a loop, so build a Map once before the loop for instant lookups
+- lib/shopify/profileLinking.ts:237:25
+  - array.find() inside a loop
+  - This gets slow as your list grows because array.find() runs inside a loop, so build a Map once before the loop for instant lookups
+- lib/support/intake/tagClaimDetection.ts:151:21
+  - array.find() inside a loop
+  - This gets slow as your list grows because array.find() runs inside a loop, so build a Map once before the loop for instant lookups
+- synthetic-lab/evaluate.ts:240:27
+  - array.find() inside a loop
+  - This gets slow as your list grows because array.find() runs inside a loop, so build a Map once before the loop for instant lookups
+- synthetic-lab/evaluate.ts:265:18
+  - array.find() inside a loop
+  - This gets slow as your list grows because array.find() runs inside a loop, so build a Map once before the loop for instant lookups
+- synthetic-lab/evaluate.ts:274:30
+  - array.find() inside a loop
+  - This gets slow as your list grows because array.find() runs inside a loop, so build a Map once before the loop for instant lookups
+- synthetic-lab/evaluate.ts:288:18
+  - array.find() inside a loop
+  - This gets slow as your list grows because array.find() runs inside a loop, so build a Map once before the loop for instant lookups
+- synthetic-lab/evaluate.ts:289:18
+  - array.find() inside a loop
+  - This gets slow as your list grows because array.find() runs inside a loop, so build a Map once before the loop for instant lookups
+- synthetic-lab/evaluate.ts:291:60
+  - array.find() inside a loop
+  - This gets slow as your list grows because array.find() runs inside a loop, so build a Map once before the loop for instant lookups
+- synthetic-lab/evaluate.ts:292:60
+  - array.find() inside a loop
+  - This gets slow as your list grows because array.find() runs inside a loop, so build a Map once before the loop for instant lookups
+- synthetic-lab/evaluate.ts:297:23
+  - array.find() inside a loop
+  - This gets slow as your list grows because array.find() runs inside a loop, so build a Map once before the loop for instant lookups
+- synthetic-lab/evaluate.ts:305:18
+  - array.find() inside a loop
+  - This gets slow as your list grows because array.find() runs inside a loop, so build a Map once before the loop for instant lookups
+- synthetic-lab/evaluate.ts:659:18
+  - array.find() inside a loop
+  - This gets slow as your list grows because array.find() runs inside a loop, so build a Map once before the loop for instant lookups
+
+## deslop:unused-file
+
+- Severity: warning
+- Category: Maintainability
+- Count: 36
+- Title: unused-file
+- Fix guidance: Delete the file if it is truly unreachable, or import it from an entry point.
+
+- app/(public)/landing/_components/MerchantDashboard.tsx
+  - Unused file — not reachable from any entry point
+- app/(public)/landing/_components/NetworkChart.tsx
+  - Unused file — not reachable from any entry point
+- app/(public)/landing/AuditForm.tsx
+  - Unused file — not reachable from any entry point
+- app/(public)/landing/PublicAuditForm.tsx
+  - Unused file — not reachable from any entry point
+- audit/run-audit-2.js
+  - Unused file — not reachable from any entry point
+- audit/run-audit-3.js
+  - Unused file — not reachable from any entry point
+- audit/run-audit-4.js
+  - Unused file — not reachable from any entry point
+- audit/run-audit-5.js
+  - Unused file — not reachable from any entry point
+- audit/run-audit.js
+  - Unused file — not reachable from any entry point
+- audit/run-reaudit-v2.js
+  - Unused file — not reachable from any entry point
+- audit/run-reaudit.js
+  - Unused file — not reachable from any entry point
+- audit/verify-fixes-v2.js
+  - Unused file — not reachable from any entry point
+- audit/verify-fixes.js
+  - Unused file — not reachable from any entry point
+- components/audit/DeleteAuditButton.tsx
+  - Unused file — not reachable from any entry point
+- components/connections/SectionConnectionGate.tsx
+  - Unused file — not reachable from any entry point
+- components/customers/CrossMerchantSignalCard.tsx
+  - Unused file — not reachable from any entry point
+- components/customers/IdentityClusterGraph.tsx
+  - Unused file — not reachable from any entry point
+- components/dashboard/InsightsStrip.tsx
+  - Unused file — not reachable from any entry point
+- components/dashboard/LoadDemoButton.tsx
+  - Unused file — not reachable from any entry point
+- components/dashboard/NextUpPanel.tsx
+  - Unused file — not reachable from any entry point
+- components/dashboard/SavingsCard.tsx
+  - Unused file — not reachable from any entry point
+- components/evidence/BuildEvidencePackageTrigger.tsx
+  - Unused file — not reachable from any entry point
+- components/settings/BulkDeleteClient.tsx
+  - Unused file — not reachable from any entry point
+- components/signup/SignupFlow.tsx
+  - Unused file — not reachable from any entry point
+- components/ui/animated-grid-pattern.tsx
+  - Unused file — not reachable from any entry point
+- components/ui/border-beam.tsx
+  - Unused file — not reachable from any entry point
+- components/ui/meteors.tsx
+  - Unused file — not reachable from any entry point
+- design-audit/_smoke.js
+  - Unused file — not reachable from any entry point
+- design-audit/capture-audit-screenshots.mjs
+  - Unused file — not reachable from any entry point
+- design-audit/seed-audit-data.mjs
+  - Unused file — not reachable from any entry point
+- interaction-audit/run-control-audit.mjs
+  - Unused file — not reachable from any entry point
+- registry/magicui/dotted-map.tsx
+  - Unused file — not reachable from any entry point
+- simulation/seed-simulation.mjs
+  - Unused file — not reachable from any entry point
+- synthetic-lab/generate.ts
+  - Unused file — not reachable from any entry point
+- tests/support/run-walkthrough-fixtures.mjs
+  - Unused file — not reachable from any entry point
+- types/customer.ts
+  - Unused file — not reachable from any entry point
+
+## react-doctor:no-array-index-as-key
+
+- Severity: warning
+- Category: Bugs
+- Count: 29
+- Title: Array index used as a key
+- Fix guidance: Use a stable id from the item, like `key={item.id}` or `key={item.slug}`. Index keys break when the list reorders or filters.
+
+- app/(app)/chargebacks/[id]/page.tsx:256:20
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders or filters, so use a stable id like `key={item.id}`, not the array index "i".
+- app/(app)/chargebacks/[id]/page.tsx:291:17
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders or filters, so use a stable id like `key={item.id}`, not the array index "i".
+- app/(app)/customers/[id]/page.tsx:872:30
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders or filters, so use a stable id like `key={item.id}`, not the array index "index".
+- app/(app)/customers/[id]/page.tsx:942:24
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders or filters, so use a stable id like `key={item.id}`, not the array index "i".
+- app/(app)/customers/[id]/page.tsx:949:24
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders or filters, so use a stable id like `key={item.id}`, not the array index "i".
+- app/(app)/customers/[id]/page.tsx:956:24
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders or filters, so use a stable id like `key={item.id}`, not the array index "i".
+- app/(app)/customers/[id]/page.tsx:964:29
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders or filters, so use a stable id like `key={item.id}`, not the array index "i".
+- app/(app)/customers/[id]/page.tsx:974:24
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders or filters, so use a stable id like `key={item.id}`, not the array index "i".
+- app/(app)/customers/[id]/page.tsx:981:24
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders or filters, so use a stable id like `key={item.id}`, not the array index "i".
+- app/(app)/customers/[id]/page.tsx:996:23
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders or filters, so use a stable id like `key={item.id}`, not the array index "index".
+- app/(public)/audit/[runId]/report/page.tsx:149:27
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders or filters, so use a stable id like `key={item.id}`, not the array index "index".
+- app/(public)/landing/_components/MerchantDashboard.tsx:610:18
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders or filters, so use a stable id like `key={item.id}`, not the array index "i".
+- app/(public)/landing/_components/MerchantDashboard.tsx:725:53
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders or filters, so use a stable id like `key={item.id}`, not the array index "i".
+- components/claims/ClaimReviewPanel.tsx:1566:26
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders or filters, so use a stable id like `key={item.id}`, not the array index "i".
+- components/common/PageHeader.tsx:32:21
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders or filters, so use a stable id like `key={item.id}`, not the array index "i".
+- components/customers/IdentityTimeline.tsx:38:15
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders or filters, so use a stable id like `key={item.id}`, not the array index "idx".
+- components/dashboard/InsightsStrip.tsx:45:17
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders or filters, so use a stable id like `key={item.id}`, not the array index "i".
+- components/dashboard/InsightsStrip.tsx:49:16
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders or filters, so use a stable id like `key={item.id}`, not the array index "i".
+- components/evidence/EvidencePackageForm.tsx:312:23
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders or filters, so use a stable id like `key={item.id}`, not the array index "i".
+- components/layout/AppHeader.tsx:105:19
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders or filters, so use a stable id like `key={item.id}`, not the array index "i".
+- components/navigation/skeletons/primitives.tsx:38:11
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders or filters, so use a stable id like `key={item.id}`, not the array index "i".
+- components/navigation/skeletons/primitives.tsx:66:19
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders or filters, so use a stable id like `key={item.id}`, not the array index "i".
+- components/navigation/skeletons/WorkbenchPageSkeleton.tsx:35:27
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders or filters, so use a stable id like `key={item.id}`, not the array index "i".
+- components/navigation/skeletons/WorkbenchPageSkeleton.tsx:56:15
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders or filters, so use a stable id like `key={item.id}`, not the array index "idx".
+- components/ui/PageHeader.tsx:50:15
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders or filters, so use a stable id like `key={item.id}`, not the array index "i".
+- components/ui/PageHeader.tsx:117:57
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders or filters, so use a stable id like `key={item.id}`, not the array index "i".
+- lib/evidence/pdf.tsx:165:15
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders or filters, so use a stable id like `key={item.id}`, not the array index "i".
+- lib/evidence/pdf.tsx:199:17
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders or filters, so use a stable id like `key={item.id}`, not the array index "i".
+- lib/evidence/pdf.tsx:333:19
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders or filters, so use a stable id like `key={item.id}`, not the array index "i".
+
+## react-doctor:no-wide-letter-spacing
+
+- Severity: warning
+- Category: Maintainability
+- Count: 29
+- Title: Wide letter spacing on body text
+- Fix guidance: Save wide letter-spacing (over 0.05em) for short uppercase labels, nav items, and buttons, not body text.
+
+- app/(public)/audit/AuditUploadForm.tsx:161:65
+  - Wide letter spacing on body text
+  - Your users find body text harder to read at 0.08em letter spacing, so save wide spacing for short uppercase labels.
+- app/(public)/audit/AuditUploadForm.tsx:193:65
+  - Wide letter spacing on body text
+  - Your users find body text harder to read at 0.08em letter spacing, so save wide spacing for short uppercase labels.
+- app/(public)/audit/AuditUploadForm.tsx:296:56
+  - Wide letter spacing on body text
+  - Your users find body text harder to read at 0.10em letter spacing, so save wide spacing for short uppercase labels.
+- app/(public)/audit/AuditUploadForm.tsx:304:56
+  - Wide letter spacing on body text
+  - Your users find body text harder to read at 0.10em letter spacing, so save wide spacing for short uppercase labels.
+- app/(public)/audit/page.tsx:37:15
+  - Wide letter spacing on body text
+  - Your users find body text harder to read at 0.14em letter spacing, so save wide spacing for short uppercase labels.
+- app/(public)/audit/page.tsx:144:13
+  - Wide letter spacing on body text
+  - Your users find body text harder to read at 0.08em letter spacing, so save wide spacing for short uppercase labels.
+- app/(public)/audit/submitted/page.tsx:74:15
+  - Wide letter spacing on body text
+  - Your users find body text harder to read at 0.06em letter spacing, so save wide spacing for short uppercase labels.
+- app/(public)/landing/_components/HeroNotificationArtifact.tsx:126:13
+  - Wide letter spacing on body text
+  - Your users find body text harder to read at 0.08em letter spacing, so save wide spacing for short uppercase labels.
+- app/(public)/landing/_components/HeroNotificationArtifact.tsx:194:65
+  - Wide letter spacing on body text
+  - Your users find body text harder to read at 0.08em letter spacing, so save wide spacing for short uppercase labels.
+- app/(public)/landing/_components/MerchantDashboard.tsx:210:54
+  - Wide letter spacing on body text
+  - Your users find body text harder to read at 0.10em letter spacing, so save wide spacing for short uppercase labels.
+- app/(public)/landing/_components/MerchantDashboard.tsx:226:54
+  - Wide letter spacing on body text
+  - Your users find body text harder to read at 0.08em letter spacing, so save wide spacing for short uppercase labels.
+- app/(public)/landing/_components/MerchantDashboard.tsx:557:57
+  - Wide letter spacing on body text
+  - Your users find body text harder to read at 0.10em letter spacing, so save wide spacing for short uppercase labels.
+- app/(public)/landing/_components/MerchantDashboard.tsx:583:90
+  - Wide letter spacing on body text
+  - Your users find body text harder to read at 0.06em letter spacing, so save wide spacing for short uppercase labels.
+- app/(public)/landing/_components/MerchantDashboard.tsx:588:88
+  - Wide letter spacing on body text
+  - Your users find body text harder to read at 0.06em letter spacing, so save wide spacing for short uppercase labels.
+- app/(public)/landing/_components/MerchantDashboard.tsx:593:38
+  - Wide letter spacing on body text
+  - Your users find body text harder to read at 0.08em letter spacing, so save wide spacing for short uppercase labels.
+- app/(public)/landing/_components/MerchantDashboard.tsx:669:60
+  - Wide letter spacing on body text
+  - Your users find body text harder to read at 0.07em letter spacing, so save wide spacing for short uppercase labels.
+- app/(public)/landing/_components/MerchantDashboard.tsx:722:88
+  - Wide letter spacing on body text
+  - Your users find body text harder to read at 0.06em letter spacing, so save wide spacing for short uppercase labels.
+- app/(public)/landing/_components/MerchantDashboard.tsx:802:100
+  - Wide letter spacing on body text
+  - Your users find body text harder to read at 0.06em letter spacing, so save wide spacing for short uppercase labels.
+- app/(public)/landing/_components/MerchantDashboard.tsx:807:84
+  - Wide letter spacing on body text
+  - Your users find body text harder to read at 0.06em letter spacing, so save wide spacing for short uppercase labels.
+- app/(public)/landing/_components/PipelineTabs.tsx:172:61
+  - Wide letter spacing on body text
+  - Your users find body text harder to read at 0.08em letter spacing, so save wide spacing for short uppercase labels.
+- app/(public)/landing/_components/PipelineTabs.tsx:267:19
+  - Wide letter spacing on body text
+  - Your users find body text harder to read at 0.06em letter spacing, so save wide spacing for short uppercase labels.
+- app/(public)/landing/AuditForm.tsx:117:13
+  - Wide letter spacing on body text
+  - Your users find body text harder to read at 0.06em letter spacing, so save wide spacing for short uppercase labels.
+- app/(public)/landing/page.tsx:298:17
+  - Wide letter spacing on body text
+  - Your users find body text harder to read at 0.08em letter spacing, so save wide spacing for short uppercase labels.
+- app/(public)/landing/page.tsx:428:23
+  - Wide letter spacing on body text
+  - Your users find body text harder to read at 0.08em letter spacing, so save wide spacing for short uppercase labels.
+- app/(public)/landing/page.tsx:443:23
+  - Wide letter spacing on body text
+  - Your users find body text harder to read at 0.08em letter spacing, so save wide spacing for short uppercase labels.
+- app/(public)/landing/page.tsx:457:23
+  - Wide letter spacing on body text
+  - Your users find body text harder to read at 0.08em letter spacing, so save wide spacing for short uppercase labels.
+- app/(public)/landing/page.tsx:761:23
+  - Wide letter spacing on body text
+  - Your users find body text harder to read at 0.06em letter spacing, so save wide spacing for short uppercase labels.
+- app/(public)/landing/page.tsx:856:21
+  - Wide letter spacing on body text
+  - Your users find body text harder to read at 0.06em letter spacing, so save wide spacing for short uppercase labels.
+- app/(public)/landing/page.tsx:1147:94
+  - Wide letter spacing on body text
+  - Your users find body text harder to read at 0.06em letter spacing, so save wide spacing for short uppercase labels.
+
+## react-doctor:prefer-module-scope-static-value
+
+- Severity: warning
+- Category: Maintainability
+- Count: 28
+- Title: Static value rebuilt every render
+- Fix guidance: Move the value above the component, at the top of the file. It doesn't use local state, so rebuilding it each update is wasted and makes it look new every time.
+
+- app/(app)/claims/page.tsx:116:9
+  - Static value rebuilt every render
+  - `colourMap` inside `SlaPill` uses no local state but is rebuilt every render, so it looks new each time & breaks memoized children. Move it to the top of the file, outside the component.
+- app/(app)/help/identity-matching/page.tsx:18:9
+  - Static value rebuilt every render
+  - `map` inside `UniquenessChip` uses no local state but is rebuilt every render, so it looks new each time & breaks memoized children. Move it to the top of the file, outside the component.
+- app/(public)/audit/AuditUploadForm.tsx:150:9
+  - Static value rebuilt every render
+  - `mono` inside `AuditUploadForm` uses no local state but is rebuilt every render, so it looks new each time & breaks memoized children. Move it to the top of the file, outside the component.
+- app/(public)/audit/AuditUploadForm.tsx:151:9
+  - Static value rebuilt every render
+  - `sans` inside `AuditUploadForm` uses no local state but is rebuilt every render, so it looks new each time & breaks memoized children. Move it to the top of the file, outside the component.
+- app/(public)/audit/AuditUploadForm.tsx:152:9
+  - Static value rebuilt every render
+  - `serif` inside `AuditUploadForm` uses no local state but is rebuilt every render, so it looks new each time & breaks memoized children. Move it to the top of the file, outside the component.
+- app/(public)/audit/submitted/page.tsx:28:9
+  - Static value rebuilt every render
+  - `sans` inside `SubmittedPage` uses no local state but is rebuilt every render, so it looks new each time & breaks memoized children. Move it to the top of the file, outside the component.
+- app/(public)/audit/submitted/page.tsx:29:9
+  - Static value rebuilt every render
+  - `serif` inside `SubmittedPage` uses no local state but is rebuilt every render, so it looks new each time & breaks memoized children. Move it to the top of the file, outside the component.
+- app/(public)/audit/submitted/page.tsx:30:9
+  - Static value rebuilt every render
+  - `mono` inside `SubmittedPage` uses no local state but is rebuilt every render, so it looks new each time & breaks memoized children. Move it to the top of the file, outside the component.
+- app/(public)/landing/_components/NetworkChart.tsx:49:9
+  - Static value rebuilt every render
+  - `tickValues` inside `NetworkChart` uses no local state but is rebuilt every render, so it looks new each time & breaks memoized children. Move it to the top of the file, outside the component.
+- app/(public)/landing/_components/VerdictTicker.tsx:67:9
+  - Static value rebuilt every render
+  - `doubled` inside `VerdictTicker` uses no local state but is rebuilt every render, so it looks new each time & breaks memoized children. Move it to the top of the file, outside the component.
+- app/(public)/landing/page.tsx:55:9
+  - Static value rebuilt every render
+  - `faqFeatured` inside `LandingPage` uses no local state but is rebuilt every render, so it looks new each time & breaks memoized children. Move it to the top of the file, outside the component.
+- app/(public)/landing/page.tsx:81:9
+  - Static value rebuilt every render
+  - `faqMore` inside `LandingPage` uses no local state but is rebuilt every render, so it looks new each time & breaks memoized children. Move it to the top of the file, outside the component.
+- app/(public)/landing/page.tsx:115:9
+  - Static value rebuilt every render
+  - `heroSubjectFields` inside `LandingPage` uses no local state but is rebuilt every render, so it looks new each time & breaks memoized children. Move it to the top of the file, outside the component.
+- app/api/account/delete/route.ts:118:11
+  - Static value rebuilt every render
+  - `tables` inside `POST` uses no local state but is rebuilt every render, so it looks new each time & breaks memoized children. Move it to the top of the file, outside the component.
+- app/api/audit/[runId]/export/route.ts:122:9
+  - Static value rebuilt every render
+  - `headers` inside `GETHandler` uses no local state but is rebuilt every render, so it looks new each time & breaks memoized children. Move it to the top of the file, outside the component.
+- app/api/audit/[runId]/progress/route.ts:97:9
+  - Static value rebuilt every render
+  - `statusMap` inside `GETHandler` uses no local state but is rebuilt every render, so it looks new each time & breaks memoized children. Move it to the top of the file, outside the component.
+- app/api/cron/purge-expired-audits/route.ts:58:11
+  - Static value rebuilt every render
+  - `tables` inside `POST` uses no local state but is rebuilt every render, so it looks new each time & breaks memoized children. Move it to the top of the file, outside the component.
+- app/api/customers/[id]/cross-merchant/route.ts:81:9
+  - Static value rebuilt every render
+  - `SIGNAL_TYPE_MAP` inside `GET` uses no local state but is rebuilt every render, so it looks new each time & breaks memoized children. Move it to the top of the file, outside the component.
+- app/api/inbox/export/route.ts:57:9
+  - Static value rebuilt every render
+  - `headers` inside `GET` uses no local state but is rebuilt every render, so it looks new each time & breaks memoized children. Move it to the top of the file, outside the component.
+- app/api/settings/bulk-delete/route.ts:45:9
+  - Static value rebuilt every render
+  - `SOFT_DELETE_FIELD` inside `POSTHandler` uses no local state but is rebuilt every render, so it looks new each time & breaks memoized children. Move it to the top of the file, outside the component.
+- components/audit/DataQualityBanner.tsx:57:9
+  - Static value rebuilt every render
+  - `bannerStyle` inside `DataQualityBanner` uses no local state but is rebuilt every render, so it looks new each time & breaks memoized children. Move it to the top of the file, outside the component.
+- components/claims/ClaimReviewPanel.tsx:182:9
+  - Static value rebuilt every render
+  - `colourMap` inside `StatusPill` uses no local state but is rebuilt every render, so it looks new each time & breaks memoized children. Move it to the top of the file, outside the component.
+- components/claims/ClaimReviewPanel.tsx:201:9
+  - Static value rebuilt every render
+  - `colourMap` inside `SlaBadge` uses no local state but is rebuilt every render, so it looks new each time & breaks memoized children. Move it to the top of the file, outside the component.
+- components/customers/CustomersFilterSheet.tsx:91:9
+  - Static value rebuilt every render
+  - `advancedKeys` inside `CustomersFilterSheet` uses no local state but is rebuilt every render, so it looks new each time & breaks memoized children. Move it to the top of the file, outside the component.
+- components/inbox/InboxClient.tsx:152:9
+  - Static value rebuilt every render
+  - `statusShortcuts` inside `InboxClient` uses no local state but is rebuilt every render, so it looks new each time & breaks memoized children. Move it to the top of the file, outside the component.
+- components/internal/NetworkMetricsCharts.tsx:52:9
+  - Static value rebuilt every render
+  - `sectionStyle` inside `NetworkMetricsCharts` uses no local state but is rebuilt every render, so it looks new each time & breaks memoized children. Move it to the top of the file, outside the component.
+- lib/evidence/pdf.tsx:156:9
+  - Static value rebuilt every render
+  - `colWidths` inside `PDFIdentityEvidenceTable` uses no local state but is rebuilt every render, so it looks new each time & breaks memoized children. Move it to the top of the file, outside the component.
+- lib/evidence/pdf.tsx:180:9
+  - Static value rebuilt every render
+  - `colWidths` inside `PDFOrderHistoryTable` uses no local state but is rebuilt every render, so it looks new each time & breaks memoized children. Move it to the top of the file, outside the component.
+
+## react-doctor:no-array-index-key
+
+- Severity: warning
+- Category: Performance
+- Count: 26
+- Title: Array index used as a key
+- Fix guidance: Use a stable `key` from your data instead of the array index.
+
+- app/(app)/chargebacks/[id]/page.tsx:256:20
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders.
+- app/(app)/chargebacks/[id]/page.tsx:291:17
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders.
+- app/(app)/customers/[id]/page.tsx:872:30
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders.
+- app/(app)/customers/[id]/page.tsx:942:24
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders.
+- app/(app)/customers/[id]/page.tsx:949:24
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders.
+- app/(app)/customers/[id]/page.tsx:956:24
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders.
+- app/(app)/customers/[id]/page.tsx:964:29
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders.
+- app/(app)/customers/[id]/page.tsx:974:24
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders.
+- app/(app)/customers/[id]/page.tsx:981:24
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders.
+- app/(app)/customers/[id]/page.tsx:996:23
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders.
+- app/(public)/landing/_components/MerchantDashboard.tsx:610:18
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders.
+- app/(public)/landing/_components/MerchantDashboard.tsx:725:53
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders.
+- components/claims/ClaimReviewPanel.tsx:1566:26
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders.
+- components/common/PageHeader.tsx:32:21
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders.
+- components/customers/IdentityTimeline.tsx:38:15
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders.
+- components/dashboard/InsightsStrip.tsx:45:17
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders.
+- components/dashboard/InsightsStrip.tsx:49:16
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders.
+- components/evidence/EvidencePackageForm.tsx:312:23
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders.
+- components/layout/AppHeader.tsx:105:19
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders.
+- components/navigation/skeletons/primitives.tsx:66:19
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders.
+- components/navigation/skeletons/primitives.tsx:76:21
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders.
+- components/ui/PageHeader.tsx:50:15
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders.
+- components/ui/PageHeader.tsx:117:57
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders.
+- lib/evidence/pdf.tsx:165:15
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders.
+- lib/evidence/pdf.tsx:199:17
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders.
+- lib/evidence/pdf.tsx:333:19
+  - Array index used as a key
+  - Your users can see & submit the wrong data when this list reorders.
+
+## react-doctor:no-giant-component
+
+- Severity: warning
+- Category: Maintainability
+- Count: 25
+- Title: Component is too large
+- Fix guidance: Pull each section into its own component, like `<UserHeader />` and `<UserActions />`.
+
+- app/(app)/audit/[runId]/page.tsx:100:31
+  - Component is too large
+  - Component "AuditRunPage" is 607 lines long, which is hard to read & change. Split it into a few smaller components.
+- app/(app)/chargebacks/[id]/page.tsx:20:31
+  - Component is too large
+  - Component "EvidenceDetailPage" is 317 lines long, which is hard to read & change. Split it into a few smaller components.
+- app/(app)/claims/page.tsx:178:31
+  - Component is too large
+  - Component "ClaimsPage" is 516 lines long, which is hard to read & change. Split it into a few smaller components.
+- app/(app)/customers/[id]/page.tsx:252:31
+  - Component is too large
+  - Component "CustomerProfilePage" is 850 lines long, which is hard to read & change. Split it into a few smaller components.
+- app/(app)/customers/page.tsx:152:31
+  - Component is too large
+  - Component "CustomersOverviewPage" is 475 lines long, which is hard to read & change. Split it into a few smaller components.
+- app/(app)/dashboard/page.tsx:236:31
+  - Component is too large
+  - Component "DashboardPage" is 445 lines long, which is hard to read & change. Split it into a few smaller components.
+- app/(app)/reports/page.tsx:203:31
+  - Component is too large
+  - Component "ReportsPage" is 569 lines long, which is hard to read & change. Split it into a few smaller components.
+- app/(app)/settings/account/page.tsx:19:25
+  - Component is too large
+  - Component "AccountSettingsPage" is 329 lines long, which is hard to read & change. Split it into a few smaller components.
+- app/(public)/audit-demo/AuditDemoClient.tsx:91:25
+  - Component is too large
+  - Component "AuditDemoClient" is 323 lines long, which is hard to read & change. Split it into a few smaller components.
+- app/(public)/landing/_components/PipelineTabs.tsx:45:25
+  - Component is too large
+  - Component "PipelineTabs" is 350 lines long, which is hard to read & change. Split it into a few smaller components.
+- app/(public)/landing/page.tsx:22:25
+  - Component is too large
+  - Component "LandingPage" is 1732 lines long, which is hard to read & change. Split it into a few smaller components.
+- components/claims/ClaimReviewPanel.tsx:465:25
+  - Component is too large
+  - Component "ClaimReviewPanel" is 1307 lines long, which is hard to read & change. Split it into a few smaller components.
+- components/customers/CustomerIntelligenceDrawer.tsx:545:10
+  - Component is too large
+  - Component "DrawerContent" is 399 lines long, which is hard to read & change. Split it into a few smaller components.
+- components/customers/CustomersFilterSheet.tsx:43:25
+  - Component is too large
+  - Component "CustomersFilterSheet" is 353 lines long, which is hard to read & change. Split it into a few smaller components.
+- components/evidence/EvidencePackageForm.tsx:24:17
+  - Component is too large
+  - Component "EvidencePackageForm" is 376 lines long, which is hard to read & change. Split it into a few smaller components.
+- components/inbox/InboxClient.tsx:114:25
+  - Component is too large
+  - Component "InboxClient" is 559 lines long, which is hard to read & change. Split it into a few smaller components.
+- components/layout/CommandPalette.tsx:123:25
+  - Component is too large
+  - Component "CommandPalette" is 375 lines long, which is hard to read & change. Split it into a few smaller components.
+- components/nav/Sidebar.tsx:134:25
+  - Component is too large
+  - Component "Sidebar" is 322 lines long, which is hard to read & change. Split it into a few smaller components.
+- components/settings/ApiIntegrationsClient.tsx:63:25
+  - Component is too large
+  - Component "ApiIntegrationsClient" is 551 lines long, which is hard to read & change. Split it into a few smaller components.
+- components/settings/GorgiasSupportSyncClient.tsx:69:25
+  - Component is too large
+  - Component "GorgiasSupportSyncClient" is 654 lines long, which is hard to read & change. Split it into a few smaller components.
+- components/settings/TeamManagementClient.tsx:100:25
+  - Component is too large
+  - Component "TeamManagementClient" is 332 lines long, which is hard to read & change. Split it into a few smaller components.
+- components/shopify/SyncStatusCard.tsx:174:25
+  - Component is too large
+  - Component "SyncStatusCard" is 342 lines long, which is hard to read & change. Split it into a few smaller components.
+- components/signup/SignupFlow.tsx:125:25
+  - Component is too large
+  - Component "SignupFlow" is 345 lines long, which is hard to read & change. Split it into a few smaller components.
+- components/upload/UploadClient.tsx:105:25
+  - Component is too large
+  - Component "UploadClient" is 1680 lines long, which is hard to read & change. Split it into a few smaller components.
+- extensions/chrome/popup/popup.tsx:62:10
+  - Component is too large
+  - Component "App" is 426 lines long, which is hard to read & change. Split it into a few smaller components.
+
+## deslop:unused-export
+
+- Severity: warning
+- Category: Maintainability
+- Count: 25
+- Title: unused-export
+- Fix guidance: Drop the `export` keyword (or remove the declaration) if no other module uses this symbol.
+
+- components/connections/ConnectionStateContext.tsx:32:7
+  - Unused export: `useConnectionState`
+- components/inbox/InboxClient.tsx:71:7
+  - Unused export: `queueMeta`
+- components/inbox/InboxClient.tsx:114
+  - Unused export: `default`
+- components/ui/ActionBar.tsx:10:7
+  - Unused export: `ActionBar`
+- components/ui/Button.tsx:76:9
+  - Unused export: `BUTTON_BASE`
+- components/ui/Button.tsx:76:22
+  - Unused export: `BUTTON_VARIANT_CLASSES`
+- components/ui/Button.tsx:76:46
+  - Unused export: `buttonVariantStyle`
+- components/ui/Button.tsx:76:66
+  - Unused export: `BUTTON_SIZES`
+- components/ui/EvidenceList.tsx:44:7
+  - Unused export: `EvidenceList`
+- components/ui/Field.tsx:13:7
+  - Unused export: `Field`
+- components/ui/Field.tsx:42:7
+  - Unused export: `FieldInput`
+- components/ui/Field.tsx:66:7
+  - Unused export: `FieldSelect`
+- components/ui/Field.tsx:92:7
+  - Unused export: `FieldTextarea`
+- components/ui/FilterBar.tsx:20:7
+  - Unused export: `FilterBar`
+- components/ui/FilterChip.tsx:13:7
+  - Unused export: `FilterChip`
+- components/ui/LinkedIdentityList.tsx:42:7
+  - Unused export: `LinkedIdentityList`
+- components/ui/LoadingState.tsx:10:7
+  - Unused export: `Skeleton`
+- components/ui/LoadingState.tsx:26:7
+  - Unused export: `LoadingState`
+- components/ui/LoadingState.tsx:116:7
+  - Unused export: `Spinner`
+- components/ui/SignalBadge.tsx:26:13
+  - Unused export: `SIGNAL_META`
+- components/ui/SparklineChip.tsx:14:7
+  - Unused export: `SparklineChip`
+- components/ui/Tabs.tsx:17:7
+  - Unused export: `Tabs`
+- components/ui/Timeline.tsx:66:7
+  - Unused export: `Timeline`
+- components/ui/Timeline.tsx:185:7
+  - Unused export: `HorizontalTimeline`
+- components/workbench/WorkbenchPanel.tsx:12:7
+  - Unused export: `WorkbenchPanel`
+
+## react-doctor:prefer-useReducer
+
+- Severity: warning
+- Category: Bugs
+- Count: 24
+- Title: Many related useState calls
+- Fix guidance: Group related state: `const [state, dispatch] = useReducer(reducer, { field1, field2, ... })`
+
+- app/(app)/settings/account/page.tsx:19:47
+  - Many related useState calls
+  - 17 useState calls in "AccountSettingsPage" can each trigger a separate render.
+- app/(auth)/login/page.tsx:26:27
+  - Many related useState calls
+  - 6 useState calls in "LoginPageInner" can each trigger a separate render.
+- app/(public)/audit-demo/AuditDemoClient.tsx:91:91
+  - Many related useState calls
+  - 8 useState calls in "AuditDemoClient" can each trigger a separate render.
+- app/(public)/audit/[runId]/report/ClaimGate.tsx:6:91
+  - Many related useState calls
+  - 5 useState calls in "ClaimGate" can each trigger a separate render.
+- app/(public)/audit/AuditUploadForm.tsx:50:43
+  - Many related useState calls
+  - 10 useState calls in "AuditUploadForm" can each trigger a separate render.
+- app/(public)/landing/PublicAuditForm.tsx:104:43
+  - Many related useState calls
+  - 7 useState calls in "PublicAuditForm" can each trigger a separate render.
+- components/apply/FoundingMerchantApplicationForm.tsx:12:109
+  - Many related useState calls
+  - 8 useState calls in "FoundingMerchantApplicationForm" can each trigger a separate render.
+- components/audit/AuditCustomersTableClient.tsx:162:4
+  - Many related useState calls
+  - 6 useState calls in "AuditCustomersTableClient" can each trigger a separate render.
+- components/audit/CustomerNotes.tsx:19:82
+  - Many related useState calls
+  - 8 useState calls in "CustomerNotes" can each trigger a separate render.
+- components/audit/WatchlistStarButton.tsx:27:30
+  - Many related useState calls
+  - 5 useState calls in "WatchlistStarButton" can each trigger a separate render.
+- components/claims/ClaimReviewPanel.tsx:465:128
+  - Many related useState calls
+  - 40 useState calls in "ClaimReviewPanel" can each trigger a separate render.
+- components/customers/CustomerIntelligenceDrawer.tsx:373:37
+  - Many related useState calls
+  - 6 useState calls in "CustomerIntelligenceDrawer" can each trigger a separate render.
+- components/evidence/EvidencePackageForm.tsx:30:30
+  - Many related useState calls
+  - 8 useState calls in "EvidencePackageForm" can each trigger a separate render.
+- components/inbox/InboxClient.tsx:114:87
+  - Many related useState calls
+  - 8 useState calls in "InboxClient" can each trigger a separate render.
+- components/layout/CommandPalette.tsx:123:82
+  - Many related useState calls
+  - 5 useState calls in "CommandPalette" can each trigger a separate render.
+- components/nav/Sidebar.tsx:141:18
+  - Many related useState calls
+  - 5 useState calls in "Sidebar" can each trigger a separate render.
+- components/OnboardingClient.tsx:64:27
+  - Many related useState calls
+  - 9 useState calls in "OnboardingClient" can each trigger a separate render.
+- components/settings/ApiIntegrationsClient.tsx:67:4
+  - Many related useState calls
+  - 12 useState calls in "ApiIntegrationsClient" can each trigger a separate render.
+- components/settings/AuditTrailClient.tsx:76:85
+  - Many related useState calls
+  - 5 useState calls in "AuditTrailClient" can each trigger a separate render.
+- components/settings/GorgiasSupportSyncClient.tsx:69:72
+  - Many related useState calls
+  - 12 useState calls in "GorgiasSupportSyncClient" can each trigger a separate render.
+- components/settings/TeamManagementClient.tsx:100:48
+  - Many related useState calls
+  - 10 useState calls in "TeamManagementClient" can each trigger a separate render.
+- components/signup/SignupFlow.tsx:125:38
+  - Many related useState calls
+  - 14 useState calls in "SignupFlow" can each trigger a separate render.
+- components/upload/UploadClient.tsx:105:81
+  - Many related useState calls
+  - 27 useState calls in "UploadClient" can each trigger a separate render.
+- extensions/chrome/popup/popup.tsx:62:16
+  - Many related useState calls
+  - 19 useState calls in "App" can each trigger a separate render.
+
+## react-doctor:only-export-components
+
+- Severity: warning
+- Category: Maintainability
+- Count: 22
+- Title: Non-component export in component file
+- Fix guidance: Move non-component exports out of files that export components.
+
+- components/claims/ClaimReviewPanel.tsx:131:17
+  - Non-component export in component file
+  - Fast Refresh stops working when a file exports non-components.
+- components/claims/ClaimReviewPanel.tsx:143:17
+  - Non-component export in component file
+  - Fast Refresh stops working when a file exports non-components.
+- components/claims/ClaimReviewPanel.tsx:150:17
+  - Non-component export in component file
+  - Fast Refresh stops working when a file exports non-components.
+- components/claims/ClaimReviewPanel.tsx:157:17
+  - Non-component export in component file
+  - Fast Refresh stops working when a file exports non-components.
+- components/inbox/InboxClient.tsx:71:17
+  - Non-component export in component file
+  - Fast Refresh stops working when a file exports non-components.
+- components/inbox/InboxClient.tsx:88:17
+  - Non-component export in component file
+  - Fast Refresh stops working when a file exports non-components.
+- components/inbox/InboxClient.tsx:101:17
+  - Non-component export in component file
+  - Fast Refresh stops working when a file exports non-components.
+- components/navigation/skeletons/primitives.tsx:20:14
+  - Non-component export in component file
+  - Fast Refresh stops working when a file exports non-components.
+- components/ui/Button.tsx:76:47
+  - Non-component export in component file
+  - Fast Refresh stops working when a file exports non-components.
+- components/ui/SignalBadge.tsx:26:14
+  - Non-component export in component file
+  - Fast Refresh stops working when a file exports non-components.
+- extensions/chrome/popup/popup.tsx:10:10
+  - Non-component export in component file
+  - Fast Refresh can't track this component because the file exports nothing.
+- extensions/chrome/popup/popup.tsx:28:10
+  - Non-component export in component file
+  - Fast Refresh can't track this component because the file exports nothing.
+- extensions/chrome/popup/popup.tsx:62:10
+  - Non-component export in component file
+  - Fast Refresh can't track this component because the file exports nothing.
+- lib/evidence/pdf.tsx:121:10
+  - Non-component export in component file
+  - Fast Refresh skips this component because it isn't exported.
+- lib/evidence/pdf.tsx:138:10
+  - Non-component export in component file
+  - Fast Refresh skips this component because it isn't exported.
+- lib/evidence/pdf.tsx:155:10
+  - Non-component export in component file
+  - Fast Refresh skips this component because it isn't exported.
+- lib/evidence/pdf.tsx:179:10
+  - Non-component export in component file
+  - Fast Refresh skips this component because it isn't exported.
+- lib/evidence/pdf.tsx:213:10
+  - Non-component export in component file
+  - Fast Refresh skips this component because it isn't exported.
+- lib/evidence/pdf.tsx:260:10
+  - Non-component export in component file
+  - Fast Refresh skips this component because it isn't exported.
+- lib/evidence/pdf.tsx:341:10
+  - Non-component export in component file
+  - Fast Refresh skips this component because it isn't exported.
+- lib/evidence/pdf.tsx:369:10
+  - Non-component export in component file
+  - Fast Refresh skips this component because it isn't exported.
+- lib/evidence/pdf.tsx:383:10
+  - Non-component export in component file
+  - Fast Refresh skips this component because it isn't exported.
+
+## react-doctor:js-set-map-lookups
+
+- Severity: warning
+- Category: Performance
+- Count: 21
+- Title: Array lookup inside a loop
+- Fix guidance: Use a `Set` or `Map` when you check for the same items over and over. `Array.includes`/`find` scans the whole list each time
+
+- audit/run-reaudit-v2.js:317:33
+  - Array lookup inside a loop
+  - This gets slow because array.includes() inside a loop scans the whole list every time, so use a Set for instant lookups
+- lib/analysis/customerIntelligence.ts:298:52
+  - Array lookup inside a loop
+  - This gets slow because array.includes() inside a loop scans the whole list every time, so use a Set for instant lookups
+- lib/analysis/customerIntelligence.ts:338:89
+  - Array lookup inside a loop
+  - This gets slow because array.includes() inside a loop scans the whole list every time, so use a Set for instant lookups
+- lib/analysis/customerIntelligence.ts:349:89
+  - Array lookup inside a loop
+  - This gets slow because array.includes() inside a loop scans the whole list every time, so use a Set for instant lookups
+- lib/analysis/customerIntelligence.ts:360:89
+  - Array lookup inside a loop
+  - This gets slow because array.includes() inside a loop scans the whole list every time, so use a Set for instant lookups
+- lib/customers/narrative.ts:38:9
+  - Array lookup inside a loop
+  - This gets slow because array.includes() inside a loop scans the whole list every time, so use a Set for instant lookups
+- lib/engine/fastContext.ts:309:12
+  - Array lookup inside a loop
+  - This gets slow because array.includes() inside a loop scans the whole list every time, so use a Set for instant lookups
+- lib/identity/matchScorer.ts:526:17
+  - Array lookup inside a loop
+  - This gets slow because array.indexOf() inside a loop scans the whole list every time, so use a Set for instant lookups
+- lib/identity/matchScorer.ts:527:15
+  - Array lookup inside a loop
+  - This gets slow because array.indexOf() inside a loop scans the whole list every time, so use a Set for instant lookups
+- lib/processing/clusterExpansion.ts:607:34
+  - Array lookup inside a loop
+  - This gets slow because array.includes() inside a loop scans the whole list every time, so use a Set for instant lookups
+- lib/processing/clusterExpansion.ts:631:9
+  - Array lookup inside a loop
+  - This gets slow because array.includes() inside a loop scans the whole list every time, so use a Set for instant lookups
+- lib/processing/clusterExpansion.ts:632:10
+  - Array lookup inside a loop
+  - This gets slow because array.includes() inside a loop scans the whole list every time, so use a Set for instant lookups
+- lib/shopify/profileLinking.ts:103:55
+  - Array lookup inside a loop
+  - This gets slow because array.includes() inside a loop scans the whole list every time, so use a Set for instant lookups
+- lib/support/gorgias/accountIdentity.ts:140:17
+  - Array lookup inside a loop
+  - This gets slow because array.includes() inside a loop scans the whole list every time, so use a Set for instant lookups
+- lib/support/intake/tagClaimDetection.ts:151:57
+  - Array lookup inside a loop
+  - This gets slow because array.includes() inside a loop scans the whole list every time, so use a Set for instant lookups
+- synthetic-lab/common.ts:263:16
+  - Array lookup inside a loop
+  - This gets slow because array.indexOf() inside a loop scans the whole list every time, so use a Set for instant lookups
+- synthetic-lab/evaluate.ts:244:17
+  - Array lookup inside a loop
+  - This gets slow because array.indexOf() inside a loop scans the whole list every time, so use a Set for instant lookups
+- synthetic-lab/evaluate.ts:683:92
+  - Array lookup inside a loop
+  - This gets slow because array.includes() inside a loop scans the whole list every time, so use a Set for instant lookups
+- synthetic-lab/evaluate.ts:686:108
+  - Array lookup inside a loop
+  - This gets slow because array.includes() inside a loop scans the whole list every time, so use a Set for instant lookups
+- synthetic-lab/iterate.ts:167:57
+  - Array lookup inside a loop
+  - This gets slow because array.includes() inside a loop scans the whole list every time, so use a Set for instant lookups
+- synthetic-lab/iterate.ts:528:21
+  - Array lookup inside a loop
+  - This gets slow because array.includes() inside a loop scans the whole list every time, so use a Set for instant lookups
+
+## react-doctor:label-has-associated-control
+
+- Severity: warning
+- Category: Accessibility
+- Count: 21
+- Title: Label missing associated control
+- Fix guidance: Tie every label to a control with `htmlFor`, or by nesting the input.
+
+- app/(app)/settings/account/page.tsx:173:11
+  - Label missing associated control
+  - Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it.
+- app/(app)/settings/account/page.tsx:189:11
+  - Label missing associated control
+  - Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it.
+- app/(app)/settings/account/page.tsx:202:11
+  - Label missing associated control
+  - Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it.
+- app/(app)/settings/account/page.tsx:217:11
+  - Label missing associated control
+  - Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it.
+- app/(app)/settings/account/page.tsx:321:11
+  - Label missing associated control
+  - Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it.
+- app/(auth)/reset/page.tsx:121:17
+  - Label missing associated control
+  - Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it.
+- app/(auth)/reset/update/page.tsx:111:15
+  - Label missing associated control
+  - Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it.
+- app/(auth)/reset/update/page.tsx:123:15
+  - Label missing associated control
+  - Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it.
+- app/(public)/audit/[runId]/report/ClaimGate.tsx:88:11
+  - Label missing associated control
+  - Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it.
+- app/(public)/audit/[runId]/report/ClaimGate.tsx:94:11
+  - Label missing associated control
+  - Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it.
+- app/(public)/audit/[runId]/report/ClaimGate.tsx:100:11
+  - Label missing associated control
+  - Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it.
+- app/(public)/audit/[runId]/report/ClaimGate.tsx:106:11
+  - Label missing associated control
+  - Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it.
+- app/(public)/audit/AuditUploadForm.tsx:192:9
+  - Label missing associated control
+  - Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it.
+- components/customers/CustomersFilterSheet.tsx:209:15
+  - Label missing associated control
+  - Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it.
+- components/settings/GorgiasSupportSyncClient.tsx:382:11
+  - Label missing associated control
+  - Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it.
+- components/settings/GorgiasSupportSyncClient.tsx:408:11
+  - Label missing associated control
+  - Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it.
+- components/settings/GorgiasSupportSyncClient.tsx:493:13
+  - Label missing associated control
+  - Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it.
+- components/settings/GorgiasSupportSyncClient.tsx:515:13
+  - Label missing associated control
+  - Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it.
+- components/upload/UploadClient.tsx:1355:13
+  - Label missing associated control
+  - Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it.
+- components/upload/UploadClient.tsx:1379:13
+  - Label missing associated control
+  - Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it.
+- components/upload/UploadClient.tsx:1416:13
+  - Label missing associated control
+  - Screen reader users can't tell which input this label names because it's tied to none, so add `htmlFor` or wrap the input inside it.
+
+## react-doctor:js-hoist-intl
+
+- Severity: warning
+- Category: Performance
+- Count: 20
+- Title: Intl formatter rebuilt each call
+- Fix guidance: Move `new Intl.NumberFormat(...)` to the top of the file or wrap it in `useMemo`. Building one is slow, so don't redo it on every call
+
+- app/api/search/route.ts:152:15
+  - Intl formatter rebuilt each call
+  - This is slow because new Intl.NumberFormat() rebuilds on every call inside a function, so move it to the top of the file, or wrap it in useMemo
+- components/audit/CustomerNotes.tsx:16:10
+  - Intl formatter rebuilt each call
+  - This is slow because new Intl.DateTimeFormat() rebuilds on every call inside a function, so move it to the top of the file, or wrap it in useMemo
+- components/claims/ClaimReviewPanel.tsx:170:10
+  - Intl formatter rebuilt each call
+  - This is slow because new Intl.NumberFormat() rebuilds on every call inside a function, so move it to the top of the file, or wrap it in useMemo
+- components/dashboard/SavingsCard.tsx:39:10
+  - Intl formatter rebuilt each call
+  - This is slow because new Intl.NumberFormat() rebuilds on every call inside a function, so move it to the top of the file, or wrap it in useMemo
+- components/settings/ApiIntegrationsClient.tsx:54:10
+  - Intl formatter rebuilt each call
+  - This is slow because new Intl.DateTimeFormat() rebuilds on every call inside a function, so move it to the top of the file, or wrap it in useMemo
+- components/settings/AuditTrailClient.tsx:43:10
+  - Intl formatter rebuilt each call
+  - This is slow because new Intl.DateTimeFormat() rebuilds on every call inside a function, so move it to the top of the file, or wrap it in useMemo
+- components/settings/GorgiasSupportSyncClient.tsx:28:10
+  - Intl formatter rebuilt each call
+  - This is slow because new Intl.DateTimeFormat() rebuilds on every call inside a function, so move it to the top of the file, or wrap it in useMemo
+- components/settings/TeamManagementClient.tsx:69:10
+  - Intl formatter rebuilt each call
+  - This is slow because new Intl.DateTimeFormat() rebuilds on every call inside a function, so move it to the top of the file, or wrap it in useMemo
+- components/ui/Timeline.tsx:173:12
+  - Intl formatter rebuilt each call
+  - This is slow because new Intl.DateTimeFormat() rebuilds on every call inside a function, so move it to the top of the file, or wrap it in useMemo
+- components/watchlist/WatchlistTableClient.tsx:160:20
+  - Intl formatter rebuilt each call
+  - This is slow because new Intl.DateTimeFormat() rebuilds on every call inside a function, so move it to the top of the file, or wrap it in useMemo
+- lib/customers/narrative.ts:46:12
+  - Intl formatter rebuilt each call
+  - This is slow because new Intl.DateTimeFormat() rebuilds on every call inside a function, so move it to the top of the file, or wrap it in useMemo
+- lib/email/templates.ts:30:10
+  - Intl formatter rebuilt each call
+  - This is slow because new Intl.NumberFormat() rebuilds on every call inside a function, so move it to the top of the file, or wrap it in useMemo
+- lib/evidence/narrative.ts:13:10
+  - Intl formatter rebuilt each call
+  - This is slow because new Intl.DateTimeFormat() rebuilds on every call inside a function, so move it to the top of the file, or wrap it in useMemo
+- lib/evidence/pdf.tsx:102:10
+  - Intl formatter rebuilt each call
+  - This is slow because new Intl.DateTimeFormat() rebuilds on every call inside a function, so move it to the top of the file, or wrap it in useMemo
+- lib/evidence/pdf.tsx:106:10
+  - Intl formatter rebuilt each call
+  - This is slow because new Intl.NumberFormat() rebuilds on every call inside a function, so move it to the top of the file, or wrap it in useMemo
+- lib/utils/format.ts:11:10
+  - Intl formatter rebuilt each call
+  - This is slow because new Intl.NumberFormat() rebuilds on every call inside a function, so move it to the top of the file, or wrap it in useMemo
+- lib/utils/format.ts:37:17
+  - Intl formatter rebuilt each call
+  - This is slow because new Intl.DateTimeFormat() rebuilds on every call inside a function, so move it to the top of the file, or wrap it in useMemo
+- lib/utils/format.ts:59:12
+  - Intl formatter rebuilt each call
+  - This is slow because new Intl.DateTimeFormat() rebuilds on every call inside a function, so move it to the top of the file, or wrap it in useMemo
+- lib/utils/format.ts:68:12
+  - Intl formatter rebuilt each call
+  - This is slow because new Intl.DateTimeFormat() rebuilds on every call inside a function, so move it to the top of the file, or wrap it in useMemo
+- lib/utils/format.ts:95:12
+  - Intl formatter rebuilt each call
+  - This is slow because new Intl.DateTimeFormat() rebuilds on every call inside a function, so move it to the top of the file, or wrap it in useMemo
+
+## react-doctor:no-event-handler
+
+- Severity: warning
+- Category: Bugs
+- Count: 20
+- Title: Event logic handled in an effect
+- Fix guidance: Run the side effect in the event handler that triggers it, instead of watching its state from a useEffect. See https://react.dev/learn/you-might-not-need-an-effect#sharing-logic-between-event-handlers
+
+- app/(app)/settings/account/page.tsx:48:69
+  - Event logic handled in an effect
+  - Faking an event handler with state plus a useEffect costs an extra render & runs late.
+- components/audit/AuditCustomersTableClient.tsx:216:9
+  - Event logic handled in an effect
+  - Faking an event handler with a prop plus a useEffect costs an extra render & runs late.
+- components/audit/AuditTabs.tsx:24:9
+  - Event logic handled in an effect
+  - Faking an event handler with a prop plus a useEffect costs an extra render & runs late.
+- components/audit/DataQualityBanner.tsx:22:36
+  - Event logic handled in an effect
+  - Faking an event handler with a prop plus a useEffect costs an extra render & runs late.
+- components/claims/ClaimReviewPanel.tsx:475:42
+  - Event logic handled in an effect
+  - Faking an event handler with a prop plus a useEffect costs an extra render & runs late.
+- components/claims/ClaimReviewPanel.tsx:532:34
+  - Event logic handled in an effect
+  - Faking an event handler with a prop plus a useEffect costs an extra render & runs late.
+- components/claims/ClaimReviewPanel.tsx:559:21
+  - Event logic handled in an effect
+  - Faking an event handler with state plus a useEffect costs an extra render & runs late.
+- components/claims/ClaimReviewPanel.tsx:572:21
+  - Event logic handled in an effect
+  - Faking an event handler with state plus a useEffect costs an extra render & runs late.
+- components/claims/ClaimReviewPanel.tsx:585:21
+  - Event logic handled in an effect
+  - Faking an event handler with state plus a useEffect costs an extra render & runs late.
+- components/claims/ClaimReviewPanel.tsx:610:10
+  - Event logic handled in an effect
+  - Faking an event handler with state plus a useEffect costs an extra render & runs late.
+- components/claims/ClaimReviewPanel.tsx:620:39
+  - Event logic handled in an effect
+  - Faking an event handler with state plus a useEffect costs an extra render & runs late.
+- components/claims/ClaimReviewPanel.tsx:620:68
+  - Event logic handled in an effect
+  - Faking an event handler with state plus a useEffect costs an extra render & runs late.
+- components/claims/ClaimReviewPanel.tsx:646:9
+  - Event logic handled in an effect
+  - Faking an event handler with a prop plus a useEffect costs an extra render & runs late.
+- components/claims/ClaimReviewPanel.tsx:658:10
+  - Event logic handled in an effect
+  - Faking an event handler with state plus a useEffect costs an extra render & runs late.
+- components/common/AmplitudeInit.tsx:20:9
+  - Event logic handled in an effect
+  - Faking an event handler with a prop plus a useEffect costs an extra render & runs late.
+- components/customers/CustomerIntelligenceDrawer.tsx:385:9
+  - Event logic handled in an effect
+  - Faking an event handler with a prop plus a useEffect costs an extra render & runs late.
+- components/evidence/EvidencePackageForm.tsx:51:16
+  - Event logic handled in an effect
+  - Faking an event handler with a prop plus a useEffect costs an extra render & runs late.
+- components/layout/CommandPalette.tsx:182:9
+  - Event logic handled in an effect
+  - Faking an event handler with a prop plus a useEffect costs an extra render & runs late.
+- components/ui/animated-grid-pattern.tsx:60:9
+  - Event logic handled in an effect
+  - Faking an event handler with state plus a useEffect costs an extra render & runs late.
+- components/upload/UploadClient.tsx:353:9
+  - Event logic handled in an effect
+  - Faking an event handler with state plus a useEffect costs an extra render & runs late.
+
+## react-doctor:server-sequential-independent-await
+
+- Severity: warning
+- Category: Bugs
+- Count: 17
+- Title: Sequential independent awaits
+- Fix guidance: These two awaits don't depend on each other. Wrap them in `Promise.all([...])` so they run at the same time.
+
+- app/(app)/audit/[runId]/page.tsx:102:3
+  - Sequential independent awaits
+  - This await doesn't use the previous result, so your users wait twice as long for nothing.
+- app/(app)/customers/[id]/page.tsx:254:3
+  - Sequential independent awaits
+  - This await doesn't use the previous result, so your users wait twice as long for nothing.
+- app/(app)/customers/[id]/page.tsx:335:3
+  - Sequential independent awaits
+  - This await doesn't use the previous result, so your users wait twice as long for nothing.
+- app/(app)/customers/page.tsx:164:3
+  - Sequential independent awaits
+  - This await doesn't use the previous result, so your users wait twice as long for nothing.
+- app/(app)/history/page.tsx:46:3
+  - Sequential independent awaits
+  - This await doesn't use the previous result, so your users wait twice as long for nothing.
+- app/(app)/reports/page.tsx:215:3
+  - Sequential independent awaits
+  - This await doesn't use the previous result, so your users wait twice as long for nothing.
+- app/(public)/audit/[runId]/report/page.tsx:57:3
+  - Sequential independent awaits
+  - This await doesn't use the previous result, so your users wait twice as long for nothing.
+- app/api/customers/notes/[id]/route.ts:29:3
+  - Sequential independent awaits
+  - This await doesn't use the previous result, so your users wait twice as long for nothing.
+- app/api/team/route.ts:37:3
+  - Sequential independent awaits
+  - This await doesn't use the previous result, so your users wait twice as long for nothing.
+- app/api/watchlist/[id]/route.ts:38:3
+  - Sequential independent awaits
+  - This await doesn't use the previous result, so your users wait twice as long for nothing.
+- audit/run-reaudit-v2.js:292:3
+  - Sequential independent awaits
+  - This await doesn't use the previous result, so your users wait twice as long for nothing.
+- audit/run-reaudit-v2.js:590:3
+  - Sequential independent awaits
+  - This await doesn't use the previous result, so your users wait twice as long for nothing.
+- audit/run-reaudit.js:261:3
+  - Sequential independent awaits
+  - This await doesn't use the previous result, so your users wait twice as long for nothing.
+- audit/run-reaudit.js:597:3
+  - Sequential independent awaits
+  - This await doesn't use the previous result, so your users wait twice as long for nothing.
+- lib/evidence/buildPackage.ts:110:3
+  - Sequential independent awaits
+  - This await doesn't use the previous result, so your users wait twice as long for nothing.
+- lib/gorgias/widgetData.ts:610:3
+  - Sequential independent awaits
+  - This await doesn't use the previous result, so your users wait twice as long for nothing.
+- lib/support/intake/linkSupportCase.ts:492:3
+  - Sequential independent awaits
+  - This await doesn't use the previous result, so your users wait twice as long for nothing.
+
+## react-doctor:js-tosorted-immutable
+
+- Severity: warning
+- Category: Performance
+- Count: 16
+- Title: Spread copy before sort()
+- Fix guidance: Use `array.toSorted()` (ES2023) instead of `[...array].sort()` so you sort without copying the array first
+
+- app/(app)/audit/[runId]/page.tsx:91:10
+  - Spread copy before sort()
+  - This wastes work because [...array].sort() copies the array just to sort it, so use array.toSorted() to sort without the extra copy (ES2023)
+- components/audit/AuditCustomersTableClient.tsx:82:24
+  - Spread copy before sort()
+  - This wastes work because [...array].sort() copies the array just to sort it, so use array.toSorted() to sort without the extra copy (ES2023)
+- components/ui/Timeline.tsx:195:18
+  - Spread copy before sort()
+  - This wastes work because [...array].sort() copies the array just to sort it, so use array.toSorted() to sort without the extra copy (ES2023)
+- lib/claims/priority.ts:32:10
+  - Spread copy before sort()
+  - This wastes work because [...array].sort() copies the array just to sort it, so use array.toSorted() to sort without the extra copy (ES2023)
+- lib/claims/reporting.ts:42:18
+  - Spread copy before sort()
+  - This wastes work because [...array].sort() copies the array just to sort it, so use array.toSorted() to sort without the extra copy (ES2023)
+- lib/engine/fastContext.ts:248:18
+  - Spread copy before sort()
+  - This wastes work because [...array].sort() copies the array just to sort it, so use array.toSorted() to sort without the extra copy (ES2023)
+- lib/engine/fastScore.ts:478:18
+  - Spread copy before sort()
+  - This wastes work because [...array].sort() copies the array just to sort it, so use array.toSorted() to sort without the extra copy (ES2023)
+- lib/engine/identityCluster.ts:224:18
+  - Spread copy before sort()
+  - This wastes work because [...array].sort() copies the array just to sort it, so use array.toSorted() to sort without the extra copy (ES2023)
+- lib/engine/signals/paymentChurn.ts:23:18
+  - Spread copy before sort()
+  - This wastes work because [...array].sort() copies the array just to sort it, so use array.toSorted() to sort without the extra copy (ES2023)
+- lib/gorgias/widgetData.ts:63:18
+  - Spread copy before sort()
+  - This wastes work because [...array].sort() copies the array just to sort it, so use array.toSorted() to sort without the extra copy (ES2023)
+- lib/gorgias/widgetData.ts:781:18
+  - Spread copy before sort()
+  - This wastes work because [...array].sort() copies the array just to sort it, so use array.toSorted() to sort without the extra copy (ES2023)
+- lib/identity/contextInsights.ts:128:19
+  - Spread copy before sort()
+  - This wastes work because [...array].sort() copies the array just to sort it, so use array.toSorted() to sort without the extra copy (ES2023)
+- lib/linker.ts:999:18
+  - Spread copy before sort()
+  - This wastes work because [...array].sort() copies the array just to sort it, so use array.toSorted() to sort without the extra copy (ES2023)
+- lib/processing/restitchAuditIdentity.ts:429:60
+  - Spread copy before sort()
+  - This wastes work because [...array].sort() copies the array just to sort it, so use array.toSorted() to sort without the extra copy (ES2023)
+- lib/scorer.ts:242:19
+  - Spread copy before sort()
+  - This wastes work because [...array].sort() copies the array just to sort it, so use array.toSorted() to sort without the extra copy (ES2023)
+- registry/magicui/dotted-map.tsx:54:20
+  - Spread copy before sort()
+  - This wastes work because [...array].sort() copies the array just to sort it, so use array.toSorted() to sort without the extra copy (ES2023)
+
+## react-doctor:nextjs-no-a-element
+
+- Severity: warning
+- Category: Bugs
+- Count: 16
+- Title: Plain anchor for internal link
+- Fix guidance: `import Link from 'next/link'` for client-side navigation, prefetching, and preserved scroll position
+
+- app/(public)/landing/page.tsx:216:13
+  - Plain anchor for internal link
+  - Plain <a> reloads the whole page on internal links.
+- app/(public)/landing/page.tsx:223:13
+  - Plain anchor for internal link
+  - Plain <a> reloads the whole page on internal links.
+- app/(public)/landing/page.tsx:240:13
+  - Plain anchor for internal link
+  - Plain <a> reloads the whole page on internal links.
+- app/(public)/landing/page.tsx:988:15
+  - Plain anchor for internal link
+  - Plain <a> reloads the whole page on internal links.
+- app/(public)/landing/page.tsx:995:15
+  - Plain anchor for internal link
+  - Plain <a> reloads the whole page on internal links.
+- app/(public)/landing/page.tsx:1562:15
+  - Plain anchor for internal link
+  - Plain <a> reloads the whole page on internal links.
+- app/(public)/landing/page.tsx:1708:17
+  - Plain anchor for internal link
+  - Plain <a> reloads the whole page on internal links.
+- app/(public)/landing/page.tsx:1709:17
+  - Plain anchor for internal link
+  - Plain <a> reloads the whole page on internal links.
+- app/(public)/landing/page.tsx:1710:17
+  - Plain anchor for internal link
+  - Plain <a> reloads the whole page on internal links.
+- app/(public)/landing/page.tsx:1717:17
+  - Plain anchor for internal link
+  - Plain <a> reloads the whole page on internal links.
+- app/(public)/landing/page.tsx:1718:17
+  - Plain anchor for internal link
+  - Plain <a> reloads the whole page on internal links.
+- app/(public)/landing/page.tsx:1719:17
+  - Plain anchor for internal link
+  - Plain <a> reloads the whole page on internal links.
+- app/(public)/landing/page.tsx:1720:17
+  - Plain anchor for internal link
+  - Plain <a> reloads the whole page on internal links.
+- components/claims/ClaimReviewPanel.tsx:1106:13
+  - Plain anchor for internal link
+  - Plain <a> reloads the whole page on internal links.
+- components/reports/ExportMenu.tsx:77:11
+  - Plain anchor for internal link
+  - Plain <a> reloads the whole page on internal links.
+- components/settings/ApiIntegrationsClient.tsx:442:13
+  - Plain anchor for internal link
+  - Plain <a> reloads the whole page on internal links.
+
+## react-doctor:no-cascading-set-state
+
+- Severity: warning
+- Category: Bugs
+- Count: 15
+- Title: Multiple setState calls in one effect
+- Fix guidance: Combine into useReducer: `const [state, dispatch] = useReducer(reducer, initialState)`
+
+- app/(public)/landing/_components/AnimatedBar.tsx:57:3
+  - Multiple setState calls in one effect
+  - 3 setState calls in one useEffect redraw your screen each time they run together.
+- components/audit/CustomerNotes.tsx:29:3
+  - Multiple setState calls in one effect
+  - 3 setState calls in one useEffect redraw your screen each time they run together.
+- components/claims/ClaimReviewPanel.tsx:518:3
+  - Multiple setState calls in one effect
+  - 5 setState calls in one useEffect redraw your screen each time they run together.
+- components/claims/ClaimReviewPanel.tsx:531:3
+  - Multiple setState calls in one effect
+  - 17 setState calls in one useEffect redraw your screen each time they run together.
+- components/claims/ClaimReviewPanel.tsx:623:3
+  - Multiple setState calls in one effect
+  - 3 setState calls in one useEffect redraw your screen each time they run together.
+- components/claims/ClaimReviewPanel.tsx:685:3
+  - Multiple setState calls in one effect
+  - 9 setState calls in one useEffect redraw your screen each time they run together.
+- components/customers/CrossMerchantSignalCard.tsx:117:3
+  - Multiple setState calls in one effect
+  - 6 setState calls in one useEffect redraw your screen each time they run together.
+- components/customers/CustomerIntelligenceDrawer.tsx:383:3
+  - Multiple setState calls in one effect
+  - 14 setState calls in one useEffect redraw your screen each time they run together.
+- components/customers/CustomerSupportCasesSection.tsx:12:3
+  - Multiple setState calls in one effect
+  - 4 setState calls in one useEffect redraw your screen each time they run together.
+- components/evidence/EvidencePackageForm.tsx:45:3
+  - Multiple setState calls in one effect
+  - 3 setState calls in one useEffect redraw your screen each time they run together.
+- components/evidence/EvidencePackageForm.tsx:60:3
+  - Multiple setState calls in one effect
+  - 5 setState calls in one useEffect redraw your screen each time they run together.
+- components/layout/CommandPalette.tsx:142:3
+  - Multiple setState calls in one effect
+  - 9 setState calls in one useEffect redraw your screen each time they run together.
+- components/layout/CommandPalette.tsx:181:3
+  - Multiple setState calls in one effect
+  - 5 setState calls in one useEffect redraw your screen each time they run together.
+- components/shopify/ShopifyIntegrationBanner.tsx:30:3
+  - Multiple setState calls in one effect
+  - 3 setState calls in one useEffect redraw your screen each time they run together.
+- hooks/useCountUp.ts:19:3
+  - Multiple setState calls in one effect
+  - 4 setState calls in one useEffect redraw your screen each time they run together.
+
+## react-doctor:no-fetch-in-effect
+
+- Severity: warning
+- Category: Bugs
+- Count: 14
+- Title: Data fetching inside an effect
+- Fix guidance: Use `useQuery()` from @tanstack/react-query, `useSWR()`, or fetch in a Server Component instead
+
+- app/(app)/settings/account/page.tsx:44:3
+  - Data fetching inside an effect
+  - fetch() inside useEffect races, double-fires & leaks for your users.
+- components/audit/CustomerNotes.tsx:29:3
+  - Data fetching inside an effect
+  - fetch() inside useEffect races, double-fires & leaks for your users.
+- components/claims/ClaimReviewPanel.tsx:518:3
+  - Data fetching inside an effect
+  - fetch() inside useEffect races, double-fires & leaks for your users.
+- components/claims/ClaimReviewPanel.tsx:623:3
+  - Data fetching inside an effect
+  - fetch() inside useEffect races, double-fires & leaks for your users.
+- components/customers/CrossMerchantSignalCard.tsx:117:3
+  - Data fetching inside an effect
+  - fetch() inside useEffect races, double-fires & leaks for your users.
+- components/customers/CustomerIntelligenceDrawer.tsx:383:3
+  - Data fetching inside an effect
+  - fetch() inside useEffect races, double-fires & leaks for your users.
+- components/customers/CustomerSupportCasesSection.tsx:12:3
+  - Data fetching inside an effect
+  - fetch() inside useEffect races, double-fires & leaks for your users.
+- components/evidence/EvidencePackageForm.tsx:45:3
+  - Data fetching inside an effect
+  - fetch() inside useEffect races, double-fires & leaks for your users.
+- components/evidence/EvidencePackageForm.tsx:60:3
+  - Data fetching inside an effect
+  - fetch() inside useEffect races, double-fires & leaks for your users.
+- components/layout/CommandPalette.tsx:142:3
+  - Data fetching inside an effect
+  - fetch() inside useEffect races, double-fires & leaks for your users.
+- components/nav/Sidebar.tsx:160:3
+  - Data fetching inside an effect
+  - fetch() inside useEffect races, double-fires & leaks for your users.
+- components/settings/GorgiasSupportSyncClient.tsx:86:3
+  - Data fetching inside an effect
+  - fetch() inside useEffect races, double-fires & leaks for your users.
+- components/settings/OrderSourceClient.tsx:55:3
+  - Data fetching inside an effect
+  - fetch() inside useEffect races, double-fires & leaks for your users.
+- components/upload/UploadClient.tsx:595:3
+  - Data fetching inside an effect
+  - fetch() inside useEffect races, double-fires & leaks for your users.
+
+## react-doctor:prefer-tag-over-role
+
+- Severity: warning
+- Category: Accessibility
+- Count: 14
+- Title: Role used instead of HTML tag
+- Fix guidance: Replace `role` with the matching HTML element when one exists.
+
+- components/claims/ClaimReviewPanel.tsx:364:45
+  - Role used instead of HTML tag
+  - Screen reader users get more reliable semantics from `<address>` than `role="group"`, so use `<address>` instead.
+- components/customers/CustomerIntelligenceDrawer.tsx:428:9
+  - Role used instead of HTML tag
+  - Screen reader users get more reliable semantics from `<dialog>` than `role="dialog"`, so use `<dialog>` instead.
+- components/evidence/EvidenceStrengthMeter.tsx:52:47
+  - Role used instead of HTML tag
+  - Screen reader users get more reliable semantics from `<img>` than `role="img"`, so use `<img>` instead.
+- components/layout/CommandPalette.tsx:275:9
+  - Role used instead of HTML tag
+  - Screen reader users get more reliable semantics from `<dialog>` than `role="dialog"`, so use `<dialog>` instead.
+- components/settings/ApiIntegrationsClient.tsx:458:82
+  - Role used instead of HTML tag
+  - Screen reader users get more reliable semantics from `<dialog>` than `role="dialog"`, so use `<dialog>` instead.
+- components/settings/ApiIntegrationsClient.tsx:573:82
+  - Role used instead of HTML tag
+  - Screen reader users get more reliable semantics from `<dialog>` than `role="dialog"`, so use `<dialog>` instead.
+- components/settings/AppearanceSettings.tsx:46:11
+  - Role used instead of HTML tag
+  - Screen reader users get more reliable semantics from `<address>` than `role="group"`, so use `<address>` instead.
+- components/settings/TeamManagementClient.tsx:306:11
+  - Role used instead of HTML tag
+  - Screen reader users get more reliable semantics from `<output>` than `role="status"`, so use `<output>` instead.
+- components/shopify/ShopifyIntegrationBanner.tsx:80:7
+  - Role used instead of HTML tag
+  - Screen reader users get more reliable semantics from `<output>` than `role="status"`, so use `<output>` instead.
+- components/shopify/SyncStatusCard.tsx:88:9
+  - Role used instead of HTML tag
+  - Screen reader users get more reliable semantics from `<dialog>` than `role="dialog"`, so use `<dialog>` instead.
+- components/ui/Drawer.tsx:80:7
+  - Role used instead of HTML tag
+  - Screen reader users get more reliable semantics from `<dialog>` than `role="dialog"`, so use `<dialog>` instead.
+- components/ui/LinkedIdentityList.tsx:58:15
+  - Role used instead of HTML tag
+  - Screen reader users get more reliable semantics from `<button>` than `role="button"`, so use `<button>` instead.
+- components/ui/Timeline.tsx:202:7
+  - Role used instead of HTML tag
+  - Screen reader users get more reliable semantics from `<menu>` than `role="list"`, so use `<menu>` instead.
+- components/ui/UnauthLogo.tsx:46:7
+  - Role used instead of HTML tag
+  - Screen reader users get more reliable semantics from `<img>` than `role="img"`, so use `<img>` instead.
+
+## deslop:unused-dependency
+
+- Severity: warning
+- Category: Maintainability
+- Count: 14
+- Title: unused-dependency
+- Fix guidance: Remove the dependency from package.json if it is genuinely unused.
+
+- package.json
+  - Unused dependency: `@radix-ui/react-alert-dialog`
+- package.json
+  - Unused dependency: `@radix-ui/react-dialog`
+- package.json
+  - Unused dependency: `@radix-ui/react-dropdown-menu`
+- package.json
+  - Unused dependency: `@radix-ui/react-label`
+- package.json
+  - Unused dependency: `@radix-ui/react-progress`
+- package.json
+  - Unused dependency: `@radix-ui/react-select`
+- package.json
+  - Unused dependency: `@radix-ui/react-separator`
+- package.json
+  - Unused dependency: `@radix-ui/react-slot`
+- package.json
+  - Unused dependency: `@radix-ui/react-tabs`
+- package.json
+  - Unused dependency: `@radix-ui/react-toast`
+- package.json
+  - Unused dependency: `@radix-ui/react-tooltip`
+- package.json
+  - Unused dependency: `class-variance-authority`
+- package.json
+  - Unused dependency: `countries-list`
+- package.json
+  - Unused dependency: `dotted-map`
+
+## react-doctor:design-no-redundant-padding-axes
+
+- Severity: warning
+- Category: Maintainability
+- Count: 12
+- Title: Redundant padding axes
+- Fix guidance: Collapse `px-N py-N` to `p-N` when both sides match. Keep them split only when one side changes at a breakpoint (`py-2 md:py-3`).
+
+- app/(app)/chargebacks/page.tsx:105:16
+  - Redundant padding axes
+  - px-4 & py-4 are the same.
+- app/(app)/customers/[id]/page.tsx:827:22
+  - Redundant padding axes
+  - px-3 & py-3 are the same.
+- app/(app)/customers/[id]/page.tsx:837:18
+  - Redundant padding axes
+  - px-3 & py-3 are the same.
+- app/(app)/watchlist/page.tsx:210:25
+  - Redundant padding axes
+  - px-3 & py-3 are the same.
+- app/(app)/watchlist/page.tsx:214:25
+  - Redundant padding axes
+  - px-3 & py-3 are the same.
+- app/(app)/watchlist/page.tsx:218:25
+  - Redundant padding axes
+  - px-3 & py-3 are the same.
+- app/(app)/watchlist/page.tsx:219:25
+  - Redundant padding axes
+  - px-3 & py-3 are the same.
+- app/(app)/watchlist/page.tsx:222:25
+  - Redundant padding axes
+  - px-3 & py-3 are the same.
+- app/(public)/landing/_components/HeroNotificationArtifact.tsx:102:12
+  - Redundant padding axes
+  - px-3 & py-3 are the same.
+- components/claims/ClaimReviewPanel.tsx:1640:23
+  - Redundant padding axes
+  - px-2 & py-2 are the same.
+- components/navigation/skeletons/pageSkeletons.tsx:363:14
+  - Redundant padding axes
+  - px-4 & py-4 are the same.
+- components/OnboardingClient.tsx:161:19
+  - Redundant padding axes
+  - px-3 & py-3 are the same.
+
+## react-doctor:no-multi-comp
+
+- Severity: warning
+- Category: Maintainability
+- Count: 10
+- Title: Multiple components in one file
+- Fix guidance: Move secondary components into their own files.
+
+- extensions/chrome/popup/popup.tsx:28:10
+  - Multiple components in one file
+  - This file is harder to navigate with more than one component.
+- extensions/chrome/popup/popup.tsx:62:10
+  - Multiple components in one file
+  - This file is harder to navigate with more than one component.
+- lib/evidence/pdf.tsx:138:10
+  - Multiple components in one file
+  - This file is harder to navigate with more than one component.
+- lib/evidence/pdf.tsx:155:10
+  - Multiple components in one file
+  - This file is harder to navigate with more than one component.
+- lib/evidence/pdf.tsx:179:10
+  - Multiple components in one file
+  - This file is harder to navigate with more than one component.
+- lib/evidence/pdf.tsx:213:10
+  - Multiple components in one file
+  - This file is harder to navigate with more than one component.
+- lib/evidence/pdf.tsx:260:10
+  - Multiple components in one file
+  - This file is harder to navigate with more than one component.
+- lib/evidence/pdf.tsx:341:10
+  - Multiple components in one file
+  - This file is harder to navigate with more than one component.
+- lib/evidence/pdf.tsx:369:10
+  - Multiple components in one file
+  - This file is harder to navigate with more than one component.
+- lib/evidence/pdf.tsx:383:10
+  - Multiple components in one file
+  - This file is harder to navigate with more than one component.
+
+## react-doctor:prefer-module-scope-pure-function
+
+- Severity: warning
+- Category: Maintainability
+- Count: 10
+- Title: Pure function rebuilt every render
+- Fix guidance: Move the function above the component, at the top of the file. It doesn't use local state, so rebuilding it each update is wasted work.
+
+- app/(public)/landing/page.tsx:176:31
+  - Pure function rebuilt every render
+  - `heroSubjectRowDelay` inside `LandingPage` uses no local state but is rebuilt on every render, so it wastes work & breaks memoized children. Move it to the top of the file, outside the component.
+- app/api/customers/[id]/route.ts:324:26
+  - Pure function rebuilt every render
+  - `uniqueValues` inside `GETHandler` uses no local state but is rebuilt on every render, so it wastes work & breaks memoized children. Move it to the top of the file, outside the component.
+- app/api/evidence/ce3-check/route.ts:57:18
+  - Pure function rebuilt every render
+  - `txDate` inside `GET` uses no local state but is rebuilt on every render, so it wastes work & breaks memoized children. Move it to the top of the file, outside the component.
+- components/claims/ClaimReviewPanel.tsx:1024:22
+  - Pure function rebuilt every render
+  - `actorLabel` inside `ClaimReviewPanel` uses no local state but is rebuilt on every render, so it wastes work & breaks memoized children. Move it to the top of the file, outside the component.
+- components/claims/ClaimReviewPanel.tsx:1025:24
+  - Pure function rebuilt every render
+  - `getSlaVisual` inside `ClaimReviewPanel` uses no local state but is rebuilt on every render, so it wastes work & breaks memoized children. Move it to the top of the file, outside the component.
+- components/dashboard/InsightsStrip.tsx:20:3
+  - Pure function rebuilt every render
+  - `colorFor` inside `InsightsStrip` uses no local state but is rebuilt on every render, so it wastes work & breaks memoized children. Move it to the top of the file, outside the component.
+- components/upload/UploadClient.tsx:164:3
+  - Pure function rebuilt every render
+  - `validateCsvFile` inside `UploadClient` uses no local state but is rebuilt on every render, so it wastes work & breaks memoized children. Move it to the top of the file, outside the component.
+- components/upload/UploadClient.tsx:201:3
+  - Pure function rebuilt every render
+  - `checkDuplicateFile` inside `UploadClient` uses no local state but is rebuilt on every render, so it wastes work & breaks memoized children. Move it to the top of the file, outside the component.
+- components/upload/UploadClient.tsx:225:3
+  - Pure function rebuilt every render
+  - `hashFile` inside `UploadClient` uses no local state but is rebuilt on every render, so it wastes work & breaks memoized children. Move it to the top of the file, outside the component.
+- components/upload/UploadClient.tsx:660:3
+  - Pure function rebuilt every render
+  - `downloadTemplate` inside `UploadClient` uses no local state but is rebuilt on every render, so it wastes work & breaks memoized children. Move it to the top of the file, outside the component.
+
+## react-doctor:async-parallel
+
+- Severity: warning
+- Category: Performance
+- Count: 9
+- Title: Independent awaits run sequentially
+- Fix guidance: Use `const [a, b] = await Promise.all([fetchA(), fetchB()])` so independent calls run at the same time
+
+- app/api/account/delete/route.ts:83:5
+  - Independent awaits run sequentially
+  - These 3 sequential await statements run one after another even though they look independent, so the page waits longer than it needs to. Run them together with Promise.all() instead
+- app/api/account/delete/route.ts:143:5
+  - Independent awaits run sequentially
+  - These 3 sequential await statements run one after another even though they look independent, so the page waits longer than it needs to. Run them together with Promise.all() instead
+- app/api/claims/[claimId]/outcome/route.ts:52:5
+  - Independent awaits run sequentially
+  - These 3 sequential await statements run one after another even though they look independent, so the page waits longer than it needs to. Run them together with Promise.all() instead
+- app/api/process-csv-job/route.ts:248:5
+  - Independent awaits run sequentially
+  - These 3 sequential await statements run one after another even though they look independent, so the page waits longer than it needs to. Run them together with Promise.all() instead
+- app/api/public-audit/submit/route.ts:195:3
+  - Independent awaits run sequentially
+  - These 3 sequential await statements run one after another even though they look independent, so the page waits longer than it needs to. Run them together with Promise.all() instead
+- audit/run-reaudit-v2.js:246:3
+  - Independent awaits run sequentially
+  - These 4 sequential await statements run one after another even though they look independent, so the page waits longer than it needs to. Run them together with Promise.all() instead
+- audit/run-reaudit-v2.js:360:7
+  - Independent awaits run sequentially
+  - These 3 sequential await statements run one after another even though they look independent, so the page waits longer than it needs to. Run them together with Promise.all() instead
+- audit/run-reaudit-v2.js:374:7
+  - Independent awaits run sequentially
+  - These 4 sequential await statements run one after another even though they look independent, so the page waits longer than it needs to. Run them together with Promise.all() instead
+- lib/support/intake/ingestSupportCase.ts:234:3
+  - Independent awaits run sequentially
+  - These 3 sequential await statements run one after another even though they look independent, so the page waits longer than it needs to. Run them together with Promise.all() instead
+
+## react-doctor:click-events-have-key-events
+
+- Severity: warning
+- Category: Accessibility
+- Count: 9
+- Title: Click handler missing keyboard handler
+- Fix guidance: Pair `onClick` with a key handler so keyboard users can trigger it.
+
+- app/(public)/audit/AuditUploadForm.tsx:197:10
+  - Click handler missing keyboard handler
+  - Keyboard users can't trigger this click handler because there's no keyboard one, so add `onKeyUp`, `onKeyDown`, or `onKeyPress`.
+- app/(public)/landing/AuditForm.tsx:81:8
+  - Click handler missing keyboard handler
+  - Keyboard users can't trigger this click handler because there's no keyboard one, so add `onKeyUp`, `onKeyDown`, or `onKeyPress`.
+- components/audit/AuditCustomersTableClient.tsx:326:12
+  - Click handler missing keyboard handler
+  - Keyboard users can't trigger this click handler because there's no keyboard one, so add `onKeyUp`, `onKeyDown`, or `onKeyPress`.
+- components/customers/CustomersTableClient.tsx:112:12
+  - Click handler missing keyboard handler
+  - Keyboard users can't trigger this click handler because there's no keyboard one, so add `onKeyUp`, `onKeyDown`, or `onKeyPress`.
+- components/shopify/SyncStatusCard.tsx:80:6
+  - Click handler missing keyboard handler
+  - Keyboard users can't trigger this click handler because there's no keyboard one, so add `onKeyUp`, `onKeyDown`, or `onKeyPress`.
+- components/ui/EvidenceList.tsx:48:10
+  - Click handler missing keyboard handler
+  - Keyboard users can't trigger this click handler because there's no keyboard one, so add `onKeyUp`, `onKeyDown`, or `onKeyPress`.
+- components/ui/Timeline.tsx:85:18
+  - Click handler missing keyboard handler
+  - Keyboard users can't trigger this click handler because there's no keyboard one, so add `onKeyUp`, `onKeyDown`, or `onKeyPress`.
+- components/ui/Timeline.tsx:212:14
+  - Click handler missing keyboard handler
+  - Keyboard users can't trigger this click handler because there's no keyboard one, so add `onKeyUp`, `onKeyDown`, or `onKeyPress`.
+- components/upload/UploadClient.tsx:924:10
+  - Click handler missing keyboard handler
+  - Keyboard users can't trigger this click handler because there's no keyboard one, so add `onKeyUp`, `onKeyDown`, or `onKeyPress`.
+
+## react-doctor:exhaustive-deps
+
+- Severity: warning
+- Category: Bugs
+- Count: 9
+- Title: Missing effect dependencies
+- Fix guidance: Don't blindly add missing dependencies. Read the hook callback first. Bad: useEffect(() => {   setCount(count + 1); }, [count]); Better: useEffect(() => {   setCount((currentCount) => currentCount + 1); }, []); If the missing value is recreated every render, move it inside the hook or stabilize it before adding it to deps.
+
+- components/audit/AuditCustomersTableClient.tsx:217:6
+  - Missing effect dependencies
+  - `useEffect` can run with a stale `initialEmail, openDrawerForEmail` & show your users old data.
+- components/claims/ClaimReviewPanel.tsx:683:6
+  - Missing effect dependencies
+  - `useEffect` can run with a stale `selectedClaim, selectedClaim.latest_outcome, selectedClaim.events, selectedClaim.evidence_count` & show your users old data.
+- components/claims/ClaimReviewPanel.tsx:731:6
+  - Missing effect dependencies
+  - `useEffect` can run with a stale `selectedClaim` & show your users old data.
+- components/common/TrackPageView.tsx:15:6
+  - Missing effect dependencies
+  - `useEffect` can run with a stale `event, properties` & show your users old data.
+- components/inbox/InboxClient.tsx:185:5
+  - Missing effect dependencies
+  - `useCallback` can run with a stale `statusShortcuts, setStatusAndDismiss` & show your users old data.
+- components/ui/animated-grid-pattern.tsx:63:6
+  - Missing effect dependencies
+  - `useEffect` can run with a stale `generateSquares` & show your users old data.
+- components/upload/UploadClient.tsx:295:6
+  - Missing effect dependencies
+  - `useCallback` can run with a stale `handleFile` & show your users old data.
+- components/watchlist/WatchlistSearchInput.tsx:38:6
+  - Missing effect dependencies
+  - `useEffect` can run with a stale `searchParams.toString, router.push, pathname` & show your users old data.
+- hooks/useCountUp.ts:50:6
+  - Missing effect dependencies
+  - `useEffect` can run with a stale `displayValue` & show your users old data.
+
+## react-doctor:no-initialize-state
+
+- Severity: warning
+- Category: Bugs
+- Count: 9
+- Title: State initialized from a mount effect
+- Fix guidance: Pass the initial value directly to useState() instead of setting it from a mount-only useEffect. For SSR hydration, prefer useSyncExternalStore().
+
+- app/(app)/settings/account/page.tsx:59:5
+  - State initialized from a mount effect
+  - Your users see an extra render with empty "merchant" because a useEffect sets its starting value.
+- app/(public)/audit/AuditUploadForm.tsx:67:7
+  - State initialized from a mount effect
+  - Your users see an extra render with empty "email" because a useEffect sets its starting value.
+- components/audit/AuditCustomersTableClient.tsx:216:23
+  - State initialized from a mount effect
+  - Your users see an extra render with empty "drawerOpen" because a useEffect sets its starting value.
+- components/nav/Sidebar.tsx:156:30
+  - State initialized from a mount effect
+  - Your users see an extra render with empty "collapsed" because a useEffect sets its starting value.
+- components/settings/ApiIntegrationsClient.tsx:133:5
+  - State initialized from a mount effect
+  - Your users see an extra render with empty "loading" because a useEffect sets its starting value.
+- components/settings/ApiIntegrationsClient.tsx:134:5
+  - State initialized from a mount effect
+  - Your users see an extra render with empty "connStatus" because a useEffect sets its starting value.
+- components/settings/AppearanceSettings.tsx:23:5
+  - State initialized from a mount effect
+  - Your users see an extra render with empty "theme" because a useEffect sets its starting value.
+- components/settings/TeamManagementClient.tsx:144:5
+  - State initialized from a mount effect
+  - Your users see an extra render with empty "loading" because a useEffect sets its starting value.
+- components/upload/UploadClient.tsx:137:28
+  - State initialized from a mount effect
+  - Your users see an extra render with empty "exportGuideOpen" because a useEffect sets its starting value.
+
+## react-doctor:jsx-no-jsx-as-prop
+
+- Severity: warning
+- Category: Performance
+- Count: 8
+- Title: JSX element passed as a prop
+- Fix guidance: Move the JSX outside the component, or wrap it in `useMemo`.
+
+- app/(app)/chargebacks/page.tsx:77:7
+  - JSX element passed as a prop
+  - This child redraws every render because the prop gets brand new JSX each time.
+- app/(app)/chargebacks/page.tsx:88:7
+  - JSX element passed as a prop
+  - This child redraws every render because the prop gets brand new JSX each time.
+- app/(app)/claims/page.tsx:437:7
+  - JSX element passed as a prop
+  - This child redraws every render because the prop gets brand new JSX each time.
+- app/(app)/customers/page.tsx:432:7
+  - JSX element passed as a prop
+  - This child redraws every render because the prop gets brand new JSX each time.
+- app/(app)/customers/page.tsx:443:7
+  - JSX element passed as a prop
+  - This child redraws every render because the prop gets brand new JSX each time.
+- app/(app)/history/page.tsx:62:7
+  - JSX element passed as a prop
+  - This child redraws every render because the prop gets brand new JSX each time.
+- app/(app)/history/page.tsx:73:7
+  - JSX element passed as a prop
+  - This child redraws every render because the prop gets brand new JSX each time.
+- app/(app)/reports/page.tsx:766:7
+  - JSX element passed as a prop
+  - This child redraws every render because the prop gets brand new JSX each time.
+
+## react-doctor:no-chain-state-updates
+
+- Severity: warning
+- Category: Bugs
+- Count: 8
+- Title: State updates chained through effects
+- Fix guidance: Set all the related state together in the event handler that starts it, instead of having one useEffect react to a state change and set more state. See https://react.dev/learn/you-might-not-need-an-effect#chains-of-computations
+
+- components/claims/ClaimReviewPanel.tsx:625:7
+  - State updates chained through effects
+  - Chaining state updates triggers an extra render each step.
+- components/claims/ClaimReviewPanel.tsx:658:19
+  - State updates chained through effects
+  - Chaining state updates triggers an extra render each step.
+- components/claims/ClaimReviewPanel.tsx:664:7
+  - State updates chained through effects
+  - Chaining state updates triggers an extra render each step.
+- components/claims/ClaimReviewPanel.tsx:693:7
+  - State updates chained through effects
+  - Chaining state updates triggers an extra render each step.
+- components/claims/ClaimReviewPanel.tsx:696:7
+  - State updates chained through effects
+  - Chaining state updates triggers an extra render each step.
+- components/evidence/EvidencePackageForm.tsx:62:7
+  - State updates chained through effects
+  - Chaining state updates triggers an extra render each step.
+- components/evidence/EvidencePackageForm.tsx:65:5
+  - State updates chained through effects
+  - Chaining state updates triggers an extra render each step.
+- components/layout/CommandPalette.tsx:252:5
+  - State updates chained through effects
+  - Chaining state updates triggers an extra render each step.
+
+## react-doctor:rerender-state-only-in-handlers
+
+- Severity: warning
+- Category: Performance
+- Count: 8
+- Title: State only used in handlers
+- Fix guidance: Use useRef instead of useState when the value is only set and never shown on screen. `ref.current = ...` updates it without redrawing the component.
+
+- app/(public)/audit/AuditUploadForm.tsx:57:9
+  - State only used in handlers
+  - Each update to "columnMap" redraws your component for nothing because this useState is set but never shown on screen.
+- app/(public)/landing/PublicAuditForm.tsx:108:9
+  - State only used in handlers
+  - Each update to "columnMap" redraws your component for nothing because this useState is set but never shown on screen.
+- components/audit/WatchlistStarButton.tsx:29:9
+  - State only used in handlers
+  - Each update to "entryId" redraws your component for nothing because this useState is set but never shown on screen.
+- components/signup/SignupFlow.tsx:138:9
+  - State only used in handlers
+  - Each update to "columnMap" redraws your component for nothing because this useState is set but never shown on screen.
+- components/upload/UploadClient.tsx:117:9
+  - State only used in handlers
+  - Each update to "runId" redraws your component for nothing because this useState is set but never shown on screen.
+- components/upload/UploadClient.tsx:127:9
+  - State only used in handlers
+  - Each update to "fileHash" redraws your component for nothing because this useState is set but never shown on screen.
+- extensions/chrome/popup/popup.tsx:72:9
+  - State only used in handlers
+  - Each update to "lastEmail" redraws your component for nothing because this useState is set but never shown on screen.
+- extensions/chrome/popup/popup.tsx:73:9
+  - State only used in handlers
+  - Each update to "profileUrl" redraws your component for nothing because this useState is set but never shown on screen.
+
+## react-doctor:nextjs-missing-metadata
+
+- Severity: warning
+- Category: Bugs
+- Count: 7
+- Title: Page missing metadata
+- Fix guidance: Add `export const metadata = { title: '...', description: '...' }` or `export async function generateMetadata()`
+
+- app/(public)/audit-demo/page.tsx:1:1
+  - Page missing metadata
+  - This page has no metadata, so search engines & social previews get no title or description.
+- app/(public)/audit/[runId]/report/page.tsx:1:1
+  - Page missing metadata
+  - This page has no metadata, so search engines & social previews get no title or description.
+- app/(public)/legal/pilot-terms/page.tsx:1:1
+  - Page missing metadata
+  - This page has no metadata, so search engines & social previews get no title or description.
+- app/(public)/signup/page.tsx:1:1
+  - Page missing metadata
+  - This page has no metadata, so search engines & social previews get no title or description.
+- app/audit-running/page.tsx:1:1
+  - Page missing metadata
+  - This page has no metadata, so search engines & social previews get no title or description.
+- app/mobile-unsupported/page.tsx:1:1
+  - Page missing metadata
+  - This page has no metadata, so search engines & social previews get no title or description.
+- app/page.tsx:1:1
+  - Page missing metadata
+  - This page has no metadata, so search engines & social previews get no title or description.
+
+## react-doctor:nextjs-no-use-search-params-without-suspense
+
+- Severity: warning
+- Category: Bugs
+- Count: 7
+- Title: useSearchParams without Suspense
+- Fix guidance: Wrap the component using useSearchParams: `<Suspense fallback={<Skeleton />}><SearchComponent /></Suspense>`
+
+- components/audit/AuditTabs.tsx:20:24
+  - useSearchParams without Suspense
+  - useSearchParams() without a <Suspense> boundary forces the whole page into client-side rendering.
+- components/common/PageSizeSelect.tsx:35:24
+  - useSearchParams without Suspense
+  - useSearchParams() without a <Suspense> boundary forces the whole page into client-side rendering.
+- components/customers/CustomersFilterSheet.tsx:46:24
+  - useSearchParams without Suspense
+  - useSearchParams() without a <Suspense> boundary forces the whole page into client-side rendering.
+- components/evidence/CustomerProfileEvidenceTrigger.tsx:27:24
+  - useSearchParams without Suspense
+  - useSearchParams() without a <Suspense> boundary forces the whole page into client-side rendering.
+- components/nav/Sidebar.tsx:143:24
+  - useSearchParams without Suspense
+  - useSearchParams() without a <Suspense> boundary forces the whole page into client-side rendering.
+- components/shopify/ShopifyIntegrationBanner.tsx:24:24
+  - useSearchParams without Suspense
+  - useSearchParams() without a <Suspense> boundary forces the whole page into client-side rendering.
+- components/watchlist/WatchlistSearchInput.tsx:14:24
+  - useSearchParams without Suspense
+  - useSearchParams() without a <Suspense> boundary forces the whole page into client-side rendering.
+
+## react-doctor:no-static-element-interactions
+
+- Severity: warning
+- Category: Accessibility
+- Count: 7
+- Title: Interaction on static element
+- Fix guidance: Give clickable static elements a `role`, or use a button or link.
+
+- app/(public)/audit/AuditUploadForm.tsx:197:10
+  - Interaction on static element
+  - Screen reader users can't tell this click handler is interactive because it has no `role`, so add a `role` or use a button or link.
+- app/(public)/landing/AuditForm.tsx:81:8
+  - Interaction on static element
+  - Screen reader users can't tell this click handler is interactive because it has no `role`, so add a `role` or use a button or link.
+- components/audit/AuditCustomersTableClient.tsx:326:12
+  - Interaction on static element
+  - Screen reader users can't tell this click handler is interactive because it has no `role`, so add a `role` or use a button or link.
+- components/customers/CustomersTableClient.tsx:112:12
+  - Interaction on static element
+  - Screen reader users can't tell this click handler is interactive because it has no `role`, so add a `role` or use a button or link.
+- components/shopify/SyncStatusCard.tsx:80:6
+  - Interaction on static element
+  - Screen reader users can't tell this click handler is interactive because it has no `role`, so add a `role` or use a button or link.
+- components/ui/FilterChip.tsx:15:6
+  - Interaction on static element
+  - Screen reader users can't tell this click handler is interactive because it has no `role`, so add a `role` or use a button or link.
+- components/upload/UploadClient.tsx:924:10
+  - Interaction on static element
+  - Screen reader users can't tell this click handler is interactive because it has no `role`, so add a `role` or use a button or link.
+
+## react-doctor:nextjs-no-img-element
+
+- Severity: warning
+- Category: Bugs
+- Count: 6
+- Title: Plain img element
+- Fix guidance: `import Image from 'next/image'` for automatic WebP/AVIF, lazy loading, and responsive srcset
+
+- app/(app)/settings/integrations/chrome/page.tsx:42:11
+  - Plain img element
+  - Plain <img> ships unoptimized, oversized images to your users.
+- app/(public)/landing/_components/LandingScreenshotFrame.tsx:21:9
+  - Plain img element
+  - Plain <img> ships unoptimized, oversized images to your users.
+- app/(public)/landing/page.tsx:1249:15
+  - Plain img element
+  - Plain <img> ships unoptimized, oversized images to your users.
+- components/settings/ApiIntegrationsClient.tsx:280:19
+  - Plain img element
+  - Plain <img> ships unoptimized, oversized images to your users.
+- components/settings/ApiIntegrationsClient.tsx:431:9
+  - Plain img element
+  - Plain <img> ships unoptimized, oversized images to your users.
+- components/settings/OrderSourceClient.tsx:124:19
+  - Plain img element
+  - Plain <img> ships unoptimized, oversized images to your users.
+
+## react-doctor:prefer-html-dialog
+
+- Severity: warning
+- Category: Accessibility
+- Count: 6
+- Title: Custom modal instead of dialog
+- Fix guidance: Replace the wrapper with `<dialog>` and open it with `dialog.showModal()`. For the trigger, prefer `<button commandfor="id" command="show-modal">` (Chrome 135+), or a `useRef` with `dialogRef.current?.showModal()`.
+
+- components/customers/CustomerIntelligenceDrawer.tsx:428:9
+  - Custom modal instead of dialog
+  - Keyboard users can tab out of this `role="dialog"` modal because it has no built-in focus trapping, so use the native `<dialog>`, which gives you focus trapping, `Escape` to close, and the backdrop for free.
+- components/layout/CommandPalette.tsx:275:9
+  - Custom modal instead of dialog
+  - Keyboard users can tab out of this `role="dialog"` modal because it has no built-in focus trapping, so use the native `<dialog>`, which gives you focus trapping, `Escape` to close, and the backdrop for free.
+- components/settings/ApiIntegrationsClient.tsx:458:82
+  - Custom modal instead of dialog
+  - Keyboard users can tab out of this `role="dialog"` modal because it has no built-in focus trapping, so use the native `<dialog>`, which gives you focus trapping, `Escape` to close, and the backdrop for free.
+- components/settings/ApiIntegrationsClient.tsx:573:82
+  - Custom modal instead of dialog
+  - Keyboard users can tab out of this `role="dialog"` modal because it has no built-in focus trapping, so use the native `<dialog>`, which gives you focus trapping, `Escape` to close, and the backdrop for free.
+- components/shopify/SyncStatusCard.tsx:88:9
+  - Custom modal instead of dialog
+  - Keyboard users can tab out of this `role="dialog"` modal because it has no built-in focus trapping, so use the native `<dialog>`, which gives you focus trapping, `Escape` to close, and the backdrop for free.
+- components/ui/Drawer.tsx:80:7
+  - Custom modal instead of dialog
+  - Keyboard users can tab out of this `role="dialog"` modal because it has no built-in focus trapping, so use the native `<dialog>`, which gives you focus trapping, `Escape` to close, and the backdrop for free.
+
+## react-doctor:no-derived-useState
+
+- Severity: warning
+- Category: Bugs
+- Count: 5
+- Title: Prop derived into useState
+- Fix guidance: Remove useState and compute the value inline: `const value = transform(propName)`
+
+- app/(public)/landing/_components/Counter.tsx:41:33
+  - Prop derived into useState
+  - Your users see a stale value when prop "value" changes because useState copies it once.
+- app/(public)/landing/_components/TypedText.tsx:20:29
+  - Prop derived into useState
+  - Your users see a stale value when prop "text" changes because useState copies it once.
+- components/customers/CustomerIntelligenceDrawer.tsx:374:29
+  - Prop derived into useState
+  - Your users see a stale value when prop "prefetchedPanel" changes because useState copies it once.
+- components/evidence/EvidencePackageForm.tsx:33:49
+  - Prop derived into useState
+  - Your users see a stale value when prop "preselectedOrderId" changes because useState copies it once.
+- components/OnboardingClient.tsx:74:39
+  - Prop derived into useState
+  - Your users see a stale value when prop "shopifyShopDomain" changes because useState copies it once.
+
+## react-doctor:design-no-three-period-ellipsis
+
+- Severity: warning
+- Category: Maintainability
+- Count: 4
+- Title: Three dots instead of ellipsis
+- Fix guidance: Use the real ellipsis "…" (or `&hellip;`) instead of three dots. Good for labels like "Rename…" and "Loading…".
+
+- components/OnboardingClient.tsx:200:36
+  - Three dots instead of ellipsis
+  - Three dots ("...") look unpolished to your users.
+- components/OnboardingClient.tsx:211:36
+  - Three dots instead of ellipsis
+  - Three dots ("...") look unpolished to your users.
+- components/OnboardingClient.tsx:219:36
+  - Three dots instead of ellipsis
+  - Three dots ("...") look unpolished to your users.
+- components/settings/TeamManagementClient.tsx:385:85
+  - Three dots instead of ellipsis
+  - Three dots ("...") look unpolished to your users.
+
+## react-doctor:js-min-max-loop
+
+- Severity: warning
+- Category: Performance
+- Count: 4
+- Title: sort() to find min or max
+- Fix guidance: Use `Math.min(...array)` or `Math.max(...array)` instead of sorting the whole list just to read the first or last item
+
+- app/api/customers/[id]/route.ts:328:23
+  - sort() to find min or max
+  - This is slow because array.sort()[0] sorts the whole list just to grab the smallest or largest, so use Math.min(...array) instead
+- app/api/customers/[id]/route.ts:465:5
+  - sort() to find min or max
+  - This is slow because array.sort()[0] sorts the whole list just to grab the smallest or largest, so use Math.min(...array) instead
+- lib/claims/priority.ts:32:10
+  - sort() to find min or max
+  - This is slow because array.sort()[0] sorts the whole list just to grab the smallest or largest, so use Math.min(...array) instead
+- lib/gorgias/widgetData.ts:688:32
+  - sort() to find min or max
+  - This is slow because array.sort()[0] sorts the whole list just to grab the smallest or largest, so use Math.min(...array) instead
+
+## react-doctor:no-effect-chain
+
+- Severity: warning
+- Category: Bugs
+- Count: 4
+- Title: Effects chained together
+- Fix guidance: Compute as much as possible during render (e.g. `const isGameOver = round > 5`) and write all related state inside the event handler that originally fires the chain. Each effect link adds an extra render and makes the code rigid as requirements evolve
+
+- components/claims/ClaimReviewPanel.tsx:553:3
+  - Effects chained together
+  - Your screen redraws several times from a single action because one useEffect changes "selectedOrderId", which sets off this one.
+- components/claims/ClaimReviewPanel.tsx:604:3
+  - Effects chained together
+  - Your screen redraws several times from a single action because one useEffect changes "selectedOrderId", which sets off this one.
+- components/claims/ClaimReviewPanel.tsx:649:3
+  - Effects chained together
+  - Your screen redraws several times from a single action because one useEffect changes "claimId", which sets off this one.
+- components/claims/ClaimReviewPanel.tsx:657:3
+  - Effects chained together
+  - Your screen redraws several times from a single action because one useEffect changes "claimId", which sets off this one.
+
+## react-doctor:no-outline-none
+
+- Severity: warning
+- Category: Accessibility
+- Count: 4
+- Title: outline:none removes focus ring
+- Fix guidance: Style `:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px }` so the focus ring shows for keyboard users but not mouse clicks.
+
+- app/(public)/audit/AuditUploadForm.tsx:179:13
+  - outline:none removes focus ring
+  - Your keyboard users can't tell where they are because outline: none hides the focus ring, so style :focus-visible instead, or add a box-shadow focus ring.
+- app/(public)/landing/AuditForm.tsx:72:13
+  - outline:none removes focus ring
+  - Your keyboard users can't tell where they are because outline: none hides the focus ring, so style :focus-visible instead, or add a box-shadow focus ring.
+- components/customers/CustomerIntelligenceDrawer.tsx:776:15
+  - outline:none removes focus ring
+  - Your keyboard users can't tell where they are because outline: none hides the focus ring, so style :focus-visible instead, or add a box-shadow focus ring.
+- components/ui/FilterBar.tsx:58:15
+  - outline:none removes focus ring
+  - Your keyboard users can't tell where they are because outline: none hides the focus ring, so style :focus-visible instead, or add a box-shadow focus ring.
+
+## react-doctor:async-defer-await
+
+- Severity: warning
+- Category: Performance
+- Count: 3
+- Title: await before an early-return guard
+- Fix guidance: Move the `await` below the early-return guard so the skip path stays fast
+
+- components/inbox/InboxClient.tsx:211:5
+  - await before an early-return guard
+  - This await blocks the function before an early-return that doesn't use the awaited value, so the skip path waits for nothing. Move the await below the guard so it only runs when you need the data
+- lib/api/v1/lookup.ts:156:3
+  - await before an early-return guard
+  - This await blocks the function before an early-return that doesn't use the awaited value, so the skip path waits for nothing. Move the await below the guard so it only runs when you need the data
+- lib/api/v1/lookup.ts:177:3
+  - await before an early-return guard
+  - This await blocks the function before an early-return that doesn't use the awaited value, so the skip path waits for nothing. Move the await below the guard so it only runs when you need the data
+
+## react-doctor:nextjs-no-client-side-redirect
+
+- Severity: warning
+- Category: Bugs
+- Count: 3
+- Title: Client-side redirect for navigation
+- Fix guidance: Avoid redirects inside useEffect. Use an event handler, middleware, or server-side redirect (App Router: redirect() from next/navigation; Pages Router: getServerSideProps redirect)
+
+- components/shopify/ShopifyIntegrationBanner.tsx:64:5
+  - Client-side redirect for navigation
+  - router.replace() in useEffect flashes the wrong page before redirecting.
+- components/upload/UploadClient.tsx:610:11
+  - Client-side redirect for navigation
+  - router.push() in useEffect flashes the wrong page before redirecting.
+- components/watchlist/WatchlistSearchInput.tsx:31:9
+  - Client-side redirect for navigation
+  - router.push() in useEffect flashes the wrong page before redirecting.
+
+## react-doctor:no-derived-state-effect
+
+- Severity: warning
+- Category: Bugs
+- Count: 3
+- Title: Derived state stored in an effect
+- Fix guidance: Work out derived values while rendering: `const x = fn(dep)`. To reset a component's state when a prop changes, give it a key prop: `<Component key={prop} />`. See https://react.dev/learn/you-might-not-need-an-effect
+
+- components/evidence/EvidencePackageForm.tsx:41:3
+  - Derived state stored in an effect
+  - You pay an extra render for state you can derive from other values.
+- components/layout/CommandPalette.tsx:251:3
+  - Derived state stored in an effect
+  - Your users briefly see stale state on every prop change.
+- components/navigation/NavigationProvider.tsx:21:3
+  - Derived state stored in an effect
+  - Your users briefly see stale state on every prop change.
+
+## react-doctor:no-large-animated-blur
+
+- Severity: warning
+- Category: Performance
+- Count: 3
+- Title: Large animated blur
+- Fix guidance: Keep the blur under 10px, or blur a smaller element. Big blurs use a lot more GPU memory as the element grows
+
+- app/(public)/landing/page.tsx:393:19
+  - Large animated blur
+  - This can run out of GPU memory on phones because blur(18px) gets heavier as the blur & element grow, so use a smaller blur or a smaller element
+- app/(public)/landing/page.tsx:394:19
+  - Large animated blur
+  - This can run out of GPU memory on phones because blur(18px) gets heavier as the blur & element grow, so use a smaller blur or a smaller element
+- components/ui/spotlight.tsx:32:11
+  - Large animated blur
+  - This can run out of GPU memory on phones because blur(48px) gets heavier as the blur & element grow, so use a smaller blur or a smaller element
+
+## react-doctor:no-noninteractive-element-interactions
+
+- Severity: warning
+- Category: Accessibility
+- Count: 3
+- Title: Handler on non-interactive element
+- Fix guidance: Put interactions on a button or link, or add an interactive role.
+
+- components/ui/EvidenceList.tsx:48:10
+  - Handler on non-interactive element
+  - Keyboard & screen reader users can't trigger this `<li>` because it isn't interactive, so use a button or link or add an interactive role.
+- components/ui/Timeline.tsx:85:18
+  - Handler on non-interactive element
+  - Keyboard & screen reader users can't trigger this `<li>` because it isn't interactive, so use a button or link or add an interactive role.
+- components/ui/Timeline.tsx:212:14
+  - Handler on non-interactive element
+  - Keyboard & screen reader users can't trigger this `<li>` because it isn't interactive, so use a button or link or add an interactive role.
+
+## react-doctor:no-render-in-render
+
+- Severity: warning
+- Category: Maintainability
+- Count: 3
+- Title: Component rendered by inline function call
+- Fix guidance: Make it a named component, like `const ListItem = ({ item }) => <div>{item.name}</div>`.
+
+- components/settings/GorgiasSupportSyncClient.tsx:531:12
+  - Component rendered by inline function call
+  - Your users lose state because "renderCredentialFields()" builds UI from an inline call that React remounts, so pull it into its own component instead.
+- components/settings/GorgiasSupportSyncClient.tsx:707:16
+  - Component rendered by inline function call
+  - Your users lose state because "renderCredentialFields()" builds UI from an inline call that React remounts, so pull it into its own component instead.
+- components/upload/UploadClient.tsx:1230:12
+  - Component rendered by inline function call
+  - Your users lose state because "renderDataQualityPanel()" builds UI from an inline call that React remounts, so pull it into its own component instead.
+
+## react-doctor:prefer-dynamic-import
+
+- Severity: warning
+- Category: Performance
+- Count: 3
+- Title: Heavy library loaded eagerly
+- Fix guidance: Load it only when needed: `const Component = dynamic(() => import('library'), { ssr: false })` from next/dynamic, or React.lazy().
+
+- components/charts/WeeklyTrendChart.tsx:3:1
+  - Heavy library loaded eagerly
+  - "recharts" ships extra code to your users up front & slows page load. Load it on demand with React.lazy() or next/dynamic.
+- components/internal/NetworkMetricsCharts.tsx:9:1
+  - Heavy library loaded eagerly
+  - "recharts" ships extra code to your users up front & slows page load. Load it on demand with React.lazy() or next/dynamic.
+- lib/evidence/pdf.tsx:11:1
+  - Heavy library loaded eagerly
+  - "@react-pdf/renderer" ships extra code to your users up front & slows page load. Load it on demand with React.lazy() or next/dynamic.
+
+## react-doctor:advanced-event-handler-refs
+
+- Severity: warning
+- Category: Performance
+- Count: 2
+- Title: Listener re-subscribes on every handler change
+- Fix guidance: Store the handler in a ref and have the listener read `handlerRef.current()`. The subscription stays put while the latest handler still runs.
+
+- components/customers/CustomerIntelligenceDrawer.tsx:399:3
+  - Listener re-subscribes on every handler change
+  - useEffect re-adds the "handleKeyDown" listener every time the handler changes.
+- components/inbox/InboxClient.tsx:188:3
+  - Listener re-subscribes on every handler change
+  - useEffect re-adds the "handleKeyboardShortcut" listener every time the handler changes.
+
+## react-doctor:js-cache-property-access
+
+- Severity: warning
+- Category: Performance
+- Count: 2
+- Title: Repeated property access in a loop
+- Fix guidance: Read the value once into a variable at the top of the loop: `const { x, y } = obj.deeply.nested`
+
+- lib/analysis/entityResolution.ts:663:31
+  - Repeated property access in a loop
+  - This slows the loop because od.normCard.length is read 4 times inside it, so read it once into a variable at the top
+- lib/analysis/entityResolution.ts:713:13
+  - Repeated property access in a loop
+  - This slows the loop because od.identity.matchStatus is read 3 times inside it, so read it once into a variable at the top
+
+## react-doctor:no-generic-handler-names
+
+- Severity: warning
+- Category: Maintainability
+- Count: 2
+- Title: Vague event handler name
+- Fix guidance: Rename it to say what it does. For example `handleSubmit` could be `saveUserProfile`, and `handleClick` could be `toggleSidebar`.
+
+- components/customers/InvestigationStatusSelect.tsx:37:7
+  - Vague event handler name
+  - The handler name "handleChange" says when it runs, not what it does, so name it after the action instead.
+- components/dashboard/LoadDemoButton.tsx:40:9
+  - Vague event handler name
+  - The handler name "handleClick" says when it runs, not what it does, so name it after the action instead.
+
+## react-doctor:no-side-tab-border
+
+- Severity: warning
+- Category: Maintainability
+- Count: 2
+- Title: Thick one-sided border
+- Fix guidance: Use a softer accent like an inset box-shadow, a background, or a thin border-bottom instead of a thick one-sided border.
+
+- components/customers/CustomerIntelligenceDrawer.tsx:626:11
+  - Thick one-sided border
+  - Your users see an off, dated thick border on one side (left: 3px), so use a softer accent or drop it.
+- components/customers/CustomerIntelligenceDrawer.tsx:737:11
+  - Thick one-sided border
+  - Your users see an off, dated thick border on one side (left: 3px), so use a softer accent or drop it.
+
+## react-doctor:rerender-lazy-ref-init
+
+- Severity: warning
+- Category: Performance
+- Count: 2
+- Title: Ref initializer runs on every render
+- Fix guidance: Set it up only once: `const ref = useRef<T | null>(null); if (ref.current === null) ref.current = expensiveCall();`
+
+- components/claims/ClaimReviewPanel.tsx:515:50
+  - Ref initializer runs on every render
+  - useRef(new Set()) rebuilds this value on every render & throws it away.
+- components/upload/UploadClient.tsx:145:55
+  - Ref initializer runs on every render
+  - useRef(new Set()) rebuilds this value on every render & throws it away.
+
+## react-doctor:rerender-memo-with-default-value
+
+- Severity: warning
+- Category: Performance
+- Count: 2
+- Title: Empty default prop breaks memo
+- Fix guidance: Move it to the top of the file: `const EMPTY_ITEMS: Item[] = []`, then use that as the default value
+
+- components/upload/UploadClient.tsx:105:56
+  - Empty default prop breaks memo
+  - This keeps redrawing children that compare props because default prop value [] makes a brand new array every render, so move it to a constant at the top of the file
+- registry/magicui/dotted-map.tsx:39:13
+  - Empty default prop breaks memo
+  - This keeps redrawing children that compare props because default prop value [] makes a brand new array every render, so move it to a constant at the top of the file
+
+## react-doctor:server-fetch-without-revalidate
+
+- Severity: warning
+- Category: Bugs
+- Count: 2
+- Title: Fetch without revalidate
+- Fix guidance: Pass `{ next: { revalidate: <seconds> } }` (or `cache: "no-store"`) so old data doesn't stick around.
+
+- app/api/process-csv-chunk/route.ts:37:11
+  - Fetch without revalidate
+  - fetch(url) is cached forever by default, so your users can see stale data.
+- app/api/shopify/callback/route.ts:102:28
+  - Fetch without revalidate
+  - fetch(url) is cached forever by default, so your users can see stale data.
+
+## deslop:unused-dev-dependency
+
+- Severity: warning
+- Category: Maintainability
+- Count: 2
+- Title: unused-dev-dependency
+- Fix guidance: Remove the dependency from package.json if it is genuinely unused.
+
+- package.json
+  - Unused devDependency: `pg`
+- package.json
+  - Unused devDependency: `react-doctor`
+
+## deslop:circular-dependency
+
+- Severity: warning
+- Category: Maintainability
+- Count: 1
+- Title: circular-dependency
+- Fix guidance: Break the cycle by extracting the shared code into a third module that both files import.
+
+- lib/log/index.ts
+  - Circular import cycle: lib/log/index.ts → lib/sentry.ts
+
+## react-doctor:client-localstorage-no-version
+
+- Severity: warning
+- Category: Bugs
+- Count: 1
+- Title: Unversioned localStorage key
+- Fix guidance: Put a version in the storage key (e.g. "myKey:v1"). If you change the data shape later, old saved data can be ignored instead of crashing the app.
+
+- app/(public)/audit-demo/AuditDemoClient.tsx:144:7
+  - Unversioned localStorage key
+  - sessionStorage.setItem("auditDemoContext", JSON.stringify(...)) has no version, so changing the data shape later crashes your users' saved sessions. Add one to the key (e.g. "auditDemoContext:v1").
+
+## react-doctor:design-no-vague-button-label
+
+- Severity: warning
+- Category: Accessibility
+- Count: 1
+- Title: Vague button label
+- Fix guidance: Name the action: "Save changes" instead of "Continue", "Send invite" instead of "Submit". The label is the button's accessible name.
+
+- components/settings/ApiIntegrationsClient.tsx:518:19
+  - Vague button label
+  - Screen reader & unsure users can't tell what "Done" does.
+
+## react-doctor:iframe-missing-sandbox
+
+- Severity: warning
+- Category: Security
+- Count: 1
+- Title: iframe missing sandbox attribute
+- Fix guidance: Add `sandbox=""` (or a curated value) to your iframe.
+
+- components/evidence/EvidencePackagePreview.tsx:129:11
+  - iframe missing sandbox attribute
+  - Combining `allow-scripts` & `allow-same-origin` lets the iframe remove its own sandbox, defeating the protection.
+
+## react-doctor:js-hoist-regexp
+
+- Severity: warning
+- Category: Performance
+- Count: 1
+- Title: RegExp built inside a loop
+- Fix guidance: Move `new RegExp(...)` (or large regex literals) to a constant outside the loop so it isn't rebuilt on every pass
+
+- lib/scorer.ts:140:16
+  - RegExp built inside a loop
+  - This slows the loop because new RegExp() rebuilds the pattern every pass, so move it to a constant outside the loop
+
+## react-doctor:nextjs-no-client-fetch-for-server-data
+
+- Severity: warning
+- Category: Bugs
+- Count: 1
+- Title: Client fetch for server data
+- Fix guidance: Remove 'use client' and fetch directly in the Server Component. No API round-trip, and secrets stay on the server.
+
+- app/(app)/settings/account/page.tsx:44:3
+  - Client fetch for server data
+  - useEffect + fetch in a page/layout makes your users wait through an extra round trip & loading spinner.
+
+## react-doctor:no-layout-transition-inline
+
+- Severity: warning
+- Category: Performance
+- Count: 1
+- Title: Animating layout properties
+- Fix guidance: Animate `transform` and `opacity` instead, since they're cheap for the browser. For height, animate `grid-template-rows` from `0fr` to `1fr`.
+
+- app/(public)/audit-demo/AuditDemoClient.tsx:51:13
+  - Animating layout properties
+  - Your users see janky, stuttering animation because "width" relayouts the page every frame, so animate transform & opacity instead.
+
+## react-doctor:no-mirror-prop-effect
+
+- Severity: warning
+- Category: Bugs
+- Count: 1
+- Title: Prop mirrored into state via effect
+- Fix guidance: Delete both the `useState` and the `useEffect` and read the prop directly while rendering. Copying a prop into state shows the old value on the first render before the effect catches up.
+
+- components/evidence/EvidencePackageForm.tsx:41:3
+  - Prop mirrored into state via effect
+  - Your screen shows the old value first because useState "selectedOrderId" copies prop "preselectedOrderId" through this effect.
+
+## react-doctor:no-pass-data-to-parent
+
+- Severity: warning
+- Category: Bugs
+- Count: 1
+- Title: Data passed to parent via effect
+- Fix guidance: Fetch the data in the parent and pass it down as a prop (or return it from the hook), instead of handing it back up through a prop callback in a useEffect. See https://react.dev/learn/you-might-not-need-an-effect#passing-data-to-the-parent
+
+- components/audit/AuditCustomersTableClient.tsx:216:23
+  - Data passed to parent via effect
+  - Handing data back to a parent from a useEffect costs your users an extra render.
+
+## react-doctor:no-redundant-roles
+
+- Severity: warning
+- Category: Accessibility
+- Count: 1
+- Title: Redundant ARIA role
+- Fix guidance: Remove `role` attributes that match what the element already does.
+
+- components/ui/Timeline.tsx:214:15
+  - Redundant ARIA role
+  - Screen reader users gain nothing from this `role` because `<li>` already acts as a `listitem`, so remove it.
+
+## react-doctor:no-transition-all
+
+- Severity: warning
+- Category: Performance
+- Count: 1
+- Title: transition: all animates everything
+- Fix guidance: List the specific properties: `transition: "opacity 200ms, transform 200ms"`. In Tailwind, use `transition-colors`, `transition-opacity`, or `transition-transform`
+
+- app/(public)/audit-demo/AuditDemoClient.tsx:82:9
+  - transition: all animates everything
+  - This can stutter because transition: "all" animates every property, even slow layout ones, so list only the properties you actually change
+
+## react-doctor:no-uncontrolled-input
+
+- Severity: warning
+- Category: Bugs
+- Count: 1
+- Title: Uncontrolled input value
+- Fix guidance: Give `useState` a starting value (e.g. `useState("")` instead of `useState()`), add `onChange` (or `readOnly`) whenever you set `value`, and drop `defaultValue` on controlled inputs since React ignores it.
+
+- app/(public)/audit/[runId]/report/ClaimGate.tsx:91:11
+  - Uncontrolled input value
+  - Your users can't type in this <input value={...}> because it has no `onChange` or `readOnly`, so add `onChange` (or `readOnly` if that's intended).
+
+## react-doctor:rendering-hydration-mismatch-time
+
+- Severity: warning
+- Category: Bugs
+- Count: 1
+- Title: Time or random value in JSX
+- Fix guidance: Move time or random values into useEffect+useState so they only run in the browser, or add suppressHydrationWarning to the parent if it's intentional
+
+- components/ui/animated-grid-pattern.tsx:101:20
+  - Time or random value in JSX
+  - This breaks hydration because Math.random() reached from JSX gives a different value on the server than in the browser, so move it into useEffect+useState to run only in the browser, or add suppressHydrationWarning to the parent if it's on purpose
+
+## react-doctor:rerender-defer-reads-hook
+
+- Severity: warning
+- Category: Performance
+- Count: 1
+- Title: URL hook value only read in handlers
+- Fix guidance: Read the URL inside the handler (e.g. `new URL(window.location.href).searchParams`) so the component doesn't redraw every time the URL changes.
+
+- components/customers/CustomersFilterSheet.tsx:45:9
+  - URL hook value only read in handlers
+  - usePathname() redraws your component on every URL change even though it's only read inside event handlers.
+
+## react-doctor:use-lazy-motion
+
+- Severity: warning
+- Category: Performance
+- Count: 1
+- Title: Full Framer Motion import
+- Fix guidance: Use `import { LazyMotion, m } from "framer-motion"` with `domAnimation` features. Saves about 30kb.
+
+- components/ui/animated-grid-pattern.tsx:4:1
+  - Full Framer Motion import
+  - Importing "motion" ships about 30 kb of extra code to your users & slows page load. Use "m" with LazyMotion instead.
+

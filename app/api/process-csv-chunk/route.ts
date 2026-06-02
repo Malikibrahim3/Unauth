@@ -42,6 +42,7 @@ async function dispatchFinalize(origin: string, payload: ChunkDispatchPayload): 
       },
       body: JSON.stringify(payload),
       keepalive: true,
+      cache: 'no-store',
     }).then((r) => {
       void r.body?.cancel();
     }).catch((err) => {

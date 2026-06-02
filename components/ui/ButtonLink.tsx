@@ -19,8 +19,7 @@ export function ButtonLink({
   className,
   style,
   leadingIcon,
-  children,
-  ...props
+  children, ...props
 }: ButtonLinkProps) {
   const { className: buttonClassName, style: buttonStyle, iconSizeClass } = getButtonPresentation(
     variant,

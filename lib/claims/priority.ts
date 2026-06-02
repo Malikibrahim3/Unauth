@@ -29,7 +29,7 @@ export function pickPriorityClaim<T extends PriorityClaimRow>(
   );
   const pool = active.length > 0 ? active : claims;
 
-  return [...pool].sort((a, b) => {
+  const compare = (a: T, b: T) => {
     const slaA = getClaimSlaState(a);
     const slaB = getClaimSlaState(b);
     const rankA = SLA_RANK[slaA.state] ?? 9;
@@ -43,5 +43,11 @@ export function pickPriorityClaim<T extends PriorityClaimRow>(
     const ageA = new Date(a.submitted_at ?? a.created_at ?? 0).getTime();
     const ageB = new Date(b.submitted_at ?? b.created_at ?? 0).getTime();
     return ageA - ageB;
-  })[0];
+  };
+
+  let best = pool[0];
+  for (let i = 1; i < pool.length; i++) {
+    if (compare(pool[i], best) < 0) best = pool[i];
+  }
+  return best;
 }

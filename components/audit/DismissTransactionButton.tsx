@@ -25,7 +25,7 @@ export default function DismissTransactionButton({ txId }: { txId: string }) {
 
   if (error) {
     return (
-      <span className="inline-flex items-center gap-1 text-[10px]" style={{ color: 'var(--risk-critical)' }}>
+      <span className="inline-flex items-center gap-1 text-xs" style={{ color: 'var(--risk-critical)' }}>
         <AlertCircle className="h-3 w-3" />{error}
       </span>
     );
@@ -35,7 +35,7 @@ export default function DismissTransactionButton({ txId }: { txId: string }) {
     return (
       <span className="inline-flex items-center gap-1.5">
         <button
-          onClick={handleDismiss}
+type="button"           onClick={handleDismiss}
           disabled={loading}
           className="text-xs font-medium disabled:opacity-50"
           style={{ color: 'var(--risk-critical)' }}
@@ -43,7 +43,7 @@ export default function DismissTransactionButton({ txId }: { txId: string }) {
           {loading ? 'Dismissing…' : 'Dismiss'}
         </button>
         <button
-          onClick={() => setConfirming(false)}
+type="button"           onClick={() => setConfirming(false)}
           className="text-xs transition-colors" style={{ color: 'var(--text-subtle)' }} onMouseEnter={e => (e.currentTarget.style.color = 'var(--text)')} onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-subtle)')}
         >
           Cancel
@@ -54,7 +54,7 @@ export default function DismissTransactionButton({ txId }: { txId: string }) {
 
   return (
     <button
-      onClick={() => setConfirming(true)}
+type="button"       onClick={() => setConfirming(true)}
       className="transition-colors ml-2" style={{ color: 'var(--text-disabled)' }} onMouseEnter={e => (e.currentTarget.style.color = 'var(--risk-critical)')} onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-disabled)')}
       title="Dismiss transaction"
     >

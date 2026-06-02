@@ -11,7 +11,7 @@ interface Props {
 export default function TrackPageView({ event, properties }: Props) {
   useEffect(() => {
     track(event, properties);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [event, properties]);
+
   return null;
 }

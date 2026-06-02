@@ -19,7 +19,7 @@ export default function DeleteAuditButton({ jobId }: { jobId: string }) {
     return (
       <span className="inline-flex items-center gap-1.5">
         <button
-          onClick={handleDelete}
+type="button"           onClick={handleDelete}
           disabled={loading}
           className="px-2 py-1 rounded text-xs font-medium disabled:opacity-50 hover:bg-[var(--risk-critical-bg)] transition-colors"
           style={{ color: 'var(--risk-critical)' }}
@@ -27,7 +27,7 @@ export default function DeleteAuditButton({ jobId }: { jobId: string }) {
           {loading ? 'Removing…' : 'Confirm'}
         </button>
         <button
-          onClick={() => setConfirming(false)}
+type="button"           onClick={() => setConfirming(false)}
           className="px-2 py-1 rounded text-xs transition-colors hover:bg-[var(--bg-subtle)]" style={{ color: 'var(--text-subtle)' }}
         >
           Cancel
@@ -38,7 +38,7 @@ export default function DeleteAuditButton({ jobId }: { jobId: string }) {
 
   return (
     <button
-      onClick={() => setConfirming(true)}
+type="button"       onClick={() => setConfirming(true)}
       className="p-1.5 rounded-md transition-colors hover:bg-[var(--risk-critical-bg)]"
       style={{ color: 'var(--text-disabled)' }}
       onMouseEnter={e => (e.currentTarget.style.color = 'var(--risk-critical)')}

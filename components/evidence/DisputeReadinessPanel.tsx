@@ -93,7 +93,7 @@ export function DisputeReadinessPanel({
       passed: !!pkg.merchant_notes ? true : 'warning',
       detail: pkg.merchant_notes
         ? 'Merchant notes attached'
-        : 'No merchant notes — consider adding context before submitting',
+        : 'No merchant notes - consider adding context before submitting',
     },
   ];
 

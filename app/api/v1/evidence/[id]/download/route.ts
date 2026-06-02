@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
 import { streamV1EvidencePdf } from '@/lib/api/v1/evidence';
 import { parseAndVerifySignedToken, hashSignedToken } from '@/lib/api/signedAccess';
+import { consumeEvidenceDownloadToken } from '@/lib/api/v1/consumeEvidenceDownloadToken';
 import { TABLES } from '@/lib/supabase/tables';
 import { withRequestLogging } from '@/lib/log';
 
@@ -9,7 +10,7 @@ export const dynamic = 'force-dynamic';
 
 async function GETHandler(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
   const token = request.nextUrl.searchParams.get('token')?.trim() ?? '';
@@ -27,7 +28,6 @@ async function GETHandler(
 
   const service = createServiceClient();
   const tokenHash = hashSignedToken(token);
-  const nowIso = new Date().toISOString();
 
   const { data: tokenRow } = await service
     .from(TABLES.EVIDENCE_DOWNLOAD_TOKENS)
@@ -53,19 +53,10 @@ async function GETHandler(
     return NextResponse.json({ error: 'Token expired' }, { status: 401 });
   }
 
-  const { data: consumedRow, error: consumeError } = await service
-    .from(TABLES.EVIDENCE_DOWNLOAD_TOKENS)
-    .update({ used_at: nowIso })
-    .eq('id', tokenRow.id)
-    .is('used_at', null)
-    .select('id')
-    .maybeSingle() as unknown as { data: { id: string } | null; error: { message: string } | null };
-
-  if (consumeError) {
-    return NextResponse.json({ error: 'Failed to consume token' }, { status: 500 });
-  }
-  if (!consumedRow) {
-    return NextResponse.json({ error: 'Token already used' }, { status: 401 });
+  const consumed = await consumeEvidenceDownloadToken(tokenRow.id);
+  if (!consumed.ok) {
+    const status = consumed.error === 'Token already used' ? 401 : 500;
+    return NextResponse.json({ error: consumed.error }, { status });
   }
 
   const pdf = await streamV1EvidencePdf(service, tokenRow.merchant_id, id);

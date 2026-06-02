@@ -1,11 +1,10 @@
-import { Suspense } from 'react';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
 import Link from 'next/link';
 import AuditHistoryTableClient from '@/components/audit/AuditHistoryTableClient';
 import type { Database } from '@/lib/supabase/types';
-import PageSizeSelect from '@/components/common/PageSizeSelect';
-import { ButtonLink, WorkbenchPage, WorkbenchActionBar, WorkbenchEmptyState, WorkbenchKpiStrip } from '@/components/ui';
+import { ButtonLink, WorkbenchEmptyState } from '@/components/ui';
+import { HistoryPageWorkbench } from '@/app/(app)/history/HistoryPageWorkbench';
 import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
 import { requirePermission, PERMISSIONS, resolveDefaultAppPath } from '@/lib/permissions';
 import { getConnectionState } from '@/lib/connections/getConnectionState';
@@ -35,15 +34,16 @@ export default async function HistoryPage({ searchParams }: { searchParams?: { p
     : DEFAULT_PAGE_SIZE;
   const offset = (page - 1) * pageSize;
 
-  const { data: runs, count } = await serviceClient
-    .from(TABLES.PROCESSING_JOBS)
-    .select('*', { count: 'exact' })
-    .eq('merchant_id', ctx.merchantId)
-    .eq('hidden_by_merchant', false)
-    .order('created_at', { ascending: false })
-    .range(offset, offset + pageSize - 1);
-
-  const connection = await getConnectionState(serviceClient, ctx.merchantId);
+  const [{ data: runs, count }, connection] = await Promise.all([
+    serviceClient
+      .from(TABLES.PROCESSING_JOBS)
+      .select('*', { count: 'exact' })
+      .eq('merchant_id', ctx.merchantId)
+      .eq('hidden_by_merchant', false)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + pageSize - 1),
+    getConnectionState(serviceClient, ctx.merchantId),
+  ]);
 
   const typedRuns = (runs ?? []) as unknown as RunRow[];
   const total = count ?? 0;
@@ -51,47 +51,24 @@ export default async function HistoryPage({ searchParams }: { searchParams?: { p
   const baseSearchParams = sp ?? {};
 
   return (
-    <WorkbenchPage
+    <HistoryPageWorkbench
       title="Import history"
       subtitle={`Showing ${total === 0 ? 0 : offset + 1}-${Math.min(offset + pageSize, total)} of ${total.toLocaleString()} imports`}
       navItems={WORKBENCH_NAV_ITEMS}
-      activeNavKey="audits"
       actions={
         <ButtonLink href="/upload" size="sm">Import CSV</ButtonLink>
       }
-      kpiStrip={
-        <WorkbenchKpiStrip
-          items={[
-            { label: 'Imports', value: total.toLocaleString(), hint: 'Visible imports' },
-            { label: 'Rows processed', value: typedRuns.reduce((sum, row) => sum + row.total_rows, 0).toLocaleString(), hint: 'Current page scope' },
-            { label: 'Matched', value: typedRuns.reduce((sum, row) => sum + (row.flagged_count ?? 0), 0).toLocaleString(), hint: 'Current page scope' },
-            { label: 'Last import', value: typedRuns[0]?.created_at ? new Date(typedRuns[0].created_at).toLocaleDateString('en-US') : '-', hint: 'Most recent import' },
-            { label: 'Failed', value: typedRuns.filter((row) => row.status === 'failed').length.toLocaleString(), hint: 'Current page scope' },
-          ]}
-        />
-      }
-      actionBar={
-        <WorkbenchActionBar
-          left={
-            <Suspense fallback={<span className="text-xs" style={{ color: 'var(--text-muted)' }}>Rows per page…</span>}>
-              <PageSizeSelect pathname="/history" pageSize={pageSize} />
-            </Suspense>
-          }
-          right={
-            totalPages > 1 ? (
-              <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
-                <span>Page {page} of {totalPages}</span>
-                {page > 1 && (
-                  <ButtonLink href={`/history?${new URLSearchParams({ ...baseSearchParams, page: String(page - 1), pageSize: String(pageSize) }).toString()}`} variant="secondary" size="sm">Prev</ButtonLink>
-                )}
-                {page < totalPages && (
-                  <ButtonLink href={`/history?${new URLSearchParams({ ...baseSearchParams, page: String(page + 1), pageSize: String(pageSize) }).toString()}`} variant="secondary" size="sm">Next</ButtonLink>
-                )}
-              </div>
-            ) : null
-          }
-        />
-      }
+      kpiItems={[
+        { label: 'Imports', value: total.toLocaleString(), hint: 'Visible imports' },
+        { label: 'Rows processed', value: typedRuns.reduce((sum, row) => sum + row.total_rows, 0).toLocaleString(), hint: 'Current page scope' },
+        { label: 'Matched', value: typedRuns.reduce((sum, row) => sum + (row.flagged_count ?? 0), 0).toLocaleString(), hint: 'Current page scope' },
+        { label: 'Last import', value: typedRuns[0]?.created_at ? new Date(typedRuns[0].created_at).toLocaleDateString('en-US') : '-', hint: 'Most recent import' },
+        { label: 'Failed', value: typedRuns.filter((row) => row.status === 'failed').length.toLocaleString(), hint: 'Current page scope' },
+      ]}
+      page={page}
+      totalPages={totalPages}
+      pageSize={pageSize}
+      baseSearchParams={baseSearchParams as Record<string, string>}
       main={
         typedRuns.length === 0 ? (
           <WorkbenchEmptyState

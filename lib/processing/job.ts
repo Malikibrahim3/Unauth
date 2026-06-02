@@ -153,8 +153,8 @@ export async function completeJob(
   //     of 30–90 second Supabase 520/521 outages seen in production. Only entered
   //     when all Phase-1 failures indicate the DB is fully unreachable.
   const delays = [1000, 2000, 4000, 8000, 20000, 20000, 20000];
-  let allUpstreamDown = true;
-  for (let attempt = 0; attempt < delays.length; attempt++) {
+
+  const completeAttempt = async (attempt: number, allUpstreamDown: boolean): Promise<void> => {
     const { error } = await serviceClient
       .from(TABLES.PROCESSING_JOBS)
       .update(update as any)
@@ -163,18 +163,17 @@ export async function completeJob(
     if (!error) return;
 
     const upstream = isUpstreamDown(error);
-    if (!upstream) allUpstreamDown = false;
+    const nextAllUpstreamDown = upstream && allUpstreamDown;
     console.error(`Failed to complete job (attempt ${attempt + 1}/${delays.length}):`, error);
 
-    const delay = delays[attempt];
-    // Only enter Phase 2 (20 s waits) when EVERY failure so far was upstream-down.
-    // If any failure was a DB logic error, long waits won't help.
-    if (attempt >= 4 && !allUpstreamDown) break;
+    if (attempt >= 4 && !nextAllUpstreamDown) return;
+    if (attempt >= delays.length - 1) return;
 
-    if (attempt < delays.length - 1) {
-      await new Promise<void>((r) => setTimeout(r, delay));
-    }
-  }
+    await new Promise<void>((r) => setTimeout(r, delays[attempt]!));
+    return completeAttempt(attempt + 1, nextAllUpstreamDown);
+  };
+
+  await completeAttempt(0, true);
 }
 
 export async function logBatchError(

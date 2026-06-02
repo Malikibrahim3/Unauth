@@ -45,21 +45,17 @@ export function isUpstreamDown(err: any): boolean {
 export async function withRetry<T>(
   fn: () => Promise<T>,
   attempts = 3,
-  baseDelayMs = 500
+  baseDelayMs = 500,
+  attempt = 0
 ): Promise<T> {
-  let lastErr: unknown;
-  for (let i = 0; i < attempts; i++) {
-    try {
-      return await fn();
-    } catch (err) {
-      lastErr = err;
-      // Bail immediately on upstream-down — retries amplify the problem.
-      if (isUpstreamDown(err)) throw err;
-      const jitter = Math.random() * 200;
-      await new Promise((r) => setTimeout(r, baseDelayMs * 2 ** i + jitter));
-    }
+  try {
+    return await fn();
+  } catch (err) {
+    if (isUpstreamDown(err) || attempt >= attempts - 1) throw err;
+    const jitter = Math.random() * 200;
+    await new Promise((r) => setTimeout(r, baseDelayMs * 2 ** attempt + jitter));
+    return withRetry(fn, attempts, baseDelayMs, attempt + 1);
   }
-  throw lastErr;
 }
 
 // True upstream-down (server reported HTTP 521 / schema cache miss / etc.).
@@ -85,28 +81,33 @@ export function isHardUpstreamDown(err: any): boolean {
 //
 // Returns { value, retries, failed }. Callers can surface the counters in the
 // data-quality report without changing the success/failure contract.
+async function withReadRetryAttempt<T>(
+  fn: () => Promise<T>,
+  attempts: number,
+  baseDelayMs: number,
+  attempt: number,
+  retries: number
+): Promise<{ value: T | null; retries: number; failed: boolean; lastError: unknown }> {
+  try {
+    const value = await fn();
+    return { value, retries, failed: false, lastError: null };
+  } catch (err) {
+    if (isHardUpstreamDown(err)) {
+      return { value: null, retries, failed: true, lastError: err };
+    }
+    if (attempt >= attempts - 1) {
+      return { value: null, retries, failed: true, lastError: err };
+    }
+    const jitter = Math.random() * 200;
+    await new Promise((r) => setTimeout(r, baseDelayMs * 2 ** attempt + jitter));
+    return withReadRetryAttempt(fn, attempts, baseDelayMs, attempt + 1, retries + 1);
+  }
+}
+
 export async function withReadRetry<T>(
   fn: () => Promise<T>,
   attempts = 5,
   baseDelayMs = 500
 ): Promise<{ value: T | null; retries: number; failed: boolean; lastError: unknown }> {
-  let lastErr: unknown = null;
-  let retries = 0;
-  for (let i = 0; i < attempts; i++) {
-    try {
-      const value = await fn();
-      return { value, retries, failed: false, lastError: null };
-    } catch (err) {
-      lastErr = err;
-      if (isHardUpstreamDown(err)) {
-        return { value: null, retries, failed: true, lastError: err };
-      }
-      if (i < attempts - 1) {
-        retries++;
-        const jitter = Math.random() * 200;
-        await new Promise((r) => setTimeout(r, baseDelayMs * 2 ** i + jitter));
-      }
-    }
-  }
-  return { value: null, retries, failed: true, lastError: lastErr };
+  return withReadRetryAttempt(fn, attempts, baseDelayMs, 0, 0);
 }

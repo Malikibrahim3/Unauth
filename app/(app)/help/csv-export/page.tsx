@@ -28,7 +28,7 @@ export default function CsvExportHelpPage() {
       </div>
 
       {/* ------------------------------------------------------------------ */}
-      {/* Section 1 — Why more fields matter                                  */}
+      {/* Section 1 - Why more fields matter                                  */}
       {/* ------------------------------------------------------------------ */}
       <section className="space-y-4">
         <h2 className="text-heading-md">
@@ -39,7 +39,7 @@ export default function CsvExportHelpPage() {
           tell whether two orders came from the same person. With just an email
           address, someone can open a new Gmail account in 60 seconds and
           appear as a brand-new customer. With a card fingerprint, device ID,
-          and IP address together, it becomes very difficult to hide — those
+          and IP address together, it becomes very difficult to hide - those
           three pieces of hardware-level data need to change simultaneously,
           which is practically impossible without a new device and a new
           payment card.
@@ -57,7 +57,7 @@ export default function CsvExportHelpPage() {
       </section>
 
       {/* ------------------------------------------------------------------ */}
-      {/* Section 2 — Field guide                                             */}
+      {/* Section 2 - Field guide                                             */}
       {/* ------------------------------------------------------------------ */}
       <section className="space-y-6">
         <h2 className="text-heading-md">Field guide</h2>
@@ -160,7 +160,7 @@ export default function CsvExportHelpPage() {
       </section>
 
       {/* ------------------------------------------------------------------ */}
-      {/* Section 3 — What works with limited data                            */}
+      {/* Section 3 - What works with limited data                            */}
       {/* ------------------------------------------------------------------ */}
       <section className="space-y-4">
         <h2 className="text-heading-md">
@@ -172,7 +172,7 @@ export default function CsvExportHelpPage() {
         </p>
         <ul className="text-body-sm space-y-2" style={{ color: 'var(--text-muted)' }}>
           <li>
-            <strong>Email variants</strong> — the same person using{' '}
+            <strong>Email variants</strong> - the same person using{' '}
             <code className="text-xs px-1 rounded" style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
               customer@example.com
             </code>{' '}
@@ -184,26 +184,26 @@ export default function CsvExportHelpPage() {
             <code className="text-xs px-1 rounded" style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
               c.u.s.t.o.m.e.r@example.com
             </code>{' '}
-            — caught by email variant detection.
+            - caught by email variant detection.
           </li>
           <li>
-            <strong>Address clustering</strong> — three orders to the same
-            address under different names — caught by address matching.
+            <strong>Address clustering</strong> - three orders to the same
+            address under different names - caught by address matching.
           </li>
           <li>
-            <strong>Name variants</strong> — &ldquo;John Smith&rdquo; and
-            &ldquo;Jon Smith&rdquo; — caught by Levenshtein distance matching.
+            <strong>Name variants</strong> - &ldquo;John Smith&rdquo; and
+            &ldquo;Jon Smith&rdquo; - caught by Levenshtein distance matching.
           </li>
           <li>
-            <strong>Behavioural patterns</strong> — claiming refunds within
-            24 hours repeatedly, or claiming refunds on every order — caught
+            <strong>Behavioural patterns</strong> - claiming refunds within
+            24 hours repeatedly, or claiming refunds on every order - caught
             by behavioural context analysis.
           </li>
         </ul>
         <p className="text-body-sm" style={{ color: 'var(--text-muted)' }}>
           These signals are real. They&rsquo;re weaker than hardware signals but
           they surface patterns that a manual review would likely miss. Results
-          will show as &lsquo;possible&rsquo; confidence — which is honest — but
+          will show as &lsquo;possible&rsquo; confidence - which is honest - but
           they&rsquo;re still actionable.
         </p>
         <p className="text-body-sm" style={{ color: 'var(--text-muted)' }}>
@@ -226,16 +226,16 @@ export default function CsvExportHelpPage() {
         </p>
         <ul className="space-y-1 text-body-sm list-none pl-0" style={{ color: 'var(--text-muted)' }}>
           {([
-            ['Device fingerprint', 'deviceMatch — capture device ID at checkout'],
-            ['IP address cluster', 'ipCluster — IP address or ASN recorded on the order'],
-            ['Email address', 'emailVariant — standard checkout field, captured automatically'],
-            ['Billing / shipping address', 'addressCluster — full address including postcode'],
-            ['Phone number', 'phoneMatch — mobile or landline recorded at checkout'],
-            ['Account linkage', 'accountLink — customer account ID or loyalty programme ID'],
+            ['Device fingerprint', 'deviceMatch - capture device ID at checkout'],
+            ['IP address cluster', 'ipCluster - IP address or ASN recorded on the order'],
+            ['Email address', 'emailVariant - standard checkout field, captured automatically'],
+            ['Billing / shipping address', 'addressCluster - full address including postcode'],
+            ['Phone number', 'phoneMatch - mobile or landline recorded at checkout'],
+            ['Account linkage', 'accountLink - customer account ID or loyalty programme ID'],
           ] as const).map(([label, detail]) => (
             <li key={label} className="flex gap-2 items-start">
               <span className="h-1.5 w-1.5 rounded-full flex-shrink-0" style={{ background: 'var(--accent)', marginTop: '0.45rem' }} />
-              <span><span className="font-medium" style={{ color: 'var(--text)' }}>{label}</span> — {detail}</span>
+              <span><span className="font-medium" style={{ color: 'var(--text)' }}>{label}</span> - {detail}</span>
             </li>
           ))}
         </ul>

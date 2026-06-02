@@ -10,7 +10,7 @@ export function PrivacyBadge({ value = 'Privacy-safe', className }: PrivacyBadge
   return (
     <span
       title="Cross-store comparisons use hashed identifiers only. No other merchant can see your customer list."
-      className={cn('inline-flex items-center gap-1 rounded-sm border px-1.5 py-0.5 text-[10px] font-medium leading-none', className)}
+      className={cn('inline-flex items-center gap-1 rounded-sm border px-1.5 py-0.5 text-xs font-medium leading-none', className)}
       style={{
         background: 'var(--privacy-fill)',
         borderColor: 'var(--privacy-border)',

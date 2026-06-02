@@ -19,6 +19,12 @@ const ALLOWED: Record<string, string> = {
   processing_jobs: 'processing_jobs',
 };
 
+const SOFT_DELETE_FIELD: Record<string, string> = {
+  customer_notes: 'deleted_by_merchant',
+  watchlist_entries: 'removed_by_merchant',
+  processing_jobs: 'hidden_by_merchant',
+};
+
 async function POSTHandler(req: NextRequest) {
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown';
 
@@ -41,24 +47,23 @@ async function POSTHandler(req: NextRequest) {
   const { entity, ids, confirm } = body;
   if (!confirm) return NextResponse.json({ error: 'Confirmation required' }, { status: 400 });
 
-  // Soft-delete flag per table (we never hard-delete merchant-flagged signals)
-  const SOFT_DELETE_FIELD: Record<string, string> = {
-    customer_notes: 'deleted_by_merchant',
-    watchlist_entries: 'removed_by_merchant',
-    processing_jobs: 'hidden_by_merchant',
-  };
-
   // If entity === 'all' soft-delete all allowed tables for this merchant
   if (entity === 'all') {
-    for (const [, table] of Object.entries(ALLOWED)) {
+    const tableEntries = Object.entries(ALLOWED);
+    const softDeleteAllTables = async (index: number): Promise<NextResponse | null> => {
+      if (index >= tableEntries.length) return null;
+      const [, table] = tableEntries[index]!;
       const field = SOFT_DELETE_FIELD[table];
-      if (!field) continue;
+      if (!field) return softDeleteAllTables(index + 1);
       const query = table === 'watchlist_entries'
         ? serviceClient.from(table).update({ [field]: true } as any).eq('merchant_id', user.id)
         : scopedClient.from(table).update({ [field]: true } as any);
       const { error } = await query;
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    }
+      return softDeleteAllTables(index + 1);
+    };
+    const bulkDeleteError = await softDeleteAllTables(0);
+    if (bulkDeleteError) return bulkDeleteError;
     logAction({ ctx, action: 'bulk_delete', metadata: { entity: 'all' }, ip });
     return NextResponse.json({ ok: true });
   }

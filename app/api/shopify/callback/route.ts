@@ -10,6 +10,8 @@ import { resolveOAuthMerchantId } from '@/lib/shopify/resolveOAuthMerchantId';
 import { registerShopifyWebhooks } from '@/lib/shopify/webhooks';
 import { shopifyAuditError } from '@/lib/shopify/auditLog';
 import { getAppUrl } from '@/lib/utils/appUrl';
+import { exchangeShopifyOAuthAccessToken } from '@/lib/shopify/exchangeOAuthAccessToken';
+import { persistShopifyOAuthConnection } from '@/lib/shopify/persistOAuthConnection';
 
 const SHOP_REGEX = /^[a-zA-Z0-9][a-zA-Z0-9-]*\.myshopify\.com$/;
 const INTEGRATIONS_PATH = '/settings/integrations';
@@ -99,29 +101,18 @@ export async function GET(request: NextRequest) {
 
   try {
     shopifyDebugLog('token_exchange.started', { callbackShopDomain: shop });
-    const tokenRes = await fetch(`https://${shop}/admin/oauth/access_token`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        client_id: apiKey,
-        client_secret: apiSecret,
-        code,
-      }),
-    });
-    if (!tokenRes.ok) {
-      shopifyDebugLog('token_exchange.success', { tokenExchangeSuccess: false, status: tokenRes.status });
+    const tokenExchange = await exchangeShopifyOAuthAccessToken(shop, code, apiKey, apiSecret);
+    if (!tokenExchange.ok) {
+      shopifyDebugLog('token_exchange.success', {
+        tokenExchangeSuccess: false,
+        status: tokenExchange.status,
+        reason: tokenExchange.reason,
+      });
       const response = integrationsRedirect(request, { shopify_error: 'token_exchange_failed' });
       clearOAuthCookies(response);
       return response;
     }
-    const tokenPayload = (await tokenRes.json()) as { access_token?: string };
-    const accessToken = tokenPayload.access_token;
-    if (!accessToken) {
-      shopifyDebugLog('token_exchange.success', { tokenExchangeSuccess: false, reason: 'missing_token' });
-      const response = integrationsRedirect(request, { shopify_error: 'token_exchange_failed' });
-      clearOAuthCookies(response);
-      return response;
-    }
+    const accessToken = tokenExchange.accessToken;
     shopifyDebugLog('token_exchange.success', { tokenExchangeSuccess: true });
 
     const serviceClient = createServiceClient();
@@ -129,46 +120,21 @@ export async function GET(request: NextRequest) {
     const merchantId = await resolveOAuthMerchantId(request, serviceClient, userClient);
     shopifyDebugLog('callback.merchant_resolved', { hasMerchantId: Boolean(merchantId) });
 
-    const now = new Date().toISOString();
-    const { error: merchantTokenError } = await serviceClient
-      .from('shopify_merchants' as never)
-      .upsert(
-        {
-          shop_domain: shop,
-          access_token: accessToken,
-          uninstalled_at: null,
-          updated_at: now,
-        },
-        { onConflict: 'shop_domain' },
-      );
+    const persisted = await persistShopifyOAuthConnection(serviceClient, {
+      shop,
+      accessToken,
+      merchantId,
+    });
 
-    if (merchantTokenError) {
-      throw new Error(merchantTokenError.message);
-    }
-
-    if (!merchantId) {
-      shopifyDebugLog('merchant_connection.upserted', { merchantConnectionUpserted: false, merchantConnectionActive: false });
-      const response = integrationsRedirect(request, { shopify_error: 'missing_merchant' });
-      clearOAuthCookies(response);
-      return response;
-    }
-
-    const { error: mappingError } = await serviceClient
-      .from('merchant_shopify_connections' as never)
-      .upsert(
-        {
-          merchant_id: merchantId,
-          shop_domain: shop,
-          active: true,
-          uninstalled_at: null,
-          updated_at: now,
-        },
-        { onConflict: 'merchant_id,shop_domain' },
-      );
-
-    if (mappingError) {
-      shopifyDebugLog('merchant_connection.upserted', { merchantConnectionUpserted: false, merchantConnectionActive: false });
-      const response = integrationsRedirect(request, { shopify_error: 'connection_failed' });
+    if (!persisted.ok) {
+      if (persisted.error === 'merchant_token_failed') {
+        throw new Error(persisted.message ?? 'merchant_token_failed');
+      }
+      shopifyDebugLog('merchant_connection.upserted', {
+        merchantConnectionUpserted: false,
+        merchantConnectionActive: false,
+      });
+      const response = integrationsRedirect(request, { shopify_error: persisted.error });
       clearOAuthCookies(response);
       return response;
     }
@@ -199,12 +165,13 @@ export async function GET(request: NextRequest) {
     }
 
     // Score into audit_transactions after the redirect so OAuth does not hit serverless timeouts.
+    const connectedMerchantId = persisted.merchantId;
     after(async () => {
       try {
         const auditBackfill = await backfillShopifyAuditTransactions({
           supabase: serviceClient,
           shopDomain: shop,
-          merchantId,
+          merchantId: connectedMerchantId,
         });
         shopifyDebugLog('backfill.audit.finished', {
           callbackShopDomain: shop,
@@ -213,7 +180,7 @@ export async function GET(request: NextRequest) {
           batches: auditBackfill.batches,
         });
       } catch (auditError) {
-        shopifyAuditError('backfill.audit.failed', auditError, { shopDomain: shop, merchantId });
+        shopifyAuditError('backfill.audit.failed', auditError, { shopDomain: shop, merchantId: connectedMerchantId });
         shopifyDebugLog('backfill.audit.failed', {
           callbackShopDomain: shop,
           message: auditError instanceof Error ? auditError.message : 'unknown',

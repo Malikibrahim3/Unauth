@@ -41,8 +41,7 @@ async function checkWatchlistAppearances(
   if (!watchlisted || watchlisted.length === 0) return;
 
   const watchlistedIds = watchlisted
-    .map((w: { customer_profile_id: string | null }) => w.customer_profile_id)
-    .filter(Boolean) as string[];
+    .flatMap((w: { customer_profile_id: string | null }) => (w.customer_profile_id ? [w.customer_profile_id] : [])) as string[];
 
   if (watchlistedIds.length === 0) return;
 
@@ -245,11 +244,10 @@ async function POSTHandler(request: NextRequest) {
     }
 
     // Update job with row count and mark as processing
-    await updateJobTotalRows(scopedClient, queueItem.job_id, parseResult.rowCount);
-    await scopedClient
-      .from(TABLES.PROCESSING_JOBS)
-      .update({ status: 'processing' })
-      .eq('id', queueItem.job_id);
+    await Promise.all([
+      updateJobTotalRows(scopedClient, queueItem.job_id, parseResult.rowCount),
+      scopedClient.from(TABLES.PROCESSING_JOBS).update({ status: 'processing' }).eq('id', queueItem.job_id),
+    ]);
 
     const usageGuard = await checkCsvUsageGuard(serviceClient);
     if (usageGuard.shouldStop) {

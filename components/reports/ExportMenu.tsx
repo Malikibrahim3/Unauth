@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui';
 
@@ -41,10 +42,10 @@ export default function ExportMenu({ range }: ExportMenuProps) {
           style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-raised)' }}
         >
           <p
-            className="px-3 pb-1 pt-1.5 text-[10px] font-bold uppercase tracking-wider"
+            className="px-3 pb-1 pt-1.5 text-xs font-bold uppercase tracking-wider"
             style={{ color: 'var(--ink-tertiary)' }}
           >
-            Live reports — Shopify + helpdesk
+            Live reports - Shopify + helpdesk
           </p>
           <a
             role="menuitem"
@@ -54,7 +55,7 @@ export default function ExportMenu({ range }: ExportMenuProps) {
             onClick={() => setOpen(false)}
           >
             Claims CSV
-            <span className="ml-1 opacity-60">— status, amounts, SLA</span>
+            <span className="ml-1 opacity-60">- status, amounts, SLA</span>
           </a>
           <a
             role="menuitem"
@@ -64,26 +65,27 @@ export default function ExportMenu({ range }: ExportMenuProps) {
             onClick={() => setOpen(false)}
           >
             Outcomes CSV
-            <span className="ml-1 opacity-60">— decisions, refunds</span>
+            <span className="ml-1 opacity-60">- decisions, refunds</span>
           </a>
 
           <div className="my-1 border-t" style={{ borderColor: 'var(--surface-border)' }} />
           <p
-            className="px-3 pb-1 pt-0.5 text-[10px] font-bold uppercase tracking-wider"
+            className="px-3 pb-1 pt-0.5 text-xs font-bold uppercase tracking-wider"
             style={{ color: 'var(--ink-tertiary)' }}
           >
             Activity log
           </p>
-          <a
+          <Link
             role="menuitem"
             href="/api/audit-trail?format=csv&limit=200"
+            prefetch={false}
             className="block px-3 py-2 text-xs hover:bg-[var(--surface-overlay)]"
             style={{ color: 'var(--text)' }}
             onClick={() => setOpen(false)}
           >
             Audit trail CSV
-            <span className="ml-1 opacity-60">— all actions, actors</span>
-          </a>
+            <span className="ml-1 opacity-60">- all actions, actors</span>
+          </Link>
         </div>
       )}
     </div>

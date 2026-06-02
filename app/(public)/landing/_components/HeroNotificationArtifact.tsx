@@ -76,8 +76,8 @@ function ComplaintCard({
         <span
           style={{
             fontFamily: 'var(--font-dm-mono, monospace)',
-            fontSize: '9.5px',
-            letterSpacing: '0.12em',
+            fontSize: '12px',
+            letterSpacing: '0.02em',
             textTransform: 'uppercase',
             color: t.darkLabel,
           }}
@@ -87,7 +87,7 @@ function ComplaintCard({
         <span
           style={{
             fontFamily: 'var(--font-dm-mono, monospace)',
-            fontSize: '9px',
+            fontSize: '12px',
             letterSpacing: '0.1em',
             textTransform: 'uppercase',
             color: t.accent,
@@ -99,11 +99,11 @@ function ComplaintCard({
       </div>
 
       {/* Body */}
-      <div className="px-3 py-3">
+      <div className="p-3">
         <figcaption
           style={{
             fontFamily: 'var(--font-dm-mono, monospace)',
-            fontSize: '11px',
+            fontSize: '12px',
             color: t.bg,
             lineHeight: 1.65,
             margin: 0,
@@ -122,8 +122,8 @@ function ComplaintCard({
         <span
           style={{
             fontFamily: 'var(--font-dm-mono, monospace)',
-            fontSize: '9.5px',
-            letterSpacing: '0.08em',
+            fontSize: '12px',
+            letterSpacing: '0.02em',
             color: t.darkLabel,
           }}
         >
@@ -180,18 +180,18 @@ export default function HeroNotificationArtifact() {
           }}
         >
           <div className="flex items-center justify-between px-3 py-2" style={{ borderBottom: '1px solid rgba(48,44,36,0.85)' }}>
-            <span style={{ fontFamily: t.mono, fontSize: '9px', letterSpacing: '0.1em', textTransform: 'uppercase', color: t.darkLabel }}>
+            <span style={{ fontFamily: t.mono, fontSize: '12px', letterSpacing: '0.1em', textTransform: 'uppercase', color: t.darkLabel }}>
               {item.handle}
             </span>
-            <span style={{ fontFamily: t.mono, fontSize: '8.5px', letterSpacing: '0.08em', textTransform: 'uppercase', color: t.accent, fontWeight: 600 }}>
+            <span style={{ fontFamily: t.mono, fontSize: '12px', letterSpacing: '0.02em', textTransform: 'uppercase', color: t.accent, fontWeight: 600 }}>
               {item.tone}
             </span>
           </div>
-          <p style={{ fontFamily: t.mono, fontSize: '10.5px', lineHeight: 1.6, color: t.bg, margin: 0, padding: '12px 12px 10px' }}>
+          <p style={{ fontFamily: t.mono, fontSize: '12px', lineHeight: 1.6, color: t.bg, margin: 0, padding: '12px 12px 10px' }}>
             {item.body}
           </p>
           <div className="px-3 pb-3">
-            <span style={{ fontFamily: t.mono, fontSize: '9px', letterSpacing: '0.08em', color: t.darkLabel }}>
+            <span style={{ fontFamily: t.mono, fontSize: '12px', letterSpacing: '0.02em', color: t.darkLabel }}>
               {item.store}
             </span>
           </div>
@@ -276,7 +276,7 @@ export default function HeroNotificationArtifact() {
         }
       `}</style>
 
-      {/* Warm glow anchor — grounds the columns against the dark bg */}
+      {/* Warm glow anchor - grounds the columns against the dark bg */}
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_55%_52%,rgba(123,45,38,0.13),transparent_70%)]" />
       {/* Secondary cool-dark vignette to push depth */}
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_80%_at_50%_50%,transparent_40%,rgba(15,14,10,0.55)_100%)]" />

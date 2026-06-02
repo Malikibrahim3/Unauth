@@ -124,7 +124,7 @@ export async function GET(request: NextRequest) {
     claims = fallback.data;
   }
 
-  const claimIds = (claims ?? []).map((claim: any) => claim.id).filter(Boolean);
+  const claimIds = (claims ?? []).flatMap((claim: any) => (claim.id ? [claim.id] : []));
   const outcomesByClaimId = new Map<string, any[]>();
   const eventsByClaimId = new Map<string, any[]>();
   const evidenceCountByClaimId = new Map<string, number>();

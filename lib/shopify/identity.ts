@@ -50,11 +50,15 @@ export function normalizeAddress(address: ShopifyAddress | null | undefined): st
 export async function upsertMerchantIdentityRows(supabase: any, rows: MerchantIdentityInsert[]) {
   if (!rows.length) return;
   const batchSize = 500;
-  for (let i = 0; i < rows.length; i += batchSize) {
-    const batch = rows.slice(i, i + batchSize);
-    const { error } = await supabase
-      .from('merchant_identities' as any)
-      .upsert(batch as any, { onConflict: 'shop_domain,source,source_id' });
-    if (error) throw new Error(error.message);
-  }
+  const batches = Array.from({ length: Math.ceil(rows.length / batchSize) }, (_, i) =>
+    rows.slice(i * batchSize, i * batchSize + batchSize)
+  );
+  await Promise.all(
+    batches.map(async (batch) => {
+      const { error } = await supabase
+        .from('merchant_identities' as any)
+        .upsert(batch as any, { onConflict: 'shop_domain,source,source_id' });
+      if (error) throw new Error(error.message);
+    })
+  );
 }

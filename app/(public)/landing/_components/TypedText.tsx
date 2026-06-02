@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 
 type Props = {
   text: string;
@@ -17,10 +17,17 @@ export default function TypedText({
   className = '',
   style,
 }: Props) {
-  const [count, setCount] = useState(text.length);
+  const [count, setCount] = useState(0);
+  const prevTextRef = useRef(text);
+
+  if (text !== prevTextRef.current) {
+    prevTextRef.current = text;
+    setCount(0);
+  }
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setCount(text.length);
       return;
     }
 
@@ -35,11 +42,7 @@ export default function TypedText({
       }
     };
 
-    frame = window.requestAnimationFrame((now) => {
-      setCount(0);
-      tick(now);
-    });
-
+    frame = window.requestAnimationFrame(tick);
     return () => {
       window.cancelAnimationFrame(frame);
     };

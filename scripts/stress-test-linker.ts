@@ -90,7 +90,7 @@ function main() {
 
   // Top clusters by size
   console.log('\n=== TOP 10 CLUSTERS BY SIZE ===\n');
-  const topClusters = [...result.clusters].sort((a, b) => b.order_ids.length - a.order_ids.length).slice(0, 10);
+  const topClusters = result.clusters.toSorted((a, b) => b.order_ids.length - a.order_ids.length).slice(0, 10);
   topClusters.forEach((cluster, idx) => {
     console.log(`#${idx + 1}: Cluster ${cluster.cluster_id}`);
     console.log(`  Size: ${cluster.order_ids.length} orders`);

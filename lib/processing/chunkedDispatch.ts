@@ -67,8 +67,7 @@ export async function downloadChunkRows(
   jobId: string,
   index: number
 ): Promise<ParsedCsvRow[]> {
-  let lastError: string | null = null;
-  for (let attempt = 1; attempt <= DOWNLOAD_RETRY_ATTEMPTS; attempt++) {
+  const downloadAttempt = async (attempt: number, lastError: string | null): Promise<ParsedCsvRow[]> => {
     const { data, error } = await supabase.storage
       .from(CHUNK_BUCKET)
       .download(chunkPath(jobId, index));
@@ -78,16 +77,18 @@ export async function downloadChunkRows(
     }
 
     const message = error?.message ?? 'no data';
-    lastError = message;
     const retryable = isRetryableDownloadError(message);
-    if (!retryable || attempt === DOWNLOAD_RETRY_ATTEMPTS) break;
+    if (!retryable || attempt >= DOWNLOAD_RETRY_ATTEMPTS) {
+      throw new Error(`downloadChunkRows ${index} failed: ${message}`);
+    }
     console.warn(
       `[chunkedDispatch] downloadChunkRows retry chunk=${index} attempt=${attempt + 1}/${DOWNLOAD_RETRY_ATTEMPTS}: ${message}`
     );
     await sleep(DOWNLOAD_RETRY_DELAY_MS);
-  }
+    return downloadAttempt(attempt + 1, message);
+  };
 
-  throw new Error(`downloadChunkRows ${index} failed: ${lastError ?? 'unknown error'}`);
+  return downloadAttempt(1, null);
 }
 
 /** Best-effort cleanup of all chunk JSON blobs for a job. */

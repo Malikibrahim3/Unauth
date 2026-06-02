@@ -36,7 +36,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     .eq('source', 'order')
     .in('email', emails);
 
-  const orderIds = Array.from(new Set((ids ?? []).map((r: any) => String(r.source_id)).filter(Boolean)));
+  const orderIds = Array.from(new Set((ids ?? []).flatMap((r: any) => { const v = String(r.source_id); return v ? [v] : []; })));
   if (orderIds.length === 0) return NextResponse.json({ orders: [] });
 
   const { data: orders } = await service

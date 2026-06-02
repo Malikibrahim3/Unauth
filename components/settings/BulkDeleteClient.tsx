@@ -60,7 +60,7 @@ export default function BulkDeleteClient() {
         </select>
 
         <button
-          onClick={() => {
+type="button"           onClick={() => {
             setEntity('all');
           }}
           className="text-xs font-medium px-2 py-1"
@@ -83,7 +83,7 @@ export default function BulkDeleteClient() {
 
       <div>
         <button
-          onClick={handleDelete}
+type="button"           onClick={handleDelete}
           disabled={loading}
           className="rounded px-3 py-2 font-semibold"
           style={{ background: 'var(--risk-critical)', color: 'white' }}

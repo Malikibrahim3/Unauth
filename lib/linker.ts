@@ -183,7 +183,7 @@ export function normaliseName(raw: string | null | undefined): string | null {
 
   // "Last, First" → "First Last"
   if (cleaned.includes(',')) {
-    const parts = cleaned.split(',').map((p) => p.trim()).filter(Boolean);
+    const parts = cleaned.split(',').flatMap((p) => { const v = p.trim(); return v ? [v] : []; });
     if (parts.length === 2) {
       return `${parts[1]} ${parts[0]}`.replace(/\s+/g, ' ').trim();
     }
@@ -832,7 +832,7 @@ function scorePair(
 class UnionFind {
   private parent = new Map<string, string>();
 
-  find(x: string): string {
+  findRoot(x: string): string {
     let p = this.parent.get(x);
     if (p === undefined) {
       this.parent.set(x, x);
@@ -848,8 +848,8 @@ class UnionFind {
   }
 
   union(a: string, b: string): void {
-    const ra = this.find(a);
-    const rb = this.find(b);
+    const ra = this.findRoot(a);
+    const rb = this.findRoot(b);
     if (ra === rb) return;
     // Deterministic: always point the lexicographically larger root at the
     // smaller one. This guarantees identical input yields identical cluster
@@ -996,7 +996,7 @@ function isHighConfidenceGraphEdge(evidence: string[], score: number): boolean {
  * for promoted candidate groups without re-implementing the same hash logic.
  */
 export function deterministicClusterId(orderIds: string[]): string {
-  const sorted = [...orderIds].sort();
+  const sorted = orderIds.toSorted();
   const h = createHash('sha256').update(sorted.join('|')).digest('hex');
   return `${h.slice(0, 8)}-${h.slice(8, 12)}-4${h.slice(13, 16)}-${h.slice(16, 20)}-${h.slice(20, 32)}`;
 }
@@ -1181,7 +1181,7 @@ export function linkIdentities(input: LinkerOrderInput[]): LinkerResult {
   const directLinkedKeys = new Set(linkedPairs.map((p) => pairKey(p.a, p.b)));
   const directRootMembers = new Map<string, string[]>();
   for (const row of normalised) {
-    const root = uf.find(row.order_id);
+    const root = uf.findRoot(row.order_id);
     const members = directRootMembers.get(root) ?? [];
     members.push(row.order_id);
     directRootMembers.set(root, members);
@@ -1201,8 +1201,8 @@ export function linkIdentities(input: LinkerOrderInput[]): LinkerResult {
   for (const acc of Array.from(pairs.values())) {
     if (directLinkedKeys.has(pairKey(acc.order_id_a, acc.order_id_b))) continue;
 
-    const rootA = uf.find(acc.order_id_a);
-    const rootB = uf.find(acc.order_id_b);
+    const rootA = uf.findRoot(acc.order_id_a);
+    const rootB = uf.findRoot(acc.order_id_b);
     if (rootA === rootB) continue;
 
     const oa = byId.get(acc.order_id_a)!;
@@ -1242,7 +1242,7 @@ export function linkIdentities(input: LinkerOrderInput[]): LinkerResult {
 
     const chainComponents = new Map<string, { roots: Set<string>; edges: ChainEdge[] }>();
     for (const edge of chainEdges) {
-      const root = chainUf.find(edge.rootA);
+      const root = chainUf.findRoot(edge.rootA);
       const component = chainComponents.get(root) ?? { roots: new Set<string>(), edges: [] };
       component.roots.add(edge.rootA);
       component.roots.add(edge.rootB);
@@ -1291,7 +1291,7 @@ export function linkIdentities(input: LinkerOrderInput[]): LinkerResult {
 
     const rescueMembers = new Map<string, string[]>();
     for (const row of normalised) {
-      const root = uf.find(row.order_id);
+      const root = uf.findRoot(row.order_id);
       const members = rescueMembers.get(root) ?? [];
       members.push(row.order_id);
       rescueMembers.set(root, members);
@@ -1303,8 +1303,8 @@ export function linkIdentities(input: LinkerOrderInput[]): LinkerResult {
       .sort((a, b) => b.score - a.score);
 
     for (const edge of rescueCandidates) {
-      const rootA = uf.find(edge.a);
-      const rootB = uf.find(edge.b);
+      const rootA = uf.findRoot(edge.a);
+      const rootB = uf.findRoot(edge.b);
       if (rootA === rootB) continue;
       const membersA = rescueMembers.get(rootA) ?? [rootA];
       const membersB = rescueMembers.get(rootB) ?? [rootB];
@@ -1319,7 +1319,7 @@ export function linkIdentities(input: LinkerOrderInput[]): LinkerResult {
         evidence: edge.evidence,
       });
       uf.union(rootA, rootB);
-      const newRoot = uf.find(rootA);
+      const newRoot = uf.findRoot(rootA);
       rescueMembers.delete(rootA);
       rescueMembers.delete(rootB);
       rescueMembers.set(newRoot, combinedMembers);
@@ -1338,7 +1338,7 @@ export function linkIdentities(input: LinkerOrderInput[]): LinkerResult {
   const clusterEvidence = new Map<string, Set<string>>();
 
   for (const p of linkedPairs) {
-    const root = uf.find(p.a);
+    const root = uf.findRoot(p.a);
     if (!clusterMembers.has(root)) {
       clusterMembers.set(root, new Set());
       clusterMaxScore.set(root, 0);

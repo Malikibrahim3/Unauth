@@ -105,7 +105,8 @@ async function createEvidence(params: {
   if (!evidenceId) return { ok: true, evidence: result.data };
 
   const signedUrl = await apiFetch<{ download_url: string }>(
-    `/api/v1/evidence/${encodeURIComponent(evidenceId)}/signed-url`
+    `/api/v1/evidence/${encodeURIComponent(evidenceId)}/signed-url`,
+    { method: 'POST' },
   );
   return {
     ok: true,

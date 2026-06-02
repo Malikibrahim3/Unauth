@@ -139,7 +139,13 @@ export async function buildIdentityClusters(
 
     // Find or create a cluster record for this email group.
     // Prefer an existing cross-email cluster if any member is already in one.
-    const existing = emailOrders.map((o) => map[o.orderId]).find((c) => c !== null) ?? null;
+    const existing = (() => {
+      for (const o of emailOrders) {
+        const cluster = map[o.orderId];
+        if (cluster !== null) return cluster;
+      }
+      return null;
+    })();
     const syntheticClusterId = existing?.clusterId ?? crypto.randomUUID();
     const record: IdentityCluster = existing ?? {
       clusterId: syntheticClusterId,

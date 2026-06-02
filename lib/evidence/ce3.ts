@@ -100,27 +100,28 @@ export function assessCE3Eligibility(
   const disputedCredential = opts?.disputedPaymentCredential ?? null
 
   // Evaluate every undisputed prior order (exclude the disputed order itself).
-  const evaluated = orderHistory
-    .filter(p => p.order_id !== disputedOrderId && (!p.refund_status || p.refund_status === 'none'))
-    .map(prior => {
-      const days = daysBetween(disputedDate, prior.order_date)
-      const matchingSignals = CE3_CORE_ELEMENTS.filter(
-        k => prior.signalHashes[k] && prior.signalHashes[k] === disputedSignalHashes[k],
-      )
-      const hasMandatoryElement = matchingSignals.some(k =>
-        CE3_MANDATORY_ELEMENTS.includes(k as CE3CoreElement),
-      )
-      const withinWindow = days >= CE3_MIN_DAYS && days <= CE3_MAX_DAYS
+  const evaluated = orderHistory.flatMap((prior) => {
+    if (prior.order_id === disputedOrderId || (prior.refund_status && prior.refund_status !== 'none')) {
+      return [];
+    }
+    const days = daysBetween(disputedDate, prior.order_date)
+    const matchingSignals = CE3_CORE_ELEMENTS.filter(
+      k => prior.signalHashes[k] && prior.signalHashes[k] === disputedSignalHashes[k],
+    )
+    const hasMandatoryElement = matchingSignals.some(k =>
+      CE3_MANDATORY_ELEMENTS.includes(k as CE3CoreElement),
+    )
+    const withinWindow = days >= CE3_MIN_DAYS && days <= CE3_MAX_DAYS
 
-      // Same-PAN check: a mismatch disqualifies; absence means "unverified".
-      const priorCredential = prior.paymentCredential ?? null
-      const credentialMismatch =
+    // Same-PAN check: a mismatch disqualifies; absence means "unverified".
+    const priorCredential = prior.paymentCredential ?? null
+    const credentialMismatch =
         !!disputedCredential && !!priorCredential && disputedCredential !== priorCredential
 
       const qualifies =
         matchingSignals.length >= 2 && hasMandatoryElement && withinWindow && !credentialMismatch
 
-      return {
+      return [{
         orderId: prior.order_id,
         orderDate: new Date(prior.order_date),
         matchingSignals,
@@ -130,7 +131,7 @@ export function assessCE3Eligibility(
         hasMandatoryElement,
         credentialMismatch,
         qualifies,
-      }
+      }];
     })
     // Strongest evidence first: most matching elements, then most recent prior.
     .sort((a, b) =>
@@ -152,7 +153,7 @@ export function assessCE3Eligibility(
     paymentCredential = allPriorsHadCredential ? 'verified' : 'unverified'
   }
 
-  const qualifyingSignals = [...new Set(topTwo.filter(p => p.qualifies).flatMap(p => p.matchingSignals))]
+  const qualifyingSignals = [...new Set(topTwo.flatMap((p) => (p.qualifies ? p.matchingSignals : [])))];
   const mandatorySatisfied = eligible && topTwo.every(p => p.hasMandatoryElement)
 
   // Per-core-element match grid across the disputed order and the selected priors.

@@ -2,6 +2,14 @@
 
 import { type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
+import {
+  DATA_TABLE_EMPTY_STYLE,
+  DATA_TABLE_HEAD_ROW_STYLE,
+  DATA_TABLE_HEADER_CELL_BASE,
+  DATA_TABLE_SKELETON_BAR_STYLE,
+  DATA_TABLE_SKELETON_CELL_STYLE,
+  DATA_TABLE_STYLE,
+} from '@/components/ui/dataTableStyles';
 
 interface Column<T> {
   key: string;
@@ -27,6 +35,8 @@ interface DataTableProps<T> {
   selectedKey?: string;
   className?: string;
   emptyState?: ReactNode;
+  /** Applied to each body row when `onRowClick` is set (e.g. Playwright `customer-row`). */
+  rowTestId?: string;
 }
 
 const ROW_HEIGHT: Record<TableDensity, number> = {
@@ -35,20 +45,27 @@ const ROW_HEIGHT: Record<TableDensity, number> = {
   relaxed:  52,
 };
 
+const SKELETON_ROW_BORDER = { borderBottom: '1px solid var(--border-subtle)' } as const;
+const SORT_ICON_STYLE = { opacity: 1 } as const;
+const SORT_ICON_MUTED_STYLE = { opacity: 0.35 } as const;
+
+function skeletonBarWidth(colIndex: number): string {
+  if (colIndex === 0) return '60%';
+  if (colIndex === 1) return '80%';
+  return '50%';
+}
+
 function SkeletonRows({ count = 6, cols }: { count?: number; cols: number }) {
   return (
     <>
       {Array.from({ length: count }).map((_, i) => (
-        <tr key={i} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+        <tr key={i} style={SKELETON_ROW_BORDER}>
           {Array.from({ length: cols }).map((_, j) => (
-            <td key={j} style={{ padding: '10px 14px' }}>
+            <td key={j} style={DATA_TABLE_SKELETON_CELL_STYLE} aria-label="Loading row">
               <div
                 className="skeleton"
-                style={{
-                  height: 12,
-                  borderRadius: 2,
-                  width: j === 0 ? '60%' : j === 1 ? '80%' : '50%',
-                }}
+                style={{ ...DATA_TABLE_SKELETON_BAR_STYLE, width: skeletonBarWidth(j) }}
+                aria-hidden="true"
               />
             </td>
           ))}
@@ -65,7 +82,7 @@ function SortIcon({ active, dir }: { active: boolean; dir?: 'asc' | 'desc' }) {
       viewBox="0 0 10 12"
       fill="currentColor"
       aria-hidden="true"
-      style={{ opacity: active ? 1 : 0.35 }}
+      style={active ? SORT_ICON_STYLE : SORT_ICON_MUTED_STYLE}
     >
       {(!active || dir === 'asc') && (
         <path d="M5 2L8 6H2L5 2Z" opacity={active && dir === 'asc' ? 1 : 0.4} />
@@ -75,6 +92,16 @@ function SortIcon({ active, dir }: { active: boolean; dir?: 'asc' | 'desc' }) {
       )}
     </svg>
   );
+}
+
+function headerCellStyle(col: Column<unknown>, sortable: boolean): React.CSSProperties {
+  return {
+    ...DATA_TABLE_HEADER_CELL_BASE,
+    width: col.width,
+    textAlign: col.align === 'right' ? 'right' : col.align === 'center' ? 'center' : 'left',
+    cursor: sortable ? 'pointer' : undefined,
+    userSelect: sortable ? 'none' : undefined,
+  };
 }
 
 export function DataTable<T>({
@@ -90,31 +117,20 @@ export function DataTable<T>({
   selectedKey,
   className,
   emptyState,
+  rowTestId,
 }: DataTableProps<T>) {
   const rowH = ROW_HEIGHT[density];
 
   return (
     <div className={cn('w-full overflow-x-auto', className)}>
-      <table className="w-full border-collapse" style={{ fontSize: 13, background: 'var(--surface-raised)' }}>
+      <table className="w-full border-collapse" style={DATA_TABLE_STYLE}>
         <thead>
-          <tr style={{ background: 'var(--surface-overlay)', borderBottom: '1px solid var(--surface-border)' }}>
+          <tr style={DATA_TABLE_HEAD_ROW_STYLE}>
             {columns.map((col) => (
               <th
                 key={col.key}
                 scope="col"
-                style={{
-                  width: col.width,
-                  fontSize: 11,
-                  fontWeight: 600,
-                  letterSpacing: '0.01em',
-                  color: 'var(--ink-secondary)',
-                  padding: '0 14px',
-                  height: 34,
-                  whiteSpace: 'nowrap',
-                  textAlign: col.align === 'right' ? 'right' : col.align === 'center' ? 'center' : 'left',
-                  cursor: col.sortable && onSort ? 'pointer' : undefined,
-                  userSelect: col.sortable && onSort ? 'none' : undefined,
-                }}
+                style={headerCellStyle(col as Column<unknown>, Boolean(col.sortable && onSort))}
                 onClick={col.sortable && onSort ? () => onSort(col.key) : undefined}
               >
                 {col.header}
@@ -132,10 +148,7 @@ export function DataTable<T>({
             <tr>
               <td colSpan={columns.length}>
                 {emptyState ?? (
-                  <div
-                    className="flex items-center justify-center"
-                    style={{ height: 200, fontSize: 12, color: 'var(--text-muted)' }}
-                  >
+                  <div className="flex items-center justify-center" style={DATA_TABLE_EMPTY_STYLE}>
                     No results
                   </div>
                 )}
@@ -148,6 +161,7 @@ export function DataTable<T>({
               return (
                 <tr
                   key={key}
+                  data-testid={onRowClick && rowTestId ? rowTestId : undefined}
                   onClick={onRowClick ? () => onRowClick(row) : undefined}
                   style={{
                     height: rowH,

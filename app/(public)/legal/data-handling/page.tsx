@@ -52,7 +52,7 @@ export default function DataHandlingPage() {
           <ul className="space-y-2">
             {[
               'Pseudonymous identity hashes (not raw emails or addresses)',
-              'Aggregate statistics per identity (order counts, refund rates — no order details)',
+              'Aggregate statistics per identity (order counts, refund rates - no order details)',
             ].map((item) => (
               <li key={item} className="flex items-start gap-2">
                 <span className="mt-1 h-2 w-2 flex-shrink-0 rounded-full bg-[var(--success)]" aria-hidden="true" />
@@ -77,7 +77,7 @@ export default function DataHandlingPage() {
             threshold, no signal fires and no information about other merchants is shared.
           </p>
           <p className="mt-3">
-            When a signal does fire, you see only aggregate statistics — never the names of other
+            When a signal does fire, you see only aggregate statistics - never the names of other
             merchants, and never any details from their customers&rsquo; orders.
           </p>
         </section>

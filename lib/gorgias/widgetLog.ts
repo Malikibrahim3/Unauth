@@ -1,4 +1,4 @@
-import { redactSensitiveData } from '@/lib/log';
+import { redactSensitiveData } from '@/lib/log/redactSensitiveData';
 
 const WIDGET_ROUTE = '/api/gorgias/widget';
 

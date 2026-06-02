@@ -24,13 +24,13 @@ export default function HowItWorksPage() {
             When you upload an export of your orders, Unauth reads every order and looks for customers who appear
             to be using multiple identities. We compare details like email addresses, shipping addresses, IP
             addresses, and card information across orders to identify accounts that share the same underlying
-            customer — even when names and emails are different.
+            customer - even when names and emails are different.
           </p>
           <p>
             Each customer is given a confidence grade rather than a score. A Definite match means we are highly
             confident two or more accounts belong to the same person. A Probable match means we have strong
             evidence but not certainty. A Possible match means there are overlapping signals worth reviewing. A
-            Weak match means a single signal was found — treat this as informational only.
+            Weak match means a single signal was found - treat this as informational only.
           </p>
           <p>
             We never tell you what to do. We show you the pattern and you decide.
@@ -47,7 +47,7 @@ export default function HowItWorksPage() {
         <div className="space-y-3 text-body-sm leading-relaxed" style={{ color: 'var(--text)' }}>
           <p>
             Each time you upload an export, Unauth adds to what it already knows about your customers. A customer
-            who appeared in your January upload will be recognised when they appear in your February upload — even
+            who appeared in your January upload will be recognised when they appear in your February upload - even
             if they use a slightly different email or name.
           </p>
           <p>
@@ -55,7 +55,7 @@ export default function HowItWorksPage() {
             routine gives you a continuously updated picture of your customer base.
           </p>
           <p>
-            You can also run a one-off customer lookup upload — export every order associated with their email from
+            You can also run a one-off customer lookup upload - export every order associated with their email from
             your platform and upload it. Unauth will focus entirely on building that customer&apos;s profile.
           </p>
         </div>

@@ -38,7 +38,7 @@ export function MerchantEnvChip({ merchantName, environment = 'production', clas
       <span
         className={cn(
           'inline-flex items-center rounded px-1 py-px',
-          'text-[10px] font-semibold uppercase leading-none tracking-wide',
+          'text-xs font-semibold uppercase leading-none tracking-wide',
           isProd
             ? 'bg-[var(--risk-low-bg)] text-[var(--risk-low-fg)]'
             : 'bg-[var(--bg-subtle)] text-[var(--text-muted)]',

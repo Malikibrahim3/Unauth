@@ -53,7 +53,7 @@ export function buildShopifyOrderSignalRow(
   const riskLevel = payload?.risk?.level ?? payload?.risk_level ?? null;
   const tagList =
     typeof payload.tags === 'string'
-      ? payload.tags.split(',').map((t: string) => t.trim()).filter(Boolean)
+      ? payload.tags.split(',').flatMap((t: string) => { const v = t.trim(); return v ? [v] : []; })
       : Array.isArray(payload.tags)
         ? payload.tags
         : [];

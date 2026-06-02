@@ -166,11 +166,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       score: scored.totalScore,
       flagged: scored.flagged,
-      signals: scored.signals.filter((s) => s.fired).map((s) => ({
-        name: s.name,
-        score: s.score,
-        reason: s.reason,
-      })),
+      signals: scored.signals.flatMap((s) =>
+        s.fired ? [{ name: s.name, score: s.score, reason: s.reason }] : [],
+      ),
       matchingEntities,
       hasHistory,
       caveat: !hasHistory

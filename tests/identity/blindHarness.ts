@@ -305,7 +305,7 @@ export async function runBlindDataset(dataset: string, fileName = `${dataset}.cs
   const signalCombos = new Map<string, number>();
   for (const row of actualRows) {
     if (row.signals_matched.length > 0) {
-      const key = [...row.signals_matched].sort().join(',');
+      const key = row.signals_matched.toSorted().join(',');
       signalCombos.set(key, (signalCombos.get(key) ?? 0) + 1);
     }
   }

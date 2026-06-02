@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Chrome } from 'lucide-react';
@@ -39,7 +40,7 @@ export default async function ChromeIntegrationPage() {
           ← Integrations
         </Link>
         <div className="flex items-center gap-3">
-          <img
+          <Image
             src="/integrations/chrome.svg"
             alt=""
             width={32}
@@ -51,7 +52,7 @@ export default async function ChromeIntegrationPage() {
           </h1>
         </div>
         <p className="mt-1 text-sm" style={{ color: 'var(--text-muted)' }}>
-          Look up any customer email from any tab — Gorgias, Zendesk, Shopify, Gmail
+          Look up any customer email from any tab - Gorgias, Zendesk, Shopify, Gmail
         </p>
       </div>
 

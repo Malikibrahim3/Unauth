@@ -21,6 +21,13 @@ const NO_STORE_HEADERS = {
   Expires: '0',
 } as const;
 
+const PROGRESS_STATUS_MAP: Record<string, string> = {
+  pending: 'processing',
+  processing: 'processing',
+  completed: 'complete',
+  failed: 'failed',
+};
+
 async function GETHandler(
   request: NextRequest,
   { params }: { params: Promise<{ runId: string }> }
@@ -94,20 +101,18 @@ async function GETHandler(
       ? Math.round(((job.processed_rows + job.failed_rows) / job.total_rows) * 100)
       : 0;
 
-  const statusMap: Record<string, string> = {
-    pending: 'processing',
-    processing: 'processing',
-    completed: 'complete',
-    failed: 'failed',
-  };
+  const firstError = (() => {
+    const log = job.error_log;
+    if (!log) return null;
+    if (typeof log === 'string') return log;
+    if (Array.isArray(log) && log.length > 0) {
+      const entry = log[0];
+      return typeof entry === 'string' ? entry : JSON.stringify(entry);
+    }
+    return null;
+  })();
 
-  const firstError =
-    Array.isArray(job.error_log) && job.error_log.length > 0
-      ? (job.error_log[0] as { message?: string }).message ?? 'Processing failed'
-      : undefined;
-
-  // Override status when job is stale — emit failure so UI stops polling.
-  const effectiveStatus = isStuck ? 'failed' : (statusMap[job.status] ?? job.status);
+  const effectiveStatus = isStuck ? 'failed' : (PROGRESS_STATUS_MAP[job.status] ?? job.status);
   const effectiveError = isStuck
     ? (canRecover
         ? 'DB unavailable during finalisation — all rows are written and can be recovered.'

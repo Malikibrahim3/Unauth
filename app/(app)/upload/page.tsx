@@ -75,7 +75,7 @@ export default async function UploadPage({ searchParams }: UploadPageProps) {
               className="mb-6 rounded-[var(--radius-2)] px-5 py-4"
               style={{ background: 'var(--risk-low-bg)', border: '1px solid var(--risk-low-line)' }}
             >
-              <p className="text-h3" style={{ color: 'var(--risk-low-fg)' }}>Welcome to Unauth — your account is set up.</p>
+              <p className="text-h3" style={{ color: 'var(--risk-low-fg)' }}>Welcome to Unauth - your account is set up.</p>
               <p className="text-caption mt-0.5" style={{ color: 'var(--risk-low-fg)' }}>
                 Import a historical order export below to backfill identity matching, or connect Shopify and your helpdesk for live monitoring.
               </p>

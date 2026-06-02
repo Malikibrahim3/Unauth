@@ -155,7 +155,7 @@ export default async function GlobalGraphPage() {
                     }}
                   />
                 </div>
-                <p className="text-[10px] leading-tight text-center truncate w-full" style={{ color: 'var(--text-subtle)' }}>{item.label}</p>
+                <p className="text-xs leading-tight text-center truncate w-full" style={{ color: 'var(--text-subtle)' }}>{item.label}</p>
                 <p className="text-caption font-mono" style={{ color: 'var(--text)' }}>{item.rate.toFixed(1)}%</p>
               </div>
             ))}

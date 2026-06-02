@@ -236,23 +236,25 @@ export async function deleteGorgiasSidebarWidget(
     { path: `/integrations/${previous.integrationId}` },
   ];
 
-  for (const { path } of deletions) {
-    try {
-      const res = await fetch(`${base}${path}`, {
-        method: 'DELETE',
-        headers: {
-          Accept: 'application/json',
-          Authorization: basicAuthHeader(credentials.email, credentials.api_key),
-        },
-      });
-      // 404 = already deleted; any non-OK is swallowed (best-effort cleanup).
-      if (!res.ok && res.status !== 404) {
-        await res.text().catch(() => '');
+  await Promise.all(
+    deletions.map(async ({ path: deletePath }) => {
+      try {
+        const res = await fetch(`${base}${deletePath}`, {
+          method: 'DELETE',
+          headers: {
+            Accept: 'application/json',
+            Authorization: basicAuthHeader(credentials.email, credentials.api_key),
+          },
+        });
+        // 404 = already deleted; any non-OK is swallowed (best-effort cleanup).
+        if (!res.ok && res.status !== 404) {
+          await res.text().catch(() => '');
+        }
+      } catch {
+        // Network/other error — leave the stale resource rather than fail the reconnect.
       }
-    } catch {
-      // Network/other error — leave the stale resource rather than fail the reconnect.
-    }
-  }
+    })
+  );
 }
 
 export async function registerGorgiasSidebarWidget(input: {

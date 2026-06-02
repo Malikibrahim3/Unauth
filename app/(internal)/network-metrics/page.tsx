@@ -62,7 +62,7 @@ export default async function NetworkMetricsPage() {
           Network Metrics
         </h1>
         <p className="text-body-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-          Internal dashboard — last 90 days of daily snapshots.
+          Internal dashboard - last 90 days of daily snapshots.
         </p>
       </div>
 

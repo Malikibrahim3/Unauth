@@ -151,9 +151,9 @@ export async function performV1CustomerProfile(
       risk_score: Math.round(riskScore),
       investigation_status: String(profile.investigation_status ?? 'new'),
       identity_timeline: {
-        emails: emails.map((e) => maskEmail(e)).filter(Boolean),
-        addresses: addresses.map((a) => maskAddress(a)).filter(Boolean),
-        cards: cards.map((c) => maskIdentifier(c, 4)).filter(Boolean),
+        emails: emails.flatMap((e) => { const v = maskEmail(e); return v ? [v] : []; }),
+        addresses: addresses.flatMap((a) => { const v = maskAddress(a); return v ? [v] : []; }),
+        cards: cards.flatMap((c) => { const v = maskIdentifier(c, 4); return v ? [v] : []; }),
       },
       behavioral_history: {
         total_orders: Number(profile.total_orders ?? 0),

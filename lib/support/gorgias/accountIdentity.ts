@@ -137,7 +137,7 @@ export function extractGorgiasAccountIdentity(
       return identityFromDomain(candidate.value, candidate.source);
     }
     const host = hostFromUri(candidate.value);
-    if (host && host.includes('gorgias')) {
+    if (host && (host.endsWith('.gorgias.com') || host === 'gorgias.com' || host.endsWith('.gorgias.help'))) {
       return identityFromDomain(host, candidate.source);
     }
   }

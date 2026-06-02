@@ -12,6 +12,15 @@ import { nextPendingChunkIndex } from '@/lib/processing/chunkQueue';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
+type PendingChunkRow = {
+  job_id: string;
+  merchant_id: string;
+  total_chunks: number;
+  storage_path: string;
+  column_map: unknown;
+  chunk_index: number;
+};
+
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get('authorization');
   const cronSecret = env.CRON_SECRET;
@@ -32,27 +41,33 @@ export async function GET(request: NextRequest) {
   }
 
   const origin = originFromRequest(request);
-  const dispatched: Array<{ jobId: string; chunkIndex: number }> = [];
   const seenJobs = new Set<string>();
-
-  for (const row of pendingJobs ?? []) {
+  const uniqueRows = ((pendingJobs ?? []) as PendingChunkRow[]).filter((row) => {
     const jobId = row.job_id as string;
-    if (seenJobs.has(jobId)) continue;
+    if (seenJobs.has(jobId)) return false;
     seenJobs.add(jobId);
+    return true;
+  });
 
-    const nextIndex = await nextPendingChunkIndex(sc, jobId);
-    if (nextIndex === null) continue;
+  const dispatched = (
+    await Promise.all(
+      uniqueRows.map(async (row) => {
+        const jobId = row.job_id as string;
+        const nextIndex = await nextPendingChunkIndex(sc, jobId);
+        if (nextIndex === null) return null;
 
-    await dispatchChunk(origin, {
-      jobId,
-      chunkIndex: nextIndex,
-      totalChunks: row.total_chunks as number,
-      merchantId: row.merchant_id as string,
-      storagePath: row.storage_path as string,
-      columnMap: (row.column_map as Record<string, string> | null) ?? null,
-    });
-    dispatched.push({ jobId, chunkIndex: nextIndex });
-  }
+        await dispatchChunk(origin, {
+          jobId,
+          chunkIndex: nextIndex,
+          totalChunks: row.total_chunks as number,
+          merchantId: row.merchant_id as string,
+          storagePath: row.storage_path as string,
+          columnMap: (row.column_map as Record<string, string> | null) ?? null,
+        });
+        return { jobId, chunkIndex: nextIndex };
+      })
+    )
+  ).filter((entry): entry is { jobId: string; chunkIndex: number } => entry !== null);
 
   return NextResponse.json({ ok: true, dispatched });
 }

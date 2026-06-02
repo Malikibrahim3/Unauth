@@ -195,8 +195,7 @@ export async function countMerchantReviewQueueProfiles(
 
   const PAGE = 1000;
 
-  // Clause A: identity_confidence_grade IN (probable,definite)
-  for (let offset = 0; ; offset += PAGE) {
+  const fetchGradedClausePage = async (offset: number): Promise<void> => {
     const { data, error } = await serviceClient
       .from(TABLES.AUDIT_TRANSACTIONS)
       .select('id')
@@ -213,11 +212,11 @@ export async function countMerchantReviewQueueProfiles(
     for (const row of data ?? []) {
       reviewWorthyTxIds.add(row.id);
     }
-    if (!data || data.length < PAGE) break;
-  }
+    if (!data || data.length < PAGE) return;
+    return fetchGradedClausePage(offset + PAGE);
+  };
 
-  // Clause B: match_status IN (probable,definite) and grade not already likely
-  for (let offset = 0; ; offset += PAGE) {
+  const fetchStatusClausePage = async (offset: number): Promise<void> => {
     const { data, error } = await serviceClient
       .from(TABLES.AUDIT_TRANSACTIONS)
       .select('id')
@@ -235,14 +234,29 @@ export async function countMerchantReviewQueueProfiles(
     for (const row of data ?? []) {
       reviewWorthyTxIds.add(row.id);
     }
-    if (!data || data.length < PAGE) break;
-  }
+    if (!data || data.length < PAGE) return;
+    return fetchStatusClausePage(offset + PAGE);
+  };
 
-  if (reviewWorthyTxIds.size === 0) return 0;
+  const [{ count: gradedHeadCount }, { count: statusHeadCount }] = await Promise.all([
+    serviceClient
+      .from(TABLES.AUDIT_TRANSACTIONS)
+      .select('id', { count: 'exact', head: true })
+      .in('job_id', ownedJobIds)
+      .in('identity_confidence_grade', ['probable', 'definite'])
+      .not('dismissed_by_merchant', 'is', true),
+    serviceClient
+      .from(TABLES.AUDIT_TRANSACTIONS)
+      .select('id', { count: 'exact', head: true })
+      .in('job_id', ownedJobIds)
+      .in('match_status', ['probable', 'definite'])
+      .is('identity_confidence_grade', null)
+      .not('dismissed_by_merchant', 'is', true),
+  ]);
+  if (!(gradedHeadCount ?? 0) && !(statusHeadCount ?? 0)) return 0;
 
-  // 2) Map review-worthy transaction IDs to profile IDs via appearance links.
   const distinctProfileIds = new Set<string>();
-  for (let offset = 0; ; offset += PAGE) {
+  const fetchAppearancePage = async (offset: number): Promise<void> => {
     const { data, error } = await serviceClient
       .from('customer_profile_audit_appearances')
       .select('profile_id,transaction_id')
@@ -262,8 +276,18 @@ export async function countMerchantReviewQueueProfiles(
       }
     }
 
-    if (!data || data.length < PAGE) break;
+    if (!data || data.length < PAGE) return;
+    return fetchAppearancePage(offset + PAGE);
+  };
+
+  if ((gradedHeadCount ?? 0) > 0) {
+    await fetchGradedClausePage(0);
   }
+  if ((statusHeadCount ?? 0) > 0) {
+    await fetchStatusClausePage(0);
+  }
+  if (reviewWorthyTxIds.size === 0) return 0;
+  await fetchAppearancePage(0);
 
   return distinctProfileIds.size;
 }
@@ -330,7 +354,7 @@ export async function getMerchantOwnedJobIds(
 ): Promise<string[]> {
   const PAGE = 1000;
   const allIds: string[] = [];
-  for (let offset = 0; ; offset += PAGE) {
+  const fetchJobIdsPage = async (offset: number): Promise<void> => {
     const { data, error } = await serviceClient
       .from(TABLES.PROCESSING_JOBS)
       .select('id')
@@ -339,8 +363,10 @@ export async function getMerchantOwnedJobIds(
       .range(offset, offset + PAGE - 1);
     if (error) throw new Error(`getMerchantOwnedJobIds failed: ${error.message}`);
     allIds.push(...(data ?? []).map((r: { id: string }) => r.id));
-    if (!data || data.length < PAGE) break;
-  }
+    if (!data || data.length < PAGE) return;
+    return fetchJobIdsPage(offset + PAGE);
+  };
+  await fetchJobIdsPage(0);
   return allIds;
 }
 
@@ -506,9 +532,10 @@ export async function fetchMerchantScopedCustomerTransactions(
       [
         ...((profile.emails ?? []) as string[]),
         typeof profile.primary_email === 'string' ? profile.primary_email : null,
-      ]
-        .map((value) => value?.trim())
-        .filter(Boolean) as string[],
+      ].flatMap((value) => {
+        const trimmed = value?.trim();
+        return trimmed ? [trimmed] : [];
+      }),
     ),
   );
   const profileCards = (profile.card_last4s ?? []) as string[];
@@ -614,6 +641,15 @@ export async function refreshAuditCustomerSummaries(
   auditId: string,
   merchantId: string,
 ): Promise<number> {
+  const { data: jobRow, error: jobError } = await serviceClient
+    .from(TABLES.PROCESSING_JOBS)
+    .select('id')
+    .eq('id', auditId)
+    .eq('merchant_id', merchantId)
+    .maybeSingle();
+  if (jobError) throw new Error(`refreshAuditCustomerSummaries ownership check failed: ${jobError.message}`);
+  if (!jobRow) throw new Error(`refreshAuditCustomerSummaries audit ${auditId} is not owned by merchant ${merchantId}`);
+
   const rpcResult = await serviceClient.rpc('refresh_audit_customer_summaries' as any, {
     p_audit_id: auditId,
     p_merchant_id: merchantId,
@@ -631,15 +667,6 @@ export async function refreshAuditCustomerSummaries(
     throw new Error(`refreshAuditCustomerSummaries RPC failed: ${rpcResult.error.message}`);
   }
 
-  const { data: jobRow, error: jobError } = await serviceClient
-    .from(TABLES.PROCESSING_JOBS)
-    .select('id')
-    .eq('id', auditId)
-    .eq('merchant_id', merchantId)
-    .maybeSingle();
-  if (jobError) throw new Error(`refreshAuditCustomerSummaries ownership check failed: ${jobError.message}`);
-  if (!jobRow) throw new Error(`refreshAuditCustomerSummaries audit ${auditId} is not owned by merchant ${merchantId}`);
-
   const summaries = new Map<string, {
     customer_email: string | null;
     customer_name: string | null;
@@ -651,6 +678,17 @@ export async function refreshAuditCustomerSummaries(
     highest_grade: string | null;
   }>();
 
+  const { count: reviewableCount, error: reviewableCountError } = await serviceClient
+    .from(TABLES.AUDIT_TRANSACTIONS)
+    .select('id', { count: 'exact', head: true })
+    .eq('job_id', auditId)
+    .or(buildReviewableFilter())
+    .not('dismissed_by_merchant', 'is', true);
+  if (reviewableCountError) {
+    throw new Error(`refreshAuditCustomerSummaries count failed: ${reviewableCountError.message}`);
+  }
+  if (!reviewableCount) return 0;
+
   const rows = await paginateAll<AuditCustomerSummarySourceRow>((from, to) =>
     serviceClient
       .from(TABLES.AUDIT_TRANSACTIONS)
@@ -660,6 +698,8 @@ export async function refreshAuditCustomerSummaries(
       .not('dismissed_by_merchant', 'is', true)
       .range(from, to) as unknown as Promise<{ data: AuditCustomerSummarySourceRow[] | null; error: unknown }>
   );
+
+  if (rows.length === 0) return 0;
 
   for (const row of rows) {
     const key = (row.customer_email?.trim().toLowerCase() || row.customer_name?.trim().toLowerCase() || 'unknown customer');
@@ -686,6 +726,14 @@ export async function refreshAuditCustomerSummaries(
     summaries.set(key, existing);
   }
 
+  const summaryRows = [...summaries.entries()].map(([customerKey, row]) => ({
+    audit_id: auditId,
+    merchant_id: merchantId,
+    customer_key: customerKey,
+    ...row,
+  }));
+  if (summaryRows.length === 0) return 0;
+
   const { error: deleteError } = await serviceClient
     .from('audit_customer_summaries' as any)
     .delete()
@@ -694,33 +742,27 @@ export async function refreshAuditCustomerSummaries(
   if (isMissingRelationError(deleteError as { message?: string; code?: string })) return 0;
   if (deleteError) throw new Error(`refreshAuditCustomerSummaries delete failed: ${deleteError.message}`);
 
-  const summaryRows = [...summaries.entries()].map(([customerKey, row]) => ({
-    audit_id: auditId,
-    merchant_id: merchantId,
-    customer_key: customerKey,
-    ...row,
-  }));
-
-  for (let offset = 0; offset < summaryRows.length; offset += 1000) {
-    const { error } = await serviceClient
-      .from('audit_customer_summaries' as any)
-      .upsert(summaryRows.slice(offset, offset + 1000), { onConflict: 'audit_id,customer_key' });
-    if (isMissingRelationError(error as { message?: string; code?: string })) return 0;
-    if (error) throw new Error(`refreshAuditCustomerSummaries upsert failed: ${error.message}`);
+  const valueAtRisk = summaryRows.reduce((sum, row) => sum + row.total_spend, 0);
+  const linkedClusterCount = new Set(rows.flatMap((row) => row.cluster_id ? [row.cluster_id] : [])).size;
+  const gradeCounts = { definite: 0, probable: 0, possible: 0, weak: 0 };
+  for (const row of rows) {
+    const grade = row.identity_confidence_grade;
+    if (grade === 'definite') gradeCounts.definite += 1;
+    else if (grade === 'probable') gradeCounts.probable += 1;
+    else if (grade === 'possible') gradeCounts.possible += 1;
+    else if (grade === 'weak') gradeCounts.weak += 1;
   }
 
-  const valueAtRisk = summaryRows.reduce((sum, row) => sum + row.total_spend, 0);
-  const linkedClusterCount = new Set(rows.map((row) => row.cluster_id).filter(Boolean)).size;
   const { error: resultSummaryError } = await serviceClient
     .from('audit_result_summaries' as any)
     .upsert({
       audit_id: auditId,
       merchant_id: merchantId,
       flagged_transactions: rows.length,
-      definite_count: rows.filter((row) => row.identity_confidence_grade === 'definite').length,
-      probable_count: rows.filter((row) => row.identity_confidence_grade === 'probable').length,
-      possible_count: rows.filter((row) => row.identity_confidence_grade === 'possible').length,
-      weak_count: rows.filter((row) => row.identity_confidence_grade === 'weak').length,
+      definite_count: gradeCounts.definite,
+      probable_count: gradeCounts.probable,
+      possible_count: gradeCounts.possible,
+      weak_count: gradeCounts.weak,
       linked_cluster_count: linkedClusterCount,
       customer_count: summaryRows.length,
       value_at_risk: valueAtRisk,
@@ -730,6 +772,26 @@ export async function refreshAuditCustomerSummaries(
     if (isMissingRelationError(resultSummaryError as { message?: string; code?: string })) return summaryRows.length;
     throw new Error(`refreshAuditCustomerSummaries result summary upsert failed: ${resultSummaryError.message}`);
   }
+
+  const summaryBatches = Array.from({ length: Math.ceil(summaryRows.length / 1000) }, (_, i) =>
+    summaryRows.slice(i * 1000, i * 1000 + 1000)
+  );
+  let missingSummaryTable = false;
+  const batchResults = await Promise.all(
+    summaryBatches.map(async (batch) => {
+      if (missingSummaryTable) return null;
+      const { error } = await serviceClient
+        .from('audit_customer_summaries' as any)
+        .upsert(batch, { onConflict: 'audit_id,customer_key' });
+      if (isMissingRelationError(error as { message?: string; code?: string })) {
+        missingSummaryTable = true;
+        return null;
+      }
+      if (error) throw new Error(`refreshAuditCustomerSummaries upsert failed: ${error.message}`);
+      return true;
+    }),
+  );
+  if (missingSummaryTable || batchResults.every((result) => result === null)) return 0;
 
   return summaryRows.length;
 }
@@ -944,9 +1006,8 @@ export async function getExposureAtRisk(
         q: ReturnType<typeof serviceClient.from>
       ) => ReturnType<typeof serviceClient.from>,
     ): Promise<number | null> {
-      let offset = 0;
       let clauseSum = 0;
-      while (true) {
+      const sumClausePage = async (offset: number): Promise<number | null> => {
         const base = serviceClient
           .from(TABLES.AUDIT_TRANSACTIONS)
           .select('order_value')
@@ -963,7 +1024,7 @@ export async function getExposureAtRisk(
           console.error('[getExposureAtRisk] transaction query failed:', error.message);
           return null;
         }
-        if (!data || data.length === 0) break;
+        if (!data || data.length === 0) return clauseSum;
 
         for (const row of data) {
           if (row.order_value !== null && row.order_value !== undefined) {
@@ -975,10 +1036,10 @@ export async function getExposureAtRisk(
           }
         }
 
-        if (data.length < TX_BATCH) break;
-        offset += TX_BATCH;
-      }
-      return clauseSum;
+        if (data.length < TX_BATCH) return clauseSum;
+        return sumClausePage(offset + TX_BATCH);
+      };
+      return sumClausePage(0);
     }
 
     // Clause A: likely identity-grade transactions

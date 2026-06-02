@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import type { ComponentProps } from 'react';
-import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useNavigation } from './NavigationProvider';
 
@@ -17,8 +16,7 @@ export default function AppNavLink({
   onNavigate,
   onClick,
   className,
-  children,
-  ...props
+  children, ...props
 }: AppNavLinkProps) {
   const { pendingHref, beginNavigation } = useNavigation();
   const hrefString = typeof href === 'string' ? href : (href.pathname ?? '');
@@ -31,19 +29,13 @@ export default function AppNavLink({
       aria-busy={isPending || undefined}
       onClick={(e) => {
         onClick?.(e);
-        if (e.defaultPrevented) return;
+        if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.shiftKey) return;
         beginNavigation(hrefString);
         onNavigate?.();
       }}
       {...props}
     >
       {children}
-      {isPending && (
-        <Loader2
-          className="ml-auto h-3.5 w-3.5 flex-shrink-0 animate-spin text-[var(--copper-bright)]"
-          aria-hidden="true"
-        />
-      )}
     </Link>
   );
 }

@@ -5,10 +5,11 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { UnauthLogo } from '@/components/ui/UnauthLogo';
+import { resetSubmitButtonStyle } from '@/app/(auth)/reset/resetFormStyles';
 
 const LABEL_STYLE: React.CSSProperties = {
   display: 'block',
-  fontSize: '11px',
+  fontSize: '12px',
   fontWeight: 500,
   color: 'var(--ink-tertiary)',
   marginBottom: '6px',
@@ -83,7 +84,7 @@ export default function UpdatePasswordPage() {
           <div style={{ marginBottom: '28px' }}>
             <p
               style={{
-                fontSize: '11px',
+                fontSize: '12px',
                 fontWeight: 500,
                 letterSpacing: '0.04em',
                 textTransform: 'uppercase',
@@ -108,8 +109,9 @@ export default function UpdatePasswordPage() {
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '13px' }}>
             <div>
-              <label style={LABEL_STYLE}>New password</label>
+              <label htmlFor="reset-update-password" style={LABEL_STYLE}>New password</label>
               <input
+                id="reset-update-password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -120,8 +122,9 @@ export default function UpdatePasswordPage() {
             </div>
 
             <div>
-              <label style={LABEL_STYLE}>Confirm password</label>
+              <label htmlFor="reset-update-confirm-password" style={LABEL_STYLE}>Confirm password</label>
               <input
+                id="reset-update-confirm-password"
                 type="password"
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
@@ -138,19 +141,7 @@ export default function UpdatePasswordPage() {
             <button
               type="submit"
               disabled={loading || !password || !confirm}
-              style={{
-                padding: '11px 20px',
-                background: loading || !password || !confirm ? 'var(--surface-muted)' : 'var(--copper-bright)',
-                color: loading || !password || !confirm ? 'var(--ink-tertiary)' : 'var(--ink-inverse)',
-                border: 'none',
-                borderRadius: '6px',
-                fontSize: '12px',
-                fontWeight: 600,
-                textTransform: 'uppercase',
-                letterSpacing: '0.04em',
-                cursor: loading || !password || !confirm ? 'not-allowed' : 'pointer',
-                transition: 'background 0.15s',
-              }}
+              style={resetSubmitButtonStyle(loading || !password || !confirm)}
             >
               {loading ? 'Updating…' : 'Update password'}
             </button>

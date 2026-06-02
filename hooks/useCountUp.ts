@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useReducer, useRef } from 'react';
 
 interface UseCountUpOptions {
   duration?: number;
@@ -14,34 +14,42 @@ function prefersReducedMotion(): boolean {
 
 export function useCountUp(value: number, options: UseCountUpOptions = {}) {
   const { duration = 600, format } = options;
-  const [displayValue, setDisplayValue] = useState(value);
+  const fromRef = useRef(value);
+  const [displayValue, setDisplayValue] = useReducer(
+    (_current: number, next: number) => next,
+    value,
+  );
 
   useEffect(() => {
-    if (!Number.isFinite(value)) {
-      setDisplayValue(value);
+    const commit = (next: number) => {
+      fromRef.current = next;
+      setDisplayValue(next);
+    };
+
+    if (!Number.isFinite(value) || prefersReducedMotion()) {
+      commit(value);
       return;
     }
 
-    if (prefersReducedMotion()) {
-      setDisplayValue(value);
-      return;
-    }
-
+    const from = fromRef.current;
     const start = performance.now();
-    const shouldAnimate = Math.abs(displayValue - value) >= Math.max(1, Math.abs(value) * 0.1);
+    const shouldAnimate = Math.abs(from - value) >= Math.max(1, Math.abs(value) * 0.1);
     if (!shouldAnimate) {
-      setDisplayValue(value);
+      commit(value);
       return;
     }
 
-    const from = displayValue;
     let frame = 0;
 
     const tick = (now: number) => {
       const elapsed = Math.min(1, (now - start) / duration);
       const eased = 1 - Math.pow(1 - elapsed, 3);
       const next = from + (value - from) * eased;
-      setDisplayValue(elapsed >= 1 ? value : next);
+      const resolved = elapsed >= 1 ? value : next;
+      setDisplayValue(resolved);
+      if (elapsed >= 1) {
+        fromRef.current = value;
+      }
       if (elapsed < 1) frame = window.requestAnimationFrame(tick);
     };
 

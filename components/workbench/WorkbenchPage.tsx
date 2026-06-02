@@ -1,5 +1,7 @@
 import { type ReactNode } from 'react';
 import { WorkbenchNav, type WorkbenchNavItem } from './WorkbenchNav';
+import { WorkbenchKpiStrip, type WorkbenchKpiItem } from './WorkbenchKpiStrip';
+import { WorkbenchActionBar } from './WorkbenchActionBar';
 
 interface WorkbenchPageProps {
   title: string;
@@ -7,7 +9,12 @@ interface WorkbenchPageProps {
   navItems?: WorkbenchNavItem[];
   activeNavKey?: string;
   actions?: ReactNode;
+  /** Prefer kpiItems over kpiStrip to avoid passing JSX as a prop. */
+  kpiItems?: WorkbenchKpiItem[];
   kpiStrip?: ReactNode;
+  actionBarLeft?: ReactNode;
+  actionBarMiddle?: ReactNode;
+  actionBarRight?: ReactNode;
   actionBar?: ReactNode;
   main: ReactNode;
   rail?: ReactNode;
@@ -20,12 +27,24 @@ export function WorkbenchPage({
   navItems,
   activeNavKey,
   actions,
+  kpiItems,
   kpiStrip,
+  actionBarLeft,
+  actionBarMiddle,
+  actionBarRight,
   actionBar,
   main,
   rail,
   footer,
 }: WorkbenchPageProps) {
+  const resolvedKpiStrip = kpiItems ? <WorkbenchKpiStrip items={kpiItems} /> : kpiStrip;
+  const resolvedActionBar =
+    actionBarLeft != null || actionBarMiddle != null || actionBarRight != null ? (
+      <WorkbenchActionBar left={actionBarLeft} middle={actionBarMiddle} right={actionBarRight} />
+    ) : (
+      actionBar
+    );
+
   return (
     <div className="p-3 md:p-5">
       <section
@@ -65,8 +84,8 @@ export function WorkbenchPage({
           </div>
         </header>
 
-        {kpiStrip}
-        {actionBar}
+        {resolvedKpiStrip}
+        {resolvedActionBar}
 
         {rail ? (
           <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px]">

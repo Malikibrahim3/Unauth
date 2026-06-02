@@ -21,42 +21,42 @@ export type ProfileHashArrays = {
 export function buildProfileHashArrays(identifiers: ProfileIdentityArrays): ProfileHashArrays {
   const email_hashes = [
     ...new Set(
-      (identifiers.emails ?? [])
-        .filter((v) => typeof v === 'string' && v.length > 0)
-        .map((v) => hashIdentifier(v))
+      (identifiers.emails ?? []).flatMap((v) =>
+        typeof v === 'string' && v.length > 0 ? [hashIdentifier(v)] : [],
+      ),
     ),
   ];
 
   const phone_hashes = [
     ...new Set(
-      (identifiers.phones ?? [])
-        .map((v) => normalisePhone(v))
-        .filter((v): v is string => Boolean(v))
-        .map((v) => hashIdentifier(v))
+      (identifiers.phones ?? []).flatMap((v) => {
+        const normalized = normalisePhone(v);
+        return normalized ? [hashIdentifier(normalized)] : [];
+      }),
     ),
   ];
 
   const address_hashes = [
     ...new Set(
-      (identifiers.addresses ?? [])
-        .filter((v) => typeof v === 'string' && v.length > 0)
-        .map((v) => hashIdentifier(v))
+      (identifiers.addresses ?? []).flatMap((v) =>
+        typeof v === 'string' && v.length > 0 ? [hashIdentifier(v)] : [],
+      ),
     ),
   ];
 
   const card_hashes = [
     ...new Set(
-      (identifiers.card_last4s ?? [])
-        .filter((v) => typeof v === 'string' && v.length > 0)
-        .map((v) => hashIdentifier(v))
+      (identifiers.card_last4s ?? []).flatMap((v) =>
+        typeof v === 'string' && v.length > 0 ? [hashIdentifier(v)] : [],
+      ),
     ),
   ];
 
   const ip_hashes = [
     ...new Set(
-      (identifiers.ips ?? [])
-        .filter((v) => typeof v === 'string' && v.length > 0)
-        .map((v) => hashIdentifier(v))
+      (identifiers.ips ?? []).flatMap((v) =>
+        typeof v === 'string' && v.length > 0 ? [hashIdentifier(v)] : [],
+      ),
     ),
   ];
 

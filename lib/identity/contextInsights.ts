@@ -125,7 +125,7 @@ function assessValueEscalation(orders: ScorerOrder[]): ContextFlag | null {
   );
   if (refundOrders.length < 2) return null;
 
-  const byValue = [...orders].sort((a, b) => b.order_total - a.order_total);
+  const byValue = orders.toSorted((a, b) => b.order_total - a.order_total);
   const top2 = new Set([byValue[0]?.order_id, byValue[1]?.order_id]);
 
   const byDate = [...refundOrders]

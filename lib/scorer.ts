@@ -133,11 +133,11 @@ const SOFT_SIGNALS: LinkerSignal[] = ['email', 'postcode', 'ip'];
 // ---------------------------------------------------------------------------
 
 const FORBIDDEN_WORDS = ['fraud', 'fraudulent', 'scammer', 'criminal', 'confirmed fraud'];
+const FORBIDDEN_WORD_PATTERNS = FORBIDDEN_WORDS.map((word) => new RegExp(word, 'gi'));
 
 function guardLanguage(text: string): string {
   let safe = text;
-  for (const word of FORBIDDEN_WORDS) {
-    const re = new RegExp(word, 'gi');
+  for (const re of FORBIDDEN_WORD_PATTERNS) {
     safe = safe.replace(re, 'unusual activity');
   }
   return safe;
@@ -239,7 +239,7 @@ function scoreValueEscalation(orders: ScorerOrder[]): { points: number; detail: 
   if (refundOrders.length < 2) return { points: 0, detail: 'Less than 2 refund claims — no escalation pattern' };
 
   // Sort all orders by value descending
-  const byValue = [...orders].sort((a, b) => b.order_total - a.order_total);
+  const byValue = orders.toSorted((a, b) => b.order_total - a.order_total);
   const top2 = new Set([byValue[0]?.order_id, byValue[1]?.order_id]);
 
   // Sort refund orders by date descending (most recent first)

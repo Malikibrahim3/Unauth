@@ -25,7 +25,7 @@ export default function PrivacyPage() {
             names, email addresses, delivery addresses, phone numbers, order identifiers, order
             values, and refund or chargeback records. Where merchants include them in their export,
             we also process partial card identifiers (last 4 digits and BIN prefix) as pseudonymous
-            matching signals — we never receive, store, or process full card numbers, CVV codes, or
+            matching signals - we never receive, store, or process full card numbers, CVV codes, or
             complete card credentials. We also collect standard account information for registered
             merchants (name, email, billing details) and usage logs for the platform itself.
           </p>
@@ -45,14 +45,14 @@ export default function PrivacyPage() {
         <section>
           <h2 className="mb-2 text-xl font-semibold text-[var(--text)]">Who it is shared with</h2>
           <p>
-            Raw order data — including customer names, emails, and addresses — is never shared with
+            Raw order data - including customer names, emails, and addresses - is never shared with
             other merchants. Each merchant&rsquo;s data is isolated in a separate database partition
             protected by row-level security that cannot be overridden by application code.
           </p>
           <p className="mt-2">
             <strong>What is shared with the network:</strong> pseudonymous identity hashes derived
             from customer identifiers using HMAC-SHA256 (irreversible without the secret salt), and
-            aggregate per-identity statistics (order counts, refund rates — never order details or
+            aggregate per-identity statistics (order counts, refund rates - never order details or
             customer names). This is described in detail in our{' '}
             <Link href="/legal/data-handling" className="underline text-[var(--accent)]">
               data handling guide

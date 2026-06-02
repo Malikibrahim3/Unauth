@@ -20,16 +20,17 @@ async function DELETEHandler(req: NextRequest, { params }: { params: Promise<{ i
   const scopedClient = createScopedClient(ctx.merchantId, serviceClient);
 
   // Fetch the note before deleting so we have profile_id for activity log
-  const { data: noteRow } = await scopedClient
-    .from('customer_notes')
-    .select('id, customer_profile_id')
-    .eq('id', resolvedParams.id)
-    .maybeSingle();
-
-  const { error } = await scopedClient
-    .from('customer_notes')
-    .update({ deleted_by_merchant: true } as any)
-    .eq('id', resolvedParams.id);
+  const [{ data: noteRow }, { error }] = await Promise.all([
+    scopedClient
+      .from('customer_notes')
+      .select('id, customer_profile_id')
+      .eq('id', resolvedParams.id)
+      .maybeSingle(),
+    scopedClient
+      .from('customer_notes')
+      .update({ deleted_by_merchant: true } as any)
+      .eq('id', resolvedParams.id),
+  ]);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 

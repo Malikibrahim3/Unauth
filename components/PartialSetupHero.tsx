@@ -29,9 +29,9 @@ export default function PartialSetupHero({ connection }: PartialSetupHeroProps) 
   const helpdeskDone = connection.helpdesk || connection.helpdeskOnlyConnected;
 
   const heading = shopifyDone
-    ? 'Shopify connected — now add your helpdesk'
+    ? 'Shopify connected - now add your helpdesk'
     : helpdeskDone
-      ? 'Helpdesk connected — now connect Shopify'
+      ? 'Helpdesk connected - now connect Shopify'
       : 'Connect Shopify and your helpdesk to get started';
 
   const body = shopifyDone
@@ -45,13 +45,13 @@ export default function PartialSetupHero({ connection }: PartialSetupHeroProps) 
       done: shopifyDone,
       icon: <ShopifyMark />,
       label: 'Shopify',
-      sub: shopifyDone ? 'Connected — orders syncing' : 'Required — syncs orders and identity signals',
+      sub: shopifyDone ? 'Connected - orders syncing' : 'Required - syncs orders and identity signals',
     },
     {
       done: helpdeskDone,
       icon: <HelpdeskMark />,
       label: 'Gorgias or Zendesk',
-      sub: helpdeskDone ? 'Connected — claims syncing' : 'Required — pulls claim history and dispute signals',
+      sub: helpdeskDone ? 'Connected - claims syncing' : 'Required - pulls claim history and dispute signals',
     },
   ];
 
@@ -113,7 +113,7 @@ export default function PartialSetupHero({ connection }: PartialSetupHeroProps) 
         style={{ background: 'var(--surface-overlay)', border: '1px solid var(--border-default)' }}
       >
         <p className="text-xs" style={{ color: 'var(--ink-secondary)' }}>
-          Not ready to connect yet? Upload a CSV export to explore what Unauth surfaces — integrations can be added later.
+          Not ready to connect yet? Upload a CSV export to explore what Unauth surfaces - integrations can be added later.
         </p>
         <Link
           href="/upload?welcome=1"

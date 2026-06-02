@@ -42,7 +42,7 @@ export default async function InternalEvalPage() {
   }
 
   // Fetch the 10 most recent eval runs via service role.
-  // Using the standard client here — eval_history has no RLS so only
+  // Using the standard client here - eval_history has no RLS so only
   // a service-role key can query it in production. In local dev the
   // anon key bypasses RLS when not defined.
   const { data: rows } = await supabase
@@ -58,7 +58,7 @@ export default async function InternalEvalPage() {
     <div className="p-8 max-w-4xl space-y-6">
       <div>
         <h1 className="text-2xl font-bold" style={{ color: 'var(--text)' }}>
-          Engine Eval — Internal
+          Engine Eval - Internal
         </h1>
         <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
           Internal use only. Not linked from any merchant-facing page.
@@ -92,26 +92,26 @@ export default async function InternalEvalPage() {
             </div>
             <div>
               <dt style={{ color: 'var(--text-muted)' }}>Engine version</dt>
-              <dd style={{ color: 'var(--text)' }}>{latest.engine_version ?? '—'}</dd>
+              <dd style={{ color: 'var(--text)' }}>{latest.engine_version ?? '-'}</dd>
             </div>
             <div>
               <dt style={{ color: 'var(--text-muted)' }}>Rows / Labelled</dt>
-              <dd style={{ color: 'var(--text)' }}>{latest.row_count ?? '—'} / {latest.labelled_count ?? '—'}</dd>
+              <dd style={{ color: 'var(--text)' }}>{latest.row_count ?? '-'} / {latest.labelled_count ?? '-'}</dd>
             </div>
             <div>
               <dt style={{ color: 'var(--text-muted)' }}>F1</dt>
               <dd className={`font-semibold ${(latest.f1_score ?? 0) >= 0.70 ? 'text-[var(--success)]' : 'text-[var(--risk-critical)]'}`}>
-                {latest.f1_score != null ? latest.f1_score.toFixed(3) : '—'}
+                {latest.f1_score != null ? latest.f1_score.toFixed(3) : '-'}
                 {(latest.f1_score ?? 0) >= 0.70 ? ' ✓' : ' ✗ below 0.70 floor'}
               </dd>
             </div>
             <div>
               <dt style={{ color: 'var(--text-muted)' }}>Precision</dt>
-              <dd style={{ color: 'var(--text)' }}>{latest.precision_score != null ? latest.precision_score.toFixed(3) : '—'}</dd>
+              <dd style={{ color: 'var(--text)' }}>{latest.precision_score != null ? latest.precision_score.toFixed(3) : '-'}</dd>
             </div>
             <div>
               <dt style={{ color: 'var(--text-muted)' }}>Recall</dt>
-              <dd style={{ color: 'var(--text)' }}>{latest.recall_score != null ? latest.recall_score.toFixed(3) : '—'}</dd>
+              <dd style={{ color: 'var(--text)' }}>{latest.recall_score != null ? latest.recall_score.toFixed(3) : '-'}</dd>
             </div>
           </dl>
 
@@ -148,11 +148,11 @@ export default async function InternalEvalPage() {
                     {new Date(row.run_at).toLocaleDateString('en-US')}
                   </td>
                   <td className={`py-1.5 pr-4 font-mono ${(row.f1_score ?? 0) >= 0.70 ? 'text-[var(--success)]' : 'text-[var(--risk-critical)]'}`}>
-                    {row.f1_score?.toFixed(3) ?? '—'}
+                    {row.f1_score?.toFixed(3) ?? '-'}
                   </td>
-                  <td className="py-1.5 pr-4 font-mono">{row.precision_score?.toFixed(3) ?? '—'}</td>
-                  <td className="py-1.5 pr-4 font-mono">{row.recall_score?.toFixed(3) ?? '—'}</td>
-                  <td className="py-1.5 font-mono">{row.row_count ?? '—'}</td>
+                  <td className="py-1.5 pr-4 font-mono">{row.precision_score?.toFixed(3) ?? '-'}</td>
+                  <td className="py-1.5 pr-4 font-mono">{row.recall_score?.toFixed(3) ?? '-'}</td>
+                  <td className="py-1.5 font-mono">{row.row_count ?? '-'}</td>
                 </tr>
               ))}
             </tbody>

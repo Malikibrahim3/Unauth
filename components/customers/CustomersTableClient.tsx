@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { ConfidenceBadge } from '@/components/ui/ConfidenceBadge';
 import { riskLevelToNewGrade } from '@/lib/confidence';
 import CustomerIntelligenceDrawer from '@/components/customers/CustomerIntelligenceDrawer';
@@ -32,6 +32,10 @@ interface CustomersTableClientProps {
 
 export default function CustomersTableClient({ rows, watchlistFilterActive = false }: CustomersTableClientProps) {
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
+
+  const openProfile = useCallback((profileId: string) => {
+    requestAnimationFrame(() => setSelectedProfileId(profileId));
+  }, []);
   const columns = [
     {
       key: 'customer',
@@ -40,11 +44,11 @@ export default function CustomersTableClient({ rows, watchlistFilterActive = fal
         <div>
           <div className="flex items-center gap-1.5">
             <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>
-              {p.names?.[0] ?? '—'}
+              {p.names?.[0] ?? '-'}
             </span>
             {p.on_watchlist && !watchlistFilterActive && <Badge tone="neutral" size="sm">Watched</Badge>}
           </div>
-          <div className="text-xs font-mono" style={{ color: 'var(--text-muted)' }}>{p.primary_email ?? '—'}</div>
+          <div className="text-xs font-mono" style={{ color: 'var(--text-muted)' }}>{p.primary_email ?? '-'}</div>
         </div>
       ),
     },
@@ -88,19 +92,36 @@ export default function CustomersTableClient({ rows, watchlistFilterActive = fal
       key: 'open',
       header: '',
       align: 'right' as const,
-      render: () => <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--accent)' }}>View →</span>,
+      render: (p: CustomerRow) => (
+        <button
+          type="button"
+          className="text-xs font-semibold hover:underline"
+          style={{ color: 'var(--accent)' }}
+          onClick={(e) => {
+            e.stopPropagation();
+            openProfile(p.id);
+          }}
+        >
+          View →
+        </button>
+      ),
     },
   ];
 
   return (
     <>
       {/* ── Desktop table (sm+) ─────────────────────────────── */}
-      <div className="hidden sm:block overflow-hidden border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)', borderRadius: 4 }}>
+      <div
+        className="hidden sm:block overflow-hidden border"
+        data-testid="customers-table"
+        style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)', borderRadius: 4 }}
+      >
         <DataTable
           columns={columns}
           rows={rows}
           getRowKey={(row) => row.id}
-          onRowClick={(row) => setSelectedProfileId(row.id)}
+          onRowClick={(row) => openProfile(row.id)}
+          rowTestId="customer-row"
           selectedKey={selectedProfileId ?? undefined}
           density="relaxed"
         />
@@ -109,21 +130,22 @@ export default function CustomersTableClient({ rows, watchlistFilterActive = fal
       {/* ── Mobile card list (<sm) ───────────────────────────── */}
       <div className="sm:hidden space-y-3">
         {rows.map((p) => (
-          <div
+          <button
+            type="button"
             key={p.id}
-            className="p-4 cursor-pointer transition-colors"
+            className="p-4 w-full text-left cursor-pointer transition-colors"
             style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}
-            onClick={() => setSelectedProfileId(p.id)}
+            onClick={() => openProfile(p.id)}
           >
             <div className="flex items-start justify-between gap-2 mb-2">
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{p.names?.[0] ?? '—'}</span>
+                  <span className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{p.names?.[0] ?? '-'}</span>
                   {p.on_watchlist && !watchlistFilterActive && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-sm border font-medium" style={{ background: 'var(--watchlist-bg)', color: 'var(--watchlist)', borderColor: 'var(--watchlist-bd)' }}>watched</span>
+                    <span className="text-xs px-1.5 py-0.5 rounded-sm border font-medium" style={{ background: 'var(--watchlist-bg)', color: 'var(--watchlist)', borderColor: 'var(--watchlist-bd)' }}>watched</span>
                   )}
                 </div>
-                <p className="text-xs truncate mt-0.5" style={{ color: 'var(--text-muted)' }}>{p.primary_email ?? '—'}</p>
+                <p className="text-xs truncate mt-0.5" style={{ color: 'var(--text-muted)' }}>{p.primary_email ?? '-'}</p>
               </div>
               <ConfidenceBadge grade={riskLevelToNewGrade(p.risk_level)} size="sm" />
             </div>
@@ -134,21 +156,16 @@ export default function CustomersTableClient({ rows, watchlistFilterActive = fal
               <span style={{ color: 'var(--border)' }}>·</span>
               <span><span className="font-semibold font-mono" style={{ color: 'var(--text)' }}>{p.total_refund_claims}</span> refunds</span>
             </div>
-            <div className="mt-3 flex justify-end">
-              <button
-                onClick={(e) => { e.stopPropagation(); setSelectedProfileId(p.id); }}
-                className="text-xs font-semibold hover:underline"
-                style={{ color: 'var(--text)' }}
-              >
-                View ›
-              </button>
+            <div className="mt-3 flex justify-end text-xs font-semibold" style={{ color: 'var(--text)' }}>
+              View ›
             </div>
-          </div>
+          </button>
         ))}
       </div>
 
       <CustomerIntelligenceDrawer
         profileId={selectedProfileId}
+        open={selectedProfileId !== null}
         onClose={() => setSelectedProfileId(null)}
       />
     </>

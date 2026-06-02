@@ -10,6 +10,17 @@ import { maskEmail, maskName } from '@/lib/privacy/mask';
 
 export const dynamic = 'force-dynamic';
 
+const INBOX_EXPORT_HEADERS = [
+  'order_id',
+  'date',
+  'confidence_grade',
+  'identity_score',
+  'value_at_risk',
+  'why_flagged',
+  'customer_email_masked',
+  'customer_name_masked',
+];
+
 function topReason(signals: unknown): string {
   if (!Array.isArray(signals) || signals.length === 0) return 'Needs manual review';
   const first = signals.find((s) => typeof s === 'string') as string | undefined;
@@ -54,16 +65,7 @@ export async function GET() {
     });
   }
 
-  const headers = [
-    'order_id',
-    'date',
-    'confidence_grade',
-    'identity_score',
-    'value_at_risk',
-    'why_flagged',
-    'customer_email_masked',
-    'customer_name_masked',
-  ];
+  const headers = INBOX_EXPORT_HEADERS;
   const lines = [headers.join(',')];
 
   for (const row of rows) {

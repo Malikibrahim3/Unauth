@@ -53,12 +53,12 @@ export default function ZendeskSetupClient() {
       </div>
 
       <ol className="list-decimal space-y-3 pl-5 text-sm" style={{ color: 'var(--text)' }}>
-        <li>Download the Unauth app zip above — it ships pre-configured with your key.</li>
+        <li>Download the Unauth app zip above - it ships pre-configured with your key.</li>
         <li>
           In Zendesk → Admin → Apps and integrations → Zendesk Support apps → Upload private app
         </li>
         <li>Upload the zip file.</li>
-        <li>Install — no API key to paste. Unauth now appears on every ticket sidebar.</li>
+        <li>Install - no API key to paste. Unauth now appears on every ticket sidebar.</li>
       </ol>
 
       <div

@@ -43,7 +43,6 @@ export function UnauthLogo({ variant = 'light', size = 'nav', className, compact
   return (
     <span
       className={['ua-mark', compact && 'compact', normalized, knownSizeClass, className].filter(Boolean).join(' ')}
-      role="img"
       aria-label="Unauth."
       style={knownSizeClass && knownSizeClass !== 'display' ? undefined : { fontSize: `${px}px` }}
     >

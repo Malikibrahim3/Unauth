@@ -1,29 +1,47 @@
 'use client';
 
-import { useState } from 'react';
+import { useReducer, type CSSProperties } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
+type ClaimGateState = {
+  storeName: string;
+  password: string;
+  confirmPassword: string;
+  loading: boolean;
+  error: string;
+};
+
+type ClaimGateAction = { type: 'patch'; patch: Partial<ClaimGateState> };
+
+function claimGateReducer(state: ClaimGateState, action: ClaimGateAction): ClaimGateState {
+  if (action.type === 'patch') return { ...state, ...action.patch };
+  return state;
+}
+
 export default function ClaimGate({ auditId, email }: { auditId: string; email: string }) {
-  const [storeName, setStoreName] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [state, dispatch] = useReducer(claimGateReducer, {
+    storeName: '',
+    password: '',
+    confirmPassword: '',
+    loading: false,
+    error: '',
+  });
+  const { storeName, password, confirmPassword, loading, error } = state;
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
-    setError('');
+    dispatch({ type: 'patch', patch: { error: '' } });
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match.');
+      dispatch({ type: 'patch', patch: { error: 'Passwords do not match.' } });
       return;
     }
     if (!storeName.trim()) {
-      setError('Store name is required.');
+      dispatch({ type: 'patch', patch: { error: 'Store name is required.' } });
       return;
     }
 
-    setLoading(true);
+    dispatch({ type: 'patch', patch: { loading: true } });
     const supabase = createClient();
     const signUp = await supabase.auth.signUp({
       email,
@@ -38,16 +56,20 @@ export default function ClaimGate({ auditId, email }: { auditId: string; email: 
     });
 
     if (signUp.error && !signUp.error.message.toLowerCase().includes('already')) {
-      setLoading(false);
-      setError(signUp.error.message);
+      dispatch({ type: 'patch', patch: { loading: false, error: signUp.error.message } });
       return;
     }
 
     if (!signUp.data.session) {
       const signIn = await supabase.auth.signInWithPassword({ email, password });
       if (signIn.error) {
-        setLoading(false);
-        setError('Account created. Please verify your email, then sign in to view this report.');
+        dispatch({
+          type: 'patch',
+          patch: {
+            loading: false,
+            error: 'Account created. Please verify your email, then sign in to view this report.',
+          },
+        });
         return;
       }
     }
@@ -58,9 +80,14 @@ export default function ClaimGate({ auditId, email }: { auditId: string; email: 
       body: JSON.stringify({ storeName: storeName.trim() }),
     });
     const claimBody = await claim.json().catch(() => ({}));
-    setLoading(false);
+    dispatch({ type: 'patch', patch: { loading: false } });
     if (!claim.ok) {
-      setError(typeof claimBody?.error === 'string' ? claimBody.error : 'Could not link audit to your account.');
+      dispatch({
+        type: 'patch',
+        patch: {
+          error: typeof claimBody?.error === 'string' ? claimBody.error : 'Could not link audit to your account.',
+        },
+      });
       return;
     }
 
@@ -85,50 +112,35 @@ export default function ClaimGate({ auditId, email }: { auditId: string; email: 
 
       <div className="space-y-4">
         <div>
-          <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: '#78889C' }}>
+          <label htmlFor="claim-gate-email" className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: '#78889C' }}>
             Email
           </label>
-          <input value={email} disabled style={inputStyle} />
+          <input id="claim-gate-email" value={email} readOnly disabled style={inputStyle} />
         </div>
         <div>
-          <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: '#78889C' }}>
+          <label htmlFor="claim-gate-store-name" className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: '#78889C' }}>
             Store name
           </label>
-          <input value={storeName} onChange={(event) => setStoreName(event.target.value)} required style={inputStyle} />
+          <input id="claim-gate-store-name" value={storeName} onChange={(event) => dispatch({ type: 'patch', patch: { storeName: event.target.value } })} required style={inputStyle} />
         </div>
         <div>
-          <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: '#78889C' }}>
+          <label htmlFor="claim-gate-password" className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: '#78889C' }}>
             Password
           </label>
-          <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} required style={inputStyle} />
+          <input id="claim-gate-password" type="password" value={password} onChange={(event) => dispatch({ type: 'patch', patch: { password: event.target.value } })} required style={inputStyle} />
         </div>
         <div>
-          <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: '#78889C' }}>
+          <label htmlFor="claim-gate-confirm-password" className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: '#78889C' }}>
             Confirm password
           </label>
-          <input type="password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} required style={inputStyle} />
+          <input id="claim-gate-confirm-password" type="password" value={confirmPassword} onChange={(event) => dispatch({ type: 'patch', patch: { confirmPassword: event.target.value } })} required style={inputStyle} />
         </div>
       </div>
 
       {error ? <p className="mt-4 text-sm" style={{ color: '#7B2D26' }}>{error}</p> : null}
 
-      <button
-        type="submit"
-        disabled={loading}
-        style={{
-          width: '100%',
-          marginTop: '16px',
-          background: '#1A1814',
-          color: '#E8E4D8',
-          border: '1px solid #1A1814',
-          padding: '12px 14px',
-          fontFamily: 'var(--font-dm-sans, sans-serif)',
-          fontSize: '15px',
-          fontWeight: 500,
-          opacity: loading ? 0.75 : 1,
-        }}
-      >
-        {loading ? 'Linking account...' : 'View my report →'}
+      <button type="submit" disabled={loading} className="ua-claim-gate-submit">
+        {loading ? 'Linking account…' : 'View my report →'}
       </button>
 
       <p className="mt-3 text-sm" style={{ color: '#8A8472', marginBottom: 0 }}>
@@ -138,7 +150,7 @@ export default function ClaimGate({ auditId, email }: { auditId: string; email: 
   );
 }
 
-const inputStyle: React.CSSProperties = {
+const inputStyle: CSSProperties = {
   width: '100%',
   background: '#FAF6EF',
   border: '1px solid #D2C9B5',

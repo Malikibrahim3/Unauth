@@ -10,7 +10,10 @@ function getDisposableDomains(): Set<string> {
       const filePath = join(process.cwd(), 'lib/engine/data/disposable-domains.txt');
       const contents = readFileSync(filePath, 'utf-8');
       disposableDomains = new Set(
-        contents.split('\n').map((d: string) => d.trim().toLowerCase()).filter(Boolean)
+        contents.split('\n').flatMap((d: string) => {
+          const v = d.trim().toLowerCase();
+          return v ? [v] : [];
+        }),
       );
     } catch {
       disposableDomains = new Set();

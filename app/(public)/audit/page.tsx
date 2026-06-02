@@ -33,8 +33,8 @@ export default function AuditPage() {
           <p
             style={{
               ...mono,
-              fontSize: '11px',
-              letterSpacing: '0.14em',
+              fontSize: '12px',
+              letterSpacing: '0.04em',
               color: muted,
               marginTop: 0,
               marginBottom: '10px',
@@ -67,7 +67,7 @@ export default function AuditPage() {
             }}
           >
             Upload your last 90 days of orders and refunds. We&apos;ll resolve repeat identities
-            in your store data and email you the results — linked identities, their confidence
+            in your store data and email you the results - linked identities, their confidence
             grades, and a factual claims history.
           </p>
           <p
@@ -82,7 +82,7 @@ export default function AuditPage() {
             }}
           >
             <strong style={{ color: '#1A1814', fontWeight: 600 }}>Free audit scans your store only.</strong>{' '}
-            Approved founding merchants unlock cross-store network matching — we&apos;ll say when that applies.
+            Approved founding merchants unlock cross-store network matching - we&apos;ll say when that applies.
           </p>
         </div>
 
@@ -120,14 +120,14 @@ export default function AuditPage() {
               margin: 0,
             }}
           >
-            Questions before uploading? Email the team directly —{' '}
+            Questions before uploading? Email the team directly -{' '}
             <a
               href="mailto:hello@unauth.co"
               style={{ color: muted, textDecoration: 'underline' }}
             >
               hello@unauth.co
             </a>{' '}
-            — response within 2 hours.
+            - response within 2 hours.
           </p>
         </div>
 
@@ -136,12 +136,12 @@ export default function AuditPage() {
         <p
           style={{
             ...mono,
-            fontSize: '11px',
+            fontSize: '12px',
             color: '#9A9080',
             textAlign: 'center',
             marginTop: '72px',
             marginBottom: 0,
-            letterSpacing: '0.08em',
+            letterSpacing: '0.02em',
           }}
         >
           HMAC-SHA256 · client-side hashing · k-anonymity gated · UK GDPR compliant

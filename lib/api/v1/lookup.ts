@@ -153,7 +153,6 @@ export async function performV1Lookup(
   }
 
   const results = (rows ?? []) as SearchRow[];
-  await new Promise((r) => setTimeout(r, 10 + Math.random() * 40));
 
   if (results.length === 0) {
     await logPublicApiAccess(service, {
@@ -174,20 +173,32 @@ export async function performV1Lookup(
   const merchantCount = best.total_merchants_seen_at ?? merchantIds.length;
   const kAnonOk = merchantCount >= K_ANONYMITY_MIN;
 
+  if (!kAnonOk) {
+    await logPublicApiAccess(service, {
+      merchantId: auth.merchantId,
+      queryType: auditType,
+      kAnonymitySatisfied: false,
+      resultReturned: true,
+      queriedHashes,
+      matchedMerchantCount: merchantCount,
+      requestIp: auth.requestIp,
+      apiKeyId: auth.apiKeyId,
+    });
+    return { ok: false, status: 404, error: 'No matching identity found' };
+  }
+
+  await new Promise((r) => setTimeout(r, 10 + Math.random() * 40));
+
   await logPublicApiAccess(service, {
     merchantId: auth.merchantId,
     queryType: auditType,
-    kAnonymitySatisfied: kAnonOk,
+    kAnonymitySatisfied: true,
     resultReturned: true,
     queriedHashes,
     matchedMerchantCount: merchantCount,
     requestIp: auth.requestIp,
     apiKeyId: auth.apiKeyId,
   });
-
-  if (!kAnonOk) {
-    return { ok: false, status: 404, error: 'No matching identity found' };
-  }
 
   // ---------------------------------------------------------------------------
   // Identity confidence grade — identity signals ONLY (productContract.ts).

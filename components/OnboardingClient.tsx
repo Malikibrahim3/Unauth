@@ -1,12 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useReducer } from 'react';
 import { cloneElement, type ReactElement } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Check, Upload, Users, FileText, Plug, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { ORDER_VOLUME_OPTIONS, FRAUD_CONCERN_OPTIONS } from '@/lib/constants/merchantProfile';
+import {
+  createInitialOnboardingState,
+  onboardingReducer,
+} from '@/components/Onboarding/onboardingReducer';
 
 interface OnboardingClientProps {
   userId: string;
@@ -63,21 +67,37 @@ export default function OnboardingClient({
   shopifyShopDomain = '',
 }: OnboardingClientProps) {
   void userId;
-  const [activeStep, setActiveStep] = useState(0);
-  const [storeName, setStoreName] = useState(initialStoreName);
-  const [platform, setPlatform] = useState(initialPlatform);
-  const [annualVolume, setAnnualVolume] = useState(initialAnnualVolume);
-  const [primaryConcern, setPrimaryConcern] = useState(initialPrimaryConcern);
-  const [loading, setLoading] = useState(false);
-  const [skipLoading, setSkipLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [shopDomain, setShopDomain] = useState(shopifyShopDomain);
+  const [state, dispatch] = useReducer(
+    onboardingReducer,
+    {
+      initialStoreName,
+      initialPlatform,
+      initialAnnualVolume,
+      initialPrimaryConcern,
+      shopifyShopDomain,
+    },
+    (input) => createInitialOnboardingState(input),
+  );
+  const {
+    activeStep,
+    storeName,
+    platform,
+    annualVolume,
+    primaryConcern,
+    loading,
+    skipLoading,
+    error,
+    shopDomain,
+  } = state;
   const router = useRouter();
 
+  useEffect(() => {
+    dispatch({ type: 'patch', patch: { shopDomain: shopifyShopDomain } });
+  }, [shopifyShopDomain]);
+
   async function saveAndContinue() {
-    // Store profile fields are optional — never block reaching first value.
-    setLoading(true);
-    setError('');
+    // Store profile fields are optional - never block reaching first value.
+    dispatch({ type: 'patch', patch: { loading: true, error: '' } });
     const response = await fetch('/api/account/setup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -90,9 +110,9 @@ export default function OnboardingClient({
       }),
     });
     const payload = await response.json().catch(() => ({}));
-    setLoading(false);
+    dispatch({ type: 'patch', patch: { loading: false } });
     if (!response.ok) {
-      setError(payload.error ?? 'Could not save your store details.');
+      dispatch({ type: 'patch', patch: { error: payload.error ?? 'Could not save your store details.' } });
       return;
     }
     router.push('/upload?welcome=1');
@@ -100,8 +120,7 @@ export default function OnboardingClient({
   }
 
   async function skipOnboarding() {
-    setSkipLoading(true);
-    setError('');
+    dispatch({ type: 'patch', patch: { skipLoading: true, error: '' } });
     const response = await fetch('/api/account/setup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -114,9 +133,9 @@ export default function OnboardingClient({
       }),
     });
     const payload = await response.json().catch(() => ({}));
-    setSkipLoading(false);
+    dispatch({ type: 'patch', patch: { skipLoading: false } });
     if (!response.ok) {
-      setError(payload.error ?? 'Could not skip setup right now. Please try again.');
+      dispatch({ type: 'patch', patch: { error: payload.error ?? 'Could not skip setup right now. Please try again.' } });
       return;
     }
     router.push('/upload?welcome=1');
@@ -157,8 +176,8 @@ export default function OnboardingClient({
                 <button
                   key={step.id}
                   type="button"
-                  onClick={() => setActiveStep(index)}
-                  className="grid w-full grid-cols-[24px_minmax(0,1fr)_auto] items-center gap-3 rounded-md border px-3 py-3 text-left transition-colors"
+                  onClick={() => dispatch({ type: 'patch', patch: { activeStep: index } })}
+                  className="grid w-full grid-cols-[24px_minmax(0,1fr)_auto] items-center gap-3 rounded-md border p-3 text-left transition-colors"
                   style={{
                     background: active ? 'var(--copper-glow)' : 'var(--surface-input)',
                     borderColor: active ? 'var(--copper-bright)' : 'var(--surface-border)',
@@ -193,11 +212,11 @@ export default function OnboardingClient({
           {activeStep === 0 ? (
             <div className="grid gap-4 md:grid-cols-2">
               <Field label="Store name">
-                <input value={storeName} onChange={(e) => setStoreName(e.target.value)} placeholder="Acme Commerce Ltd" />
+                <input aria-label="Store name" value={storeName} onChange={(e) => dispatch({ type: 'patch', patch: { storeName: e.target.value } })} placeholder="Acme Commerce Ltd" />
               </Field>
               <Field label="Platform">
-                <select value={platform} onChange={(e) => setPlatform(e.target.value)}>
-                  <option value="">Select platform...</option>
+                <select aria-label="Platform" value={platform} onChange={(e) => dispatch({ type: 'patch', patch: { platform: e.target.value } })}>
+                  <option value="">Select platform…</option>
                   <option value="shopify">Shopify</option>
                   <option value="woocommerce">WooCommerce</option>
                   <option value="magento">Magento</option>
@@ -207,16 +226,16 @@ export default function OnboardingClient({
                 </select>
               </Field>
               <Field label="Annual order volume">
-                <select value={annualVolume} onChange={(e) => setAnnualVolume(e.target.value)}>
-                  <option value="">Select range...</option>
+                <select aria-label="Annual order volume" value={annualVolume} onChange={(e) => dispatch({ type: 'patch', patch: { annualVolume: e.target.value } })}>
+                  <option value="">Select range…</option>
                   {ORDER_VOLUME_OPTIONS.map((o) => (
                     <option key={o.value} value={o.value}>{o.label}</option>
                   ))}
                 </select>
               </Field>
               <Field label="Primary concern">
-                <select value={primaryConcern} onChange={(e) => setPrimaryConcern(e.target.value)}>
-                  <option value="">Select concern...</option>
+                <select aria-label="Primary concern" value={primaryConcern} onChange={(e) => dispatch({ type: 'patch', patch: { primaryConcern: e.target.value } })}>
+                  <option value="">Select concern…</option>
                   {FRAUD_CONCERN_OPTIONS.map((o) => (
                     <option key={o.value} value={o.value}>{o.label}</option>
                   ))}
@@ -224,7 +243,7 @@ export default function OnboardingClient({
               </Field>
               <div className="md:col-span-2 rounded-md border px-4 py-3" style={{ background: 'var(--privacy-fill)', borderColor: 'var(--privacy-border)' }}>
                 <p className="t-body" style={{ color: 'var(--privacy-ink)' }}>
-                  When you upload an order CSV, raw records stay scoped to your store. Cross-store comparison uses hashed identifiers only — other merchants never see your customer list.
+                  When you upload an order CSV, raw records stay scoped to your store. Cross-store comparison uses hashed identifiers only - other merchants never see your customer list.
                 </p>
               </div>
               {error && <p className="md:col-span-2 t-caption" style={{ color: 'var(--sev-definite)' }}>{error}</p>}
@@ -260,7 +279,8 @@ export default function OnboardingClient({
                     <div className="flex flex-col gap-2 md:flex-row">
                       <input
                         value={shopDomain}
-                        onChange={(e) => setShopDomain(e.target.value)}
+                        onChange={(e) => dispatch({ type: 'patch', patch: { shopDomain: e.target.value } })}
+                        aria-label="Shopify store domain"
                         placeholder="your-store.myshopify.com"
                         className="w-full rounded-md border px-3 py-2 text-sm outline-none"
                         style={{
@@ -297,6 +317,7 @@ function Field({ label, children }: { label: string; children: ReactElement<any>
     <label className="block">
       <span className="t-label mb-2 block" style={{ color: 'var(--ink-tertiary)' }}>{label}</span>
       {cloneElement(children, {
+        'aria-label': label,
         className: 'w-full rounded-md border px-3 py-2 text-sm outline-none',
         style: {
           background: 'var(--surface-input)',

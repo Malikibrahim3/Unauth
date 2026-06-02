@@ -8,7 +8,7 @@ export function LoadDemoButton() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleClick() {
+  async function loadDemoAccount() {
     setLoading(true);
     setError(null);
     try {
@@ -37,7 +37,7 @@ export function LoadDemoButton() {
   return (
     <div>
       <button
-        onClick={handleClick}
+type="button"         onClick={loadDemoAccount}
         disabled={loading}
         className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-md disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
         style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}

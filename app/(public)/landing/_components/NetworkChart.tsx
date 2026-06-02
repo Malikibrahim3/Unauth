@@ -45,8 +45,16 @@ function formatTick(value: number) {
   return value >= 1000 ? `${Math.round(value / 1000)}k` : String(value);
 }
 
+const TICK_VALUES = [0, 3000, 6000, 9000, 12000];
+
+const EVEN_WEEK_LABELS = data.reduce<{ week: string; dataIndex: number }[]>((acc, point, index) => {
+  if (index % 2 === 0) {
+    acc.push({ week: point.week, dataIndex: index });
+  }
+  return acc;
+}, []);
+
 export default function NetworkChart() {
-  const tickValues = [0, 3000, 6000, 9000, 12000];
   const clusterPath = linePath('clusters');
   const abuserPath = linePath('abusers');
 
@@ -76,7 +84,7 @@ export default function NetworkChart() {
         <p
           style={{
             fontFamily: 'var(--font-dm-mono, monospace)',
-            fontSize: '11px',
+            fontSize: '12px',
             letterSpacing: '0.1em',
             textTransform: 'uppercase',
             color: t.inkTertiary,
@@ -85,13 +93,13 @@ export default function NetworkChart() {
         >
           ILLUSTRATIVE · PROJECTED 12-WEEK WINDOW
         </p>
-        {/* Legend — top-right */}
+        {/* Legend - top-right */}
         <div
           style={{
             display: 'flex',
             gap: '20px',
             fontFamily: 'var(--font-dm-mono, monospace)',
-            fontSize: '11px',
+            fontSize: '12px',
             color: t.darkMid,
           }}
         >
@@ -133,14 +141,14 @@ export default function NetworkChart() {
           textAnchor="middle"
           fill="rgba(184,178,160,0.6)"
           fontFamily="var(--font-dm-mono, monospace)"
-          fontSize="9"
+          fontSize="12"
           letterSpacing="0.08em"
           transform={`rotate(-90, 10, ${chart.height / 2})`}
         >
           CLUSTERS
         </text>
 
-        {tickValues.map((value) => {
+        {TICK_VALUES.map((value) => {
           const tickY = yPosition(value);
           return (
             <g key={value}>
@@ -152,15 +160,11 @@ export default function NetworkChart() {
           );
         })}
 
-        {data.filter((_, index) => index % 2 === 0).map((point, index) => {
-          const dataIndex = index * 2;
-          const tickX = xPosition(dataIndex);
-          return (
-            <text key={point.week} x={tickX} y={chart.height - 10} textAnchor="middle" fill="var(--landing-ink-tertiary)" fontFamily="var(--font-dm-mono, monospace)" fontSize="11">
-              {point.week}
-            </text>
-          );
-        })}
+        {EVEN_WEEK_LABELS.map(({ week, dataIndex }) => (
+          <text key={week} x={xPosition(dataIndex)} y={chart.height - 10} textAnchor="middle" fill="var(--landing-ink-tertiary)" fontFamily="var(--font-dm-mono, monospace)" fontSize="11">
+            {week}
+          </text>
+        ))}
 
         {/* Bottom axis label "MONTHS (illustrative)" */}
         <text
@@ -169,7 +173,7 @@ export default function NetworkChart() {
           textAnchor="middle"
           fill="rgba(184,178,160,0.6)"
           fontFamily="var(--font-dm-mono, monospace)"
-          fontSize="9"
+          fontSize="12"
           letterSpacing="0.08em"
         >
           MONTHS (illustrative)
@@ -191,7 +195,7 @@ export default function NetworkChart() {
           textAnchor="end"
           fill="rgba(232,228,216,0.45)"
           fontFamily="var(--font-dm-mono, monospace)"
-          fontSize="9"
+          fontSize="12"
           letterSpacing="0.04em"
         >
           k ≥ 3 threshold

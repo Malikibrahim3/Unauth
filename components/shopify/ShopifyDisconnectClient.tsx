@@ -32,7 +32,7 @@ export default function ShopifyDisconnectClient() {
       <div>
         <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Disconnect Shopify</p>
         <p className="mt-0.5 text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-          Removes the link between this workspace and your Shopify store. Existing synced orders are kept — only live syncing stops.
+          Removes the link between this workspace and your Shopify store. Existing synced orders are kept - only live syncing stops.
         </p>
       </div>
 

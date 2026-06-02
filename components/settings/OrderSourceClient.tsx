@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { CheckCircle2, ArrowRight, Store } from 'lucide-react';
+import { useFetchJson } from '@/lib/react/useFetchJson';
 
 type PlatformOption = {
   id: string;
@@ -47,29 +48,21 @@ const PLATFORM_OPTIONS: PlatformOption[] = [
   },
 ];
 
-type ShopifyConnectionState = { connected: boolean; detail: string | null };
+type ShopifyStatusResponse = {
+  connected?: boolean;
+  shopDomain?: string | null;
+};
 
 export default function OrderSourceClient() {
-  const [shopify, setShopify] = useState<ShopifyConnectionState | null>(null);
+  const { data: shopifyData } = useFetchJson<ShopifyStatusResponse>('/api/shopify/status', {
+    parse: async (response) => (response.ok ? response.json() : { connected: false, shopDomain: null }),
+  });
 
-  useEffect(() => {
-    fetch('/api/shopify/status', { cache: 'no-store' })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        setShopify({
-          connected: Boolean(d?.connected),
-          detail: d?.shopDomain ?? null,
-        });
-      })
-      .catch(() => setShopify({ connected: false, detail: null }));
-  }, []);
-
-  const statusKnown = shopify !== null;
-  const shopifyConnected = Boolean(shopify?.connected);
+  const statusKnown = shopifyData !== undefined;
+  const shopifyConnected = Boolean(shopifyData?.connected);
 
   return (
     <div className="space-y-2.5">
-      {/* Column header */}
       <div className="flex items-center gap-2">
         <Store className="h-4 w-4 shrink-0" style={{ color: 'var(--icon-muted)' }} />
         <div>
@@ -78,12 +71,10 @@ export default function OrderSourceClient() {
         </div>
       </div>
 
-      {/* Main card */}
       <div
         className="rounded-xl border p-5 space-y-4"
         style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-raised)' }}
       >
-        {/* Status header */}
         <div className="flex items-start gap-3">
           <div
             className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full"
@@ -105,12 +96,11 @@ export default function OrderSourceClient() {
           </div>
         </div>
 
-        {/* Platform rows */}
         <div className="space-y-2.5">
           {PLATFORM_OPTIONS.map((platform) => {
             const isShopify = platform.id === 'shopify';
             const connected = isShopify && shopifyConnected;
-            const detail = isShopify ? shopify?.detail : null;
+            const detail = isShopify ? shopifyData?.shopDomain : null;
 
             return (
               <div key={platform.id}>
@@ -121,13 +111,12 @@ export default function OrderSourceClient() {
                     background: connected ? 'color-mix(in srgb, var(--sev-clear, #2f6b43) 4%, var(--bg-surface))' : 'var(--bg-surface)',
                   }}
                 >
-                  <img
+                  <Image
                     src={platform.logo}
                     alt=""
                     width={28}
                     height={28}
-                    className="h-7 w-7 shrink-0 rounded-md"
-                    style={{ objectFit: 'contain' }}
+                    className="h-7 w-7 shrink-0 rounded-md object-contain"
                   />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-2">
@@ -155,7 +144,7 @@ export default function OrderSourceClient() {
                         )
                       ) : (
                         <span
-                          className="inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
+                          className="inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-xs font-semibold uppercase tracking-wide"
                           style={{
                             background: 'color-mix(in srgb, var(--text-muted) 10%, transparent)',
                             color: 'var(--text-muted)',
@@ -166,7 +155,6 @@ export default function OrderSourceClient() {
                       )}
                     </div>
 
-                    {/* Status dot line — matches helpdesk row pattern exactly */}
                     {statusKnown && platform.available && (
                       <p className="mt-1 flex items-center gap-1.5 text-xs font-medium">
                         <span
@@ -203,7 +191,6 @@ export default function OrderSourceClient() {
           </p>
         )}
       </div>
-
     </div>
   );
 }

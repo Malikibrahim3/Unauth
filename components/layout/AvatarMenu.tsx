@@ -64,7 +64,7 @@ export function AvatarMenu({ email, className }: AvatarMenuProps) {
         className={cn(
           'flex h-7 w-7 items-center justify-center rounded-full',
           'bg-[var(--accent-500)] text-white',
-          'text-[11px] font-bold leading-none',
+          'text-xs font-bold leading-none',
           'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] focus-visible:outline-offset-2',
           'transition-opacity hover:opacity-90',
           'select-none',

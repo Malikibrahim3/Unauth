@@ -35,12 +35,14 @@ interface SavingsCardProps {
   className?: string;
 }
 
+const savingsCurrencyFormatter = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+  maximumFractionDigits: 0,
+});
+
 function formatCurrency(value: number) {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 0,
-  }).format(value);
+  return savingsCurrencyFormatter.format(value);
 }
 
 export function SavingsCard({ data, loading, className }: SavingsCardProps) {
@@ -88,7 +90,7 @@ export function SavingsCard({ data, loading, className }: SavingsCardProps) {
           {animatedValue}
         </p>
       ) : (
-        <p className="text-display num leading-none text-[var(--text-tertiary)]">—</p>
+        <p className="text-display num leading-none text-[var(--text-tertiary)]">-</p>
       )}
 
       {/* Sub-label */}

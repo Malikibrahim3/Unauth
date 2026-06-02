@@ -18,8 +18,7 @@ export function DotPattern({
   cx = 1,
   cy = 1,
   cr = 1,
-  className,
-  ...props
+  className, ...props
 }: DotPatternProps) {
   const id = useId();
 

@@ -1,7 +1,7 @@
 'use client';
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { usePathname } from 'next/navigation';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, Suspense } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
 import RouteProgressBar from './RouteProgressBar';
 
 type NavigationContextValue = {
@@ -12,11 +12,35 @@ type NavigationContextValue = {
 
 const NavigationContext = createContext<NavigationContextValue | null>(null);
 
-const PENDING_TIMEOUT_MS = 15_000;
+const PENDING_TIMEOUT_MS = 3_500;
+
+function NavigationSync({
+  onRouteChange,
+}: {
+  onRouteChange: (pathname: string, searchParams: ReturnType<typeof useSearchParams>) => void;
+}) {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    onRouteChange(pathname, searchParams);
+  }, [pathname, searchParams, onRouteChange]);
+
+  return null;
+}
 
 export function NavigationProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [pendingHref, setPendingHref] = useState<string | null>(null);
+  const [currentSearchParams, setCurrentSearchParams] = useState('');
+
+  const handleRouteChange = useCallback(
+    (_: string, searchParams: ReturnType<typeof useSearchParams>) => {
+      setCurrentSearchParams(searchParams.toString());
+      setPendingHref(null);
+    },
+    [],
+  );
 
   useEffect(() => {
     setPendingHref(null);
@@ -28,12 +52,15 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
     return () => window.clearTimeout(timer);
   }, [pendingHref]);
 
-  const beginNavigation = useCallback((href: string) => {
-    const targetPath = href.split('?')[0] ?? href;
-    const currentPath = pathname.split('?')[0] ?? pathname;
-    if (targetPath === currentPath) return;
-    setPendingHref(href);
-  }, [pathname]);
+  const beginNavigation = useCallback(
+    (href: string) => {
+      const [targetPath, targetQuery = ''] = href.split('?');
+      if (targetPath === pathname && targetQuery === currentSearchParams) return;
+      if (href.startsWith('#') || (!href.startsWith('/') && !href.startsWith('http'))) return;
+      setPendingHref(href);
+    },
+    [pathname, currentSearchParams],
+  );
 
   const value = useMemo(
     () => ({ pendingHref, setPendingHref, beginNavigation }),
@@ -42,6 +69,9 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
 
   return (
     <NavigationContext.Provider value={value}>
+      <Suspense fallback={null}>
+        <NavigationSync onRouteChange={handleRouteChange} />
+      </Suspense>
       <RouteProgressBar active={pendingHref !== null} />
       {children}
     </NavigationContext.Provider>

@@ -14,14 +14,15 @@ interface SignalRowProps {
   caveat: string;
 }
 
+const UNIQUENESS_COLOUR_MAP: Record<SignalRowProps['uniqueness'], { bg: string; fg: string }> = {
+  'Very high': { bg: 'var(--risk-critical-bg)', fg: 'var(--risk-critical-fg)' },
+  High:        { bg: 'var(--risk-high-bg)',     fg: 'var(--risk-high-fg)'     },
+  Medium:      { bg: 'var(--risk-medium-bg)',   fg: 'var(--risk-medium-fg)'   },
+  Low:         { bg: 'var(--risk-low-bg)',       fg: 'var(--risk-low-fg)'     },
+};
+
 function UniquenessChip({ uniqueness }: { uniqueness: SignalRowProps['uniqueness'] }) {
-  const map: Record<SignalRowProps['uniqueness'], { bg: string; fg: string }> = {
-    'Very high': { bg: 'var(--risk-critical-bg)', fg: 'var(--risk-critical-fg)' },
-    High:        { bg: 'var(--risk-high-bg)',     fg: 'var(--risk-high-fg)'     },
-    Medium:      { bg: 'var(--risk-medium-bg)',   fg: 'var(--risk-medium-fg)'   },
-    Low:         { bg: 'var(--risk-low-bg)',       fg: 'var(--risk-low-fg)'     },
-  };
-  const { bg, fg } = map[uniqueness];
+  const { bg, fg } = UNIQUENESS_COLOUR_MAP[uniqueness];
   return (
     <span
       className="inline-block text-xs px-2 py-0.5 rounded font-medium"
@@ -84,7 +85,7 @@ export default function IdentityMatchingPage() {
         </h2>
         <div className="space-y-3 text-body-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>
           <p>
-            When an order export is uploaded, each order is parsed into a set of identity tokens — structured
+            When an order export is uploaded, each order is parsed into a set of identity tokens - structured
             representations of the identity signals it contains. These tokens are compared against all existing
             orders in your account to find overlapping signals.
           </p>
@@ -94,7 +95,7 @@ export default function IdentityMatchingPage() {
             assigned to the customer.
           </p>
           <p>
-            The matching logic is deterministic and graph-based — there is no machine learning involved. Every
+            The matching logic is deterministic and graph-based - there is no machine learning involved. Every
             link is traceable to a specific signal that appeared in two or more orders.
           </p>
         </div>
@@ -156,12 +157,12 @@ export default function IdentityMatchingPage() {
           <p>
             Each signal type is weighted by its uniqueness. Card fingerprint and device ID carry the most weight;
             IP address alone carries the least. When signals of different types independently point to the same
-            cluster, their evidence multiplies — this is convergence.
+            cluster, their evidence multiplies - this is convergence.
           </p>
           <p>
             A{' '}
             <span className="font-semibold" style={{ color: 'var(--text)' }}>Definite</span>{' '}
-            grade typically requires convergent evidence from two or more high-uniqueness signal types — for
+            grade typically requires convergent evidence from two or more high-uniqueness signal types - for
             example, the same card fingerprint and the same device ID appearing across different email addresses.
           </p>
           <p>
@@ -185,7 +186,7 @@ export default function IdentityMatchingPage() {
           What matching cannot prove
         </h2>
         <p className="text-body-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-          Unauth identifies shared signals — it does not prove fraudulent intent. A Definite match means two
+          Unauth identifies shared signals - it does not prove fraudulent intent. A Definite match means two
           accounts share the same identity; it does not mean those orders were fraudulent chargebacks. The
           analyst's job is to look at the evidence, consider the order history and chargeback record, and make a
           judgement. Unauth surfaces the pattern; you decide what it means.

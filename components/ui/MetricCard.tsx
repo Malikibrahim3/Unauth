@@ -37,9 +37,11 @@ const ARROW: Record<DeltaProps['direction'], string> = {
 export function MetricCard({ label, value, delta, hint, icon, density = 'default', size, microchart, className }: MetricCardProps) {
   const isHero = size === 'hero';
   const padding = isHero ? 20 : density === 'compact' ? 12 : 16;
-  const displayValue = typeof value === 'number'
-    ? useCountUp(value, { format: (next) => Math.round(next).toLocaleString('en-US') })
-    : value;
+  const numericValue = typeof value === 'number' ? value : null;
+  const animatedValue = useCountUp(numericValue ?? 0, {
+    format: (next) => Math.round(next).toLocaleString('en-US'),
+  });
+  const displayValue = numericValue !== null ? animatedValue : value;
 
   return (
     <div
@@ -55,7 +57,7 @@ export function MetricCard({ label, value, delta, hint, icon, density = 'default
       <div className="flex items-start justify-between gap-2">
         <span
           style={{
-            fontSize: 11,
+            fontSize: 12,
             fontWeight: 500,
             letterSpacing: '0.01em',
             color: 'var(--ink-secondary)',
@@ -87,7 +89,7 @@ export function MetricCard({ label, value, delta, hint, icon, density = 'default
       {delta && (
         <div
           className="mt-1 flex items-center gap-1"
-          style={{ fontSize: 11, color: TONE_COLOR[delta.tone] }}
+          style={{ fontSize: 12, color: TONE_COLOR[delta.tone] }}
         >
           <span aria-hidden="true">{ARROW[delta.direction]}</span>
           <span>{delta.value > 0 ? '+' : ''}{delta.value}</span>
@@ -101,7 +103,7 @@ export function MetricCard({ label, value, delta, hint, icon, density = 'default
       )}
 
       {hint && (
-        <p className="mt-1" style={{ fontSize: 11, color: 'var(--ink-tertiary)' }}>{hint}</p>
+        <p className="mt-1" style={{ fontSize: 12, color: 'var(--ink-tertiary)' }}>{hint}</p>
       )}
     </div>
   );

@@ -7,7 +7,7 @@ interface SkeletonProps {
   style?: React.CSSProperties;
 }
 
-export function Skeleton({ className, style }: SkeletonProps) {
+function Skeleton({ className, style }: SkeletonProps) {
   return (
     <div
       className={cn('skeleton rounded-[var(--radius-1)]', className)}
@@ -23,7 +23,7 @@ interface LoadingStateProps {
 }
 
 /** Full-section loading placeholder using skeleton rows */
-export function LoadingState({ rows = 6, className }: LoadingStateProps) {
+function LoadingState({ rows = 6, className }: LoadingStateProps) {
   return (
     <div className={cn('space-y-[var(--space-3)] p-[var(--space-5)]', className)} aria-busy="true" aria-label="Loading…">
       {Array.from({ length: rows }).map((_, i) => (
@@ -112,8 +112,8 @@ export function ErrorBoundaryUI({
   );
 }
 
-/** Inline spinner — buttons and row-level operations only */
-export function Spinner({ size = 16, className }: { size?: number; className?: string }) {
+/** Inline spinner - buttons and row-level operations only */
+function Spinner({ size = 16, className }: { size?: number; className?: string }) {
   return (
     <svg
       className={cn('animate-spin', className)}

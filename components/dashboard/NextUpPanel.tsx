@@ -87,7 +87,7 @@ export default function NextUpPanel({ claims, inboxCount }: NextUpPanelProps) {
                       {claim.customerName}
                     </p>
                     <span
-                      className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold"
+                      className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold"
                       style={{ background: slaTone.bg, color: slaTone.text }}
                     >
                       {sla.label}
@@ -98,7 +98,7 @@ export default function NextUpPanel({ claims, inboxCount }: NextUpPanelProps) {
                     {claim.customerEmail ? ` · ${claim.customerEmail}` : ''}
                   </p>
                   <p className="text-caption mt-1" style={{ color: 'var(--text-subtle)' }}>
-                    {formatClaimAge(claim)} · Updated {claim.updatedAt ? new Date(claim.updatedAt).toLocaleDateString('en-US') : '—'}
+                    {formatClaimAge(claim)} · Updated {claim.updatedAt ? new Date(claim.updatedAt).toLocaleDateString('en-US') : '-'}
                   </p>
                 </div>
                 <div className="self-center text-right">

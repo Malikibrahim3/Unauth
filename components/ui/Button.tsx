@@ -2,14 +2,7 @@
 
 import { type ButtonHTMLAttributes, forwardRef, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
-import {
-  BUTTON_BASE,
-  BUTTON_ICON_SIZES,
-  BUTTON_VARIANT_CLASSES,
-  buttonVariantStyle,
-  BUTTON_SIZES,
-  getButtonPresentation,
-} from './buttonStyles';
+import { BUTTON_ICON_SIZES, getButtonPresentation } from './buttonStyles';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'link';
 export type ButtonSize = 'sm' | 'md' | 'lg';
@@ -52,6 +45,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     return (
       <button
+        type="button"
         ref={ref}
         disabled={disabled || loading}
         className={buttonClassName}
@@ -71,6 +65,3 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   },
 );
 Button.displayName = 'Button';
-
-// Re-export for consumers that need raw tokens
-export { BUTTON_BASE, BUTTON_VARIANT_CLASSES, buttonVariantStyle, BUTTON_SIZES };

@@ -92,15 +92,19 @@ export async function backfillShopifyMerchantIdentities(input: {
 
   const signalRows = orders.map((order) => buildShopifyOrderSignalRow(shopDomain, order));
   const signalBatchSize = 250;
-  for (let i = 0; i < signalRows.length; i += signalBatchSize) {
-    const batch = signalRows.slice(i, i + signalBatchSize);
-    const { error: signalError } = await supabase
-      .from('shopify_order_signals' as never)
-      .upsert(batch as never, { onConflict: 'shop_domain,shopify_order_id' });
-    if (signalError) {
-      throw new Error(`shopify_order_signals_backfill_failed: ${signalError.message}`);
-    }
-  }
+  const signalBatches = Array.from({ length: Math.ceil(signalRows.length / signalBatchSize) }, (_, i) =>
+    signalRows.slice(i * signalBatchSize, i * signalBatchSize + signalBatchSize)
+  );
+  await Promise.all(
+    signalBatches.map(async (batch) => {
+      const { error: signalError } = await supabase
+        .from('shopify_order_signals' as never)
+        .upsert(batch as never, { onConflict: 'shop_domain,shopify_order_id' });
+      if (signalError) {
+        throw new Error(`shopify_order_signals_backfill_failed: ${signalError.message}`);
+      }
+    })
+  );
 
   await syncShopifyProfilesForShop({ shopDomain, supabase });
 

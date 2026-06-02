@@ -26,10 +26,9 @@ export function Spotlight({
         className="absolute"
         style={{
           inset: "-20% -10% auto auto",
-          width: "min(70vw, 900px)",
-          height: "min(70vw, 900px)",
-          background: `radial-gradient(ellipse 55% 55% at 60% 40%, ${fill}, transparent)`,
-          filter: "blur(48px)",
+          width: "min(50vw, 480px)",
+          height: "min(50vw, 480px)",
+          background: `radial-gradient(ellipse 55% 55% at 60% 40%, ${fill}, transparent 72%)`,
         }}
       />
     </div>

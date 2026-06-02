@@ -21,7 +21,7 @@ export function maskName(value: string | null | undefined): string | null {
 
 export function maskAddress(value: string | null | undefined): string | null {
   if (!value) return null;
-  const parts = value.split(',').map((part) => part.trim()).filter(Boolean);
+  const parts = value.split(',').flatMap((part) => { const v = part.trim(); return v ? [v] : []; });
   return parts.length > 1 ? `masked address, ${parts.at(-1)}` : 'masked address';
 }
 

@@ -192,8 +192,10 @@ export async function POST(request: NextRequest) {
     return failPublicAudit(sc, auditId, filePath, 422, `Row count exceeds limit of ${MAX_ROWS}.`);
   }
 
-  await updateJobTotalRows(scopedClient, jobId, parseResult.rowCount);
-  await sc.from(TABLES.PUBLIC_AUDITS).update({ row_count: parseResult.rowCount } as any).eq('id', auditId);
+  await Promise.all([
+    updateJobTotalRows(scopedClient, jobId, parseResult.rowCount),
+    sc.from(TABLES.PUBLIC_AUDITS).update({ row_count: parseResult.rowCount } as any).eq('id', auditId),
+  ]);
 
   const usageGuard = await checkCsvUsageGuard(scopedClient);
   if (usageGuard.shouldStop) {

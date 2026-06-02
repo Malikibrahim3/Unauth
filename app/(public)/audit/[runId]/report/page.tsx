@@ -1,5 +1,11 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+
+export const metadata: Metadata = {
+  title: 'Audit report | Unauth',
+  description: 'Review flagged identities from your audit run.',
+};
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
 import ClaimGate from './ClaimGate';
@@ -37,28 +43,32 @@ function redactAddress(value: string | null): string {
 function signalsText(value: unknown): string {
   if (!value) return '—';
   if (Array.isArray(value)) return value.slice(0, 3).join(', ') || '—';
-  if (typeof value === 'object') return Object.keys(value as Record<string, unknown>).slice(0, 3).join(', ') || '—';
+  if (typeof value === 'object') return Object.keys(value as Record<string, unknown>).slice(0, 3).join(', ') || '-';
   return String(value);
 }
 
 function scoreText(row: ReportRow): string {
   const grade = row.identity_confidence_grade;
-  return grade ? grade.charAt(0).toUpperCase() + grade.slice(1) : '—';
+  return grade ? grade.charAt(0).toUpperCase() + grade.slice(1) : '-';
 }
 
 export default async function PublicAuditReportPage({ params }: ReportPageProps) {
   const { runId } = await params;
   const supabase = createClient();
   const service = createServiceClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const { data: audit } = await service
-    .from(TABLES.PUBLIC_AUDITS)
-    .select('id, submitted_email, linked_user_id, processing_job_id')
-    .eq('id', runId)
-    .maybeSingle();
+  const [
+    {
+      data: { user },
+    },
+    { data: audit },
+  ] = await Promise.all([
+    supabase.auth.getUser(),
+    service
+      .from(TABLES.PUBLIC_AUDITS)
+      .select('id, submitted_email, linked_user_id, processing_job_id')
+      .eq('id', runId)
+      .maybeSingle(),
+  ]);
 
   if (!audit) notFound();
   const publicAudit = audit as {
@@ -145,8 +155,8 @@ export default async function PublicAuditReportPage({ params }: ReportPageProps)
                       </td>
                     </tr>
                   ) : (
-                    rows.map((row, index) => (
-                      <tr key={`${row.cluster_id ?? 'cluster'}-${index}`} className="border-t" style={{ borderColor: '#EEE7D8' }}>
+                    rows.map((row) => (
+                      <tr key={row.cluster_id ?? `${row.customer_email ?? ''}-${row.shipping_address ?? ''}`} className="border-t" style={{ borderColor: '#EEE7D8' }}>
                         <td className="px-4 py-3 text-sm">{row.cluster_id ?? 'Pending'}</td>
                         <td className="px-4 py-3 text-sm" style={{ color: '#4A4640' }}>
                           {redactEmail(row.customer_email)} · {redactAddress(row.shipping_address)}

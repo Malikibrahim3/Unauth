@@ -21,6 +21,18 @@ import { normalisePhone } from '@/lib/linker';
 
 export const dynamic = 'force-dynamic';
 
+const SIGNAL_TYPE_MAP: Record<string, string> = {
+  shared_email: 'shared_email',
+  shared_phone: 'shared_phone',
+  shared_address: 'shared_address',
+  shared_card: 'shared_card',
+  shared_ip: 'shared_ip',
+  shared_device: 'shared_device',
+  shared_account_id: 'shared_account_id',
+  refund_velocity: 'refund_velocity',
+  chargeback_after_delivery: 'chargeback_after_delivery',
+};
+
 type CustomerProfileRow = {
   id: string;
   fraud_flags: unknown;
@@ -78,26 +90,12 @@ export async function GET(
     ? (row.fraud_flags as string[])
     : [];
 
-  const SIGNAL_TYPE_MAP: Record<string, string> = {
-    shared_email: 'shared_email',
-    shared_phone: 'shared_phone',
-    shared_address: 'shared_address',
-    shared_card: 'shared_card',
-    shared_ip: 'shared_ip',
-    shared_device: 'shared_device',
-    shared_account_id: 'shared_account_id',
-    refund_velocity: 'refund_velocity',
-    chargeback_after_delivery: 'chargeback_after_delivery',
-  };
-
-  const yourStore = rawFlags
-    .map((f) => SIGNAL_TYPE_MAP[f.toLowerCase().replace(/ /g, '_')] ?? null)
-    .filter((sig): sig is string => Boolean(sig))
-    .map((sig) => ({
-      signalType: sig,
-      label: sig.replace(/_/g, ' '),
-      count: 1,
-    }));
+  const yourStore = rawFlags.flatMap((f) => {
+    const sig = SIGNAL_TYPE_MAP[f.toLowerCase().replace(/ /g, '_')];
+    return sig
+      ? [{ signalType: sig, label: sig.replace(/_/g, ' '), count: 1 }]
+      : [];
+  });
 
   const profileEmails: string[] = Array.isArray(row.emails) ? (row.emails as string[]) : [];
   const profilePhones: string[] = Array.isArray(row.phones) ? (row.phones as string[]) : [];
@@ -122,22 +120,25 @@ export async function GET(
   const networkMap: Map<string, { merchantCount: number; totalOccurrences: number }> = new Map();
 
   if (entityTypes.length > 0) {
-    for (const { type, value } of entityTypes.slice(0, 20)) {
-      const { data: entityRows } = await serviceClient
-        .from('fraud_entities')
-        .select('id, entity_type, flagged_count, chargeback_count')
-        .eq('entity_type', type)
-        .eq('entity_value', value)
-        .limit(5);
+    const entityRowGroups = await Promise.all(
+      entityTypes.slice(0, 20).map(async ({ type, value }) => {
+        const { data: entityRows } = await serviceClient
+          .from('fraud_entities')
+          .select('id, entity_type, flagged_count, chargeback_count')
+          .eq('entity_type', type)
+          .eq('entity_value', value)
+          .limit(5);
+        return (entityRows ?? []) as Array<{
+          id: string;
+          entity_type: string;
+          flagged_count: number;
+          chargeback_count: number;
+        }>;
+      })
+    );
 
-      if (!entityRows?.length) continue;
-
-      for (const entityRow of entityRows as Array<{
-        id: string;
-        entity_type: string;
-        flagged_count: number;
-        chargeback_count: number;
-      }>) {
+    for (const entityRows of entityRowGroups) {
+      for (const entityRow of entityRows) {
         networkEntityCount++;
         const sigKey = `shared_${entityRow.entity_type}`;
         const existing = networkMap.get(sigKey) ?? { merchantCount: 0, totalOccurrences: 0 };

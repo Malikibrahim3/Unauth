@@ -147,18 +147,25 @@ export async function persistGlobalIdentityGraph({
     confidence_grade: Grade | null;
   }> = [];
 
-  for (const type of ['email', 'phone', 'address', 'ip', 'device', 'card_last4'] as const) {
-    const values = [...aggregate.values()].filter((attr) => attr.type === type).map((attr) => attr.value);
-    for (const valueChunk of chunk(values, 200)) {
+  const lookupChunks = (['email', 'phone', 'address', 'ip', 'device', 'card_last4'] as const).flatMap((type) => {
+    const values = [...aggregate.values()].flatMap((attr) => (attr.type === type ? [attr.value] : []));
+    return chunk(values, 200).map((valueChunk) => ({ type, valueChunk }));
+  });
+  const lookupResults = await Promise.all(
+    lookupChunks.map(async ({ type, valueChunk }) => {
       const { data, error } = await (serviceClient as any)
         .from('global_identity_attributes')
         .select('id,attribute_type,attribute_value,merchant_ids,audit_ids,appearance_count,confidence_grade')
         .eq('attribute_type', type)
         .in('attribute_value', valueChunk);
-      if (error) errors.push(`Global identity lookup failed: ${error.message}`);
-      else existingRows.push(...((data ?? []) as typeof existingRows));
-    }
-  }
+      if (error) {
+        errors.push(`Global identity lookup failed: ${error.message}`);
+        return [] as typeof existingRows;
+      }
+      return (data ?? []) as typeof existingRows;
+    })
+  );
+  existingRows.push(...lookupResults.flat());
 
   const existingByKey = new Map(existingRows.map((row) => [`${row.attribute_type}:${row.attribute_value}`, row]));
   const upserts = [...aggregate.values()].map((attr) => {
@@ -180,22 +187,27 @@ export async function persistGlobalIdentityGraph({
     };
   });
 
-  let attributeRows: Array<{ id: string; attribute_type: AttributeInput['type']; attribute_value: string; merchant_ids: string[] }> = [];
-  for (const rows of chunk(upserts, 1000)) {
-    const { data, error } = await (serviceClient as any)
-      .from('global_identity_attributes')
-      .upsert(rows, { onConflict: 'attribute_type,attribute_value' })
-      .select('id,attribute_type,attribute_value,merchant_ids');
-    if (error) errors.push(`Global identity upsert failed: ${error.message}`);
-    else attributeRows.push(...((data ?? []) as typeof attributeRows));
-  }
+  const upsertBatches = await Promise.all(
+    chunk(upserts, 1000).map(async (rows) => {
+      const { data, error } = await (serviceClient as any)
+        .from('global_identity_attributes')
+        .upsert(rows, { onConflict: 'attribute_type,attribute_value' })
+        .select('id,attribute_type,attribute_value,merchant_ids');
+      if (error) {
+        errors.push(`Global identity upsert failed: ${error.message}`);
+        return [] as Array<{ id: string; attribute_type: AttributeInput['type']; attribute_value: string; merchant_ids: string[] }>;
+      }
+      return (data ?? []) as Array<{ id: string; attribute_type: AttributeInput['type']; attribute_value: string; merchant_ids: string[] }>;
+    })
+  );
+  const attributeRows = upsertBatches.flat();
 
   const idByKey = new Map(attributeRows.map((row) => [`${row.attribute_type}:${row.attribute_value}`, row.id]));
   const appearances = attrs
-    .map((attr) => {
+    .flatMap((attr) => {
       const attributeId = idByKey.get(`${attr.type}:${attr.value}`);
-      if (!attributeId) return null;
-      return {
+      if (!attributeId) return [];
+      return [{
         attribute_id: attributeId,
         merchant_id: merchantId,
         audit_id: auditId,
@@ -203,18 +215,22 @@ export async function persistGlobalIdentityGraph({
         order_id: attr.orderId,
         confidence_grade: attr.grade,
         matched_signal_count: attr.matchedSignalCount,
-      };
-    })
-    .filter(Boolean);
+      }];
+    });
 
-  let appearancesInserted = 0;
-  for (const rows of chunk(appearances, 1000)) {
-    const { error } = await (serviceClient as any)
-      .from('global_identity_appearances')
-      .upsert(rows, { onConflict: 'attribute_id,merchant_id,audit_id,order_id', ignoreDuplicates: true });
-    if (error) errors.push(`Global identity appearance insert failed: ${error.message}`);
-    else appearancesInserted += rows.length;
-  }
+  const appearanceResults = await Promise.all(
+    chunk(appearances, 1000).map(async (rows) => {
+      const { error } = await (serviceClient as any)
+        .from('global_identity_appearances')
+        .upsert(rows, { onConflict: 'attribute_id,merchant_id,audit_id,order_id', ignoreDuplicates: true });
+      if (error) {
+        errors.push(`Global identity appearance insert failed: ${error.message}`);
+        return 0;
+      }
+      return rows.length;
+    })
+  );
+  const appearancesInserted = appearanceResults.reduce((sum, count) => sum + count, 0);
 
   const crossMerchantAttributes = attributeRows.filter((row) => (row.merchant_ids ?? []).length > 1).length;
   return {

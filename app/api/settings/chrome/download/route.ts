@@ -12,16 +12,18 @@ export const dynamic = 'force-dynamic';
 
 async function addDirectoryToZip(zip: JSZip, dirPath: string, zipPath: string): Promise<void> {
   const entries = await readdir(dirPath, { withFileTypes: true });
-  for (const entry of entries) {
-    const fullPath = path.join(dirPath, entry.name);
-    const entryZipPath = zipPath ? `${zipPath}/${entry.name}` : entry.name;
-    if (entry.isDirectory()) {
-      await addDirectoryToZip(zip, fullPath, entryZipPath);
-    } else {
-      const content = await readFile(fullPath);
-      zip.file(entryZipPath, content);
-    }
-  }
+  await Promise.all(
+    entries.map(async (entry) => {
+      const fullPath = path.join(dirPath, entry.name);
+      const entryZipPath = zipPath ? `${zipPath}/${entry.name}` : entry.name;
+      if (entry.isDirectory()) {
+        await addDirectoryToZip(zip, fullPath, entryZipPath);
+      } else {
+        const content = await readFile(fullPath);
+        zip.file(entryZipPath, content);
+      }
+    })
+  );
 }
 
 async function GETHandler() {

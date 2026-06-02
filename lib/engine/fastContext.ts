@@ -245,7 +245,7 @@ function computeCustomerMaxVelocity(customerOrders: NormalisedOrder[]): number {
   const WINDOW_MS = 24 * 60 * 60 * 1000;
   if (customerOrders.length < 3) return 0;
 
-  const sorted = [...customerOrders].sort((a, b) => a.orderDate.getTime() - b.orderDate.getTime());
+  const sorted = customerOrders.toSorted((a, b) => a.orderDate.getTime() - b.orderDate.getTime());
 
   let maxWindow = 0;
   let i = 0;
@@ -284,7 +284,7 @@ export async function buildFastContext(
 
   const customerOrderHistory = new Map<string, NormalisedOrder[]>();
   const addressEmailMap = new Map<string, Set<string>>();
-  const emailRawEmailsMap = new Map<string, string[]>();
+  const emailRawEmailsMapBuild = new Map<string, Set<string>>();
   const customerMaxVelocity = new Map<string, number>();
   const customerValueStats = new Map<string, { mean: number; stddev: number }>();
   const customerPaymentMethods = new Map<string, Set<string>>();
@@ -305,10 +305,15 @@ export async function buildFastContext(
     // emailRawEmailsMap
     const rawEmail = (order as NormalisedOrder & { _rawEmail?: string })._rawEmail;
     if (rawEmail) {
-      const list = emailRawEmailsMap.get(order.emailHash) ?? [];
-      if (!list.includes(rawEmail)) list.push(rawEmail);
-      emailRawEmailsMap.set(order.emailHash, list);
+      const set = emailRawEmailsMapBuild.get(order.emailHash) ?? new Set<string>();
+      set.add(rawEmail);
+      emailRawEmailsMapBuild.set(order.emailHash, set);
     }
+  }
+
+  const emailRawEmailsMap = new Map<string, string[]>();
+  for (const [emailHash, rawSet] of emailRawEmailsMapBuild) {
+    emailRawEmailsMap.set(emailHash, [...rawSet]);
   }
 
   for (const [emailHash, customerOrders] of Array.from(customerOrderHistory.entries())) {
@@ -331,7 +336,7 @@ export async function buildFastContext(
   // write-side in worker.ts uses the same functions so the read/write
   // contract is symmetric.
   // -----------------------------------------------------------------------
-  const allEmails = Array.from(new Set(orders.map((o) => o.emailHash).filter(Boolean)));
+  const allEmails = Array.from(new Set(orders.flatMap((o) => o.emailHash ? [o.emailHash] : [])));
   const allIPs = Array.from(new Set(orders.map((o) => o.ipHash).filter((v): v is string => Boolean(v))));
   const allAddresses = Array.from(new Set(
     orders.map((o) => o.addressHash).filter((v): v is string => Boolean(v))

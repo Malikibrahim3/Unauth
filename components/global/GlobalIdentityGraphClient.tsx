@@ -92,10 +92,12 @@ export default function GlobalIdentityGraphClient({ profiles }: Props) {
   }, [profiles]);
 
   const filteredProfiles = useMemo(() => {
-    return profiles
-      .filter((profile) => gradeFilter === 'all' || profile.identity_confidence_grade === gradeFilter)
-      .filter((profile) => profile.total_merchants_seen_at >= minMerchants)
-      .filter((profile) => byDateFilter(profile, dateFilter, maxDate));
+    return profiles.filter(
+      (profile) =>
+        (gradeFilter === 'all' || profile.identity_confidence_grade === gradeFilter) &&
+        profile.total_merchants_seen_at >= minMerchants &&
+        byDateFilter(profile, dateFilter, maxDate),
+    );
   }, [dateFilter, gradeFilter, maxDate, minMerchants, profiles]);
 
   const selectedProfile = filteredProfiles.find((profile) => profile.id === selectedId) ?? filteredProfiles[0] ?? null;
@@ -118,7 +120,7 @@ export default function GlobalIdentityGraphClient({ profiles }: Props) {
         fontSize: 12,
         fontWeight: 700,
         textTransform: 'uppercase',
-        letterSpacing: '0.08em',
+        letterSpacing: '0.02em',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -145,7 +147,7 @@ export default function GlobalIdentityGraphClient({ profiles }: Props) {
                 </span>
                 <ConfidenceBadge grade={gradeLabel(grade) as any} size="sm" />
               </div>
-              <div className="truncate font-mono text-[10px]" style={{ color: 'var(--ink-secondary)' }}>
+              <div className="truncate font-mono text-xs" style={{ color: 'var(--ink-secondary)' }}>
                 {profile.total_merchants_seen_at} merchants · {profile.total_orders} orders
               </div>
               <div className="h-1 overflow-hidden rounded-sm" style={{ background: 'var(--surface-muted)' }}>
@@ -196,7 +198,7 @@ export default function GlobalIdentityGraphClient({ profiles }: Props) {
                   key={grade}
                   type="button"
                   onClick={() => setGradeFilter(grade)}
-                  className="rounded-md border px-2 py-1.5 text-[11px] font-semibold uppercase transition-colors"
+                  className="rounded-md border px-2 py-1.5 text-xs font-semibold uppercase transition-colors"
                   style={{
                     background: gradeFilter === grade ? 'var(--copper-bright)' : 'var(--surface-input)',
                     borderColor: gradeFilter === grade ? 'var(--copper-bright)' : 'var(--surface-border)',
@@ -217,7 +219,7 @@ export default function GlobalIdentityGraphClient({ profiles }: Props) {
                   key={range}
                   type="button"
                   onClick={() => setDateFilter(range)}
-                  className="h-8 flex-1 rounded-md border text-[11px] font-semibold uppercase transition-colors"
+                  className="h-8 flex-1 rounded-md border text-xs font-semibold uppercase transition-colors"
                   style={{
                     background: dateFilter === range ? 'var(--copper-bright)' : 'var(--surface-input)',
                     borderColor: dateFilter === range ? 'var(--copper-bright)' : 'var(--surface-border)',
@@ -290,7 +292,7 @@ export default function GlobalIdentityGraphClient({ profiles }: Props) {
                   {profileName(selectedProfile)}
                 </p>
               </div>
-              <p className="mt-1 truncate font-mono text-[11px]" style={{ color: 'var(--ink-secondary)' }}>
+              <p className="mt-1 truncate font-mono text-xs" style={{ color: 'var(--ink-secondary)' }}>
                 {selectedProfile.primary_email ?? selectedProfile.id}
               </p>
             </div>

@@ -109,7 +109,7 @@ export default function BehaviorRoadmap({ events }: BehaviorRoadmapProps) {
             {patternTags.map((tag) => (
               <span
                 key={tag}
-                className="rounded-sm border px-1.5 py-0.5 text-[11px] font-medium"
+                className="rounded-sm border px-1.5 py-0.5 text-xs font-medium"
                 style={{ background: 'var(--surface-muted)', borderColor: 'var(--surface-border)', color: 'var(--ink-secondary)' }}
               >
                 {tag}
@@ -168,7 +168,7 @@ export default function BehaviorRoadmap({ events }: BehaviorRoadmapProps) {
               </button>
               <div className="flex items-center gap-2 pt-0.5">
                 {event.source && (
-                  <span className="rounded-sm border px-1.5 py-0.5 text-[10px] font-medium uppercase" style={{ background: 'var(--surface-muted)', borderColor: 'var(--surface-border)', color: 'var(--ink-tertiary)' }}>
+                  <span className="rounded-sm border px-1.5 py-0.5 text-xs font-medium uppercase" style={{ background: 'var(--surface-muted)', borderColor: 'var(--surface-border)', color: 'var(--ink-tertiary)' }}>
                     {event.source}
                   </span>
                 )}

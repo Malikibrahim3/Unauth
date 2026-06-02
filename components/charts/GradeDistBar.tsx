@@ -46,7 +46,7 @@ export default function GradeDistBar({ grades }: GradeDistBarProps) {
               className="inline-block h-2 w-2 rounded-[2px] shrink-0"
               style={{ background: g.color }}
             />
-            <span className="text-[10px] leading-none" style={{ color: 'var(--ink-tertiary)', fontFamily: 'DM Sans, system-ui, sans-serif' }}>
+            <span className="text-xs leading-none" style={{ color: 'var(--ink-tertiary)', fontFamily: 'DM Sans, system-ui, sans-serif' }}>
               {g.label} · {g.count.toLocaleString()}
             </span>
           </div>

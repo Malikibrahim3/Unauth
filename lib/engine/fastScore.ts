@@ -475,7 +475,7 @@ function paymentChurn(order: NormalisedOrder, ctx: FastScoringContext): SignalRe
 
   // Scan every window ending at this order's date; track the highest distinct
   // method count observed in any sliding window, per bucket.
-  const sorted = [...customerOrders].sort((a, b) => a.orderDate.getTime() - b.orderDate.getTime());
+  const sorted = customerOrders.toSorted((a, b) => a.orderDate.getTime() - b.orderDate.getTime());
   const bucketCounts: Record<string, number> = {};
   let bestScore = 0;
   let bestLabel: string | null = null;

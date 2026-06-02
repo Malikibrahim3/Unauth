@@ -443,7 +443,7 @@ async function generateOne(rawOptions, tier) {
   const customersTarget = Number(options.customers);
   const fraudRate = Number(options["fraud-rate"]);
   const hardness = Number(options.hardness || 0);
-  const focusStrategies = String(options.focus || "").split(",").map((s) => s.trim()).filter(Boolean);
+  const focusStrategies = String(options.focus || "").split(",").flatMap((s) => { const v = s.trim(); return v ? [v] : []; });
   const merchantId = `merchant_tier_${tier}`;
   const merchantName = settings.merchantName;
 
@@ -630,10 +630,7 @@ async function generateOne(rawOptions, tier) {
 async function main() {
   const options = parseArgs(defaultConfig);
   const tiers = String(options.tier) === "all" ? [1, 2, 3] : [Number(options.tier || 2)];
-  const outputs = [];
-  for (const tier of tiers) {
-    outputs.push(await generateOne(options, tier));
-  }
+  const outputs = await Promise.all(tiers.map((tier) => generateOne(options, tier)));
   console.log(JSON.stringify({ ok: true, outputs }, null, 2));
 }
 

@@ -19,6 +19,16 @@ function logErr(type, msg) {
 
 // ── Screenshot ─────────────────────────────────────────────────────────────
 let ssIdx = 1;
+async function visitElementsSequentially(elements, visit) {
+  const step = async (index) => {
+    if (index >= elements.length) return undefined;
+    const result = await visit(elements[index], index);
+    if (result !== undefined && result !== false) return result;
+    return step(index + 1);
+  };
+  return step(0);
+}
+
 async function ss(page, name) {
   const file = `r${String(ssIdx).padStart(2,'0')}_${name}.png`;
   await page.screenshot({ path: path.join(SS_DIR, file), fullPage: true });
@@ -117,32 +127,34 @@ async function main() {
   if (page.url().includes('/onboarding')) {
     console.log('  → Onboarding redirect, completing...');
     // The onboarding page - try to complete it
-    await ss(page, 'onboarding_page');
-    const onboardingText = await getText(page);
+    const [, onboardingText, [btns, links]] = await Promise.all([
+      ss(page, 'onboarding_page'),
+      getText(page),
+      Promise.all([page.$$('button'), page.$$('a')]),
+    ]);
     R.onboardingRedirect = true;
 
-    // Try clicking any "continue" or "skip" button
-    const btns = await page.$$('button');
-    for (const btn of btns) {
+    // Try clicking any "continue" or "skip" button, then upload/dashboard links
+    await visitElementsSequentially(btns, async (btn) => {
       const t = await btn.innerText().catch(() => '');
       if (/continue|skip|next|complete|get started/i.test(t)) {
         await btn.click().catch(() => {});
         await page.waitForTimeout(1500);
-        break;
+        return true;
       }
-    }
+    });
 
-    // Try clicking any upload/dashboard link
-    const links = await page.$$('a');
-    for (const link of links) {
-      const t = await link.innerText().catch(() => '');
-      const h = await link.getAttribute('href').catch(() => '');
+    await visitElementsSequentially(links, async (link) => {
+      const [t, h] = await Promise.all([
+        link.innerText().catch(() => ''),
+        link.getAttribute('href').catch(() => ''),
+      ]);
       if (/dashboard|upload|skip/i.test(t) || /dashboard|upload/i.test(h)) {
         await link.click().catch(() => {});
         await page.waitForTimeout(1500);
-        break;
+        return true;
       }
-    }
+    });
     loggedIn = !page.url().includes('/login');
   }
 
@@ -220,17 +232,17 @@ async function main() {
   // Look for sample data / demo buttons
   const allBtns = await page.$$('button, a');
   let sampleClicked = false;
-  for (const btn of allBtns) {
+  const sampleClickedResult = await visitElementsSequentially(allBtns, async (btn) => {
     const t = await btn.innerText().catch(() => '');
     if (/sample data|demo data|try sample|load sample/i.test(t)) {
       await btn.click().catch(() => {});
       await page.waitForTimeout(2000);
-      sampleClicked = true;
       R.sampleDataButtonFound = true;
       await ss(page, 'after_sample_data_click');
-      break;
+      return true;
     }
-  }
+  });
+  sampleClicked = Boolean(sampleClickedResult);
   if (!sampleClicked) R.sampleDataButtonFound = false;
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -243,11 +255,10 @@ async function main() {
   const intUrl = page.url();
   R.integrationsUrl = intUrl.replace(BASE_URL, '');
   R.integrationsAccessible = !intUrl.includes('/login');
-  await ss(page, 'settings_integrations_full');
-
-  // Wait for the card to load (it's client-side fetched)
-  await page.waitForTimeout(800);
-  await ss(page, 'settings_integrations_loaded');
+  await Promise.all([
+    ss(page, 'settings_integrations_full'),
+    page.waitForTimeout(800).then(() => ss(page, 'settings_integrations_loaded')),
+  ]);
   const intText = await getText(page);
   R.syncCardPresent = /shopify/i.test(intText);
   R.syncCardShowsNotConnected = /not connected/i.test(intText);
@@ -260,14 +271,19 @@ async function main() {
   // Check header pill (navigate somewhere that shows the header)
   route = '/customers';
   await page.goto(`${BASE_URL}/customers`, { waitUntil: 'networkidle' });
-  await page.waitForTimeout(600);
-  const headerHTML = await page.evaluate(() => document.querySelector('header')?.innerHTML || '');
+  const [headerHTML, headerPillText] = await Promise.all([
+    page.waitForTimeout(600).then(() => page.evaluate(() => document.querySelector('header')?.innerHTML || '')),
+    page.waitForTimeout(600).then(() => page.evaluate(() => {
+    const labels = [];
+    for (const link of document.querySelectorAll('header a')) {
+      if (/shopify/i.test(link.textContent || '')) labels.push(link.textContent?.trim());
+    }
+    return labels.join(' | ');
+    })),
+  ]);
   R.headerPillVisible = /shopify/i.test(headerHTML);
   R.headerPillLinksToIntegrations = headerHTML.includes('/settings/integrations');
-  R.headerPillText = await page.evaluate(() => {
-    const links = Array.from(document.querySelectorAll('header a'));
-    return links.filter(a => /shopify/i.test(a.textContent || '')).map(a => a.textContent?.trim()).join(' | ');
-  });
+  R.headerPillText = headerPillText;
   await ss(page, 'header_shopify_pill');
   console.log(`  Header pill: visible=${R.headerPillVisible}, text="${R.headerPillText}"`);
 
@@ -288,8 +304,10 @@ async function main() {
   await page.waitForTimeout(1000);
   await ss(page, 'customers_list');
 
-  const custText = await getText(page);
-  const custLinks = await page.$$('a[href*="/customers/"]');
+  const [custText, custLinks] = await Promise.all([
+    getText(page),
+    page.$$('a[href*="/customers/"]'),
+  ]);
   console.log(`  Found ${custLinks.length} customer link(s)`);
 
   if (custLinks.length > 0) {
@@ -311,29 +329,29 @@ async function main() {
     // Navigate to claims tab
     const claimsTabLinks = await page.$$('a[href*="/claims"]');
     let claimsTabClicked = false;
-    for (const link of claimsTabLinks) {
-      const txt = await link.innerText().catch(() => '');
-      const href = await link.getAttribute('href').catch(() => '');
+    claimsTabClicked = Boolean(await visitElementsSequentially(claimsTabLinks, async (link) => {
+      const [txt, href] = await Promise.all([
+        link.innerText().catch(() => ''),
+        link.getAttribute('href').catch(() => ''),
+      ]);
       if (/claim/i.test(txt) || href?.includes(`/customers/${R.firstCustomerId}/claims`)) {
         await link.click();
         await page.waitForTimeout(1200);
-        claimsTabClicked = true;
-        break;
+        return true;
       }
-    }
+    }));
 
     if (!claimsTabClicked) {
       // Try tabs/buttons
       const tabs = await page.$$('[role="tab"], button');
-      for (const tab of tabs) {
+      claimsTabClicked = Boolean(await visitElementsSequentially(tabs, async (tab) => {
         const txt = await tab.innerText().catch(() => '');
         if (/claim/i.test(txt)) {
           await tab.click();
           await page.waitForTimeout(800);
-          claimsTabClicked = true;
-          break;
+          return true;
         }
-      }
+      }));
     }
 
     if (!claimsTabClicked && R.firstCustomerId) {
@@ -356,55 +374,54 @@ async function main() {
     // Select claim type
     let claimTypeSet = false;
     const selects = await page.$$('select');
-    for (const sel of selects) {
-      const id = await sel.getAttribute('id').catch(() => '');
-      const name = await sel.getAttribute('name').catch(() => '');
-      const opts = await sel.$$eval('option', os => os.map(o => o.textContent?.trim()));
+    claimTypeSet = Boolean(await visitElementsSequentially(selects, async (sel) => {
+      const [[id, name], opts] = await Promise.all([
+        Promise.all([sel.getAttribute('id').catch(() => ''), sel.getAttribute('name').catch(() => '')]),
+        sel.$$eval('option', os => os.map(o => o.textContent?.trim())),
+      ]);
       if (/type|claim_type|claimType/i.test(id + name) || opts.some(o => /parcel|missing|damaged/i.test(o || ''))) {
-        try { await sel.selectOption({ label: 'Missing parcel' }); claimTypeSet = true; } catch {
-          try { await sel.selectOption({ index: 1 }); claimTypeSet = true; } catch {}
+        try { await sel.selectOption({ label: 'Missing parcel' }); return true; } catch {
+          try { await sel.selectOption({ index: 1 }); return true; } catch {}
         }
-        break;
       }
-    }
+    }));
 
     // Select order reference
     let orderSet = false;
-    for (const sel of selects) {
-      const name = await sel.getAttribute('name').catch(() => '');
-      const id = await sel.getAttribute('id').catch(() => '');
-      const placeholder = await sel.getAttribute('placeholder').catch(() => '');
-      const opts = await sel.$$eval('option', os => os.map(o => o.textContent?.trim()));
+    orderSet = Boolean(await visitElementsSequentially(selects, async (sel) => {
+      const [[name, id], placeholder, opts] = await Promise.all([
+        Promise.all([sel.getAttribute('name').catch(() => ''), sel.getAttribute('id').catch(() => '')]),
+        sel.getAttribute('placeholder').catch(() => ''),
+        sel.$$eval('option', os => os.map(o => o.textContent?.trim())),
+      ]);
       if (/order/i.test(id + name + (placeholder || '')) || opts.some(o => /order|#/i.test(o || ''))) {
         try {
           await sel.selectOption({ index: 1 });
           CF.orderPickerWorks = true;
-          orderSet = true;
+          return true;
         } catch {}
-        break;
       }
-    }
+    }));
 
     // Try text inputs for order ref
     if (!orderSet) {
       const orderInputs = await page.$$('input[placeholder*="rder"], input[name*="rder"]');
-      for (const inp of orderInputs) {
+      orderSet = Boolean(await visitElementsSequentially(orderInputs, async (inp) => {
         await inp.fill('#TEST-001').catch(() => {});
         CF.orderPickerWorks = true;
-        break;
-      }
+        return true;
+      }));
     }
 
     // Fill customer reason
     const allTextareas = await page.$$('textarea');
-    for (const ta of allTextareas) {
-      const name = await ta.getAttribute('name').catch(() => '');
-      const placeholder = await ta.getAttribute('placeholder').catch(() => '');
+    await visitElementsSequentially(allTextareas, async (ta) => {
+      const [name, placeholder] = await Promise.all([ta.getAttribute('name').catch(() => ''), ta.getAttribute('placeholder').catch(() => '')]);
       if (/reason|customer/i.test(name + placeholder)) {
         await ta.fill('Customer states parcel was not delivered — reaudit test').catch(() => {});
-        break;
+        return true;
       }
-    }
+    });
     // Fill first textarea if still empty
     if (allTextareas.length > 0) {
       const val = await allTextareas[0].inputValue().catch(() => '');
@@ -412,20 +429,22 @@ async function main() {
     }
 
     // Fill internal notes
-    for (const ta of allTextareas) {
-      const name = await ta.getAttribute('name').catch(() => '');
-      const placeholder = await ta.getAttribute('placeholder').catch(() => '');
+    await visitElementsSequentially(allTextareas, async (ta) => {
+      const [name, placeholder] = await Promise.all([ta.getAttribute('name').catch(() => ''), ta.getAttribute('placeholder').catch(() => '')]);
       if (/note|internal/i.test(name + placeholder)) {
         await ta.fill('Internal: re-audit test note').catch(() => {});
-        break;
+        return true;
       }
-    }
+    });
     if (allTextareas.length > 1) {
       const val = await allTextareas[1].inputValue().catch(() => '');
       if (!val) await allTextareas[1].fill('Internal: re-audit test note').catch(() => {});
     }
 
-    await ss(page, 'claim_panel_filled');
+    const [, allButtons] = await Promise.all([
+      ss(page, 'claim_panel_filled'),
+      page.$$('button'),
+    ]);
 
     // Listen for save API calls
     const saveResponses = [];
@@ -439,25 +458,26 @@ async function main() {
     // Check for loading state during save
     let loadingDetected = false;
 
-    // Click Save claim button
-    const allButtons = await page.$$('button');
-    for (const btn of allButtons) {
-      const txt = await btn.innerText().catch(() => '');
-      const disabled = await btn.evaluate(el => el.disabled).catch(() => false);
+    await visitElementsSequentially(allButtons, async (btn) => {
+      const [txt, disabled] = await Promise.all([
+        btn.innerText().catch(() => ''),
+        btn.evaluate((el) => el.disabled).catch(() => false),
+      ]);
       if (/save claim|save|submit claim/i.test(txt) && !disabled) {
-        await btn.click();
-        // Check loading state immediately after click
-        await page.waitForTimeout(200);
-        const pageHtml = await page.evaluate(() => document.body.innerHTML);
+        const pageHtml = await btn.click()
+          .then(() => page.waitForTimeout(200))
+          .then(() => page.evaluate(() => document.body.innerHTML));
         loadingDetected = /loading|spinner|animate-spin|aria-busy/i.test(pageHtml);
         CF.loadingVisible = loadingDetected;
         await page.waitForTimeout(2500);
-        break;
+        return true;
       }
-    }
+    });
 
-    await ss(page, 'claim_save_result');
-    const afterSaveText = await getText(page);
+    const [, afterSaveText] = await Promise.all([
+      ss(page, 'claim_save_result'),
+      getText(page),
+    ]);
 
     // Determine success
     page.off('response', saveHandler);
@@ -566,7 +586,9 @@ async function main() {
   ];
 
   R.navChecks = {};
-  for (const [name, r] of navRoutes) {
+  const visitNavRoute = async (index) => {
+    if (index >= navRoutes.length) return;
+    const [name, r] = navRoutes[index];
     route = r;
     try {
       await page.goto(`${BASE_URL}${r}`, { waitUntil: 'networkidle', timeout: 8000 });
@@ -577,17 +599,21 @@ async function main() {
       );
       R.navChecks[name] = { requested: r, final: finalUrl, redirected: finalUrl !== r, is404 };
       await ss(page, name);
-    } catch(e) {
+    } catch (e) {
       R.navChecks[name] = { error: e.message };
     }
-  }
+    return visitNavRoute(index + 1);
+  };
+  await visitNavRoute(0);
 
   // ── Help page specific check ──────────────────────────────────────────
   route = '/help';
   await page.goto(`${BASE_URL}/help`, { waitUntil: 'networkidle' });
   await page.waitForTimeout(600);
-  const helpHTML = await page.evaluate(() => document.body.innerHTML);
-  const helpText = await getText(page);
+  const [helpHTML, helpText] = await Promise.all([
+    page.evaluate(() => document.body.innerHTML),
+    getText(page),
+  ]);
   R.helpHasAuditTabBar = /tab.*inbox|tab.*upload|Inbox.*Upload.*Chargebacks/i.test(helpHTML);
   R.helpHasOwnHeader = /help/i.test(helpText.slice(0, 300));
   R.helpIsClean = !R.helpHasAuditTabBar;

@@ -1,5 +1,5 @@
 import * as Sentry from '@sentry/nextjs';
-import { redactSensitiveData } from '@/lib/log';
+import { redactSensitiveData } from '@/lib/log/redactSensitiveData';
 
 const TRACES_SAMPLE_RATE = 0.1;
 const ERROR_SAMPLE_RATE = 1;

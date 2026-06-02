@@ -1,3 +1,10 @@
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Pilot terms | Unauth',
+  description: 'Terms for founding-merchant pilot access.',
+};
+
 export default function PilotTermsPage() {
   return (
     <div className="min-h-screen px-6 py-16 md:px-10" style={{ background: '#F8F5EE', color: '#1A1814' }}>

@@ -26,12 +26,14 @@ function escapeHtml(value: string): string {
     .replaceAll("'", '&#39;');
 }
 
+const emailUsdFormatter = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+  maximumFractionDigits: 0,
+});
+
 function formatUsd(value: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 0,
-  }).format(value);
+  return emailUsdFormatter.format(value);
 }
 
 export function buildAuditResultsEmail(input: AuditEmailInput) {

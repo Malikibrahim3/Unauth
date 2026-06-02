@@ -17,6 +17,13 @@ import { env } from '@/lib/utils/env';
 
 export const maxDuration = 60;
 
+const PURGE_DEPENDENT_TABLES: Array<{ table: string; column: string }> = [
+  { table: 'customer_profile_audit_appearances', column: 'audit_id' },
+  { table: 'watchlist_appearances', column: 'audit_id' },
+  { table: 'audit_transactions', column: 'job_id' },
+  { table: 'csv_upload_queue', column: 'job_id' },
+];
+
 export async function POST(request: NextRequest) {
   const authHeader = request.headers.get('authorization');
   if (!env.CRON_SECRET || authHeader !== `Bearer ${env.CRON_SECRET}`) {
@@ -55,14 +62,11 @@ export async function POST(request: NextRequest) {
 
   // 3. Cascade delete downstream rows (order matters for FK constraints)
   if (jobIds.length > 0) {
-    const tables: Array<{ table: string; column: string }> = [
-      { table: 'customer_profile_audit_appearances', column: 'audit_id' },
-      { table: 'watchlist_appearances', column: 'audit_id' },
-      { table: 'audit_transactions', column: 'job_id' },
-      { table: 'csv_upload_queue', column: 'job_id' },
-    ];
+    const tables = PURGE_DEPENDENT_TABLES;
 
-    for (const { table, column } of tables) {
+    const deleteDependentTables = async (index: number): Promise<void> => {
+      if (index >= tables.length) return;
+      const { table, column } = tables[index]!;
       const { error } = await sc
         .from(table as any)
         .delete()
@@ -70,7 +74,9 @@ export async function POST(request: NextRequest) {
       if (error) {
         console.error(`[purge] delete ${table} error`, error);
       }
-    }
+      return deleteDependentTables(index + 1);
+    };
+    await deleteDependentTables(0);
 
     // 4. Delete the processing_jobs themselves
     const { error: jobsError } = await sc
@@ -93,14 +99,16 @@ export async function POST(request: NextRequest) {
     if (error) storageErrors.push(`explicit paths: ${error.message}`);
   }
 
-  for (const id of auditIds) {
-    const { data: files } = await sc.storage.from(STORAGE_BUCKETS.MERCHANT_CSV_UPLOADS).list(id);
-    if (files && files.length > 0) {
-      const paths = files.map((f: { name: string }) => `${id}/${f.name}`);
-      const { error } = await sc.storage.from(STORAGE_BUCKETS.MERCHANT_CSV_UPLOADS).remove(paths);
-      if (error) storageErrors.push(`${id}: ${error.message}`);
-    }
-  }
+  await Promise.all(
+    auditIds.map(async (id) => {
+      const { data: files } = await sc.storage.from(STORAGE_BUCKETS.MERCHANT_CSV_UPLOADS).list(id);
+      if (files && files.length > 0) {
+        const paths = files.map((f: { name: string }) => `${id}/${f.name}`);
+        const { error } = await sc.storage.from(STORAGE_BUCKETS.MERCHANT_CSV_UPLOADS).remove(paths);
+        if (error) storageErrors.push(`${id}: ${error.message}`);
+      }
+    })
+  );
 
   // 6. Delete the public_audit rows
   const { error: deleteError } = await sc

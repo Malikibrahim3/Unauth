@@ -97,14 +97,16 @@ async function loadClaimRows(
 
   if (error) throw new Error(`load_claim_rows_failed: ${error.message}`);
 
-  return (data ?? [])
-    .filter((row) => row.requires_merchant_review !== true)
-    .map((row) => ({
-      claim_type: asString(row.claim_type),
-      created_at_provider: asString(row.created_at_provider),
-      updated_at_provider: asString(row.updated_at_provider),
-      requires_merchant_review: row.requires_merchant_review === true,
-    }));
+  return (data ?? []).flatMap((row) =>
+    row.requires_merchant_review === true
+      ? []
+      : [{
+          claim_type: asString(row.claim_type),
+          created_at_provider: asString(row.created_at_provider),
+          updated_at_provider: asString(row.updated_at_provider),
+          requires_merchant_review: row.requires_merchant_review === true,
+        }],
+  );
 }
 
 /**

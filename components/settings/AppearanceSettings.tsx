@@ -40,10 +40,9 @@ export default function AppearanceSettings() {
             Switch between light and dark mode. Your choice is saved on this device.
           </p>
         </div>
-        <div
-          className="inline-flex shrink-0 rounded-md border p-0.5"
+        <fieldset
+          className="inline-flex shrink-0 rounded-md border p-0.5 m-0 min-w-0"
           style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-input)' }}
-          role="group"
           aria-label="Color theme"
         >
           {OPTIONS.map(({ value, label, icon: Icon }) => {
@@ -71,7 +70,7 @@ export default function AppearanceSettings() {
               </button>
             );
           })}
-        </div>
+        </fieldset>
       </div>
     </SectionCard>
   );

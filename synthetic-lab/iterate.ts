@@ -123,6 +123,7 @@ const STRATEGY_SIGNALS = {
 };
 
 const BROAD_OVERLAP_SIGNALS = ["address_cluster", "shared_device", "shared_payment", "ip_velocity", "phone_reuse"];
+const BROAD_OVERLAP_SIGNAL_SET = new Set(BROAD_OVERLAP_SIGNALS);
 const CLEAN_GUARDS = ["business_address_guard", "student_address_guard", "cancelled_order_guard"];
 const SAFETY_DAMPEN_SIGNALS = [
   "email_reuse",
@@ -164,7 +165,7 @@ function learnWeights(weights, summaries, learningRate, maxFpr) {
       const signals = STRATEGY_SIGNALS[metric.strategy] || [];
       if (!signals.length || !metric.truth) continue;
 
-      const usesBroadOverlap = signals.some((signal) => BROAD_OVERLAP_SIGNALS.includes(signal));
+      const usesBroadOverlap = signals.some((signal) => BROAD_OVERLAP_SIGNAL_SET.has(signal));
       const canChaseRecall = Number(metric.predicted || 0) === 0 || Number(metric.precision || 0) >= 0.35;
       if (metric.recall < 0.75 && canChaseRecall && !(summaryFpr > TARGETS.clean_baseline_false_positive_rate && usesBroadOverlap)) {
         const deficit = 0.75 - Number(metric.recall || 0);
@@ -240,7 +241,11 @@ function scoreAtThreshold(rows, threshold) {
 }
 
 function calibrateThreshold(summaries, maxFpr, currentThreshold) {
-  const tierRows = summaries.map(loadPredictionRows).filter((rows) => rows.length);
+  const tierRows = [];
+  for (const summary of summaries) {
+    const rows = loadPredictionRows(summary);
+    if (rows.length) tierRows.push(rows);
+  }
   if (!tierRows.length) return { threshold: currentThreshold, changed: false };
   let best = null;
   for (let threshold = 20; threshold <= 100; threshold += 1) {
@@ -352,7 +357,11 @@ async function main() {
   const scriptDir = __dirname;
   const cwd = path.resolve(scriptDir, "..");
   const sharedWeightsBase = path.resolve(String(options.weights || path.join(root, "learned-scoring-weights.json")));
-  const tiers = String(options.tiers || "1,2,3").split(",").map((n) => Number(n.trim())).filter(Boolean);
+  const tiers = [];
+  for (const part of String(options.tiers || "1,2,3").split(",")) {
+    const n = Number(part.trim());
+    if (n) tiers.push(n);
+  }
   const doCalibrate = options["calibrate-threshold"] === true || options["calibrate-threshold"] === "true";
 
   // Per-tier state: weights and threshold, seeded from shared weights if no tier file exists yet.
@@ -365,7 +374,11 @@ async function main() {
   }
 
   let hardness = Number(options.hardness || 0);
-  let focus = String(options.focus || "").split(",").map((s) => s.trim()).filter(Boolean);
+  let focus = [];
+  for (const part of String(options.focus || "").split(",")) {
+    const v = part.trim();
+    if (v) focus.push(v);
+  }
   let consecutivePasses = 0;
   const runSummary = [];
 
@@ -525,7 +538,8 @@ async function main() {
     writeJson(path.join(iterDir, "iteration-summary.json"), { aggregate, summaries: trainSummaries });
     writeIterationReport(path.join(iterDir, "iteration-report.md"), trainSummaries, aggregate, focus, passed, consecutivePasses);
 
-    const refTier = tiers.includes(2) ? 2 : tiers[0];
+    const tierSet = new Set(tiers);
+    const refTier = tierSet.has(2) ? 2 : tiers[0];
     fs.copyFileSync(path.join(iterDir, `tier${refTier}`, "merchant_dataset.csv"), path.join(root, "merchant_dataset.csv"));
     fs.copyFileSync(path.join(iterDir, `tier${refTier}`, "merchant_truth.json"), path.join(root, "merchant_truth.json"));
     fs.copyFileSync(path.join(iterDir, `tier${refTier}`, "identity_truth.json"), path.join(root, "identity_truth.json"));

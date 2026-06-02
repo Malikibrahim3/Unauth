@@ -1,6 +1,42 @@
 const MERCHANT_DISPLAY_CURRENCY = 'USD';
 const MERCHANT_DISPLAY_LOCALE = 'en-US';
 
+const currencyFormatter = new Intl.NumberFormat(MERCHANT_DISPLAY_LOCALE, {
+  style: 'currency',
+  currency: MERCHANT_DISPLAY_CURRENCY,
+  minimumFractionDigits: 2,
+});
+
+const dateTimePartsFormatter = new Intl.DateTimeFormat(MERCHANT_DISPLAY_LOCALE, {
+  day: '2-digit',
+  month: 'short',
+  year: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+  timeZone: 'UTC',
+});
+
+const dateTableFormatter = new Intl.DateTimeFormat(MERCHANT_DISPLAY_LOCALE, {
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  timeZone: 'UTC',
+});
+
+const dateProseFormatter = new Intl.DateTimeFormat(MERCHANT_DISPLAY_LOCALE, {
+  month: 'long',
+  day: 'numeric',
+  year: 'numeric',
+  timeZone: 'UTC',
+});
+
+const dateShortFormatter = new Intl.DateTimeFormat(MERCHANT_DISPLAY_LOCALE, {
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric',
+  timeZone: 'UTC',
+});
+
 export function formatRiskScore(score: number | null | undefined): string {
   if (typeof score !== 'number' || Number.isNaN(score)) return '—';
   return Math.round(score).toString();
@@ -8,11 +44,7 @@ export function formatRiskScore(score: number | null | undefined): string {
 
 /** Merchant UI: always USD with US locale. */
 export function formatCurrency(amount: number, _currency = 'USD'): string {
-  return new Intl.NumberFormat(MERCHANT_DISPLAY_LOCALE, {
-    style: 'currency',
-    currency: MERCHANT_DISPLAY_CURRENCY,
-    minimumFractionDigits: 2,
-  }).format(amount);
+  return currencyFormatter.format(amount);
 }
 
 export function formatCurrencyCompact(amount: number, _currency = 'USD'): string {
@@ -34,14 +66,7 @@ export function formatCurrencyNullable(amount: number | null | undefined, _curre
 
 export function formatDate(date: Date | string): string {
   const d = typeof date === 'string' ? new Date(date) : date;
-  const parts = new Intl.DateTimeFormat(MERCHANT_DISPLAY_LOCALE, {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZone: 'UTC',
-  }).formatToParts(d);
+  const parts = dateTimePartsFormatter.formatToParts(d);
 
   const lookup = Object.fromEntries(parts.map((part) => [part.type, part.value]));
   return `${lookup.day} ${lookup.month} ${lookup.year}, ${lookup.hour}:${lookup.minute}`;
@@ -56,21 +81,11 @@ export function formatDateMode(
   if (Number.isNaN(d.getTime())) return String(date);
 
   if (mode === 'table') {
-    return new Intl.DateTimeFormat(MERCHANT_DISPLAY_LOCALE, {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      timeZone: 'UTC',
-    }).format(d);
+    return dateTableFormatter.format(d);
   }
 
   if (mode === 'prose') {
-    return new Intl.DateTimeFormat(MERCHANT_DISPLAY_LOCALE, {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
-      timeZone: 'UTC',
-    }).format(d);
+    return dateProseFormatter.format(d);
   }
 
   if (mode === 'recent') {
@@ -92,12 +107,7 @@ export function formatDateMode(
 export function formatDateShort(date: Date | string): string {
   try {
     const d = typeof date === 'string' ? new Date(date) : date;
-    return new Intl.DateTimeFormat(MERCHANT_DISPLAY_LOCALE, {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-      timeZone: 'UTC',
-    }).format(d);
+    return dateShortFormatter.format(d);
   } catch {
     return String(date);
   }

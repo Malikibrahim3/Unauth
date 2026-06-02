@@ -95,7 +95,7 @@ async function GETHandler(req: NextRequest) {
     const profileIds = await fetchReviewQueueProfileIds(
       serviceClient,
       ownedJobIds,
-      rows.map((row: any) => row.id).filter(Boolean),
+      rows.flatMap((row: any) => (row.id ? [row.id] : [])),
     );
 
     return NextResponse.json({

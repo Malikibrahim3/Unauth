@@ -268,20 +268,22 @@ export async function processWebhook(rawBody: string, shopDomain: string, topic:
         .eq('shop_domain', shopDomain)
         .eq('shopify_order_id', orderId)
         .select('id,status');
-      for (const claim of voidedClaims ?? []) {
-        await appendClaimEvent(supabase, {
-          claim_id: claim.id,
-          merchant_id: merchantId,
-          shop_domain: shopDomain,
-          event_type: 'status_changed',
-          new_status: 'voided',
-          triggered_by: 'shopify_order_cancelled',
-          metadata: {
+      await Promise.all(
+        (voidedClaims ?? []).map((claim: { id: string }) =>
+          appendClaimEvent(supabase, {
+            claim_id: claim.id,
+            merchant_id: merchantId,
+            shop_domain: shopDomain,
+            event_type: 'status_changed',
+            new_status: 'voided',
             triggered_by: 'shopify_order_cancelled',
-            shopify_order_id: orderId,
-          },
-        });
-      }
+            metadata: {
+              triggered_by: 'shopify_order_cancelled',
+              shopify_order_id: orderId,
+            },
+          })
+        )
+      );
     }
   }
 

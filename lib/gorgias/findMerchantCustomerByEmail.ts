@@ -41,7 +41,7 @@ const PROFILE_SELECT =
 
 function parseFraudFlags(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
-  return value.map((flag) => String(flag)).filter(Boolean);
+  return value.flatMap((flag) => { const v = String(flag); return v ? [v] : []; });
 }
 
 function merchantIdsIncludes(merchantIds: unknown, merchantId: string): boolean {

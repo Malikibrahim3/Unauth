@@ -65,7 +65,7 @@ export default function AuditCharts({ counts, totalRows, totalFlagged }: Props) 
             </div>
             {/* Legend */}
             <div className="flex flex-col gap-1.5">
-              {TIERS.filter((t) => counts[t.key] > 0).map((t) => (
+              {TIERS.flatMap((t) => (counts[t.key] > 0 ? [(
                 <div key={t.key} className="flex items-center justify-between text-xs">
                   <span className="flex items-center gap-1.5">
                     <span className="h-2 w-2 rounded-sm flex-shrink-0" style={{ background: t.color }} />
@@ -78,7 +78,7 @@ export default function AuditCharts({ counts, totalRows, totalFlagged }: Props) 
                     </span>
                   </span>
                 </div>
-              ))}
+              )] : []))}
             </div>
           </div>
         )}
@@ -101,7 +101,7 @@ export default function AuditCharts({ counts, totalRows, totalFlagged }: Props) 
                 </div>
                 <div className="text-center">
                   <p className="text-caption font-mono" style={{ color: 'var(--ink-primary)' }}>{value.toLocaleString()}</p>
-                  <p className="text-[11px] truncate" style={{ color: 'var(--ink-secondary)' }}>{tier.label}</p>
+                  <p className="text-xs truncate" style={{ color: 'var(--ink-secondary)' }}>{tier.label}</p>
                 </div>
               </div>
             );
@@ -109,7 +109,7 @@ export default function AuditCharts({ counts, totalRows, totalFlagged }: Props) 
         </div>
       </SectionCard>
 
-      {/* Overall composition — full width */}
+      {/* Overall composition - full width */}
       <SectionCard title="Overall composition" className="md:col-span-2">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-4 text-caption" style={{ color: 'var(--ink-tertiary)' }}>
@@ -125,7 +125,7 @@ export default function AuditCharts({ counts, totalRows, totalFlagged }: Props) 
         </div>
         <div className="h-2 w-full rounded-sm overflow-hidden" style={{ background: 'var(--surface-muted)' }}>
           <div
-            className="h-full rounded-sm transition-all duration-500"
+            className="h-full rounded-sm transition-colors duration-500"
             style={{ width: `${flaggedPct}%`, background: 'var(--copper-bright)' }}
           />
         </div>

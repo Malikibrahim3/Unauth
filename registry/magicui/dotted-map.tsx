@@ -13,6 +13,8 @@ export interface Marker {
 
 type MapMarker<M extends Marker> = Omit<M, 'lat' | 'lng'> & { x: number; y: number };
 
+const EMPTY_MARKERS: Marker[] = [];
+
 export interface DottedMapProps<M extends Marker = Marker> extends React.SVGProps<SVGSVGElement> {
   width?: number;
   height?: number;
@@ -36,7 +38,7 @@ export function DottedMap<M extends Marker = Marker>({
   width = 150,
   height = 75,
   mapSamples = 5000,
-  markers = [],
+  markers,
   dotColor = 'currentColor',
   markerColor = '#FF6900',
   dotRadius = 0.2,
@@ -44,14 +46,14 @@ export function DottedMap<M extends Marker = Marker>({
   pulse = false,
   renderMarkerOverlay,
   className,
-  style,
-  ...svgProps
+  style, ...svgProps
 }: DottedMapProps<M>) {
+  const markerList = markers ?? (EMPTY_MARKERS as M[]);
   const { points, addMarkers } = createMap({ width, height, mapSamples });
-  const processedMarkers = addMarkers(markers);
+  const processedMarkers = addMarkers(markerList);
 
   const { xStep, yToRowIndex } = React.useMemo(() => {
-    const sorted = [...points].sort((a, b) => a.y - b.y || a.x - b.x);
+    const sorted = points.toSorted((a, b) => a.y - b.y || a.x - b.x);
     const rowMap = new Map<number, number>();
     let step = 0;
     let prevY = Number.NaN;

@@ -30,7 +30,7 @@ export default function IdentityChangesDisclosure({ entries, variantCount }: Ide
           </span>
           Identifier changes ({entries.length})
           <span className="font-normal" style={{ color: 'var(--text-muted)' }}>
-            — {summary}
+            - {summary}
           </span>
         </span>
       </summary>

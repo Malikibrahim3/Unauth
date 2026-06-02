@@ -92,7 +92,7 @@ async function GETHandler(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to fetch audit trail' }, { status: 500 });
   }
 
-  const claimIds = [...new Set((claimEvents ?? []).map((event: any) => event.claim_id).filter(Boolean))] as string[];
+  const claimIds = [...new Set((claimEvents ?? []).flatMap((event: any) => (event.claim_id ? [event.claim_id] : [])))] as string[];
   const claimHrefById = new Map<string, string>();
   if (claimIds.length > 0) {
     const { data: claimRows } = await service
@@ -140,7 +140,7 @@ async function GETHandler(request: NextRequest) {
     const exportDenied = await requirePermission(service, user.id, PERMISSIONS.EXPORT_AUDIT);
     if (exportDenied.denied) return exportDenied.denied;
 
-    const actorIds = [...new Set(rows.map((r: { actor_user_id?: string | null }) => r.actor_user_id).filter(Boolean))] as string[];
+    const actorIds = [...new Set(rows.flatMap((r: { actor_user_id?: string | null }) => (r.actor_user_id ? [r.actor_user_id] : [])))] as string[];
     const actorMap: Record<string, { email: string; role: string }> = {};
     if (actorIds.length > 0) {
       const { data: memberRows } = await service

@@ -43,14 +43,17 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (!parsed.success) return NextResponse.json({ error: 'Invalid outcome payload' }, { status: 400 });
 
   try {
-    const previous = await latestOutcome(serviceClient, claimId);
-    const outcome = await upsertMerchantCaseOutcome(serviceClient, {
-      ...parsed.data,
-      actor_user_id: parsed.data.actor_user_id ?? user.id,
-    });
+    const [previous, outcome] = await Promise.all([
+      latestOutcome(serviceClient, claimId),
+      upsertMerchantCaseOutcome(serviceClient, {
+        ...parsed.data,
+        actor_user_id: parsed.data.actor_user_id ?? user.id,
+      }),
+    ]);
     const newStatus = claimStatusForOutcome(parsed.data);
-    await updateClaimStatus(serviceClient, claim, ctx.merchantId, newStatus);
-    await appendClaimEvent(serviceClient, {
+    await Promise.all([
+      updateClaimStatus(serviceClient, claim, ctx.merchantId, newStatus),
+      appendClaimEvent(serviceClient, {
       claim_id: claimId,
       merchant_id: ctx.merchantId,
       shop_domain: claim.shop_domain,
@@ -70,7 +73,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         amount_refunded: outcome.amount_refunded ?? null,
         amount_recovered: outcome.amount_recovered ?? null,
       },
-    });
+    }),
+    ]);
     await appendClaimEvent(serviceClient, {
       claim_id: claimId,
       merchant_id: ctx.merchantId,

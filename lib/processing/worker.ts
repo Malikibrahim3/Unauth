@@ -80,14 +80,18 @@ async function mapWithConcurrency<T>(
   concurrency: number,
   worker: (item: T, index: number) => Promise<void>
 ): Promise<void> {
-  let next = 0;
-  const workers = Array.from({ length: Math.min(concurrency, items.length) }, async () => {
-    while (next < items.length) {
-      const index = next++;
-      await worker(items[index], index);
-    }
-  });
-  await Promise.all(workers);
+  const runBatch = async (start: number): Promise<void> => {
+    if (start >= items.length) return;
+    const end = Math.min(start + concurrency, items.length);
+    await Promise.all(
+      Array.from({ length: end - start }, (_, offset) => {
+        const index = start + offset;
+        return worker(items[index]!, index);
+      })
+    );
+    return runBatch(end);
+  };
+  await runBatch(0);
 }
 
 function isTransientTransportError(err: unknown): boolean {
@@ -104,21 +108,18 @@ function isTransientTransportError(err: unknown): boolean {
 async function withTransportRetry<T>(
   fn: () => Promise<T>,
   attempts = 3,
-  baseDelayMs = 300
+  baseDelayMs = 300,
+  attempt = 0
 ): Promise<T> {
-  let lastErr: unknown;
-  for (let i = 0; i < attempts; i++) {
-    try {
-      return await fn();
-    } catch (err) {
-      lastErr = err;
-      if (!isTransientTransportError(err) || i === attempts - 1) break;
-      const jitter = Math.random() * 120;
-      const delay = baseDelayMs * 2 ** i + jitter;
-      await new Promise<void>((resolve) => setTimeout(resolve, delay));
-    }
+  try {
+    return await fn();
+  } catch (err) {
+    if (!isTransientTransportError(err) || attempt >= attempts - 1) throw err;
+    const jitter = Math.random() * 120;
+    const delay = baseDelayMs * 2 ** attempt + jitter;
+    await new Promise<void>((resolve) => setTimeout(resolve, delay));
+    return withTransportRetry(fn, attempts, baseDelayMs, attempt + 1);
   }
-  throw lastErr;
 }
 
 type MatchStatus = 'none' | 'candidate' | 'probable' | 'definite';
@@ -464,7 +465,7 @@ function rowToFraudTransaction(
   /** Set only when cross-job dedup is active (flag on + migration applied). */
   merchantId?: string
 ): FraudTransactionInsert {
-  const flags = scored.signals.filter((s) => s.fired).map((s) => s.name);
+  const flags = scored.signals.flatMap((s) => (s.fired ? [s.name] : []));
   const imr = identity?.identityMatchResult;
   const refundClaimed = isRefundClaimedForPersistence(row);
 
@@ -843,11 +844,17 @@ export async function processCsvJob(
       if (!identityResultsByOrder.has(orderId)) {
         // O(1) map lookup instead of O(n) Array.from(...).find()
         const memberIds = clusterMemberSet.get(clusterId);
-        const existingClusterResult = expansionResults.get(orderId) ??
-          // Inherit from an existing cluster member that already has a result
-          (memberIds
-            ? Array.from(memberIds).map((id) => identityResultsByOrder.get(id)).find(Boolean)
-            : undefined);
+        let inheritedClusterResult: PersistedIdentityResult | undefined;
+        if (memberIds) {
+          for (const memberId of memberIds) {
+            const memberResult = identityResultsByOrder.get(memberId);
+            if (memberResult) {
+              inheritedClusterResult = memberResult;
+              break;
+            }
+          }
+        }
+        const existingClusterResult = expansionResults.get(orderId) ?? inheritedClusterResult;
 
         if (existingClusterResult) {
           // Use the existing cluster's grade/score; recompute per-row signals.
@@ -855,7 +862,10 @@ export async function processCsvJob(
           const thisInput = linkerInputById.get(orderId);
           const existingCluster = clusterById.get(clusterId);
           const clusterInputs = existingCluster
-            ? existingCluster.order_ids.map((id) => linkerInputById.get(id)).filter((r): r is LinkerOrderInput => r !== undefined)
+            ? existingCluster.order_ids.flatMap((id) => {
+                const input = linkerInputById.get(id);
+                return input ? [input] : [];
+              })
             : [];
           const rowSignals = thisInput ? getRowMatchedSignals(thisInput, [...clusterInputs, thisInput]) : [];
           identityResultsByOrder.set(orderId, {

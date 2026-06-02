@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState, type ReactNode } from 'react';
+import { Suspense, useEffect, useState, type ReactNode } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { BuildEvidencePackageDrawer } from '@/components/evidence/BuildEvidencePackageDrawer';
+import { BuildEvidencePackageTrigger } from '@/components/evidence/BuildEvidencePackageTrigger';
 
 interface CustomerProfileEvidenceTriggerProps {
   profileId: string;
@@ -13,8 +13,7 @@ interface CustomerProfileEvidenceTriggerProps {
   children: ReactNode;
 }
 
-/** Opens the evidence drawer; honours `?buildEvidence=1` and `?disputedOrder=` on the profile URL. */
-export function CustomerProfileEvidenceTrigger({
+function CustomerProfileEvidenceTriggerInner({
   profileId,
   disabled = false,
   title,
@@ -49,23 +48,26 @@ export function CustomerProfileEvidenceTrigger({
   }
 
   return (
-    <>
-      <button
-        type="button"
-        disabled={disabled}
-        title={title}
-        className={className}
-        style={style}
-        onClick={() => setOpen(true)}
-      >
-        {children}
-      </button>
-      <BuildEvidencePackageDrawer
-        open={open}
-        onClose={handleClose}
-        profileId={profileId}
-        preselectedOrderId={disputedOrderFromUrl}
-      />
-    </>
+    <BuildEvidencePackageTrigger
+      profileId={profileId}
+      preselectedOrderId={disputedOrderFromUrl}
+      disabled={disabled}
+      title={title}
+      className={className}
+      style={style}
+      open={open}
+      onOpenChange={(next) => (next ? setOpen(true) : handleClose())}
+    >
+      {children}
+    </BuildEvidencePackageTrigger>
+  );
+}
+
+/** Opens the evidence drawer; honours `?buildEvidence=1` and `?disputedOrder=` on the profile URL. */
+export function CustomerProfileEvidenceTrigger(props: CustomerProfileEvidenceTriggerProps) {
+  return (
+    <Suspense fallback={null}>
+      <CustomerProfileEvidenceTriggerInner {...props} />
+    </Suspense>
   );
 }

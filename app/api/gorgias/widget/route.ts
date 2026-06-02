@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { createServiceClient } from '@/lib/supabase/server';
 import { getClientIp } from '@/lib/ratelimit';
 import {
@@ -16,6 +17,7 @@ import { validateWidgetToken } from '@/lib/api/widgetTokens';
 import { resolveWidgetCustomerIdentity } from '@/lib/gorgias/resolveWidgetCustomerIdentity';
 import { GORGIAS_WIDGET_TOKEN_HEADER } from '@/lib/support/gorgias/registerSidebarWidget';
 import { isUsableWidgetEmailParam } from '@/lib/support/gorgias/ticketCustomerEmail';
+import { TABLES } from '@/lib/supabase/tables';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -187,6 +189,27 @@ function errorResult(message: string): GorgiasClaimWidgetResult {
   return { ok: false, kind: 'error', message };
 }
 
+async function hasActiveGorgiasConnection(service: SupabaseClient, merchantId: string): Promise<boolean> {
+  const { data, error } = await service
+    .from(TABLES.SUPPORT_PROVIDER_CONNECTIONS)
+    .select('id')
+    .eq('merchant_id', merchantId)
+    .eq('provider', 'gorgias')
+    .eq('status', 'active')
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    gorgiasWidgetLog('helpdesk_connection_check_failed', {
+      merchantId,
+      errorMessage: error.message,
+    });
+    return false;
+  }
+
+  return Boolean(data);
+}
+
 export async function GET(request: NextRequest) {
   logBuildMarker();
 
@@ -247,6 +270,22 @@ export async function GET(request: NextRequest) {
     gorgiasWidgetLog('widget_token_valid', {});
 
     const service = createServiceClient();
+
+    const gorgiasConnected = await hasActiveGorgiasConnection(service, authResult.merchantId);
+    if (!gorgiasConnected) {
+      return returnJsonForResult({
+        branch: 'helpdesk_disconnected',
+        result: {
+          ok: false,
+          kind: 'helpdesk_disconnected',
+          message: 'Gorgias is not connected to Unauth. Reconnect it in Unauth settings to show live claim context in this widget.',
+        },
+        lookupDiagnostics: null,
+        ctx,
+        returnHtml,
+        status: 200,
+      });
+    }
 
     const resolvedIdentity = await resolveWidgetCustomerIdentity(service, {
       merchantId: authResult.merchantId,

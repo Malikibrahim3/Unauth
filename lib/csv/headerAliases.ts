@@ -558,15 +558,20 @@ export function autoMapHeaders(csvHeaders: string[]): AutoMapResult {
 
   const normalized = csvHeaders.map((h) => h.trim().toLowerCase());
   const used = new Set<number>();
+  const normToIndex = new Map<string, number>();
+  for (let i = 0; i < normalized.length; i++) {
+    if (!used.has(i)) normToIndex.set(normalized[i], i);
+  }
 
   // ── Pass 1: exact alias matching ──
   for (const [field, aliases] of Object.entries(HEADER_ALIASES) as [RequiredField, string[]][]) {
     for (const alias of aliases) {
       const aliasNorm = alias.toLowerCase();
-      const idx = normalized.findIndex((h, i) => !used.has(i) && h === aliasNorm);
-      if (idx !== -1) {
+      const idx = normToIndex.get(aliasNorm);
+      if (idx !== undefined) {
         exact[field] = csvHeaders[idx];
         used.add(idx);
+        normToIndex.delete(aliasNorm);
         break;
       }
     }
@@ -574,7 +579,11 @@ export function autoMapHeaders(csvHeaders: string[]): AutoMapResult {
 
   // ── Pass 2: fuzzy substring fallback ──
   // Collect remaining unused headers
-  const remaining = csvHeaders.map((raw, i) => ({ raw, norm: normalized[i], idx: i })).filter((h) => !used.has(h.idx));
+  const remaining: Array<{ raw: string; norm: string; idx: number }> = [];
+  for (let i = 0; i < csvHeaders.length; i += 1) {
+    if (used.has(i)) continue;
+    remaining.push({ raw: csvHeaders[i]!, norm: normalized[i]!, idx: i });
+  }
 
   for (const { raw, norm } of remaining) {
     for (const rule of FUZZY_RULES) {

@@ -7,6 +7,8 @@
  * address tweaks, high refund rates).
  */
 
+export type { CustomerIntelligence } from '@/types/customer';
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -118,14 +120,14 @@ class UnionFind {
     this.rank = new Array(n).fill(0);
   }
 
-  find(x: number): number {
-    if (this.parent[x] !== x) this.parent[x] = this.find(this.parent[x]);
+  findRoot(x: number): number {
+    if (this.parent[x] !== x) this.parent[x] = this.findRoot(this.parent[x]);
     return this.parent[x];
   }
 
   union(x: number, y: number): void {
-    const rx = this.find(x);
-    const ry = this.find(y);
+    const rx = this.findRoot(x);
+    const ry = this.findRoot(y);
     if (rx === ry) return;
     if (this.rank[rx] < this.rank[ry]) this.parent[rx] = ry;
     else if (this.rank[rx] > this.rank[ry]) this.parent[ry] = rx;
@@ -285,7 +287,7 @@ export function buildCustomerProfiles(transactions: TransactionRow[]): CustomerP
   // Step 4: group emails into clusters
   const clusters = new Map<number, number[]>();
   for (let i = 0; i < uniqueEmails.length; i++) {
-    const root = uf.find(i);
+    const root = uf.findRoot(i);
     if (!clusters.has(root)) clusters.set(root, []);
     clusters.get(root)!.push(i);
   }
@@ -295,19 +297,27 @@ export function buildCustomerProfiles(transactions: TransactionRow[]): CustomerP
 
   for (const [root, emailIndices] of Array.from(clusters.entries())) {
     const clusterEmailArr = emailIndices.map((i: number) => uniqueEmails[i]);
-    const clusterTxs = transactions.filter((tx) => clusterEmailArr.includes(norm(tx.customer_email)));
+    const clusterEmailSet = new Set(clusterEmailArr);
+    const clusterTxs = transactions.filter((tx) => clusterEmailSet.has(norm(tx.customer_email)));
     if (clusterTxs.length === 0) continue;
 
     const emails = unique(clusterTxs.map((tx) => norm(tx.customer_email)));
     const names = unique(clusterTxs.map((tx) => norm(tx.customer_name)));
-    const addresses = unique(clusterTxs.map((tx) => tx.shipping_address?.trim() ?? '').filter(Boolean));
-    const ips = unique(clusterTxs.map((tx) => tx.device_ip?.trim() ?? '').filter(Boolean));
+    const addresses = unique(clusterTxs.flatMap((tx) => {
+      const v = tx.shipping_address?.trim() ?? '';
+      return v ? [v] : [];
+    }));
+    const ips = unique(clusterTxs.flatMap((tx) => {
+      const v = tx.device_ip?.trim() ?? '';
+      return v ? [v] : [];
+    }));
     const cards = unique(
-      clusterTxs
-        .map((tx) => tx.card_last4?.replace(/\D/g, '').slice(-4) ?? '')
-        .filter((c) => c.length === 4)
+      clusterTxs.flatMap((tx) => {
+        const c = tx.card_last4?.replace(/\D/g, '').slice(-4) ?? '';
+        return c.length === 4 ? [c] : [];
+      }),
     );
-    const paymentMethods = unique(clusterTxs.map((tx) => tx.payment_method ?? '').filter(Boolean));
+    const paymentMethods = unique(clusterTxs.flatMap((tx) => { const v = tx.payment_method ?? ''; return v ? [v] : []; }));
 
     const orders: OrderSummary[] = clusterTxs
       .map((tx) => ({
@@ -335,7 +345,10 @@ export function buildCustomerProfiles(transactions: TransactionRow[]): CustomerP
     const clusterLinks: IdentityLink[] = [];
     if (emails.length > 1) {
       for (const [card, idxs] of Array.from(cardToEmails.entries())) {
-        const linkedEmails = Array.from(idxs).map((i) => uniqueEmails[i]).filter((e) => clusterEmailArr.includes(e));
+        const linkedEmails = Array.from(idxs).flatMap((i) => {
+          const e = uniqueEmails[i];
+          return clusterEmailSet.has(e) ? [e] : [];
+        });
         if (linkedEmails.length > 1) {
           clusterLinks.push({
             type: 'shared_card',
@@ -346,7 +359,10 @@ export function buildCustomerProfiles(transactions: TransactionRow[]): CustomerP
         }
       }
       for (const [addr, idxs] of Array.from(addressToEmails.entries())) {
-        const linkedEmails = Array.from(idxs).map((i) => uniqueEmails[i]).filter((e) => clusterEmailArr.includes(e));
+        const linkedEmails = Array.from(idxs).flatMap((i) => {
+          const e = uniqueEmails[i];
+          return clusterEmailSet.has(e) ? [e] : [];
+        });
         if (linkedEmails.length > 1) {
           clusterLinks.push({
             type: 'shared_address',
@@ -357,7 +373,10 @@ export function buildCustomerProfiles(transactions: TransactionRow[]): CustomerP
         }
       }
       for (const [ip, idxs] of Array.from(ipToEmails.entries())) {
-        const linkedEmails = Array.from(idxs).map((i) => uniqueEmails[i]).filter((e) => clusterEmailArr.includes(e));
+        const linkedEmails = Array.from(idxs).flatMap((i) => {
+          const e = uniqueEmails[i];
+          return clusterEmailSet.has(e) ? [e] : [];
+        });
         if (linkedEmails.length > 1) {
           clusterLinks.push({
             type: 'shared_ip',
@@ -422,7 +441,9 @@ export function buildCustomerProfiles(transactions: TransactionRow[]): CustomerP
         severity: 'high',
         title: 'High refund rate',
         description: `${refundCount} out of ${orders.length} orders refunded (${Math.round(refundRate * 100)}%)`,
-        evidence: orders.filter((o) => o.refunded).map((o) => `${o.orderId}: ${o.refundReason ?? 'No reason given'}`),
+        evidence: orders.flatMap((o) =>
+          o.refunded ? [`${o.orderId}: ${o.refundReason ?? 'No reason given'}`] : [],
+        ),
       });
     } else if (refundRate > 0.3 && refundCount >= 2) {
       flags.push({

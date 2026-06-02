@@ -45,7 +45,7 @@ export default function RemoveButton({ id, onRemoved }: RemoveButtonProps) {
       <span className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--text-muted)' }}>
         Removing in {countdown}s
         <button
-          onClick={handleUndo}
+type="button"           onClick={handleUndo}
           className="font-semibold underline transition-colors"
           style={{ color: 'var(--text)' }}
         >
@@ -57,7 +57,7 @@ export default function RemoveButton({ id, onRemoved }: RemoveButtonProps) {
 
   return (
     <button
-      onClick={handleRemove}
+type="button"       onClick={handleRemove}
       className="text-xs transition-colors"
       style={{ color: 'var(--text-subtle)' }}
       onMouseEnter={e => (e.currentTarget.style.color = 'var(--risk-critical)')}

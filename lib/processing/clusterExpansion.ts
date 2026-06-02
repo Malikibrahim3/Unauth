@@ -526,13 +526,15 @@ function expandFromSeedClusters(
 
   for (const cluster of linkedClusters) {
     clusterStep++;
-    const clusterInputs = cluster.order_ids
-      .map((id) => inputById.get(id))
-      .filter((r): r is LinkerOrderInput => r !== undefined);
+    const clusterInputs = cluster.order_ids.flatMap((id) => {
+      const row = inputById.get(id);
+      return row !== undefined ? [row] : [];
+    });
 
-    const clusterNames = cluster.order_ids
-      .map((id) => candidateNames.get(id) ?? '')
-      .filter(Boolean);
+    const clusterNames = cluster.order_ids.flatMap((id) => {
+      const name = candidateNames.get(id) ?? '';
+      return name ? [name] : [];
+    });
     const clusterEmails = new Set<string>();
     const clusterPhones = new Set<string>();
     const clusterDevices = new Set<string>();
@@ -604,7 +606,8 @@ function expandFromSeedClusters(
       //   medium-only or corroborator-only       → no merge
       //   name+postcode, IP+postcode, BIN+postcode → no merge
       let addressVariantPromotion = false;
-      if (strong.length === 0 && medium.includes('postcode')) {
+      const mediumSet = new Set(medium);
+      if (strong.length === 0 && mediumSet.has('postcode')) {
         const sharedAddress = hasAddressNearMatch(candidateRow, clusterInputs);
         if (sharedAddress) {
           const candNameForVariant = candidateNames.get(candId);
@@ -628,8 +631,8 @@ function expandFromSeedClusters(
       const candIp = ipKey(candidateRow);
       if (
         strong.length === 0 &&
-        medium.includes('ip') &&
-        !medium.includes('postcode') &&
+        mediumSet.has('ip') &&
+        !mediumSet.has('postcode') &&
         candIp &&
         (ipUsageCount.get(candIp) ?? 0) >= CORPORATE_IP_THRESHOLD
       ) {
@@ -646,11 +649,11 @@ function expandFromSeedClusters(
       assignments.set(candId, cluster.cluster_id);
 
       // Debug report
-      const candidateEdges = clusterInputs.map((clusterRow) => {
+      const candidateEdges = clusterInputs.flatMap((clusterRow) => {
         const { strong: s, medium: m } = countSharedSignals(candidateRow, [clusterRow]);
-        if (s.length + m.length === 0) return null;
-        return `matched ${clusterRow.order_id} on ${[...s, ...m].join('+')}`;
-      }).filter(Boolean) as string[];
+        if (s.length + m.length === 0) return [];
+        return [`matched ${clusterRow.order_id} on ${[...s, ...m].join('+')}`];
+      });
 
       reports.push({
         missed_order_id: candId,

@@ -360,7 +360,7 @@ export function ChargebacksLoadingSkeleton() {
   return (
     <WorkbenchPageSkeleton showActionBar kpiCount={5}>
       <div>
-        <div className="border-b px-4 py-4 space-y-3" style={{ borderColor: 'var(--border-default)' }}>
+        <div className="border-b p-4 space-y-3" style={{ borderColor: 'var(--border-default)' }}>
           <Bone className="h-4 w-36" />
           <Bone className="h-16 w-full max-w-lg" />
           <Bone className="h-3 w-80" />

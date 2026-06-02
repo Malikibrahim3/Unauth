@@ -359,7 +359,7 @@ export default async function StorePage() {
         }
       />
 
-      {/* Completeness / stale banner — the clear next best action */}
+      {/* Completeness / stale banner - the clear next best action */}
       {config.banner ? <CompletenessBanner banner={config.banner} primaryCta={config.primaryCta} /> : null}
 
       {/* KPI strip */}
@@ -447,7 +447,7 @@ export default async function StorePage() {
             </div>
           </SectionCard>
 
-          {/* Helpdesk completeness — keep helpdesk first-class, never optional */}
+          {/* Helpdesk completeness - keep helpdesk first-class, never optional */}
           <SectionCard
             title="Claim & dispute context"
             description="Helpdesk completeness for this store"

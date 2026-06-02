@@ -49,7 +49,7 @@ export function EvidenceStrengthMeter({ strength, label }: EvidenceStrengthMeter
         </span>
       </div>
 
-      <div className="flex items-end gap-1.5" role="img" aria-label={`Evidence strength: ${STRENGTH_LABEL[strength]}`}>
+      <figure className="flex items-end gap-1.5 m-0" aria-label={`Evidence strength: ${STRENGTH_LABEL[strength]}`}>
         {LEVELS.map((level, i) => {
           const isActive = i < activeLevel;
           const barStrength = level;
@@ -69,8 +69,8 @@ export function EvidenceStrengthMeter({ strength, label }: EvidenceStrengthMeter
             />
           );
         })}
-      </div>
-      <div className="mt-2 text-[10px] font-semibold tracking-[0.12em] uppercase" style={{ color: 'var(--text-muted)' }}>
+      </figure>
+      <div className="mt-2 text-xs font-semibold tracking-[0.12em] uppercase" style={{ color: 'var(--text-muted)' }}>
         {STRENGTH_LABEL[strength]}
       </div>
     </div>

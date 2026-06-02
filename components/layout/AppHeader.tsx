@@ -29,7 +29,7 @@ interface AppHeaderProps {
 }
 
 /**
- * AppHeader — 56px sticky header per §3.3.
+ * AppHeader - 56px sticky header per §3.3.
  * Renders breadcrumbs in the center-left region; ⌘K trigger and avatar slot on the right.
  */
 export default function AppHeader({
@@ -102,7 +102,7 @@ export default function AppHeader({
         {segments.map((seg, i) => {
           const isLast = i === segments.length - 1;
           return (
-            <span key={i} className="flex items-center gap-0">
+            <span key={seg.href ?? seg.label} className="flex items-center gap-0">
               {i > 0 && (
                 <ChevronRight
                   className="mx-1.5 h-3 w-3 flex-shrink-0 text-[var(--ink-tertiary)]"
@@ -159,7 +159,7 @@ export default function AppHeader({
         </div>
       )}
 
-      {/* MerchantEnvChip — left of search */}
+      {/* MerchantEnvChip - left of search */}
       <MerchantEnvChip merchantName={merchantName ?? null} environment={environment} />
 
       {/* ⌘K trigger */}
@@ -180,7 +180,7 @@ export default function AppHeader({
       >
         <Search size={14} aria-hidden="true" />
         <span className="hidden sm:inline">Search</span>
-        <kbd className="hidden sm:inline font-mono text-[10px] opacity-60">⌘K</kbd>
+        <kbd className="hidden sm:inline font-mono text-xs opacity-60">⌘K</kbd>
       </button>
 
       <AvatarMenu email={userEmail} />

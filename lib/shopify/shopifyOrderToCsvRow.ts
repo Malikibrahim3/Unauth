@@ -30,8 +30,10 @@ export type ShopifyOrderIdentityRow = {
 function paymentGatewaysToMethod(gateways: unknown): string | undefined {
   if (!Array.isArray(gateways) || gateways.length === 0) return undefined;
   return gateways
-    .map((g) => (typeof g === 'string' ? g.trim() : ''))
-    .filter(Boolean)
+    .flatMap((g) => {
+      const v = typeof g === 'string' ? g.trim() : '';
+      return v ? [v] : [];
+    })
     .join(', ');
 }
 

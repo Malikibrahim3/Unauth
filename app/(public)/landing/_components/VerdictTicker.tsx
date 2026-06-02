@@ -37,10 +37,12 @@ const verdicts: VerdictEntry[] = [
   { id: '#u_midform.42',    grade: 'POSSIBLE', score: 0.62, signals: ['shared_ip', 'name_variant'],     action: 'watch'  },
 ];
 
+const DOUBLED_VERDICTS = [...verdicts, ...verdicts];
+
 const mono: React.CSSProperties = {
   fontFamily: 'var(--font-dm-mono, monospace)',
   fontSize: '12px',
-  letterSpacing: '0.07em',
+  letterSpacing: '0.02em',
   color: '#E8E4D8',
   textShadow: '0 1px 0 rgba(0,0,0,0.35)',
 };
@@ -64,8 +66,6 @@ function VerdictChip({ id, grade, score, signals, action }: VerdictEntry) {
 }
 
 export default function VerdictTicker() {
-  const doubled = [...verdicts, ...verdicts];
-
   return (
     <div className="relative w-full overflow-hidden" style={{ background: t.darkBg, borderTop: '1px solid rgba(248,245,238,0.08)', borderBottom: '1px solid rgba(248,245,238,0.08)' }}>
       <style>{`
@@ -83,7 +83,7 @@ export default function VerdictTicker() {
       `}</style>
 
       <div className="ua-verdict-ticker flex items-center gap-8 py-[11px] w-max">
-        {doubled.map((v, i) => (
+        {DOUBLED_VERDICTS.map((v, i) => (
           <VerdictChip key={`${v.id}-${i}`} {...v} />
         ))}
       </div>

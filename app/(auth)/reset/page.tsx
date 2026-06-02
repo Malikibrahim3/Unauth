@@ -4,10 +4,11 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { UnauthLogo } from '@/components/ui/UnauthLogo';
+import { resetSubmitButtonStyle } from '@/app/(auth)/reset/resetFormStyles';
 
 const LABEL_STYLE: React.CSSProperties = {
   display: 'block',
-  fontSize: '11px',
+  fontSize: '12px',
   fontWeight: 500,
   color: 'var(--ink-tertiary)',
   marginBottom: '6px',
@@ -73,7 +74,7 @@ export default function ResetPage() {
           <div style={{ marginBottom: '28px' }}>
             <p
               style={{
-                fontSize: '11px',
+                fontSize: '12px',
                 fontWeight: 500,
                 letterSpacing: '0.04em',
                 textTransform: 'uppercase',
@@ -108,7 +109,7 @@ export default function ResetPage() {
                 lineHeight: 1.5,
               }}
             >
-              Check your inbox — we&apos;ve sent a reset link to <strong>{email}</strong>.
+              Check your inbox - we&apos;ve sent a reset link to <strong>{email}</strong>.
               <br />
               <br />
               <Link href="/login" style={{ color: 'var(--sev-clear)', fontWeight: 500 }}>
@@ -118,8 +119,9 @@ export default function ResetPage() {
           ) : (
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '13px' }}>
               <div>
-                <label style={LABEL_STYLE}>Email address</label>
+                <label htmlFor="reset-email" style={LABEL_STYLE}>Email address</label>
                 <input
+                  id="reset-email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -136,19 +138,7 @@ export default function ResetPage() {
               <button
                 type="submit"
                 disabled={loading || !email}
-                style={{
-                  padding: '11px 20px',
-                  background: loading || !email ? 'var(--surface-muted)' : 'var(--copper-bright)',
-                  color: loading || !email ? 'var(--ink-tertiary)' : 'var(--ink-inverse)',
-                  border: 'none',
-                  borderRadius: '6px',
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.04em',
-                  cursor: loading || !email ? 'not-allowed' : 'pointer',
-                  transition: 'background 0.15s',
-                }}
+                style={resetSubmitButtonStyle(loading || !email)}
               >
                 {loading ? 'Sending…' : 'Send reset link'}
               </button>

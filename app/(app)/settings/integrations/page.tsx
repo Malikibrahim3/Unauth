@@ -18,14 +18,14 @@ export default function IntegrationsPage() {
       />
 
       <div className="p-6 lg:p-8 max-w-5xl space-y-8">
-        {/* Required data pair — order source on the left, helpdesk on the right */}
+        {/* Required data pair - order source on the left, helpdesk on the right */}
         <section className="space-y-3">
           <div className="flex items-center gap-2">
             <h2 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
               Required sources
             </h2>
             <span
-              className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide"
+              className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold uppercase tracking-wide"
               style={{
                 background: 'color-mix(in srgb, var(--warning) 12%, transparent)',
                 color: 'var(--warning)',
@@ -39,7 +39,7 @@ export default function IntegrationsPage() {
           </p>
 
           <div className="grid gap-4 lg:grid-cols-2">
-            {/* Order source — ecommerce platform */}
+            {/* Order source - ecommerce platform */}
             <div className="space-y-2.5">
               <Suspense fallback={null}>
                 <ShopifyIntegrationBanner />
@@ -47,12 +47,12 @@ export default function IntegrationsPage() {
               <OrderSourceClient />
             </div>
 
-            {/* Helpdesk — claims & dispute context */}
+            {/* Helpdesk - claims & dispute context */}
             <ApiIntegrationsClient section="helpdesk" />
           </div>
         </section>
 
-        {/* Advanced — lower priority tooling */}
+        {/* Advanced - lower priority tooling */}
         <ApiIntegrationsClient section="advanced" />
       </div>
     </div>

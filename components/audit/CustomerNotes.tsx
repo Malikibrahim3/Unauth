@@ -1,6 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useReducer } from 'react';
+import { useFetchJson } from '@/lib/react/useFetchJson';
+import {
+  customerNotesReducer,
+  initialCustomerNotesState,
+} from '@/components/audit/customerNotesReducer';
 
 interface Note {
   id: string;
@@ -12,78 +17,78 @@ interface CustomerNotesProps {
   customerProfileId: string;
 }
 
+const noteDateFormatter = new Intl.DateTimeFormat('en-US', {
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric',
+  timeZone: 'UTC',
+});
+
 function formatNoteDate(d: string) {
-  return new Intl.DateTimeFormat('en-US', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(d));
+  return noteDateFormatter.format(new Date(d));
 }
 
 export default function CustomerNotes({ customerProfileId }: CustomerNotesProps) {
-  const [notes, setNotes] = useState<Note[]>([]);
-  const [draft, setDraft] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [savedMsg, setSavedMsg] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [bulkDeleting, setBulkDeleting] = useState(false);
-
-  useEffect(() => {
-    fetch(`/api/customers/${customerProfileId}/notes`)
-      .then((r) => r.json())
-      .then((d) => { setNotes(d.notes ?? []); setLoading(false); })
-      .catch(() => setLoading(false));
-  }, [customerProfileId]);
+  const [state, dispatch] = useReducer(customerNotesReducer, initialCustomerNotesState);
+  const { data, loading, reload } = useFetchJson<{ notes?: Note[] }>(
+    `/api/customers/${customerProfileId}/notes`,
+  );
+  const notes = data?.notes ?? [];
 
   async function saveNote() {
-    if (!draft.trim()) return;
-    setSaving(true);
+    if (!state.draft.trim()) return;
+    dispatch({ type: 'patch', patch: { saving: true } });
     const res = await fetch(`/api/customers/${customerProfileId}/notes`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ body: draft.trim() }),
+      body: JSON.stringify({ body: state.draft.trim() }),
     });
     if (res.ok) {
-      const { note } = await res.json();
-      setNotes((prev) => [note, ...prev]);
-      setDraft('');
-      setSavedMsg('Saved just now \u2713');
-      setTimeout(() => setSavedMsg(''), 3000);
+      dispatch({
+        type: 'patch',
+        patch: {
+          draft: '',
+          savedMsg: 'Saved just now \u2713',
+          saving: false,
+        },
+      });
+      reload();
+      setTimeout(() => dispatch({ type: 'patch', patch: { savedMsg: '' } }), 3000);
+    } else {
+      dispatch({ type: 'patch', patch: { saving: false } });
     }
-    setSaving(false);
   }
 
   async function deleteNote(id: string) {
     if (!confirm('Delete this note?')) return;
-    setDeletingId(id);
+    dispatch({ type: 'patch', patch: { deletingId: id } });
     await fetch(`/api/customers/notes/${id}`, { method: 'DELETE' });
-    setNotes((prev) => prev.filter((n) => n.id !== id));
-    setDeletingId(null);
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      next.delete(id);
-      return next;
-    });
+    dispatch({ type: 'patch', patch: { deletingId: null } });
+    dispatch({ type: 'toggleSelected', id, checked: false });
+    reload();
   }
 
   async function bulkDeleteSelected() {
-    if (selectedIds.size === 0) return;
-    if (!confirm(`Delete ${selectedIds.size} note(s)?`)) return;
-    setBulkDeleting(true);
+    if (state.selectedIds.size === 0) return;
+    if (!confirm(`Delete ${state.selectedIds.size} note(s)?`)) return;
+    dispatch({ type: 'patch', patch: { bulkDeleting: true } });
     try {
-      const ids = Array.from(selectedIds);
+      const ids = Array.from(state.selectedIds);
       const res = await fetch('/api/settings/bulk-delete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ entity: 'customer_notes', ids, confirm: true }),
       });
       if (res.ok) {
-        const idSet = new Set(ids);
-        setNotes((prev) => prev.filter((n) => !idSet.has(n.id)));
-        setSelectedIds(new Set());
+        dispatch({ type: 'clearSelected' });
+        reload();
       }
     } finally {
-      setBulkDeleting(false);
+      dispatch({ type: 'patch', patch: { bulkDeleting: false } });
     }
   }
+
+  const { draft, saving, savedMsg, deletingId, selectedIds, bulkDeleting } = state;
 
   return (
     <div className="rounded-lg p-4 space-y-3 border" style={{ borderColor: 'var(--border-subtle)' }}>
@@ -95,6 +100,7 @@ export default function CustomerNotes({ customerProfileId }: CustomerNotesProps)
               {selectedIds.size} selected
             </span>
             <button
+              type="button"
               onClick={bulkDeleteSelected}
               disabled={bulkDeleting}
               className="text-xs font-semibold rounded px-2 py-1 disabled:opacity-50"
@@ -103,7 +109,8 @@ export default function CustomerNotes({ customerProfileId }: CustomerNotesProps)
               {bulkDeleting ? 'Deleting…' : 'Delete selected'}
             </button>
             <button
-              onClick={() => setSelectedIds(new Set())}
+              type="button"
+              onClick={() => dispatch({ type: 'clearSelected' })}
               disabled={bulkDeleting}
               className="text-xs font-semibold"
               style={{ color: 'var(--text-muted)' }}
@@ -131,13 +138,7 @@ export default function CustomerNotes({ customerProfileId }: CustomerNotesProps)
                 type="checkbox"
                 checked={checked}
                 onChange={(e) => {
-                  const isChecked = e.target.checked;
-                  setSelectedIds((prev) => {
-                    const next = new Set(prev);
-                    if (isChecked) next.add(note.id);
-                    else next.delete(note.id);
-                    return next;
-                  });
+                  dispatch({ type: 'toggleSelected', id: note.id, checked: e.target.checked });
                 }}
               />
               <div className="min-w-0">
@@ -146,6 +147,7 @@ export default function CustomerNotes({ customerProfileId }: CustomerNotesProps)
               </div>
             </label>
             <button
+              type="button"
               onClick={() => deleteNote(note.id)}
               disabled={deletingId === note.id || bulkDeleting}
               className="text-xs flex-shrink-0"
@@ -161,7 +163,8 @@ export default function CustomerNotes({ customerProfileId }: CustomerNotesProps)
       <div className="space-y-2">
         <textarea
           value={draft}
-          onChange={(e) => setDraft(e.target.value)}
+          onChange={(e) => dispatch({ type: 'patch', patch: { draft: e.target.value } })}
+          aria-label="Add a note"
           placeholder="Add a note…"
           rows={2}
           className="w-full text-sm rounded px-3 py-2 focus:outline-none resize-none"
@@ -169,6 +172,7 @@ export default function CustomerNotes({ customerProfileId }: CustomerNotesProps)
         />
         <div className="flex items-center gap-3">
           <button
+            type="button"
             onClick={saveNote}
             disabled={saving || !draft.trim()}
             className="px-3 py-1.5 text-xs font-semibold rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"

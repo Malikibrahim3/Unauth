@@ -111,7 +111,7 @@ export function PageConnectionGate({
 }: PageConnectionGateProps) {
   const missing = missingFor(requires, connection);
 
-  // Both connected — clean render
+  // Both connected - clean render
   if (!missing) return <>{children}</>;
 
   // When the canonical setup state is supplied it decides gating: a full gate is

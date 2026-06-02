@@ -28,6 +28,31 @@ function escapeCsvCell(value: string): string {
   return value;
 }
 
+const EXPORT_HEADERS = [
+  'order_id',
+  'processed_at',
+  'order_value',
+  'match_status',
+  'identity_match_score',
+  'identity_match_grade',
+  'cluster_id',
+  'candidate_cluster_id',
+  'confirmed_identity_id',
+  'customer_email_masked',
+  'customer_name_masked',
+  'matched_datapoints',
+  'changed_datapoints',
+  'evidence_summary',
+  'identity_evidence',
+  'context_flags',
+  'context_summary',
+  'recommended_review_reason',
+  // Legacy columns (kept for backward compat)
+  'identity_score',
+  'identity_confidence_grade',
+  'signals_matched',
+];
+
 async function GETHandler(
   req: NextRequest,
   { params }: { params: Promise<{ runId: string }> }
@@ -98,51 +123,33 @@ async function GETHandler(
   const expectedTotalRows = totalCount ?? 0;
 
   const PAGE_SIZE = 1000;
-  for (let offset = 0; ; offset += PAGE_SIZE) {
-    const { data, error: txError } = await serviceClient
-      .from(TABLES.AUDIT_TRANSACTIONS)
-      .select(
-        'order_id, processed_at, order_value, identity_score, identity_confidence_grade, cluster_id, match_status, candidate_cluster_id, confirmed_identity_id, signals_matched, customer_email, customer_name, identity_match_score, identity_match_grade, matched_datapoints, changed_datapoints, identity_evidence, evidence_summary, context_flags, context_summary'
-      )
-      .eq('job_id', runId)
-      .order('id', { ascending: true })
-      .range(offset, offset + PAGE_SIZE - 1);
-
+  const pageCount = Math.max(1, Math.ceil(expectedTotalRows / PAGE_SIZE));
+  const pages = await Promise.all(
+    Array.from({ length: pageCount }, (_, pageIndex) => {
+      const offset = pageIndex * PAGE_SIZE;
+      return serviceClient
+        .from(TABLES.AUDIT_TRANSACTIONS)
+        .select(
+          'order_id, processed_at, order_value, identity_score, identity_confidence_grade, cluster_id, match_status, candidate_cluster_id, confirmed_identity_id, signals_matched, customer_email, customer_name, identity_match_score, identity_match_grade, matched_datapoints, changed_datapoints, identity_evidence, evidence_summary, context_flags, context_summary'
+        )
+        .eq('job_id', runId)
+        .order('id', { ascending: true })
+        .range(offset, offset + PAGE_SIZE - 1);
+    })
+  );
+  for (const { data, error: txError } of pages) {
     if (txError) {
       return NextResponse.json({ error: 'Failed to fetch transactions' }, { status: 500 });
     }
-    if (!data || data.length === 0) break;
-    rows.push(...(data as unknown as typeof rows));
-    if (data.length < PAGE_SIZE) break;
+    if (data && data.length > 0) {
+      rows.push(...(data as unknown as typeof rows));
+    }
   }
 
   // Sanity-check — warn in headers if we got fewer rows than expected.
   const rowsIncomplete = !(rows.length >= expectedTotalRows);
 
-  const headers = [
-    'order_id',
-    'processed_at',
-    'order_value',
-    'match_status',
-    'identity_match_score',
-    'identity_match_grade',
-    'cluster_id',
-    'candidate_cluster_id',
-    'confirmed_identity_id',
-    'customer_email_masked',
-    'customer_name_masked',
-    'matched_datapoints',
-    'changed_datapoints',
-    'evidence_summary',
-    'identity_evidence',
-    'context_flags',
-    'context_summary',
-    'recommended_review_reason',
-    // Legacy columns (kept for backward compat)
-    'identity_score',
-    'identity_confidence_grade',
-    'signals_matched',
-  ];
+  const headers = EXPORT_HEADERS;
   const csvLines: string[] = [headers.join(',')];
 
   for (const row of rows) {

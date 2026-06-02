@@ -98,7 +98,7 @@ export default function DpaPage() {
           </p>
           <p className="mt-3">
             We use Amplitude analytics software to track feature usage within the Unauth application.
-            No personal customer data is sent to Amplitude — only anonymised merchant behaviour events.
+            No personal customer data is sent to Amplitude - only anonymised merchant behaviour events.
           </p>
         </section>
 

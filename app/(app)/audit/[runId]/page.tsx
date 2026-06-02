@@ -1,30 +1,13 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server';
-import { Download, Users, ArrowRight } from 'lucide-react';
 import { notFound, redirect } from 'next/navigation';
-import Link from 'next/link';
-import { formatDate, formatCurrency } from '@/lib/utils/format';
-import { scoreToGrade, gradeToLetter, type ConfidenceGrade, ESTIMATED_CHARGEBACK_RATE, CONFIDENCE_THRESHOLDS } from '@/lib/engine/weights';
-import { signalLabel } from '@/lib/copy/signalLabels';
-import { CONFIDENCE_TIER_LABELS } from '@/lib/copy/merchantUx';
-import { ConfidenceBadge } from '@/components/ui/ConfidenceBadge';
-import type { ConfidenceGradeValue } from '@/lib/confidence';
-import DismissTransactionButton from '@/components/audit/DismissTransactionButton';
-import FeedbackButtons from '@/components/audit/FeedbackButtons';
-import DataQualityBanner from '@/components/audit/DataQualityBanner';
-import AuditRiskChart from '@/components/audit/AuditRiskChart';
-import AuditTabs from '@/components/audit/AuditTabs';
-import { Suspense } from 'react';
+import { ESTIMATED_CHARGEBACK_RATE } from '@/lib/engine/weights';
 import type { DataQualityReport } from '@/lib/csv/dataQuality';
 import type { Database } from '@/lib/supabase/types';
-import PageSizeSelect from '@/components/common/PageSizeSelect';
-import AuditCustomersTableClient from '@/components/audit/AuditCustomersTableClient';
-import { PageHeader } from '@/components/common/PageHeader';
-import { SectionCard, MetricCard } from '@/components/ui';
-import { RiskDistributionStrip } from '@/components/audit/RiskDistributionStrip';
-import { formatDateMode } from '@/lib/utils/format';
 import { requirePermission, PERMISSIONS, resolveDefaultAppPath } from '@/lib/permissions';
 import { buildReviewableFilter } from '@/lib/supabase/filters';
 import { TABLES } from '@/lib/supabase/tables';
+import { AuditRunPageView } from '@/app/(app)/audit/[runId]/AuditRunPageView';
+import type { CustomerRollup } from '@/app/(app)/audit/[runId]/AuditRunPageView';
 
 type RunRow = Database['public']['Tables']['processing_jobs']['Row'];
 type TxRow = Database['public']['Tables']['audit_transactions']['Row'];
@@ -43,7 +26,6 @@ const TX_TABLE_SELECT =
   'id,order_id,processed_at,order_value,identity_score,match_score,identity_confidence_grade,' +
   'signals_matched,identity_signals,fraud_flags';
 
-type CustomerRollup = [string, { maxScore: number; orderCount: number; totalSpend: number }];
 type CustomerSummaryRow = {
   customer_email: string | null;
   customer_name: string | null;
@@ -88,7 +70,7 @@ function addCustomerSummary(
 }
 
 function sortCustomerRollups(customerAgg: Map<string, { maxScore: number; orderCount: number; totalSpend: number }>): CustomerRollup[] {
-  return [...customerAgg.entries()].sort((a, b) => b[1].maxScore - a[1].maxScore || b[1].orderCount - a[1].orderCount);
+  return [...customerAgg.entries()].toSorted((a, b) => b[1].maxScore - a[1].maxScore || b[1].orderCount - a[1].orderCount);
 }
 
 function toNumber(value: number | string | null | undefined): number {
@@ -98,8 +80,7 @@ function toNumber(value: number | string | null | undefined): number {
 }
 
 export default async function AuditRunPage({ params, searchParams }: RunPageProps) {
-  const resolvedParams = await params;
-  const resolvedSearchParams = await searchParams;
+  const [resolvedParams, resolvedSearchParams] = await Promise.all([params, searchParams]);
   const supabase = createClient();
   const serviceClient = createServiceClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -203,9 +184,8 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
         .select('id,total_merchants_seen_at')
         .in('id', profileIds);
       const crossProfiles = new Set(
-        ((profileRows ?? []) as Array<{ id: string; total_merchants_seen_at: number }>).
-          filter((row) => row.total_merchants_seen_at > 1)
-          .map((row) => row.id)
+        ((profileRows ?? []) as Array<{ id: string; total_merchants_seen_at: number }>)
+          .flatMap((row) => (row.total_merchants_seen_at > 1 ? [row.id] : [])),
       );
       for (const row of (appearanceRows ?? []) as Array<{ transaction_id: string; profile_id: string }>) {
         if (crossProfiles.has(row.profile_id)) crossMerchantTxIds.add(row.transaction_id);
@@ -258,7 +238,9 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
       const summaryRows: CustomerSummaryRow[] = [];
       const maxRows = needsFullCustomerSummary ? Number.POSITIVE_INFINITY : OVERVIEW_CUSTOMER_SAMPLE;
 
-      for (let offset2 = 0; offset2 < maxRows; offset2 += SUMMARY_BATCH) {
+      const fetchSummaryBatch = async (offset2: number): Promise<void> => {
+        if (offset2 >= maxRows) return;
+
         const { data: batch } = await serviceClient
           .from(TABLES.AUDIT_TRANSACTIONS)
           .select('customer_email, customer_name, order_value, identity_score')
@@ -275,8 +257,10 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
           reviewOrderValue += toNumber(row.order_value);
         }
 
-        if (rows.length < SUMMARY_BATCH || !needsFullCustomerSummary) break;
-      }
+        if (rows.length < SUMMARY_BATCH || !needsFullCustomerSummary) return;
+        return fetchSummaryBatch(offset2 + SUMMARY_BATCH);
+      };
+      await fetchSummaryBatch(0);
 
       allCustomers = sortCustomerRollups(customerAgg);
       totalCustomers = needsFullCustomerSummary ? customerAgg.size : Math.min(customerAgg.size, summary.flaggedTransactions);
@@ -306,403 +290,34 @@ export default async function AuditRunPage({ params, searchParams }: RunPageProp
   );
 
   return (
-    <div className="p-6 md:p-8 space-y-6">
-      <PageHeader
-        title={runData.upload_type === 'shopify' ? 'Store intelligence' : 'Audit results'}
-        subtitle={
-          runData.upload_type === 'shopify'
-            ? `${runData.filename.replace(/^shopify-/, '')} · synced ${formatDate(runData.created_at)}`
-            : `${runData.filename} · ${formatDate(runData.created_at)}`
-        }
-        breadcrumbs={
-          runData.upload_type === 'shopify'
-            ? [{ label: 'Store overview', href: '/store' }, { label: 'Intelligence' }]
-            : [{ label: 'Dashboard', href: '/dashboard' }, { label: 'Audit result' }]
-        }
-        actions={statusBadge}
-      />
-
-      {/* ── First insight + ingestion summary (#16/#45/#46) ───────────── */}
-      <SectionCard title="Summary" className="border-[var(--border)]">
-        <p className="text-body-sm" style={{ color: 'var(--text)' }}>
-          <strong>{summary.flaggedTransactions.toLocaleString()}</strong> of{' '}
-          <strong>{(runData.processed_rows ?? runData.total_rows ?? 0).toLocaleString()}</strong> orders matched a known
-          identity in this upload
-          {networkLinkedCount > 0 ? (
-            <>
-              {' '}
-              · <strong>{networkLinkedCount.toLocaleString()}</strong> linked across other merchants
-            </>
-          ) : (
-            <> · 0 linked across other merchants</>
-          )}
-          .
-        </p>
-        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-caption" style={{ color: 'var(--text-muted)' }}>
-          <span><strong style={{ color: 'var(--text)' }}>{(runData.processed_rows ?? runData.total_rows ?? 0).toLocaleString()}</strong> orders ingested</span>
-          <span style={{ color: 'var(--border)' }}>·</span>
-          <span><strong style={{ color: 'var(--text)' }}>{networkLinkedCount.toLocaleString()}</strong> identities linked</span>
-          <span style={{ color: 'var(--border)' }}>·</span>
-          <span><strong style={{ color: 'var(--text)' }}>{summary.flaggedTransactions.toLocaleString()}</strong> with prior claim history</span>
-          {((runData as unknown as { failed_rows?: number }).failed_rows ?? 0) > 0 && (
-            <>
-              <span style={{ color: 'var(--border)' }}>·</span>
-              <span>{(runData as unknown as { failed_rows?: number }).failed_rows!.toLocaleString()} rows skipped (could not be parsed)</span>
-            </>
-          )}
-        </div>
-        <div className="mt-4">
-          <Link
-            href="/settings/integrations"
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-md transition-colors"
-            style={{ border: '1px solid var(--border-default)', color: 'var(--text)', background: 'transparent' }}
-          >
-            Connect your helpdesk (Zendesk / Gorgias) →
-          </Link>
-        </div>
-      </SectionCard>
-
-      {/* ── Action bar ───────────────────────────────────────────────── */}
-      {hasFlags && (
-        <SectionCard title="Status" className="border-[var(--border)]">
-        <div className="flex items-center gap-3 flex-wrap">
-          <p className="text-body-sm flex-1" style={{ color: 'var(--text-muted)' }}>
-            <strong style={{ color: 'var(--text)' }}>{summary.flaggedTransactions.toLocaleString()} orders</strong> with likely identity links.
-          </p>
-          <div className="flex items-center gap-2 flex-wrap">
-            <Link
-              href={`/audit/${jobId}?tab=customers`}
-              className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-md transition-colors"
-              style={{ background: 'var(--copper-bright)', color: 'var(--ink-inverse)' }}
-            >
-              <Users className="h-4 w-4" />
-              Review likely identities
-            </Link>
-            <a
-              href={`/api/audit/${jobId}/export`}
-              className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-md transition-colors"
-              style={{ border: '1px solid var(--border-default)', color: 'var(--text)', background: 'transparent' }}
-              download
-            >
-              <Download className="h-4 w-4" />
-              Export CSV
-            </a>
-            <Link
-              href={`/audit/${jobId}?tab=transactions`}
-              className="text-sm font-medium hover:underline"
-              style={{ color: 'var(--text-muted)' }}
-            >
-              View all transactions
-            </Link>
-          </div>
-        </div>
-        </SectionCard>
-      )}
-
-      {/* ── Audit summary hero ────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-        <Link href={`/audit/${jobId}?tab=transactions`} className="block"><MetricCard label="Orders analysed" value={runData.total_rows} /></Link>
-        <Link href={`/audit/${jobId}?tab=transactions`} className="block"><MetricCard label="Linked across stores" value={networkLinkedCount.toLocaleString()} hint="Shoppers seen at multiple merchants" /></Link>
-        <div className="md:col-span-2">
-          <SectionCard title="Match strength breakdown">
-            <RiskDistributionStrip definite={gradeCounts.definite} probable={gradeCounts.probable} candidate={gradeCounts.possible} weak={gradeCounts.weak} />
-          </SectionCard>
-        </div>
-        <Link href={`/audit/${jobId}?tab=customers&grade=definite`} className="block"><MetricCard label="Strong matches" value={gradeCounts.definite} hint="Highest confidence" /></Link>
-        <MetricCard label="Completed" value={formatDateMode(runData.created_at, 'recent')} hint={formatDate(runData.created_at)} />
-      </div>
-
-      {/* ── Data quality banner ───────────────────────────────────────── */}
-      {dataQuality && (
-        <DataQualityBanner report={dataQuality} runId={runData.id} />
-      )}
-
-      {/* ── Tabs ─────────────────────────────────────────────────────── */}
-      <Suspense fallback={<div className="text-body-sm" style={{ color: 'var(--text-muted)' }}>Loading…</div>}>
-      <AuditTabs
-        defaultTab={defaultTab}
-        tabs={[
-          { id: 'overview', label: 'Overview' },
-          { id: 'customers', label: 'Customers' },
-          { id: 'transactions', label: `Transactions (${totalTransactions.toLocaleString()})` },
-          { id: 'data_quality', label: 'Data quality' },
-        ]}
-        panels={{
-          overview: (
-            <div className="space-y-6">
-              {/* Grade cards */}
-              <div className="grid grid-cols-4 gap-3">
-                {([
-                  { grade: 'definite', tileLabel: CONFIDENCE_TIER_LABELS.definite },
-                  { grade: 'probable', tileLabel: CONFIDENCE_TIER_LABELS.probable },
-                  { grade: 'possible', tileLabel: CONFIDENCE_TIER_LABELS.possible },
-                  { grade: 'weak',     tileLabel: CONFIDENCE_TIER_LABELS.weak },
-                ] as const).map(({ grade, tileLabel }) => (
-                  <Link key={grade} href={`/audit/${jobId}?tab=customers&grade=${grade}`}>
-                    <div
-                      className="rounded-md border px-4 py-3 transition-colors hover:bg-[var(--surface-overlay)] group"
-                      style={{
-                        background: 'var(--surface-raised)',
-                        borderColor: 'var(--surface-border)',
-                        borderTop: `3px solid ${
-                          grade === 'definite' ? 'var(--sev-clear)' :
-                          grade === 'probable' ? 'var(--sev-probable)' :
-                          'var(--sev-neutral)'
-                        }`,
-                      }}
-                    >
-                      <div className="mb-1"><ConfidenceBadge grade={gradeToLetter(grade as ConfidenceGrade)} size="sm" /></div>
-                      <div className="text-heading-sm font-mono group-hover:underline" style={{ color: 'var(--text)' }}>{gradeCounts[grade].toLocaleString()}</div>
-                      <div className="text-caption mt-0.5" style={{ color: 'var(--text-muted)' }}>{tileLabel}</div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-
-              <AuditRiskChart counts={gradeCounts} totalRows={runData.total_rows} totalFlagged={summary.flaggedTransactions} />
-
-              {!isRunComplete && (
-                <div className="rounded-xl px-6 py-8 text-center border space-y-3" style={{ background: 'var(--info-bg)', borderColor: 'var(--info-bd)' }}>
-                  <p className="text-body-sm font-semibold" style={{ color: 'var(--info)' }}>Still analyzing your upload</p>
-                  <p className="text-caption" style={{ color: 'var(--text-muted)' }}>
-                    Match counts and risk grades update when processing finishes. Refresh this page in a moment.
-                  </p>
-                </div>
-              )}
-
-              {isRunComplete && !hasFlags && (
-                <div className="rounded-xl px-6 py-8 text-center border space-y-3" style={{ background: 'var(--success-bg)', borderColor: 'var(--success-bd)' }}>
-                  <p className="text-body-sm font-semibold" style={{ color: 'var(--success)' }}>No identity match signals were found in this upload.</p>
-                  <p className="text-caption" style={{ color: 'var(--success)' }}>Upload a longer date range to surface slower repeat claim patterns.</p>
-                  <div className="flex items-center justify-center gap-3 pt-1 flex-wrap">
-                    <Link href="/upload" className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-md transition-colors" style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}>
-                      Upload a longer range
-                    </Link>
-                    <Link href={`/audit/${runData.id}?tab=transactions`} className="text-sm font-medium hover:underline" style={{ color: 'var(--text-muted)' }}>
-                      View all transactions
-                    </Link>
-                  </div>
-                </div>
-              )}
-
-              {hasFlags && allCustomers.length > 0 && (
-                <div>
-                  <h2 className="text-body-sm font-semibold mb-3" style={{ color: 'var(--text)' }}>Top matched profiles</h2>
-                  <div className="rounded-lg overflow-hidden border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b" style={{ background: 'var(--bg-subtle)', borderColor: 'var(--border-subtle)' }}>
-                          <th className="text-left px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Customer</th>
-                          <th className="text-right px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Orders ↓</th>
-                          <th className="text-right px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Total spend</th>
-                          <th className="text-right px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Confidence ↓</th>
-                          <th className="px-4 py-2.5"></th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {allCustomers.slice(0, 10).map(([email, stats]) => {
-                          return (
-                            <tr key={email} className="border-b transition-colors hover-bg-subtle" style={{ borderColor: 'var(--border-subtle)' }}>
-                              <td className="px-4 py-2.5 text-xs font-mono" style={{ color: 'var(--text-muted)' }}>{email}</td>
-                              <td className="px-4 py-2.5 text-right font-mono" style={{ color: 'var(--text)' }}>{stats.orderCount}</td>
-                              <td className="px-4 py-2.5 text-right font-mono" style={{ color: 'var(--text)' }}>{formatCurrency(stats.totalSpend)}</td>
-                              <td className="px-4 py-2.5 text-right font-mono font-semibold" style={{ color: 'var(--text)' }}>{Math.round(stats.maxScore)}</td>
-                              <td className="px-4 py-2.5 text-right">
-                                <Link
-                                  href={`/audit/${jobId}?tab=customers&customerEmail=${encodeURIComponent(email)}&customerPage=${customerPage}&txPage=${txPage}&customerPageSize=${customerPageSize}&txPageSize=${txPageSize}`}
-                                  className="inline-flex items-center gap-0.5 text-xs font-semibold hover:underline"
-                                  style={{ color: 'var(--text)' }}
-                                >
-                                  View <ArrowRight className="h-3 w-3" />
-                                </Link>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-            </div>
-          ),
-
-          customers: (
-            <div className="space-y-4">
-              {allCustomers.length > 0 && (
-                <div>
-                  <div className="flex items-center justify-between gap-3 px-4 py-2.5 text-xs border-b" style={{ color: 'var(--text-muted)', borderColor: 'var(--border-subtle)', background: 'var(--bg-subtle)' }}>
-                    <span>
-                      Showing {totalCustomers === 0 ? 0 : customerOffset + 1}–{Math.min(customerOffset + customerPageSize, totalCustomers)} of {totalCustomers.toLocaleString()} customers
-                    </span>
-                    <PageSizeSelect pathname={`/audit/${jobId}`} pageSize={customerPageSize} pageParam="customerPage" pageSizeParam="customerPageSize" label="Customers per page" />
-                  </div>
-                  <AuditCustomersTableClient
-                    runId={runData.id}
-                    rows={pagedCustomers.map(([email, stats]) => {
-                      return {
-                        email,
-                        orderCount: stats.orderCount,
-                        totalSpend: stats.totalSpend,
-                        maxScore: stats.maxScore,
-                        grade: scoreToGrade(stats.maxScore),
-                      };
-                    })}
-                    initialEmail={defaultTab === 'customers' ? selectedCustomerEmail : null}
-                  />
-                  {customerPages > 1 && (
-                    <div className="px-4 py-2.5 flex items-center justify-end gap-2 text-xs border-t" style={{ color: 'var(--text-muted)', borderColor: 'var(--border-subtle)' }}>
-                      <span>Page {customerPage} of {customerPages}</span>
-                      {customerPage > 1 && (
-                        <Link href={`/audit/${jobId}?customerPage=${customerPage - 1}&txPage=${txPage}&customerPageSize=${customerPageSize}&txPageSize=${txPageSize}`} className="px-2 py-1 border rounded" style={{ borderColor: 'var(--border)' }}>&larr; Prev</Link>
-                      )}
-                      {customerPage < customerPages && (
-                        <Link href={`/audit/${jobId}?customerPage=${customerPage + 1}&txPage=${txPage}&customerPageSize=${customerPageSize}&txPageSize=${txPageSize}`} className="px-2 py-1 border rounded" style={{ borderColor: 'var(--border)' }}>Next &rarr;</Link>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          ),
-
-          transactions: (
-            <div className="space-y-4">
-              {txPage > 1 && (transactions ?? []).length === 0 && (
-                <div className="rounded-xl px-6 py-8 text-center border" style={{ background: 'var(--bg-subtle)', borderColor: 'var(--border-subtle)' }}>
-                  <p className="text-body-sm font-semibold mb-2" style={{ color: 'var(--text)' }}>No more transactions on this page.</p>
-                  <Link href={`/audit/${jobId}`} className="text-caption hover:underline" style={{ color: 'var(--text-muted)' }}>← Back to page 1</Link>
-                </div>
-              )}
-
-              {totalTransactions > 0 && (
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <h2 className="text-body-sm font-semibold" style={{ color: 'var(--text)' }}>
-                      All transactions
-                      <span className="ml-1 font-normal" style={{ color: 'var(--text-muted)' }}>({totalTransactions.toLocaleString()} total)</span>
-                    </h2>
-                    {txPages > 1 && (
-                      <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
-                        <span>Page {txPage} of {txPages}</span>
-                        {txPage > 1 && (
-                          <Link href={`/audit/${jobId}?txPage=${txPage - 1}&customerPage=${customerPage}&customerPageSize=${customerPageSize}&txPageSize=${txPageSize}`} className="px-2 py-1 border rounded" style={{ borderColor: 'var(--border)' }}>&larr; Prev</Link>
-                        )}
-                        {txPage < txPages && (
-                          <Link href={`/audit/${jobId}?txPage=${txPage + 1}&customerPage=${customerPage}&customerPageSize=${customerPageSize}&txPageSize=${txPageSize}`} className="px-2 py-1 border rounded" style={{ borderColor: 'var(--border)' }}>Next &rarr;</Link>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  <div className="mb-3 flex items-center justify-end">
-                    <PageSizeSelect pathname={`/audit/${jobId}`} pageSize={txPageSize} pageParam="txPage" pageSizeParam="txPageSize" label="Transactions per page" />
-                  </div>
-                  <div className="rounded-lg overflow-hidden border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b" style={{ background: 'var(--bg-subtle)', borderColor: 'var(--border-subtle)' }}>
-                          <th className="text-left px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Order ID</th>
-                          <th className="text-left px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Date ↓</th>
-                          <th className="text-right px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Total</th>
-                          <th className="text-right px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Score ↓</th>
-                          <th className="text-left px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Grade</th>
-                          <th className="text-left px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Top signal</th>
-                          <th className="px-4 py-2.5"></th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {((transactions ?? []) as unknown as TxRow[]).map((tx) => {
-                          const flags = ((tx as any).signals_matched as string[]) ?? ((tx as any).identity_signals as string[]) ?? ((tx as any).fraud_flags as string[]) ?? [];
-                          const topFlag = flags[0];
-                          const idGrade = (tx as any).identity_confidence_grade as 'definite' | 'probable' | 'possible' | 'weak' | null | undefined;
-                          const letterGrade: ConfidenceGradeValue | null = idGrade
-                            ? gradeToLetter(idGrade as ConfidenceGrade)
-                            : null;
-                          return (
-                            <tr key={tx.id} className="border-b transition-colors hover-bg-subtle" style={{ borderColor: 'var(--border-subtle)' }}>
-                              <td className="px-4 py-2.5 font-mono text-xs" style={{ color: 'var(--text-muted)' }}>{tx.order_id}</td>
-                              <td className="px-4 py-2.5 text-xs" style={{ color: 'var(--text-muted)' }}>{formatDate(tx.processed_at)}</td>
-                              <td className="px-4 py-2.5 text-right font-mono" style={{ color: 'var(--text)' }}>{formatCurrency(tx.order_value ?? 0)}</td>
-                              <td className="px-4 py-2.5 text-right font-mono font-semibold" style={{ color: 'var(--text)' }}>{Math.round((tx as any).identity_score ?? (tx as any).match_score ?? 0)}</td>
-                              <td className="px-4 py-2.5">
-                                {letterGrade
-                                  ? <ConfidenceBadge grade={letterGrade} size="sm" />
-                                  : <span className="text-xs" style={{ color: 'var(--text-subtle)' }}>Ungraded</span>}
-                              </td>
-                              <td className="px-4 py-2.5 text-xs max-w-xs" style={{ color: 'var(--text-muted)' }}>
-                                <div className="truncate">{topFlag ? signalLabel(topFlag).short : '—'}</div>
-                                {crossMerchantTxIds.has(tx.id) && (
-                                  <div className="mt-1 text-[11px] font-semibold" style={{ color: 'var(--accent)' }}>
-                                    Also seen at other merchants
-                                  </div>
-                                )}
-                                <FeedbackButtons transactionId={tx.id} signalsThatFired={flags} />
-                              </td>
-                              <td className="px-4 py-2.5 text-right">
-                                <div className="flex items-center justify-end gap-1">
-                                  <Link href={`/audit/${jobId}/transaction/${tx.id}`} className="inline-flex items-center gap-0.5 text-xs font-semibold hover:underline" style={{ color: 'var(--text)' }}>
-                                    Details <ArrowRight className="h-3 w-3" />
-                                  </Link>
-                                  <DismissTransactionButton txId={tx.id} />
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-              {totalTransactions === 0 && (
-                <div className="rounded-xl px-6 py-8 text-center border space-y-3" style={{ background: 'var(--bg-subtle)', borderColor: 'var(--border-subtle)' }}>
-                  <p className="text-body-sm font-semibold" style={{ color: 'var(--text)' }}>No transactions found for this audit.</p>
-                  <p className="text-caption" style={{ color: 'var(--text-muted)' }}>This audit may still be processing, or the file had no recognised order rows.</p>
-                  <div className="flex items-center justify-center gap-3 pt-1">
-                    <Link href="/upload" className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-md transition-colors" style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}>
-                      Run a new audit
-                    </Link>
-                    <Link href="/history" className="text-sm font-medium hover:underline" style={{ color: 'var(--text-muted)' }}>View audit history</Link>
-                  </div>
-                </div>
-              )}
-            </div>
-          ),
-
-          data_quality: (
-            <div className="space-y-4">
-              {dataQuality ? (
-                <DataQualityBanner report={dataQuality} runId={jobId} />
-              ) : (
-                <div className="rounded-lg p-6 text-center border" style={{ background: 'var(--success-bg)', borderColor: 'var(--success-bd)' }}>
-                  <p className="text-body-sm font-semibold" style={{ color: 'var(--success)' }}>No data quality issues detected in this upload.</p>
-                  <p className="text-caption mt-1" style={{ color: 'var(--success)' }}>All required fields were present and properly formatted.</p>
-                </div>
-              )}
-              <div className="rounded-lg px-5 py-4 border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
-                <h3 className="text-body-sm font-semibold mb-3" style={{ color: 'var(--text)' }}>Coverage summary</h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                  {[
-                    { label: 'Total rows', value: runData.total_rows.toLocaleString() },
-                    { label: 'Processed', value: `${runData.processed_rows.toLocaleString()} (${runData.total_rows > 0 ? ((runData.processed_rows / runData.total_rows) * 100).toFixed(1) : 0}%)` },
-                    { label: 'Matched rows', value: summary.flaggedTransactions.toLocaleString() },
-                    { label: 'Order value (matched)', value: formatCurrency(valueAtRisk) },
-                    { label: 'Linked order value est.', value: formatCurrency(estimatedExposure) },
-                  ].map(({ label, value }) => (
-                    <div key={label}>
-                      <p className="text-caption mb-0.5" style={{ color: 'var(--text-muted)' }}>{label}</p>
-                      <p className="text-body-sm font-semibold font-mono" style={{ color: 'var(--text)' }}>{value}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          ),
-        }}
-      />
-      </Suspense>
-    </div>
+    <AuditRunPageView
+      runData={runData}
+      jobId={jobId}
+      statusBadge={statusBadge}
+      summary={{ flaggedTransactions: summary.flaggedTransactions, linkedClusters: summary.linkedClusters }}
+      gradeCounts={gradeCounts}
+      networkLinkedCount={networkLinkedCount}
+      dataQuality={dataQuality}
+      defaultTab={defaultTab}
+      hasFlags={hasFlags}
+      isRunComplete={isRunComplete}
+      allCustomers={allCustomers}
+      customerPage={customerPage}
+      txPage={txPage}
+      customerPageSize={customerPageSize}
+      txPageSize={txPageSize}
+      customerOffset={customerOffset}
+      totalCustomers={totalCustomers}
+      customerPages={customerPages}
+      pagedCustomers={pagedCustomers}
+      selectedCustomerEmail={selectedCustomerEmail}
+      totalTransactions={totalTransactions}
+      txPages={txPages}
+      transactions={(transactions ?? null) as TxRow[] | null}
+      crossMerchantTxIds={crossMerchantTxIds}
+      valueAtRisk={valueAtRisk}
+      estimatedExposure={estimatedExposure}
+    />
   );
 }
 
-// Duplicate JSX removed — original return already rendered the full page.

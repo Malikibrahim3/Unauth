@@ -39,7 +39,7 @@ function outcomeTimestamp(row: ClaimOutcomeReportRow): string {
 }
 
 export function latestOutcomeByClaim(outcomes: ClaimOutcomeReportRow[]) {
-  const sorted = [...outcomes].sort((a, b) => outcomeTimestamp(b).localeCompare(outcomeTimestamp(a)));
+  const sorted = outcomes.toSorted((a, b) => outcomeTimestamp(b).localeCompare(outcomeTimestamp(a)));
   const map = new Map<string, ClaimOutcomeReportRow>();
   for (const row of sorted) {
     if (!map.has(row.claim_id)) map.set(row.claim_id, row);
@@ -53,7 +53,7 @@ export function buildClaimOpsMetrics(
   now = new Date(),
 ): ClaimOpsMetrics {
   const latestOutcomes = latestOutcomeByClaim(outcomes);
-  const latest = claims.map((claim) => latestOutcomes.get(claim.id)).filter(Boolean) as ClaimOutcomeReportRow[];
+  const latest = claims.flatMap((claim) => { const v = latestOutcomes.get(claim.id); return v ? [v] : []; }) as ClaimOutcomeReportRow[];
   const approvedDecisions = new Set(['approved', 'full_refund', 'partial_refund']);
   const legitimateOutcomes = new Set(['customer_verified', 'legitimate']);
 

@@ -22,6 +22,13 @@ interface WatchlistTableClientProps {
   rows: WatchlistEntry[];
 }
 
+const watchlistAddedAtFormatter = new Intl.DateTimeFormat('en-US', {
+  day: '2-digit',
+  month: 'short',
+  year: 'numeric',
+  timeZone: 'UTC',
+});
+
 export default function WatchlistTableClient({ rows: initialRows }: WatchlistTableClientProps) {
   const [rows, setRows] = useState<WatchlistEntry[]>(initialRows);
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
@@ -66,7 +73,7 @@ export default function WatchlistTableClient({ rows: initialRows }: WatchlistTab
           </span>
           <div className="flex items-center gap-2">
             <button
-              onClick={bulkRemoveSelected}
+type="button"               onClick={bulkRemoveSelected}
               disabled={bulkRemoving}
               className="text-xs font-semibold rounded px-2 py-1 disabled:opacity-50"
               style={{ background: 'var(--risk-critical-bg)', color: 'var(--risk-critical)', border: '1px solid var(--risk-critical-bd)' }}
@@ -74,7 +81,7 @@ export default function WatchlistTableClient({ rows: initialRows }: WatchlistTab
               {bulkRemoving ? 'Removing…' : 'Remove selected'}
             </button>
             <button
-              onClick={() => setSelectedIds(new Set())}
+type="button"               onClick={() => setSelectedIds(new Set())}
               disabled={bulkRemoving}
               className="text-xs font-semibold"
               style={{ color: 'var(--text-muted)' }}
@@ -145,24 +152,19 @@ export default function WatchlistTableClient({ rows: initialRows }: WatchlistTab
                 </td>
                 <td className="px-4 py-3">
                   <div className="text-sm font-medium" style={{ color: 'var(--text)' }}>
-                    {entry.display_name ?? '—'}
+                    {entry.display_name ?? '-'}
                   </div>
-                  <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{entry.display_email ?? '—'}</div>
+                  <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{entry.display_email ?? '-'}</div>
                 </td>
                 <td className="px-4 py-3">
                   {entry.last_seen_risk ? (
                     <ConfidenceBadge grade={riskLevelToNewGrade(entry.last_seen_risk)} size="sm" />
                   ) : (
-                    <span className="text-xs" style={{ color: 'var(--text-subtle)' }}>—</span>
+                    <span className="text-xs" style={{ color: 'var(--text-subtle)' }}>-</span>
                   )}
                 </td>
                 <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-muted)' }}>
-                  {new Intl.DateTimeFormat('en-US', {
-                    day: '2-digit',
-                    month: 'short',
-                    year: 'numeric',
-                    timeZone: 'UTC',
-                  }).format(new Date(entry.added_at))}
+                  {watchlistAddedAtFormatter.format(new Date(entry.added_at))}
                 </td>
                 <td
                   className="px-4 py-3 text-right"

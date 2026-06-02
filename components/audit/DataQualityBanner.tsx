@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import type { DataQualityReport } from '@/lib/csv/dataQuality';
+import { useAdjustStateWhenPropChanges } from '@/lib/react/adjustStateWhenPropChanges';
 
 interface Props {
   report: DataQualityReport;
@@ -15,15 +15,22 @@ interface Props {
  * the only legitimate use of localStorage in this codebase (UI preference,
  * not data).
  */
-export default function DataQualityBanner({ report, runId }: Props) {
-  const [dismissed, setDismissed] = useState(false);
+function readDismissed(runId: string): boolean {
+  if (typeof window === 'undefined') return false;
+  return localStorage.getItem(`unauth.dqBanner.${runId}`) === 'dismissed';
+}
 
-  useEffect(() => {
-    const key = `unauth.dqBanner.${runId}`;
-    if (typeof window !== 'undefined' && localStorage.getItem(key) === 'dismissed') {
-      setDismissed(true);
-    }
-  }, [runId]);
+const BANNER_STYLE = {
+  background: 'var(--risk-high-bg)',
+  borderColor: 'var(--risk-high-bd)',
+};
+
+export default function DataQualityBanner({ report, runId }: Props) {
+  const [dismissed, setDismissed] = useAdjustStateWhenPropChanges(
+    runId,
+    readDismissed,
+    readDismissed(runId),
+  );
 
   const { grade } = report;
   const warnings = report.pipelineWarnings;
@@ -46,7 +53,7 @@ export default function DataQualityBanner({ report, runId }: Props) {
   ].filter(Boolean) as string[];
   const hasPipelineWarnings = warningMessages.length > 0;
 
-  // Only show for sparse or minimal — rich/adequate need no banner
+  // Only show for sparse or minimal - rich/adequate need no banner
   if (dismissed || (!hasPipelineWarnings && grade !== 'sparse' && grade !== 'minimal')) return null;
 
   function dismiss() {
@@ -54,14 +61,9 @@ export default function DataQualityBanner({ report, runId }: Props) {
     setDismissed(true);
   }
 
-  const bannerStyle = {
-    background: 'var(--risk-high-bg)',
-    borderColor: 'var(--risk-high-bd)',
-  };
-
   if (hasPipelineWarnings && grade !== 'minimal' && grade !== 'sparse') {
     return (
-      <div className="flex items-start gap-3 border rounded-lg px-4 py-3" style={bannerStyle}>
+      <div className="flex items-start gap-3 border rounded-lg px-4 py-3" style={BANNER_STYLE}>
         <span className="mt-0.5 flex-shrink-0" style={{ color: 'var(--risk-high)' }}>!</span>
         <div className="flex-1 space-y-1">
           <p className="text-sm font-semibold" style={{ color: 'var(--risk-high)' }}>
@@ -74,7 +76,7 @@ export default function DataQualityBanner({ report, runId }: Props) {
           ))}
         </div>
         <button
-          onClick={dismiss}
+type="button"           onClick={dismiss}
           aria-label="Dismiss banner"
           className="text-sm leading-none flex-shrink-0 opacity-60 hover:opacity-100"
           style={{ color: 'var(--risk-high)' }}
@@ -87,7 +89,7 @@ export default function DataQualityBanner({ report, runId }: Props) {
 
   if (grade === 'minimal') {
     return (
-      <div className="flex items-start gap-3 border rounded-lg px-4 py-3" style={bannerStyle}>
+      <div className="flex items-start gap-3 border rounded-lg px-4 py-3" style={BANNER_STYLE}>
         <span className="mt-0.5 flex-shrink-0" style={{ color: 'var(--risk-high)' }}>⚠</span>
         <div className="flex-1 space-y-1">
           <p className="text-sm font-semibold" style={{ color: 'var(--risk-high)' }}>
@@ -112,7 +114,7 @@ export default function DataQualityBanner({ report, runId }: Props) {
           </Link>
         </div>
         <button
-          onClick={dismiss}
+type="button"           onClick={dismiss}
           aria-label="Dismiss banner"
           className="text-sm leading-none flex-shrink-0 opacity-60 hover:opacity-100"
           style={{ color: 'var(--risk-high)' }}
@@ -125,7 +127,7 @@ export default function DataQualityBanner({ report, runId }: Props) {
 
   // sparse
   return (
-    <div className="flex items-start gap-3 border rounded-lg px-4 py-3" style={bannerStyle}>
+    <div className="flex items-start gap-3 border rounded-lg px-4 py-3" style={BANNER_STYLE}>
       <span className="mt-0.5 flex-shrink-0" style={{ color: 'var(--risk-high)' }}>⚠</span>
       <div className="flex-1 space-y-1">
         <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
@@ -150,7 +152,7 @@ export default function DataQualityBanner({ report, runId }: Props) {
         </Link>
       </div>
       <button
-        onClick={dismiss}
+type="button"         onClick={dismiss}
         aria-label="Dismiss banner"
         className="text-sm leading-none flex-shrink-0"
         style={{ color: 'var(--risk-high)' }}

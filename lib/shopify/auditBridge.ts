@@ -125,20 +125,26 @@ async function loadExistingScoredOrderIds(
   if (shopifyOrderIds.length === 0) return scored;
 
   const CHUNK = 200;
-  for (let i = 0; i < shopifyOrderIds.length; i += CHUNK) {
-    const chunk = shopifyOrderIds.slice(i, i + CHUNK);
-    const { data, error } = await supabase
-      .from(TABLES.AUDIT_TRANSACTIONS)
-      .select('order_id')
-      .eq('shop_domain', shopDomain)
-      .eq('source', 'shopify')
-      .in('order_id', chunk);
+  const chunks = Array.from({ length: Math.ceil(shopifyOrderIds.length / CHUNK) }, (_, i) =>
+    shopifyOrderIds.slice(i * CHUNK, i * CHUNK + CHUNK)
+  );
+  const chunkResults = await Promise.all(
+    chunks.map(async (chunkIds) => {
+      const { data, error } = await supabase
+        .from(TABLES.AUDIT_TRANSACTIONS)
+        .select('order_id')
+        .eq('shop_domain', shopDomain)
+        .eq('source', 'shopify')
+        .in('order_id', chunkIds);
 
-    if (error) {
-      throw new Error(`shopify_audit_lookup_failed: ${error.message}`);
-    }
-
-    for (const row of data ?? []) {
+      if (error) {
+        throw new Error(`shopify_audit_lookup_failed: ${error.message}`);
+      }
+      return data ?? [];
+    })
+  );
+  for (const rows of chunkResults) {
+    for (const row of rows) {
       scored.add((row as { order_id: string }).order_id);
     }
   }
@@ -156,7 +162,7 @@ export async function scoreShopifyOrdersIntoAudit(input: {
   merchantId?: string;
 }): Promise<{ scored: number; skipped: number; jobId: string }> {
   const { supabase, shopDomain, shopifyOrderIds } = input;
-  const uniqueIds = [...new Set(shopifyOrderIds.map(String).filter(Boolean))];
+  const uniqueIds = [...new Set(shopifyOrderIds.flatMap((id) => { const v = String(id); return v ? [v] : []; }))];
   if (uniqueIds.length === 0) {
     return { scored: 0, skipped: 0, jobId: '' };
   }
@@ -240,25 +246,27 @@ async function refreshClaimSummariesForShopifyEmails(
   input: { merchantId: string; shopDomain: string; normEmails: string[] }
 ): Promise<void> {
   const unique = [...new Set(input.normEmails)];
-  for (const normEmail of unique) {
-    try {
-      const emailHash = hashSupportEmail(normEmail);
-      const { count, error } = await supabase
-        .from('merchant_identities' as never)
-        .select('*', { count: 'exact', head: true })
-        .eq('shop_domain', input.shopDomain)
-        .eq('source', 'order')
-        .eq('email', normEmail);
-      if (error) continue;
-      await recomputeCustomerClaimSummary(supabase, {
-        merchantId: input.merchantId,
-        emailHash,
-        knownOrderCount: count ?? 0,
-      });
-    } catch {
-      // Best-effort — widget also falls back to merchant_identities when summary is missing.
-    }
-  }
+  await Promise.all(
+    unique.map(async (normEmail) => {
+      try {
+        const emailHash = hashSupportEmail(normEmail);
+        const { count, error } = await supabase
+          .from('merchant_identities' as never)
+          .select('*', { count: 'exact', head: true })
+          .eq('shop_domain', input.shopDomain)
+          .eq('source', 'order')
+          .eq('email', normEmail);
+        if (error) return;
+        await recomputeCustomerClaimSummary(supabase, {
+          merchantId: input.merchantId,
+          emailHash,
+          knownOrderCount: count ?? 0,
+        });
+      } catch {
+        // Best-effort — widget also falls back to merchant_identities when summary is missing.
+      }
+    })
+  );
 }
 
 /**

@@ -118,38 +118,43 @@ export async function countShopifyCommerceOrdersForProfile(
 
   const identities = (identityRows ?? []) as ShopifyIdentityRow[];
   const orderIds = uniqueNonEmpty(
-    identities
-      .filter((row) => row.identity_type === 'shopify_order_id')
-      .map((row) => row.identity_value)
+    identities.flatMap((row) =>
+      row.identity_type === 'shopify_order_id' ? [row.identity_value] : [],
+    ),
   );
   const customerIds = uniqueNonEmpty(
-    identities
-      .filter((row) => row.identity_type === 'shopify_customer_id')
-      .map((row) => row.identity_value)
+    identities.flatMap((row) =>
+      row.identity_type === 'shopify_customer_id' ? [row.identity_value] : [],
+    ),
   );
 
   const orderKeys = new Set<string>();
   let totalValue = 0;
 
-  for (const shopDomain of shopDomains) {
-    if (orderIds.length > 0) {
-      const { data: byOrderId } = await service
-        .from('shopify_order_signals' as never)
-        .select('shop_domain, shopify_order_id, order_number, total_price')
-        .eq('shop_domain', shopDomain)
-        .in('shopify_order_id', orderIds);
-      totalValue += addSignalRows(orderKeys, byOrderId as ShopifySignalRow[] | null);
-    }
+  const shopTotals = await Promise.all(
+    shopDomains.map(async (shopDomain) => {
+      let shopValue = 0;
+      if (orderIds.length > 0) {
+        const { data: byOrderId } = await service
+          .from('shopify_order_signals' as never)
+          .select('shop_domain, shopify_order_id, order_number, total_price')
+          .eq('shop_domain', shopDomain)
+          .in('shopify_order_id', orderIds);
+        shopValue += addSignalRows(orderKeys, byOrderId as ShopifySignalRow[] | null);
+      }
 
-    if (customerIds.length > 0) {
-      const { data: byCustomerId } = await service
-        .from('shopify_order_signals' as never)
-        .select('shop_domain, shopify_order_id, order_number, total_price')
-        .eq('shop_domain', shopDomain)
-        .in('customer_id', customerIds);
-      totalValue += addSignalRows(orderKeys, byCustomerId as ShopifySignalRow[] | null);
-    }
-  }
+      if (customerIds.length > 0) {
+        const { data: byCustomerId } = await service
+          .from('shopify_order_signals' as never)
+          .select('shop_domain, shopify_order_id, order_number, total_price')
+          .eq('shop_domain', shopDomain)
+          .in('customer_id', customerIds);
+        shopValue += addSignalRows(orderKeys, byCustomerId as ShopifySignalRow[] | null);
+      }
+      return shopValue;
+    })
+  );
+  totalValue += shopTotals.reduce((sum, value) => sum + value, 0);
 
   return { orderCount: orderKeys.size, totalValue };
 }

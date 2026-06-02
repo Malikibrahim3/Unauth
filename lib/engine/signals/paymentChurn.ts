@@ -20,7 +20,7 @@ export const paymentChurn: Signal = (order: NormalisedOrder, context: ScoringCon
     };
   }
 
-  const sorted = [...customerOrders].sort((a, b) => a.orderDate.getTime() - b.orderDate.getTime());
+  const sorted = customerOrders.toSorted((a, b) => a.orderDate.getTime() - b.orderDate.getTime());
   const buckets: Record<string, number> = {};
   let best = 0;
   let bestLabel: string | null = null;

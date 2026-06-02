@@ -279,12 +279,19 @@ export async function resolveDefaultAppPath(
   if (!ctx) return '/onboarding';
 
   const excluded = new Set(options.exclude ?? []);
-  for (const destination of DEFAULT_APP_DESTINATIONS) {
-    if (excluded.has(destination.href)) continue;
+  const resolveDestination = async (index: number): Promise<string | null> => {
+    if (index >= DEFAULT_APP_DESTINATIONS.length) return null;
+    const destination = DEFAULT_APP_DESTINATIONS[index]!;
+    if (excluded.has(destination.href)) {
+      return resolveDestination(index + 1);
+    }
     if (await hasPermission(serviceClient, ctx, destination.permission)) {
       return destination.href;
     }
-  }
+    return resolveDestination(index + 1);
+  };
+  const resolved = await resolveDestination(0);
+  if (resolved) return resolved;
 
   return '/onboarding';
 }

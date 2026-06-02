@@ -1,8 +1,11 @@
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
-import { Bone, workbenchSectionStyle } from './primitives';
+import { Bone } from './primitives';
+import { workbenchSectionStyle } from './workbenchSectionStyle';
 
 const NAV_PILL_COUNT = 7;
+const NAV_PILL_KEYS = ['nav-pill-1', 'nav-pill-2', 'nav-pill-3', 'nav-pill-4', 'nav-pill-5', 'nav-pill-6', 'nav-pill-7'] as const;
+const KPI_SLOT_KEYS = ['kpi-slot-1', 'kpi-slot-2', 'kpi-slot-3', 'kpi-slot-4', 'kpi-slot-5', 'kpi-slot-6', 'kpi-slot-7', 'kpi-slot-8', 'kpi-slot-9', 'kpi-slot-10'] as const;
 
 export function WorkbenchPageSkeleton({
   showNav = true,
@@ -31,8 +34,8 @@ export function WorkbenchPageSkeleton({
               <Bone className="h-7 w-48 max-w-full" />
               {showNav && (
                 <div className="flex flex-wrap gap-4 pt-1">
-                  {[...Array(NAV_PILL_COUNT)].map((_, i) => (
-                    <Bone key={i} className="h-4 w-14" />
+                  {NAV_PILL_KEYS.slice(0, NAV_PILL_COUNT).map((pillKey) => (
+                    <Bone key={pillKey} className="h-4 w-14" />
                   ))}
                 </div>
               )}
@@ -51,10 +54,10 @@ export function WorkbenchPageSkeleton({
           className={cn('grid border-b', kpiColsClassName)}
           style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-raised)' }}
         >
-          {[...Array(kpiCount)].map((_, idx) => (
+          {KPI_SLOT_KEYS.slice(0, kpiCount).map((slotKey, idx) => (
             <div
-              key={idx}
-              className="min-w-0 px-3 py-3 md:px-4 space-y-2"
+              key={slotKey}
+              className="min-w-0 p-3 md:px-4 space-y-2"
               style={{
                 borderRightColor: 'var(--surface-border)',
                 borderRightWidth: idx === kpiCount - 1 ? 0 : 1,

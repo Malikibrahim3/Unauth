@@ -60,7 +60,7 @@ function computePrimaryReason(
   const counts = new Map<string, number>();
   for (const r of reasons) counts.set(r, (counts.get(r) ?? 0) + 1);
 
-  const sorted = [...counts.entries()].sort((a, b) => b[1] - a[1]);
+  const sorted = [...counts.entries()].toSorted((a, b) => b[1] - a[1]);
   const [topReason, topCount] = sorted[0];
 
   if (topCount / reasons.length >= 0.5) {
@@ -483,7 +483,7 @@ export type GorgiasClaimWidgetResult =
   | { ok: true; data: ClaimWidgetData }
   | {
       ok: false;
-      kind: 'error' | 'not_found' | 'identity_unresolved';
+      kind: 'error' | 'not_found' | 'identity_unresolved' | 'helpdesk_disconnected';
       message?: string;
     };
 
@@ -556,19 +556,21 @@ export async function countShopifyOrdersAtMerchant(
   const directEmailCustomerIdsByShop = new Map<string, Set<string>>();
   const countSignalRowsForCustomerIds = async (customerIdsByShop: Map<string, Set<string>>) => {
     const orderIds = new Set<string>();
-    for (const [shopDomain, customerIds] of customerIdsByShop.entries()) {
-      const ids = [...customerIds];
-      if (!ids.length) continue;
-      const { data: signalRows } = await service
-        .from('shopify_order_signals' as never)
-        .select('shopify_order_id, order_number')
-        .eq('shop_domain', shopDomain)
-        .in('customer_id', ids);
+    const signalRowGroups = await Promise.all(
+      [...customerIdsByShop.entries()].map(async ([shopDomain, customerIds]) => {
+        const ids = [...customerIds];
+        if (!ids.length) return { shopDomain, signalRows: [] as Array<{ shopify_order_id?: string | number | null; order_number?: string | number | null }> };
+        const { data: signalRows } = await service
+          .from('shopify_order_signals' as never)
+          .select('shopify_order_id, order_number')
+          .eq('shop_domain', shopDomain)
+          .in('customer_id', ids);
+        return { shopDomain, signalRows: (signalRows ?? []) as Array<{ shopify_order_id?: string | number | null; order_number?: string | number | null }> };
+      })
+    );
 
-      for (const signal of (signalRows ?? []) as Array<{
-        shopify_order_id?: string | number | null;
-        order_number?: string | number | null;
-      }>) {
+    for (const { shopDomain, signalRows } of signalRowGroups) {
+      for (const signal of signalRows) {
         const orderNumber = signal.order_number == null ? null : String(signal.order_number).trim();
         if (orderNumber && !/^\d+$/.test(orderNumber)) continue;
         if (signal.shopify_order_id != null) {
@@ -579,21 +581,23 @@ export async function countShopifyOrdersAtMerchant(
     return orderIds;
   };
 
-  for (const row of connections as Array<{ shop_domain: string }>) {
-    const shopDomain = row.shop_domain?.trim();
+  const identityRowGroups = await Promise.all(
+    (connections as Array<{ shop_domain: string }>).map(async (row) => {
+      const shopDomain = row.shop_domain?.trim();
+      if (!shopDomain) return { shopDomain: null, identityRows: [] as Array<{ source_id?: string | number | null; customer_id?: string | number | null }> };
+      const { data: identityRows } = await service
+        .from('merchant_identities' as never)
+        .select('source_id, customer_id')
+        .eq('shop_domain', shopDomain)
+        .eq('source', 'order')
+        .eq('email', normEmail);
+      return { shopDomain, identityRows: (identityRows ?? []) as Array<{ source_id?: string | number | null; customer_id?: string | number | null }> };
+    })
+  );
+
+  for (const { shopDomain, identityRows } of identityRowGroups) {
     if (!shopDomain) continue;
-
-    const { data: identityRows } = await service
-      .from('merchant_identities' as never)
-      .select('source_id, customer_id')
-      .eq('shop_domain', shopDomain)
-      .eq('source', 'order')
-      .eq('email', normEmail);
-
-    for (const identity of (identityRows ?? []) as Array<{
-      source_id?: string | number | null;
-      customer_id?: string | number | null;
-    }>) {
+    for (const identity of identityRows) {
       if (identity.source_id != null) {
         directEmailOrderIds.add(`${shopDomain}:${String(identity.source_id)}`);
       }
@@ -605,20 +609,23 @@ export async function countShopifyOrdersAtMerchant(
     }
   }
 
-  const directEmailSignalOrderIds = await countSignalRowsForCustomerIds(directEmailCustomerIdsByShop);
-
-  const { data: emailIdentityRows } = await service
-    .from(TABLES.CUSTOMER_PROFILE_IDENTITIES)
-    .select('customer_profile_id')
-    .eq('merchant_id', merchantId)
-    .eq('identity_type', 'email')
-    .eq('identity_value', normEmail);
+  const [directEmailSignalOrderIds, { data: emailIdentityRows }] = await Promise.all([
+    countSignalRowsForCustomerIds(directEmailCustomerIdsByShop),
+    service
+      .from(TABLES.CUSTOMER_PROFILE_IDENTITIES)
+      .select('customer_profile_id')
+      .eq('merchant_id', merchantId)
+      .eq('identity_type', 'email')
+      .eq('identity_value', normEmail),
+  ]);
 
   const profileIds = Array.from(
     new Set(
       ((emailIdentityRows ?? []) as Array<{ customer_profile_id?: string | null }>)
-        .map((row) => row.customer_profile_id?.trim())
-        .filter((id): id is string => Boolean(id))
+        .flatMap((row) => {
+          const id = row.customer_profile_id?.trim();
+          return id ? [id] : [];
+        })
     )
   );
 
@@ -685,14 +692,19 @@ export async function readThisStoreSummary(
 
   const confirmedClaimCount = confirmedClaims.length;
   const totalOrders = Math.max(Number(data.total_orders ?? 0), confirmedClaimCount);
-  const lastConfirmedClaimAt = confirmedClaims
-    .map((row: Record<string, unknown>) => {
-      const createdAt = typeof row.created_at_provider === 'string' ? row.created_at_provider : null;
-      const updatedAt = typeof row.updated_at_provider === 'string' ? row.updated_at_provider : null;
-      return createdAt ?? updatedAt;
-    })
-    .filter((value): value is string => Boolean(value))
-    .sort((a, b) => Date.parse(b) - Date.parse(a))[0] ?? null;
+  let lastConfirmedClaimAt: string | null = null;
+  let lastConfirmedClaimMs = -Infinity;
+  for (const row of confirmedClaims) {
+    const createdAt = typeof row.created_at_provider === 'string' ? row.created_at_provider : null;
+    const updatedAt = typeof row.updated_at_provider === 'string' ? row.updated_at_provider : null;
+    const value = createdAt ?? updatedAt;
+    if (!value) continue;
+    const ms = Date.parse(value);
+    if (ms > lastConfirmedClaimMs) {
+      lastConfirmedClaimMs = ms;
+      lastConfirmedClaimAt = value;
+    }
+  }
 
   return {
     total_orders: totalOrders,
@@ -778,7 +790,7 @@ export function derivePrimaryReasonFromTypes(types: ClaimType[]): PrimaryReason 
   const counts = new Map<ClaimType, number>();
   for (const t of types) counts.set(t, (counts.get(t) ?? 0) + 1);
 
-  const sorted = [...counts.entries()].sort((a, b) => b[1] - a[1]);
+  const sorted = [...counts.entries()].toSorted((a, b) => b[1] - a[1]);
   const [topType, topCount] = sorted[0];
 
   if (topCount / types.length > 0.5) {

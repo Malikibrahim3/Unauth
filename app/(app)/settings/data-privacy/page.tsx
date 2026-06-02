@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { SectionCard } from '@/components/ui';
+import BulkDeleteClient from '@/components/settings/BulkDeleteClient';
 
 export default async function DataPrivacySettingsPage() {
   const userClient = createClient();
@@ -35,6 +36,9 @@ export default async function DataPrivacySettingsPage() {
             Account deletion permanently removes audits, customer profiles, watchlist entries, and notes.
             Contact support if you need help removing data before closing your account.
           </p>
+          <div className="mt-4">
+            <BulkDeleteClient />
+          </div>
         </SectionCard>
 
         <SectionCard title="Audit logging">

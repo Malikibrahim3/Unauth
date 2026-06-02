@@ -152,19 +152,18 @@ export async function streamParseCsv(
           // Retry up to 3 times with exponential back-off on transient errors.
           const MAX_RETRIES = 3;
           (async () => {
-            let lastErr: unknown;
-            for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+            const invokeChunkWithRetry = async (attempt: number): Promise<void> => {
               try {
                 await onChunk(batch, idx);
-                return;
               } catch (err) {
-                lastErr = err;
-                if (attempt < MAX_RETRIES - 1) {
-                  await new Promise((r) => setTimeout(r, 1000 * Math.pow(2, attempt)));
+                if (attempt >= MAX_RETRIES - 1) {
+                  throw err instanceof Error ? err : new Error(String(err));
                 }
+                await new Promise((r) => setTimeout(r, 1000 * Math.pow(2, attempt)));
+                return invokeChunkWithRetry(attempt + 1);
               }
-            }
-            throw lastErr instanceof Error ? lastErr : new Error(String(lastErr));
+            };
+            await invokeChunkWithRetry(0);
           })()
             .then(() => parser.resume())
             .catch((err) => {
@@ -191,20 +190,18 @@ export async function streamParseCsv(
     const finalBatch = rows;
     rows = [];
     const MAX_RETRIES = 3;
-    let lastErr: unknown;
-    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    const invokeFinalChunkWithRetry = async (attempt: number): Promise<void> => {
       try {
         await onChunk(finalBatch, idx);
-        lastErr = undefined;
-        break;
       } catch (err) {
-        lastErr = err;
-        if (attempt < MAX_RETRIES - 1) {
-          await new Promise((r) => setTimeout(r, 1000 * Math.pow(2, attempt)));
+        if (attempt >= MAX_RETRIES - 1) {
+          throw err instanceof Error ? err : new Error(String(err));
         }
+        await new Promise((r) => setTimeout(r, 1000 * Math.pow(2, attempt)));
+        return invokeFinalChunkWithRetry(attempt + 1);
       }
-    }
-    if (lastErr) throw lastErr instanceof Error ? lastErr : new Error(String(lastErr));
+    };
+    await invokeFinalChunkWithRetry(0);
   }
   const totalChunks = chunkIndex;
 

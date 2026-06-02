@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useReducer, type CSSProperties } from 'react';
 import { t } from '../_tokens';
 
 type Props = {
-  value: number;       // 0..1
+  value: number;
   color?: string;
   track?: string;
   height?: number;
@@ -12,10 +12,33 @@ type Props = {
   duration?: number;
   initialVisible?: boolean;
   transitionWidth?: boolean;
-  waitForVisibility?: boolean; // when true + transitionWidth, defer animation until in viewport
+  waitForVisibility?: boolean;
   className?: string;
   style?: CSSProperties;
 };
+
+type BarState = {
+  visible: boolean;
+  animatedValue: number;
+};
+
+type BarAction =
+  | { type: 'show' }
+  | { type: 'reset-animation'; value: number }
+  | { type: 'set-animated'; value: number };
+
+function barReducer(state: BarState, action: BarAction): BarState {
+  switch (action.type) {
+    case 'show':
+      return { ...state, visible: true };
+    case 'reset-animation':
+      return { ...state, animatedValue: action.value };
+    case 'set-animated':
+      return { ...state, animatedValue: action.value };
+    default:
+      return state;
+  }
+}
 
 export default function AnimatedBar({
   value,
@@ -31,23 +54,23 @@ export default function AnimatedBar({
   style,
 }: Props) {
   const ref = useRef<HTMLDivElement | null>(null);
-  const [visible, setVisible] = useState(initialVisible);
-  const [animatedValue, setAnimatedValue] = useState(transitionWidth ? 0 : Math.max(0, Math.min(1, value)));
-
   const clamped = Math.max(0, Math.min(1, value));
+  const [{ visible, animatedValue }, dispatch] = useReducer(barReducer, {
+    visible: initialVisible || (transitionWidth && !waitForVisibility),
+    animatedValue: transitionWidth ? 0 : clamped,
+  });
 
   useEffect(() => {
     if (!transitionWidth) return;
-    // If waitForVisibility, only start when visible flag is set by the IO below
     if (waitForVisibility && !visible) return;
-    setAnimatedValue(0);
+    dispatch({ type: 'reset-animation', value: 0 });
     let frame = 0;
     const startedAt = window.performance.now() + delay;
     const tick = (now: number) => {
       const elapsed = now - startedAt;
       const progress = Math.max(0, Math.min(1, elapsed / duration));
       const eased = 1 - Math.pow(1 - progress, 3);
-      setAnimatedValue(clamped * eased);
+      dispatch({ type: 'set-animated', value: clamped * eased });
       if (progress < 1) frame = window.requestAnimationFrame(tick);
     };
     frame = window.requestAnimationFrame(tick);
@@ -55,24 +78,24 @@ export default function AnimatedBar({
   }, [clamped, delay, duration, transitionWidth, visible, waitForVisibility]);
 
   useEffect(() => {
-    if (transitionWidth && !waitForVisibility) {
-      setVisible(true);
+    if (!waitForVisibility || visible) return;
+    if (initialVisible) {
+      dispatch({ type: 'show' });
       return;
     }
-    if (initialVisible && !waitForVisibility) return;
     const el = ref.current;
     if (!el) return;
     if (typeof IntersectionObserver === 'undefined') {
-      setVisible(true);
+      dispatch({ type: 'show' });
       return;
     }
     const obs = new IntersectionObserver(
-      (entries) => entries.forEach((e) => { if (e.isIntersecting) { setVisible(true); obs.disconnect(); } }),
+      (entries) => entries.forEach((e) => { if (e.isIntersecting) { dispatch({ type: 'show' }); obs.disconnect(); } }),
       { threshold: 0.3, rootMargin: '0px 0px -8% 0px' },
     );
     obs.observe(el);
     return () => obs.disconnect();
-  }, [initialVisible, transitionWidth, waitForVisibility]);
+  }, [initialVisible, visible, waitForVisibility]);
 
   return (
     <div

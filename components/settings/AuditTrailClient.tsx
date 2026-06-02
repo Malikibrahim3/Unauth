@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { ChevronDown, ChevronRight, Download, Filter } from 'lucide-react';
 import { claimEventSummary } from '@/lib/claims/events';
@@ -9,6 +9,7 @@ import {
   auditResourceSummary,
 } from '@/lib/audit/actionLabels';
 import { SectionCard } from '@/components/ui';
+import { useFetchJson } from '@/lib/react/useFetchJson';
 
 type AuditRow = {
   id: string;
@@ -39,11 +40,13 @@ const RESOURCE_FILTERS = [
   { value: 'report', label: 'Reports' },
 ];
 
+const auditTrailTimestampFormatter = new Intl.DateTimeFormat('en-US', {
+  dateStyle: 'medium',
+  timeStyle: 'short',
+});
+
 function formatTimestamp(value: string) {
-  return new Intl.DateTimeFormat('en-US', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(new Date(value));
+  return auditTrailTimestampFormatter.format(new Date(value));
 }
 
 function rowSummary(row: AuditRow): string {
@@ -74,32 +77,23 @@ function metadataEntries(metadata: Record<string, unknown> | null) {
 }
 
 export default function AuditTrailClient({ actorsByUserId }: AuditTrailClientProps) {
-  const [rows, setRows] = useState<AuditRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [resourceType, setResourceType] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  const loadRows = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const params = new URLSearchParams({ limit: '60' });
-      if (resourceType) params.set('resourceType', resourceType);
-      const response = await fetch(`/api/audit-trail?${params.toString()}`, { cache: 'no-store' });
-      const body = await response.json();
-      if (!response.ok) throw new Error(body?.error ?? 'Failed to load audit trail');
-      setRows(body.rows ?? []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load audit trail');
-    } finally {
-      setLoading(false);
-    }
+  const auditUrl = useMemo(() => {
+    const params = new URLSearchParams({ limit: '60' });
+    if (resourceType) params.set('resourceType', resourceType);
+    return `/api/audit-trail?${params.toString()}`;
   }, [resourceType]);
 
-  useEffect(() => {
-    loadRows();
-  }, [loadRows]);
+  const { data, loading, error } = useFetchJson<{ rows?: AuditRow[] }>(auditUrl, {
+    parse: async (response) => {
+      const body = await response.json();
+      if (!response.ok) throw new Error(body?.error ?? 'Failed to load audit trail');
+      return body;
+    },
+  });
+  const rows = data?.rows ?? [];
 
   const exportHref = useMemo(() => {
     const params = new URLSearchParams({ format: 'csv', limit: '200' });
@@ -231,7 +225,7 @@ export default function AuditTrailClient({ actorsByUserId }: AuditTrailClientPro
                           <dl className="grid gap-2 sm:grid-cols-2">
                             {details.map(([key, value]) => (
                               <div key={key}>
-                                <dt className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: 'var(--ink-tertiary)' }}>
+                                <dt className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--ink-tertiary)' }}>
                                   {key.replace(/_/g, ' ')}
                                 </dt>
                                 <dd className="mt-0.5 font-mono text-xs break-all" style={{ color: 'var(--ink-secondary)' }}>

@@ -112,14 +112,20 @@ async function mapWithConcurrency<T, R>(
   worker: (item: T, index: number) => Promise<R>
 ): Promise<R[]> {
   const results: R[] = new Array(items.length);
-  let next = 0;
-  const workers = Array.from({ length: Math.min(concurrency, items.length) }, async () => {
-    while (next < items.length) {
-      const index = next++;
-      results[index] = await worker(items[index], index);
-    }
-  });
-  await Promise.all(workers);
+  const runBatch = async (start: number): Promise<void> => {
+    if (start >= items.length) return;
+    const end = Math.min(start + concurrency, items.length);
+    await Promise.all(
+      Array.from({ length: end - start }, (_, offset) => {
+        const index = start + offset;
+        return worker(items[index]!, index).then((value) => {
+          results[index] = value;
+        });
+      })
+    );
+    return runBatch(end);
+  };
+  await runBatch(0);
   return results;
 }
 
@@ -149,22 +155,19 @@ function isRetryableWriteError(message: string): boolean {
 async function withWriteRetry<T>(
   fn: () => Promise<T>,
   attempts = 4,
-  baseDelayMs = 300
+  baseDelayMs = 300,
+  attempt = 1
 ): Promise<T> {
-  let lastErr: unknown;
-  for (let attempt = 1; attempt <= attempts; attempt++) {
-    try {
-      return await fn();
-    } catch (err) {
-      lastErr = err;
-      const message = String((err as any)?.message ?? err ?? 'unknown error');
-      if (!isRetryableWriteError(message) || attempt === attempts) break;
-      const jitter = Math.random() * 150;
-      const delayMs = baseDelayMs * 2 ** (attempt - 1) + jitter;
-      await new Promise<void>((resolve) => setTimeout(resolve, delayMs));
-    }
+  try {
+    return await fn();
+  } catch (err) {
+    const message = String((err as any)?.message ?? err ?? 'unknown error');
+    if (!isRetryableWriteError(message) || attempt >= attempts) throw err;
+    const jitter = Math.random() * 150;
+    const delayMs = baseDelayMs * 2 ** (attempt - 1) + jitter;
+    await new Promise<void>((resolve) => setTimeout(resolve, delayMs));
+    return withWriteRetry(fn, attempts, baseDelayMs, attempt + 1);
   }
-  throw lastErr;
 }
 
 function formatAppearanceRowForLog(row: unknown): string {
@@ -523,7 +526,7 @@ export async function processProfilesForBatch(
     const normCard  = normaliseCard(rawOrder._rawCardLast4);
     const normIP    = normaliseIP(rawOrder._rawIP);
     const normAddr  = normaliseAddress(rawOrder._rawAddress);
-    const flags     = scoredOrder.signals.filter((s) => s.fired).map((s) => s.name);
+    const flags     = scoredOrder.signals.flatMap((s) => (s.fired ? [s.name] : []));
     const isRefund  =
       rawOrder.refundStatus === 'full' ||
       rawOrder.refundStatus === 'partial' ||
@@ -542,9 +545,9 @@ export async function processProfilesForBatch(
     };
   });
 
-  const uniqueEmails = [...new Set(orderDataList.map((od) => od.normEmail).filter((value): value is string => Boolean(value)))];
-  const uniqueCards  = [...new Set(orderDataList.map((od) => od.normCard).filter((c) => c.length === 4))];
-  const uniqueIPs    = [...new Set(orderDataList.map((od) => od.normIP).filter((value): value is string => Boolean(value)))];
+  const uniqueEmails = [...new Set(orderDataList.flatMap((od) => (od.normEmail ? [od.normEmail] : [])))];
+  const uniqueCards  = [...new Set(orderDataList.flatMap((od) => (od.normCard.length === 4 ? [od.normCard] : [])))];
+  const uniqueIPs    = [...new Set(orderDataList.flatMap((od) => (od.normIP ? [od.normIP] : [])))];
 
   // -------------------------------------------------------------------------
   // 1. Bulk fetch potentially matching profiles — 3 parallel queries.
@@ -654,14 +657,18 @@ export async function processProfilesForBatch(
     // back to them retrospectively. profile_confidence reflects the initial
     // certainty (25 for none, 50 for candidate, 100 for stronger signals).
 
+    const normCard = od.normCard;
+    const normCardLen = normCard?.length ?? 0;
+    const identityMatchStatus = od.identity?.matchStatus;
+
     let matchedProfile: CustomerProfileRow | null = null;
     let confidence = 0;
 
     if (od.normEmail && profileByEmail.has(od.normEmail)) {
       matchedProfile = profileByEmail.get(od.normEmail)!;
       confidence = 99;
-    } else if (od.normCard && od.normCard.length === 4 && profileByCard.has(od.normCard)) {
-      const candidate = profileByCard.get(od.normCard)!;
+    } else if (normCard && normCardLen === 4 && profileByCard.has(normCard)) {
+      const candidate = profileByCard.get(normCard)!;
       if (hasProfileValue(candidate.addresses, od.normAddr)) {
         matchedProfile = candidate;
         confidence = 85;
@@ -690,8 +697,8 @@ export async function processProfilesForBatch(
       if (od.normEmail) p.emails = [...new Set([...p.emails, od.normEmail])];
       if (od.normIP)    p.ips    = [...new Set([...p.ips, od.normIP])];
       if (od.normAddr)  p.addresses = [...new Set([...p.addresses, od.normAddr])];
-      if (od.normCard && od.normCard.length === 4)
-        p.card_last4s = [...new Set([...p.card_last4s, od.normCard])];
+      if (normCard && normCardLen === 4)
+        p.card_last4s = [...new Set([...p.card_last4s, normCard])];
       if (merchantId) p.merchant_ids = [...new Set([...p.merchant_ids, merchantId])];
       p.fraud_flags = [...new Set([...p.fraud_flags, ...od.flags])];
       p.total_orders += 1;
@@ -710,12 +717,12 @@ export async function processProfilesForBatch(
         p.identity_signals_summary = mergeStrings(p.identity_signals_summary ?? [], od.identity.signals);
         // identity_cluster_id is ONLY set for confirmed (definite) links.
         // Probable rows update the profile but leave the cluster link empty.
-        if (od.identity.matchStatus === 'definite') {
+        if (identityMatchStatus === 'definite') {
           p.identity_cluster_id = p.identity_cluster_id ?? od.identity.clusterId;
           p.identity_status = 'confirmed';
-        } else if (od.identity.matchStatus === 'probable' && p.identity_status !== 'confirmed') {
+        } else if (identityMatchStatus === 'probable' && p.identity_status !== 'confirmed') {
           p.identity_status = 'candidate';
-        } else if (od.identity.matchStatus === 'candidate' && p.identity_status == null) {
+        } else if (identityMatchStatus === 'candidate' && p.identity_status == null) {
           // Low-confidence returning visit — mark as candidate so analysts can
           // review when stronger signals arrive.
           p.identity_status = 'candidate';
@@ -951,19 +958,17 @@ export async function processProfilesForBatch(
   // -------------------------------------------------------------------------
   // 6. Bulk insert all appearance links in one query
   // -------------------------------------------------------------------------
-  const appearanceInserts = scored
-    .map((scoredOrder) => {
-      const profileId = profileIdForOrder.get(scoredOrder.order.orderId);
-      if (!profileId) return null;
-      return {
-        profile_id:      profileId,
-        audit_id:        auditId,
-        transaction_id:  transactionIdMap.get(scoredOrder.order.orderId) ?? null,
-        score_at_time:   scoredOrder.totalScore,
-        flags_at_time:   scoredOrder.signals.filter((s) => s.fired).map((s) => s.name),
-      };
-    })
-    .filter(Boolean);
+  const appearanceInserts = scored.flatMap((scoredOrder) => {
+    const profileId = profileIdForOrder.get(scoredOrder.order.orderId);
+    if (!profileId) return [];
+    return [{
+      profile_id:      profileId,
+      audit_id:        auditId,
+      transaction_id:  transactionIdMap.get(scoredOrder.order.orderId) ?? null,
+      score_at_time:   scoredOrder.totalScore,
+      flags_at_time:   scoredOrder.signals.flatMap((s) => (s.fired ? [s.name] : [])),
+    }];
+  });
 
   if (appearanceInserts.length > 0) {
     await mapWithConcurrency(splitIntoBatches(appearanceInserts, WRITE_CHUNK), WRITE_CONCURRENCY, async (chunk) =>

@@ -25,128 +25,73 @@ export default function AuditForm() {
     setStatus('submitting');
     setErrorMsg('');
 
-    // Store email in sessionStorage so the /audit page can pre-fill it
     sessionStorage.setItem('auditPrefillEmail', email);
     router.push('/audit');
   }
 
-  return (
-    <form
-      onSubmit={handleSubmit}
-      style={{
-        background: t.ink,
-        border: `1px solid ${t.darkBorder}`,
-        padding: '22px',
-      }}
-    >
-      <p
-        style={{
-          fontFamily: t.mono,
-          fontSize: '10.5px',
-          color: t.inkTertiary,
-          textTransform: 'uppercase',
-          letterSpacing: '0.14em',
-          marginBottom: '14px',
-        }}
-      >
-        Free audit · no card
-      </p>
+  function assignDroppedFile(dropped: File) {
+    if (!fileRef.current) return;
+    const dt = new DataTransfer();
+    dt.items.add(dropped);
+    fileRef.current.files = dt.files;
+    setFileName(dropped.name);
+  }
 
-      {/* Email */}
+  return (
+    <form onSubmit={handleSubmit} className="ua-landing-audit-form">
+      <p className="ua-landing-audit-form-label">Free audit · no card</p>
+
       <div style={{ marginBottom: '10px' }}>
         <input
           type="email"
           required
+          aria-label="Email address"
           value={email}
-          onChange={e => setEmail(e.target.value)}
+          onChange={(e) => setEmail(e.target.value)}
           placeholder="you@yourstore.com"
-          style={{
-            display: 'block',
-            width: '100%',
-            background: t.darkBg,
-            border: `1px solid ${t.darkBorder}`,
-            color: t.darkBright,
-            fontFamily: t.sans,
-            fontSize: '14px',
-            padding: '11px 14px',
-            outline: 'none',
-            boxSizing: 'border-box',
-          }}
-          onFocus={e => { e.currentTarget.style.borderColor = t.accent; }}
-          onBlur={e => { e.currentTarget.style.borderColor = t.darkBorder; }}
+          className="ua-landing-audit-form-input"
         />
       </div>
 
-      {/* File drop zone */}
-      <div
-        style={{
-          marginBottom: '12px',
-          border: `1px dashed ${t.darkBorder}`,
-          padding: '16px',
-          cursor: 'pointer',
-          textAlign: 'center',
-        }}
-        onClick={() => fileRef.current?.click()}
-        onDragOver={e => { e.preventDefault(); e.currentTarget.style.borderColor = t.accent; }}
-        onDragLeave={e => { e.currentTarget.style.borderColor = t.darkBorder; }}
-        onDrop={e => {
-          e.preventDefault();
-          e.currentTarget.style.borderColor = t.darkBorder;
-          const dropped = e.dataTransfer.files?.[0];
-          if (dropped && fileRef.current) {
-            const dt = new DataTransfer();
-            dt.items.add(dropped);
-            fileRef.current.files = dt.files;
-            setFileName(dropped.name);
-          }
-        }}
-      >
+      <label className="ua-landing-audit-form-drop block">
         <input
           ref={fileRef}
           type="file"
           accept=".csv,text/csv"
-          style={{ display: 'none' }}
-          onChange={e => setFileName(e.target.files?.[0]?.name ?? null)}
+          className="sr-only"
+          aria-label="Order export CSV file"
+          onChange={(e) => setFileName(e.target.files?.[0]?.name ?? null)}
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => {
+            e.preventDefault();
+            const dropped = e.dataTransfer.files?.[0];
+            if (dropped) assignDroppedFile(dropped);
+          }}
         />
         <p
           style={{
             fontFamily: t.mono,
-            fontSize: '11px',
+            fontSize: '12px',
             color: fileName ? t.darkBright : t.inkTertiary,
             margin: 0,
-            letterSpacing: '0.06em',
+            letterSpacing: '0.02em',
           }}
         >
           {fileName ?? 'Drop CSV or click to select'}
         </p>
-      </div>
+      </label>
 
-      {/* Submit */}
       <button
         type="submit"
         disabled={status === 'submitting'}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          width: '100%',
-          background: t.accent,
-          color: t.accentFg,
-          fontFamily: t.sans,
-          fontSize: '15px',
-          fontWeight: 500,
-          padding: '14px 18px',
-          border: 'none',
-          cursor: 'pointer',
-          marginBottom: errorMsg ? '10px' : 0,
-          transition: 'background 160ms ease',
-        }}
+        className="ua-landing-audit-form-submit"
+        style={{ marginBottom: errorMsg ? '10px' : 0 }}
       >
         <span>{status === 'submitting' ? 'Loading…' : 'Run free audit'}</span>
         <span style={{ fontFamily: t.mono }}>→</span>
       </button>
 
-      {errorMsg && (
+      {errorMsg ? (
         <p
           style={{
             fontFamily: t.serif,
@@ -158,7 +103,7 @@ export default function AuditForm() {
         >
           {errorMsg}
         </p>
-      )}
+      ) : null}
 
       <p
         style={{
