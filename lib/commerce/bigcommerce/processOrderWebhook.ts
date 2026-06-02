@@ -30,8 +30,10 @@ export async function processBigCommerceOrderWebhook(input: {
 }): Promise<void> {
   const { supabase, storeHash, webhookPayload } = input;
   const data = webhookPayload.data as { type?: string; id?: number | string } | undefined;
-  const orderId = data?.id ?? webhookPayload.id;
-  if (orderId === undefined || orderId === null) return;
+  const rawOrderId = data?.id ?? webhookPayload.id;
+  if (rawOrderId === undefined || rawOrderId === null) return;
+  if (typeof rawOrderId !== 'string' && typeof rawOrderId !== 'number') return;
+  const orderId: string | number = rawOrderId;
 
   const credentialRow = await loadBigCommerceCredentialsForStore(supabase, storeHash);
   if (!credentialRow) return;
