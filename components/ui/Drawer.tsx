@@ -1,6 +1,6 @@
 'use client';
 
-import { type ReactNode, useEffect, useRef, useCallback } from 'react';
+import { type ReactNode, useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
 
 interface DrawerProps {
@@ -26,17 +26,6 @@ export function Drawer({
 }: DrawerProps) {
   const drawerRef = useRef<HTMLDivElement>(null);
 
-  // ESC to close
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
-  }, [open, onClose]);
-
-  // Focus trap
   useEffect(() => {
     if (!open) return;
     const el = drawerRef.current;
@@ -59,7 +48,6 @@ export function Drawer({
     return () => document.removeEventListener('keydown', trap);
   }, [open]);
 
-  // Prevent body scroll while open
   useEffect(() => {
     if (open) {
       document.body.style.overflow = 'hidden';
@@ -69,9 +57,14 @@ export function Drawer({
     return () => { document.body.style.overflow = ''; };
   }, [open]);
 
-  const handleBackdropClick = useCallback(() => {
-    if (closeOnBackdrop) onClose();
-  }, [closeOnBackdrop, onClose]);
+  useEffect(() => {
+    if (!open) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onClose, open]);
 
   if (!open) return null;
 
@@ -80,30 +73,26 @@ export function Drawer({
       role="dialog"
       aria-modal="true"
       aria-label={ariaLabel ?? title ?? 'Panel'}
+      className="fixed inset-0 flex justify-end"
       style={{ zIndex: 'var(--z-drawer)' as unknown as number }}
-      className="fixed inset-0 flex"
     >
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-[rgba(20,24,33,0.45)]"
-        style={{
-          animation: `fadeIn var(--duration-fast) var(--ease-standard) both`,
-        }}
-        onClick={handleBackdropClick}
-        aria-hidden="true"
-      />
-
-      {/* Panel */}
+      {closeOnBackdrop ? (
+        <button
+          type="button"
+          aria-label="Close panel"
+          className="absolute inset-0 cursor-default border-0 bg-[rgba(20,24,33,0.45)] p-0"
+          onClick={onClose}
+        />
+      ) : null}
       <div
         ref={drawerRef}
-        className="absolute right-0 top-0 bottom-0 flex flex-col bg-[var(--bg-surface)]"
+        className="relative z-10 flex h-full max-h-full flex-col bg-[var(--bg-surface)]"
         style={{
           width: typeof width === 'number' ? `min(${width}px, 100vw)` : width,
           boxShadow: 'var(--shadow-drawer)',
-          animation: `slideInRight var(--duration-default) var(--ease-emphasized) both`,
         }}
+        onClick={(e) => e.stopPropagation()}
       >
-        {/* Sticky header (only when title is provided) */}
         {title && (
           <div
             className="flex items-center justify-between px-[var(--space-5)] py-[var(--space-4)] border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] shrink-0"
@@ -111,6 +100,7 @@ export function Drawer({
           >
             <h2 className="text-h2 text-[var(--text-primary)]">{title}</h2>
             <button
+              type="button"
               onClick={onClose}
               className="p-1 rounded-[var(--radius-2)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
               aria-label="Close"
@@ -120,10 +110,8 @@ export function Drawer({
           </div>
         )}
 
-        {/* Scrollable body */}
         <div className="flex-1 overflow-y-auto">{children}</div>
 
-        {/* Sticky footer */}
         {footer && (
           <div
             className="shrink-0 bg-[var(--bg-surface)] border-t border-[var(--border-subtle)]"
@@ -134,16 +122,6 @@ export function Drawer({
         )}
       </div>
 
-      <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to   { opacity: 1; }
-        }
-        @keyframes slideInRight {
-          from { transform: translateX(100%); }
-          to   { transform: translateX(0); }
-        }
-      `}</style>
     </div>
   );
 }
