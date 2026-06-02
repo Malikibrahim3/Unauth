@@ -20,6 +20,7 @@ import {
   registerGorgiasSidebarWidget,
   deleteGorgiasSidebarWidget,
   refreshGorgiasSidebarWidgetIntegrationUrl,
+  refreshGorgiasSidebarWidgetTemplate,
   gorgiasApiBaseUrl,
 } from '@/lib/support/gorgias/registerSidebarWidget';
 import {
@@ -235,7 +236,8 @@ export async function refreshMerchantGorgiasSidebarWidgetUrlBestEffort(
     !existing ||
     existing.status !== 'active' ||
     !existing.provider_base_url ||
-    existing.sidebar_integration_id == null
+    existing.sidebar_integration_id == null ||
+    existing.sidebar_widget_id == null
   ) {
     return;
   }
@@ -247,11 +249,18 @@ export async function refreshMerchantGorgiasSidebarWidgetUrlBestEffort(
 
   try {
     const credentials = decryptGorgiasApiCredentials(rawRow.access_token_encrypted);
-    await refreshGorgiasSidebarWidgetIntegrationUrl({
-      providerBaseUrl: existing.provider_base_url,
-      credentials,
-      integrationId: existing.sidebar_integration_id,
-    });
+    await Promise.all([
+      refreshGorgiasSidebarWidgetIntegrationUrl({
+        providerBaseUrl: existing.provider_base_url,
+        credentials,
+        integrationId: existing.sidebar_integration_id,
+      }),
+      refreshGorgiasSidebarWidgetTemplate({
+        providerBaseUrl: existing.provider_base_url,
+        credentials,
+        widgetId: existing.sidebar_widget_id,
+      }),
+    ]);
   } catch {
     // Never block settings load on Gorgias cache refresh.
   }

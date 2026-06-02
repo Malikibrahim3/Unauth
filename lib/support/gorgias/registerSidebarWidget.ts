@@ -96,14 +96,32 @@ export async function refreshGorgiasSidebarWidgetIntegrationUrl(input: {
   );
 }
 
+export async function refreshGorgiasSidebarWidgetTemplate(input: {
+  providerBaseUrl: string;
+  credentials: { email: string; api_key: string };
+  widgetId: number;
+}): Promise<void> {
+  const apiBaseUrl = gorgiasApiBaseUrl(input.providerBaseUrl);
+  await gorgiasApiRequest<GorgiasWidgetResponse>(
+    apiBaseUrl,
+    `/widgets/${input.widgetId}`,
+    input.credentials,
+    {
+      method: 'PUT',
+      body: JSON.stringify({
+        context: 'ticket',
+        type: 'http',
+        template: buildGorgiasSidebarWidgetTemplate(env.NEXT_PUBLIC_APP_URL),
+      }),
+    }
+  );
+}
+
 export function buildGorgiasSidebarWidgetTemplate(appBaseUrl: string) {
   const appLink = appBaseUrl.replace(/\/$/, '');
-  // Deep-link to the authenticated customer search, pre-filtered to this ticket's
-  // customer, instead of the app root (which renders the public marketing page even
-  // when signed in). `{{ticket.customer.email}}` is a Gorgias template var substituted
-  // at render time — keep the braces literal (no URLSearchParams, which would
-  // percent-encode them so Gorgias never matches).
-  const profileLink = `${appLink}/customers?email={{ticket.customer.email}}`;
+  const fallbackConnectLink = `${appLink}/settings/integrations`;
+  const ctaUrl = '{{cta_url}}';
+  const ctaLabel = '{{cta_label}}';
   // HTTP integration returns flat JSON at the root; child paths (risk_level, etc.) resolve
   // against that object. Empty card path = root (see Gorgias programmatic widgets docs).
   return {
@@ -115,9 +133,9 @@ export function buildGorgiasSidebarWidgetTemplate(appBaseUrl: string) {
         path: '',
         meta: {
           displayCard: true,
-          link: profileLink,
+          link: fallbackConnectLink,
           custom: {
-            links: [{ url: profileLink, label: 'View full profile in Unauth →' }],
+            links: [{ url: ctaUrl, label: ctaLabel }],
           },
         },
         widgets: [

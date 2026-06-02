@@ -42,6 +42,8 @@ const GORGIAS_WIDGET_JSON_FALLBACK: GorgiasWidgetJsonPayload = {
   recent_activity: 'Could not load. Refresh the ticket to retry.',
   ce3_evidence: '—',
   watchlisted: '—',
+  cta_label: 'Connect to Unauth →',
+  cta_url: `${process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '') ?? ''}/settings/integrations`,
 };
 
 type WidgetReturnContext = {

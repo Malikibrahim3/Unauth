@@ -702,6 +702,11 @@ describe('buildGorgiasSidebarWidgetTemplate', () => {
     const template = buildGorgiasSidebarWidgetTemplate('https://app.unauth.test');
     const json = JSON.stringify(template);
     expect(template.widgets[0].title).toBe('Unauth Identity Intelligence');
+    expect(template.widgets[0].meta.custom.links[0]).toEqual({
+      url: '{{cta_url}}',
+      label: '{{cta_label}}',
+    });
+    expect(json).not.toContain('View full profile in Unauth');
     expect(json.toLowerCase()).not.toContain('fraud');
   });
 });

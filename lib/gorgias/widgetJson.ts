@@ -5,6 +5,7 @@ import type {
   PrimaryReason,
   ThisStoreOrdersSource,
 } from '@/lib/gorgias/widgetData';
+import { env } from '@/lib/utils/env';
 
 /**
  * Flat root object — field paths must match buildGorgiasSidebarWidgetTemplate() exactly.
@@ -25,6 +26,8 @@ export type GorgiasWidgetJsonPayload = {
   /** CE 3.0 evidence indicator, or '—'. */
   ce3_evidence: string;
   watchlisted: string;
+  cta_label: string;
+  cta_url: string;
 };
 
 const NO_NETWORK_LABEL = 'No network history found';
@@ -90,6 +93,24 @@ function formatIdentity(grade: string, matchedOn: string[]): string {
   return `${grade}${on}`;
 }
 
+function appUrl(path: string): string {
+  return `${env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '')}${path}`;
+}
+
+function baseCta(profileUrl?: string | null): Pick<GorgiasWidgetJsonPayload, 'cta_label' | 'cta_url'> {
+  return {
+    cta_label: 'View full profile in Unauth →',
+    cta_url: profileUrl?.trim() || appUrl('/customers'),
+  };
+}
+
+function connectCta(): Pick<GorgiasWidgetJsonPayload, 'cta_label' | 'cta_url'> {
+  return {
+    cta_label: 'Connect to Unauth →',
+    cta_url: appUrl('/settings/integrations'),
+  };
+}
+
 export function claimWidgetToJson(result: GorgiasClaimWidgetResult): GorgiasWidgetJsonPayload {
   if (!result.ok) {
     if (result.kind === 'not_found') {
@@ -102,6 +123,7 @@ export function claimWidgetToJson(result: GorgiasClaimWidgetResult): GorgiasWidg
         recent_activity: '—',
         ce3_evidence: '—',
         watchlisted: '—',
+        ...baseCta(),
       };
     }
     if (result.kind === 'identity_unresolved') {
@@ -114,6 +136,7 @@ export function claimWidgetToJson(result: GorgiasClaimWidgetResult): GorgiasWidg
         recent_activity: '—',
         ce3_evidence: '—',
         watchlisted: '—',
+        ...baseCta(),
       };
     }
     if (result.kind === 'helpdesk_disconnected') {
@@ -126,6 +149,7 @@ export function claimWidgetToJson(result: GorgiasClaimWidgetResult): GorgiasWidg
         recent_activity: 'Reconnect in Unauth',
         ce3_evidence: '—',
         watchlisted: '—',
+        ...connectCta(),
       };
     }
     return {
@@ -137,6 +161,7 @@ export function claimWidgetToJson(result: GorgiasClaimWidgetResult): GorgiasWidg
       recent_activity: '—',
       ce3_evidence: '—',
       watchlisted: '—',
+      ...baseCta(),
     };
   }
 
@@ -166,6 +191,7 @@ export function claimWidgetToJson(result: GorgiasClaimWidgetResult): GorgiasWidg
       recent_activity: 'Connect Shopify or wait for the next order sync',
       ce3_evidence: '—',
       watchlisted: '—',
+      ...baseCta(result.data.profileUrl),
     };
   }
 
@@ -195,6 +221,7 @@ export function claimWidgetToJson(result: GorgiasClaimWidgetResult): GorgiasWidg
       ? 'CE 3.0 evidence available — documented cross-merchant history'
       : '—',
     watchlisted: result.data.watchlisted ? '⚠ On watchlist' : 'Not on watchlist',
+    ...baseCta(result.data.profileUrl),
   };
 }
 
