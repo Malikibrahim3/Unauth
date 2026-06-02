@@ -144,7 +144,24 @@ export async function nudgeRecentGorgiasTicketsForMerchantBestEffort(input: {
   try {
     const access = await getActiveGorgiasMerchantApiAccess(input.supabase, input.merchantId);
     if (!access) return;
+    await nudgeRecentGorgiasTicketsWithAccessBestEffort({
+      ...input,
+      access,
+    });
+  } catch {
+    // Best-effort batch refresh.
+  }
+}
 
+export async function nudgeRecentGorgiasTicketsWithAccessBestEffort(input: {
+  supabase: SupabaseClient;
+  merchantId: string;
+  access: { providerBaseUrl: string; credentials: GorgiasApiCredentials };
+  reason: string;
+  payload?: unknown;
+  limit?: number;
+}): Promise<void> {
+  try {
     const { data, error } = await input.supabase
       .from(TABLES.SUPPORT_CASE_INTAKE)
       .select('external_case_id')
@@ -166,7 +183,7 @@ export async function nudgeRecentGorgiasTicketsForMerchantBestEffort(input: {
     await Promise.all(
       ticketIds.map((ticketId) =>
         nudgeGorgiasTicketWidgetRefreshBestEffort({
-          ...access,
+          ...input.access,
           ticketId,
           reason: input.reason,
           payload: input.payload,

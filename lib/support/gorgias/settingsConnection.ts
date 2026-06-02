@@ -18,7 +18,6 @@ import { createWidgetTokenForGorgiasSidebar } from '@/lib/support/gorgias/ensure
 import {
   GorgiasSidebarRegistrationError,
   registerGorgiasSidebarWidget,
-  deleteGorgiasSidebarWidget,
   refreshGorgiasSidebarWidgetIntegrationUrl,
   refreshGorgiasSidebarWidgetTemplate,
   gorgiasApiBaseUrl,
@@ -50,7 +49,7 @@ import {
   type GorgiasSidebarWidgetSetupResult,
   type GorgiasSupportWebhookScopeEntry,
 } from '@/lib/support/gorgias/supportConnectionShared';
-import { nudgeRecentGorgiasTicketsForMerchantBestEffort } from '@/lib/support/gorgias/widgetRefreshNudge';
+import { nudgeRecentGorgiasTicketsWithAccessBestEffort } from '@/lib/support/gorgias/widgetRefreshNudge';
 
 type GorgiasConnectionDbRow = {
   id: string;
@@ -792,52 +791,48 @@ export async function disableMerchantGorgiasSupportConnection(
     throw new Error('gorgias_connection_not_found');
   }
 
-  if (existing.status === 'active') {
-    await nudgeRecentGorgiasTicketsForMerchantBestEffort({
-      supabase: supabase as SupabaseClient,
-      merchantId,
-      reason: 'gorgias_connection_disabled',
-      payload: {
-        event: 'gorgias_connection_disabled',
-        merchant_id: merchantId,
-        disabled_at: new Date().toISOString(),
-      },
-    });
-  }
+  const rawRow = await getGorgiasConnectionRawRow(supabase, merchantId);
+  const credentials =
+    rawRow?.access_token_encrypted && existing.provider_base_url
+      ? decryptGorgiasApiCredentials(rawRow.access_token_encrypted)
+      : null;
 
-  // Best-effort remote cleanup: deregister sidebar widget + webhook integration in Gorgias.
-  // Failures must never block the local wipe — swallow everything.
-  if (existing.provider_base_url) {
-    const rawRow = await getGorgiasConnectionRawRow(supabase, merchantId);
-    if (rawRow?.access_token_encrypted) {
-      try {
-        const credentials = decryptGorgiasApiCredentials(rawRow.access_token_encrypted);
-        const apiBaseUrl = gorgiasApiBaseUrl(existing.provider_base_url);
-
-        if (
-          existing.sidebar_integration_id != null &&
-          existing.sidebar_widget_id != null
-        ) {
-          await deleteGorgiasSidebarWidget(apiBaseUrl, credentials, {
-            integrationId: existing.sidebar_integration_id,
-            widgetId: existing.sidebar_widget_id,
-          });
-        }
-
-        if (existing.support_webhook_integration_id != null) {
-          await deleteGorgiasSupportWebhookIntegration(
-            apiBaseUrl,
-            credentials,
-            existing.support_webhook_integration_id
-          );
-        }
-      } catch {
-        // Remote cleanup failed — proceed with local wipe regardless.
+  // Keep the sidebar widget in Gorgias so agents can see "Connect to Unauth" after disconnect.
+  // The inbound support webhook is removed because Unauth should no longer ingest live helpdesk data.
+  if (existing.provider_base_url && credentials) {
+    try {
+      if (existing.sidebar_widget_id != null) {
+        await refreshGorgiasSidebarWidgetTemplate({
+          providerBaseUrl: existing.provider_base_url,
+          credentials,
+          widgetId: existing.sidebar_widget_id,
+        });
       }
+
+      if (existing.support_webhook_integration_id != null) {
+        const apiBaseUrl = gorgiasApiBaseUrl(existing.provider_base_url);
+        await deleteGorgiasSupportWebhookIntegration(
+          apiBaseUrl,
+          credentials,
+          existing.support_webhook_integration_id
+        );
+      }
+    } catch {
+      // Remote cleanup/template refresh failed — proceed with local wipe regardless.
     }
   }
 
   const now = new Date().toISOString();
+  const sidebarScope: GorgiasSidebarScopeEntry | null =
+    existing.sidebar_integration_id != null && existing.sidebar_widget_id != null
+      ? {
+          kind: 'gorgias_sidebar_widget',
+          integration_id: existing.sidebar_integration_id,
+          widget_id: existing.sidebar_widget_id,
+          registered_at: now,
+        }
+      : null;
+
   const { data, error } = await (supabase as ListableSupabase)
     .from(TABLES.SUPPORT_PROVIDER_CONNECTIONS)
     .update({
@@ -846,7 +841,7 @@ export async function disableMerchantGorgiasSupportConnection(
       webhook_secret_hash: null,
       webhook_secret_created_at: null,
       webhook_secret_rotated_at: null,
-      scopes: [],
+      scopes: sidebarScope ? [sidebarScope] : [],
       last_error: null,
       updated_at: now,
     })
@@ -861,6 +856,23 @@ export async function disableMerchantGorgiasSupportConnection(
 
   if (!data) {
     throw new Error('gorgias_connection_not_found');
+  }
+
+  if (existing.status === 'active' && existing.provider_base_url && credentials) {
+    await nudgeRecentGorgiasTicketsWithAccessBestEffort({
+      supabase: supabase as SupabaseClient,
+      merchantId,
+      access: {
+        providerBaseUrl: existing.provider_base_url,
+        credentials,
+      },
+      reason: 'gorgias_connection_disabled',
+      payload: {
+        event: 'gorgias_connection_disabled',
+        merchant_id: merchantId,
+        disabled_at: now,
+      },
+    });
   }
 
   return toGorgiasSupportConnectionSettings(data);
