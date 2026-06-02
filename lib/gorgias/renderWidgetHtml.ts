@@ -1,5 +1,6 @@
 import { claimWidgetToJson } from '@/lib/gorgias/widgetJson';
 import type { GorgiasClaimWidgetResult } from '@/lib/gorgias/widgetData';
+import { env } from '@/lib/utils/env';
 
 /**
  * HTML preview of the Gorgias sidebar widget (opt-in via ?format=html). The
@@ -94,6 +95,7 @@ function page(inner: string): string {
 
 export function renderGorgiasWidgetHtml(ctx: ClaimWidgetRenderContext): string {
   const { result } = ctx;
+  const isDisconnected = !result.ok && result.kind === 'helpdesk_disconnected';
 
   if (!result.ok) {
     const message =
@@ -106,6 +108,12 @@ export function renderGorgiasWidgetHtml(ctx: ClaimWidgetRenderContext): string {
   const { thisStore, network } = result.data;
   const json = claimWidgetToJson(result);
   const profileUrl = ctx.profileUrl ?? result.data.profileUrl ?? '';
+  const appBase = env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '');
+  const connectUrl = `${appBase}/settings/integrations`;
+  const ctaUrl = isDisconnected ? connectUrl : profileUrl;
+  const ctaLabel = isDisconnected
+    ? 'Connect to Unauth →'
+    : 'View full profile in Unauth →';
 
   const networkCell = (value: string) =>
     network ? dash(value) : '<span class="no-network">No network history found</span>';
@@ -146,7 +154,7 @@ export function renderGorgiasWidgetHtml(ctx: ClaimWidgetRenderContext): string {
     </table>
     ${json.ce3_evidence && json.ce3_evidence !== '—' ? `<div class="ce3">${escapeHtml(json.ce3_evidence)}</div>` : ''}
     ${json.watchlisted && json.watchlisted !== '—' ? `<div class="watchlist${json.watchlisted.startsWith('⚠') ? ' warn' : ''}">${escapeHtml(json.watchlisted)}</div>` : ''}
-    ${profileUrl ? `<a class="cta" href="${escapeHtml(profileUrl)}" target="_blank" rel="noopener noreferrer">View full profile in Unauth →</a>` : ''}
+    ${ctaUrl ? `<a class="cta" href="${escapeHtml(ctaUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(ctaLabel)}</a>` : ''}
   `;
 
   return page(inner);
