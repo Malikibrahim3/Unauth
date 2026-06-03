@@ -15,6 +15,8 @@ export const TABLES = {
   PUBLIC_AUDITS: 'public_audits',
   MERCHANTS: 'merchants',
   MERCHANT_MEMBERS: 'merchant_members',
+  SUBSCRIPTIONS: 'subscriptions',
+  CONTEXT_CREDIT_EVENTS: 'context_credit_events',
   WATCHLIST_ENTRIES: 'watchlist_entries',
   CSV_UPLOAD_QUEUE: 'csv_upload_queue',
   EVIDENCE_PACKAGES: 'evidence_packages',

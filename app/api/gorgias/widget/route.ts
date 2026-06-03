@@ -11,6 +11,7 @@ import type { MerchantCustomerLookupDiagnostics } from '@/lib/gorgias/findMercha
 import {
   claimWidgetToJson,
   type GorgiasWidgetJsonPayload,
+  type GorgiasWidgetLinkContext,
 } from '@/lib/gorgias/widgetJson';
 import { gorgiasWidgetLog, gorgiasWidgetLogError } from '@/lib/gorgias/widgetLog';
 import { GORGIAS_FRAME_HEADERS, renderGorgiasWidgetHtml } from '@/lib/gorgias/renderWidgetHtml';
@@ -35,16 +36,22 @@ const JSON_RESPONSE_HEADERS = {
 } as const;
 
 const GORGIAS_WIDGET_JSON_FALLBACK: GorgiasWidgetJsonPayload = {
-  identity: '—',
-  claims: '—',
-  orders: '—',
-  claim_rate: '—',
-  primary_reason: '—',
-  recent_activity: 'Could not load. Refresh the ticket to retry.',
-  ce3_evidence: '—',
-  watchlisted: '—',
-  cta_label: 'Connect to Unauth →',
+  identity: 'Case context preview unavailable',
+  claims: 'View basic context — 1 credit',
+  orders: 'View full context — 2 credits',
+  claim_rate: 'Generate evidence summary — 3 credits',
+  primary_reason: "Uses your store's own order, claim, delivery, and customer history.",
+  recent_activity: 'Adds pseudonymous network intelligence from participating merchants.',
+  ce3_evidence: 'Unauth provides contextual information for merchant review. Unauth does not make refund, fulfilment, account, or customer eligibility decisions.',
+  watchlisted: 'Other merchants’ raw customer data is not exposed.',
+  cta_label: 'Open case in Unauth →',
   cta_url: `${process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '') ?? ''}/settings/integrations`,
+  basic_unlock_url: '',
+  full_unlock_url: '',
+  evidence_unlock_url: '',
+  basic_unlock_label: 'View basic context — 1 credit',
+  full_unlock_label: 'View full context — 2 credits',
+  evidence_unlock_label: 'Generate evidence summary — 3 credits',
 };
 
 type WidgetReturnContext = {
@@ -116,6 +123,13 @@ function wantsHtmlResponse(request: NextRequest): boolean {
   return request.nextUrl.searchParams.get('format') === 'html';
 }
 
+/** Non-production only: `?widget_diagnostic=1` enables detailed pre-unlock stats in HTML. */
+function widgetJsonOptions(request: NextRequest): { allowDetailedPreview?: boolean } {
+  if (process.env.NODE_ENV === 'production') return {};
+  if (request.nextUrl.searchParams.get('widget_diagnostic') !== '1') return {};
+  return { allowDetailedPreview: true };
+}
+
 function isUnresolvedGorgiasVar(value: string): boolean {
   return value.includes('{{') || value.includes('}}');
 }
@@ -148,8 +162,10 @@ function returnJsonForResult(input: {
   ctx: WidgetReturnContext;
   returnHtml: boolean;
   status?: number;
+  linkContext?: GorgiasWidgetLinkContext;
+  widgetJsonOptions?: { allowDetailedPreview?: boolean };
 }): NextResponse {
-  const body = claimWidgetToJson(input.result);
+  const body = claimWidgetToJson(input.result, input.linkContext, input.widgetJsonOptions);
   const status = input.status ?? 200;
   const state = input.result.ok ? 'ok' : input.result.kind;
 
@@ -183,6 +199,8 @@ function returnJsonForResult(input: {
   const html = renderGorgiasWidgetHtml({
     result: input.result,
     profileUrl: input.result.ok ? input.result.data.profileUrl : null,
+    link: input.linkContext,
+    options: input.widgetJsonOptions,
   });
 
   return returnWidgetHtml(input.branch, html, status, input.ctx);
@@ -227,6 +245,7 @@ export async function GET(request: NextRequest) {
     const name = searchParams.get('name')?.trim() ?? '';
     const orderId = searchParams.get('order_id')?.trim() ?? '';
     const returnHtml = wantsHtmlResponse(request);
+    const jsonOptions = widgetJsonOptions(request);
 
     const requestIp = getClientIp(request.headers);
 
@@ -249,6 +268,7 @@ export async function GET(request: NextRequest) {
         ctx,
         returnHtml,
         status: 401,
+        widgetJsonOptions: jsonOptions,
       });
     }
 
@@ -265,6 +285,7 @@ export async function GET(request: NextRequest) {
         ctx,
         returnHtml,
         status: authResult.status === 500 ? 500 : 401,
+        widgetJsonOptions: jsonOptions,
       });
     }
 
@@ -287,6 +308,7 @@ export async function GET(request: NextRequest) {
         ctx,
         returnHtml,
         status: 200,
+        widgetJsonOptions: jsonOptions,
       });
     }
 
@@ -312,8 +334,19 @@ export async function GET(request: NextRequest) {
         ctx,
         returnHtml,
         status: 200,
+        widgetJsonOptions: jsonOptions,
       });
     }
+
+    const ticketRef = isUnresolvedGorgiasVar(ticketIdParam) ? null : ticketIdParam;
+    const orderRef = isUnresolvedGorgiasVar(orderId) ? '' : orderId;
+
+    const linkContext: GorgiasWidgetLinkContext = {
+      widgetToken,
+      email,
+      ticketRef,
+      orderRef: orderRef || null,
+    };
 
     const { result, lookupDiagnostics } = await buildGorgiasClaimWidgetData(
       service,
@@ -325,7 +358,7 @@ export async function GET(request: NextRequest) {
       {
         rawEmail: email,
         rawName: isUnresolvedGorgiasVar(name) ? '' : name,
-        orderId: isUnresolvedGorgiasVar(orderId) ? '' : orderId,
+        orderId: orderRef,
       }
     );
 
@@ -337,6 +370,8 @@ export async function GET(request: NextRequest) {
       lookupDiagnostics,
       ctx,
       returnHtml,
+      linkContext,
+      widgetJsonOptions: jsonOptions,
     });
   } catch (err) {
     gorgiasWidgetLogError('fatal_error', err);

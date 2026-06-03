@@ -1,5 +1,11 @@
-import { claimWidgetToJson } from '@/lib/gorgias/widgetJson';
+import {
+  claimWidgetToJson,
+  useCreditGatedWidgetPreview,
+  type GorgiasWidgetJsonOptions,
+  type GorgiasWidgetLinkContext,
+} from '@/lib/gorgias/widgetJson';
 import type { GorgiasClaimWidgetResult } from '@/lib/gorgias/widgetData';
+import { GORGIAS_SIDEBAR_CARD_TITLE, GORGIAS_SIDEBAR_ROW_LABELS } from '@/lib/support/gorgias/registerSidebarWidget';
 import { env } from '@/lib/utils/env';
 
 /**
@@ -10,6 +16,8 @@ import { env } from '@/lib/utils/env';
 export type ClaimWidgetRenderContext = {
   result: GorgiasClaimWidgetResult;
   profileUrl: string | null;
+  link?: GorgiasWidgetLinkContext;
+  options?: GorgiasWidgetJsonOptions;
 };
 
 function escapeHtml(value: string): string {
@@ -80,12 +88,12 @@ function page(inner: string): string {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Unauth Identity Intelligence</title>
+  <title>${escapeHtml(GORGIAS_SIDEBAR_CARD_TITLE)}</title>
   <style>${baseStyles()}</style>
 </head>
 <body>
   <div class="card">
-    <div class="title">Unauth Identity Intelligence</div>
+    <div class="title">${escapeHtml(GORGIAS_SIDEBAR_CARD_TITLE)}</div>
     ${inner}
   </div>
   <p class="brand">Unauth</p>
@@ -94,61 +102,74 @@ function page(inner: string): string {
 }
 
 export function renderGorgiasWidgetHtml(ctx: ClaimWidgetRenderContext): string {
-  const { result } = ctx;
+  const { result, link, options } = ctx;
   const isDisconnected = !result.ok && result.kind === 'helpdesk_disconnected';
+  const creditGatedPreview = useCreditGatedWidgetPreview(options);
+  const rowLabels = GORGIAS_SIDEBAR_ROW_LABELS;
 
-  if (!result.ok) {
+  if (!result.ok && !creditGatedPreview) {
     const message =
       result.kind === 'not_found'
         ? 'Not seen at any store yet'
-        : result.message ?? 'Could not load identity intelligence.';
+        : result.message ?? 'Could not load case context.';
     return page(`<p class="no-network">${escapeHtml(message)}</p>`);
   }
 
-  const { thisStore, network } = result.data;
-  const json = claimWidgetToJson(result);
-  const profileUrl = ctx.profileUrl ?? result.data.profileUrl ?? '';
+  const json = claimWidgetToJson(result, link, options);
+  const profileUrl = ctx.profileUrl ?? (result.ok ? result.data.profileUrl : null) ?? '';
   const appBase = env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '');
   const connectUrl = `${appBase}/settings/integrations`;
-  const ctaUrl = isDisconnected ? connectUrl : profileUrl;
-  const ctaLabel = isDisconnected
-    ? 'Connect to Unauth →'
-    : 'View full profile in Unauth →';
+  const ctaUrl = isDisconnected ? connectUrl : profileUrl || json.cta_url;
+  const ctaLabel = isDisconnected ? 'Connect to Unauth →' : json.cta_label;
 
-  const networkCell = (value: string) =>
-    network ? dash(value) : '<span class="no-network">No network history found</span>';
+  if (creditGatedPreview) {
+    const inner = `
+      <div class="grade">${escapeHtml(json.identity)}</div>
+      <table class="cmp">
+        <tbody>
+          <tr><th>${escapeHtml(rowLabels.claims)}</th><td>${escapeHtml(json.claims)}</td></tr>
+          <tr><th>${escapeHtml(rowLabels.orders)}</th><td>${escapeHtml(json.orders)}</td></tr>
+          <tr><th>${escapeHtml(rowLabels.claim_rate)}</th><td>${escapeHtml(json.claim_rate)}</td></tr>
+          <tr><th>${escapeHtml(rowLabels.primary_reason)}</th><td>${escapeHtml(json.primary_reason)}</td></tr>
+          <tr><th>${escapeHtml(rowLabels.recent_activity)}</th><td>${escapeHtml(json.recent_activity)}</td></tr>
+        </tbody>
+      </table>
+      ${json.ce3_evidence && json.ce3_evidence !== '—' ? `<div class="ce3"><strong>${escapeHtml(rowLabels.ce3_evidence)}</strong> ${escapeHtml(json.ce3_evidence)}</div>` : ''}
+      ${json.watchlisted ? `<div class="watchlist"><strong>${escapeHtml(rowLabels.watchlisted)}</strong> ${escapeHtml(json.watchlisted)}</div>` : ''}
+      ${ctaUrl ? `<a class="cta" href="${escapeHtml(ctaUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(ctaLabel)}</a>` : ''}
+    `;
+    return page(inner);
+  }
 
-  const primaryReason = network ? dash(json.primary_reason) : '<span class="no-network">No network history found</span>';
-  const recent = network ? dash(json.recent_activity) : '<span class="no-network">No network history found</span>';
+  if (!result.ok) {
+    const message = result.message ?? 'Could not load case context.';
+    return page(`<p class="no-network">${escapeHtml(message)}</p>`);
+  }
 
+  const { thisStore } = result.data;
   const cleanClaims = json.claims === 'No prior claims on record';
   const inner = `
     <div class="grade">${escapeHtml(json.identity)}</div>
     <div class="claims${cleanClaims ? ' clean' : ''}">${escapeHtml(json.claims)}</div>
     <table class="cmp">
       <thead>
-        <tr><th></th><th>This Store</th><th>Network (All-time)</th></tr>
+        <tr><th></th><th>Context action</th><th>Details</th></tr>
       </thead>
       <tbody>
         <tr>
-          <th>Orders</th>
-          <td>${dash(thisStore.orderCount)}</td>
-          <td>${networkCell(network ? `${network.orderCount} across ${network.merchantCount} merchants` : '')}</td>
+          <th>Store</th>
+          <td>${escapeHtml(json.orders)}</td>
+          <td>${escapeHtml(json.primary_reason)}</td>
         </tr>
         <tr>
-          <th>Claim rate</th>
-          <td>${dash(wholePct(thisStore.claimRate))}</td>
-          <td>${networkCell(network && network.orderCount > 0 ? wholePct(network.claimRate) : '—')}</td>
+          <th>Network</th>
+          <td>${escapeHtml(json.claim_rate)}</td>
+          <td>${escapeHtml(json.recent_activity)}</td>
         </tr>
         <tr>
-          <th>Primary reason</th>
-          <td>—</td>
-          <td>${primaryReason}</td>
-        </tr>
-        <tr>
-          <th>Last 90 days</th>
-          <td>—</td>
-          <td>${recent}</td>
+          <th>This store</th>
+          <td>${dash(thisStore.orderCount)} orders</td>
+          <td>${dash(wholePct(thisStore.claimRate))} claim rate</td>
         </tr>
       </tbody>
     </table>

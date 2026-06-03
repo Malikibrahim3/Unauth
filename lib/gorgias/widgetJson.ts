@@ -1,3 +1,4 @@
+import { CONTEXT_REVIEW_DISCLAIMER } from '@/lib/api/lookup/contextLookupCore';
 import { gradeHeadline } from '@/lib/gorgias/widgetData';
 import type {
   GorgiasClaimWidgetResult,
@@ -6,13 +7,13 @@ import type {
   ThisStoreOrdersSource,
 } from '@/lib/gorgias/widgetData';
 import { env } from '@/lib/utils/env';
+import { buildGorgiasWidgetUnlockUrlSet } from '@/lib/gorgias/widgetUnlockUrls';
 
 /**
  * Flat root object — field paths must match buildGorgiasSidebarWidgetTemplate() exactly.
  *
- * `identity` is the PRIMARY element (the confidence grade — who the person is).
- * The remaining fields are a plain, sourced claims record (what they have done).
- * No risk score, risk band, or "fraud" wording is emitted.
+ * Field paths must match `buildGorgiasSidebarWidgetTemplate()`. Pre-unlock payloads are
+ * credit-gated copy + unlock CTAs unless `allowDetailedPreview` is set in non-production.
  */
 export type GorgiasWidgetJsonPayload = {
   /** PRIMARY: identity confidence grade + what it matched on. */
@@ -25,14 +26,117 @@ export type GorgiasWidgetJsonPayload = {
   recent_activity: string;
   /** CE 3.0 evidence indicator, or '—'. */
   ce3_evidence: string;
+  /**
+   * @deprecated Legacy Gorgias template field path `watchlisted`. Always data-safety copy,
+   * never merchant watchlist state. Do not use for new product logic.
+   */
   watchlisted: string;
   cta_label: string;
   cta_url: string;
+  /** Browser-openable GET unlock links (Gorgias custom.links). */
+  basic_unlock_url: string;
+  full_unlock_url: string;
+  evidence_unlock_url: string;
+  basic_unlock_label: string;
+  full_unlock_label: string;
+  evidence_unlock_label: string;
 };
+
+export type GorgiasWidgetLinkContext = {
+  widgetToken: string;
+  email: string;
+  ticketRef: string | null;
+  orderRef: string | null;
+  claimId?: string | null;
+};
+
+export type GorgiasWidgetJsonOptions = {
+  /**
+   * Dev-only (`NODE_ENV !== 'production'`): emit pre-unlock case stats in widget JSON/HTML.
+   * Requires `?widget_diagnostic=1` on the widget route.
+   */
+  allowDetailedPreview?: boolean;
+};
+
+/** True unless an explicit non-production diagnostic preview was requested. */
+export function useCreditGatedWidgetPreview(options?: GorgiasWidgetJsonOptions): boolean {
+  return !(options?.allowDetailedPreview === true && process.env.NODE_ENV !== 'production');
+}
+
+const BASIC_UNLOCK_LABEL = 'View basic context — 1 credit';
+const FULL_UNLOCK_LABEL = 'View full context — 2 credits';
+const EVIDENCE_UNLOCK_LABEL = 'Generate evidence summary — 3 credits';
+
+const UNLOCK_LABELS = {
+  basic_unlock_label: BASIC_UNLOCK_LABEL,
+  full_unlock_label: FULL_UNLOCK_LABEL,
+  evidence_unlock_label: EVIDENCE_UNLOCK_LABEL,
+} as const;
+
+const DATA_SAFETY_NOTE =
+  'Other merchants’ raw customer data is not exposed. Pseudonymous network context is available via credit unlock.';
 
 const NO_NETWORK_LABEL = 'No network history found';
 const NO_CROSS_STORE_LABEL = 'No cross-store history found';
 const NO_CLAIMS_LABEL = 'No prior claims on record';
+
+type WidgetCorePayload = Omit<
+  GorgiasWidgetJsonPayload,
+  | 'basic_unlock_url'
+  | 'full_unlock_url'
+  | 'evidence_unlock_url'
+  | 'basic_unlock_label'
+  | 'full_unlock_label'
+  | 'evidence_unlock_label'
+>;
+
+function unlockUrls(link: GorgiasWidgetLinkContext | undefined): Pick<
+  GorgiasWidgetJsonPayload,
+  'basic_unlock_url' | 'full_unlock_url' | 'evidence_unlock_url'
+> {
+  if (!link?.widgetToken || !link.email.trim()) {
+    return { basic_unlock_url: '', full_unlock_url: '', evidence_unlock_url: '' };
+  }
+  if (!link.ticketRef?.trim() && !link.orderRef?.trim() && !link.claimId?.trim()) {
+    return { basic_unlock_url: '', full_unlock_url: '', evidence_unlock_url: '' };
+  }
+  return buildGorgiasWidgetUnlockUrlSet({
+    appBaseUrl: env.NEXT_PUBLIC_APP_URL,
+    widgetToken: link.widgetToken,
+    email: link.email,
+    ticketRef: link.ticketRef,
+    orderRef: link.orderRef,
+    claimId: link.claimId ?? null,
+  });
+}
+
+function withUnlockFields(
+  payload: WidgetCorePayload,
+  link?: GorgiasWidgetLinkContext,
+): GorgiasWidgetJsonPayload {
+  return { ...payload, ...UNLOCK_LABELS, ...unlockUrls(link) };
+}
+
+/** Case-scoped Gorgias tickets get credit unlock links; preview must not leak stats before unlock. */
+export function hasGorgiasUnlockCaseScope(link?: GorgiasWidgetLinkContext): boolean {
+  if (!link?.widgetToken?.trim() || !link.email.trim()) return false;
+  return Boolean(link.ticketRef?.trim() || link.orderRef?.trim() || link.claimId?.trim());
+}
+
+function buildCreditGatedPreviewPayload(profileUrl?: string | null): WidgetCorePayload {
+  return {
+    identity: 'Context available for this ticket',
+    claims: BASIC_UNLOCK_LABEL,
+    orders: FULL_UNLOCK_LABEL,
+    claim_rate: EVIDENCE_UNLOCK_LABEL,
+    primary_reason: "Uses your store's own order, claim, delivery, and customer history.",
+    recent_activity:
+      'A full check adds pseudonymous network context from participating merchants.',
+    ce3_evidence: CONTEXT_REVIEW_DISCLAIMER,
+    watchlisted: DATA_SAFETY_NOTE,
+    ...baseCta(profileUrl),
+  };
+}
 
 function wholePct(rate0to1: number): string {
   return `${Math.round(rate0to1 * 100)}%`;
@@ -62,7 +166,6 @@ function formatClaimOrders(
   if (network.orderCount > 0) {
     return `${storePart} · ${network.orderCount} across ${network.merchantCount} ${merchants}`;
   }
-  // Network present but order denominator unknown (cross-merchant detect only).
   return `${storePart} · seen at ${network.merchantCount} ${merchants}`;
 }
 
@@ -82,11 +185,6 @@ function formatStoreRecent(count: number): string {
   return `${count} ${pluralise(count, 'claim', 'claims')} in last 90 days`;
 }
 
-/**
- * Build the `identity` line — the primary element. Grade comes first, then the
- * factual identifiers it matched on. This reflects identity certainty only and
- * is never conditioned on claim history.
- */
 function formatIdentity(grade: string, matchedOn: string[]): string {
   if (grade === 'NO MATCH') return 'No identity match on record';
   const on = matchedOn.length > 0 ? ` — matched on ${matchedOn.join(', ')}` : '';
@@ -99,7 +197,7 @@ function appUrl(path: string): string {
 
 function baseCta(profileUrl?: string | null): Pick<GorgiasWidgetJsonPayload, 'cta_label' | 'cta_url'> {
   return {
-    cta_label: 'View full profile in Unauth →',
+    cta_label: 'Open case in Unauth →',
     cta_url: profileUrl?.trim() || appUrl('/customers'),
   };
 }
@@ -111,58 +209,118 @@ function connectCta(): Pick<GorgiasWidgetJsonPayload, 'cta_label' | 'cta_url'> {
   };
 }
 
-export function claimWidgetToJson(result: GorgiasClaimWidgetResult): GorgiasWidgetJsonPayload {
+export function claimWidgetToJson(
+  result: GorgiasClaimWidgetResult,
+  link?: GorgiasWidgetLinkContext,
+  options?: GorgiasWidgetJsonOptions,
+): GorgiasWidgetJsonPayload {
+  const creditGatedPreview = useCreditGatedWidgetPreview(options);
+
   if (!result.ok) {
     if (result.kind === 'not_found') {
-      return {
-        identity: 'No identity match on record',
-        claims: NO_CLAIMS_LABEL,
-        orders: 'Not seen at any store yet',
-        claim_rate: '—',
-        primary_reason: '—',
-        recent_activity: '—',
-        ce3_evidence: '—',
-        watchlisted: '—',
-        ...baseCta(),
-      };
+      if (creditGatedPreview) {
+        return withUnlockFields(buildCreditGatedPreviewPayload(), link);
+      }
+      return withUnlockFields(
+        {
+          identity: 'No identity match on record',
+          claims: NO_CLAIMS_LABEL,
+          orders: 'Not seen at any store yet',
+          claim_rate: '—',
+          primary_reason: '—',
+          recent_activity: '—',
+          ce3_evidence: '—',
+          watchlisted: DATA_SAFETY_NOTE,
+          ...baseCta(),
+        },
+        link,
+      );
     }
     if (result.kind === 'identity_unresolved') {
-      return {
-        identity: 'No identifier found — open the customer in Gorgias to check',
+      if (creditGatedPreview) {
+        return withUnlockFields(
+          {
+            identity: 'Context available for this ticket',
+            claims: BASIC_UNLOCK_LABEL,
+            orders: FULL_UNLOCK_LABEL,
+            claim_rate: EVIDENCE_UNLOCK_LABEL,
+            primary_reason: 'Open the customer profile in Gorgias so Unauth can resolve the ticket email.',
+            recent_activity:
+              'A full check adds pseudonymous network context from participating merchants.',
+            ce3_evidence: CONTEXT_REVIEW_DISCLAIMER,
+            watchlisted: DATA_SAFETY_NOTE,
+            ...baseCta(),
+          },
+          link,
+        );
+      }
+      return withUnlockFields(
+        {
+          identity: 'No identifier found — open the customer in Gorgias to check',
+          claims: '—',
+          orders: 'Customer identity not resolved',
+          claim_rate: '—',
+          primary_reason: '—',
+          recent_activity: '—',
+          ce3_evidence: '—',
+          watchlisted: DATA_SAFETY_NOTE,
+          ...baseCta(),
+        },
+        link,
+      );
+    }
+    if (result.kind === 'helpdesk_disconnected') {
+      return withUnlockFields(
+        {
+          identity: 'Helpdesk not connected',
+          claims: 'Reconnect Gorgias',
+          orders: 'Not connected',
+          claim_rate: 'Unavailable',
+          primary_reason: '—',
+          recent_activity: 'Reconnect in Unauth',
+          ce3_evidence: '—',
+          watchlisted: DATA_SAFETY_NOTE,
+          ...connectCta(),
+        },
+        link,
+      );
+    }
+    if (creditGatedPreview) {
+      return withUnlockFields(buildCreditGatedPreviewPayload(), link);
+    }
+    return withUnlockFields(
+      {
+        identity: '—',
         claims: '—',
-        orders: 'Customer identity not resolved',
+        orders: (result.message ?? 'Could not load context preview.').slice(0, 100),
         claim_rate: '—',
         primary_reason: '—',
         recent_activity: '—',
         ce3_evidence: '—',
-        watchlisted: '—',
+        watchlisted: DATA_SAFETY_NOTE,
         ...baseCta(),
-      };
+      },
+      link,
+    );
+  }
+
+  if (creditGatedPreview) {
+    const profileUrl = result.data.profileUrl;
+    if (
+      result.data.thisStore.ordersCountSource === 'none' &&
+      result.data.thisStore.orderCount === 0 &&
+      result.data.thisStore.claimCount === 0 &&
+      !result.data.network
+    ) {
+      return withUnlockFields(
+        {
+          ...buildCreditGatedPreviewPayload(profileUrl),
+          primary_reason: 'Connect Shopify or wait for the next order sync to load store history.',
+        },
+        link,
+      );
     }
-    if (result.kind === 'helpdesk_disconnected') {
-      return {
-        identity: 'Helpdesk not connected',
-        claims: 'Reconnect Gorgias',
-        orders: 'Not connected',
-        claim_rate: 'Unavailable',
-        primary_reason: '—',
-        recent_activity: 'Reconnect in Unauth',
-        ce3_evidence: '—',
-        watchlisted: '—',
-        ...connectCta(),
-      };
-    }
-    return {
-      identity: '—',
-      claims: '—',
-      orders: (result.message ?? 'Could not load identity intelligence.').slice(0, 100),
-      claim_rate: '—',
-      primary_reason: '—',
-      recent_activity: '—',
-      ce3_evidence: '—',
-      watchlisted: '—',
-      ...baseCta(),
-    };
+    return withUnlockFields(buildCreditGatedPreviewPayload(profileUrl), link);
   }
 
   const {
@@ -182,17 +340,20 @@ export function claimWidgetToJson(result: GorgiasClaimWidgetResult): GorgiasWidg
     thisStore.claimCount === 0 &&
     !network
   ) {
-    return {
-      identity: formatIdentity(gradeHeadline(confidenceGrade), matchedOn),
-      claims: 'Order data not synced to Unauth yet',
-      orders: 'Order data not synced to Unauth yet',
-      claim_rate: '—',
-      primary_reason: '—',
-      recent_activity: 'Connect Shopify or wait for the next order sync',
-      ce3_evidence: '—',
-      watchlisted: '—',
-      ...baseCta(result.data.profileUrl),
-    };
+    return withUnlockFields(
+      {
+        identity: formatIdentity(gradeHeadline(confidenceGrade), matchedOn),
+        claims: 'Order data not synced to Unauth yet',
+        orders: 'Order data not synced to Unauth yet',
+        claim_rate: '—',
+        primary_reason: '—',
+        recent_activity: 'Connect Shopify or wait for the next order sync',
+        ce3_evidence: '—',
+        watchlisted: DATA_SAFETY_NOTE,
+        ...baseCta(result.data.profileUrl),
+      },
+      link,
+    );
   }
 
   const primaryReason = network
@@ -203,26 +364,28 @@ export function claimWidgetToJson(result: GorgiasClaimWidgetResult): GorgiasWidg
     ? formatRecent(network)
     : formatStoreRecent(storeRecentClaimCount);
 
-  // Clean-state confirmation: no claims at this store and none across the network.
   const hasAnyClaims =
     thisStore.claimCount > 0 || (network ? network.claimCount > 0 : false);
   const claims = hasAnyClaims
     ? formatClaimsSummary(thisStore.claimCount, network, storeClaimValue, thisStore.lastClaimAt)
     : NO_CLAIMS_LABEL;
 
-  return {
-    identity: formatIdentity(gradeHeadline(confidenceGrade), matchedOn),
-    claims,
-    orders: formatClaimOrders(thisStore.orderCount, network, thisStore.ordersCountSource),
-    claim_rate: formatClaimRateField(thisStore.claimRate, network),
-    primary_reason: primaryReason,
-    recent_activity: recentActivity,
-    ce3_evidence: ce3EvidenceAvailable
-      ? 'CE 3.0 evidence available — documented cross-merchant history'
-      : '—',
-    watchlisted: result.data.watchlisted ? '⚠ On watchlist' : 'Not on watchlist',
-    ...baseCta(result.data.profileUrl),
-  };
+  return withUnlockFields(
+    {
+      identity: formatIdentity(gradeHeadline(confidenceGrade), matchedOn),
+      claims,
+      orders: formatClaimOrders(thisStore.orderCount, network, thisStore.ordersCountSource),
+      claim_rate: formatClaimRateField(thisStore.claimRate, network),
+      primary_reason: primaryReason,
+      recent_activity: recentActivity,
+      ce3_evidence: ce3EvidenceAvailable
+        ? 'CE 3.0 evidence available — documented cross-merchant history'
+        : '—',
+      watchlisted: DATA_SAFETY_NOTE,
+      ...baseCta(result.data.profileUrl),
+    },
+    link,
+  );
 }
 
 function formatClaimDate(iso: string | null): string {
@@ -232,11 +395,6 @@ function formatClaimDate(iso: string | null): string {
   return d.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-/**
- * One-line factual claims summary: counts, amount, and date for the store's own
- * claims (own data) plus an anonymised network count. Amounts/dates are only
- * shown for own-store claims — never for the network line.
- */
 function formatClaimsSummary(
   storeClaims: number,
   network: NetworkStats | null,

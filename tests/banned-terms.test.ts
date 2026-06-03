@@ -38,6 +38,19 @@ const BANNED_PATTERNS: { pattern: RegExp; description: string }[] = [
   { pattern: /review risky customers/i,   description: '"Review risky customers" CTA' },
   { pattern: /top flagged customers/i,    description: '"Top flagged customers" section title' },
   { pattern: /why this customer is flagged/i, description: '"Why this customer is flagged" section title' },
+  { pattern: /\bblacklist\b(?!\s*:)/i,    description: '"blacklist" label' },
+  { pattern: /\bblocklist\b/i,            description: '"blocklist" label' },
+  { pattern: /\bhigh-risk customer\b/i,   description: '"high-risk customer" label' },
+  { pattern: /\bbad customer\b/i,         description: '"bad customer" label' },
+  { pattern: /\babusive customer\b/i,     description: '"abusive customer" label' },
+  { pattern: /\bapprove claim\b/i,        description: '"approve claim" CTA' },
+  { pattern: /\breject claim\b/i,         description: '"reject claim" CTA' },
+  { pattern: /\bauto-deny\b/i,            description: '"auto-deny" copy' },
+  { pattern: /\bauto-reject\b/i,          description: '"auto-reject" copy' },
+  { pattern: /\brecommended action\b/i,   description: '"recommended action" label' },
+  { pattern: /\bsuggested action\b/i,     description: '"suggested action" label' },
+  { pattern: /\brecommended review\b/i,   description: '"recommended review" label' },
+  { pattern: /\bbefore deciding\b/i,      description: '"before deciding" copy' },
 ];
 
 // ---------------------------------------------------------------------------
@@ -61,6 +74,8 @@ const EXCLUDE_PATTERNS = [
   /banned-terms\.test\./,
   // The terms constants file (it lists banned terms as data)
   /lib\/copy\/terms\.ts/,
+  // Backend-compatible enum definitions are not rendered verbatim
+  /components\/claims\/claimReviewTypes\.ts/,
 ];
 
 // Comment lines should be ignored
@@ -110,7 +125,7 @@ describe('Banned user-facing terms', () => {
       }
 
       if (violations.length > 0) {
-        fail(
+        throw new Error(
           `Found banned term (${description}) in UI files:\n${violations.join('\n')}\n\n` +
           `Replace with neutral identity-match language. See lib/copy/terms.ts for approved copy.`
         );

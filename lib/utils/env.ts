@@ -47,6 +47,8 @@ const envSchema = z.object({
   BIGCOMMERCE_CLIENT_SECRET: z.string().min(1).optional(),
   ENFORCE_PRODUCT_GATES: z.string().optional(),
   NEXT_PUBLIC_ENFORCE_PRODUCT_GATES: z.string().optional(),
+  /** Set to `true` in Vercel/host env to enforce paid tiers from `subscriptions`. */
+  BILLING_ACTIVE: z.string().optional(),
 }).superRefine((env, ctx) => {
   if (!env.NEXT_PUBLIC_SUPABASE_ANON_KEY && !env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) {
     ctx.addIssue({

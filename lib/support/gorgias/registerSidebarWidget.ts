@@ -117,36 +117,57 @@ export async function refreshGorgiasSidebarWidgetTemplate(input: {
   );
 }
 
+/** Gorgias sidebar card title — shown to agents in the helpdesk. */
+export const GORGIAS_SIDEBAR_CARD_TITLE = 'Unauth claim context';
+
+/** Row labels in buildGorgiasSidebarWidgetTemplate (must align with widget JSON field paths). */
+export const GORGIAS_SIDEBAR_ROW_LABELS = {
+  identity: 'Case context',
+  claims: 'Basic context',
+  orders: 'Full context',
+  claim_rate: 'Evidence summary',
+  primary_reason: 'Store context',
+  recent_activity: 'Network context',
+  ce3_evidence: 'Review note',
+  watchlisted: 'Data safety',
+} as const;
+
 export function buildGorgiasSidebarWidgetTemplate(appBaseUrl: string) {
   const appLink = appBaseUrl.replace(/\/$/, '');
   const fallbackConnectLink = `${appLink}/settings/integrations`;
   const ctaUrl = '{{cta_url}}';
   const ctaLabel = '{{cta_label}}';
-  // HTTP integration returns flat JSON at the root; child paths (risk_level, etc.) resolve
-  // against that object. Empty card path = root (see Gorgias programmatic widgets docs).
+  const labels = GORGIAS_SIDEBAR_ROW_LABELS;
+  // HTTP integration returns flat JSON at the root; child paths resolve against that object.
+  // Empty card path = root (see Gorgias programmatic widgets docs).
   return {
     type: 'wrapper',
     widgets: [
       {
         type: 'card',
-        title: 'Unauth Identity Intelligence',
+        title: GORGIAS_SIDEBAR_CARD_TITLE,
         path: '',
         meta: {
           displayCard: true,
           link: fallbackConnectLink,
           custom: {
-            links: [{ url: ctaUrl, label: ctaLabel }],
+            links: [
+              { url: '{{basic_unlock_url}}', label: '{{basic_unlock_label}}' },
+              { url: '{{full_unlock_url}}', label: '{{full_unlock_label}}' },
+              { url: '{{evidence_unlock_url}}', label: '{{evidence_unlock_label}}' },
+              { url: ctaUrl, label: ctaLabel },
+            ],
           },
         },
         widgets: [
-          { path: 'identity', title: 'Identity match', type: 'text' },
-          { path: 'claims', title: 'Claims on record', type: 'text' },
-          { path: 'orders', title: 'Orders', type: 'text' },
-          { path: 'claim_rate', title: 'Claim rate', type: 'text' },
-          { path: 'primary_reason', title: 'Primary reason', type: 'text' },
-          { path: 'recent_activity', title: 'Recent (90 days)', type: 'text' },
-          { path: 'ce3_evidence', title: 'CE 3.0', type: 'text' },
-          { path: 'watchlisted', title: 'Watchlist', type: 'text' },
+          { path: 'identity', title: labels.identity, type: 'text' },
+          { path: 'claims', title: labels.claims, type: 'text' },
+          { path: 'orders', title: labels.orders, type: 'text' },
+          { path: 'claim_rate', title: labels.claim_rate, type: 'text' },
+          { path: 'primary_reason', title: labels.primary_reason, type: 'text' },
+          { path: 'recent_activity', title: labels.recent_activity, type: 'text' },
+          { path: 'ce3_evidence', title: labels.ce3_evidence, type: 'text' },
+          { path: 'watchlisted', title: labels.watchlisted, type: 'text' },
         ],
       },
     ],
@@ -293,8 +314,8 @@ export async function registerGorgiasSidebarWidget(input: {
     {
       method: 'POST',
       body: JSON.stringify({
-        name: 'Unauth Identity Intelligence',
-        description: 'Unauth identity intelligence for Gorgias support tickets',
+        name: GORGIAS_SIDEBAR_CARD_TITLE,
+        description: 'Unauth case context for Gorgias support tickets (credit unlock)',
         type: 'http',
         http: {
           url: widgetUrl,
@@ -330,7 +351,7 @@ export async function registerGorgiasSidebarWidget(input: {
   );
 
   // New widget is live — now remove the previous one so the merchant doesn't end up
-  // with two "Unauth Identity Intelligence" cards. Best-effort; never aborts on failure.
+  // with two Unauth sidebar cards. Best-effort; never aborts on failure.
   if (input.previous) {
     await deleteGorgiasSidebarWidget(apiBaseUrl, input.credentials, input.previous);
   }

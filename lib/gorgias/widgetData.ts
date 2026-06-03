@@ -476,6 +476,7 @@ export type ClaimWidgetData = {
   storeRecentClaimCount: number;
   profileUrl: string;
   dataFreshAt: string;
+  /** @deprecated Always false in payloads — template field retained for Gorgias compatibility. */
   watchlisted: boolean;
 };
 
@@ -1042,25 +1043,6 @@ export async function buildGorgiasClaimWidgetData(
 
   const profileUrl = 'profileUrl' in model ? (model.profileUrl ?? null) : null;
 
-  // Check if this customer is on the merchant's watchlist
-  let watchlisted = false;
-  const resolvedProfileId =
-    model.state === 'merchant_profile' ? model.profileId :
-    model.state === 'network_match' ? (model as { profileId?: string | null }).profileId ?? null :
-    model.state === 'low_clear' ? (model as { profileId?: string | null }).profileId ?? null :
-    null;
-
-  if (resolvedProfileId) {
-    const { data: wlRow } = await service
-      .from('watchlist_entries')
-      .select('id')
-      .eq('customer_profile_id', resolvedProfileId)
-      .eq('merchant_id', auth.merchantId)
-      .eq('removed_by_merchant', false)
-      .maybeSingle();
-    watchlisted = !!wlRow;
-  }
-
   const result = assembleClaimWidgetData({
     model,
     summary,
@@ -1071,7 +1053,7 @@ export async function buildGorgiasClaimWidgetData(
     nowIso: new Date().toISOString(),
     shopifyOrderCount,
     storeClaimValue: typeof storeClaimValue === 'number' ? storeClaimValue : null,
-    watchlisted,
+    watchlisted: false,
   });
 
   gorgiasWidgetLog('claim_widget.sources', {

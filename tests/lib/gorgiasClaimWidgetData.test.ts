@@ -541,7 +541,7 @@ describe('assembleClaimWidgetData', () => {
     expect(result.data.thisStore.claimRate).toBe(0.14);
     expect(result.data.thisStore.ordersCountSource).toBe('shopify_identities');
 
-    const payload = claimWidgetToJson(result);
+    const payload = claimWidgetToJson(result, undefined, { allowDetailedPreview: true });
     expect(payload.orders).toBe('7 linked orders here · No cross-store history found');
     expect(payload.claim_rate).toBe('14% this store');
     expect(payload.primary_reason).toBe('Item not received · 100%');
@@ -653,7 +653,7 @@ describe('claimWidgetToJson', () => {
   }
 
   it('renders network claim rate as a whole percentage and dominant reason', () => {
-    const payload = claimWidgetToJson(okResult());
+    const payload = claimWidgetToJson(okResult(), undefined, { allowDetailedPreview: true });
     expect(payload.claim_rate).toBe('100% this store · 75% network');
     expect(payload.primary_reason).toBe('Item not received · 100%');
     expect(payload.recent_activity).toBe('2 claims in last 90 days');
@@ -682,27 +682,57 @@ describe('claimWidgetToJson', () => {
       ...emptyStoreClaimFields,
       nowIso: NOW,
     });
-    const payload = claimWidgetToJson(result);
+    const payload = claimWidgetToJson(result, undefined, { allowDetailedPreview: true });
     expect(payload.orders).toContain('No network history found');
     expect(payload.primary_reason).toBe('—');
     expect(payload.recent_activity).toBe('—');
   });
 
-  it('shows — for not_found, never null/undefined', () => {
+  it('shows credit-gated copy for not_found by default', () => {
     const payload = claimWidgetToJson({ ok: false, kind: 'not_found' });
+    expect(payload.identity).toBe('Context available for this ticket');
+    expect(payload.orders).toContain('2 credits');
+    for (const value of Object.values(payload)) {
+      expect(typeof value).toBe('string');
+      expect(value).not.toContain('undefined');
+    }
+  });
+
+  it('shows legacy not_found copy only in diagnostic preview mode', () => {
+    const payload = claimWidgetToJson(
+      { ok: false, kind: 'not_found' },
+      undefined,
+      { allowDetailedPreview: true },
+    );
     expect(payload.orders).toBe('Not seen at any store yet');
     expect(payload.claim_rate).toBe('—');
-    expect(payload.primary_reason).toBe('—');
-    expect(payload.recent_activity).toBe('—');
   });
 });
 
 describe('buildGorgiasSidebarWidgetTemplate', () => {
-  it('uses the exact header "Unauth Identity Intelligence" and no "fraud" wording', () => {
+  it('uses context-unlock card title and row labels without legacy risk wording', () => {
     const template = buildGorgiasSidebarWidgetTemplate('https://app.unauth.test');
     const json = JSON.stringify(template);
-    expect(template.widgets[0].title).toBe('Unauth Identity Intelligence');
+    expect(template.widgets[0].title).toBe('Unauth claim context');
+    const rowTitles = template.widgets[0].widgets.map((w: { title: string }) => w.title);
+    expect(rowTitles).toEqual([
+      'Case context',
+      'Basic context',
+      'Full context',
+      'Evidence summary',
+      'Store context',
+      'Network context',
+      'Review note',
+      'Data safety',
+    ]);
+    expect(json).not.toContain('Claims on record');
+    expect(json).not.toContain('Claim rate');
+    expect(json).not.toContain('Identity Intelligence');
     expect(template.widgets[0].meta.custom.links[0]).toEqual({
+      url: '{{basic_unlock_url}}',
+      label: '{{basic_unlock_label}}',
+    });
+    expect(template.widgets[0].meta.custom.links[3]).toEqual({
       url: '{{cta_url}}',
       label: '{{cta_label}}',
     });
