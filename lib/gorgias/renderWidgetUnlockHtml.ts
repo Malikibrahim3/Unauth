@@ -65,6 +65,13 @@ function formatCreditShortfallMessage(input: {
   return input.fallbackError ?? 'Not enough context credits remaining.';
 }
 
+function renderReturnToTicketBlock(gorgiasTicketUrl: string | null | undefined): string {
+  if (gorgiasTicketUrl) {
+    return `<p class="return"><a href="${escapeHtml(gorgiasTicketUrl)}" rel="noopener noreferrer">Return to Gorgias ticket</a></p>`;
+  }
+  return '<p class="muted return">You can close this tab and return to the ticket in Gorgias.</p>';
+}
+
 export function renderWidgetUnlockHtml(input: {
   contextType: ContextUnlockType;
   results: FormattedContextResult[];
@@ -73,6 +80,7 @@ export function renderWidgetUnlockHtml(input: {
   ticketRef: string | null;
   orderRef: string | null;
   claimId?: string | null;
+  gorgiasTicketUrl?: string | null;
   error?: string;
   insufficientCredits?: boolean;
   planGate?: boolean;
@@ -129,6 +137,9 @@ export function renderWidgetUnlockHtml(input: {
     ul { margin: 8px 0 0 18px; }
     .disclaimer { margin-top: 16px; font-size: 12px; color: #6b5c54; }
     .scope { font-size: 12px; color: #9a8f88; margin-bottom: 12px; }
+    .return { margin-top: 14px; }
+    .return a { color: #c8763a; font-weight: 600; text-decoration: none; }
+    .return a:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
@@ -136,6 +147,7 @@ export function renderWidgetUnlockHtml(input: {
     <h1>${escapeHtml(title)}</h1>
     ${scope ? `<p class="scope">${scope}</p>` : ''}
     ${body}
+    ${input.ticketRef ? renderReturnToTicketBlock(input.gorgiasTicketUrl) : ''}
     <p class="disclaimer">${escapeHtml(CONTEXT_REVIEW_DISCLAIMER)}</p>
     <p class="disclaimer">Cost for this unlock type: ${getContextCreditCost(input.contextType)} credit(s).</p>
   </div>

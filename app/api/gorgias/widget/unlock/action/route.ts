@@ -2,10 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { performWidgetContextUnlock } from '@/lib/api/gorgias/performWidgetContextUnlock';
 import { validateWidgetToken } from '@/lib/api/widgetTokens';
 import type { ContextUnlockType } from '@/lib/billing/contextCredits';
+import { buildGorgiasTicketAppUrl } from '@/lib/gorgias/gorgiasTicketUrl';
 import { renderWidgetUnlockHtml } from '@/lib/gorgias/renderWidgetUnlockHtml';
 import type { FormattedContextResult } from '@/lib/api/lookup/contextLookupCore';
 import { getClientIp } from '@/lib/ratelimit';
 import { createServiceClient } from '@/lib/supabase/server';
+import { TABLES } from '@/lib/supabase/tables';
 import { GORGIAS_WIDGET_TOKEN_HEADER } from '@/lib/support/gorgias/registerSidebarWidget';
 import { withRequestLogging } from '@/lib/log';
 
@@ -84,14 +86,34 @@ async function GETHandler(request: NextRequest) {
 
   const json = result.json;
   const results = (json.results ?? []) as FormattedContextResult[];
+  const ticketRef = typeof json.ticketRef === 'string' ? json.ticketRef : null;
+
+  let gorgiasTicketUrl: string | null = null;
+  if (ticketRef) {
+    const { data: conn } = await service
+      .from(TABLES.SUPPORT_PROVIDER_CONNECTIONS)
+      .select('provider_base_url')
+      .eq('merchant_id', authResult.merchantId)
+      .eq('provider', 'gorgias')
+      .eq('status', 'active')
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    gorgiasTicketUrl = buildGorgiasTicketAppUrl(
+      typeof conn?.provider_base_url === 'string' ? conn.provider_base_url : null,
+      ticketRef,
+    );
+  }
+
   const html = renderWidgetUnlockHtml({
     contextType,
     results,
     creditsSpent: typeof json.creditsSpent === 'number' ? json.creditsSpent : 0,
     remainingCredits: typeof json.remainingCredits === 'number' ? json.remainingCredits : 0,
-    ticketRef: typeof json.ticketRef === 'string' ? json.ticketRef : null,
+    ticketRef,
     orderRef: typeof json.orderRef === 'string' ? json.orderRef : null,
     claimId: typeof json.claimId === 'string' ? json.claimId : null,
+    gorgiasTicketUrl,
     error: typeof json.error === 'string' ? json.error : undefined,
     insufficientCredits: result.status === 402,
     planGate: result.status === 403,
