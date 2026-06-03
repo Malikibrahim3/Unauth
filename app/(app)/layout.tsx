@@ -1,9 +1,11 @@
 import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
 import Sidebar from '@/components/nav/Sidebar';
 import AppHeader from '@/components/layout/AppHeader';
 import DemoBanner from '@/components/common/DemoBanner';
+import BillingStatusBanner from '@/components/billing/BillingStatusBanner';
 import AmplitudeInit from '@/components/common/AmplitudeInit';
 import { createServiceClient } from '@/lib/supabase/server';
 import { shouldRequireOnboarding } from '@/lib/account/onboardingGate';
@@ -11,6 +13,8 @@ import { ensureMerchantContextForUser } from '@/lib/account/ensureMerchantContex
 import { getConnectionState } from '@/lib/connections/getConnectionState';
 import { ConnectionStateProvider } from '@/components/connections/ConnectionStateContext';
 import { NavigationProvider } from '@/components/navigation/NavigationProvider';
+import { DevPreviewProvider } from '@/components/product/DevPreviewContext';
+import { DEV_TIER_COOKIE, getDevPreviewFromCookieValue } from '@/lib/product/devPreview';
 
 export const dynamic = 'force-dynamic';
 
@@ -86,8 +90,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     ? connectedStoreKey.replace(/^www\./i, '').split('.')[0]?.replace(/[-_]/g, ' ') ?? merchantName
     : merchantName;
 
+  // Dev preview — read the tier cookie so the context is consistent with getMerchantProductPlan.
+  const isProduction = process.env.VERCEL_ENV === 'production';
+  const devPreview = isProduction
+    ? null
+    : getDevPreviewFromCookieValue((await cookies()).get(DEV_TIER_COOKIE)?.value);
+
   return (
     <NavigationProvider>
+    <DevPreviewProvider value={devPreview}>
       <div
         className="flex h-screen overflow-hidden bg-[var(--surface-base)] text-[var(--ink-primary)]"
       >
@@ -117,6 +128,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             </div>
           )}
 
+          <BillingStatusBanner />
+
           <main className="flex-1 overflow-y-auto overflow-x-hidden">
             <ConnectionStateProvider value={connectionState}>
               {children}
@@ -124,6 +137,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </main>
         </div>
       </div>
+    </DevPreviewProvider>
     </NavigationProvider>
   );
 }

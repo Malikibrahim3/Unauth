@@ -23,8 +23,14 @@ describe('billing tiers (canonical SSOT)', () => {
     expect(can('free', 'helpdesk_widget')).toBe(true);
     expect(can('free', 'network_signal_enrichment')).toBe(true);
     expect(can('free', 'watchlist')).toBe(false);
-    expect(limit('free', 'contextCreditsPerMonth')).toBe(50);
+    expect(limit('free', 'contextCreditsPerMonth')).toBe(100);
     expect(limit('free', 'historyDays')).toBe(30);
+    if (isBillingActive()) {
+      expect(limit('pro', 'historyDays')).toBe(180);
+      expect(limit('growth', 'historyDays')).toBe(730);
+      expect(can('pro', 'multi_store')).toBe(false);
+      expect(can('growth', 'multi_store')).toBe(true);
+    }
   });
 
   it('when billing is inactive in non-production, can(), limit(), and effectiveTier() use free', () => {

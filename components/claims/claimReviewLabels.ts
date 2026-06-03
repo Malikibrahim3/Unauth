@@ -20,14 +20,14 @@ export const CLAIM_TYPE_LABELS: Record<ClaimType, string> = {
 };
 
 export const DECISION_LABELS: Record<Decision, string> = {
-  approved: 'Merchant approved claim',
-  denied: 'Merchant declined claim',
+  approved: 'Merchant resolved in customer favour',
+  denied: 'Merchant closed without payout',
   escalated: 'Escalated for review',
-  partial_refund: 'Partial refund',
-  full_refund: 'Full refund',
+  partial_refund: 'Partial resolution',
+  full_refund: 'Full resolution',
   chargeback_disputed: 'Chargeback disputed',
-  blacklist: 'Added to merchant watchlist',
-  no_action: 'No action',
+  blacklist: 'Legacy restricted action',
+  no_action: 'No further action',
 };
 
 export const OUTCOME_LABELS: Record<Outcome, string> = {
@@ -36,9 +36,9 @@ export const OUTCOME_LABELS: Record<Outcome, string> = {
   pending: 'Pending',
   chargeback_won: 'Chargeback won',
   chargeback_lost: 'Chargeback lost',
-  customer_verified: 'Customer verified',
-  suspected_fraud: 'Pattern suggests misuse',
-  legitimate: 'Legitimate',
+  customer_verified: 'Additional identity details verified',
+  suspected_fraud: 'Pattern requires closer review',
+  legitimate: 'Claim context resolved',
 };
 
 export const EVIDENCE_TYPE_LABELS: Record<EvidenceType, string> = {

@@ -49,6 +49,14 @@ const envSchema = z.object({
   NEXT_PUBLIC_ENFORCE_PRODUCT_GATES: z.string().optional(),
   /** Set to `true` in Vercel/host env to enforce paid tiers from `subscriptions`. */
   BILLING_ACTIVE: z.string().optional(),
+  /** Stripe — optional until billing is wired; required for checkout/webhooks in production. */
+  STRIPE_SECRET_KEY: z.string().min(1).optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().min(1).optional(),
+  STRIPE_PRICE_PRO: z.string().min(1).optional(),
+  STRIPE_PRICE_GROWTH: z.string().min(1).optional(),
+  STRIPE_PRICE_TOPUP: z.string().min(1).optional(),
+  /** Internal notification for Scale "Contact us" requests. */
+  BILLING_CONTACT_EMAIL: z.string().email().optional(),
 }).superRefine((env, ctx) => {
   if (!env.NEXT_PUBLIC_SUPABASE_ANON_KEY && !env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY) {
     ctx.addIssue({

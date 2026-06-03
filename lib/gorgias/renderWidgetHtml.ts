@@ -70,6 +70,8 @@ function baseStyles(): string {
     .brand { font-size: 10px; color: #6b5c54; margin-top: 10px; text-align: right; }
     .watchlist { font-size: 12px; margin-top: 6px; }
     .warn { color: #f2994a; font-weight: 600; font-size: 12px; margin-top: 6px; }
+    .usage-banner { margin-bottom: 10px; padding: 8px 10px; border-radius: 6px; background: rgba(200, 118, 58, 0.12); border: 1px solid rgba(200, 118, 58, 0.35); font-size: 12px; line-height: 1.4; }
+    .usage-banner a { color: #c8763a; font-weight: 600; }
   `;
 }
 
@@ -123,7 +125,14 @@ export function renderGorgiasWidgetHtml(ctx: ClaimWidgetRenderContext): string {
   const ctaLabel = isDisconnected ? 'Connect to Unauth →' : json.cta_label;
 
   if (creditGatedPreview) {
+    const usageBanner =
+      json.credit_usage_banner && json.credit_topup_url
+        ? `<div class="usage-banner"><p>${escapeHtml(json.credit_usage_banner)}</p><a href="${escapeHtml(json.credit_topup_url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(json.credit_topup_label ?? 'View options')}</a></div>`
+        : json.credit_usage_banner
+          ? `<div class="usage-banner"><p>${escapeHtml(json.credit_usage_banner)}</p></div>`
+          : '';
     const inner = `
+      ${usageBanner}
       <div class="grade">${escapeHtml(json.identity)}</div>
       <table class="cmp">
         <tbody>

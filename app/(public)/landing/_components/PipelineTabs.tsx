@@ -14,36 +14,36 @@ const DWELL = 5200;
 
 const STEPS = [
   {
-    n: '01', label: 'Upload', timing: '11ms',
-    stat: '11', unit: 'ms',
-    headline: 'No schema changes. No checkout work.',
-    body: 'Upload your existing order, refund, and return exports as CSV. No schema changes, no developer, no checkout work - if you can export a report, you can run an audit.',
-    screenshot: '/screenshots/pipeline-upload-cohesive.png',
-    alt: 'Unauth New Audit - Upload CSV step with file drop zone, max file 200 MB, max rows 500k, Map → Process flow',
+    n: '01', label: 'Connect', timing: '~1 min',
+    stat: '2', unit: 'live sources',
+    headline: 'Connect one order source and one helpdesk.',
+    body: 'Authorize Shopify, WooCommerce, or BigCommerce plus Gorgias, Zendesk, or Freshdesk. CSV backfill is available when live sources are not connected yet.',
+    screenshot: '/screenshots/inbox.png',
+    alt: 'Unauth inbox showing identity-matched cases from connected order source and helpdesk',
   },
   {
-    n: '02', label: 'Hash', timing: '4ms',
-    stat: 'k-safe', unit: 'network signals',
-    headline: 'Sensitive fields are minimised for matching.',
-    body: 'Email, phone, address, and card references are normalised into HMAC-SHA256 matching keys before cross-merchant graph comparison.',
-    screenshot: '/screenshots/hash-demo.png',
-    alt: 'Unauth Hash Demo - Privacy Boundary Active banner and table of rows with email and phone replaced by HMAC tokens',
+    n: '02', label: 'Sync', timing: 'continuous',
+    stat: 'live', unit: 'order & support sync',
+    headline: 'Orders, refunds, fulfillment, claims, and support context sync.',
+    body: 'Purchase and fulfillment data from your store and dispute history from your helpdesk stay current — no manual exports once connected.',
+    screenshot: '/screenshots/dashboard.png',
+    alt: 'Unauth merchant dashboard showing synced claim metrics, transaction volume, and chargeback trend',
   },
   {
     n: '03', label: 'Resolve', timing: '17ms',
-    stat: '6', unit: 'merchants in cluster',
-    headline: 'Cross-merchant clusters surface in milliseconds.',
-    body: 'Hashed signals resolve against the cross-merchant identity graph. Only patterns confirmed across three or more merchants surface as evidence - everything else is filtered out.',
-    screenshot: '/screenshots/inbox.png',
-    alt: 'Unauth Inbox · Cases - identity-matched cases queue with cross-merchant identity match signals, confidence grades, values, and dates',
+    stat: 'own-store', unit: 'identity + claims',
+    headline: 'Own-store identity and claim patterns resolve first.',
+    body: 'Signals resolve into customer-level identity and claim patterns. Thresholded cross-merchant network signal surfaces only when k-anonymity density exists.',
+    screenshot: '/screenshots/customers-clusters.png',
+    alt: 'Unauth customers view showing resolved identity clusters with confidence grades and claim history',
   },
   {
-    n: '04', label: 'Case File', timing: '6ms',
+    n: '04', label: 'Review', timing: '6ms',
     stat: 'DEFINITE', unit: 'confidence grade',
-    headline: 'Identity grade, claims history, and evidence pack — merchant decides next step.',
-    body: 'You get the identity confidence grade, documented signals, a factual claims history, and a CE 3.0-style evidence workflow where required data exists — ready for your review or dispute prep.',
+    headline: 'Confidence grade, evidence context, queue action.',
+    body: 'Each claim carries a confidence grade, documented signals, claim history, and assembled evidence context — you decide whether to trust, review, or challenge.',
     screenshot: '/screenshots/pipeline-casefile-v3.png',
-    alt: 'Unauth customer profile - Nora Kessler, DEFINITE match, confidence 0.99, order value, order history, merchant record, and identity signals',
+    alt: 'Unauth customer profile - DEFINITE match, confidence grade, order history, merchant record, and identity signals',
   },
 ] as const satisfies readonly PipelineStep[];
 
@@ -101,7 +101,7 @@ export default function PipelineTabs() {
   const step = STEPS[active];
 
   return (
-    <section id="how-it-works" className="ua-landing-pipeline-section ua-section-flow">
+    <section id="workflow" className="ua-landing-pipeline-section ua-section-flow">
       <div className="ua-pipeline-shell ua-landing-pipeline-shell-pad relative mx-auto max-w-[1400px] px-6 md:px-10 pb-16 md:pb-24">
         <PipelineTabsHeader />
         <div className="ua-pipeline-stage ua-landing-pipeline-stage">

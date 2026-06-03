@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getContextCreditSnapshot } from '@/lib/billing/contextCredits';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 
@@ -14,15 +15,17 @@ export async function GET() {
   const { denied, ctx } = await requirePermission(service, user.id, PERMISSIONS.LOOKUP_CUSTOMER);
   if (denied) return denied;
 
-  const today = new Date().toISOString().slice(0, 10);
-
-  const { data: quotaData } = await service
-    .from('lookup_daily_counts' as any)
-    .select('count')
-    .eq('merchant_id', ctx.merchantId)
-    .eq('lookup_date', today)
-    .single();
-
-  const used = (quotaData as { count?: number } | null)?.count ?? 0;
-  return NextResponse.json({ used, limit: 200 });
+  const snapshot = await getContextCreditSnapshot(service, ctx.merchantId);
+  return NextResponse.json({
+    used: snapshot.used,
+    limit: snapshot.allowance,
+    remaining: snapshot.remaining,
+    monthlyRemaining: snapshot.monthlyRemaining,
+    topupRemaining: snapshot.topupRemaining,
+    tier: snapshot.tier,
+    periodStart: snapshot.periodStart,
+    periodEnd: snapshot.periodEnd,
+    subscriptionStatus: snapshot.subscriptionStatus,
+    label: 'context credits',
+  });
 }

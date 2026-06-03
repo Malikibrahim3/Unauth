@@ -23,20 +23,20 @@ export function LandingFooterSection({ todayISO }: { todayISO: string }) {
             <p
               style={{
                 margin: '14px 0 0',
-                fontFamily: 'var(--font-dm-mono, monospace)',
+                fontFamily: 'var(--font-dm-sans, sans-serif)',
                 fontSize: '12px',
                 color: FOOTER_STYLES_ESPRESSO.link,
               }}
             >
-              Version issue-04 · build date {todayISO}
+              London, UK · {todayISO}
             </p>
           </div>
 
           <div>
             <p style={{ margin: 0, color: FOOTER_STYLES_ESPRESSO.heading, fontWeight: 600, letterSpacing: '0.02em' }}>Product</p>
             <div className="mt-3 flex flex-col gap-2">
-              <Link href="/audit" style={{ color: FOOTER_STYLES_ESPRESSO.link }} className="hover:underline">Audit portal</Link>
-              <Link href="/signup" style={{ color: FOOTER_STYLES_ESPRESSO.link }} className="hover:underline">Book a pilot</Link>
+              <Link href="/signup" style={{ color: FOOTER_STYLES_ESPRESSO.link }} className="hover:underline">Create workspace</Link>
+              <Link href="/audit" style={{ color: FOOTER_STYLES_ESPRESSO.link }} className="hover:underline">CSV fallback</Link>
               <Link href="/demo" style={{ color: FOOTER_STYLES_ESPRESSO.link }} className="hover:underline">Interactive demo</Link>
             </div>
           </div>
@@ -55,8 +55,7 @@ export function LandingFooterSection({ todayISO }: { todayISO: string }) {
             <p style={{ margin: 0, color: FOOTER_STYLES_ESPRESSO.heading, fontWeight: 600, letterSpacing: '0.02em' }}>Contact</p>
             <div className="mt-3 flex flex-col gap-2">
               <a href="mailto:hello@unauth.co" style={{ color: FOOTER_STYLES_ESPRESSO.link }} className="hover:underline">hello@unauth.co</a>
-              <span style={{ color: FOOTER_STYLES_ESPRESSO.link }}>London, UK</span>
-              <span style={{ color: FOOTER_STYLES_ESPRESSO.link }}>Support window: Mon-Fri, 09:00-18:00 GMT</span>
+              <span style={{ color: FOOTER_STYLES_ESPRESSO.link }}>Mon–Fri, 09:00–18:00 GMT</span>
             </div>
           </div>
         </div>
@@ -71,7 +70,7 @@ export function LandingFooterSection({ todayISO }: { todayISO: string }) {
             paddingBlock: FOOTER_STYLES_ESPRESSO.bottomBg === 'transparent' ? 0 : '18px',
           }}
         >
-          <p style={{ margin: 0, fontStyle: 'italic', fontFamily: 'var(--font-serif, serif)', fontSize: '12px' }}>
+          <p style={{ margin: 0, fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '12px', color: FOOTER_STYLES_ESPRESSO.link }}>
             Case files, audit outputs, and network figures shown on this page are illustrative examples only.
           </p>
           <span style={{ color: FOOTER_STYLES_ESPRESSO.link }}>© 2026 Unauth. All rights reserved.</span>

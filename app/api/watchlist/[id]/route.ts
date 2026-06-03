@@ -1,9 +1,6 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server';
-import { TABLES } from '@/lib/supabase/tables';
-import { createScopedClient } from '@/lib/supabase/scoped';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { logAction } from '@/lib/permissions/audit';
-import { writeActivityLog } from '@/lib/customers/activityLog';
 import { NextRequest, NextResponse } from 'next/server';
 import { enforceRateLimit, limitFromEnv, rateLimitKey } from '@/lib/ratelimit';
 import { withRequestLogging } from '@/lib/log';
@@ -19,7 +16,6 @@ async function DELETEHandler(req: NextRequest, { params }: { params: Promise<{ i
   const serviceClient = createServiceClient();
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.MANAGE_WATCHLIST);
   if (denied) return denied;
-  const scopedClient = createScopedClient(ctx.merchantId, serviceClient);
 
   const limited = await enforceRateLimit(
     rateLimitKey('watchlist', 'delete', ctx.merchantId),
@@ -27,41 +23,19 @@ async function DELETEHandler(req: NextRequest, { params }: { params: Promise<{ i
   );
   if (limited) return limited;
 
-  // Fetch the entry before removing to get the profile_id for activity log
-  const [{ data: entryRow }, { error }] = await Promise.all([
-    serviceClient
-      .from(TABLES.WATCHLIST_ENTRIES)
-      .select('id, customer_profile_id')
-      .eq('id', resolvedParams.id)
-      .eq('merchant_id', ctx.merchantId)
-      .maybeSingle(),
-    serviceClient
-      .from(TABLES.WATCHLIST_ENTRIES)
-      .update({ removed_by_merchant: true } as any)
-      .eq('id', resolvedParams.id)
-      .eq('merchant_id', ctx.merchantId),
-  ]);
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
   logAction({
     ctx,
     action: 'remove_from_watchlist',
     resourceType: 'watchlist_entry',
     resourceId: resolvedParams.id,
+    metadata: { retired: true },
     ip,
   });
 
-  if (entryRow?.customer_profile_id) {
-    await writeActivityLog({
-      supabase: scopedClient,
-      profileId: entryRow.customer_profile_id,
-      merchantId: ctx.merchantId,
-      eventType: 'watchlist_removed',
-    });
-  }
-
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({
+    error:
+      'Customer watchlists are retired. Use claim review, evidence workflows, and aggregate dashboards for case-scoped follow-up.',
+  }, { status: 410 });
 }
 
 export const DELETE = withRequestLogging('/api/watchlist/[id]', DELETEHandler);

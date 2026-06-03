@@ -30,7 +30,6 @@ export type CustomerProfilePageHeroProps = {
   merchantClaimCount: number;
   merchantOrderCount: number;
   localClaimRatePct: number;
-  watchlisted: boolean;
   viewToken: string;
   openClaimCount: number;
   isEligibleForEvidence: boolean;
@@ -55,7 +54,6 @@ export function CustomerProfilePageHero({
   merchantClaimCount,
   merchantOrderCount,
   localClaimRatePct,
-  watchlisted,
   viewToken,
   openClaimCount,
   isEligibleForEvidence,
@@ -126,17 +124,11 @@ export function CustomerProfilePageHero({
               {profile.primary_email ?? profile.id}
             </p>
             <p className="mt-2 max-w-2xl text-body-sm" style={{ color: 'var(--ink-secondary)' }}>
-              Take this intelligence back to your Gorgias or Zendesk ticket. Use an evidence package in your Shopify dispute or bank portal when you need documentation.
+              Take this context back to your Gorgias or Zendesk ticket. Use an evidence package when you need documentation, and keep final merchant decisions outside Unauth.
             </p>
             <div className="mt-4 flex flex-wrap items-center gap-2">
               <InvestigationStatusSelect profileId={profile.id} initialStatus={profile.investigation_status ?? 'new'} />
-              <WatchlistStarButton
-                customerProfileId={profile.id}
-                displayName={profile.names[0] ?? undefined}
-                displayEmail={profile.primary_email ?? undefined}
-                lastSeenRisk={profile.risk_level}
-                initialWatchlisted={watchlisted}
-              />
+              <WatchlistStarButton />
               {!viewToken && (
                 <Link
                   href={`/customers/${profile.id}/claims`}
@@ -228,7 +220,7 @@ export function CustomerProfilePageHero({
         <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
           <p className="text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Evidence scope</p>
           <span className="text-caption" style={{ color: 'var(--text-muted)' }}>
-            Compare what was observed in this store vs merchant-wide network exposure
+            Compare what was observed in this store vs pseudonymous network exposure
           </span>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

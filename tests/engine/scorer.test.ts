@@ -388,7 +388,7 @@ describe('scoreCluster', () => {
   // ========================================================================
 
   describe('language rules', () => {
-    it('never uses forbidden words in recommended_action', () => {
+    it('does not emit merchant-facing recommended_action text', () => {
       const cluster = baseCluster({ confidence_score: 133 });
       const orders = [
         baseOrder('o1', { chargeback_filed: true }),
@@ -396,9 +396,7 @@ describe('scoreCluster', () => {
       ];
 
       const result = scoreCluster({ cluster, orders });
-      expect(result.recommended_action.toLowerCase()).not.toContain('fraud');
-      expect(result.recommended_action.toLowerCase()).not.toContain('scammer');
-      expect(result.recommended_action.toLowerCase()).not.toContain('criminal');
+      expect(result.recommended_action).toBeNull();
     });
   });
 

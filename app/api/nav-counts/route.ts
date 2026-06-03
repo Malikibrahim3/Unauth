@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { resolveCallerContext } from '@/lib/permissions';
+import { TABLES } from '@/lib/supabase/tables';
 
 export async function GET() {
   const supabase = createClient();
@@ -12,23 +13,16 @@ export async function GET() {
   const serviceClient = createServiceClient();
   const ctx = await resolveCallerContext(serviceClient, user.id);
   if (!ctx) {
-    return NextResponse.json({ watchlistCount: 0, claimsCount: 0 });
+    return NextResponse.json({ claimsCount: 0 });
   }
 
-  const [watchlistResult, claimsResult] = await Promise.all([
-    serviceClient
-      .from('watchlist_entries' as never)
-      .select('id', { count: 'exact', head: true })
-      .eq('merchant_id' as never, ctx.merchantId as never),
-    serviceClient
-      .from('merchant_claims' as never)
-      .select('id', { count: 'exact', head: true })
-      .eq('merchant_id' as never, ctx.merchantId as never)
-      .in('status' as never, ['open', 'under_review', 'pending_evidence'] as never),
-  ]);
+  const { count } = await serviceClient
+    .from(TABLES.MERCHANT_CLAIMS as never)
+    .select('id', { count: 'exact', head: true })
+    .eq('merchant_id' as never, ctx.merchantId as never)
+    .in('status' as never, ['open', 'under_review', 'pending_evidence'] as never);
 
   return NextResponse.json({
-    watchlistCount: watchlistResult.count ?? 0,
-    claimsCount: claimsResult.count ?? 0,
+    claimsCount: count ?? 0,
   });
 }

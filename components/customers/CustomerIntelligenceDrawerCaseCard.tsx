@@ -43,14 +43,7 @@ export function CustomerIntelligenceDrawerCaseCard({
         <div className="flex items-center gap-1.5 flex-wrap justify-end">
           <span className={tierChipGradeClass(profile.risk_level)}>{tierLabel(profile.risk_level)}</span>
           {hasProfileId ? (
-            <WatchlistStarButton
-              customerProfileId={profile.id}
-              displayName={profile.names[0] ?? undefined}
-              displayEmail={profile.primary_email ?? undefined}
-              lastSeenRisk={profile.risk_level}
-              initialWatchlisted={profile.on_watchlist}
-              watchlistEntryId={profile.watchlist_entry_id ?? null}
-            />
+            <WatchlistStarButton />
           ) : null}
         </div>
       </div>

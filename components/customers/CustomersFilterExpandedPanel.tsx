@@ -47,20 +47,20 @@ export function CustomersFilterExpandedPanel({
                 className="h-9 w-full rounded-md px-3 text-[13px] focus:outline-none"
                 style={{ background: 'var(--bg-inset)', border: '1px solid var(--border)', color: 'var(--text)' }}
               >
-                <option value="">All confidence levels</option>
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-                <option value="critical">Critical</option>
+                <option value="">All match bands</option>
+                <option value="low">Light match band</option>
+                <option value="medium">Moderate match band</option>
+                <option value="high">Strong match band</option>
+                <option value="critical">Very strong match band</option>
               </select>
             </div>
 
             {/* Checkboxes */}
             <div className="lg:col-span-9 flex flex-wrap gap-x-5 gap-y-2 items-center pb-0.5">
               {[
+                { key: 'openClaims', label: 'Open claims for review' },
                 { key: 'hasRefunds', label: 'Has refunds' },
                 { key: 'hasChargebacks', label: 'Has chargebacks' },
-                { key: 'watchlisted', label: 'Watchlisted only' },
                 { key: 'manuallyReviewed', label: 'Manually reviewed' },
               ].map(({ key, label }) => (
                 <label key={key} htmlFor={`customers-filter-${key}`} className="flex items-center gap-2 text-xs cursor-pointer" style={{ color: 'var(--text-muted)' }}>

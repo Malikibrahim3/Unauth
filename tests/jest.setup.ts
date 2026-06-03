@@ -1,3 +1,7 @@
+import { loadDotenvFiles } from '@/lib/utils/loadDotenv';
+
+loadDotenvFiles();
+
 process.env.IDENTITY_SALT =
   process.env.IDENTITY_SALT ||
   'test-salt-0000000000000000000000000000000000000000000000000000000000000000';

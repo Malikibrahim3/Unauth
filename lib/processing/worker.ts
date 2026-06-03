@@ -149,21 +149,13 @@ function pureGradeToMatchStatus(
   return 'none';
 }
 
-function recommendedActionForPureGrade(
-  grade: PersistedIdentityResult['grade']
-): string | null {
-  if (grade === 'definite') return 'Treat as the same customer identity.';
-  if (grade === 'probable') return 'Review as a likely same-customer match.';
-  if (grade === 'possible') return 'Review supporting identity evidence before action.';
-  return null;
-}
-
 type PersistedIdentityResult = {
   grade: 'weak' | 'possible' | 'probable' | 'definite' | null;
   matchStatus: MatchStatus;
   identityScore: number | null;
   signalsMatched: string[];
   behaviouralFlags: string[];
+  /** @deprecated Always null — legacy DB column; use evidence_summary / context_summary. */
   recommendedAction: string | null;
   ce3Eligible: boolean;
   ce3QualifyingTransactions: string[];
@@ -395,7 +387,6 @@ function buildClusterIdentityResults(
       const grade = pureGradeToLegacyGrade(resolvedPureGrade);
       const matchStatus = pureGradeToMatchStatus(resolvedPureGrade);
       const identityScore = grade ? (rowPureResult?.identity_match_score ?? null) : null;
-      const recommendedAction = recommendedActionForPureGrade(grade);
       const isConfirmed = matchStatus === 'definite';
       const isProbable = matchStatus === 'probable';
       const isCandidate = matchStatus === 'candidate';
@@ -406,7 +397,7 @@ function buildClusterIdentityResults(
         identityScore: reviewDecision.reviewWorthy ? identityScore : null,
         signalsMatched: reviewDecision.reviewWorthy ? rowSignals : [],
         behaviouralFlags: (clusterScore?.behavioural_flags ?? []).map((flag) => flag.flag),
-        recommendedAction: reviewDecision.reviewWorthy ? recommendedAction : null,
+        recommendedAction: null,
         ce3Eligible: contextResult?.ce3_eligible ?? clusterScore?.ce3_eligible ?? false,
         ce3QualifyingTransactions: ce3OrderIds,
         clusterId: reviewDecision.reviewWorthy && isConfirmed ? cluster.cluster_id : null,

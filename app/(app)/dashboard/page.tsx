@@ -114,13 +114,6 @@ export default async function DashboardPage() {
   const recentRuns = typedRuns.slice(0, 4);
   const { total: totalPackages, ce3Eligible: priorMatchPackages } = evidenceCounts;
 
-  const { count: unreviewedAppearances } = await serviceClient
-    .from('watchlist_appearances' as never)
-    .select('id', { count: 'exact', head: true })
-    .eq('merchant_id', ctx.merchantId)
-    .is('reviewed_at', null);
-  const watchlistNeedReview = unreviewedAppearances ?? 0;
-
   let reviewQueue: number | null = null;
   try {
     reviewQueue = await countMerchantReviewQueueProfiles(serviceClient, ctx.merchantId);
@@ -166,14 +159,6 @@ export default async function DashboardPage() {
       href: '/chargebacks',
     });
   }
-  if (watchlistNeedReview > 0) {
-    activity.push({
-      type: 'Watchlist',
-      detail: `${watchlistNeedReview} appearance${watchlistNeedReview === 1 ? '' : 's'} pending review`,
-      time: 'current',
-      href: '/watchlist',
-    });
-  }
   if (latestRun) {
     activity.push({
       type: 'Import',
@@ -207,7 +192,6 @@ export default async function DashboardPage() {
       claimsNeedingAction={claimsNeedingAction}
       totalPackages={totalPackages}
       priorMatchPackages={priorMatchPackages}
-      watchlistNeedReview={watchlistNeedReview}
       activity={activity}
       recentRuns={recentRuns}
     />

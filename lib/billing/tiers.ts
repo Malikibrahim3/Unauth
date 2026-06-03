@@ -82,7 +82,7 @@ export const TIER_CONFIG: Record<Tier, TierEntitlements> = {
   free: {
     tier: 'free',
     label: 'Free',
-    tagline: 'Join the network and review occasional claims',
+    tagline: 'Network participation with baseline access scaled to what you contribute',
     priceMonthlyUsd: 0,
     features: {
       own_store_analytics: true,
@@ -99,7 +99,7 @@ export const TIER_CONFIG: Record<Tier, TierEntitlements> = {
       network_signal_enrichment: true,
     },
     limits: {
-      contextCreditsPerMonth: 50,
+      contextCreditsPerMonth: 100,
       connectedStores: 1,
       seats: 1,
       historyDays: 30,
@@ -109,7 +109,7 @@ export const TIER_CONFIG: Record<Tier, TierEntitlements> = {
   pro: {
     tier: 'pro',
     label: 'Pro',
-    tagline: 'Review claims regularly inside support',
+    tagline: 'Single-store claim review with six months of network history',
     priceMonthlyUsd: 99,
     features: {
       own_store_analytics: true,
@@ -130,14 +130,14 @@ export const TIER_CONFIG: Record<Tier, TierEntitlements> = {
       contextCreditsPerMonth: 1_000,
       connectedStores: 1,
       seats: 5,
-      historyDays: 90,
+      historyDays: 180,
       apiCallsPerMonth: 0,
     },
   },
   growth: {
     tier: 'growth',
     label: 'Growth',
-    tagline: 'High-volume network-powered claim review',
+    tagline: 'Multi-store operations with two years of network history and aggregate reporting',
     priceMonthlyUsd: 399,
     features: {
       own_store_analytics: true,
@@ -162,7 +162,7 @@ export const TIER_CONFIG: Record<Tier, TierEntitlements> = {
       contextCreditsPerMonth: 5_000,
       connectedStores: 5,
       seats: 15,
-      historyDays: 365,
+      historyDays: 730,
       apiCallsPerMonth: 0,
     },
   },

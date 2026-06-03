@@ -1,32 +1,31 @@
+import { getMerchantSubscriptionRow } from '@/lib/billing/merchantBilling';
+import { normalizePlanId, type SubscriptionStatus } from '@/lib/billing/plans';
 import { normalizeTier } from '@/lib/billing/normalizeTier';
 import { effectiveTier, type Tier } from '@/lib/billing/tiers';
 import { DEV_TIER_COOKIE, getDevPreviewFromCookieValue } from '@/lib/product/devPreview';
-import { TABLES } from '@/lib/supabase/tables';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-export type SubscriptionStatus = 'active' | 'trialing' | 'past_due' | 'canceled';
+export type { SubscriptionStatus };
 
 export interface MerchantSubscription {
   merchantId: string;
   /** Subscribed tier from DB — used for credits and allowances (never dev-gated to free). */
   tier: Tier;
+  planId: ReturnType<typeof normalizePlanId>;
   status: SubscriptionStatus;
   currentPeriodStart: string;
   currentPeriodEnd: string | null;
+  stripeSubscriptionId: string | null;
+  stripeCustomerId: string | null;
+  cancelAtPeriodEnd: boolean;
+  downgradeToPlanId: ReturnType<typeof normalizePlanId> | null;
+  gracePeriodEndsAt: string | null;
   providerRef: string | null;
-  /** Explicit monthly context credits for scale/enterprise; null when not set. */
   contextCreditsMonthly: number | null;
 }
 
-const ACTIVE_STATUSES: SubscriptionStatus[] = ['active', 'trialing'];
+const ACTIVE_STATUSES: SubscriptionStatus[] = ['active', 'grace_period', 'past_due', 'free'];
 
-/**
- * Returns the merchant's effective billing tier (after {@link effectiveTier} / `BILLING_ACTIVE`).
- * Dev-preview cookie override applies in non-production before the gate.
- *
- * Feature access must use {@link can} and {@link limit} — never branch on feature flags by
- * comparing this string to `'pro'` / `'growth'` without those helpers.
- */
 export async function getMerchantTier(
   supabase: SupabaseClient,
   merchantId: string,
@@ -50,61 +49,41 @@ async function resolveMerchantTierRaw(
     }
   }
 
-  const { data, error } = await supabase
-    .from(TABLES.SUBSCRIPTIONS)
-    .select('tier, status, current_period_start, current_period_end, provider_ref')
-    .eq('merchant_id', merchantId)
-    .in('status', ACTIVE_STATUSES)
-    .order('current_period_start', { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  const row = await getMerchantSubscriptionRow(supabase, merchantId);
+  if (!row) return 'free';
+  return normalizeTier(row.planId);
+}
 
-  if (error || !data) {
-    return 'free';
-  }
-
-  return normalizeTier(data.tier);
+function mapToLegacySubscription(
+  merchantId: string,
+  row: NonNullable<Awaited<ReturnType<typeof getMerchantSubscriptionRow>>>,
+): MerchantSubscription {
+  return {
+    merchantId,
+    tier: normalizeTier(row.planId),
+    planId: row.planId,
+    status: row.status,
+    currentPeriodStart: row.currentPeriodStart,
+    currentPeriodEnd: row.currentPeriodEnd,
+    stripeSubscriptionId: row.stripeSubscriptionId,
+    stripeCustomerId: row.stripeCustomerId,
+    cancelAtPeriodEnd: row.cancelAtPeriodEnd,
+    downgradeToPlanId: row.downgradeToPlanId,
+    gracePeriodEndsAt: row.gracePeriodEndsAt,
+    providerRef: row.stripeSubscriptionId,
+    contextCreditsMonthly: row.contextCreditsMonthly,
+  };
 }
 
 export async function getMerchantSubscription(
   supabase: SupabaseClient,
   merchantId: string,
 ): Promise<MerchantSubscription | null> {
-  const { data, error } = await supabase
-    .from(TABLES.SUBSCRIPTIONS)
-    .select(
-      'tier, status, current_period_start, current_period_end, provider_ref, context_credits_monthly',
-    )
-    .eq('merchant_id', merchantId)
-    .in('status', ACTIVE_STATUSES)
-    .order('current_period_start', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (error || !data) return null;
-
-  const row = data as {
-    tier: string;
-    status: string;
-    current_period_start: string;
-    current_period_end: string | null;
-    provider_ref: string | null;
-    context_credits_monthly: number | null;
-  };
-
-  return {
-    merchantId,
-    tier: normalizeTier(row.tier),
-    status: row.status as SubscriptionStatus,
-    currentPeriodStart: row.current_period_start,
-    currentPeriodEnd: row.current_period_end,
-    providerRef: row.provider_ref,
-    contextCreditsMonthly:
-      row.context_credits_monthly != null ? Number(row.context_credits_monthly) : null,
-  };
+  const row = await getMerchantSubscriptionRow(supabase, merchantId);
+  if (!row || !ACTIVE_STATUSES.includes(row.status)) return null;
+  return mapToLegacySubscription(merchantId, row);
 }
 
-/** Subscribed tier for credits/allowances — same as {@link getMerchantSubscription}.tier. */
 export async function getSubscribedMerchantTier(
   supabase: SupabaseClient,
   merchantId: string,

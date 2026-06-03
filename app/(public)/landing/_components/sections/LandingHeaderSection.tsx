@@ -10,21 +10,22 @@ export function LandingHeaderSection() {
           <div className="flex items-center gap-8">
             <UnauthLogo variant="wordmark-light" size={28} />
             <nav className="ua-landing-nav-links hidden md:flex items-center gap-7">
-              <Link href="#how-it-works" className="ua-nav-link">How it works</Link>
-              <Link href="#network" className="ua-nav-link">Network</Link>
+              <Link href="#integrations" className="ua-nav-link">Integrations</Link>
+              <Link href="#workflow" className="ua-nav-link">Workflow</Link>
               <Link href="#evidence" className="ua-nav-link">Evidence</Link>
-              <Link href="#security" className="ua-nav-link">Security</Link>
+              <Link href="#pricing" className="ua-nav-link">Pricing</Link>
+              <Link href="#faq" className="ua-nav-link">FAQ</Link>
             </nav>
           </div>
           <div className="flex items-center gap-4">
             <Link href="/login" className="ua-landing-nav-signin hover:underline">
               Sign in
             </Link>
-            <Link href="/audit" className="ua-landing-cta-sm md:hidden hover:bg-[var(--landing-accent-hover)]">
-              Audit →
+            <Link href="/signup" className="ua-landing-cta-sm md:hidden hover:bg-[var(--landing-accent-hover)]">
+              Start →
             </Link>
-            <Link href="/audit" className="ua-landing-cta-md hidden md:inline-flex hover:bg-[var(--landing-accent-hover)]">
-              Run free audit →
+            <Link href="/signup" className="ua-landing-cta-md hidden md:inline-flex hover:bg-[var(--landing-accent-hover)]">
+              Create workspace →
             </Link>
           </div>
         </div>

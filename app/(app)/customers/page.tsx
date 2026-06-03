@@ -51,7 +51,9 @@ export default async function CustomersOverviewPage({
   const riskFilter      = sp.risk ?? '';
   const hasRefunds      = sp.hasRefunds === '1';
   const hasChargebacks  = sp.hasChargebacks === '1';
-  const watchlistedOnly = sp.watchlisted === '1';
+  /** Legacy query param — ignored (watchlist filter retired). */
+  void (sp.watchlisted === '1');
+  const openClaimsOnly = sp.openClaims === '1';
   const manuallyReviewed = sp.manuallyReviewed === '1';
   const sort            = sp.sort ?? 'risk';
 
@@ -153,7 +155,7 @@ export default async function CustomersOverviewPage({
   let query = svc
     .from(TABLES.CUSTOMER_PROFILES)
     .select(
-      'id, risk_score, risk_level, total_orders, total_refund_claims, total_chargebacks, refund_rate, refund_acceleration_score, total_merchants_seen_at, fastest_claim_days, primary_email, names, on_watchlist, manually_reviewed, last_seen, first_seen, profile_confidence, investigation_status',
+      'id, risk_score, risk_level, total_orders, total_refund_claims, total_chargebacks, refund_rate, refund_acceleration_score, total_merchants_seen_at, fastest_claim_days, primary_email, names, manually_reviewed, last_seen, first_seen, profile_confidence, investigation_status',
       { count: 'exact' }
     )
     .or(merchantFilter);
@@ -185,9 +187,30 @@ export default async function CustomersOverviewPage({
     query = (query as any).ilike('phones::text', `%${escapePostgrestFilterValue(phoneFilter)}%`);
   }
 
-  // Risk level
+  // Identity match band (stored as risk_level — internal column name only)
   if (riskFilter) {
     query = query.eq('risk_level', riskFilter);
+  }
+
+  if (openClaimsOnly) {
+    const { data: openClaimRows } = await svc
+      .from(TABLES.MERCHANT_CLAIMS as never)
+      .select('customer_id')
+      .eq('merchant_id' as never, ctx.merchantId as never)
+      .in('status' as never, ['open', 'under_review', 'pending_evidence', 'evidence_requested', 'pending', 'escalated'] as never)
+      .not('customer_id', 'is', null)
+      .limit(500) as unknown as { data: Array<{ customer_id: string | null }> | null };
+    const openClaimProfileIds = Array.from(
+      new Set(
+        (openClaimRows ?? [])
+          .map((r) => r.customer_id)
+          .filter((id): id is string => typeof id === 'string' && id.length > 0),
+      ),
+    );
+    query =
+      openClaimProfileIds.length > 0
+        ? query.in('id', openClaimProfileIds)
+        : query.eq('id', '00000000-0000-0000-0000-000000000000');
   }
 
   // Numeric ranges
@@ -206,7 +229,6 @@ export default async function CustomersOverviewPage({
   // Boolean flags
   if (hasRefunds)      query = query.gt('total_refund_claims', 0);
   if (hasChargebacks)  query = query.gt('total_chargebacks', 0);
-  if (watchlistedOnly) query = query.eq('on_watchlist', true);
   if (manuallyReviewed) query = query.eq('manually_reviewed', true);
 
   // Date ranges
@@ -268,7 +290,6 @@ export default async function CustomersOverviewPage({
     fastest_claim_days: number | null;
     primary_email: string | null;
     names: string[] | null;
-    on_watchlist: boolean;
     manually_reviewed: boolean;
     last_seen: string;
     first_seen: string;
@@ -280,7 +301,7 @@ export default async function CustomersOverviewPage({
   const totalPages = Math.ceil(total / PAGE_SIZE);
   const from = total === 0 ? 0 : offset + 1;
   const to = Math.min(offset + PAGE_SIZE, total);
-  const noFilters = !q && !riskFilter && !hasRefunds && !hasChargebacks && !watchlistedOnly &&
+  const noFilters = !q && !riskFilter && !hasRefunds && !hasChargebacks && !openClaimsOnly &&
     !manuallyReviewed && !ipFilter && !addressFilter && !cardFilter && !phoneFilter &&
     riskMin === null && riskMax === null && refundRateMin === null && refundRateMax === null &&
     ordersMin === null && ordersMax === null && claimsMin === null && claimsMax === null &&
@@ -310,7 +331,7 @@ export default async function CustomersOverviewPage({
       statusFilter={statusFilter}
       hasRefunds={hasRefunds}
       hasChargebacks={hasChargebacks}
-      watchlistedOnly={watchlistedOnly}
+      openClaimsOnly={openClaimsOnly}
     />
   );
 }

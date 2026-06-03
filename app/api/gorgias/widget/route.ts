@@ -8,11 +8,16 @@ import {
   type GorgiasClaimWidgetResult,
 } from '@/lib/gorgias/widgetData';
 import type { MerchantCustomerLookupDiagnostics } from '@/lib/gorgias/findMerchantCustomerByEmail';
+import { buildCreditUsageWidgetFields } from '@/lib/billing/creditUsage';
+import { CONTEXT_UNLOCK_CTA_LABELS, getContextCreditSnapshot } from '@/lib/billing/contextCredits';
 import {
   claimWidgetToJson,
+  hasGorgiasUnlockCaseScope,
   type GorgiasWidgetJsonPayload,
   type GorgiasWidgetLinkContext,
+  type GorgiasWidgetJsonOptions,
 } from '@/lib/gorgias/widgetJson';
+import { env } from '@/lib/utils/env';
 import { gorgiasWidgetLog, gorgiasWidgetLogError } from '@/lib/gorgias/widgetLog';
 import { GORGIAS_FRAME_HEADERS, renderGorgiasWidgetHtml } from '@/lib/gorgias/renderWidgetHtml';
 import { validateWidgetToken } from '@/lib/api/widgetTokens';
@@ -37,9 +42,9 @@ const JSON_RESPONSE_HEADERS = {
 
 const GORGIAS_WIDGET_JSON_FALLBACK: GorgiasWidgetJsonPayload = {
   identity: 'Case context preview unavailable',
-  claims: 'View basic context — 1 credit',
-  orders: 'View full context — 2 credits',
-  claim_rate: 'Generate evidence summary — 3 credits',
+  claims: CONTEXT_UNLOCK_CTA_LABELS.basic_context,
+  orders: CONTEXT_UNLOCK_CTA_LABELS.full_context,
+  claim_rate: CONTEXT_UNLOCK_CTA_LABELS.evidence_summary,
   primary_reason: "Uses your store's own order, claim, delivery, and customer history.",
   recent_activity: 'Adds pseudonymous network intelligence from participating merchants.',
   ce3_evidence: 'Unauth provides contextual information for merchant review. Unauth does not make refund, fulfilment, account, or customer eligibility decisions.',
@@ -49,9 +54,9 @@ const GORGIAS_WIDGET_JSON_FALLBACK: GorgiasWidgetJsonPayload = {
   basic_unlock_url: '',
   full_unlock_url: '',
   evidence_unlock_url: '',
-  basic_unlock_label: 'View basic context — 1 credit',
-  full_unlock_label: 'View full context — 2 credits',
-  evidence_unlock_label: 'Generate evidence summary — 3 credits',
+  basic_unlock_label: CONTEXT_UNLOCK_CTA_LABELS.basic_context,
+  full_unlock_label: CONTEXT_UNLOCK_CTA_LABELS.full_context,
+  evidence_unlock_label: CONTEXT_UNLOCK_CTA_LABELS.evidence_summary,
 };
 
 type WidgetReturnContext = {
@@ -124,10 +129,22 @@ function wantsHtmlResponse(request: NextRequest): boolean {
 }
 
 /** Non-production only: `?widget_diagnostic=1` enables detailed pre-unlock stats in HTML. */
-function widgetJsonOptions(request: NextRequest): { allowDetailedPreview?: boolean } {
+function widgetJsonOptions(request: NextRequest): GorgiasWidgetJsonOptions {
   if (process.env.NODE_ENV === 'production') return {};
   if (request.nextUrl.searchParams.get('widget_diagnostic') !== '1') return {};
   return { allowDetailedPreview: true };
+}
+
+async function enrichWidgetJsonOptions(
+  service: SupabaseClient,
+  merchantId: string,
+  base: GorgiasWidgetJsonOptions,
+  link?: GorgiasWidgetLinkContext,
+): Promise<GorgiasWidgetJsonOptions> {
+  if (!link || !hasGorgiasUnlockCaseScope(link)) return base;
+  const snapshot = await getContextCreditSnapshot(service, merchantId);
+  const creditUsage = buildCreditUsageWidgetFields(snapshot, env.NEXT_PUBLIC_APP_URL);
+  return { ...base, creditUsage };
 }
 
 function isUnresolvedGorgiasVar(value: string): boolean {
@@ -163,7 +180,7 @@ function returnJsonForResult(input: {
   returnHtml: boolean;
   status?: number;
   linkContext?: GorgiasWidgetLinkContext;
-  widgetJsonOptions?: { allowDetailedPreview?: boolean };
+  widgetJsonOptions?: GorgiasWidgetJsonOptions;
 }): NextResponse {
   const body = claimWidgetToJson(input.result, input.linkContext, input.widgetJsonOptions);
   const status = input.status ?? 200;
@@ -364,6 +381,13 @@ export async function GET(request: NextRequest) {
 
     gorgiasWidgetLog('customer_lookup.result', describeResultForLog(result));
 
+    const enrichedJsonOptions = await enrichWidgetJsonOptions(
+      service,
+      authResult.merchantId,
+      jsonOptions,
+      linkContext,
+    );
+
     return returnJsonForResult({
       branch: result.ok ? 'result_ok' : `result_${result.kind}`,
       result,
@@ -371,7 +395,7 @@ export async function GET(request: NextRequest) {
       ctx,
       returnHtml,
       linkContext,
-      widgetJsonOptions: jsonOptions,
+      widgetJsonOptions: enrichedJsonOptions,
     });
   } catch (err) {
     gorgiasWidgetLogError('fatal_error', err);

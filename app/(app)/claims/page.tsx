@@ -163,7 +163,7 @@ export default async function ClaimsPage({
   const orderIdByOrderRef = new Map<string, string>();
   if (orderRefs.length > 0) {
     const { data: orderRows } = await serviceClient
-      .from('fraud_transactions' as any)
+      .from(TABLES.AUDIT_TRANSACTIONS as any)
       .select('id,order_id')
       .eq('merchant_id', ctx.merchantId)
       .in('order_id', orderRefs)

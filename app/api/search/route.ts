@@ -105,23 +105,29 @@ export async function GET(req: NextRequest) {
   // ── 1. Customers ──────────────────────────────────────────────────────────
   if (types.includes('customers')) {
     try {
-      const { data: customers } = await serviceClient
+      let merchantProfileIds: string[] = [];
+      if (merchantJobIds.length > 0) {
+        const { data: appearances } = await serviceClient
+          .from('customer_profile_audit_appearances' as any)
+          .select('profile_id')
+          .in('audit_id', merchantJobIds.slice(0, 100))
+          .limit(500);
+        const profileIdsFromAppearances: string[] = (appearances ?? []).flatMap(
+          (row: { profile_id: string | null }) => (row.profile_id ? [row.profile_id] : []),
+        );
+        merchantProfileIds = [...new Set(profileIdsFromAppearances)];
+      }
+
+      const customersQuery = serviceClient
         .from('customer_profiles' as any)
         .select('id, name, email, risk_level')
-        .or(`name.ilike.%${q}%,email.ilike.%${q}%`)
-        .in(
-          'id',
-          merchantJobIds.length > 0
-            ? (
-                await serviceClient
-                  .from('transactions' as any)
-                  .select('customer_profile_id')
-                  .in('processing_job_id', merchantJobIds.slice(0, 100))
-                  .not('customer_profile_id', 'is', null)
-                  .limit(500)
-              ).data?.flatMap((r: { customer_profile_id: string }) => (r.customer_profile_id ? [r.customer_profile_id] : [])) ?? []
-            : [],
-        )
+        .or(`name.ilike.%${q}%,email.ilike.%${q}%`);
+
+      const { data: customers } = await (
+        merchantProfileIds.length > 0
+          ? customersQuery.in('id', merchantProfileIds)
+          : customersQuery.eq('id', '00000000-0000-0000-0000-000000000000')
+      )
         .limit(limit)
         .range(offset, offset + limit - 1);
 

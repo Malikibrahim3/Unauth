@@ -7,6 +7,7 @@ import { getSubscribedMerchantTier } from '@/lib/billing/getMerchantTier';
 import { TIER_CONFIG } from '@/lib/billing/tiers';
 import {
   creditFailureResponse,
+  NETWORK_PAUSED_AT_CAP_MESSAGE,
   precheckContextCredits,
   spendContextCreditsAfterSuccess,
 } from '@/lib/billing/contextUnlockFlow';
@@ -67,7 +68,7 @@ export async function performWidgetContextUnlock(
         status: 403,
         json: {
           error:
-            'Evidence summaries are available on paid plans (Pro or higher). Upgrade for more monthly context credits.',
+            'Case Reports are available on paid plans (Pro or higher). Upgrade for more monthly context credits.',
         },
       };
     }
@@ -89,6 +90,32 @@ export async function performWidgetContextUnlock(
       }),
     };
   }
+
+  const networkPausedFallback = creditPrecheck.mode.kind === 'network_paused_fallback';
+  const softCapBasic =
+    creditPrecheck.mode.kind === 'soft_cap_basic' ||
+    networkPausedFallback;
+
+  if (
+    creditPrecheck.mode.kind === 'standard' &&
+    creditPrecheck.snapshot.usageBand === 'exhausted' &&
+    params.contextType === 'evidence_summary'
+  ) {
+    return {
+      status: 402,
+      json: creditFailureResponse({
+        contextType: params.contextType,
+        creditsRequired: getContextCreditCost(params.contextType),
+        remaining: 0,
+        error:
+          'Monthly credits are used up. Case Report is paused until you add a top-up or your allowance resets. Store Check still works.',
+      }),
+    };
+  }
+
+  const resultContextType: ContextUnlockType = networkPausedFallback
+    ? 'basic_context'
+    : params.contextType;
 
   const search = await runWidgetContextProfileSearch(
     service,
@@ -115,7 +142,7 @@ export async function performWidgetContextUnlock(
 
   const results = formatContextLookupResults(
     params.merchantId,
-    params.contextType,
+    resultContextType,
     search.rawRows,
   );
 
@@ -147,16 +174,28 @@ export async function performWidgetContextUnlock(
     };
   }
 
+  const creditsToSpend = networkPausedFallback
+    ? getContextCreditCost('basic_context')
+    : getContextCreditCost(params.contextType);
+
   const creditSpend = await spendContextCreditsAfterSuccess(service, {
     merchantId: params.merchantId,
-    contextType: params.contextType,
+    contextType: resultContextType,
     claimId: params.claimId ?? null,
     ticketRef: params.ticketRef ?? null,
     orderRef: params.orderRef ?? null,
     customerRef: params.customerRef ?? null,
+    allowSoftCap: softCapBasic,
     metadata: {
       request_source: 'widget',
       api_key_id: params.apiKeyId,
+      ...(networkPausedFallback
+        ? {
+            network_paused_fallback: true,
+            requested_context_type: params.contextType,
+          }
+        : {}),
+      ...(softCapBasic && !networkPausedFallback ? { soft_cap_basic: true } : {}),
     },
   });
 
@@ -189,9 +228,11 @@ export async function performWidgetContextUnlock(
       results,
       total: results.length,
       contextType: params.contextType,
-      creditsSpent: getContextCreditCost(params.contextType),
+      deliveredContextType: resultContextType,
+      creditsSpent: creditsToSpend,
       remainingCredits: creditSpend.snapshot.remaining,
       disclaimer: CONTEXT_REVIEW_DISCLAIMER,
+      networkPausedNotice: networkPausedFallback ? NETWORK_PAUSED_AT_CAP_MESSAGE : null,
       ticketRef: params.ticketRef ?? null,
       orderRef: params.orderRef ?? null,
       claimId: params.claimId ?? null,

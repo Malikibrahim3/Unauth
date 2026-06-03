@@ -14,7 +14,6 @@ import {
   ShieldCheck,
   Users,
   Inbox,
-  Eye,
   Upload,
   Activity,
   ArrowRight,
@@ -58,7 +57,6 @@ export type DashboardPageCockpitProps = {
   claimsNeedingAction: number;
   totalPackages: number;
   priorMatchPackages: number;
-  watchlistNeedReview: number;
   activity: ActivityItem[];
   recentRuns: RunRow[];
 };
@@ -78,7 +76,6 @@ export function DashboardPageCockpit(props: DashboardPageCockpitProps) {
     claimsNeedingAction,
     totalPackages,
     priorMatchPackages,
-    watchlistNeedReview,
     activity,
     recentRuns,
   } = props;
@@ -278,17 +275,6 @@ export function DashboardPageCockpit(props: DashboardPageCockpitProps) {
                 : priorMatchPackages > 0
                   ? `${priorMatchPackages} include a prior identity match — strongest for disputes.`
                   : 'Export packaged identity evidence for dispute review.'}
-            </p>
-          </ModuleCard>
-
-          <ModuleCard title="Watchlist appearances" href="/watchlist" linkLabel="Open" icon={Eye}>
-            <p className="num font-semibold" style={{ fontSize: 22, color: 'var(--data-score)' }}>
-              {watchlistNeedReview.toLocaleString()}
-            </p>
-            <p className="text-caption mt-1" style={{ color: 'var(--text-muted)' }}>
-              {watchlistNeedReview > 0
-                ? 'Watched identities appeared in new activity — review pending.'
-                : 'No new appearances from watched identities.'}
             </p>
           </ModuleCard>
 

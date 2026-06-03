@@ -30,7 +30,8 @@ export const COPY = {
   evidenceSignals: 'Evidence signals',
   linkedOrders: 'Linked orders',
   confidenceLevel: 'Confidence level',
-  recommendedAction: 'Recommended review action',
+  /** Internal/engine column label only — not shown as an operational instruction. */
+  recommendedAction: 'Review context note (internal)',
   matchSummary: 'Identity match summary',
 
   // Status labels

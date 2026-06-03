@@ -438,12 +438,6 @@ export default async function StorePage() {
                 detail={dataPresence.hasEvidencePackages ? `${dataPresence.sources.evidencePackages.toLocaleString()} dispute-ready` : 'None generated yet'}
                 icon={ShieldCheck}
               />
-              <DataPresenceRow
-                label="Watchlist"
-                present={dataPresence.hasWatchlist}
-                detail={dataPresence.hasWatchlist ? `${dataPresence.sources.watchlistEntries.toLocaleString()} watched identities` : 'No watched identities'}
-                icon={Activity}
-              />
             </div>
           </SectionCard>
 

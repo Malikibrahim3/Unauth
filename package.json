@@ -63,7 +63,8 @@
     "post:gorgias-webhook-fixture": "ts-node --project tsconfig.scripts.json --transpile-only -r tsconfig-paths/register scripts/post-gorgias-webhook-fixture.ts",
     "create:gorgias-support-connection": "ts-node --project tsconfig.scripts.json --transpile-only -r tsconfig-paths/register scripts/create-gorgias-support-connection.ts",
     "build:extension": "cd extensions/chrome && npm install && npm run build",
-    "doctor": "react-doctor . --json"
+    "doctor": "react-doctor . --json",
+    "gen:supabase-types": "sh -c 'test -n \"$SUPABASE_PROJECT_ID\" || (echo \"Set SUPABASE_PROJECT_ID (see docs/supabase-types-regeneration.md)\" >&2; exit 1); npx supabase gen types typescript --project-id \"$SUPABASE_PROJECT_ID\" > lib/supabase/types.ts'"
   },
   "dependencies": {
     "@amplitude/analytics-browser": "^2.42.0",
@@ -83,6 +84,7 @@
     "react-dom": "^18",
     "reactflow": "^11.11.4",
     "recharts": "^2.13.3",
+    "stripe": "^17.7.0",
     "svg-dotted-map": "^2.0.1",
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7",

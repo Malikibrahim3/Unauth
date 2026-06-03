@@ -1,61 +1,62 @@
 import { t } from './_tokens';
+import {
+  LANDING_BILLING_TRANSPARENCY,
+  LANDING_FAQ_ALWAYS_FREE,
+  LANDING_PRICING_TIERS,
+  LANDING_TIER_CHART,
+} from '@/lib/billing/landingTierChart';
 
-export const LANDING_PRODUCT_LADDER = [
-  {
-    tier: 'Free · Evidence',
-    title: 'Recover after the dispute exists',
-    body: 'Evidence packs with order, delivery, customer, support, and dispute context. CE 3.0 readiness checks where required data exists; surfaces missing fields including IP/device. Replaces spreadsheets, screenshots, and manual dispute prep.',
-    future: false,
-  },
-  {
-    tier: 'Pro · Claim Confidence',
-    title: 'Decide before you refund',
-    body: 'Customer history search, claim and refund patterns, trust and risk signals, helpdesk widgets, and a review queue so you choose who to trust, review, or challenge. You keep the final decision.',
-    future: false,
-  },
-  {
-    tier: 'Advanced · Prevention',
-    title: 'Stronger prevention workflows (planned)',
-    body: 'Future-facing: live lookup and scoring, custom rules, review routing, and network intelligence. Checkout controls are planned — not live today.',
-    future: true,
-  },
-  {
-    tier: 'Enterprise · Network API',
-    title: 'Partners query the network',
-    body: 'Privacy-preserving trust and risk signal APIs for PSPs, BNPLs, acquirers, and platforms — aggregate intelligence without exposing another merchant\'s private customer records.',
-    future: false,
-  },
-] as const;
+export {
+  LANDING_BILLING_TRANSPARENCY,
+  LANDING_FAQ_ALWAYS_FREE,
+  LANDING_PRICING_TIERS,
+  LANDING_TIER_CHART,
+};
+
+export const LANDING_PRODUCT_LADDER = LANDING_TIER_CHART.filter(
+  (tier) => tier.key !== 'enterprise',
+).map((tier) => ({
+  tier: tier.name,
+  title: tier.tagline,
+  body: tier.features.slice(0, 3).join(' · '),
+  future: false,
+}));
 
 export const LANDING_UPGRADE_LADDER = [
-  { tier: 'Free', copy: 'Recover chargebacks with evidence packs and CE 3.0 readiness.' },
-  { tier: 'Pro', copy: 'Decide refunds and claims with claim-confidence workflows.' },
-  { tier: 'Advanced', copy: 'Prepare to prevent with stronger workflows (future-leaning).' },
-  { tier: 'Enterprise / API', copy: 'Let partners query privacy-preserving network signals.' },
+  {
+    tier: 'Free',
+    copy: 'Join the network with useful day-one store context, helpdesk presence, and monthly context credits for occasional case review.',
+  },
+  {
+    tier: 'Pro',
+    copy: 'Review claims regularly inside support with deeper context, more credits, evidence summaries, and extended history.',
+  },
+  {
+    tier: 'Growth',
+    copy: 'Support high-volume claim review with multi-store coverage, longer history, advanced reporting, and more monthly credits.',
+  },
+  {
+    tier: 'Scale',
+    copy: 'Custom context infrastructure for case-scoped API or bulk workflows, security review, and embedded operations.',
+  },
 ] as const;
 
 export const LANDING_GOOD_CUSTOMERS_COPY =
-  'Trust signals, claim confidence, and consistent history help resolve genuine claims faster and lower manual review burden. Unauth does not auto-approve customers across the network — merchants stay in control.';
+  'Store context and pseudonymous network signals help teams review genuine cases faster without turning customers into permanent risk records. Unauth provides context, not decisions.';
 
-export const LANDING_FREE_WEDGE_COPY = {
-  title: 'Free replaces the messy evidence workflow',
-  body: 'Stop rebuilding chargeback packets from spreadsheets, screenshots, tracking portals, and order timelines. Free evidence is a real wedge — why pay just to prepare dispute documentation?',
+export const LANDING_UNAUTH_WEDGE_COPY = {
+  title: 'Unauth replaces the messy evidence workflow',
+  body: 'Stop rebuilding chargeback packets from spreadsheets, screenshots, tracking portals, and order timelines. The product is built on your store data from day one — no waiting for a network.',
 };
 
 export const LANDING_PRIVACY_NETWORK_COPY =
-  'Privacy-preserving, merchant-scoped records, aggregate signals, and thresholded network intelligence (k-anonymity gated). No private customer records are exposed across merchants — only patterns strong enough to meet network thresholds.';
-
-export const LANDING_PRICING_TEASER = [
-  { tier: 'Free Evidence', price: '£0', note: 'Evidence packs & CE 3.0 readiness checks' },
-  { tier: 'Pro Claim Confidence', price: 'from £99/mo', note: 'Planned pricing · starting from' },
-  { tier: 'Advanced Prevention', price: 'from £299/mo', note: 'Planned pricing · checkout controls not live' },
-  { tier: 'Enterprise / API', price: 'Custom', note: 'Per-query licensing later' },
-] as const;
+  'Privacy-preserving, merchant-scoped records and thresholded pseudonymous network intelligence (k-anonymity N≥3). Other merchants’ raw customer data is never exposed — only linked patterns strong enough to meet network thresholds.';
 
 const FAQ_FEATURED = [
+  LANDING_FAQ_ALWAYS_FREE,
   {
     q: 'What exactly is Unauth?',
-    a: 'Unauth is a merchant-side trust network for ecommerce claims, chargebacks, and post-purchase risk. We link identity patterns across hashed signals, surface claim confidence and evidence strength, and help you review before you refund — without auto-declining orders or sharing raw customer records across merchants.',
+    a: 'Unauth is a context and intelligence network for claim and customer review. We link pseudonymous signals, surface case context for merchant review, and help support teams assemble evidence without making refund, fulfilment, account, or eligibility decisions.',
   },
   {
     q: 'How do you get data from other merchants?',
@@ -63,7 +64,7 @@ const FAQ_FEATURED = [
   },
   {
     q: "Can you see my customers' data?",
-    a: "Your raw upload is processed inside your merchant workspace and is not exposed to other merchants. Network comparison uses HMAC-SHA256 identifiers, k-anonymity gates, and masked outputs so reports show relevant risk patterns without revealing another merchant's customer records.",
+    a: "Your raw upload is processed inside your merchant workspace and is not exposed to other merchants. Network comparison uses HMAC-SHA256 identifiers, k-anonymity gates, and masked outputs so reports show relevant pseudonymous patterns without revealing another merchant's customer records.",
   },
   {
     q: 'Is this GDPR compliant?',
@@ -71,46 +72,46 @@ const FAQ_FEATURED = [
   },
   {
     q: 'Do I need to integrate anything?',
-    a: 'No. Export a CSV from your store - Shopify, WooCommerce, Stripe, or any platform - and upload it. No API keys, no developer, no checkout plugin. If you can export an order report, you can run an audit.',
+    a: 'For live monitoring, yes: connect one order source and one helpdesk. CSV import is available for historical backfill or evaluation if you are not ready to connect yet.',
   },
   {
     q: 'How long does an audit take?',
-    a: "Around 20 minutes for most datasets. Files with 50,000+ orders may take slightly longer. You don't need to stay on the page - results will be ready when you return.",
+    a: "Around 20 minutes for most datasets. Files with 50,000+ orders may take slightly longer. You don't need to stay on the page — results will be ready when you return.",
   },
 ] as const;
 
 const FAQ_MORE = [
   {
-    q: 'How is this different from a blocklist?',
-    a: "Blocklists only flag signals you've already seen at your store. Unauth links identity patterns across merchants with privacy-preserving, thresholded network intelligence — so you can review claim confidence before refunding, not maintain a shared customer database.",
+    q: 'How is this different from a reusable customer list?',
+    a: "Unauth is designed to answer case questions, not help build customer denial lists. Context unlocks are case-scoped, network data is pseudonymous, and raw cross-merchant customer records are never exposed.",
   },
   {
     q: 'What does a confidence grade actually mean?',
-    a: 'Every identity cluster gets a grade — Definite, Probable, Possible, or Weak — based on how many signals match and how strong those matches are. Grades reflect claim-confidence strength, not a final refund decision. You decide what threshold you act on.',
+    a: 'Identity confidence reflects how strongly available data points appear linked. It does not mean a customer should be approved, rejected, refunded, denied, blocked, or punished.',
   },
   {
     q: 'What do I actually get at the end?',
-    a: 'A full audit report showing every identity cluster found, their confidence grade, the signals that linked them, their abuse history across the network, and a representment-ready case file for any cluster you want to dispute. Everything exportable.',
+    a: 'A reviewable record of store context, pseudonymous network context when available, and case-level evidence summaries or exports where your plan supports them.',
   },
   {
-    q: 'What is a representment-ready case file?',
-    a: 'To dispute a chargeback, you need documented evidence of order history and linked identity signals. Unauth builds CE 3.0-style evidence workflows where required data exists — transaction history, prior-order signal overlap, and readiness checks that flag missing IP/device fields. Merchants use outputs in dispute review at their discretion; outcomes are not guaranteed.',
+    q: 'What is chargeback evidence assembly?',
+    a: 'We assemble evidence and flag readiness for representment — transaction history, prior-order signal overlap, and missing-field detection. Full CE 3.0 qualification needs checkout-time data for some cases. Merchants use outputs at their discretion; outcomes are not guaranteed.',
   },
   {
     q: 'Does Unauth block orders automatically?',
-    a: 'No, and deliberately so. We believe merchants should keep the decline decision. We surface the intelligence, you decide what to do with it. This also means we never create false positives that cost you a legitimate sale - that is your call to make, not ours.',
+    a: 'No. Unauth provides contextual information for merchant review and does not make refund, fulfilment, account, or customer eligibility decisions.',
   },
   {
     q: 'How does pricing work?',
-    a: 'Free evidence packs are £0. Pro claim confidence is planned from £99/mo, Advanced prevention from £299/mo (checkout controls not live yet), and Enterprise/API is custom. Pricing is indicative — billing is not wired in this release.',
+    a: 'Every plan includes the widget, store context, and pseudonymous network context. Free includes 100 monthly context credits (baseline access aligned with network participation), Pro includes 1,000, Growth includes 5,000, and Scale uses dedicated monthly volume agreed at onboarding.',
   },
   {
     q: 'Who is Unauth for?',
-    a: "US ecommerce merchants processing more than 1,000 orders a month who are seeing refund abuse, INR fraud, or chargeback rates they can't explain with their current tools. If you're smaller, a free audit is still worth running - you might be surprised what's already in your data.",
+    a: "Ecommerce merchants seeing refund abuse, INR claims, or chargebacks they can't explain with processor-only tools. Connect your store and see your patterns in minutes.",
   },
   {
     q: 'How do I get started?',
-    a: 'Export your order history as a CSV and upload it. No account, no card, no integration. You\'ll have a full report in around 20 minutes.',
+    a: 'Connect your store or upload a CSV. No credit card required.',
   },
 ] as const;
 
@@ -143,8 +144,9 @@ export const COMPARISON_ROWS = [
   { cap: 'Surfaces cross-merchant identity patterns', a: 'partial' as const, b: 'no' as const, c: 'yes' as const, note: 'thresholded network signals (k≥3 merchants)' },
   { cap: 'Explainable signals (no black box)', a: 'partial' as const, b: 'no' as const, c: 'yes' as const, note: 'every flag documented' },
   { cap: 'Generates representment-ready case file', a: 'no' as const, b: 'no' as const, c: 'yes' as const, note: 'chargeback evidence packet' },
-  { cap: 'Works from CSV upload - no code required', a: 'no' as const, b: 'no' as const, c: 'yes' as const, note: 'start with exports you already have' },
+  { cap: 'CSV backfill available when integrations are not connected', a: 'no' as const, b: 'no' as const, c: 'yes' as const, note: 'historical import, optional' },
   { cap: 'You keep the decline decision - no black box blocks', a: 'no' as const, b: 'no' as const, c: 'yes' as const, note: 'advises, never auto-blocks' },
+  { cap: 'Context unlocks are case-scoped, not reusable customer surveillance', a: 'no' as const, b: 'no' as const, c: 'yes' as const, note: 'credits unlock review context for a case' },
   { cap: 'PII stays encrypted - never exposed in transit', a: 'no' as const, b: 'no' as const, c: 'yes' as const, note: 'client-side HMAC-SHA256' },
 ] as const;
 
@@ -152,12 +154,6 @@ export const COMPARISON_COLUMNS = [
   { name: 'Blocklists', sub: 'Flags repeat emails, IPs, or devices you have already seen', highlight: false, logo: false },
   { name: 'Checkout scoring', sub: 'Scores orders at checkout to catch payment fraud before approval', highlight: false, logo: false },
   { name: 'Unauth', sub: 'Claim confidence, evidence strength, and privacy-preserving network signals after checkout', highlight: true, logo: true },
-] as const;
-
-export const SHOPIFY_STEPS = [
-  { step: '1', title: 'Connect store', copy: 'Install app and authorize your Shopify store.' },
-  { step: '2', title: 'Auto-sync data', copy: 'Orders, fulfillment, and claim context start syncing immediately.' },
-  { step: '3', title: 'Review and close cases', copy: 'Fraud team works a live queue with status + evidence links.' },
 ] as const;
 
 export const FOOTER_STYLES_ESPRESSO = {

@@ -41,8 +41,8 @@ export type MerchantDataPresence = {
  * - shopify_order_signals is keyed by shop_domain only, so we resolve
  *   merchant_shopify_connections (merchant_id -> shop_domain) first.
  * - audit_transactions, processing_jobs, merchant_claims, support_case_intake,
- *   evidence_packages, watchlist_entries and customer_activity_log all carry a
- *   scalar merchant_id referencing merchants(id).
+ *   evidence_packages, and customer_activity_log all carry a scalar merchant_id
+ *   referencing merchants(id).
  * - public_audits is intentionally excluded: it is the public free-audit intake
  *   table and must not count as merchant workspace data until claimed and
  *   re-tenanted.
@@ -78,7 +78,6 @@ export async function getMerchantDataPresence(
     { count: merchantClaims },
     { count: supportCases },
     { count: evidencePackages },
-    { count: watchlistEntries },
     { count: customerActivity },
     { count: shopifyOrderSignals },
   ] = await Promise.all([
@@ -115,11 +114,6 @@ export async function getMerchantDataPresence(
       .select('id', { count: 'exact', head: true })
       .eq('merchant_id', merchantId),
     serviceClient
-      .from(TABLES.WATCHLIST_ENTRIES)
-      .select('id', { count: 'exact', head: true })
-      .eq('merchant_id', merchantId)
-      .eq('removed_by_merchant', false),
-    serviceClient
       .from('customer_activity_log' as never)
       .select('id', { count: 'exact', head: true })
       .eq('merchant_id', merchantId),
@@ -140,7 +134,7 @@ export async function getMerchantDataPresence(
     merchantClaims: merchantClaims ?? 0,
     supportCases: supportCases ?? 0,
     evidencePackages: evidencePackages ?? 0,
-    watchlistEntries: watchlistEntries ?? 0,
+    watchlistEntries: 0,
     customerActivity: customerActivity ?? 0,
   };
 
@@ -149,7 +143,7 @@ export async function getMerchantDataPresence(
   const hasOrders = sources.auditTransactions > 0 || hasShopifySignals;
   const hasHelpdeskClaims = sources.merchantClaims > 0 || sources.supportCases > 0;
   const hasEvidencePackages = sources.evidencePackages > 0;
-  const hasWatchlist = sources.watchlistEntries > 0;
+  const hasWatchlist = false;
   const hasCustomerActivity = sources.customerActivity > 0;
   const hasCsvImports = sources.csvImports > 0;
   const hasLiveIntegrationReports = hasShopifySignals || hasHelpdeskClaims;
@@ -159,7 +153,6 @@ export async function getMerchantDataPresence(
     hasOrders ||
     hasHelpdeskClaims ||
     hasEvidencePackages ||
-    hasWatchlist ||
     hasCustomerActivity ||
     hasCsvImports;
 

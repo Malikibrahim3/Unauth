@@ -9,14 +9,14 @@ export const CLAIM_TYPE_LABELS: Record<string, string> = {
 };
 
 export const DECISION_LABELS: Record<string, string> = {
-  approved: 'Merchant approved',
-  denied: 'Merchant declined',
+  approved: 'Resolved in customer favour',
+  denied: 'Closed without payout',
   escalated: 'Escalated for review',
-  partial_refund: 'Partial refund',
-  full_refund: 'Full refund',
+  partial_refund: 'Partial resolution',
+  full_refund: 'Full resolution',
   chargeback_disputed: 'CB disputed',
-  blacklist: 'Added to watchlist',
-  no_action: 'No action',
+  blacklist: 'Legacy restricted action',
+  no_action: 'No further action',
 };
 
 export type ClaimRow = {

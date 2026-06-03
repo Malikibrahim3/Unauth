@@ -58,7 +58,7 @@ export function ClaimReviewContextColumn({ wb }: { wb: ClaimReviewWorkbench }) {
               </CaseIntelTile>
               <CaseIntelTile label="Evidence">
                 <p className="font-semibold" style={{ color: evidenceRecorded ? 'var(--success)' : 'var(--text)' }}>{evidenceRecorded ? 'On record' : 'Missing'}</p>
-                <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{evidenceRecorded ? 'Ready for merchant decision' : 'Add evidence in action rail'}</p>
+                <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{evidenceRecorded ? 'Ready for merchant review outcome' : 'Add evidence in action rail'}</p>
               </CaseIntelTile>
               <CaseIntelTile label="Owner">
                 <p className="font-semibold">{selectedClaim.assigned_to ? 'Assigned' : 'Unassigned'}</p>
@@ -173,10 +173,10 @@ export function ClaimReviewContextColumn({ wb }: { wb: ClaimReviewWorkbench }) {
 
       {selectedClaim && latestOutcome && (
         <section className="rounded-xl p-4 border" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}>
-          <p className="text-caption font-semibold mb-3" style={{ color: 'var(--ink-secondary)' }}>Recorded merchant decision</p>
+          <p className="text-caption font-semibold mb-3" style={{ color: 'var(--ink-secondary)' }}>Recorded merchant outcome</p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
             <div>
-              <p className="text-xs mb-0.5" style={{ color: 'var(--text-muted)' }}>Decision</p>
+                <p className="text-xs mb-0.5" style={{ color: 'var(--text-muted)' }}>Outcome recorded</p>
               <p className="font-semibold" style={{ color: 'var(--text)' }}>
                 {DECISION_LABELS[latestOutcome.decision as Decision] ?? latestOutcome.decision}
               </p>
@@ -193,7 +193,7 @@ export function ClaimReviewContextColumn({ wb }: { wb: ClaimReviewWorkbench }) {
             </div>
             {previousOutcome && (
               <div>
-                <p className="text-xs mb-0.5" style={{ color: 'var(--text-muted)' }}>Previous decision</p>
+                <p className="text-xs mb-0.5" style={{ color: 'var(--text-muted)' }}>Previous outcome</p>
                 <p className="font-semibold" style={{ color: 'var(--text)' }}>
                   {DECISION_LABELS[previousOutcome.decision as Decision] ?? previousOutcome.decision} / {OUTCOME_LABELS[previousOutcome.outcome as Outcome] ?? previousOutcome.outcome}
                 </p>

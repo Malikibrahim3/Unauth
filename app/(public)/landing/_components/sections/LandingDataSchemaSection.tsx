@@ -7,6 +7,7 @@ const SCHEMA_CATEGORIES = [
   { label: 'Payment', sensitive: true, fields: ['payment_method', 'card_bin', 'card_last4'] },
   { label: 'Fulfillment', fields: ['carrier', 'tracking_number', 'delivery_status'] },
   { label: 'Abuse signals', fields: ['refund_requested', 'refund_reason', 'return_reason', 'chargeback_status'] },
+  { label: 'Support', fields: ['ticket_id', 'claim_type', 'ticket_status', 'first_message_at'] },
 ] as const;
 
 const COMING_SOON_FIELDS = ['device_fingerprint', 'browser_fingerprint', 'session_id', 'checkout_timestamp'] as const;
@@ -18,11 +19,11 @@ export function LandingDataSchemaSection() {
         <div className="mx-auto max-w-[1400px] px-6 md:px-10 pt-16 md:pt-20 pb-12 md:pb-16">
           <Reveal delay={40} className="ua-landing-schema-reveal-header">
             <div>
-              <p className="ua-landing-schema-section-eyebrow">§ 3 - DATA SCHEMA</p>
-              <h2 className="ua-landing-schema-section-title">Use data you already have.</h2>
+              <p className="ua-landing-schema-section-eyebrow">DATA MODEL</p>
+              <h2 className="ua-landing-schema-section-title">Use the data your store and helpdesk already produce.</h2>
             </div>
             <p className="ua-landing-schema-section-aside">
-              Standard order, refund, delivery, and payment exports. No integration required.
+              Live integrations keep order, fulfillment, refund, claim, and support context current. CSV backfill fills historical gaps.
             </p>
           </Reveal>
 
@@ -30,9 +31,9 @@ export function LandingDataSchemaSection() {
             <div className="ua-landing-schema-panel-header">
               <div className="ua-landing-schema-panel-header-left">
                 <span className="ua-landing-schema-live-dot" />
-                <span className="ua-landing-schema-panel-title">● CSV UPLOAD - WORKS TODAY</span>
+                <span className="ua-landing-schema-panel-title">● LIVE SOURCES + HISTORICAL BACKFILL</span>
               </div>
-              <span className="ua-landing-schema-panel-meta">shopify · woocommerce · stripe · custom OMS</span>
+              <span className="ua-landing-schema-panel-meta">shopify · woocommerce · bigcommerce · gorgias · zendesk · freshdesk</span>
             </div>
             <p className="ua-landing-schema-panel-note">
               Works with partial data - every additional field strengthens identity confidence. Nothing is mandatory.

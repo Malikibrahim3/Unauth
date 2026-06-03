@@ -33,8 +33,10 @@ export function LandingHeroCaseCardBody() {
                   <p
                     className="ua-case-step"
                     style={{
-                      fontFamily: 'var(--font-serif, serif)',
+                      fontFamily: 'var(--font-dm-sans, sans-serif)',
                       fontSize: '18px',
+                      fontWeight: 600,
+                      letterSpacing: '-0.01em',
                       color: t.ink,
                       marginBottom: '4px',
                       lineHeight: 1.3,
@@ -74,9 +76,9 @@ export function LandingHeroCaseCardBody() {
                   <p
                     className="ua-case-step"
                     style={{
-                      fontFamily: 'var(--font-serif, serif)',
+                      fontFamily: 'var(--font-dm-sans, sans-serif)',
                       fontSize: '12px',
-                      fontStyle: 'italic',
+                      fontStyle: 'normal',
                       color: t.inkTertiary,
                       lineHeight: 1.45,
                       margin: '0 0 10px 0',

@@ -229,8 +229,8 @@ export function CustomerProfilePageMainColumn({
                 case 'status_changed': description = `Status changed to ${d.to}`; break;
                 case 'note_added': description = `Note added: ${d.note_preview ?? ''}`; break;
                 case 'note_deleted': description = 'Note removed'; break;
-                case 'watchlist_added': description = 'Added to watchlist'; break;
-                case 'watchlist_removed': description = 'Removed from watchlist'; break;
+                case 'watchlist_added': description = 'Legacy saved-case marker (retired)'; break;
+                case 'watchlist_removed': description = 'Legacy saved-case marker removed (retired)'; break;
                 case 'evidence_generated': description = `Evidence package generated (${d.reference_number})`; break;
                 case 'audit_appearance': description = `Appeared in ${d.audit_label ?? 'an audit'} with ${d.score ?? ''} confidence`; break;
                 case 'manually_reviewed': description = 'Marked as manually reviewed'; break;

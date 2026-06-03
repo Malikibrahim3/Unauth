@@ -717,9 +717,9 @@ describe('buildGorgiasSidebarWidgetTemplate', () => {
     const rowTitles = template.widgets[0].widgets.map((w: { title: string }) => w.title);
     expect(rowTitles).toEqual([
       'Case context',
-      'Basic context',
-      'Full context',
-      'Evidence summary',
+      'Store Check',
+      'Network Check',
+      'Case Report',
       'Store context',
       'Network context',
       'Review note',

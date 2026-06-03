@@ -47,7 +47,7 @@ export function resolvePrimaryAction(
     return {
       key: 'save_claim',
       label: 'Create claim record',
-      reason: 'Save claim details before adding evidence or recording a decision.',
+      reason: 'Save claim details before adding evidence or recording a review outcome.',
       cta: 'Create claim',
       railSection: null,
     };
@@ -82,9 +82,9 @@ export function resolvePrimaryAction(
   if (!hasDecision) {
     return {
       key: 'decision',
-      label: 'Record merchant decision',
+      label: 'Record merchant outcome',
       reason: 'Evidence is on record. Capture the merchant outcome for this claim.',
-      cta: 'Record merchant decision',
+      cta: 'Record merchant outcome',
       railSection: 'decision',
     };
   }
@@ -120,7 +120,7 @@ export function statusNextAction(claim: ClaimRecord | null, hasDecision: boolean
   if (claim.status === 'open') return 'Review evidence';
   if (claim.status === 'pending' || claim.status === 'evidence_requested') return 'Check requested evidence';
   if (claim.status === 'escalated') return 'Review escalation';
-  if (!hasDecision) return 'Record merchant decision';
+  if (!hasDecision) return 'Record merchant outcome';
   if (!responseRecorded) return 'Record customer response';
   if (isFinalClaimStatus(claim.status)) return 'Work complete';
   return 'Close claim';

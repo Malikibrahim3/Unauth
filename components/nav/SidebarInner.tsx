@@ -13,7 +13,6 @@ import type { NavItemView } from '@/components/nav/SidebarNavItem';
 export interface SidebarProps {
   merchantName: string | null;
   userEmail: string;
-  watchlistCount?: number;
   claimsCount?: number;
   shopifyConnected?: boolean;
   helpdeskConnected?: boolean;
@@ -33,7 +32,6 @@ function readCollapsedPreference(): boolean {
 function SidebarInnerContent({
   merchantName,
   userEmail,
-  watchlistCount: initialWatchlistCount = 0,
   claimsCount: initialClaimsCount = 0,
   shopifyConnected = false,
   helpdeskConnected = false,
@@ -51,13 +49,12 @@ function SidebarInnerContent({
     const stored = readCollapsedPreference();
     if (stored) setCollapsed(true);
   }, []);
-  const { data: navCounts } = useFetchJson<{ watchlistCount?: number; claimsCount?: number }>(
+  const { data: navCounts } = useFetchJson<{ claimsCount?: number }>(
     `/api/nav-counts?context=${encodeURIComponent(pathname)}`,
     {
       parse: async (response) => (response.ok ? response.json() : {}),
     },
   );
-  const watchlistCount = navCounts?.watchlistCount ?? initialWatchlistCount;
   const claimsCount = navCounts?.claimsCount ?? initialClaimsCount;
 
   function toggleCollapse() {
@@ -88,18 +85,8 @@ function SidebarInnerContent({
       tierLabel: route.tierLabel,
       tierFuture: route.future,
       showDevAccess: !enforceGates && Boolean(route.tier),
-      badge:
-        route.key === 'claims'
-          ? claimsCount || undefined
-          : route.key === 'watchlist'
-            ? watchlistCount || undefined
-            : undefined,
-      badgeTitle:
-        route.key === 'claims'
-          ? 'Open claims'
-          : route.key === 'watchlist'
-            ? 'Watched identities'
-            : undefined,
+      badge: route.key === 'claims' ? claimsCount || undefined : undefined,
+      badgeTitle: route.key === 'claims' ? 'Open claims for review' : undefined,
     })),
   }));
 

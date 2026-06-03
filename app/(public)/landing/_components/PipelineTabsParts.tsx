@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { PlugZap, RefreshCw, Fingerprint, ClipboardCheck } from 'lucide-react';
 import type { TabId } from './pipelineTabsTypes';
 
 export type PipelineStep = {
@@ -15,16 +16,18 @@ export type PipelineStep = {
   readonly alt: string;
 };
 
+const STEP_ICONS = [PlugZap, RefreshCw, Fingerprint, ClipboardCheck] as const;
+
 export function PipelineTabsHeader() {
   return (
     <div className="ua-pipeline-header ua-landing-pipeline-header-center">
-      <p className="ua-landing-pipeline-header-eyebrow">§ 2 - THE PIPELINE</p>
+      <p className="ua-landing-pipeline-header-eyebrow">03 — WORKFLOW</p>
       <h2 className="ua-landing-pipeline-header-title">
-        CSV in.{' '}
-        <span className="ua-landing-pipeline-title-italic">Actionable cases out.</span>
+        Live sources in.{' '}
+        <span className="ua-landing-pipeline-title-italic">Case-ready decisions out.</span>
       </h2>
       <p className="ua-landing-pipeline-header-body">
-        Hash sensitive fields in the browser. Get scored clusters, signals, and case files back - in 38ms, end-to-end.
+        Connect once, then orders, refunds, and support context sync continuously into a reviewable claim queue with confidence grades and evidence.
       </p>
     </div>
   );
@@ -51,6 +54,7 @@ export function PipelineStepNav({
     <div className="ua-pipeline-control ua-landing-pipeline-control">
       {steps.map((s, i) => {
         const on = active === i;
+        const Icon = STEP_ICONS[i];
         return (
           <button
             type="button"
@@ -58,7 +62,11 @@ export function PipelineStepNav({
             onClick={() => onJump(i as TabId)}
             className={`ua-landing-pipeline-step-btn${on ? ' ua-landing-pipeline-step-btn--active' : ''}`}
           >
-            <span className="ua-landing-pipeline-step-num">{s.n}</span>
+            <Icon
+              size={14}
+              strokeWidth={1.75}
+              style={{ marginRight: 8, flexShrink: 0, color: on ? 'var(--landing-accent)' : 'var(--landing-ink-faint)' }}
+            />
             <span className="ua-landing-pipeline-step-label">{s.label}</span>
             <span className="ua-landing-pipeline-step-timing">{s.timing}</span>
             {on && !paused && (
@@ -123,7 +131,7 @@ function PipelinePauseBar({
         )}
         <span className="ua-landing-pipeline-pause-label">{paused ? 'Play' : 'Pause'}</span>
       </button>
-      <span className="ua-landing-pipeline-timing-note">38ms end-to-end</span>
+      <span className="ua-landing-pipeline-timing-note">Always in sync</span>
     </div>
   );
 }
@@ -139,15 +147,52 @@ export function PipelineScreenshot({ step, active, fade }: PipelineScreenshotPro
     <div
       key={active}
       className={`ua-artifact-enter ua-pipeline-screenshot ua-landing-pipeline-screenshot-panel${fade ? '' : ' ua-landing-pipeline-screenshot-panel--hidden'}`}
+      style={{ display: 'flex', flexDirection: 'column', borderRadius: 8, overflow: 'hidden' }}
     >
-      <Image
-        src={step.screenshot}
-        alt={step.alt}
-        fill
-        className="ua-pipeline-screenshot-img"
-        sizes="(max-width: 900px) 100vw, 60vw"
-        priority={active === 0}
-      />
+      {/* Browser chrome bar */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          padding: '7px 12px',
+          background: 'var(--landing-cream)',
+          borderBottom: '1px solid var(--landing-line)',
+          flexShrink: 0,
+        }}
+      >
+        <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--landing-border)', flexShrink: 0 }} />
+        <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--landing-border)', flexShrink: 0 }} />
+        <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--landing-border)', flexShrink: 0 }} />
+        <span
+          style={{
+            flex: 1,
+            height: 20,
+            background: 'var(--landing-paper)',
+            border: '1px solid var(--landing-border)',
+            borderRadius: 3,
+            margin: '0 4px',
+            display: 'flex',
+            alignItems: 'center',
+            padding: '0 8px',
+            fontFamily: 'var(--font-dm-mono, monospace)',
+            fontSize: 10,
+            color: 'var(--landing-ink-tertiary)',
+          }}
+        >
+          app.unauth.co
+        </span>
+      </div>
+      <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>
+        <Image
+          src={step.screenshot}
+          alt={step.alt}
+          fill
+          className="ua-pipeline-screenshot-img"
+          sizes="(max-width: 900px) 100vw, 60vw"
+          priority={active === 0}
+        />
+      </div>
     </div>
   );
 }

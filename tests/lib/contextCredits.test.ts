@@ -9,7 +9,13 @@ jest.mock('@/lib/billing/getMerchantTier', () => ({
   getMerchantSubscription: jest.fn(),
 }));
 
+jest.mock('@/lib/billing/merchantBilling', () => ({
+  getMerchantBillingState: jest.fn(),
+  getMerchantCreditsRow: jest.fn(),
+}));
+
 import { getMerchantSubscription } from '@/lib/billing/getMerchantTier';
+import { getMerchantBillingState } from '@/lib/billing/merchantBilling';
 
 describe('context credits', () => {
   beforeEach(() => {
@@ -17,7 +23,7 @@ describe('context credits', () => {
   });
 
   it('defines the settled plan allowances and costs', () => {
-    expect(PLAN_CONTEXT_CREDITS.free).toBe(50);
+    expect(PLAN_CONTEXT_CREDITS.free).toBe(100);
     expect(PLAN_CONTEXT_CREDITS.pro).toBe(1000);
     expect(PLAN_CONTEXT_CREDITS.growth).toBe(5000);
     expect(CONTEXT_CREDIT_COSTS.basic_context).toBe(1);
@@ -28,31 +34,16 @@ describe('context credits', () => {
   it('computes remaining credits from current-period usage', async () => {
     (getMerchantSubscription as jest.Mock).mockResolvedValue({
       tier: 'pro',
-      currentPeriodStart: '2026-06-01T00:00:00.000Z',
-      currentPeriodEnd: '2026-07-01T00:00:00.000Z',
-    });
-
-    const supabase: any = {
-      from: jest.fn(() => ({
-        select: jest.fn(() => ({
-          eq: jest.fn(() => ({
-            gte: jest.fn(() => ({
-              lt: jest.fn().mockResolvedValue({
-                data: [{ credits_spent: 2 }, { credits_spent: 3 }],
-                error: null,
-              }),
-            })),
-          })),
-        })),
-      })),
-    };
-
-    (getMerchantSubscription as jest.Mock).mockResolvedValue({
-      tier: 'pro',
       contextCreditsMonthly: null,
       currentPeriodStart: '2026-06-01T00:00:00.000Z',
       currentPeriodEnd: '2026-07-01T00:00:00.000Z',
     });
+    (getMerchantBillingState as jest.Mock).mockResolvedValue({
+      credits: { monthlyCreditsRemaining: 995, topupCreditsRemaining: 0 },
+      usedThisCycle: 5,
+    });
+
+    const supabase: any = { from: jest.fn(), rpc: jest.fn() };
 
     const snapshot = await getContextCreditSnapshot(supabase, 'merchant-1');
     expect(snapshot.tier).toBe('pro');
@@ -67,22 +58,14 @@ describe('context credits', () => {
       currentPeriodStart: '2026-06-01T00:00:00.000Z',
       currentPeriodEnd: '2026-07-01T00:00:00.000Z',
     });
+    (getMerchantBillingState as jest.Mock).mockResolvedValue({
+      credits: { monthlyCreditsRemaining: 1, topupCreditsRemaining: 0 },
+      usedThisCycle: 99,
+    });
 
     const supabase: any = {
-      from: jest.fn(() => ({
-        select: jest.fn(() => ({
-          eq: jest.fn(() => ({
-            gte: jest.fn(() => ({
-              lt: jest.fn().mockResolvedValue({
-                data: Array.from({ length: 49 }, () => ({ credits_spent: 1 })),
-                error: null,
-              }),
-            })),
-          })),
-        })),
-      })),
       rpc: jest.fn().mockResolvedValue({
-        data: { ok: false, used: 49, remaining: 1, credits_required: 2 },
+        data: { ok: false, used: 99, remaining: 1, credits_required: 2 },
         error: null,
       }),
     };
@@ -105,27 +88,16 @@ describe('context credits', () => {
       currentPeriodStart: '2026-06-01T00:00:00.000Z',
       currentPeriodEnd: '2026-07-01T00:00:00.000Z',
     });
+    (getMerchantBillingState as jest.Mock).mockResolvedValue({
+      credits: { monthlyCreditsRemaining: 5000, topupCreditsRemaining: 0 },
+      usedThisCycle: 0,
+    });
 
     const rpc = jest.fn().mockResolvedValue({
-      data: { ok: true, used: 1, remaining: 4999, credits_spent: 1 },
+      data: { ok: true, used: 1, remaining: 4999, credits_spent: 1, monthly_remaining: 4999, topup_remaining: 0 },
       error: null,
     });
-    const selectChain = {
-      eq: jest.fn(() => ({
-        gte: jest.fn(() => ({
-          lt: jest.fn().mockResolvedValue({
-            data: [],
-            error: null,
-          }),
-        })),
-      })),
-    };
-    const supabase: any = {
-      from: jest.fn(() => ({
-        select: jest.fn(() => selectChain),
-      })),
-      rpc,
-    };
+    const supabase: any = { rpc };
 
     const result = await consumeContextCredits(supabase, {
       merchantId: 'merchant-1',
@@ -157,7 +129,7 @@ describe('context credits', () => {
   });
 
   it('free and pro tiers can use full network context when credits remain', () => {
-    expect(PLAN_CONTEXT_CREDITS.free).toBe(50);
+    expect(PLAN_CONTEXT_CREDITS.free).toBe(100);
     expect(PLAN_CONTEXT_CREDITS.pro).toBe(1000);
     expect(CONTEXT_CREDIT_COSTS.full_context).toBe(2);
   });

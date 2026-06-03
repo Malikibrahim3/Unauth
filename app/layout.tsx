@@ -1,9 +1,16 @@
 import type { Metadata } from 'next';
-import { DM_Mono, DM_Sans, Source_Serif_4 } from 'next/font/google';
+import { Bricolage_Grotesque, DM_Mono, DM_Sans, Source_Serif_4 } from 'next/font/google';
 import SentryInit from '@/components/common/SentryInit';
 import ThemeBootstrap from '@/components/common/ThemeBootstrap';
 import 'reactflow/dist/style.css';
 import './globals.css';
+
+const bricolage = Bricolage_Grotesque({
+  subsets: ['latin'],
+  variable: '--font-bricolage',
+  display: 'swap',
+  weight: ['500', '600', '700'],
+});
 
 const dmSans = DM_Sans({
   subsets: ['latin'],
@@ -50,7 +57,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`${dmSans.variable} ${dmMono.variable} ${sourceSerif.variable}`}
+      className={`${bricolage.variable} ${dmSans.variable} ${dmMono.variable} ${sourceSerif.variable}`}
       suppressHydrationWarning
     >
       <body className="font-sans antialiased">

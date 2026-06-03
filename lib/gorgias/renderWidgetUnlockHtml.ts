@@ -1,7 +1,7 @@
 import { CONTEXT_REVIEW_DISCLAIMER } from '@/lib/api/lookup/contextLookupCore';
 import type { FormattedContextResult } from '@/lib/api/lookup/contextLookupCore';
 import type { ContextUnlockType } from '@/lib/billing/contextCredits';
-import { getContextCreditCost } from '@/lib/billing/contextCredits';
+import { CONTEXT_UNLOCK_LABELS, getContextCreditCost } from '@/lib/billing/contextCredits';
 
 function escapeHtml(value: string): string {
   return value
@@ -13,16 +13,11 @@ function escapeHtml(value: string): string {
 }
 
 function contextTypeLabel(contextType: ContextUnlockType): string {
-  switch (contextType) {
-    case 'basic_context':
-      return 'Basic store context';
-    case 'full_context':
-      return 'Full context (store + network)';
-    case 'evidence_summary':
-      return 'Evidence summary';
-    default:
-      return 'Context unlock';
-  }
+  const label = CONTEXT_UNLOCK_LABELS[contextType];
+  if (contextType === 'basic_context') return `${label} unlocked`;
+  if (contextType === 'full_context') return `${label} (store + network) unlocked`;
+  if (contextType === 'evidence_summary') return `${label} unlocked`;
+  return label ?? 'Context unlock';
 }
 
 function renderResultBlock(
@@ -81,6 +76,7 @@ export function renderWidgetUnlockHtml(input: {
   orderRef: string | null;
   claimId?: string | null;
   gorgiasTicketUrl?: string | null;
+  networkPausedNotice?: string | null;
   error?: string;
   insufficientCredits?: boolean;
   planGate?: boolean;
@@ -108,7 +104,8 @@ export function renderWidgetUnlockHtml(input: {
         ? `<p class="warn">${escapeHtml(input.error)}</p>`
         : input.results.length === 0
           ? `<p class="muted">No matching context profile was found for this case. No credits were spent.</p>`
-          : `${input.results.map((r) => renderResultBlock(r, input.contextType)).join('')}
+          : `${input.networkPausedNotice ? `<p class="warn">${escapeHtml(input.networkPausedNotice)}</p>` : ''}
+             ${input.results.map((r) => renderResultBlock(r, input.contextType)).join('')}
              <p class="meta">Credits spent: ${input.creditsSpent} · Remaining: ${input.remainingCredits}</p>`;
 
   const scope = [

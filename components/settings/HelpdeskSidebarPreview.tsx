@@ -22,39 +22,34 @@ export default function HelpdeskSidebarPreview({ providerLabel }: HelpdeskSideba
             className="rounded-md border p-3"
             style={{ background: 'var(--sev-clear-fill)', borderColor: 'var(--sev-clear)', color: 'var(--sev-clear)' }}
           >
-            <p className="text-sm font-bold">DEFINITE</p>
-            <p className="mt-1 opacity-90">Matched on email + shipping address</p>
-            <p className="mt-3 text-xs font-semibold uppercase tracking-wide opacity-70">Claims on record</p>
+            <p className="text-sm font-bold">Case context available</p>
+            <p className="mt-1 opacity-90">Open the case in Unauth to review store and network context.</p>
+            <p className="mt-3 text-xs font-semibold uppercase tracking-wide opacity-70">Context actions</p>
             <ul className="mt-1 list-disc space-y-0.5 pl-4 normal-case opacity-90">
-              <li>2 refunds · your store</li>
-              <li>4 refunds across 3 merchants</li>
+              <li>View Store Check — 1 credit</li>
+              <li>View Network Check — 2 credits</li>
+              <li>Generate Case Report — 3 credits</li>
             </ul>
             <div
               className="mt-3 rounded px-2 py-1.5 normal-case opacity-80"
               style={{ background: 'rgba(0,0,0,0.08)' }}
             >
-              Cross-merchant: 4 merchants · 6 claims
+              Other merchants’ raw customer data is not exposed.
             </div>
             <div className="mt-3 flex flex-col gap-1.5">
               <span
                 className="block rounded py-1.5 text-center text-xs font-semibold"
                 style={{ background: 'var(--accent)', color: 'var(--ink-inverse)' }}
               >
-                View Profile
-              </span>
-              <span
-                className="block rounded border py-1.5 text-center text-xs font-semibold"
-                style={{ borderColor: 'color-mix(in srgb, var(--sev-clear) 50%, transparent)', color: 'var(--sev-clear)' }}
-              >
-                Get PDF
+                Open case in Unauth
               </span>
             </div>
           </div>
           <p className="mt-2 text-right opacity-40">Unauth</p>
         </div>
         <p className="max-w-xs text-sm" style={{ color: 'var(--text-muted)' }}>
-          Approximate appearance inside {providerLabel} (~300px sidebar). Grade colours reflect identity
-          confidence, not fraud risk.
+          Approximate appearance inside {providerLabel} (~300px sidebar). The widget is a context
+          entry point, not a decisioning tool.
         </p>
       </div>
     </div>

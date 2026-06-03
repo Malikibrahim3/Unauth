@@ -1,13 +1,21 @@
 import type { NextRequest } from 'next/server';
+import {
+  getContextCreditCost,
+  type ContextUnlockReason,
+  type ContextUnlockType,
+} from '@/lib/billing/contextCredits';
+import {
+  creditFailureResponse,
+  precheckContextCredits,
+  spendContextCreditsAfterSuccess,
+} from '@/lib/billing/contextUnlockFlow';
+import {
+  CONTEXT_REVIEW_DISCLAIMER,
+  formatContextLookupResults,
+  runContextProfileSearch,
+} from '@/lib/api/lookup/contextLookupCore';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
-import {
-  normaliseEmail,
-  normaliseIP,
-  normaliseAddress,
-  normaliseCard,
-} from '@/lib/identity/normalise';
-import { hashIdentifier } from '@/lib/identity/hash';
 
 const DAILY_LOOKUP_LIMIT = 200;
 
@@ -33,6 +41,12 @@ export type MerchantLookupBody = {
   address?: string;
   card?: string;
   ip?: string;
+  contextType?: ContextUnlockType;
+  claimId?: string;
+  ticketRef?: string;
+  orderRef?: string;
+  customerRef?: string;
+  reason?: ContextUnlockReason;
 };
 
 export async function performMerchantLookup(
@@ -60,12 +74,26 @@ export async function performMerchantLookup(
   const rawAddress = body.address?.trim() ?? '';
   const rawCard = body.card?.trim() ?? '';
   const rawIp = body.ip?.trim() ?? '';
+  const contextType = body.contextType ?? 'full_context';
 
   if (!rawEmail && !rawName && !rawAddress && !rawCard && !rawIp) {
     return { status: 400, json: { error: 'At least one search term is required' } };
   }
 
   const merchantId = ctx.merchantId;
+  const creditPrecheck = await precheckContextCredits(service, merchantId, contextType);
+  if (!creditPrecheck.ok) {
+    return {
+      status: creditPrecheck.status,
+      json: creditFailureResponse({
+        contextType,
+        creditsRequired: creditPrecheck.creditsRequired,
+        remaining: creditPrecheck.snapshot.remaining,
+        error: creditPrecheck.error,
+      }),
+    };
+  }
+
   const today = new Date().toISOString().slice(0, 10) as unknown as Date;
 
   const { data: newCount, error: countError } = await service.rpc(
@@ -85,39 +113,22 @@ export async function performMerchantLookup(
     };
   }
 
-  const normEmail = rawEmail ? normaliseEmail(rawEmail) : null;
-  const normCard = rawCard ? normaliseCard(rawCard) : null;
-  const normIp = rawIp ? normaliseIP(rawIp) : null;
-  const normAddress = rawAddress ? normaliseAddress(rawAddress) : null;
-  const normName = rawName ? rawName.toLowerCase() : null;
-
-  const queriedHashes = [
-    normEmail ? hashIdentifier(normEmail) : null,
-    normAddress ? hashIdentifier(normAddress) : null,
-    normIp ? hashIdentifier(normIp) : null,
-    normCard ? hashIdentifier(normCard) : null,
-  ].filter(Boolean) as string[];
-
-  const { data: rows, error } = await service.rpc('search_customer_profiles', {
-    p_email: null,
-    p_name: normName || null,
-    p_address: null,
-    p_card: null,
-    p_ip: null,
-    p_email_hash: normEmail ? hashIdentifier(normEmail) : null,
-    p_address_hash: normAddress ? hashIdentifier(normAddress) : null,
-    p_card_hash: normCard && normCard.length === 4 ? hashIdentifier(normCard) : null,
-    p_ip_hash: normIp ? hashIdentifier(normIp) : null,
+  const search = await runContextProfileSearch(service, {
+    rawEmail,
+    rawName,
+    rawAddress,
+    rawCard,
+    rawIp,
   });
 
-  if (error) {
-    console.error('[lookup] RPC error:', error.message);
+  if (!search.ok) {
+    console.error('[lookup] RPC error:', search.error);
     void service.from('access_audit_log').insert({
       merchant_id: merchantId,
       query_type: 'merchant_lookup',
       k_anonymity_satisfied: false,
       result_returned: false,
-      queried_hashes: queriedHashes,
+      queried_hashes: search.queriedHashes,
       matched_merchant_count: 0,
       lookup_type: 'merchant_lookup',
       request_ip: ip,
@@ -125,31 +136,41 @@ export async function performMerchantLookup(
     return { status: 500, json: { error: 'Search failed' } };
   }
 
-  const results = (rows ?? []).map((p: Record<string, unknown>) => {
-    const merchantIds: string[] = Array.isArray(p.merchant_ids) ? (p.merchant_ids as string[]) : [];
-    const merchantContributed = merchantIds.includes(merchantId);
-
-    return {
-      id: p.id,
-      risk_score: p.risk_score,
-      risk_level: p.risk_level,
-      fraud_flags: Array.isArray(p.fraud_flags) ? (p.fraud_flags as string[]) : [],
-      total_orders: p.total_orders,
-      total_refund_claims: p.total_refund_claims,
-      total_merchants_seen_at: p.total_merchants_seen_at,
-      refund_rate: p.refund_rate,
-      fastest_claim_days: p.fastest_claim_days,
-      first_seen: p.first_seen,
-      last_seen: p.last_seen,
-      merchant_contributed: merchantContributed,
-      primary_email: merchantContributed ? p.primary_email : null,
-      names: merchantContributed ? (Array.isArray(p.names) ? (p.names as string[]) : []) : [],
-      addresses: merchantContributed
-        ? (Array.isArray(p.addresses) ? (p.addresses as string[]) : [])
-        : [],
-    };
+  const creditSpend = await spendContextCreditsAfterSuccess(service, {
+    merchantId,
+    userId: user.id,
+    contextType,
+    claimId: body.claimId ?? null,
+    ticketRef: body.ticketRef ?? null,
+    orderRef: body.orderRef ?? null,
+    customerRef: body.customerRef ?? null,
+    reason: body.reason ?? null,
+    metadata: {
+      request_source: 'app',
+      source: 'merchant_lookup',
+      requestedIdentifiers: {
+        email: Boolean(rawEmail),
+        name: Boolean(rawName),
+        address: Boolean(rawAddress),
+        card: Boolean(rawCard),
+        ip: Boolean(rawIp),
+      },
+    },
   });
 
+  if (!creditSpend.ok) {
+    return {
+      status: 402,
+      json: creditFailureResponse({
+        contextType,
+        creditsRequired: creditSpend.creditsRequired,
+        remaining: creditSpend.snapshot.remaining,
+        error: 'Not enough context credits remaining for this review.',
+      }),
+    };
+  }
+
+  const results = formatContextLookupResults(merchantId, contextType, search.rawRows);
   const kAnonSatisfied = results.length > 0;
   await new Promise((r) => setTimeout(r, 10 + Math.random() * 40));
 
@@ -158,7 +179,7 @@ export async function performMerchantLookup(
     query_type: 'merchant_lookup',
     k_anonymity_satisfied: kAnonSatisfied,
     result_returned: kAnonSatisfied,
-    queried_hashes: queriedHashes,
+    queried_hashes: search.queriedHashes,
     matched_merchant_count: results.length,
     lookup_type: 'merchant_lookup',
     request_ip: ip,
@@ -167,5 +188,15 @@ export async function performMerchantLookup(
     if (auditErr) console.error('[lookup] audit_log insert failed (non-fatal):', auditErr.message);
   });
 
-  return { status: 200, json: { results, total: results.length } };
+  return {
+    status: 200,
+    json: {
+      results,
+      total: results.length,
+      contextType,
+      creditsSpent: getContextCreditCost(contextType),
+      remainingCredits: creditSpend.snapshot.remaining,
+      disclaimer: CONTEXT_REVIEW_DISCLAIMER,
+    },
+  };
 }

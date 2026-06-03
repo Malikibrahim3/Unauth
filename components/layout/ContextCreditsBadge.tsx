@@ -35,7 +35,11 @@ export function ContextCreditsBadge() {
   }
 
   const remaining = credits.remaining ?? 0;
-  const low = remaining <= Math.max(5, Math.floor(credits.limit * 0.1));
+  const used = credits.used ?? 0;
+  const limit = credits.limit ?? 0;
+  const usageRatio = limit > 0 ? used / limit : 0;
+  const low = remaining <= Math.max(5, Math.floor(limit * 0.1));
+  const warn = usageRatio >= 0.8 && remaining > 0;
 
   return (
     <div
@@ -45,12 +49,15 @@ export function ContextCreditsBadge() {
       <span className="text-[11px] font-medium uppercase tracking-wide" style={{ color: 'var(--ink-tertiary)' }}>
         {credits.label}
       </span>
-      <span className="text-xs font-semibold" style={{ color: low ? 'var(--status-warn)' : 'var(--ink-secondary)' }}>
-        {remaining} of {credits.limit} remaining
+      <span
+        className="text-xs font-semibold"
+        style={{ color: low || warn ? 'var(--status-warn)' : 'var(--ink-secondary)' }}
+      >
+        {remaining} of {limit} remaining
       </span>
-      {low ? (
-        <Link href="/#pricing" className="text-[11px] font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
-          Upgrade for more credits
+      {warn || low ? (
+        <Link href="/settings/billing" className="text-[11px] font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
+          {low ? 'Upgrade or top up' : 'Top up or upgrade'}
         </Link>
       ) : null}
     </div>

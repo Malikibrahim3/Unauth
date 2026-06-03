@@ -47,7 +47,7 @@ export type AppRoute = {
   /** Included in command palette quick nav */
   commandPalette?: boolean;
   commandDescription?: string;
-  badgeKey?: 'claims' | 'watchlist';
+  badgeKey?: 'claims';
   /** Informational product tier badge (Phase 0 — does not gate navigation). */
   tier?: ProductTier;
   /** Short tier badge label override, e.g. "Evidence" or "Network". */
@@ -111,16 +111,15 @@ export const APP_ROUTES = {
   watchlist: {
     key: 'watchlist',
     href: '/watchlist',
-    label: 'Watchlist',
-    pageTitle: 'Watchlist',
+    label: 'Legacy case watch',
+    pageTitle: 'Legacy case watch',
     permission: PERMISSIONS.VIEW_WATCHLIST,
     tier: 'pro',
     icon: Star,
-    sidebar: true,
-    workbench: true,
-    commandPalette: true,
-    commandDescription: 'Profiles you are monitoring for review',
-    badgeKey: 'watchlist',
+    sidebar: false,
+    workbench: false,
+    commandPalette: false,
+    commandDescription: 'Legacy customer monitoring view',
   },
   evidencePackages: {
     key: 'evidencePackages',
@@ -193,7 +192,7 @@ export const APP_ROUTES = {
     label: 'Network graph',
     pageTitle: 'Network graph',
     permission: PERMISSIONS.VIEW_CUSTOMERS,
-    tier: 'advanced',
+    tier: 'growth',
     tierLabel: 'Network',
     icon: GitBranch,
     sidebar: true,
@@ -207,7 +206,7 @@ export const APP_ROUTES = {
     label: 'Live lookup',
     pageTitle: 'Live lookup',
     permission: PERMISSIONS.VIEW_CUSTOMERS,
-    tier: 'advanced',
+    tier: 'growth',
     icon: Users,
     sidebar: false,
     commandPalette: true,
@@ -233,7 +232,7 @@ export const SIDEBAR_NAV_GROUPS: Array<{ label: string; routeKeys: AppRouteKey[]
   { label: 'Workspace', routeKeys: ['dashboard'] },
   {
     label: 'Review',
-    routeKeys: ['store', 'customers', 'claims', 'watchlist', 'evidencePackages', 'reports'],
+    routeKeys: ['store', 'customers', 'claims', 'evidencePackages', 'reports'],
   },
   { label: 'Network', routeKeys: ['global'] },
   { label: 'Backfill', routeKeys: ['upload', 'history'] },

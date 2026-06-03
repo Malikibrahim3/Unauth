@@ -1068,9 +1068,9 @@ describe('countReviewWorthyTransactions — behavioral tests', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Watchlist appearance sync — no invalid audit_transactions ownership columns
+// CSV ingest — no invalid audit_transactions.merchant_id ownership queries
 // ---------------------------------------------------------------------------
-describe('watchlist appearance sync — schema-safe transaction/profile linking', () => {
+describe('CSV ingest — schema-safe transaction scoping', () => {
   it('process-csv-job route does NOT query audit_transactions.merchant_id', () => {
     const content = fs.readFileSync(
       path.join(process.cwd(), 'app/api/process-csv-job/route.ts'),
@@ -1089,14 +1089,6 @@ describe('watchlist appearance sync — schema-safe transaction/profile linking'
     expect(content).not.toMatch(
       /from\s*\(\s*['"]audit_transactions['"]\s*\)[\s\S]*?\.eq\s*\(\s*['"]merchant_id['"]\s*,\s*merchantId\s*\)/
     );
-  });
-
-  it('watchlist sync resolves profile links via customer_profile_audit_appearances in job stage', () => {
-    const jobContent = fs.readFileSync(
-      path.join(process.cwd(), 'app/api/process-csv-job/route.ts'),
-      'utf-8'
-    );
-    expect(jobContent).toContain("from('customer_profile_audit_appearances')");
   });
 });
 

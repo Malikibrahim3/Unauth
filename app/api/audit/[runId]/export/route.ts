@@ -46,7 +46,7 @@ const EXPORT_HEADERS = [
   'identity_evidence',
   'context_flags',
   'context_summary',
-  'recommended_review_reason',
+  'review_context_summary',
   // Legacy columns (kept for backward compat)
   'identity_score',
   'identity_confidence_grade',
@@ -163,11 +163,11 @@ async function GETHandler(
           .join('; ')
       : '';
 
-    // Build recommended_review_reason: identity first, context second
+    // Review context summary: identity evidence first, behavioural context second
     const reviewParts: string[] = [];
     if (row.evidence_summary) reviewParts.push(row.evidence_summary);
     if (row.context_summary)  reviewParts.push(row.context_summary);
-    const recommendedReviewReason = reviewParts.join(' ');
+    const reviewContextSummary = reviewParts.join(' ');
 
     const cells = [
       escapeCsvCell(row.order_id ?? ''),
@@ -187,7 +187,7 @@ async function GETHandler(
       escapeCsvCell(identityEvidenceStr),
       escapeCsvCell(contextFlagsStr),
       escapeCsvCell(row.context_summary ?? ''),
-      escapeCsvCell(recommendedReviewReason),
+      escapeCsvCell(reviewContextSummary),
       // Legacy columns
       row.identity_score != null ? String(Math.round(row.identity_score)) : '',
       escapeCsvCell(row.identity_confidence_grade ?? ''),

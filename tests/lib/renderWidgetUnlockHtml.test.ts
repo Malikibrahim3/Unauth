@@ -69,7 +69,7 @@ describe('renderWidgetUnlockHtml', () => {
       ticketRef: 'T-1',
       orderRef: null,
       planGate: true,
-      error: 'Evidence summaries are available on paid plans (Pro or higher).',
+      error: 'Case Reports are available on paid plans (Pro or higher).',
     });
     expect(html).toContain('paid plans');
     expect(html).not.toContain('Store context');

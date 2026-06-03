@@ -58,7 +58,7 @@ describe('scoreIdentityFromSignals', () => {
     // 30+30+25+35+8 = 128, capped at 100
     expect(result.identity_score).toBe(100);
     expect(result.identity_confidence_grade).toBe('definite');
-    expect(result.recommended_action).not.toBeNull();
+    expect(result.recommended_action).toBeNull();
   });
 
   it('["phone","account","email","ip"] → 98, definite', () => {

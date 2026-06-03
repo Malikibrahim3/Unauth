@@ -5,6 +5,7 @@ import { ChevronRight, HelpCircle, LogOut, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { UnauthLogo } from '@/components/ui/UnauthLogo';
 import { SidebarGroupLabel, SidebarNavItem, type NavItemView } from '@/components/nav/SidebarNavItem';
+import { DevTierSwitcher } from '@/components/product/DevTierSwitcher';
 
 type SidebarAsideProps = {
   isMobile: boolean;
@@ -159,6 +160,12 @@ export function SidebarAside({
           </div>
         ))}
       </nav>
+
+      {process.env.NEXT_PUBLIC_VERCEL_ENV !== 'production' && (
+        <div className={cn('border-t border-[var(--surface-border)] py-2', isCollapsed ? 'px-1' : '')}>
+          <DevTierSwitcher collapsed={isCollapsed} />
+        </div>
+      )}
 
       <div
         className={cn(

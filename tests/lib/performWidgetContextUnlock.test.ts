@@ -34,6 +34,7 @@ describe('performWidgetContextUnlock', () => {
     (precheckContextCredits as jest.Mock).mockResolvedValue({
       ok: true,
       snapshot: { remaining: 10, tier: 'pro' },
+      mode: { kind: 'standard' },
     });
     (spendContextCreditsAfterSuccess as jest.Mock).mockResolvedValue({
       ok: true,

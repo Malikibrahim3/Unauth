@@ -13,7 +13,7 @@
  * Receives a cluster (from the linker), the full order data for every
  * order in that cluster, and optional historical entity data. Produces
  * a confidence grade, review priority score, plain-English signal summary,
- * recommended action, behavioural flags, and CE 3.0 eligibility.
+ * behavioural flags, and CE 3.0 eligibility. (Legacy recommended_action is always null.)
  *
  * This module NEVER links identities — that is the linker's job. It only
  * interprets what the linker already found and adds behavioural context.
@@ -93,7 +93,11 @@ export interface ScoredCluster {
 
   // Identity linkage summary
   signals_summary: string[];
-  recommended_action: string;
+  /**
+   * @deprecated Legacy field — always null. DB column `recommended_action` must not
+   * carry merchant-facing decisioning text. Use evidence_summary / context_summary.
+   */
+  recommended_action: string | null;
 
   // Behavioural signals
   behavioural_flags: BehaviouralFlag[];
@@ -352,38 +356,6 @@ function applyHardCaps(
 }
 
 // ---------------------------------------------------------------------------
-// RECOMMENDED ACTION
-// ---------------------------------------------------------------------------
-
-function buildRecommendedAction(
-  grade: ConfidenceGrade,
-  flags: BehaviouralFlag[],
-  hasChargeback: boolean
-): string {
-  if (grade === 'definite') {
-    if (hasChargeback) {
-      return guardLanguage(
-        'Multiple linked accounts with chargeback history — review all orders before processing refunds or shipments.'
-      );
-    }
-    return guardLanguage(
-      'High-confidence identity match across linked accounts — verify manually before approving high-value transactions.'
-    );
-  }
-  if (grade === 'probable') {
-    return guardLanguage(
-      'Linked accounts detected with corroborating signals — review before approving refund claims.'
-    );
-  }
-  if (grade === 'possible') {
-    return guardLanguage(
-      'Possible linked accounts — review if a refund or return is requested on any of these orders.'
-    );
-  }
-  return guardLanguage('Weak identity overlap — informational only, no action needed.');
-}
-
-// ---------------------------------------------------------------------------
 // CE 3.0 ELIGIBILITY
 // ---------------------------------------------------------------------------
 
@@ -522,7 +494,6 @@ export function scoreCluster(input: ScoreClusterInput): ScoredCluster {
   const ce3 = checkCE3Eligibility(cluster, orders);
 
   // --- 6. Build output ---
-  const hasChargeback = orders.some((o) => o.chargeback_filed === true);
   const signalsSummary = buildSignalsSummary(cluster);
 
   return {
@@ -531,7 +502,7 @@ export function scoreCluster(input: ScoreClusterInput): ScoredCluster {
     confidence_grade: grade,
     review_priority_score: capResult.score,
     signals_summary: signalsSummary,
-    recommended_action: buildRecommendedAction(grade, flags, hasChargeback),
+    recommended_action: null,
     behavioural_flags: flags,
     behavioural_score: behaviouralScore,
     review_worthy:
@@ -632,16 +603,8 @@ export function scoreIdentityFromSignals(signals: string[]): SignalScoreResult {
   else if (identity_score >= GRADE_THRESHOLDS.PROBABLE) identity_confidence_grade = 'probable';
   else if (identity_score >= GRADE_THRESHOLDS.POSSIBLE) identity_confidence_grade = 'possible';
 
-  const recommended_action: string | null =
-    identity_confidence_grade === 'definite'
-      ? 'High-confidence identity match — verify manually before approving high-value transactions.'
-      : identity_confidence_grade === 'probable'
-        ? 'Multiple signals link these orders — review before processing refunds.'
-        : identity_confidence_grade === 'possible'
-          ? 'Partial identity overlap detected — monitor for further activity.'
-          : null;
-
-  return { identity_score, identity_confidence_grade, recommended_action };
+  // Legacy `recommended_action` DB column — not populated with decisioning copy.
+  return { identity_score, identity_confidence_grade, recommended_action: null };
 }
 
 // ---------------------------------------------------------------------------

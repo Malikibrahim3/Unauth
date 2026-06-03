@@ -115,6 +115,8 @@ async function GETHandler(request: NextRequest) {
     claimId: typeof json.claimId === 'string' ? json.claimId : null,
     gorgiasTicketUrl,
     error: typeof json.error === 'string' ? json.error : undefined,
+    networkPausedNotice:
+      typeof json.networkPausedNotice === 'string' ? json.networkPausedNotice : null,
     insufficientCredits: result.status === 402,
     planGate: result.status === 403,
     requiredCredits: typeof json.requiredCredits === 'number' ? json.requiredCredits : undefined,

@@ -123,9 +123,9 @@ export const GORGIAS_SIDEBAR_CARD_TITLE = 'Unauth claim context';
 /** Row labels in buildGorgiasSidebarWidgetTemplate (must align with widget JSON field paths). */
 export const GORGIAS_SIDEBAR_ROW_LABELS = {
   identity: 'Case context',
-  claims: 'Basic context',
-  orders: 'Full context',
-  claim_rate: 'Evidence summary',
+  claims: 'Store Check',
+  orders: 'Network Check',
+  claim_rate: 'Case Report',
   primary_reason: 'Store context',
   recent_activity: 'Network context',
   ce3_evidence: 'Review note',

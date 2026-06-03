@@ -7,6 +7,7 @@ import type { ProductTier } from '@/lib/product/tiers';
 import { FeatureTierBadge } from '@/components/product/FeatureTierBadge';
 import { LockedFeaturePreview } from '@/components/product/LockedFeaturePreview';
 import { UpgradeCard } from '@/components/product/UpgradeCard';
+import { useDevPreview } from '@/components/product/DevPreviewContext';
 
 function clientShouldEnforceProductGates(): boolean {
   return parseProductGateEnv(process.env.NEXT_PUBLIC_ENFORCE_PRODUCT_GATES);
@@ -23,8 +24,11 @@ export function FeatureGate({
   children: ReactNode;
   showTierBadge?: boolean;
 }) {
-  const enforce = clientShouldEnforceProductGates();
-  const allowed = hasEntitlement(plan, entitlement);
+  // Dev preview context overrides both the plan and enforcement decision.
+  const devPreview = useDevPreview();
+  const enforce = devPreview ? devPreview.enforce : clientShouldEnforceProductGates();
+  const effectivePlan: ProductTier = devPreview ? devPreview.tier : plan;
+  const allowed = hasEntitlement(effectivePlan, entitlement);
 
   if (!enforce) {
     return (

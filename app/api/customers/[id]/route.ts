@@ -96,7 +96,9 @@ export interface CustomerIntelligencePanel {
     last_seen: string;
     profile_confidence: number;
     manually_reviewed: boolean;
+    /** @deprecated Always false — customer watchlists retired. */
     on_watchlist: boolean;
+    /** @deprecated Always null — customer watchlists retired. */
     watchlist_entry_id: string | null;
   };
   orderHistory: OrderHistoryEntry[];
@@ -145,18 +147,7 @@ async function GETHandler(
   ) as any | null;
 
   // -------------------------------------------------------------------------
-  // 2. Check watchlist status for this merchant
-  // -------------------------------------------------------------------------
-  const { data: watchlistRow } = await serviceClient
-    .from(TABLES.WATCHLIST_ENTRIES)
-    .select('id')
-    .eq('merchant_id', user.id)
-    .eq('customer_profile_id', profileId)
-    .eq('removed_by_merchant', false)
-    .maybeSingle() as unknown as { data: { id: string } | null };
-
-  // -------------------------------------------------------------------------
-  // 3a. Resolve merchant-owned job IDs — used as the security boundary for
+  // 2. Resolve merchant-owned job IDs — used as the security boundary for
   //     ALL subsequent transaction queries. Service role bypasses RLS so
   //     we MUST enforce merchant scope at the application layer.
   // -------------------------------------------------------------------------
@@ -369,8 +360,8 @@ async function GETHandler(
       last_seen: lastSeen,
       profile_confidence: maxScore,
       manually_reviewed: false,
-      on_watchlist: !!watchlistRow,
-      watchlist_entry_id: watchlistRow?.id ?? null,
+      on_watchlist: false,
+      watchlist_entry_id: null,
     };
   }
 
@@ -532,8 +523,8 @@ async function GETHandler(
       last_seen: computedLastSeen,
       profile_confidence: profile.profile_confidence,
       manually_reviewed: profile.manually_reviewed,
-      on_watchlist: !!watchlistRow,
-      watchlist_entry_id: watchlistRow?.id ?? null,
+      on_watchlist: false,
+      watchlist_entry_id: null,
     },
     orderHistory,
     identityTimeline,

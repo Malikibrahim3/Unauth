@@ -1,9 +1,6 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server';
-import { TABLES } from '@/lib/supabase/tables';
-import { createScopedClient } from '@/lib/supabase/scoped';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { logAction } from '@/lib/permissions/audit';
-import { writeActivityLog } from '@/lib/customers/activityLog';
 import { NextRequest, NextResponse } from 'next/server';
 import { enforceRateLimit, limitFromEnv, rateLimitKey } from '@/lib/ratelimit';
 import { withRequestLogging } from '@/lib/log';
@@ -23,15 +20,11 @@ async function GETHandler(_req: NextRequest) {
   );
   if (limited) return limited;
 
-  const { data, error } = await serviceClient
-    .from(TABLES.WATCHLIST_ENTRIES)
-    .select('*')
-    .eq('merchant_id', ctx.merchantId)
-    .eq('removed_by_merchant', false)
-    .order('added_at', { ascending: false });
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ entries: data });
+  return NextResponse.json({
+    entries: [],
+    message:
+      'Customer watchlists are retired. Use claim review, evidence workflows, and aggregate dashboards for case-scoped follow-up.',
+  });
 }
 
 async function POSTHandler(req: NextRequest) {
@@ -44,7 +37,6 @@ async function POSTHandler(req: NextRequest) {
   const serviceClient = createServiceClient();
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.MANAGE_WATCHLIST);
   if (denied) return denied;
-  const scopedClient = createScopedClient(ctx.merchantId, serviceClient);
 
   const limited = await enforceRateLimit(
     rateLimitKey('watchlist', 'write', ctx.merchantId),
@@ -52,43 +44,18 @@ async function POSTHandler(req: NextRequest) {
   );
   if (limited) return limited;
 
-  const body = await req.json();
-  const { customerProfileId, emailHash, displayName, displayEmail, lastSeenRisk } = body;
-
-  const { data, error } = await serviceClient
-    .from(TABLES.WATCHLIST_ENTRIES)
-    .upsert({
-      merchant_id: ctx.merchantId,
-      customer_profile_id: customerProfileId ?? null,
-      email_hash: emailHash ?? null,
-      display_name: displayName ?? null,
-      display_email: displayEmail ?? null,
-      last_seen_risk: lastSeenRisk ?? null,
-    }, { onConflict: 'merchant_id,customer_profile_id' })
-    .select()
-    .single();
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
   logAction({
     ctx,
     action: 'add_to_watchlist',
     resourceType: 'customer_profile',
-    resourceId: customerProfileId ?? undefined,
-    metadata: { displayEmail, displayName, lastSeenRisk },
+    metadata: { retired: true },
     ip,
   });
 
-  if (customerProfileId) {
-    await writeActivityLog({
-      supabase: scopedClient,
-      profileId: customerProfileId,
-      merchantId: ctx.merchantId,
-      eventType: 'watchlist_added',
-    });
-  }
-
-  return NextResponse.json({ entry: data });
+  return NextResponse.json({
+    error:
+      'Customer watchlists are retired. Use claim review, evidence workflows, and aggregate dashboards for case-scoped follow-up.',
+  }, { status: 410 });
 }
 
 export const GET = withRequestLogging('/api/watchlist', GETHandler);

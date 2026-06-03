@@ -5,24 +5,23 @@ import { FAQ_ALL } from '../../landingPageConstants';
 export function LandingFaqSection() {
   return (
     <>
-      <section className="ua-landing-faq-section">
+      <section id="faq" className="ua-landing-faq-section">
         <div className="mx-auto max-w-[1100px] px-6 md:px-10 py-16 md:py-24 lg:grid lg:grid-cols-[360px_minmax(0,1fr)] lg:gap-12 xl:gap-16">
 
           <div className="mb-12 lg:mb-0">
             <Reveal className="lg:sticky lg:top-24" delay={40}>
               <p className="ua-landing-faq-eyebrow">
-                § 6 - FREQUENT QUESTIONS
+                08 — FREQUENT QUESTIONS
               </p>
               <h2 className="ua-landing-faq-heading">
-                <span className="whitespace-nowrap">Everything you&rsquo;d ask</span>
-                <br />
+                <span>Everything you&rsquo;d ask </span>
                 <span className="ua-landing-faq-heading-italic">before committing.</span>
               </h2>
               <p className="ua-landing-faq-lead">
                 Data handling, privacy, integration, evidence - answered directly.
               </p>
-              <Link href="/audit" className="ua-landing-faq-cta-link">
-                Run a free audit →
+              <Link href="/signup" className="ua-landing-faq-cta-link">
+                Create workspace →
               </Link>
             </Reveal>
           </div>

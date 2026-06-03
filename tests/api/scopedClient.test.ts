@@ -105,7 +105,6 @@ describe('static guard: service-role API routes use scoped tenant access', () =>
     'app/api/lookup/quick-score/route.ts': new Set(['access_audit_log']), // insert payload merchant_id
     'app/api/lookup/remaining/route.ts': new Set(['lookup_daily_counts']), // .eq('merchant_id', ctx.merchantId)
     'app/api/lookup/route.ts': new Set(['access_audit_log']), // insert payload merchant_id
-    'app/api/process-csv-finalize/route.ts': new Set(['watchlist_appearances']), // upsert rows carry merchant_id
     'app/api/search/route.ts': new Set(['customer_profiles', 'transactions', 'evidence_packages']), // .in(... merchantJobIds)
     'app/api/settings/bulk-delete/route.ts': new Set(['*']), // dynamic from(table); serviceClient branch uses .eq('merchant_id', user.id)
   };

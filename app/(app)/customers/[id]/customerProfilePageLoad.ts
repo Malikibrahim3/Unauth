@@ -112,7 +112,6 @@ export type CustomerProfilePageViewProps = {
   auditRunId: string | null;
   viewToken: string;
   profile: CustomerProfileDisplay;
-  watchlisted: boolean;
   displayName: string;
   profileGrade: ConfidenceGradeValue;
   hasCleanRecord: boolean;
@@ -273,14 +272,6 @@ export async function loadCustomerProfilePage(
   }
 
   const profile = toCustomerProfileDisplay(profileRow);
-
-  const { data: watchlistRow } = await svc
-    .from(TABLES.WATCHLIST_ENTRIES)
-    .select('id')
-    .eq('customer_profile_id', profileId)
-    .eq('merchant_id', merchantId)
-    .eq('removed_by_merchant', false)
-    .maybeSingle() as unknown as { data: { id: string } | null };
 
   let transactionRows: Record<string, unknown>[] = await fetchMerchantScopedCustomerTransactions(
     svc,
@@ -491,7 +482,6 @@ export async function loadCustomerProfilePage(
     auditRunId,
     viewToken,
     profile,
-    watchlisted: Boolean(watchlistRow),
     displayName,
     profileGrade,
     hasCleanRecord,

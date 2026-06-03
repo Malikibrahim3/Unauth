@@ -37,7 +37,6 @@ export function CustomerProfilePageView(props: CustomerProfilePageViewProps) {
     auditRunId,
     viewToken,
     profile,
-    watchlisted,
     displayName,
     profileGrade,
     hasCleanRecord,
@@ -81,7 +80,6 @@ export function CustomerProfilePageView(props: CustomerProfilePageViewProps) {
         merchantClaimCount={merchantClaimCount}
         merchantOrderCount={merchantOrderCount}
         localClaimRatePct={localClaimRatePct}
-        watchlisted={watchlisted}
         viewToken={viewToken}
         openClaimCount={openClaimCount}
         isEligibleForEvidence={isEligibleForEvidence}

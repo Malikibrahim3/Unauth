@@ -6,6 +6,10 @@ import type {
   PrimaryReason,
   ThisStoreOrdersSource,
 } from '@/lib/gorgias/widgetData';
+import {
+  CONTEXT_UNLOCK_CTA_LABELS,
+} from '@/lib/billing/contextCredits';
+import type { CreditUsageWidgetFields } from '@/lib/billing/creditUsage';
 import { env } from '@/lib/utils/env';
 import { buildGorgiasWidgetUnlockUrlSet } from '@/lib/gorgias/widgetUnlockUrls';
 
@@ -40,6 +44,10 @@ export type GorgiasWidgetJsonPayload = {
   basic_unlock_label: string;
   full_unlock_label: string;
   evidence_unlock_label: string;
+  /** Set when monthly usage is high or exhausted (80%+ / cap). */
+  credit_usage_banner?: string;
+  credit_topup_label?: string;
+  credit_topup_url?: string;
 };
 
 export type GorgiasWidgetLinkContext = {
@@ -56,6 +64,7 @@ export type GorgiasWidgetJsonOptions = {
    * Requires `?widget_diagnostic=1` on the widget route.
    */
   allowDetailedPreview?: boolean;
+  creditUsage?: CreditUsageWidgetFields | null;
 };
 
 /** True unless an explicit non-production diagnostic preview was requested. */
@@ -63,14 +72,10 @@ export function useCreditGatedWidgetPreview(options?: GorgiasWidgetJsonOptions):
   return !(options?.allowDetailedPreview === true && process.env.NODE_ENV !== 'production');
 }
 
-const BASIC_UNLOCK_LABEL = 'View basic context — 1 credit';
-const FULL_UNLOCK_LABEL = 'View full context — 2 credits';
-const EVIDENCE_UNLOCK_LABEL = 'Generate evidence summary — 3 credits';
-
 const UNLOCK_LABELS = {
-  basic_unlock_label: BASIC_UNLOCK_LABEL,
-  full_unlock_label: FULL_UNLOCK_LABEL,
-  evidence_unlock_label: EVIDENCE_UNLOCK_LABEL,
+  basic_unlock_label: CONTEXT_UNLOCK_CTA_LABELS.basic_context,
+  full_unlock_label: CONTEXT_UNLOCK_CTA_LABELS.full_context,
+  evidence_unlock_label: CONTEXT_UNLOCK_CTA_LABELS.evidence_summary,
 } as const;
 
 const DATA_SAFETY_NOTE =
@@ -113,8 +118,21 @@ function unlockUrls(link: GorgiasWidgetLinkContext | undefined): Pick<
 function withUnlockFields(
   payload: WidgetCorePayload,
   link?: GorgiasWidgetLinkContext,
+  options?: GorgiasWidgetJsonOptions,
 ): GorgiasWidgetJsonPayload {
-  return { ...payload, ...UNLOCK_LABELS, ...unlockUrls(link) };
+  const credit = options?.creditUsage;
+  return {
+    ...payload,
+    ...UNLOCK_LABELS,
+    ...unlockUrls(link),
+    ...(credit
+      ? {
+          credit_usage_banner: credit.credit_usage_banner,
+          credit_topup_label: credit.credit_topup_label,
+          credit_topup_url: credit.credit_topup_url,
+        }
+      : {}),
+  };
 }
 
 /** Case-scoped Gorgias tickets get credit unlock links; preview must not leak stats before unlock. */
@@ -126,9 +144,9 @@ export function hasGorgiasUnlockCaseScope(link?: GorgiasWidgetLinkContext): bool
 function buildCreditGatedPreviewPayload(profileUrl?: string | null): WidgetCorePayload {
   return {
     identity: 'Context available for this ticket',
-    claims: BASIC_UNLOCK_LABEL,
-    orders: FULL_UNLOCK_LABEL,
-    claim_rate: EVIDENCE_UNLOCK_LABEL,
+    claims: CONTEXT_UNLOCK_CTA_LABELS.basic_context,
+    orders: CONTEXT_UNLOCK_CTA_LABELS.full_context,
+    claim_rate: CONTEXT_UNLOCK_CTA_LABELS.evidence_summary,
     primary_reason: "Uses your store's own order, claim, delivery, and customer history.",
     recent_activity:
       'A full check adds pseudonymous network context from participating merchants.',
@@ -219,7 +237,7 @@ export function claimWidgetToJson(
   if (!result.ok) {
     if (result.kind === 'not_found') {
       if (creditGatedPreview) {
-        return withUnlockFields(buildCreditGatedPreviewPayload(), link);
+        return withUnlockFields(buildCreditGatedPreviewPayload(), link, options);
       }
       return withUnlockFields(
         {
@@ -234,6 +252,7 @@ export function claimWidgetToJson(
           ...baseCta(),
         },
         link,
+        options,
       );
     }
     if (result.kind === 'identity_unresolved') {
@@ -241,9 +260,9 @@ export function claimWidgetToJson(
         return withUnlockFields(
           {
             identity: 'Context available for this ticket',
-            claims: BASIC_UNLOCK_LABEL,
-            orders: FULL_UNLOCK_LABEL,
-            claim_rate: EVIDENCE_UNLOCK_LABEL,
+            claims: CONTEXT_UNLOCK_CTA_LABELS.basic_context,
+            orders: CONTEXT_UNLOCK_CTA_LABELS.full_context,
+            claim_rate: CONTEXT_UNLOCK_CTA_LABELS.evidence_summary,
             primary_reason: 'Open the customer profile in Gorgias so Unauth can resolve the ticket email.',
             recent_activity:
               'A full check adds pseudonymous network context from participating merchants.',
@@ -267,6 +286,7 @@ export function claimWidgetToJson(
           ...baseCta(),
         },
         link,
+        options,
       );
     }
     if (result.kind === 'helpdesk_disconnected') {
@@ -283,10 +303,11 @@ export function claimWidgetToJson(
           ...connectCta(),
         },
         link,
+        options,
       );
     }
     if (creditGatedPreview) {
-      return withUnlockFields(buildCreditGatedPreviewPayload(), link);
+      return withUnlockFields(buildCreditGatedPreviewPayload(), link, options);
     }
     return withUnlockFields(
       {
@@ -318,9 +339,10 @@ export function claimWidgetToJson(
           primary_reason: 'Connect Shopify or wait for the next order sync to load store history.',
         },
         link,
+        options,
       );
     }
-    return withUnlockFields(buildCreditGatedPreviewPayload(profileUrl), link);
+    return withUnlockFields(buildCreditGatedPreviewPayload(profileUrl), link, options);
   }
 
   const {
@@ -385,6 +407,7 @@ export function claimWidgetToJson(
       ...baseCta(result.data.profileUrl),
     },
     link,
+    options,
   );
 }
 

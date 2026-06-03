@@ -16,7 +16,6 @@ import { tryClaimJobFinalize } from '@/lib/processing/chunkQueue';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { summarizeAuditResults } from '@/lib/audit/resultsSummary';
 import { sendEmail } from '@/lib/email/send';
-import { GRADE_ORDER, type ConfidenceGrade } from '@/lib/engine/weights';
 import { buildAuditResultsEmail } from '@/lib/email/templates';
 
 export const maxDuration = 300;
@@ -37,63 +36,6 @@ function formatError(err: unknown): string {
 
   if (parts.length > 0) return parts.join(' | ');
   return JSON.stringify(maybe);
-}
-
-async function checkWatchlistAppearances(
-  merchantId: string,
-  auditId: string,
-  supabase: SupabaseClient
-): Promise<void> {
-  const { data: merchant } = await supabase
-    .from(TABLES.MERCHANTS)
-    .select('user_id')
-    .eq('id', merchantId)
-    .maybeSingle();
-  const ownerUserId = (merchant as { user_id?: string | null } | null)?.user_id ?? merchantId;
-
-  const { data: watchlisted } = await supabase
-    .from(TABLES.WATCHLIST_ENTRIES)
-    .select('customer_profile_id')
-    .or(`merchant_id.eq.${ownerUserId},merchant_id.eq.${merchantId}`)
-    .eq('removed_by_merchant', false);
-  if (!watchlisted || watchlisted.length === 0) return;
-  const ids = (watchlisted as { customer_profile_id: string | null }[])
-    .flatMap((w) => (w.customer_profile_id ? [w.customer_profile_id] : [])) as string[];
-  if (ids.length === 0) return;
-
-  const { data: appearances } = await supabase
-    .from(TABLES.AUDIT_TRANSACTIONS)
-    .select('customer_profile_id, identity_confidence_grade')
-    .eq('job_id', auditId)
-    .eq('merchant_id', merchantId)
-    .in('customer_profile_id', ids);
-  if (!appearances || appearances.length === 0) return;
-
-  const gradeOrder = GRADE_ORDER;
-  const grouped = new Map<string, { count: number; highestGrade: ConfidenceGrade }>();
-  for (const row of appearances as Array<{ customer_profile_id: string; identity_confidence_grade: ConfidenceGrade }>) {
-    const ex = grouped.get(row.customer_profile_id);
-    const rank = gradeOrder[row.identity_confidence_grade] ?? 0;
-    if (!ex) {
-      grouped.set(row.customer_profile_id, { count: 1, highestGrade: row.identity_confidence_grade });
-    } else {
-      grouped.set(row.customer_profile_id, {
-        count: ex.count + 1,
-        highestGrade: rank > (gradeOrder[ex.highestGrade] ?? 0) ? row.identity_confidence_grade : ex.highestGrade,
-      });
-    }
-  }
-  const rows = Array.from(grouped.entries()).map(([profileId, d]) => ({
-    merchant_id: merchantId,
-    customer_profile_id: profileId,
-    audit_id: auditId,
-    transaction_count: d.count,
-    highest_grade: d.highestGrade,
-  }));
-  const { error } = await supabase
-    .from('watchlist_appearances')
-    .upsert(rows, { onConflict: 'merchant_id,customer_profile_id,audit_id' });
-  if (error) console.error('[watchlist_appearances] upsert error:', error.message);
 }
 
 async function maybeSendAuditResultsEmail(
@@ -237,16 +179,10 @@ async function finalizeJob(
 
   try {
     log('Finalising job');
-    let watchlistSyncStatus: 'synced' | 'failed' = 'synced';
-    try {
-      await checkWatchlistAppearances(merchantId, jobId, sc);
-    } catch (err) {
-      watchlistSyncStatus = 'failed';
-      console.warn(`[finalize ${jobId}] watchlist sync non-fatal failure:`, formatError(err));
-    }
+    // Legacy appearance sync retired — case-scoped review uses claims + review queue.
     await sc
       .from(TABLES.PROCESSING_JOBS)
-      .update({ watchlist_sync_status: watchlistSyncStatus } as any)
+      .update({ watchlist_sync_status: 'skipped' } as any)
       .eq('id', jobId);
     const flaggedCount = await countReviewWorthyTransactions(sc, jobId, merchantId);
     try {
