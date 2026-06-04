@@ -1,0 +1,14 @@
+{
+  "app": {
+    "name": "Unauth Fraud Intelligence",
+    "short_description": "Identity confidence and claims context on every Zendesk ticket.",
+    "long_description": "Shows Unauth store checks, network context, and case reports in the ticket sidebar using your Unauth API key.",
+    "installation_instructions": "Upload this private app, enter your Unauth API key from Settings → API & Integrations in the Unauth dashboard, then install to the ticket sidebar.",
+    "parameters": {
+      "api_key": {
+        "label": "Unauth API key",
+        "helpText": "Create an API key in Unauth under Settings → Integrations → Advanced (API keys)."
+      }
+    }
+  }
+}

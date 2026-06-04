@@ -5,6 +5,8 @@
     "email": "support@unauth.co",
     "url": "https://unauth.co"
   },
+  "defaultLocale": "en",
+  "private": true,
   "version": "1.0.0",
   "frameworkVersion": "2.0",
   "location": {
