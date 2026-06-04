@@ -1,5 +1,3 @@
-import { env } from '@/lib/utils/env';
-
 /** Canonical plan identifiers — must match `plans` table and Stripe products. */
 export type PlanId = 'free' | 'pro' | 'growth' | 'scale';
 
@@ -18,7 +16,7 @@ export interface PlanDefinition {
   stripePriceId: string | null;
 }
 
-/** Hard-coded plan catalog — Stripe price IDs from env, never inlined. */
+/** Hard-coded plan catalog. Stripe price IDs: `lib/billing/planStripeIds.ts` (server-only). */
 export const PLANS: Record<PlanId, PlanDefinition> = {
   free: {
     planId: 'free',
@@ -32,14 +30,14 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     name: 'Pro',
     priceGbp: 99,
     creditsMonthly: 1000,
-    stripePriceId: env.STRIPE_PRICE_PRO ?? null,
+    stripePriceId: null,
   },
   growth: {
     planId: 'growth',
     name: 'Growth',
     priceGbp: 399,
     creditsMonthly: 5000,
-    stripePriceId: env.STRIPE_PRICE_GROWTH ?? null,
+    stripePriceId: null,
   },
   scale: {
     planId: 'scale',
@@ -61,10 +59,6 @@ export function getPlanCreditsMonthly(planId: PlanId, customAllowance?: number |
     return customAllowance ?? null;
   }
   return plan.creditsMonthly;
-}
-
-export function getTopUpStripePriceId(): string | null {
-  return env.STRIPE_PRICE_TOPUP ?? null;
 }
 
 export function isPaidPlan(planId: PlanId): boolean {

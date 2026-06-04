@@ -38,7 +38,6 @@ export async function precheckContextCredits(
   contextType: ContextUnlockType,
 ): Promise<CreditPrecheckResult> {
   const snapshot = await getContextCreditSnapshot(supabase, merchantId);
-  const subscription = await getMerchantSubscription(supabase, merchantId);
   const creditsRequired = getContextCreditCost(contextType);
   const creditsExhausted = snapshot.usageBand === 'exhausted';
 
@@ -69,20 +68,6 @@ export async function precheckContextCredits(
     }
   }
 
-  if (subscription) {
-    const suspension = isContextTypeSuspended(subscription, contextType, creditsExhausted);
-    if (!suspension.allowed) {
-      return {
-        ok: false,
-        status: 402,
-        snapshot,
-        creditsRequired,
-        error: suspension.message,
-        upgradePrompt: suspension.reason === 'plan_gated',
-      };
-    }
-  }
-
   const mode = resolveCreditPrecheckMode(snapshot, contextType);
 
   if (mode.kind === 'network_paused_fallback' || mode.kind === 'soft_cap_basic') {
@@ -97,6 +82,21 @@ export async function precheckContextCredits(
       creditsRequired,
       error: 'Not enough context credits remaining for this review.',
     };
+  }
+
+  const subscription = await getMerchantSubscription(supabase, merchantId);
+  if (subscription) {
+    const suspension = isContextTypeSuspended(subscription, contextType, creditsExhausted);
+    if (!suspension.allowed) {
+      return {
+        ok: false,
+        status: 402,
+        snapshot,
+        creditsRequired,
+        error: suspension.message,
+        upgradePrompt: suspension.reason === 'plan_gated',
+      };
+    }
   }
 
   return { ok: true, snapshot, mode: { kind: 'standard' } };

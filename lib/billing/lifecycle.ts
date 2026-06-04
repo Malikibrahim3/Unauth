@@ -4,10 +4,10 @@ import {
   getMerchantOwnerEmail,
   logBillingEvent,
 } from '@/lib/billing/merchantBilling';
+import { getTopUpStripePriceId } from '@/lib/billing/planStripeIds';
 import {
   GRACE_PERIOD_DAYS,
   getPlanCreditsMonthly,
-  getTopUpStripePriceId,
   isDowngrade,
   isUpgrade,
   PLANS,

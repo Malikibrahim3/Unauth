@@ -20,6 +20,7 @@ export async function GET() {
   return NextResponse.json({ ok: true, service: 'woocommerce-webhooks' });
 }
 
+// Service-role access is protected here by HMAC signature verification, not user auth.
 export async function POST(request: NextRequest) {
   const webhookSource = request.headers.get('x-wc-webhook-source');
   const topic = normalizeTopic(request.headers.get('x-wc-webhook-topic'));

@@ -4,7 +4,8 @@ import {
   type PlanId,
   type SubscriptionStatus,
 } from '@/lib/billing/plans';
-import { normalizeTier, type Tier } from '@/lib/billing/normalizeTier';
+import { normalizeTier } from '@/lib/billing/normalizeTier';
+import type { Tier } from '@/lib/billing/tiers';
 import { TABLES } from '@/lib/supabase/tables';
 import type { SupabaseClient } from '@supabase/supabase-js';
 

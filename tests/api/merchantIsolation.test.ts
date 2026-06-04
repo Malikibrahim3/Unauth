@@ -332,7 +332,7 @@ describe('paginateAll', () => {
 // Watchlist isolation — merchantId vs userId
 // ---------------------------------------------------------------------------
 describe('Watchlist uses merchantId not userId', () => {
-  it('watchlist route/page files scope merchant_id by merchantId, never user.id', async () => {
+  it('watchlist routes scope merchant_id by merchantId, and the page stays a retired informational surface', async () => {
     const fs = await import('fs');
     const path = await import('path');
     const read = (rel: string) => fs.readFileSync(path.join(process.cwd(), rel), 'utf-8');
@@ -340,7 +340,6 @@ describe('Watchlist uses merchantId not userId', () => {
     const files = {
       route: read('app/api/watchlist/route.ts'),
       deleteRoute: read('app/api/watchlist/[id]/route.ts'),
-      page: read('app/(app)/watchlist/page.tsx'),
     };
 
     for (const content of Object.values(files)) {
@@ -352,6 +351,10 @@ describe('Watchlist uses merchantId not userId', () => {
       // And it must scope by the merchant tenant key.
       expect(content).toMatch(/\.merchantId/);
     }
+
+    const page = read('app/(app)/watchlist/page.tsx');
+    expect(page).toContain('Customer watchlists are retired');
+    expect(page).toContain('Open claims');
   });
 });
 

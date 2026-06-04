@@ -10,7 +10,7 @@ import { registerBigCommerceWebhooks } from '@/lib/commerce/bigcommerce/register
 import { resolveBigCommerceOAuthMerchantId } from '@/lib/commerce/bigcommerce/resolveOAuthMerchantId';
 import { getAppUrl } from '@/lib/utils/appUrl';
 import { logAction } from '@/lib/permissions/audit';
-import { resolveCallerContext } from '@/lib/permissions';
+import { PERMISSIONS, requirePermission, resolveCallerContext } from '@/lib/permissions';
 import { getClientIp } from '@/lib/ratelimit';
 
 const INTEGRATIONS_PATH = '/settings/integrations/bigcommerce';
@@ -50,6 +50,24 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const userClient = createClient();
+    const serviceClient = createServiceClient();
+    const {
+      data: { user },
+    } = await userClient.auth.getUser();
+    if (!user) {
+      const response = integrationsRedirect({ bigcommerce_error: 'unauthorized' });
+      clearOAuthCookies(response);
+      return response;
+    }
+
+    const { denied } = await requirePermission(serviceClient, user.id, PERMISSIONS.MANAGE_SETTINGS);
+    if (denied) {
+      const response = integrationsRedirect({ bigcommerce_error: 'forbidden' });
+      clearOAuthCookies(response);
+      return response;
+    }
+
     const appUrl = getAppUrl();
     const redirectUri = `${appUrl.replace(/\/$/, '')}/api/bigcommerce/callback`;
 
@@ -65,8 +83,6 @@ export async function GET(request: NextRequest) {
       return response;
     }
 
-    const serviceClient = createServiceClient();
-    const userClient = createClient();
     const merchantId = await resolveBigCommerceOAuthMerchantId(
       request,
       serviceClient,
@@ -88,9 +104,6 @@ export async function GET(request: NextRequest) {
       return response;
     }
 
-    const {
-      data: { user },
-    } = await userClient.auth.getUser();
     if (user) {
       const ctx = await resolveCallerContext(serviceClient, user.id);
       if (ctx) {

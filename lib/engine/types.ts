@@ -70,6 +70,7 @@ export interface IdentityAlert {
 export interface ScoredOrder {
   order: NormalisedOrder;
   totalScore: number;
+  riskTier?: 'low' | 'medium' | 'high' | 'critical';
   /**
    * §5.1 / §5.2 — Grade derived from score AND identifier diversity.
    * null = below scoring threshold (totalScore < 25).

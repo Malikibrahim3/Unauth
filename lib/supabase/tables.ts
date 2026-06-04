@@ -10,6 +10,7 @@
 export const TABLES = {
   PROCESSING_JOBS: 'processing_jobs',
   AUDIT_TRANSACTIONS: 'audit_transactions',
+  MERCHANT_CLAIMS: 'merchant_claims',
   CUSTOMER_PROFILES: 'customer_profiles',
   CUSTOMER_PROFILE_IDENTITIES: 'customer_profile_identities',
   PUBLIC_AUDITS: 'public_audits',

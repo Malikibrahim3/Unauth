@@ -1,10 +1,11 @@
+import { PLAN_CONTEXT_CREDITS } from '@/lib/billing/contextCredits';
 import { resolveMonthlyCreditAllowance } from '@/lib/billing/resolveMonthlyCreditAllowance';
 
 describe('resolveMonthlyCreditAllowance', () => {
   it('resolves standard plan allowances', () => {
-    expect(resolveMonthlyCreditAllowance('free', null)).toEqual({ ok: true, allowance: 50 });
-    expect(resolveMonthlyCreditAllowance('pro', null)).toEqual({ ok: true, allowance: 1000 });
-    expect(resolveMonthlyCreditAllowance('growth', null)).toEqual({ ok: true, allowance: 5000 });
+    expect(resolveMonthlyCreditAllowance('free', null)).toEqual({ ok: true, allowance: PLAN_CONTEXT_CREDITS.free });
+    expect(resolveMonthlyCreditAllowance('pro', null)).toEqual({ ok: true, allowance: PLAN_CONTEXT_CREDITS.pro });
+    expect(resolveMonthlyCreditAllowance('growth', null)).toEqual({ ok: true, allowance: PLAN_CONTEXT_CREDITS.growth });
   });
 
   it('requires explicit allowance for scale and enterprise', () => {

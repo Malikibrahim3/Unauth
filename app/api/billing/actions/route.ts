@@ -5,6 +5,7 @@ import {
   scheduleDowngrade,
 } from '@/lib/billing/lifecycle';
 import { getMerchantBillingState } from '@/lib/billing/merchantBilling';
+import { getPlanStripePriceId } from '@/lib/billing/planStripeIds';
 import {
   isDowngrade,
   isUpgrade,
@@ -96,7 +97,7 @@ export async function POST(req: NextRequest) {
   switch (action) {
     case 'checkout': {
       if (!planId) return NextResponse.json({ error: 'planId required' }, { status: 400 });
-      const priceId = PLANS[planId].stripePriceId;
+      const priceId = getPlanStripePriceId(planId);
       if (!priceId) return NextResponse.json({ error: 'Plan not available for checkout' }, { status: 400 });
       const url = await createSubscriptionCheckoutSession({
         customerId: state.subscription.stripeCustomerId ?? undefined,
@@ -143,7 +144,7 @@ export async function POST(req: NextRequest) {
           .update({ downgrade_to_plan_id: null, updated_at: new Date().toISOString() })
           .eq('merchant_id', ctx.merchantId);
       }
-      const priceId = PLANS[planId as PlanId].stripePriceId;
+      const priceId = getPlanStripePriceId(planId as PlanId);
       if (state.subscription.stripeSubscriptionId && priceId) {
         await upgradeSubscriptionImmediate({
           subscriptionId: state.subscription.stripeSubscriptionId,

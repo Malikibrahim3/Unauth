@@ -129,7 +129,13 @@ function getClientSnapshot<T>(key: string, enabled: boolean): FetchSnapshot<T> {
   if (!enabled) {
     return SERVER_SNAPSHOT_IDLE as FetchSnapshot<T>;
   }
-  return syncSnapshot<T>(getEntry(key));
+  const entry = getEntry(key);
+  // Match getServerSnapshot until the first load starts — avoids hydration mismatch
+  // when client components use useFetchJson / useAsyncResource (e.g. Settings → Integrations).
+  if (entry.data === undefined && entry.error === null && entry.promise === null && !entry.loading) {
+    return SERVER_SNAPSHOT_LOADING as FetchSnapshot<T>;
+  }
+  return syncSnapshot<T>(entry);
 }
 
 function useResourceStore<T>(

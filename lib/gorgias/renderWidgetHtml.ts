@@ -120,7 +120,7 @@ export function renderGorgiasWidgetHtml(ctx: ClaimWidgetRenderContext): string {
   const json = claimWidgetToJson(result, link, options);
   const profileUrl = ctx.profileUrl ?? (result.ok ? result.data.profileUrl : null) ?? '';
   const appBase = env.NEXT_PUBLIC_APP_URL.replace(/\/$/, '');
-  const connectUrl = `${appBase}/settings/integrations`;
+  const connectUrl = `${appBase}/settings/integrations/gorgias`;
   const ctaUrl = isDisconnected ? connectUrl : profileUrl || json.cta_url;
   const ctaLabel = isDisconnected ? 'Connect to Unauth →' : json.cta_label;
 

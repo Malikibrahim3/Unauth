@@ -12,6 +12,7 @@ import {
 import type { CreditUsageWidgetFields } from '@/lib/billing/creditUsage';
 import { env } from '@/lib/utils/env';
 import { buildGorgiasWidgetUnlockUrlSet } from '@/lib/gorgias/widgetUnlockUrls';
+import { GORGIAS_SETTINGS_INTEGRATIONS_PATH } from '@/lib/support/gorgias/supportConnectionShared';
 
 /**
  * Flat root object — field paths must match buildGorgiasSidebarWidgetTemplate() exactly.
@@ -223,7 +224,7 @@ function baseCta(profileUrl?: string | null): Pick<GorgiasWidgetJsonPayload, 'ct
 function connectCta(): Pick<GorgiasWidgetJsonPayload, 'cta_label' | 'cta_url'> {
   return {
     cta_label: 'Connect to Unauth →',
-    cta_url: appUrl('/settings/integrations'),
+    cta_url: appUrl(GORGIAS_SETTINGS_INTEGRATIONS_PATH),
   };
 }
 
@@ -439,3 +440,6 @@ function formatClaimsSummary(
   }
   return parts.length > 0 ? parts.join(' · ') : NO_CLAIMS_LABEL;
 }
+
+// Backward-compatible export name used by tests and older callers.
+export const gorgiasWidgetModelToJson = claimWidgetToJson;

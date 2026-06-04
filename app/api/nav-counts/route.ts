@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
-import { resolveCallerContext } from '@/lib/permissions';
+import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { TABLES } from '@/lib/supabase/tables';
 
 export async function GET() {
@@ -11,10 +11,8 @@ export async function GET() {
   }
 
   const serviceClient = createServiceClient();
-  const ctx = await resolveCallerContext(serviceClient, user.id);
-  if (!ctx) {
-    return NextResponse.json({ claimsCount: 0 });
-  }
+  const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_INBOX);
+  if (denied) return NextResponse.json({ claimsCount: 0 });
 
   const { count } = await serviceClient
     .from(TABLES.MERCHANT_CLAIMS as never)

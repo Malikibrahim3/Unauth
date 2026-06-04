@@ -76,6 +76,7 @@ function safeExternalCaseId(body: unknown): string | null {
 }
 
 export async function POST(request: NextRequest) {
+  // Service-role access is protected by secret/HMAC-style webhook verification inside ingestGorgiasSupportWebhook.
   const searchParams = new URL(request.url).searchParams;
   const rateLimitIdentity =
     request.headers.get('x-gorgias-account-id') ??

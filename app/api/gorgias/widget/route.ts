@@ -50,7 +50,7 @@ const GORGIAS_WIDGET_JSON_FALLBACK: GorgiasWidgetJsonPayload = {
   ce3_evidence: 'Unauth provides contextual information for merchant review. Unauth does not make refund, fulfilment, account, or customer eligibility decisions.',
   watchlisted: 'Other merchants’ raw customer data is not exposed.',
   cta_label: 'Open case in Unauth →',
-  cta_url: `${process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '') ?? ''}/settings/integrations`,
+  cta_url: `${process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '') ?? ''}/settings/integrations/gorgias`,
   basic_unlock_url: '',
   full_unlock_url: '',
   evidence_unlock_url: '',

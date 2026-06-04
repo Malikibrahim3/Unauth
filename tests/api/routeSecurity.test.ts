@@ -88,6 +88,9 @@ describe('Static security guard: service-role routes must be auth-gated', () => 
         content.includes('HMAC') ||
         content.includes('x-internal-secret') ||
         content.includes('x-unauth-internal-secret') ||
+        content.includes('verifyBigCommerceWebhookSignature') ||
+        content.includes('verifyWooCommerceWebhookSignature') ||
+        content.includes('verifyGorgiasWebhookAuth') ||
         content.includes('verifySupportIngestSecret') ||
         content.includes('verifyGorgiasSupportWebhookSecret') ||
         content.includes('x-unauth-gorgias-secret') ||
@@ -382,60 +385,13 @@ describe('/api/inbox/export — review population semantics', () => {
 // Inbox page — correct population semantics
 // ---------------------------------------------------------------------------
 describe('Inbox page — review population semantics', () => {
-  it('inbox page uses fetchMerchantReviewQueueRows', () => {
+  it('inbox page is a thin alias redirect to the canonical claims route', () => {
     const content = fs.readFileSync(
       path.join(process.cwd(), 'app/(app)/inbox/page.tsx'),
       'utf-8'
     );
-    expect(content).toContain('fetchMerchantReviewQueueRows');
-  });
-
-  it('inbox page does NOT filter by legacy risk_level', () => {
-    const content = fs.readFileSync(
-      path.join(process.cwd(), 'app/(app)/inbox/page.tsx'),
-      'utf-8'
-    );
-    expect(content).not.toContain("in('risk_level'");
-    expect(content).not.toContain("risk_level: ['high'");
-  });
-
-  it('inbox page does NOT order by legacy match_score', () => {
-    const content = fs.readFileSync(
-      path.join(process.cwd(), 'app/(app)/inbox/page.tsx'),
-      'utf-8'
-    );
-    expect(content).not.toContain("order('match_score'");
-  });
-
-  it('inbox page uses service client with requirePermission', () => {
-    const content = fs.readFileSync(
-      path.join(process.cwd(), 'app/(app)/inbox/page.tsx'),
-      'utf-8'
-    );
-    expect(content).toContain('requirePermission');
-    expect(content).toContain('createServiceClient');
-  });
-
-  it('inbox page renders case-status navigation for triage', () => {
-    const content = fs.readFileSync(
-      path.join(process.cwd(), 'app/(app)/inbox/page.tsx'),
-      'utf-8'
-    );
-    // The inbox renders a "Case status" navigation for triage across the
-    // active queue, claims, and resolved history.
-    expect(content).toContain('aria-label="Case status"');
-    expect(content).toContain('Active work');
-    expect(content).toContain('Claims queue');
-    expect(content).toContain('Resolved history');
-  });
-
-  it('inbox client uses merchant-scoped customer profile links from row data', () => {
-    const content = fs.readFileSync(
-      path.join(process.cwd(), 'components/inbox/InboxClient.tsx'),
-      'utf-8'
-    );
-    expect(content).toContain('customer_profile_id');
-    expect(content).toContain('/customers/');
+    expect(content).toContain("redirect('/claims')");
+    expect(content).not.toContain('fetchMerchantReviewQueueRows');
   });
 });
 
@@ -494,12 +450,12 @@ describe('Customer detail page — linked identity privacy', () => {
 
   it('derives linked identity from merchant-owned transactions only', () => {
     const content = fs.readFileSync(
-      path.join(process.cwd(), 'app/(app)/customers/[id]/page.tsx'),
+      path.join(process.cwd(), 'app/(app)/customers/[id]/customerProfilePageLoad.ts'),
       'utf-8'
     );
     // Must use fetchMerchantScopedCustomerTransactions (not raw cluster table)
     expect(content).toContain('fetchMerchantScopedCustomerTransactions');
-    expect(content).toContain("if (transactions.length === 0");
+    expect(content).toContain('if (transactionRows.length === 0');
     expect(content).toContain("in('job_id', ownedJobIds)");
   });
 });
@@ -663,38 +619,23 @@ describe('fetchMerchantReviewQueueRows — null match_status regression', () => 
 // Inbox page auth and permission guards
 // ---------------------------------------------------------------------------
 describe('Inbox page — auth and permission guards', () => {
-  it('inbox page redirects unauthenticated users to /login', () => {
+  it('inbox page redirects to the canonical claims route', () => {
     const content = fs.readFileSync(
       path.join(process.cwd(), 'app/(app)/inbox/page.tsx'),
       'utf-8'
     );
-    expect(content).toContain("redirect('/login')");
-    // Must redirect BEFORE calling fetchMerchantReviewQueueRows — slice from the
-    // function body so we don't confuse the import line with the actual call.
-    const fnStart = content.indexOf('export default async function');
-    const body = content.slice(fnStart);
-    const redirectIdx = body.indexOf("redirect('/login')");
-    const fetchIdx = body.indexOf('fetchMerchantReviewQueueRows(');
-    expect(redirectIdx).toBeGreaterThan(-1);
-    expect(fetchIdx).toBeGreaterThan(-1);
-    expect(redirectIdx).toBeLessThan(fetchIdx);
+    expect(content).toContain("redirect('/claims')");
   });
 
-  it('inbox page uses VIEW_INBOX permission, not VIEW_CUSTOMERS', () => {
+  it('claims page owns auth and VIEW_INBOX permission enforcement', () => {
     const content = fs.readFileSync(
-      path.join(process.cwd(), 'app/(app)/inbox/page.tsx'),
+      path.join(process.cwd(), 'app/(app)/claims/page.tsx'),
       'utf-8'
     );
     expect(content).toContain('PERMISSIONS.VIEW_INBOX');
+    expect(content).toContain("redirect('/login')");
     expect(content).not.toContain('PERMISSIONS.VIEW_CUSTOMERS');
-  });
-
-  it('inbox page fails closed on permission denial (redirects to permitted app route)', () => {
-    const content = fs.readFileSync(
-      path.join(process.cwd(), 'app/(app)/inbox/page.tsx'),
-      'utf-8'
-    );
-    expect(content).toContain('if (denied) redirect(await resolveDefaultAppPath');
+    expect(content).toContain('if (denied) redirect(\'/dashboard\')');
   });
 });
 
@@ -1478,7 +1419,7 @@ describe('dashboard/page.tsx — fail-closed and no silent zero', () => {
 
   it('renders "Unavailable" state when review queue count failed', () => {
     const content = fs.readFileSync(
-      path.join(process.cwd(), 'app/(app)/dashboard/page.tsx'),
+      path.join(process.cwd(), 'app/(app)/dashboard/dashboardPageUtils.ts'),
       'utf-8'
     );
     expect(content).toContain('Unavailable');

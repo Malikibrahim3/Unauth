@@ -57,18 +57,21 @@ export function buildClaimOpsMetrics(
   const approvedDecisions = new Set(['approved', 'full_refund', 'partial_refund']);
   const legitimateOutcomes = new Set(['customer_verified', 'legitimate']);
 
+  const isResolvedStatus = (status: string | null | undefined): boolean =>
+    status === 'resolved' || isFinalClaimStatus(status);
+
   return {
     totalClaims: claims.length,
     openClaims: claims.filter((claim) => claim.status === 'open').length,
     inReviewOrPendingClaims: claims.filter((claim) => ['under_review', 'evidence_requested', 'pending', 'escalated'].includes(claim.status)).length,
-    resolvedClaims: claims.filter((claim) => isFinalClaimStatus(claim.status)).length,
+    resolvedClaims: claims.filter((claim) => isResolvedStatus(claim.status)).length,
     deniedClaims: latest.filter((row) => row.decision === 'denied').length,
     approvedClaims: latest.filter((row) => approvedDecisions.has(row.decision ?? '')).length,
     suspectedFraudOutcomes: latest.filter((row) => row.outcome === 'suspected_fraud').length,
     legitimateOutcomes: latest.filter((row) => legitimateOutcomes.has(row.outcome ?? '')).length,
     valueAtRisk: claims.reduce((sum, claim) => sum + (Number(claim.amount_at_risk) || 0), 0),
     amountRefunded: latest.reduce((sum, row) => sum + (Number(row.amount_refunded) || 0), 0),
-    resolutionRate: claims.length > 0 ? claims.filter((claim) => isFinalClaimStatus(claim.status)).length / claims.length : 0,
+    resolutionRate: claims.length > 0 ? claims.filter((claim) => isResolvedStatus(claim.status)).length / claims.length : 0,
     overdueClaims: claims.filter((claim) => isActiveClaimStatus(claim.status) && getClaimSlaState(claim, now).state === 'overdue').length,
   };
 }

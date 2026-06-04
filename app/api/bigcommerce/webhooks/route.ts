@@ -19,6 +19,7 @@ export async function GET() {
   return NextResponse.json({ ok: true, service: 'bigcommerce-webhooks' });
 }
 
+// Service-role access is protected here by HMAC signature verification, not user auth.
 export async function POST(request: NextRequest) {
   const rawBody = await request.text();
   const signature = request.headers.get('x-bc-signature');

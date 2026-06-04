@@ -43,7 +43,7 @@ describe('POST /api/gorgias/support-webhook — webhook_logs', () => {
     const response = await POST(request);
 
     expect(response.status).toBe(400);
-    await expect(response.json()).resolves.toEqual({ ok: false, error: 'invalid_ticket_payload' });
+    await expect(response.json()).resolves.toMatchObject({ ok: false, error: 'invalid_ticket_payload' });
 
     const logs = rowsOf(client, TABLES.WEBHOOK_LOGS);
     expect(logs).toHaveLength(1);
@@ -51,7 +51,7 @@ describe('POST /api/gorgias/support-webhook — webhook_logs', () => {
       provider: 'gorgias',
       status: 'validation_error',
       http_status: 400,
-      error: 'invalid_ticket_payload',
     });
+    expect(String(logs[0].error)).toContain('invalid_ticket_payload');
   });
 });

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { ensureMerchantContextForUser } from '@/lib/account/ensureMerchantContext';
+import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import {
   bigCommerceOAuthCookieOptions,
   clearBigCommerceOAuthCookieOptions,
@@ -28,6 +29,20 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const supabase = createClient();
+    const serviceClient = createServiceClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      return integrationsRedirect(request, { bigcommerce_error: 'unauthorized' });
+    }
+
+    const { denied } = await requirePermission(serviceClient, user.id, PERMISSIONS.MANAGE_SETTINGS);
+    if (denied) {
+      return integrationsRedirect(request, { bigcommerce_error: 'forbidden' });
+    }
+
     const state = crypto.randomBytes(16).toString('hex');
     const appUrl = getAppUrl();
     const redirectUri = `${appUrl.replace(/\/$/, '')}/api/bigcommerce/callback`;
@@ -42,20 +57,13 @@ export async function GET(request: NextRequest) {
     const response = NextResponse.redirect(authorizeUrl.toString());
     response.cookies.set('bigcommerce_oauth_state', state, bigCommerceOAuthCookieOptions(600));
 
-    const supabase = createClient();
-    const serviceClient = createServiceClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (user) {
-      const ctx = await ensureMerchantContextForUser(serviceClient, user);
-      if (ctx?.merchantId) {
-        response.cookies.set(
-          'bigcommerce_oauth_merchant_id',
-          ctx.merchantId,
-          bigCommerceOAuthCookieOptions(600),
-        );
-      }
+    const ctx = await ensureMerchantContextForUser(serviceClient, user);
+    if (ctx?.merchantId) {
+      response.cookies.set(
+        'bigcommerce_oauth_merchant_id',
+        ctx.merchantId,
+        bigCommerceOAuthCookieOptions(600),
+      );
     }
 
     return response;

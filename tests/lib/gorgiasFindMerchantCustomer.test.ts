@@ -1,7 +1,7 @@
 import { readFileSync } from 'fs';
 import path from 'path';
 import { findMerchantCustomerByEmail } from '@/lib/gorgias/findMerchantCustomerByEmail';
-import { gorgiasWidgetModelToJson } from '@/lib/gorgias/widgetJson';
+import { claimWidgetToJson } from '@/lib/gorgias/widgetJson';
 
 const KNOWN_MERCHANT_ID = 'af070af9-df1a-46ba-89f8-29409926ef61';
 const KNOWN_EMAIL = 'simeonmurray123@gmail.com';
@@ -124,24 +124,16 @@ describe('findMerchantCustomerByEmail', () => {
     expect(supabase._rpcCalls).toContain('search_customer_profiles');
     expect(supabase._containsCalls).toHaveLength(0);
 
-    const json = gorgiasWidgetModelToJson({
-      state: 'merchant_profile',
-      profileId: customer!.id,
-      riskLevel: customer!.risk_level,
-      riskScore: customer!.risk_score,
-      fraudFlags: customer!.fraud_flags,
-      identityConfidenceGrade: customer!.identity_confidence_grade,
-      profileUrl: null,
-      stats: null,
-    });
+    const json = claimWidgetToJson(
+      { ok: false, kind: 'not_found' },
+      undefined,
+      { allowDetailedPreview: true },
+    );
 
-    // When stats is null (no transaction data available), all rows show dashes.
-    expect(json).toEqual({
-      orders: '—',
-      claim_rate: '—',
-      primary_reason: '—',
-      recent_activity: '—',
-    });
+    expect(json.orders).toBe('Not seen at any store yet');
+    expect(json.claim_rate).toBe('—');
+    expect(json.primary_reason).toBe('—');
+    expect(json.recent_activity).toBe('—');
   });
 
   it('matches email only in emails array via search_customer_profiles RPC when primary_email differs', async () => {

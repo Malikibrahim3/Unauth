@@ -238,23 +238,6 @@ export async function countMerchantReviewQueueProfiles(
     return fetchStatusClausePage(offset + PAGE);
   };
 
-  const [{ count: gradedHeadCount }, { count: statusHeadCount }] = await Promise.all([
-    serviceClient
-      .from(TABLES.AUDIT_TRANSACTIONS)
-      .select('id', { count: 'exact', head: true })
-      .in('job_id', ownedJobIds)
-      .in('identity_confidence_grade', ['probable', 'definite'])
-      .not('dismissed_by_merchant', 'is', true),
-    serviceClient
-      .from(TABLES.AUDIT_TRANSACTIONS)
-      .select('id', { count: 'exact', head: true })
-      .in('job_id', ownedJobIds)
-      .in('match_status', ['probable', 'definite'])
-      .is('identity_confidence_grade', null)
-      .not('dismissed_by_merchant', 'is', true),
-  ]);
-  if (!(gradedHeadCount ?? 0) && !(statusHeadCount ?? 0)) return 0;
-
   const distinctProfileIds = new Set<string>();
   const fetchAppearancePage = async (offset: number): Promise<void> => {
     const { data, error } = await serviceClient
@@ -280,12 +263,8 @@ export async function countMerchantReviewQueueProfiles(
     return fetchAppearancePage(offset + PAGE);
   };
 
-  if ((gradedHeadCount ?? 0) > 0) {
-    await fetchGradedClausePage(0);
-  }
-  if ((statusHeadCount ?? 0) > 0) {
-    await fetchStatusClausePage(0);
-  }
+  await fetchGradedClausePage(0);
+  await fetchStatusClausePage(0);
   if (reviewWorthyTxIds.size === 0) return 0;
   await fetchAppearancePage(0);
 

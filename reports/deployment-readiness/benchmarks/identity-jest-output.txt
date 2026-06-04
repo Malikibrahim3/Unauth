@@ -1,10 +1,159 @@
-PASS tests/engine/identityScoring.test.ts
 PASS tests/engine/linker.test.ts
+  ● Console
+
+    console.log
+      [linker] step-4 scoring: 1 total pairs, 0 skipped by anchor fast-path (no personal signal), 1 actually scored
+
+      at linkIdentities (lib/linker.ts:1400:11)
+
+    console.log
+      [linker] graph-chain linking: promoted 1 component(s) from 1 weak candidate edge(s)
+
+      at linkIdentities (lib/linker.ts:1289:15)
+
+    console.log
+      [linker] step-4 scoring: 1 total pairs, 0 skipped by anchor fast-path (no personal signal), 1 actually scored
+
+      at linkIdentities (lib/linker.ts:1400:11)
+
+    console.log
+      [linker] step-4 scoring: 1 total pairs, 0 skipped by anchor fast-path (no personal signal), 1 actually scored
+
+      at linkIdentities (lib/linker.ts:1400:11)
+
+    console.log
+      [linker] step-4 scoring: 1 total pairs, 0 skipped by anchor fast-path (no personal signal), 1 actually scored
+
+      at linkIdentities (lib/linker.ts:1400:11)
+
+    console.log
+      [linker] step-4 scoring: 1 total pairs, 0 skipped by anchor fast-path (no personal signal), 1 actually scored
+
+      at linkIdentities (lib/linker.ts:1400:11)
+
+    console.log
+      [linker] step-4 scoring: 1 total pairs, 0 skipped by anchor fast-path (no personal signal), 1 actually scored
+
+      at linkIdentities (lib/linker.ts:1400:11)
+
+    console.log
+      [linker] step-4 scoring: 1 total pairs, 1 skipped by anchor fast-path (no personal signal), 0 actually scored
+
+      at linkIdentities (lib/linker.ts:1400:11)
+
+    console.log
+      [linker] step-4 scoring: 1 total pairs, 1 skipped by anchor fast-path (no personal signal), 0 actually scored
+
+      at linkIdentities (lib/linker.ts:1400:11)
+
+    console.log
+      [linker] step-4 scoring: 1 total pairs, 0 skipped by anchor fast-path (no personal signal), 1 actually scored
+
+      at linkIdentities (lib/linker.ts:1400:11)
+
+    console.log
+      [linker] step-4 scoring: 1 total pairs, 1 skipped by anchor fast-path (no personal signal), 0 actually scored
+
+      at linkIdentities (lib/linker.ts:1400:11)
+
+    console.log
+      [linker] step-4 scoring: 1 total pairs, 0 skipped by anchor fast-path (no personal signal), 1 actually scored
+
+      at linkIdentities (lib/linker.ts:1400:11)
+
+    console.log
+      [linker] step-4 scoring: 1 total pairs, 1 skipped by anchor fast-path (no personal signal), 0 actually scored
+
+      at linkIdentities (lib/linker.ts:1400:11)
+
+    console.log
+      [linker] graph-chain linking: promoted 1 component(s) from 1 weak candidate edge(s)
+
+      at linkIdentities (lib/linker.ts:1289:15)
+
+    console.log
+      [linker] step-4 scoring: 1 total pairs, 0 skipped by anchor fast-path (no personal signal), 1 actually scored
+
+      at linkIdentities (lib/linker.ts:1400:11)
+
+    console.log
+      [linker] graph-chain linking: promoted 1 component(s) from 2 weak candidate edge(s)
+
+      at linkIdentities (lib/linker.ts:1289:15)
+
+    console.log
+      [linker] step-4 scoring: 3 total pairs, 0 skipped by anchor fast-path (no personal signal), 3 actually scored
+
+      at linkIdentities (lib/linker.ts:1400:11)
+
+    console.log
+      [linker] graph-chain linking: promoted 1 component(s) from 1 weak candidate edge(s)
+
+      at linkIdentities (lib/linker.ts:1289:15)
+
+    console.log
+      [linker] step-4 scoring: 1 total pairs, 0 skipped by anchor fast-path (no personal signal), 1 actually scored
+
+      at linkIdentities (lib/linker.ts:1400:11)
+
+    console.log
+      [linker] graph-chain linking: promoted 1 component(s) from 1 weak candidate edge(s)
+
+      at linkIdentities (lib/linker.ts:1289:15)
+
+    console.log
+      [linker] step-4 scoring: 1 total pairs, 0 skipped by anchor fast-path (no personal signal), 1 actually scored
+
+      at linkIdentities (lib/linker.ts:1400:11)
+
+    console.log
+      [linker] step-4 scoring: 0 total pairs, 0 skipped by anchor fast-path (no personal signal), 0 actually scored
+
+      at linkIdentities (lib/linker.ts:1400:11)
+
+    console.log
+      [linker] step-4 scoring: 0 total pairs, 0 skipped by anchor fast-path (no personal signal), 0 actually scored
+
+      at linkIdentities (lib/linker.ts:1400:11)
+
+PASS tests/engine/identityScoring.test.ts
 PASS tests/identity/scoringModel.blind.test.ts
+  ● Console
+
+    console.log
+      [linker] step-4 scoring: 1 total pairs, 0 skipped by anchor fast-path (no personal signal), 1 actually scored
+
+      at linkIdentities (lib/linker.ts:1400:11)
+
+    console.log
+      [linker] step-4 scoring: 1 total pairs, 1 skipped by anchor fast-path (no personal signal), 0 actually scored
+
+      at linkIdentities (lib/linker.ts:1400:11)
+
+    console.log
+      [linker] step-4 scoring: 1 total pairs, 1 skipped by anchor fast-path (no personal signal), 0 actually scored
+
+      at linkIdentities (lib/linker.ts:1400:11)
+
+    console.log
+      [linker] step-4 scoring: 1 total pairs, 0 skipped by anchor fast-path (no personal signal), 1 actually scored
+
+      at linkIdentities (lib/linker.ts:1400:11)
+
+    console.log
+      [linker] step-4 scoring: 1 total pairs, 0 skipped by anchor fast-path (no personal signal), 1 actually scored
+
+      at linkIdentities (lib/linker.ts:1400:11)
+
+    console.log
+      [linker] step-4 scoring: 3 total pairs, 3 skipped by anchor fast-path (no personal signal), 0 actually scored
+
+      at linkIdentities (lib/linker.ts:1400:11)
+
 PASS tests/engine/identityMatchGating.test.ts
 
 Test Suites: 4 passed, 4 total
-Tests:       85 passed, 85 total
+Tests:       90 passed, 90 total
 Snapshots:   0 total
-Time:        0.374 s, estimated 1 s
+Time:        0.3 s, estimated 1 s
 Ran all test suites matching /tests\/engine\/linker.test.ts|tests\/engine\/identityScoring.test.ts|tests\/engine\/identityMatchGating.test.ts|tests\/identity\/scoringModel.blind.test.ts/i.

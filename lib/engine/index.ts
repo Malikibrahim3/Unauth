@@ -104,6 +104,13 @@ function computeScore(signals: SignalResult[]): number {
   return Math.min(100, Math.max(0, corroboratedScore));
 }
 
+function scoreToRiskTier(score: number): 'low' | 'medium' | 'high' | 'critical' {
+  if (score >= 75) return 'critical';
+  if (score >= 50) return 'high';
+  if (score >= 25) return 'medium';
+  return 'low';
+}
+
 export function scoreOrders(
   orders: NormalisedOrder[],
   opts?: ScoreOrdersOptions,
@@ -130,10 +137,23 @@ export function scoreOrders(
       (s) => s.fired && BEHAVIORAL_FRAUD_SIGNALS.has(s.name),
     );
     const flagged = baseFlagged && hasBehavioralSignal;
+    const firedBehavioralSignals = signals.filter(
+      (s) => s.fired && BEHAVIORAL_FRAUD_SIGNALS.has(s.name),
+    );
+    const hasSparseHistory = customerOrders.length < 2;
+    const hasCorroboratingBehavior =
+      firedBehavioralSignals.length >= 2 ||
+      signals.some((s) => s.fired && (s.name === 'disputeHistory' || s.name === 'crossMerchant'));
+    const cappedScore =
+      hasSparseHistory && !hasCorroboratingBehavior
+        ? Math.min(adjustedScore, 49)
+        : adjustedScore;
+    const riskTier = scoreToRiskTier(cappedScore);
 
     return {
       order,
       totalScore: adjustedScore,
+      riskTier,
       flagged,
       signals,
     };

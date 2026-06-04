@@ -18,7 +18,7 @@ describe('billing activation', () => {
     const proAllowance = resolveMonthlyCreditAllowance('pro', null);
     expect(proAllowance).toEqual({ ok: true, allowance: PLAN_CONTEXT_CREDITS.pro });
     const freeAllowance = resolveMonthlyCreditAllowance('free', null);
-    expect(freeAllowance).toEqual({ ok: true, allowance: 50 });
+    expect(freeAllowance).toEqual({ ok: true, allowance: PLAN_CONTEXT_CREDITS.free });
   });
 
   it('does not grant unlimited credits to scale without explicit allowance', () => {

@@ -92,8 +92,8 @@
   "suites": [],
   "errors": [
     {
-      "message": "TimeoutError: page.waitForSelector: Timeout 180000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"audit-results\"], [data-status=\"completed\"]') to be visible\u001b[22m\n",
-      "stack": "TimeoutError: page.waitForSelector: Timeout 180000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"audit-results\"], [data-status=\"completed\"]') to be visible\u001b[22m\n\n    at uploadSeedCSV (/Users/malikibrahim/Downloads/Unauth/tests/global-setup.ts:199:14)\n    at globalSetup (/Users/malikibrahim/Downloads/Unauth/tests/global-setup.ts:128:5)",
+      "message": "Error: page.waitForSelector: Target page, context or browser has been closed\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"audit-results\"], [data-status=\"completed\"]') to be visible\u001b[22m\n",
+      "stack": "Error: page.waitForSelector: Target page, context or browser has been closed\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"audit-results\"], [data-status=\"completed\"]') to be visible\u001b[22m\n\n    at uploadSeedCSV (/Users/malikibrahim/Downloads/Unauth/tests/global-setup.ts:199:14)\n    at globalSetup (/Users/malikibrahim/Downloads/Unauth/tests/global-setup.ts:128:5)",
       "location": {
         "file": "/Users/malikibrahim/Downloads/Unauth/tests/global-setup.ts",
         "column": 14,
@@ -103,8 +103,8 @@
     }
   ],
   "stats": {
-    "startTime": "2026-06-02T13:08:56.031Z",
-    "duration": 198914.76299999998,
+    "startTime": "2026-06-03T23:03:40.696Z",
+    "duration": 206314.805,
     "expected": 0,
     "skipped": 0,
     "unexpected": 0,

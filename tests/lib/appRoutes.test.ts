@@ -63,7 +63,6 @@ describe('app route registry', () => {
   "Store overview",
   "Customers",
   "Claims",
-  "Watchlist",
   "Evidence packages",
   "Reports",
   "Network graph",

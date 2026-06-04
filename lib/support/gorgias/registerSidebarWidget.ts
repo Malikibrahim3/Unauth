@@ -134,7 +134,7 @@ export const GORGIAS_SIDEBAR_ROW_LABELS = {
 
 export function buildGorgiasSidebarWidgetTemplate(appBaseUrl: string) {
   const appLink = appBaseUrl.replace(/\/$/, '');
-  const fallbackConnectLink = `${appLink}/settings/integrations`;
+  const fallbackConnectLink = `${appLink}/settings/integrations/gorgias`;
   const ctaUrl = '{{cta_url}}';
   const ctaLabel = '{{cta_label}}';
   const labels = GORGIAS_SIDEBAR_ROW_LABELS;
