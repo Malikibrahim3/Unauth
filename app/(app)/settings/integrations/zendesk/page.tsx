@@ -15,6 +15,8 @@ export default async function ZendeskIntegrationPage() {
   const service = createServiceClient();
   const { denied } = await requirePermission(service, user.id, PERMISSIONS.VIEW_SETTINGS);
   if (denied) redirect('/settings');
+  const manage = await requirePermission(service, user.id, PERMISSIONS.MANAGE_SETTINGS);
+  const canManage = !manage.denied;
 
   return (
     <div className="space-y-8 p-8 max-w-2xl">
@@ -37,7 +39,7 @@ export default async function ZendeskIntegrationPage() {
         </p>
       </div>
 
-      <ZendeskSetupClient />
+      <ZendeskSetupClient canManage={canManage} />
     </div>
   );
 }

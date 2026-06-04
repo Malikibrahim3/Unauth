@@ -4,10 +4,15 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { CheckCircle2, Download } from 'lucide-react';
 import HelpdeskSidebarPreview from '@/components/settings/HelpdeskSidebarPreview';
+import ZendeskSupportSyncClient from '@/components/settings/ZendeskSupportSyncClient';
 
 const ZENDESK_ZIP_PATH = '/downloads/unauth-zendesk-app.zip';
 
-export default function ZendeskSetupClient() {
+type Props = {
+  canManage?: boolean;
+};
+
+export default function ZendeskSetupClient({ canManage = true }: Props) {
   const [connected, setConnected] = useState(false);
   const [statusLoading, setStatusLoading] = useState(true);
   const [verifying, setVerifying] = useState(false);
@@ -21,8 +26,10 @@ export default function ZendeskSetupClient() {
         setConnected(false);
         return;
       }
-      const body = (await res.json()) as { connected?: boolean };
-      setConnected(Boolean(body.connected));
+      const body = (await res.json()) as { connected?: boolean; connection?: { zendesk_api_configured?: boolean } };
+      setConnected(
+        Boolean(body.connected ?? body.connection?.zendesk_api_configured),
+      );
     } catch {
       setConnected(false);
     } finally {
@@ -113,6 +120,10 @@ export default function ZendeskSetupClient() {
         </li>
         <li>Install the app. Unauth appears on every ticket sidebar.</li>
         <li>Return here and click <strong>Verify install</strong>.</li>
+        <li>
+          Enter your Zendesk subdomain and API token below to import historical tickets (up to 24
+          months).
+        </li>
       </ol>
 
       <div
@@ -124,6 +135,8 @@ export default function ZendeskSetupClient() {
           at any time; update the key in Zendesk app settings if you change it.
         </p>
       </div>
+
+      <ZendeskSupportSyncClient canManage={canManage} />
 
       <HelpdeskSidebarPreview providerLabel="Zendesk" />
     </div>
