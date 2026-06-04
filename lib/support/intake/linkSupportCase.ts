@@ -1,7 +1,17 @@
+import type { SupabaseClient } from '@supabase/supabase-js';
+
 import { ACTIVE_CLAIM_STATUSES, FINAL_CLAIM_STATUSES } from '@/lib/claims/sla';
+import {
+  findCommerceOrdersForStoreByOrderId,
+  findCommerceOrdersForStoreByOrderRef,
+  type CommerceOrderMatch,
+} from '@/lib/support/intake/commerceOrderLookup';
+import { resolveOrderSourceStoreKeyForMerchant } from '@/lib/support/intake/resolveOrderSourceStoreKey';
 import { TABLES } from '@/lib/supabase/tables';
 import type { SupportProvider } from '@/lib/support/providers/types';
 import { appendSupportCaseEvent } from '@/lib/support/intake/store';
+
+export { matchShopifyOrdersByOrderRef } from '@/lib/support/intake/commerceOrderLookup';
 
 export const SUPPORT_LINK_STATUSES = [
   'unlinked',
@@ -36,13 +46,6 @@ export type SupportCaseLinkResult = {
   link_metadata: Record<string, unknown>;
 };
 
-type ShopifyOrderMatch = {
-  shopify_order_id: string;
-  order_number: string | null;
-  customer_id: string | null;
-  shop_domain: string;
-};
-
 type ServiceClient = {
   from: (table: string) => Record<string, unknown>;
 };
@@ -66,33 +69,6 @@ function asString(value: unknown): string | null {
 
 function uniq(values: Array<string | null | undefined>): string[] {
   return Array.from(new Set(values.filter((v): v is string => !!v)));
-}
-
-function normalizeNumericOrderRef(orderRef: string): string | null {
-  const trimmed = orderRef.trim();
-  const hashMatch = trimmed.match(/^#(\d+)$/);
-  if (hashMatch?.[1]) return hashMatch[1];
-  if (/^\d+$/.test(trimmed)) return trimmed;
-  return null;
-}
-
-export function matchShopifyOrdersByOrderRef(
-  orders: ShopifyOrderMatch[],
-  orderRef: string
-): ShopifyOrderMatch[] {
-  const trimmed = orderRef.trim();
-  const numeric = normalizeNumericOrderRef(trimmed);
-
-  return orders.filter((order) => {
-    const orderNumber = order.order_number?.trim() ?? '';
-    const shopifyOrderId = order.shopify_order_id.trim();
-    if (shopifyOrderId === trimmed || orderNumber === trimmed) return true;
-    if (numeric) {
-      if (orderNumber === numeric || orderNumber === `#${numeric}`) return true;
-      if (shopifyOrderId === numeric) return true;
-    }
-    return false;
-  });
 }
 
 async function loadSupportCase(
@@ -138,31 +114,6 @@ async function loadSupportCase(
   };
 }
 
-async function listShopifyOrdersForShop(
-  supabase: ServiceClient,
-  shopDomain: string
-): Promise<ShopifyOrderMatch[]> {
-  const { data, error } = await (supabase.from('shopify_order_signals') as {
-    select: (columns: string) => {
-      eq: (col: string, val: string) => Promise<{
-        data: Array<Record<string, unknown>> | null;
-        error: { message: string } | null;
-      }>;
-    };
-  })
-    .select('shopify_order_id, order_number, customer_id, shop_domain')
-    .eq('shop_domain', shopDomain);
-
-  if (error) throw new Error(`list_shopify_orders_failed: ${error.message}`);
-
-  return (data ?? []).map((row) => ({
-    shopify_order_id: String(row.shopify_order_id),
-    order_number: asString(row.order_number),
-    customer_id: asString(row.customer_id),
-    shop_domain: String(row.shop_domain),
-  }));
-}
-
 async function findProfileIdsByIdentity(
   supabase: ServiceClient,
   merchantId: string,
@@ -193,7 +144,7 @@ async function findProfileIdsByIdentity(
 async function resolveCustomerProfileFromOrder(
   supabase: ServiceClient,
   merchantId: string,
-  order: ShopifyOrderMatch
+  order: CommerceOrderMatch
 ): Promise<{ profileId: string | null; ambiguous: boolean }> {
   const profileIds = new Set<string>();
 
@@ -411,7 +362,7 @@ async function recordLinkEvents(
 
 function buildLinkResultFromOrder(
   supportCase: SupportCaseIntakeLinkRow,
-  order: ShopifyOrderMatch,
+  order: CommerceOrderMatch,
   customerResolution: { profileId: string | null; ambiguous: boolean },
   claimResolution: { claimId: string | null; ambiguous: boolean }
 ): SupportCaseLinkResult {
@@ -464,8 +415,11 @@ export async function linkSupportCaseByOrderRef(
     };
   }
 
-  const orders = await listShopifyOrdersForShop(client, input.shopDomain);
-  const orderMatches = matchShopifyOrdersByOrderRef(orders, input.orderRef);
+  const orderMatches = await findCommerceOrdersForStoreByOrderRef(client, {
+    merchantId: input.merchantId,
+    storeKey: input.shopDomain,
+    orderRef: input.orderRef,
+  });
 
   if (orderMatches.length > 1) {
     return {
@@ -577,16 +531,27 @@ export async function linkSupportCaseToCommerceContext(
 
     let result: SupportCaseLinkResult;
 
-    if (supportCase.shop_domain && supportCase.order_ref) {
+    const storeKey =
+      supportCase.shop_domain?.trim() ||
+      (await resolveOrderSourceStoreKeyForMerchant(
+        client as unknown as SupabaseClient,
+        input.merchantId
+      )) ||
+      null;
+
+    if (storeKey && supportCase.order_ref) {
       result = await linkSupportCaseByOrderRef(client, {
         supportCaseId: input.supportCaseId,
         merchantId: input.merchantId,
-        shopDomain: supportCase.shop_domain,
+        shopDomain: storeKey,
         orderRef: supportCase.order_ref,
       });
-    } else if (supportCase.shop_domain && supportCase.shopify_order_id) {
-      const orders = await listShopifyOrdersForShop(client, supportCase.shop_domain);
-      const direct = orders.filter((o) => o.shopify_order_id === supportCase.shopify_order_id);
+    } else if (storeKey && supportCase.shopify_order_id) {
+      const direct = await findCommerceOrdersForStoreByOrderId(client, {
+        merchantId: input.merchantId,
+        storeKey,
+        orderId: supportCase.shopify_order_id,
+      });
       if (direct.length > 1) {
         result = {
           link_status: 'ambiguous',
@@ -604,7 +569,7 @@ export async function linkSupportCaseToCommerceContext(
         );
         const claimResolution = await findExistingMerchantClaim(client, {
           merchantId: input.merchantId,
-          shopDomain: supportCase.shop_domain,
+          shopDomain: storeKey,
           shopifyOrderId: order.shopify_order_id,
           orderRef: supportCase.order_ref,
           claimReason: supportCase.claim_reason,
@@ -621,7 +586,7 @@ export async function linkSupportCaseToCommerceContext(
           shopify_order_id: null,
           customer_profile_id: null,
           merchant_claim_id: null,
-          link_metadata: { reason: 'shopify_order_id_not_found' },
+          link_metadata: { reason: 'commerce_order_id_not_found' },
         };
       }
     } else {
@@ -630,7 +595,7 @@ export async function linkSupportCaseToCommerceContext(
         shopify_order_id: null,
         customer_profile_id: null,
         merchant_claim_id: null,
-        link_metadata: { reason: 'missing_shop_domain_or_order_ref' },
+        link_metadata: { reason: 'missing_store_key_or_order_ref' },
       };
     }
 

@@ -33,6 +33,11 @@ function makeLinkingSupabase(options: {
     customer_id: string | null;
     shop_domain: string;
   }>;
+  auditOrders?: Array<{
+    order_id: string;
+    shop_domain: string;
+    merchant_id: string;
+  }>;
   profileIdentities?: Array<{
     customer_profile_id: string;
     identity_type: string;
@@ -130,6 +135,27 @@ function makeLinkingSupabase(options: {
                   (claim) => claim.merchant_id === merchantId
                 ),
                 error: null,
+              }),
+            }),
+          }),
+        };
+      }
+
+      if (table === TABLES.AUDIT_TRANSACTIONS) {
+        return {
+          select: () => ({
+            eq: (_c: string, merchantId: string) => ({
+              eq: (_c2: string, shopDomain: string) => ({
+                in: (_c3: string, orderIds: string[]) =>
+                  Promise.resolve({
+                    data: (options.auditOrders ?? []).filter(
+                      (row) =>
+                        row.merchant_id === merchantId &&
+                        row.shop_domain === shopDomain &&
+                        orderIds.includes(row.order_id)
+                    ),
+                    error: null,
+                  }),
               }),
             }),
           }),
@@ -323,6 +349,41 @@ describe('linkSupportCaseToCommerceContext', () => {
     expect(result.link_metadata.claim_candidate).not.toBe(true);
     expect(mock.events.some((e) => e.event_type === 'linked_merchant_claim')).toBe(true);
     expect(mock.getSupportCase().merchant_claim_id).toBe(CLAIM_ID);
+  });
+
+  it('links WooCommerce order from audit_transactions when shopify signals are empty', async () => {
+    const wooStore = 'https://woo.example.com';
+    const mock = makeLinkingSupabase({
+      supportCase: {
+        ...baseCase,
+        shop_domain: wooStore,
+        order_ref: '4521',
+      },
+      shopifyOrders: [],
+      auditOrders: [
+        {
+          order_id: '4521',
+          shop_domain: wooStore,
+          merchant_id: MERCHANT_ID,
+        },
+      ],
+      profileIdentities: [
+        {
+          customer_profile_id: PROFILE_ID,
+          identity_type: 'shopify_order_id',
+          identity_value: '4521',
+        },
+      ],
+    });
+
+    const result = await linkSupportCaseToCommerceContext(mock.supabase, {
+      supportCaseId: SUPPORT_CASE_ID,
+      merchantId: MERCHANT_ID,
+    });
+
+    expect(result.link_status).toBe('linked');
+    expect(result.shopify_order_id).toBe('4521');
+    expect(result.customer_profile_id).toBe(PROFILE_ID);
   });
 
   it('does not expose raw email in link metadata', async () => {

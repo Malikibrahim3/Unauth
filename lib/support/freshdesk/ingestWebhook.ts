@@ -5,6 +5,7 @@ import {
   SupportIngestError,
   type SupportIngestSuccess,
 } from '@/lib/support/intake/ingestSupportCase';
+import { resolveOrderSourceStoreKeyForMerchant } from '@/lib/support/intake/resolveOrderSourceStoreKey';
 import { extractFreshdeskAccountIdentity } from '@/lib/support/freshdesk/accountIdentity';
 import {
   markFreshdeskSupportConnectionRevoked,
@@ -185,42 +186,10 @@ async function resolveShopDomainForFreshdeskIngest(input: {
   const explicit = input.explicitShopDomain?.trim();
   if (explicit) return explicit;
 
-  const { data, error } = await (input.supabase as {
-    from: (table: string) => {
-      select: (columns: string) => {
-        eq: (column: string, value: string | boolean) => {
-          eq: (column2: string, value2: string | boolean) => {
-            order: (
-              column: string,
-              options: { ascending: boolean }
-            ) => {
-              limit: (count: number) => Promise<{
-                data: Array<{ shop_domain: string | null }> | null;
-                error: { message: string } | null;
-              }>;
-            };
-          };
-        };
-      };
-    };
-  })
-    .from(TABLES.MERCHANT_SHOPIFY_CONNECTIONS)
-    .select('shop_domain')
-    .eq('merchant_id', input.merchantId)
-    .eq('active', true)
-    .order('updated_at', { ascending: false })
-    .limit(2);
-
-  if (error) return undefined;
-
-  const domains = Array.from(
-    new Set(
-      (data ?? [])
-        .map((row) => row.shop_domain?.trim())
-        .filter((domain): domain is string => Boolean(domain))
-    )
+  return resolveOrderSourceStoreKeyForMerchant(
+    input.supabase as Parameters<typeof resolveOrderSourceStoreKeyForMerchant>[0],
+    input.merchantId
   );
-  return domains.length === 1 ? domains[0] : undefined;
 }
 
 function shouldHydrateFreshdeskTicket(ticket: Record<string, unknown>): boolean {
