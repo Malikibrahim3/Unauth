@@ -1,8 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { getOrderSourceConnectionStatus } from '@/lib/commerce/connectionStatus';
 import type { OrderSourcePlatform } from '@/lib/commerce/types';
+import { resolveMerchantHelpdeskLink } from '@/lib/support/helpdesk/resolveMerchantHelpdeskLink';
 import { getShopifyConnectionStatus, type ShopifyLinkState } from '@/lib/shopify/connectionStatus';
-import { TABLES } from '@/lib/supabase/tables';
 
 export type HelpdeskProvider = 'gorgias' | 'zendesk' | 'freshdesk';
 
@@ -26,17 +26,10 @@ export async function getConnectionState(
   serviceClient: SupabaseClient,
   merchantId: string,
 ): Promise<ConnectionState> {
-  const [orderSource, shopifyStatus, helpdeskRow] = await Promise.all([
+  const [orderSource, shopifyStatus, helpdeskLink] = await Promise.all([
     getOrderSourceConnectionStatus(serviceClient, merchantId),
     getShopifyConnectionStatus(serviceClient, merchantId),
-    serviceClient
-      .from(TABLES.SUPPORT_PROVIDER_CONNECTIONS)
-      .select('provider')
-      .eq('merchant_id', merchantId)
-      .eq('status', 'active')
-      .in('provider', ['gorgias', 'zendesk', 'freshdesk'])
-      .limit(1)
-      .maybeSingle(),
+    resolveMerchantHelpdeskLink(serviceClient, merchantId),
   ]);
 
   const orderSourceConnected = orderSource.connected;
@@ -44,8 +37,8 @@ export async function getConnectionState(
   const orderSourceStoreKey = orderSource.storeKey;
   const shopify = orderSourcePlatform === 'shopify' && orderSourceConnected;
 
-  const helpdeskProvider = (helpdeskRow.data?.provider as HelpdeskProvider | null) ?? null;
-  const helpdesk = helpdeskProvider !== null;
+  const helpdeskProvider = helpdeskLink.provider;
+  const helpdesk = helpdeskLink.linked;
 
   return {
     orderSourceConnected,

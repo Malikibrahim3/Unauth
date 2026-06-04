@@ -13,6 +13,7 @@ import {
   updateMerchantZendeskSupportConnection,
   zendeskSupportConnectionInputSchema,
 } from '@/lib/support/zendesk/settingsConnection';
+import { evaluateZendeskHelpdeskLink } from '@/lib/support/zendesk/helpdeskLinkStatus';
 import {
   ZENDESK_CONNECT_CREDENTIALS_ERROR,
   ZENDESK_CONNECT_CREDENTIALS_ERROR_CODE,
@@ -32,9 +33,11 @@ async function GETHandler() {
 
   try {
     const connection = await getMerchantZendeskSupportConnection(service, ctx.merchantId);
+    const link = evaluateZendeskHelpdeskLink(connection);
     return NextResponse.json({
       connection,
-      connected: Boolean(connection?.status === 'active' && connection.zendesk_api_configured),
+      link,
+      connected: link.helpdeskLinked,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Failed to load Zendesk connection';
@@ -104,9 +107,11 @@ async function POSTHandler(req: NextRequest) {
       }
     });
 
+    const link = evaluateZendeskHelpdeskLink(saved.connection);
     return NextResponse.json({
       connection: saved.connection,
-      connected: true,
+      link,
+      connected: link.helpdeskLinked,
     });
   } catch (err) {
     if (err instanceof ZendeskCredentialsError) {

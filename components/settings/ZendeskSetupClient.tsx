@@ -13,7 +13,8 @@ type Props = {
 };
 
 export default function ZendeskSetupClient({ canManage = true }: Props) {
-  const [connected, setConnected] = useState(false);
+  const [sidebarVerified, setSidebarVerified] = useState(false);
+  const [ticketSyncConnected, setTicketSyncConnected] = useState(false);
   const [statusLoading, setStatusLoading] = useState(true);
   const [verifying, setVerifying] = useState(false);
   const [verifyError, setVerifyError] = useState<string | null>(null);
@@ -23,15 +24,22 @@ export default function ZendeskSetupClient({ canManage = true }: Props) {
     try {
       const res = await fetch('/api/settings/zendesk/connection', { cache: 'no-store' });
       if (!res.ok) {
-        setConnected(false);
+        setSidebarVerified(false);
+        setTicketSyncConnected(false);
         return;
       }
-      const body = (await res.json()) as { connected?: boolean; connection?: { zendesk_api_configured?: boolean } };
-      setConnected(
-        Boolean(body.connected ?? body.connection?.zendesk_api_configured),
+      const body = (await res.json()) as {
+        connected?: boolean;
+        connection?: { status?: string; zendesk_api_configured?: boolean };
+        link?: { helpdeskLinked?: boolean; sidebarReady?: boolean };
+      };
+      setTicketSyncConnected(
+        Boolean(body.link?.helpdeskLinked ?? body.connected ?? body.connection?.zendesk_api_configured),
       );
+      setSidebarVerified(Boolean(body.link?.sidebarReady ?? body.connection?.status === 'active'));
     } catch {
-      setConnected(false);
+      setSidebarVerified(false);
+      setTicketSyncConnected(false);
     } finally {
       setStatusLoading(false);
     }
@@ -51,7 +59,7 @@ export default function ZendeskSetupClient({ canManage = true }: Props) {
         setVerifyError(body.error ?? 'Verification failed');
         return;
       }
-      setConnected(true);
+      setSidebarVerified(true);
     } catch {
       setVerifyError('Could not verify the Zendesk install.');
     } finally {
@@ -74,14 +82,14 @@ export default function ZendeskSetupClient({ canManage = true }: Props) {
         <button
           type="button"
           onClick={() => void verifyInstall()}
-          disabled={verifying || connected}
+          disabled={verifying || sidebarVerified}
           className="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-medium disabled:opacity-60"
           style={{ borderColor: 'var(--surface-border)', color: 'var(--text)' }}
         >
-          {connected ? (
+          {sidebarVerified ? (
             <>
               <CheckCircle2 className="h-4 w-4" style={{ color: 'var(--sev-clear, #2f6b43)' }} />
-              Install verified
+              Sidebar verified
             </>
           ) : verifying ? (
             'Verifying…'
@@ -95,9 +103,22 @@ export default function ZendeskSetupClient({ canManage = true }: Props) {
           {verifyError}
         </p>
       )}
-      {!statusLoading && connected && (
+      {!statusLoading && sidebarVerified && (
         <p className="text-sm font-medium" style={{ color: 'var(--sev-clear, #2f6b43)' }}>
-          Zendesk is connected. The sidebar app should appear on support tickets.
+          Sidebar app verified. Unauth should appear on Zendesk tickets that already exist in your
+          Zendesk account.
+        </p>
+      )}
+      {!statusLoading && ticketSyncConnected && (
+        <p className="text-sm font-medium" style={{ color: 'var(--sev-clear, #2f6b43)' }}>
+          Ticket sync is connected. Unauth imports Zendesk tickets and links them to your store
+          orders (this does not copy tickets from Gorgias or your personal email inbox).
+        </p>
+      )}
+      {!statusLoading && sidebarVerified && !ticketSyncConnected && (
+        <p className="text-sm" style={{ color: 'var(--warning)' }}>
+          Add your Zendesk API token below to import ticket history into Unauth. Gorgias tickets
+          only appear after you connect Gorgias separately.
         </p>
       )}
 

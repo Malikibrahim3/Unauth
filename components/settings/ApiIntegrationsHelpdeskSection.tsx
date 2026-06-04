@@ -44,6 +44,13 @@ async function fetchConnectionStatus(): Promise<ConnectionStatus> {
   const gBody = gRes.ok ? await gRes.json() : null;
   const sBody = sRes.ok ? await sRes.json() : null;
   const zBody = zRes.ok ? await zRes.json() : null;
+  const zLink = zBody?.link as
+    | {
+        state?: 'connected' | 'degraded' | 'disconnected';
+        helpdeskLinked?: boolean;
+        sidebarReady?: boolean;
+      }
+    | undefined;
   const fBody = fRes.ok ? await fRes.json() : null;
   const gConn = gBody?.connection ?? null;
   const gLink = gBody?.link as
@@ -67,8 +74,10 @@ async function fetchConnectionStatus(): Promise<ConnectionStatus> {
       detail: sBody?.shopDomain ?? null,
     },
     zendesk: {
-      connected: Boolean(zBody?.connected),
-      detail: null,
+      connected: zLink?.helpdeskLinked ?? Boolean(zBody?.connected),
+      sidebarReady: zLink?.sidebarReady ?? Boolean(zBody?.connection?.status === 'active'),
+      linkState: zLink?.state ?? (zBody?.connected ? 'connected' : 'disconnected'),
+      detail: zBody?.connection?.provider_account_id ?? null,
     },
     freshdesk: {
       connected: Boolean(fConn && fConn.status === 'active'),
@@ -146,26 +155,33 @@ export default function ApiIntegrationsHelpdeskSection() {
             const providerState = connStatus ? connStatus[item.statusKey] : null;
             const connected = Boolean(providerState?.connected);
             const degraded =
-              item.id === 'gorgias' &&
               connected &&
               providerState &&
               'linkState' in providerState &&
               providerState.linkState === 'degraded';
+            const zendeskSidebarOnly =
+              item.id === 'zendesk' &&
+              providerState &&
+              'sidebarReady' in providerState &&
+              providerState.sidebarReady &&
+              !connected;
             return (
               <div
                 key={item.id}
                 className="flex gap-3 rounded-lg border p-3"
                 style={{
-                  borderColor: degraded
-                    ? 'color-mix(in srgb, var(--warning) 35%, var(--surface-border))'
-                    : connected
-                      ? 'var(--sev-clear, #2f6b43)'
-                      : 'var(--surface-border)',
-                  background: degraded
-                    ? 'color-mix(in srgb, var(--warning) 6%, var(--bg-surface))'
-                    : connected
-                      ? 'color-mix(in srgb, var(--sev-clear, #2f6b43) 4%, var(--bg-surface))'
-                      : 'var(--bg-surface)',
+                  borderColor:
+                    degraded || zendeskSidebarOnly
+                      ? 'color-mix(in srgb, var(--warning) 35%, var(--surface-border))'
+                      : connected
+                        ? 'var(--sev-clear, #2f6b43)'
+                        : 'var(--surface-border)',
+                  background:
+                    degraded || zendeskSidebarOnly
+                      ? 'color-mix(in srgb, var(--warning) 6%, var(--bg-surface))'
+                      : connected
+                        ? 'color-mix(in srgb, var(--sev-clear, #2f6b43) 4%, var(--bg-surface))'
+                        : 'var(--bg-surface)',
                 }}
               >
                 <Image
@@ -179,7 +195,7 @@ export default function ApiIntegrationsHelpdeskSection() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-2">
                     <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>{item.name}</p>
-                    {connected ? (
+                    {connected || zendeskSidebarOnly ? (
                       <Link
                         href={item.href}
                         className="inline-flex shrink-0 items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium"
@@ -204,24 +220,33 @@ export default function ApiIntegrationsHelpdeskSection() {
                         aria-hidden
                         className="inline-block h-1.5 w-1.5 shrink-0 rounded-full"
                         style={{
-                          background: connected ? 'var(--sev-clear, #2f6b43)' : 'transparent',
-                          border: connected ? 'none' : '1px solid var(--text-muted)',
+                          background:
+                            connected || zendeskSidebarOnly
+                              ? zendeskSidebarOnly
+                                ? 'var(--warning)'
+                                : 'var(--sev-clear, #2f6b43)'
+                              : 'transparent',
+                          border:
+                            connected || zendeskSidebarOnly ? 'none' : '1px solid var(--text-muted)',
                         }}
                       />
                       <span
                         style={{
-                          color: degraded
-                            ? 'var(--warning)'
-                            : connected
-                              ? 'var(--sev-clear, #2f6b43)'
-                              : 'var(--text-muted)',
+                          color:
+                            zendeskSidebarOnly || degraded
+                              ? 'var(--warning)'
+                              : connected
+                                ? 'var(--sev-clear, #2f6b43)'
+                                : 'var(--text-muted)',
                         }}
                       >
-                        {degraded
-                          ? 'Connected — finish setup'
-                          : connected
-                            ? 'Connected'
-                            : 'Not connected'}
+                        {zendeskSidebarOnly
+                          ? 'Sidebar only — sync tickets'
+                          : degraded
+                            ? 'Connected — finish setup'
+                            : connected
+                              ? 'Connected'
+                              : 'Not connected'}
                       </span>
                       {connected && providerState?.detail ? (
                         <span className="truncate" style={{ color: 'var(--text-muted)' }}>· {providerState.detail}</span>
