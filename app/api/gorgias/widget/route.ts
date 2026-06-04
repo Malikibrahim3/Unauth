@@ -24,7 +24,8 @@ import { validateWidgetToken } from '@/lib/api/widgetTokens';
 import { resolveWidgetCustomerIdentity } from '@/lib/gorgias/resolveWidgetCustomerIdentity';
 import { GORGIAS_WIDGET_TOKEN_HEADER } from '@/lib/support/gorgias/registerSidebarWidget';
 import { isUsableWidgetEmailParam } from '@/lib/support/gorgias/ticketCustomerEmail';
-import { TABLES } from '@/lib/supabase/tables';
+import { getMerchantGorgiasSupportConnection } from '@/lib/support/gorgias/settingsConnection';
+import { isGorgiasHelpdeskLinkedForWidget } from '@/lib/support/gorgias/helpdeskLinkStatus';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -227,27 +228,6 @@ function errorResult(message: string): GorgiasClaimWidgetResult {
   return { ok: false, kind: 'error', message };
 }
 
-async function hasActiveGorgiasConnection(service: SupabaseClient, merchantId: string): Promise<boolean> {
-  const { data, error } = await service
-    .from(TABLES.SUPPORT_PROVIDER_CONNECTIONS)
-    .select('id')
-    .eq('merchant_id', merchantId)
-    .eq('provider', 'gorgias')
-    .eq('status', 'active')
-    .limit(1)
-    .maybeSingle();
-
-  if (error) {
-    gorgiasWidgetLog('helpdesk_connection_check_failed', {
-      merchantId,
-      errorMessage: error.message,
-    });
-    return false;
-  }
-
-  return Boolean(data);
-}
-
 export async function GET(request: NextRequest) {
   logBuildMarker();
 
@@ -312,8 +292,16 @@ export async function GET(request: NextRequest) {
 
     const service = createServiceClient();
 
-    const gorgiasConnected = await hasActiveGorgiasConnection(service, authResult.merchantId);
-    if (!gorgiasConnected) {
+    let gorgiasConnection = null;
+    try {
+      gorgiasConnection = await getMerchantGorgiasSupportConnection(service, authResult.merchantId);
+    } catch (err) {
+      gorgiasWidgetLog('helpdesk_connection_check_failed', {
+        merchantId: authResult.merchantId,
+        errorMessage: err instanceof Error ? err.message : 'unknown',
+      });
+    }
+    if (!isGorgiasHelpdeskLinkedForWidget(gorgiasConnection)) {
       return returnJsonForResult({
         branch: 'helpdesk_disconnected',
         result: {

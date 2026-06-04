@@ -46,10 +46,20 @@ async function fetchConnectionStatus(): Promise<ConnectionStatus> {
   const zBody = zRes.ok ? await zRes.json() : null;
   const fBody = fRes.ok ? await fRes.json() : null;
   const gConn = gBody?.connection ?? null;
+  const gLink = gBody?.link as
+    | {
+        state?: 'connected' | 'degraded' | 'disconnected';
+        helpdeskLinked?: boolean;
+        widgetReady?: boolean;
+      }
+    | undefined;
   const fConn = fBody?.connection ?? null;
+  const gorgiasConnected = gLink?.helpdeskLinked ?? Boolean(gConn && gConn.status === 'active');
   return {
     gorgias: {
-      connected: Boolean(gConn && gConn.status === 'active'),
+      connected: gorgiasConnected,
+      widgetReady: gLink?.widgetReady ?? Boolean(gConn?.sidebar_widget_registered),
+      linkState: gLink?.state ?? (gorgiasConnected ? 'connected' : 'disconnected'),
       detail: gConn?.provider_account_name ?? gConn?.provider_account_id ?? null,
     },
     shopify: {
@@ -135,13 +145,27 @@ export default function ApiIntegrationsHelpdeskSection() {
           {HELPDESK_OPTIONS.map((item) => {
             const providerState = connStatus ? connStatus[item.statusKey] : null;
             const connected = Boolean(providerState?.connected);
+            const degraded =
+              item.id === 'gorgias' &&
+              connected &&
+              providerState &&
+              'linkState' in providerState &&
+              providerState.linkState === 'degraded';
             return (
               <div
                 key={item.id}
                 className="flex gap-3 rounded-lg border p-3"
                 style={{
-                  borderColor: connected ? 'var(--sev-clear, #2f6b43)' : 'var(--surface-border)',
-                  background: connected ? 'color-mix(in srgb, var(--sev-clear, #2f6b43) 4%, var(--bg-surface))' : 'var(--bg-surface)',
+                  borderColor: degraded
+                    ? 'color-mix(in srgb, var(--warning) 35%, var(--surface-border))'
+                    : connected
+                      ? 'var(--sev-clear, #2f6b43)'
+                      : 'var(--surface-border)',
+                  background: degraded
+                    ? 'color-mix(in srgb, var(--warning) 6%, var(--bg-surface))'
+                    : connected
+                      ? 'color-mix(in srgb, var(--sev-clear, #2f6b43) 4%, var(--bg-surface))'
+                      : 'var(--bg-surface)',
                 }}
               >
                 <Image
@@ -184,8 +208,20 @@ export default function ApiIntegrationsHelpdeskSection() {
                           border: connected ? 'none' : '1px solid var(--text-muted)',
                         }}
                       />
-                      <span style={{ color: connected ? 'var(--sev-clear, #2f6b43)' : 'var(--text-muted)' }}>
-                        {connected ? 'Connected' : 'Not connected'}
+                      <span
+                        style={{
+                          color: degraded
+                            ? 'var(--warning)'
+                            : connected
+                              ? 'var(--sev-clear, #2f6b43)'
+                              : 'var(--text-muted)',
+                        }}
+                      >
+                        {degraded
+                          ? 'Connected — finish setup'
+                          : connected
+                            ? 'Connected'
+                            : 'Not connected'}
                       </span>
                       {connected && providerState?.detail ? (
                         <span className="truncate" style={{ color: 'var(--text-muted)' }}>· {providerState.detail}</span>

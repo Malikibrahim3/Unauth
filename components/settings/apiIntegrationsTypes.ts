@@ -17,8 +17,14 @@ export type HelpdeskOption = {
 };
 
 export type ConnectionState = { connected: boolean; detail: string | null };
+
+export type GorgiasHelpdeskConnectionState = ConnectionState & {
+  widgetReady: boolean;
+  linkState: 'connected' | 'degraded' | 'disconnected';
+};
+
 export type ConnectionStatus = {
-  gorgias: ConnectionState;
+  gorgias: GorgiasHelpdeskConnectionState;
   shopify: ConnectionState;
   zendesk: ConnectionState;
   freshdesk: ConnectionState;

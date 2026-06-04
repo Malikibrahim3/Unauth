@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { TABLES } from '@/lib/supabase/tables';
 import {
   buildGorgiasSupportWebhookUrl,
+  getMerchantGorgiasSupportConnection,
   resolveGorgiasConnectionIdentity,
 } from '@/lib/support/gorgias/settingsConnection';
 import {
@@ -120,18 +121,25 @@ function makeSettingsSupabase(initial: ConnectionRow[] = []) {
       return {
         select: (_columns: string) => ({
           eq: (column: string, value: string) => {
+            if (column === 'id') {
+              return {
+                limit: async (n: number) => {
+                  const match = rows.filter((row) => row.id === value).slice(0, n);
+                  return { data: match, error: null };
+                },
+              };
+            }
             if (column === 'merchant_id') {
               return {
                 eq: (_column2: string, provider: string) => ({
                   order: (_orderColumn: string, _opts: { ascending: boolean }) => ({
-                    limit: (_n: number) => ({
-                      maybeSingle: async () => {
-                        const match = rows
-                          .filter((row) => row.merchant_id === value && row.provider === provider)
-                          .sort((a, b) => b.updated_at.localeCompare(a.updated_at));
-                        return { data: match[0] ?? null, error: null };
-                      },
-                    }),
+                    limit: async (n: number) => {
+                      const match = rows
+                        .filter((row) => row.merchant_id === value && row.provider === provider)
+                        .sort((a, b) => b.updated_at.localeCompare(a.updated_at))
+                        .slice(0, n);
+                      return { data: match, error: null };
+                    },
                   }),
                 }),
               };
@@ -486,6 +494,64 @@ describe('Gorgias support connection settings API', () => {
     expect(json.connection.sidebar_widget_registered).toBe(true);
     expect(json.sidebar_widget?.status).toBe('success');
     expect(registerGorgiasSidebarWidget).toHaveBeenCalled();
+  });
+
+  it('getMerchantGorgiasSupportConnection prefers active over a newer disabled row', async () => {
+    const activeAt = '2026-06-03T12:00:00.000Z';
+    const { supabase } = makeSettingsSupabase([
+      makeConnectionRow({
+        id: 'disabled-row',
+        status: 'disabled',
+        updated_at: '2026-06-04T12:00:00.000Z',
+      }),
+      makeConnectionRow({
+        id: 'active-row',
+        status: 'active',
+        updated_at: activeAt,
+        access_token_encrypted: 'encrypted-blob',
+        scopes: [
+          {
+            kind: 'gorgias_sidebar_widget',
+            integration_id: 101,
+            widget_id: 202,
+            registered_at: activeAt,
+          },
+        ],
+      }),
+    ]);
+
+    const connection = await getMerchantGorgiasSupportConnection(supabase, MERCHANT_A);
+    expect(connection?.id).toBe('active-row');
+    expect(connection?.status).toBe('active');
+    expect(connection?.sidebar_widget_registered).toBe(true);
+  });
+
+  it('GET returns link metadata aligned with connection state', async () => {
+    setupAuth(true);
+    setupPermission(MERCHANT_A);
+    const activeAt = new Date().toISOString();
+    const { supabase } = makeSettingsSupabase([
+      makeConnectionRow({
+        status: 'active',
+        updated_at: activeAt,
+        access_token_encrypted: 'encrypted-blob',
+        scopes: [
+          {
+            kind: 'gorgias_sidebar_widget',
+            integration_id: 101,
+            widget_id: 202,
+            registered_at: activeAt,
+          },
+        ],
+      }),
+    ]);
+    (createServiceClient as jest.Mock).mockReturnValue(supabase);
+
+    const res = await GET();
+    const json = await res.json();
+    expect(json.link.state).toBe('connected');
+    expect(json.link.helpdeskLinked).toBe(true);
+    expect(json.link.widgetReady).toBe(true);
   });
 
   it('merchant B cannot read merchant A connection via scoped GET', async () => {

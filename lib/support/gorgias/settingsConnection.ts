@@ -207,20 +207,23 @@ export async function getMerchantGorgiasSupportConnection(
   supabase: unknown,
   merchantId: string
 ): Promise<GorgiasSupportConnectionSettings | null> {
-  const { data, error } = await (supabase as ListableSupabase)
+  const { data: rows, error } = await (supabase as SupabaseClient)
     .from(TABLES.SUPPORT_PROVIDER_CONNECTIONS)
     .select(CONNECTION_SETTINGS_SELECT)
     .eq('merchant_id', merchantId)
     .eq('provider', 'gorgias')
     .order('updated_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .limit(8);
 
   if (error) {
     throw new Error(`get_gorgias_support_connection_failed: ${error.message}`);
   }
 
-  return data ? toGorgiasSupportConnectionSettings(data) : null;
+  const list = (rows ?? []) as GorgiasConnectionDbRow[];
+  if (list.length === 0) return null;
+
+  const active = list.find((row) => row.status === 'active');
+  return toGorgiasSupportConnectionSettings(active ?? list[0]);
 }
 
 /**
@@ -270,19 +273,21 @@ async function getGorgiasConnectionRawRow(
   supabase: unknown,
   merchantId: string
 ): Promise<GorgiasConnectionDbRow | null> {
-  const { data, error } = await (supabase as ListableSupabase)
+  const settings = await getMerchantGorgiasSupportConnection(supabase, merchantId);
+  if (!settings) return null;
+
+  const { data: rows, error } = await (supabase as SupabaseClient)
     .from(TABLES.SUPPORT_PROVIDER_CONNECTIONS)
     .select(CONNECTION_SETTINGS_SELECT)
-    .eq('merchant_id', merchantId)
-    .eq('provider', 'gorgias')
-    .order('updated_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .eq('id', settings.id)
+    .limit(1);
 
   if (error) {
     throw new Error(`get_gorgias_raw_row_failed: ${error.message}`);
   }
-  return data;
+
+  const row = (rows?.[0] as GorgiasConnectionDbRow | undefined) ?? null;
+  return row;
 }
 
 export const gorgiasSupportConnectionInputSchema = z

@@ -16,6 +16,7 @@ import {
   GORGIAS_CONNECT_CREDENTIALS_ERROR,
   GORGIAS_CONNECT_CREDENTIALS_ERROR_CODE,
 } from '@/lib/support/gorgias/supportConnectionShared';
+import { evaluateGorgiasHelpdeskLink } from '@/lib/support/gorgias/helpdeskLinkStatus';
 
 async function GETHandler() {
   const userClient = createClient();
@@ -31,7 +32,8 @@ async function GETHandler() {
   try {
     await refreshMerchantGorgiasSidebarWidgetUrlBestEffort(service, ctx.merchantId);
     const connection = await getMerchantGorgiasSupportConnection(service, ctx.merchantId);
-    return NextResponse.json({ connection });
+    const link = evaluateGorgiasHelpdeskLink(connection);
+    return NextResponse.json({ connection, link });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Failed to load Gorgias connection';
     return NextResponse.json({ error: message }, { status: 500 });
