@@ -227,6 +227,91 @@
         });
       }
 
+      function storeOrdersLine(store) {
+        if (!store) return '';
+        var orders = store.orders != null ? store.orders : '—';
+        var claims = store.claims != null ? store.claims : 0;
+        var parts = ['Orders at your store: ' + esc(String(orders))];
+        if (claims > 0) {
+          parts.push(claims + ' claim' + (claims === 1 ? '' : 's') + ' on record');
+        }
+        if (store.primary_reason) {
+          parts.push('Top reason: ' + esc(store.primary_reason));
+        }
+        return '<div class="section"><p class="muted">' + parts.join(' · ') + '</p></div>';
+      }
+
+      function networkLine(network) {
+        if (!network || !network.merchants) return '';
+        return (
+          '<div class="section cross"><p class="section-title">Network</p><p>' +
+          esc(String(network.orders)) + ' orders · ' +
+          esc(String(network.claims)) + ' claims · ' +
+          esc(String(network.merchants)) + ' merchants</p></div>'
+        );
+      }
+
+      function renderHelpdeskContext(ctx, apiKey, email, orderId) {
+        var profileUrlValue =
+          ctx.profile_url ||
+          profileUrl(email);
+        var theme = gradeTheme(ctx.confidence || 'definite');
+        var storeHtml = storeOrdersLine(ctx.store);
+        var networkHtml = networkLine(ctx.network);
+        var claims = ctx.claims_record || {};
+        var refunds = Number(claims.refunds || 0);
+        var chargebacks = Number(claims.chargebacks || 0);
+        var claimsHtml =
+          refunds + chargebacks > 0
+            ? '<div class="section"><p class="section-title">Claims on record</p><p>' +
+              esc(claimsLine(claims)) +
+              '</p></div>'
+            : '';
+        var matchedHtml =
+          Array.isArray(ctx.matched_on) && ctx.matched_on.length > 0
+            ? '<p class="meta">Matched on ' + esc(ctx.matched_on.join(', ')) + '</p>'
+            : '';
+        var ce3 = ctx.ce3_evidence_available;
+        var evidenceHtml = ce3
+          ? '<button type="button" class="btn btn-ghost" id="unauth-pdf-btn">Get PDF</button>' +
+            '<div class="evidence-result" id="unauth-pdf-result" hidden></div>'
+          : '';
+        var subtitle =
+          ctx.state === 'low_clear' || (refunds + chargebacks === 0 && !claims.cross_merchant)
+            ? 'Identity confirmed · No prior claims on record'
+            : 'Case context at your store';
+        root.innerHTML =
+          '<div class="card" style="background:' +
+          theme.bg + ';border-color:' + theme.border + ';color:' + theme.accent + ';">' +
+          '<div class="headline">' + theme.icon + ' ' + theme.label + '</div>' +
+          '<p class="meta">' + esc(subtitle) + '</p>' +
+          matchedHtml +
+          storeHtml +
+          networkHtml +
+          claimsHtml +
+          '<div class="actions">' +
+          '<button type="button" class="btn btn-primary" id="unauth-profile-btn">View Profile</button>' +
+          evidenceHtml +
+          '</div></div>';
+        bindProfileBtn(profileUrlValue);
+        if (ce3) bindPdfBtn(apiKey, email, orderId);
+      }
+
+      function fetchHelpdeskContext(email, name, orderId, apiKey) {
+        var qs =
+          '?email=' +
+          encodeURIComponent(email) +
+          '&name=' +
+          encodeURIComponent(name || '') +
+          '&order_ref=' +
+          encodeURIComponent(orderId || '');
+        return apiFetch('/api/v1/helpdesk-ticket-context' + qs, apiKey).then(function (r) {
+          return r.json().then(function (body) {
+            return { status: r.status, body: body };
+          });
+        });
+      }
+
       function bindProfileBtn(profileUrlValue) {
         var btn = document.getElementById('unauth-profile-btn');
         if (btn) {
@@ -425,58 +510,50 @@
             return;
           }
 
-          var lookupRes = await runLookup(email, name, orderId, apiKey);
-          var generatedProfileUrl = await fetchProfileUrl(apiKey, email).catch(function () {
-            return profileUrl(email);
-          });
+          var contextRes = await fetchHelpdeskContext(email, name, orderId, apiKey);
 
-          if (lookupRes.status === 401) {
+          if (contextRes.status === 401) {
             renderError('Invalid API key. Check Unauth → Settings → API & Integrations.');
             return;
           }
-          if (lookupRes.status === 429) {
-            renderError(lookupRes.body.error || 'Daily lookup limit reached.');
+          if (contextRes.status === 403) {
+            renderError(
+              contextRes.body.error ||
+                'Your plan does not include the helpdesk sidebar. Check Billing in Unauth.'
+            );
             return;
           }
-          if (lookupRes.status >= 500) {
-            renderError(lookupRes.body.error || 'Server error');
+          if (contextRes.status === 429) {
+            renderError(contextRes.body.error || 'Daily lookup limit reached.');
+            return;
+          }
+          if (contextRes.status >= 500) {
+            renderError(contextRes.body.error || 'Server error');
             return;
           }
 
-          if (lookupRes.status === 404) {
-            var customerOnMiss = await fetchCustomer(email, apiKey).catch(function () {
-              return null;
+          if (contextRes.status !== 200) {
+            renderError(contextRes.body.error || 'Could not load case context');
+            return;
+          }
+
+          var ctx = contextRes.body;
+          if (ctx.state === 'error') {
+            renderError(ctx.message || 'Could not load case context');
+            return;
+          }
+          if (ctx.state === 'not_found') {
+            renderNotFound();
+            return;
+          }
+
+          if (!ctx.profile_url) {
+            ctx.profile_url = await fetchProfileUrl(apiKey, email).catch(function () {
+              return profileUrl(email);
             });
-            if (customerOnMiss) {
-              // Known at this store, not in the cross-merchant network → clean.
-              renderClean(generatedProfileUrl, 'definite', customerOnMiss);
-            } else {
-              renderNotFound();
-            }
-            return;
           }
 
-          if (lookupRes.status !== 200) {
-            renderError(lookupRes.body.error || 'Lookup failed');
-            return;
-          }
-
-          var lookup = lookupRes.body;
-          var claims = lookup.claims_record || {};
-          var refunds = Number(claims.refunds || 0);
-          var chargebacks = Number(claims.chargebacks || 0);
-          var cross = claims.cross_merchant;
-
-          // Identity resolved but nothing on record → clean confirmation.
-          if (refunds + chargebacks === 0 && !cross) {
-            var customer = await fetchCustomer(email, apiKey).catch(function () {
-              return null;
-            });
-            renderClean(generatedProfileUrl, lookup.confidence, customer);
-            return;
-          }
-
-          renderMatch(generatedProfileUrl, email, lookup, apiKey, orderId);
+          renderHelpdeskContext(ctx, apiKey, email, orderId);
         } catch (err) {
           renderError(err && err.message ? err.message : 'Could not load ticket data');
         }

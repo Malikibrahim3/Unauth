@@ -1,8 +1,8 @@
 // TODO(product-gating): require CUSTOMER_SEARCH / CUSTOMER_DOSSIER entitlements when ENFORCE_PRODUCT_GATES is enabled.
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { TABLES } from '@/lib/supabase/tables';
 import { normaliseEmail } from '@/lib/identity/normalise';
 import { hashIdentifier } from '@/lib/identity/hash';
+import { findMerchantCustomerByEmail } from '@/lib/gorgias/findMerchantCustomerByEmail';
 import {
   fetchMerchantScopedCustomerProfile,
   fetchMerchantScopedCustomerTransactions,
@@ -22,28 +22,6 @@ export type CustomerAuth = {
 export type CustomerResult =
   | { ok: true; body: Record<string, unknown> }
   | { ok: false; status: number; error: string };
-
-async function resolveProfileIdByEmail(
-  service: SupabaseClient,
-  merchantId: string,
-  normEmail: string
-): Promise<string | null> {
-  const filters = `merchant_ids.cs.${JSON.stringify([merchantId])}`;
-
-  const { data, error } = await service
-    .from(TABLES.CUSTOMER_PROFILES)
-    .select('id')
-    .contains('emails', JSON.stringify([normEmail]))
-    .or(filters)
-    .order('risk_score', { ascending: false })
-    .limit(1)
-    .maybeSingle() as unknown as { data: { id: string } | null; error: { message: string } | null };
-
-  if (error) {
-    throw new Error(error.message);
-  }
-  return data?.id ?? null;
-}
 
 function countInrClaims(transactions: Array<Record<string, unknown>>): number {
   return transactions.filter((tx) => {
@@ -69,7 +47,8 @@ export async function performV1CustomerProfile(
 
   let profileId: string | null;
   try {
-    profileId = await resolveProfileIdByEmail(service, auth.merchantId, normEmail);
+    const { customer } = await findMerchantCustomerByEmail(service, auth.merchantId, normEmail);
+    profileId = customer?.id ?? null;
   } catch {
     return { ok: false, status: 500, error: 'Profile lookup failed' };
   }
@@ -115,6 +94,8 @@ export async function performV1CustomerProfile(
     profile
   );
 
+  const storeOrdersAtMerchant = transactions.length;
+
   const emails = (Array.isArray(profile.emails) ? profile.emails : []) as string[];
   const addresses = (Array.isArray(profile.addresses) ? profile.addresses : []) as string[];
   const cards = (Array.isArray(profile.card_last4s) ? profile.card_last4s : []) as string[];
@@ -158,6 +139,7 @@ export async function performV1CustomerProfile(
       },
       behavioral_history: {
         total_orders: Number(profile.total_orders ?? 0),
+        store_orders_at_merchant: storeOrdersAtMerchant,
         refund_claims: Number(profile.total_refund_claims ?? 0),
         chargebacks: Number(profile.total_chargebacks ?? 0),
         INR_claims: countInrClaims(transactions),
