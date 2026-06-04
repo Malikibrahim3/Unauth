@@ -101,11 +101,15 @@ export default function ZendeskSetupClient() {
         </li>
         <li>Upload the zip file.</li>
         <li>
+          Set <strong>Unauth app URL</strong> to this deployment (HTTPS, no trailing slash), e.g.{' '}
+          <code className="text-xs">https://unauth-pi.vercel.app</code>.
+        </li>
+        <li>
           When prompted for <strong>API key</strong>, paste a key from{' '}
-          <Link href="/settings/api-integrations" className="underline" style={{ color: 'var(--accent)' }}>
-            Settings → API &amp; Integrations
-          </Link>
-          .
+          <Link href="/settings/integrations" className="underline" style={{ color: 'var(--accent)' }}>
+            Settings → Integrations
+          </Link>{' '}
+          (Advanced → API keys).
         </li>
         <li>Install the app. Unauth appears on every ticket sidebar.</li>
         <li>Return here and click <strong>Verify install</strong>.</li>

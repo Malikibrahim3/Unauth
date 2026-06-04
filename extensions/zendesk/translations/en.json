@@ -3,8 +3,12 @@
     "name": "Unauth Fraud Intelligence",
     "short_description": "Identity confidence and claims context on every Zendesk ticket.",
     "long_description": "Shows Unauth store checks, network context, and case reports in the ticket sidebar using your Unauth API key.",
-    "installation_instructions": "Upload this private app, enter your Unauth API key from Settings → API & Integrations in the Unauth dashboard, then install to the ticket sidebar.",
+    "installation_instructions": "1. Download the zip from Unauth → Settings → Integrations → Zendesk.\n2. In Zendesk Admin → Apps → Upload private app, upload the zip (manifest.json at the root).\n3. Set **Unauth app URL** to your Unauth deployment (e.g. https://unauth-pi.vercel.app).\n4. Paste your Unauth API key from Settings → Integrations → Advanced.\n5. Install the app to the ticket sidebar, then click **Verify install** in Unauth.",
     "parameters": {
+      "app_base_url": {
+        "label": "Unauth app URL",
+        "helpText": "HTTPS URL of your Unauth deployment (no trailing slash). Example: https://unauth-pi.vercel.app"
+      },
       "api_key": {
         "label": "Unauth API key",
         "helpText": "Create an API key in Unauth under Settings → Integrations → Advanced (API keys)."

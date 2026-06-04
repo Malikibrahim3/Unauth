@@ -7,26 +7,34 @@
   },
   "defaultLocale": "en",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.1",
   "frameworkVersion": "2.0",
+  "domainWhitelist": [
+    "unauth-pi.vercel.app",
+    "app.unauth.co",
+    "unauth.co"
+  ],
   "location": {
     "support": {
       "ticket_sidebar": {
-        "url": "index.html",
-        "size": {
-          "width": "100%",
-          "height": "600px"
-        }
+        "url": "assets/iframe.html",
+        "flexible": true
       }
     }
   },
   "parameters": [
     {
+      "name": "app_base_url",
+      "type": "url",
+      "required": true,
+      "default": "https://unauth-pi.vercel.app"
+    },
+    {
       "name": "api_key",
       "type": "text",
       "secure": true,
       "required": true,
-      "description": "Your Unauth API key from Settings → API & Integrations in the Unauth dashboard."
+      "scopes": ["header"]
     }
   ]
 }
