@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { after } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { logAction } from '@/lib/permissions/audit';
@@ -17,6 +18,8 @@ import {
   GORGIAS_CONNECT_CREDENTIALS_ERROR_CODE,
 } from '@/lib/support/gorgias/supportConnectionShared';
 import { evaluateGorgiasHelpdeskLink } from '@/lib/support/gorgias/helpdeskLinkStatus';
+import { backfillGorgiasSupportCases } from '@/lib/support/gorgias/backfill';
+import { getConnectionState } from '@/lib/connections/getConnectionState';
 
 async function GETHandler() {
   const userClient = createClient();
@@ -110,6 +113,26 @@ async function POSTHandler(req: NextRequest) {
         provider_account_id: created.connection.provider_account_id,
       },
       ip,
+    });
+
+    const merchantId = ctx.merchantId;
+    const connectionId = created.connection.id;
+    after(async () => {
+      try {
+        const orderSource = await getConnectionState(service, merchantId);
+        await backfillGorgiasSupportCases({
+          supabase: service,
+          merchantId,
+          providerConnectionId: connectionId,
+          shopDomain: orderSource.orderSourceStoreKey,
+        });
+      } catch (err) {
+        console.error('Gorgias historical ticket backfill failed', {
+          merchantId,
+          connectionId,
+          message: err instanceof Error ? err.message : 'unknown',
+        });
+      }
     });
 
     return NextResponse.json(created);

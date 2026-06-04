@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { after } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { exchangeBigCommerceOAuthAccessToken } from '@/lib/commerce/bigcommerce/exchangeOAuthAccessToken';
 import { persistBigCommerceOAuthConnection } from '@/lib/commerce/bigcommerce/persistOAuthConnection';
@@ -12,6 +13,7 @@ import { getAppUrl } from '@/lib/utils/appUrl';
 import { logAction } from '@/lib/permissions/audit';
 import { PERMISSIONS, requirePermission, resolveCallerContext } from '@/lib/permissions';
 import { getClientIp } from '@/lib/ratelimit';
+import { backfillBigCommerceOrders } from '@/lib/commerce/bigcommerce/backfill';
 
 const INTEGRATIONS_PATH = '/settings/integrations/bigcommerce';
 
@@ -141,6 +143,24 @@ export async function GET(request: NextRequest) {
         message: webhookError instanceof Error ? webhookError.message : 'unknown',
       });
     }
+
+    const connectedMerchantId = persisted.merchantId;
+    const accessToken = tokenExchange.token.access_token;
+    after(async () => {
+      try {
+        await backfillBigCommerceOrders({
+          supabase: serviceClient,
+          storeHash,
+          accessToken,
+        });
+      } catch (err) {
+        console.error('BigCommerce historical order backfill failed', {
+          storeHash,
+          merchantId: connectedMerchantId,
+          message: err instanceof Error ? err.message : 'unknown',
+        });
+      }
+    });
 
     const successParams: Record<string, string> = {
       bigcommerce_connected: '1',

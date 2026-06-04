@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { after } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { logAction } from '@/lib/permissions/audit';
@@ -15,6 +16,8 @@ import {
   WOOCOMMERCE_CONNECT_CREDENTIALS_ERROR_CODE,
   WooCommerceCredentialsError,
 } from '@/lib/commerce/woocommerce/woocommerceConnectionShared';
+import { backfillWooCommerceOrders } from '@/lib/commerce/woocommerce/backfill';
+import { normalizeWooCommerceStoreUrl } from '@/lib/commerce/woocommerce/normalizeStoreUrl';
 
 async function GETHandler() {
   const userClient = createClient();
@@ -95,6 +98,29 @@ async function POSTHandler(req: NextRequest) {
       resourceId: created.connection.id,
       metadata: { store_key: created.connection.store_key },
       ip,
+    });
+
+    const { store_url } = normalizeWooCommerceStoreUrl(parsed.data.store_url);
+    const storeKey = created.connection.store_key;
+    const credentials = {
+      consumer_key: parsed.data.consumer_key,
+      consumer_secret: parsed.data.consumer_secret,
+    };
+    after(async () => {
+      try {
+        await backfillWooCommerceOrders({
+          supabase: service,
+          storeUrl: store_url,
+          storeKey,
+          credentials,
+        });
+      } catch (err) {
+        console.error('WooCommerce historical order backfill failed', {
+          storeKey,
+          merchantId: ctx.merchantId,
+          message: err instanceof Error ? err.message : 'unknown',
+        });
+      }
     });
 
     return NextResponse.json(created);

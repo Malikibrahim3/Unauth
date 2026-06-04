@@ -30,3 +30,4 @@ final-report.md
 # Supabase CLI temp files (project-specific, not portable)
 supabase/.temp/
 
+.vercel

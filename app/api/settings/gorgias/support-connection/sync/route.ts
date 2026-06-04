@@ -1,0 +1,46 @@
+import { NextResponse } from 'next/server';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
+import { requirePermission, PERMISSIONS } from '@/lib/permissions';
+import { withRequestLogging } from '@/lib/log';
+import { getConnectionState } from '@/lib/connections/getConnectionState';
+import { backfillGorgiasSupportCases } from '@/lib/support/gorgias/backfill';
+import { getMerchantGorgiasSupportConnection } from '@/lib/support/gorgias/settingsConnection';
+
+/** Allow large helpdesk backfills on Vercel (same pattern as Shopify sync-audit). */
+export const maxDuration = 300;
+
+async function POSTHandler() {
+  const userClient = createClient();
+  const {
+    data: { user },
+  } = await userClient.auth.getUser();
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const service = createServiceClient();
+  const { denied, ctx } = await requirePermission(service, user.id, PERMISSIONS.MANAGE_SETTINGS);
+  if (denied) return denied;
+
+  const connection = await getMerchantGorgiasSupportConnection(service, ctx.merchantId);
+  if (!connection || connection.status !== 'active' || !connection.gorgias_api_configured) {
+    return NextResponse.json({ error: 'Gorgias is not connected' }, { status: 400 });
+  }
+
+  try {
+    const orderSource = await getConnectionState(service, ctx.merchantId);
+    const result = await backfillGorgiasSupportCases({
+      supabase: service,
+      merchantId: ctx.merchantId,
+      providerConnectionId: connection.id,
+      shopDomain: orderSource.orderSourceStoreKey,
+    });
+    return NextResponse.json({ ok: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'gorgias_backfill_failed';
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+export const POST = withRequestLogging(
+  '/api/settings/gorgias/support-connection/sync',
+  POSTHandler,
+);

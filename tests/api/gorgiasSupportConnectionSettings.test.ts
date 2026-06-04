@@ -48,6 +48,31 @@ jest.mock('@/lib/support/gorgias/registerSupportWebhook', () => ({
   deleteGorgiasSupportWebhookIntegration: jest.fn().mockResolvedValue(undefined),
 }));
 
+jest.mock('next/server', () => {
+  const actual = jest.requireActual('next/server');
+  return {
+    ...actual,
+    after: (task: () => void | Promise<void>) => {
+      void Promise.resolve().then(() => task());
+    },
+  };
+});
+
+jest.mock('@/lib/support/gorgias/backfill', () => ({
+  backfillGorgiasSupportCases: jest.fn(async () => ({
+    tickets_listed: 0,
+    ingested: 0,
+    skipped: 0,
+    errors: 0,
+  })),
+}));
+
+jest.mock('@/lib/connections/getConnectionState', () => ({
+  getConnectionState: jest.fn(async () => ({
+    orderSourceStoreKey: 'test.myshopify.com',
+  })),
+}));
+
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission } from '@/lib/permissions';
 import { createWidgetTokenForGorgiasSidebar } from '@/lib/support/gorgias/ensureWidgetToken';
