@@ -319,6 +319,8 @@ function applyClaimDetection(
 ): void {
   if (detection.action !== 'create_or_confirm_claim') {
     normalized.is_claim = false;
+    normalized.claim_type = null;
+    normalized.claim_type_confidence = null;
     normalized.detection_method = 'tag';
     normalized.trigger_tag = detection.action === 'void' || detection.action === 'update_status' ? detection.triggerTag : null;
     normalized.trigger_tags = [];
@@ -559,7 +561,14 @@ async function captureClaimSignals(
       emailHash,
       knownOrderCount: ordersAtMerchant,
     });
-  } catch {
+  } catch (error) {
     // Signal capture is best-effort; never break ticket ingestion.
+    console.error('captureClaimSignals failed', {
+      merchantId: input.merchantId,
+      supportCaseId: input.supportCaseId,
+      externalCaseId: input.normalized.external_case_id,
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
   }
 }

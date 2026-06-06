@@ -121,6 +121,13 @@ function makeGorgiasWebhookSupabase(options?: {
         return {
           select: () => ({
             eq: (column: string, value: string | boolean) => ({
+              maybeSingle: async () => ({
+                data:
+                  shopifyConnections.find(
+                    (row) => row[column as 'merchant_id' | 'active'] === value
+                  ) ?? null,
+                error: null,
+              }),
               eq: (column2: string, value2: string | boolean) => ({
                 order: () => ({
                   limit: async () => ({
@@ -132,6 +139,23 @@ function makeGorgiasWebhookSupabase(options?: {
                     error: null,
                   }),
                 }),
+              }),
+            }),
+          }),
+        };
+      }
+
+      if (table === 'shopify_merchants') {
+        return {
+          select: () => ({
+            eq: (_column: string, shopDomain: string) => ({
+              maybeSingle: async () => ({
+                data: shopifyConnections.some(
+                  (row) => row.shop_domain === shopDomain && row.active
+                )
+                  ? { access_token: 'test-token', uninstalled_at: null }
+                  : null,
+                error: null,
               }),
             }),
           }),

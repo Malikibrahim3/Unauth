@@ -24,7 +24,6 @@ import {
 import { fetchFreshdeskTicketById } from '@/lib/support/freshdesk/freshdeskApi';
 import { FreshdeskApiError } from '@/lib/support/freshdesk/freshdeskApi';
 import { getActiveFreshdeskMerchantApiAccess } from '@/lib/support/freshdesk/merchantApiAccess';
-import { TABLES } from '@/lib/supabase/tables';
 
 export class FreshdeskWebhookError extends Error {
   constructor(
@@ -124,8 +123,7 @@ type ResolvedMerchantContext = {
 
 async function resolveMerchantContext(
   supabase: unknown,
-  input: IngestFreshdeskWebhookInput,
-  ticket: Record<string, unknown>
+  input: IngestFreshdeskWebhookInput
 ): Promise<ResolvedMerchantContext> {
   const webhookSearchParams = webhookSearchParamsFromRequestUrl(input.requestUrl);
   const identity = extractFreshdeskAccountIdentity(
@@ -257,12 +255,7 @@ export async function ingestFreshdeskSupportWebhook(
 
   const supabase = createServiceClient();
   const webhookSearchParams = webhookSearchParamsFromRequestUrl(input.requestUrl);
-  const merchantContext = await resolveMerchantContext(supabase, input, initialTicket);
-  const shopDomain = await resolveShopDomainForFreshdeskIngest({
-    supabase,
-    merchantId: merchantContext.merchantId,
-    explicitShopDomain,
-  });
+  const merchantContext = await resolveMerchantContext(supabase, input);
 
   const headerSecret = readFreshdeskWebhookSecret(input.headers, webhookSearchParams);
   const auth = verifyFreshdeskWebhookAuth({
@@ -281,6 +274,12 @@ export async function ingestFreshdeskSupportWebhook(
     }
     throw new FreshdeskWebhookError(auth.status, auth.code);
   }
+
+  const shopDomain = await resolveShopDomainForFreshdeskIngest({
+    supabase,
+    merchantId: merchantContext.merchantId,
+    explicitShopDomain,
+  });
 
   const connectionId = merchantContext.providerConnectionId;
   const ticket = await hydrateFreshdeskTicketForIngest({

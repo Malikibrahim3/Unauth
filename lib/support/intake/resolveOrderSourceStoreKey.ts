@@ -10,7 +10,15 @@ export async function resolveOrderSourceStoreKeyForMerchant(
   serviceClient: SupabaseClient,
   merchantId: string
 ): Promise<string | undefined> {
-  const status = await getOrderSourceConnectionStatus(serviceClient, merchantId);
-  const storeKey = status.storeKey?.trim();
-  return storeKey || undefined;
+  try {
+    const status = await getOrderSourceConnectionStatus(serviceClient, merchantId);
+    const storeKey = status.storeKey?.trim();
+    return storeKey || undefined;
+  } catch (error) {
+    console.warn('resolveOrderSourceStoreKeyForMerchant failed', {
+      merchantId,
+      message: error instanceof Error ? error.message : String(error),
+    });
+    return undefined;
+  }
 }

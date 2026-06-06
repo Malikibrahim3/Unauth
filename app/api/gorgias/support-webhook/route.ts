@@ -147,6 +147,11 @@ export async function POST(request: NextRequest) {
         { status: error.status }
       );
     }
+    console.error('Gorgias support webhook ingest failed', {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      external_case_id: safeExternalCaseId(body),
+    });
     await logGorgiasWebhookResult({
       provider: 'gorgias',
       status: 'error',

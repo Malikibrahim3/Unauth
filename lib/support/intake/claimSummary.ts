@@ -19,6 +19,15 @@ type ClaimRow = {
   requires_merchant_review: boolean;
 };
 
+function isMissingRequiresMerchantReviewColumn(message: string): boolean {
+  return (
+    message.includes('support_case_intake') &&
+    (message.includes('schema cache') || message.includes('does not exist')) &&
+    (message.includes("'requires_merchant_review'") ||
+      message.includes('support_case_intake.requires_merchant_review'))
+  );
+}
+
 export type CustomerClaimSummaryRow = {
   customer_email_hash: string;
   merchant_id: string;
@@ -78,33 +87,44 @@ async function loadClaimRows(
   merchantId: string,
   emailHash: string
 ): Promise<ClaimRow[]> {
-  const { data, error } = await (supabase.from(TABLES.SUPPORT_CASE_INTAKE) as {
-    select: (columns: string) => {
-      eq: (col: string, val: string) => {
-        eq: (col2: string, val2: string) => {
-          eq: (col3: string, val3: boolean) => Promise<{
-            data: Array<Record<string, unknown>> | null;
-            error: { message: string } | null;
-          }>;
+  const runSelect = (columns: string) =>
+    (supabase.from(TABLES.SUPPORT_CASE_INTAKE) as {
+      select: (columns: string) => {
+        eq: (col: string, val: string) => {
+          eq: (col2: string, val2: string) => {
+            eq: (col3: string, val3: boolean) => Promise<{
+              data: Array<Record<string, unknown>> | null;
+              error: { message: string } | null;
+            }>;
+          };
         };
       };
-    };
-  })
-    .select('claim_type, created_at_provider, updated_at_provider, requires_merchant_review')
-    .eq('merchant_id', merchantId)
-    .eq('customer_email_hash', emailHash)
-    .eq('is_claim', true);
+    })
+      .select(columns)
+      .eq('merchant_id', merchantId)
+      .eq('customer_email_hash', emailHash)
+      .eq('is_claim', true);
+
+  let includeReviewColumn = true;
+  let { data, error } = await runSelect(
+    'claim_type, created_at_provider, updated_at_provider, requires_merchant_review'
+  );
+
+  if (error && isMissingRequiresMerchantReviewColumn(error.message)) {
+    includeReviewColumn = false;
+    ({ data, error } = await runSelect('claim_type, created_at_provider, updated_at_provider'));
+  }
 
   if (error) throw new Error(`load_claim_rows_failed: ${error.message}`);
 
   return (data ?? []).flatMap((row) =>
-    row.requires_merchant_review === true
+    includeReviewColumn && row.requires_merchant_review === true
       ? []
       : [{
           claim_type: asString(row.claim_type),
           created_at_provider: asString(row.created_at_provider),
           updated_at_provider: asString(row.updated_at_provider),
-          requires_merchant_review: row.requires_merchant_review === true,
+          requires_merchant_review: includeReviewColumn && row.requires_merchant_review === true,
         }],
   );
 }

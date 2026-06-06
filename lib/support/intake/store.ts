@@ -197,6 +197,35 @@ const upsertCaseSchema = z.object({
   keyword_matched: z.string().nullable().optional(),
 });
 
+const SUPPORT_CASE_INTAKE_COMPAT_FIELDS = [
+  'detection_method',
+  'trigger_tag',
+  'trigger_tags',
+  'requires_merchant_review',
+  'keyword_matched',
+] as const;
+
+function isMissingSupportCaseIntakeCompatColumn(message: string): boolean {
+  return (
+    message.includes('support_case_intake') &&
+    (message.includes('schema cache') || message.includes('does not exist')) &&
+    SUPPORT_CASE_INTAKE_COMPAT_FIELDS.some(
+      (field) =>
+        message.includes(`'${field}'`) || message.includes(`support_case_intake.${field}`)
+    )
+  );
+}
+
+function stripSupportCaseIntakeCompatFields(
+  payload: Record<string, unknown>
+): Record<string, unknown> {
+  const cleaned = { ...payload };
+  for (const field of SUPPORT_CASE_INTAKE_COMPAT_FIELDS) {
+    delete cleaned[field];
+  }
+  return cleaned;
+}
+
 const appendEventSchema = z.object({
   merchant_id: z.string().uuid(),
   support_case_id: z.string().uuid(),
@@ -311,11 +340,18 @@ export async function upsertSupportCaseIntake(
     updated_at: new Date().toISOString(),
   });
 
-  const { data, error } = await supabase
-    .from(TABLES.SUPPORT_CASE_INTAKE)
-    .upsert(payload, { onConflict: 'merchant_id,provider,external_case_id' })
-    .select()
-    .single();
+  const runUpsert = (candidate: Record<string, unknown>) =>
+    supabase
+      .from(TABLES.SUPPORT_CASE_INTAKE)
+      .upsert(candidate, { onConflict: 'merchant_id,provider,external_case_id' })
+      .select()
+      .single();
+
+  let { data, error } = await runUpsert(payload);
+
+  if (error && isMissingSupportCaseIntakeCompatColumn(error.message)) {
+    ({ data, error } = await runUpsert(stripSupportCaseIntakeCompatFields(payload)));
+  }
 
   if (error) throw new Error(`upsert ${TABLES.SUPPORT_CASE_INTAKE} failed: ${error.message}`);
   return data;

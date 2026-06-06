@@ -21,6 +21,16 @@ describe('tag-based claim detection', () => {
     });
   });
 
+  it('treats refund-requested as a default Gorgias trigger tag', () => {
+    const result = detectClaimFromTags(config, { tags: ['refund-requested'] });
+    expect(result).toMatchObject({
+      action: 'create_or_confirm_claim',
+      detectionMethod: 'tag',
+      triggerTag: 'refund-requested',
+      requiresMerchantReview: false,
+    });
+  });
+
   it('updates status for an outcome tag', () => {
     expect(detectClaimFromTags(config, { tags: ['refund-issued'] })).toMatchObject({
       action: 'update_status',

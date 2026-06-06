@@ -24,7 +24,6 @@ import {
 import { fetchGorgiasTicketById } from '@/lib/support/gorgias/fetchTicket';
 import { getActiveGorgiasMerchantApiAccess } from '@/lib/support/gorgias/merchantApiAccess';
 import { GorgiasSidebarRegistrationError } from '@/lib/support/gorgias/registerSidebarWidget';
-import { TABLES } from '@/lib/supabase/tables';
 
 export const GORGIAS_EVENT_TYPE_HEADER = 'x-gorgias-event-type';
 
@@ -243,11 +242,6 @@ export async function ingestGorgiasSupportWebhook(
   const supabase = createServiceClient();
   const webhookSearchParams = webhookSearchParamsFromRequestUrl(input.requestUrl);
   const merchantContext = await resolveMerchantContext(supabase, input, initialTicket);
-  const shopDomain = await resolveShopDomainForGorgiasIngest({
-    supabase,
-    merchantId: merchantContext.merchantId,
-    explicitShopDomain,
-  });
 
   const headerSecret = readGorgiasWebhookSecret(input.headers, webhookSearchParams);
   const auth = verifyGorgiasWebhookAuth({
@@ -266,6 +260,12 @@ export async function ingestGorgiasSupportWebhook(
     }
     throw new GorgiasWebhookError(auth.status, auth.code);
   }
+
+  const shopDomain = await resolveShopDomainForGorgiasIngest({
+    supabase,
+    merchantId: merchantContext.merchantId,
+    explicitShopDomain,
+  });
 
   const connectionId = merchantContext.providerConnectionId;
   const ticket = await hydrateGorgiasTicketForIngest({

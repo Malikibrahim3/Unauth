@@ -52,6 +52,8 @@ export const DEFAULT_TAG_CONFIGS: Record<SupportProvider, MerchantClaimTagConfig
       'return/exchange',
       'refund-request',
       'refund_request',
+      'refund-requested',
+      'refund_requested',
       'chargeback',
       'dispute',
       'fraud',

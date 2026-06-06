@@ -27,6 +27,61 @@ function makeUpsertSupabase() {
   return { supabase, calls };
 }
 
+function makeCompatFallbackUpsertSupabase() {
+  const calls: Array<{ table: string; payload: Record<string, unknown>; onConflict: string }> = [];
+  let attempt = 0;
+  const supabase = {
+    from: (table: string) => ({
+      upsert: (payload: Record<string, unknown>, opts: { onConflict: string }) => ({
+        select: () => ({
+          single: async () => {
+            attempt += 1;
+            calls.push({ table, payload, onConflict: opts.onConflict });
+            if (attempt === 1) {
+              return {
+                data: null,
+                error: {
+                  message:
+                    "Could not find the 'detection_method' column of 'support_case_intake' in the schema cache",
+                },
+              };
+            }
+            return { data: payload, error: null };
+          },
+        }),
+      }),
+    }),
+  };
+  return { supabase, calls };
+}
+
+function makeCompatSqlFallbackUpsertSupabase() {
+  const calls: Array<{ table: string; payload: Record<string, unknown>; onConflict: string }> = [];
+  let attempt = 0;
+  const supabase = {
+    from: (table: string) => ({
+      upsert: (payload: Record<string, unknown>, opts: { onConflict: string }) => ({
+        select: () => ({
+          single: async () => {
+            attempt += 1;
+            calls.push({ table, payload, onConflict: opts.onConflict });
+            if (attempt === 1) {
+              return {
+                data: null,
+                error: {
+                  message: 'column support_case_intake.keyword_matched does not exist',
+                },
+              };
+            }
+            return { data: payload, error: null };
+          },
+        }),
+      }),
+    }),
+  };
+  return { supabase, calls };
+}
+
 function makeInsertSupabase() {
   const inserts: Array<{ table: string; payload: Record<string, unknown> }> = [];
   const supabase = {
@@ -134,6 +189,52 @@ describe('support intake store', () => {
     expect(payload.raw_payload).toBeUndefined();
     expect(payload.rawPayload).toBeUndefined();
     expect(payload.raw_payload_hash).toBe(hashRawPayload({ conversation: ['full', 'thread'] }));
+  });
+
+  it('retries support_case_intake upsert without compatibility-only columns when schema cache is behind', async () => {
+    const { supabase, calls } = makeCompatFallbackUpsertSupabase();
+    await upsertSupportCaseIntake(supabase, {
+      merchant_id: merchantA,
+      provider: 'gorgias',
+      external_case_id: 'g-compat-1',
+      detection_method: 'tag',
+      trigger_tag: 'refund-requested',
+      trigger_tags: ['refund-requested'],
+      requires_merchant_review: true,
+      keyword_matched: 'refund',
+      raw_payload: { id: 1 },
+    });
+
+    expect(calls).toHaveLength(2);
+    expect(calls[0].payload.detection_method).toBe('tag');
+    expect(calls[1].payload.detection_method).toBeUndefined();
+    expect(calls[1].payload.trigger_tag).toBeUndefined();
+    expect(calls[1].payload.trigger_tags).toBeUndefined();
+    expect(calls[1].payload.requires_merchant_review).toBeUndefined();
+    expect(calls[1].payload.keyword_matched).toBeUndefined();
+  });
+
+  it('retries support_case_intake upsert without compatibility-only columns when Postgres reports a missing live column', async () => {
+    const { supabase, calls } = makeCompatSqlFallbackUpsertSupabase();
+    await upsertSupportCaseIntake(supabase, {
+      merchant_id: merchantA,
+      provider: 'gorgias',
+      external_case_id: 'g-compat-2',
+      detection_method: 'tag',
+      trigger_tag: 'refund-requested',
+      trigger_tags: ['refund-requested'],
+      requires_merchant_review: true,
+      keyword_matched: 'refund',
+      raw_payload: { id: 2 },
+    });
+
+    expect(calls).toHaveLength(2);
+    expect(calls[0].payload.keyword_matched).toBe('refund');
+    expect(calls[1].payload.detection_method).toBeUndefined();
+    expect(calls[1].payload.trigger_tag).toBeUndefined();
+    expect(calls[1].payload.trigger_tags).toBeUndefined();
+    expect(calls[1].payload.requires_merchant_review).toBeUndefined();
+    expect(calls[1].payload.keyword_matched).toBeUndefined();
   });
 
   it('hashes customer email and omits plaintext', async () => {

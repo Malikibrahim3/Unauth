@@ -71,7 +71,18 @@ function makeFreshdeskWebhookSupabase(options?: {
       if (table === TABLES.MERCHANT_SHOPIFY_CONNECTIONS) {
         return {
           select: () => ({
-            eq: () => ({
+            eq: (column: string, value: string | boolean) => ({
+              maybeSingle: async () => ({
+                data:
+                  column === 'merchant_id' && value === MERCHANT_ID
+                    ? {
+                        merchant_id: MERCHANT_ID,
+                        shop_domain: 'unauth-test.myshopify.com',
+                        active: true,
+                      }
+                    : null,
+                error: null,
+              }),
               eq: () => ({
                 order: () => ({
                   limit: async () => ({
@@ -85,6 +96,19 @@ function makeFreshdeskWebhookSupabase(options?: {
                     error: null,
                   }),
                 }),
+              }),
+            }),
+          }),
+        };
+      }
+
+      if (table === 'shopify_merchants') {
+        return {
+          select: () => ({
+            eq: () => ({
+              maybeSingle: async () => ({
+                data: { access_token: 'test-token', uninstalled_at: null },
+                error: null,
               }),
             }),
           }),

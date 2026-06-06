@@ -106,22 +106,30 @@ async function POSTHandler(req: NextRequest) {
       consumer_key: parsed.data.consumer_key,
       consumer_secret: parsed.data.consumer_secret,
     };
-    after(async () => {
-      try {
-        await backfillWooCommerceOrders({
-          supabase: service,
-          storeUrl: store_url,
-          storeKey,
-          credentials,
-        });
-      } catch (err) {
-        console.error('WooCommerce historical order backfill failed', {
-          storeKey,
-          merchantId: ctx.merchantId,
-          message: err instanceof Error ? err.message : 'unknown',
-        });
-      }
-    });
+    try {
+      after(async () => {
+        try {
+          await backfillWooCommerceOrders({
+            supabase: service,
+            storeUrl: store_url,
+            storeKey,
+            credentials,
+          });
+        } catch (err) {
+          console.error('WooCommerce historical order backfill failed', {
+            storeKey,
+            merchantId: ctx.merchantId,
+            message: err instanceof Error ? err.message : 'unknown',
+          });
+        }
+      });
+    } catch (err) {
+      console.error('WooCommerce historical order backfill scheduling failed', {
+        storeKey,
+        merchantId: ctx.merchantId,
+        message: err instanceof Error ? err.message : 'unknown',
+      });
+    }
 
     return NextResponse.json(created);
   } catch (err) {

@@ -1,7 +1,10 @@
 import { TABLES } from '@/lib/supabase/tables';
 import { ingestSupportCase } from '@/lib/support/intake/ingestSupportCase';
 import { hashSupportEmail } from '@/lib/support/intake/store';
-import { getNetworkClaimSummary } from '@/lib/support/intake/claimSummary';
+import {
+  getNetworkClaimSummary,
+  recomputeCustomerClaimSummary,
+} from '@/lib/support/intake/claimSummary';
 import { createMemoryClient, rowsOf, type MemoryClient } from '@/tests/lib/supabaseMemoryClient';
 
 const MERCHANT_A = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
@@ -66,16 +69,20 @@ function seedShopifyOrder(client: MemoryClient, order: { id: string; orderNumber
   client.__store.set('shopify_order_signals', rows);
 }
 
-function seedClaimTagConfig(client: MemoryClient, merchantId: string, triggerTag = 'parcel-claim') {
+function seedClaimTagConfig(
+  client: MemoryClient,
+  merchantId: string,
+  options: { triggerTags?: string[]; keywordFallbackEnabled?: boolean } = {}
+) {
   const rows = rowsOf(client, 'merchant_claim_tag_configs');
   rows.push({
     id: `${merchantId}-claim-tag-config`,
     merchant_id: merchantId,
     helpdesk_platform: 'gorgias',
-    claim_trigger_tags: [triggerTag],
+    claim_trigger_tags: options.triggerTags ?? ['parcel-claim'],
     outcome_tags: {},
     void_tags: [],
-    keyword_fallback_enabled: true,
+    keyword_fallback_enabled: options.keywordFallbackEnabled ?? true,
   });
   client.__store.set('merchant_claim_tag_configs', rows);
 }
@@ -142,6 +149,37 @@ describe('ingestSupportCase — claim intelligence', () => {
     expect(summary[0].total_claims).toBe(0);
     expect(summary[0].total_orders).toBe(2);
     expect(summary[0].claim_rate).toBe(0);
+  });
+
+  it('clears claim_type metadata when tags do not confirm a claim', async () => {
+    const client = createMemoryClient();
+    seedClaimTagConfig(client, MERCHANT_A, {
+      triggerTags: ['chargeback'],
+      keywordFallbackEnabled: false,
+    });
+
+    const result = await ingestSupportCase(
+      client,
+      body(
+        MERCHANT_A,
+        gorgiasTicket({
+          id: 'g-non-claim',
+          body: 'my package never arrived',
+          email: 'not-claimed@example.com',
+          tags: ['refund-requested'],
+          order: { id: '1009', customer: { orders_count: 1 } },
+        })
+      )
+    );
+
+    expect(result.is_claim).toBe(false);
+    expect(result.claim_type).toBeNull();
+    expect(result.claim_type_confidence).toBeNull();
+
+    const intake = caseRows(client)[0];
+    expect(intake.is_claim).toBe(false);
+    expect(intake.claim_type).toBeNull();
+    expect(intake.claim_type_confidence).toBeNull();
   });
 
   it('upserts a duplicate ticket id instead of duplicating', async () => {
@@ -366,5 +404,132 @@ describe('ingestSupportCase — claim intelligence', () => {
     expect(claimEvents.map((event) => event.event_type)).toEqual(
       expect.arrayContaining(['claim_created', 'claim_updated'])
     );
+  });
+});
+
+describe('claim summary compatibility', () => {
+  it('retries summary reads without requires_merchant_review when the live schema cache lacks that column', async () => {
+    const rows = [
+      {
+        claim_type: 'INR',
+        created_at_provider: '2026-05-10T12:00:00.000Z',
+        updated_at_provider: '2026-05-10T12:00:00.000Z',
+      },
+    ];
+    let attempts = 0;
+    const summaryUpserts: Record<string, unknown>[] = [];
+
+    const supabase = {
+      from: (table: string) => {
+        if (table === TABLES.SUPPORT_CASE_INTAKE) {
+          return {
+            select: (_columns: string) => ({
+              eq: (_col1: string, _val1: string) => ({
+                eq: (_col2: string, _val2: string) => ({
+                  eq: async (_col3: string, _val3: boolean) => {
+                    attempts += 1;
+                    if (attempts === 1) {
+                      return {
+                        data: null,
+                        error: {
+                          message:
+                            "Could not find the 'requires_merchant_review' column of 'support_case_intake' in the schema cache",
+                        },
+                      };
+                    }
+                    return { data: rows, error: null };
+                  },
+                }),
+              }),
+            }),
+          };
+        }
+
+        if (table === TABLES.CUSTOMER_CLAIM_SUMMARY) {
+          return {
+            upsert: (payload: Record<string, unknown>) => ({
+              select: () => ({
+                single: async () => {
+                  summaryUpserts.push(payload);
+                  return { error: null };
+                },
+              }),
+            }),
+          };
+        }
+
+        throw new Error(`unexpected table: ${table}`);
+      },
+    };
+
+    const result = await recomputeCustomerClaimSummary(supabase, {
+      merchantId: MERCHANT_A,
+      emailHash: hashSupportEmail('compat@example.com'),
+      knownOrderCount: 2,
+    });
+
+    expect(attempts).toBe(2);
+    expect(result?.total_claims).toBe(1);
+    expect(summaryUpserts).toHaveLength(1);
+  });
+
+  it('retries summary reads without requires_merchant_review when Postgres reports the column missing directly', async () => {
+    const rows = [
+      {
+        claim_type: 'INR',
+        created_at_provider: '2026-05-10T12:00:00.000Z',
+        updated_at_provider: '2026-05-10T12:00:00.000Z',
+      },
+    ];
+    let attempts = 0;
+
+    const supabase = {
+      from: (table: string) => {
+        if (table === TABLES.SUPPORT_CASE_INTAKE) {
+          return {
+            select: (_columns: string) => ({
+              eq: (_col1: string, _val1: string) => ({
+                eq: (_col2: string, _val2: string) => ({
+                  eq: async (_col3: string, _val3: boolean) => {
+                    attempts += 1;
+                    if (attempts === 1) {
+                      return {
+                        data: null,
+                        error: {
+                          message:
+                            'column support_case_intake.requires_merchant_review does not exist',
+                        },
+                      };
+                    }
+                    return { data: rows, error: null };
+                  },
+                }),
+              }),
+            }),
+          };
+        }
+
+        if (table === TABLES.CUSTOMER_CLAIM_SUMMARY) {
+          return {
+            upsert: (_payload: Record<string, unknown>) => ({
+              select: () => ({
+                single: async () => ({ error: null }),
+              }),
+            }),
+          };
+        }
+
+        throw new Error(`unexpected table: ${table}`);
+      },
+    };
+
+    const result = await recomputeCustomerClaimSummary(supabase, {
+      merchantId: MERCHANT_A,
+      emailHash: hashSupportEmail('compat-sql@example.com'),
+      knownOrderCount: 2,
+    });
+
+    expect(attempts).toBe(2);
+    expect(result?.total_claims).toBe(1);
   });
 });

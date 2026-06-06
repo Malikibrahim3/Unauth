@@ -41,6 +41,8 @@ export type AuditAction =
   | 'update_gorgias_support_connection'
   | 'rotate_gorgias_webhook_secret'
   | 'disable_gorgias_support_connection'
+  | 'create_zendesk_support_connection'
+  | 'update_zendesk_support_connection'
   | 'create_freshdesk_support_connection'
   | 'update_freshdesk_support_connection'
   | 'rotate_freshdesk_webhook_secret'

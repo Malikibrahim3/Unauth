@@ -62,7 +62,7 @@ export async function backfillZendeskSupportCases(input: {
   let reachedCutoff = false;
 
   while (nextPage && ticketsListed < MAX_TICKETS_PER_RUN && !reachedCutoff) {
-    const page = await zendeskApiRequest<ZendeskSearchResponse>(
+    const page: ZendeskSearchResponse = await zendeskApiRequest<ZendeskSearchResponse>(
       access.providerBaseUrl,
       nextPage,
       access.credentials,
@@ -124,7 +124,7 @@ export async function backfillZendeskSupportCases(input: {
       break;
     }
 
-    const next = page.next_page;
+    const next: string | null | undefined = page.next_page;
     if (!next || typeof next !== 'string') {
       break;
     }
