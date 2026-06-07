@@ -69,8 +69,8 @@ export default async function ChargebacksPage() {
 
   return (
     <ChargebacksPageWorkbench
-      title="Evidence packages"
-      subtitle="Chargeback evidence packs and CE 3.0 readiness checks — where required data exists in your records."
+      title="Evidence & Defence"
+      subtitle="Generate evidence packages for dispute escalations. CE 3.0 readiness is checked automatically where data exists."
       navItems={WORKBENCH_NAV_ITEMS}
       actions={
         <ButtonLink href="/customers" variant="secondary" size="sm">View customers</ButtonLink>

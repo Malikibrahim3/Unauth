@@ -11,7 +11,7 @@ import {
   resolveMerchantSetupState,
   shouldFullGate,
   setupStateHasUsefulData,
-} from '@/lib/connections/getMerchantSetupState';
+} from '@/lib/connections/setupState';
 
 function connection(over: Partial<ConnectionState>): ConnectionState {
   const orderSourceConnected = over.orderSourceConnected ?? over.shopify ?? false;

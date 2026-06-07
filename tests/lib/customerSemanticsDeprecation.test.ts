@@ -45,13 +45,13 @@ describe('customer semantics deprecation', () => {
     expect(content).not.toMatch(/from\s*\(\s*TABLES\.WATCHLIST_ENTRIES/);
   });
 
-  it('widget JSON always uses data-safety copy for legacy watchlisted field', () => {
+  it('widget JSON uses trust signal helper for legacy watchlisted field', () => {
     const content = fs.readFileSync(
       path.join(process.cwd(), 'lib/gorgias/widgetJson.ts'),
       'utf-8',
     );
-    expect(content).toContain('DATA_SAFETY_NOTE');
-    expect(content).toMatch(/watchlisted:\s*DATA_SAFETY_NOTE/);
+    expect(content).toContain('computeWidgetTrustSummary');
+    expect(content).toMatch(/watchlisted:\s*computeWidgetTrustSummary/);
     expect(content).toContain('deprecated');
   });
 

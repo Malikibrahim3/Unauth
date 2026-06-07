@@ -8,7 +8,7 @@ import { appendClaimEvent } from '@/lib/claims/events';
 import { claimStatusForOutcome } from '@/lib/claims/statusMachine';
 
 const reverseBodySchema = z.object({
-  decision: z.enum(['approved', 'denied', 'escalated', 'partial_refund', 'full_refund', 'chargeback_disputed', 'blacklist', 'no_action']),
+  decision: z.enum(['approved', 'denied', 'escalated', 'partial_refund', 'full_refund', 'chargeback_disputed', 'blacklist', 'internal_watch', 'no_action']),
   outcome: z.enum(['loss', 'recovered', 'pending', 'chargeback_won', 'chargeback_lost', 'customer_verified', 'suspected_fraud', 'legitimate']),
   note: z.string().trim().min(3),
   amount_refunded: z.number().finite().nullable().optional(),

@@ -7,6 +7,7 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   globalSetup: require.resolve('./light-auth-setup'),
+  globalTeardown: require.resolve('./light-auth-teardown'),
   use: {
     baseURL: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
     storageState: path.join(__dirname, '.auth/user.json'),

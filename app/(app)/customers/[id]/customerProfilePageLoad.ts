@@ -36,6 +36,8 @@ export type CustomerProfileSearchParams = {
   view_token?: string;
   buildEvidence?: string;
   disputedOrder?: string;
+  source?: string;
+  ticket_id?: string;
 };
 
 export type CustomerProfilePageParams = { id: string };
@@ -111,6 +113,8 @@ export type CustomerProfilePageViewProps = {
   connectionState: ConnectionState;
   auditRunId: string | null;
   viewToken: string;
+  gorgiasSource: string | null;
+  gorgiasTicketId: string | null;
   profile: CustomerProfileDisplay;
   displayName: string;
   profileGrade: ConfidenceGradeValue;
@@ -218,6 +222,8 @@ export async function loadCustomerProfilePage(
 ): Promise<CustomerProfileLoadResult> {
   const viewToken = searchParams.view_token?.trim() ?? '';
   const auditRunId = searchParams.audit ?? null;
+  const gorgiasSource = searchParams.source?.trim() === 'gorgias' ? 'gorgias' : null;
+  const gorgiasTicketId = searchParams.ticket_id?.trim() || null;
 
   const svc = createServiceClient();
   let merchantId = '';
@@ -481,6 +487,8 @@ export async function loadCustomerProfilePage(
     connectionState: connectionState as ConnectionState,
     auditRunId,
     viewToken,
+    gorgiasSource,
+    gorgiasTicketId,
     profile,
     displayName,
     profileGrade,

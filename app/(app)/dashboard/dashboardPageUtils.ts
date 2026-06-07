@@ -57,13 +57,13 @@ export function buildConfig(state: MerchantSetupState, connection: ConnectionSta
   switch (state) {
     case 'shopify_only_with_data':
       return {
-        subtitle: 'Shopify orders and customers are syncing. Add your helpdesk to complete claim context.',
-        primaryCta: { label: 'Connect helpdesk', href: integrations },
+        subtitle: 'Shopify orders are syncing. Connect Gorgias to add claim context to your tickets.',
+        primaryCta: { label: 'Connect Gorgias', href: integrations },
         secondaryCta: undefined,
         banner: {
           tone: 'incomplete',
-          title: 'Shopify is connected. Connect your helpdesk to finish setup.',
-          body: 'Connect your helpdesk to add claim history and dispute context. Until then, claim and dispute metrics will read as incomplete — not zero.',
+          title: 'Shopify connected — add Gorgias to activate claim intelligence',
+          body: 'Connect Gorgias so your agents see claim context inside every support ticket. Claim metrics will show as incomplete until Gorgias is connected.',
         },
       };
     case 'helpdesk_only_with_data':
@@ -102,7 +102,7 @@ export function buildConfig(state: MerchantSetupState, connection: ConnectionSta
     case 'fully_connected_with_data':
     default:
       return {
-        subtitle: 'Live fraud intelligence across your Shopify orders and helpdesk claims.',
+        subtitle: 'Claim intelligence across your Shopify orders and Gorgias tickets.',
         primaryCta: connection.bothConnected
           ? { label: 'Review queue', href: '/customers?risk=high&status=new' }
           : { label: 'Complete setup', href: integrations },
@@ -155,7 +155,7 @@ export function buildKpis(
   const evidence: Kpi = {
     label: 'Evidence ready',
     value: fmt(metrics.totalPackages),
-    hint: 'CE 3.0 readiness where data exists',
+    hint: 'For dispute documentation',
     icon: ShieldCheck,
   };
   const reviewQueue: Kpi = {

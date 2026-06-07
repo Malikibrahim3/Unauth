@@ -11,12 +11,12 @@ export function UpgradeCard({ entitlement }: { entitlement: Entitlement }) {
         {getFeatureAccessLabel(entitlement)}
       </p>
       <h3 className="text-heading-sm" style={{ color: 'var(--text)' }}>
-        Upgrade to unlock {meta.label}
+        {meta.label}
       </h3>
       <p className="text-body-sm" style={{ color: 'var(--text-muted)' }}>
         {meta.availability === 'future'
-          ? 'This capability is on the roadmap and is not available yet.'
-          : 'Contact us to add this capability to your plan. Billing and checkout are not wired in this environment.'}
+          ? 'This is on the product roadmap and is not yet available. Contact us if you\'d like early access.'
+          : 'Available on a higher plan. Upgrade from billing settings or contact hello@unauth.co.'}
       </p>
     </div>
   );

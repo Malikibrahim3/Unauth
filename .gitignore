@@ -11,6 +11,7 @@ node_modules/
 build/
 .turbo/
 tests/.test-credentials.json
+tests/support/.auth/
 tests/reports/
 tests/utils/csv-fixtures/
 synthetic-lab/outputs/

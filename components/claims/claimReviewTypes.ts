@@ -15,6 +15,7 @@ export type Decision =
   | 'full_refund'
   | 'chargeback_disputed'
   | 'blacklist'
+  | 'internal_watch'
   | 'no_action';
 
 export type Outcome =

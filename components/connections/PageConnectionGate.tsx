@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Plug } from 'lucide-react';
 import type { ConnectionState } from '@/lib/connections/getConnectionState';
-import { type MerchantSetupState, shouldFullGate } from '@/lib/connections/getMerchantSetupState';
+import { type MerchantSetupState, shouldFullGate } from '@/lib/connections/setupState';
 import { ConnectionPromptStrip } from './ConnectionPromptStrip';
 
 type Requires = 'both' | 'shopify' | 'helpdesk';
@@ -48,13 +48,13 @@ function GatePanel({ missing, pageName, pageDescription }: {
   const isDangerous = missing === 'helpdesk';
 
   const headline = isDangerous
-    ? `Shopify is connected — add your helpdesk to see ${pageName}`
-    : `Connect Shopify and your helpdesk to use ${pageName}`;
+    ? `Shopify is connected — connect Gorgias to activate claim intelligence`
+    : `Connect Shopify + Gorgias to use ${pageName}`;
 
   const body = pageDescription ?? (
     isDangerous
-      ? `Your orders are syncing from Shopify, but claim data comes from your helpdesk. Without it, ${pageName.toLowerCase()} shows order patterns with no claim history — an incomplete picture you can't act on.`
-      : `${pageName} requires both Shopify and a helpdesk (Gorgias or Zendesk). Shopify gives order data; your helpdesk gives claim history. One without the other is incomplete.`
+      ? `Connect Gorgias so your agents see claim context — order history, prior claims, and trust indicators — inside every support ticket.`
+      : `${pageName} requires Shopify for order data and Gorgias for claim history. Both are required to activate claim intelligence.`
   );
 
   return (
@@ -89,10 +89,10 @@ function GatePanel({ missing, pageName, pageDescription }: {
         </div>
 
         <Link
-          href="/settings/integrations"
+          href={isDangerous ? '/settings/integrations/gorgias' : '/settings/integrations'}
           className="btn-accent inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition-opacity hover:opacity-90"
         >
-          {isDangerous ? 'Connect your helpdesk' : 'Connect Shopify and your helpdesk'}
+          {isDangerous ? 'Connect Gorgias' : 'Set up Shopify + Gorgias'}
         </Link>
       </div>
     </div>

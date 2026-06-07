@@ -2,16 +2,22 @@ import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
 
-const PROFILE_ID = '6ac24686-2fd4-4a27-9eb3-cb1751a9548c';
-const VIEW_TOKEN_PATH = path.join(__dirname, '.profile-view-token.json');
+const VIEW_TOKEN_PATH = path.join(__dirname, '.auth/profile-view-token.json');
 
-function profilePageUrl(profileId: string): string {
+type ProfileViewTokenState = {
+  profileId: string;
+  viewToken: string;
+};
+
+function readProfileViewTokenState(): ProfileViewTokenState {
   if (!fs.existsSync(VIEW_TOKEN_PATH)) {
-    return `/customers/${profileId}`;
+    throw new Error(`Missing support profile view token at ${VIEW_TOKEN_PATH}`);
   }
-  const { viewToken } = JSON.parse(fs.readFileSync(VIEW_TOKEN_PATH, 'utf8')) as {
-    viewToken: string;
-  };
+  return JSON.parse(fs.readFileSync(VIEW_TOKEN_PATH, 'utf8')) as ProfileViewTokenState;
+}
+
+function profilePageUrl(): string {
+  const { profileId, viewToken } = readProfileViewTokenState();
   return `/customers/${profileId}?view_token=${encodeURIComponent(viewToken)}`;
 }
 const CLAIM_ID = '63f5f1ec-e96c-41b7-a759-cb4c253da644';
@@ -36,7 +42,9 @@ const linkedSupportCase = {
 
 test.describe('Support case linking UI', () => {
   test('customer profile shows Support cases section without raw email', async ({ page }) => {
-    await page.route(`**/api/customers/${PROFILE_ID}/support-cases`, async (route) => {
+    const { profileId } = readProfileViewTokenState();
+
+    await page.route(`**/api/customers/${profileId}/support-cases`, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -44,7 +52,7 @@ test.describe('Support case linking UI', () => {
       });
     });
 
-    await page.goto(profilePageUrl(PROFILE_ID), { waitUntil: 'networkidle' });
+    await page.goto(profilePageUrl(), { waitUntil: 'domcontentloaded' });
 
     await expect(page.getByText('Support cases', { exact: true })).toBeVisible();
     await expect(
@@ -61,6 +69,8 @@ test.describe('Support case linking UI', () => {
   });
 
   test('claim review shows Support ticket context when available', async ({ page }) => {
+    const { profileId } = readProfileViewTokenState();
+
     await page.route(`**/api/claims/${CLAIM_ID}/support-context`, async (route) => {
       await route.fulfill({
         status: 200,
@@ -69,7 +79,7 @@ test.describe('Support case linking UI', () => {
       });
     });
 
-    await page.route(`**/api/customers/${PROFILE_ID}**`, async (route) => {
+    await page.route(`**/api/customers/${profileId}**`, async (route) => {
       if (route.request().url().includes('/support-cases')) {
         return route.continue();
       }
@@ -77,7 +87,7 @@ test.describe('Support case linking UI', () => {
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
-          profile: { id: PROFILE_ID, primary_email: null, risk_score: 10, risk_level: 'low' },
+          profile: { id: profileId, primary_email: null, risk_score: 10, risk_level: 'low' },
           orderHistory: [],
           linkedAccounts: [],
         }),
@@ -104,12 +114,12 @@ test.describe('Support case linking UI', () => {
       });
     });
 
-    await page.route(`**/api/customers/${PROFILE_ID}/shopify-orders`, async (route) => {
+    await page.route(`**/api/customers/${profileId}/shopify-orders`, async (route) => {
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ orders: [] }) });
     });
 
-    await page.goto(`/customers/${PROFILE_ID}/claims?claimId=${CLAIM_ID}`, {
-      waitUntil: 'networkidle',
+    await page.goto(`/customers/${profileId}/claims?claimId=${CLAIM_ID}`, {
+      waitUntil: 'domcontentloaded',
     });
 
     await expect(page.getByText('Support ticket context')).toBeVisible({ timeout: 15000 });

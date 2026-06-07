@@ -34,3 +34,8 @@ export type ConnectionStatus = {
   zendesk: ZendeskHelpdeskConnectionState;
   freshdesk: ConnectionState;
 };
+
+export type IntegrationsSetupStatus = ConnectionStatus & {
+  woocommerce: ConnectionState;
+  bigcommerce: ConnectionState;
+};

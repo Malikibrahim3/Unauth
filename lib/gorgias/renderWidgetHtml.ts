@@ -133,18 +133,16 @@ export function renderGorgiasWidgetHtml(ctx: ClaimWidgetRenderContext): string {
           : '';
     const inner = `
       ${usageBanner}
-      <div class="grade">${escapeHtml(json.identity)}</div>
+      <div class="grade">—</div>
       <table class="cmp">
         <tbody>
-          <tr><th>${escapeHtml(rowLabels.claims)}</th><td>${escapeHtml(json.claims)}</td></tr>
-          <tr><th>${escapeHtml(rowLabels.orders)}</th><td>${escapeHtml(json.orders)}</td></tr>
-          <tr><th>${escapeHtml(rowLabels.claim_rate)}</th><td>${escapeHtml(json.claim_rate)}</td></tr>
-          <tr><th>${escapeHtml(rowLabels.primary_reason)}</th><td>${escapeHtml(json.primary_reason)}</td></tr>
-          <tr><th>${escapeHtml(rowLabels.recent_activity)}</th><td>${escapeHtml(json.recent_activity)}</td></tr>
+          <tr><th>${escapeHtml(rowLabels.claims)}</th><td>—</td></tr>
+          <tr><th>${escapeHtml(rowLabels.orders)}</th><td>—</td></tr>
+          <tr><th>${escapeHtml(rowLabels.claim_rate)}</th><td>—</td></tr>
+          <tr><th>${escapeHtml(rowLabels.primary_reason)}</th><td>—</td></tr>
+          <tr><th>${escapeHtml(rowLabels.recent_activity)}</th><td>—</td></tr>
         </tbody>
       </table>
-      ${json.ce3_evidence && json.ce3_evidence !== '—' ? `<div class="ce3"><strong>${escapeHtml(rowLabels.ce3_evidence)}</strong> ${escapeHtml(json.ce3_evidence)}</div>` : ''}
-      ${json.watchlisted ? `<div class="watchlist"><strong>${escapeHtml(rowLabels.watchlisted)}</strong> ${escapeHtml(json.watchlisted)}</div>` : ''}
       ${ctaUrl ? `<a class="cta" href="${escapeHtml(ctaUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(ctaLabel)}</a>` : ''}
     `;
     return page(inner);

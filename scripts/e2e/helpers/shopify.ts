@@ -10,8 +10,16 @@ function adminBaseUrl(): string {
   return `https://${shopifyStoreDomain()}/admin/api/${API_VERSION}`;
 }
 
+function adminUrl(path: string): string {
+  const normalized = path.startsWith('/') ? path : `/${path}`;
+  if (normalized.startsWith('/oauth/')) {
+    return `https://${shopifyStoreDomain()}/admin${normalized}`;
+  }
+  return `${adminBaseUrl()}${normalized}`;
+}
+
 async function shopifyRequest<T>(method: string, path: string, body?: unknown): Promise<T> {
-  const url = `${adminBaseUrl()}${path.startsWith('/') ? path : `/${path}`}`;
+  const url = adminUrl(path);
   const res = await fetch(url, {
     method,
     headers: {

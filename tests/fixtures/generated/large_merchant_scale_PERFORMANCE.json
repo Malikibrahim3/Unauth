@@ -1,6 +1,6 @@
 {
   "dataset": "large_merchant_scale",
   "rows": 5400,
-  "durationMs": 2349,
-  "rowsPerSecond": 2299
+  "durationMs": 1249,
+  "rowsPerSecond": 4323
 }

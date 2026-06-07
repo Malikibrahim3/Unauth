@@ -60,7 +60,7 @@ describe('renderGorgiasWidgetHtml', () => {
     });
 
     expect(html).toContain('Unauth claim context');
-    expect(html).toContain('Store Check');
+    expect(html).toContain('Claim history');
     expect(html).not.toMatch(/\b9\b.*orders/i);
     expect(html).not.toContain('DEFINITE');
     expect(html).not.toContain('Item not received');

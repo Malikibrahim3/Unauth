@@ -93,7 +93,7 @@ export function DashboardPageCockpit(props: DashboardPageCockpitProps) {
       {/* Header */}
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="t-heading" style={{ color: 'var(--ink-primary)' }}>Dashboard</h1>
+          <h1 className="t-heading" style={{ color: 'var(--ink-primary)' }}>Claim overview</h1>
           <p className="text-body-sm mt-1" style={{ color: 'var(--ink-secondary)' }}>{config.subtitle}</p>
         </div>
         <div className="flex items-center gap-2">
@@ -176,9 +176,9 @@ export function DashboardPageCockpit(props: DashboardPageCockpitProps) {
             <div className="flex items-center gap-2">
               <Inbox className="h-4 w-4" style={{ color: 'var(--ink-tertiary)' }} />
               <div>
-                <p className="text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Attention queue</p>
+                <p className="text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Claims for review</p>
                 <p className="text-caption" style={{ color: 'var(--text-subtle)' }}>
-                  Customers with linked identities or claim history worth a look
+                  Customers with prior claims or repeat patterns from your Gorgias tickets
                 </p>
               </div>
             </div>
@@ -265,16 +265,16 @@ export function DashboardPageCockpit(props: DashboardPageCockpitProps) {
             )}
           </ModuleCard>
 
-          <ModuleCard title="Evidence ready" href="/chargebacks" linkLabel="View all" icon={ShieldCheck}>
+          <ModuleCard title="Evidence & defence" href="/chargebacks" linkLabel="View packages" icon={ShieldCheck}>
             <p className="num font-semibold" style={{ fontSize: 22, color: 'var(--data-score)' }}>
               {totalPackages.toLocaleString()}
             </p>
             <p className="text-caption mt-1" style={{ color: 'var(--text-muted)' }}>
               {totalPackages === 0
-                ? 'Generate an evidence package from a customer profile when a dispute needs documentation.'
+                ? 'When a claim escalates to a dispute, generate an evidence package from the customer profile.'
                 : priorMatchPackages > 0
-                  ? `${priorMatchPackages} include a prior identity match — strongest for disputes.`
-                  : 'Export packaged identity evidence for dispute review.'}
+                  ? `${priorMatchPackages} include a prior identity match — strongest for dispute documentation.`
+                  : 'Evidence packages ready for dispute documentation.'}
             </p>
           </ModuleCard>
 

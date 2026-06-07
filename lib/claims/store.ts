@@ -12,7 +12,7 @@ const detectionMethodSchema = z.enum([
   'bigcommerce_refund',
 ]);
 const refundTypeSchema = z.enum(['full', 'partial', 'unknown']);
-const outcomeDecisionSchema = z.enum(['approved', 'denied', 'escalated', 'partial_refund', 'full_refund', 'chargeback_disputed', 'blacklist', 'no_action']);
+const outcomeDecisionSchema = z.enum(['approved', 'denied', 'escalated', 'partial_refund', 'full_refund', 'chargeback_disputed', 'blacklist', 'internal_watch', 'no_action']);
 const outcomeSchema = z.enum(['loss', 'recovered', 'pending', 'chargeback_won', 'chargeback_lost', 'customer_verified', 'suspected_fraud', 'legitimate']);
 const evidenceTypeSchema = z.enum(['tracking', 'proof_of_delivery', 'customer_message', 'support_ticket', 'return_label', 'warehouse_scan', 'payment_dispute', 'note', 'other']);
 const evidenceSourceSchema = z.enum(['manual', 'csv_import', 'zendesk', 'gorgias', 'shopify', 'stripe', 'paypal', 'carrier']);

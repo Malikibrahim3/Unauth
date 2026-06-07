@@ -36,6 +36,8 @@ export function CustomerProfilePageView(props: CustomerProfilePageViewProps) {
     connectionState,
     auditRunId,
     viewToken,
+    gorgiasSource,
+    gorgiasTicketId,
     profile,
     displayName,
     profileGrade,
@@ -93,6 +95,8 @@ export function CustomerProfilePageView(props: CustomerProfilePageViewProps) {
         density={density}
         primaryIdentifier={primaryIdentifier}
         identitySignalRows={identitySignalRows}
+        gorgiasSource={gorgiasSource}
+        gorgiasTicketId={gorgiasTicketId}
       />
 
       {/*

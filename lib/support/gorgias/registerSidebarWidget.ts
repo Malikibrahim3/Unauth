@@ -123,13 +123,13 @@ export const GORGIAS_SIDEBAR_CARD_TITLE = 'Unauth claim context';
 /** Row labels in buildGorgiasSidebarWidgetTemplate (must align with widget JSON field paths). */
 export const GORGIAS_SIDEBAR_ROW_LABELS = {
   identity: 'Case context',
-  claims: 'Store Check',
-  orders: 'Network Check',
-  claim_rate: 'Case Report',
-  primary_reason: 'Store context',
-  recent_activity: 'Network context',
-  ce3_evidence: 'Review note',
-  watchlisted: 'Data safety',
+  claims: 'Claim history',
+  orders: 'Orders',
+  claim_rate: 'Claim rate',
+  primary_reason: 'Primary reason',
+  recent_activity: 'Recent activity',
+  ce3_evidence: 'Network & evidence',
+  watchlisted: 'Review context',
 } as const;
 
 export function buildGorgiasSidebarWidgetTemplate(appBaseUrl: string) {
@@ -315,7 +315,7 @@ export async function registerGorgiasSidebarWidget(input: {
       method: 'POST',
       body: JSON.stringify({
         name: GORGIAS_SIDEBAR_CARD_TITLE,
-        description: 'Unauth case context for Gorgias support tickets (credit unlock)',
+        description: 'Unauth claim context for Gorgias support tickets',
         type: 'http',
         http: {
           url: widgetUrl,

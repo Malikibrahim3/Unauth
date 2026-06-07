@@ -60,7 +60,7 @@ export default function BillingSettingsClient() {
     const topup = searchParams.get('topup');
     const action = searchParams.get('action');
     if (checkout === 'success') showToast('Subscription updated successfully.');
-    if (topup === 'success') showToast(`${TOP_UP_CREDITS} credits added. Network checks restored.`);
+    if (topup === 'success') showToast(`${TOP_UP_CREDITS} network credits added. Full access restored.`);
     if (action === 'topup') void runAction('topup');
   }, [searchParams, showToast]);
 
@@ -128,7 +128,7 @@ export default function BillingSettingsClient() {
           style={{ borderColor: 'var(--risk-high)', background: 'var(--surface-raised)' }}
           role="alert"
         >
-          Your payment failed. Update billing to restore full access. Store Checks are still available.{' '}
+          Your payment failed. Update billing to restore full access. Basic claim context remains available.{' '}
           {state.gracePeriodDaysRemaining != null && (
             <span>Access restores in {state.gracePeriodDaysRemaining} days if unpaid.</span>
           )}{' '}
@@ -191,7 +191,7 @@ export default function BillingSettingsClient() {
       </section>
 
       <section className="rounded-lg border p-5" style={{ borderColor: 'var(--surface-border)' }}>
-        <h2 className="text-sm font-semibold text-[var(--ink-primary)]">Credits this cycle</h2>
+        <h2 className="text-sm font-semibold text-[var(--ink-primary)]">Network credits this cycle</h2>
         <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
           <div>
             <p className="text-[var(--ink-tertiary)]">Monthly remaining</p>

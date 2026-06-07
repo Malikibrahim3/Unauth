@@ -541,11 +541,11 @@ describe('assembleClaimWidgetData', () => {
     expect(result.data.thisStore.claimRate).toBe(0.14);
     expect(result.data.thisStore.ordersCountSource).toBe('shopify_identities');
 
-    const payload = claimWidgetToJson(result, undefined, { allowDetailedPreview: true });
+    const payload = claimWidgetToJson(result, undefined);
     expect(payload.orders).toBe('7 linked orders here · No cross-store history found');
     expect(payload.claim_rate).toBe('14% this store');
     expect(payload.primary_reason).toBe('Item not received · 100%');
-    expect(payload.recent_activity).toBe('1 claim in last 90 days');
+    expect(payload.recent_activity).toBe('1 claim in last 90 days · Item not received');
   });
 
   it('uses audit transaction stats when claim summary and Shopify rows are missing', () => {
@@ -653,7 +653,7 @@ describe('claimWidgetToJson', () => {
   }
 
   it('renders network claim rate as a whole percentage and dominant reason', () => {
-    const payload = claimWidgetToJson(okResult(), undefined, { allowDetailedPreview: true });
+    const payload = claimWidgetToJson(okResult(), undefined, { showNetworkIntelligence: true });
     expect(payload.claim_rate).toBe('100% this store · 75% network');
     expect(payload.primary_reason).toBe('Item not received · 100%');
     expect(payload.recent_activity).toBe('2 claims in last 90 days');
@@ -688,23 +688,22 @@ describe('claimWidgetToJson', () => {
     expect(payload.recent_activity).toBe('—');
   });
 
-  it('shows credit-gated copy for not_found by default', () => {
+  it('shows factual context for not_found (no credit-gated copy)', () => {
     const payload = claimWidgetToJson({ ok: false, kind: 'not_found' });
-    expect(payload.identity).toBe('Context available for this ticket');
-    expect(payload.orders).toContain('2 credits');
+    expect(payload.identity).toBe('No prior record at your store');
+    expect(payload.orders).toBe('No orders synced yet');
     for (const value of Object.values(payload)) {
       expect(typeof value).toBe('string');
       expect(value).not.toContain('undefined');
     }
   });
 
-  it('shows legacy not_found copy only in diagnostic preview mode', () => {
+  it('not_found shows consistent message regardless of options', () => {
     const payload = claimWidgetToJson(
       { ok: false, kind: 'not_found' },
       undefined,
-      { allowDetailedPreview: true },
     );
-    expect(payload.orders).toBe('Not seen at any store yet');
+    expect(payload.orders).toBe('No orders synced yet');
     expect(payload.claim_rate).toBe('—');
   });
 });
@@ -717,16 +716,15 @@ describe('buildGorgiasSidebarWidgetTemplate', () => {
     const rowTitles = template.widgets[0].widgets.map((w: { title: string }) => w.title);
     expect(rowTitles).toEqual([
       'Case context',
-      'Store Check',
-      'Network Check',
-      'Case Report',
-      'Store context',
-      'Network context',
-      'Review note',
-      'Data safety',
+      'Claim history',
+      'Orders',
+      'Claim rate',
+      'Primary reason',
+      'Recent activity',
+      'Network & evidence',
+      'Review context',
     ]);
     expect(json).not.toContain('Claims on record');
-    expect(json).not.toContain('Claim rate');
     expect(json).not.toContain('Identity Intelligence');
     expect(template.widgets[0].meta.custom.links[0]).toEqual({
       url: '{{basic_unlock_url}}',

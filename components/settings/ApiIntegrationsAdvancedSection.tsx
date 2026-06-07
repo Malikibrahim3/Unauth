@@ -131,9 +131,9 @@ export default function ApiIntegrationsAdvancedSection() {
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Advanced</h2>
+        <h2 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Advanced &amp; optional</h2>
         <p className="mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>
-          Browser tooling and API keys for custom integrations. Optional - not required for core monitoring.
+          Browser tooling and API keys for custom integrations. Not required for the core Shopify + Gorgias workflow.
         </p>
       </div>
 

@@ -127,10 +127,9 @@ describe('findMerchantCustomerByEmail', () => {
     const json = claimWidgetToJson(
       { ok: false, kind: 'not_found' },
       undefined,
-      { allowDetailedPreview: true },
     );
 
-    expect(json.orders).toBe('Not seen at any store yet');
+    expect(json.orders).toBe('No orders synced yet');
     expect(json.claim_rate).toBe('—');
     expect(json.primary_reason).toBe('—');
     expect(json.recent_activity).toBe('—');

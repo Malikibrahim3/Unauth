@@ -29,8 +29,8 @@ const OK_RESULT = {
 };
 
 describe('claimWidgetToJson', () => {
-  it('formats unlocked merchant context into comparison rows', () => {
-    const payload = claimWidgetToJson(OK_RESULT, undefined, { allowDetailedPreview: true });
+  it('formats full network context when showNetworkIntelligence is enabled', () => {
+    const payload = claimWidgetToJson(OK_RESULT, undefined, { showNetworkIntelligence: true });
 
     expect(payload.orders).toBe('3 orders here · 12 across 4 merchants');
     expect(payload.claim_rate).toBe('67% this store · 75% network');
@@ -45,29 +45,51 @@ describe('claimWidgetToJson', () => {
     }
   });
 
-  it('uses credit-gated preview by default in non-production', () => {
+  it('shows own-store data without network by default (free tier)', () => {
     const payload = claimWidgetToJson(OK_RESULT);
 
-    expect(payload.orders).toBe('View Network Check — 2 credits');
-    expect(payload.claim_rate).toBe('Generate Case Report — 3 credits');
-    expect(payload.identity).toBe('Context available for this ticket');
+    expect(payload.orders).toBe('3 orders here · No network history found');
+    expect(payload.claim_rate).toBe('67% this store');
+    expect(payload.identity).toContain('DEFINITE');
+    expect(payload.claims).toContain('your store');
+    for (const [key, value] of Object.entries(payload)) {
+      expect(typeof value).toBe('string');
+    }
   });
 
-  it('not_found renders a factual fallback when detailed preview is allowed', () => {
-    const payload = claimWidgetToJson({ ok: false, kind: 'not_found' }, undefined, {
-      allowDetailedPreview: true,
-    });
+  it('trust summary for repeat-claim customer includes last claim timing', () => {
+    // OK_RESULT: claimRate=0.67, claimCount=2 → additional_review; lastClaimAt='2026-05-01'
+    const payload = claimWidgetToJson(OK_RESULT);
+    expect(payload.watchlisted).toContain('Additional review recommended');
+    expect(payload.watchlisted).toMatch(/last .+ ago/);
+  });
 
-    expect(payload.orders).toBe('Not seen at any store yet');
+  it('recent_activity includes claim type for single recent store claim', () => {
+    const result = {
+      ...OK_RESULT,
+      data: {
+        ...OK_RESULT.data,
+        storeRecentClaimCount: 1,
+        storePrimaryReason: { type: 'dominant' as const, label: 'Item not received', percentage: 75 },
+      },
+    };
+    // showNetworkIntelligence disabled → own-store recent_activity
+    const payload = claimWidgetToJson(result);
+    expect(payload.recent_activity).toContain('Item not received');
+    expect(payload.recent_activity).toContain('1 claim in last 90 days');
+  });
+
+  it('not_found renders a factual fallback', () => {
+    const payload = claimWidgetToJson({ ok: false, kind: 'not_found' });
+
+    expect(payload.orders).toBe('No orders synced yet');
     expect(payload.claim_rate).toBe('—');
     expect(payload.primary_reason).toBe('—');
     expect(payload.recent_activity).toBe('—');
   });
 
   it('never returns null fields for current widget payloads', () => {
-    const payload = claimWidgetToJson({ ok: false, kind: 'not_found' }, undefined, {
-      allowDetailedPreview: true,
-    });
+    const payload = claimWidgetToJson({ ok: false, kind: 'not_found' });
     expect(Object.values(payload).every((v) => typeof v === 'string')).toBe(true);
   });
 });

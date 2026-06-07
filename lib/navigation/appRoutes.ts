@@ -127,13 +127,13 @@ export const APP_ROUTES = {
     label: 'Evidence packages',
     pageTitle: 'Evidence packages',
     permission: PERMISSIONS.VIEW_CHARGEBACKS,
-    tier: 'free',
+    tier: 'growth',
     tierLabel: 'Evidence',
     icon: ShieldCheck,
-    sidebar: true,
+    sidebar: false,
     workbench: true,
     commandPalette: true,
-    commandDescription: 'Download chargeback evidence',
+    commandDescription: 'Evidence packages for dispute documentation',
   },
   reports: {
     key: 'reports',
@@ -153,7 +153,7 @@ export const APP_ROUTES = {
     pageTitle: 'Historical import',
     permission: PERMISSIONS.UPLOAD_CSV,
     icon: Upload,
-    sidebar: true,
+    sidebar: false,
     commandPalette: true,
     commandDescription: 'Import a CSV for historical backfill',
   },
@@ -164,10 +164,10 @@ export const APP_ROUTES = {
     pageTitle: 'Import history',
     permission: PERMISSIONS.VIEW_HISTORY,
     icon: ListChecks,
-    sidebar: true,
+    sidebar: false,
     workbench: true,
     commandPalette: true,
-    commandDescription: 'Past audit runs and results',
+    commandDescription: 'Past import runs and results',
   },
   settings: {
     key: 'settings',
@@ -195,10 +195,10 @@ export const APP_ROUTES = {
     tier: 'growth',
     tierLabel: 'Network',
     icon: GitBranch,
-    sidebar: true,
+    sidebar: false,
     workbench: false,
     commandPalette: true,
-    commandDescription: 'Cross-merchant identity network view',
+    commandDescription: 'Cross-merchant identity network (Growth+)',
   },
   lookup: {
     key: 'lookup',
@@ -217,25 +217,20 @@ export const APP_ROUTES = {
 /** Command palette shortcuts that are not primary nav routes. */
 export const COMMAND_PALETTE_FILTERS = [
   {
-    label: 'High-confidence matches',
-    description: 'Customers with elevated risk tier',
+    label: 'High claim-rate customers',
+    description: 'Customers with prior claim history for review',
     href: '/customers?risk=high',
   },
   {
-    label: 'New investigations',
-    description: 'Customers with status: new',
+    label: 'New for review',
+    description: 'Customers flagged and not yet actioned',
     href: '/customers?risk=high&status=new',
   },
 ] as const;
 
 export const SIDEBAR_NAV_GROUPS: Array<{ label: string; routeKeys: AppRouteKey[] }> = [
-  { label: 'Workspace', routeKeys: ['dashboard'] },
-  {
-    label: 'Review',
-    routeKeys: ['store', 'customers', 'claims', 'evidencePackages', 'reports'],
-  },
-  { label: 'Network', routeKeys: ['global'] },
-  { label: 'Backfill', routeKeys: ['upload', 'history'] },
+  { label: 'Overview', routeKeys: ['dashboard', 'store'] },
+  { label: 'Review', routeKeys: ['customers', 'claims', 'reports'] },
 ];
 
 export function getSidebarNavItems(): Array<{ label: string; items: AppRoute[] }> {
@@ -263,7 +258,7 @@ export function getCommandPaletteNavItems() {
   for (const r of Object.values(APP_ROUTES) as AppRoute[]) {
     if (!r.commandPalette) continue;
     items.push({
-      label: r.key === 'dashboard' ? 'Investigation dashboard' : r.label,
+      label: r.key === 'dashboard' ? 'Claim overview' : r.label,
       description: r.commandDescription ?? r.label,
       href: r.href,
     });

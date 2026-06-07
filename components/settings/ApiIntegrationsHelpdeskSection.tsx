@@ -5,21 +5,23 @@ import Link from 'next/link';
 import { Headphones, CheckCircle2, ArrowRight } from 'lucide-react';
 import { FeatureTierBadge } from '@/components/product/FeatureTierBadge';
 import { useAsyncResource } from '@/lib/react/useFetchJson';
-import type { ConnectionStatus, HelpdeskOption } from '@/components/settings/apiIntegrationsTypes';
+import type { HelpdeskOption } from '@/components/settings/apiIntegrationsTypes';
+import { fetchIntegrationConnectionStatus } from '@/components/settings/fetchIntegrationConnectionStatus';
 
-const HELPDESK_OPTIONS: HelpdeskOption[] = [
+const HELPDESK_OPTIONS: (HelpdeskOption & { recommended?: boolean })[] = [
   {
     id: 'gorgias',
     name: 'Gorgias',
-    description: 'Surface identity confidence and claims history inside your helpdesk sidebar',
+    description: 'Add claim context to every support ticket. Agents see order history, prior claims, and trust indicators without leaving Gorgias.',
     statusKey: 'gorgias',
     href: '/settings/integrations/gorgias',
     logo: '/integrations/gorgias.png',
+    recommended: true,
   },
   {
     id: 'zendesk',
     name: 'Zendesk',
-    description: 'Show identity matches and claims history while agents handle tickets',
+    description: 'Claim context in the Zendesk sidebar. For teams on Zendesk instead of Gorgias.',
     statusKey: 'zendesk',
     href: '/settings/integrations/zendesk',
     logo: '/integrations/zendesk.svg',
@@ -27,67 +29,15 @@ const HELPDESK_OPTIONS: HelpdeskOption[] = [
   {
     id: 'freshdesk',
     name: 'Freshdesk',
-    description: 'Sync support tickets for claim detection and dispute context',
+    description: 'Sync support tickets for claim detection. For teams on Freshdesk.',
     statusKey: 'freshdesk',
     href: '/settings/integrations/freshdesk',
     logo: '/integrations/freshdesk.svg',
   },
 ];
 
-async function fetchConnectionStatus(): Promise<ConnectionStatus> {
-  const [gRes, sRes, zRes, fRes] = await Promise.all([
-    fetch('/api/settings/gorgias/support-connection', { cache: 'no-store' }),
-    fetch('/api/shopify/status', { cache: 'no-store' }),
-    fetch('/api/settings/zendesk/connection', { cache: 'no-store' }),
-    fetch('/api/settings/freshdesk/support-connection', { cache: 'no-store' }),
-  ]);
-  const gBody = gRes.ok ? await gRes.json() : null;
-  const sBody = sRes.ok ? await sRes.json() : null;
-  const zBody = zRes.ok ? await zRes.json() : null;
-  const zLink = zBody?.link as
-    | {
-        state?: 'connected' | 'degraded' | 'disconnected';
-        helpdeskLinked?: boolean;
-        sidebarReady?: boolean;
-      }
-    | undefined;
-  const fBody = fRes.ok ? await fRes.json() : null;
-  const gConn = gBody?.connection ?? null;
-  const gLink = gBody?.link as
-    | {
-        state?: 'connected' | 'degraded' | 'disconnected';
-        helpdeskLinked?: boolean;
-        widgetReady?: boolean;
-      }
-    | undefined;
-  const fConn = fBody?.connection ?? null;
-  const gorgiasConnected = gLink?.helpdeskLinked ?? Boolean(gConn && gConn.status === 'active');
-  return {
-    gorgias: {
-      connected: gorgiasConnected,
-      widgetReady: gLink?.widgetReady ?? Boolean(gConn?.sidebar_widget_registered),
-      linkState: gLink?.state ?? (gorgiasConnected ? 'connected' : 'disconnected'),
-      detail: gConn?.provider_account_name ?? gConn?.provider_account_id ?? null,
-    },
-    shopify: {
-      connected: Boolean(sBody?.connected),
-      detail: sBody?.shopDomain ?? null,
-    },
-    zendesk: {
-      connected: zLink?.helpdeskLinked ?? Boolean(zBody?.connected),
-      sidebarReady: zLink?.sidebarReady ?? Boolean(zBody?.connection?.status === 'active'),
-      linkState: zLink?.state ?? (zBody?.connected ? 'connected' : 'disconnected'),
-      detail: zBody?.connection?.provider_account_id ?? null,
-    },
-    freshdesk: {
-      connected: Boolean(fConn && fConn.status === 'active'),
-      detail: fConn?.provider_account_name ?? fConn?.provider_account_id ?? null,
-    },
-  };
-}
-
 export default function ApiIntegrationsHelpdeskSection() {
-  const { data: connStatus } = useAsyncResource('api-integration-connections', fetchConnectionStatus);
+  const { data: connStatus } = useAsyncResource('integrations-setup-status', fetchIntegrationConnectionStatus);
 
   const statusKnown = connStatus !== null;
   const gorgiasConnected = Boolean(connStatus?.gorgias.connected);
@@ -111,7 +61,7 @@ export default function ApiIntegrationsHelpdeskSection() {
         <div className="flex flex-wrap items-center gap-2">
           <div>
             <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Helpdesk</p>
-            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Claims &amp; dispute context</p>
+            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Gorgias recommended · Zendesk and Freshdesk also supported</p>
           </div>
           <FeatureTierBadge entitlement="HELPDESK_WIDGET" />
         </div>
@@ -151,7 +101,7 @@ export default function ApiIntegrationsHelpdeskSection() {
         </div>
 
         <div className="space-y-2.5">
-          {HELPDESK_OPTIONS.map((item) => {
+          {HELPDESK_OPTIONS.map((item, idx) => {
             const providerState = connStatus ? connStatus[item.statusKey] : null;
             const connected = Boolean(providerState?.connected);
             const degraded =
@@ -165,97 +115,121 @@ export default function ApiIntegrationsHelpdeskSection() {
               'sidebarReady' in providerState &&
               providerState.sidebarReady &&
               !connected;
+            const isPrimary = idx === 0; // Gorgias
+            const showArrow = isPrimary && guideToHelpdesk && !connected;
             return (
-              <div
-                key={item.id}
-                className="flex gap-3 rounded-lg border p-3"
-                style={{
-                  borderColor:
-                    degraded || zendeskSidebarOnly
-                      ? 'color-mix(in srgb, var(--warning) 35%, var(--surface-border))'
-                      : connected
-                        ? 'var(--sev-clear, #2f6b43)'
-                        : 'var(--surface-border)',
-                  background:
-                    degraded || zendeskSidebarOnly
-                      ? 'color-mix(in srgb, var(--warning) 6%, var(--bg-surface))'
-                      : connected
-                        ? 'color-mix(in srgb, var(--sev-clear, #2f6b43) 4%, var(--bg-surface))'
-                        : 'var(--bg-surface)',
-                }}
-              >
-                <Image
-                  src={item.logo}
-                  alt=""
-                  width={28}
-                  height={28}
-                  className="h-7 w-7 shrink-0 rounded-md"
-                  style={{ objectFit: 'contain' }}
-                />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>{item.name}</p>
-                    {connected || zendeskSidebarOnly ? (
-                      <Link
-                        href={item.href}
-                        className="inline-flex shrink-0 items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium"
-                        style={{ borderColor: 'var(--surface-border)', color: 'var(--text-muted)' }}
-                      >
-                        Manage
-                      </Link>
-                    ) : (
-                      <Link
-                        href={item.href}
-                        className="inline-flex shrink-0 items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold"
-                        style={{ background: 'var(--accent)', color: 'var(--accent-fg, #fff)' }}
-                      >
-                        Connect
-                        {guideToHelpdesk ? <ArrowRight className="h-3 w-3" /> : null}
-                      </Link>
-                    )}
-                  </div>
-                  {statusKnown ? (
-                    <p className="mt-1 flex items-center gap-1.5 text-xs font-medium">
-                      <span
-                        aria-hidden
-                        className="inline-block h-1.5 w-1.5 shrink-0 rounded-full"
-                        style={{
-                          background:
-                            connected || zendeskSidebarOnly
-                              ? zendeskSidebarOnly
-                                ? 'var(--warning)'
-                                : 'var(--sev-clear, #2f6b43)'
-                              : 'transparent',
-                          border:
-                            connected || zendeskSidebarOnly ? 'none' : '1px solid var(--text-muted)',
-                        }}
-                      />
-                      <span
-                        style={{
-                          color:
-                            zendeskSidebarOnly || degraded
-                              ? 'var(--warning)'
-                              : connected
-                                ? 'var(--sev-clear, #2f6b43)'
-                                : 'var(--text-muted)',
-                        }}
-                      >
-                        {zendeskSidebarOnly
-                          ? 'Sidebar only — sync tickets'
-                          : degraded
-                            ? 'Connected — finish setup'
-                            : connected
-                              ? 'Connected'
-                              : 'Not connected'}
-                      </span>
-                      {connected && providerState?.detail ? (
-                        <span className="truncate" style={{ color: 'var(--text-muted)' }}>· {providerState.detail}</span>
-                      ) : null}
+              <div key={item.id}>
+                {/* Separator before secondary helpdesks */}
+                {idx === 1 && (
+                  <div className="flex items-center gap-2 pb-2 pt-1">
+                    <div className="h-px flex-1" style={{ background: 'var(--surface-border)' }} />
+                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                      Using Zendesk or Freshdesk instead?
                     </p>
-                  ) : null}
-                  <p className="mt-1 text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-                    {item.description}
-                  </p>
+                    <div className="h-px flex-1" style={{ background: 'var(--surface-border)' }} />
+                  </div>
+                )}
+                <div
+                  className="flex gap-3 rounded-lg border p-3"
+                  style={{
+                    borderColor:
+                      degraded || zendeskSidebarOnly
+                        ? 'color-mix(in srgb, var(--warning) 35%, var(--surface-border))'
+                        : connected
+                          ? 'var(--sev-clear, #2f6b43)'
+                          : 'var(--surface-border)',
+                    background:
+                      degraded || zendeskSidebarOnly
+                        ? 'color-mix(in srgb, var(--warning) 6%, var(--bg-surface))'
+                        : connected
+                          ? 'color-mix(in srgb, var(--sev-clear, #2f6b43) 4%, var(--bg-surface))'
+                          : 'var(--bg-surface)',
+                    opacity: !isPrimary && !connected && !zendeskSidebarOnly ? 0.75 : 1,
+                  }}
+                >
+                  <Image
+                    src={item.logo}
+                    alt=""
+                    width={28}
+                    height={28}
+                    className="h-7 w-7 shrink-0 rounded-md"
+                    style={{ objectFit: 'contain' }}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>{item.name}</p>
+                        {item.recommended && (
+                          <span
+                            className="inline-flex items-center rounded-full px-1.5 py-0.5 text-xs font-semibold"
+                            style={{ background: 'color-mix(in srgb, var(--accent) 12%, transparent)', color: 'var(--accent)' }}
+                          >
+                            Recommended
+                          </span>
+                        )}
+                      </div>
+                      {connected || zendeskSidebarOnly ? (
+                        <Link
+                          href={item.href}
+                          className="inline-flex shrink-0 items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium"
+                          style={{ borderColor: 'var(--surface-border)', color: 'var(--text-muted)' }}
+                        >
+                          Manage
+                        </Link>
+                      ) : (
+                        <Link
+                          href={item.href}
+                          className="inline-flex shrink-0 items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold"
+                          style={{ background: 'var(--accent)', color: 'var(--accent-fg, #fff)' }}
+                        >
+                          Connect
+                          {showArrow ? <ArrowRight className="h-3 w-3" /> : null}
+                        </Link>
+                      )}
+                    </div>
+                    {statusKnown ? (
+                      <p className="mt-1 flex items-center gap-1.5 text-xs font-medium">
+                        <span
+                          aria-hidden
+                          className="inline-block h-1.5 w-1.5 shrink-0 rounded-full"
+                          style={{
+                            background:
+                              connected || zendeskSidebarOnly
+                                ? zendeskSidebarOnly
+                                  ? 'var(--warning)'
+                                  : 'var(--sev-clear, #2f6b43)'
+                                : 'transparent',
+                            border:
+                              connected || zendeskSidebarOnly ? 'none' : '1px solid var(--text-muted)',
+                          }}
+                        />
+                        <span
+                          style={{
+                            color:
+                              zendeskSidebarOnly || degraded
+                                ? 'var(--warning)'
+                                : connected
+                                  ? 'var(--sev-clear, #2f6b43)'
+                                  : 'var(--text-muted)',
+                          }}
+                        >
+                          {zendeskSidebarOnly
+                            ? 'Sidebar only — sync tickets'
+                            : degraded
+                              ? 'Connected — finish setup'
+                              : connected
+                                ? 'Connected'
+                                : 'Not connected'}
+                        </span>
+                        {connected && providerState?.detail ? (
+                          <span className="truncate" style={{ color: 'var(--text-muted)' }}>· {providerState.detail}</span>
+                        ) : null}
+                      </p>
+                    ) : null}
+                    <p className="mt-1 text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+                      {item.description}
+                    </p>
+                  </div>
                 </div>
               </div>
             );

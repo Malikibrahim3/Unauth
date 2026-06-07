@@ -16,6 +16,7 @@ export const DECISION_LABELS: Record<string, string> = {
   full_refund: 'Full resolution',
   chargeback_disputed: 'CB disputed',
   blacklist: 'Legacy restricted action',
+  internal_watch: 'Internal watch',
   no_action: 'No further action',
 };
 

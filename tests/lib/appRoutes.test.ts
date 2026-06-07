@@ -63,11 +63,7 @@ describe('app route registry', () => {
   "Store overview",
   "Customers",
   "Claims",
-  "Evidence packages",
   "Reports",
-  "Network graph",
-  "Historical import",
-  "Import history",
 ]
 `);
   });

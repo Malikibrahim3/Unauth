@@ -29,16 +29,16 @@ export default function PartialSetupHero({ connection }: PartialSetupHeroProps) 
   const helpdeskDone = connection.helpdesk || connection.helpdeskOnlyConnected;
 
   const heading = shopifyDone
-    ? 'Shopify connected - now add your helpdesk'
+    ? 'Connect Gorgias to activate claim intelligence in tickets'
     : helpdeskDone
-      ? 'Helpdesk connected - now connect Shopify'
-      : 'Connect Shopify and your helpdesk to get started';
+      ? 'Connect Shopify to add order context'
+      : 'Start with Shopify + Gorgias';
 
   const body = shopifyDone
-    ? 'Orders are syncing from Shopify. Your helpdesk (Gorgias or Zendesk) provides the claim history that makes this data actionable. Without it, you\'ll see orders but no claim context.'
+    ? 'Shopify is syncing. Connect Gorgias so your agents see claim context — order history, prior claims, and trust indicators — inside every ticket. Zendesk and Freshdesk also work.'
     : helpdeskDone
       ? 'Claim history is coming from your helpdesk. Shopify provides the order data that ties it all together. Without both, the picture is incomplete.'
-      : 'Shopify gives order data. Your helpdesk gives claim history. Both are required for identity confidence grades, claim rates, and evidence packages.';
+      : 'Shopify provides order data. Gorgias provides claim history. Both are required for claim rates, confidence grades, and evidence packages.';
 
   const steps: Array<{ done: boolean; icon: React.ReactNode; label: string; sub: string }> = [
     {
@@ -50,8 +50,8 @@ export default function PartialSetupHero({ connection }: PartialSetupHeroProps) 
     {
       done: helpdeskDone,
       icon: <HelpdeskMark />,
-      label: 'Gorgias or Zendesk',
-      sub: helpdeskDone ? 'Connected - claims syncing' : 'Required - pulls claim history and dispute signals',
+      label: 'Gorgias',
+      sub: helpdeskDone ? 'Connected — claims syncing' : 'Recommended · Zendesk and Freshdesk also supported',
     },
   ];
 
@@ -103,7 +103,7 @@ export default function PartialSetupHero({ connection }: PartialSetupHeroProps) 
             href="/settings/integrations"
             className="btn-accent inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold"
           >
-            {shopifyDone ? 'Connect your helpdesk' : helpdeskDone ? 'Connect Shopify' : 'Set up integrations'}
+            {shopifyDone ? 'Connect Gorgias' : helpdeskDone ? 'Connect Shopify' : 'Set up integrations'}
           </Link>
         </div>
       </div>

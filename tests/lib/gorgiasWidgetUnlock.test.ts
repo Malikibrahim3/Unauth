@@ -44,7 +44,7 @@ describe('Gorgias widget unlock links', () => {
     expect(payload.basic_unlock_url).toContain('basic_context');
   });
 
-  it('credit-gated preview hides case stats when ticket scope is present', () => {
+  it('shows own-store context without network intelligence by default', () => {
     const link = {
       widgetToken: 'wt_abc',
       email: 'a@b.com',
@@ -85,12 +85,13 @@ describe('Gorgias widget unlock links', () => {
       },
       link,
     );
-    expect(payload.identity).toBe('Context available for this ticket');
-    expect(payload.claims).toContain('1 credit');
-    expect(payload.orders).not.toMatch(/\b9\b/);
-    expect(payload.orders).not.toContain('claims');
-    expect(payload.ce3_evidence).not.toContain('CE 3.0 evidence available');
-    expect(payload.primary_reason).not.toContain('Item not received');
+    expect(payload.identity).toContain('DEFINITE');
+    expect(payload.orders).toContain('9');
+    expect(payload.orders).not.toContain('20');
+    expect(payload.ce3_evidence).toContain('Network signal available');
+    expect(payload.primary_reason).toContain('Item not received');
+    expect(payload.cta_url).toContain('source=gorgias');
+    expect(payload.cta_url).toContain('ticket_id=T-1');
   });
 
   it('omits unlock URLs without case scope', () => {
@@ -107,7 +108,7 @@ describe('Gorgias widget unlock links', () => {
     expect(template.widgets[0].widgets[1].title).toBe(GORGIAS_SIDEBAR_ROW_LABELS.claims);
     expect(template.widgets[0].widgets[3].title).toBe(GORGIAS_SIDEBAR_ROW_LABELS.claim_rate);
     const blob = JSON.stringify(template);
-    expect(blob).not.toMatch(/Claims on record|Claim rate|Identity Intelligence/i);
+    expect(blob).not.toMatch(/Claims on record|Identity Intelligence/i);
   });
 
   it('sidebar template registers three unlock links plus app CTA', () => {

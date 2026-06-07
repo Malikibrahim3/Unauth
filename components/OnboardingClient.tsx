@@ -1,10 +1,9 @@
 'use client';
 
-import { useEffect, useReducer } from 'react';
-import { cloneElement, type ReactElement } from 'react';
+import { useEffect, useReducer, cloneElement, type ReactElement } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Check, Upload, Users, FileText, Plug, UserPlus } from 'lucide-react';
+import { Check, ShoppingBag, Headphones, Store, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { ORDER_VOLUME_OPTIONS, FRAUD_CONCERN_OPTIONS } from '@/lib/constants/merchantProfile';
 import {
@@ -24,36 +23,28 @@ interface OnboardingClientProps {
 
 const STEPS = [
   {
-    id: 'upload',
-    label: 'Upload your first audit',
-    icon: Upload,
-    body: 'When you upload an order CSV, Unauth maps your order, refund, payment, and identity columns into a privacy-safe audit run.',
+    id: 'profile',
+    label: 'Your store profile',
+    icon: Store,
+    body: 'Tell us a bit about your store. This helps Unauth surface the right claim patterns for your volume and category.',
   },
   {
-    id: 'review',
-    label: 'Review matched customers',
-    icon: Users,
-    body: 'Work the queue by confidence grade, order value, and network footprint rather than scanning every transaction manually.',
+    id: 'shopify',
+    label: 'Connect Shopify',
+    icon: ShoppingBag,
+    body: 'Connect Shopify so Unauth can show order history, refund patterns, and customer signals inside every Gorgias ticket.',
   },
   {
-    id: 'evidence',
-    label: 'Generate an evidence package',
-    icon: FileText,
-    body: 'Identity evidence exports assemble cross-merchant match data, transaction history, and confidence signals into a report your team can use for dispute review.',
+    id: 'gorgias',
+    label: 'Connect Gorgias',
+    icon: Headphones,
+    body: 'Connect Gorgias so your support agents see claim context — prior orders, claim rate, trust indicators — without leaving the ticket.',
   },
   {
-    id: 'integration',
-    label: 'Set up chargeback integration',
-    icon: Plug,
-    optional: true,
-    body: 'Later, connect chargeback and payment data to enrich signals with dispute outcomes and PSP-level identifiers.',
-  },
-  {
-    id: 'team',
-    label: 'Invite a team member',
-    icon: UserPlus,
-    optional: true,
-    body: 'Invite analysts once your first audit is running so they can look up customers and export evidence for your helpdesk.',
+    id: 'done',
+    label: 'Widget is live',
+    icon: Check,
+    body: 'Your Gorgias claim context widget is ready. Agents will see Unauth intelligence inside every support ticket automatically.',
   },
 ] as const;
 
@@ -95,8 +86,7 @@ export default function OnboardingClient({
     dispatch({ type: 'patch', patch: { shopDomain: shopifyShopDomain } });
   }, [shopifyShopDomain]);
 
-  async function saveAndContinue() {
-    // Store profile fields are optional - never block reaching first value.
+  async function saveProfileAndContinue() {
     dispatch({ type: 'patch', patch: { loading: true, error: '' } });
     const response = await fetch('/api/account/setup', {
       method: 'POST',
@@ -115,8 +105,7 @@ export default function OnboardingClient({
       dispatch({ type: 'patch', patch: { error: payload.error ?? 'Could not save your store details.' } });
       return;
     }
-    router.push('/upload?welcome=1');
-    router.refresh();
+    dispatch({ type: 'patch', patch: { activeStep: 1 } });
   }
 
   async function skipOnboarding() {
@@ -129,29 +118,30 @@ export default function OnboardingClient({
         platform: platform || undefined,
         monthlyOrderVolume: annualVolume || undefined,
         primaryFraudConcern: primaryConcern || undefined,
-        setupComplete: false,
+        setupComplete: true,
       }),
     });
-    const payload = await response.json().catch(() => ({}));
+    await response.json().catch(() => ({}));
     dispatch({ type: 'patch', patch: { skipLoading: false } });
-    if (!response.ok) {
-      dispatch({ type: 'patch', patch: { error: payload.error ?? 'Could not skip setup right now. Please try again.' } });
-      return;
-    }
-    router.push('/upload?welcome=1');
+    router.push('/dashboard');
     router.refresh();
   }
 
   const current = STEPS[activeStep];
   const CurrentIcon = current.icon;
-  const canStart = true;
 
   return (
     <main className="min-h-screen p-4 md:p-8" style={{ background: 'var(--surface-base)' }}>
       <div className="mx-auto grid max-w-6xl gap-5 lg:grid-cols-[360px_minmax(0,1fr)]">
+        {/* Sidebar checklist */}
         <aside className="rounded-lg border p-4" style={{ background: 'var(--surface-raised)', borderColor: 'var(--surface-border)' }}>
           <div className="mb-6 flex items-start justify-between gap-3">
-            <h1 className="t-heading" style={{ color: 'var(--ink-primary)' }}>First-run checklist</h1>
+            <div>
+              <h1 className="t-heading" style={{ color: 'var(--ink-primary)' }}>Get started</h1>
+              <p className="t-caption mt-1" style={{ color: 'var(--ink-tertiary)' }}>
+                Add claim intelligence to your Gorgias tickets
+              </p>
+            </div>
             <button
               type="button"
               onClick={skipOnboarding}
@@ -162,11 +152,7 @@ export default function OnboardingClient({
               {skipLoading ? 'Skipping…' : 'Skip'}
             </button>
           </div>
-          <div className="mb-6">
-            <p className="t-body mt-2" style={{ color: 'var(--ink-secondary)' }}>
-              Complete the first audit path, then add integrations and team access when you are ready.
-            </p>
-          </div>
+
           <div className="space-y-2">
             {STEPS.map((step, index) => {
               const Icon = step.icon;
@@ -188,45 +174,61 @@ export default function OnboardingClient({
                   </span>
                   <span className="min-w-0">
                     <span className="block t-body" style={{ color: active ? 'var(--ink-primary)' : 'var(--ink-secondary)' }}>{step.label}</span>
-                    {'optional' in step && step.optional && <span className="t-caption" style={{ color: 'var(--ink-tertiary)' }}>Optional</span>}
                   </span>
                   <span className="t-mono" style={{ color: 'var(--ink-tertiary)' }}>{String(index + 1).padStart(2, '0')}</span>
                 </button>
               );
             })}
           </div>
+
+          {/* Secondary: CSV path */}
+          <div className="mt-6 rounded-md border px-3 py-2.5" style={{ background: 'var(--surface-input)', borderColor: 'var(--surface-border)' }}>
+            <p className="t-caption" style={{ color: 'var(--ink-tertiary)' }}>
+              Not on Gorgias yet?{' '}
+              <Link href="/upload" className="font-medium hover:underline" style={{ color: 'var(--ink-secondary)' }}>
+                Start with a CSV import
+              </Link>
+              {' '}to explore your data first.
+            </p>
+          </div>
         </aside>
 
+        {/* Step content */}
         <section className="rounded-lg border p-6" style={{ background: 'var(--surface-raised)', borderColor: 'var(--surface-border)' }}>
           <div className="mb-6 flex items-start gap-3">
             <span className="flex h-10 w-10 items-center justify-center rounded-md" style={{ background: 'var(--surface-input)', color: 'var(--copper-bright)' }}>
               <CurrentIcon className="h-5 w-5" />
             </span>
             <div>
-              <p className="t-label" style={{ color: 'var(--ink-tertiary)' }}>STEP {activeStep + 1}</p>
+              <p className="t-label" style={{ color: 'var(--ink-tertiary)' }}>STEP {activeStep + 1} OF {STEPS.length}</p>
               <h2 className="t-heading mt-1" style={{ color: 'var(--ink-primary)' }}>{current.label}</h2>
               <p className="t-body mt-2 max-w-2xl" style={{ color: 'var(--ink-secondary)' }}>{current.body}</p>
             </div>
           </div>
 
-          {activeStep === 0 ? (
+          {activeStep === 0 && (
             <div className="grid gap-4 md:grid-cols-2">
               <Field label="Store name">
-                <input aria-label="Store name" value={storeName} onChange={(e) => dispatch({ type: 'patch', patch: { storeName: e.target.value } })} placeholder="Acme Commerce Ltd" />
+                <input
+                  aria-label="Store name"
+                  value={storeName}
+                  onChange={(e) => dispatch({ type: 'patch', patch: { storeName: e.target.value } })}
+                  placeholder="Acme Commerce Ltd"
+                />
               </Field>
               <Field label="Platform">
                 <select aria-label="Platform" value={platform} onChange={(e) => dispatch({ type: 'patch', patch: { platform: e.target.value } })}>
                   <option value="">Select platform…</option>
                   <option value="shopify">Shopify</option>
                   <option value="woocommerce">WooCommerce</option>
-                  <option value="magento">Magento</option>
                   <option value="bigcommerce">BigCommerce</option>
+                  <option value="magento">Magento</option>
                   <option value="custom">Custom</option>
                   <option value="other">Other</option>
                 </select>
               </Field>
-              <Field label="Annual order volume">
-                <select aria-label="Annual order volume" value={annualVolume} onChange={(e) => dispatch({ type: 'patch', patch: { annualVolume: e.target.value } })}>
+              <Field label="Monthly order volume">
+                <select aria-label="Monthly order volume" value={annualVolume} onChange={(e) => dispatch({ type: 'patch', patch: { annualVolume: e.target.value } })}>
                   <option value="">Select range…</option>
                   {ORDER_VOLUME_OPTIONS.map((o) => (
                     <option key={o.value} value={o.value}>{o.label}</option>
@@ -241,69 +243,140 @@ export default function OnboardingClient({
                   ))}
                 </select>
               </Field>
-              <div className="md:col-span-2 rounded-md border px-4 py-3" style={{ background: 'var(--privacy-fill)', borderColor: 'var(--privacy-border)' }}>
-                <p className="t-body" style={{ color: 'var(--privacy-ink)' }}>
-                  When you upload an order CSV, raw records stay scoped to your store. Cross-store comparison uses hashed identifiers only - other merchants never see your customer list.
-                </p>
-              </div>
               {error && <p className="md:col-span-2 t-caption" style={{ color: 'var(--sev-definite)' }}>{error}</p>}
               <div className="md:col-span-2 flex justify-end">
                 <Button
                   type="button"
                   size="lg"
-                  onClick={saveAndContinue}
-                  disabled={!canStart}
+                  onClick={saveProfileAndContinue}
                   loading={loading}
                 >
-                  {loading ? 'Saving…' : 'Upload first audit'}
+                  {loading ? 'Saving…' : 'Continue'}
                 </Button>
               </div>
             </div>
-          ) : activeStep === 4 ? (
-            <div className="rounded-md border px-4 py-3" style={{ background: 'var(--sev-clear-fill)', borderColor: 'var(--sev-clear)' }}>
-              <p className="t-subhead" style={{ color: 'var(--sev-clear)' }}>Setup complete</p>
-              <Link href="/dashboard" className="t-body mt-2 inline-block underline underline-offset-2" style={{ color: 'var(--ink-primary)' }}>
-                Go to dashboard
-              </Link>
-            </div>
-          ) : (
-            <div className="rounded-md border px-4 py-3" style={{ background: 'var(--surface-input)', borderColor: 'var(--surface-border)' }}>
-              {activeStep === 3 ? (
-                <div className="space-y-3">
-                  <p className="t-body" style={{ color: 'var(--ink-secondary)' }}>
-                    {shopifyConnected
-                      ? `Shopify is connected (${shopifyShopDomain}). You can reconnect any time from settings.`
-                      : 'Connect Shopify now to sync orders/customers and keep identity signals up to date via webhooks.'}
+          )}
+
+          {activeStep === 1 && (
+            <div className="space-y-4">
+              {shopifyConnected ? (
+                <div className="rounded-md border px-4 py-3" style={{ background: 'var(--sev-clear-fill)', borderColor: 'var(--sev-clear)' }}>
+                  <div className="flex items-center gap-2">
+                    <Check className="h-4 w-4" style={{ color: 'var(--sev-clear)' }} />
+                    <p className="t-body font-semibold" style={{ color: 'var(--sev-clear)' }}>
+                      Shopify connected — {shopifyShopDomain}
+                    </p>
+                  </div>
+                  <p className="t-caption mt-1" style={{ color: 'var(--ink-secondary)' }}>
+                    Orders, customers, and refund history are syncing automatically.
                   </p>
-                  {!shopifyConnected && (
-                    <div className="flex flex-col gap-2 md:flex-row">
-                      <input
-                        value={shopDomain}
-                        onChange={(e) => dispatch({ type: 'patch', patch: { shopDomain: e.target.value } })}
-                        aria-label="Shopify store domain"
-                        placeholder="your-store.myshopify.com"
-                        className="w-full rounded-md border px-3 py-2 text-sm outline-none"
-                        style={{
-                          background: 'var(--surface-input)',
-                          borderColor: 'var(--surface-border)',
-                          color: 'var(--ink-primary)',
-                        }}
-                      />
-                      <a
-                        href={`/api/shopify/install?shop=${encodeURIComponent(shopDomain.trim())}`}
-                        className="inline-flex items-center justify-center rounded-md border px-3 py-2 text-sm font-medium"
-                        style={{ borderColor: 'var(--surface-border)', color: 'var(--ink-primary)' }}
-                      >
-                        Connect Shopify
-                      </a>
-                    </div>
-                  )}
                 </div>
               ) : (
-                <p className="t-body" style={{ color: 'var(--ink-secondary)' }}>
-                  This step becomes available after your first audit creates the initial case queue and evidence candidates.
-                </p>
+                <div className="rounded-md border p-4 space-y-3" style={{ background: 'var(--surface-input)', borderColor: 'var(--surface-border)' }}>
+                  <p className="t-body" style={{ color: 'var(--ink-secondary)' }}>
+                    Enter your Shopify store domain to connect. You can also connect from{' '}
+                    <Link href="/settings/integrations" className="underline underline-offset-2" style={{ color: 'var(--accent)' }}>
+                      Settings → Integrations
+                    </Link>
+                    {' '}at any time.
+                  </p>
+                  <div className="flex flex-col gap-2 md:flex-row">
+                    <input
+                      value={shopDomain}
+                      onChange={(e) => dispatch({ type: 'patch', patch: { shopDomain: e.target.value } })}
+                      aria-label="Shopify store domain"
+                      placeholder="your-store.myshopify.com"
+                      className="w-full rounded-md border px-3 py-2 text-sm outline-none"
+                      style={{ background: 'var(--surface-input)', borderColor: 'var(--surface-border)', color: 'var(--ink-primary)' }}
+                    />
+                    <a
+                      href={`/api/shopify/install?shop=${encodeURIComponent(shopDomain.trim())}`}
+                      className="inline-flex items-center justify-center rounded-md border px-4 py-2 text-sm font-semibold gap-1.5"
+                      style={{ borderColor: 'var(--copper-bright)', color: 'var(--copper-bright)', background: 'var(--copper-glow)', whiteSpace: 'nowrap' }}
+                    >
+                      <ShoppingBag className="h-4 w-4" />
+                      Connect Shopify
+                    </a>
+                  </div>
+                </div>
               )}
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => dispatch({ type: 'patch', patch: { activeStep: 2 } })}
+                  className="t-caption hover:underline"
+                  style={{ color: 'var(--ink-tertiary)' }}
+                >
+                  {shopifyConnected ? 'Continue to Gorgias →' : "I'll connect later — skip to Gorgias"}
+                </button>
+                {shopifyConnected && (
+                  <Button type="button" onClick={() => dispatch({ type: 'patch', patch: { activeStep: 2 } })}>
+                    Continue <ArrowRight className="h-4 w-4 ml-1" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {activeStep === 2 && (
+            <div className="space-y-4">
+              <div className="rounded-md border p-4 space-y-3" style={{ background: 'var(--surface-input)', borderColor: 'var(--surface-border)' }}>
+                <p className="t-body" style={{ color: 'var(--ink-secondary)' }}>
+                  Connect Gorgias from the integrations page. Once connected, Unauth will automatically add a claim context card to every Gorgias ticket — showing order history, prior claims, and trust indicators for the customer.
+                </p>
+                <p className="t-caption" style={{ color: 'var(--ink-tertiary)' }}>
+                  You can also add Zendesk or Freshdesk later from the same page.
+                </p>
+                <Link
+                  href="/settings/integrations/gorgias"
+                  className="inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold"
+                  style={{ background: 'var(--copper-glow)', borderColor: 'var(--copper-bright)', border: '1px solid', color: 'var(--copper-bright)' }}
+                >
+                  <Headphones className="h-4 w-4" />
+                  Set up Gorgias integration
+                </Link>
+              </div>
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => dispatch({ type: 'patch', patch: { activeStep: 3 } })}
+                  className="t-caption hover:underline"
+                  style={{ color: 'var(--ink-tertiary)' }}
+                >
+                  {"I'll connect later — go to dashboard"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => dispatch({ type: 'patch', patch: { activeStep: 3 } })}
+                  className="t-caption font-semibold hover:underline"
+                  style={{ color: 'var(--accent)' }}
+                >
+                  Already connected? Continue →
+                </button>
+              </div>
+            </div>
+          )}
+
+          {activeStep === 3 && (
+            <div className="space-y-4">
+              <div className="rounded-md border px-4 py-3" style={{ background: 'var(--sev-clear-fill)', borderColor: 'var(--sev-clear)' }}>
+                <p className="t-subhead" style={{ color: 'var(--sev-clear)' }}>Setup complete</p>
+                <p className="t-body mt-1" style={{ color: 'var(--ink-secondary)' }}>
+                  Your Gorgias agents will now see claim context automatically. You can review integration status and add more sources from Settings.
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <Link
+                  href="/dashboard"
+                  className="btn-accent inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold"
+                >
+                  Go to claim overview
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+                <Link href="/settings/integrations" className="t-caption hover:underline" style={{ color: 'var(--ink-tertiary)' }}>
+                  Manage integrations →
+                </Link>
+              </div>
             </div>
           )}
         </section>

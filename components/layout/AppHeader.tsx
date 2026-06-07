@@ -8,7 +8,6 @@ import { cn } from '@/lib/utils';
 import CommandPalette from './CommandPalette';
 import { MerchantEnvChip } from './MerchantEnvChip';
 import { AvatarMenu } from './AvatarMenu';
-import { ContextCreditsBadge } from './ContextCreditsBadge';
 
 export interface BreadcrumbSegment {
   label: string;
@@ -159,8 +158,6 @@ export default function AppHeader({
           {actions}
         </div>
       )}
-
-      <ContextCreditsBadge />
 
       {/* MerchantEnvChip - left of search */}
       <MerchantEnvChip merchantName={merchantName ?? null} environment={environment} />

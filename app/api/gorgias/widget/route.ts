@@ -10,6 +10,7 @@ import {
 import type { MerchantCustomerLookupDiagnostics } from '@/lib/gorgias/findMerchantCustomerByEmail';
 import { buildCreditUsageWidgetFields } from '@/lib/billing/creditUsage';
 import { CONTEXT_UNLOCK_CTA_LABELS, getContextCreditSnapshot } from '@/lib/billing/contextCredits';
+import { TIER_ORDER } from '@/lib/billing/tiers';
 import {
   claimWidgetToJson,
   hasGorgiasUnlockCaseScope,
@@ -19,6 +20,7 @@ import {
 } from '@/lib/gorgias/widgetJson';
 import { env } from '@/lib/utils/env';
 import { gorgiasWidgetLog, gorgiasWidgetLogError } from '@/lib/gorgias/widgetLog';
+import { computeWidgetReviewLevel } from '@/lib/gorgias/widgetTrustSignals';
 import { GORGIAS_FRAME_HEADERS, renderGorgiasWidgetHtml } from '@/lib/gorgias/renderWidgetHtml';
 import { validateWidgetToken } from '@/lib/api/widgetTokens';
 import { resolveWidgetCustomerIdentity } from '@/lib/gorgias/resolveWidgetCustomerIdentity';
@@ -142,10 +144,13 @@ async function enrichWidgetJsonOptions(
   base: GorgiasWidgetJsonOptions,
   link?: GorgiasWidgetLinkContext,
 ): Promise<GorgiasWidgetJsonOptions> {
-  if (!link || !hasGorgiasUnlockCaseScope(link)) return base;
   const snapshot = await getContextCreditSnapshot(service, merchantId);
-  const creditUsage = buildCreditUsageWidgetFields(snapshot, env.NEXT_PUBLIC_APP_URL);
-  return { ...base, creditUsage };
+  const showNetworkIntelligence = TIER_ORDER[snapshot.tier] >= TIER_ORDER['growth'];
+  const creditUsage =
+    link && hasGorgiasUnlockCaseScope(link)
+      ? buildCreditUsageWidgetFields(snapshot, env.NEXT_PUBLIC_APP_URL)
+      : null;
+  return { ...base, showNetworkIntelligence, ...(creditUsage ? { creditUsage } : {}) };
 }
 
 function isUnresolvedGorgiasVar(value: string): boolean {
@@ -241,6 +246,7 @@ export async function GET(request: NextRequest) {
     const ticketIdParam = searchParams.get('ticket_id')?.trim() ?? '';
     const name = searchParams.get('name')?.trim() ?? '';
     const orderId = searchParams.get('order_id')?.trim() ?? '';
+    const orderNumber = searchParams.get('order_number')?.trim() ?? '';
     const returnHtml = wantsHtmlResponse(request);
     const jsonOptions = widgetJsonOptions(request);
 
@@ -251,6 +257,7 @@ export async function GET(request: NextRequest) {
       customerEmailUnresolved: isUnresolvedGorgiasVar(customerEmailParam),
       ticketIdPresent: Boolean(ticketIdParam && !isUnresolvedGorgiasVar(ticketIdParam)),
       orderIdPresent: Boolean(orderId),
+      orderNumberPresent: Boolean(orderNumber),
       returnHtml,
       hasWidgetToken: Boolean(widgetToken),
       wtFromHeader: Boolean(request.headers.get(GORGIAS_WIDGET_TOKEN_HEADER)?.trim()),
@@ -344,7 +351,9 @@ export async function GET(request: NextRequest) {
     }
 
     const ticketRef = isUnresolvedGorgiasVar(ticketIdParam) ? null : ticketIdParam;
-    const orderRef = isUnresolvedGorgiasVar(orderId) ? '' : orderId;
+    const resolvedOrderId = isUnresolvedGorgiasVar(orderId) ? '' : orderId;
+    const resolvedOrderNumber = isUnresolvedGorgiasVar(orderNumber) ? '' : orderNumber;
+    const orderRef = resolvedOrderId || resolvedOrderNumber;
 
     const linkContext: GorgiasWidgetLinkContext = {
       widgetToken,
@@ -369,12 +378,35 @@ export async function GET(request: NextRequest) {
 
     gorgiasWidgetLog('customer_lookup.result', describeResultForLog(result));
 
+    if (result.ok) {
+      gorgiasWidgetLog('widget_signals', {
+        trustLevel: computeWidgetReviewLevel({
+          orderCount: result.data.thisStore.orderCount,
+          claimCount: result.data.thisStore.claimCount,
+          claimRate: result.data.thisStore.claimRate,
+          recentClaimCount: result.data.storeRecentClaimCount,
+          confidenceGrade: null,
+          networkSignalAvailable: result.data.network !== null,
+          ce3EvidenceAvailable: result.data.ce3EvidenceAvailable,
+        }),
+        ce3EvidenceAvailable: result.data.ce3EvidenceAvailable,
+        networkSignalAvailable: result.data.network !== null,
+        orderRefUsed: Boolean(orderRef),
+        profileUrlGenerated: Boolean(result.data.profileUrl),
+        storeOrders: result.data.thisStore.orderCount,
+        storeClaims: result.data.thisStore.claimCount,
+        storeClaimRatePct: Math.round(result.data.thisStore.claimRate * 100),
+        ordersCountSource: result.data.thisStore.ordersCountSource,
+      });
+    }
+
     const enrichedJsonOptions = await enrichWidgetJsonOptions(
       service,
       authResult.merchantId,
       jsonOptions,
       linkContext,
     );
+    gorgiasWidgetLog('widget_options', { showNetworkIntelligence: enrichedJsonOptions.showNetworkIntelligence });
 
     return returnJsonForResult({
       branch: result.ok ? 'result_ok' : `result_${result.kind}`,

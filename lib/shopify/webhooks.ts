@@ -13,6 +13,9 @@ const WEBHOOK_TOPICS = [
   'app/uninstalled',
 ] as const;
 
+type WebhookTopic = (typeof WEBHOOK_TOPICS)[number];
+type WebhookRegistrationFailure = { topic: WebhookTopic; status: number; body: string };
+
 export function verifyShopifyWebhookHmac(rawBody: string, providedHmac: string | null): boolean {
   if (!providedHmac) return false;
   // Read at call time (not from singleton) so test environments that set
@@ -29,9 +32,9 @@ export async function registerShopifyWebhooks(input: { shopDomain: string; acces
   const { shopDomain, accessToken } = input;
   const address = `${getAppUrl()}/api/shopify/webhooks`;
   const apiVersion = '2025-10';
-  await Promise.all(
-    WEBHOOK_TOPICS.map((topic) =>
-      fetch(`https://${shopDomain}/admin/api/${apiVersion}/webhooks.json`, {
+  const results = await Promise.all(
+    WEBHOOK_TOPICS.map(async (topic): Promise<WebhookRegistrationFailure | null> => {
+      const response = await fetch(`https://${shopDomain}/admin/api/${apiVersion}/webhooks.json`, {
         method: 'POST',
         headers: {
           'X-Shopify-Access-Token': accessToken,
@@ -39,7 +42,18 @@ export async function registerShopifyWebhooks(input: { shopDomain: string; acces
         },
         body: JSON.stringify({ webhook: { topic, address, format: 'json' } }),
         cache: 'no-store',
-      })
-    )
+      });
+      if (response.ok) return null;
+      const body = await response.text().catch(() => '');
+      return { topic, status: response.status, body: body.slice(0, 300) };
+    })
   );
+  const failures = results.filter((failure): failure is WebhookRegistrationFailure => failure !== null);
+
+  if (failures.length > 0) {
+    const summary = failures
+      .map((failure) => `${failure.topic} -> ${failure.status}${failure.body ? ` ${failure.body}` : ''}`)
+      .join('; ');
+    throw new Error(`shopify_webhook_registration_failed: ${summary}`);
+  }
 }

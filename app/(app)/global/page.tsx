@@ -106,13 +106,18 @@ export default async function GlobalGraphPage() {
     <div className="p-6 md:p-8 space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-overline mb-2" style={{ color: 'var(--text-muted)' }}>Persistent intelligence</p>
-          <h1 className="text-h1">Global Identity Graph</h1>
+          <p className="text-overline mb-2" style={{ color: 'var(--text-muted)' }}>Advanced · Growth+</p>
+          <h1 className="text-h1">Network Intelligence</h1>
           <p className="text-body-sm mt-2 max-w-3xl" style={{ color: 'var(--text-muted)' }}>
             Cross-run and cross-merchant matches for your merchant, with privacy-safe network counts. Other merchant names and order details are intentionally hidden.
           </p>
         </div>
-        <Link href="/upload" className="btn-accent rounded-md px-3 py-2 text-caption font-semibold">Process CSV</Link>
+        <span
+          className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold"
+          style={{ background: 'color-mix(in srgb, var(--accent) 10%, transparent)', color: 'var(--accent)' }}
+        >
+          Growth+ feature
+        </span>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
