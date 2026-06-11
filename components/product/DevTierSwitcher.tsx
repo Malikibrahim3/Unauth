@@ -19,13 +19,13 @@ function writeTierCookie(value: DevPreviewCookieValue) {
 }
 
 function tierDotClass(value: DevPreviewCookieValue): string {
-  if (value === 'dev') return 'bg-[var(--ink-tertiary)]';
+  if (value === 'dev') return 'bg-[var(--text-tertiary)]';
   if (value === 'free') return 'bg-emerald-500';
   if (value === 'pro') return 'bg-blue-500';
   if (value === 'growth' || value === 'advanced') return 'bg-purple-500';
   if (value === 'scale') return 'bg-violet-400';
   if (value === 'enterprise') return 'bg-amber-500';
-  return 'bg-[var(--ink-tertiary)]';
+  return 'bg-[var(--text-tertiary)]';
 }
 
 export function DevTierSwitcher({ collapsed }: { collapsed: boolean }) {
@@ -60,11 +60,11 @@ export function DevTierSwitcher({ collapsed }: { collapsed: boolean }) {
       <div
         className="rounded-md border px-2 py-1.5"
         style={{
-          borderColor: 'var(--surface-border)',
-          background: 'var(--surface-overlay)',
+          borderColor: 'var(--border)',
+          background: 'var(--surface)',
         }}
       >
-        <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--ink-tertiary)]">
+        <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
           Dev preview
         </p>
         <div className="flex flex-col gap-0.5">
@@ -78,12 +78,12 @@ export function DevTierSwitcher({ collapsed }: { collapsed: boolean }) {
                 className={cn(
                   'flex w-full items-center justify-between rounded px-1.5 py-1 text-left text-xs transition-colors',
                   isActive
-                    ? 'font-semibold text-[var(--ink-primary)]'
-                    : 'text-[var(--ink-secondary)] hover:text-[var(--ink-primary)]',
+                    ? 'font-semibold text-[var(--text-primary)]'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]',
                 )}
                 style={
                   isActive
-                    ? { background: 'color-mix(in srgb, var(--copper-bright) 12%, transparent)' }
+                    ? { background: 'color-mix(in srgb, var(--text-primary) 6%, transparent)' }
                     : undefined
                 }
               >
@@ -94,7 +94,7 @@ export function DevTierSwitcher({ collapsed }: { collapsed: boolean }) {
                   />
                   {opt.label}
                 </span>
-                <span className="text-[var(--ink-tertiary)]">{opt.description}</span>
+                <span className="text-[var(--text-tertiary)]">{opt.description}</span>
               </button>
             );
           })}

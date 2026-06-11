@@ -65,10 +65,10 @@ export default function WatchlistTableClient({ rows: initialRows }: WatchlistTab
   return (
     <>
       {selectedIds.size > 0 && (
-        <div className="mb-3 flex items-center justify-between gap-3 rounded-lg px-3 py-2 border"
-          style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
+        <div className="mb-3 flex items-center justify-between gap-3 rounded-md px-3 py-2 border"
+          style={{ background: 'var(--surface)', borderColor: 'var(--border-muted)' }}
         >
-          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+          <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
             {selectedIds.size} selected
           </span>
           <div className="flex items-center gap-2">
@@ -84,7 +84,7 @@ type="button"               onClick={bulkRemoveSelected}
 type="button"               onClick={() => setSelectedIds(new Set())}
               disabled={bulkRemoving}
               className="text-xs font-semibold"
-              style={{ color: 'var(--text-muted)' }}
+              style={{ color: 'var(--text-secondary)' }}
             >
               Clear
             </button>
@@ -92,10 +92,10 @@ type="button"               onClick={() => setSelectedIds(new Set())}
         </div>
       )}
 
-      <div className="border rounded-lg overflow-hidden" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
+      <div className="border rounded-md overflow-hidden" style={{ background: 'var(--surface)', borderColor: 'var(--border-muted)' }}>
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b" style={{ background: 'var(--bg-subtle)', borderColor: 'var(--border-subtle)' }}>
+            <tr className="border-b" style={{ background: 'var(--bg-subtle)', borderColor: 'var(--border-muted)' }}>
               <th className="text-left px-4 py-2.5" style={{ width: 44 }}>
                 <input
                   type="checkbox"
@@ -111,10 +111,10 @@ type="button"               onClick={() => setSelectedIds(new Set())}
                   aria-label="Select all"
                 />
               </th>
-              <th className="text-left px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Customer</th>
-              <th className="text-left px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Last seen risk</th>
-              <th className="text-left px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Monitoring since</th>
-              <th className="px-4 py-2.5 text-overline text-right" style={{ color: 'var(--text-muted)' }}>Actions</th>
+              <th className="text-left px-4 py-2.5 text-overline" style={{ color: 'var(--text-secondary)' }}>Customer</th>
+              <th className="text-left px-4 py-2.5 text-overline" style={{ color: 'var(--text-secondary)' }}>Last seen risk</th>
+              <th className="text-left px-4 py-2.5 text-overline" style={{ color: 'var(--text-secondary)' }}>Monitoring since</th>
+              <th className="px-4 py-2.5 text-overline text-right" style={{ color: 'var(--text-secondary)' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -122,7 +122,7 @@ type="button"               onClick={() => setSelectedIds(new Set())}
               <tr
                 key={entry.id}
                 className="border-b transition-colors"
-                style={{ borderColor: 'var(--border-subtle)', cursor: entry.customer_profile_id ? 'pointer' : 'default' }}
+                style={{ borderColor: 'var(--border-muted)', cursor: entry.customer_profile_id ? 'pointer' : 'default' }}
                 onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-subtle)')}
                 onMouseLeave={e => (e.currentTarget.style.background = '')}
                 onClick={() => {
@@ -154,16 +154,16 @@ type="button"               onClick={() => setSelectedIds(new Set())}
                   <div className="text-sm font-medium" style={{ color: 'var(--text)' }}>
                     {entry.display_name ?? '-'}
                   </div>
-                  <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{entry.display_email ?? '-'}</div>
+                  <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>{entry.display_email ?? '-'}</div>
                 </td>
                 <td className="px-4 py-3">
                   {entry.last_seen_risk ? (
                     <ConfidenceBadge grade={riskLevelToNewGrade(entry.last_seen_risk)} size="sm" />
                   ) : (
-                    <span className="text-xs" style={{ color: 'var(--text-subtle)' }}>-</span>
+                    <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>-</span>
                   )}
                 </td>
-                <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-muted)' }}>
+                <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-secondary)' }}>
                   {watchlistAddedAtFormatter.format(new Date(entry.added_at))}
                 </td>
                 <td

@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import { Download, Users } from 'lucide-react';
-import { formatDate } from '@/lib/utils/format';
-import { formatDateMode } from '@/lib/utils/format';
+import { formatDate, formatDateMode } from '@/lib/utils/format';
 import { SectionCard, MetricCard } from '@/components/ui';
 import { RiskDistributionStrip } from '@/components/audit/RiskDistributionStrip';
 import type { AuditRunPageViewProps } from '@/app/(app)/audit/[runId]/auditRunPageViewTypes';
@@ -20,100 +19,135 @@ export function AuditRunPageSummarySections({
   hasFlags,
 }: AuditRunPageSummarySectionsProps) {
   const failedRows = (runData as unknown as { failed_rows?: number }).failed_rows ?? 0;
+  const totalAnalysed = runData.processed_rows ?? runData.total_rows ?? 0;
+  const matchedProfiles = summary.flaggedTransactions;
+  const strongMatches = gradeCounts.definite;
 
   return (
     <div className="space-y-4 px-4 pt-4">
-      <SectionCard title="Summary">
-        <p className="text-body-sm" style={{ color: 'var(--ink-primary)' }}>
-          <strong>{summary.flaggedTransactions.toLocaleString()}</strong> of{' '}
-          <strong>{(runData.processed_rows ?? runData.total_rows ?? 0).toLocaleString()}</strong> orders matched a known
-          identity in this upload
-          {networkLinkedCount > 0 ? (
-            <>
-              {' '}
-              · <strong>{networkLinkedCount.toLocaleString()}</strong> linked across other merchants
-            </>
-          ) : (
-            <> · 0 linked across other merchants</>
-          )}
-          .
-        </p>
-        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-caption" style={{ color: 'var(--ink-secondary)' }}>
-          <span><strong style={{ color: 'var(--ink-primary)' }}>{(runData.processed_rows ?? runData.total_rows ?? 0).toLocaleString()}</strong> orders ingested</span>
-          <span style={{ color: 'var(--surface-border)' }}>·</span>
-          <span><strong style={{ color: 'var(--ink-primary)' }}>{networkLinkedCount.toLocaleString()}</strong> identities linked</span>
-          <span style={{ color: 'var(--surface-border)' }}>·</span>
-          <span><strong style={{ color: 'var(--ink-primary)' }}>{summary.flaggedTransactions.toLocaleString()}</strong> with prior claim history</span>
-          {failedRows > 0 ? (
-            <>
-              <span style={{ color: 'var(--surface-border)' }}>·</span>
-              <span>{failedRows.toLocaleString()} rows skipped (could not be parsed)</span>
-            </>
-          ) : null}
-        </div>
-        <div className="mt-4">
-          <Link
-            href="/settings/integrations"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-md transition-colors hover:opacity-80"
-            style={{ border: '1px solid var(--surface-border)', color: 'var(--ink-secondary)', background: 'transparent' }}
-          >
-            Connect your helpdesk (Zendesk / Gorgias) →
-          </Link>
-        </div>
-      </SectionCard>
 
+      {/* ── Header summary strip ─────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Link href={`/audit/${jobId}?tab=transactions`} className="block">
+          <MetricCard label="Orders analysed" value={totalAnalysed.toLocaleString()} />
+        </Link>
+        <Link href={`/audit/${jobId}?tab=customers`} className="block">
+          <MetricCard
+            label="Matched profiles"
+            value={matchedProfiles.toLocaleString()}
+            hint={matchedProfiles > 0 ? 'Identity signals found' : 'No signals in this upload'}
+          />
+        </Link>
+        <Link href={`/audit/${jobId}?tab=customers&grade=definite`} className="block">
+          <MetricCard
+            label="Strong matches"
+            value={strongMatches.toLocaleString()}
+            hint="High corroboration"
+          />
+        </Link>
+        <MetricCard
+          label="Linked across merchants"
+          value={networkLinkedCount.toLocaleString()}
+          hint="Seen at other stores"
+        />
+      </div>
+
+      {/* ── Match strength chart ─────────────────────────────────────────── */}
+      {hasFlags && (
+        <div className="md:w-1/2">
+          <SectionCard title="Signal confidence breakdown">
+            <RiskDistributionStrip
+              definite={gradeCounts.definite}
+              probable={gradeCounts.probable}
+              candidate={gradeCounts.possible}
+              weak={gradeCounts.weak}
+            />
+          </SectionCard>
+        </div>
+      )}
+
+      {/* ── Insight panel (replaces contradictory empty state) ─────────────── */}
       {hasFlags ? (
-        <SectionCard title="Actions">
-          <div className="flex items-center gap-3 flex-wrap">
-            <p className="text-body-sm flex-1" style={{ color: 'var(--ink-secondary)' }}>
-              <strong style={{ color: 'var(--ink-primary)' }}>{summary.flaggedTransactions.toLocaleString()} orders</strong> with likely identity links.
-            </p>
-            <div className="flex items-center gap-2 flex-wrap">
+        <SectionCard title="Audit insight">
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div className="space-y-1 flex-1 min-w-0">
+              <p className="text-body-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                {matchedProfiles.toLocaleString()} matched profile{matchedProfiles !== 1 ? 's' : ''} found in this upload.
+              </p>
+              {strongMatches > 0 && (
+                <p className="t-caption" style={{ color: 'var(--text-secondary)' }}>
+                  {strongMatches.toLocaleString()} strong match{strongMatches !== 1 ? 'es' : ''} — high-corroboration identity evidence.
+                </p>
+              )}
+              {failedRows > 0 && (
+                <p className="t-caption" style={{ color: 'var(--text-tertiary)' }}>
+                  {failedRows.toLocaleString()} rows could not be parsed and were skipped.
+                </p>
+              )}
+            </div>
+            <div className="flex items-center gap-2 flex-wrap shrink-0">
               <Link
                 href={`/audit/${jobId}?tab=customers`}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-md transition-colors"
-                style={{ background: 'var(--copper-bright)', color: 'var(--ink-inverse)' }}
+                style={{ background: 'var(--accent)', color: 'white' }}
               >
                 <Users className="h-4 w-4" />
-                Review likely identities
+                View matched profiles
               </Link>
               <a
                 href={`/api/audit/${jobId}/export`}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-md transition-colors hover:opacity-80"
-                style={{ border: '1px solid var(--surface-border)', color: 'var(--ink-secondary)', background: 'transparent' }}
+                style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)', background: 'transparent' }}
                 download
               >
                 <Download className="h-4 w-4" />
                 Export CSV
               </a>
+            </div>
+          </div>
+        </SectionCard>
+      ) : (
+        /* Only shown when ALL match counts are genuinely zero */
+        <SectionCard title="No signals found">
+          <div className="py-4 space-y-2">
+            <p className="text-body-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+              No identity match signals were found in this upload.
+            </p>
+            <p className="t-caption" style={{ color: 'var(--text-secondary)' }}>
+              Try uploading a longer date range to surface repeat patterns across more orders.
+            </p>
+            <div className="flex items-center gap-3 pt-2 flex-wrap">
+              <Link
+                href="/upload"
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-md"
+                style={{ background: 'var(--accent)', color: 'white' }}
+              >
+                Upload a longer range
+              </Link>
               <Link
                 href={`/audit/${jobId}?tab=transactions`}
                 className="text-sm font-medium hover:underline"
-                style={{ color: 'var(--ink-tertiary)' }}
+                style={{ color: 'var(--text-tertiary)' }}
               >
                 View all transactions
               </Link>
             </div>
           </div>
         </SectionCard>
-      ) : null}
+      )}
 
-      <div className="grid grid-cols-1 md:grid-cols-6 gap-3 pb-4">
-        <Link href={`/audit/${jobId}?tab=transactions`} className="block">
-          <MetricCard label="Orders analysed" value={runData.total_rows} />
+      {/* ── Helpdesk connection nudge ────────────────────────────────────── */}
+      <div className="pb-1">
+        <Link
+          href="/settings/integrations"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold rounded-md transition-colors hover:opacity-80"
+          style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)', background: 'transparent' }}
+        >
+          Connect your helpdesk for claim context →
         </Link>
-        <Link href={`/audit/${jobId}?tab=transactions`} className="block">
-          <MetricCard label="Linked across stores" value={networkLinkedCount.toLocaleString()} hint="Shoppers seen at multiple merchants" />
-        </Link>
-        <div className="md:col-span-2">
-          <SectionCard title="Match strength breakdown">
-            <RiskDistributionStrip definite={gradeCounts.definite} probable={gradeCounts.probable} candidate={gradeCounts.possible} weak={gradeCounts.weak} />
-          </SectionCard>
-        </div>
-        <Link href={`/audit/${jobId}?tab=customers&grade=definite`} className="block">
-          <MetricCard label="Strong matches" value={gradeCounts.definite} hint="Highest confidence" />
-        </Link>
-        <MetricCard label="Completed" value={formatDateMode(runData.created_at, 'recent')} hint={formatDate(runData.created_at)} />
+        <span className="ml-3 t-caption" style={{ color: 'var(--text-tertiary)' }}>
+          Completed {formatDateMode(runData.created_at, 'recent')} · {formatDate(runData.created_at)}
+        </span>
       </div>
     </div>
   );

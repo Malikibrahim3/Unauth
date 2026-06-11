@@ -112,23 +112,32 @@ export async function POST(request: NextRequest) {
       is_claim: result.is_claim,
       claim_type: result.claim_type,
     });
-    const access = await getActiveGorgiasMerchantApiAccess(
-      createServiceClient(),
-      result.merchant_id
-    );
-    if (access) {
-      await nudgeGorgiasTicketWidgetRefreshBestEffort({
-        ...access,
-        ticketId: result.external_case_id,
-        reason: 'support_webhook_ingested',
-        payload: {
-          event: 'support_webhook_ingested',
-          ticket_id: result.external_case_id,
-          is_claim: result.is_claim,
-          claim_type: result.claim_type,
-          // Each ingested Gorgias event should be eligible to refresh after the throttle window.
-          ingested_at: new Date().toISOString(),
-        },
+    // Widget refresh nudge is best-effort: credential or API failures here
+    // must never fail a webhook that already ingested successfully.
+    try {
+      const access = await getActiveGorgiasMerchantApiAccess(
+        createServiceClient(),
+        result.merchant_id
+      );
+      if (access) {
+        await nudgeGorgiasTicketWidgetRefreshBestEffort({
+          ...access,
+          ticketId: result.external_case_id,
+          reason: 'support_webhook_ingested',
+          payload: {
+            event: 'support_webhook_ingested',
+            ticket_id: result.external_case_id,
+            is_claim: result.is_claim,
+            claim_type: result.claim_type,
+            // Each ingested Gorgias event should be eligible to refresh after the throttle window.
+            ingested_at: new Date().toISOString(),
+          },
+        });
+      }
+    } catch (nudgeError) {
+      console.warn('Gorgias widget refresh nudge skipped', {
+        merchant_id: result.merchant_id,
+        message: nudgeError instanceof Error ? nudgeError.message : String(nudgeError),
       });
     }
     return NextResponse.json(result);

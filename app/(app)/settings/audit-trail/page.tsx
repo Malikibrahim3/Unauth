@@ -54,7 +54,7 @@ export default async function AuditTrailPage() {
         <Link
           href="/settings"
           className="mb-4 inline-flex items-center gap-1.5 text-xs hover:underline"
-          style={{ color: 'var(--text-muted)' }}
+          style={{ color: 'var(--text-secondary)' }}
         >
           <ArrowLeft className="h-3 w-3" /> Settings
         </Link>
@@ -62,7 +62,7 @@ export default async function AuditTrailPage() {
           <History className="h-5 w-5" style={{ color: 'var(--privacy-ink)' }} />
           <h1 className="t-heading" style={{ color: 'var(--text)' }}>Audit trail</h1>
         </div>
-        <p className="mt-2 max-w-2xl text-sm" style={{ color: 'var(--text-muted)' }}>
+        <p className="mt-2 max-w-2xl text-sm" style={{ color: 'var(--text-secondary)' }}>
           Review merchant-scoped user actions and claim lifecycle events with actor attribution.
         </p>
         <p className="mt-1 inline-flex items-center gap-1 text-xs font-semibold" style={{ color: 'var(--privacy-ink)' }}>

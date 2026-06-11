@@ -59,9 +59,10 @@ export function formatCurrencyCompact(amount: number, _currency = 'USD'): string
 }
 
 /** Null-safe currency formatter — returns '—' for null/undefined values. */
-export function formatCurrencyNullable(amount: number | null | undefined, _currency = 'USD'): string {
+export function formatCurrencyNullable(amount: number | string | null | undefined, _currency = 'USD'): string {
   if (amount == null) return '—';
-  return formatCurrency(amount);
+  const numericAmount = typeof amount === 'string' ? Number.parseFloat(amount) || 0 : amount;
+  return formatCurrency(numericAmount);
 }
 
 export function formatDate(date: Date | string): string {

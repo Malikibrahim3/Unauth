@@ -4,20 +4,17 @@ import { PageConnectionGate } from '@/components/connections/PageConnectionGate'
 import type { ConnectionState } from '@/lib/connections/getConnectionState';
 import { WorkbenchPage, WorkbenchEmptyState, ButtonLink } from '@/components/ui';
 import { WORKBENCH_NAV_ITEMS } from '@/components/workbench/workbenchNavItems';
-import { ConfidenceBadge } from '@/components/ui/ConfidenceBadge';
-import { riskLevelToNewGrade } from '@/lib/confidence';
 import { formatCurrencyNullable } from '@/lib/utils/format';
-import { formatClaimAge, formatFiledDate } from '@/lib/claims/sla';
 import PageSizeSelect from '@/components/common/PageSizeSelect';
-import { StatusPill, SlaPill } from '@/app/(app)/claims/claimsPageUi';
+import { AnalyticsDonutChart } from '@/components/analytics/AnalyticsDonutChart';
+import { AnalyticsHBarChart } from '@/components/analytics/AnalyticsHBarChart';
 import {
-  CLAIM_TYPE_LABELS,
-  DECISION_LABELS,
   type ClaimRow,
   type CustomerProfileSummary,
   type EvidencePackageRow,
 } from '@/app/(app)/claims/claimsPageData';
-import { claimNextAction, buildClaimsQueryString } from '@/app/(app)/claims/claimsPageLogic';
+import { buildClaimsQueryString } from '@/app/(app)/claims/claimsPageLogic';
+import { ClaimsQueueClient } from '@/app/(app)/claims/ClaimsQueueClient';
 import type { ClaimsListView } from '@/lib/claims/claimsQueueUi';
 
 export type ClaimsFilterTab = {
@@ -76,26 +73,50 @@ export function ClaimsPageView({
   page,
   totalPages,
 }: ClaimsPageViewProps) {
+  const statusDonut = [
+    { label: 'Open', value: queueCounts.active, color: 'var(--text-primary)' },
+    { label: 'Unread', value: queueCounts.unread, color: 'var(--warning)' },
+    { label: 'Overdue', value: queueCounts.overdue, color: 'var(--critical)' },
+    { label: 'Resolved', value: queueCounts.resolved, color: 'var(--success)' },
+  ].filter((item) => item.value > 0);
+  const claimTypeBars = Object.entries(
+    claims.reduce<Record<string, number>>((acc, claim) => {
+      acc[claim.claim_type] = (acc[claim.claim_type] ?? 0) + 1;
+      return acc;
+    }, {})
+  )
+    .slice(0, 5)
+    .map(([label, value]) => ({
+      label,
+      value,
+      color: 'var(--neutral)',
+    }));
+
   return (
-    <PageConnectionGate requires="helpdesk" connection={connectionState} pageName="Claims" pageDescription="Claim data comes from your helpdesk integration. Connect Gorgias or Zendesk to see and manage disputes here." hasData={queueCounts.total > 0}>
+    <PageConnectionGate requires="helpdesk" connection={connectionState} pageName="Claim Evidence" pageDescription="Claim-linked identity evidence appears here after helpdesk or commerce sync. Connect Gorgias or Zendesk to view claim evidence in Unauth." hasData={queueCounts.total > 0}>
     <WorkbenchPage
-      title="Claims"
-      subtitle="Track active claim work and merchant-recorded outcomes"
+      title="Claim Evidence Index"
+      subtitle="Identity evidence and recorded merchant responses for claim-linked orders."
       navItems={WORKBENCH_NAV_ITEMS}
       activeNavKey="claims"
       kpiItems={[
-        { label: 'Active queue', value: queueCounts.active.toLocaleString(), hint: 'Unresolved work' },
-        { label: 'New / unread', value: queueCounts.unread.toLocaleString(), hint: 'Not yet opened' },
-        { label: 'Overdue', value: queueCounts.overdue.toLocaleString(), hint: '>72h open' },
-        { label: 'Resolved', value: queueCounts.resolved.toLocaleString(), hint: 'History' },
-        { label: 'Total claims', value: queueCounts.total.toLocaleString(), hint: 'All time' },
+        { label: 'Claims with evidence', value: queueCounts.active.toLocaleString(), hint: 'Open claims' },
+        { label: 'New evidence', value: queueCounts.unread.toLocaleString(), hint: 'Arrived since last visit' },
+        { label: 'Ageing claims', value: queueCounts.overdue.toLocaleString(), hint: '>72h open' },
+        { label: 'Outcomes recorded', value: queueCounts.resolved.toLocaleString(), hint: 'Merchant trail' },
+        { label: 'Claims reviewed', value: queueCounts.total.toLocaleString(), hint: 'All time' },
         { label: 'Open claim value', value: formatCurrencyNullable(totalAtRisk || null), hint: 'All claims' },
       ]}
+      footer={
+        <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+          Support conversations stay in your helpdesk. Unauth shows the identity evidence and merchant response record behind each claim.
+        </p>
+      }
       main={
         isEmpty ? (
           <WorkbenchEmptyState
-            title="No claims yet"
-            description="Claims appear here when filed from a customer profile. Open a customer profile, run a claim review, and it will show up in this list."
+            title="No claim records yet"
+            description="Unauth will show claim-linked identity evidence here after imports, helpdesk events, or commerce syncs."
             action={
               <Link href="/customers" className="text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
                 Go to Customers →
@@ -103,230 +124,140 @@ export function ClaimsPageView({
             }
           />
         ) : (
-          <div className="p-4 space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                {resultText}
-              </p>
-              <Suspense fallback={<span className="text-xs" style={{ color: 'var(--text-muted)' }}>Rows per page…</span>}>
-                <PageSizeSelect pathname="/claims" pageSize={pageSize} />
-              </Suspense>
+          <div>
+            <div className="grid gap-4 px-4 pt-4 lg:grid-cols-2">
+              <div className="rounded-[10px] border p-4" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
+                <p className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>Queue health</p>
+                <p className="mt-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                  Open, unread, overdue, and resolved claim mix
+                </p>
+                <div className="mt-3">
+                  <AnalyticsDonutChart data={statusDonut} height={220} emptyLabel="No claim mix yet" />
+                </div>
+              </div>
+              <div className="rounded-[10px] border p-4" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
+                <p className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>Current page claim types</p>
+                <p className="mt-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                  Quick read on what the analyst is looking at right now
+                </p>
+                <div className="mt-3">
+                  <AnalyticsHBarChart data={claimTypeBars} yAxisWidth={110} emptyLabel="No claim type data" />
+                </div>
+              </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-x-1 gap-y-1 border-b pb-3" style={{ borderColor: 'var(--border-subtle)' }} role="tablist" aria-label="Claims queues">
-              {filterTabs.map((tab) => (
-                <Link
-                  key={tab.label}
-                  href={tab.href}
-                  role="tab"
-                  aria-selected={tab.active}
-                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-colors"
-                  style={{
-                    background: tab.active ? 'var(--accent)' : 'var(--bg-subtle)',
-                    color: tab.active ? 'var(--text-inverse)' : 'var(--text-muted)',
-                  }}
-                >
-                  {tab.label}
-                  <span className="font-mono tabular-nums">{tab.count}</span>
-                </Link>
-              ))}
-            </div>
-
-            <div className="rounded-md border px-3 py-2 text-xs" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)', color: 'var(--text-muted)' }}>
-              {queueFilter === 'history'
-                ? 'History shows resolved and closed claims with merchant-recorded outcomes.'
-                : queueFilter === 'snoozed'
-                  ? 'Snoozed claims are hidden from the active queue until follow-up is due.'
-                : 'Open/read removes a claim from New / unread but keeps it in Active until resolved. Resolve/close moves it to History.'}
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2 text-xs">
-              {[
-                { label: 'Recently updated', href: `/claims${buildClaimsQueryString(sp, { sort: undefined, sla: undefined, page: '1' })}`, active: sort === 'updated' && !slaFilter },
-                { label: 'Oldest first', href: `/claims${buildClaimsQueryString(sp, { sort: 'age', sla: undefined, page: '1' })}`, active: sort === 'age' && !slaFilter },
-                { label: 'Newest filed', href: `/claims${buildClaimsQueryString(sp, { sort: 'filed_desc', sla: undefined, page: '1' })}`, active: sort === 'filed_desc' && !slaFilter },
-                { label: 'Overdue', href: `/claims${buildClaimsQueryString(sp, { sla: 'overdue', sort: 'age', page: '1' })}`, active: slaFilter === 'overdue' },
-                { label: 'Approaching SLA', href: `/claims${buildClaimsQueryString(sp, { sla: 'approaching', sort: 'age', page: '1' })}`, active: slaFilter === 'approaching' },
-              ].map((item) => (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  className="px-2.5 py-1 rounded-md font-medium"
-                  style={{ background: item.active ? 'var(--accent)' : 'var(--bg-subtle)', color: item.active ? 'var(--text-inverse)' : 'var(--text-muted)' }}
-                >
-                  {item.label}
-                </Link>
-              ))}
+            {/* Toolbar */}
+            <div className="flex flex-wrap items-center justify-between gap-3 px-4 pt-4 pb-3 border-b" style={{ borderColor: 'var(--border-muted)' }}>
+              <div
+                className="flex flex-wrap items-center gap-x-1 gap-y-1"
+                role="tablist"
+                aria-label="Claim review filters"
+              >
+                {filterTabs.map((tab) => (
+                  <Link
+                    key={tab.label}
+                    href={tab.href}
+                    role="tab"
+                    aria-selected={tab.active}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-[6px] text-xs font-medium transition-colors"
+                    style={{
+                      background: tab.active ? 'var(--accent)' : 'var(--surface-sunken)',
+                      color: tab.active ? 'white' : 'var(--text-secondary)',
+                    }}
+                  >
+                    {tab.label}
+                    <span className="font-mono tabular-nums">{tab.count}</span>
+                  </Link>
+                ))}
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5">
+                  {[
+                    { label: 'Updated', href: `/claims${buildClaimsQueryString(sp, { sort: undefined, sla: undefined, page: '1' })}`, active: sort === 'updated' && !slaFilter },
+                    { label: 'Oldest', href: `/claims${buildClaimsQueryString(sp, { sort: 'age', sla: undefined, page: '1' })}`, active: sort === 'age' && !slaFilter },
+                    { label: 'Ageing first', href: `/claims${buildClaimsQueryString(sp, { sla: 'overdue', sort: 'age', page: '1' })}`, active: slaFilter === 'overdue' },
+                  ].map((item) => (
+                    <Link
+                      key={item.label}
+                      href={item.href}
+                      className="px-2.5 py-1 rounded-[6px] text-xs font-medium"
+                      style={{
+                        background: item.active ? 'var(--surface-sunken)' : 'transparent',
+                        color: item.active ? 'var(--text-primary)' : 'var(--text-tertiary)',
+                        border: item.active ? '1px solid var(--border)' : '1px solid transparent',
+                      }}
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
+                </div>
+                <Suspense fallback={<span className="text-xs" style={{ color: 'var(--text-secondary)' }}>Rows…</span>}>
+                  <PageSizeSelect pathname="/claims" pageSize={pageSize} />
+                </Suspense>
+              </div>
             </div>
 
             {claims.length === 0 ? (
-              <div className="rounded-md border py-12 text-center text-sm" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)', color: 'var(--text-muted)' }}>
-                <p>
+              <div
+                className="py-16 text-center"
+                style={{ color: 'var(--text-secondary)' }}
+              >
+                <p className="text-sm">
                   {listView.kind === 'unread'
-                    ? 'No new unread claims right now.'
+                    ? 'No claims with new evidence right now.'
                     : listView.kind === 'history'
-                      ? 'No resolved claims in history yet.'
+                      ? 'No claims with recorded outcomes yet.'
                       : listView.kind === 'snoozed'
-                        ? 'No snoozed claims right now.'
+                        ? 'No deferred claim records right now.'
                         : listView.kind === 'assigned_me'
-                          ? 'No claims are assigned to you.'
+                          ? 'No claim records in this view.'
                           : listView.kind === 'unassigned'
-                            ? 'No unassigned active claims.'
+                            ? 'No claims needing review right now.'
                             : slaFilter === 'overdue'
-                              ? 'No overdue claims in this view.'
-                              : 'No claims match this filter.'}
+                              ? 'No ageing claims in this view.'
+                              : listView.kind === 'status' && listView.status === 'open'
+                                ? 'No claims with strong identity links right now.'
+                                : listView.kind === 'status' && listView.status === 'pending'
+                                  ? 'No claims waiting on source data right now.'
+                                  : listView.kind === 'status' && listView.status === 'escalated'
+                                    ? 'No claims with high evidence density right now.'
+                                    : 'No claim records match this filter.'}
                 </p>
                 {queueFilter === 'active' && (
-                  <Link href="/claims?queue=history" className="mt-2 inline-block font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
-                    View history
+                  <Link
+                    href="/claims?queue=history"
+                    className="mt-2 inline-block text-xs font-semibold hover:underline"
+                    style={{ color: 'var(--accent)' }}
+                  >
+                    View recorded outcomes
                   </Link>
                 )}
               </div>
             ) : (
-              <div className="overflow-x-auto rounded-xl border" style={{ borderColor: 'var(--border-subtle)' }}>
-                <table className="w-full min-w-[1080px] text-sm">
-                  <thead className="sticky top-0 z-10" style={{ background: 'var(--bg-subtle)' }}>
-                    <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                      {[
-                        { label: 'Order ref', className: '' },
-                        { label: 'Customer', className: 'min-w-[160px]' },
-                        { label: 'Type', className: '' },
-                        { label: 'Status', className: '' },
-                        { label: 'Stage', className: '' },
-                        { label: 'Owner', className: 'hidden xl:table-cell' },
-                        { label: 'Next action', className: 'min-w-[150px]' },
-                        { label: 'Merchant decision', className: 'hidden xl:table-cell' },
-                        { label: 'Filed', className: 'hidden lg:table-cell' },
-                        { label: 'Age', className: 'hidden lg:table-cell' },
-                        { label: 'SLA', className: '' },
-                        { label: 'Evidence', className: 'hidden xl:table-cell' },
-                        { label: 'At risk', className: '' },
-                        { label: 'Updated', className: 'hidden lg:table-cell' },
-                      ].map((col) => (
-                        <th
-                          key={col.label}
-                          className={`text-left px-4 py-2.5 text-xs font-semibold whitespace-nowrap ${col.className}`}
-                          style={{ color: 'var(--text-muted)' }}
-                        >
-                          {col.label}
-                        </th>
-                      ))}
-                      <th
-                        className="sticky right-0 px-4 py-2.5 text-xs font-semibold text-right whitespace-nowrap"
-                        style={{ color: 'var(--text-muted)', background: 'var(--bg-subtle)' }}
-                      >
-                        Action
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {claims.map((c) => {
-                      const orderRef = c.shopify_order_id ?? c.id.slice(0, 8);
-                      const latestOutcome = latestOutcomeByClaimId.get(c.id) ?? null;
-                      const linkedEvidence = evidenceByClaimId.get(c.id) ?? null;
-                      const customer = c.customer_id ? customerById.get(c.customer_id) ?? null : null;
-                      const customerName = customer?.names?.[0] ?? null;
-                      const customerEmail = customer?.primary_email ?? null;
-                      const ops = claimNextAction(c, latestOutcome, currentUserId);
-                      return (
-                        <tr
-                          key={c.id}
-                          className="group border-t hover:bg-[var(--bg-hover)]"
-                          style={{ borderColor: 'var(--border-subtle)' }}
-                        >
-                          <td className="px-4 py-3 font-mono text-xs max-w-[120px] truncate" style={{ color: 'var(--text)' }} title={orderRef}>
-                            {orderRef}
-                          </td>
-                          <td className="px-4 py-3 text-xs" style={{ color: 'var(--text)' }}>
-                            {c.customer_id ? (
-                              <Link href={`/customers/${c.customer_id}`} className="block min-w-0 hover:underline" style={{ color: 'var(--accent)' }}>
-                                <span className="block font-semibold truncate">{customerName ?? 'Unknown customer'}</span>
-                                {customerEmail && (
-                                  <span className="block truncate text-xs" style={{ color: 'var(--text-muted)' }}>{customerEmail}</span>
-                                )}
-                                {customer?.risk_level && (
-                                  <span className="mt-1 inline-block">
-                                    <ConfidenceBadge grade={riskLevelToNewGrade(customer.risk_level)} size="sm" />
-                                  </span>
-                                )}
-                              </Link>
-                            ) : (
-                              <span style={{ color: 'var(--text-muted)' }}>-</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: 'var(--text)' }}>
-                            {CLAIM_TYPE_LABELS[c.claim_type] ?? c.claim_type}
-                          </td>
-                          <td className="px-4 py-3">
-                            <StatusPill status={c.status} />
-                          </td>
-                          <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: 'var(--text)' }}>
-                            {ops.stage}
-                          </td>
-                          <td className="hidden xl:table-cell px-4 py-3 text-xs whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>
-                            {ops.owner}
-                          </td>
-                          <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-muted)' }}>
-                            {ops.next}
-                          </td>
-                          <td className="hidden xl:table-cell px-4 py-3 text-xs whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>
-                            {latestOutcome ? DECISION_LABELS[latestOutcome.decision] ?? latestOutcome.decision : '-'}
-                          </td>
-                          <td className="hidden lg:table-cell px-4 py-3 text-xs whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>
-                            {formatFiledDate(c)}
-                          </td>
-                          <td className="hidden lg:table-cell px-4 py-3 text-xs whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>
-                            {formatClaimAge(c)}
-                          </td>
-                          <td className="px-4 py-3">
-                            <SlaPill claim={c} />
-                          </td>
-                          <td className="hidden xl:table-cell px-4 py-3 text-xs max-w-[100px] truncate" style={{ color: 'var(--text-muted)' }}>
-                            {linkedEvidence ? (
-                              <Link href={`/chargebacks/${linkedEvidence.id}`} className="hover:underline truncate block" style={{ color: 'var(--accent)' }} title={linkedEvidence.reference_number}>
-                                {linkedEvidence.reference_number}
-                              </Link>
-                            ) : '-'}
-                          </td>
-                          <td className="px-4 py-3 text-xs tabular-nums whitespace-nowrap" style={{ color: 'var(--text)' }}>
-                            {formatCurrencyNullable(c.amount_at_risk, c.currency ?? undefined)}
-                          </td>
-                          <td className="hidden lg:table-cell px-4 py-3 text-xs whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>
-                            {new Date(c.updated_at).toLocaleDateString('en-US')}
-                          </td>
-                          <td
-                            className="sticky right-0 px-4 py-3 text-right whitespace-nowrap group-hover:bg-[var(--bg-hover)]"
-                            style={{ background: 'var(--surface-raised)' }}
-                          >
-                            {c.customer_id ? (
-                              <Link
-                                href={`/customers/${c.customer_id}/claims?claimId=${c.id}`}
-                                className="text-xs font-semibold hover:underline"
-                                style={{ color: 'var(--accent)' }}
-                              >
-                                Review & record
-                              </Link>
-                            ) : (
-                              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>-</span>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+              <ClaimsQueueClient
+                claims={claims}
+                outcomesRecord={Object.fromEntries(latestOutcomeByClaimId)}
+                evidenceRecord={Object.fromEntries(evidenceByClaimId)}
+                customersRecord={Object.fromEntries(customerById)}
+                currentUserId={currentUserId}
+              />
             )}
 
             {totalPages > 1 && (
-              <div className="flex flex-wrap items-center justify-end gap-2 pt-2 text-xs" style={{ color: 'var(--text-muted)' }}>
-                <span>Page {page} of {totalPages}</span>
-                {page > 1 && (
-                  <ButtonLink href={`/claims${buildClaimsQueryString(sp, { page: String(page - 1) })}`} variant="secondary" size="sm">Previous</ButtonLink>
-                )}
-                {page < totalPages && (
-                  <ButtonLink href={`/claims${buildClaimsQueryString(sp, { page: String(page + 1) })}`} variant="secondary" size="sm">Next</ButtonLink>
-                )}
+              <div
+                className="flex flex-wrap items-center justify-between gap-2 border-t px-4 py-3 text-xs"
+                style={{ borderColor: 'var(--border-muted)', color: 'var(--text-secondary)' }}
+              >
+                <span>{resultText}</span>
+                <div className="flex items-center gap-2">
+                  <span>Page {page} of {totalPages}</span>
+                  {page > 1 && (
+                    <ButtonLink href={`/claims${buildClaimsQueryString(sp, { page: String(page - 1) })}`} variant="secondary" size="sm">Previous</ButtonLink>
+                  )}
+                  {page < totalPages && (
+                    <ButtonLink href={`/claims${buildClaimsQueryString(sp, { page: String(page + 1) })}`} variant="secondary" size="sm">Next</ButtonLink>
+                  )}
+                </div>
               </div>
             )}
           </div>

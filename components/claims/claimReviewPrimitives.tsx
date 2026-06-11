@@ -13,7 +13,7 @@ import type { ClaimRecord, ClaimStatus, EvidenceSource, EvidenceType } from '@/c
 
 export function StatusPill({ status }: { status: string }) {
   const label = STATUS_LABELS[status] ?? status;
-  const c = STATUS_COLOUR_MAP[status] ?? { bg: 'var(--bg-subtle)', text: 'var(--text-muted)' };
+  const c = STATUS_COLOUR_MAP[status] ?? { bg: 'var(--bg-subtle)', text: 'var(--text-secondary)' };
   return (
     <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: c.bg, color: c.text }}>
       {label}
@@ -21,19 +21,28 @@ export function StatusPill({ status }: { status: string }) {
   );
 }
 
+const SLA_DISPLAY_LABEL: Record<string, string> = {
+  Overdue: 'Ageing',
+  'Approaching SLA': 'Approaching threshold',
+  Resolved: 'Outcome recorded',
+  Normal: 'Within threshold',
+  'SLA unknown': 'Age unknown',
+};
+
 export function SlaBadge({ claim }: { claim: ClaimRecord }) {
   const sla = getClaimSlaState(claim);
   const c = SLA_COLOUR_MAP[sla.state] ?? SLA_COLOUR_MAP.normal;
+  const label = SLA_DISPLAY_LABEL[sla.label] ?? sla.label;
   return (
     <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: c.bg, color: c.text }}>
-      {sla.label}
+      {label}
     </span>
   );
 }
 
 export function FieldLabel({ children, htmlFor }: { children: ReactNode; htmlFor?: string }) {
   return (
-    <label htmlFor={htmlFor} className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-muted)' }}>
+    <label htmlFor={htmlFor} className="block text-xs font-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>
       {children}
     </label>
   );
@@ -58,28 +67,28 @@ export function RailSection({
 }) {
   return (
     <div
-      className="rounded-lg border overflow-hidden"
+      className="rounded-md border overflow-hidden"
       style={{
-        borderColor: highlighted ? 'var(--copper-bright)' : 'var(--border-subtle)',
-        background: 'var(--bg-surface)',
-        boxShadow: highlighted ? '0 0 0 1px var(--copper-bright)' : undefined,
+        borderColor: highlighted ? 'var(--text-primary)' : 'var(--border-muted)',
+        background: 'var(--surface)',
+        boxShadow: highlighted ? '0 0 0 1px var(--text-primary)' : undefined,
       }}
     >
       <button
         type="button"
         onClick={() => onToggle(id)}
         className="w-full flex items-center justify-between px-3 py-2 text-left"
-        style={{ background: 'var(--bg-surface)' }}
+        style={{ background: 'var(--surface)' }}
         aria-expanded={open}
       >
         <span className="flex items-center gap-1.5 min-w-0">
-          <span className="text-xs font-semibold uppercase tracking-wide truncate" style={{ color: 'var(--ink-secondary)' }}>{title}</span>
+          <span className="text-xs font-semibold uppercase tracking-wide truncate" style={{ color: 'var(--text-secondary)' }}>{title}</span>
           {badge}
         </span>
-        <span className="text-xs shrink-0 ml-2" style={{ color: 'var(--text-muted)' }}>{open ? '▲' : '▼'}</span>
+        <span className="text-xs shrink-0 ml-2" style={{ color: 'var(--text-secondary)' }}>{open ? '▲' : '▼'}</span>
       </button>
       {open && (
-        <div className="px-3 pb-3 pt-0 border-t" style={{ borderColor: 'var(--border-subtle)' }}>
+        <div className="px-3 pb-3 pt-0 border-t" style={{ borderColor: 'var(--border-muted)' }}>
           {children}
         </div>
       )}
@@ -89,8 +98,8 @@ export function RailSection({
 
 export function CaseIntelTile({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="rounded-lg border px-3 py-2.5 min-w-0" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)' }}>
-      <p className="text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--text-muted)' }}>{label}</p>
+    <div className="rounded-md border px-3 py-2.5 min-w-0" style={{ borderColor: 'var(--border-muted)', background: 'var(--bg-inset)' }}>
+      <p className="text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: 'var(--text-secondary)' }}>{label}</p>
       <div className="text-sm leading-snug" style={{ color: 'var(--text)' }}>{children}</div>
     </div>
   );
@@ -128,7 +137,7 @@ export function ClaimLifecycleStatusBar({
   if (claimIsClosed) {
     return (
       <div className="space-y-2">
-        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Claim closed. Reopen to return to active queue.</p>
+        <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>Claim archived. Reopen to continue evidence review.</p>
         <textarea
           id="claim-reopen-note"
           className="w-full px-2 py-1.5 rounded-md text-xs resize-none"
@@ -155,7 +164,7 @@ export function ClaimLifecycleStatusBar({
   return (
     <div className="space-y-2">
       <label className="block">
-        <FieldLabel htmlFor="claim-lifecycle-status">Status</FieldLabel>
+        <FieldLabel htmlFor="claim-lifecycle-status">Review status</FieldLabel>
         <select
           id="claim-lifecycle-status"
           className="w-full px-2 py-1.5 rounded-md text-xs"
@@ -188,7 +197,7 @@ export function ClaimLifecycleStatusBar({
         className="w-full px-3 py-1.5 rounded-md text-xs font-semibold disabled:opacity-60"
         style={btnStyle(submitIsPrimary && claimId ? 'primary' : claimId ? 'secondary' : 'disabled')}
       >
-        Update status
+        Update review status
       </button>
       <fieldset className="flex flex-wrap gap-1 border-0 p-0 m-0">
         <legend className="sr-only">Quick status shortcuts</legend>
@@ -200,9 +209,9 @@ export function ClaimLifecycleStatusBar({
             onClick={() => setStatusToSet(item.value)}
             className="rounded-md border px-2 py-0.5 text-xs font-semibold disabled:opacity-50"
             style={{
-              borderColor: statusToSet === item.value ? 'var(--accent)' : 'var(--border-subtle)',
-              background: 'var(--bg-surface)',
-              color: statusToSet === item.value ? 'var(--accent)' : 'var(--text-muted)',
+              borderColor: statusToSet === item.value ? 'var(--accent)' : 'var(--border-muted)',
+              background: 'var(--surface)',
+              color: statusToSet === item.value ? 'var(--accent)' : 'var(--text-secondary)',
             }}
           >
             {item.label}

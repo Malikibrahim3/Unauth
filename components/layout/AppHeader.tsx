@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
-import { ChevronRight, Search } from 'lucide-react';
+import { ChevronRight, Menu, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import CommandPalette from './CommandPalette';
 import { MerchantEnvChip } from './MerchantEnvChip';
@@ -69,7 +69,7 @@ export default function AppHeader({
       )}
       style={{
         background: 'color-mix(in srgb, var(--surface-base) 92%, transparent)',
-        borderBottomColor: 'var(--surface-border)',
+        borderBottomColor: 'var(--border)',
         backdropFilter: 'saturate(130%) blur(8px)',
         WebkitBackdropFilter: 'saturate(130%) blur(8px)',
       }}
@@ -82,18 +82,13 @@ export default function AppHeader({
           onClick={onToggleSidebar}
           className={cn(
             'flex h-7 w-7 items-center justify-center rounded-md',
-            'text-[var(--ink-tertiary)] hover:text-[var(--ink-primary)]',
+            'text-[var(--text-tertiary)] hover:text-[var(--text-primary)]',
             'transition-colors duration-[var(--duration-fast)]',
             'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] focus-visible:outline-offset-2',
             'flex-shrink-0',
           )}
         >
-          {/* Hamburger / bars icon */}
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-            <rect x="2" y="4"  width="12" height="1.5" rx="0.75" fill="currentColor" />
-            <rect x="2" y="7.25" width="12" height="1.5" rx="0.75" fill="currentColor" />
-            <rect x="2" y="10.5" width="12" height="1.5" rx="0.75" fill="currentColor" />
-          </svg>
+          <Menu size={16} aria-hidden="true" />
         </button>
       )}
 
@@ -105,7 +100,7 @@ export default function AppHeader({
             <span key={seg.href ?? seg.label} className="flex items-center gap-0">
               {i > 0 && (
                 <ChevronRight
-                  className="mx-1.5 h-3 w-3 flex-shrink-0 text-[var(--ink-tertiary)]"
+                  className="mx-1.5 h-3 w-3 flex-shrink-0 text-[var(--text-tertiary)]"
                   aria-hidden="true"
                 />
               )}
@@ -114,8 +109,8 @@ export default function AppHeader({
                   className={cn(
                     'truncate',
                     isLast
-                      ? 'text-[13px] font-semibold text-[var(--ink-primary)]'
-                      : 'text-caption text-[var(--ink-secondary)]',
+                      ? 'text-[13px] font-semibold text-[var(--text-primary)]'
+                      : 'text-caption text-[var(--text-secondary)]',
                   )}
                   aria-current={isLast ? 'page' : undefined}
                 >
@@ -127,7 +122,7 @@ export default function AppHeader({
                         width: 5,
                         height: 5,
                         borderRadius: 999,
-                        background: 'var(--copper-bright)',
+                        background: 'var(--text-tertiary)',
                         marginRight: 7,
                         verticalAlign: '1px',
                       }}
@@ -139,8 +134,8 @@ export default function AppHeader({
                 <Link
                   href={seg.href}
                   className={cn(
-                    'text-caption truncate text-[var(--ink-secondary)]',
-                    'hover:text-[var(--ink-primary)] transition-colors duration-[var(--duration-fast)]',
+                    'text-caption truncate text-[var(--text-secondary)]',
+                    'hover:text-[var(--text-primary)] transition-colors duration-[var(--duration-fast)]',
                     'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] focus-visible:outline-offset-2 rounded-sm',
                   )}
                 >
@@ -169,14 +164,14 @@ export default function AppHeader({
         onClick={openPalette}
         className={cn(
           'flex h-7 items-center gap-1.5 px-2',
-          'border border-[var(--surface-border)]',
-          'text-caption text-[var(--ink-tertiary)]',
-          'hover:border-[var(--copper-bright)] hover:text-[var(--ink-primary)]',
+          'border border-[var(--border)]',
+          'text-caption text-[var(--text-tertiary)]',
+          'hover:border-[var(--border)] hover:text-[var(--text-primary)]',
           'transition-colors duration-[var(--duration-fast)]',
           'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] focus-visible:outline-offset-2',
           'flex-shrink-0',
         )}
-        style={{ background: 'var(--surface-input)', borderRadius: 6 }}
+        style={{ background: 'var(--surface-sunken)', borderRadius: 6 }}
       >
         <Search size={14} aria-hidden="true" />
         <span className="hidden sm:inline">Search</span>
@@ -205,7 +200,7 @@ function deriveFromPathname(pathname: string): BreadcrumbSegment[] {
     history:     'Import history',
     inbox:       'Claims',
     store:       'Store overview',
-    reports:     'Reports',
+    reports:     'Analytics',
     chargebacks: 'Evidence packages',
     onboarding:  'Onboarding',
     help:        'Help',

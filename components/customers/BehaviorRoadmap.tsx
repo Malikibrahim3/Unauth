@@ -34,12 +34,12 @@ interface BehaviorRoadmapProps {
 
 const GLYPHS: Record<BehaviorRoadmapEventType, { symbol: string; color: string; tag?: string }> = {
   order_placed: { symbol: '■', color: 'var(--sev-neutral)' },
-  order_refunded: { symbol: '●', color: 'var(--sev-probable)' },
-  chargeback_filed: { symbol: '✕', color: 'var(--sev-probable)' },
-  identity_change: { symbol: '◆', color: 'var(--sev-probable)' },
-  watchlist_add: { symbol: '✓', color: 'var(--sev-clear)' },
+  order_refunded: { symbol: '●', color: 'var(--warning)' },
+  chargeback_filed: { symbol: '✕', color: 'var(--warning)' },
+  identity_change: { symbol: '◆', color: 'var(--warning)' },
+  watchlist_add: { symbol: '✓', color: 'var(--neutral)' },
   cross_merchant_signal: { symbol: '◆', color: 'color-mix(in srgb, var(--sev-neutral) 60%, transparent)' },
-  note_added: { symbol: '■', color: 'var(--ink-tertiary)' },
+  note_added: { symbol: '■', color: 'var(--text-tertiary)' },
 };
 
 function DensitySvg({ events }: { events: BehaviorRoadmapEvent[] }) {
@@ -61,7 +61,7 @@ function DensitySvg({ events }: { events: BehaviorRoadmapEvent[] }) {
     <svg className="h-5 w-full" viewBox="0 0 180 20" preserveAspectRatio="none" aria-hidden="true">
       {buckets.map((bucket, index) => {
         const height = Math.max(2, (bucket.total / max) * 18);
-        const fill = bucket.total > 0 ? 'var(--ink-tertiary)' : 'var(--surface-muted)';
+        const fill = bucket.total > 0 ? 'var(--text-tertiary)' : 'var(--surface-sunken)';
         return (
           <rect
             key={index}
@@ -92,11 +92,11 @@ export default function BehaviorRoadmap({ events }: BehaviorRoadmapProps) {
   }, [events]);
 
   return (
-    <div className="overflow-hidden rounded-md border" style={{ background: 'var(--surface-raised)', borderColor: 'var(--surface-border)' }}>
-      <div className="border-b px-4 py-3" style={{ borderColor: 'var(--surface-border)' }}>
+    <div className="overflow-hidden rounded-md border" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+      <div className="border-b px-4 py-3" style={{ borderColor: 'var(--border)' }}>
         <div className="flex items-center justify-between gap-3">
-          <p className="text-[13px] font-semibold" style={{ color: 'var(--ink-primary)' }}>Order & claim history</p>
-          <p className="t-mono" style={{ color: 'var(--ink-secondary)' }}>{events.length} events</p>
+          <p className="text-[13px] font-semibold" style={{ color: 'var(--text-primary)' }}>Order & claim history</p>
+          <p className="t-mono" style={{ color: 'var(--text-secondary)' }}>{events.length} events</p>
         </div>
         <div
           className="mt-2 cursor-help"
@@ -110,7 +110,7 @@ export default function BehaviorRoadmap({ events }: BehaviorRoadmapProps) {
               <span
                 key={tag}
                 className="rounded-sm border px-1.5 py-0.5 text-xs font-medium"
-                style={{ background: 'var(--surface-muted)', borderColor: 'var(--surface-border)', color: 'var(--ink-secondary)' }}
+                style={{ background: 'var(--surface-sunken)', borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
               >
                 {tag}
               </span>
@@ -128,24 +128,24 @@ export default function BehaviorRoadmap({ events }: BehaviorRoadmapProps) {
             <li
               key={event.id}
               className="relative grid min-h-8 grid-cols-[60px_18px_minmax(0,1fr)_auto] items-start gap-2 border-b px-3 py-2 last:border-b-0"
-              style={{ borderColor: 'var(--surface-border)' }}
+              style={{ borderColor: 'var(--border)' }}
             >
               <time className="t-mono pt-0.5" style={{ color: 'var(--data-date)' }}>
                 {formatDateMode(event.date, 'table')}
               </time>
               <span aria-hidden="true" className="relative flex h-5 items-center justify-center">
                 {index < events.length - 1 && (
-                  <span className="absolute left-1/2 top-4 h-[calc(100%+16px)] w-px -translate-x-1/2" style={{ background: 'var(--surface-border)' }} />
+                  <span className="absolute left-1/2 top-4 h-[calc(100%+16px)] w-px -translate-x-1/2" style={{ background: 'var(--border)' }} />
                 )}
                 <span style={{ color: glyph.color, fontSize: 12, lineHeight: 1 }}>{glyph.symbol}</span>
               </span>
               <button
                 type="button"
                 onClick={() => setExpandedId(expanded ? null : event.id)}
-                className="min-w-0 text-left focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-[var(--copper-bright)]"
+                className="min-w-0 text-left focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
               >
                 <div className="flex min-w-0 items-center gap-2">
-                  <span className="truncate t-body" style={{ color: 'var(--ink-primary)' }}>{event.title}</span>
+                  <span className="truncate text-body-sm" style={{ color: 'var(--text-primary)' }}>{event.title}</span>
                   {event.amount != null && (
                     <span className="t-mono shrink-0" style={{ color: 'var(--data-currency)' }}>
                       {formatCurrencyNullable(event.amount)}
@@ -153,13 +153,13 @@ export default function BehaviorRoadmap({ events }: BehaviorRoadmapProps) {
                   )}
                 </div>
                 {event.subtitle && (
-                  <p className="mt-0.5 truncate t-caption" style={{ color: 'var(--ink-tertiary)' }}>{event.subtitle}</p>
+                  <p className="mt-0.5 truncate t-caption" style={{ color: 'var(--text-tertiary)' }}>{event.subtitle}</p>
                 )}
                 {expanded && (
-                  <div className="mt-2 rounded-sm border px-3 py-2" style={{ background: 'var(--surface-input)', borderColor: 'var(--surface-border)' }}>
-                    {event.detail && <p className="t-body" style={{ color: 'var(--ink-secondary)' }}>{event.detail}</p>}
+                  <div className="mt-2 rounded-sm border px-3 py-2" style={{ background: 'var(--surface-sunken)', borderColor: 'var(--border)' }}>
+                    {event.detail && <p className="text-body-sm" style={{ color: 'var(--text-secondary)' }}>{event.detail}</p>}
                     {event.evidence?.length ? (
-                      <p className="mt-1 t-caption" style={{ color: 'var(--ink-tertiary)' }}>
+                      <p className="mt-1 t-caption" style={{ color: 'var(--text-tertiary)' }}>
                         {event.evidence.map(labelFor).join(' · ')}
                       </p>
                     ) : null}
@@ -168,11 +168,11 @@ export default function BehaviorRoadmap({ events }: BehaviorRoadmapProps) {
               </button>
               <div className="flex items-center gap-2 pt-0.5">
                 {event.source && (
-                  <span className="rounded-sm border px-1.5 py-0.5 text-xs font-medium uppercase" style={{ background: 'var(--surface-muted)', borderColor: 'var(--surface-border)', color: 'var(--ink-tertiary)' }}>
+                  <span className="rounded-sm border px-1.5 py-0.5 text-xs font-medium uppercase" style={{ background: 'var(--surface-sunken)', borderColor: 'var(--border)', color: 'var(--text-tertiary)' }}>
                     {event.source}
                   </span>
                 )}
-                {expanded ? <ChevronDown className="h-3.5 w-3.5" style={{ color: 'var(--ink-tertiary)' }} /> : <ChevronRight className="h-3.5 w-3.5" style={{ color: 'var(--ink-tertiary)' }} />}
+                {expanded ? <ChevronDown className="h-3.5 w-3.5" style={{ color: 'var(--text-tertiary)' }} /> : <ChevronRight className="h-3.5 w-3.5" style={{ color: 'var(--text-tertiary)' }} />}
               </div>
             </li>
           );

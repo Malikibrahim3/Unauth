@@ -63,7 +63,7 @@ export default function DataQualityBanner({ report, runId }: Props) {
 
   if (hasPipelineWarnings && grade !== 'minimal' && grade !== 'sparse') {
     return (
-      <div className="flex items-start gap-3 border rounded-lg px-4 py-3" style={BANNER_STYLE}>
+      <div className="flex items-start gap-3 border rounded-md px-4 py-3" style={BANNER_STYLE}>
         <span className="mt-0.5 flex-shrink-0" style={{ color: 'var(--risk-high)' }}>!</span>
         <div className="flex-1 space-y-1">
           <p className="text-sm font-semibold" style={{ color: 'var(--risk-high)' }}>
@@ -89,7 +89,7 @@ type="button"           onClick={dismiss}
 
   if (grade === 'minimal') {
     return (
-      <div className="flex items-start gap-3 border rounded-lg px-4 py-3" style={BANNER_STYLE}>
+      <div className="flex items-start gap-3 border rounded-md px-4 py-3" style={BANNER_STYLE}>
         <span className="mt-0.5 flex-shrink-0" style={{ color: 'var(--risk-high)' }}>⚠</span>
         <div className="flex-1 space-y-1">
           <p className="text-sm font-semibold" style={{ color: 'var(--risk-high)' }}>
@@ -127,26 +127,26 @@ type="button"           onClick={dismiss}
 
   // sparse
   return (
-    <div className="flex items-start gap-3 border rounded-lg px-4 py-3" style={BANNER_STYLE}>
+    <div className="flex items-start gap-3 border rounded-md px-4 py-3" style={BANNER_STYLE}>
       <span className="mt-0.5 flex-shrink-0" style={{ color: 'var(--risk-high)' }}>⚠</span>
       <div className="flex-1 space-y-1">
         <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
           Limited identity data in this audit
         </p>
-        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
           Matching relied mostly on softer identity signals, so some results
           may stay at &lsquo;possible&rsquo; instead of reaching higher confidence.
           Adding stronger identity fields would improve linking confidence.
         </p>
         {warningMessages.map((message) => (
-          <p key={message} className="text-sm" style={{ color: 'var(--text-muted)' }}>
+          <p key={message} className="text-sm" style={{ color: 'var(--text-secondary)' }}>
             {message}
           </p>
         ))}
         <Link
           href="/help/csv-export"
           className="text-xs underline"
-          style={{ color: 'var(--text-muted)' }}
+          style={{ color: 'var(--text-secondary)' }}
         >
           See which fields to add →
         </Link>

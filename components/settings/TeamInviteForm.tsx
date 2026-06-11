@@ -28,13 +28,13 @@ export function TeamInviteForm({
   return (
     <form
       onSubmit={onSubmit}
-      className="rounded-lg border p-5 space-y-4"
-      style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
+      className="rounded-md border p-5 space-y-4"
+      style={{ background: 'var(--surface)', borderColor: 'var(--border-muted)' }}
     >
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Invite teammate</h2>
-          <p className="mt-1 text-sm" style={{ color: 'var(--text-muted)' }}>
+          <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
             Invite up to 50 teammates per hour with a magic-link email.
           </p>
         </div>
@@ -83,7 +83,7 @@ export function TeamInviteForm({
       </div>
 
       {!canManageTeam ? (
-        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+        <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
           Your {currentUserRole ?? 'current'} role can view the team but cannot invite users or change roles.
         </p>
       ) : null}

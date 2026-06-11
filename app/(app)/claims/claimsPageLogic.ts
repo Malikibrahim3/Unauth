@@ -1,34 +1,64 @@
 import type { ClaimRow } from '@/app/(app)/claims/claimsPageData';
 
+export type ClaimEvidenceStatus = {
+  evidenceStatus: string;
+  reviewState: string;
+};
+
 export function claimNextAction(
   claim: ClaimRow,
-  latestOutcome: { decision: string; outcome: string; updated_at: string } | null,
-  currentUserId: string,
-) {
-  const owner = claim.assigned_to === currentUserId ? 'Assigned to me' : claim.assigned_to ? 'Assigned' : 'Unassigned';
+  _latestOutcome: { decision: string; outcome: string; updated_at: string } | null,
+  _currentUserId: string,
+): ClaimEvidenceStatus {
   const snoozedUntil = claim.snoozed_until ? new Date(claim.snoozed_until) : null;
   if (snoozedUntil && snoozedUntil.getTime() > Date.now()) {
-    return { stage: 'Snoozed', owner, next: `Follow up ${snoozedUntil.toLocaleDateString('en-US')}` };
+    return {
+      evidenceStatus: 'Linked identity evidence available after follow-up date',
+      reviewState: `Evidence state: Deferred until ${snoozedUntil.toLocaleDateString('en-US')}`,
+    };
   }
   switch (claim.status) {
     case 'open':
-      return { stage: claim.first_viewed_at ? 'Viewed' : 'New / unread', owner, next: 'Review linked identity evidence' };
+      return {
+        evidenceStatus: 'Linked identity evidence available',
+        reviewState: claim.first_viewed_at
+          ? 'Review state: Needs review'
+          : 'Evidence state: New evidence found',
+      };
     case 'pending':
-      return { stage: 'Awaiting info', owner, next: 'Wait for carrier or customer update' };
+      return {
+        evidenceStatus: 'Waiting on carrier or customer source data',
+        reviewState: 'Evidence state: Waiting on source data',
+      };
     case 'escalated':
-      return { stage: 'Escalated', owner, next: 'Review escalation context' };
+      return {
+        evidenceStatus: 'High-density identity evidence available',
+        reviewState: 'Evidence state: High evidence density',
+      };
     case 'resolved_refunded':
     case 'resolved_won':
     case 'resolved_lost':
     case 'resolved_denied':
     case 'resolved_exchanged':
-      return { stage: 'Outcome recorded', owner: 'Merchant', next: 'In history' };
+      return {
+        evidenceStatus: 'Merchant-recorded outcome on file',
+        reviewState: 'Evidence state: Outcome recorded',
+      };
     case 'voided':
-      return { stage: 'Voided', owner: 'Merchant', next: 'Archived' };
+      return {
+        evidenceStatus: 'Claim voided — no active evidence review',
+        reviewState: 'Evidence state: Archived',
+      };
     case 'stale':
-      return { stage: 'Stale', owner: 'System', next: 'Reopen if new evidence arrives' };
+      return {
+        evidenceStatus: 'Reopen if new identity evidence arrives',
+        reviewState: 'Evidence state: Stale',
+      };
     default:
-      return { stage: 'Review', owner, next: 'Record next action' };
+      return {
+        evidenceStatus: 'Linked identity evidence available',
+        reviewState: 'Review state: Needs review',
+      };
   }
 }
 

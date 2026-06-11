@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useState } from 'react';
+import { ArrowRight } from 'lucide-react';
 import { ConfidenceBadge } from '@/components/ui/ConfidenceBadge';
 import { riskLevelToNewGrade } from '@/lib/confidence';
 import CustomerIntelligenceDrawer from '@/components/customers/CustomerIntelligenceDrawer';
@@ -43,13 +44,13 @@ export default function CustomersTableClient({ rows }: CustomersTableClientProps
               {p.names?.[0] ?? '-'}
             </span>
           </div>
-          <div className="text-xs font-mono" style={{ color: 'var(--text-muted)' }}>{p.primary_email ?? '-'}</div>
+          <div className="text-xs font-mono" style={{ color: 'var(--text-secondary)' }}>{p.primary_email ?? '-'}</div>
         </div>
       ),
     },
     {
       key: 'risk',
-      header: 'Confidence',
+      header: 'Identity confidence',
       render: (p: CustomerRow) => <ConfidenceBadge grade={riskLevelToNewGrade(p.risk_level)} size="sm" />,
     },
     {
@@ -62,7 +63,7 @@ export default function CustomersTableClient({ rows }: CustomersTableClientProps
             className="num"
             style={{
               fontFamily: 'var(--font-mono)',
-              color: p.total_merchants_seen_at > 1 ? 'var(--accent)' : 'var(--text-muted)',
+              color: p.total_merchants_seen_at > 1 ? 'var(--accent)' : 'var(--text-secondary)',
               fontWeight: p.total_merchants_seen_at > 1 ? 700 : 500,
             }}
           >
@@ -81,7 +82,7 @@ export default function CustomersTableClient({ rows }: CustomersTableClientProps
       key: 'refunds',
       header: 'Refunds',
       align: 'right' as const,
-      render: (p: CustomerRow) => <span className="num" style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-muted)' }}>{p.total_refund_claims}</span>,
+      render: (p: CustomerRow) => <span className="num" style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>{p.total_refund_claims}</span>,
     },
     {
       key: 'open',
@@ -90,14 +91,14 @@ export default function CustomersTableClient({ rows }: CustomersTableClientProps
       render: (p: CustomerRow) => (
         <button
           type="button"
-          className="text-xs font-semibold hover:underline"
+          className="inline-flex items-center gap-1 text-xs font-semibold hover:underline"
           style={{ color: 'var(--accent)' }}
           onClick={(e) => {
             e.stopPropagation();
             openProfile(p.id);
           }}
         >
-          View →
+          View <ArrowRight className="h-3 w-3" aria-hidden="true" />
         </button>
       ),
     },
@@ -109,7 +110,7 @@ export default function CustomersTableClient({ rows }: CustomersTableClientProps
       <div
         className="hidden sm:block overflow-hidden border"
         data-testid="customers-table"
-        style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)', borderRadius: 4 }}
+        style={{ background: 'var(--surface)', borderColor: 'var(--border-muted)', borderRadius: 4 }}
       >
         <DataTable
           columns={columns}
@@ -129,7 +130,7 @@ export default function CustomersTableClient({ rows }: CustomersTableClientProps
             type="button"
             key={p.id}
             className="p-4 w-full text-left cursor-pointer transition-colors"
-            style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}
+            style={{ background: 'var(--surface)', border: '1px solid var(--border-muted)' }}
             onClick={() => openProfile(p.id)}
           >
             <div className="flex items-start justify-between gap-2 mb-2">
@@ -137,11 +138,11 @@ export default function CustomersTableClient({ rows }: CustomersTableClientProps
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <span className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{p.names?.[0] ?? '-'}</span>
                 </div>
-                <p className="text-xs truncate mt-0.5" style={{ color: 'var(--text-muted)' }}>{p.primary_email ?? '-'}</p>
+                <p className="text-xs truncate mt-0.5" style={{ color: 'var(--text-secondary)' }}>{p.primary_email ?? '-'}</p>
               </div>
               <ConfidenceBadge grade={riskLevelToNewGrade(p.risk_level)} size="sm" />
             </div>
-            <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--text-muted)' }}>
+            <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--text-secondary)' }}>
               <span><span className="font-semibold font-mono" style={{ color: p.total_merchants_seen_at > 1 ? 'var(--accent)' : 'var(--text)' }}>{p.total_merchants_seen_at}</span> stores seen</span>
               <span style={{ color: 'var(--border)' }}>·</span>
               <span><span className="font-semibold font-mono" style={{ color: 'var(--text)' }}>{p.total_orders}</span> orders</span>
@@ -149,7 +150,9 @@ export default function CustomersTableClient({ rows }: CustomersTableClientProps
               <span><span className="font-semibold font-mono" style={{ color: 'var(--text)' }}>{p.total_refund_claims}</span> refunds</span>
             </div>
             <div className="mt-3 flex justify-end text-xs font-semibold" style={{ color: 'var(--text)' }}>
-              View ›
+              <span className="inline-flex items-center gap-1">
+                View <ArrowRight className="h-3 w-3" aria-hidden="true" />
+              </span>
             </div>
           </button>
         ))}

@@ -46,12 +46,12 @@ export function ContextCreditsBadge() {
       className="hidden md:flex flex-col items-end text-right leading-tight"
       title="Monthly context credits reset at the end of your billing period."
     >
-      <span className="text-[11px] font-medium uppercase tracking-wide" style={{ color: 'var(--ink-tertiary)' }}>
+      <span className="text-[11px] font-medium uppercase tracking-wide" style={{ color: 'var(--text-tertiary)' }}>
         {credits.label}
       </span>
       <span
         className="text-xs font-semibold"
-        style={{ color: low || warn ? 'var(--status-warn)' : 'var(--ink-secondary)' }}
+        style={{ color: low || warn ? 'var(--status-warn)' : 'var(--text-secondary)' }}
       >
         {remaining} of {limit} remaining
       </span>

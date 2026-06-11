@@ -57,6 +57,7 @@ export async function proxy(request: NextRequest) {
     pathname === '/audit-demo' ||
     pathname.startsWith('/audit-demo/') ||
     pathname === '/demo' ||
+    pathname === '/pricing' ||
     pathname === '/apply' ||
     pathname === '/signup' ||
     pathname.startsWith('/audit') ||
@@ -131,6 +132,7 @@ export async function proxy(request: NextRequest) {
     pathname === '/audit-demo' ||
     pathname.startsWith('/audit-demo/') ||
     pathname === '/demo' ||
+    pathname === '/pricing' ||
     pathname === '/mobile-unsupported' ||
     pathname === '/legal' ||
     pathname.startsWith('/legal/');

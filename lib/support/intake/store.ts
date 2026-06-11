@@ -324,37 +324,47 @@ export async function upsertSupportCaseIntake(
     }
   }
 
-  const {
-    customer_email: _email,
-    customer_email_hash: _emailHash,
-    raw_payload: _raw,
-    raw_payload_hash: _rawHash,
-    ...rest
-  } = parsed;
-  const payload = stripForbiddenIntakeFields({
-    ...rest,
+  // v2 source_tickets shape (post-cutover): provider-native classification
+  // fields (is_claim, summaries, decisions) do NOT live on the ticket row —
+  // claims become first-class rows via ensureClaimForTicketV2 and rich
+  // classification detail rides on the intake source_ticket_events entry.
+  const TICKET_CHANNELS = new Set(['email', 'chat', 'sms', 'phone', 'social', 'portal', 'api', 'bot']);
+  const channel = typeof parsed.channel === 'string' && TICKET_CHANNELS.has(parsed.channel.toLowerCase())
+    ? parsed.channel.toLowerCase()
+    : 'unknown';
+  const payload = {
+    merchant_id: parsed.merchant_id,
     provider: normalizeProviderName(parsed.provider),
-    customer_email_hash: customerEmailHash,
-    order_ref: orderRef,
+    connection_id: parsed.provider_connection_id ?? null,
+    external_id: parsed.external_case_id,
+    external_url: parsed.external_url ?? null,
+    status: parsed.case_status ?? null,
+    channel,
+    tags: parsed.tags ?? [],
+    message_count: parsed.message_count ?? null,
+    customer_reply_count: parsed.customer_reply_count ?? null,
+    was_reopened: parsed.was_reopened ?? null,
+    linked_order_external_ids: orderRef ? [orderRef.replace(/^#/, '')] : [],
+    created_at_provider: parsed.created_at_provider ?? null,
+    updated_at_provider: parsed.updated_at_provider ?? null,
     raw_payload_hash: rawPayloadHash,
     updated_at: new Date().toISOString(),
-  });
+  };
 
-  const runUpsert = (candidate: Record<string, unknown>) =>
-    supabase
-      .from(TABLES.SUPPORT_CASE_INTAKE)
-      .upsert(candidate, { onConflict: 'merchant_id,provider,external_case_id' })
-      .select()
-      .single();
-
-  let { data, error } = await runUpsert(payload);
-
-  if (error && isMissingSupportCaseIntakeCompatColumn(error.message)) {
-    ({ data, error } = await runUpsert(stripSupportCaseIntakeCompatFields(payload)));
-  }
+  const { data, error } = await supabase
+    .from(TABLES.SUPPORT_CASE_INTAKE)
+    .upsert(payload, { onConflict: 'merchant_id,provider,external_id' })
+    .select()
+    .single();
 
   if (error) throw new Error(`upsert ${TABLES.SUPPORT_CASE_INTAKE} failed: ${error.message}`);
-  return data;
+  // echo legacy-shaped fields callers still read off the result
+  return {
+    ...(data as Record<string, unknown>),
+    external_case_id: (data as Record<string, unknown>).external_id,
+    customer_email_hash: customerEmailHash,
+    order_ref: orderRef,
+  } as Record<string, unknown>;
 }
 
 export async function appendSupportCaseEvent(
@@ -369,13 +379,21 @@ export async function appendSupportCaseEvent(
     parsed.raw_payload_hash ??
     (parsed.raw_payload !== undefined ? hashRawPayload(parsed.raw_payload) : null);
 
-  const { actor_identifier: _actor, raw_payload: _raw, raw_payload_hash: _rawHash, ...rest } = parsed;
-  const payload = stripForbiddenIntakeFields({
-    ...rest,
-    provider: normalizeProviderName(parsed.provider),
-    actor_identifier_hash: actorIdentifierHash,
+  // v2 source_ticket_events shape
+  const payload = {
+    merchant_id: parsed.merchant_id,
+    source_ticket_id: parsed.support_case_id,
+    event_type: parsed.event_type,
+    actor_type: parsed.actor_type ?? null,
+    summary: parsed.event_summary ?? null,
+    occurred_at: parsed.occurred_at_provider ?? null,
+    metadata: {
+      ...parsed.metadata,
+      provider: normalizeProviderName(parsed.provider),
+      ...(actorIdentifierHash ? { actor_identifier_hash: actorIdentifierHash } : {}),
+    },
     raw_payload_hash: rawPayloadHash,
-  });
+  };
 
   const { data, error } = await supabase
     .from(TABLES.SUPPORT_CASE_EVENTS)
@@ -429,6 +447,7 @@ const orderClaimContextSchema = z.object({
   tracking_number: z.string().nullable().optional(),
   days_since_order_at_claim: z.number().int().nullable().optional(),
   days_since_delivery_at_claim: z.number().int().nullable().optional(),
+  time_to_claim_days: z.number().int().nullable().optional(),
   payment_method: z.string().nullable().optional(),
   discount_code_used: z.boolean().nullable().optional(),
   discount_amount: z.number().nullable().optional(),

@@ -3,6 +3,7 @@
 import { Suspense, use } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { ArrowLeft } from 'lucide-react';
 import { EvidencePackageForm } from '@/components/evidence/EvidencePackageForm';
 
 function ProfileDrawerLink({ profileId, disputedOrder }: { profileId: string; disputedOrder: string }) {
@@ -10,7 +11,7 @@ function ProfileDrawerLink({ profileId, disputedOrder }: { profileId: string; di
     ? `/customers/${profileId}?buildEvidence=1&disputedOrder=${encodeURIComponent(disputedOrder)}`
     : `/customers/${profileId}?buildEvidence=1`;
   return (
-    <p className="mx-auto max-w-2xl px-8 pb-2 text-caption" style={{ color: 'var(--text-muted)' }}>
+    <p className="mx-auto max-w-2xl px-8 pb-2 text-caption" style={{ color: 'var(--text-secondary)' }}>
       Prefer the profile view?{' '}
       <Link href={href} className="font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
         Open as a side panel on the customer profile
@@ -33,15 +34,9 @@ function EvidenceNewPageContent({ profileId }: { profileId: string }) {
         <Link
           href={`/customers/${profileId}`}
           className="inline-flex items-center gap-1.5 text-sm transition-colors hover:opacity-80"
-          style={{ color: 'var(--text-muted)' }}
+          style={{ color: 'var(--text-secondary)' }}
         >
-          <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-            <path
-              fillRule="evenodd"
-              d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
-              clipRule="evenodd"
-            />
-          </svg>
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
           Back to profile
         </Link>
       </div>
@@ -54,7 +49,7 @@ function EvidenceNewPageContent({ profileId }: { profileId: string }) {
 export default function EvidenceNewPage({ params }: PageProps) {
   const { id } = use(params);
   return (
-    <Suspense fallback={<div className="p-8 text-sm" style={{ color: 'var(--text-muted)' }}>Loading…</div>}>
+    <Suspense fallback={<div className="p-8 text-sm" style={{ color: 'var(--text-secondary)' }}>Loading…</div>}>
       <EvidenceNewPageContent profileId={id} />
     </Suspense>
   );

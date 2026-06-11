@@ -5,7 +5,7 @@ import { REPORTS_TABS, type ReportsTab } from '@/app/(app)/reports/reportsPageTy
 const TAB_META: Record<ReportsTab, { label: string; icon: typeof Radio | null }> = {
   overview: { label: 'Overview', icon: null },
   csv: { label: 'CSV audits', icon: FileSpreadsheet },
-  integration: { label: 'Live reports', icon: Radio },
+  integration: { label: 'Live intelligence', icon: Radio },
 };
 
 export function ReportsTabBar({
@@ -19,8 +19,8 @@ export function ReportsTabBar({
 }) {
   return (
     <div
-      className="flex gap-1 border-b px-4"
-      style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-overlay)' }}
+      className="flex border-b px-8"
+      style={{ borderColor: 'var(--border-muted)', gap: 24 }}
     >
       {REPORTS_TABS.map((tab) => {
         const Icon = TAB_META[tab].icon;
@@ -29,21 +29,31 @@ export function ReportsTabBar({
           <Link
             key={tab}
             href={`/reports?tab=${tab}&range=${range}`}
-            className="inline-flex items-center gap-1.5 px-3 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors"
+            className="inline-flex items-center -mb-px transition-colors"
             style={{
-              borderColor: isActive ? 'var(--copper-bright)' : 'transparent',
-              color: isActive ? 'var(--ink-primary)' : 'var(--ink-tertiary)',
-              fontWeight: isActive ? 600 : 500,
+              height: 36,
+              padding: '0 4px',
+              gap: 6,
+              fontSize: 14,
+              fontWeight: 500,
+              color: isActive ? 'var(--text-primary)' : 'var(--text-tertiary)',
+              borderBottom: isActive ? '2px solid var(--text-primary)' : '2px solid transparent',
             }}
           >
             {Icon ? <Icon className="h-3.5 w-3.5" /> : null}
             {TAB_META[tab].label}
             {tab === 'csv' && csvCount > 0 ? (
               <span
-                className="num inline-flex h-4 min-w-4 items-center justify-center rounded px-1 text-xs font-bold"
+                className="inline-flex items-center justify-center"
                 style={{
-                  background: isActive ? 'var(--copper-glow)' : 'var(--surface-muted)',
-                  color: isActive ? 'var(--copper-bright)' : 'var(--ink-tertiary)',
+                  height: 18,
+                  minWidth: 18,
+                  borderRadius: 'var(--radius-full)',
+                  background: 'var(--surface-sunken)',
+                  color: 'var(--text-secondary)',
+                  fontSize: 11,
+                  fontWeight: 500,
+                  padding: '0 5px',
                 }}
               >
                 {csvCount}

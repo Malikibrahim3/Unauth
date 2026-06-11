@@ -3,69 +3,30 @@
 import { useEffect, useRef } from 'react';
 import { COMMAND_PALETTE_FILTERS, getCommandPaletteNavItems } from '@/lib/navigation/appRoutes';
 import type { NavItem } from '@/components/layout/commandPaletteReducer';
+import {
+  AlertCircle,
+  Clipboard,
+  Clock,
+  Download,
+  LayoutGrid,
+  Settings,
+  Star,
+  Upload,
+  Users,
+} from 'lucide-react';
 import CommandPaletteSurface from '@/components/layout/CommandPaletteSurface';
 
 const PALETTE_ICONS: Record<string, React.ReactNode> = {
-  '/dashboard': (
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-      <rect x="1" y="1" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1.4" />
-      <rect x="9" y="1" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1.4" />
-      <rect x="1" y="9" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1.4" />
-      <rect x="9" y="9" width="6" height="6" rx="1" stroke="currentColor" strokeWidth="1.4" />
-    </svg>
-  ),
-  '/customers': (
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-      <circle cx="8" cy="5" r="3" stroke="currentColor" strokeWidth="1.4" />
-      <path d="M2 14c0-3.314 2.686-6 6-6s6 2.686 6 6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-    </svg>
-  ),
-  '/claims': (
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-      <path d="M3 4h10v9H3V4z" stroke="currentColor" strokeWidth="1.4" />
-      <path d="M5 2h6v2H5V2z" stroke="currentColor" strokeWidth="1.4" />
-    </svg>
-  ),
-  '/upload': (
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-      <path d="M8 11V3M4 7l4-4 4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M2 13h12" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-    </svg>
-  ),
-  '/chargebacks': (
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-      <path d="M8 2v8M5 7l3 3 3-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-      <rect x="2" y="12" width="12" height="2" rx="1" stroke="currentColor" strokeWidth="1.4" />
-    </svg>
-  ),
-  '/watchlist': (
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-      <path d="M8 1.5L9.854 5.41l4.146.603-3 2.922.708 4.125L8 10.896l-3.708 1.164.708-4.125-3-2.922 4.146-.603L8 1.5z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
-    </svg>
-  ),
-  '/history': (
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-      <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.4" />
-      <path d="M8 5v3.5l2.5 1.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-    </svg>
-  ),
-  '/settings': (
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-      <circle cx="8" cy="8" r="2.5" stroke="currentColor" strokeWidth="1.4" />
-      <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-    </svg>
-  ),
-  filter_high_risk: (
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-      <path d="M8 2L9.5 6h4L10 9l1.5 5L8 12l-3.5 2L6 9 2.5 6h4z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
-    </svg>
-  ),
-  filter_new: (
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-      <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.4" />
-      <path d="M8 5v3M8 11v.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-    </svg>
-  ),
+  '/dashboard': <LayoutGrid size={14} aria-hidden="true" />,
+  '/customers': <Users size={14} aria-hidden="true" />,
+  '/claims': <Clipboard size={14} aria-hidden="true" />,
+  '/upload': <Upload size={14} aria-hidden="true" />,
+  '/chargebacks': <Download size={14} aria-hidden="true" />,
+  '/watchlist': <Star size={14} aria-hidden="true" />,
+  '/history': <Clock size={14} aria-hidden="true" />,
+  '/settings': <Settings size={14} aria-hidden="true" />,
+  filter_high_risk: <Star size={14} aria-hidden="true" />,
+  filter_new: <AlertCircle size={14} aria-hidden="true" />,
 };
 
 const DEFAULT_PALETTE_ICON = PALETTE_ICONS['/dashboard'];
@@ -118,8 +79,8 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
     <dialog
       ref={dialogRef}
       aria-label="Command palette"
-      className="fixed left-1/2 top-[20%] z-50 w-full max-w-lg -translate-x-1/2 rounded-xl border-0 p-0 shadow-2xl overflow-hidden backdrop:bg-black/40"
-      style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
+      className="fixed left-1/2 top-[20%] z-50 w-full max-w-lg -translate-x-1/2 rounded-md border-0 p-0 shadow-2xl overflow-hidden backdrop:bg-black/40"
+      style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
       onClose={onClose}
       onCancel={(e) => {
         e.preventDefault();

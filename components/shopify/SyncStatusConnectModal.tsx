@@ -74,14 +74,14 @@ export function SyncStatusConnectModal({
         onClick={onClose}
       />
       <div
-        className="relative w-full max-w-md rounded-xl p-6 shadow-xl"
-        style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)' }}
+        className="relative w-full max-w-md rounded-md p-6 shadow-xl"
+        style={{ background: 'var(--surface)', border: '1px solid var(--border-muted)' }}
       >
         <button
           type="button"
           onClick={onClose}
           className="absolute top-4 right-4 rounded p-1 opacity-50 hover:opacity-100"
-          style={{ color: 'var(--text-muted)' }}
+          style={{ color: 'var(--text-secondary)' }}
           aria-label="Close"
         >
           <X className="h-4 w-4" />
@@ -94,7 +94,7 @@ export function SyncStatusConnectModal({
         >
           Connect Shopify
         </h2>
-        <p className="text-xs mb-5" style={{ color: 'var(--text-muted)' }}>
+        <p className="text-xs mb-5" style={{ color: 'var(--text-secondary)' }}>
           We use this only to send you to the correct Shopify approval screen.
         </p>
 
@@ -116,7 +116,7 @@ export function SyncStatusConnectModal({
               placeholder="admin.shopify.com/store/your-store"
               className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-1"
               style={{
-                borderColor: inputError ? 'var(--risk-high, #DC2626)' : 'var(--border-subtle)',
+                borderColor: inputError ? 'var(--success)' : 'var(--border-muted)',
                 background: 'var(--bg-inset)',
                 color: 'var(--text)',
               }}
@@ -125,11 +125,11 @@ export function SyncStatusConnectModal({
               data-testid="shopify-admin-url-input"
             />
             {inputError ? (
-              <p className="mt-1.5 text-xs" style={{ color: 'var(--risk-high, #DC2626)' }} role="alert">
+              <p className="mt-1.5 text-xs" style={{ color: 'var(--success)' }} role="alert">
                 {inputError}
               </p>
             ) : (
-              <p className="mt-1.5 text-xs" style={{ color: 'var(--text-muted)' }}>
+              <p className="mt-1.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
                 Paste the Shopify Admin URL for the store you want to connect. You can find it in Shopify Admin, usually as{' '}
                 <code className="font-mono">admin.shopify.com/store/your-store</code>.
               </p>
@@ -141,14 +141,14 @@ export function SyncStatusConnectModal({
               type="button"
               onClick={onClose}
               className="rounded-md px-4 py-2 text-xs font-medium"
-              style={{ color: 'var(--text-muted)', background: 'var(--bg-inset)' }}
+              style={{ color: 'var(--text-secondary)', background: 'var(--bg-inset)' }}
             >
               Cancel
             </button>
             <button
               type="submit"
               className="rounded-md px-4 py-2 text-xs font-semibold"
-              style={{ background: 'var(--accent)', color: '#fff' }}
+              style={{ background: 'var(--accent)', color: 'white' }}
               data-testid="shopify-connect-submit"
             >
               Continue to Shopify →

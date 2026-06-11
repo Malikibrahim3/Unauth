@@ -38,9 +38,9 @@ function PageSizeSelectInner({
     Number.parseInt(searchParams.get(pageSizeParam) ?? String(pageSize), 10) || pageSize;
 
   return (
-    <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+    <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
       <span className="shrink-0">{label}</span>
-      <div className="inline-flex shrink-0 overflow-hidden rounded-[4px] border" style={{ borderColor: 'var(--border-default)', background: 'var(--bg-surface)' }}>
+      <div className="inline-flex shrink-0 overflow-hidden rounded-[4px] border" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
         {PAGE_SIZES.map((size) => {
           const active = size === activePageSize;
           return (
@@ -50,9 +50,9 @@ function PageSizeSelectInner({
               scroll={false}
               className="px-2.5 py-1.5 font-semibold transition-colors"
               style={{
-                background: active ? 'var(--brand-ink)' : 'var(--bg-surface)',
-                color: active ? 'var(--brand-paper)' : 'var(--text-muted)',
-                boxShadow: active ? 'inset 0 0 0 1px rgba(26,24,20,0.08)' : undefined,
+                background: active ? 'var(--brand-ink)' : 'var(--surface)',
+                color: active ? 'var(--brand-paper)' : 'var(--text-secondary)',
+                boxShadow: active ? 'inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 8%, transparent)' : undefined,
               }}
               aria-current={active ? 'page' : undefined}
             >
@@ -73,7 +73,7 @@ export default function PageSizeSelect(props: {
   pageParam?: string;
 }) {
   return (
-    <Suspense fallback={<span className="text-xs" style={{ color: 'var(--text-muted)' }}>Rows per page…</span>}>
+    <Suspense fallback={<span className="text-xs" style={{ color: 'var(--text-secondary)' }}>Rows per page…</span>}>
       <PageSizeSelectInner {...props} />
     </Suspense>
   );

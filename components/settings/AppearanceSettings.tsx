@@ -36,13 +36,13 @@ export default function AppearanceSettings() {
           <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
             Color theme
           </p>
-          <p className="mt-0.5 text-xs" style={{ color: 'var(--text-muted)' }}>
+          <p className="mt-0.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
             Switch between light and dark mode. Your choice is saved on this device.
           </p>
         </div>
         <fieldset
           className="inline-flex shrink-0 rounded-md border p-0.5 m-0 min-w-0"
-          style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-input)' }}
+          style={{ borderColor: 'var(--border)', background: 'var(--surface-sunken)' }}
           aria-label="Color theme"
         >
           {OPTIONS.map(({ value, label, icon: Icon }) => {
@@ -57,11 +57,11 @@ export default function AppearanceSettings() {
                   'inline-flex items-center gap-1.5 rounded-sm px-3 py-1.5 text-xs font-semibold transition-colors',
                   'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] focus-visible:outline-offset-2',
                   active
-                    ? 'text-[var(--ink-primary)]'
-                    : 'text-[var(--ink-tertiary)] hover:text-[var(--ink-secondary)]',
+                    ? 'text-[var(--text-primary)]'
+                    : 'text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]',
                 )}
                 style={{
-                  background: active ? 'var(--surface-raised)' : 'transparent',
+                  background: active ? 'var(--surface)' : 'transparent',
                   boxShadow: active ? 'var(--shadow-1)' : undefined,
                 }}
               >

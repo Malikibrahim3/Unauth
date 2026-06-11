@@ -4,6 +4,7 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { PERMISSIONS, requirePermission } from '@/lib/permissions';
 import { SectionCard } from '@/components/ui';
 import BulkDeleteClient from '@/components/settings/BulkDeleteClient';
+import { PrivacyBadge } from '@/components/ui/PrivacyBadge';
 
 export default async function DataPrivacySettingsPage() {
   const userClient = createClient();
@@ -16,14 +17,44 @@ export default async function DataPrivacySettingsPage() {
 
   return (
     <div className="p-6 md:p-8 max-w-3xl">
-      <h1 className="t-heading" style={{ color: 'var(--ink-primary)' }}>Data &amp; privacy</h1>
-      <p className="text-body-sm mt-1" style={{ color: 'var(--ink-secondary)' }}>
+      <h1 className="t-heading" style={{ color: 'var(--text-primary)' }}>Data &amp; privacy</h1>
+      <p className="text-body-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
         How Unauth handles merchant and customer data, retention, and compliance.
       </p>
 
       <div className="mt-6 space-y-4">
+        <SectionCard title="How identity matching protects PII">
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <PrivacyBadge value="Privacy-safe graph" />
+            <span
+              className="inline-flex items-center rounded-sm border px-2 py-0.5 text-mono-sm"
+              style={{
+                background: 'var(--privacy-fill)',
+                borderColor: 'var(--privacy-border)',
+                color: 'var(--privacy-ink)',
+              }}
+            >
+              k&gt;=3
+            </span>
+          </div>
+          <div
+            className="rounded-md border p-4 text-mono-sm"
+            style={{
+              background: 'var(--surface)',
+              borderColor: 'var(--border-muted)',
+              color: 'var(--data-id)',
+            }}
+          >
+            raw identifier -&gt; normalise -&gt; HMAC-SHA256 (per-tenant salt) -&gt; privacy-safe graph
+          </div>
+          <p className="mt-3 text-body-sm" style={{ color: 'var(--text-secondary)' }}>
+            Raw emails, addresses, and phone numbers never enter the cross-merchant graph.
+            Matching happens on salted hashes. Cohorts below the k-anonymity threshold of k=3 are never shown.
+          </p>
+        </SectionCard>
+
         <SectionCard title="Data scope">
-          <p className="text-body-sm" style={{ color: 'var(--ink-secondary)' }}>
+          <p className="text-body-sm" style={{ color: 'var(--text-secondary)' }}>
             Unauth processes order exports and Shopify sync data to support identity matching and claim
             review for your store. Cross-merchant signals are aggregated
             and anonymised before network comparison.
@@ -31,7 +62,7 @@ export default async function DataPrivacySettingsPage() {
         </SectionCard>
 
         <SectionCard title="Retention & deletion">
-          <p className="text-body-sm" style={{ color: 'var(--ink-secondary)' }}>
+          <p className="text-body-sm" style={{ color: 'var(--text-secondary)' }}>
             Audit runs and associated transaction data are retained according to your plan settings.
             Account deletion permanently removes audits, customer profiles, watchlist entries, and notes.
             Contact support if you need help removing data before closing your account.
@@ -42,7 +73,7 @@ export default async function DataPrivacySettingsPage() {
         </SectionCard>
 
         <SectionCard title="Audit logging">
-          <p className="text-body-sm" style={{ color: 'var(--ink-secondary)' }}>
+          <p className="text-body-sm" style={{ color: 'var(--text-secondary)' }}>
             User actions, claim decisions, evidence attachments, and exports are recorded in an
             append-only audit trail for compliance review.
           </p>
@@ -56,7 +87,7 @@ export default async function DataPrivacySettingsPage() {
         </SectionCard>
 
         <SectionCard title="Legal documents">
-          <ul className="space-y-2 text-body-sm" style={{ color: 'var(--ink-secondary)' }}>
+          <ul className="space-y-2 text-body-sm" style={{ color: 'var(--text-secondary)' }}>
             <li>
               <Link href="/legal/privacy" className="font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
                 Privacy policy

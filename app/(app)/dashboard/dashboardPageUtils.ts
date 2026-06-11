@@ -11,7 +11,7 @@ import {
   Headphones,
   ShieldCheck,
   Users,
-  Inbox,
+  Search,
   Activity,
 } from 'lucide-react';
 
@@ -83,9 +83,9 @@ export function buildConfig(state: MerchantSetupState, connection: ConnectionSta
         primaryCta: { label: 'Connect Shopify & helpdesk', href: integrations },
         secondaryCta: { label: 'Import more', href: '/upload' },
         banner: {
-          tone: 'incomplete',
-          title: 'Connect Shopify and your helpdesk for live monitoring.',
-          body: 'This workspace is built from imported CSV history. Connect your live sources to monitor new orders and claims as they happen.',
+          tone: 'stale',
+          title: 'Running from imported history — connect live sources for real-time monitoring.',
+          body: 'Shopify and a helpdesk will add new orders and claims as they happen, and sync your ticket queue for one-click evidence building.',
         },
       };
     case 'stale_existing_data':
@@ -159,15 +159,15 @@ export function buildKpis(
     icon: ShieldCheck,
   };
   const reviewQueue: Kpi = {
-    label: 'Review queue',
+    label: 'Profiles with signals',
     value: metrics.reviewQueue === null ? 'Unavailable' : fmt(metrics.reviewQueue),
-    hint: 'Profiles needing a look',
-    icon: Inbox,
+    hint: 'Identity evidence available',
+    icon: Search,
   };
   const claims: Kpi = {
-    label: 'Claims needing action',
+    label: 'Open claims',
     value: connection.helpdesk ? fmt(metrics.claimsNeedingAction) : 'Missing',
-    hint: connection.helpdesk ? 'Awaiting a decision' : 'Connect helpdesk to add claim history',
+    hint: connection.helpdesk ? 'With identity evidence' : 'Connect helpdesk to add claim history',
     incomplete: !connection.helpdesk,
     icon: Headphones,
   };
@@ -232,10 +232,10 @@ export function buildGradeDist(rows: QueueRow[]): GradeDistEntry[] {
     if (g in counts) counts[g as keyof typeof counts] += 1;
   }
   return [
-    { key: 'A', label: 'A · Definite', count: counts.A, color: 'var(--sev-definite)' },
-    { key: 'B', label: 'B · Probable', count: counts.B, color: 'var(--sev-probable)' },
+    { key: 'A', label: 'A · Definite', count: counts.A, color: 'var(--success)' },
+    { key: 'B', label: 'B · Probable', count: counts.B, color: 'var(--warning)' },
     { key: 'C', label: 'C · Possible', count: counts.C, color: 'var(--sev-possible)' },
-    { key: 'D', label: 'D · Weak',     count: counts.D, color: 'var(--sev-clear)' },
+    { key: 'D', label: 'D · Weak',     count: counts.D, color: 'var(--neutral)' },
   ];
 }
 

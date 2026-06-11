@@ -10,17 +10,17 @@ export default function HelpdeskSidebarPreview({ providerLabel }: HelpdeskSideba
       </p>
       <div className="flex flex-wrap items-start gap-6">
         <div
-          className="w-[300px] shrink-0 rounded-lg border p-3 text-xs"
+          className="w-[300px] shrink-0 rounded-md border p-3 text-xs"
           style={{
-            borderColor: 'var(--surface-border)',
-            background: '#14100e',
-            color: '#f5f0eb',
+            borderColor: 'var(--border)',
+            background: 'var(--text-primary)',
+            color: 'white',
             fontFamily: 'system-ui, sans-serif',
           }}
         >
           <div
             className="rounded-md border p-3"
-            style={{ background: 'var(--sev-clear-fill)', borderColor: 'var(--sev-clear)', color: 'var(--sev-clear)' }}
+            style={{ background: 'var(--sev-clear-fill)', borderColor: 'var(--neutral)', color: 'var(--neutral)' }}
           >
             <p className="text-sm font-bold">Case context available</p>
             <p className="mt-1 opacity-90">Open the case in Unauth to review store and network context.</p>
@@ -32,14 +32,14 @@ export default function HelpdeskSidebarPreview({ providerLabel }: HelpdeskSideba
             </ul>
             <div
               className="mt-3 rounded px-2 py-1.5 normal-case opacity-80"
-              style={{ background: 'rgba(0,0,0,0.08)' }}
+              style={{ background: 'color-mix(in srgb, var(--text-primary) 8%, transparent)' }}
             >
               Other merchants’ raw customer data is not exposed.
             </div>
             <div className="mt-3 flex flex-col gap-1.5">
               <span
                 className="block rounded py-1.5 text-center text-xs font-semibold"
-                style={{ background: 'var(--accent)', color: 'var(--ink-inverse)' }}
+                style={{ background: 'var(--accent)', color: 'white' }}
               >
                 Open case in Unauth
               </span>
@@ -47,7 +47,7 @@ export default function HelpdeskSidebarPreview({ providerLabel }: HelpdeskSideba
           </div>
           <p className="mt-2 text-right opacity-40">Unauth</p>
         </div>
-        <p className="max-w-xs text-sm" style={{ color: 'var(--text-muted)' }}>
+        <p className="max-w-xs text-sm" style={{ color: 'var(--text-secondary)' }}>
           Approximate appearance inside {providerLabel} (~300px sidebar). The widget is a context
           entry point, not a decisioning tool.
         </p>

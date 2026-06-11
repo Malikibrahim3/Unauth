@@ -35,7 +35,7 @@ export default async function ChromeIntegrationPage() {
         <Link
           href="/settings/integrations"
           className="mb-4 inline-flex items-center gap-1.5 text-xs hover:underline"
-          style={{ color: 'var(--text-muted)' }}
+          style={{ color: 'var(--text-secondary)' }}
         >
           ← Integrations
         </Link>
@@ -51,7 +51,7 @@ export default async function ChromeIntegrationPage() {
             Install Chrome Extension
           </h1>
         </div>
-        <p className="mt-1 text-sm" style={{ color: 'var(--text-muted)' }}>
+        <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
           Look up any customer email from any tab - Gorgias, Zendesk, Shopify, Gmail
         </p>
       </div>

@@ -37,11 +37,11 @@ export function GorgiasSupportSyncConnectionDetails({
       {isDisabledOrError ? (
         <div
           className="rounded-md px-3 py-2 text-sm"
-          style={{ background: 'rgba(180, 50, 50, 0.08)', color: 'var(--text)' }}
+          style={{ background: 'color-mix(in srgb, var(--success) 8%, transparent)', color: 'var(--text)' }}
         >
           <p className="font-medium">Connection {connection.status}</p>
           {connection.last_error ? (
-            <p className="mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>
+            <p className="mt-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
               {connection.last_error}
             </p>
           ) : null}
@@ -50,50 +50,50 @@ export function GorgiasSupportSyncConnectionDetails({
 
       <dl className="grid gap-2 text-sm">
         <div className="flex justify-between gap-4">
-          <dt style={{ color: 'var(--text-muted)' }}>Account</dt>
+          <dt style={{ color: 'var(--text-secondary)' }}>Account</dt>
           <dd style={{ color: 'var(--text)' }}>{gorgiasAccountLabel(connection)}</dd>
         </div>
         <div className="flex justify-between gap-4">
-          <dt style={{ color: 'var(--text-muted)' }}>Status</dt>
+          <dt style={{ color: 'var(--text-secondary)' }}>Status</dt>
           <dd style={{ color: 'var(--text)' }}>{connection.status}</dd>
         </div>
         <div className="flex justify-between gap-4">
-          <dt style={{ color: 'var(--text-muted)' }}>Webhook secret</dt>
+          <dt style={{ color: 'var(--text-secondary)' }}>Webhook secret</dt>
           <dd style={{ color: 'var(--text)' }}>
             {connection.webhook_secret_configured ? 'Configured' : 'Not configured'}
           </dd>
         </div>
         <div className="flex justify-between gap-4">
-          <dt style={{ color: 'var(--text-muted)' }}>Sidebar widget</dt>
+          <dt style={{ color: 'var(--text-secondary)' }}>Sidebar widget</dt>
           <dd style={{ color: 'var(--text)' }}>
             {connection.sidebar_widget_registered ? 'Registered in Gorgias' : 'Not registered'}
           </dd>
         </div>
         <div className="flex justify-between gap-4">
-          <dt style={{ color: 'var(--text-muted)' }}>Ticket webhook</dt>
+          <dt style={{ color: 'var(--text-secondary)' }}>Ticket webhook</dt>
           <dd style={{ color: 'var(--text)' }}>
             {connection.support_webhook_registered ? 'Registered in Gorgias' : 'Manual setup required'}
           </dd>
         </div>
         {connection.sidebar_integration_id != null ? (
           <div className="flex justify-between gap-4">
-            <dt style={{ color: 'var(--text-muted)' }}>Gorgias integration</dt>
+            <dt style={{ color: 'var(--text-secondary)' }}>Gorgias integration</dt>
             <dd style={{ color: 'var(--text)' }}>{connection.sidebar_integration_id}</dd>
           </div>
         ) : null}
         <div className="flex justify-between gap-4">
-          <dt style={{ color: 'var(--text-muted)' }}>Gorgias API credentials</dt>
+          <dt style={{ color: 'var(--text-secondary)' }}>Gorgias API credentials</dt>
           <dd style={{ color: 'var(--text)' }}>
             {connection.gorgias_api_configured ? 'Stored securely' : 'Not configured'}
           </dd>
         </div>
         <div className="flex justify-between gap-4">
-          <dt style={{ color: 'var(--text-muted)' }}>Last sync</dt>
+          <dt style={{ color: 'var(--text-secondary)' }}>Last sync</dt>
           <dd style={{ color: 'var(--text)' }}>{formatGorgiasWhen(connection.last_sync_at)}</dd>
         </div>
         {connection.last_error && isActive ? (
           <div className="flex justify-between gap-4">
-            <dt style={{ color: 'var(--text-muted)' }}>Last error</dt>
+            <dt style={{ color: 'var(--text-secondary)' }}>Last error</dt>
             <dd className="text-right" style={{ color: 'var(--text)' }}>
               {connection.last_error}
             </dd>
@@ -102,7 +102,7 @@ export function GorgiasSupportSyncConnectionDetails({
       </dl>
 
       {state.showSetupInstructions && connection.webhook_url ? (
-        <div className="space-y-2 text-sm" style={{ color: 'var(--text-muted)' }}>
+        <div className="space-y-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
           <p className="font-medium" style={{ color: 'var(--text)' }}>
             Setup instructions
           </p>
@@ -171,7 +171,7 @@ export function GorgiasSupportSyncConnectionDetails({
       </div>
 
       {canManage && isDisabledOrError ? (
-        <div className="space-y-3 pt-2 border-t" style={{ borderColor: 'var(--surface-border)' }}>
+        <div className="space-y-3 pt-2 border-t" style={{ borderColor: 'var(--border)' }}>
           <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>
             Reconnect Gorgias
           </p>

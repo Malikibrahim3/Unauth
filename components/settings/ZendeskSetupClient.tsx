@@ -74,7 +74,7 @@ export default function ZendeskSetupClient({ canManage = true }: Props) {
           href={ZENDESK_ZIP_PATH}
           download="unauth-zendesk-app.zip"
           className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium"
-          style={{ background: 'var(--accent)', color: 'var(--accent-fg, #fff)' }}
+          style={{ background: 'var(--accent)', color: 'white' }}
         >
           <Download className="h-4 w-4" />
           Download Zendesk app (.zip)
@@ -84,11 +84,11 @@ export default function ZendeskSetupClient({ canManage = true }: Props) {
           onClick={() => void verifyInstall()}
           disabled={verifying || sidebarVerified}
           className="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-medium disabled:opacity-60"
-          style={{ borderColor: 'var(--surface-border)', color: 'var(--text)' }}
+          style={{ borderColor: 'var(--border)', color: 'var(--text)' }}
         >
           {sidebarVerified ? (
             <>
-              <CheckCircle2 className="h-4 w-4" style={{ color: 'var(--sev-clear, #2f6b43)' }} />
+              <CheckCircle2 className="h-4 w-4" style={{ color: 'var(--success)' }} />
               Sidebar verified
             </>
           ) : verifying ? (
@@ -99,18 +99,18 @@ export default function ZendeskSetupClient({ canManage = true }: Props) {
         </button>
       </div>
       {verifyError && (
-        <p className="text-sm" style={{ color: 'var(--danger, #e8362a)' }}>
+        <p className="text-sm" style={{ color: 'var(--success)' }}>
           {verifyError}
         </p>
       )}
       {!statusLoading && sidebarVerified && (
-        <p className="text-sm font-medium" style={{ color: 'var(--sev-clear, #2f6b43)' }}>
+        <p className="text-sm font-medium" style={{ color: 'var(--success)' }}>
           Sidebar app verified. Unauth should appear on Zendesk tickets that already exist in your
           Zendesk account.
         </p>
       )}
       {!statusLoading && ticketSyncConnected && (
-        <p className="text-sm font-medium" style={{ color: 'var(--sev-clear, #2f6b43)' }}>
+        <p className="text-sm font-medium" style={{ color: 'var(--success)' }}>
           Ticket sync is connected. Unauth imports Zendesk tickets and links them to your store
           orders (this does not copy tickets from Gorgias or your personal email inbox).
         </p>
@@ -148,10 +148,10 @@ export default function ZendeskSetupClient({ canManage = true }: Props) {
       </ol>
 
       <div
-        className="rounded-lg border p-4 text-sm"
-        style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-raised)' }}
+        className="rounded-md border p-4 text-sm"
+        style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
       >
-        <p style={{ color: 'var(--text-muted)' }}>
+        <p style={{ color: 'var(--text-secondary)' }}>
           Use an existing API key from Settings → API &amp; Integrations. Revoke or rotate keys there
           at any time; update the key in Zendesk app settings if you change it.
         </p>

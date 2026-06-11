@@ -36,7 +36,7 @@ export function GorgiasSupportSyncCreateForm({
           <label
             htmlFor="gorgias-account-domain"
             className="block text-xs font-medium mb-1"
-            style={{ color: 'var(--text-muted)' }}
+            style={{ color: 'var(--text-secondary)' }}
           >
             Gorgias account ID or account domain
           </label>
@@ -53,7 +53,7 @@ export function GorgiasSupportSyncCreateForm({
           disabled={!canManage || state.busy}
         />
         {isCreate ? (
-          <p className="mt-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+          <p className="mt-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
             This is your Gorgias subdomain - found in your browser URL when logged into Gorgias. If your URL is{' '}
             <code>acme.gorgias.com</code>, enter <code>acme</code> or <code>acme.gorgias.com</code>.
           </p>
@@ -64,7 +64,7 @@ export function GorgiasSupportSyncCreateForm({
           <label
             htmlFor="gorgias-display-name"
             className="block text-xs font-medium mb-1"
-            style={{ color: 'var(--text-muted)' }}
+            style={{ color: 'var(--text-secondary)' }}
           >
             Display name (optional)
           </label>
@@ -91,7 +91,7 @@ export function GorgiasSupportSyncCreateForm({
         onToggleCredHelp={() => onPatch({ showCredHelp: !state.showCredHelp })}
       />
       {isCreate ? (
-        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+        <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
           Registers the Unauth sidebar widget and ticket webhook in Gorgias automatically using your REST API
           credentials. If the domain cannot be resolved, you will be given a one-time secret to configure the
           webhook manually.
@@ -101,12 +101,12 @@ export function GorgiasSupportSyncCreateForm({
         type="submit"
         disabled={(!canManage && isCreate) || state.busy}
         className="inline-flex rounded-md px-3 py-2 text-sm font-medium disabled:opacity-50"
-        style={{ background: 'var(--accent)', color: 'var(--accent-fg, #fff)' }}
+        style={{ background: 'var(--accent)', color: 'white' }}
       >
         {state.busy ? 'Connecting…' : submitLabel}
       </button>
       {isCreate && !canManage ? (
-        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+        <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
           You need manage settings permission to create a connection.
         </p>
       ) : null}

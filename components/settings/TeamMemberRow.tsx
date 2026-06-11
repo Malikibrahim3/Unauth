@@ -48,16 +48,16 @@ export function TeamMemberRow({
         <div className="flex flex-wrap items-center gap-2">
           <p className="truncate text-sm font-medium" style={{ color: 'var(--text)' }}>{member.invited_email}</p>
           {member.invite_status === 'pending' ? (
-            <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs" style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
+            <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs" style={{ background: 'var(--bg-subtle)', color: 'var(--text-secondary)' }}>
               <Clock className="h-3 w-3" /> Pending
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs" style={{ background: 'rgba(47, 107, 67, 0.10)', color: 'var(--text)' }}>
+            <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs" style={{ background: 'var(--success-bg)', color: 'var(--text)' }}>
               <Check className="h-3 w-3" /> {STATUS_LABELS[member.invite_status]}
             </span>
           )}
         </div>
-        <p className="mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>
+        <p className="mt-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
           {member.is_account_owner
             ? 'Account owner'
             : member.invite_status === 'pending'
@@ -100,7 +100,7 @@ export function TeamMemberRow({
             type="button"
             onClick={onCancelRemove}
             className="inline-flex items-center rounded-md border px-2.5 py-1.5 font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1"
-            style={{ borderColor: 'var(--border-subtle)', color: 'var(--text-muted)', outlineColor: 'var(--accent)' }}
+            style={{ borderColor: 'var(--border-muted)', color: 'var(--text-secondary)', outlineColor: 'var(--accent)' }}
           >
             Cancel
           </button>
@@ -112,7 +112,7 @@ export function TeamMemberRow({
           disabled={!canRemoveThisMember || busyMemberId === member.id}
           aria-label={`Remove ${member.invited_email}`}
           className="inline-flex h-9 w-9 items-center justify-center rounded-md transition-opacity focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40"
-          style={{ border: '1px solid var(--border)', color: 'var(--text-muted)', outlineColor: 'var(--accent)' }}
+          style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)', outlineColor: 'var(--accent)' }}
         >
           <Trash2 className="h-4 w-4" />
         </button>

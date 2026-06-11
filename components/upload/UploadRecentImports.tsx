@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { AnalyticsBarChart } from '@/components/analytics/AnalyticsBarChart';
 import { formatDateShort } from '@/lib/utils/format';
 import type { RecentImport } from '@/components/upload/uploadClientTypes';
 import {
@@ -16,8 +17,17 @@ type UploadRecentImportsProps = {
 };
 
 export function UploadRecentImports({ recentImports }: UploadRecentImportsProps) {
+  const chartData = recentImports
+    .slice()
+    .reverse()
+    .map((run) => ({
+      label: formatDateShort(run.createdAt),
+      value: run.flaggedCount,
+      color: 'var(--accent)',
+    }));
+
   return (
-    <div className="rounded-lg border px-4 py-3" style={uploadSurfaceCardStyle}>
+    <div className="rounded-md border px-4 py-3" style={uploadSurfaceCardStyle}>
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm font-semibold" style={uploadTextStyle}>
           Recent imports
@@ -25,6 +35,14 @@ export function UploadRecentImports({ recentImports }: UploadRecentImportsProps)
         <Link href="/history" className="text-xs font-semibold hover:underline" style={uploadAccentTextStyle}>
           View all
         </Link>
+      </div>
+      <div className="mt-3 rounded-md border p-3" style={{ borderColor: 'var(--border-muted)', background: 'var(--bg-inset)' }}>
+        <p className="text-xs font-semibold" style={uploadTextStyle}>
+          Matched rows across recent imports
+        </p>
+        <div className="mt-2">
+          <AnalyticsBarChart data={chartData} height={180} emptyLabel="No recent imports" />
+        </div>
       </div>
       <ul className="mt-2 divide-y" style={uploadSubtleBorderStyle}>
         {recentImports.map((run) => (
@@ -41,7 +59,7 @@ export function UploadRecentImports({ recentImports }: UploadRecentImportsProps)
             <div className="flex items-center gap-2">
               <span
                 className="rounded px-2 py-0.5 font-semibold capitalize"
-                style={{ background: 'var(--bg-inset)', color: 'var(--text-muted)' }}
+                style={{ background: 'var(--bg-inset)', color: 'var(--text-secondary)' }}
               >
                 {run.status.replace(/_/g, ' ')}
               </span>

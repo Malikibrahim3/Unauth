@@ -241,55 +241,49 @@ export default async function ClaimsPage({
 
   const filterTabs: ClaimsFilterTab[] = [
     {
-      label: 'Active',
+      label: 'All claims',
       count: queueCounts.active,
       href: `/claims${buildClaimsQueryString(sp, { queue: undefined, viewed: undefined, owner: undefined, status: undefined, sla: undefined, page: '1' })}`,
       active: listView.kind === 'active',
     },
     {
-      label: 'New / unread',
+      label: 'New evidence',
       count: queueCounts.unread,
       href: `/claims${buildClaimsQueryString(sp, { viewed: 'unread', queue: undefined, owner: undefined, status: undefined, sla: undefined, page: '1' })}`,
       active: listView.kind === 'unread',
     },
     {
-      label: 'Assigned to me',
-      count: queueCounts.assignedToMe,
-      href: `/claims${buildClaimsQueryString(sp, { owner: 'me', viewed: undefined, queue: undefined, status: undefined, sla: undefined, page: '1' })}`,
-      active: listView.kind === 'assigned_me',
-    },
-    {
-      label: 'Unassigned',
+      label: 'Needs review',
       count: queueCounts.unassigned,
       href: `/claims${buildClaimsQueryString(sp, { owner: 'unassigned', viewed: undefined, queue: undefined, status: undefined, sla: undefined, page: '1' })}`,
       active: listView.kind === 'unassigned',
     },
     {
-      label: 'Overdue',
+      label: 'Strong identity links',
+      count: queueCounts.open,
+      href: `/claims${buildClaimsQueryString(sp, { status: 'open', viewed: undefined, owner: undefined, queue: undefined, sla: undefined, page: '1' })}`,
+      active: listView.kind === 'status' && listView.status === 'open',
+    },
+    {
+      label: 'Ageing claims',
       count: queueCounts.overdue,
       href: `/claims${buildClaimsQueryString(sp, { sla: 'overdue', sort: 'age', viewed: undefined, owner: undefined, status: undefined, queue: undefined, page: '1' })}`,
       active: slaFilter === 'overdue',
     },
     {
-      label: 'Awaiting info',
+      label: 'Waiting on source data',
       count: queueCounts.awaitingInfo,
       href: `/claims${buildClaimsQueryString(sp, { status: 'pending', viewed: undefined, owner: undefined, queue: undefined, sla: undefined, page: '1' })}`,
       active: listView.kind === 'status' && listView.status === 'pending',
     },
     {
-      label: 'Snoozed',
-      count: queueCounts.snoozed,
-      href: `/claims${buildClaimsQueryString(sp, { queue: 'snoozed', viewed: undefined, owner: undefined, status: undefined, sla: undefined, page: '1' })}`,
-      active: listView.kind === 'snoozed',
-    },
-    {
-      label: 'Escalated',
+      label: 'High evidence density',
       count: queueCounts.escalated,
       href: `/claims${buildClaimsQueryString(sp, { status: 'escalated', viewed: undefined, owner: undefined, queue: undefined, sla: undefined, page: '1' })}`,
       active: listView.kind === 'status' && listView.status === 'escalated',
     },
     {
-      label: 'History',
+      label: 'Outcome recorded',
       count: queueCounts.resolved,
       href: `/claims${buildClaimsQueryString(sp, { queue: 'history', viewed: undefined, owner: undefined, status: undefined, sla: undefined, page: '1' })}`,
       active: listView.kind === 'history',

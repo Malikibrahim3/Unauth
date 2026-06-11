@@ -1,5 +1,6 @@
 'use client';
 
+import { ArrowDown, ArrowUp, Minus } from 'lucide-react';
 import { type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { useCountUp } from '@/hooks/useCountUp';
@@ -25,18 +26,18 @@ interface MetricCardProps {
 const TONE_COLOR: Record<DeltaProps['tone'], string> = {
   positive: 'var(--risk-low-fg)',
   negative: 'var(--risk-critical-fg)',
-  neutral:  'var(--text-muted)',
+  neutral:  'var(--text-secondary)',
 };
 
-const ARROW: Record<DeltaProps['direction'], string> = {
-  up: '↑',
-  down: '↓',
-  flat: '›',
+const ARROW_ICON: Record<DeltaProps['direction'], typeof ArrowUp> = {
+  up: ArrowUp,
+  down: ArrowDown,
+  flat: Minus,
 };
 
 export function MetricCard({ label, value, delta, hint, icon, density = 'default', size, microchart, className }: MetricCardProps) {
   const isHero = size === 'hero';
-  const padding = isHero ? 20 : density === 'compact' ? 12 : 16;
+  const padding = isHero ? 'var(--space-5)' : density === 'compact' ? 'var(--space-3)' : 'var(--space-4)';
   const numericValue = typeof value === 'number' ? value : null;
   const animatedValue = useCountUp(numericValue ?? 0, {
     format: (next) => Math.round(next).toLocaleString('en-US'),
@@ -47,23 +48,22 @@ export function MetricCard({ label, value, delta, hint, icon, density = 'default
     <div
       className={cn('group', className)}
       style={{
-        background: 'var(--surface-raised)',
-        border: '1px solid var(--surface-border)',
+        background: 'var(--surface)',
+        border: '1px solid var(--border)',
         borderRadius: 'var(--radius-md)',
-        boxShadow: 'var(--shadow-sm)',
         padding,
+        boxShadow: 'none',
       }}
     >
       <div className="flex items-start justify-between gap-2">
         <span
-          style={{
-            fontSize: 12,
-            fontWeight: 500,
-            letterSpacing: '0.01em',
-            color: 'var(--ink-secondary)',
-            lineHeight: 1,
-          }}
-        >
+        style={{
+          fontSize: 12,
+          fontWeight: 500,
+          color: 'var(--text-tertiary)',
+          lineHeight: 1,
+        }}
+      >
           {label}
         </span>
         {icon && (
@@ -74,27 +74,30 @@ export function MetricCard({ label, value, delta, hint, icon, density = 'default
       </div>
 
       <div
-        className="mt-2 num leading-tight tabular-nums"
+        className="mt-3 num leading-tight tabular-nums"
         style={{
-          fontSize: isHero ? 40 : 22,
+          fontSize: isHero ? 40 : 30,
           fontWeight: 600,
-          color: String(value).includes('£') || String(value).includes('$') ? 'var(--data-currency)' : 'var(--data-score)',
-          letterSpacing: '-0.02em',
+          color: 'var(--text-primary)',
+          letterSpacing: '-0.04em',
           fontFamily: 'var(--font-sans)',
         }}
       >
         {displayValue}
       </div>
 
-      {delta && (
-        <div
-          className="mt-1 flex items-center gap-1"
-          style={{ fontSize: 12, color: TONE_COLOR[delta.tone] }}
-        >
-          <span aria-hidden="true">{ARROW[delta.direction]}</span>
-          <span>{delta.value > 0 ? '+' : ''}{delta.value}</span>
-        </div>
-      )}
+      {delta && (() => {
+        const DeltaIcon = ARROW_ICON[delta.direction];
+        return (
+          <div
+            className="mt-1 flex items-center gap-1"
+            style={{ fontSize: 12, color: TONE_COLOR[delta.tone] }}
+          >
+            <DeltaIcon size={12} aria-hidden="true" />
+            <span>{delta.value > 0 ? '+' : ''}{delta.value}</span>
+          </div>
+        );
+      })()}
 
       {isHero && microchart && (
         <div className="mt-3" aria-hidden="true">
@@ -103,7 +106,7 @@ export function MetricCard({ label, value, delta, hint, icon, density = 'default
       )}
 
       {hint && (
-        <p className="mt-1" style={{ fontSize: 12, color: 'var(--ink-tertiary)' }}>{hint}</p>
+        <p className="mt-1" style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>{hint}</p>
       )}
     </div>
   );

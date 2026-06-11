@@ -104,30 +104,30 @@ export default async function PublicAuditReportPage({ params }: ReportPageProps)
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#F8F5EE', color: '#1A1814' }} className="px-6 py-12 md:px-10">
+    <div style={{ minHeight: '100vh', background: 'var(--surface-base)', color: 'var(--ink-primary)' }} className="px-6 py-12 md:px-10">
       <div className="mx-auto max-w-6xl space-y-5">
         {canView ? (
-          <div className="border px-4 py-3 text-sm" style={{ borderColor: '#D8D0BD', background: '#FAF6EF', color: '#4A4640' }}>
+          <div className="border px-4 py-3 text-sm" style={{ borderColor: 'var(--border-default)', background: 'var(--surface-raised)', color: 'var(--ink-secondary)' }}>
             This report shows patterns within your store only. Network-wide resolution is available to founding merchants.{' '}
-            <Link href="/apply" className="underline" style={{ color: '#1A1814' }}>
+            <Link href="/apply" className="underline" style={{ color: 'var(--ink-primary)' }}>
               Apply for network access →
             </Link>
           </div>
         ) : null}
 
-        <div className="relative overflow-hidden border" style={{ borderColor: '#D8D0BD', background: '#FDFBF6' }}>
+        <div className="relative overflow-hidden border" style={{ borderColor: 'var(--border-default)', background: 'var(--surface-raised)' }}>
           <div className={!canView ? 'blur-[6px] pointer-events-none select-none' : ''}>
-            <div className="flex items-center justify-between border-b px-5 py-4" style={{ borderColor: '#E7DFCE' }}>
+            <div className="flex items-center justify-between border-b px-5 py-4" style={{ borderColor: 'var(--border-subtle)' }}>
               <div>
                 <h1 style={{ fontFamily: 'var(--font-dm-sans, sans-serif)', fontSize: '30px', fontWeight: 500, letterSpacing: '-0.02em', margin: 0 }}>
                   Full audit report
                 </h1>
-                <p style={{ margin: '6px 0 0', color: '#7A7265', fontSize: '13px', fontFamily: 'var(--font-dm-sans, sans-serif)' }}>
+                <p style={{ margin: '6px 0 0', color: 'var(--ink-tertiary)', fontSize: '13px', fontFamily: 'var(--font-dm-sans, sans-serif)' }}>
                   Audit ID: {publicAudit.id}
                 </p>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <p style={{ margin: 0, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.14em', color: '#7A7265', fontFamily: 'var(--font-dm-sans, sans-serif)' }}>
+                <p style={{ margin: 0, fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--ink-tertiary)', fontFamily: 'var(--font-dm-sans, sans-serif)' }}>
                   Order value linked
                 </p>
                 <p style={{ margin: '4px 0 0', fontSize: '24px', fontFamily: 'var(--font-dm-sans, sans-serif)', fontWeight: 500 }}>
@@ -138,10 +138,10 @@ export default async function PublicAuditReportPage({ params }: ReportPageProps)
 
             <div className="overflow-x-auto">
               <table className="w-full text-left">
-                <thead style={{ background: '#FAF6EF' }}>
+                <thead style={{ background: 'var(--surface-raised)' }}>
                   <tr>
                     {['Cluster ID', 'Linked identities', 'Confidence grade', 'Signals fired', 'Orders / order value'].map((label) => (
-                      <th key={label} className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: '#7A7265' }}>
+                      <th key={label} className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--ink-tertiary)' }}>
                         {label}
                       </th>
                     ))}
@@ -150,19 +150,19 @@ export default async function PublicAuditReportPage({ params }: ReportPageProps)
                 <tbody>
                   {rows.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="px-4 py-8 text-center text-sm" style={{ color: '#7A7265' }}>
+                      <td colSpan={5} className="px-4 py-8 text-center text-sm" style={{ color: 'var(--ink-tertiary)' }}>
                         No matched rows yet for this audit.
                       </td>
                     </tr>
                   ) : (
                     rows.map((row) => (
-                      <tr key={row.cluster_id ?? `${row.customer_email ?? ''}-${row.shipping_address ?? ''}`} className="border-t" style={{ borderColor: '#EEE7D8' }}>
+                      <tr key={row.cluster_id ?? `${row.customer_email ?? ''}-${row.shipping_address ?? ''}`} className="border-t" style={{ borderColor: 'var(--border-subtle)' }}>
                         <td className="px-4 py-3 text-sm">{row.cluster_id ?? 'Pending'}</td>
-                        <td className="px-4 py-3 text-sm" style={{ color: '#4A4640' }}>
+                        <td className="px-4 py-3 text-sm" style={{ color: 'var(--ink-secondary)' }}>
                           {redactEmail(row.customer_email)} · {redactAddress(row.shipping_address)}
                         </td>
                         <td className="px-4 py-3 text-sm">{scoreText(row)}</td>
-                        <td className="px-4 py-3 text-sm" style={{ color: '#4A4640' }}>{signalsText(row.signals_matched)}</td>
+                        <td className="px-4 py-3 text-sm" style={{ color: 'var(--ink-secondary)' }}>{signalsText(row.signals_matched)}</td>
                         <td className="px-4 py-3 text-sm">1 order · {formatCurrency(row.order_value ?? 0, 'USD')}</td>
                       </tr>
                     ))

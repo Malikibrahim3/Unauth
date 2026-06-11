@@ -34,9 +34,9 @@ export function ConnectionPromptStrip({ connection, hasExistingProfiles }: Conne
     <div
       className="flex items-center justify-between gap-4 px-4 py-2.5 border-b text-sm"
       style={{
-        background: 'color-mix(in srgb, var(--warning, #b45309) 8%, var(--surface-raised))',
+        background: 'color-mix(in srgb, var(--warning, #b45309) 8%, var(--surface))',
         borderColor: 'color-mix(in srgb, var(--warning, #b45309) 20%, transparent)',
-        color: 'var(--ink-secondary)',
+        color: 'var(--text-secondary)',
         fontFamily: 'DM Sans, system-ui, sans-serif',
       }}
     >
@@ -46,7 +46,7 @@ export function ConnectionPromptStrip({ connection, hasExistingProfiles }: Conne
           style={{ background: 'var(--warning, #b45309)' }}
           aria-hidden="true"
         />
-        <span className="leading-snug" style={{ color: 'var(--ink-primary)' }}>{message}</span>
+        <span className="leading-snug" style={{ color: 'var(--text-primary)' }}>{message}</span>
       </div>
       <Link
         href="/settings/integrations"

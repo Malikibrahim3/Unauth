@@ -3,11 +3,14 @@ import CustomerNotes from '@/components/audit/CustomerNotes';
 import CustomerSupportCasesSection from '@/components/customers/CustomerSupportCasesSection';
 import IdentityChangesDisclosure from '@/components/customers/IdentityChangesDisclosure';
 import BehaviorRoadmap from '@/components/customers/BehaviorRoadmap';
+import { AnalyticsDonutChart } from '@/components/analytics/AnalyticsDonutChart';
+import { AnalyticsHBarChart } from '@/components/analytics/AnalyticsHBarChart';
 import { SectionCard } from '@/components/ui/SectionCard';
 import { MetricCard } from '@/components/ui/MetricCard';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Badge } from '@/components/ui/Badge';
 import { PrivacyBadge } from '@/components/ui/PrivacyBadge';
+import { NetworkFootprint } from '@/components/ui/NetworkFootprint';
 import { labelFor } from '@/lib/copy/labels';
 import { formatDate, formatDateMode } from '@/lib/utils/format';
 import { FLAG_EXPERIENCE_POLISH_V1 } from '@/lib/flags';
@@ -58,13 +61,24 @@ export function CustomerProfilePageMainColumn({
   linkedAccounts,
   activityLog,
 }: CustomerProfilePageMainColumnProps) {
+  const linkedAccountBars = linkedAccounts.slice(0, 5).map((acc) => ({
+    label: labelize(acc.entityType),
+    value: acc.confidence,
+    color: 'var(--neutral)',
+  }));
+  const signalMix = [
+    { label: 'Store-only', value: Math.max(merchantOrderCount - profile.total_chargebacks, 0), color: 'var(--neutral)' },
+    { label: 'Chargebacks', value: profile.total_chargebacks, color: 'var(--success)' },
+    { label: 'Cross-store', value: Math.max((profile.total_merchants_seen_at ?? 1) - 1, 0), color: 'var(--neutral)' },
+  ].filter((item) => item.value > 0);
+
   return (
     <div className="min-w-0 space-y-[var(--space-5)]">
       {!hasCleanRecord && (
-        <SectionCard title="Order & claim history" description="Chronological orders and claim events — use this narrative in your helpdesk reply.">
-          <div className="mb-[var(--space-5)] rounded-lg border p-[var(--space-4)]" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)' }}>
+        <SectionCard title="Order & claim history" description="Chronological orders and claim events for this customer.">
+          <div className="mb-[var(--space-5)] rounded-md border p-[var(--space-4)]" style={{ borderColor: 'var(--border-muted)', background: 'var(--bg-inset)' }}>
             <div className="flex items-start gap-3">
-              <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" style={{ color: 'var(--text-muted)' }} />
+              <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" style={{ color: 'var(--text-secondary)' }} />
               <p className="text-body-sm leading-relaxed" style={{ color: 'var(--text)' }}>{merchantNarrative}</p>
             </div>
 
@@ -106,10 +120,26 @@ export function CustomerProfilePageMainColumn({
         title="Network footprint"
         description={<span className="inline-flex items-center gap-2"><span>Privacy-safe cross-store context</span><PrivacyBadge /></span>}
       >
+        <NetworkFootprint
+          merchants={profile.total_merchants_seen_at ?? 1}
+          claims={profile.total_chargebacks}
+          grade={profileGrade === 'F' ? null : profileGrade}
+          kSatisfied={(profile.total_merchants_seen_at ?? 1) >= 3}
+        />
         <div className="grid grid-cols-3 gap-3">
           <MetricCard label="Merchants" value={profile.total_merchants_seen_at ?? 1} density="compact" />
           <MetricCard label="Profile orders" value={profile.total_orders ?? merchantOrderCount} density="compact" />
           <MetricCard label="Privacy" value="Privacy-safe" density="compact" />
+        </div>
+        <div className="mt-4 grid gap-4 lg:grid-cols-2">
+          <div>
+            <p className="mb-2 text-caption font-semibold" style={{ color: 'var(--text-secondary)' }}>Exposure mix</p>
+            <AnalyticsDonutChart data={signalMix} height={190} emptyLabel="No exposure mix yet" />
+          </div>
+          <div>
+            <p className="mb-2 text-caption font-semibold" style={{ color: 'var(--text-secondary)' }}>Linked identifier confidence</p>
+            <AnalyticsHBarChart data={linkedAccountBars} yAxisWidth={120} emptyLabel="No linked identifiers yet" />
+          </div>
         </div>
         {merchantSignalPills.length === 0 ? (
           <EmptyState title="No merchant signals" description="No cross-merchant claim signals are available for this profile yet." />
@@ -119,7 +149,7 @@ export function CustomerProfilePageMainColumn({
               <span
                 key={`${pill.merchantLabel}-${pill.claimType}`}
                 className="inline-flex items-center gap-2 rounded-md border px-2.5 py-1 text-xs"
-                style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)', color: 'var(--text)' }}
+                style={{ borderColor: 'var(--border-muted)', background: 'var(--bg-inset)', color: 'var(--text)' }}
                 title="Cross-merchant signal summary"
               >
                 <span className="font-semibold">{pill.merchantLabel}</span>
@@ -131,7 +161,7 @@ export function CustomerProfilePageMainColumn({
             ))}
           </div>
         )}
-        <p className="text-caption mt-3" style={{ color: 'var(--text-muted)' }}>
+        <p className="text-caption mt-3" style={{ color: 'var(--text-secondary)' }}>
           Other merchant names, customer IDs, and order IDs are hidden; only aggregate presence is shown.
         </p>
       </SectionCard>
@@ -163,7 +193,7 @@ export function CustomerProfilePageMainColumn({
             <IdentityDatum label={labelFor('cards')}>
               <div className="flex flex-wrap gap-1.5">
                 {profile.card_last4s.map((c) => (
-                  <span key={c} className="font-mono text-caption px-1.5 py-0.5 rounded border" style={{ background: 'var(--bg-subtle)', borderColor: 'var(--border-subtle)', color: 'var(--text-muted)' }}>
+                  <span key={c} className="font-mono text-caption px-1.5 py-0.5 rounded border" style={{ background: 'var(--bg-subtle)', borderColor: 'var(--border-muted)', color: 'var(--text-secondary)' }}>
                     •••• {c}
                   </span>
                 ))}
@@ -189,7 +219,7 @@ export function CustomerProfilePageMainColumn({
 
       <SectionCard title={`Linked identities (${linkedAccounts.length})`}>
         {linkedAccounts.length === 0 ? (
-          <p className="text-body-sm" style={{ color: 'var(--text-muted)' }}>
+          <p className="text-body-sm" style={{ color: 'var(--text-secondary)' }}>
             No linked identities yet. They appear when signals connect this profile to other customer records in your data or the network.
           </p>
         ) : (
@@ -197,13 +227,13 @@ export function CustomerProfilePageMainColumn({
             {linkedAccounts.map((acc) => (
               <li key={`${acc.entityType}-${acc.entityValue}`} className="grid grid-cols-[minmax(0,1fr)_60px_36px] items-center gap-3">
                 <div className="min-w-0">
-                  <p className="t-label" style={{ color: 'var(--ink-tertiary)' }}>{labelize(acc.entityType)}</p>
-                  <p className="t-caption truncate font-mono" style={{ color: 'var(--ink-secondary)' }}>{acc.entityValue}</p>
+                  <p className="t-label" style={{ color: 'var(--text-tertiary)' }}>{labelize(acc.entityType)}</p>
+                  <p className="t-caption truncate font-mono" style={{ color: 'var(--text-secondary)' }}>{acc.entityValue}</p>
                 </div>
-                <div className="h-0.5 overflow-hidden rounded-full" style={{ background: 'var(--surface-muted)' }}>
-                  <div className="h-full" style={{ width: `${acc.confidence}%`, background: 'var(--copper-bright)' }} />
+                <div className="h-2 overflow-hidden rounded-full" style={{ background: 'var(--surface-sunken)' }}>
+                  <div className="h-full" style={{ width: `${acc.confidence}%`, background: 'var(--accent)' }} />
                 </div>
-                <span className="t-mono text-right" style={{ color: 'var(--ink-secondary)' }}>{acc.confidence}%</span>
+                <span className="t-mono text-right" style={{ color: 'var(--text-secondary)' }}>{acc.confidence}%</span>
               </li>
             ))}
           </ul>
@@ -237,11 +267,11 @@ export function CustomerProfilePageMainColumn({
                 default: description = labelize(entry.event_type);
               }
               return (
-                <li key={entry.id} className="flex items-start gap-3 rounded-lg border p-3" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)' }}>
-                  <Activity className="mt-0.5 h-4 w-4 shrink-0" style={{ color: 'var(--text-muted)' }} />
+                <li key={entry.id} className="flex items-start gap-3 rounded-md border p-3" style={{ borderColor: 'var(--border-muted)', background: 'var(--bg-inset)' }}>
+                  <Activity className="mt-0.5 h-4 w-4 shrink-0" style={{ color: 'var(--text-secondary)' }} />
                   <div className="min-w-0 flex-1">
                     <p className="text-body-sm" style={{ color: 'var(--text)' }}>{description}</p>
-                    <p className="text-caption" style={{ color: 'var(--text-subtle)' }} title={formatDate(entry.created_at)}>{formatDateMode(entry.created_at, 'recent')}</p>
+                    <p className="text-caption" style={{ color: 'var(--text-tertiary)' }} title={formatDate(entry.created_at)}>{formatDateMode(entry.created_at, 'recent')}</p>
                   </div>
                 </li>
               );

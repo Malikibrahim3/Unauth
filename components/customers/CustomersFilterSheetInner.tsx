@@ -92,7 +92,7 @@ export function CustomersFilterSheetInner({
           defaultValue={searchParams.get('q') ?? ''}
           onChange={(e) => makeDebounced('q', 2)(e.target.value)}
           className="h-9 min-w-[280px] rounded-md px-3 text-[13px] focus:outline-none"
-          style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text)' }}
+          style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)' }}
           onFocus={(e) => { e.target.style.borderColor = 'var(--border-strong)'; e.target.style.outline = '2px solid var(--focus-ring)'; e.target.style.outlineOffset = '2px'; }}
           onBlur={(e) => { e.target.style.borderColor = 'var(--border)'; e.target.style.outline = 'none'; }}
         />
@@ -102,7 +102,7 @@ export function CustomersFilterSheetInner({
           value={searchParams.get('sort') ?? 'risk'}
           onChange={(e) => updateParam('sort', e.target.value)}
           className="h-9 rounded-md px-3 text-[13px] focus:outline-none"
-          style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text)' }}
+          style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text)' }}
         >
           <option value="risk">Sort: Highest confidence</option>
           <option value="recent">Sort: Most recent</option>
@@ -114,7 +114,7 @@ export function CustomersFilterSheetInner({
           <option value="fastestClaim">Sort: Fastest claims</option>
         </select>
 
-        <div className="flex items-center gap-0.5 rounded-lg p-0.5" style={{ background: 'var(--bg-inset)', border: '1px solid var(--border-subtle)' }}>
+        <div className="flex items-center gap-0.5 rounded-md p-0.5" style={{ background: 'var(--bg-inset)', border: '1px solid var(--border-muted)' }}>
           {[
             { value: '', label: 'All' },
             { value: 'new', label: 'New' },
@@ -132,8 +132,8 @@ export function CustomersFilterSheetInner({
                 className="inline-flex h-8 items-center px-2.5 text-xs font-medium rounded-md transition-colors"
                 style={
                   active
-                    ? { background: 'var(--bg-surface)', color: 'var(--text)', boxShadow: 'var(--shadow-xs)' }
-                    : { color: 'var(--text-muted)', background: 'transparent' }
+                    ? { background: 'var(--surface)', color: 'var(--text)', boxShadow: 'var(--shadow-xs)' }
+                    : { color: 'var(--text-secondary)', background: 'transparent' }
                 }
               >
                 {label}
@@ -154,7 +154,7 @@ export function CustomersFilterSheetInner({
           {activeFiltersCount > 0 && (
             <span
               className="flex items-center justify-center w-4 h-4 rounded-full text-xs font-bold"
-              style={{ background: 'var(--text-inverse)', color: 'var(--accent)' }}
+              style={{ background: 'white', color: 'var(--accent)' }}
             >
               {activeFiltersCount}
             </span>

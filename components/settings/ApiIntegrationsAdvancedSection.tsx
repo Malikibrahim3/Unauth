@@ -132,7 +132,7 @@ export default function ApiIntegrationsAdvancedSection() {
     <div className="space-y-5">
       <div>
         <h2 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Advanced &amp; optional</h2>
-        <p className="mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>
+        <p className="mt-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
           Browser tooling and API keys for custom integrations. Not required for the core Shopify + Gorgias workflow.
         </p>
       </div>
@@ -141,7 +141,7 @@ export default function ApiIntegrationsAdvancedSection() {
         <p
           className="rounded-md px-3 py-2 text-sm"
           style={{
-            background: state.message.type === 'error' ? 'rgba(180, 50, 50, 0.08)' : 'rgba(47, 107, 67, 0.10)',
+            background: state.message.type === 'error' ? 'color-mix(in srgb, var(--success) 8%, transparent)' : 'var(--success-bg)',
             color: 'var(--text)',
           }}
         >

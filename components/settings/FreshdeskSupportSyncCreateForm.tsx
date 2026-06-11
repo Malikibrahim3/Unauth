@@ -36,7 +36,7 @@ export function FreshdeskSupportSyncCreateForm({
           <label
             htmlFor="freshdesk-domain"
             className="block text-xs font-medium mb-1"
-            style={{ color: 'var(--text-muted)' }}
+            style={{ color: 'var(--text-secondary)' }}
           >
             Freshdesk domain
           </label>
@@ -53,7 +53,7 @@ export function FreshdeskSupportSyncCreateForm({
           disabled={!canManage || state.busy}
         />
         {isCreate ? (
-          <p className="mt-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+          <p className="mt-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
             Your Freshdesk subdomain. If you log in at <code>acme.freshdesk.com</code>, enter{' '}
             <code>acme</code> or the full host.
           </p>
@@ -65,7 +65,7 @@ export function FreshdeskSupportSyncCreateForm({
           <label
             htmlFor="freshdesk-display-name"
             className="block text-xs font-medium mb-1"
-            style={{ color: 'var(--text-muted)' }}
+            style={{ color: 'var(--text-secondary)' }}
           >
             Display name (optional)
           </label>
@@ -95,7 +95,7 @@ export function FreshdeskSupportSyncCreateForm({
         type="submit"
         disabled={!canManage || state.busy}
         className="rounded-md px-4 py-2 text-sm font-semibold disabled:opacity-60"
-        style={{ background: 'var(--accent)', color: 'var(--accent-fg, #fff)' }}
+        style={{ background: 'var(--accent)', color: 'white' }}
       >
         {state.busy ? 'Saving…' : submitLabel}
       </button>

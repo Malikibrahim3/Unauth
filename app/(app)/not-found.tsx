@@ -13,14 +13,14 @@ export default function AppNotFound() {
               <Link
                 href="/dashboard"
                 className="inline-flex items-center rounded-md px-4 py-2 text-sm font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1"
-                style={{ background: 'var(--accent)', color: 'var(--text-inverse)', outlineColor: 'var(--accent)' }}
+                style={{ background: 'var(--accent)', color: 'white', outlineColor: 'var(--accent)' }}
               >
                 Back to dashboard
               </Link>
               <Link
                 href="/claims"
                 className="inline-flex items-center rounded-md border px-4 py-2 text-sm font-semibold hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1"
-                style={{ borderColor: 'var(--border-subtle)', color: 'var(--text)', outlineColor: 'var(--accent)' }}
+                style={{ borderColor: 'var(--border-muted)', color: 'var(--text)', outlineColor: 'var(--accent)' }}
               >
                 Open claims
               </Link>

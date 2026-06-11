@@ -5,7 +5,7 @@ import { uploadSubtleBorderStyle, uploadSubtleTextStyle, uploadTextStyle } from 
 
 export function UploadAdvancedIntegrations() {
   return (
-    <div className="rounded-lg p-5 space-y-4 border" style={uploadSubtleBorderStyle}>
+    <div className="rounded-md p-5 space-y-4 border" style={uploadSubtleBorderStyle}>
       <div>
         <h3 className="text-sm font-semibold mb-0.5" style={uploadTextStyle}>
           Advanced Integrations
@@ -19,8 +19,8 @@ export function UploadAdvancedIntegrations() {
         {ADVANCED_INTEGRATIONS.map((integration) => (
           <div
             key={integration.title}
-            className="flex items-start gap-3 rounded-lg px-4 py-3 border"
-            style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-subtle)' }}
+            className="flex items-start gap-3 rounded-md px-4 py-3 border"
+            style={{ borderColor: 'var(--border-muted)', background: 'var(--bg-subtle)' }}
           >
             <span className="text-lg flex-shrink-0">{integration.icon}</span>
             <div className="min-w-0">
@@ -32,7 +32,7 @@ export function UploadAdvancedIntegrations() {
               </p>
               <span
                 className="inline-block mt-1.5 text-xs px-2 py-0.5 rounded font-semibold"
-                style={{ background: 'var(--bg-inset)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
+                style={{ background: 'var(--bg-inset)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}
               >
                 Planned integration
               </span>

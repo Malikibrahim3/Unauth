@@ -44,7 +44,7 @@ type="button"           onClick={handleDismiss}
         </button>
         <button
 type="button"           onClick={() => setConfirming(false)}
-          className="text-xs transition-colors" style={{ color: 'var(--text-subtle)' }} onMouseEnter={e => (e.currentTarget.style.color = 'var(--text)')} onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-subtle)')}
+          className="text-xs transition-colors" style={{ color: 'var(--text-tertiary)' }} onMouseEnter={e => (e.currentTarget.style.color = 'var(--text)')} onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-tertiary)')}
         >
           Cancel
         </button>

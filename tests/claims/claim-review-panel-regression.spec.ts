@@ -9,7 +9,7 @@ test.describe('Claim Review Panel — accordion/rail regression', () => {
   async function openFirstActiveClaim(page: Page): Promise<string | null> {
     await page.goto('/claims?queue=active');
     await page.waitForLoadState('networkidle');
-    const reviewLink = page.getByRole('link', { name: 'Review & record' }).first();
+    const reviewLink = page.getByRole('link', { name: 'Review evidence' }).first();
     const exists = await reviewLink.isVisible().catch(() => false);
     if (!exists) return null;
     const href = await reviewLink.getAttribute('href');
@@ -25,7 +25,7 @@ test.describe('Claim Review Panel — accordion/rail regression', () => {
     test.skip(!href, 'No active claims available');
 
     // Case intelligence section must be visible
-    const intelligenceSection = page.getByText('Claim context');
+    const intelligenceSection = page.getByText('Claim evidence context');
     await expect(intelligenceSection).toBeVisible();
 
     // Edit form should be collapsed (button present, form fields hidden)
@@ -67,11 +67,9 @@ test.describe('Claim Review Panel — accordion/rail regression', () => {
     test.skip(!href, 'No active claims available');
 
     const sections = [
-      'OWNERSHIP',
-      'WORKFLOW STATUS',
-      'FOLLOW-UP / SNOOZE',
+      'REVIEW STATUS',
       'ADD EVIDENCE',
-      'MERCHANT DECISION',
+      'RECORD MERCHANT OUTCOME',
       'CUSTOMER RESPONSE',
     ];
 
@@ -111,31 +109,12 @@ test.describe('Claim Review Panel — accordion/rail regression', () => {
     await page.screenshot({ path: 'tests/reports/claim-review-04-edit-form-closed.png', fullPage: false });
   });
 
-  // ─── 5. Assign to me ────────────────────────────────────────────────────────
-  test('assign to me works', async ({ page }) => {
+  // ─── 5. Update lifecycle status ─────────────────────────────────────────────
+  test('review status update works', async ({ page }) => {
     const href = await openFirstActiveClaim(page);
     test.skip(!href, 'No active claims available');
 
-    // Open ownership accordion
-    const ownerBtn = page.getByRole('button', { name: /OWNERSHIP/i }).first();
-    await ownerBtn.click();
-    await page.waitForTimeout(200);
-
-    const assignBtn = page.getByRole('button', { name: 'Assign to me' });
-    await expect(assignBtn).toBeVisible();
-    await assignBtn.click();
-
-    // Toast success
-    await expect(page.getByText('Assignment updated').or(page.getByText('assignment', { exact: false }))).toBeVisible({ timeout: 8000 }).catch(() => null);
-    await page.screenshot({ path: 'tests/reports/claim-review-05-assign.png', fullPage: false });
-  });
-
-  // ─── 6. Update lifecycle status ─────────────────────────────────────────────
-  test('workflow status update works', async ({ page }) => {
-    const href = await openFirstActiveClaim(page);
-    test.skip(!href, 'No active claims available');
-
-    const statusBtn = page.getByRole('button', { name: /WORKFLOW STATUS/i }).first();
+    const statusBtn = page.getByRole('button', { name: /REVIEW STATUS/i }).first();
     await statusBtn.click();
     await page.waitForTimeout(200);
 
@@ -143,31 +122,13 @@ test.describe('Claim Review Panel — accordion/rail regression', () => {
     await expect(noteInput).toBeVisible();
     await noteInput.fill('Regression test note — under review');
 
-    const updateBtn = page.getByRole('button', { name: 'Update status' });
+    const updateBtn = page.getByRole('button', { name: 'Update review status' });
     await updateBtn.click();
     await expect(page.getByText(/updated|status/i)).toBeVisible({ timeout: 8000 }).catch(() => null);
     await page.screenshot({ path: 'tests/reports/claim-review-06-status-update.png', fullPage: false });
   });
 
-  // ─── 7. Snooze ──────────────────────────────────────────────────────────────
-  test('snooze works', async ({ page }) => {
-    const href = await openFirstActiveClaim(page);
-    test.skip(!href, 'No active claims available');
-
-    const snoozeBtn = page.getByRole('button', { name: /FOLLOW-UP/i }).first();
-    const visible = await snoozeBtn.isVisible().catch(() => false);
-    test.skip(!visible, 'Snooze section not available (claim may be closed)');
-
-    await snoozeBtn.click();
-    await page.waitForTimeout(200);
-
-    const snoozeSubmit = page.getByRole('button', { name: 'Snooze' }).filter({ hasNotText: /clear/i }).first();
-    await snoozeSubmit.click();
-    await expect(page.getByText(/Follow-up updated|snooze/i)).toBeVisible({ timeout: 8000 }).catch(() => null);
-    await page.screenshot({ path: 'tests/reports/claim-review-07-snooze.png', fullPage: false });
-  });
-
-  // ─── 8. Add evidence ────────────────────────────────────────────────────────
+  // ─── 6. Add evidence ────────────────────────────────────────────────────────
   test('add evidence works', async ({ page }) => {
     const href = await openFirstActiveClaim(page);
     test.skip(!href, 'No active claims available');
@@ -183,19 +144,19 @@ test.describe('Claim Review Panel — accordion/rail regression', () => {
     await page.screenshot({ path: 'tests/reports/claim-review-08-evidence.png', fullPage: false });
   });
 
-  // ─── 9. Record merchant decision ────────────────────────────────────────────
-  test('record merchant decision works', async ({ page }) => {
+  // ─── 7. Record merchant outcome ─────────────────────────────────────────────
+  test('record merchant outcome works', async ({ page }) => {
     const href = await openFirstActiveClaim(page);
     test.skip(!href, 'No active claims available');
 
-    const decisionBtn = page.getByRole('button', { name: /MERCHANT DECISION/i }).first();
+    const decisionBtn = page.getByRole('button', { name: /RECORD MERCHANT OUTCOME/i }).first();
     const visible = await decisionBtn.isVisible().catch(() => false);
     test.skip(!visible, 'Merchant decision section not available');
 
     await decisionBtn.click();
     await page.waitForTimeout(200);
 
-    const recordBtn = page.getByRole('button', { name: 'Record merchant decision' });
+    const recordBtn = page.getByRole('button', { name: 'Record merchant outcome' });
     await expect(recordBtn).toBeVisible();
     await recordBtn.click();
     await expect(page.getByText(/decision recorded|Merchant decision/i)).toBeVisible({ timeout: 10000 }).catch(() => null);
@@ -287,7 +248,7 @@ test.describe('Claim Review Panel — accordion/rail regression', () => {
     // Navigate to unread claim
     await page.goto('/claims?viewed=unread&queue=active');
     await page.waitForLoadState('networkidle');
-    const reviewLink = page.getByRole('link', { name: 'Review & record' }).first();
+    const reviewLink = page.getByRole('link', { name: 'Review evidence' }).first();
     const visible = await reviewLink.isVisible().catch(() => false);
     test.skip(!visible, 'No unread claims available');
 

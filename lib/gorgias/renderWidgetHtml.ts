@@ -70,8 +70,7 @@ function baseStyles(): string {
     .brand { font-size: 10px; color: #6b5c54; margin-top: 10px; text-align: right; }
     .watchlist { font-size: 12px; margin-top: 6px; }
     .warn { color: #f2994a; font-weight: 600; font-size: 12px; margin-top: 6px; }
-    .usage-banner { margin-bottom: 10px; padding: 8px 10px; border-radius: 6px; background: rgba(200, 118, 58, 0.12); border: 1px solid rgba(200, 118, 58, 0.35); font-size: 12px; line-height: 1.4; }
-    .usage-banner a { color: #c8763a; font-weight: 600; }
+    .context-summary { font-size: 12px; opacity: 0.85; margin-bottom: 10px; line-height: 1.4; }
   `;
 }
 
@@ -125,14 +124,8 @@ export function renderGorgiasWidgetHtml(ctx: ClaimWidgetRenderContext): string {
   const ctaLabel = isDisconnected ? 'Connect to Unauth →' : json.cta_label;
 
   if (creditGatedPreview) {
-    const usageBanner =
-      json.credit_usage_banner && json.credit_topup_url
-        ? `<div class="usage-banner"><p>${escapeHtml(json.credit_usage_banner)}</p><a href="${escapeHtml(json.credit_topup_url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(json.credit_topup_label ?? 'View options')}</a></div>`
-        : json.credit_usage_banner
-          ? `<div class="usage-banner"><p>${escapeHtml(json.credit_usage_banner)}</p></div>`
-          : '';
     const inner = `
-      ${usageBanner}
+      <div class="context-summary">${escapeHtml(json.context_summary)}</div>
       <div class="grade">—</div>
       <table class="cmp">
         <tbody>
@@ -156,6 +149,8 @@ export function renderGorgiasWidgetHtml(ctx: ClaimWidgetRenderContext): string {
   const { thisStore } = result.data;
   const cleanClaims = json.claims === 'No prior claims on record';
   const inner = `
+    ${json.order_context && json.order_context !== '—' ? `<div class="context-summary">${escapeHtml(json.order_context)}</div>` : ''}
+    <div class="context-summary">${escapeHtml(json.context_summary)}</div>
     <div class="grade">${escapeHtml(json.identity)}</div>
     <div class="claims${cleanClaims ? ' clean' : ''}">${escapeHtml(json.claims)}</div>
     <table class="cmp">

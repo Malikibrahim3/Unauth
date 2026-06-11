@@ -4,6 +4,7 @@ import { LifeBuoy } from 'lucide-react';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import FreshdeskSupportSyncClient from '@/components/settings/FreshdeskSupportSyncClient';
+import { PROVIDER_BRAND_COLOURS } from '@/components/settings/providerBrand';
 
 export default async function FreshdeskIntegrationPage() {
   const userClient = createClient();
@@ -25,17 +26,17 @@ export default async function FreshdeskIntegrationPage() {
         <Link
           href="/settings/integrations"
           className="mb-4 inline-flex items-center gap-1.5 text-xs hover:underline"
-          style={{ color: 'var(--text-muted)' }}
+          style={{ color: 'var(--text-secondary)' }}
         >
           ← Integrations
         </Link>
         <div className="flex items-center gap-3">
-          <LifeBuoy className="h-5 w-5" style={{ color: '#25C16F' }} />
+          <LifeBuoy className="h-5 w-5" style={{ color: PROVIDER_BRAND_COLOURS.freshdesk }} />
           <h1 className="text-heading-lg" style={{ color: 'var(--text)' }}>
             Connect Freshdesk
           </h1>
         </div>
-        <p className="mt-1 text-sm" style={{ color: 'var(--text-muted)' }}>
+        <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
           Ingest support tickets for claim detection and dispute context.
         </p>
       </div>

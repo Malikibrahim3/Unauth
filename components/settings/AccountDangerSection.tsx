@@ -15,7 +15,7 @@ export default function AccountDangerSection({ state, dispatch, onDelete }: Prop
     <SectionCard
       title="Account"
       description="Destructive actions"
-      className="border-[rgba(159,29,29,0.30)]"
+      style={{ borderColor: 'color-mix(in srgb, var(--success) 30%, var(--border))' }}
     >
       <div className="space-y-4">
         <div className="flex items-center gap-2">
@@ -25,13 +25,13 @@ export default function AccountDangerSection({ state, dispatch, onDelete }: Prop
 
         <div>
           <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>Delete your account</p>
-          <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+          <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
             This permanently deletes all your audits, customer profiles, watchlist, and notes. This action cannot be undone.
           </p>
         </div>
 
         <div>
-          <label htmlFor="account-delete-confirm" className="block text-xs mb-1.5" style={{ color: 'var(--text-muted)' }}>
+          <label htmlFor="account-delete-confirm" className="block text-xs mb-1.5" style={{ color: 'var(--text-secondary)' }}>
             Type <span className="font-mono font-bold" style={{ color: 'var(--text)' }}>DELETE</span> to confirm
           </label>
           <div className="flex gap-2">

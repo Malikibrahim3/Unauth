@@ -60,7 +60,7 @@ const FAQ_FEATURED = [
   },
   {
     q: 'How do you get data from other merchants?',
-    a: "Merchants contribute anonymised, hashed identity signals to the network graph. Raw customer records stay merchant-scoped; cross-merchant views use aggregate, thresholded signals — not another store's customer list.",
+    a: "Merchants contribute anonymised, hashed identity signals to the shared identity network. Raw customer records stay merchant-scoped; cross-merchant views use aggregate, thresholded signals — not another store's customer list.",
   },
   {
     q: "Can you see my customers' data?",
@@ -98,7 +98,7 @@ const FAQ_MORE = [
     a: 'We assemble evidence and flag readiness for representment — transaction history, prior-order signal overlap, and missing-field detection. Full CE 3.0 qualification needs checkout-time data for some cases. Merchants use outputs at their discretion; outcomes are not guaranteed.',
   },
   {
-    q: 'Does Unauth block orders automatically?',
+    q: 'Does Unauth make fulfilment decisions automatically?',
     a: 'No. Unauth provides contextual information for merchant review and does not make refund, fulfilment, account, or customer eligibility decisions.',
   },
   {

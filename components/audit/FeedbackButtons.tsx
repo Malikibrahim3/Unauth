@@ -51,7 +51,7 @@ type="button"               onClick={() => submit('same_customer')}
             <button
 type="button"               onClick={() => submit('different_customer')}
               disabled={loading}
-              className="text-xs px-1.5 py-0.5 rounded-sm border transition-colors disabled:opacity-50" style={{ borderColor: 'var(--border-subtle)', color: 'var(--text-muted)', background: 'transparent' }} onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-subtle)')} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+              className="text-xs px-1.5 py-0.5 rounded-sm border transition-colors disabled:opacity-50" style={{ borderColor: 'var(--border-muted)', color: 'var(--text-secondary)', background: 'transparent' }} onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-subtle)')} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
             >
               Different customers confirmed
             </button>
@@ -63,13 +63,13 @@ type="button"               onClick={() => submit('different_customer')}
           </span>
         )}
         {submitted === 'different_customer' && (
-          <span className="text-xs px-1.5 py-0.5 rounded border flex items-center gap-1" style={{ borderColor: 'var(--border)', background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
+          <span className="text-xs px-1.5 py-0.5 rounded border flex items-center gap-1" style={{ borderColor: 'var(--border)', background: 'var(--bg-subtle)', color: 'var(--text-secondary)' }}>
             ✓ Saved
           </span>
         )}
       </div>
       {submitted === null && (
-        <p className="text-xs leading-tight" style={{ color: 'var(--text-subtle)' }}>Your feedback trains the identity matching engine</p>
+        <p className="text-xs leading-tight" style={{ color: 'var(--text-tertiary)' }}>Your feedback trains the identity matching engine</p>
       )}
     </div>
   );

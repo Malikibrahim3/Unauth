@@ -27,19 +27,19 @@ export function ClaimReviewFormSection({ wb }: { wb: ClaimReviewWorkbench }) {
 
   return (
     <section
-      className="order-3 min-w-0 min-[1100px]:col-start-1 min-[1100px]:row-start-2 rounded-xl border overflow-hidden"
-      style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}
+      className="order-3 min-w-0 min-[1100px]:col-start-1 min-[1100px]:row-start-2 rounded-md border overflow-hidden"
+      style={{ borderColor: 'var(--border-muted)', background: 'var(--surface)' }}
     >
       <button
         type="button"
         onClick={() => patch({ claimFormOpen: !claimFormOpen })}
         className="w-full flex items-center justify-between px-4 py-2.5 text-left"
       >
-        <span className="text-xs font-semibold" style={{ color: 'var(--ink-secondary)' }}>{claimId ? 'Edit claim details' : 'Create claim'}</span>
-        <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{claimFormOpen ? '▲' : '▼'}</span>
+        <span className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>{claimId ? 'Edit claim details' : 'Create claim'}</span>
+        <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>{claimFormOpen ? '▲' : '▼'}</span>
       </button>
       {claimFormOpen && (
-        <div className="px-4 pb-4 pt-0 border-t space-y-3" style={{ borderColor: 'var(--border-subtle)' }}>
+        <div className="px-4 pb-4 pt-0 border-t space-y-3" style={{ borderColor: 'var(--border-muted)' }}>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {shops.length > 0 && (
               <div>
@@ -61,7 +61,7 @@ export function ClaimReviewFormSection({ wb }: { wb: ClaimReviewWorkbench }) {
                     {orderOptions.length > 1 && <option value="">Select an order…</option>}
                     {orderOptions.map((o) => <option key={o.id} value={o.id}>{formatOrderOption(o)}</option>)}
                   </select>
-                  <button type="button" onClick={() => patch({ manualModeExplicit: true })} className="mt-1 text-xs hover:underline" style={{ color: 'var(--text-muted)' }}>Enter reference manually</button>
+                  <button type="button" onClick={() => patch({ manualModeExplicit: true })} className="mt-1 text-xs hover:underline" style={{ color: 'var(--text-secondary)' }}>Enter reference manually</button>
                 </>
               ) : (
                 <div className="space-y-1.5">
@@ -73,7 +73,7 @@ export function ClaimReviewFormSection({ wb }: { wb: ClaimReviewWorkbench }) {
                     <option value="audit">Audit</option>
                   </select>
                   {orderOptions.length > 0 && (
-                    <button type="button" onClick={() => patch({ manualModeExplicit: false })} className="text-xs hover:underline" style={{ color: 'var(--text-muted)' }}>← Back to order list</button>
+                    <button type="button" onClick={() => patch({ manualModeExplicit: false })} className="text-xs hover:underline" style={{ color: 'var(--text-secondary)' }}>← Back to order list</button>
                   )}
                 </div>
               )}
@@ -104,7 +104,7 @@ export function ClaimReviewFormSection({ wb }: { wb: ClaimReviewWorkbench }) {
           )}
           {resolvedDuplicateClaim && (
             <p className="text-xs rounded-md px-2 py-1.5" style={{ background: 'var(--bg-inset)', color: 'var(--text)' }}>
-              Resolved claim exists. <button type="button" onClick={() => setClaimId(resolvedDuplicateClaim.id)} className="font-semibold underline" style={{ color: 'var(--accent)' }}>Open it</button>
+              Outcome already recorded for this order. <button type="button" onClick={() => setClaimId(resolvedDuplicateClaim.id)} className="font-semibold underline" style={{ color: 'var(--accent)' }}>Open it</button>
             </p>
           )}
           <button

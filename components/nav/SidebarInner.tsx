@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { Menu } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useFetchJson } from '@/lib/react/useFetchJson';
 import { cn } from '@/lib/utils';
@@ -134,14 +135,12 @@ function SidebarInnerContent({
         className={cn(
           'md:hidden fixed top-3 left-3 z-50',
           'flex h-9 w-9 items-center justify-center rounded-md',
-          'bg-[var(--bg-surface)] border border-[var(--border-subtle)]',
+          'bg-[var(--surface)] border border-[var(--border-muted)]',
           'text-[var(--icon-muted)] hover:text-[var(--icon)]',
           'shadow-sm transition-colors',
         )}
       >
-        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" aria-hidden="true">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-        </svg>
+        <Menu className="h-5 w-5" aria-hidden="true" />
       </button>
 
       {mobileOpen ? (

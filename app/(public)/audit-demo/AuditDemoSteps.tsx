@@ -1,6 +1,8 @@
 'use client';
 
 import { useMemo } from 'react';
+import { AnalyticsBarChart } from '@/components/analytics/AnalyticsBarChart';
+import { AnalyticsDonutChart } from '@/components/analytics/AnalyticsDonutChart';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import type { AuditDemoAction, AuditDemoState } from '@/app/(public)/audit-demo/auditDemoReducer';
@@ -56,6 +58,48 @@ function OptionCard({
   );
 }
 
+function buildPreview(state: AuditDemoState) {
+  const volumeMultiplier =
+    state.volume === 'under-1000' ? 0.8 :
+    state.volume === '1000-10000' ? 1.1 :
+    state.volume === '10000-50000' ? 1.45 :
+    state.volume === '50000plus' ? 1.8 :
+    1;
+  const platformMultiplier =
+    state.platform === 'shopify' ? 1.15 :
+    state.platform === 'woocommerce' ? 0.95 :
+    state.platform === 'magento' ? 1.05 :
+    0.9;
+  const problemBias =
+    state.problem === 'refund-abuse' ? { refunds: 56, chargebacks: 18, repeat: 26 } :
+    state.problem === 'chargebacks' ? { refunds: 22, chargebacks: 54, repeat: 24 } :
+    state.problem === 'both' ? { refunds: 38, chargebacks: 34, repeat: 28 } :
+    { refunds: 34, chargebacks: 26, repeat: 40 };
+
+  const baseRows = Math.round(280 * volumeMultiplier * platformMultiplier);
+  const likelyMatches = Math.max(8, Math.round(baseRows * 0.12));
+  const evidenceReady = Math.max(2, Math.round(likelyMatches * 0.24));
+
+  return {
+    kpis: [
+      { label: 'Likely repeated identities', value: likelyMatches.toLocaleString() },
+      { label: 'Evidence-ready cases', value: evidenceReady.toLocaleString() },
+      { label: 'Rows sampled in preview', value: baseRows.toLocaleString() },
+    ],
+    mix: [
+      { label: 'Refund patterns', value: problemBias.refunds, color: 'var(--accent)' },
+      { label: 'Chargeback risk', value: problemBias.chargebacks, color: 'var(--sev-probable, #C7762B)' },
+      { label: 'Repeat identities', value: problemBias.repeat, color: 'var(--sev-clear, #3E7A63)' },
+    ],
+    bars: [
+      { label: 'Week 1', value: Math.round(likelyMatches * 0.55), color: 'var(--surface-border)' },
+      { label: 'Week 2', value: Math.round(likelyMatches * 0.72), color: 'var(--surface-border)' },
+      { label: 'Week 3', value: Math.round(likelyMatches * 0.9), color: 'var(--accent)' },
+      { label: 'Week 4', value: likelyMatches, color: 'var(--accent)' },
+    ],
+  };
+}
+
 type Props = {
   state: AuditDemoState;
   dispatch: React.Dispatch<AuditDemoAction>;
@@ -66,6 +110,7 @@ type Props = {
 
 export default function AuditDemoSteps({ state, dispatch, onStartAudit, onSelectProblem, onGoBack }: Props) {
   const canGoBack = state.step > 1 && !state.loading;
+  const preview = useMemo(() => buildPreview(state), [state]);
 
   const subtitle = useMemo(() => {
     if (state.step === 1) return "We'll tailor the demo to your setup.";
@@ -127,6 +172,27 @@ export default function AuditDemoSteps({ state, dispatch, onStartAudit, onSelect
               </Button>
             </form>
             {state.emailError ? <p className={styles.emailError}>{state.emailError}</p> : null}
+
+            <div className="mt-6 rounded-md border p-4" style={{ borderColor: 'var(--landing-border)', background: 'rgba(255,255,255,0.64)' }}>
+              <div className="grid gap-3 sm:grid-cols-3">
+                {preview.kpis.map((item) => (
+                  <div key={item.label}>
+                    <p className="text-[11px] uppercase tracking-wide" style={{ color: 'var(--landing-ink-tertiary)' }}>{item.label}</p>
+                    <p className="mt-1 text-[22px] font-semibold leading-none" style={{ color: 'var(--landing-ink)' }}>{item.value}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                <div>
+                  <p className="mb-2 text-xs font-semibold" style={{ color: 'var(--landing-ink)' }}>Pattern mix preview</p>
+                  <AnalyticsDonutChart data={preview.mix} height={180} />
+                </div>
+                <div>
+                  <p className="mb-2 text-xs font-semibold" style={{ color: 'var(--landing-ink)' }}>Projected weekly review load</p>
+                  <AnalyticsBarChart data={preview.bars} height={180} />
+                </div>
+              </div>
+            </div>
           </>
         ) : null}
 
@@ -194,6 +260,23 @@ export default function AuditDemoSteps({ state, dispatch, onStartAudit, onSelect
                     onClick={() => onSelectProblem(option.value)}
                   />
                 ))}
+              </div>
+            ) : null}
+
+            {!state.loading ? (
+              <div className="mt-6 rounded-md border p-4" style={{ borderColor: 'var(--landing-border)', background: 'rgba(255,255,255,0.64)' }}>
+                <p className="text-xs font-semibold" style={{ color: 'var(--landing-ink)' }}>Live preview</p>
+                <p className="mt-1 text-xs" style={{ color: 'var(--landing-ink-tertiary)' }}>
+                  This is the kind of summary we&apos;ll lead with once your audit is live.
+                </p>
+                <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                  {preview.kpis.map((item) => (
+                    <div key={item.label}>
+                      <p className="text-[11px] uppercase tracking-wide" style={{ color: 'var(--landing-ink-tertiary)' }}>{item.label}</p>
+                      <p className="mt-1 text-[20px] font-semibold leading-none" style={{ color: 'var(--landing-ink)' }}>{item.value}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             ) : null}
           </>

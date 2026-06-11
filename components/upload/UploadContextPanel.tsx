@@ -60,7 +60,7 @@ export function UploadContextPanel({
   onBatchSubmit,
 }: UploadContextPanelProps) {
   return (
-    <div data-testid="upload-context" className="rounded-lg p-5 space-y-5 border" style={uploadSubtleBorderStyle}>
+    <div data-testid="upload-context" className="rounded-md p-5 space-y-5 border" style={uploadSubtleBorderStyle}>
       <div>
         <div className="flex items-center gap-2 mb-0.5">
           <Calendar className="h-4 w-4" style={uploadIconMutedStyle} />
@@ -156,7 +156,7 @@ export function UploadContextPanel({
       </div>
 
       {duplicateWarning ? (
-        <div className="rounded-lg border px-4 py-3 text-sm" style={uploadMediumRiskPanelStyle}>
+        <div className="rounded-md border px-4 py-3 text-sm" style={uploadMediumRiskPanelStyle}>
           <p className="font-semibold" style={uploadTextStyle}>
             Looks like you&apos;ve already uploaded this file
           </p>
@@ -183,7 +183,7 @@ export function UploadContextPanel({
 
       {uploadWarnings.length > 0 && (
         <div
-          className="rounded-lg border px-4 py-3 text-sm"
+          className="rounded-md border px-4 py-3 text-sm"
           style={{ background: 'var(--bg-subtle)', borderColor: 'var(--border)' }}
         >
           <p className="font-semibold" style={uploadTextStyle}>

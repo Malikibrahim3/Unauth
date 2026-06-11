@@ -81,18 +81,18 @@ export default function BigCommerceConnectClient({ canManage }: Props) {
   }
 
   if (loading && !connection) {
-    return <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Loading…</p>;
+    return <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Loading…</p>;
   }
 
   return (
     <div className="space-y-6">
       {message && (
         <p
-          className="text-sm rounded-lg border px-3 py-2"
+          className="text-sm rounded-md border px-3 py-2"
           style={{
-            color: message.type === 'error' ? 'var(--sev-high)' : 'var(--sev-clear, #2f6b43)',
-            borderColor: 'var(--surface-border)',
-            background: 'var(--bg-surface)',
+            color: message.type === 'error' ? 'var(--sev-high)' : 'var(--success)',
+            borderColor: 'var(--border)',
+            background: 'var(--surface)',
           }}
         >
           {message.text}
@@ -101,14 +101,14 @@ export default function BigCommerceConnectClient({ canManage }: Props) {
 
       {isActive && connection && (
         <div
-          className="rounded-xl border p-5 space-y-3"
-          style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-raised)' }}
+          className="rounded-md border p-5 space-y-3"
+          style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
         >
           <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Connected</p>
-          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+          <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
             Store hash: {connection.store_key}
           </p>
-          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+          <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
             Webhook URL: {connection.webhook_url}
           </p>
           {connection.last_error && (
@@ -122,7 +122,7 @@ export default function BigCommerceConnectClient({ canManage }: Props) {
               onClick={() => void disconnect()}
               disabled={busy}
               className="text-xs font-medium underline"
-              style={{ color: 'var(--text-muted)' }}
+              style={{ color: 'var(--text-secondary)' }}
             >
               Disconnect
             </button>
@@ -133,8 +133,8 @@ export default function BigCommerceConnectClient({ canManage }: Props) {
       {canManage && !isActive && (
         <a
           href="/api/bigcommerce/install"
-          className="inline-flex rounded-lg px-4 py-2 text-sm font-semibold"
-          style={{ background: 'var(--accent)', color: 'var(--accent-fg, #fff)' }}
+          className="inline-flex rounded-md px-4 py-2 text-sm font-semibold"
+          style={{ background: 'var(--accent)', color: 'white' }}
         >
           Connect with BigCommerce
         </a>
@@ -144,7 +144,7 @@ export default function BigCommerceConnectClient({ canManage }: Props) {
         <a
           href="/api/bigcommerce/install"
           className="inline-flex text-xs font-medium underline"
-          style={{ color: 'var(--text-muted)' }}
+          style={{ color: 'var(--text-secondary)' }}
         >
           Re-authorize connection
         </a>

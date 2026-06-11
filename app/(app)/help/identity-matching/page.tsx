@@ -25,7 +25,7 @@ function UniquenessChip({ uniqueness }: { uniqueness: SignalRowProps['uniqueness
   const { bg, fg } = UNIQUENESS_COLOUR_MAP[uniqueness];
   return (
     <span
-      className="inline-block text-xs px-2 py-0.5 rounded font-medium"
+      className="inline-block text-caption px-2 py-0.5 rounded font-medium"
       style={{ background: bg, color: fg }}
     >
       {uniqueness} uniqueness
@@ -36,16 +36,16 @@ function UniquenessChip({ uniqueness }: { uniqueness: SignalRowProps['uniqueness
 function SignalRow({ name, uniqueness, description, caveat }: SignalRowProps) {
   return (
     <div
-      className="rounded-lg p-5 space-y-2.5 border"
-      style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
+      className="rounded-md p-5 space-y-2.5 border"
+      style={{ background: 'var(--surface)', borderColor: 'var(--border-muted)' }}
     >
       <div className="flex items-center justify-between flex-wrap gap-2">
         <span className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{name}</span>
         <UniquenessChip uniqueness={uniqueness} />
       </div>
-      <p className="text-body-sm" style={{ color: 'var(--text-muted)' }}>{description}</p>
-      <p className="text-xs italic" style={{ color: 'var(--text-subtle)' }}>
-        <span className="not-italic font-medium" style={{ color: 'var(--text-muted)' }}>Caveat: </span>
+      <p className="text-body-sm" style={{ color: 'var(--text-secondary)' }}>{description}</p>
+      <p className="text-caption italic" style={{ color: 'var(--text-tertiary)' }}>
+        <span className="not-italic font-medium" style={{ color: 'var(--text-secondary)' }}>Caveat: </span>
         {caveat}
       </p>
     </div>
@@ -58,8 +58,8 @@ export default function IdentityMatchingPage() {
       <div className="flex items-center gap-3">
         <Link
           href="/help"
-          className="inline-flex items-center gap-1.5 text-sm transition-colors hover:opacity-80"
-          style={{ color: 'var(--text-muted)' }}
+          className="inline-flex items-center gap-1.5 text-caption transition-colors hover:opacity-80"
+          style={{ color: 'var(--text-secondary)' }}
         >
           <ArrowLeft className="h-4 w-4" />
           Help
@@ -70,20 +70,20 @@ export default function IdentityMatchingPage() {
         <h1 className="text-heading-lg" style={{ color: 'var(--text)' }}>
           How identity matching works
         </h1>
-        <p className="text-body-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+        <p className="text-body-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
           Unauth identifies customers who are operating multiple accounts by linking orders across your transaction
           history using a layered set of identity signals. This page explains each signal type, how they are
           combined, and the limits of what matching can and cannot prove.
         </p>
       </section>
 
-      <div style={{ borderTop: '1px solid var(--border-subtle)' }} />
+      <div style={{ borderTop: '1px solid var(--border-muted)' }} />
 
       <section className="space-y-4">
         <h2 className="text-heading-md" style={{ color: 'var(--text)' }}>
           The matching pipeline
         </h2>
-        <div className="space-y-3 text-body-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+        <div className="space-y-3 text-body-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
           <p>
             When an order export is uploaded, each order is parsed into a set of identity tokens - structured
             representations of the identity signals it contains. These tokens are compared against all existing
@@ -101,7 +101,7 @@ export default function IdentityMatchingPage() {
         </div>
       </section>
 
-      <div style={{ borderTop: '1px solid var(--border-subtle)' }} />
+      <div style={{ borderTop: '1px solid var(--border-muted)' }} />
 
       <section className="space-y-4">
         <h2 className="text-heading-md" style={{ color: 'var(--text)' }}>
@@ -147,13 +147,13 @@ export default function IdentityMatchingPage() {
         </div>
       </section>
 
-      <div style={{ borderTop: '1px solid var(--border-subtle)' }} />
+      <div style={{ borderTop: '1px solid var(--border-muted)' }} />
 
       <section className="space-y-4">
         <h2 className="text-heading-md" style={{ color: 'var(--text)' }}>
           How signals combine into a grade
         </h2>
-        <div className="space-y-3 text-body-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+        <div className="space-y-3 text-body-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
           <p>
             Each signal type is weighted by its uniqueness. Card fingerprint and device ID carry the most weight;
             IP address alone carries the least. When signals of different types independently point to the same
@@ -179,13 +179,13 @@ export default function IdentityMatchingPage() {
         </div>
       </section>
 
-      <div style={{ borderTop: '1px solid var(--border-subtle)' }} />
+      <div style={{ borderTop: '1px solid var(--border-muted)' }} />
 
       <section className="space-y-4">
         <h2 className="text-heading-md" style={{ color: 'var(--text)' }}>
           What matching cannot prove
         </h2>
-        <p className="text-body-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+        <p className="text-body-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
           Unauth identifies shared signals - it does not prove fraudulent intent. A Definite match means two
           accounts share the same identity; it does not mean those orders were fraudulent chargebacks. The
           analyst's job is to look at the evidence, consider the order history and chargeback record, and make a
@@ -196,8 +196,8 @@ export default function IdentityMatchingPage() {
       <div className="pt-2">
         <Link
           href="/help"
-          className="text-sm hover:opacity-80 transition-opacity"
-          style={{ color: 'var(--text-muted)' }}
+          className="text-caption hover:opacity-80 transition-opacity"
+          style={{ color: 'var(--text-secondary)' }}
         >
           ← Back to Help &amp; Docs
         </Link>

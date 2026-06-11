@@ -1,0 +1,106 @@
+'use client';
+
+import { useMemo } from 'react';
+import type { EChartsOption } from 'echarts';
+import { EChartWrapper } from './EChartWrapper';
+import { readCssTokens, baseAxisLabel, baseSplitLine, baseTooltip } from '@/components/charts/echartsTheme';
+
+export interface HBarEntry {
+  label: string;
+  value: number;
+  color?: string;
+}
+
+export interface AnalyticsHBarChartProps {
+  data: HBarEntry[];
+  height?: number;
+  defaultColor?: string;
+  valueFormatter?: (n: number) => string;
+  showValues?: boolean;
+  emptyLabel?: string;
+  yAxisWidth?: number;
+  maxBarWidth?: number;
+}
+
+export function AnalyticsHBarChart({
+  data,
+  height,
+  defaultColor,
+  valueFormatter,
+  showValues = true,
+  emptyLabel = 'No data yet',
+  yAxisWidth = 120,
+  maxBarWidth = 16,
+}: AnalyticsHBarChartProps) {
+  const derivedHeight = height ?? Math.max(120, data.length * 36 + 16);
+
+  const option = useMemo((): EChartsOption => {
+    const t = readCssTokens();
+    const c = defaultColor ?? t.data_neutral;
+    const fmt = valueFormatter ?? ((n: number) => n.toLocaleString());
+
+    if (!data || data.length === 0) {
+      return {
+        graphic: [{ type: 'text', left: 'center', top: 'middle', style: { text: emptyLabel, fill: t.ink_tertiary, fontSize: 12, fontFamily: 'inherit' } }],
+        xAxis: { show: false },
+        yAxis: { show: false },
+        series: [],
+      };
+    }
+
+    return {
+      animation: true,
+      animationDuration: 400,
+      grid: { left: yAxisWidth, right: showValues ? 52 : 12, top: 4, bottom: 4 },
+      tooltip: {
+        ...baseTooltip(t),
+        trigger: 'item' as const,
+        formatter: (param: unknown) => {
+          const p = param as { name: string; value: number };
+          return `<span style="color:${t.ink_secondary};font-size:11px">${p.name}</span><br/><span style="font-weight:600;color:${t.ink_primary}">${fmt(p.value)}</span>`;
+        },
+      },
+      xAxis: {
+        type: 'value' as const,
+        splitLine: baseSplitLine(t),
+        axisLabel: { show: false },
+        axisLine: { show: false },
+        axisTick: { show: false },
+      },
+      yAxis: {
+        type: 'category' as const,
+        data: data.map((d) => d.label),
+        axisLine: { show: false },
+        axisTick: { show: false },
+        axisLabel: {
+          ...baseAxisLabel(t),
+          width: yAxisWidth - 8,
+          overflow: 'truncate' as const,
+          align: 'right' as const,
+        },
+      },
+      series: [{
+        type: 'bar' as const,
+        data: data.map((d) => ({
+          value: d.value,
+          itemStyle: {
+            color: d.color ?? c,
+            borderRadius: [0, 4, 4, 0],
+          },
+        })),
+        barMaxWidth: maxBarWidth,
+        label: showValues ? {
+          show: true,
+          position: 'right' as const,
+          color: t.ink_secondary,
+          fontSize: 11,
+          fontFamily: 'inherit',
+          formatter: (param: unknown) => fmt((param as { value: number }).value),
+        } : { show: false },
+        emphasis: { itemStyle: { opacity: 0.8 } },
+      }],
+    };
+  }, [data, defaultColor, valueFormatter, showValues, emptyLabel, yAxisWidth, maxBarWidth]);
+
+  return <EChartWrapper option={option} height={derivedHeight} />;
+}

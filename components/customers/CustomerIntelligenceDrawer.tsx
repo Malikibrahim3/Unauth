@@ -51,7 +51,7 @@ function CustomerIntelligenceDrawerShell({
         width="min(629px, 100vw)"
         aria-label="Customer summary"
       >
-        <div data-testid="customer-drawer" className="flex min-h-full flex-col bg-[var(--surface-raised)]">
+        <div data-testid="customer-drawer" className="flex min-h-full flex-col bg-[var(--surface)]">
           <div className="cid-header">
             <div>
               <div className="cid-overline">
@@ -65,7 +65,7 @@ function CustomerIntelligenceDrawerShell({
                 <Link
                   href={`/customers/${resolvedProfileId}`}
                   onClick={onClose}
-                  className="cid-profile-link hover:bg-[var(--surface-muted)]"
+                  className="cid-profile-link hover:bg-[var(--surface-sunken)]"
                 >
                   Full profile <ExternalLink className="cid-icon-11" />
                 </Link>
@@ -74,7 +74,7 @@ function CustomerIntelligenceDrawerShell({
                 type="button"
                 onClick={onClose}
                 aria-label="Close panel"
-                className="cid-close-btn hover:bg-[var(--surface-overlay)] transition-colors"
+                className="cid-close-btn hover:bg-[var(--surface)] transition-colors"
               >
                 <X className="cid-icon-16" />
               </button>

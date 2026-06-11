@@ -15,7 +15,7 @@ interface InsightsStripProps {
 }
 
 function colorFor(level: Insight['level']) {
-  if (level === 'warn') return { bg: 'var(--warning-bg, #F7F0DA)', border: 'var(--warning-bd, #CDB258)', text: 'var(--warning, #8B6A14)', dot: 'var(--warning)' };
+  if (level === 'warn') return { bg: 'var(--warning-bg)', border: 'var(--warning-bd)', text: 'var(--warning)', dot: 'var(--warning)' };
   if (level === 'positive') return { bg: 'var(--success-bg)', border: 'var(--success-bd)', text: 'var(--success)', dot: 'var(--success)' };
   return { bg: 'var(--info-bg)', border: 'var(--info-bd)', text: 'var(--info)', dot: 'var(--info)' };
 }
@@ -30,7 +30,7 @@ export default function InsightsStrip({ insights }: InsightsStripProps) {
         const insightKey = ins.href ?? ins.text;
         const inner = (
           <div
-            className={`flex items-start gap-2.5 px-4 py-2.5 rounded-lg border text-body-sm ${ins.href ? 'cursor-pointer hover:brightness-95 transition-[filter]' : ''}`}
+            className={`flex items-start gap-2.5 px-4 py-2.5 rounded-md border text-body-sm ${ins.href ? 'cursor-pointer hover:brightness-95 transition-[filter]' : ''}`}
             style={{ background: c.bg, borderColor: c.border, color: c.text }}
           >
             <span className="mt-1 h-1.5 w-1.5 rounded-full flex-shrink-0" style={{ background: c.dot }} />

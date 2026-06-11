@@ -68,7 +68,7 @@ export type AnalyticsEvent =
   | 'Evidence Package Generated'
   | 'Evidence PDF Downloaded'
   | 'Lookup Performed'
-  | 'Quick Score Performed'
+  | 'Merchant Lookup Performed'
   | 'Feedback Submitted'
   | 'Transaction Dismissed'
   // Retention signals

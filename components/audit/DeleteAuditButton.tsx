@@ -28,7 +28,7 @@ type="button"           onClick={handleDelete}
         </button>
         <button
 type="button"           onClick={() => setConfirming(false)}
-          className="px-2 py-1 rounded text-xs transition-colors hover:bg-[var(--bg-subtle)]" style={{ color: 'var(--text-subtle)' }}
+          className="px-2 py-1 rounded text-xs transition-colors hover:bg-[var(--bg-subtle)]" style={{ color: 'var(--text-tertiary)' }}
         >
           Cancel
         </button>

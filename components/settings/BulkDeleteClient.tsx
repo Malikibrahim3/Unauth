@@ -41,7 +41,7 @@ export default function BulkDeleteClient() {
 
   return (
     <div className="space-y-3">
-      <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+      <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
         Choose which app data to permanently delete. This action is irreversible.
       </p>
 
@@ -50,7 +50,7 @@ export default function BulkDeleteClient() {
           value={entity}
           onChange={(e) => setEntity(e.target.value)}
           className="rounded px-2 py-1 border"
-          style={{ background: 'var(--bg-surface)' }}
+          style={{ background: 'var(--surface)' }}
         >
           {OPTIONS.map((o) => (
             <option key={o.value} value={o.value}>
@@ -76,7 +76,7 @@ type="button"           onClick={() => {
           checked={confirmChecked}
           onChange={(e) => setConfirmChecked(e.target.checked)}
         />
-        <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
+        <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
           I understand this will permanently delete the selected data.
         </span>
       </label>
@@ -93,7 +93,7 @@ type="button"           onClick={handleDelete}
       </div>
 
       {message && (
-        <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
+        <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
           {message}
         </p>
       )}

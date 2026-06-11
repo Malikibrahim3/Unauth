@@ -20,7 +20,7 @@ export default function AccountPasswordSection({ state, dispatch, onSubmit }: Pr
             type="button"
             onClick={() => dispatch({ type: 'patch', patch: { showPasswords: !state.showPasswords } })}
             className="text-xs flex items-center gap-1"
-            style={{ color: 'var(--text-muted)' }}
+            style={{ color: 'var(--text-secondary)' }}
           >
             {state.showPasswords ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
             {state.showPasswords ? 'Hide' : 'Show'}

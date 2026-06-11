@@ -1,0 +1,11 @@
+6.1 repeat-claimer lookup returns full profile	0a73aa9d-6fbf-4325-b7d3-605b12a52155|probable|74|1|32|18|0.5625|1.04|t|t	0a73aa9d-6fbf-4325-b7d3-605b12a52155|probable|74|1|32|18|0.5625|1.04|t|t	PASS	merchant: Simeon Murray Store; grade probable, 18 claims
+6.1 fastest_claim_days non-null, not 99999	non-null < 99999	1.04	PASS	
+6.2 unknown hash returns 0 rows (no error)	0	0	PASS	
+6.2 unknown lookup still logged	+1 row, matched=0	+1, 0|true	PASS	k_anonymity_satisfied defaults true when no ids matched
+6.3 three hashes of one identity → 1 row	1|1	1|1	PASS	email+phone+payment_fingerprint
+6.4 superseded identity never returned	winner 4f48b893-983c-42b4-be80-0d9a3debd42f only	4f48b893-983c-42b4-be80-0d9a3debd42f	PASS	superseded=d10cee8c-1403-4f55-b2ff-65e0f72f8a57 excluded by superseded_by filter
+6.5 non-canonical edge silently dropped	no error, 0 rows	err:'none' rows:0	PASS	
+6.5 canonical version inserted	1 row	1	PASS	
+6.6 invalid hash rejected by CHECK	constraint violation error	ERROR:  new row for relation "identity_signals" violates check constra	PASS	
+6.6 no partial commit (valid row in same call also absent)	0|0	0|0	PASS	statement-level atomicity
+6.7 concurrent increments both applied	12|3	12|3	PASS	second tx blocked ~3s on row lock, then applied

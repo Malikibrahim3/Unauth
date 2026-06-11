@@ -58,16 +58,14 @@ export async function upsertIdentity(
   add('ip',                   signals.ipHash);
   add('device',               signals.deviceIdHash);
 
-  try {
-    await serviceClient.rpc('upsert_identity_v2', {
-      p_email_hash:  signals.emailHash,
-      p_merchant_id: merchantId,
-      p_is_refund:   isRefund,
-      p_is_inr:      isInr,
-      p_signals:     signalPayload,
-    });
-  } catch (err) {
-    console.error('RPC call failed:', err);
-    throw err;
-  }
+  // upsert_identity_v2 was dropped with its backing tables (migration 0078);
+  // identity observations now flow through ingest_identity_observations()
+  // against identity_signals/identity_edges. This legacy path is a no-op
+  // until callers are migrated to the v2 ingest pipeline.
+  console.warn('identity lookup upsert skipped: legacy upsert_identity_v2 retired', {
+    merchantId,
+    signalCount: Object.keys(signalPayload).length,
+    isRefund,
+    isInr,
+  });
 }

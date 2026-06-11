@@ -111,26 +111,27 @@ export const APP_ROUTES = {
   watchlist: {
     key: 'watchlist',
     href: '/watchlist',
-    label: 'Legacy case watch',
-    pageTitle: 'Legacy case watch',
+    label: 'Network',
+    pageTitle: 'Network',
     permission: PERMISSIONS.VIEW_WATCHLIST,
-    tier: 'pro',
-    icon: Star,
-    sidebar: false,
-    workbench: false,
-    commandPalette: false,
-    commandDescription: 'Legacy customer monitoring view',
+    tier: 'growth',
+    tierLabel: 'Network',
+    icon: GitBranch,
+    sidebar: true,
+    workbench: true,
+    commandPalette: true,
+    commandDescription: 'Cross-merchant network context',
   },
   evidencePackages: {
     key: 'evidencePackages',
     href: '/chargebacks',
-    label: 'Evidence packages',
-    pageTitle: 'Evidence packages',
+    label: 'Evidence',
+    pageTitle: 'Evidence',
     permission: PERMISSIONS.VIEW_CHARGEBACKS,
     tier: 'growth',
     tierLabel: 'Evidence',
     icon: ShieldCheck,
-    sidebar: false,
+    sidebar: true,
     workbench: true,
     commandPalette: true,
     commandDescription: 'Evidence packages for dispute documentation',
@@ -138,8 +139,8 @@ export const APP_ROUTES = {
   reports: {
     key: 'reports',
     href: '/reports',
-    label: 'Reports',
-    pageTitle: 'Reports',
+    label: 'Analytics',
+    pageTitle: 'Analytics',
     permission: PERMISSIONS.VIEW_AUDIT,
     tier: 'pro',
     icon: BarChart3,
@@ -189,8 +190,8 @@ export const APP_ROUTES = {
   global: {
     key: 'global',
     href: '/global',
-    label: 'Network graph',
-    pageTitle: 'Network graph',
+    label: 'Network intelligence',
+    pageTitle: 'Network intelligence',
     permission: PERMISSIONS.VIEW_CUSTOMERS,
     tier: 'growth',
     tierLabel: 'Network',
@@ -229,8 +230,9 @@ export const COMMAND_PALETTE_FILTERS = [
 ] as const;
 
 export const SIDEBAR_NAV_GROUPS: Array<{ label: string; routeKeys: AppRouteKey[] }> = [
-  { label: 'Overview', routeKeys: ['dashboard', 'store'] },
-  { label: 'Review', routeKeys: ['customers', 'claims', 'reports'] },
+  { label: 'Overview', routeKeys: ['dashboard'] },
+  { label: 'Operations', routeKeys: ['claims', 'customers', 'evidencePackages', 'watchlist'] },
+  { label: 'Analytics', routeKeys: ['reports'] },
 ];
 
 export function getSidebarNavItems(): Array<{ label: string; items: AppRoute[] }> {

@@ -13,18 +13,18 @@ type BadgeSize = 'sm' | 'md';
 
 export const BADGE_LAYOUT_STYLE: Record<BadgeSize, CSSProperties> = {
   sm: {
-    height: 16,
-    paddingLeft: '5px',
-    paddingRight: '5px',
+    height: 'var(--badge-height-sm)',
+    paddingLeft: 'var(--space-1)',
+    paddingRight: 'var(--space-1)',
     fontSize: 12,
     fontWeight: 700,
     letterSpacing: '0.02em',
     textTransform: 'uppercase',
     whiteSpace: 'nowrap',
-    borderRadius: 3,
+    borderRadius: 'var(--badge-radius)',
   },
   md: {
-    height: 18,
+    height: 'var(--badge-height-md)',
     paddingLeft: '7px',
     paddingRight: '7px',
     fontSize: 12,
@@ -32,28 +32,28 @@ export const BADGE_LAYOUT_STYLE: Record<BadgeSize, CSSProperties> = {
     letterSpacing: '0.02em',
     textTransform: 'uppercase',
     whiteSpace: 'nowrap',
-    borderRadius: 3,
+    borderRadius: 'var(--badge-radius)',
   },
 };
 
 const CHIP_STYLES: Record<BadgeTone, { background: string; color: string; border: string }> = {
-  neutral: { background: 'var(--surface-muted)', color: 'var(--ink-secondary)', border: 'var(--surface-border)' },
+  neutral: { background: 'var(--surface-sunken)', color: 'var(--text-secondary)', border: 'var(--border)' },
   info: { background: 'var(--privacy-fill)', color: 'var(--privacy-ink)', border: 'var(--privacy-border)' },
-  accent: { background: 'var(--copper-glow)', color: 'var(--copper-bright)', border: 'var(--copper-dim)' },
-  success: { background: 'var(--sev-clear-fill)', color: 'var(--sev-clear)', border: 'var(--risk-low-bd)' },
-  warning: { background: 'var(--sev-probable-fill)', color: 'var(--sev-probable)', border: 'var(--risk-high-bd)' },
-  danger: { background: 'var(--sev-definite-fill)', color: 'var(--sev-definite)', border: 'var(--risk-critical-bd)' },
-  critical: { background: 'var(--sev-definite-fill)', color: 'var(--sev-definite)', border: 'var(--sev-definite)' },
+  accent: { background: 'var(--copper-glow)', color: 'var(--accent)', border: 'var(--accent-soft)' },
+  success: { background: 'var(--sev-clear-fill)', color: 'var(--neutral)', border: 'var(--risk-low-bd)' },
+  warning: { background: 'var(--sev-probable-fill)', color: 'var(--warning)', border: 'var(--risk-high-bd)' },
+  danger: { background: 'var(--sev-definite-fill)', color: 'var(--success)', border: 'var(--risk-critical-bd)' },
+  critical: { background: 'var(--sev-definite-fill)', color: 'var(--success)', border: 'var(--success)' },
 };
 
 const SOLID_STYLES: Record<BadgeTone, { background: string; color: string }> = {
-  neutral: { background: 'var(--surface-muted)', color: 'var(--ink-primary)' },
-  info: { background: 'var(--privacy-ink)', color: 'var(--ink-inverse)' },
-  accent: { background: 'var(--copper-bright)', color: 'var(--ink-inverse)' },
-  success: { background: 'var(--sev-clear)', color: 'var(--ink-primary)' },
-  warning: { background: 'var(--sev-probable)', color: 'var(--ink-inverse)' },
-  danger: { background: 'var(--sev-definite)', color: 'var(--ink-primary)' },
-  critical: { background: 'var(--sev-definite)', color: 'var(--ink-primary)' },
+  neutral: { background: 'var(--surface-sunken)', color: 'var(--text-primary)' },
+  info: { background: 'var(--privacy-ink)', color: 'white' },
+  accent: { background: 'var(--accent)', color: 'white' },
+  success: { background: 'var(--neutral)', color: 'var(--text-primary)' },
+  warning: { background: 'var(--warning)', color: 'white' },
+  danger: { background: 'var(--success)', color: 'var(--text-primary)' },
+  critical: { background: 'var(--success)', color: 'var(--text-primary)' },
 };
 
 export function badgeToneStyle(

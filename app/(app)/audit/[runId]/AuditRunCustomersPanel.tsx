@@ -40,7 +40,7 @@ export function AuditRunCustomersPanel({
     <div className="space-y-4">
       {allCustomers.length > 0 ? (
         <div>
-          <div className="flex items-center justify-between gap-3 px-4 py-2.5 text-xs border-b" style={{ color: 'var(--text-muted)', borderColor: 'var(--border-subtle)', background: 'var(--bg-subtle)' }}>
+          <div className="flex items-center justify-between gap-3 px-4 py-2.5 text-xs border-b" style={{ color: 'var(--text-secondary)', borderColor: 'var(--border-muted)', background: 'var(--bg-subtle)' }}>
             <span>
               Showing {totalCustomers === 0 ? 0 : customerOffset + 1}–{Math.min(customerOffset + customerPageSize, totalCustomers)} of {totalCustomers.toLocaleString()} customers
             </span>
@@ -58,7 +58,7 @@ export function AuditRunCustomersPanel({
             initialEmail={defaultTab === 'customers' ? selectedCustomerEmail : null}
           />
           {customerPages > 1 ? (
-            <div className="px-4 py-2.5 flex items-center justify-end gap-2 text-xs border-t" style={{ color: 'var(--text-muted)', borderColor: 'var(--border-subtle)' }}>
+            <div className="px-4 py-2.5 flex items-center justify-end gap-2 text-xs border-t" style={{ color: 'var(--text-secondary)', borderColor: 'var(--border-muted)' }}>
               <span>Page {customerPage} of {customerPages}</span>
               {customerPage > 1 ? (
                 <Link href={`/audit/${jobId}?customerPage=${customerPage - 1}&txPage=${txPage}&customerPageSize=${customerPageSize}&txPageSize=${txPageSize}`} className="px-2 py-1 border rounded" style={{ borderColor: 'var(--border)' }}>&larr; Prev</Link>

@@ -20,12 +20,12 @@ export function AuditRunDataQualityPanel({
       {dataQuality ? (
         <DataQualityBanner report={dataQuality} runId={jobId} />
       ) : (
-        <div className="rounded-lg p-6 text-center border" style={{ background: 'var(--success-bg)', borderColor: 'var(--success-bd)' }}>
+        <div className="rounded-md p-6 text-center border" style={{ background: 'var(--success-bg)', borderColor: 'var(--success-bd)' }}>
           <p className="text-body-sm font-semibold" style={{ color: 'var(--success)' }}>No data quality issues detected in this upload.</p>
           <p className="text-caption mt-1" style={{ color: 'var(--success)' }}>All required fields were present and properly formatted.</p>
         </div>
       )}
-      <div className="rounded-lg px-5 py-4 border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
+      <div className="rounded-md px-5 py-4 border" style={{ background: 'var(--surface)', borderColor: 'var(--border-muted)' }}>
         <h3 className="text-body-sm font-semibold mb-3" style={{ color: 'var(--text)' }}>Coverage summary</h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           {[
@@ -36,7 +36,7 @@ export function AuditRunDataQualityPanel({
             { label: 'Linked order value est.', value: formatCurrency(estimatedExposure) },
           ].map(({ label, value }) => (
             <div key={label}>
-              <p className="text-caption mb-0.5" style={{ color: 'var(--text-muted)' }}>{label}</p>
+              <p className="text-caption mb-0.5" style={{ color: 'var(--text-secondary)' }}>{label}</p>
               <p className="text-body-sm font-semibold font-mono" style={{ color: 'var(--text)' }}>{value}</p>
             </div>
           ))}

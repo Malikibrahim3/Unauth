@@ -8,7 +8,7 @@ export function confidenceBadgeShellStyle(input: {
 }): CSSProperties {
   const { compact, fill, fg, dashed } = input;
   return {
-    width: compact ? 20 : 96,
+    width: `var(--confidence-badge-shell-${compact ? 'compact' : 'full'})`,
     height: compact ? 20 : 22,
     borderRadius: 'var(--radius-sm)',
     background: fill,
@@ -25,7 +25,7 @@ export const CONFIDENCE_BADGE_GRADE_STYLE: CSSProperties = {
 };
 
 export const CONFIDENCE_BADGE_LABEL_STYLE: CSSProperties = {
-  color: 'var(--ink-secondary)',
+  color: 'var(--text-secondary)',
   fontSize: 12,
   fontWeight: 600,
   letterSpacing: '0.01em',

@@ -12,15 +12,15 @@ export default function CsvExportHelpPage() {
       <div>
         <Link
           href="/upload"
-          className="text-xs hover:underline"
-          style={{ color: 'var(--text-subtle)' }}
+          className="text-caption hover:underline"
+          style={{ color: 'var(--text-tertiary)' }}
         >
           ← Back to upload
         </Link>
-        <h1 className="text-display-sm font-bold mt-3" style={{ color: 'var(--text)' }}>
+        <h1 className="text-heading-lg mt-3" style={{ color: 'var(--text)' }}>
           How to improve your CSV export
         </h1>
-        <p className="text-body-sm mt-1" style={{ color: 'var(--text-muted)' }}>
+        <p className="text-body-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
           The more information your export includes, the more accurately we can
           identify patterns. This guide explains which fields to add and how to
           find them.
@@ -34,7 +34,7 @@ export default function CsvExportHelpPage() {
         <h2 className="text-heading-md">
           Why more fields matter
         </h2>
-        <p className="text-body-sm" style={{ color: 'var(--text-muted)' }}>
+        <p className="text-body-sm" style={{ color: 'var(--text-secondary)' }}>
           The more information your export includes, the more accurately we can
           tell whether two orders came from the same person. With just an email
           address, someone can open a new Gmail account in 60 seconds and
@@ -44,13 +44,13 @@ export default function CsvExportHelpPage() {
           which is practically impossible without a new device and a new
           payment card.
         </p>
-        <p className="text-body-sm" style={{ color: 'var(--text-muted)' }}>
+        <p className="text-body-sm" style={{ color: 'var(--text-secondary)' }}>
           Every field you add increases the certainty of a match. Even partial
           data helps. Adding just a phone number or billing address moves a
           result from &ldquo;possible&rdquo; to &ldquo;probable&rdquo; when
           combined with soft signals like email patterns.
         </p>
-        <p className="text-body-sm" style={{ color: 'var(--text-muted)' }}>
+        <p className="text-body-sm" style={{ color: 'var(--text-secondary)' }}>
           You only need to do this setup once. Save your new export settings in
           your platform and every future audit will automatically be richer.
         </p>
@@ -166,22 +166,22 @@ export default function CsvExportHelpPage() {
         <h2 className="text-heading-md">
           What we can still do with limited data
         </h2>
-        <p className="text-body-sm" style={{ color: 'var(--text-muted)' }}>
+        <p className="text-body-sm" style={{ color: 'var(--text-secondary)' }}>
           Even with just the 6 required fields, the engine can still detect
           meaningful patterns:
         </p>
-        <ul className="text-body-sm space-y-2" style={{ color: 'var(--text-muted)' }}>
+        <ul className="text-body-sm space-y-2" style={{ color: 'var(--text-secondary)' }}>
           <li>
             <strong>Email variants</strong> - the same person using{' '}
-            <code className="text-xs px-1 rounded" style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
+            <code className="text-xs px-1 rounded" style={{ background: 'var(--bg-subtle)', color: 'var(--text-secondary)' }}>
               customer@example.com
             </code>{' '}
             and{' '}
-            <code className="text-xs px-1 rounded" style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
+            <code className="text-xs px-1 rounded" style={{ background: 'var(--bg-subtle)', color: 'var(--text-secondary)' }}>
               customer+refund@example.com
             </code>{' '}
             or{' '}
-            <code className="text-xs px-1 rounded" style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
+            <code className="text-xs px-1 rounded" style={{ background: 'var(--bg-subtle)', color: 'var(--text-secondary)' }}>
               c.u.s.t.o.m.e.r@example.com
             </code>{' '}
             - caught by email variant detection.
@@ -200,13 +200,13 @@ export default function CsvExportHelpPage() {
             by behavioural context analysis.
           </li>
         </ul>
-        <p className="text-body-sm" style={{ color: 'var(--text-muted)' }}>
+        <p className="text-body-sm" style={{ color: 'var(--text-secondary)' }}>
           These signals are real. They&rsquo;re weaker than hardware signals but
           they surface patterns that a manual review would likely miss. Results
           will show as &lsquo;possible&rsquo; confidence - which is honest - but
           they&rsquo;re still actionable.
         </p>
-        <p className="text-body-sm" style={{ color: 'var(--text-muted)' }}>
+        <p className="text-body-sm" style={{ color: 'var(--text-secondary)' }}>
           Think of this as your baseline. Every field you add upgrades your
           detection from &lsquo;possible&rsquo; toward &lsquo;probable&rsquo;
           and eventually &lsquo;definite&rsquo;.
@@ -216,15 +216,15 @@ export default function CsvExportHelpPage() {
       {/* Identity evidence quality */}
       <section className="space-y-4">
         <h2 className="text-heading-md">Maximising identity evidence quality</h2>
-        <p className="text-body-sm" style={{ color: 'var(--text-muted)' }}>
+        <p className="text-body-sm" style={{ color: 'var(--text-secondary)' }}>
           Stronger exports come from richer checkout signals and a longer undisputed order history.
           Prior-order matching works best when you capture device, network, and address data alongside
           standard contact fields.
         </p>
-        <p className="text-body-sm" style={{ color: 'var(--text-muted)' }}>
+        <p className="text-body-sm" style={{ color: 'var(--text-secondary)' }}>
           Signals that improve prior-order matching in identity evidence exports:
         </p>
-        <ul className="space-y-1 text-body-sm list-none pl-0" style={{ color: 'var(--text-muted)' }}>
+        <ul className="space-y-1 text-body-sm list-none pl-0" style={{ color: 'var(--text-secondary)' }}>
           {([
             ['Device fingerprint', 'deviceMatch - capture device ID at checkout'],
             ['IP address cluster', 'ipCluster - IP address or ASN recorded on the order'],
@@ -239,15 +239,15 @@ export default function CsvExportHelpPage() {
             </li>
           ))}
         </ul>
-        <p className="text-body-sm" style={{ color: 'var(--text-muted)' }}>
+        <p className="text-body-sm" style={{ color: 'var(--text-secondary)' }}>
           Email is captured on most uploads from day one. Adding device fingerprint or IP address
           alongside billing address typically yields stronger prior-order identity matches.
         </p>
-        <div className="rounded-lg border px-4 py-3" style={{ background: 'var(--accent-soft)', borderColor: 'var(--border)' }}>
+        <div className="rounded-md border px-4 py-3" style={{ background: 'var(--accent-soft)', borderColor: 'var(--border)' }}>
           <p className="text-body-sm font-semibold mb-0.5" style={{ color: 'var(--text)' }}>
             Prior matches are assessed automatically
           </p>
-          <p className="text-body-sm" style={{ color: 'var(--text-muted)' }}>
+          <p className="text-body-sm" style={{ color: 'var(--text-secondary)' }}>
             When you generate identity evidence from a customer profile, Unauth checks for prior
             orders that share signals with the disputed order and shows match strength in the export.
             View packages in{' '}
@@ -259,11 +259,11 @@ export default function CsvExportHelpPage() {
         </div>
       </section>
 
-      <div className="pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+      <div className="pt-4" style={{ borderTop: '1px solid var(--border-muted)' }}>
         <Link
           href="/upload"
           className="inline-block px-5 py-2.5 text-sm font-semibold rounded-md transition-colors"
-          style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}
+          style={{ background: 'var(--accent)', color: 'white' }}
         >
           ← Back to upload
         </Link>
@@ -295,22 +295,22 @@ function FieldRow({
   caveat,
 }: FieldRowProps) {
   return (
-    <div className="rounded-lg p-4 space-y-3 border" style={{ borderColor: 'var(--border-subtle)' }}>
+    <div className="rounded-md p-4 space-y-3 border" style={{ borderColor: 'var(--border-muted)' }}>
       <div>
         <div className="flex items-center gap-2">
           <h4 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{name}</h4>
-          <code className="text-xs px-1.5 py-0.5 rounded font-mono" style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
+          <code className="text-xs px-1.5 py-0.5 rounded font-mono" style={{ background: 'var(--bg-subtle)', color: 'var(--text-secondary)' }}>
             {fieldKey}
           </code>
         </div>
-        <p className="text-caption mt-1" style={{ color: 'var(--text-muted)' }}>{impact}</p>
+        <p className="text-caption mt-1" style={{ color: 'var(--text-secondary)' }}>{impact}</p>
         {caveat && (
           <p className="text-xs rounded px-2 py-1 mt-2 border" style={{ color: 'var(--risk-high)', background: 'var(--risk-high-bg)', borderColor: 'var(--risk-high-bd)' }}>
             ⚠ {caveat}
           </p>
         )}
       </div>
-      <div className="space-y-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+      <div className="space-y-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
         <div className="grid grid-cols-[120px_1fr] gap-2">
           <span className="font-medium" style={{ color: 'var(--text)' }}>Platform (example)</span>
           <span>{shopify}</span>

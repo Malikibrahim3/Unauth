@@ -21,19 +21,19 @@ const SHOPIFY_ERROR_MESSAGES: Record<string, string> = {
 
 const BANNER_VARIANT_STYLES = {
   success: {
-    background: 'var(--success-bg, #DCFCE7)',
-    color: 'var(--success, #166534)',
-    border: 'var(--success-bd, #BBF7D0)',
+    background: 'var(--success-bg)',
+    color: 'var(--success)',
+    border: 'var(--success-bd)',
   },
   warning: {
-    background: 'var(--risk-medium-bg, #FEF3C7)',
-    color: 'var(--risk-medium, #92400E)',
-    border: 'var(--risk-medium-bd, #FDE68A)',
+    background: 'var(--warning-bg)',
+    color: 'var(--warning)',
+    border: 'var(--warning-bd)',
   },
   error: {
-    background: 'var(--risk-high-bg, #FEE2E2)',
-    color: 'var(--risk-high, #991B1B)',
-    border: 'var(--risk-high-bd, #FCA5A5)',
+    background: 'var(--sev-definite-fill)',
+    color: 'var(--success)',
+    border: 'color-mix(in srgb, var(--success) 35%, var(--border))',
   },
 } as const;
 
@@ -85,7 +85,7 @@ export function ShopifyIntegrationBannerInner({ search }: { search: string }) {
 
   return (
     <output
-      className="block rounded-lg border px-4 py-3 text-sm mb-4"
+      className="block rounded-md border px-4 py-3 text-sm mb-4"
       style={BANNER_VARIANT_STYLES[banner.variant]}
       data-testid="shopify-integration-banner"
     >

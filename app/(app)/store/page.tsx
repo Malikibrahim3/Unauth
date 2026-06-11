@@ -7,7 +7,7 @@ import { formatDateMode } from '@/lib/utils/format';
 import { getConnectionState, type ConnectionState } from '@/lib/connections/getConnectionState';
 import { getMerchantDataPresence, type MerchantDataPresence } from '@/lib/supabase/getMerchantDataPresence';
 import { resolveMerchantSetupState, type MerchantSetupState } from '@/lib/connections/getMerchantSetupState';
-import { PageHeader, MetricCard, SectionCard, EmptyState, Badge } from '@/components/ui';
+import { WorkbenchPage, MetricCard, SectionCard, EmptyState, Badge, ButtonLink } from '@/components/ui';
 import TrackPageView from '@/components/common/TrackPageView';
 import WeeklyTrendChart from '@/components/charts/WeeklyTrendChart';
 import type { TrendDataPoint } from '@/components/charts/WeeklyTrendChart';
@@ -178,11 +178,11 @@ function SyncRow({
   return (
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-2">
-        <Icon className="h-4 w-4" style={{ color: 'var(--ink-tertiary)' }} />
+        <Icon className="h-4 w-4" style={{ color: 'var(--text-tertiary)' }} />
         <span className="text-caption" style={{ color: 'var(--text)' }}>{label}</span>
       </div>
       {connected ? (
-        <span className="flex items-center gap-1.5 text-caption font-medium" style={{ color: 'var(--sev-clear)' }}>
+        <span className="flex items-center gap-1.5 text-caption font-medium" style={{ color: 'var(--neutral)' }}>
           <CheckCircle2 className="h-3.5 w-3.5" /> Connected
         </span>
       ) : (
@@ -207,15 +207,15 @@ function CompletenessBanner({
 }) {
   const accentBorder =
     banner.tone === 'stale'
-      ? 'var(--border-default)'
-      : 'color-mix(in srgb, var(--warning) 35%, var(--border-default))';
+      ? 'var(--border)'
+      : 'color-mix(in srgb, var(--warning) 35%, var(--border))';
   const bg =
     banner.tone === 'stale'
-      ? 'var(--bg-surface)'
-      : 'color-mix(in srgb, var(--warning) 7%, var(--bg-surface))';
+      ? 'var(--surface)'
+      : 'color-mix(in srgb, var(--warning) 7%, var(--surface))';
   return (
     <section
-      className="flex flex-wrap items-center justify-between gap-4 rounded-lg border px-4 py-3.5"
+      className="flex flex-wrap items-center justify-between gap-4 rounded-md border px-4 py-3.5"
       style={{ background: bg, borderColor: accentBorder }}
     >
       <div className="flex items-start gap-3 min-w-0">
@@ -226,8 +226,8 @@ function CompletenessBanner({
           <AlertTriangle className="h-4 w-4" style={{ color: 'var(--warning)' }} />
         </span>
         <div className="min-w-0">
-          <p className="text-body-sm font-semibold" style={{ color: 'var(--ink-primary)' }}>{banner.title}</p>
-          <p className="text-caption mt-0.5 leading-snug" style={{ color: 'var(--ink-secondary)' }}>{banner.body}</p>
+          <p className="text-body-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{banner.title}</p>
+          <p className="text-caption mt-0.5 leading-snug" style={{ color: 'var(--text-secondary)' }}>{banner.body}</p>
         </div>
       </div>
       <Link
@@ -288,34 +288,39 @@ export default async function StorePage() {
           ? { label: 'Connect Shopify', href: '/settings/integrations' }
           : { label: 'Connect Shopify & your helpdesk', href: '/settings/integrations' };
     return (
-      <div className="p-4 md:p-6">
-        <TrackPageView event="Store Viewed" />
-        <PageHeader
-          eyebrow="Store"
-          title="Store overview"
-          subtitle="Your Shopify orders and helpdesk claims, in one place."
-        />
-        <div className="mt-6">
-          <SectionCard title="Connect your sources">
-            <EmptyState
-              icon={<Store className="h-6 w-6" />}
-              title="Connect Shopify and your helpdesk"
-              description="Store intelligence needs both your Shopify store and a helpdesk (Gorgias or Zendesk). Orders come from Shopify; claim history comes from your helpdesk. Without both, this view would be incomplete."
-              action={
-                <div className="flex items-center justify-center gap-3">
-                  <Link href={primary.href} className="btn-accent inline-flex items-center gap-1.5 rounded-md px-4 py-2 text-sm font-semibold">
-                    {primary.label}
-                    <ArrowRight className="h-3.5 w-3.5" />
-                  </Link>
-                  <Link href="/upload" className="text-sm font-medium hover:underline" style={{ color: 'var(--ink-tertiary)' }}>
-                    Import CSV instead →
-                  </Link>
-                </div>
-              }
-            />
-          </SectionCard>
-        </div>
-      </div>
+      <WorkbenchPage
+        eyebrow="Store"
+        title="Store overview"
+        subtitle="Your Shopify orders and helpdesk claims, in one place."
+        actions={
+          <ButtonLink href={primary.href} variant="primary" leadingIcon={<Store className="h-4 w-4" />}>
+            {primary.label}
+          </ButtonLink>
+        }
+        main={
+          <>
+            <TrackPageView event="Store Viewed" />
+            <SectionCard title="Connect your sources">
+              <EmptyState
+                icon={<Store className="h-6 w-6" />}
+                title="Connect Shopify and your helpdesk"
+                description="Store intelligence needs both your Shopify store and a helpdesk (Gorgias or Zendesk). Orders come from Shopify; claim history comes from your helpdesk. Without both, this view would be incomplete."
+                action={
+                  <div className="flex items-center justify-center gap-3">
+                    <ButtonLink href={primary.href} variant="primary" leadingIcon={<Store className="h-4 w-4" />}>
+                      {primary.label}
+                    </ButtonLink>
+                    <Link href="/upload" className="inline-flex items-center gap-1.5 text-sm font-medium hover:underline" style={{ color: 'var(--text-tertiary)' }}>
+                      Import CSV instead
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </Link>
+                  </div>
+                }
+              />
+            </SectionCard>
+          </>
+        }
+      />
     );
   }
 
@@ -326,202 +331,187 @@ export default async function StorePage() {
   const latestSync = latestShopifyJob?.created_at ? formatDateMode(latestShopifyJob.created_at, 'recent') : null;
 
   return (
-    <div className="p-4 md:p-6 space-y-5">
-      <TrackPageView event="Store Viewed" />
-
-      <PageHeader
-        eyebrow="Store"
-        title="Store overview"
-        subtitle={config.subtitle}
-        secondaryActions={
-          config.secondaryCta
-            ? [
-                <Link
-                  key="secondary"
-                  href={config.secondaryCta.href}
-                  className="inline-flex items-center gap-1.5 rounded-md border px-3 py-2 text-caption font-semibold"
-                  style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-default)', color: 'var(--ink-secondary)' }}
-                >
-                  <Upload className="h-3.5 w-3.5" />
-                  {config.secondaryCta.label}
-                </Link>,
-              ]
-            : undefined
-        }
-        primaryAction={
-          <Link
-            href={config.primaryCta.href}
-            className="btn-accent inline-flex items-center gap-1.5 rounded-md px-4 py-2 text-caption font-semibold"
-          >
-            {config.primaryCta.label}
-            <ArrowRight className="h-3.5 w-3.5" />
-          </Link>
-        }
-      />
-
-      {/* Completeness / stale banner - the clear next best action */}
-      {config.banner ? <CompletenessBanner banner={config.banner} primaryCta={config.primaryCta} /> : null}
-
-      {/* KPI strip */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-        {kpis.map((kpi) => (
-          <MetricCard
-            key={kpi.label}
-            label={kpi.label}
-            value={kpi.value}
-            hint={kpi.hint}
-            icon={kpi.icon}
-          />
-        ))}
-      </div>
-
-      {/* Body */}
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="space-y-5">
-          {/* Order volume trend */}
-          <section className="rounded-lg border p-4" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-default)' }}>
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <p className="text-body-sm font-semibold" style={{ color: 'var(--ink-primary)' }}>Order volume</p>
-                <p className="text-caption" style={{ color: 'var(--ink-tertiary)' }}>8-week Shopify sync trend</p>
-              </div>
-            </div>
-            {orderTrend.some((pt) => pt.value > 0) ? (
-              <WeeklyTrendChart data={orderTrend} color="var(--accent)" primaryLabel="Orders" height={130} />
-            ) : (
-              <div
-                className="flex h-[130px] items-center justify-center rounded-md"
-                style={{ background: 'var(--bg-surface-alt)', border: '1px dashed var(--border-default)' }}
-              >
-                <p className="text-caption text-center px-4" style={{ color: 'var(--ink-tertiary)' }}>
-                  {connectionState.shopify
-                    ? 'No order signals in the past 8 weeks'
-                    : 'Connect Shopify to see order trends'}
-                </p>
-              </div>
-            )}
-          </section>
-
-          {/* Data detected */}
-          <SectionCard
-            title="Store data detected"
-            description="What we have for your store right now, by source."
-          >
-            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-              <DataPresenceRow
-                label="Shopify orders"
-                present={dataPresence.hasShopifySignals}
-                detail={dataPresence.hasShopifySignals ? `${dataPresence.sources.shopifyOrderSignals.toLocaleString()} order signals` : 'No Shopify orders yet'}
-                icon={ShoppingBag}
-              />
-              <DataPresenceRow
-                label="Imported orders"
-                present={dataPresence.sources.auditTransactions > 0}
-                detail={dataPresence.sources.auditTransactions > 0 ? `${dataPresence.sources.auditTransactions.toLocaleString()} matched transactions` : 'No CSV imports'}
-                icon={Upload}
-              />
-              <DataPresenceRow
-                label="Customer profiles"
-                present={dataPresence.hasCustomerProfiles}
-                detail={dataPresence.hasCustomerProfiles ? `${dataPresence.sources.customerProfiles.toLocaleString()} profiles` : 'No profiles yet'}
-                icon={Users}
-              />
-              <DataPresenceRow
-                label="Helpdesk claims"
-                present={dataPresence.hasHelpdeskClaims}
-                detail={dataPresence.hasHelpdeskClaims ? `${(dataPresence.sources.merchantClaims + dataPresence.sources.supportCases).toLocaleString()} claims tracked` : 'Connect helpdesk for claim history'}
-                icon={Headphones}
-              />
-              <DataPresenceRow
-                label="Evidence packages"
-                present={dataPresence.hasEvidencePackages}
-                detail={dataPresence.hasEvidencePackages ? `${dataPresence.sources.evidencePackages.toLocaleString()} dispute-ready` : 'None generated yet'}
-                icon={ShieldCheck}
-              />
-            </div>
-          </SectionCard>
-
-          {/* Helpdesk completeness - keep helpdesk first-class, never optional */}
-          <SectionCard
-            title="Claim & dispute context"
-            description="Helpdesk completeness for this store"
-            actions={
-              <Link href="/claims" className="text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
-                Open claims →
-              </Link>
-            }
-          >
-            {connectionState.helpdesk ? (
-              <p className="text-body-sm" style={{ color: 'var(--ink-secondary)' }}>
-                {helpdeskLabel} is connected. {(dataPresence.sources.merchantClaims + dataPresence.sources.supportCases).toLocaleString()} claim
-                {dataPresence.sources.merchantClaims + dataPresence.sources.supportCases === 1 ? '' : 's'} tracked and tied to orders and customer profiles for dispute context.
-              </p>
-            ) : (
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <p className="text-caption" style={{ color: 'var(--warning)' }}>
-                  No helpdesk connected. Claim history and dispute context are incomplete until you connect Gorgias or Zendesk.
-                </p>
-                <Link
-                  href="/settings/integrations"
-                  className="btn-accent inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-caption font-semibold"
-                >
-                  Connect helpdesk
-                </Link>
-              </div>
-            )}
-          </SectionCard>
-        </div>
-
-        {/* Right rail */}
-        <aside className="space-y-4">
-          <SectionCard title="Sync health" actions={
-            <Link href="/settings/integrations" className="text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
-              Manage →
-            </Link>
-          }>
-            <div className="space-y-2.5">
-              <SyncRow label="Shopify" connected={connectionState.shopify} icon={ShoppingBag} />
-              <SyncRow label={helpdeskLabel} connected={connectionState.helpdesk} icon={Headphones} />
-            </div>
-          </SectionCard>
-
-          <SectionCard title="Data freshness">
-            {latestSync ? (
-              <>
-                <p className="num font-semibold" style={{ fontSize: 18, color: 'var(--data-score)' }}>{latestSync}</p>
-                <p className="text-caption mt-1" style={{ color: 'var(--text-muted)' }}>Latest Shopify sync run.</p>
-              </>
-            ) : (
-              <p className="text-caption" style={{ color: 'var(--text-subtle)' }}>
-                {connectionState.shopify
-                  ? 'No Shopify sync run recorded yet. Orders may still be arriving via live signals.'
-                  : 'Connect Shopify to track sync freshness.'}
-              </p>
-            )}
-            {connectionState.bothConnected ? (
-              <Badge tone="success" size="sm" className="mt-3">Live monitoring on</Badge>
-            ) : setupState === 'stale_existing_data' ? (
-              <Badge tone="warning" size="sm" className="mt-3">Sources disconnected</Badge>
-            ) : (
-              <Badge tone="warning" size="sm" className="mt-3">Setup incomplete</Badge>
-            )}
-          </SectionCard>
-
-          {latestShopifyJob ? (
-            <SectionCard title="Shopify audit detail" description="Latest synced batch">
-              <Link
-                href={`/audit/${latestShopifyJob.id}?source=shopify`}
-                className="inline-flex items-center gap-1.5 text-caption font-semibold hover:underline"
-                style={{ color: 'var(--accent)' }}
-              >
-                Open audit detail
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-            </SectionCard>
+    <WorkbenchPage
+      eyebrow="Store"
+      title="Store overview"
+      subtitle={config.subtitle}
+      actions={
+        <div className="flex flex-wrap items-center gap-2">
+          {config.secondaryCta ? (
+            <ButtonLink href={config.secondaryCta.href} variant="secondary" leadingIcon={<Upload className="h-3.5 w-3.5" />}>
+              {config.secondaryCta.label}
+            </ButtonLink>
           ) : null}
-        </aside>
-      </div>
-    </div>
+          <ButtonLink href={config.primaryCta.href} variant="primary" leadingIcon={<ArrowRight className="h-3.5 w-3.5" />}>
+            {config.primaryCta.label}
+          </ButtonLink>
+        </div>
+      }
+      main={
+        <>
+          <TrackPageView event="Store Viewed" />
+          <div className="space-y-5">
+            {config.banner ? <CompletenessBanner banner={config.banner} primaryCta={config.primaryCta} /> : null}
+
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+              {kpis.map((kpi) => (
+                <MetricCard
+                  key={kpi.label}
+                  label={kpi.label}
+                  value={kpi.value}
+                  hint={kpi.hint}
+                  icon={kpi.icon}
+                />
+              ))}
+            </div>
+
+            <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
+              <div className="space-y-5">
+                <section className="rounded-md border p-4" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+                  <div className="mb-3 flex items-center justify-between">
+                    <div>
+                      <p className="text-body-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Order volume</p>
+                      <p className="text-caption" style={{ color: 'var(--text-tertiary)' }}>8-week Shopify sync trend</p>
+                    </div>
+                  </div>
+                  {orderTrend.some((pt) => pt.value > 0) ? (
+                    <WeeklyTrendChart data={orderTrend} color="var(--accent)" primaryLabel="Orders" height={130} />
+                  ) : (
+                    <div
+                      className="flex h-[130px] items-center justify-center rounded-md"
+                      style={{ background: 'var(--surface-sunken)', border: '1px dashed var(--border)' }}
+                    >
+                      <p className="text-caption px-4 text-center" style={{ color: 'var(--text-tertiary)' }}>
+                        {connectionState.shopify
+                          ? 'No order signals in the past 8 weeks'
+                          : 'Connect Shopify to see order trends'}
+                      </p>
+                    </div>
+                  )}
+                </section>
+
+                <SectionCard
+                  title="Store data detected"
+                  description="What we have for your store right now, by source."
+                >
+                  <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                    <DataPresenceRow
+                      label="Shopify orders"
+                      present={dataPresence.hasShopifySignals}
+                      detail={dataPresence.hasShopifySignals ? `${dataPresence.sources.shopifyOrderSignals.toLocaleString()} order signals` : 'No Shopify orders yet'}
+                      icon={ShoppingBag}
+                    />
+                    <DataPresenceRow
+                      label="Imported orders"
+                      present={dataPresence.sources.auditTransactions > 0}
+                      detail={dataPresence.sources.auditTransactions > 0 ? `${dataPresence.sources.auditTransactions.toLocaleString()} matched transactions` : 'No CSV imports'}
+                      icon={Upload}
+                    />
+                    <DataPresenceRow
+                      label="Customer profiles"
+                      present={dataPresence.hasCustomerProfiles}
+                      detail={dataPresence.hasCustomerProfiles ? `${dataPresence.sources.customerProfiles.toLocaleString()} profiles` : 'No profiles yet'}
+                      icon={Users}
+                    />
+                    <DataPresenceRow
+                      label="Helpdesk claims"
+                      present={dataPresence.hasHelpdeskClaims}
+                      detail={dataPresence.hasHelpdeskClaims ? `${(dataPresence.sources.merchantClaims + dataPresence.sources.supportCases).toLocaleString()} claims tracked` : 'Connect helpdesk for claim history'}
+                      icon={Headphones}
+                    />
+                    <DataPresenceRow
+                      label="Evidence packages"
+                      present={dataPresence.hasEvidencePackages}
+                      detail={dataPresence.hasEvidencePackages ? `${dataPresence.sources.evidencePackages.toLocaleString()} dispute-ready` : 'None generated yet'}
+                      icon={ShieldCheck}
+                    />
+                  </div>
+                </SectionCard>
+
+                <SectionCard
+                  title="Claim & dispute context"
+                  description="Helpdesk completeness for this store"
+                  actions={
+                    <Link href="/claims" className="inline-flex items-center gap-1.5 text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
+                      Open claims
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </Link>
+                  }
+                >
+                  {connectionState.helpdesk ? (
+                    <p className="text-body-sm" style={{ color: 'var(--text-secondary)' }}>
+                      {helpdeskLabel} is connected. {(dataPresence.sources.merchantClaims + dataPresence.sources.supportCases).toLocaleString()} claim
+                      {dataPresence.sources.merchantClaims + dataPresence.sources.supportCases === 1 ? '' : 's'} tracked and tied to orders and customer profiles for dispute context.
+                    </p>
+                  ) : (
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <p className="text-caption" style={{ color: 'var(--warning)' }}>
+                        No helpdesk connected. Claim history and dispute context are incomplete until you connect Gorgias or Zendesk.
+                      </p>
+                      <ButtonLink href="/settings/integrations" variant="primary">
+                        Connect helpdesk
+                      </ButtonLink>
+                    </div>
+                  )}
+                </SectionCard>
+              </div>
+
+              <aside className="space-y-4">
+                <SectionCard
+                  title="Sync health"
+                  actions={
+                    <Link href="/settings/integrations" className="inline-flex items-center gap-1.5 text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
+                      Manage
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </Link>
+                  }
+                >
+                  <div className="space-y-2.5">
+                    <SyncRow label="Shopify" connected={connectionState.shopify} icon={ShoppingBag} />
+                    <SyncRow label={helpdeskLabel} connected={connectionState.helpdesk} icon={Headphones} />
+                  </div>
+                </SectionCard>
+
+                <SectionCard title="Data freshness">
+                  {latestSync ? (
+                    <>
+                      <p className="num font-semibold" style={{ fontSize: 18, color: 'var(--text-primary)' }}>{latestSync}</p>
+                      <p className="mt-1 text-caption" style={{ color: 'var(--text-secondary)' }}>Latest Shopify sync run.</p>
+                    </>
+                  ) : (
+                    <p className="text-caption" style={{ color: 'var(--text-tertiary)' }}>
+                      {connectionState.shopify
+                        ? 'No Shopify sync run recorded yet. Orders may still be arriving via live signals.'
+                        : 'Connect Shopify to track sync freshness.'}
+                    </p>
+                  )}
+                  {connectionState.bothConnected ? (
+                    <Badge tone="success" size="sm" className="mt-3">Live monitoring on</Badge>
+                  ) : setupState === 'stale_existing_data' ? (
+                    <Badge tone="warning" size="sm" className="mt-3">Sources disconnected</Badge>
+                  ) : (
+                    <Badge tone="warning" size="sm" className="mt-3">Setup incomplete</Badge>
+                  )}
+                </SectionCard>
+
+                {latestShopifyJob ? (
+                  <SectionCard title="Shopify audit detail" description="Latest synced batch">
+                    <Link
+                      href={`/audit/${latestShopifyJob.id}?source=shopify`}
+                      className="inline-flex items-center gap-1.5 text-caption font-semibold hover:underline"
+                      style={{ color: 'var(--accent)' }}
+                    >
+                      Open audit detail
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </Link>
+                  </SectionCard>
+                ) : null}
+              </aside>
+            </div>
+          </div>
+        </>
+      }
+    />
   );
 }
 
@@ -554,17 +544,17 @@ function DataPresenceRow({
   return (
     <div
       className="flex items-start gap-2.5 rounded-md border px-3 py-2.5"
-      style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
+      style={{ background: 'var(--surface)', borderColor: 'var(--border-muted)' }}
     >
-      <Icon className="mt-0.5 h-4 w-4 shrink-0" style={{ color: present ? 'var(--accent)' : 'var(--ink-tertiary)' }} />
+      <Icon className="mt-0.5 h-4 w-4 shrink-0" style={{ color: present ? 'var(--accent)' : 'var(--text-tertiary)' }} />
       <div className="min-w-0">
         <div className="flex items-center gap-2">
-          <p className="text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>{label}</p>
+          <p className="text-caption font-semibold" style={{ color: 'var(--text-secondary)' }}>{label}</p>
           {present ? (
-            <CheckCircle2 className="h-3.5 w-3.5" style={{ color: 'var(--sev-clear)' }} />
+            <CheckCircle2 className="h-3.5 w-3.5" style={{ color: 'var(--neutral)' }} />
           ) : null}
         </div>
-        <p className="text-caption mt-0.5 leading-snug" style={{ color: present ? 'var(--text-muted)' : 'var(--text-subtle)' }}>
+        <p className="text-caption mt-0.5 leading-snug" style={{ color: present ? 'var(--text-secondary)' : 'var(--text-tertiary)' }}>
           {detail}
         </p>
       </div>

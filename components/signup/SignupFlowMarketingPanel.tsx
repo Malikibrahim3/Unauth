@@ -5,9 +5,9 @@ import { SIGNUP_TEXT_MUTED } from '@/components/signup/signupFlowStyles';
 
 export function SignupFlowMarketingPanel() {
   return (
-    <div className="border-b px-6 py-12 md:px-10 lg:border-b-0 lg:border-r" style={{ borderColor: '#D8D0BD' }}>
+    <div className="border-b px-6 py-12 md:px-10 lg:border-b-0 lg:border-r" style={{ borderColor: 'var(--border)' }}>
       <Link href="/" className="inline-block">
-        <span className="text-sm font-semibold uppercase tracking-[0.16em]" style={{ color: '#7B2D26' }}>
+        <span className="text-sm font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--accent)' }}>
           Unauth
         </span>
       </Link>
@@ -34,7 +34,7 @@ export function SignupFlowMarketingPanel() {
             fontFamily: 'var(--font-serif, serif)',
             fontSize: '18px',
             lineHeight: 1.6,
-            color: '#4A4640',
+            color: 'var(--text-secondary)',
           }}
         >
           Create your account, upload your last 90 days of orders and refunds, and we&apos;ll resolve repeat
@@ -48,7 +48,7 @@ export function SignupFlowMarketingPanel() {
             'Results land in your inbox in around 20 minutes.',
           ].map((item) => (
             <div key={item} className="flex items-start gap-3">
-              <span className="mt-2 h-1.5 w-1.5 rounded-full" style={{ background: '#7B2D26' }} />
+              <span className="mt-2 h-1.5 w-1.5 rounded-full" style={{ background: 'var(--accent)' }} />
               <p className="text-sm leading-6" style={SIGNUP_TEXT_MUTED}>
                 {item}
               </p>

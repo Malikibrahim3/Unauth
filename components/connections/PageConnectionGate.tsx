@@ -60,29 +60,29 @@ function GatePanel({ missing, pageName, pageDescription }: {
   return (
     <div className="flex items-center justify-center min-h-[55vh] p-8">
       <div
-        className="max-w-md w-full rounded-lg border p-8 space-y-5"
+        className="max-w-md w-full rounded-md border p-8 space-y-5"
         style={{
-          background: 'var(--surface-raised)',
-          borderColor: 'var(--border-default)',
+          background: 'var(--surface)',
+          borderColor: 'var(--border)',
         }}
       >
         <div
-          className="inline-flex h-10 w-10 items-center justify-center rounded-lg"
-          style={{ background: 'var(--surface-overlay)', border: '1px solid var(--border-default)' }}
+          className="inline-flex h-10 w-10 items-center justify-center rounded-md"
+          style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
         >
-          <Plug className="h-5 w-5" style={{ color: 'var(--ink-secondary)' }} />
+          <Plug className="h-5 w-5" style={{ color: 'var(--text-secondary)' }} />
         </div>
 
         <div className="space-y-2">
           <h2
             className="text-base font-semibold leading-snug"
-            style={{ color: 'var(--ink-primary)', fontFamily: 'DM Sans, system-ui, sans-serif' }}
+            style={{ color: 'var(--text-primary)', fontFamily: 'DM Sans, system-ui, sans-serif' }}
           >
             {headline}
           </h2>
           <p
             className="text-sm leading-relaxed"
-            style={{ color: 'var(--ink-secondary)', fontFamily: 'DM Sans, system-ui, sans-serif' }}
+            style={{ color: 'var(--text-secondary)', fontFamily: 'DM Sans, system-ui, sans-serif' }}
           >
             {body}
           </p>

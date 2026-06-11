@@ -12,7 +12,7 @@ export function CustomerProfileBlockedView({ reason }: { reason: CustomerProfile
     return (
       <div className="p-8">
         <h1 className="text-heading-lg">Access denied</h1>
-        <p className="text-body-sm mt-2" style={{ color: 'var(--text-muted)' }}>
+        <p className="text-body-sm mt-2" style={{ color: 'var(--text-secondary)' }}>
           You do not have permission to view this customer profile.
         </p>
       </div>
@@ -21,7 +21,7 @@ export function CustomerProfileBlockedView({ reason }: { reason: CustomerProfile
   return (
     <div className="p-8">
       <h1 className="text-heading-lg">Link expired</h1>
-      <p className="text-body-sm mt-2" style={{ color: 'var(--text-muted)' }}>
+      <p className="text-body-sm mt-2" style={{ color: 'var(--text-secondary)' }}>
         This link has expired. Ask your team for a new one from Unauth.
       </p>
       <a href="https://unauth.co" className="text-body-sm mt-3 inline-block underline" style={{ color: 'var(--text)' }}>

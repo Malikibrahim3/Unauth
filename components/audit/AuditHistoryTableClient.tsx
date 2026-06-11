@@ -61,10 +61,10 @@ export default function AuditHistoryTableClient({ rows: initialRows }: AuditHist
   return (
     <>
       {selectedIds.size > 0 && (
-        <div className="mb-3 flex items-center justify-between gap-3 rounded-lg px-3 py-2 border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
+        <div className="mb-3 flex items-center justify-between gap-3 rounded-md px-3 py-2 border" style={{ background: 'var(--surface)', borderColor: 'var(--border-muted)' }}>
           <div className="flex items-center gap-2">
             <Trash2 className="h-4 w-4" />
-            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{selectedIds.size} selected</span>
+            <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>{selectedIds.size} selected</span>
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -75,17 +75,17 @@ type="button"               onClick={hideSelected}
             >
               {bulkHiding ? 'Removing…' : 'Remove selected'}
             </button>
-            <button type="button" onClick={() => setSelectedIds(new Set())} disabled={bulkHiding} className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>
+            <button type="button" onClick={() => setSelectedIds(new Set())} disabled={bulkHiding} className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>
               Clear
             </button>
           </div>
         </div>
       )}
 
-      <div className="rounded-lg overflow-hidden border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
+      <div className="rounded-md overflow-hidden border" style={{ background: 'var(--surface)', borderColor: 'var(--border-muted)' }}>
         <table className="w-full text-sm">
           <thead>
-            <tr style={{ borderBottom: '1px solid var(--border-subtle)', background: 'var(--bg-subtle)' }}>
+            <tr style={{ borderBottom: '1px solid var(--border-muted)', background: 'var(--bg-subtle)' }}>
               <th className="px-4 py-2.5 text-left" style={{ width: 44 }}>
                 <input
                   type="checkbox"
@@ -97,13 +97,13 @@ type="button"               onClick={hideSelected}
                   aria-label="Select all audits"
                 />
               </th>
-              <th className="text-left px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Label</th>
-              <th className="text-left px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Type</th>
-              <th className="text-left px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Period</th>
-              <th className="text-left px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Status</th>
-              <th className="text-right px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Rows</th>
-              <th className="text-right px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Matched</th>
-              <th className="text-left px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--ink-secondary)' }}>Uploaded</th>
+              <th className="text-left px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--text-secondary)' }}>Label</th>
+              <th className="text-left px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--text-secondary)' }}>Type</th>
+              <th className="text-left px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--text-secondary)' }}>Period</th>
+              <th className="text-left px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--text-secondary)' }}>Status</th>
+              <th className="text-right px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--text-secondary)' }}>Rows</th>
+              <th className="text-right px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--text-secondary)' }}>Matched</th>
+              <th className="text-left px-4 py-2.5 text-caption font-semibold" style={{ color: 'var(--text-secondary)' }}>Uploaded</th>
               <th className="px-4 py-2.5" aria-label="Actions" />
             </tr>
           </thead>
@@ -117,7 +117,7 @@ type="button"               onClick={hideSelected}
               const checked = selectedIds.has(run.id);
 
               return (
-                <tr key={run.id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                <tr key={run.id} style={{ borderBottom: '1px solid var(--border-muted)' }}>
                   <td className="px-4 py-3 align-top" onClick={(e) => e.stopPropagation()}>
                     <input
                       type="checkbox"
@@ -134,24 +134,24 @@ type="button"               onClick={hideSelected}
                   <td className="px-4 py-3 max-w-xs">
                     <span className="text-sm font-medium truncate block" style={{ color: 'var(--text)' }}>{displayLabel}</span>
                     {anyRun.label && (
-                      <span className="text-xs font-mono truncate block" style={{ color: 'var(--text-subtle)' }}>{run.filename}</span>
+                      <span className="text-xs font-mono truncate block" style={{ color: 'var(--text-tertiary)' }}>{run.filename}</span>
                     )}
                   </td>
                   <td className="px-4 py-3">
                     <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border" style={{
                       background: anyRun.upload_type === 'investigation' ? 'var(--info-bg)' : 'var(--bg-subtle)',
                       borderColor: anyRun.upload_type === 'investigation' ? 'var(--info-bd)' : 'var(--border)',
-                      color: anyRun.upload_type === 'investigation' ? 'var(--info)' : 'var(--text-muted)',
+                      color: anyRun.upload_type === 'investigation' ? 'var(--info)' : 'var(--text-secondary)',
                     }}>
                       {typeLabel}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-muted)' }}>{period}</td>
+                  <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-secondary)' }}>{period}</td>
                   <td className="px-4 py-3">
                     <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border" style={{
                       background: run.status === 'completed' ? 'var(--success-bg)' : run.status === 'processing' ? 'var(--info-bg)' : run.status === 'pending' ? 'var(--bg-subtle)' : 'var(--risk-critical-bg)',
                       borderColor: run.status === 'completed' ? 'var(--success-bd)' : run.status === 'processing' ? 'var(--info-bd)' : run.status === 'pending' ? 'var(--border)' : 'var(--risk-critical-bd)',
-                      color: run.status === 'completed' ? 'var(--success)' : run.status === 'processing' ? 'var(--info)' : run.status === 'pending' ? 'var(--text-muted)' : 'var(--risk-critical)',
+                      color: run.status === 'completed' ? 'var(--success)' : run.status === 'processing' ? 'var(--info)' : run.status === 'pending' ? 'var(--text-secondary)' : 'var(--risk-critical)',
                     }}>
                       {run.status === 'completed' ? 'Completed' : run.status === 'processing' ? 'Processing' : run.status === 'pending' ? 'Pending' : 'Failed'}
                     </span>
@@ -159,9 +159,9 @@ type="button"               onClick={hideSelected}
                   <td className="px-4 py-3 text-right" style={{ color: 'var(--text)' }}>{run.total_rows.toLocaleString()}</td>
                   <td className="px-4 py-3 text-right" style={{ color: 'var(--text)' }}>
                     {(run.flagged_count ?? 0).toLocaleString()}
-                    {run.total_rows > 0 && <span className="ml-1 text-xs" style={{ color: 'var(--text-muted)' }}>({(flagRate * 100).toFixed(1)}%)</span>}
+                    {run.total_rows > 0 && <span className="ml-1 text-xs" style={{ color: 'var(--text-secondary)' }}>({(flagRate * 100).toFixed(1)}%)</span>}
                   </td>
-                  <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-muted)' }}>{formatDate(run.created_at)}</td>
+                  <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-secondary)' }}>{formatDate(run.created_at)}</td>
                   <td className="px-4 py-3 text-right">
                     <div className="inline-flex items-center justify-end gap-2">
                       {(run.status === 'complete' || run.status === 'completed') && (

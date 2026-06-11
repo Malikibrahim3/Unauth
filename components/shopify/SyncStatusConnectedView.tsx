@@ -31,7 +31,7 @@ function SyncStatusConnectedContent({
     <>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+          <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
             {status.orderCount?.toLocaleString() ?? '-'} orders synced
             {typeof status.auditTransactionCount === 'number'
               ? ` · ${status.auditTransactionCount.toLocaleString()} scored`
@@ -47,7 +47,7 @@ function SyncStatusConnectedContent({
           }}
           disabled={syncing}
           className="inline-flex shrink-0 items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold disabled:opacity-60"
-          style={{ background: 'var(--accent)', color: '#fff' }}
+          style={{ background: 'var(--accent)', color: 'white' }}
           data-testid="shopify-sync-now"
         >
           {syncing ? (
@@ -62,20 +62,20 @@ function SyncStatusConnectedContent({
       </div>
 
       {syncError ? (
-        <p className="text-xs" style={{ color: 'var(--risk-high, #DC2626)' }} role="alert">
+        <p className="text-xs" style={{ color: 'var(--success)' }} role="alert">
           {syncError}
         </p>
       ) : null}
 
       <div className="grid grid-cols-2 gap-3 text-xs">
         <div>
-          <p style={{ color: 'var(--text-muted)' }}>Last order synced</p>
+          <p style={{ color: 'var(--text-secondary)' }}>Last order synced</p>
           <p className="font-medium mt-0.5" style={{ color: 'var(--text)' }}>
             {status.lastOrderSyncedAt ? formatRelativeTime(status.lastOrderSyncedAt) : 'Never'}
           </p>
         </div>
         <div>
-          <p style={{ color: 'var(--text-muted)' }}>Last webhook</p>
+          <p style={{ color: 'var(--text-secondary)' }}>Last webhook</p>
           <p className="font-medium mt-0.5" style={{ color: 'var(--text)' }}>
             {status.lastWebhookAt ? formatRelativeTime(status.lastWebhookAt) : 'None'}
             {status.lastWebhookTopic ? (
@@ -84,7 +84,7 @@ function SyncStatusConnectedContent({
           </p>
         </div>
         <div>
-          <p style={{ color: 'var(--text-muted)' }}>Webhook health</p>
+          <p style={{ color: 'var(--text-secondary)' }}>Webhook health</p>
           <p
             className="font-medium mt-0.5"
             style={{ color: webhookHealthy ? 'var(--success)' : 'var(--risk-high)' }}
@@ -93,7 +93,7 @@ function SyncStatusConnectedContent({
           </p>
         </div>
         <div>
-          <p style={{ color: 'var(--text-muted)' }}>Data sources</p>
+          <p style={{ color: 'var(--text-secondary)' }}>Data sources</p>
           <p className="font-medium mt-0.5" style={{ color: 'var(--text)' }}>
             {(status.dataSources ?? ['Shopify']).join(' · ')}
           </p>
@@ -104,7 +104,7 @@ function SyncStatusConnectedContent({
 
       {recentWebhooks.length > 0 ? (
         <div>
-          <p className="text-xs font-semibold mb-2" style={{ color: 'var(--text-muted)' }}>
+          <p className="text-xs font-semibold mb-2" style={{ color: 'var(--text-secondary)' }}>
             Recent webhook activity
           </p>
           <ul className="space-y-1">
@@ -116,7 +116,7 @@ function SyncStatusConnectedContent({
                 <span className="font-mono truncate" style={{ color: 'var(--text)' }}>
                   {event.topic ?? 'webhook'}
                 </span>
-                <span style={{ color: event.status === 'failed' ? 'var(--risk-high)' : 'var(--text-muted)' }}>
+                <span style={{ color: event.status === 'failed' ? 'var(--risk-high)' : 'var(--text-secondary)' }}>
                   {event.status} · {formatRelativeTime(event.at)}
                 </span>
               </li>
@@ -128,19 +128,19 @@ function SyncStatusConnectedContent({
       {hasError ? (
         <div
           className="px-3 py-2 rounded-md text-xs"
-          style={{ background: 'var(--risk-high-bg, #FEE2E2)', color: 'var(--risk-high, #991B1B)' }}
+          style={{ background: 'var(--sev-definite-fill)', color: 'var(--success)' }}
         >
           <p className="font-semibold mb-0.5">Sync error</p>
           <p>{status.lastError}</p>
         </div>
       ) : null}
 
-      <div className="pt-2 border-t" style={{ borderColor: 'var(--surface-border)' }}>
+      <div className="pt-2 border-t" style={{ borderColor: 'var(--border)' }}>
         <button
           type="button"
           onClick={onOpenModal}
           className="text-xs"
-          style={{ color: 'var(--text-muted)' }}
+          style={{ color: 'var(--text-secondary)' }}
           data-testid="reconnect-shopify"
         >
           {hasError ? 'Reconnect to fix sync error →' : 'Re-authorize connection'}
@@ -174,15 +174,15 @@ export function SyncStatusConnectedView({
   return (
     <>
       {variant === 'inline' ? (
-        <div className="pt-3 mt-3 border-t space-y-4" style={{ borderColor: 'var(--surface-border)' }}>
+        <div className="pt-3 mt-3 border-t space-y-4" style={{ borderColor: 'var(--border)' }}>
           {content}
         </div>
       ) : (
         <div
-          className="rounded-xl p-5 border space-y-4"
+          className="rounded-md p-5 border space-y-4"
           style={{
-            borderColor: hasError ? 'var(--risk-high-bd, #FCA5A5)' : 'var(--border-subtle)',
-            background: 'var(--bg-surface)',
+            borderColor: hasError ? 'color-mix(in srgb, var(--success) 35%, var(--border))' : 'var(--border-muted)',
+            background: 'var(--surface)',
           }}
         >
           {content}

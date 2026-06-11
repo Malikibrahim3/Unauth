@@ -42,7 +42,7 @@ export default function RemoveButton({ id, onRemoved }: RemoveButtonProps) {
 
   if (countdown !== null) {
     return (
-      <span className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--text-muted)' }}>
+      <span className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
         Removing in {countdown}s
         <button
 type="button"           onClick={handleUndo}
@@ -59,9 +59,9 @@ type="button"           onClick={handleUndo}
     <button
 type="button"       onClick={handleRemove}
       className="text-xs transition-colors"
-      style={{ color: 'var(--text-subtle)' }}
+      style={{ color: 'var(--text-tertiary)' }}
       onMouseEnter={e => (e.currentTarget.style.color = 'var(--risk-critical)')}
-      onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-subtle)')}
+      onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-tertiary)')}
     >
       Remove
     </button>

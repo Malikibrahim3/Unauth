@@ -13,6 +13,8 @@ import type { ConfidenceGrade } from '@/lib/engine/weights';
 import { STATUS_LABELS } from '@/lib/utils/investigationStatus';
 import GradeDistBar from '@/components/charts/GradeDistBar';
 import type { GradeDistEntry } from '@/components/charts/GradeDistBar';
+import { AnalyticsDonutChart } from '@/components/analytics/AnalyticsDonutChart';
+import { AnalyticsHBarChart } from '@/components/analytics/AnalyticsHBarChart';
 import { FilterChip } from '@/app/(app)/customers/CustomersOverviewFilterChip';
 import { buildRemoveHref, customersListHref } from '@/app/(app)/customers/customersOverviewPageUtils';
 
@@ -91,42 +93,82 @@ export function CustomersOverviewPageView({
           else gradeCounts.low += 1;
         }
         const gradeDist: GradeDistEntry[] = [
-          { key: 'high', label: 'Strong match band', count: gradeCounts.high, color: 'var(--sev-definite)' },
-          { key: 'medium', label: 'Moderate match band', count: gradeCounts.medium, color: 'var(--sev-probable)' },
-          { key: 'low', label: 'Light match band', count: gradeCounts.low, color: 'var(--sev-clear)' },
+          { key: 'high', label: 'Strong match band', count: gradeCounts.high, color: 'var(--success)' },
+          { key: 'medium', label: 'Moderate match band', count: gradeCounts.medium, color: 'var(--warning)' },
+          { key: 'low', label: 'Light match band', count: gradeCounts.low, color: 'var(--neutral)' },
         ];
         const multiMerchant = rows.filter((r) => r.total_merchants_seen_at >= 2).length;
+        const statusBars = Object.entries(
+          rows.reduce<Record<string, number>>((acc, row) => {
+            const key = row.investigation_status ?? 'new';
+            acc[key] = (acc[key] ?? 0) + 1;
+            return acc;
+          }, {})
+        )
+          .slice(0, 4)
+          .map(([key, value]) => ({
+            label: STATUS_LABELS[key as keyof typeof STATUS_LABELS] ?? key,
+            value,
+            color: 'var(--neutral)',
+          }));
+        const networkDonut = [
+          { label: '2+ stores', value: multiMerchant, color: 'var(--network)' },
+          { label: 'Single store', value: Math.max(rows.length - multiMerchant, 0), color: 'var(--border)' },
+        ];
         return (
           <div
-            className="rounded-lg border p-4"
-            style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-default)' }}
+            className="rounded-[10px] border p-4"
+            style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
           >
             <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-              <p className="text-body-sm font-semibold" style={{ color: 'var(--ink-primary)' }}>
+              <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
                 Context profile - {noFilters ? 'all customers' : 'current page'}
               </p>
               <div className="flex items-center gap-4">
                 {multiMerchant > 0 && (
-                  <span className="text-caption" style={{ color: 'var(--sev-probable)' }}>
+                  <span className="text-xs" style={{ color: 'var(--network)' }}>
                     {multiMerchant} seen at 2+ stores
                   </span>
                 )}
                 {!connectionState.helpdesk && (
-                  <span className="text-caption" style={{ color: 'var(--warning)' }}>
+                  <span className="text-xs" style={{ color: 'var(--warning)' }}>
                     Claim counts incomplete - helpdesk not connected
                   </span>
                 )}
               </div>
             </div>
             <GradeDistBar grades={gradeDist} />
+            <div className="mt-4 grid gap-4 lg:grid-cols-2">
+              <div>
+                <p className="mb-2 text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>
+                  Investigation status
+                </p>
+                <AnalyticsHBarChart
+                  data={statusBars}
+                  yAxisWidth={110}
+                  maxBarWidth={14}
+                  emptyLabel="No status data"
+                />
+              </div>
+              <div>
+                <p className="mb-2 text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>
+                  Network density
+                </p>
+                <AnalyticsDonutChart
+                  data={networkDonut}
+                  height={180}
+                  emptyLabel="No network data"
+                />
+              </div>
+            </div>
           </div>
         );
       })()}
 
       {/* ── Compact filter bar ─────────────────────────────────────── */}
       {totalCount > 0 && (
-        <div className="flex h-auto min-h-10 flex-wrap items-center gap-2 rounded-md border px-3 py-2" style={{ background: 'var(--surface-raised)', borderColor: 'var(--surface-border)' }}>
-          <span className="t-label mr-1" style={{ color: 'var(--ink-tertiary)' }}>Filters</span>
+        <div className="flex h-auto min-h-10 flex-wrap items-center gap-2 rounded-[10px] border px-3 py-2" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+          <span className="text-xs font-medium mr-1" style={{ color: 'var(--text-tertiary)' }}>Filters</span>
           {[
             { label: 'Open claims for review', href: '?openClaims=1', highlight: openClaimsOnly },
             { label: 'New', href: '?risk=high&status=new', highlight: !openClaimsOnly },
@@ -136,11 +178,11 @@ export function CustomersOverviewPageView({
             <Link
               key={label}
               href={href}
-              className="rounded-sm border px-2.5 py-1 t-label transition-colors"
+              className="rounded-[4px] border px-2.5 py-1 text-xs font-medium transition-colors"
               style={{
-                background: highlight ? 'var(--copper-dim)' : 'var(--surface-muted)',
-                borderColor: highlight ? 'var(--copper-bright)' : 'var(--surface-border)',
-                color: highlight ? 'var(--copper-bright)' : 'var(--ink-secondary)',
+                background: highlight ? 'var(--accent-soft)' : 'var(--surface-sunken)',
+                borderColor: highlight ? 'var(--accent-border)' : 'var(--border)',
+                color: highlight ? 'var(--accent)' : 'var(--text-secondary)',
               }}
             >
               {label}
@@ -151,7 +193,7 @@ export function CustomersOverviewPageView({
 
       {/* ── Saved views strip ─────────────────────────────────────── */}
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="t-label" style={{ color: 'var(--ink-tertiary)' }}>Saved views</span>
+        <span className="text-xs font-medium" style={{ color: 'var(--text-tertiary)' }}>Saved views</span>
         {[
           { label: 'Customers with open claims', href: '?openClaims=1' },
           { label: 'High confidence · new', href: '?risk=high&status=new' },
@@ -162,8 +204,8 @@ export function CustomersOverviewPageView({
           <Link
             key={label}
             href={href}
-            className="t-label rounded-sm border px-2.5 py-1 transition-colors hover:bg-[var(--surface-overlay)]"
-            style={{ borderColor: 'var(--surface-border)', color: 'var(--ink-secondary)' }}
+            className="text-xs font-medium rounded-[4px] border px-2.5 py-1 transition-colors hover:bg-[var(--surface-sunken)]"
+            style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
           >
             {label}
           </Link>
@@ -173,14 +215,14 @@ export function CustomersOverviewPageView({
       {/* ── Active filter chips ───────────────────────────────────── */}
       {!noFilters && (
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-caption" style={{ color: 'var(--text-muted)' }}>Active filters:</span>
+          <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>Active filters:</span>
           {riskFilter && <FilterChip label={`Match confidence: ${GRADE_LABELS[riskFilter as ConfidenceGrade] ?? riskFilter}`} removeHref={buildRemoveHref(sp, 'risk')} />}
           {statusFilter && <FilterChip label={`Status: ${STATUS_LABELS[statusFilter as keyof typeof STATUS_LABELS] ?? statusFilter}`} removeHref={buildRemoveHref(sp, 'status')} />}
           {hasRefunds && <FilterChip label="Has refunds" removeHref={buildRemoveHref(sp, 'hasRefunds')} />}
           {hasChargebacks && <FilterChip label="Has chargebacks" removeHref={buildRemoveHref(sp, 'hasChargebacks')} />}
           {openClaimsOnly && <FilterChip label="Open claims for review" removeHref={buildRemoveHref(sp, 'openClaims')} />}
           {q && <FilterChip label={`Search: "${q}"`} removeHref={buildRemoveHref(sp, 'q')} />}
-          <Link href="/customers" className="text-xs hover:underline" style={{ color: 'var(--text-muted)' }}>Clear all</Link>
+          <Link href="/customers" className="text-xs hover:underline" style={{ color: 'var(--text-secondary)' }}>Clear all</Link>
         </div>
       )}
 
@@ -194,7 +236,7 @@ export function CustomersOverviewPageView({
           }
           action={
             <div className="flex items-center gap-4">
-              <Link href={pageActions.primary.href} className="text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
+              <Link href={pageActions.primary.href} className="text-xs font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
                 {pageActions.primary.label} →
               </Link>
             </div>
@@ -205,7 +247,7 @@ export function CustomersOverviewPageView({
           title="No customers match filters"
           description="No customer profiles match the filters you've applied. Adjust or clear them to see more."
           action={
-            <Link href="/customers" className="text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
+            <Link href="/customers" className="text-xs font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
               Clear all filters →
             </Link>
           }
@@ -213,10 +255,10 @@ export function CustomersOverviewPageView({
       ) : (
         <>
           <div className="flex items-center justify-between">
-            <p className="text-caption" style={{ color: 'var(--text-muted)' }}>
+            <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
               {`Showing ${from}–${to} of ${totalCount.toLocaleString()} customers`}
             </p>
-            <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+            <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
               <Suspense fallback={null}>
                 <PageSizeSelect pathname="/customers" pageSize={PAGE_SIZE} />
               </Suspense>

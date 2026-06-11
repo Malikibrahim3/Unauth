@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Loader2 } from 'lucide-react';
 
 export function LoadDemoButton() {
   const router = useRouter();
@@ -40,14 +41,11 @@ export function LoadDemoButton() {
 type="button"         onClick={loadDemoAccount}
         disabled={loading}
         className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-md disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
-        style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}
+        style={{ background: 'var(--accent)', color: 'white' }}
       >
         {loading ? (
           <>
-            <svg className="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24" fill="none">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-            </svg>
+            <Loader2 className="animate-spin h-3.5 w-3.5" aria-hidden="true" />
             Scoring 3,000 transactions…
           </>
         ) : (

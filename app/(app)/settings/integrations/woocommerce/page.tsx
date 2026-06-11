@@ -4,6 +4,7 @@ import { Store } from 'lucide-react';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import WooCommerceConnectClient from '@/components/settings/WooCommerceConnectClient';
+import { PROVIDER_BRAND_COLOURS } from '@/components/settings/providerBrand';
 
 export default async function WooCommerceIntegrationPage() {
   const userClient = createClient();
@@ -25,17 +26,17 @@ export default async function WooCommerceIntegrationPage() {
         <Link
           href="/settings/integrations"
           className="mb-4 inline-flex items-center gap-1.5 text-xs hover:underline"
-          style={{ color: 'var(--text-muted)' }}
+          style={{ color: 'var(--text-secondary)' }}
         >
           ← Integrations
         </Link>
         <div className="flex items-center gap-3">
-          <Store className="h-5 w-5" style={{ color: '#7F54B3' }} />
+          <Store className="h-5 w-5" style={{ color: PROVIDER_BRAND_COLOURS.woocommerce }} />
           <h1 className="text-heading-lg" style={{ color: 'var(--text)' }}>
             Connect WooCommerce
           </h1>
         </div>
-        <p className="mt-1 text-sm" style={{ color: 'var(--text-muted)' }}>
+        <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
           Sync orders and refunds into audit transactions using REST API keys.
         </p>
       </div>

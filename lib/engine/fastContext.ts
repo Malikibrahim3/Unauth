@@ -15,6 +15,18 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { TABLES } from '../supabase/tables';
 import { withReadRetry } from './dbSemaphore';
 import { env } from '../utils/env';
+import { hashIdentifier } from '../identity/hash';
+import {
+  normaliseEmail,
+  normaliseIP,
+  normaliseAddress,
+  normaliseCard,
+  normalisePhone,
+} from '../identity/normalise';
+import {
+  canonicalizeEdgePair,
+  type V1IdentifierType,
+} from '../identity/identifierGraph';
 
 // ── Concurrency limiter ────────────────────────────────────────────────────
 // Cap simultaneous Supabase requests to avoid saturating the Postgres
@@ -95,6 +107,220 @@ export interface CoOccurrence {
   co_occurrence_count: number;
   first_seen: string;
   last_seen: string;
+}
+
+/** Row shape from identifier_co_occurrence_edges (Step 5 dual-read). */
+export type IdentifierCoOccurrenceEdgeRow = {
+  id: string;
+  left_identifier_type: string;
+  left_identifier_hash: string;
+  right_identifier_type: string;
+  right_identifier_hash: string;
+  seen_count: number;
+  first_seen_at: string;
+  last_seen_at: string;
+};
+
+const LEGACY_TO_V1_ENTITY_TYPE: Partial<Record<string, V1IdentifierType>> = {
+  email: 'normalized_email_hash',
+  address: 'full_normalized_shipping_address_hash',
+};
+
+const V1_TO_LEGACY_ENTITY_TYPE: Partial<Record<V1IdentifierType, string>> = {
+  normalized_email_hash: 'email',
+  full_normalized_shipping_address_hash: 'address',
+  full_normalized_billing_address_hash: 'address',
+  phone_e164_hash: 'phone',
+};
+
+/** Canonical dedup key for v1-mappable legacy co-occurrence rows. null = legacy-only (ip/card). */
+export function legacyCoOccurrenceDedupKey(row: CoOccurrence): string | null {
+  const leftV1 = LEGACY_TO_V1_ENTITY_TYPE[row.entity_a_type];
+  const rightV1 = LEGACY_TO_V1_ENTITY_TYPE[row.entity_b_type];
+  if (!leftV1 || !rightV1) return null;
+  return identifierEdgeDedupKey(
+    leftV1,
+    hashIdentifier(row.entity_a_value),
+    rightV1,
+    hashIdentifier(row.entity_b_value)
+  );
+}
+
+/** Canonical dedup key for identifier_co_occurrence_edges rows. */
+export function identifierEdgeDedupKey(
+  leftType: string,
+  leftHash: string,
+  rightType: string,
+  rightHash: string
+): string {
+  const { left, right } = canonicalizeEdgePair(
+    { type: leftType as V1IdentifierType, hash: leftHash },
+    { type: rightType as V1IdentifierType, hash: rightHash }
+  );
+  return `${left.type}:${left.hash}|${right.type}:${right.hash}`;
+}
+
+/** Reverse map batch hashes to legacy plaintext values for source-agnostic CoOccurrence output. */
+export function buildHashToLegacyLookup(orders: NormalisedOrder[]): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const order of orders) {
+    const raw = order as NormalisedOrder & {
+      _rawEmail?: string;
+      _rawAddress?: string;
+      _rawBillingAddress?: string;
+      _rawPhone?: string;
+    };
+    if (order.emailHash && raw._rawEmail) {
+      const norm = normaliseEmail(raw._rawEmail);
+      if (norm) map.set(`normalized_email_hash:${order.emailHash}`, norm);
+    }
+    if (order.addressHash && raw._rawAddress) {
+      const norm = normaliseAddress(raw._rawAddress);
+      if (norm) map.set(`full_normalized_shipping_address_hash:${order.addressHash}`, norm);
+    }
+    if (order.billingAddressHash && raw._rawBillingAddress) {
+      const norm = normaliseAddress(raw._rawBillingAddress);
+      if (norm) map.set(`full_normalized_billing_address_hash:${order.billingAddressHash}`, norm);
+    }
+    if (order.phoneHash && raw._rawPhone) {
+      const norm = normalisePhone(raw._rawPhone);
+      if (norm) map.set(`phone_e164_hash:${order.phoneHash}`, norm);
+    }
+  }
+  return map;
+}
+
+function legacyEntityValueFromV1(
+  v1Type: string,
+  hash: string,
+  hashToLegacy: Map<string, string>
+): string {
+  return hashToLegacy.get(`${v1Type}:${hash}`) ?? hash;
+}
+
+/** Map a new-table edge row to legacy CoOccurrence shape (source-agnostic output). */
+export function identifierEdgeToCoOccurrence(
+  row: IdentifierCoOccurrenceEdgeRow,
+  hashToLegacy: Map<string, string>
+): CoOccurrence {
+  const entityAType =
+    V1_TO_LEGACY_ENTITY_TYPE[row.left_identifier_type as V1IdentifierType] ??
+    row.left_identifier_type;
+  const entityBType =
+    V1_TO_LEGACY_ENTITY_TYPE[row.right_identifier_type as V1IdentifierType] ??
+    row.right_identifier_type;
+  return {
+    id: row.id,
+    entity_a_type: entityAType,
+    entity_a_value: legacyEntityValueFromV1(
+      row.left_identifier_type,
+      row.left_identifier_hash,
+      hashToLegacy
+    ),
+    entity_b_type: entityBType,
+    entity_b_value: legacyEntityValueFromV1(
+      row.right_identifier_type,
+      row.right_identifier_hash,
+      hashToLegacy
+    ),
+    co_occurrence_count: row.seen_count,
+    first_seen: row.first_seen_at,
+    last_seen: row.last_seen_at,
+  };
+}
+
+/**
+ * Merge legacy + new co-occurrence sources (parallel dual-read, pre-backfill).
+ * New-table rows are authoritative when both sources share a v1 dedup key.
+ * ip/card legacy pairs pass through without dedup (no v1 mapping).
+ */
+export function mergeCoOccurrenceSources(
+  legacyRows: CoOccurrence[],
+  newRows: IdentifierCoOccurrenceEdgeRow[],
+  hashToLegacy: Map<string, string>
+): CoOccurrence[] {
+  const byKey = new Map<string, CoOccurrence>();
+  for (const row of newRows) {
+    const key = identifierEdgeDedupKey(
+      row.left_identifier_type,
+      row.left_identifier_hash,
+      row.right_identifier_type,
+      row.right_identifier_hash
+    );
+    byKey.set(key, identifierEdgeToCoOccurrence(row, hashToLegacy));
+  }
+
+  const merged: CoOccurrence[] = Array.from(byKey.values());
+  const legacyOnlyIds = new Set<string>();
+
+  for (const legacy of legacyRows) {
+    const key = legacyCoOccurrenceDedupKey(legacy);
+    if (key === null) {
+      if (!legacyOnlyIds.has(legacy.id)) {
+        legacyOnlyIds.add(legacy.id);
+        merged.push(legacy);
+      }
+      continue;
+    }
+    if (!byKey.has(key)) {
+      byKey.set(key, legacy);
+      merged.push(legacy);
+    }
+  }
+
+  return merged;
+}
+
+function extractLegacyPlaintextValues(orders: NormalisedOrder[]): {
+  emails: string[];
+  ips: string[];
+  addresses: string[];
+  cards: string[];
+} {
+  const emails = new Set<string>();
+  const ips = new Set<string>();
+  const addresses = new Set<string>();
+  const cards = new Set<string>();
+
+  for (const order of orders) {
+    const raw = order as NormalisedOrder & {
+      _rawEmail?: string;
+      _rawIP?: string | null;
+      _rawAddress?: string | null;
+      _rawCardLast4?: string | null;
+    };
+    const email = raw._rawEmail ? normaliseEmail(raw._rawEmail) : null;
+    if (email) emails.add(email);
+    const ip = raw._rawIP ? normaliseIP(raw._rawIP) : null;
+    if (ip) ips.add(ip);
+    const address = raw._rawAddress ? normaliseAddress(raw._rawAddress) : null;
+    if (address) addresses.add(address);
+    const card = raw._rawCardLast4 ? normaliseCard(raw._rawCardLast4) : null;
+    if (card) cards.add(card);
+  }
+
+  return {
+    emails: Array.from(emails),
+    ips: Array.from(ips),
+    addresses: Array.from(addresses),
+    cards: Array.from(cards),
+  };
+}
+
+function indexCoOccurrencesByEntity(rows: CoOccurrence[]): Map<string, CoOccurrence[]> {
+  const map = new Map<string, CoOccurrence[]>();
+  const seenIds = new Set<string>();
+  for (const co of rows) {
+    if (seenIds.has(co.id)) continue;
+    seenIds.add(co.id);
+    const keyA = `${co.entity_a_type}:${co.entity_a_value}`;
+    const keyB = `${co.entity_b_type}:${co.entity_b_value}`;
+    if (!map.has(keyA)) map.set(keyA, []);
+    if (!map.has(keyB)) map.set(keyB, []);
+    map.get(keyA)!.push(co);
+    map.get(keyB)!.push(co);
+  }
+  return map;
 }
 
 export interface FastScoringContext {
@@ -341,9 +567,17 @@ export async function buildFastContext(
   const allAddresses = Array.from(new Set(
     orders.map((o) => o.addressHash).filter((v): v is string => Boolean(v))
   ));
+  const allBillingAddresses = Array.from(new Set(
+    orders.map((o) => o.billingAddressHash).filter((v): v is string => Boolean(v))
+  ));
+  const allPhoneHashes = Array.from(new Set(
+    orders.map((o) => o.phoneHash).filter((v): v is string => Boolean(v))
+  ));
   const allCards = Array.from(new Set(
     orders.map((o) => o.cardLast4).filter((v): v is string => Boolean(v))
   ));
+  const legacyPlaintext = extractLegacyPlaintextValues(orders);
+  const hashToLegacy = buildHashToLegacyLookup(orders);
 
   // -----------------------------------------------------------------------
   // Chunked IN() queries.
@@ -434,11 +668,93 @@ export async function buildFastContext(
     return results.flat();
   }
 
+  const IDENTIFIER_EDGE_COLS =
+    'id,left_identifier_type,left_identifier_hash,right_identifier_type,right_identifier_hash,' +
+    'seen_count,first_seen_at,last_seen_at';
+
+  async function fetchIdentifierCoBatch(
+    side: 'left' | 'right',
+    identifierType: string,
+    hashes: string[]
+  ): Promise<IdentifierCoOccurrenceEdgeRow[]> {
+    if (hashes.length === 0) return [];
+    const typeCol = side === 'left' ? 'left_identifier_type' : 'right_identifier_type';
+    const hashCol = side === 'left' ? 'left_identifier_hash' : 'right_identifier_hash';
+    const chunks: string[][] = [];
+    for (let i = 0; i < hashes.length; i += IN_CHUNK) chunks.push(hashes.slice(i, i + IN_CHUNK));
+    const results = await Promise.all(
+      chunks.map((chunk) =>
+        fetchSemaphore(async () => {
+          const r = await withReadRetry(async () => {
+            const { data, error } = await supabase
+              .from(TABLES.IDENTIFIER_CO_OCCURRENCE_EDGES)
+              .select(IDENTIFIER_EDGE_COLS)
+              .eq(typeCol, identifierType)
+              .in(hashCol, chunk);
+            if (error) throw new Error(error.message);
+            return (data as unknown as IdentifierCoOccurrenceEdgeRow[]) ?? [];
+          });
+          readHealth.fastContextReadRetries += r.retries;
+          if (r.failed) {
+            readHealth.fastContextReadFailures++;
+            console.error(
+              `[fastContext] identifier_co_occurrence_edges ${identifierType}/${side} fetch failed (after retries): ${String((r.lastError as Error)?.message ?? r.lastError)}`
+            );
+            return [] as IdentifierCoOccurrenceEdgeRow[];
+          }
+          return r.value ?? [];
+        })
+      )
+    );
+    return results.flat();
+  }
+
+  async function fetchAllIdentifierCoOccurrences(): Promise<IdentifierCoOccurrenceEdgeRow[]> {
+    const v1Fetches: Array<Promise<IdentifierCoOccurrenceEdgeRow[]>> = [
+      fetchIdentifierCoBatch('left', 'normalized_email_hash', allEmails),
+      fetchIdentifierCoBatch('right', 'normalized_email_hash', allEmails),
+      fetchIdentifierCoBatch('left', 'full_normalized_shipping_address_hash', allAddresses),
+      fetchIdentifierCoBatch('right', 'full_normalized_shipping_address_hash', allAddresses),
+      fetchIdentifierCoBatch('left', 'full_normalized_billing_address_hash', allBillingAddresses),
+      fetchIdentifierCoBatch('right', 'full_normalized_billing_address_hash', allBillingAddresses),
+      fetchIdentifierCoBatch('left', 'phone_e164_hash', allPhoneHashes),
+      fetchIdentifierCoBatch('right', 'phone_e164_hash', allPhoneHashes),
+    ];
+    const rows = (await Promise.all(v1Fetches)).flat();
+    const byId = new Map<string, IdentifierCoOccurrenceEdgeRow>();
+    for (const row of rows) {
+      if (!byId.has(row.id)) byId.set(row.id, row);
+    }
+    return Array.from(byId.values());
+  }
+
+  async function fetchAllLegacyCoOccurrences(): Promise<CoOccurrence[]> {
+    const legacyFetches = await Promise.all([
+      fetchCoBatch('a', 'email',      legacyPlaintext.emails),
+      fetchCoBatch('b', 'email',      legacyPlaintext.emails),
+      fetchCoBatch('a', 'ip',         legacyPlaintext.ips),
+      fetchCoBatch('b', 'ip',         legacyPlaintext.ips),
+      fetchCoBatch('a', 'address',    legacyPlaintext.addresses),
+      fetchCoBatch('b', 'address',    legacyPlaintext.addresses),
+      fetchCoBatch('a', 'card_last4', legacyPlaintext.cards),
+      fetchCoBatch('b', 'card_last4', legacyPlaintext.cards),
+    ]);
+    return legacyFetches.flat();
+  }
+
+  async function fetchMergedCoOccurrences(): Promise<CoOccurrence[]> {
+    const [legacyRows, newRows] = await Promise.all([
+      fetchAllLegacyCoOccurrences(),
+      fetchAllIdentifierCoOccurrences(),
+    ]);
+    return mergeCoOccurrenceSources(legacyRows, newRows, hashToLegacy);
+  }
+
   // -----------------------------------------------------------------------
   // All Supabase reads in ONE parallel round-trip.
-  // Entity history (4 types), co-occurrences (8 directions), signal weights,
-  // and cross-merchant profiles all fire simultaneously — previously these
-  // were three sequential await stages costing 3× the wall-clock latency.
+  // Entity history (4 types), co-occurrences (legacy + new graph, parallel merge),
+  // signal weights, and cross-merchant profiles all fire simultaneously —
+  // previously these were three sequential await stages costing 3× the wall-clock latency.
   // The RPC has a 10-second safety timeout so it never blocks the pipeline.
   // -----------------------------------------------------------------------
   const [
@@ -447,7 +763,7 @@ export async function buildFastContext(
     addressHistory,
     cardHistory,
     { data: weightAdjustments },
-    coArrays,
+    mergedCoRows,
     crossMerchantResult,
   ] = await Promise.all([
     fetchEntityBatch('email',      allEmails),
@@ -456,17 +772,7 @@ export async function buildFastContext(
     fetchEntityBatch('card_last4', allCards),
     // Phase 6 — adaptive weights. Tolerate missing table gracefully.
     supabase.from('signal_performance').select('signal_name, weight_adjustment'),
-    // All co-occurrence directions in parallel
-    Promise.all([
-      fetchCoBatch('a', 'email',      allEmails),
-      fetchCoBatch('b', 'email',      allEmails),
-      fetchCoBatch('a', 'ip',         allIPs),
-      fetchCoBatch('b', 'ip',         allIPs),
-      fetchCoBatch('a', 'address',    allAddresses),
-      fetchCoBatch('b', 'address',    allAddresses),
-      fetchCoBatch('a', 'card_last4', allCards),
-      fetchCoBatch('b', 'card_last4', allCards),
-    ]),
+    fetchMergedCoOccurrences(),
     // §1.2 — Cross-merchant profiles.
     //
     // PERF (2026-05-03): the previous implementation pulled up to 10 000
@@ -496,20 +802,8 @@ export async function buildFastContext(
   const historicalAddressMap = new Map(addressHistory.map((e: FraudEntity) => [e.entity_value, e]));
   const historicalCardMap    = new Map(cardHistory.map((e: FraudEntity)    => [e.entity_value, e]));
 
-  const seenCoIds = new Set<string>();
-  const historicalCoOccurrenceMap = new Map<string, CoOccurrence[]>();
-  for (const arr of coArrays) {
-    for (const co of arr) {
-      if (seenCoIds.has(co.id)) continue;
-      seenCoIds.add(co.id);
-      const keyA = `${co.entity_a_type}:${co.entity_a_value}`;
-      const keyB = `${co.entity_b_type}:${co.entity_b_value}`;
-      if (!historicalCoOccurrenceMap.has(keyA)) historicalCoOccurrenceMap.set(keyA, []);
-      if (!historicalCoOccurrenceMap.has(keyB)) historicalCoOccurrenceMap.set(keyB, []);
-      historicalCoOccurrenceMap.get(keyA)!.push(co);
-      historicalCoOccurrenceMap.get(keyB)!.push(co);
-    }
-  }
+  const historicalCoOccurrenceMap = indexCoOccurrencesByEntity(mergedCoRows);
+  const seenCoIds = new Set(mergedCoRows.map((co) => co.id));
 
   const signalWeightAdjustments: Record<string, number> = {};
   for (const row of weightAdjustments ?? []) {

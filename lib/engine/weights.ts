@@ -103,6 +103,28 @@ export const IDENTITY_SIGNAL_WEIGHTS = {
 
 export type IdentitySignalKey = keyof typeof IDENTITY_SIGNAL_WEIGHTS;
 
+/**
+ * Canonical weights projected onto the v2 `identifier_type` enum, used by the
+ * v2 resolution engine (lib/identity/resolver.ts) to score identity clusters.
+ * Every value is derived from IDENTITY_SIGNAL_WEIGHTS / SIGNAL_WEIGHTS above —
+ * no independent numbers. Mapping rationale (set at the 2026-06-11 v2 cutover):
+ * payment_fingerprint ≅ card; billing mirrors shipping; email_root adds no
+ * weight beyond email (it is a derived alias); platform/helpdesk ids are
+ * email-strength hard links; ip and name are weak bridging signals that never
+ * claim identity membership and carry no membership weight here.
+ */
+export const V2_IDENTIFIER_TYPE_WEIGHTS: Record<string, number> = {
+  email: IDENTITY_SIGNAL_WEIGHTS.email,
+  email_root: 0,
+  phone: IDENTITY_SIGNAL_WEIGHTS.phone,
+  shipping_address: IDENTITY_SIGNAL_WEIGHTS.shipping_address,
+  billing_address: IDENTITY_SIGNAL_WEIGHTS.shipping_address,
+  address_unit: 0,
+  payment_fingerprint: IDENTITY_SIGNAL_WEIGHTS.card,
+  platform_customer_id: IDENTITY_SIGNAL_WEIGHTS.email,
+  helpdesk_contact_id: IDENTITY_SIGNAL_WEIGHTS.email,
+};
+
 // =============================================================================
 // CONFIDENCE THRESHOLDS AND GRADE FUNCTIONS — SINGLE SOURCE OF TRUTH
 // =============================================================================

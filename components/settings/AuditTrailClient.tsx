@@ -118,7 +118,7 @@ export default function AuditTrailClient({ actorsByUserId }: AuditTrailClientPro
           <a
             href={exportHref}
             className="inline-flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-xs font-semibold hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1"
-            style={{ borderColor: 'var(--surface-border)', color: 'var(--ink-secondary)', outlineColor: 'var(--accent)' }}
+            style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)', outlineColor: 'var(--accent)' }}
           >
             <Download className="h-3.5 w-3.5" />
             Export CSV
@@ -127,7 +127,7 @@ export default function AuditTrailClient({ actorsByUserId }: AuditTrailClientPro
       }
     >
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        <Filter className="h-4 w-4" style={{ color: 'var(--ink-tertiary)' }} aria-hidden="true" />
+        <Filter className="h-4 w-4" style={{ color: 'var(--text-tertiary)' }} aria-hidden="true" />
         <label className="sr-only" htmlFor="audit-resource-filter">Filter by resource</label>
         <select
           id="audit-resource-filter"
@@ -135,9 +135,9 @@ export default function AuditTrailClient({ actorsByUserId }: AuditTrailClientPro
           onChange={(event) => setResourceType(event.target.value)}
           className="rounded-md px-3 py-1.5 text-xs focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1"
           style={{
-            background: 'var(--surface-input)',
-            border: '1px solid var(--surface-border)',
-            color: 'var(--ink-primary)',
+            background: 'var(--surface-sunken)',
+            border: '1px solid var(--border)',
+            color: 'var(--text-primary)',
             outlineColor: 'var(--accent)',
           }}
         >
@@ -148,22 +148,22 @@ export default function AuditTrailClient({ actorsByUserId }: AuditTrailClientPro
       </div>
 
       {loading ? (
-        <p className="text-sm" style={{ color: 'var(--ink-tertiary)' }}>Loading audit events…</p>
+        <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>Loading audit events…</p>
       ) : error ? (
         <p className="text-sm" style={{ color: 'var(--risk-critical-fg)' }}>{error}</p>
       ) : rows.length === 0 ? (
-        <p className="text-sm" style={{ color: 'var(--ink-tertiary)' }}>No audit events recorded yet.</p>
+        <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>No audit events recorded yet.</p>
       ) : (
-        <div className="overflow-x-auto rounded-md border" style={{ borderColor: 'var(--surface-border)' }}>
+        <div className="overflow-x-auto rounded-[var(--radius-md)] border bg-[var(--surface)]" style={{ borderColor: 'var(--border)', boxShadow: 'var(--shadow-1)' }}>
           <table className="w-full text-sm">
             <thead>
-              <tr style={{ background: 'var(--surface-muted)', color: 'var(--ink-tertiary)' }}>
-                <th className="px-4 py-2 text-left text-xs font-semibold w-8" aria-label="Expand details" />
-                <th className="px-4 py-2 text-left text-xs font-semibold">Time</th>
-                <th className="px-4 py-2 text-left text-xs font-semibold">Action</th>
-                <th className="px-4 py-2 text-left text-xs font-semibold">Object</th>
-                <th className="px-4 py-2 text-left text-xs font-semibold">Actor</th>
-                <th className="px-4 py-2 text-left text-xs font-semibold">Summary</th>
+              <tr style={{ background: 'var(--surface)', color: 'var(--text-tertiary)', borderBottom: '1px solid var(--border)' }}>
+                <th className="w-8 px-4 py-3 text-left text-xs font-medium" aria-label="Expand details" />
+                <th className="px-4 py-3 text-left text-xs font-medium">Time</th>
+                <th className="px-4 py-3 text-left text-xs font-medium">Action</th>
+                <th className="px-4 py-3 text-left text-xs font-medium">Object</th>
+                <th className="px-4 py-3 text-left text-xs font-medium">Actor</th>
+                <th className="px-4 py-3 text-left text-xs font-medium">Summary</th>
               </tr>
             </thead>
             <tbody>
@@ -177,13 +177,13 @@ export default function AuditTrailClient({ actorsByUserId }: AuditTrailClientPro
 
                 return (
                   <Fragment key={rowKey}>
-                    <tr className="border-t" style={{ borderColor: 'var(--surface-border)' }}>
+                    <tr className="border-t" style={{ borderColor: 'var(--border-muted)' }}>
                       <td className="px-2 py-3">
                         {details.length > 0 ? (
                           <button
                             type="button"
                             onClick={() => setExpandedId(isExpanded ? null : rowKey)}
-                            className="inline-flex h-7 w-7 items-center justify-center rounded-md hover:bg-[var(--surface-overlay)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1"
+                            className="inline-flex h-7 w-7 items-center justify-center rounded-md hover:bg-[var(--surface)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1"
                             style={{ outlineColor: 'var(--accent)' }}
                             aria-expanded={isExpanded}
                             aria-label={isExpanded ? 'Hide metadata' : 'Show metadata'}
@@ -192,13 +192,13 @@ export default function AuditTrailClient({ actorsByUserId }: AuditTrailClientPro
                           </button>
                         ) : null}
                       </td>
-                      <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: 'var(--ink-tertiary)' }}>
+                      <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: 'var(--text-tertiary)' }}>
                         {formatTimestamp(row.created_at)}
                       </td>
-                      <td className="px-4 py-3 font-semibold" style={{ color: 'var(--ink-primary)' }}>
+                      <td className="px-4 py-3 font-semibold" style={{ color: 'var(--text-primary)' }}>
                         {auditActionLabel(row.action, row.resource_type)}
                       </td>
-                      <td className="px-4 py-3 text-xs" style={{ color: 'var(--ink-secondary)' }}>
+                      <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-secondary)' }}>
                         {claimHref ? (
                           <Link
                             href={claimHref}
@@ -212,23 +212,23 @@ export default function AuditTrailClient({ actorsByUserId }: AuditTrailClientPro
                           auditResourceSummary(row.resource_type, row.resource_id)
                         )}
                       </td>
-                      <td className="px-4 py-3 text-xs" style={{ color: 'var(--ink-secondary)' }}>
+                      <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-secondary)' }}>
                         {actorLabel(row)}
                       </td>
-                      <td className="px-4 py-3 text-xs max-w-xs truncate" style={{ color: 'var(--ink-secondary)' }} title={rowSummary(row)}>
+                      <td className="px-4 py-3 text-xs max-w-xs truncate" style={{ color: 'var(--text-secondary)' }} title={rowSummary(row)}>
                         {rowSummary(row)}
                       </td>
                     </tr>
                     {isExpanded && details.length > 0 ? (
-                      <tr className="border-t" style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-overlay)' }}>
+                      <tr className="border-t" style={{ borderColor: 'var(--border-muted)', background: 'var(--surface)' }}>
                         <td colSpan={6} className="px-4 py-3">
                           <dl className="grid gap-2 sm:grid-cols-2">
                             {details.map(([key, value]) => (
                               <div key={key}>
-                                <dt className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--ink-tertiary)' }}>
+                                <dt className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-tertiary)' }}>
                                   {key.replace(/_/g, ' ')}
                                 </dt>
-                                <dd className="mt-0.5 font-mono text-xs break-all" style={{ color: 'var(--ink-secondary)' }}>
+                                <dd className="mt-0.5 font-mono text-xs break-all" style={{ color: 'var(--text-secondary)' }}>
                                   {typeof value === 'object' ? JSON.stringify(value) : String(value)}
                                 </dd>
                               </div>

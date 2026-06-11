@@ -140,9 +140,9 @@ describe('claims queue UI helpers', () => {
 
   it('formats result text for unread and active views', () => {
     expect(formatClaimsResultText({ showing: 25, totalMatching: 55, view: { kind: 'active' } }))
-      .toBe('Showing 25 of 55 active claims');
+      .toBe('Showing 25 of 55 claim evidence reviews');
     expect(formatClaimsResultText({ showing: 12, totalMatching: 54, view: { kind: 'unread' } }))
-      .toBe('Showing 12 of 54 new unread claims');
+      .toBe('Showing 12 of 54 claims with new evidence');
   });
 
   it('resolves list view from query params', () => {

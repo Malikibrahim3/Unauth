@@ -82,7 +82,7 @@ export default async function UploadPage({ searchParams }: UploadPageProps) {
             </div>
           )}
           <UploadClient recentImports={recentImports} />
-          <p className="mt-6 text-center text-caption" style={{ color: 'var(--ink-tertiary)' }}>
+          <p className="mt-6 text-center text-caption" style={{ color: 'var(--text-tertiary)' }}>
             CSV only · up to 200 MB · 500k rows per file · map columns, then import
           </p>
         </div>

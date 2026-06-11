@@ -57,7 +57,7 @@ export function AuditRunPageView(props: AuditRunPageViewProps) {
       }
       statusBadge={statusBadge}
     >
-      <Suspense fallback={<div className="p-6 text-body-sm" style={{ color: 'var(--ink-tertiary)' }}>Loading…</div>}>
+      <Suspense fallback={<div className="p-6 text-body-sm" style={{ color: 'var(--text-tertiary)' }}>Loading…</div>}>
         <AuditTabs
           defaultTab={defaultTab}
           tabs={[

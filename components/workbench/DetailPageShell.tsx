@@ -2,6 +2,14 @@ import { type ReactNode } from 'react';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import {
+  PAGE_BAND_STYLE,
+  PAGE_EYEBROW_STYLE,
+  PAGE_HEADER_STYLE,
+  PAGE_SHELL_INNER_CLASS,
+  PAGE_SUBTITLE_STYLE,
+  PAGE_TITLE_STYLE,
+} from '@/components/ui/pageShellStyles';
 
 interface DetailPageShellProps {
   /** Back link shown above the title */
@@ -42,32 +50,23 @@ export function DetailPageShell({
   className,
 }: DetailPageShellProps) {
   return (
-    <div className={cn('p-3 md:p-5', className)}>
-      <div
-        className="overflow-hidden border"
-        style={{
-          borderColor: 'var(--surface-border)',
-          borderRadius: 'var(--radius-md)',
-          background: 'var(--surface-raised)',
-          boxShadow: 'var(--shadow-1)',
-        }}
-      >
+    <div className={cn(className)} style={PAGE_BAND_STYLE}>
+      <div>
         {/* Header */}
         <header
-          className="border-b"
+          className={PAGE_SHELL_INNER_CLASS}
           style={{
-            borderColor: 'var(--surface-border)',
-            background: 'var(--surface-raised)',
-            padding: tabs ? '16px 16px 0' : '14px 16px',
+            ...PAGE_HEADER_STYLE,
+            paddingBottom: tabs ? 0 : undefined,
           }}
         >
           {/* Back / eyebrow row */}
           {(backHref || eyebrow) && (
-            <div className="flex items-center gap-2 mb-2" style={{ fontSize: 12, color: 'var(--ink-tertiary)' }}>
+            <div className="mb-3 flex items-center gap-2" style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>
               {backHref && (
                 <Link
                   href={backHref}
-                  className="inline-flex items-center gap-1 transition-colors hover:text-[var(--ink-secondary)]"
+                  className="inline-flex items-center gap-1 transition-colors hover:text-[var(--text-secondary)]"
                   style={{ color: 'inherit' }}
                 >
                   <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
@@ -77,7 +76,7 @@ export function DetailPageShell({
               {backHref && eyebrow && (
                 <span aria-hidden="true" style={{ opacity: 0.4 }}>›</span>
               )}
-              {eyebrow && <span>{eyebrow}</span>}
+              {eyebrow && <span style={PAGE_EYEBROW_STYLE}>{eyebrow}</span>}
             </div>
           )}
 
@@ -85,13 +84,13 @@ export function DetailPageShell({
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="t-heading min-w-0 truncate" style={{ color: 'var(--ink-primary)' }}>
+                <h1 className="t-page-title min-w-0 truncate" style={PAGE_TITLE_STYLE}>
                   {title}
                 </h1>
                 {statusBadge}
               </div>
               {subtitle && (
-                <p className="mt-1 text-body-sm" style={{ color: 'var(--ink-secondary)' }}>
+                <p className="mt-2 text-body-sm" style={PAGE_SUBTITLE_STYLE}>
                   {subtitle}
                 </p>
               )}
@@ -102,7 +101,7 @@ export function DetailPageShell({
           </div>
 
           {/* Tabs — flush to header bottom edge */}
-          {tabs && <div className="mt-3">{tabs}</div>}
+          {tabs && <div className="mt-5">{tabs}</div>}
         </header>
 
         {/* Metric strip */}
@@ -110,17 +109,14 @@ export function DetailPageShell({
 
         {/* Body */}
         {rail ? (
-          <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_380px]">
-            <div
-              className="min-w-0 border-r"
-              style={{ borderColor: 'var(--surface-border)' }}
-            >
+          <div className={`${PAGE_SHELL_INNER_CLASS} grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_380px] xl:items-start`}>
+            <div className="min-w-0">
               {children}
             </div>
             <aside className="min-w-0">{rail}</aside>
           </div>
         ) : (
-          <div>{children}</div>
+          <div className={PAGE_SHELL_INNER_CLASS}>{children}</div>
         )}
       </div>
     </div>

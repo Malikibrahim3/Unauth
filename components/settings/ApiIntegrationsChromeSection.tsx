@@ -5,8 +5,8 @@ import { ExternalLink } from 'lucide-react';
 export function ApiIntegrationsChromeSection() {
   return (
     <section
-      className="flex gap-3 rounded-lg border p-4"
-      style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-raised)' }}
+      className="flex gap-3 rounded-md border p-4"
+      style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
     >
       <Image
         src="/integrations/chrome.svg"
@@ -22,13 +22,13 @@ export function ApiIntegrationsChromeSection() {
           <Link
             href="/settings/integrations/chrome"
             className="inline-flex shrink-0 items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium"
-            style={{ borderColor: 'var(--surface-border)', color: 'var(--text)' }}
+            style={{ borderColor: 'var(--border)', color: 'var(--text)' }}
           >
             Install
             <ExternalLink className="h-3 w-3" />
           </Link>
         </div>
-        <p className="mt-1 text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+        <p className="mt-1 text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
           Look up customers from any page with one click.
         </p>
       </div>

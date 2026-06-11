@@ -99,6 +99,7 @@ export type ExtractedOrderContext = {
   tracking_number: string | null;
   days_since_order_at_claim: number | null;
   days_since_delivery_at_claim: number | null;
+  time_to_claim_days: number | null;
   payment_method: string | null;
   discount_code_used: boolean | null;
   discount_amount: number | null;
@@ -191,6 +192,7 @@ export function extractCommerceSignals(rawTicket: unknown): ExtractedCommerceSig
       tracking_number: asString(order?.tracking_number ?? fulfillment?.tracking_number),
       days_since_order_at_claim: diffDays(orderCreatedAt, claimedAt),
       days_since_delivery_at_claim: diffDays(deliveredAt, claimedAt),
+      time_to_claim_days: diffDays(deliveredAt, claimedAt),
       payment_method: asString(order?.payment_method),
       discount_code_used: discountCodeUsed,
       discount_amount: asNumber(order?.total_discounts ?? order?.discount_amount),

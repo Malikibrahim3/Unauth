@@ -14,8 +14,8 @@ export const DECISION_LABELS: Record<string, string> = {
   escalated: 'Escalated for review',
   partial_refund: 'Partial resolution',
   full_refund: 'Full resolution',
-  chargeback_disputed: 'CB disputed',
-  blacklist: 'Legacy restricted action',
+  chargeback_disputed: 'Chargeback disputed',
+  blacklist: 'Escalated hold',
   internal_watch: 'Internal watch',
   no_action: 'No further action',
 };
@@ -57,21 +57,21 @@ export type EvidencePackageRow = {
 };
 
 export const STATUS_META: Record<string, { label: string; bg: string; text: string }> = {
-  open: { label: 'Open', bg: 'var(--bg-subtle)', text: 'var(--text-muted)' },
-  pending: { label: 'Pending external evidence', bg: 'var(--sev-medium-fill,#FEF3C7)', text: 'var(--sev-medium,#B45309)' },
-  escalated: { label: 'Escalated', bg: 'var(--risk-critical-bg,#FEE2E2)', text: 'var(--risk-critical,#991B1B)' },
-  resolved_refunded: { label: 'Resolved: refunded', bg: 'var(--sev-clear-fill,#DCFCE7)', text: 'var(--sev-clear,#166534)' },
-  resolved_won: { label: 'Resolved: won', bg: 'var(--sev-clear-fill,#DCFCE7)', text: 'var(--sev-clear,#166534)' },
-  resolved_lost: { label: 'Resolved: lost', bg: 'var(--sev-high-fill,#FEE2E2)', text: 'var(--sev-high,#991B1B)' },
-  resolved_denied: { label: 'Resolved: denied', bg: 'var(--bg-subtle)', text: 'var(--text-muted)' },
-  resolved_exchanged: { label: 'Resolved: exchanged', bg: 'var(--sev-clear-fill,#DCFCE7)', text: 'var(--sev-clear,#166534)' },
-  voided: { label: 'Voided', bg: 'var(--bg-subtle)', text: 'var(--text-muted)' },
-  stale: { label: 'Stale', bg: 'var(--bg-subtle)', text: 'var(--text-muted)' },
+  open: { label: 'Active', bg: 'var(--surface)', text: 'var(--text-secondary)' },
+  pending: { label: 'Waiting on source data', bg: 'var(--warning-bg)', text: 'var(--warning)' },
+  escalated: { label: 'High evidence', bg: 'var(--sev-definite-fill)', text: 'var(--success)' },
+  resolved_refunded: { label: 'Resolved: refunded', bg: 'var(--success-bg)', text: 'var(--success)' },
+  resolved_won: { label: 'Resolved: won', bg: 'var(--success-bg)', text: 'var(--success)' },
+  resolved_lost: { label: 'Resolved: lost', bg: 'var(--sev-definite-fill)', text: 'var(--success)' },
+  resolved_denied: { label: 'Resolved: denied', bg: 'var(--surface)', text: 'var(--text-secondary)' },
+  resolved_exchanged: { label: 'Resolved: exchanged', bg: 'var(--success-bg)', text: 'var(--success)' },
+  voided: { label: 'Voided', bg: 'var(--surface)', text: 'var(--text-secondary)' },
+  stale: { label: 'Stale', bg: 'var(--surface)', text: 'var(--text-secondary)' },
 };
 
 export const SLA_COLOUR_MAP: Record<string, { bg: string; text: string }> = {
-  normal: { bg: 'var(--bg-subtle)', text: 'var(--text-muted)' },
-  approaching: { bg: 'var(--sev-medium-fill,#FEF3C7)', text: 'var(--sev-medium,#B45309)' },
-  overdue: { bg: 'var(--sev-high-fill,#FEE2E2)', text: 'var(--sev-high,#991B1B)' },
-  resolved: { bg: 'var(--sev-clear-fill,#DCFCE7)', text: 'var(--sev-clear,#166534)' },
+  normal: { bg: 'var(--surface)', text: 'var(--text-secondary)' },
+  approaching: { bg: 'var(--warning-bg)', text: 'var(--warning)' },
+  overdue: { bg: 'var(--sev-definite-fill)', text: 'var(--success)' },
+  resolved: { bg: 'var(--success-bg)', text: 'var(--success)' },
 };

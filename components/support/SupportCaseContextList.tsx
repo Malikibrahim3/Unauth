@@ -41,7 +41,7 @@ function SupportCaseCards({ cases }: { cases: PublicSupportCaseContext[] }) {
           <div
             key={supportCase.id}
             className="rounded-md border p-3 text-sm"
-            style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)' }}
+            style={{ borderColor: 'var(--border-muted)', background: 'var(--bg-inset)' }}
           >
             <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
               <p className="font-semibold" style={{ color: 'var(--text)' }}>
@@ -56,41 +56,41 @@ function SupportCaseCards({ cases }: { cases: PublicSupportCaseContext[] }) {
                   className="text-xs underline"
                   style={{ color: 'var(--accent)' }}
                 >
-                  Open in helpdesk
+                  Open in {PROVIDER_LABELS[supportCase.provider] ?? supportCase.provider} →
                 </a>
               ) : null}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
               <div>
-                <span style={{ color: 'var(--text-muted)' }}>Status: </span>
+                <span style={{ color: 'var(--text-secondary)' }}>Status: </span>
                 <span style={{ color: 'var(--text)' }}>{supportCase.case_status ?? '-'}</span>
               </div>
               <div>
-                <span style={{ color: 'var(--text-muted)' }}>Link: </span>
+                <span style={{ color: 'var(--text-secondary)' }}>Link: </span>
                 <span style={{ color: 'var(--text)' }}>{supportCase.link_status}</span>
               </div>
               <div>
-                <span style={{ color: 'var(--text-muted)' }}>Claim reason: </span>
+                <span style={{ color: 'var(--text-secondary)' }}>Claim reason: </span>
                 <span style={{ color: 'var(--text)' }}>{supportCase.claim_reason ?? '-'}</span>
               </div>
               <div>
-                <span style={{ color: 'var(--text-muted)' }}>Order ref: </span>
+                <span style={{ color: 'var(--text-secondary)' }}>Order ref: </span>
                 <span style={{ color: 'var(--text)' }}>{supportCase.order_ref ?? supportCase.shopify_order_id ?? '-'}</span>
               </div>
             </div>
             {supportCase.customer_message_summary ? (
               <p className="mt-2 text-xs" style={{ color: 'var(--text)' }}>
-                <span style={{ color: 'var(--text-muted)' }}>Customer: </span>
+                <span style={{ color: 'var(--text-secondary)' }}>Customer: </span>
                 {supportCase.customer_message_summary}
               </p>
             ) : null}
             {supportCase.agent_notes_summary ? (
               <p className="mt-1 text-xs" style={{ color: 'var(--text)' }}>
-                <span style={{ color: 'var(--text-muted)' }}>Agent notes: </span>
+                <span style={{ color: 'var(--text-secondary)' }}>Outcome notes: </span>
                 {supportCase.agent_notes_summary}
               </p>
             ) : null}
-            <p className="mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>
+            <p className="mt-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
               Tags: {formatTags(supportCase.tags)}
               {supportCase.claim_candidate ? ' · Claim candidate (review only)' : ''}
             </p>
@@ -103,7 +103,7 @@ function SupportCaseCards({ cases }: { cases: PublicSupportCaseContext[] }) {
 
 export default function SupportCaseContextList({
   cases,
-  title = 'Support ticket context',
+  title = 'Helpdesk source record',
   bare = false,
   emptyMessage,
 }: {
@@ -114,7 +114,7 @@ export default function SupportCaseContextList({
 }) {
   if (cases.length === 0) {
     if (bare && emptyMessage) {
-      return <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{emptyMessage}</p>;
+      return <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{emptyMessage}</p>;
     }
     return null;
   }
@@ -125,11 +125,11 @@ export default function SupportCaseContextList({
 
   return (
     <section
-      className="rounded-xl p-4 border"
-      style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}
+      className="rounded-md p-4 border"
+      style={{ borderColor: 'var(--border-muted)', background: 'var(--surface)' }}
     >
       {title ? (
-        <p className="text-caption font-semibold mb-3" style={{ color: 'var(--ink-secondary)' }}>
+        <p className="text-caption font-semibold mb-3" style={{ color: 'var(--text-secondary)' }}>
           {title}
         </p>
       ) : null}

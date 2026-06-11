@@ -2,7 +2,7 @@ import { GRADE_COLOURS, GRADE_LABELS } from '@/lib/utils/confidenceStyles';
 import { formatCurrencyNullable } from '@/lib/utils/format';
 import type { ConnectionState } from '@/lib/connections/getConnectionState';
 import type { ClaimOpsMetrics } from '@/lib/claims/reporting';
-import type { GradeBucket, GradeBucketDisplay, RatePoint, RunSummary, TxGradeRow } from '@/app/(app)/reports/reportsPageTypes';
+import type { ClaimRow, ClaimTypeBreakdown, GradeBucket, GradeBucketDisplay, OutcomeBreakdown, OutcomeRow, RunSummary, TxGradeRow } from '@/app/(app)/reports/reportsPageTypes';
 
 export const GRADE_SAMPLE_LIMIT = 2000;
 
@@ -22,23 +22,69 @@ export function liveSetupCta(connection: ConnectionState): { title: string; body
   if (connection.bothConnected) return null;
   if (connection.shopifyOnlyConnected) {
     return {
-      title: 'Connect your helpdesk to complete live reporting',
-      body: 'Shopify order data is flowing. Add your helpdesk to layer in claim history, dispute outcomes, and SLA tracking — the metrics below stay incomplete until then.',
+      title: 'Connect your helpdesk to complete live intelligence',
+      body: 'Shopify order data is flowing. Add your helpdesk to layer in claim history and dispute outcomes — claim metrics stay incomplete until then.',
       label: 'Connect helpdesk',
     };
   }
   if (connection.helpdeskOnlyConnected) {
     return {
-      title: 'Connect Shopify to complete live reporting',
+      title: 'Connect Shopify to complete live intelligence',
       body: 'Claim history is flowing from your helpdesk. Add Shopify to tie claims to real orders and customer purchase context.',
       label: 'Connect Shopify',
     };
   }
   return {
-    title: 'Connect Shopify and your helpdesk for live reports',
-    body: 'Live reporting combines Shopify order data with helpdesk claim history. Reconnect your live sources to monitor new orders, claims, and outcomes as they happen.',
+    title: 'Connect Shopify and your helpdesk for live intelligence',
+    body: 'Live analytics combines Shopify order data with helpdesk claim history. Reconnect your live sources to monitor new orders, claims, and outcomes as they happen.',
     label: 'Connect Shopify and your helpdesk',
   };
+}
+
+const CLAIM_TYPE_UI_LABELS: Record<string, string> = {
+  missing_parcel: 'Missing parcel',
+  inr: 'Item not received',
+  damaged: 'Damaged item',
+  wrong_item: 'Wrong item',
+  refund_request: 'Refund request',
+  chargeback: 'Chargeback',
+  return_abuse: 'Return abuse',
+  snad: 'Not as described',
+  other: 'Other',
+};
+
+const OUTCOME_DECISION_LABELS: Record<string, string> = {
+  approved: 'Approved',
+  denied: 'Denied',
+  partial: 'Partial refund',
+  chargeback: 'Chargeback',
+  withdrawn: 'Withdrawn',
+  escalated: 'Escalated',
+  other: 'Other',
+};
+
+export function buildClaimTypeBreakdown(claims: ClaimRow[]): ClaimTypeBreakdown {
+  const map = new Map<string, { count: number; value: number }>();
+  for (const claim of claims) {
+    const type = claim.claim_type ?? 'other';
+    const existing = map.get(type) ?? { count: 0, value: 0 };
+    map.set(type, { count: existing.count + 1, value: existing.value + (claim.amount_at_risk ?? 0) });
+  }
+  return Array.from(map.entries())
+    .map(([type, data]) => ({ type, label: CLAIM_TYPE_UI_LABELS[type] ?? type, ...data }))
+    .sort((a, b) => b.count - a.count);
+}
+
+export function buildOutcomeBreakdown(outcomes: OutcomeRow[]): OutcomeBreakdown {
+  const map = new Map<string, { count: number; value: number }>();
+  for (const outcome of outcomes) {
+    const decision = outcome.decision ?? 'other';
+    const existing = map.get(decision) ?? { count: 0, value: 0 };
+    map.set(decision, { count: existing.count + 1, value: existing.value + (outcome.amount_refunded ?? 0) });
+  }
+  return Array.from(map.entries())
+    .map(([decision, data]) => ({ decision, label: OUTCOME_DECISION_LABELS[decision] ?? decision, ...data }))
+    .sort((a, b) => b.count - a.count);
 }
 
 export function gradeFromTransaction(row: TxGradeRow): GradeBucket {
@@ -51,22 +97,11 @@ export function gradeFromTransaction(row: TxGradeRow): GradeBucket {
   return 'weak';
 }
 
-export function buildRatePoints(trend: RunSummary[]): { points: RatePoint[]; maxRate: number } {
-  const rates = trend.map((row) => (row.total_rows > 0 ? ((row.flagged_count ?? 0) / row.total_rows) * 100 : 0));
-  const maxRate = Math.max(4, ...rates);
-  if (rates.length === 0) return { points: [], maxRate };
-  if (rates.length === 1) {
-    const y = 190 - (rates[0] / maxRate) * 150;
-    return { points: [{ x: 48, y, rate: rates[0] }, { x: 472, y, rate: rates[0] }], maxRate };
-  }
-  return {
-    points: rates.map((rate, index) => ({
-      x: 34 + (index / (rates.length - 1)) * 452,
-      y: 190 - (rate / maxRate) * 150,
-      rate,
-    })),
-    maxRate,
-  };
+export function buildMatchRateTrend(trend: RunSummary[]): Array<{ label: string; value: number }> {
+  return trend.map((run) => ({
+    label: new Date(run.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+    value: run.total_rows > 0 ? Math.round(((run.flagged_count ?? 0) / run.total_rows) * 1000) / 10 : 0,
+  }));
 }
 
 export function buildGradeBuckets(gradeCounts: Record<GradeBucket, number>): GradeBucketDisplay[] {
@@ -77,16 +112,6 @@ export function buildGradeBuckets(gradeCounts: Record<GradeBucket, number>): Gra
     count: gradeCounts[key],
     pct: (gradeCounts[key] / gradeTotal) * 100,
   }));
-}
-
-export function buildChartPaths(points: RatePoint[]): { linePath: string; areaPath: string } {
-  const linePath = points.length > 0
-    ? points.map((point, index) => `${index === 0 ? 'M' : 'L'}${point.x.toFixed(1)} ${point.y.toFixed(1)}`).join(' ')
-    : '';
-  const areaPath = points.length > 0
-    ? `${linePath} L${points[points.length - 1].x.toFixed(1)} 198 L${points[0].x.toFixed(1)} 198 Z`
-    : '';
-  return { linePath, areaPath };
 }
 
 type NumericClaimMetricKey = {

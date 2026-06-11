@@ -24,7 +24,7 @@ export function ApiKeyRevokeDialog({
       role="dialog"
       aria-modal="true"
       aria-label="Revoke API key"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(20,24,33,0.45)] p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[color-mix(in srgb, var(--text-primary) 45%, transparent)] p-4"
     >
       <button
         type="button"
@@ -34,12 +34,12 @@ export function ApiKeyRevokeDialog({
       />
       <div
         className="relative z-10 w-full max-w-sm rounded-lg border p-6 shadow-lg"
-        style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-raised)' }}
+        style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
       >
         {revokeTarget ? (
           <>
             <h3 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Revoke API key?</h3>
-            <p className="mt-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+            <p className="mt-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
               Integrations using <strong>{revokeTarget.name}</strong> ({revokeTarget.key_prefix}) will stop working
               immediately.
             </p>
@@ -57,7 +57,7 @@ export function ApiKeyRevokeDialog({
                 disabled={busyId === revokeTarget.id}
                 onClick={() => onRevoke(revokeTarget)}
                 className="rounded-md px-3 py-2 text-sm font-medium disabled:opacity-50"
-                style={{ background: 'rgba(180, 50, 50, 0.12)', color: 'var(--text)' }}
+                style={{ background: 'color-mix(in srgb, var(--success) 12%, transparent)', color: 'var(--text)' }}
               >
                 Revoke key
               </button>

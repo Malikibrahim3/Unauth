@@ -31,7 +31,7 @@ export function UploadErrorBanner({
   onRecover,
 }: UploadErrorBannerProps) {
   return (
-    <div className="flex items-start gap-3 rounded-lg px-4 py-3 border" style={uploadCriticalPanelStyle}>
+    <div className="flex items-start gap-3 rounded-md px-4 py-3 border" style={uploadCriticalPanelStyle}>
       <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" style={uploadCriticalIconStyle} />
       <div className="flex-1">
         <p className="text-sm font-semibold" style={uploadTextStyle}>
@@ -72,7 +72,7 @@ export function UploadErrorBanner({
             {showErrorDetail && (
               <pre
                 className="mt-2 text-xs whitespace-pre-wrap break-all p-2 rounded"
-                style={{ background: 'var(--bg-inset)', color: 'var(--text-muted)', maxHeight: '200px', overflow: 'auto' }}
+                style={{ background: 'var(--bg-inset)', color: 'var(--text-secondary)', maxHeight: '200px', overflow: 'auto' }}
               >
                 {rawErrorDetail}
               </pre>

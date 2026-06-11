@@ -122,7 +122,7 @@ export function UploadColumnMappingPanel({
   const fuzzySet = new Set(fuzzyFields);
 
   return (
-    <div data-testid="column-mapping" className="rounded-lg p-5 space-y-4 border" style={uploadSubtleBorderStyle}>
+    <div data-testid="column-mapping" className="rounded-md p-5 space-y-4 border" style={uploadSubtleBorderStyle}>
       <div>
         <h3 className="text-sm font-semibold mb-0.5" style={uploadTextStyle}>
           We found {csvHeaders.length} columns in your CSV. Match them:
@@ -178,7 +178,7 @@ export function UploadColumnMappingPanel({
       ))}
 
       {COLLAPSED_OPTIONAL_FIELD_GROUPS.map((group) => (
-        <div key={group.label} className="rounded-lg overflow-hidden border" style={uploadSubtleBorderStyle}>
+        <div key={group.label} className="rounded-md overflow-hidden border" style={uploadSubtleBorderStyle}>
           <button
             type="button"
             onClick={onToggleAdvanced}
@@ -193,7 +193,7 @@ export function UploadColumnMappingPanel({
             <span className="text-xs font-semibold uppercase tracking-wide">{group.label}</span>
           </button>
           {advancedOpen && (
-            <div className="px-3 pb-3 space-y-1.5" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+            <div className="px-3 pb-3 space-y-1.5" style={{ borderTop: '1px solid var(--border-muted)' }}>
               <p className="text-xs pt-2" style={uploadSubtleTextStyle}>
                 These fields can be exported from some platforms but are not required. Advanced integrations (below)
                 provide richer signals.
@@ -238,7 +238,7 @@ export function UploadColumnMappingPanel({
             onClick={onContinue}
             disabled={!canSubmit}
             className="px-5 py-2 text-sm font-semibold rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:enabled:bg-[var(--accent-hover)]"
-            style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}
+            style={{ background: 'var(--accent)', color: 'white' }}
           >
             {canSubmit
               ? 'Continue →'

@@ -133,18 +133,18 @@ export default function WooCommerceConnectClient({ canManage }: Props) {
   }
 
   if (loading && !connection) {
-    return <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Loading…</p>;
+    return <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Loading…</p>;
   }
 
   return (
     <div className="space-y-6">
       {state.message && (
         <p
-          className="text-sm rounded-lg border px-3 py-2"
+          className="text-sm rounded-md border px-3 py-2"
           style={{
-            color: state.message.type === 'error' ? 'var(--sev-high)' : 'var(--sev-clear, #2f6b43)',
-            borderColor: 'var(--surface-border)',
-            background: 'var(--bg-surface)',
+            color: state.message.type === 'error' ? 'var(--sev-high)' : 'var(--success)',
+            borderColor: 'var(--border)',
+            background: 'var(--surface)',
           }}
         >
           {state.message.text}
@@ -153,14 +153,14 @@ export default function WooCommerceConnectClient({ canManage }: Props) {
 
       {isActive && connection && (
         <div
-          className="rounded-xl border p-5 space-y-3"
-          style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-raised)' }}
+          className="rounded-md border p-5 space-y-3"
+          style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
         >
           <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Connected</p>
-          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+          <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
             Store: {connection.store_url}
           </p>
-          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+          <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
             Webhook URL: {connection.webhook_url}
           </p>
           {connection.last_error && (
@@ -174,7 +174,7 @@ export default function WooCommerceConnectClient({ canManage }: Props) {
               onClick={() => void disconnect()}
               disabled={state.busy}
               className="text-xs font-medium underline"
-              style={{ color: 'var(--text-muted)' }}
+              style={{ color: 'var(--text-secondary)' }}
             >
               Disconnect
             </button>
@@ -185,7 +185,7 @@ export default function WooCommerceConnectClient({ canManage }: Props) {
       {canManage && (
         <form onSubmit={saveConnection} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
+            <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
               Store URL
             </label>
             <input
@@ -194,12 +194,12 @@ export default function WooCommerceConnectClient({ canManage }: Props) {
               value={state.storeUrl}
               onChange={(e) => patch({ storeUrl: e.target.value })}
               placeholder="https://your-store.com"
-              className="w-full rounded-lg border px-3 py-2 text-sm"
-              style={{ borderColor: 'var(--surface-border)', background: 'var(--bg-surface)' }}
+              className="w-full rounded-md border px-3 py-2 text-sm"
+              style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
             />
           </div>
           <div>
-            <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
+            <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
               Consumer key
             </label>
             <input
@@ -207,12 +207,12 @@ export default function WooCommerceConnectClient({ canManage }: Props) {
               required={!isActive}
               value={state.consumerKey}
               onChange={(e) => patch({ consumerKey: e.target.value })}
-              className="w-full rounded-lg border px-3 py-2 text-sm"
-              style={{ borderColor: 'var(--surface-border)', background: 'var(--bg-surface)' }}
+              className="w-full rounded-md border px-3 py-2 text-sm"
+              style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
             />
           </div>
           <div>
-            <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
+            <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
               Consumer secret
             </label>
             <input
@@ -220,15 +220,15 @@ export default function WooCommerceConnectClient({ canManage }: Props) {
               required={!isActive}
               value={state.consumerSecret}
               onChange={(e) => patch({ consumerSecret: e.target.value })}
-              className="w-full rounded-lg border px-3 py-2 text-sm"
-              style={{ borderColor: 'var(--surface-border)', background: 'var(--bg-surface)' }}
+              className="w-full rounded-md border px-3 py-2 text-sm"
+              style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
             />
           </div>
           <button
             type="submit"
             disabled={state.busy}
-            className="rounded-lg px-4 py-2 text-sm font-semibold"
-            style={{ background: 'var(--accent)', color: 'var(--accent-fg, #fff)' }}
+            className="rounded-md px-4 py-2 text-sm font-semibold"
+            style={{ background: 'var(--accent)', color: 'white' }}
           >
             {isActive ? 'Update credentials' : 'Connect WooCommerce'}
           </button>

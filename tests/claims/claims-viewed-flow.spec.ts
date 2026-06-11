@@ -10,8 +10,8 @@ test.describe('Claims viewed / unread flow', () => {
     await page.goto('/claims');
     await page.waitForLoadState('networkidle');
 
-    const unreadKpi = page.getByText('New / unread').locator('..');
-    const activeKpi = page.getByText('Active queue').locator('..');
+    const unreadKpi = page.getByText('New evidence found').locator('..');
+    const activeKpi = page.getByText('Reviews needing evidence').locator('..');
     const unreadBeforeText = await unreadKpi.innerText();
     const activeBeforeText = await activeKpi.innerText();
     const unreadBefore = parseInt((unreadBeforeText.match(/\d+/) ?? ['0'])[0], 10);
@@ -20,7 +20,7 @@ test.describe('Claims viewed / unread flow', () => {
     test.skip(unreadBefore === 0, 'No unread claims available to exercise viewed flow');
 
     await page.goto('/claims?viewed=unread&queue=active');
-    const reviewLink = page.getByRole('link', { name: 'Review & record' }).first();
+    const reviewLink = page.getByRole('link', { name: 'Review evidence' }).first();
     await expect(reviewLink).toBeVisible();
     const claimHref = await reviewLink.getAttribute('href');
     expect(claimHref).toBeTruthy();

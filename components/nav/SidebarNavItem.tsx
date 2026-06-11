@@ -1,7 +1,6 @@
 'use client';
 
 import AppNavLink from '@/components/navigation/AppNavLink';
-import { PlanBadge } from '@/components/product/PlanBadge';
 import { cn } from '@/lib/utils';
 import type { AppRoute } from '@/lib/navigation/appRoutes';
 import type { ProductTier } from '@/lib/product/tiers';
@@ -40,32 +39,30 @@ export function SidebarNavItem({
       active={active}
       onNavigate={onNavigate}
       className={cn(
-        'group relative flex h-8 items-center gap-3 rounded-md px-2',
-        'text-[13px] font-medium',
-        'transition-colors duration-[var(--duration-fast)]',
+        'group relative flex h-8 items-center gap-2.5 rounded-[6px] px-2.5',
+        'text-[13px] font-medium leading-none',
+        'transition-all duration-150',
         'focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--focus-ring)] focus-visible:outline-offset-2',
         active
-          ? 'bg-[var(--copper-glow)] text-[var(--ink-primary)] font-semibold'
-          : item.isPrimary
-            ? 'border border-[var(--surface-border)] bg-transparent text-[var(--ink-primary)] hover:text-[var(--copper-bright)]'
-            : 'text-[var(--ink-secondary)] hover:bg-[var(--surface-overlay)] hover:text-[var(--ink-primary)]',
+          ? 'text-[var(--text-primary)]'
+          : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-sunken)]',
         collapsed && 'justify-center',
       )}
+      style={
+        active
+          ? {
+              background: 'var(--accent-soft)',
+              color: 'var(--text-primary)'
+            }
+          : undefined
+      }
     >
-      {active && (
-        <span
-          className="absolute left-0 top-0 bottom-0 rounded-r-sm"
-          style={{ background: 'var(--copper-bright)', width: 3 }}
-          aria-hidden="true"
-        />
-      )}
-
       <Icon
         className={cn(
           'h-4 w-4 flex-shrink-0',
           active
-            ? 'text-[var(--copper-bright)]'
-            : 'text-[var(--ink-tertiary)] group-hover:text-[var(--ink-secondary)]',
+            ? 'text-[var(--accent)]'
+            : 'text-[var(--icon-muted)] group-hover:text-[var(--icon)]',
         )}
         aria-hidden="true"
       />
@@ -73,24 +70,15 @@ export function SidebarNavItem({
       {!collapsed && (
         <>
           <span className="flex-1 truncate">{item.label}</span>
-          {item.tier ? (
-            <PlanBadge
-              tier={item.tier}
-              label={item.tierLabel}
-              future={item.tierFuture}
-              devAccess={item.showDevAccess}
-              className="shrink-0"
-            />
-          ) : null}
           {!!item.badge && item.badge > 0 && (
             <span
               title={item.badgeTitle ?? `${item.badge} items`}
               aria-label={item.badgeTitle ? `${item.badgeTitle}: ${item.badge}` : `${item.badge} items`}
               className={cn(
                 'inline-flex h-[18px] min-w-[18px] items-center justify-center',
-                'rounded-sm px-1',
-                'bg-[var(--surface-muted)] text-[var(--ink-secondary)]',
-                'text-caption font-mono tabular-nums',
+                'rounded-full px-1.5',
+                'bg-[var(--accent)] text-white',
+                'text-[11px] font-semibold tabular-nums',
               )}
             >
               {item.badge > 99 ? '99+' : item.badge}
@@ -101,7 +89,7 @@ export function SidebarNavItem({
 
       {collapsed && !!item.badge && item.badge > 0 && (
         <span
-          className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-[var(--sev-definite)]"
+          className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[var(--accent)]"
           title={item.badgeTitle ?? `${item.badge} items`}
           aria-label={item.badgeTitle ? `${item.badgeTitle}: ${item.badge}` : `${item.badge} items`}
         />
@@ -111,12 +99,12 @@ export function SidebarNavItem({
 }
 
 export function SidebarGroupLabel({ label, collapsed }: { label: string; collapsed: boolean }) {
-  if (collapsed) return <div className="my-2 mx-2 h-px bg-[var(--surface-border)]" />;
+  if (collapsed) return <div className="my-2 mx-2 h-px bg-[var(--border)]" />;
   return (
-    <div className="mt-5 mb-1 px-2">
+    <div className="mt-4 mb-1 px-3">
       <span
-        className="block text-xs font-semibold leading-none"
-        style={{ color: 'var(--ink-tertiary)', letterSpacing: '0.01em' }}
+        className="block leading-none uppercase"
+        style={{ fontSize: 10, fontWeight: 500, color: 'var(--text-tertiary)', letterSpacing: '0.10em' }}
       >
         {label}
       </span>

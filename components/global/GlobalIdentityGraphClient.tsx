@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import Link from 'next/link';
 import ReactFlow, {
   Background,
   Controls,
@@ -8,9 +9,10 @@ import ReactFlow, {
   type Node,
   type NodeMouseHandler,
 } from 'reactflow';
-import { ConfidenceBadge } from '@/components/ui/ConfidenceBadge';
+import { GradeBadge } from '@/components/ui/GradeBadge';
+import { NetworkFootprint } from '@/components/ui/NetworkFootprint';
+import { PrivacyBadge } from '@/components/ui/PrivacyBadge';
 import { Button } from '@/components/ui/Button';
-import { GRADE_COLOURS } from '@/lib/utils/confidenceStyles';
 
 export type GlobalGraphProfile = {
   id: string;
@@ -47,14 +49,14 @@ function gradeLabel(grade: string | null | undefined) {
 }
 
 function gradeColor(grade: string | null | undefined) {
-  if (grade === 'definite') return GRADE_COLOURS.definite;
-  if (grade === 'probable') return GRADE_COLOURS.probable;
-  if (grade === 'possible') return GRADE_COLOURS.possible;
-  return GRADE_COLOURS.weak;
+  if (grade === 'definite') return 'var(--success)';
+  if (grade === 'probable') return 'var(--warning)';
+  if (grade === 'possible') return 'var(--sev-possible)';
+  return 'var(--sev-neutral)';
 }
 
 function profileName(profile: GlobalGraphProfile) {
-  return profile.primary_email?.split('@')[0].replace(/[._-]/g, ' ') ?? `cluster ${profile.id.slice(0, 8)}`;
+  return `hash:${profile.id.slice(0, 10)}`;
 }
 
 function byDateFilter(profile: GlobalGraphProfile, filter: DateFilter, maxDate: Date) {
@@ -70,10 +72,10 @@ function nodeStyle(profile: GlobalGraphProfile) {
   const color = gradeColor(grade);
   const intensity = gradeRank[grade] ?? 1;
   return {
-    background: 'var(--surface-raised)',
+    background: 'var(--surface)',
     border: `1px solid ${color}`,
     boxShadow: intensity >= 3 ? `0 14px 36px color-mix(in srgb, ${color} 22%, transparent)` : 'var(--shadow-1)',
-    color: 'var(--ink-primary)',
+    color: 'var(--text-primary)',
     borderRadius: 8,
     width: 172,
     padding: 0,
@@ -101,6 +103,7 @@ export default function GlobalIdentityGraphClient({ profiles }: Props) {
   }, [dateFilter, gradeFilter, maxDate, minMerchants, profiles]);
 
   const selectedProfile = filteredProfiles.find((profile) => profile.id === selectedId) ?? filteredProfiles[0] ?? null;
+  const gated = filteredProfiles.length < 3;
 
   const { nodes, edges } = useMemo(() => {
     const centre: Node = {
@@ -112,10 +115,10 @@ export default function GlobalIdentityGraphClient({ profiles }: Props) {
         width: 154,
         height: 64,
         borderRadius: 8,
-        border: '1px solid var(--copper-bright)',
-        background: 'var(--copper-dim)',
-        color: 'var(--ink-primary)',
-        boxShadow: '0 18px 48px color-mix(in srgb, var(--copper-bright) 24%, transparent)',
+        border: '1px solid var(--border)',
+        background: 'var(--surface)',
+        color: 'var(--text-primary)',
+        boxShadow: 'var(--shadow-xs)',
         fontFamily: 'var(--font-mono)',
         fontSize: 12,
         fontWeight: 700,
@@ -142,15 +145,15 @@ export default function GlobalIdentityGraphClient({ profiles }: Props) {
           label: (
             <div className="space-y-1.5">
               <div className="flex items-center justify-between gap-2">
-                <span className="truncate text-[12px] font-semibold" style={{ color: 'var(--ink-primary)' }}>
+                <span className="truncate text-[12px] font-semibold" style={{ color: 'var(--text-primary)' }}>
                   {profileName(profile)}
                 </span>
-                <ConfidenceBadge grade={gradeLabel(grade) as any} size="sm" />
+                <GradeBadge grade={gradeLabel(grade)} size="sm" compact />
               </div>
-              <div className="truncate font-mono text-xs" style={{ color: 'var(--ink-secondary)' }}>
+              <div className="truncate font-mono text-xs" style={{ color: 'var(--text-secondary)' }}>
                 {profile.total_merchants_seen_at} merchants · {profile.total_orders} orders
               </div>
-              <div className="h-1 overflow-hidden rounded-sm" style={{ background: 'var(--surface-muted)' }}>
+              <div className="h-1 overflow-hidden rounded-sm" style={{ background: 'var(--surface-sunken)' }}>
                 <div
                   className="h-full rounded-sm"
                   style={{ width: `${Math.min(100, profile.risk_score)}%`, background: color }}
@@ -187,11 +190,11 @@ export default function GlobalIdentityGraphClient({ profiles }: Props) {
 
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-[260px_minmax(0,1fr)_300px]">
-      <aside className="rounded-md border p-4" style={{ background: 'var(--surface-raised)', borderColor: 'var(--surface-border)' }}>
-        <p className="t-label" style={{ color: 'var(--ink-tertiary)' }}>Controls</p>
+      <aside className="rounded-md border p-4" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+        <p className="t-label" style={{ color: 'var(--text-tertiary)' }}>Controls</p>
         <div className="mt-4 space-y-4">
           <div>
-            <span className="t-label mb-2 block" style={{ color: 'var(--ink-tertiary)' }}>Grade tier</span>
+            <span className="t-label mb-2 block" style={{ color: 'var(--text-tertiary)' }}>Grade tier</span>
             <div className="grid grid-cols-2 gap-2">
               {(['all', 'definite', 'probable', 'possible', 'weak'] as GradeFilter[]).map((grade) => (
                 <button
@@ -200,9 +203,9 @@ export default function GlobalIdentityGraphClient({ profiles }: Props) {
                   onClick={() => setGradeFilter(grade)}
                   className="rounded-md border px-2 py-1.5 text-xs font-semibold uppercase transition-colors"
                   style={{
-                    background: gradeFilter === grade ? 'var(--copper-bright)' : 'var(--surface-input)',
-                    borderColor: gradeFilter === grade ? 'var(--copper-bright)' : 'var(--surface-border)',
-                    color: gradeFilter === grade ? 'var(--ink-inverse)' : 'var(--ink-secondary)',
+                    background: gradeFilter === grade ? 'var(--accent)' : 'var(--surface-sunken)',
+                    borderColor: gradeFilter === grade ? 'var(--accent)' : 'var(--border)',
+                    color: gradeFilter === grade ? 'white' : 'var(--text-secondary)',
                   }}
                 >
                   {grade}
@@ -212,7 +215,7 @@ export default function GlobalIdentityGraphClient({ profiles }: Props) {
           </div>
 
           <div>
-            <span className="t-label mb-2 block" style={{ color: 'var(--ink-tertiary)' }}>Date range</span>
+            <span className="t-label mb-2 block" style={{ color: 'var(--text-tertiary)' }}>Date range</span>
             <div className="flex gap-2">
               {(['all', '90d', '30d'] as DateFilter[]).map((range) => (
                 <button
@@ -221,9 +224,9 @@ export default function GlobalIdentityGraphClient({ profiles }: Props) {
                   onClick={() => setDateFilter(range)}
                   className="h-8 flex-1 rounded-md border text-xs font-semibold uppercase transition-colors"
                   style={{
-                    background: dateFilter === range ? 'var(--copper-bright)' : 'var(--surface-input)',
-                    borderColor: dateFilter === range ? 'var(--copper-bright)' : 'var(--surface-border)',
-                    color: dateFilter === range ? 'var(--ink-inverse)' : 'var(--ink-secondary)',
+                    background: dateFilter === range ? 'var(--accent)' : 'var(--surface-sunken)',
+                    borderColor: dateFilter === range ? 'var(--accent)' : 'var(--border)',
+                    color: dateFilter === range ? 'white' : 'var(--text-secondary)',
                   }}
                 >
                   {range}
@@ -233,7 +236,7 @@ export default function GlobalIdentityGraphClient({ profiles }: Props) {
           </div>
 
           <div>
-            <label className="t-label mb-2 block" htmlFor="merchant-span" style={{ color: 'var(--ink-tertiary)' }}>
+            <label className="t-label mb-2 block" htmlFor="merchant-span" style={{ color: 'var(--text-tertiary)' }}>
               Merchant span
             </label>
             <div className="flex items-center gap-2">
@@ -253,12 +256,16 @@ export default function GlobalIdentityGraphClient({ profiles }: Props) {
         </div>
       </aside>
 
-      <section className="relative min-h-[520px] overflow-hidden rounded-md border" style={{ background: 'var(--surface-base)', borderColor: 'var(--surface-border)' }}>
-        {filteredProfiles.length === 0 ? (
+      <section className="relative min-h-[520px] overflow-hidden rounded-md border" style={{ background: 'var(--surface-base)', borderColor: 'var(--border)' }}>
+        {gated ? (
           <div className="flex h-[520px] items-center justify-center p-6 text-center">
             <div>
-              <p className="text-body-sm font-semibold" style={{ color: 'var(--ink-primary)' }}>No identities match these filters.</p>
-              <p className="text-caption mt-1" style={{ color: 'var(--ink-secondary)' }}>Loosen the grade, date, or merchant span filter.</p>
+              <p className="text-body-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                Network intelligence is still growing.
+              </p>
+              <p className="text-caption mt-1" style={{ color: 'var(--text-secondary)' }}>
+                As more merchants surface matching identities, linked cross-merchant patterns will appear here. Keep the nav entry in place so the graph is ready when density increases.
+              </p>
             </div>
           </div>
         ) : (
@@ -275,27 +282,36 @@ export default function GlobalIdentityGraphClient({ profiles }: Props) {
             nodeTypes={NODE_TYPES}
             edgeTypes={EDGE_TYPES}
           >
-            <Background color="var(--surface-border)" gap={26} size={1} />
+            <Background color="var(--border)" gap={26} size={1} />
             <Controls showInteractive={false} />
           </ReactFlow>
         )}
       </section>
 
-      <aside className="rounded-md border p-4" style={{ background: 'var(--surface-raised)', borderColor: 'var(--surface-border)' }}>
-        <p className="t-label" style={{ color: 'var(--ink-tertiary)' }}>Selected node</p>
+      <aside className="rounded-md border p-4" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+        <p className="t-label" style={{ color: 'var(--text-tertiary)' }}>Selected node</p>
         {selectedProfile ? (
           <div className="mt-4 space-y-4">
             <div>
               <div className="flex items-center gap-2">
-                <ConfidenceBadge grade={gradeLabel(selectedProfile.identity_confidence_grade) as any} size="sm" />
-                <p className="truncate text-body-sm font-semibold" style={{ color: 'var(--ink-primary)' }}>
+                <GradeBadge grade={gradeLabel(selectedProfile.identity_confidence_grade)} size="sm" compact />
+                <p className="truncate text-body-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
                   {profileName(selectedProfile)}
                 </p>
+                <PrivacyBadge value="Hashed" />
               </div>
-              <p className="mt-1 truncate font-mono text-xs" style={{ color: 'var(--ink-secondary)' }}>
-                {selectedProfile.primary_email ?? selectedProfile.id}
+              <p className="mt-1 truncate font-mono text-xs" style={{ color: 'var(--text-secondary)' }}>
+                {selectedProfile.id}
               </p>
             </div>
+
+            <NetworkFootprint
+              merchants={selectedProfile.total_merchants_seen_at}
+              claims={selectedProfile.total_refund_claims}
+              grade={gradeLabel(selectedProfile.identity_confidence_grade)}
+              kSatisfied={selectedProfile.total_merchants_seen_at >= 3}
+              variant="compact"
+            />
 
             <dl className="grid grid-cols-2 gap-2">
               {[
@@ -303,26 +319,64 @@ export default function GlobalIdentityGraphClient({ profiles }: Props) {
                 ['Orders', selectedProfile.total_orders.toLocaleString()],
                 ['Claims', selectedProfile.total_refund_claims.toLocaleString()],
               ].map(([label, value]) => (
-                <div key={label} className="rounded-md border p-2" style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-overlay)' }}>
-                  <dt className="t-label" style={{ color: 'var(--ink-tertiary)' }}>{label}</dt>
-                  <dd className="mt-1 font-mono text-sm font-semibold" style={{ color: 'var(--ink-primary)' }}>{value}</dd>
+                <div key={label} className="rounded-md border p-2" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
+                  <dt className="t-label" style={{ color: 'var(--text-tertiary)' }}>{label}</dt>
+                  <dd className="mt-1 font-mono text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{value}</dd>
                 </div>
               ))}
             </dl>
 
             <div>
-              <p className="t-label mb-2" style={{ color: 'var(--ink-tertiary)' }}>Evidence signals</p>
-              <div className="space-y-1.5">
-                {(selectedProfile.identity_signals_summary ?? []).slice(0, 5).map((signal) => (
-                  <div key={signal} className="rounded-md border px-2 py-1.5 text-caption" style={{ borderColor: 'var(--surface-border)', color: 'var(--ink-secondary)' }}>
-                    {signal.replace(/_/g, ' ')}
+              <p className="t-label mb-2" style={{ color: 'var(--text-tertiary)' }}>Identity signals</p>
+              {(() => {
+                const signals = Array.isArray(selectedProfile.identity_signals_summary)
+                  ? selectedProfile.identity_signals_summary.slice(0, 5)
+                  : [];
+                if (signals.length === 0) {
+                  return (
+                    <div
+                      className="rounded-md border px-3 py-3 text-caption"
+                      style={{ borderColor: 'var(--border)', color: 'var(--text-tertiary)', background: 'var(--surface)' }}
+                    >
+                      No identity signals recorded for this cluster. Signal data appears after a network check is run against this profile.
+                    </div>
+                  );
+                }
+                return (
+                  <div className="space-y-1.5">
+                    {signals.map((signal) => (
+                      <div
+                        key={signal}
+                        className="flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-caption"
+                        style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)', background: 'var(--surface)' }}
+                      >
+                        <span
+                          className="inline-block h-1.5 w-1.5 rounded-full shrink-0"
+                          style={{ background: gradeColor(selectedProfile.identity_confidence_grade) }}
+                        />
+                        {signal.replace(/_/g, ' ')}
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                );
+              })()}
+            </div>
+
+            <div className="pt-1">
+              <Link
+                href={`/customers/${selectedProfile.id}`}
+                className="inline-flex w-full items-center justify-center rounded-md border px-3 py-2 text-xs font-medium transition-opacity hover:opacity-80"
+                style={{ borderColor: 'var(--border)', color: 'var(--text-primary)', background: 'transparent' }}
+              >
+                Open customer profile →
+              </Link>
             </div>
           </div>
         ) : (
-          <p className="mt-4 text-caption" style={{ color: 'var(--ink-secondary)' }}>Select a graph node to inspect its network footprint.</p>
+          <div className="mt-6 text-caption space-y-1.5" style={{ color: 'var(--text-secondary)' }}>
+            <p>Select a graph node to inspect its network footprint.</p>
+            <p style={{ color: 'var(--text-tertiary)' }}>Nodes represent pseudonymous identity clusters. Edge weight reflects cross-merchant signal strength.</p>
+          </div>
         )}
       </aside>
     </div>

@@ -56,7 +56,7 @@ export function resolvePrimaryAction(
     return {
       key: 'none',
       label: 'Select a claim',
-      reason: 'Choose a claim from the header switcher or queue.',
+      reason: 'Choose a claim from the header switcher or review list.',
       cta: '—',
       railSection: null,
     };
@@ -65,7 +65,7 @@ export function resolvePrimaryAction(
     return {
       key: 'reopen',
       label: 'Reopen for review',
-      reason: 'This claim is closed. Reopen it to return it to the active queue.',
+      reason: 'This claim is archived. Reopen it to continue evidence review.',
       cta: 'Reopen claim',
       railSection: 'status',
     };
@@ -100,17 +100,17 @@ export function resolvePrimaryAction(
   if (!isFinalClaimStatus(claim.status)) {
     return {
       key: 'status',
-      label: 'Close claim',
-      reason: 'Decision and response are recorded. Update status to resolved or closed.',
-      cta: 'Update status',
+      label: 'Record review status',
+      reason: 'Outcome and response are recorded. Update the claim review status.',
+      cta: 'Update review status',
       railSection: 'status',
     };
   }
   return {
     key: 'close',
-    label: 'Work complete',
-    reason: 'This case is ready to leave the active queue.',
-    cta: 'Next claim',
+    label: 'Evidence review complete',
+    reason: 'Identity evidence and merchant outcome are on record for this claim.',
+    cta: 'Next review',
     railSection: null,
   };
 }
@@ -119,11 +119,11 @@ export function statusNextAction(claim: ClaimRecord | null, hasDecision: boolean
   if (!claim) return 'Select or save a claim';
   if (claim.status === 'open') return 'Review evidence';
   if (claim.status === 'pending' || claim.status === 'evidence_requested') return 'Check requested evidence';
-  if (claim.status === 'escalated') return 'Review escalation';
+  if (claim.status === 'escalated') return 'Review high-evidence context';
   if (!hasDecision) return 'Record merchant outcome';
   if (!responseRecorded) return 'Record customer response';
-  if (isFinalClaimStatus(claim.status)) return 'Work complete';
-  return 'Close claim';
+  if (isFinalClaimStatus(claim.status)) return 'Evidence review complete';
+  return 'Record review status';
 }
 
 export function identityEvidencePoints(
@@ -179,7 +179,7 @@ export function railOpenForClaim(selectedClaim: ClaimRecord | null): Record<stri
 }
 
 export function actorLabel(actor?: string | null) {
-  return actor ? `Agent #${actor.slice(-4)}` : null;
+  return actor ? `Reviewer #${actor.slice(-4)}` : null;
 }
 
 export function getSlaVisual(claim: ClaimRecord | null) {
@@ -189,11 +189,11 @@ export function getSlaVisual(claim: ClaimRecord | null) {
   const ageMs = filed ? Date.now() - new Date(filed).getTime() : 0;
   const status = String(claim?.status ?? '').toLowerCase();
   const notResolved = status !== 'resolved';
-  if (base.state === 'overdue') return { label: 'Breached', tone: 'red' as const, icon: 'clock' as const };
+  if (base.state === 'overdue') return { label: 'Ageing', tone: 'red' as const, icon: 'clock' as const };
   if (base.state === 'approaching' || (notResolved && ageMs > 24 * 60 * 60 * 1000)) {
-    return { label: 'At risk', tone: 'amber' as const, icon: 'warning' as const };
+    return { label: 'Approaching threshold', tone: 'amber' as const, icon: 'warning' as const };
   }
-  return { label: 'Normal', tone: 'gray' as const, icon: null };
+  return { label: 'Within threshold', tone: 'gray' as const, icon: null };
 }
 
 export function buildOrderOptions(

@@ -134,11 +134,11 @@ export default function OnboardingClient({
     <main className="min-h-screen p-4 md:p-8" style={{ background: 'var(--surface-base)' }}>
       <div className="mx-auto grid max-w-6xl gap-5 lg:grid-cols-[360px_minmax(0,1fr)]">
         {/* Sidebar checklist */}
-        <aside className="rounded-lg border p-4" style={{ background: 'var(--surface-raised)', borderColor: 'var(--surface-border)' }}>
+        <aside className="rounded-md border p-4" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
           <div className="mb-6 flex items-start justify-between gap-3">
             <div>
-              <h1 className="t-heading" style={{ color: 'var(--ink-primary)' }}>Get started</h1>
-              <p className="t-caption mt-1" style={{ color: 'var(--ink-tertiary)' }}>
+              <h1 className="t-heading" style={{ color: 'var(--text-primary)' }}>Get started</h1>
+              <p className="t-caption mt-1" style={{ color: 'var(--text-tertiary)' }}>
                 Add claim intelligence to your Gorgias tickets
               </p>
             </div>
@@ -146,8 +146,8 @@ export default function OnboardingClient({
               type="button"
               onClick={skipOnboarding}
               disabled={skipLoading || loading}
-              className="inline-flex items-center rounded-md border px-2.5 py-1 text-xs transition-colors hover:bg-[var(--bg-hover)] disabled:cursor-not-allowed disabled:opacity-70"
-              style={{ color: 'var(--ink-secondary)', borderColor: 'var(--surface-border)', background: 'var(--surface-input)' }}
+              className="inline-flex items-center rounded-md border px-2.5 py-1 text-xs transition-colors hover:bg-[var(--surface-hover)] disabled:cursor-not-allowed disabled:opacity-70"
+              style={{ color: 'var(--text-secondary)', borderColor: 'var(--border)', background: 'var(--surface-sunken)' }}
             >
               {skipLoading ? 'Skipping…' : 'Skip'}
             </button>
@@ -165,27 +165,27 @@ export default function OnboardingClient({
                   onClick={() => dispatch({ type: 'patch', patch: { activeStep: index } })}
                   className="grid w-full grid-cols-[24px_minmax(0,1fr)_auto] items-center gap-3 rounded-md border p-3 text-left transition-colors"
                   style={{
-                    background: active ? 'var(--copper-glow)' : 'var(--surface-input)',
-                    borderColor: active ? 'var(--copper-bright)' : 'var(--surface-border)',
+                    background: active ? 'var(--copper-glow)' : 'var(--surface-sunken)',
+                    borderColor: active ? 'var(--accent)' : 'var(--border)',
                   }}
                 >
-                  <span className="flex h-6 w-6 items-center justify-center rounded-sm" style={{ background: done ? 'var(--sev-clear-fill)' : 'var(--surface-muted)', color: done ? 'var(--sev-clear)' : 'var(--ink-tertiary)' }}>
+                  <span className="flex h-6 w-6 items-center justify-center rounded-sm" style={{ background: done ? 'var(--sev-clear-fill)' : 'var(--surface-sunken)', color: done ? 'var(--neutral)' : 'var(--text-tertiary)' }}>
                     {done ? <Check className="h-3.5 w-3.5" /> : <Icon className="h-3.5 w-3.5" />}
                   </span>
                   <span className="min-w-0">
-                    <span className="block t-body" style={{ color: active ? 'var(--ink-primary)' : 'var(--ink-secondary)' }}>{step.label}</span>
+                    <span className="block text-body-sm" style={{ color: active ? 'var(--text-primary)' : 'var(--text-secondary)' }}>{step.label}</span>
                   </span>
-                  <span className="t-mono" style={{ color: 'var(--ink-tertiary)' }}>{String(index + 1).padStart(2, '0')}</span>
+                  <span className="t-mono" style={{ color: 'var(--text-tertiary)' }}>{String(index + 1).padStart(2, '0')}</span>
                 </button>
               );
             })}
           </div>
 
           {/* Secondary: CSV path */}
-          <div className="mt-6 rounded-md border px-3 py-2.5" style={{ background: 'var(--surface-input)', borderColor: 'var(--surface-border)' }}>
-            <p className="t-caption" style={{ color: 'var(--ink-tertiary)' }}>
+          <div className="mt-6 rounded-md border px-3 py-2.5" style={{ background: 'var(--surface-sunken)', borderColor: 'var(--border)' }}>
+            <p className="t-caption" style={{ color: 'var(--text-tertiary)' }}>
               Not on Gorgias yet?{' '}
-              <Link href="/upload" className="font-medium hover:underline" style={{ color: 'var(--ink-secondary)' }}>
+              <Link href="/upload" className="font-medium hover:underline" style={{ color: 'var(--text-secondary)' }}>
                 Start with a CSV import
               </Link>
               {' '}to explore your data first.
@@ -194,15 +194,15 @@ export default function OnboardingClient({
         </aside>
 
         {/* Step content */}
-        <section className="rounded-lg border p-6" style={{ background: 'var(--surface-raised)', borderColor: 'var(--surface-border)' }}>
+        <section className="rounded-md border p-6" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
           <div className="mb-6 flex items-start gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-md" style={{ background: 'var(--surface-input)', color: 'var(--copper-bright)' }}>
+            <span className="flex h-10 w-10 items-center justify-center rounded-md" style={{ background: 'var(--surface-sunken)', color: 'var(--accent)' }}>
               <CurrentIcon className="h-5 w-5" />
             </span>
             <div>
-              <p className="t-label" style={{ color: 'var(--ink-tertiary)' }}>STEP {activeStep + 1} OF {STEPS.length}</p>
-              <h2 className="t-heading mt-1" style={{ color: 'var(--ink-primary)' }}>{current.label}</h2>
-              <p className="t-body mt-2 max-w-2xl" style={{ color: 'var(--ink-secondary)' }}>{current.body}</p>
+              <p className="t-label" style={{ color: 'var(--text-tertiary)' }}>STEP {activeStep + 1} OF {STEPS.length}</p>
+              <h2 className="t-heading mt-1" style={{ color: 'var(--text-primary)' }}>{current.label}</h2>
+              <p className="text-body-sm mt-2 max-w-2xl" style={{ color: 'var(--text-secondary)' }}>{current.body}</p>
             </div>
           </div>
 
@@ -243,7 +243,7 @@ export default function OnboardingClient({
                   ))}
                 </select>
               </Field>
-              {error && <p className="md:col-span-2 t-caption" style={{ color: 'var(--sev-definite)' }}>{error}</p>}
+              {error && <p className="md:col-span-2 t-caption" style={{ color: 'var(--success)' }}>{error}</p>}
               <div className="md:col-span-2 flex justify-end">
                 <Button
                   type="button"
@@ -260,20 +260,20 @@ export default function OnboardingClient({
           {activeStep === 1 && (
             <div className="space-y-4">
               {shopifyConnected ? (
-                <div className="rounded-md border px-4 py-3" style={{ background: 'var(--sev-clear-fill)', borderColor: 'var(--sev-clear)' }}>
+                <div className="rounded-md border px-4 py-3" style={{ background: 'var(--sev-clear-fill)', borderColor: 'var(--neutral)' }}>
                   <div className="flex items-center gap-2">
-                    <Check className="h-4 w-4" style={{ color: 'var(--sev-clear)' }} />
-                    <p className="t-body font-semibold" style={{ color: 'var(--sev-clear)' }}>
+                    <Check className="h-4 w-4" style={{ color: 'var(--neutral)' }} />
+                    <p className="text-body-sm font-semibold" style={{ color: 'var(--neutral)' }}>
                       Shopify connected — {shopifyShopDomain}
                     </p>
                   </div>
-                  <p className="t-caption mt-1" style={{ color: 'var(--ink-secondary)' }}>
+                  <p className="t-caption mt-1" style={{ color: 'var(--text-secondary)' }}>
                     Orders, customers, and refund history are syncing automatically.
                   </p>
                 </div>
               ) : (
-                <div className="rounded-md border p-4 space-y-3" style={{ background: 'var(--surface-input)', borderColor: 'var(--surface-border)' }}>
-                  <p className="t-body" style={{ color: 'var(--ink-secondary)' }}>
+                <div className="rounded-md border p-4 space-y-3" style={{ background: 'var(--surface-sunken)', borderColor: 'var(--border)' }}>
+                  <p className="text-body-sm" style={{ color: 'var(--text-secondary)' }}>
                     Enter your Shopify store domain to connect. You can also connect from{' '}
                     <Link href="/settings/integrations" className="underline underline-offset-2" style={{ color: 'var(--accent)' }}>
                       Settings → Integrations
@@ -287,12 +287,12 @@ export default function OnboardingClient({
                       aria-label="Shopify store domain"
                       placeholder="your-store.myshopify.com"
                       className="w-full rounded-md border px-3 py-2 text-sm outline-none"
-                      style={{ background: 'var(--surface-input)', borderColor: 'var(--surface-border)', color: 'var(--ink-primary)' }}
+                      style={{ background: 'var(--surface-sunken)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
                     />
                     <a
                       href={`/api/shopify/install?shop=${encodeURIComponent(shopDomain.trim())}`}
                       className="inline-flex items-center justify-center rounded-md border px-4 py-2 text-sm font-semibold gap-1.5"
-                      style={{ borderColor: 'var(--copper-bright)', color: 'var(--copper-bright)', background: 'var(--copper-glow)', whiteSpace: 'nowrap' }}
+                      style={{ borderColor: 'var(--accent)', color: 'var(--accent)', background: 'var(--copper-glow)', whiteSpace: 'nowrap' }}
                     >
                       <ShoppingBag className="h-4 w-4" />
                       Connect Shopify
@@ -305,7 +305,7 @@ export default function OnboardingClient({
                   type="button"
                   onClick={() => dispatch({ type: 'patch', patch: { activeStep: 2 } })}
                   className="t-caption hover:underline"
-                  style={{ color: 'var(--ink-tertiary)' }}
+                  style={{ color: 'var(--text-tertiary)' }}
                 >
                   {shopifyConnected ? 'Continue to Gorgias →' : "I'll connect later — skip to Gorgias"}
                 </button>
@@ -320,17 +320,17 @@ export default function OnboardingClient({
 
           {activeStep === 2 && (
             <div className="space-y-4">
-              <div className="rounded-md border p-4 space-y-3" style={{ background: 'var(--surface-input)', borderColor: 'var(--surface-border)' }}>
-                <p className="t-body" style={{ color: 'var(--ink-secondary)' }}>
+              <div className="rounded-md border p-4 space-y-3" style={{ background: 'var(--surface-sunken)', borderColor: 'var(--border)' }}>
+                <p className="text-body-sm" style={{ color: 'var(--text-secondary)' }}>
                   Connect Gorgias from the integrations page. Once connected, Unauth will automatically add a claim context card to every Gorgias ticket — showing order history, prior claims, and trust indicators for the customer.
                 </p>
-                <p className="t-caption" style={{ color: 'var(--ink-tertiary)' }}>
+                <p className="t-caption" style={{ color: 'var(--text-tertiary)' }}>
                   You can also add Zendesk or Freshdesk later from the same page.
                 </p>
                 <Link
                   href="/settings/integrations/gorgias"
                   className="inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold"
-                  style={{ background: 'var(--copper-glow)', borderColor: 'var(--copper-bright)', border: '1px solid', color: 'var(--copper-bright)' }}
+                  style={{ background: 'var(--copper-glow)', borderColor: 'var(--accent)', border: '1px solid', color: 'var(--accent)' }}
                 >
                   <Headphones className="h-4 w-4" />
                   Set up Gorgias integration
@@ -341,7 +341,7 @@ export default function OnboardingClient({
                   type="button"
                   onClick={() => dispatch({ type: 'patch', patch: { activeStep: 3 } })}
                   className="t-caption hover:underline"
-                  style={{ color: 'var(--ink-tertiary)' }}
+                  style={{ color: 'var(--text-tertiary)' }}
                 >
                   {"I'll connect later — go to dashboard"}
                 </button>
@@ -359,9 +359,9 @@ export default function OnboardingClient({
 
           {activeStep === 3 && (
             <div className="space-y-4">
-              <div className="rounded-md border px-4 py-3" style={{ background: 'var(--sev-clear-fill)', borderColor: 'var(--sev-clear)' }}>
-                <p className="t-subhead" style={{ color: 'var(--sev-clear)' }}>Setup complete</p>
-                <p className="t-body mt-1" style={{ color: 'var(--ink-secondary)' }}>
+              <div className="rounded-md border px-4 py-3" style={{ background: 'var(--sev-clear-fill)', borderColor: 'var(--neutral)' }}>
+                <p className="t-subhead" style={{ color: 'var(--neutral)' }}>Setup complete</p>
+                <p className="text-body-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
                   Your Gorgias agents will now see claim context automatically. You can review integration status and add more sources from Settings.
                 </p>
               </div>
@@ -373,7 +373,7 @@ export default function OnboardingClient({
                   Go to claim overview
                   <ArrowRight className="h-4 w-4" />
                 </Link>
-                <Link href="/settings/integrations" className="t-caption hover:underline" style={{ color: 'var(--ink-tertiary)' }}>
+                <Link href="/settings/integrations" className="t-caption hover:underline" style={{ color: 'var(--text-tertiary)' }}>
                   Manage integrations →
                 </Link>
               </div>
@@ -388,14 +388,14 @@ export default function OnboardingClient({
 function Field({ label, children }: { label: string; children: ReactElement<any> }) {
   return (
     <label className="block">
-      <span className="t-label mb-2 block" style={{ color: 'var(--ink-tertiary)' }}>{label}</span>
+      <span className="t-label mb-2 block" style={{ color: 'var(--text-tertiary)' }}>{label}</span>
       {cloneElement(children, {
         'aria-label': label,
         className: 'w-full rounded-md border px-3 py-2 text-sm outline-none',
         style: {
-          background: 'var(--surface-input)',
-          borderColor: 'var(--surface-border)',
-          color: 'var(--ink-primary)',
+          background: 'var(--surface-sunken)',
+          borderColor: 'var(--border)',
+          color: 'var(--text-primary)',
         },
       })}
     </label>

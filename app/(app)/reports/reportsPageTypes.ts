@@ -4,10 +4,33 @@ export type ReportsTab = (typeof REPORTS_TABS)[number];
 export type ClaimRow = {
   id: string;
   status: string;
+  claim_type?: string | null;
   amount_at_risk: number | null;
   submitted_at?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
+};
+
+export type ClaimTypeBreakdown = Array<{
+  type: string;
+  label: string;
+  count: number;
+  value: number;
+}>;
+
+export type OutcomeBreakdown = Array<{
+  decision: string;
+  label: string;
+  count: number;
+  value: number;
+}>;
+
+export type SourcesCoverage = {
+  customerProfiles: number;
+  merchantClaims: number;
+  supportCases: number;
+  evidencePackages: number;
+  auditTransactions: number;
 };
 
 export type RunSummary = {
@@ -33,8 +56,6 @@ export type GradeBucketDisplay = {
   count: number;
   pct: number;
 };
-
-export type RatePoint = { x: number; y: number; rate: number };
 
 export type OutcomeRow = {
   claim_id: string;

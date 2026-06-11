@@ -22,14 +22,14 @@ export function FreshdeskCredentialFields({
   return (
     <>
       <div>
-        <p className="mb-2 text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+        <p className="mb-2 text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
           Your API key is stored encrypted and used only to validate your account and fetch ticket
           details when needed.
         </p>
         <label
           htmlFor="freshdesk-api-key"
           className="block text-xs font-medium mb-1"
-          style={{ color: 'var(--text-muted)' }}
+          style={{ color: 'var(--text-secondary)' }}
         >
           Freshdesk API key
         </label>
@@ -60,7 +60,7 @@ export function FreshdeskCredentialFields({
           Where do I find this?
         </button>
         {showCredHelp && (
-          <p className="mt-2 text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+          <p className="mt-2 text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
             In Freshdesk, open <strong>Profile Settings</strong> (avatar) → <strong>View profile</strong>{' '}
             → your API key is listed on the right. You need an admin or agent profile with API access.
           </p>

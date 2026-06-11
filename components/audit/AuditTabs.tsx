@@ -36,8 +36,8 @@ function AuditTabsInner({ tabs, panels, defaultTab }: AuditTabsProps) {
   return (
     <div>
       <div
-        className="flex gap-0 border-b"
-        style={{ borderColor: 'var(--surface-border)' }}
+        className="flex border-b"
+        style={{ borderColor: 'var(--border-muted)', gap: 24 }}
         role="tablist"
       >
         {tabs.map((tab) => {
@@ -49,10 +49,14 @@ function AuditTabsInner({ tabs, panels, defaultTab }: AuditTabsProps) {
               role="tab"
               aria-selected={isActive}
               onClick={() => selectTab(tab.id)}
-              className="relative px-4 py-2.5 text-body-sm font-medium transition-colors"
+              className="relative flex items-center transition-colors"
               style={{
-                color: isActive ? 'var(--ink-primary)' : 'var(--ink-tertiary)',
-                borderBottom: isActive ? '2px solid var(--copper-bright)' : '2px solid transparent',
+                height: 36,
+                padding: '0 4px',
+                fontSize: 14,
+                fontWeight: 500,
+                color: isActive ? 'var(--text-primary)' : 'var(--text-tertiary)',
+                borderBottom: isActive ? '2px solid var(--text-primary)' : '2px solid transparent',
                 marginBottom: '-1px',
               }}
             >
@@ -61,7 +65,7 @@ function AuditTabsInner({ tabs, panels, defaultTab }: AuditTabsProps) {
           );
         })}
       </div>
-      <div className="mt-4" role="tabpanel">{panels[active]}</div>
+      <div className="mt-5" role="tabpanel">{panels[active]}</div>
 
     </div>
   );
@@ -69,7 +73,7 @@ function AuditTabsInner({ tabs, panels, defaultTab }: AuditTabsProps) {
 
 export default function AuditTabs(props: AuditTabsProps) {
   return (
-    <Suspense fallback={<div className="text-body-sm" style={{ color: 'var(--text-muted)' }}>Loading…</div>}>
+    <Suspense fallback={<div className="text-body-sm" style={{ color: 'var(--text-secondary)' }}>Loading…</div>}>
       <AuditTabsInner {...props} />
     </Suspense>
   );

@@ -45,14 +45,14 @@ export function CustomerProfilePageSidebar({
           <MetricCard label="Avg claim" value={profile.avg_claim_days != null ? `${Math.round(profile.avg_claim_days)}d` : '—'} density="compact" />
         </div>
 
-        <div className="space-y-3 pt-[var(--space-4)]" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+        <div className="space-y-3 pt-[var(--space-4)]" style={{ borderTop: '1px solid var(--border-muted)' }}>
           <div className="grid grid-cols-2 gap-3 text-caption">
             <div>
-              <p style={{ color: 'var(--text-muted)' }}>First seen</p>
+              <p style={{ color: 'var(--text-secondary)' }}>First seen</p>
               <p className="font-medium" style={{ color: 'var(--text)' }}>{formatDate(profile.first_seen)}</p>
             </div>
             <div>
-              <p style={{ color: 'var(--text-muted)' }}>Last seen</p>
+              <p style={{ color: 'var(--text-secondary)' }}>Last seen</p>
               <p className="font-medium" style={{ color: 'var(--text)' }}>{formatDate(profile.last_seen)}</p>
             </div>
           </div>
@@ -66,11 +66,11 @@ export function CustomerProfilePageSidebar({
               <MetricCard label="Open disputes" value={openClaimCount.toLocaleString()} density="compact" />
               <MetricCard label="Latest status" value={CLAIM_STATUS_LABELS[latestClaim.status] ?? latestClaim.status} density="compact" />
             </div>
-            <div className="rounded-md border p-3" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)' }}>
-              <p className="text-caption" style={{ color: 'var(--text-muted)' }}>Latest dispute signal</p>
+            <div className="rounded-md border p-3" style={{ borderColor: 'var(--border-muted)', background: 'var(--bg-inset)' }}>
+              <p className="text-caption" style={{ color: 'var(--text-secondary)' }}>Latest dispute signal</p>
               <p className="text-body-sm font-semibold" style={{ color: 'var(--text)' }}>{CLAIM_TYPE_LABELS[latestClaim.claim_type] ?? latestClaim.claim_type}</p>
-              <p className="font-mono text-caption" style={{ color: 'var(--text-muted)' }}>{latestClaim.shopify_order_id ?? latestClaim.order_ref ?? latestClaim.id.slice(0, 8)}</p>
-              <p className="mt-2 text-caption" style={{ color: 'var(--text-muted)' }}>Filed {formatFiledDate(latestClaim)}</p>
+              <p className="font-mono text-caption" style={{ color: 'var(--text-secondary)' }}>{latestClaim.shopify_order_id ?? latestClaim.order_ref ?? latestClaim.id.slice(0, 8)}</p>
+              <p className="mt-2 text-caption" style={{ color: 'var(--text-secondary)' }}>Filed {formatFiledDate(latestClaim)}</p>
             </div>
           </div>
         ) : (

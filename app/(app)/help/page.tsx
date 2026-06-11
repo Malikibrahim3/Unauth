@@ -38,13 +38,13 @@ export default function HelpIndexPage() {
       <div>
         <Link
           href="/dashboard"
-          className="inline-flex items-center gap-1.5 text-xs mb-4 hover:underline"
-          style={{ color: 'var(--text-muted)' }}
+          className="inline-flex items-center gap-1.5 text-caption mb-4 hover:underline"
+          style={{ color: 'var(--text-secondary)' }}
         >
           ← Dashboard
         </Link>
         <h1 className="text-heading-lg" style={{ color: 'var(--text)' }}>Help &amp; Docs</h1>
-        <p className="mt-1 text-sm" style={{ color: 'var(--text-muted)' }}>
+        <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
           Guides to get the most out of Unauth.
         </p>
       </div>
@@ -53,10 +53,10 @@ export default function HelpIndexPage() {
         {ARTICLES.map(({ icon: Icon, title, description, href }) => (
           <div
             key={title}
-            className="flex items-start gap-4 rounded-lg px-5 py-4 border"
+            className="flex items-start gap-4 rounded-md px-5 py-4 border"
             style={{
-              background: 'var(--bg-surface)',
-              borderColor: 'var(--border-subtle)',
+              background: 'var(--surface)',
+              borderColor: 'var(--border-muted)',
             }}
           >
             <div
@@ -69,13 +69,13 @@ export default function HelpIndexPage() {
               <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
                 {title}
               </p>
-              <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+              <p className="text-caption mt-0.5" style={{ color: 'var(--text-secondary)' }}>
                 {description}
               </p>
             </div>
             <Link
               href={href}
-              className="text-xs font-semibold hover:underline flex-shrink-0 mt-0.5"
+              className="text-caption font-semibold hover:underline flex-shrink-0 mt-0.5"
               style={{ color: 'var(--text)' }}
             >
               Read →
@@ -84,13 +84,13 @@ export default function HelpIndexPage() {
         ))}
 
         <div
-          className="rounded-lg px-5 py-4 border"
-          style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
+          className="rounded-md px-5 py-4 border"
+          style={{ background: 'var(--surface)', borderColor: 'var(--border-muted)' }}
         >
           <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
             Still stuck?
           </p>
-          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
+          <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
             Email us at{' '}
             <a
               href="mailto:support@unauth.co"

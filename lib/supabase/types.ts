@@ -12,1156 +12,42 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
-      access_audit_log: {
+      billing_events_log: {
         Row: {
           created_at: string
-          id: string
-          identity_id: string | null
-          k_anonymity_satisfied: boolean
-          lookup_type: string | null
-          matched_merchant_count: number | null
-          merchant_id: string
-          queried_hashes: string[] | null
-          query_type: string
-          request_ip: string | null
-          result_returned: boolean
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          identity_id?: string | null
-          k_anonymity_satisfied: boolean
-          lookup_type?: string | null
-          matched_merchant_count?: number | null
-          merchant_id: string
-          queried_hashes?: string[] | null
-          query_type?: string
-          request_ip?: string | null
-          result_returned: boolean
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          identity_id?: string | null
-          k_anonymity_satisfied?: boolean
-          lookup_type?: string | null
-          matched_merchant_count?: number | null
-          merchant_id?: string
-          queried_hashes?: string[] | null
-          query_type?: string
-          request_ip?: string | null
-          result_returned?: boolean
-        }
-        Relationships: [
-          {
-            foreignKeyName: "access_audit_log_merchant_id_fkey"
-            columns: ["merchant_id"]
-            isOneToOne: false
-            referencedRelation: "merchants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      audit_transactions: {
-        Row: {
-          account_created_at: string | null
-          behavioural_flags: Json
-          review_worthy: boolean
-          billing_address: string | null
-          candidate_cluster_id: string | null
-          card_last4: string | null
-          ce3_eligible: boolean
-          ce3_qualifying_transactions: Json
-          ce3_signal_hashes: Json
-          changed_datapoints: Json
-          chargeback_filed: boolean | null
-          cluster_id: string | null
-          confirmed_identity_id: string | null
-          context_flags: Json
-          context_summary: string | null
-          customer_email: string | null
-          customer_name: string | null
-          delivery_status: string | null
-          device_ip: string | null
-          dismissed_by_merchant: boolean
-          engine_version_id: string | null
-          evidence_summary: string | null
-          false_positive_reported: boolean
-          false_positive_reported_at: string | null
-          feedback_at: string | null
-          feedback_outcome: string | null
-          fraud_flags: Json
-          id: string
-          identity_confidence_grade: string | null
-          identity_evidence: Json
-          identity_match_grade: string | null
-          identity_match_score: number | null
-          identity_score: number | null
-          job_id: string
-          match_score: number
-          match_status: string
-          matched_datapoints: Json
-          order_id: string
-          order_value: number | null
-          payment_method: string | null
-          previous_order_count: number | null
-          processed_at: string
-          recommended_action: string | null
-          refund_claimed: boolean | null
-          refund_reason: string | null
-          risk_level: string
-          shipping_address: string | null
-          signals_matched: Json
-        }
-        Insert: {
-          account_created_at?: string | null
-          behavioural_flags?: Json
-          review_worthy?: boolean
-          billing_address?: string | null
-          candidate_cluster_id?: string | null
-          card_last4?: string | null
-          ce3_eligible?: boolean
-          ce3_qualifying_transactions?: Json
-          ce3_signal_hashes?: Json
-          changed_datapoints?: Json
-          chargeback_filed?: boolean | null
-          cluster_id?: string | null
-          confirmed_identity_id?: string | null
-          context_flags?: Json
-          context_summary?: string | null
-          customer_email?: string | null
-          customer_name?: string | null
-          delivery_status?: string | null
-          device_ip?: string | null
-          dismissed_by_merchant?: boolean
-          engine_version_id?: string | null
-          evidence_summary?: string | null
-          false_positive_reported?: boolean
-          false_positive_reported_at?: string | null
-          feedback_at?: string | null
-          feedback_outcome?: string | null
-          fraud_flags?: Json
-          id?: string
-          identity_confidence_grade?: string | null
-          identity_evidence?: Json
-          identity_match_grade?: string | null
-          identity_match_score?: number | null
-          identity_score?: number | null
-          job_id: string
-          match_score?: number
-          match_status?: string
-          matched_datapoints?: Json
-          order_id: string
-          order_value?: number | null
-          payment_method?: string | null
-          previous_order_count?: number | null
-          processed_at?: string
-          recommended_action?: string | null
-          refund_claimed?: boolean | null
-          refund_reason?: string | null
-          risk_level?: string
-          shipping_address?: string | null
-          signals_matched?: Json
-        }
-        Update: {
-          account_created_at?: string | null
-          behavioural_flags?: Json
-          review_worthy?: boolean
-          billing_address?: string | null
-          candidate_cluster_id?: string | null
-          card_last4?: string | null
-          ce3_eligible?: boolean
-          ce3_qualifying_transactions?: Json
-          ce3_signal_hashes?: Json
-          changed_datapoints?: Json
-          chargeback_filed?: boolean | null
-          cluster_id?: string | null
-          confirmed_identity_id?: string | null
-          context_flags?: Json
-          context_summary?: string | null
-          customer_email?: string | null
-          customer_name?: string | null
-          delivery_status?: string | null
-          device_ip?: string | null
-          dismissed_by_merchant?: boolean
-          engine_version_id?: string | null
-          evidence_summary?: string | null
-          false_positive_reported?: boolean
-          false_positive_reported_at?: string | null
-          feedback_at?: string | null
-          feedback_outcome?: string | null
-          fraud_flags?: Json
-          id?: string
-          identity_confidence_grade?: string | null
-          identity_evidence?: Json
-          identity_match_grade?: string | null
-          identity_match_score?: number | null
-          identity_score?: number | null
-          job_id?: string
-          match_score?: number
-          match_status?: string
-          matched_datapoints?: Json
-          order_id?: string
-          order_value?: number | null
-          payment_method?: string | null
-          previous_order_count?: number | null
-          processed_at?: string
-          recommended_action?: string | null
-          refund_claimed?: boolean | null
-          refund_reason?: string | null
-          risk_level?: string
-          shipping_address?: string | null
-          signals_matched?: Json
-        }
-        Relationships: [
-          {
-            foreignKeyName: "audit_transactions_engine_version_id_fkey"
-            columns: ["engine_version_id"]
-            isOneToOne: false
-            referencedRelation: "engine_versions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fraud_transactions_job_id_fkey"
-            columns: ["job_id"]
-            isOneToOne: false
-            referencedRelation: "processing_jobs"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      csv_upload_queue: {
-        Row: {
-          column_map: Json | null
-          completed_at: string | null
-          created_at: string
-          id: string
-          job_id: string
-          merchant_id: string
-          started_at: string | null
-          status: string
-          storage_path: string
-        }
-        Insert: {
-          column_map?: Json | null
-          completed_at?: string | null
-          created_at?: string
-          id?: string
-          job_id: string
-          merchant_id: string
-          started_at?: string | null
-          status?: string
-          storage_path: string
-        }
-        Update: {
-          column_map?: Json | null
-          completed_at?: string | null
-          created_at?: string
-          id?: string
-          job_id?: string
-          merchant_id?: string
-          started_at?: string | null
-          status?: string
-          storage_path?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "csv_upload_queue_job_id_fkey"
-            columns: ["job_id"]
-            isOneToOne: false
-            referencedRelation: "processing_jobs"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      customer_activity_log: {
-        Row: {
-          created_at: string
-          event_data: Json
           event_type: string
-          id: string
-          merchant_id: string
-          profile_id: string
-        }
-        Insert: {
-          created_at?: string
-          event_data?: Json
-          event_type: string
-          id?: string
-          merchant_id: string
-          profile_id: string
-        }
-        Update: {
-          created_at?: string
-          event_data?: Json
-          event_type?: string
-          id?: string
-          merchant_id?: string
-          profile_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "customer_activity_log_merchant_id_fkey"
-            columns: ["merchant_id"]
-            isOneToOne: false
-            referencedRelation: "merchants"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "customer_activity_log_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "customer_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      customer_notes: {
-        Row: {
-          body: string
-          created_at: string | null
-          customer_profile_id: string | null
-          deleted_by_merchant: boolean
-          email_hash: string | null
-          id: string
-          merchant_id: string
-          updated_at: string | null
-        }
-        Insert: {
-          body: string
-          created_at?: string | null
-          customer_profile_id?: string | null
-          deleted_by_merchant?: boolean
-          email_hash?: string | null
-          id?: string
-          merchant_id: string
-          updated_at?: string | null
-        }
-        Update: {
-          body?: string
-          created_at?: string | null
-          customer_profile_id?: string | null
-          deleted_by_merchant?: boolean
-          email_hash?: string | null
-          id?: string
-          merchant_id?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "customer_notes_customer_profile_id_fkey"
-            columns: ["customer_profile_id"]
-            isOneToOne: false
-            referencedRelation: "customer_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      customer_profile_audit_appearances: {
-        Row: {
-          appeared_at: string
-          audit_id: string
-          flags_at_time: Json
-          id: string
-          profile_id: string
-          score_at_time: number
-          transaction_id: string | null
-        }
-        Insert: {
-          appeared_at?: string
-          audit_id: string
-          flags_at_time?: Json
-          id?: string
-          profile_id: string
-          score_at_time?: number
-          transaction_id?: string | null
-        }
-        Update: {
-          appeared_at?: string
-          audit_id?: string
-          flags_at_time?: Json
-          id?: string
-          profile_id?: string
-          score_at_time?: number
-          transaction_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "customer_profile_audit_appearances_audit_id_fkey"
-            columns: ["audit_id"]
-            isOneToOne: false
-            referencedRelation: "processing_jobs"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "customer_profile_audit_appearances_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: false
-            referencedRelation: "customer_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "customer_profile_audit_appearances_transaction_id_fkey"
-            columns: ["transaction_id"]
-            isOneToOne: false
-            referencedRelation: "audit_transactions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      customer_profiles: {
-        Row: {
-          addresses: Json
-          avg_claim_days: number | null
-          card_last4s: Json
-          emails: Json
-          false_positive_reported: boolean
-          fastest_claim_days: number | null
-          first_seen: string
-          fraud_flags: Json
-          id: string
-          identity_cluster_id: string | null
-          identity_confidence_grade: string | null
-          identity_signals_summary: Json
-          identity_status: string | null
-          investigation_status: string
-          ips: Json
-          last_audit_id: string | null
-          last_seen: string
-          manually_reviewed: boolean
-          merchant_ids: Json
-          merchant_notes: string | null
-          names: Json
-          on_watchlist: boolean
-          phones: Json
-          primary_email: string | null
-          profile_confidence: number
-          refund_acceleration_score: number
-          refund_rate: number
-          refund_timestamps: Json
-          risk_level: string
-          risk_score: number
-          total_chargebacks: number
-          total_merchants_seen_at: number
-          total_orders: number
-          total_refund_claims: number
-        }
-        Insert: {
-          addresses?: Json
-          avg_claim_days?: number | null
-          card_last4s?: Json
-          emails?: Json
-          false_positive_reported?: boolean
-          fastest_claim_days?: number | null
-          first_seen?: string
-          fraud_flags?: Json
-          id?: string
-          identity_cluster_id?: string | null
-          identity_confidence_grade?: string | null
-          identity_signals_summary?: Json
-          identity_status?: string | null
-          investigation_status?: string
-          ips?: Json
-          last_audit_id?: string | null
-          last_seen?: string
-          manually_reviewed?: boolean
-          merchant_ids?: Json
-          merchant_notes?: string | null
-          names?: Json
-          on_watchlist?: boolean
-          phones?: Json
-          primary_email?: string | null
-          profile_confidence?: number
-          refund_acceleration_score?: number
-          refund_rate?: number
-          refund_timestamps?: Json
-          risk_level?: string
-          risk_score?: number
-          total_chargebacks?: number
-          total_merchants_seen_at?: number
-          total_orders?: number
-          total_refund_claims?: number
-        }
-        Update: {
-          addresses?: Json
-          avg_claim_days?: number | null
-          card_last4s?: Json
-          emails?: Json
-          false_positive_reported?: boolean
-          fastest_claim_days?: number | null
-          first_seen?: string
-          fraud_flags?: Json
-          id?: string
-          identity_cluster_id?: string | null
-          identity_confidence_grade?: string | null
-          identity_signals_summary?: Json
-          identity_status?: string | null
-          investigation_status?: string
-          ips?: Json
-          last_audit_id?: string | null
-          last_seen?: string
-          manually_reviewed?: boolean
-          merchant_ids?: Json
-          merchant_notes?: string | null
-          names?: Json
-          on_watchlist?: boolean
-          phones?: Json
-          primary_email?: string | null
-          profile_confidence?: number
-          refund_acceleration_score?: number
-          refund_rate?: number
-          refund_timestamps?: Json
-          risk_level?: string
-          risk_score?: number
-          total_chargebacks?: number
-          total_merchants_seen_at?: number
-          total_orders?: number
-          total_refund_claims?: number
-        }
-        Relationships: []
-      }
-      engine_versions: {
-        Row: {
-          deployed_at: string
-          id: string
-          notes: string | null
-          signal_weights: Json
-          thresholds: Json
-          version_number: string
-        }
-        Insert: {
-          deployed_at?: string
-          id?: string
-          notes?: string | null
-          signal_weights: Json
-          thresholds: Json
-          version_number: string
-        }
-        Update: {
-          deployed_at?: string
-          id?: string
-          notes?: string | null
-          signal_weights?: Json
-          thresholds?: Json
-          version_number?: string
-        }
-        Relationships: []
-      }
-      eval_history: {
-        Row: {
-          dataset_path: string
-          engine_version: string | null
-          f1_score: number | null
-          full_report: Json | null
-          id: string
-          labelled_count: number | null
-          precision_score: number | null
-          recall_score: number | null
-          row_count: number | null
-          run_at: string
-        }
-        Insert: {
-          dataset_path: string
-          engine_version?: string | null
-          f1_score?: number | null
-          full_report?: Json | null
-          id?: string
-          labelled_count?: number | null
-          precision_score?: number | null
-          recall_score?: number | null
-          row_count?: number | null
-          run_at?: string
-        }
-        Update: {
-          dataset_path?: string
-          engine_version?: string | null
-          f1_score?: number | null
-          full_report?: Json | null
-          id?: string
-          labelled_count?: number | null
-          precision_score?: number | null
-          recall_score?: number | null
-          row_count?: number | null
-          run_at?: string
-        }
-        Relationships: []
-      }
-      evidence_packages: {
-        Row: {
-          ce3_eligible: boolean | null
-          ce3_prior_transactions: Json | null
-          ce3_qualifying_signals: Json | null
-          created_at: string | null
-          cross_merchant_indicator: boolean | null
-          customer_profile_id: string | null
-          generated_at: string | null
-          generated_for_order_id: string | null
-          id: string
-          merchant_id: string
-          merchant_notes: string | null
-          narrative_summary: string | null
-          pdf_storage_path: string | null
-          reference_number: string
-          signal_snapshot: Json | null
-        }
-        Insert: {
-          ce3_eligible?: boolean | null
-          ce3_prior_transactions?: Json | null
-          ce3_qualifying_signals?: Json | null
-          created_at?: string | null
-          cross_merchant_indicator?: boolean | null
-          customer_profile_id?: string | null
-          generated_at?: string | null
-          generated_for_order_id?: string | null
-          id?: string
-          merchant_id: string
-          merchant_notes?: string | null
-          narrative_summary?: string | null
-          pdf_storage_path?: string | null
-          reference_number: string
-          signal_snapshot?: Json | null
-        }
-        Update: {
-          ce3_eligible?: boolean | null
-          ce3_prior_transactions?: Json | null
-          ce3_qualifying_signals?: Json | null
-          created_at?: string | null
-          cross_merchant_indicator?: boolean | null
-          customer_profile_id?: string | null
-          generated_at?: string | null
-          generated_for_order_id?: string | null
-          id?: string
-          merchant_id?: string
-          merchant_notes?: string | null
-          narrative_summary?: string | null
-          pdf_storage_path?: string | null
-          reference_number?: string
-          signal_snapshot?: Json | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "evidence_packages_customer_profile_id_fkey"
-            columns: ["customer_profile_id"]
-            isOneToOne: false
-            referencedRelation: "customer_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "evidence_packages_generated_for_order_id_fkey"
-            columns: ["generated_for_order_id"]
-            isOneToOne: false
-            referencedRelation: "audit_transactions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "evidence_packages_merchant_id_fkey"
-            columns: ["merchant_id"]
-            isOneToOne: false
-            referencedRelation: "merchants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      founding_merchant_applications: {
-        Row: {
-          agreed_to_terms_at: string
-          created_at: string
-          created_by_user_id: string
-          fraud_problem: string
-          id: string
-          internal_notified_at: string | null
-          merchant_id: string
-          monthly_order_volume: string
-          monthly_refund_chargeback_volume: string | null
-          status: string
-          store_name: string
-          updated_at: string
-        }
-        Insert: {
-          agreed_to_terms_at: string
-          created_at?: string
-          created_by_user_id: string
-          fraud_problem: string
-          id?: string
-          internal_notified_at?: string | null
-          merchant_id: string
-          monthly_order_volume: string
-          monthly_refund_chargeback_volume?: string | null
-          status?: string
-          store_name: string
-          updated_at?: string
-        }
-        Update: {
-          agreed_to_terms_at?: string
-          created_at?: string
-          created_by_user_id?: string
-          fraud_problem?: string
-          id?: string
-          internal_notified_at?: string | null
-          merchant_id?: string
-          monthly_order_volume?: string
-          monthly_refund_chargeback_volume?: string | null
-          status?: string
-          store_name?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "founding_merchant_applications_merchant_id_fkey"
-            columns: ["merchant_id"]
-            isOneToOne: true
-            referencedRelation: "merchants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      fraud_entities: {
-        Row: {
-          entity_type: string
-          entity_value: string
-          fastest_claim_days: number | null
-          first_seen: string
-          flagged_count: number
-          id: string
-          last_seen: string
-          match_score_avg: number | null
-          refund_acceleration_score: number | null
-          refund_intervals_avg_days: number | null
-          refund_timestamps: Json | null
-          total_chargebacks: number
-          total_merchants: number
-          total_merchants_refunded_at: number | null
-          total_orders: number
-          total_refund_claims: number
-        }
-        Insert: {
-          entity_type: string
-          entity_value: string
-          fastest_claim_days?: number | null
-          first_seen?: string
-          flagged_count?: number
-          id?: string
-          last_seen?: string
-          match_score_avg?: number | null
-          refund_acceleration_score?: number | null
-          refund_intervals_avg_days?: number | null
-          refund_timestamps?: Json | null
-          total_chargebacks?: number
-          total_merchants?: number
-          total_merchants_refunded_at?: number | null
-          total_orders?: number
-          total_refund_claims?: number
-        }
-        Update: {
-          entity_type?: string
-          entity_value?: string
-          fastest_claim_days?: number | null
-          first_seen?: string
-          flagged_count?: number
-          id?: string
-          last_seen?: string
-          match_score_avg?: number | null
-          refund_acceleration_score?: number | null
-          refund_intervals_avg_days?: number | null
-          refund_timestamps?: Json | null
-          total_chargebacks?: number
-          total_merchants?: number
-          total_merchants_refunded_at?: number | null
-          total_orders?: number
-          total_refund_claims?: number
-        }
-        Relationships: []
-      }
-      fraud_entity_co_occurrences: {
-        Row: {
-          co_occurrence_count: number
-          entity_a_type: string
-          entity_a_value: string
-          entity_b_type: string
-          entity_b_value: string
-          first_seen: string
-          id: string
-          last_seen: string
-        }
-        Insert: {
-          co_occurrence_count?: number
-          entity_a_type: string
-          entity_a_value: string
-          entity_b_type: string
-          entity_b_value: string
-          first_seen?: string
-          id?: string
-          last_seen?: string
-        }
-        Update: {
-          co_occurrence_count?: number
-          entity_a_type?: string
-          entity_a_value?: string
-          entity_b_type?: string
-          entity_b_value?: string
-          first_seen?: string
-          id?: string
-          last_seen?: string
-        }
-        Relationships: []
-      }
-      fraud_identity_clusters: {
-        Row: {
-          cluster_id: string
-          confidence: number
-          entity_type: string
-          entity_value: string
-          first_seen: string | null
-          id: string
-          last_seen: string | null
-          match_reasons: Json
-        }
-        Insert: {
-          cluster_id: string
-          confidence: number
-          entity_type: string
-          entity_value: string
-          first_seen?: string | null
-          id?: string
-          last_seen?: string | null
-          match_reasons?: Json
-        }
-        Update: {
-          cluster_id?: string
-          confidence?: number
-          entity_type?: string
-          entity_value?: string
-          first_seen?: string | null
-          id?: string
-          last_seen?: string | null
-          match_reasons?: Json
-        }
-        Relationships: []
-      }
-      identity_false_positive_reports: {
-        Row: {
-          cluster_id: string
-          created_at: string
-          evidence_snapshot: Json | null
-          id: string
-          reported_at: string
-          reported_by_merchant_id: string
-          reviewer_notes: string | null
-          status: string
-        }
-        Insert: {
-          cluster_id: string
-          created_at?: string
-          evidence_snapshot?: Json | null
-          id?: string
-          reported_at?: string
-          reported_by_merchant_id: string
-          reviewer_notes?: string | null
-          status?: string
-        }
-        Update: {
-          cluster_id?: string
-          created_at?: string
-          evidence_snapshot?: Json | null
-          id?: string
-          reported_at?: string
-          reported_by_merchant_id?: string
-          reviewer_notes?: string | null
-          status?: string
-        }
-        Relationships: []
-      }
-      identity_transitions: {
-        Row: {
-          cluster_id: string
-          from_status: string | null
-          id: string
-          score_after: number | null
-          score_before: number | null
-          to_status: string
-          transitioned_at: string
-          triggering_transaction_id: string | null
-        }
-        Insert: {
-          cluster_id: string
-          from_status?: string | null
-          id?: string
-          score_after?: number | null
-          score_before?: number | null
-          to_status: string
-          transitioned_at?: string
-          triggering_transaction_id?: string | null
-        }
-        Update: {
-          cluster_id?: string
-          from_status?: string | null
-          id?: string
-          score_after?: number | null
-          score_before?: number | null
-          to_status?: string
-          transitioned_at?: string
-          triggering_transaction_id?: string | null
-        }
-        Relationships: []
-      }
-      lookup_daily_counts: {
-        Row: {
-          count: number
-          lookup_date: string
-          merchant_id: string
-        }
-        Insert: {
-          count?: number
-          lookup_date?: string
-          merchant_id: string
-        }
-        Update: {
-          count?: number
-          lookup_date?: string
-          merchant_id?: string
-        }
-        Relationships: []
-      }
-      merchant_members: {
-        Row: {
-          accepted_at: string | null
-          created_at: string
-          id: string
-          invite_status: string
-          invited_by: string | null
-          invited_email: string
-          merchant_id: string
-          role: string
-          user_id: string | null
-        }
-        Insert: {
-          accepted_at?: string | null
-          created_at?: string
-          id?: string
-          invite_status?: string
-          invited_by?: string | null
-          invited_email: string
-          merchant_id: string
-          role?: string
-          user_id?: string | null
-        }
-        Update: {
-          accepted_at?: string | null
-          created_at?: string
-          id?: string
-          invite_status?: string
-          invited_by?: string | null
-          invited_email?: string
-          merchant_id?: string
-          role?: string
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "merchant_members_merchant_id_fkey"
-            columns: ["merchant_id"]
-            isOneToOne: false
-            referencedRelation: "merchants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      merchant_api_keys: {
-        Row: {
-          created_at: string
-          id: string
-          key_hash: string
-          key_prefix: string
-          last_used_at: string | null
-          merchant_id: string
-          name: string
-          rate_limit_per_minute: number
-          revoked_at: string | null
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          key_hash: string
-          key_prefix: string
-          last_used_at?: string | null
-          merchant_id: string
-          name: string
-          rate_limit_per_minute?: number
-          revoked_at?: string | null
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          key_hash?: string
-          key_prefix?: string
-          last_used_at?: string | null
-          merchant_id?: string
-          name?: string
-          rate_limit_per_minute?: number
-          revoked_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "merchant_api_keys_merchant_id_fkey"
-            columns: ["merchant_id"]
-            isOneToOne: false
-            referencedRelation: "merchants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      merchants: {
-        Row: {
-          created_at: string
-          default_column_map: Json | null
-          id: string
-          is_demo: boolean
-          is_internal: boolean
-          monthly_order_volume: string | null
-          name: string
-          platform: string | null
-          primary_fraud_concern: string | null
-          setup_complete: boolean
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          default_column_map?: Json | null
-          id?: string
-          is_demo?: boolean
-          is_internal?: boolean
-          monthly_order_volume?: string | null
-          name: string
-          platform?: string | null
-          primary_fraud_concern?: string | null
-          setup_complete?: boolean
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          default_column_map?: Json | null
-          id?: string
-          is_demo?: boolean
-          is_internal?: boolean
-          monthly_order_volume?: string | null
-          name?: string
-          platform?: string | null
-          primary_fraud_concern?: string | null
-          setup_complete?: boolean
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      network_metrics_snapshots: {
-        Row: {
-          active_merchants_30d: number | null
-          audits_in_last_30d: number | null
-          audits_with_cross_merchant_signal_30d: number | null
-          created_at: string | null
-          id: string
-          identities_at_2_merchants: number | null
-          identities_at_3plus_merchants: number | null
-          network_inr_claim_rate: number | null
-          network_refund_rate: number | null
-          snapshot_date: string
-          total_cross_merchant_matches_lifetime: number | null
-          total_identities: number | null
-          uploads_in_last_30d: number | null
-        }
-        Insert: {
-          active_merchants_30d?: number | null
-          audits_in_last_30d?: number | null
-          audits_with_cross_merchant_signal_30d?: number | null
-          created_at?: string | null
-          id?: string
-          identities_at_2_merchants?: number | null
-          identities_at_3plus_merchants?: number | null
-          network_inr_claim_rate?: number | null
-          network_refund_rate?: number | null
-          snapshot_date: string
-          total_cross_merchant_matches_lifetime?: number | null
-          total_identities?: number | null
-          uploads_in_last_30d?: number | null
-        }
-        Update: {
-          active_merchants_30d?: number | null
-          audits_in_last_30d?: number | null
-          audits_with_cross_merchant_signal_30d?: number | null
-          created_at?: string | null
-          id?: string
-          identities_at_2_merchants?: number | null
-          identities_at_3plus_merchants?: number | null
-          network_inr_claim_rate?: number | null
-          network_refund_rate?: number | null
-          snapshot_date?: string
-          total_cross_merchant_matches_lifetime?: number | null
-          total_identities?: number | null
-          uploads_in_last_30d?: number | null
-        }
-        Relationships: []
-      }
-      normalisation_learning: {
-        Row: {
-          confirmed_same: boolean
-          created_at: string
-          field_type: string
           id: string
           merchant_id: string | null
-          similarity_at_time: number | null
-          value_a: string
-          value_b: string
+          payload: Json
+          stripe_event_id: string | null
         }
         Insert: {
-          confirmed_same: boolean
           created_at?: string
-          field_type: string
+          event_type: string
           id?: string
           merchant_id?: string | null
-          similarity_at_time?: number | null
-          value_a: string
-          value_b: string
+          payload?: Json
+          stripe_event_id?: string | null
         }
         Update: {
-          confirmed_same?: boolean
           created_at?: string
-          field_type?: string
+          event_type?: string
           id?: string
           merchant_id?: string | null
-          similarity_at_time?: number | null
-          value_a?: string
-          value_b?: string
+          payload?: Json
+          stripe_event_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_v2_bel_merchant"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       processing_jobs: {
         Row: {
@@ -1176,18 +62,18 @@ export type Database = {
           error_message: string | null
           failed_at: string | null
           failed_rows: number
-          file_hash: string | null
           filename: string
-          flagged_count: number | null
+          flagged_count: number
+          finalize_claimed_at: string | null
           has_ground_truth: boolean | null
           hidden_by_merchant: boolean
           id: string
-          is_demo: boolean
+          is_demo: boolean | null
           label: string | null
           merchant_id: string
           processed_rows: number
-          progress_message: string
-          progress_pct: number
+          progress_message: string | null
+          progress_pct: number | null
           public_audit_id: string | null
           results_email_error: string | null
           results_email_sent_at: string | null
@@ -1195,7 +81,7 @@ export type Database = {
           status: string
           total_rows: number
           updated_at: string
-          upload_type: string
+          upload_type: string | null
           watchlist_sync_status: string | null
         }
         Insert: {
@@ -1210,18 +96,18 @@ export type Database = {
           error_message?: string | null
           failed_at?: string | null
           failed_rows?: number
-          file_hash?: string | null
-          filename: string
-          flagged_count?: number | null
+          filename?: string
+          flagged_count?: number
+          finalize_claimed_at?: string | null
           has_ground_truth?: boolean | null
           hidden_by_merchant?: boolean
           id?: string
-          is_demo?: boolean
+          is_demo?: boolean | null
           label?: string | null
           merchant_id: string
           processed_rows?: number
-          progress_message?: string
-          progress_pct?: number
+          progress_message?: string | null
+          progress_pct?: number | null
           public_audit_id?: string | null
           results_email_error?: string | null
           results_email_sent_at?: string | null
@@ -1229,7 +115,7 @@ export type Database = {
           status: string
           total_rows?: number
           updated_at?: string
-          upload_type?: string
+          upload_type?: string | null
           watchlist_sync_status?: string | null
         }
         Update: {
@@ -1244,18 +130,18 @@ export type Database = {
           error_message?: string | null
           failed_at?: string | null
           failed_rows?: number
-          file_hash?: string | null
           filename?: string
-          flagged_count?: number | null
+          flagged_count?: number
+          finalize_claimed_at?: string | null
           has_ground_truth?: boolean | null
           hidden_by_merchant?: boolean
           id?: string
-          is_demo?: boolean
+          is_demo?: boolean | null
           label?: string | null
           merchant_id?: string
           processed_rows?: number
-          progress_message?: string
-          progress_pct?: number
+          progress_message?: string | null
+          progress_pct?: number | null
           public_audit_id?: string | null
           results_email_error?: string | null
           results_email_sent_at?: string | null
@@ -1263,7 +149,7 @@ export type Database = {
           status?: string
           total_rows?: number
           updated_at?: string
-          upload_type?: string
+          upload_type?: string | null
           watchlist_sync_status?: string | null
         }
         Relationships: [
@@ -1274,150 +160,394 @@ export type Database = {
             referencedRelation: "engine_versions"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "processing_jobs_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
         ]
       }
-      public_audits: {
+      audit_transactions: {
         Row: {
-          account_created: boolean
+          amount: number | null
+          cluster_id: string | null
           created_at: string
-          csv_path: string | null
-          deletion_scheduled_at: string | null
+          currency: string | null
+          customer_email: string | null
+          customer_name: string | null
+          dismissed_by_merchant: boolean | null
+          fraud_flags: Json | null
           id: string
-          linked_merchant_id: string | null
-          linked_user_id: string | null
-          original_filename: string
-          processing_job_id: string | null
-          row_count: number | null
-          status: string
-          submitted_at: string
-          submitted_email: string
+          identity_confidence_grade: string | null
+          identity_score: number | null
+          identity_signals: Json | null
+          job_id: string
+          match_score: number | null
+          merchant_id: string | null
+          order_id: string | null
+          order_value: number | string | null
+          processed_at: string | null
+          refund_reason: string | null
+          signals_matched: string[] | null
+        }
+        Insert: {
+          amount?: number | null
+          cluster_id?: string | null
+          created_at?: string
+          currency?: string | null
+          customer_email?: string | null
+          customer_name?: string | null
+          dismissed_by_merchant?: boolean | null
+          fraud_flags?: Json | null
+          id?: string
+          identity_confidence_grade?: string | null
+          identity_score?: number | null
+          identity_signals?: Json | null
+          job_id: string
+          match_score?: number | null
+          merchant_id?: string | null
+          order_id?: string | null
+          order_value?: number | string | null
+          processed_at?: string | null
+          refund_reason?: string | null
+          signals_matched?: string[] | null
+        }
+        Update: {
+          amount?: number | null
+          cluster_id?: string | null
+          created_at?: string
+          currency?: string | null
+          customer_email?: string | null
+          customer_name?: string | null
+          dismissed_by_merchant?: boolean | null
+          fraud_flags?: Json | null
+          id?: string
+          identity_confidence_grade?: string | null
+          identity_score?: number | null
+          identity_signals?: Json | null
+          job_id?: string
+          match_score?: number | null
+          merchant_id?: string | null
+          order_id?: string | null
+          order_value?: number | string | null
+          processed_at?: string | null
+          refund_reason?: string | null
+          signals_matched?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_transactions_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "processing_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      claim_events: {
+        Row: {
+          actor_user_id: string | null
+          claim_id: string
+          created_at: string
+          event_type: string
+          from_status: Database["public"]["Enums"]["claim_status"] | null
+          id: string
+          merchant_id: string
+          metadata: Json
+          note: string | null
+          to_status: Database["public"]["Enums"]["claim_status"] | null
+        }
+        Insert: {
+          actor_user_id?: string | null
+          claim_id: string
+          created_at?: string
+          event_type: string
+          from_status?: Database["public"]["Enums"]["claim_status"] | null
+          id?: string
+          merchant_id: string
+          metadata?: Json
+          note?: string | null
+          to_status?: Database["public"]["Enums"]["claim_status"] | null
+        }
+        Update: {
+          actor_user_id?: string | null
+          claim_id?: string
+          created_at?: string
+          event_type?: string
+          from_status?: Database["public"]["Enums"]["claim_status"] | null
+          id?: string
+          merchant_id?: string
+          metadata?: Json
+          note?: string | null
+          to_status?: Database["public"]["Enums"]["claim_status"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claim_events_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claim_events_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      claim_evidence: {
+        Row: {
+          added_by: string | null
+          claim_id: string
+          created_at: string
+          evidence_hash: string | null
+          evidence_type: string
+          id: string
+          merchant_id: string
+          metadata: Json
+          storage_path: string | null
+        }
+        Insert: {
+          added_by?: string | null
+          claim_id: string
+          created_at?: string
+          evidence_hash?: string | null
+          evidence_type: string
+          id?: string
+          merchant_id: string
+          metadata?: Json
+          storage_path?: string | null
+        }
+        Update: {
+          added_by?: string | null
+          claim_id?: string
+          created_at?: string
+          evidence_hash?: string | null
+          evidence_type?: string
+          id?: string
+          merchant_id?: string
+          metadata?: Json
+          storage_path?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claim_evidence_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claim_evidence_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      claim_outcomes: {
+        Row: {
+          amount_recovered: number | null
+          amount_refunded: number | null
+          claim_id: string
+          decided_at: string
+          decided_by: string | null
+          decision: Database["public"]["Enums"]["claim_decision"]
+          id: string
+          notes: string | null
+          outcome: Database["public"]["Enums"]["claim_outcome"]
           updated_at: string
         }
         Insert: {
-          account_created?: boolean
-          created_at?: string
-          csv_path?: string | null
-          deletion_scheduled_at?: string | null
+          amount_recovered?: number | null
+          amount_refunded?: number | null
+          claim_id: string
+          decided_at?: string
+          decided_by?: string | null
+          decision: Database["public"]["Enums"]["claim_decision"]
           id?: string
-          linked_merchant_id?: string | null
-          linked_user_id?: string | null
-          original_filename: string
-          processing_job_id?: string | null
-          row_count?: number | null
-          status?: string
-          submitted_at?: string
-          submitted_email: string
+          notes?: string | null
+          outcome?: Database["public"]["Enums"]["claim_outcome"]
           updated_at?: string
         }
         Update: {
-          account_created?: boolean
-          created_at?: string
-          csv_path?: string | null
-          deletion_scheduled_at?: string | null
+          amount_recovered?: number | null
+          amount_refunded?: number | null
+          claim_id?: string
+          decided_at?: string
+          decided_by?: string | null
+          decision?: Database["public"]["Enums"]["claim_decision"]
           id?: string
-          linked_merchant_id?: string | null
-          linked_user_id?: string | null
-          original_filename?: string
-          processing_job_id?: string | null
-          row_count?: number | null
-          status?: string
-          submitted_at?: string
-          submitted_email?: string
+          notes?: string | null
+          outcome?: Database["public"]["Enums"]["claim_outcome"]
           updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: "public_audits_linked_merchant_id_fkey"
-            columns: ["linked_merchant_id"]
+            foreignKeyName: "claim_outcomes_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: true
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      claims: {
+        Row: {
+          amount_at_risk: number | null
+          assigned_at: string | null
+          assigned_to: string | null
+          claim_type: Database["public"]["Enums"]["claim_type"]
+          created_at: string
+          currency: string | null
+          detection_detail: Json
+          detection_method: Database["public"]["Enums"]["claim_detection_method"]
+          first_viewed_at: string | null
+          id: string
+          identity_id: string | null
+          merchant_id: string
+          reason_normalized: string | null
+          reason_raw: string | null
+          requires_review: boolean
+          snoozed_until: string | null
+          source_order_id: string | null
+          source_ticket_id: string | null
+          status: Database["public"]["Enums"]["claim_status"]
+          submitted_at: string
+          updated_at: string
+        }
+        Insert: {
+          amount_at_risk?: number | null
+          assigned_at?: string | null
+          assigned_to?: string | null
+          claim_type: Database["public"]["Enums"]["claim_type"]
+          created_at?: string
+          currency?: string | null
+          detection_detail?: Json
+          detection_method?: Database["public"]["Enums"]["claim_detection_method"]
+          first_viewed_at?: string | null
+          id?: string
+          identity_id?: string | null
+          merchant_id: string
+          reason_normalized?: string | null
+          reason_raw?: string | null
+          requires_review?: boolean
+          snoozed_until?: string | null
+          source_order_id?: string | null
+          source_ticket_id?: string | null
+          status?: Database["public"]["Enums"]["claim_status"]
+          submitted_at?: string
+          updated_at?: string
+        }
+        Update: {
+          amount_at_risk?: number | null
+          assigned_at?: string | null
+          assigned_to?: string | null
+          claim_type?: Database["public"]["Enums"]["claim_type"]
+          created_at?: string
+          currency?: string | null
+          detection_detail?: Json
+          detection_method?: Database["public"]["Enums"]["claim_detection_method"]
+          first_viewed_at?: string | null
+          id?: string
+          identity_id?: string | null
+          merchant_id?: string
+          reason_normalized?: string | null
+          reason_raw?: string | null
+          requires_review?: boolean
+          snoozed_until?: string | null
+          source_order_id?: string | null
+          source_ticket_id?: string | null
+          status?: Database["public"]["Enums"]["claim_status"]
+          submitted_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claims_identity_id_fkey"
+            columns: ["identity_id"]
+            isOneToOne: false
+            referencedRelation: "identities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claims_merchant_id_fkey"
+            columns: ["merchant_id"]
             isOneToOne: false
             referencedRelation: "merchants"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "public_audits_processing_job_id_fkey"
-            columns: ["processing_job_id"]
+            foreignKeyName: "claims_source_order_id_fkey"
+            columns: ["source_order_id"]
             isOneToOne: false
-            referencedRelation: "processing_jobs"
+            referencedRelation: "source_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claims_source_ticket_id_fkey"
+            columns: ["source_ticket_id"]
+            isOneToOne: false
+            referencedRelation: "source_tickets"
             referencedColumns: ["id"]
           },
         ]
       }
-      signal_performance: {
+      context_credit_events: {
         Row: {
-          false_negative_count: number
-          false_positive_count: number
-          id: string
-          last_updated: string
-          precision_score: number | null
-          signal_name: string
-          true_negative_count: number
-          true_positive_count: number
-          weight_adjustment: number
-        }
-        Insert: {
-          false_negative_count?: number
-          false_positive_count?: number
-          id?: string
-          last_updated?: string
-          precision_score?: number | null
-          signal_name: string
-          true_negative_count?: number
-          true_positive_count?: number
-          weight_adjustment?: number
-        }
-        Update: {
-          false_negative_count?: number
-          false_positive_count?: number
-          id?: string
-          last_updated?: string
-          precision_score?: number | null
-          signal_name?: string
-          true_negative_count?: number
-          true_positive_count?: number
-          weight_adjustment?: number
-        }
-        Relationships: []
-      }
-      user_action_log: {
-        Row: {
-          action: string
-          actor_role: string
-          actor_user_id: string
-          created_at: string
+          claim_id: string | null
+          context_type: string
+          credits_spent: number
+          customer_ref: string | null
           id: string
           merchant_id: string
-          metadata: Json | null
-          request_ip: string | null
-          resource_id: string | null
-          resource_type: string | null
+          metadata: Json
+          occurred_at: string
+          order_ref: string | null
+          plan_tier: string
+          reason: string | null
+          ticket_ref: string | null
+          user_id: string | null
         }
         Insert: {
-          action: string
-          actor_role: string
-          actor_user_id: string
-          created_at?: string
+          claim_id?: string | null
+          context_type: string
+          credits_spent: number
+          customer_ref?: string | null
           id?: string
           merchant_id: string
-          metadata?: Json | null
-          request_ip?: string | null
-          resource_id?: string | null
-          resource_type?: string | null
+          metadata?: Json
+          occurred_at?: string
+          order_ref?: string | null
+          plan_tier: string
+          reason?: string | null
+          ticket_ref?: string | null
+          user_id?: string | null
         }
         Update: {
-          action?: string
-          actor_role?: string
-          actor_user_id?: string
-          created_at?: string
+          claim_id?: string | null
+          context_type?: string
+          credits_spent?: number
+          customer_ref?: string | null
           id?: string
           merchant_id?: string
-          metadata?: Json | null
-          request_ip?: string | null
-          resource_id?: string | null
-          resource_type?: string | null
+          metadata?: Json
+          occurred_at?: string
+          order_ref?: string | null
+          plan_tier?: string
+          reason?: string | null
+          ticket_ref?: string | null
+          user_id?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "user_action_log_merchant_id_fkey"
+            foreignKeyName: "fk_v2_cce_merchant"
             columns: ["merchant_id"]
             isOneToOne: false
             referencedRelation: "merchants"
@@ -1425,40 +555,485 @@ export type Database = {
           },
         ]
       }
-      user_permission_grants: {
+      credit_topup_log: {
         Row: {
-          granted_at: string
-          grantee_user_id: string
-          grantor_user_id: string
+          amount_gbp: number
+          created_at: string
+          credits_added: number
           id: string
           merchant_id: string
-          permission: string
-          revoked: boolean
+          stripe_payment_intent_id: string | null
+        }
+        Insert: {
+          amount_gbp: number
+          created_at?: string
+          credits_added: number
+          id?: string
+          merchant_id: string
+          stripe_payment_intent_id?: string | null
+        }
+        Update: {
+          amount_gbp?: number
+          created_at?: string
+          credits_added?: number
+          id?: string
+          merchant_id?: string
+          stripe_payment_intent_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_v2_ctl_merchant"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      helpdesk_connections: {
+        Row: {
+          access_token_encrypted: string | null
+          created_at: string
+          id: string
+          last_error: string | null
+          last_sync_at: string | null
+          merchant_id: string
+          provider: Database["public"]["Enums"]["helpdesk_kind"]
+          provider_account_id: string | null
+          provider_account_name: string | null
+          provider_base_url: string | null
+          refresh_token_encrypted: string | null
+          scopes: Json
+          status: Database["public"]["Enums"]["connection_status"]
+          token_expires_at: string | null
+          updated_at: string
+          webhook_secret_hash: string | null
+          webhook_secret_rotated_at: string | null
+        }
+        Insert: {
+          access_token_encrypted?: string | null
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          last_sync_at?: string | null
+          merchant_id: string
+          provider: Database["public"]["Enums"]["helpdesk_kind"]
+          provider_account_id?: string | null
+          provider_account_name?: string | null
+          provider_base_url?: string | null
+          refresh_token_encrypted?: string | null
+          scopes?: Json
+          status?: Database["public"]["Enums"]["connection_status"]
+          token_expires_at?: string | null
+          updated_at?: string
+          webhook_secret_hash?: string | null
+          webhook_secret_rotated_at?: string | null
+        }
+        Update: {
+          access_token_encrypted?: string | null
+          created_at?: string
+          id?: string
+          last_error?: string | null
+          last_sync_at?: string | null
+          merchant_id?: string
+          provider?: Database["public"]["Enums"]["helpdesk_kind"]
+          provider_account_id?: string | null
+          provider_account_name?: string | null
+          provider_base_url?: string | null
+          refresh_token_encrypted?: string | null
+          scopes?: Json
+          status?: Database["public"]["Enums"]["connection_status"]
+          token_expires_at?: string | null
+          updated_at?: string
+          webhook_secret_hash?: string | null
+          webhook_secret_rotated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "helpdesk_connections_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      identities: {
+        Row: {
+          confidence_grade: Database["public"]["Enums"]["confidence_grade"]
+          confidence_score: number
+          created_at: string
+          first_seen_at: string
+          id: string
+          last_seen_at: string
+          merchant_count: number
+          signal_count: number
+          superseded_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          confidence_grade?: Database["public"]["Enums"]["confidence_grade"]
+          confidence_score?: number
+          created_at?: string
+          first_seen_at?: string
+          id?: string
+          last_seen_at?: string
+          merchant_count?: number
+          signal_count?: number
+          superseded_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          confidence_grade?: Database["public"]["Enums"]["confidence_grade"]
+          confidence_score?: number
+          created_at?: string
+          first_seen_at?: string
+          id?: string
+          last_seen_at?: string
+          merchant_count?: number
+          signal_count?: number
+          superseded_by?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "identities_superseded_by_fkey"
+            columns: ["superseded_by"]
+            isOneToOne: false
+            referencedRelation: "identities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      identity_edges: {
+        Row: {
+          first_seen_at: string
+          id: string
+          last_seen_at: string
+          left_hash: string
+          left_type: Database["public"]["Enums"]["identifier_type"]
+          merchant_id: string
+          right_hash: string
+          right_type: Database["public"]["Enums"]["identifier_type"]
+          seen_count: number
+          source: Database["public"]["Enums"]["signal_source"]
+        }
+        Insert: {
+          first_seen_at?: string
+          id?: string
+          last_seen_at?: string
+          left_hash: string
+          left_type: Database["public"]["Enums"]["identifier_type"]
+          merchant_id: string
+          right_hash: string
+          right_type: Database["public"]["Enums"]["identifier_type"]
+          seen_count?: number
+          source: Database["public"]["Enums"]["signal_source"]
+        }
+        Update: {
+          first_seen_at?: string
+          id?: string
+          last_seen_at?: string
+          left_hash?: string
+          left_type?: Database["public"]["Enums"]["identifier_type"]
+          merchant_id?: string
+          right_hash?: string
+          right_type?: Database["public"]["Enums"]["identifier_type"]
+          seen_count?: number
+          source?: Database["public"]["Enums"]["signal_source"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "identity_edges_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      identity_members: {
+        Row: {
+          added_at: string
+          identifier_hash: string
+          identifier_type: Database["public"]["Enums"]["identifier_type"]
+          identity_id: string
+          match_confidence: number
+          matched_via: Json
+        }
+        Insert: {
+          added_at?: string
+          identifier_hash: string
+          identifier_type: Database["public"]["Enums"]["identifier_type"]
+          identity_id: string
+          match_confidence: number
+          matched_via?: Json
+        }
+        Update: {
+          added_at?: string
+          identifier_hash?: string
+          identifier_type?: Database["public"]["Enums"]["identifier_type"]
+          identity_id?: string
+          match_confidence?: number
+          matched_via?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "identity_members_identity_id_fkey"
+            columns: ["identity_id"]
+            isOneToOne: false
+            referencedRelation: "identities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      identity_notes: {
+        Row: {
+          body: string
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          id: string
+          identity_id: string
+          merchant_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          id?: string
+          identity_id: string
+          merchant_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          id?: string
+          identity_id?: string
+          merchant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "identity_notes_identity_id_fkey"
+            columns: ["identity_id"]
+            isOneToOne: false
+            referencedRelation: "identities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "identity_notes_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      identity_profiles: {
+        Row: {
+          avg_claim_days: number | null
+          claim_rate: number | null
+          claim_type_counts: Json
+          fastest_claim_days: number | null
+          first_seen_at: string | null
+          identity_id: string
+          last_seen_at: string | null
+          merchant_count: number
+          refreshed_at: string
+          total_chargebacks: number
+          total_claims: number
+          total_orders: number
+          total_refund_amount: number
+        }
+        Insert: {
+          avg_claim_days?: number | null
+          claim_rate?: number | null
+          claim_type_counts?: Json
+          fastest_claim_days?: number | null
+          first_seen_at?: string | null
+          identity_id: string
+          last_seen_at?: string | null
+          merchant_count?: number
+          refreshed_at?: string
+          total_chargebacks?: number
+          total_claims?: number
+          total_orders?: number
+          total_refund_amount?: number
+        }
+        Update: {
+          avg_claim_days?: number | null
+          claim_rate?: number | null
+          claim_type_counts?: Json
+          fastest_claim_days?: number | null
+          first_seen_at?: string | null
+          identity_id?: string
+          last_seen_at?: string | null
+          merchant_count?: number
+          refreshed_at?: string
+          total_chargebacks?: number
+          total_claims?: number
+          total_orders?: number
+          total_refund_amount?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "identity_profiles_identity_id_fkey"
+            columns: ["identity_id"]
+            isOneToOne: true
+            referencedRelation: "identities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      identity_resolution_events: {
+        Row: {
+          actor: string
+          created_at: string
+          detail: Json
+          event_type: string
+          from_grade: Database["public"]["Enums"]["confidence_grade"] | null
+          id: string
+          identity_id: string
+          to_grade: Database["public"]["Enums"]["confidence_grade"] | null
+        }
+        Insert: {
+          actor?: string
+          created_at?: string
+          detail?: Json
+          event_type: string
+          from_grade?: Database["public"]["Enums"]["confidence_grade"] | null
+          id?: string
+          identity_id: string
+          to_grade?: Database["public"]["Enums"]["confidence_grade"] | null
+        }
+        Update: {
+          actor?: string
+          created_at?: string
+          detail?: Json
+          event_type?: string
+          from_grade?: Database["public"]["Enums"]["confidence_grade"] | null
+          id?: string
+          identity_id?: string
+          to_grade?: Database["public"]["Enums"]["confidence_grade"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "identity_resolution_events_identity_id_fkey"
+            columns: ["identity_id"]
+            isOneToOne: false
+            referencedRelation: "identities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      identity_signals: {
+        Row: {
+          created_at: string
+          id: string
+          identifier_hash: string
+          identifier_type: Database["public"]["Enums"]["identifier_type"]
+          merchant_id: string
+          observed_at: string
+          source: Database["public"]["Enums"]["signal_source"]
+          source_customer_id: string | null
+          source_order_id: string | null
+          source_ticket_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          identifier_hash: string
+          identifier_type: Database["public"]["Enums"]["identifier_type"]
+          merchant_id: string
+          observed_at?: string
+          source: Database["public"]["Enums"]["signal_source"]
+          source_customer_id?: string | null
+          source_order_id?: string | null
+          source_ticket_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          identifier_hash?: string
+          identifier_type?: Database["public"]["Enums"]["identifier_type"]
+          merchant_id?: string
+          observed_at?: string
+          source?: Database["public"]["Enums"]["signal_source"]
+          source_customer_id?: string | null
+          source_order_id?: string | null
+          source_ticket_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "identity_signals_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "identity_signals_source_customer_id_fkey"
+            columns: ["source_customer_id"]
+            isOneToOne: false
+            referencedRelation: "source_customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "identity_signals_source_order_id_fkey"
+            columns: ["source_order_id"]
+            isOneToOne: false
+            referencedRelation: "source_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "identity_signals_source_ticket_id_fkey"
+            columns: ["source_ticket_id"]
+            isOneToOne: false
+            referencedRelation: "source_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      merchant_api_keys: {
+        Row: {
+          created_at: string
+          id: string
+          key_hash: string
+          key_prefix: string
+          last_used_at: string | null
+          merchant_id: string
+          name: string | null
+          rate_limit_per_minute: number
           revoked_at: string | null
         }
         Insert: {
-          granted_at?: string
-          grantee_user_id: string
-          grantor_user_id: string
+          created_at?: string
           id?: string
+          key_hash: string
+          key_prefix: string
+          last_used_at?: string | null
           merchant_id: string
-          permission: string
-          revoked?: boolean
+          name?: string | null
+          rate_limit_per_minute?: number
           revoked_at?: string | null
         }
         Update: {
-          granted_at?: string
-          grantee_user_id?: string
-          grantor_user_id?: string
+          created_at?: string
           id?: string
+          key_hash?: string
+          key_prefix?: string
+          last_used_at?: string | null
           merchant_id?: string
-          permission?: string
-          revoked?: boolean
+          name?: string | null
+          rate_limit_per_minute?: number
           revoked_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "user_permission_grants_merchant_id_fkey"
+            foreignKeyName: "merchant_api_keys_merchant_id_fkey"
             columns: ["merchant_id"]
             isOneToOne: false
             referencedRelation: "merchants"
@@ -1466,104 +1041,1238 @@ export type Database = {
           },
         ]
       }
-      watchlist_appearances: {
+      merchant_credits: {
         Row: {
-          audit_id: string
-          customer_profile_id: string
-          first_seen_in_audit: string | null
-          highest_grade: string | null
-          id: string
+          cycle_reset_at: string
+          last_reset_at: string | null
           merchant_id: string
-          reviewed_at: string | null
-          transaction_count: number
+          monthly_credits_remaining: number
+          topup_credits_remaining: number
+          updated_at: string
+          usage_warning_sent_at: string | null
         }
         Insert: {
-          audit_id: string
-          customer_profile_id: string
-          first_seen_in_audit?: string | null
-          highest_grade?: string | null
-          id?: string
+          cycle_reset_at: string
+          last_reset_at?: string | null
           merchant_id: string
-          reviewed_at?: string | null
-          transaction_count?: number
+          monthly_credits_remaining?: number
+          topup_credits_remaining?: number
+          updated_at?: string
+          usage_warning_sent_at?: string | null
         }
         Update: {
-          audit_id?: string
-          customer_profile_id?: string
-          first_seen_in_audit?: string | null
-          highest_grade?: string | null
-          id?: string
+          cycle_reset_at?: string
+          last_reset_at?: string | null
           merchant_id?: string
-          reviewed_at?: string | null
-          transaction_count?: number
+          monthly_credits_remaining?: number
+          topup_credits_remaining?: number
+          updated_at?: string
+          usage_warning_sent_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "watchlist_appearances_audit_id_fkey"
-            columns: ["audit_id"]
-            isOneToOne: false
-            referencedRelation: "processing_jobs"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "watchlist_appearances_customer_profile_id_fkey"
-            columns: ["customer_profile_id"]
-            isOneToOne: false
-            referencedRelation: "customer_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "watchlist_appearances_merchant_id_fkey"
+            foreignKeyName: "fk_v2_mcred_merchant"
             columns: ["merchant_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "merchants"
             referencedColumns: ["id"]
           },
         ]
       }
-      watchlist_entries: {
+      merchant_identity_state: {
         Row: {
-          added_at: string | null
-          customer_profile_id: string | null
+          created_at: string
           display_email: string | null
           display_name: string | null
-          email_hash: string | null
-          id: string
-          last_seen_at: string | null
-          last_seen_risk: string | null
+          identity_id: string
+          investigation_status: string
           merchant_id: string
-          removed_by_merchant: boolean
+          on_watchlist: boolean
+          updated_at: string
+          updated_by: string | null
         }
         Insert: {
-          added_at?: string | null
-          customer_profile_id?: string | null
+          created_at?: string
           display_email?: string | null
           display_name?: string | null
-          email_hash?: string | null
-          id?: string
-          last_seen_at?: string | null
-          last_seen_risk?: string | null
+          identity_id: string
+          investigation_status?: string
           merchant_id: string
-          removed_by_merchant?: boolean
+          on_watchlist?: boolean
+          updated_at?: string
+          updated_by?: string | null
         }
         Update: {
-          added_at?: string | null
-          customer_profile_id?: string | null
+          created_at?: string
           display_email?: string | null
           display_name?: string | null
-          email_hash?: string | null
-          id?: string
-          last_seen_at?: string | null
-          last_seen_risk?: string | null
+          identity_id?: string
+          investigation_status?: string
           merchant_id?: string
-          removed_by_merchant?: boolean
+          on_watchlist?: boolean
+          updated_at?: string
+          updated_by?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "watchlist_entries_customer_profile_id_fkey"
-            columns: ["customer_profile_id"]
+            foreignKeyName: "merchant_identity_state_identity_id_fkey"
+            columns: ["identity_id"]
             isOneToOne: false
-            referencedRelation: "customer_profiles"
+            referencedRelation: "identities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "merchant_identity_state_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      merchant_subscriptions: {
+        Row: {
+          cancel_at_period_end: boolean
+          context_credits_monthly: number | null
+          created_at: string
+          current_period_end: string | null
+          current_period_start: string
+          downgrade_to_plan_id: string | null
+          grace_period_ends_at: string | null
+          id: string
+          merchant_id: string
+          plan_id: string
+          status: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          cancel_at_period_end?: boolean
+          context_credits_monthly?: number | null
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string
+          downgrade_to_plan_id?: string | null
+          grace_period_ends_at?: string | null
+          id?: string
+          merchant_id: string
+          plan_id: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cancel_at_period_end?: boolean
+          context_credits_monthly?: number | null
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string
+          downgrade_to_plan_id?: string | null
+          grace_period_ends_at?: string | null
+          id?: string
+          merchant_id?: string
+          plan_id?: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_v2_msub_merchant"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_v2_msub_plan"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["plan_id"]
+          },
+        ]
+      }
+      merchant_users: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          id: string
+          invite_status: Database["public"]["Enums"]["invite_status"]
+          invited_by: string | null
+          invited_email: string
+          merchant_id: string
+          role: Database["public"]["Enums"]["member_role"]
+          user_id: string | null
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          id?: string
+          invite_status?: Database["public"]["Enums"]["invite_status"]
+          invited_by?: string | null
+          invited_email: string
+          merchant_id: string
+          role?: Database["public"]["Enums"]["member_role"]
+          user_id?: string | null
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          id?: string
+          invite_status?: Database["public"]["Enums"]["invite_status"]
+          invited_by?: string | null
+          invited_email?: string
+          merchant_id?: string
+          role?: Database["public"]["Enums"]["member_role"]
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "merchant_users_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      merchants: {
+        Row: {
+          created_at: string
+          business_name: string | null
+          id: string
+          is_demo: boolean
+          is_internal: boolean
+          monthly_order_volume: string | null
+          name: string
+          platform: string | null
+          primary_fraud_concern: string | null
+          setup_complete: boolean | null
+          user_id: string | null
+          settings: Json
+          invite_status: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          business_name?: string | null
+          id?: string
+          is_demo?: boolean
+          is_internal?: boolean
+          monthly_order_volume?: string | null
+          name: string
+          platform?: string | null
+          primary_fraud_concern?: string | null
+          setup_complete?: boolean | null
+          user_id?: string | null
+          settings?: Json
+          invite_status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          business_name?: string | null
+          id?: string
+          is_demo?: boolean
+          is_internal?: boolean
+          monthly_order_volume?: string | null
+          name?: string
+          platform?: string | null
+          primary_fraud_concern?: string | null
+          setup_complete?: boolean | null
+          user_id?: string | null
+          settings?: Json
+          invite_status?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      migration_orphans: {
+        Row: {
+          created_at: string
+          detail: Json
+          id: number
+          phase: string
+          reason: string
+          source_key: string
+          source_table: string
+        }
+        Insert: {
+          created_at?: string
+          detail?: Json
+          id?: number
+          phase: string
+          reason: string
+          source_key: string
+          source_table: string
+        }
+        Update: {
+          created_at?: string
+          detail?: Json
+          id?: number
+          phase?: string
+          reason?: string
+          source_key?: string
+          source_table?: string
+        }
+        Relationships: []
+      }
+      network_access_log: {
+        Row: {
+          created_at: string
+          id: string
+          k_anonymity_satisfied: boolean
+          matched_identity_count: number
+          merchant_id: string
+          queried_hashes: string[]
+          request_ip: unknown
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          k_anonymity_satisfied: boolean
+          matched_identity_count?: number
+          merchant_id: string
+          queried_hashes: string[]
+          request_ip?: unknown
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          k_anonymity_satisfied?: boolean
+          matched_identity_count?: number
+          merchant_id?: string
+          queried_hashes?: string[]
+          request_ip?: unknown
+        }
+        Relationships: [
+          {
+            foreignKeyName: "network_access_log_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plans: {
+        Row: {
+          created_at: string
+          credits_monthly: number | null
+          name: string
+          plan_id: string
+          price_gbp: number
+          stripe_price_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          credits_monthly?: number | null
+          name: string
+          plan_id: string
+          price_gbp?: number
+          stripe_price_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          credits_monthly?: number | null
+          name?: string
+          plan_id?: string
+          price_gbp?: number
+          stripe_price_id?: string | null
+        }
+        Relationships: []
+      }
+      processed_webhooks: {
+        Row: {
+          attempts: number
+          idempotency_key: string
+          last_error: string | null
+          processed_at: string
+          provider: string
+          status: string
+          store_key: string | null
+          topic: string | null
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          idempotency_key: string
+          last_error?: string | null
+          processed_at?: string
+          provider: string
+          status?: string
+          store_key?: string | null
+          topic?: string | null
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          idempotency_key?: string
+          last_error?: string | null
+          processed_at?: string
+          provider?: string
+          status?: string
+          store_key?: string | null
+          topic?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      source_addresses: {
+        Row: {
+          city: string | null
+          country: string | null
+          created_at: string
+          id: string
+          kind: string
+          line1: string | null
+          line2: string | null
+          merchant_id: string
+          normalized_full: string | null
+          phone: string | null
+          postal_code: string | null
+          region: string | null
+          source_customer_id: string | null
+        }
+        Insert: {
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          id?: string
+          kind: string
+          line1?: string | null
+          line2?: string | null
+          merchant_id: string
+          normalized_full?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          region?: string | null
+          source_customer_id?: string | null
+        }
+        Update: {
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          line1?: string | null
+          line2?: string | null
+          merchant_id?: string
+          normalized_full?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          region?: string | null
+          source_customer_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "source_addresses_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_addresses_source_customer_id_fkey"
+            columns: ["source_customer_id"]
+            isOneToOne: false
+            referencedRelation: "source_customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      source_customers: {
+        Row: {
+          account_created_at: string | null
+          connection_id: string | null
+          created_at: string
+          email: string | null
+          external_id: string
+          first_name: string | null
+          id: string
+          last_name: string | null
+          linked_platform_customer_external_id: string | null
+          merchant_id: string
+          note: string | null
+          orders_count: number | null
+          other_emails: Json
+          phone: string | null
+          raw_metadata: Json
+          source: Database["public"]["Enums"]["signal_source"]
+          tags: Json
+          total_spent: number | null
+          updated_at: string
+          verified_email: boolean | null
+        }
+        Insert: {
+          account_created_at?: string | null
+          connection_id?: string | null
+          created_at?: string
+          email?: string | null
+          external_id: string
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          linked_platform_customer_external_id?: string | null
+          merchant_id: string
+          note?: string | null
+          orders_count?: number | null
+          other_emails?: Json
+          phone?: string | null
+          raw_metadata?: Json
+          source: Database["public"]["Enums"]["signal_source"]
+          tags?: Json
+          total_spent?: number | null
+          updated_at?: string
+          verified_email?: boolean | null
+        }
+        Update: {
+          account_created_at?: string | null
+          connection_id?: string | null
+          created_at?: string
+          email?: string | null
+          external_id?: string
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          linked_platform_customer_external_id?: string | null
+          merchant_id?: string
+          note?: string | null
+          orders_count?: number | null
+          other_emails?: Json
+          phone?: string | null
+          raw_metadata?: Json
+          source?: Database["public"]["Enums"]["signal_source"]
+          tags?: Json
+          total_spent?: number | null
+          updated_at?: string
+          verified_email?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "source_customers_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      source_disputes: {
+        Row: {
+          amount: number | null
+          currency: string | null
+          dispute_type: string | null
+          external_id: string
+          finalized_at: string | null
+          id: string
+          ingested_at: string
+          initiated_at: string | null
+          merchant_id: string
+          reason: string | null
+          source_order_id: string | null
+          status: string | null
+        }
+        Insert: {
+          amount?: number | null
+          currency?: string | null
+          dispute_type?: string | null
+          external_id: string
+          finalized_at?: string | null
+          id?: string
+          ingested_at?: string
+          initiated_at?: string | null
+          merchant_id: string
+          reason?: string | null
+          source_order_id?: string | null
+          status?: string | null
+        }
+        Update: {
+          amount?: number | null
+          currency?: string | null
+          dispute_type?: string | null
+          external_id?: string
+          finalized_at?: string | null
+          id?: string
+          ingested_at?: string
+          initiated_at?: string | null
+          merchant_id?: string
+          reason?: string | null
+          source_order_id?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "source_disputes_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_disputes_source_order_id_fkey"
+            columns: ["source_order_id"]
+            isOneToOne: false
+            referencedRelation: "source_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      source_fulfillments: {
+        Row: {
+          external_id: string
+          id: string
+          ingested_at: string
+          merchant_id: string
+          occurred_at: string | null
+          shipment_status: string | null
+          source_order_id: string
+          status: string | null
+          tracking_company: string | null
+          tracking_number: string | null
+          updated_at_source: string | null
+        }
+        Insert: {
+          external_id: string
+          id?: string
+          ingested_at?: string
+          merchant_id: string
+          occurred_at?: string | null
+          shipment_status?: string | null
+          source_order_id: string
+          status?: string | null
+          tracking_company?: string | null
+          tracking_number?: string | null
+          updated_at_source?: string | null
+        }
+        Update: {
+          external_id?: string
+          id?: string
+          ingested_at?: string
+          merchant_id?: string
+          occurred_at?: string | null
+          shipment_status?: string | null
+          source_order_id?: string
+          status?: string | null
+          tracking_company?: string | null
+          tracking_number?: string | null
+          updated_at_source?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "source_fulfillments_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_fulfillments_source_order_id_fkey"
+            columns: ["source_order_id"]
+            isOneToOne: false
+            referencedRelation: "source_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      source_orders: {
+        Row: {
+          accept_language: string | null
+          billing_address_id: string | null
+          browser_ip: unknown
+          cancel_reason: string | null
+          cancelled_at: string | null
+          candidate_cluster_id: string | null
+          card_last4: string | null
+          cluster_id: string | null
+          connection_id: string | null
+          currency: string | null
+          customer_email: string | null
+          customer_name: string | null
+          dismissed_by_merchant: boolean | null
+          discount_codes: Json
+          email: string | null
+          external_id: string
+          fraud_flags: Json | null
+          financial_status: Database["public"]["Enums"]["order_financial_status"]
+          fulfillment_state: Database["public"]["Enums"]["fulfillment_state"]
+          id: string
+          identity_confidence_grade: string | null
+          identity_match_grade: string | null
+          identity_score: number | null
+          identity_signals: Json | null
+          ingested_at: string
+          job_id: string | null
+          landing_site: string | null
+          line_items_count: number | null
+          match_score: number | null
+          match_status: string | null
+          merchant_id: string
+          note: string | null
+          order_id: string | null
+          order_value: number | string | null
+          order_number: string | null
+          payment_gateway: string | null
+          phone: string | null
+          placed_at: string | null
+          processed_at: string | null
+          raw_payload_hash: string | null
+          referring_site: string | null
+          refund_reason: string | null
+          shipping_address_id: string | null
+          signals_matched: string[] | null
+          behavioural_flags: string[] | null
+          source: Database["public"]["Enums"]["signal_source"]
+          source_customer_id: string | null
+          source_name: string | null
+          subtotal_price: number | null
+          tags: Json
+          total_discounts: number | null
+          total_price: number | null
+          updated_at: string
+          user_agent: string | null
+        }
+        Insert: {
+          accept_language?: string | null
+          billing_address_id?: string | null
+          browser_ip?: unknown
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          candidate_cluster_id?: string | null
+          card_last4?: string | null
+          cluster_id?: string | null
+          connection_id?: string | null
+          currency?: string | null
+          customer_email?: string | null
+          customer_name?: string | null
+          dismissed_by_merchant?: boolean | null
+          discount_codes?: Json
+          email?: string | null
+          external_id: string
+          fraud_flags?: Json | null
+          financial_status?: Database["public"]["Enums"]["order_financial_status"]
+          fulfillment_state?: Database["public"]["Enums"]["fulfillment_state"]
+          id?: string
+          identity_confidence_grade?: string | null
+          identity_match_grade?: string | null
+          identity_score?: number | null
+          identity_signals?: Json | null
+          ingested_at?: string
+          job_id?: string | null
+          landing_site?: string | null
+          line_items_count?: number | null
+          match_score?: number | null
+          match_status?: string | null
+          merchant_id: string
+          note?: string | null
+          order_id?: string | null
+          order_value?: number | string | null
+          order_number?: string | null
+          payment_gateway?: string | null
+          phone?: string | null
+          placed_at?: string | null
+          processed_at?: string | null
+          raw_payload_hash?: string | null
+          referring_site?: string | null
+          refund_reason?: string | null
+          shipping_address_id?: string | null
+          signals_matched?: string[] | null
+          behavioural_flags?: string[] | null
+          source: Database["public"]["Enums"]["signal_source"]
+          source_customer_id?: string | null
+          source_name?: string | null
+          subtotal_price?: number | null
+          tags?: Json
+          total_discounts?: number | null
+          total_price?: number | null
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Update: {
+          accept_language?: string | null
+          billing_address_id?: string | null
+          browser_ip?: unknown
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          candidate_cluster_id?: string | null
+          card_last4?: string | null
+          cluster_id?: string | null
+          connection_id?: string | null
+          currency?: string | null
+          customer_email?: string | null
+          customer_name?: string | null
+          dismissed_by_merchant?: boolean | null
+          discount_codes?: Json
+          email?: string | null
+          external_id?: string
+          fraud_flags?: Json | null
+          financial_status?: Database["public"]["Enums"]["order_financial_status"]
+          fulfillment_state?: Database["public"]["Enums"]["fulfillment_state"]
+          id?: string
+          identity_confidence_grade?: string | null
+          identity_match_grade?: string | null
+          identity_score?: number | null
+          identity_signals?: Json | null
+          ingested_at?: string
+          job_id?: string | null
+          landing_site?: string | null
+          line_items_count?: number | null
+          match_score?: number | null
+          match_status?: string | null
+          merchant_id?: string
+          note?: string | null
+          order_id?: string | null
+          order_value?: number | string | null
+          order_number?: string | null
+          payment_gateway?: string | null
+          phone?: string | null
+          placed_at?: string | null
+          processed_at?: string | null
+          raw_payload_hash?: string | null
+          referring_site?: string | null
+          refund_reason?: string | null
+          shipping_address_id?: string | null
+          signals_matched?: string[] | null
+          behavioural_flags?: string[] | null
+          source?: Database["public"]["Enums"]["signal_source"]
+          source_customer_id?: string | null
+          source_name?: string | null
+          subtotal_price?: number | null
+          tags?: Json
+          total_discounts?: number | null
+          total_price?: number | null
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "source_orders_billing_address_id_fkey"
+            columns: ["billing_address_id"]
+            isOneToOne: false
+            referencedRelation: "source_addresses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_orders_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "store_connections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_orders_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_orders_shipping_address_id_fkey"
+            columns: ["shipping_address_id"]
+            isOneToOne: false
+            referencedRelation: "source_addresses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_orders_source_customer_id_fkey"
+            columns: ["source_customer_id"]
+            isOneToOne: false
+            referencedRelation: "source_customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      source_refunds: {
+        Row: {
+          amount: number | null
+          currency: string | null
+          external_id: string
+          id: string
+          ingested_at: string
+          is_full_refund: boolean | null
+          merchant_id: string
+          raw_payload_hash: string | null
+          reason: string | null
+          refunded_at: string | null
+          source_order_id: string
+        }
+        Insert: {
+          amount?: number | null
+          currency?: string | null
+          external_id: string
+          id?: string
+          ingested_at?: string
+          is_full_refund?: boolean | null
+          merchant_id: string
+          raw_payload_hash?: string | null
+          reason?: string | null
+          refunded_at?: string | null
+          source_order_id: string
+        }
+        Update: {
+          amount?: number | null
+          currency?: string | null
+          external_id?: string
+          id?: string
+          ingested_at?: string
+          is_full_refund?: boolean | null
+          merchant_id?: string
+          raw_payload_hash?: string | null
+          reason?: string | null
+          refunded_at?: string | null
+          source_order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "source_refunds_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_refunds_source_order_id_fkey"
+            columns: ["source_order_id"]
+            isOneToOne: false
+            referencedRelation: "source_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      source_ticket_events: {
+        Row: {
+          actor_type: string | null
+          created_at: string
+          event_type: string
+          extracted_identifiers: Json
+          id: string
+          merchant_id: string
+          metadata: Json
+          occurred_at: string | null
+          raw_payload_hash: string | null
+          source_ticket_id: string
+          summary: string | null
+        }
+        Insert: {
+          actor_type?: string | null
+          created_at?: string
+          event_type: string
+          extracted_identifiers?: Json
+          id?: string
+          merchant_id: string
+          metadata?: Json
+          occurred_at?: string | null
+          raw_payload_hash?: string | null
+          source_ticket_id: string
+          summary?: string | null
+        }
+        Update: {
+          actor_type?: string | null
+          created_at?: string
+          event_type?: string
+          extracted_identifiers?: Json
+          id?: string
+          merchant_id?: string
+          metadata?: Json
+          occurred_at?: string | null
+          raw_payload_hash?: string | null
+          source_ticket_id?: string
+          summary?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "source_ticket_events_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_ticket_events_source_ticket_id_fkey"
+            columns: ["source_ticket_id"]
+            isOneToOne: false
+            referencedRelation: "source_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      source_tickets: {
+        Row: {
+          channel: Database["public"]["Enums"]["ticket_channel"]
+          closed_at_provider: string | null
+          connection_id: string | null
+          created_at_provider: string | null
+          customer_reply_count: number | null
+          external_id: string
+          external_url: string | null
+          id: string
+          ingested_at: string
+          is_spam: boolean | null
+          linked_order_external_ids: Json
+          merchant_id: string
+          message_count: number | null
+          opened_at_provider: string | null
+          provider: Database["public"]["Enums"]["helpdesk_kind"]
+          raw_payload_hash: string | null
+          satisfaction_score: number | null
+          source_customer_id: string | null
+          status: string | null
+          subject: string | null
+          tags: Json
+          updated_at: string
+          updated_at_provider: string | null
+          was_reopened: boolean | null
+        }
+        Insert: {
+          channel?: Database["public"]["Enums"]["ticket_channel"]
+          closed_at_provider?: string | null
+          connection_id?: string | null
+          created_at_provider?: string | null
+          customer_reply_count?: number | null
+          external_id: string
+          external_url?: string | null
+          id?: string
+          ingested_at?: string
+          is_spam?: boolean | null
+          linked_order_external_ids?: Json
+          merchant_id: string
+          message_count?: number | null
+          opened_at_provider?: string | null
+          provider: Database["public"]["Enums"]["helpdesk_kind"]
+          raw_payload_hash?: string | null
+          satisfaction_score?: number | null
+          source_customer_id?: string | null
+          status?: string | null
+          subject?: string | null
+          tags?: Json
+          updated_at?: string
+          updated_at_provider?: string | null
+          was_reopened?: boolean | null
+        }
+        Update: {
+          channel?: Database["public"]["Enums"]["ticket_channel"]
+          closed_at_provider?: string | null
+          connection_id?: string | null
+          created_at_provider?: string | null
+          customer_reply_count?: number | null
+          external_id?: string
+          external_url?: string | null
+          id?: string
+          ingested_at?: string
+          is_spam?: boolean | null
+          linked_order_external_ids?: Json
+          merchant_id?: string
+          message_count?: number | null
+          opened_at_provider?: string | null
+          provider?: Database["public"]["Enums"]["helpdesk_kind"]
+          raw_payload_hash?: string | null
+          satisfaction_score?: number | null
+          source_customer_id?: string | null
+          status?: string | null
+          subject?: string | null
+          tags?: Json
+          updated_at?: string
+          updated_at_provider?: string | null
+          was_reopened?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "source_tickets_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "helpdesk_connections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_tickets_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_tickets_source_customer_id_fkey"
+            columns: ["source_customer_id"]
+            isOneToOne: false
+            referencedRelation: "source_customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_connections: {
+        Row: {
+          created_at: string
+          credentials_encrypted: string
+          id: string
+          installed_at: string
+          last_error: string | null
+          last_sync_at: string | null
+          merchant_id: string
+          platform: Database["public"]["Enums"]["platform_kind"]
+          scopes: Json
+          status: Database["public"]["Enums"]["connection_status"]
+          store_key: string
+          store_url: string | null
+          uninstalled_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          credentials_encrypted: string
+          id?: string
+          installed_at?: string
+          last_error?: string | null
+          last_sync_at?: string | null
+          merchant_id: string
+          platform: Database["public"]["Enums"]["platform_kind"]
+          scopes?: Json
+          status?: Database["public"]["Enums"]["connection_status"]
+          store_key: string
+          store_url?: string | null
+          uninstalled_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          credentials_encrypted?: string
+          id?: string
+          installed_at?: string
+          last_error?: string | null
+          last_sync_at?: string | null
+          merchant_id?: string
+          platform?: Database["public"]["Enums"]["platform_kind"]
+          scopes?: Json
+          status?: Database["public"]["Enums"]["connection_status"]
+          store_key?: string
+          store_url?: string | null
+          uninstalled_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_connections_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sync_job_chunks: {
+        Row: {
+          chunk_index: number
+          claimed_at: string | null
+          completed_at: string | null
+          id: string
+          job_id: string
+          last_error: string | null
+          status: Database["public"]["Enums"]["sync_job_status"]
+        }
+        Insert: {
+          chunk_index: number
+          claimed_at?: string | null
+          completed_at?: string | null
+          id?: string
+          job_id: string
+          last_error?: string | null
+          status?: Database["public"]["Enums"]["sync_job_status"]
+        }
+        Update: {
+          chunk_index?: number
+          claimed_at?: string | null
+          completed_at?: string | null
+          id?: string
+          job_id?: string
+          last_error?: string | null
+          status?: Database["public"]["Enums"]["sync_job_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sync_job_chunks_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "sync_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sync_jobs: {
+        Row: {
+          column_map: Json | null
+          completed_at: string | null
+          created_at: string
+          error_log: Json
+          failed_rows: number
+          file_hash: string | null
+          finalize_claimed_at: string | null
+          hidden: boolean
+          id: string
+          job_kind: string
+          label: string | null
+          merchant_id: string
+          processed_rows: number
+          progress_message: string | null
+          progress_pct: number | null
+          source: Database["public"]["Enums"]["signal_source"] | null
+          status: Database["public"]["Enums"]["sync_job_status"]
+          storage_path: string | null
+          total_rows: number | null
+          updated_at: string
+        }
+        Insert: {
+          column_map?: Json | null
+          completed_at?: string | null
+          created_at?: string
+          error_log?: Json
+          failed_rows?: number
+          file_hash?: string | null
+          finalize_claimed_at?: string | null
+          hidden?: boolean
+          id?: string
+          job_kind: string
+          label?: string | null
+          merchant_id: string
+          processed_rows?: number
+          progress_message?: string | null
+          progress_pct?: number | null
+          source?: Database["public"]["Enums"]["signal_source"] | null
+          status?: Database["public"]["Enums"]["sync_job_status"]
+          storage_path?: string | null
+          total_rows?: number | null
+          updated_at?: string
+        }
+        Update: {
+          column_map?: Json | null
+          completed_at?: string | null
+          created_at?: string
+          error_log?: Json
+          failed_rows?: number
+          file_hash?: string | null
+          finalize_claimed_at?: string | null
+          hidden?: boolean
+          id?: string
+          job_kind?: string
+          label?: string | null
+          merchant_id?: string
+          processed_rows?: number
+          progress_message?: string | null
+          progress_pct?: number | null
+          source?: Database["public"]["Enums"]["signal_source"] | null
+          status?: Database["public"]["Enums"]["sync_job_status"]
+          storage_path?: string | null
+          total_rows?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sync_jobs_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
             referencedColumns: ["id"]
           },
         ]
@@ -1573,194 +2282,158 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      bulk_upsert_co_occurrences: {
-        Args: { p_pairs: Json }
-        Returns: undefined
-      }
-      bulk_upsert_fraud_entities: {
-        Args: { p_entities: Json }
-        Returns: undefined
-      }
-      current_database_size_bytes: {
-        Args: never
-        Returns: {
-          database_bytes: number
-        }[]
-      }
-      generate_evidence_reference: { Args: never; Returns: string }
       increment_job_progress: {
         Args: {
-          p_failed_delta: number
+          p_failed_delta?: number
           p_job_id: string
           p_processed_delta: number
         }
         Returns: undefined
       }
-      increment_lookup_count: {
-        Args: { p_date: string; p_merchant_id: string }
-        Returns: number
+      ingest_identity_observations: {
+        Args: { p_edges: Json; p_merchant_id: string; p_signals: Json }
+        Returns: undefined
       }
-      record_refund_claim: {
+      bulk_upsert_identity_identifiers: {
         Args: {
-          p_claimed_at: string
-          p_days_to_claim: number
-          p_entity_type: string
-          p_entity_value: string
+          p_identifiers: Json
+          p_source_provider: string
         }
         Returns: undefined
       }
-      record_signal_feedback: {
+      bulk_upsert_identifier_co_occurrence_edges: {
         Args: {
-          p_all_signals: string[]
-          p_fired: string[]
-          p_outcome: string
-          p_transaction_id: string
-        }
-        Returns: undefined
-      }
-      search_customer_profiles: {
-        Args: {
-          p_address?: string
-          p_card?: string
-          p_email?: string
-          p_ip?: string
-          p_name?: string
-        }
-        Returns: {
-          addresses: Json
-          avg_claim_days: number
-          card_last4s: Json
-          emails: Json
-          fastest_claim_days: number
-          first_seen: string
-          fraud_flags: Json
-          id: string
-          ips: Json
-          last_audit_id: string
-          last_seen: string
-          manually_reviewed: boolean
-          merchant_ids: Json
-          merchant_notes: string
-          names: Json
-          on_watchlist: boolean
-          phones: Json
-          primary_email: string
-          profile_confidence: number
-          refund_acceleration_score: number
-          refund_rate: number
-          refund_timestamps: Json
-          risk_level: string
-          risk_score: number
-          total_chargebacks: number
-          total_merchants_seen_at: number
-          total_orders: number
-          total_refund_claims: number
-        }[]
-      }
-      search_customer_profiles_batch: {
-        Args: { p_cards?: string[]; p_emails?: string[]; p_ips?: string[] }
-        Returns: {
-          addresses: Json
-          card_last4s: Json
-          emails: Json
-          fraud_flags: Json
-          id: string
-          ips: Json
-          merchant_ids: Json
-          names: Json
-          primary_email: string
-          refund_rate: number
-          risk_level: string
-          risk_score: number
-          total_merchants_seen_at: number
-          total_orders: number
-          total_refund_claims: number
-        }[]
-      }
-      seed_fraud_intelligence: {
-        Args: never
-        Returns: {
-          addresses_seeded: number
-          cards_seeded: number
-          clusters_created: number
-          emails_seeded: number
-          ips_seeded: number
-        }[]
-      }
-      update_fraud_entity_with_intelligence: {
-        Args: {
-          p_chargebacks_delta: number
-          p_entity_type: string
-          p_entity_value: string
-          p_fastest_claim_days: number
-          p_flagged_delta: number
-          p_orders_delta: number
-          p_refund_claims_delta: number
-          p_refund_this_batch: boolean
-          p_refund_timestamps: string[]
-          p_score_avg: number
-        }
-        Returns: undefined
-      }
-      upsert_co_occurrence: {
-        Args: {
-          p_a_type: string
-          p_a_value: string
-          p_b_type: string
-          p_b_value: string
-          p_count_delta: number
-        }
-        Returns: undefined
-      }
-      upsert_fraud_entity: {
-        Args: {
-          p_chargeback: number
-          p_entity_type: string
-          p_entity_value: string
-          p_flagged: number
-          p_refund_claim: number
-          p_score: number
-        }
-        Returns: undefined
-      }
-      upsert_fraud_entity_v2: {
-        Args: {
-          p_chargebacks_delta: number
-          p_entity_type: string
-          p_entity_value: string
-          p_fastest_claim_days: number
-          p_flagged_delta: number
-          p_orders_delta: number
-          p_refund_claims_delta: number
-          p_refund_this_batch: boolean
-          p_refund_timestamps: string[]
-          p_score_avg: number
-        }
-        Returns: undefined
-      }
-      upsert_identity_v2: {
-        Args: {
-          p_email_hash: string
-          p_is_inr: boolean
-          p_is_refund: boolean
+          p_edges: Json
           p_merchant_id: string
-          p_signals: Json
-        }
-        Returns: string
-      }
-      upsert_refund_pattern: {
-        Args: {
-          p_days_to_claim: number
-          p_entity_type: string
-          p_entity_value: string
-          p_merchant_identifier: string
-          p_refund_timestamp: string
+          p_source_provider: string
         }
         Returns: undefined
+      }
+      is_merchant_member: { Args: { p_merchant_id: string }; Returns: boolean }
+      lookup_network_identity: {
+        Args: {
+          p_identifier_hashes: Json
+          p_merchant_id: string
+          p_request_ip?: unknown
+        }
+        Returns: {
+          claim_rate: number
+          claim_type_counts: Json
+          confidence_grade: Database["public"]["Enums"]["confidence_grade"]
+          confidence_score: number
+          fastest_claim_days: number
+          first_seen_at: string
+          identity_id: string
+          last_seen_at: string
+          merchant_count: number
+          total_chargebacks: number
+          total_claims: number
+          total_orders: number
+        }[]
       }
     }
     Enums: {
-      [_ in never]: never
+      claim_decision:
+        | "approved"
+        | "denied"
+        | "escalated"
+        | "partial_refund"
+        | "full_refund"
+        | "chargeback_disputed"
+        | "no_action"
+      claim_detection_method:
+        | "tag"
+        | "keyword"
+        | "manual"
+        | "platform_dispute"
+        | "platform_refund"
+        | "model"
+      claim_outcome:
+        | "loss"
+        | "recovered"
+        | "pending"
+        | "chargeback_won"
+        | "chargeback_lost"
+        | "customer_verified"
+        | "suspected_fraud"
+        | "legitimate"
+      claim_status:
+        | "pending"
+        | "open"
+        | "escalated"
+        | "resolved_refunded"
+        | "resolved_won"
+        | "resolved_lost"
+        | "resolved_denied"
+        | "resolved_exchanged"
+        | "voided"
+        | "stale"
+      claim_type:
+        | "item_not_received"
+        | "damaged"
+        | "wrong_item"
+        | "not_as_described"
+        | "refund_request"
+        | "chargeback"
+        | "return_abuse"
+        | "other"
+      confidence_grade: "weak" | "possible" | "probable" | "definite"
+      connection_status: "active" | "disabled" | "revoked" | "error"
+      fulfillment_state:
+        | "unfulfilled"
+        | "partial"
+        | "fulfilled"
+        | "delivered"
+        | "in_transit"
+        | "failure"
+        | "returned"
+        | "unknown"
+      helpdesk_kind: "gorgias" | "zendesk" | "freshdesk"
+      identifier_type:
+        | "email"
+        | "email_root"
+        | "phone"
+        | "shipping_address"
+        | "billing_address"
+        | "address_unit"
+        | "ip"
+        | "name"
+        | "payment_fingerprint"
+        | "platform_customer_id"
+        | "helpdesk_contact_id"
+      invite_status: "pending" | "active" | "revoked"
+      member_role: "owner" | "admin" | "analyst" | "viewer"
+      order_financial_status:
+        | "pending"
+        | "authorized"
+        | "paid"
+        | "partially_paid"
+        | "partially_refunded"
+        | "refunded"
+        | "voided"
+        | "cancelled"
+        | "unknown"
+      platform_kind: "shopify" | "woocommerce" | "bigcommerce"
+      signal_source:
+        | "shopify"
+        | "woocommerce"
+        | "bigcommerce"
+        | "gorgias"
+        | "zendesk"
+        | "freshdesk"
+        | "csv"
+        | "manual"
+      sync_job_status: "pending" | "running" | "completed" | "failed"
+      ticket_channel:
+        | "email"
+        | "chat"
+        | "sms"
+        | "phone"
+        | "social"
+        | "portal"
+        | "api"
+        | "bot"
+        | "unknown"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1886,10 +2559,119 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
-    Enums: {},
+    Enums: {
+      claim_decision: [
+        "approved",
+        "denied",
+        "escalated",
+        "partial_refund",
+        "full_refund",
+        "chargeback_disputed",
+        "no_action",
+      ],
+      claim_detection_method: [
+        "tag",
+        "keyword",
+        "manual",
+        "platform_dispute",
+        "platform_refund",
+        "model",
+      ],
+      claim_outcome: [
+        "loss",
+        "recovered",
+        "pending",
+        "chargeback_won",
+        "chargeback_lost",
+        "customer_verified",
+        "suspected_fraud",
+        "legitimate",
+      ],
+      claim_status: [
+        "pending",
+        "open",
+        "escalated",
+        "resolved_refunded",
+        "resolved_won",
+        "resolved_lost",
+        "resolved_denied",
+        "resolved_exchanged",
+        "voided",
+        "stale",
+      ],
+      claim_type: [
+        "item_not_received",
+        "damaged",
+        "wrong_item",
+        "not_as_described",
+        "refund_request",
+        "chargeback",
+        "return_abuse",
+        "other",
+      ],
+      confidence_grade: ["weak", "possible", "probable", "definite"],
+      connection_status: ["active", "disabled", "revoked", "error"],
+      fulfillment_state: [
+        "unfulfilled",
+        "partial",
+        "fulfilled",
+        "delivered",
+        "in_transit",
+        "failure",
+        "returned",
+        "unknown",
+      ],
+      helpdesk_kind: ["gorgias", "zendesk", "freshdesk"],
+      identifier_type: [
+        "email",
+        "email_root",
+        "phone",
+        "shipping_address",
+        "billing_address",
+        "address_unit",
+        "ip",
+        "name",
+        "payment_fingerprint",
+        "platform_customer_id",
+        "helpdesk_contact_id",
+      ],
+      invite_status: ["pending", "active", "revoked"],
+      member_role: ["owner", "admin", "analyst", "viewer"],
+      order_financial_status: [
+        "pending",
+        "authorized",
+        "paid",
+        "partially_paid",
+        "partially_refunded",
+        "refunded",
+        "voided",
+        "cancelled",
+        "unknown",
+      ],
+      platform_kind: ["shopify", "woocommerce", "bigcommerce"],
+      signal_source: [
+        "shopify",
+        "woocommerce",
+        "bigcommerce",
+        "gorgias",
+        "zendesk",
+        "freshdesk",
+        "csv",
+        "manual",
+      ],
+      sync_job_status: ["pending", "running", "completed", "failed"],
+      ticket_channel: [
+        "email",
+        "chat",
+        "sms",
+        "phone",
+        "social",
+        "portal",
+        "api",
+        "bot",
+        "unknown",
+      ],
+    },
   },
 } as const

@@ -38,11 +38,11 @@ export function FreshdeskSupportSyncConnectionDetails({
       {isDisabledOrError ? (
         <div
           className="rounded-md px-3 py-2 text-sm"
-          style={{ background: 'rgba(180, 50, 50, 0.08)', color: 'var(--text)' }}
+          style={{ background: 'color-mix(in srgb, var(--success) 8%, transparent)', color: 'var(--text)' }}
         >
           <p className="font-medium">Connection {connection.status}</p>
           {connection.last_error ? (
-            <p className="mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>
+            <p className="mt-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
               {connection.last_error}
             </p>
           ) : null}
@@ -51,27 +51,27 @@ export function FreshdeskSupportSyncConnectionDetails({
 
       <dl className="grid gap-2 text-sm">
         <div className="flex justify-between gap-4">
-          <dt style={{ color: 'var(--text-muted)' }}>Account</dt>
+          <dt style={{ color: 'var(--text-secondary)' }}>Account</dt>
           <dd style={{ color: 'var(--text)' }}>{freshdeskAccountLabel(connection)}</dd>
         </div>
         <div className="flex justify-between gap-4">
-          <dt style={{ color: 'var(--text-muted)' }}>Status</dt>
+          <dt style={{ color: 'var(--text-secondary)' }}>Status</dt>
           <dd style={{ color: 'var(--text)' }}>{connection.status}</dd>
         </div>
         <div className="flex justify-between gap-4">
-          <dt style={{ color: 'var(--text-muted)' }}>Webhook secret</dt>
+          <dt style={{ color: 'var(--text-secondary)' }}>Webhook secret</dt>
           <dd style={{ color: 'var(--text)' }}>
             {connection.webhook_secret_configured ? 'Configured' : 'Not configured'}
           </dd>
         </div>
         <div className="flex justify-between gap-4">
-          <dt style={{ color: 'var(--text-muted)' }}>Last sync</dt>
+          <dt style={{ color: 'var(--text-secondary)' }}>Last sync</dt>
           <dd style={{ color: 'var(--text)' }}>{formatFreshdeskWhen(connection.last_sync_at)}</dd>
         </div>
       </dl>
 
       {isActive ? (
-        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+        <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
           Webhook endpoint: <code>{connection.webhook_url}</code> (use the URL with your domain and
           secret from connect or rotate). Header: <code>{FRESHDESK_SUPPORT_WEBHOOK_HEADER_NAME}</code>
         </p>
@@ -83,7 +83,7 @@ export function FreshdeskSupportSyncConnectionDetails({
           disabled={!canManage || state.busy}
           onClick={onRotateSecret}
           className="inline-flex items-center gap-1.5 rounded-md border px-3 py-2 text-xs font-medium disabled:opacity-60"
-          style={{ borderColor: 'var(--surface-border)', color: 'var(--text)' }}
+          style={{ borderColor: 'var(--border)', color: 'var(--text)' }}
         >
           <RefreshCw className="h-3.5 w-3.5" />
           Rotate webhook secret
@@ -93,7 +93,7 @@ export function FreshdeskSupportSyncConnectionDetails({
           disabled={!canManage || state.busy}
           onClick={onDisableConnection}
           className="inline-flex items-center gap-1.5 rounded-md border px-3 py-2 text-xs font-medium disabled:opacity-60"
-          style={{ borderColor: 'var(--surface-border)', color: 'var(--danger, #e8362a)' }}
+          style={{ borderColor: 'var(--border)', color: 'var(--success)' }}
         >
           <Unplug className="h-3.5 w-3.5" />
           Disconnect

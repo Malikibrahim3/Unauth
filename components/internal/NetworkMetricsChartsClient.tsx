@@ -22,7 +22,7 @@ function shortDate(d: string) {
 
 type RechartsModule = typeof import('recharts');
 
-const SECTION_STYLE = { background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' };
+const SECTION_STYLE = { background: 'var(--surface)', borderColor: 'var(--border-muted)' };
 
 export default function NetworkMetricsChartsClient({ snapshots }: Props) {
   const [recharts, setRecharts] = useState<RechartsModule | null>(null);
@@ -38,7 +38,7 @@ export default function NetworkMetricsChartsClient({ snapshots }: Props) {
           <div
             key={key}
             className="h-[320px] w-full animate-pulse rounded-lg border"
-            style={{ background: 'var(--bg-subtle)', borderColor: 'var(--border-subtle)' }}
+            style={{ background: 'var(--bg-subtle)', borderColor: 'var(--border-muted)' }}
             aria-hidden="true"
           />
         ))}
@@ -80,13 +80,13 @@ export default function NetworkMetricsChartsClient({ snapshots }: Props) {
           <h2 className={titleClass} style={{ color: 'var(--text)' }}>
             Identity graph growth
           </h2>
-          <p className={subtitleClass} style={{ color: 'var(--text-muted)' }}>
+          <p className={subtitleClass} style={{ color: 'var(--text-secondary)' }}>
             k-anonymity threshold satisfied = identities at 3+ merchants
           </p>
         </div>
         <ResponsiveContainer width="100%" height={260}>
           <LineChart data={snapshots.map((s) => ({ date: shortDate(s.snapshot_date), total: s.total_identities, kanon: s.identities_at_3plus_merchants }))}>
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border-muted)" />
             <XAxis dataKey="date" tick={{ fontSize: 12 }} />
             <YAxis tick={{ fontSize: 12 }} />
             <Tooltip />
@@ -102,13 +102,13 @@ export default function NetworkMetricsChartsClient({ snapshots }: Props) {
           <h2 className={titleClass} style={{ color: 'var(--text)' }}>
             Network signal activation
           </h2>
-          <p className={subtitleClass} style={{ color: 'var(--text-muted)' }}>
+          <p className={subtitleClass} style={{ color: 'var(--text-secondary)' }}>
             % of audits producing at least one cross-merchant signal
           </p>
         </div>
         <ResponsiveContainer width="100%" height={260}>
           <LineChart data={signalData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border-muted)" />
             <XAxis dataKey="date" tick={{ fontSize: 12 }} />
             <YAxis unit="%" tick={{ fontSize: 12 }} />
             <Tooltip formatter={(v: number) => `${v}%`} />
@@ -126,7 +126,7 @@ export default function NetworkMetricsChartsClient({ snapshots }: Props) {
         </div>
         <ResponsiveContainer width="100%" height={260}>
           <BarChart data={snapshots.map((s) => ({ date: shortDate(s.snapshot_date), merchants: s.active_merchants_30d, uploads: s.uploads_in_last_30d }))}>
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border-muted)" />
             <XAxis dataKey="date" tick={{ fontSize: 12 }} />
             <YAxis tick={{ fontSize: 12 }} />
             <Tooltip />

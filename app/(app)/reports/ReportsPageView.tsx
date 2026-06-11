@@ -28,15 +28,15 @@ export function ReportsPageView({
   tabPanel,
 }: ReportsPageViewProps) {
   return (
-    <PageConnectionGate requires="both" connection={connectionState} pageName="Reports" pageDescription="Report metrics combine Shopify order data with helpdesk claim data. Without both connected, claim counts, dispute rates, and outcome summaries will be incomplete or zero." setupState={setupState} hasData={hasAnyData}>
+    <PageConnectionGate requires="both" connection={connectionState} pageName="Analytics" pageDescription="Analytics combines Shopify order data with helpdesk claim records. Without both connected, claim counts, dispute rates, and outcome summaries will be incomplete or zero." setupState={setupState} hasData={hasAnyData}>
     <WorkbenchPage
-      title="Reports"
-      subtitle="Live reporting from Shopify + helpdesk, plus CSV import audits — each clearly labelled by source."
+      title="Analytics"
+      subtitle="Store and network intelligence from customer, order, claim, and source-case records."
       navItems={WORKBENCH_NAV_ITEMS}
       activeNavKey="reports"
       actions={
         <div className="flex flex-wrap items-center gap-2">
-          <div className="inline-flex rounded-md border p-0.5" style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-input)' }}>
+          <div className="inline-flex rounded-md border p-0.5" style={{ borderColor: 'var(--border)', background: 'var(--surface-sunken)' }}>
             {['7d', '30d', '90d', 'all'].map((option) => (
               <a
                 key={option}
@@ -44,8 +44,8 @@ export function ReportsPageView({
                 className="t-label px-2.5 py-1"
                 style={{
                   borderRadius: 3,
-                  background: range === option ? 'var(--copper-dim)' : 'transparent',
-                  color: range === option ? 'var(--copper-bright)' : 'var(--ink-tertiary)',
+                  background: range === option ? 'var(--accent-soft)' : 'transparent',
+                  color: range === option ? 'var(--accent)' : 'var(--text-tertiary)',
                 }}
               >
                 {option}

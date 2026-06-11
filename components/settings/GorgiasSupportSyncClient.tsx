@@ -188,14 +188,14 @@ export default function GorgiasSupportSyncClient({ canManage }: Props) {
 
   return (
     <section
-      className="rounded-lg border p-5 space-y-5"
-      style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-raised)' }}
+      className="rounded-md border p-5 space-y-5"
+      style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
     >
       <div>
         <h2 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
           Gorgias support ticket sync
         </h2>
-        <p className="mt-1 text-sm" style={{ color: 'var(--text-muted)' }}>
+        <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
           Connect Gorgias support tickets so Unauth can link refund/missing parcel conversations to Shopify orders,
           customer profiles, and claim review.
         </p>
@@ -207,10 +207,10 @@ export default function GorgiasSupportSyncClient({ canManage }: Props) {
           style={{
             background:
               state.message.type === 'error'
-                ? 'rgba(180, 50, 50, 0.08)'
+                ? 'color-mix(in srgb, var(--success) 8%, transparent)'
                 : state.message.type === 'warning'
-                  ? 'rgba(180, 130, 40, 0.12)'
-                  : 'rgba(47, 107, 67, 0.10)',
+                  ? 'color-mix(in srgb, var(--warning) 12%, transparent)'
+                  : 'var(--success-bg)',
             color: 'var(--text)',
           }}
         >
@@ -219,7 +219,7 @@ export default function GorgiasSupportSyncClient({ canManage }: Props) {
       ) : null}
 
       {loading ? (
-        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
           Loading connection…
         </p>
       ) : state.ephemeralSecret ? (

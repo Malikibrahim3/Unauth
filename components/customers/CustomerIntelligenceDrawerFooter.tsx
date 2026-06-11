@@ -74,7 +74,7 @@ export function CustomerIntelligenceDrawerNarrativeSection({
     <Section title="Roadmap summary">
       <div className="cid-narrative-card">
         <div className="flex items-start gap-2">
-          <ShieldCheck className="cid-icon-14 shrink-0" style={{ marginTop: 1, color: 'var(--copper-bright)' }} />
+          <ShieldCheck className="cid-icon-14 shrink-0" style={{ marginTop: 1, color: 'var(--accent)' }} />
           <p className="cid-narrative-text">{narrative}</p>
         </div>
         {!hasCleanRecord && identitySignals.length > 0 ? (

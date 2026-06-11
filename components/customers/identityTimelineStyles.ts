@@ -8,7 +8,7 @@ export const IDENTITY_VARIANT_BADGE_STYLE: CSSProperties = {
   borderRadius: 3,
   background: 'var(--sev-neutral-fill)',
   color: 'var(--sev-neutral)',
-  border: '1px solid var(--surface-border)',
+  border: '1px solid var(--border)',
   fontSize: 12,
   fontWeight: 600,
 };

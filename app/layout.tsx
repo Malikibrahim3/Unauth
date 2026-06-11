@@ -1,22 +1,29 @@
 import type { Metadata } from 'next';
-import { Bricolage_Grotesque, DM_Mono, DM_Sans, Source_Serif_4 } from 'next/font/google';
+import { DM_Mono, Inter, Inter_Tight } from 'next/font/google';
 import SentryInit from '@/components/common/SentryInit';
 import ThemeBootstrap from '@/components/common/ThemeBootstrap';
+import ScrollToTop from '@/components/navigation/ScrollToTop';
 import 'reactflow/dist/style.css';
 import './globals.css';
 
-const bricolage = Bricolage_Grotesque({
-  subsets: ['latin'],
-  variable: '--font-bricolage',
-  display: 'swap',
-  weight: ['500', '600', '700'],
-});
-
-const dmSans = DM_Sans({
+// Ramp redesign — Inter is the closest free analog to Ramp's neutral grotesque.
+// Loaded into the existing CSS-var names so globals.css needs no font wiring changes:
+//   --font-dm-sans  → body / sans (Inter)
+//   --font-bricolage → display (Inter Tight, tighter for large headings)
+//   --font-dm-mono  → tabular numerals (DM Mono, retained)
+// Source Serif is dropped; --font-serif is repointed to the sans in globals.css.
+const inter = Inter({
   subsets: ['latin'],
   variable: '--font-dm-sans',
   display: 'swap',
-  weight: ['300', '400', '500', '600', '700'],
+  weight: ['400', '500', '600', '700'],
+});
+
+const interTight = Inter_Tight({
+  subsets: ['latin'],
+  variable: '--font-bricolage',
+  display: 'swap',
+  weight: ['500', '600', '700', '800'],
 });
 
 const dmMono = DM_Mono({
@@ -24,14 +31,6 @@ const dmMono = DM_Mono({
   variable: '--font-dm-mono',
   display: 'swap',
   weight: ['300', '400', '500'],
-});
-
-const sourceSerif = Source_Serif_4({
-  subsets: ['latin'],
-  variable: '--font-serif',
-  display: 'swap',
-  axes: ['opsz'],
-  style: ['normal', 'italic'],
 });
 
 export const metadata: Metadata = {
@@ -57,12 +56,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`${bricolage.variable} ${dmSans.variable} ${dmMono.variable} ${sourceSerif.variable}`}
+      className={`${interTight.variable} ${inter.variable} ${dmMono.variable}`}
       suppressHydrationWarning
     >
       <body className="font-sans antialiased">
         <ThemeBootstrap />
         <SentryInit />
+        <ScrollToTop />
         {children}
       </body>
     </html>

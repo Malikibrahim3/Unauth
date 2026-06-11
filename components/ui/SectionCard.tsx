@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react';
+import { type CSSProperties, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
 interface SectionCardProps {
@@ -9,6 +9,7 @@ interface SectionCardProps {
   density?: 'default' | 'compact';
   id?: string;
   className?: string;
+  style?: CSSProperties;
 }
 
 export function SectionCard({
@@ -19,6 +20,7 @@ export function SectionCard({
   density = 'default',
   id,
   className,
+  style,
 }: SectionCardProps) {
   const bodyPadding = density === 'compact' ? 'p-3' : 'p-4';
 
@@ -27,35 +29,29 @@ export function SectionCard({
       id={id}
       className={cn('overflow-hidden', className)}
       style={{
-        background: 'var(--surface-raised)',
-        border: '1px solid var(--surface-border)',
+        background: 'var(--surface)',
+        border: '1px solid var(--border)',
         borderRadius: 'var(--radius-md)',
-        boxShadow: 'var(--shadow-sm)',
+        boxShadow: 'none',
+        ...style,
       }}
     >
       {/* Header */}
       <div
         className="flex items-center justify-between gap-3"
         style={{
-          borderBottom: '1px solid var(--surface-border)',
-          padding: '10px 14px',
+          borderBottom: '1px solid var(--border-muted)',
+          padding: '14px 18px',
         }}
       >
         <div>
-          <div
-            style={{
-              fontSize: 13,
-              fontWeight: 600,
-              color: 'var(--ink-primary)',
-              lineHeight: 1.3,
-            }}
-          >
+          <div className="text-h3" style={{ color: 'var(--text-primary)' }}>
             {title}
           </div>
           {description && (
-              <p
-              className="mt-1 truncate"
-              style={{ fontSize: 12, color: 'var(--ink-secondary)' }}
+            <p
+              className="mt-1 truncate text-small"
+              style={{ color: 'var(--text-secondary)' }}
             >
               {description}
             </p>
@@ -67,7 +63,7 @@ export function SectionCard({
       </div>
 
       {/* Body */}
-      <div className={bodyPadding}>{children}</div>
+      <div className={cn(bodyPadding, 'bg-[var(--surface)]')}>{children}</div>
     </section>
   );
 }

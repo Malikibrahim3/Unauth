@@ -10,7 +10,7 @@ export default function GorgiasSetupClient() {
         <h2 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
           Gorgias sidebar widget
         </h2>
-        <p className="mt-2 text-sm" style={{ color: 'var(--text-muted)' }}>
+        <p className="mt-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
           {GORGIAS_SIDEBAR_AUTO_NOTE}
         </p>
       </div>

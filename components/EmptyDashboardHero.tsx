@@ -1,32 +1,30 @@
 import Link from 'next/link';
 import { Upload, ArrowRight, ShoppingBag, Headphones, ShieldCheck, Users, BarChart3, FileText } from 'lucide-react';
+import { GradeBadge, type ConfidenceGradeValue } from '@/components/ui/GradeBadge';
 
-function ShopifyMark() {
-  // Simplified Shopify-style shopping bag silhouette in their green
+function IntegrationMark({ type }: { type: 'shopify' | 'helpdesk' }) {
+  const Icon = type === 'shopify' ? ShoppingBag : Headphones;
   return (
-    <svg viewBox="0 0 40 40" fill="none" className="h-8 w-8" aria-hidden="true">
-      <rect width="40" height="40" rx="8" fill="#96BF48" />
-      <path d="M27.5 13.2c0-.1-.1-.2-.2-.2-.1 0-2.2-.2-2.2-.2s-1.5-1.5-1.6-1.6c-.2-.2-.5-.1-.6-.1l-.9.3c-.2-.5-.5-1-.9-1.4-.6-.6-1.4-.9-2.1-.9h-.1c-.3-.3-.6-.5-1-.5-2.5 0-3.7 3.1-4.1 4.6l-2.2.7c-.7.2-.7.2-.7.9L10 27l10 1.9 5.4-1.2c0-.1 2.2-14.3 2.1-14.5zM22 11.6l-1.4.4c0-.2 0-.3.1-.5.4-1.1.9-1.7 1.3-2.1v2.2zm-2-.5c-.3.2-.7.8-1 1.8l-1.1.3c.4-1.2 1.1-2.4 2.1-2.6v.5zm0-1c-.1 0-.1 0 0 0-.8.1-1.8 1.2-2.3 3l-1.6.5c.5-1.8 1.7-4.8 3.9-4.8v1.3z" fill="white"/>
-    </svg>
+    <span
+      className="inline-flex h-8 w-8 items-center justify-center rounded-md"
+      style={{
+        background: type === 'shopify' ? 'var(--lime)' : 'var(--accent)',
+        color: type === 'shopify' ? 'var(--lime-fg)' : 'white',
+      }}
+      aria-hidden="true"
+    >
+      <Icon className="h-4 w-4" />
+    </span>
   );
 }
 
-function GorgiasZendeskMark() {
+function PreviewRow({ email, grade, orders, claims }: { email: string; grade: ConfidenceGradeValue; orders: number; claims: number }) {
   return (
-    <svg viewBox="0 0 40 40" fill="none" className="h-8 w-8" aria-hidden="true">
-      <rect width="40" height="40" rx="8" fill="#7B2D26" />
-      <path d="M20 10c-5.5 0-10 4.5-10 10s4.5 10 10 10h10V20c0-5.5-4.5-10-10-10zm0 15c-2.8 0-5-2.2-5-5s2.2-5 5-5 5 2.2 5 5-2.2 5-5 5z" fill="white"/>
-    </svg>
-  );
-}
-
-function PreviewRow({ email, grade, orders, claims, gradeColor }: { email: string; grade: string; orders: number; claims: number; gradeColor: string }) {
-  return (
-    <div className="flex items-center justify-between px-3 py-2 border-b last:border-0 text-xs" style={{ borderColor: 'var(--border-subtle)' }}>
-      <span className="font-mono truncate max-w-[140px]" style={{ color: 'var(--ink-secondary)' }}>{email}</span>
-      <span className="font-bold px-1.5 py-0.5 rounded text-xs" style={{ background: gradeColor + '22', color: gradeColor }}>{grade}</span>
-      <span style={{ color: 'var(--ink-tertiary)' }}>{orders} orders</span>
-      <span style={{ color: claims > 0 ? 'var(--sev-high, #DC2626)' : 'var(--ink-tertiary)' }}>{claims} claims</span>
+    <div className="flex items-center justify-between px-3 py-2 border-b last:border-0 text-xs" style={{ borderColor: 'var(--border-muted)' }}>
+      <span className="font-mono truncate max-w-[140px]" style={{ color: 'var(--text-secondary)' }}>{email}</span>
+      <GradeBadge grade={grade} size="sm" compact />
+      <span style={{ color: 'var(--text-tertiary)' }}>{orders} orders</span>
+      <span style={{ color: claims > 0 ? 'var(--success)' : 'var(--text-tertiary)' }}>{claims} claims</span>
     </div>
   );
 }
@@ -36,77 +34,77 @@ export default function EmptyDashboardHero() {
     <div className="space-y-5 max-w-3xl">
       {/* Headline */}
       <div>
-        <h2 className="font-semibold mb-1.5" style={{ fontSize: '20px', color: 'var(--ink-primary)', fontFamily: 'DM Sans, system-ui, sans-serif' }}>
+        <h2 className="text-h2 mb-1.5" style={{ color: 'var(--text-primary)' }}>
           Connect Shopify and your helpdesk to get started
         </h2>
-        <p className="text-sm leading-relaxed" style={{ color: 'var(--ink-secondary)', fontFamily: 'DM Sans, system-ui, sans-serif' }}>
+        <p className="text-body-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
           Unauth needs both. Shopify provides order data - your helpdesk provides claim history. One without the other is an incomplete picture.
         </p>
       </div>
 
       {/* Integration flow visual */}
       <div
-        className="rounded-xl p-5"
-        style={{ background: 'var(--surface-raised)', border: '1px solid var(--border-default)' }}
+        className="rounded-md p-5"
+        style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
       >
         <div className="flex items-center gap-3">
           {/* Shopify card */}
           <Link
             href="/settings/integrations"
-            className="flex-1 rounded-lg p-4 transition-opacity hover:opacity-90 cursor-pointer"
-            style={{ background: 'var(--surface-base)', border: '1px solid var(--border-default)' }}
+            className="flex-1 rounded-md p-4 transition-opacity hover:opacity-90 cursor-pointer"
+            style={{ background: 'var(--surface-base)', border: '1px solid var(--border)' }}
           >
             <div className="flex items-center gap-3 mb-3">
-              <ShopifyMark />
+              <IntegrationMark type="shopify" />
               <div>
-                <p className="text-xs font-semibold" style={{ color: 'var(--ink-tertiary)' }}>Required</p>
-                <p className="text-sm font-semibold" style={{ color: 'var(--ink-primary)' }}>Shopify</p>
+                <p className="text-xs font-semibold" style={{ color: 'var(--text-tertiary)' }}>Required</p>
+                <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Shopify</p>
               </div>
             </div>
-            <p className="text-xs leading-relaxed" style={{ color: 'var(--ink-secondary)' }}>
+            <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
               Syncs orders, identity signals, and purchase history automatically.
             </p>
           </Link>
 
           {/* Plus connector */}
           <div className="flex flex-col items-center gap-1 px-1">
-            <div className="h-px w-6" style={{ background: 'var(--border-default)' }} />
-            <span className="text-xs font-semibold" style={{ color: 'var(--ink-tertiary)' }}>+</span>
-            <div className="h-px w-6" style={{ background: 'var(--border-default)' }} />
+            <div className="h-px w-6" style={{ background: 'var(--border)' }} />
+            <span className="text-xs font-semibold" style={{ color: 'var(--text-tertiary)' }}>+</span>
+            <div className="h-px w-6" style={{ background: 'var(--border)' }} />
           </div>
 
           {/* Helpdesk card */}
           <Link
             href="/settings/integrations"
-            className="flex-1 rounded-lg p-4 transition-opacity hover:opacity-90 cursor-pointer"
-            style={{ background: 'var(--surface-base)', border: '1px solid var(--border-default)' }}
+            className="flex-1 rounded-md p-4 transition-opacity hover:opacity-90 cursor-pointer"
+            style={{ background: 'var(--surface-base)', border: '1px solid var(--border)' }}
           >
             <div className="flex items-center gap-3 mb-3">
-              <GorgiasZendeskMark />
+              <IntegrationMark type="helpdesk" />
               <div>
-                <p className="text-xs font-semibold" style={{ color: 'var(--ink-tertiary)' }}>Required</p>
-                <p className="text-sm font-semibold" style={{ color: 'var(--ink-primary)' }}>Gorgias or Zendesk</p>
+                <p className="text-xs font-semibold" style={{ color: 'var(--text-tertiary)' }}>Required</p>
+                <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Gorgias or Zendesk</p>
               </div>
             </div>
-            <p className="text-xs leading-relaxed" style={{ color: 'var(--ink-secondary)' }}>
+            <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
               Pulls in claim history, dispute signals, and support ticket context.
             </p>
           </Link>
 
           {/* Arrow to preview */}
-          <ArrowRight className="h-4 w-4 shrink-0" style={{ color: 'var(--ink-tertiary)' }} />
+          <ArrowRight className="h-4 w-4 shrink-0" style={{ color: 'var(--text-tertiary)' }} />
 
           {/* What you get - mini preview */}
           <div
-            className="flex-1 rounded-lg overflow-hidden"
-            style={{ background: 'var(--surface-base)', border: '1px solid var(--border-default)' }}
+            className="flex-1 rounded-md overflow-hidden"
+            style={{ background: 'var(--surface-base)', border: '1px solid var(--border)' }}
           >
-            <div className="px-3 py-2 border-b" style={{ borderColor: 'var(--border-subtle)', background: 'var(--surface-overlay)' }}>
-              <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--ink-tertiary)' }}>Your customers</p>
+            <div className="px-3 py-2 border-b" style={{ borderColor: 'var(--border-muted)', background: 'var(--surface)' }}>
+              <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-tertiary)' }}>Your customers</p>
             </div>
-            <PreviewRow email="jane@acme.co" grade="A" orders={14} claims={3} gradeColor="#7B2D26" />
-            <PreviewRow email="anon+1032@gmail.com" grade="B" orders={7} claims={1} gradeColor="#B45309" />
-            <PreviewRow email="test.buyer@shop.io" grade="D" orders={2} claims={0} gradeColor="#6B7280" />
+            <PreviewRow email="hash:7c91e2a4" grade="A" orders={14} claims={3} />
+            <PreviewRow email="hash:ae24f910" grade="B" orders={7} claims={1} />
+            <PreviewRow email="hash:19bd440a" grade="D" orders={2} claims={0} />
           </div>
         </div>
 
@@ -130,26 +128,26 @@ export default function EmptyDashboardHero() {
         ].map(({ icon: Icon, label, sub }) => (
           <div
             key={label}
-            className="rounded-lg p-3 space-y-1.5"
-            style={{ background: 'var(--surface-raised)', border: '1px solid var(--border-default)' }}
+            className="rounded-md p-3 space-y-1.5"
+            style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
           >
-            <Icon className="h-4 w-4" style={{ color: 'var(--ink-tertiary)' }} />
-            <p className="text-xs font-semibold leading-snug" style={{ color: 'var(--ink-primary)' }}>{label}</p>
-            <p className="text-xs" style={{ color: 'var(--ink-tertiary)' }}>{sub}</p>
+            <Icon className="h-4 w-4" style={{ color: 'var(--text-tertiary)' }} />
+            <p className="text-xs font-semibold leading-snug" style={{ color: 'var(--text-primary)' }}>{label}</p>
+            <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{sub}</p>
           </div>
         ))}
       </div>
 
       {/* Secondary - CSV */}
       <div
-        className="flex flex-wrap items-center justify-between gap-3 rounded-lg px-4 py-3"
-        style={{ background: 'var(--surface-overlay)', border: '1px solid var(--border-default)' }}
+        className="flex flex-wrap items-center justify-between gap-3 rounded-md px-4 py-3"
+        style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
       >
         <div className="flex items-center gap-2.5 min-w-0">
-          <Upload className="h-4 w-4 shrink-0" style={{ color: 'var(--ink-tertiary)' }} />
+          <Upload className="h-4 w-4 shrink-0" style={{ color: 'var(--text-tertiary)' }} />
           <div>
-            <p className="text-sm font-medium" style={{ color: 'var(--ink-primary)' }}>Not ready to connect yet?</p>
-            <p className="text-xs" style={{ color: 'var(--ink-secondary)' }}>
+            <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Not ready to connect yet?</p>
+            <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
               Upload a CSV export to explore what Unauth surfaces - integrations can be added later.
             </p>
           </div>
@@ -158,12 +156,12 @@ export default function EmptyDashboardHero() {
           <Link
             href="/upload?welcome=1"
             className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-semibold transition-colors"
-            style={{ background: 'var(--surface-raised)', border: '1px solid var(--border-default)', color: 'var(--ink-primary)' }}
+            style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
           >
             Historical import
           </Link>
-          <Link href="/demo" className="text-sm font-medium hover:underline" style={{ color: 'var(--ink-tertiary)' }}>
-            View sample →
+          <Link href="/demo" className="text-sm font-medium hover:underline" style={{ color: 'var(--text-tertiary)' }}>
+            View sample <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
           </Link>
         </div>
       </div>

@@ -99,7 +99,7 @@ export function UploadDataQualityPanel({
       {exportFieldsOpen && (
         <div
           className="mt-2 pl-4 text-xs space-y-1"
-          style={{ borderLeft: '2px solid var(--risk-high-bd)', color: 'var(--text-muted)' }}
+          style={{ borderLeft: '2px solid var(--risk-high-bd)', color: 'var(--text-secondary)' }}
         >
           <ul className="list-disc list-inside space-y-1">
             <li>

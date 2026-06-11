@@ -9,7 +9,7 @@ export function StatusPill({ status }: { status: string }) {
   const m = STATUS_META[status] ?? STATUS_META['open'];
   return (
     <span
-      className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap"
+      className="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium whitespace-nowrap"
       style={{ background: m.bg, color: m.text }}
     >
       {m.label}
@@ -17,15 +17,24 @@ export function StatusPill({ status }: { status: string }) {
   );
 }
 
+const SLA_DISPLAY_LABEL: Record<string, string> = {
+  Overdue: 'Ageing',
+  'Approaching SLA': 'Approaching threshold',
+  Resolved: 'Outcome recorded',
+  Normal: 'Within threshold',
+  'SLA unknown': 'Age unknown',
+};
+
 export function SlaPill({ claim }: { claim: ClaimRow }) {
   const sla = getClaimSlaState(claim);
   const c = SLA_COLOUR_MAP[sla.state] ?? SLA_COLOUR_MAP.normal;
+  const label = SLA_DISPLAY_LABEL[sla.label] ?? sla.label;
   return (
     <span
-      className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap"
+      className="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium whitespace-nowrap"
       style={{ background: c.bg, color: c.text }}
     >
-      {sla.label}
+      {label}
     </span>
   );
 }

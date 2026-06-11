@@ -15,6 +15,7 @@ import { ConnectionStateProvider } from '@/components/connections/ConnectionStat
 import { NavigationProvider } from '@/components/navigation/NavigationProvider';
 import { DevPreviewProvider } from '@/components/product/DevPreviewContext';
 import { DEV_TIER_COOKIE, getDevPreviewFromCookieValue } from '@/lib/product/devPreview';
+import MobileOptimizationNotice from '@/components/mobile/MobileOptimizationNotice';
 
 export const dynamic = 'force-dynamic';
 
@@ -99,8 +100,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <NavigationProvider>
     <DevPreviewProvider value={devPreview}>
+      <MobileOptimizationNotice />
       <div
-        className="flex h-screen overflow-hidden bg-[var(--surface-base)] text-[var(--ink-primary)]"
+        className="flex h-screen overflow-hidden bg-[var(--surface-base)] text-[var(--text-primary)]"
       >
         <Sidebar
           merchantName={displayMerchantName ?? null}
@@ -130,7 +132,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
           <BillingStatusBanner />
 
-          <main className="flex-1 overflow-y-auto overflow-x-hidden">
+          <main id="app-scroll-container" className="flex-1 overflow-y-auto overflow-x-hidden">
             <ConnectionStateProvider value={connectionState}>
               {children}
             </ConnectionStateProvider>

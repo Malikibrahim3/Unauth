@@ -10,10 +10,10 @@ interface RiskDistributionStripProps {
 }
 
 const ROWS = [
-  { key: 'definite', label: 'Definite', color: 'var(--sev-clear)' },
-  { key: 'probable', label: 'Probable', color: 'var(--sev-probable)' },
+  { key: 'definite', label: 'Definite', color: 'var(--neutral)' },
+  { key: 'probable', label: 'Probable', color: 'var(--warning)' },
   { key: 'candidate', label: 'Possible', color: 'var(--sev-neutral)' },
-  { key: 'weak', label: 'Weak', color: 'var(--ink-tertiary)' },
+  { key: 'weak', label: 'Weak', color: 'var(--text-tertiary)' },
 ] as const;
 
 export function RiskDistributionStrip({ definite, probable, candidate, weak }: RiskDistributionStripProps) {
@@ -24,17 +24,17 @@ export function RiskDistributionStrip({ definite, probable, candidate, weak }: R
     <div>
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="t-label" style={{ color: 'var(--ink-secondary)' }}>
+          <div className="t-label" style={{ color: 'var(--text-secondary)' }}>
             Matched profiles
           </div>
-          <div className="t-score mt-2 num" style={{ color: 'var(--data-score)' }}>
+          <div className="t-score mt-2 num" style={{ color: 'var(--text-primary)' }}>
             {total.toLocaleString('en-US')}
           </div>
         </div>
       </div>
 
       <svg className="mt-4 h-3 w-full overflow-visible" viewBox="0 0 100 12" preserveAspectRatio="none" aria-label="Confidence distribution">
-        <rect width="100" height="12" rx="1" fill="var(--surface-muted)" />
+        <rect width="100" height="12" rx="1" fill="var(--surface-sunken)" />
         {ROWS.reduce<{ x: number; nodes: ReactNode[] }>((acc, row) => {
           const value = values[row.key];
           const width = total > 0 ? (value / total) * 100 : 0;
@@ -54,9 +54,9 @@ export function RiskDistributionStrip({ definite, probable, candidate, weak }: R
             <div key={row.key} className="flex items-center justify-between gap-2">
               <span className="flex min-w-0 items-center gap-1.5">
                 <span className="h-2 w-2 rounded-sm" style={{ background: row.color }} />
-                <span className="t-label truncate" style={{ color: 'var(--ink-secondary)' }}>{row.label}</span>
+                <span className="t-label truncate" style={{ color: 'var(--text-secondary)' }}>{row.label}</span>
               </span>
-              <span className="t-mono shrink-0" style={{ color: 'var(--ink-secondary)' }}>{value} · {pct}%</span>
+              <span className="t-mono shrink-0" style={{ color: 'var(--text-secondary)' }}>{value} · {pct}%</span>
             </div>
           );
         })}

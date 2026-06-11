@@ -1,5 +1,6 @@
 'use client';
 
+import { ChevronDown, ChevronsUpDown, ChevronUp } from 'lucide-react';
 import { type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import {
@@ -40,14 +41,15 @@ interface DataTableProps<T> {
 }
 
 const ROW_HEIGHT: Record<TableDensity, number> = {
-  compact:  36,
-  default:  44,
-  relaxed:  52,
+  compact:  40,
+  default:  52,
+  relaxed:  60,
 };
 
-const SKELETON_ROW_BORDER = { borderBottom: '1px solid var(--border-subtle)' } as const;
+const SKELETON_ROW_BORDER = { borderBottom: '1px solid var(--border-muted)' } as const;
 const SORT_ICON_STYLE = { opacity: 1 } as const;
 const SORT_ICON_MUTED_STYLE = { opacity: 0.35 } as const;
+const ROW_TRANSITION = 'background 120ms ease, box-shadow 120ms ease';
 
 function skeletonBarWidth(colIndex: number): string {
   if (colIndex === 0) return '60%';
@@ -76,21 +78,13 @@ function SkeletonRows({ count = 6, cols }: { count?: number; cols: number }) {
 }
 
 function SortIcon({ active, dir }: { active: boolean; dir?: 'asc' | 'desc' }) {
+  const Icon = !active ? ChevronsUpDown : dir === 'asc' ? ChevronUp : ChevronDown;
   return (
-    <svg
-      className={cn('ml-1 w-3 h-3 inline-block shrink-0')}
-      viewBox="0 0 10 12"
-      fill="currentColor"
+    <Icon
+      className="ml-1 w-3 h-3 inline-block shrink-0 align-middle"
       aria-hidden="true"
       style={active ? SORT_ICON_STYLE : SORT_ICON_MUTED_STYLE}
-    >
-      {(!active || dir === 'asc') && (
-        <path d="M5 2L8 6H2L5 2Z" opacity={active && dir === 'asc' ? 1 : 0.4} />
-      )}
-      {(!active || dir === 'desc') && (
-        <path d="M5 10L2 6H8L5 10Z" opacity={active && dir === 'desc' ? 1 : 0.4} />
-      )}
-    </svg>
+    />
   );
 }
 
@@ -122,8 +116,11 @@ export function DataTable<T>({
   const rowH = ROW_HEIGHT[density];
 
   return (
-    <div className={cn('w-full overflow-x-auto', className)}>
-      <table className="w-full border-collapse" style={DATA_TABLE_STYLE}>
+    <div
+      className={cn('w-full overflow-x-auto rounded-[var(--radius-md)] border bg-[var(--surface)]', className)}
+      style={{ borderColor: 'var(--border)', boxShadow: 'none' }}
+    >
+      <table className="w-full border-separate" style={DATA_TABLE_STYLE}>
         <thead>
           <tr style={DATA_TABLE_HEAD_ROW_STYLE}>
             {columns.map((col) => (
@@ -165,22 +162,22 @@ export function DataTable<T>({
                   onClick={onRowClick ? () => onRowClick(row) : undefined}
                   style={{
                     height: rowH,
-                    borderBottom: '1px solid var(--border-subtle)',
-                    background: isSelected ? 'var(--copper-glow)' : undefined,
-                    borderLeft: isSelected ? '3px solid var(--copper-bright)' : '3px solid transparent',
+                    borderBottom: '1px solid var(--border-muted)',
+                    background: isSelected ? 'var(--surface)' : 'var(--surface)',
                     cursor: onRowClick ? 'pointer' : undefined,
-                    transition: 'background 120ms',
+                    boxShadow: isSelected ? 'inset 2px 0 0 var(--lime)' : 'none',
+                    transition: ROW_TRANSITION,
                   }}
-                  className={onRowClick && !isSelected ? 'hover:bg-[var(--surface-overlay)]' : undefined}
+                  className={onRowClick && !isSelected ? 'hover:bg-[var(--surface)]' : undefined}
                 >
                   {columns.map((col) => (
                     <td
                       key={col.key}
                       style={{
-                        padding: '0 14px',
+                        padding: '0 16px',
                         verticalAlign: 'middle',
                         textAlign: col.align === 'right' ? 'right' : col.align === 'center' ? 'center' : 'left',
-                        color: 'var(--ink-primary)',
+                        color: 'var(--text-primary)',
                       }}
                     >
                       {col.render(row)}

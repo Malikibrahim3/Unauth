@@ -79,13 +79,13 @@ export function AvatarMenu({ email, className }: AvatarMenuProps) {
           className={cn(
             'absolute right-0 top-full mt-1 z-50',
             'w-48 rounded-[var(--radius-2)] border border-[var(--border)]',
-            'bg-[var(--bg-surface)] shadow-[var(--shadow-2)]',
+            'bg-[var(--surface)] shadow-[var(--shadow-2)]',
             'py-1',
           )}
         >
           {email && (
-            <div className="px-3 py-2 border-b border-[var(--border-subtle)]">
-              <p className="text-caption text-[var(--text-muted)] truncate">{email}</p>
+            <div className="px-3 py-2 border-b border-[var(--border-muted)]">
+              <p className="text-caption text-[var(--text-secondary)] truncate">{email}</p>
             </div>
           )}
 

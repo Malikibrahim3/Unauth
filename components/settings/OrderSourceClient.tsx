@@ -88,28 +88,28 @@ export default function OrderSourceClient() {
         <Store className="h-4 w-4 shrink-0" style={{ color: 'var(--icon-muted)' }} />
         <div>
           <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Order source</p>
-          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Order &amp; customer data</p>
+          <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>Order &amp; customer data</p>
         </div>
       </div>
 
       <div
-        className="rounded-xl border p-5 space-y-4"
-        style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-raised)' }}
+        className="rounded-md border p-5 space-y-4"
+        style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
       >
         <div className="flex items-start gap-3">
           <div
             className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full"
             style={{
               background: orderSourceConnected
-                ? 'var(--sev-clear, #2f6b43)'
-                : 'var(--text-muted)',
+                ? 'var(--success)'
+                : 'var(--text-secondary)',
             }}
           />
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
               {orderSourceConnected ? 'Order source connected' : 'No order source connected'}
             </p>
-            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
               {orderSourceConnected
                 ? 'Orders and customer data are syncing. Every flagged order traces back to a real transaction.'
                 : 'Connect your ecommerce platform to begin syncing orders and customer identity.'}
@@ -135,12 +135,12 @@ export default function OrderSourceClient() {
             return (
               <div key={platform.id}>
                 <div
-                  className="flex gap-3 rounded-lg border p-3"
+                  className="flex gap-3 rounded-md border p-3"
                   style={{
-                    borderColor: connected ? 'var(--sev-clear, #2f6b43)' : 'var(--surface-border)',
+                    borderColor: connected ? 'var(--success)' : 'var(--border)',
                     background: connected
-                      ? 'color-mix(in srgb, var(--sev-clear, #2f6b43) 4%, var(--bg-surface))'
-                      : 'var(--bg-surface)',
+                      ? 'color-mix(in srgb, var(--success) 4%, var(--surface))'
+                      : 'var(--surface)',
                   }}
                 >
                   <Image
@@ -160,7 +160,7 @@ export default function OrderSourceClient() {
                           <Link
                             href={platform.href}
                             className="inline-flex shrink-0 items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium"
-                            style={{ borderColor: 'var(--surface-border)', color: 'var(--text-muted)' }}
+                            style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
                           >
                             Manage
                           </Link>
@@ -168,7 +168,7 @@ export default function OrderSourceClient() {
                           <Link
                             href={platform.href}
                             className="inline-flex shrink-0 items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold"
-                            style={{ background: 'var(--accent)', color: 'var(--accent-fg, #fff)' }}
+                            style={{ background: 'var(--accent)', color: 'white' }}
                           >
                             Connect
                             <ArrowRight className="h-3 w-3" />
@@ -178,8 +178,8 @@ export default function OrderSourceClient() {
                         <span
                           className="inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-xs font-semibold uppercase tracking-wide"
                           style={{
-                            background: 'color-mix(in srgb, var(--text-muted) 10%, transparent)',
-                            color: 'var(--text-muted)',
+                            background: 'color-mix(in srgb, var(--text-secondary) 10%, transparent)',
+                            color: 'var(--text-secondary)',
                           }}
                         >
                           Coming soon
@@ -193,20 +193,20 @@ export default function OrderSourceClient() {
                           aria-hidden
                           className="inline-block h-1.5 w-1.5 shrink-0 rounded-full"
                           style={{
-                            background: connected ? 'var(--sev-clear, #2f6b43)' : 'transparent',
-                            border: connected ? 'none' : '1px solid var(--text-muted)',
+                            background: connected ? 'var(--success)' : 'transparent',
+                            border: connected ? 'none' : '1px solid var(--text-secondary)',
                           }}
                         />
-                        <span style={{ color: connected ? 'var(--sev-clear, #2f6b43)' : 'var(--text-muted)' }}>
+                        <span style={{ color: connected ? 'var(--success)' : 'var(--text-secondary)' }}>
                           {connected ? 'Connected' : 'Not connected'}
                         </span>
                         {connected && detail && (
-                          <span className="truncate" style={{ color: 'var(--text-muted)' }}>· {detail}</span>
+                          <span className="truncate" style={{ color: 'var(--text-secondary)' }}>· {detail}</span>
                         )}
                       </p>
                     )}
 
-                    <p className="mt-1 text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+                    <p className="mt-1 text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
                       {platform.description}
                     </p>
                   </div>
@@ -217,7 +217,7 @@ export default function OrderSourceClient() {
         </div>
 
         {orderSourceConnected && (
-          <p className="flex items-center gap-1.5 text-xs font-medium" style={{ color: 'var(--sev-clear, #2f6b43)' }}>
+          <p className="flex items-center gap-1.5 text-xs font-medium" style={{ color: 'var(--success)' }}>
             <CheckCircle2 className="h-3.5 w-3.5" />
             Required order source satisfied
           </p>

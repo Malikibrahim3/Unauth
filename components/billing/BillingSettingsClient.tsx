@@ -93,11 +93,24 @@ export default function BillingSettingsClient() {
   }
 
   if (loading) {
-    return <p className="p-6 text-sm text-[var(--ink-secondary)]">Loading billing…</p>;
+    return <BillingSettingsSkeleton />;
   }
 
   if (!state) {
-    return <p className="p-6 text-sm text-[var(--ink-secondary)]">Billing unavailable.</p>;
+    return (
+      <div className="mx-auto max-w-2xl p-6 space-y-4">
+        <section>
+          <h1 className="text-lg font-semibold text-[var(--text-primary)]">Billing</h1>
+        </section>
+        <div
+          className="rounded-md border p-5 text-sm"
+          style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+        >
+          <p className="font-medium text-[var(--text-primary)] mb-1">Billing unavailable</p>
+          <p>Billing details could not be loaded. Refresh to try again or contact support if the issue persists.</p>
+        </div>
+      </div>
+    );
   }
 
   const priceLabel =
@@ -113,8 +126,8 @@ export default function BillingSettingsClient() {
         <div
           className="rounded-md border px-4 py-3 text-sm"
           style={{
-            borderColor: toast.type === 'error' ? 'var(--risk-high)' : 'var(--copper-bright)',
-            background: 'var(--surface-raised)',
+            borderColor: toast.type === 'error' ? 'var(--risk-high)' : 'var(--accent)',
+            background: 'var(--surface)',
           }}
           role="status"
         >
@@ -125,7 +138,7 @@ export default function BillingSettingsClient() {
       {state.status === 'grace_period' && (
         <div
           className="rounded-md border px-4 py-3 text-sm"
-          style={{ borderColor: 'var(--risk-high)', background: 'var(--surface-raised)' }}
+          style={{ borderColor: 'var(--risk-high)', background: 'var(--surface)' }}
           role="alert"
         >
           Your payment failed. Update billing to restore full access. Basic claim context remains available.{' '}
@@ -146,7 +159,7 @@ export default function BillingSettingsClient() {
       {state.status === 'past_due' && (
         <div
           className="rounded-md border px-4 py-3 text-sm"
-          style={{ borderColor: 'var(--risk-high)', background: 'var(--surface-raised)' }}
+          style={{ borderColor: 'var(--risk-high)', background: 'var(--surface)' }}
           role="alert"
         >
           Your subscription lapsed. You&apos;re now on Free.{' '}
@@ -162,58 +175,58 @@ export default function BillingSettingsClient() {
       )}
 
       <section>
-        <h1 className="text-lg font-semibold text-[var(--ink-primary)]">Billing</h1>
-        <p className="mt-1 text-sm text-[var(--ink-secondary)]">
+        <h1 className="text-lg font-semibold text-[var(--text-primary)]">Billing</h1>
+        <p className="mt-1 text-sm text-[var(--text-secondary)]">
           Manage your plan, credits, and payment method.
         </p>
       </section>
 
-      <section className="rounded-lg border p-5" style={{ borderColor: 'var(--surface-border)' }}>
-        <h2 className="text-sm font-semibold text-[var(--ink-primary)]">Current plan</h2>
+      <section className="rounded-md border p-5" style={{ borderColor: 'var(--border)' }}>
+        <h2 className="text-sm font-semibold text-[var(--text-primary)]">Current plan</h2>
         <p className="mt-2 text-2xl font-semibold">{state.planName}</p>
-        <p className="text-sm text-[var(--ink-secondary)]">{priceLabel}</p>
+        <p className="text-sm text-[var(--text-secondary)]">{priceLabel}</p>
         {state.currentPeriodEnd && (
-          <p className="mt-2 text-sm text-[var(--ink-tertiary)]">
+          <p className="mt-2 text-sm text-[var(--text-tertiary)]">
             Next billing date: {formatDate(state.currentPeriodEnd)}
           </p>
         )}
         {state.downgradeToPlanId && (
-          <p className="mt-2 text-sm" style={{ color: 'var(--copper-bright)' }}>
+          <p className="mt-2 text-sm" style={{ color: 'var(--accent)' }}>
             Your plan will change to {state.downgradeToPlanName} on{' '}
             {formatDate(state.currentPeriodEnd)}. You keep your current credits and features until then.
           </p>
         )}
         {state.cancelAtPeriodEnd && !state.downgradeToPlanId && (
-          <p className="mt-2 text-sm text-[var(--ink-secondary)]">
+          <p className="mt-2 text-sm text-[var(--text-secondary)]">
             Cancels on {formatDate(state.currentPeriodEnd)} — you&apos;ll move to Free after that.
           </p>
         )}
       </section>
 
-      <section className="rounded-lg border p-5" style={{ borderColor: 'var(--surface-border)' }}>
-        <h2 className="text-sm font-semibold text-[var(--ink-primary)]">Network credits this cycle</h2>
+      <section className="rounded-md border p-5" style={{ borderColor: 'var(--border)' }}>
+        <h2 className="text-sm font-semibold text-[var(--text-primary)]">Network credits this cycle</h2>
         <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
           <div>
-            <p className="text-[var(--ink-tertiary)]">Monthly remaining</p>
+            <p className="text-[var(--text-tertiary)]">Monthly remaining</p>
             <p className="text-xl font-semibold">{state.monthlyCreditsRemaining}</p>
           </div>
           <div>
-            <p className="text-[var(--ink-tertiary)]">Top-up balance</p>
+            <p className="text-[var(--text-tertiary)]">Top-up balance</p>
             <p className="text-xl font-semibold">{state.topupCreditsRemaining}</p>
           </div>
         </div>
-        <p className="mt-3 text-sm text-[var(--ink-secondary)]">
+        <p className="mt-3 text-sm text-[var(--text-secondary)]">
           {state.totalRemaining} total remaining
           {state.monthlyAllowance != null && ` · ${state.usedThisCycle} used of ${state.monthlyAllowance} monthly`}
         </p>
-        <p className="mt-1 text-sm text-[var(--ink-tertiary)]">
+        <p className="mt-1 text-sm text-[var(--text-tertiary)]">
           Cycle resets: {formatDate(state.cycleResetAt)}
         </p>
         {state.canTopUp && (
           <button
             type="button"
             className="mt-4 rounded-md px-4 py-2 text-sm font-medium"
-            style={{ background: 'var(--copper-bright)', color: 'var(--surface-base)' }}
+            style={{ background: 'var(--accent)', color: 'var(--surface-base)' }}
             disabled={actionLoading === 'topup'}
             onClick={() => void runAction('topup')}
           >
@@ -222,8 +235,8 @@ export default function BillingSettingsClient() {
         )}
       </section>
 
-      <section className="rounded-lg border p-5 space-y-3" style={{ borderColor: 'var(--surface-border)' }}>
-        <h2 className="text-sm font-semibold text-[var(--ink-primary)]">Change plan</h2>
+      <section className="rounded-md border p-5 space-y-3" style={{ borderColor: 'var(--border)' }}>
+        <h2 className="text-sm font-semibold text-[var(--text-primary)]">Change plan</h2>
         {state.planId === 'free' && (
           <PlanButton
             label={`Upgrade to Pro — £${PLANS.pro.priceGbp}/mo`}
@@ -263,7 +276,7 @@ export default function BillingSettingsClient() {
           </>
         )}
         {state.planId === 'scale' && (
-          <p className="text-sm text-[var(--ink-secondary)]">
+          <p className="text-sm text-[var(--text-secondary)]">
             Scale is managed by your account team. Contact hello@unauth.co for changes.
           </p>
         )}
@@ -277,11 +290,11 @@ export default function BillingSettingsClient() {
         )}
       </section>
 
-      <section className="rounded-lg border p-5 space-y-3" style={{ borderColor: 'var(--surface-border)' }}>
-        <h2 className="text-sm font-semibold text-[var(--ink-primary)]">Payment method</h2>
+      <section className="rounded-md border p-5 space-y-3" style={{ borderColor: 'var(--border)' }}>
+        <h2 className="text-sm font-semibold text-[var(--text-primary)]">Payment method</h2>
         <button
           type="button"
-          className="text-sm underline text-[var(--copper-bright)]"
+          className="text-sm underline text-[var(--accent)]"
           disabled={actionLoading === 'portal'}
           onClick={() => void runAction('portal')}
         >
@@ -292,13 +305,13 @@ export default function BillingSettingsClient() {
             {!showCancelConfirm ? (
               <button
                 type="button"
-                className="block text-sm text-[var(--ink-tertiary)] underline"
+                className="block text-sm text-[var(--text-tertiary)] underline"
                 onClick={() => setShowCancelConfirm(true)}
               >
                 Cancel plan
               </button>
             ) : (
-              <div className="rounded border p-3 text-sm" style={{ borderColor: 'var(--surface-border)' }}>
+              <div className="rounded border p-3 text-sm" style={{ borderColor: 'var(--border)' }}>
                 <p>
                   You&apos;ll keep access until {formatDate(state.currentPeriodEnd)}, then move to Free.
                 </p>
@@ -351,9 +364,9 @@ function PlanButton({
       type="button"
       className="block w-full rounded-md px-4 py-2 text-left text-sm font-medium"
       style={{
-        background: variant === 'primary' ? 'var(--copper-bright)' : 'var(--surface-raised)',
-        color: variant === 'primary' ? 'var(--surface-base)' : 'var(--ink-primary)',
-        border: variant === 'secondary' ? '1px solid var(--surface-border)' : undefined,
+        background: variant === 'primary' ? 'var(--accent)' : 'var(--surface)',
+        color: variant === 'primary' ? 'var(--surface-base)' : 'var(--text-primary)',
+        border: variant === 'secondary' ? '1px solid var(--border)' : undefined,
       }}
       disabled={loading}
       onClick={onClick}
@@ -370,4 +383,62 @@ function formatDate(iso: string | null): string {
     month: 'short',
     year: 'numeric',
   });
+}
+
+function SkeletonBlock({ className, style }: { className?: string; style?: React.CSSProperties }) {
+  return (
+    <div
+      className={`animate-pulse rounded-md ${className ?? ''}`}
+      style={{ background: 'var(--border)', ...style }}
+      aria-hidden="true"
+    />
+  );
+}
+
+function BillingSettingsSkeleton() {
+  return (
+    <div className="mx-auto max-w-2xl space-y-8 p-6" aria-busy="true" aria-label="Loading billing">
+      <section className="space-y-1">
+        <SkeletonBlock className="h-6 w-24" />
+        <SkeletonBlock className="h-4 w-64" />
+      </section>
+
+      {/* Current plan */}
+      <section className="rounded-md border p-5 space-y-3" style={{ borderColor: 'var(--border)' }}>
+        <SkeletonBlock className="h-4 w-24" />
+        <SkeletonBlock className="h-8 w-32" />
+        <SkeletonBlock className="h-4 w-20" />
+        <SkeletonBlock className="h-3 w-48" />
+      </section>
+
+      {/* Credits */}
+      <section className="rounded-md border p-5 space-y-3" style={{ borderColor: 'var(--border)' }}>
+        <SkeletonBlock className="h-4 w-48" />
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <SkeletonBlock className="h-3 w-28" />
+            <SkeletonBlock className="h-7 w-16" />
+          </div>
+          <div className="space-y-1.5">
+            <SkeletonBlock className="h-3 w-24" />
+            <SkeletonBlock className="h-7 w-16" />
+          </div>
+        </div>
+        <SkeletonBlock className="h-3 w-56" />
+      </section>
+
+      {/* Change plan */}
+      <section className="rounded-md border p-5 space-y-3" style={{ borderColor: 'var(--border)' }}>
+        <SkeletonBlock className="h-4 w-28" />
+        <SkeletonBlock className="h-9 w-full" />
+        <SkeletonBlock className="h-9 w-full" />
+      </section>
+
+      {/* Payment */}
+      <section className="rounded-md border p-5 space-y-3" style={{ borderColor: 'var(--border)' }}>
+        <SkeletonBlock className="h-4 w-36" />
+        <SkeletonBlock className="h-4 w-48" />
+      </section>
+    </div>
+  );
 }

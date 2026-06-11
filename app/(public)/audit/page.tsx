@@ -11,15 +11,15 @@ export const metadata = {
 const sans: React.CSSProperties = { fontFamily: 'var(--font-dm-sans, sans-serif)' };
 const serif: React.CSSProperties = { fontFamily: 'var(--font-serif, serif)' };
 const mono: React.CSSProperties = { fontFamily: 'var(--font-dm-mono, monospace)' };
-const muted = '#6B6455';
+const muted = 'var(--ink-secondary)';
 
 export default function AuditPage() {
   return (
     <div
       style={{
         minHeight: '100vh',
-        background: '#F8F5EE',
-        color: '#1A1814',
+        background: 'var(--surface-base)',
+        color: 'var(--ink-primary)',
       }}
     >
       <header className="px-6 pt-5 md:px-10">
@@ -49,7 +49,7 @@ export default function AuditPage() {
               fontWeight: 400,
               lineHeight: 0.98,
               letterSpacing: '-0.03em',
-              color: '#1A1814',
+              color: 'var(--ink-primary)',
               marginTop: 0,
               marginBottom: '18px',
             }}
@@ -61,7 +61,7 @@ export default function AuditPage() {
               ...sans,
               fontSize: '18px',
               lineHeight: 1.7,
-              color: '#3A3530',
+              color: 'var(--ink-secondary)',
               marginTop: 0,
               marginBottom: 0,
             }}
@@ -75,13 +75,13 @@ export default function AuditPage() {
               ...sans,
               fontSize: '15px',
               lineHeight: 1.65,
-              color: '#574D43',
+              color: 'var(--ink-secondary)',
               marginTop: '16px',
               marginBottom: 0,
               maxWidth: '35rem',
             }}
           >
-            <strong style={{ color: '#1A1814', fontWeight: 600 }}>Free audit scans your store only.</strong>{' '}
+            <strong style={{ color: 'var(--ink-primary)', fontWeight: 600 }}>Free audit scans your store only.</strong>{' '}
             Approved founding merchants unlock cross-store network matching - we&apos;ll say when that applies.
           </p>
         </div>
@@ -137,7 +137,7 @@ export default function AuditPage() {
           style={{
             ...mono,
             fontSize: '12px',
-            color: '#9A9080',
+            color: 'var(--ink-tertiary)',
             textAlign: 'center',
             marginTop: '72px',
             marginBottom: 0,

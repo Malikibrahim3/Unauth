@@ -1,3 +1,4 @@
+import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { Button } from './Button';
@@ -64,12 +65,12 @@ export function ErrorBoundaryUI({
         role="alert"
         className="w-full rounded-[var(--radius-3)] border p-[var(--space-6)] shadow-sm"
         style={{
-          background: 'var(--bg-surface)',
-          borderColor: 'var(--border-default)',
+          background: 'var(--surface)',
+          borderColor: 'var(--border)',
         }}
       >
         <div className="space-y-[var(--space-3)]">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--text-muted)' }}>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--text-secondary)' }}>
             Page Error
           </p>
           <div className="space-y-[var(--space-2)]">
@@ -84,7 +85,7 @@ export function ErrorBoundaryUI({
             className="rounded-[var(--radius-2)] border px-[var(--space-3)] py-[var(--space-2)] text-sm"
             style={{
               background: 'var(--bg-subtle)',
-              borderColor: 'var(--border-subtle)',
+              borderColor: 'var(--border-muted)',
               color: 'var(--text-primary)',
             }}
           >
@@ -98,9 +99,9 @@ export function ErrorBoundaryUI({
               href="/dashboard"
               className="inline-flex h-8 items-center justify-center rounded-[var(--radius-2)] border px-[14px] text-[14px] font-medium transition-colors"
               style={{
-                borderColor: 'var(--border-default)',
+                borderColor: 'var(--border)',
                 color: 'var(--text-primary)',
-                background: 'var(--bg-surface)',
+                background: 'var(--surface)',
               }}
             >
               Go to dashboard
@@ -114,18 +115,5 @@ export function ErrorBoundaryUI({
 
 /** Inline spinner - buttons and row-level operations only */
 function Spinner({ size = 16, className }: { size?: number; className?: string }) {
-  return (
-    <svg
-      className={cn('animate-spin', className)}
-      width={size}
-      height={size}
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-    >
-      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-    </svg>
-  );
+  return <Loader2 className={cn('animate-spin', className)} size={size} aria-hidden="true" />;
 }

@@ -30,7 +30,7 @@ export function ApiKeyCreateDialog({
       role="dialog"
       aria-modal="true"
       aria-label="Create API key"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(20,24,33,0.45)] p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[color-mix(in srgb, var(--text-primary) 45%, transparent)] p-4"
     >
       <button
         type="button"
@@ -40,15 +40,15 @@ export function ApiKeyCreateDialog({
       />
       <div
         className="relative z-10 w-full max-w-md rounded-lg border p-6 shadow-lg"
-        style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-raised)' }}
+        style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
       >
         {state.createdSecret ? (
           <>
             <h3 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Save your credentials</h3>
-            <p className="mt-2 text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+            <p className="mt-2 text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
               Save these now. You won&apos;t be able to see them again.
             </p>
-            <p className="mt-4 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
+            <p className="mt-4 text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
               API Key (for Chrome, Zendesk, direct API)
             </p>
             <pre
@@ -59,7 +59,7 @@ export function ApiKeyCreateDialog({
             </pre>
             {state.createdWidgetToken ? (
               <>
-                <p className="mt-4 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
+                <p className="mt-4 text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
                   Widget Token (for Gorgias widget URL only)
                 </p>
                 <pre
@@ -75,7 +75,7 @@ export function ApiKeyCreateDialog({
                 type="button"
                 onClick={onCopySecret}
                 className="inline-flex flex-1 items-center justify-center gap-2 rounded-md px-3 py-2 text-sm"
-                style={{ background: 'var(--accent)', color: 'var(--accent-fg, #fff)' }}
+                style={{ background: 'var(--accent)', color: 'white' }}
               >
                 <Copy className="h-4 w-4" />
                 {state.copied ? 'Copied' : 'Copy API key'}
@@ -104,7 +104,7 @@ export function ApiKeyCreateDialog({
         ) : (
           <form onSubmit={onCreate}>
             <h3 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Create API key</h3>
-            <label className="mt-4 block text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
+            <label className="mt-4 block text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
               Label
               <input
                 type="text"
@@ -134,7 +134,7 @@ export function ApiKeyCreateDialog({
                 type="submit"
                 disabled={state.creating || !state.keyName.trim()}
                 className="rounded-md px-3 py-2 text-sm font-medium disabled:opacity-50"
-                style={{ background: 'var(--accent)', color: 'var(--accent-fg, #fff)' }}
+                style={{ background: 'var(--accent)', color: 'white' }}
               >
                 {state.creating ? 'Creating…' : 'Create key'}
               </button>

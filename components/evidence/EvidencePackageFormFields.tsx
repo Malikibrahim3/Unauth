@@ -34,14 +34,14 @@ function PriorMatchPreviewBanner({
   if (priorMatchChecking) {
     return (
       <div
-        className="flex items-center gap-2 rounded-lg p-3"
-        style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-subtle)' }}
+        className="flex items-center gap-2 rounded-md p-3"
+        style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-muted)' }}
       >
         <div
           className="h-3 w-3 animate-spin rounded-full border border-t-transparent"
           style={{ borderColor: 'var(--border)', borderTopColor: 'var(--accent)' }}
         />
-        <p className="text-caption" style={{ color: 'var(--text-muted)' }}>
+        <p className="text-caption" style={{ color: 'var(--text-secondary)' }}>
           Checking for prior identity matches…
         </p>
       </div>
@@ -51,7 +51,7 @@ function PriorMatchPreviewBanner({
   if (priorMatchPreview === 'likely') {
     return (
       <div
-        className="flex items-start gap-2.5 rounded-lg p-3"
+        className="flex items-start gap-2.5 rounded-md p-3"
         style={{ background: 'var(--success-bg)', border: '1px solid var(--success-bd)' }}
       >
         <span style={{ color: 'var(--success)' }}>✓</span>
@@ -59,7 +59,7 @@ function PriorMatchPreviewBanner({
           <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
             Prior matching transactions found
           </p>
-          <p className="text-caption mt-0.5" style={{ color: 'var(--text-muted)' }}>
+          <p className="text-caption mt-0.5" style={{ color: 'var(--text-secondary)' }}>
             This customer has prior orders in your records that share identity signals with the selected
             order.
           </p>
@@ -71,7 +71,7 @@ function PriorMatchPreviewBanner({
   if (priorMatchPreview === 'unlikely') {
     return (
       <div
-        className="flex items-start gap-2.5 rounded-lg p-3"
+        className="flex items-start gap-2.5 rounded-md p-3"
         style={{ background: 'var(--warning-bg)', border: '1px solid var(--warning-bd)' }}
       >
         <span style={{ color: 'var(--warning)' }}>⚠</span>
@@ -79,7 +79,7 @@ function PriorMatchPreviewBanner({
           <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
             No prior matching transactions detected
           </p>
-          <p className="text-caption mt-0.5" style={{ color: 'var(--text-muted)' }}>
+          <p className="text-caption mt-0.5" style={{ color: 'var(--text-secondary)' }}>
             No prior transactions with matching signals were found in your records for this customer.
           </p>
         </div>
@@ -107,11 +107,11 @@ export function EvidencePackageFormFields({
   onCancel,
 }: EvidencePackageFormFieldsProps) {
   const cancelControl = onCancel ? (
-    <button type="button" onClick={onCancel} className="text-xs hover:underline" style={{ color: 'var(--text-muted)' }}>
+    <button type="button" onClick={onCancel} className="text-xs hover:underline" style={{ color: 'var(--text-secondary)' }}>
       Cancel
     </button>
   ) : (
-    <Link href={`/customers/${profileId}`} className="text-xs hover:underline" style={{ color: 'var(--text-muted)' }}>
+    <Link href={`/customers/${profileId}`} className="text-xs hover:underline" style={{ color: 'var(--text-secondary)' }}>
       ← Cancel
     </Link>
   );
@@ -119,7 +119,7 @@ export function EvidencePackageFormFields({
   return (
     <form onSubmit={onSubmit} className="space-y-6">
       <div>
-        <label className="mb-2 block text-xs font-semibold" style={{ color: 'var(--text-muted)' }} htmlFor="order-select">
+        <label className="mb-2 block text-xs font-semibold" style={{ color: 'var(--text-secondary)' }} htmlFor="order-select">
           Disputed order *
         </label>
         <select
@@ -145,7 +145,7 @@ export function EvidencePackageFormFields({
           ))}
         </select>
         {!selectedOrderId ? (
-          <p className="text-caption mt-1.5" style={{ color: 'var(--text-subtle)' }}>
+          <p className="text-caption mt-1.5" style={{ color: 'var(--text-tertiary)' }}>
             Select the order the customer has disputed. Orders marked ★ have a refund claim on record.
           </p>
         ) : null}
@@ -161,29 +161,29 @@ export function EvidencePackageFormFields({
       ) : null}
 
       {selectedOrderId ? (
-        <div className="rounded-xl p-5" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-subtle)' }}>
-          <p className="mb-3 text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>
+        <div className="rounded-md p-5" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-muted)' }}>
+          <p className="mb-3 text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>
             This package will include
           </p>
           <ul className="space-y-1.5">
             {packageIncludes.map((item) => (
               <li key={item.label} className="flex items-center gap-2 text-caption">
                 {item.pending ? (
-                  <span style={{ color: 'var(--text-subtle)' }}>○</span>
+                  <span style={{ color: 'var(--text-tertiary)' }}>○</span>
                 ) : item.available ? (
                   <span style={{ color: 'var(--success)' }}>✓</span>
                 ) : (
                   <span style={{ color: 'var(--border)' }}>–</span>
                 )}
-                <span style={{ color: item.available ? 'var(--text)' : 'var(--text-subtle)' }}>
+                <span style={{ color: item.available ? 'var(--text)' : 'var(--text-tertiary)' }}>
                   {item.label}
                   {item.optional && !item.available ? (
-                    <span className="ml-1" style={{ color: 'var(--text-subtle)' }}>
+                    <span className="ml-1" style={{ color: 'var(--text-tertiary)' }}>
                       (add notes below)
                     </span>
                   ) : null}
                   {item.pending ? (
-                    <span className="ml-1" style={{ color: 'var(--text-subtle)' }}>
+                    <span className="ml-1" style={{ color: 'var(--text-tertiary)' }}>
                       (checking…)
                     </span>
                   ) : null}
@@ -195,9 +195,9 @@ export function EvidencePackageFormFields({
       ) : null}
 
       <div>
-        <label className="mb-2 block text-xs font-semibold" style={{ color: 'var(--text-muted)' }} htmlFor="notes">
+        <label className="mb-2 block text-xs font-semibold" style={{ color: 'var(--text-secondary)' }} htmlFor="notes">
           Merchant note{' '}
-          <span className="font-normal" style={{ color: 'var(--text-subtle)' }}>
+          <span className="font-normal" style={{ color: 'var(--text-tertiary)' }}>
             (optional · appears in the package · max 500 characters)
           </span>
         </label>
@@ -214,7 +214,7 @@ export function EvidencePackageFormFields({
             color: 'var(--text)',
           }}
         />
-        <p className="text-caption mt-1 text-right" style={{ color: 'var(--text-subtle)' }}>
+        <p className="text-caption mt-1 text-right" style={{ color: 'var(--text-tertiary)' }}>
           {notes.length}/500
         </p>
       </div>
@@ -239,12 +239,12 @@ export function EvidencePackageFormFields({
             type="submit"
             disabled={!canSubmit}
             className="rounded-md px-5 py-2.5 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40"
-            style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}
+            style={{ background: 'var(--accent)', color: 'white' }}
           >
             {loading ? 'Building…' : 'Build evidence package'}
           </button>
           {!selectedOrderId ? (
-            <p className="text-xs" style={{ color: 'var(--text-subtle)' }}>
+            <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
               Select an order above to continue
             </p>
           ) : null}

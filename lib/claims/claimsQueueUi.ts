@@ -56,35 +56,35 @@ export function formatClaimsResultText(input: {
 
   switch (view.kind) {
     case 'active':
-      return `${pagePart} active claims`;
+      return `${pagePart} claim evidence reviews`;
     case 'unread':
-      return `${pagePart} new unread claims`;
+      return `${pagePart} claims with new evidence`;
     case 'assigned_me':
-      return `${pagePart} claims assigned to you`;
+      return `${pagePart} claim evidence reviews`;
     case 'unassigned':
-      return `${pagePart} unassigned claims`;
+      return `${pagePart} claims needing review`;
     case 'snoozed':
-      return `${pagePart} snoozed claims`;
+      return `${pagePart} deferred claim reviews`;
     case 'history':
-      return `${pagePart} resolved claims in history`;
+      return `${pagePart} claims with recorded outcomes`;
     case 'sla':
-      return `${pagePart} ${view.sla === 'approaching' ? 'claims approaching SLA' : 'overdue claims'}`;
+      return `${pagePart} ${view.sla === 'approaching' ? 'claims approaching review threshold' : 'ageing unresolved claims'}`;
     case 'status': {
       const labels: Record<string, string> = {
-        open: 'open claims',
-        pending: 'claims awaiting info',
-        escalated: 'escalated claims',
-        resolved_refunded: 'refunded claims',
-        resolved_won: 'won claims',
-        resolved_lost: 'lost claims',
-        resolved_denied: 'denied claims',
-        resolved_exchanged: 'exchanged claims',
+        open: 'claims with strong identity links',
+        pending: 'claims waiting on source data',
+        escalated: 'claims with high evidence density',
+        resolved_refunded: 'refunded outcomes',
+        resolved_won: 'won outcomes',
+        resolved_lost: 'lost outcomes',
+        resolved_denied: 'denied outcomes',
+        resolved_exchanged: 'exchanged outcomes',
         voided: 'voided claims',
         stale: 'stale claims',
       };
       return `${pagePart} ${labels[view.status] ?? view.status.replace(/_/g, ' ')}`;
     }
     default:
-      return `${pagePart} matching claims`;
+      return `${pagePart} matching claim reviews`;
   }
 }

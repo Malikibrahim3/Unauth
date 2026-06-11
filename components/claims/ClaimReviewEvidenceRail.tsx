@@ -48,7 +48,7 @@ export function ClaimReviewEvidenceRail({ wb }: { wb: ClaimReviewWorkbench }) {
         ) : undefined}
       >
         {!claimId && (
-          <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>Save the claim first. Evidence attaches to an active claim record.</p>
+          <p className="text-xs mb-3" style={{ color: 'var(--text-secondary)' }}>Save the claim first. Evidence attaches to an active claim record.</p>
         )}
         <div className="space-y-2">
           <div className="grid grid-cols-2 gap-2">
@@ -73,7 +73,7 @@ export function ClaimReviewEvidenceRail({ wb }: { wb: ClaimReviewWorkbench }) {
             <FieldLabel htmlFor="evidence-url">Evidence URL (optional)</FieldLabel>
             <input id="evidence-url" aria-label="Evidence URL (optional)" className="w-full px-2 py-1.5 rounded-md text-xs" style={inputStyle()} placeholder="https://…" value={state.evidenceUrl} onChange={(e) => patch({ evidenceUrl: e.target.value })} />
           </div>
-          <button type="button" aria-label={state.showMeta ? 'Hide advanced evidence fields' : 'Show advanced evidence fields'} onClick={() => patch({ showMeta: !state.showMeta })} className="text-xs hover:underline" style={{ color: 'var(--text-muted)' }}>
+          <button type="button" aria-label={state.showMeta ? 'Hide advanced evidence fields' : 'Show advanced evidence fields'} onClick={() => patch({ showMeta: !state.showMeta })} className="text-xs hover:underline" style={{ color: 'var(--text-secondary)' }}>
             {state.showMeta ? '▲ Hide' : '▼ Advanced'}: hash &amp; metadata
           </button>
           {state.showMeta && (
@@ -88,7 +88,7 @@ export function ClaimReviewEvidenceRail({ wb }: { wb: ClaimReviewWorkbench }) {
                   <input aria-label="Metadata value" className="px-2 py-1.5 rounded-md text-xs" style={inputStyle()} placeholder="value" value={r.value} onChange={(e) => dispatch({ type: 'setMetaRows', updater: (rows) => rows.map((x) => (x.id === r.id ? { ...x, value: e.target.value } : x)) })} />
                 </div>
               ))}
-              <button type="button" aria-label="Add metadata row" onClick={() => dispatch({ type: 'setMetaRows', updater: (rows) => [...rows, { id: nextMetaRowId(), key: '', value: '' }] })} className="px-2 py-1 rounded-md text-xs" style={{ border: '1px solid var(--border)', color: 'var(--text-muted)' }}>+ Add row</button>
+              <button type="button" aria-label="Add metadata row" onClick={() => dispatch({ type: 'setMetaRows', updater: (rows) => [...rows, { id: nextMetaRowId(), key: '', value: '' }] })} className="px-2 py-1 rounded-md text-xs" style={{ border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>+ Add row</button>
             </div>
           )}
         </div>
@@ -106,7 +106,7 @@ export function ClaimReviewEvidenceRail({ wb }: { wb: ClaimReviewWorkbench }) {
       {selectedClaim && !claimIsClosed && (
         <RailSection
           id="decision"
-          title="Merchant decision"
+          title="Record merchant outcome"
           open={state.railOpen.decision}
           onToggle={(id) => dispatch({ type: 'toggleRail', id })}
           highlighted={primaryAction.railSection === 'decision'}
@@ -114,10 +114,10 @@ export function ClaimReviewEvidenceRail({ wb }: { wb: ClaimReviewWorkbench }) {
             <span className="text-xs rounded-full px-1.5 py-0.5 font-semibold" style={{ background: 'var(--success-bg)', color: 'var(--success)' }}>Recorded</span>
           ) : undefined}
         >
-          <p className="text-xs mb-2" style={{ color: 'var(--text-muted)' }}>Unauth surfaces evidence. Merchant decides.</p>
+          <p className="text-xs mb-2" style={{ color: 'var(--text-secondary)' }}>Unauth surfaces evidence. Merchant response is recorded here.</p>
           <div className="space-y-2">
             <div>
-              <FieldLabel htmlFor="merchant-decision">Decision</FieldLabel>
+              <FieldLabel htmlFor="merchant-decision">Merchant response</FieldLabel>
               <select id="merchant-decision" className="w-full px-2 py-1.5 rounded-md text-sm" style={inputStyle()} value={state.decision} onChange={(e) => patch({ decision: e.target.value as Decision })}>
                 {(Object.entries(DECISION_LABELS) as [Decision, string][]).map(([v, l]) => (
                   <option key={v} value={v}>{l}</option>
@@ -125,7 +125,7 @@ export function ClaimReviewEvidenceRail({ wb }: { wb: ClaimReviewWorkbench }) {
               </select>
             </div>
             <div>
-              <FieldLabel htmlFor="merchant-outcome">Outcome</FieldLabel>
+              <FieldLabel htmlFor="merchant-outcome">Outcome signal</FieldLabel>
               <select id="merchant-outcome" className="w-full px-2 py-1.5 rounded-md text-sm" style={inputStyle()} value={state.outcome} onChange={(e) => patch({ outcome: e.target.value as Outcome })}>
                 {(Object.entries(OUTCOME_LABELS) as [Outcome, string][]).map(([v, l]) => (
                   <option key={v} value={v}>{l}</option>
@@ -134,7 +134,7 @@ export function ClaimReviewEvidenceRail({ wb }: { wb: ClaimReviewWorkbench }) {
             </div>
           </div>
           {!claimId && (
-            <p className="mt-2 text-xs" style={{ color: 'var(--text-muted)' }}>Save the claim details first. Outcome recording requires an active claim.</p>
+            <p className="mt-2 text-xs" style={{ color: 'var(--text-secondary)' }}>Save the claim details first. Outcome recording requires an active claim.</p>
           )}
           <button
             type="button"
@@ -143,7 +143,7 @@ export function ClaimReviewEvidenceRail({ wb }: { wb: ClaimReviewWorkbench }) {
             className="mt-2 w-full px-3 py-1.5 rounded-md text-xs font-semibold flex items-center justify-center gap-2 disabled:opacity-60"
             style={btnStyle(primaryAction.key === 'decision' && claimId ? 'primary' : claimId ? 'secondary' : 'disabled')}
           >
-            {busy ? <><span className="h-3 w-3 rounded-full border-2 border-current border-t-transparent animate-spin" /> Saving…</> : 'Record merchant decision'}
+            {busy ? <><span className="h-3 w-3 rounded-full border-2 border-current border-t-transparent animate-spin" /> Saving…</> : 'Record merchant response'}
           </button>
         </RailSection>
       )}
@@ -159,7 +159,7 @@ export function ClaimReviewEvidenceRail({ wb }: { wb: ClaimReviewWorkbench }) {
         ) : undefined}
       >
         <textarea aria-label="Customer response preview" className="w-full p-2 rounded-md text-xs resize-none mb-2" style={inputStyle()} rows={4} value={customerResponse} readOnly />
-        <p className="mb-3 text-xs" style={{ color: 'var(--text-muted)' }}>Internal notes and risk signals stay out of the customer-facing response.</p>
+        <p className="mb-3 text-xs" style={{ color: 'var(--text-secondary)' }}>Internal notes and risk signals stay out of the customer-facing response.</p>
         <button
           type="button"
           onClick={onCopyCustomerResponse}
@@ -173,7 +173,7 @@ export function ClaimReviewEvidenceRail({ wb }: { wb: ClaimReviewWorkbench }) {
 
       {selectedClaim && latestOutcome && (
         <RailSection id="advanced" title="Advanced" open={state.railOpen.advanced} onToggle={(id) => dispatch({ type: 'toggleRail', id })}>
-          <p className="text-xs mb-3 font-semibold" style={{ color: 'var(--text-muted)' }}>Reverse recorded decision</p>
+          <p className="text-xs mb-3 font-semibold" style={{ color: 'var(--text-secondary)' }}>Reverse recorded merchant response</p>
           <div className="space-y-2">
             <div className="grid grid-cols-2 gap-2">
               <select aria-label="Reverse decision" className="w-full px-2 py-1.5 rounded-md text-xs" style={inputStyle()} value={state.reverseDecision} onChange={(e) => patch({ reverseDecision: e.target.value as Decision })}>
@@ -185,7 +185,7 @@ export function ClaimReviewEvidenceRail({ wb }: { wb: ClaimReviewWorkbench }) {
             </div>
             <textarea aria-label="Reason for reversal" className="w-full px-2 py-1.5 rounded-md text-xs resize-none" style={inputStyle()} rows={2} placeholder="Reason for reversal" value={state.reverseNote} onChange={(e) => patch({ reverseNote: e.target.value })} />
             <button type="button" onClick={onReverse} disabled={busy || !claimId} className="w-full px-3 py-1.5 rounded-md text-xs font-semibold disabled:opacity-60" style={btnStyle('muted')}>
-              Reverse decision
+              Reverse merchant response
             </button>
           </div>
         </RailSection>

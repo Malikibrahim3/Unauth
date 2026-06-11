@@ -5,8 +5,12 @@ import { EvidenceStrengthMeter } from '@/components/evidence/EvidenceStrengthMet
 import { DisputeReadinessPanel } from '@/components/evidence/DisputeReadinessPanel'
 import { EvidencePackagePreview } from '@/components/evidence/EvidencePackagePreview'
 import { SensitiveField } from '@/components/ui/SensitiveField'
-import { SectionCard, Badge } from '@/components/ui'
-import { EvidenceDetailCard } from '@/app/(app)/chargebacks/[id]/EvidenceDetailCard'
+import { Badge } from '@/components/ui'
+import { NetworkFootprint } from '@/components/ui/NetworkFootprint'
+import { IdentitySignalsTable } from '@/app/(app)/chargebacks/[id]/IdentitySignalsTable'
+import { PriorMatchDetailSection } from '@/app/(app)/chargebacks/[id]/PriorMatchDetailSection'
+import { NarrativeSummarySection } from '@/app/(app)/chargebacks/[id]/NarrativeSummarySection'
+import { MerchantNotesSection } from '@/app/(app)/chargebacks/[id]/MerchantNotesSection'
 
 export type EvidenceDetailPackage = {
   id: string
@@ -36,6 +40,18 @@ export type EvidenceDetailPageViewProps = {
   evidenceStrength: 'weak' | 'moderate' | 'strong'
 }
 
+const STRENGTH_GRADE: Record<'weak' | 'moderate' | 'strong', string> = {
+  strong: 'A',
+  moderate: 'B',
+  weak: 'C',
+}
+
+const STRENGTH_LABEL: Record<'weak' | 'moderate' | 'strong', string> = {
+  strong: 'Strong',
+  moderate: 'Moderate',
+  weak: 'Weak',
+}
+
 export function EvidenceDetailPageView({
   pkg,
   canRevealCustomer,
@@ -47,260 +63,246 @@ export function EvidenceDetailPageView({
   identityMatchLevel,
   evidenceStrength,
 }: EvidenceDetailPageViewProps) {
+  const gradeLabel = STRENGTH_GRADE[evidenceStrength]
+  const strengthLabel = STRENGTH_LABEL[evidenceStrength]
+  const ce3Label = ce3DetailStatusLabel(pkg.ce3_eligible, identityMatchLevel)
+  const ce3Tone = ce3Label === 'CE 3.0 ready' ? 'success' : ce3Label === 'Needs stronger checkout-time data' ? 'neutral' : 'warning'
+
   return (
-    <div className="p-8 max-w-4xl mx-auto space-y-6">
-      {/* Back navigation */}
-      <div className="flex items-center gap-3" style={{ color: 'var(--text-muted)' }}>
-        <Link
-          href="/chargebacks"
-          className="inline-flex items-center gap-1.5 text-sm transition-colors hover:opacity-80"
-          style={{ color: 'var(--text-muted)' }}
-        >
-          <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-          </svg>
-          Back to Evidence Packages
+    <div className="p-6 md:p-8" style={{ background: 'var(--bg-canvas)', minHeight: '100vh' }}>
+      {/* Breadcrumb */}
+      <nav className="mb-6 flex items-center gap-2" style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+        <Link href="/chargebacks" className="hover:underline transition-colors" style={{ color: 'var(--text-secondary)' }}>
+          Evidence Packages
         </Link>
-        <span style={{ color: 'var(--border)' }}>/</span>
-        <span className="text-sm" style={{ color: 'var(--text)' }}>{pkg.reference_number}</span>
-      </div>
+        <span style={{ opacity: 0.4 }}>/</span>
+        <span style={{ color: 'var(--text-primary)' }}>{pkg.reference_number}</span>
+      </nav>
 
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-heading-lg" style={{ color: 'var(--text)' }}>
-              Evidence package
-            </h1>
-            {(() => {
-              const label = ce3DetailStatusLabel(pkg.ce3_eligible, identityMatchLevel);
-              const tone =
-                label === 'CE 3.0 ready'
-                  ? 'success'
-                  : label === 'Needs stronger checkout-time data'
-                    ? 'neutral'
-                    : 'warning';
-              return <Badge tone={tone} size="sm">{label}</Badge>;
-            })()}
-            {pkg.cross_merchant_indicator ? <Badge tone="info" size="sm">Network</Badge> : null}
-          </div>
-          <p className="text-body-sm font-mono mt-0.5" style={{ color: 'var(--text-muted)' }}>
-            {pkg.reference_number}
-            {pkg.generated_for_order_id ? ` · Order ${pkg.generated_for_order_id.slice(0, 20)}` : ''}
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          {pkg.pdf_storage_path && (
-            <a
-              href={`/api/evidence/${pkg.id}/pdf`}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-semibold transition-colors"
-              style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}
-              download
-            >
-              Download PDF ⤓
-            </a>
-          )}
-        </div>
-      </div>
+      {/* Two-rail layout */}
+      <div className="grid gap-6 max-w-6xl mx-auto" style={{ gridTemplateColumns: '1fr 280px', alignItems: 'start' }}>
+        {/* ═══════════════════════════════════════
+            MAIN RAIL
+        ═══════════════════════════════════════ */}
+        <main className="space-y-5 min-w-0">
 
-      <SectionCard
-        title="Package provenance"
-        description="How this evidence package was compiled and where it can be reviewed."
-      >
-        <div className="grid gap-4 md:grid-cols-2">
-          <div>
-            <p className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Generated</p>
-            <p className="text-sm font-medium mt-1" style={{ color: 'var(--text)' }}>
-              {formatDate(pkg.generated_at)}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Data sources</p>
-            <p className="text-sm font-medium mt-1" style={{ color: 'var(--text)' }}>
-              {signalCount} identity signal{signalCount === 1 ? '' : 's'}
-              {identityMatchLevel !== 'None' ? ` · Prior identity match: ${identityMatchLevel}` : ''}
-            </p>
-          </div>
-          {pkg.customer_profile_id ? (
-            <div>
-              <p className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Customer record</p>
-              <Link
-                href={`/customers/${pkg.customer_profile_id}`}
-                className="text-sm font-semibold mt-1 inline-block hover:underline"
-                style={{ color: 'var(--accent)' }}
-              >
-                View customer profile →
-              </Link>
-            </div>
-          ) : null}
-          <div>
-            <p className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Retention</p>
-            <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-              Stored in your merchant-scoped evidence archive with masked identifiers for export.
-            </p>
-          </div>
-        </div>
-        {fullEmail ? (
-          <div className="mt-4 pt-4 border-t" style={{ borderColor: 'var(--border-subtle)' }}>
-            <SensitiveField
-              label="Customer email"
-              masked={maskedEmail}
-              full={fullEmail}
-              canReveal={canRevealCustomer}
-            />
-          </div>
-        ) : null}
-      </SectionCard>
-
-      {identityMatchLevel === 'Strong' && (
-        <div
-          className="rounded-lg p-4"
-          style={{
-            background: 'var(--bg-inset)',
-            border: '1px solid var(--border-subtle)',
-          }}
-        >
-          <p className="text-sm font-bold mb-1" style={{ color: 'var(--text)' }}>
-            Strong prior identity match
-          </p>
-          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-            Prior orders in your records share multiple identity signals with the disputed transaction.
-          </p>
-        </div>
-      )}
-
-      {/* ── PHASE C: EVIDENCE AMPLIFICATION ─────────────────────────── */}
-      {/* Evidence Strength Meter */}
-      <EvidenceStrengthMeter
-        strength={evidenceStrength}
-        label="Overall evidence strength"
-      />
-
-      {/* Dispute Readiness Checklist */}
-      <DisputeReadinessPanel pkg={pkg} />
-
-      {/* PDF Preview (only when a PDF has been generated) */}
-      {pkg.pdf_storage_path && (
-        <EvidencePackagePreview
-          packageId={pkg.id}
-          referenceNumber={pkg.reference_number}
-        />
-      )}
-      {/* ── END PHASE C ──────────────────────────────────────────────── */}
-
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-        <EvidenceDetailCard label="Reference" value={pkg.reference_number} mono />
-<EvidenceDetailCard 
-          label="Identity match"
-          value={identityMatchLevel}
-        />
-<EvidenceDetailCard 
-          label="Cross-merchant indicator"
-          value={pkg.cross_merchant_indicator ? 'Yes' : 'Not available'}
-        />
-<EvidenceDetailCard 
-          label="Order in dispute"
-          value={pkg.generated_for_order_id?.slice(0, 20) ?? '—'}
-          mono
-        />
-      </div>
-
-      {identityMatchLevel !== 'None' && (matchSignals.length > 0 || matchedPriors.length > 0) && (
-        <section
-          className="rounded-xl p-5 border"
-          style={{ background: 'var(--sev-clear-fill)', borderColor: 'var(--risk-low-bd)' }}
-        >
-          <h2 className="text-overline mb-3" style={{ color: 'var(--text-muted)' }}>Prior match detail</h2>
-          {matchSignals.length > 0 && (
-            <p className="text-body-sm mb-2" style={{ color: 'var(--text-secondary)' }}>
-              <span className="font-semibold">Matching signals:</span>{' '}
-              {matchSignals.join(', ')}
-            </p>
-          )}
-          {matchedPriors.length > 0 && (
-            <div className="space-y-1">
-              <p className="text-body-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
-                Matched prior orders:
-              </p>
-              {matchedPriors.map((p) => (
-                <p key={p.orderId} className="text-body-sm font-mono" style={{ color: 'var(--text-secondary)' }}>
-                  {p.orderId} - {formatDate(p.orderDate)} ({p.daysPriorToDispute} days prior)
-                </p>
-              ))}
-            </div>
-          )}
-        </section>
-      )}
-
-      {/* Narrative */}
-      {pkg.narrative_summary && (
-        <section
-          className="rounded-xl p-5 border"
-          style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
-        >
-          <h2 className="text-overline mb-3">Summary Narrative</h2>
-          <p
-            className="text-body-sm leading-relaxed whitespace-pre-line"
-            style={{ color: 'var(--text)' }}
+          {/* ── HERO BLOCK ─────────────────────── */}
+          <section
+            data-dossier-hero
+            style={{
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-md)',
+              boxShadow: 'var(--shadow-md)',
+              padding: '24px',
+            }}
           >
-            {pkg.narrative_summary}
-          </p>
-        </section>
-      )}
+            {/* Eyebrow */}
+            <div className="text-overline mb-1" style={{ color: 'var(--text-secondary)' }}>
+              Case Reference
+            </div>
+            <div
+              className="font-mono font-semibold mb-6"
+              style={{ fontSize: 18, letterSpacing: '-0.005em', color: 'var(--text-primary)' }}
+            >
+              {pkg.reference_number}
+            </div>
 
-      {/* Identity signals snapshot */}
-      {pkg.signal_snapshot && pkg.signal_snapshot.length > 0 && (
-        <section
-          className="rounded-xl p-5 border"
-          style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
-        >
-          <h2 className="text-overline mb-3">Identity Evidence</h2>
-          <div className="space-y-2">
-            {pkg.signal_snapshot.map((ev) => (
-              <div
-                key={`${ev.identifierType}-${ev.maskedValue}`}
-                className="flex items-center justify-between px-3 py-2 rounded"
-                style={{ background: 'var(--bg-subtle)' }}
-              >
-                <div>
-                  <span className="text-xs font-semibold" style={{ color: 'var(--text)' }}>
-                    {ev.identifierType}
-                  </span>
-                  <span className="ml-2 font-mono text-xs" style={{ color: 'var(--text-muted)' }}>
-                    {ev.maskedValue}
-                  </span>
-                </div>
-                {ev.ce3Accepted && (
-                  <span
-                    className="text-xs font-semibold px-1.5 py-0.5 rounded"
-                    style={{ background: 'var(--bg-subtle)', color: 'var(--text-muted)', border: '1px solid var(--border-subtle)' }}
-                    title="Core identity signal used for prior-order matching"
-                  >
-                    Core
-                  </span>
-                )}
+            {/* Evidence strength as focal element */}
+            <div className="mb-6">
+              <div className="text-overline mb-3" style={{ color: 'var(--text-secondary)' }}>
+                Evidence strength
               </div>
-            ))}
-          </div>
-        </section>
-      )}
+              <div className="flex items-center gap-4">
+                <div
+                  className="text-mono-lg inline-flex shrink-0 items-center justify-center rounded-md"
+                  style={{
+                    width: 56,
+                    height: 56,
+                    lineHeight: 1,
+                    background: `var(--evidence-${evidenceStrength}-bg)`,
+                    color: `var(--evidence-${evidenceStrength}-fg)`,
+                    border: `2px solid var(--evidence-${evidenceStrength}-line)`,
+                  }}
+                >
+                  {gradeLabel}
+                </div>
+                <div>
+                  <div className="font-semibold" style={{ fontSize: 15, color: 'var(--text-primary)' }}>
+                    {strengthLabel} evidence
+                  </div>
+                  <div className="mt-1" style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
+                    {signalCount} identity signal{signalCount === 1 ? '' : 's'}
+                    {matchedPriors.length > 0
+                      ? ` · ${matchedPriors.length} prior order${matchedPriors.length === 1 ? '' : 's'}`
+                      : ''}
+                  </div>
+                </div>
+              </div>
+            </div>
 
-      {/* Merchant notes */}
-      {pkg.merchant_notes && (
-        <section
-          className="rounded-xl p-5 border"
-          style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
-        >
-          <h2 className="text-overline mb-3">Merchant Notes</h2>
-          <p className="text-body-sm whitespace-pre-line" style={{ color: 'var(--text)' }}>
-            {pkg.merchant_notes}
+            {/* Divider */}
+            <div style={{ borderTop: '1px solid var(--border)', margin: '0 0 16px' }} />
+
+            <div className="mb-4">
+              <NetworkFootprint
+                merchants={pkg.cross_merchant_indicator ? Math.max(2, matchedPriors.length + 1) : 1}
+                claims={matchedPriors.length}
+                grade={gradeLabel === 'A' || gradeLabel === 'B' ? gradeLabel : 'C'}
+                kSatisfied={pkg.cross_merchant_indicator && matchedPriors.length >= 1}
+                variant="compact"
+              />
+            </div>
+
+            {/* Metadata row */}
+            <div className="grid grid-cols-3 gap-4 mb-6">
+              <div>
+                <div className="text-caption mb-1" style={{ color: 'var(--text-secondary)' }}>Order in dispute</div>
+                <div className="font-mono font-semibold truncate" style={{ fontSize: 13, color: 'var(--text-primary)' }}>
+                  {pkg.generated_for_order_id?.slice(0, 20) ?? '—'}
+                </div>
+              </div>
+              <div>
+                <div className="text-caption mb-1" style={{ color: 'var(--text-secondary)' }}>Cross-merchant</div>
+                <div className="font-semibold" style={{ fontSize: 13, color: 'var(--text-primary)' }}>
+                  {pkg.cross_merchant_indicator ? 'Yes' : 'Not linked'}
+                </div>
+              </div>
+              <div>
+                <div className="text-caption mb-1" style={{ color: 'var(--text-secondary)' }}>Generated</div>
+                <div className="font-semibold" style={{ fontSize: 13, color: 'var(--text-primary)' }}>
+                  {formatDate(pkg.generated_at)}
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-2">
+              {pkg.pdf_storage_path && (
+                <a
+                  href={`/api/evidence/${pkg.id}/pdf`}
+                  className="inline-flex items-center gap-2 rounded-md text-caption font-semibold transition-colors"
+                  style={{
+                    padding: '8px 14px',
+                    background: 'var(--accent)',
+                    color: 'white',
+                    border: '1px solid var(--accent)',
+                  }}
+                  download
+                >
+                  Download PDF ⤓
+                </a>
+              )}
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="inline-flex items-center gap-2 rounded-md text-caption font-semibold transition-colors"
+                style={{
+                  padding: '8px 14px',
+                  background: 'var(--surface-sunken)',
+                  color: 'var(--text-primary)',
+                  border: '1px solid var(--border)',
+                }}
+              >
+                Print ↗
+              </button>
+            </div>
+          </section>
+
+          {/* ── DOSSIER SECTIONS ──────────────── */}
+          <DisputeReadinessPanel pkg={pkg} />
+
+          <EvidenceStrengthMeter strength={evidenceStrength} label="Dispute evidence strength" />
+
+          {pkg.signal_snapshot && pkg.signal_snapshot.length > 0 && (
+            <IdentitySignalsTable signals={pkg.signal_snapshot} />
+          )}
+
+          {identityMatchLevel !== 'None' && (matchSignals.length > 0 || matchedPriors.length > 0) && (
+            <PriorMatchDetailSection matchSignals={matchSignals} matchedPriors={matchedPriors} />
+          )}
+
+          {pkg.narrative_summary && (
+            <NarrativeSummarySection narrative={pkg.narrative_summary} />
+          )}
+
+          {pkg.merchant_notes && (
+            <MerchantNotesSection notes={pkg.merchant_notes} />
+          )}
+
+          {pkg.pdf_storage_path && (
+            <EvidencePackagePreview packageId={pkg.id} referenceNumber={pkg.reference_number} />
+          )}
+
+          <p className="text-caption" style={{ color: 'var(--text-tertiary)' }}>
+            This report presents cross-merchant identity match data. Merchants may use this information to support chargeback dispute processes at their discretion.
           </p>
-        </section>
-      )}
+        </main>
 
-      <p className="text-xs" style={{ color: 'var(--text-subtle)' }}>
-        This report presents cross-merchant identity match data. Merchants may use this information to support chargeback dispute processes at their discretion.
-      </p>
+        {/* ═══════════════════════════════════════
+            SIDEBAR — sticky metadata
+        ═══════════════════════════════════════ */}
+        <aside>
+          <div
+            style={{
+              position: 'sticky',
+              top: 20,
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-md)',
+              boxShadow: 'var(--shadow-sm)',
+              padding: '16px',
+            }}
+          >
+            {/* CE 3.0 status */}
+            <div className="mb-4 pb-4 border-b" style={{ borderColor: 'var(--border)' }}>
+              <div className="text-overline mb-2" style={{ color: 'var(--text-secondary)' }}>
+                CE 3.0 Status
+              </div>
+              <Badge tone={ce3Tone} size="md">{ce3Label}</Badge>
+              {pkg.cross_merchant_indicator && (
+                <div className="mt-2">
+                  <Badge tone="info" size="sm">Network flag</Badge>
+                </div>
+              )}
+            </div>
+
+            {/* Customer link */}
+            {pkg.customer_profile_id && (
+              <div className="mb-4 pb-4 border-b" style={{ borderColor: 'var(--border)' }}>
+                <div className="text-caption font-semibold mb-2" style={{ color: 'var(--text-secondary)' }}>
+                  Customer
+                </div>
+                {fullEmail && (
+                  <SensitiveField
+                    label=""
+                    masked={maskedEmail}
+                    full={fullEmail}
+                    canReveal={canRevealCustomer}
+                  />
+                )}
+                <Link
+                  href={`/customers/${pkg.customer_profile_id}`}
+                  className="inline-flex items-center gap-1 mt-2 font-semibold hover:opacity-70 transition-opacity"
+                  style={{ fontSize: 12, color: 'var(--accent)' }}
+                >
+                  View profile →
+                </Link>
+              </div>
+            )}
+
+            {/* Retention note */}
+            <div>
+              <div className="text-caption font-semibold mb-1" style={{ color: 'var(--text-secondary)' }}>
+                Storage
+              </div>
+              <p className="text-caption" style={{ color: 'var(--text-tertiary)', lineHeight: 1.5 }}>
+                Stored in your merchant-scoped archive with masked identifiers for export.
+              </p>
+            </div>
+          </div>
+        </aside>
+      </div>
     </div>
   )
 }

@@ -9,17 +9,17 @@ import type { ConfidenceGrade } from '@/lib/engine/weights';
 import type { ConfidenceGradeValue } from '@/lib/confidence';
 
 export const GRADE_COLOURS: Record<ConfidenceGrade, string> = {
-  definite: 'var(--sev-clear)',
-  probable: 'var(--sev-probable)',
+  definite: 'var(--neutral)',
+  probable: 'var(--warning)',
   possible: 'var(--sev-neutral)',
-  weak: 'var(--ink-tertiary)',
+  weak: 'var(--text-tertiary)',
 };
 
 export const GRADE_FILL_COLOURS: Record<ConfidenceGrade, string> = {
   definite: 'var(--sev-clear-fill)',
   probable: 'var(--sev-probable-fill)',
   possible: 'var(--sev-neutral-fill)',
-  weak: 'var(--surface-muted)',
+  weak: 'var(--surface-sunken)',
 };
 
 export const GRADE_LABELS: Record<ConfidenceGrade, string> = {

@@ -5,7 +5,7 @@ import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import ShopifyIntegrationBanner from '@/components/shopify/ShopifyIntegrationBanner';
 import SyncStatusCard from '@/components/shopify/SyncStatusCard';
 import ShopifyDisconnectClient from '@/components/shopify/ShopifyDisconnectClient';
-import { PageHeader } from '@/components/ui/PageHeader';
+import { SettingsPageShell } from '@/components/ui';
 
 export default async function ShopifyIntegrationPage() {
   const userClient = createClient();
@@ -22,25 +22,23 @@ export default async function ShopifyIntegrationPage() {
   const canManage = !manageCheck.denied;
 
   return (
-    <div>
-      <PageHeader
-        eyebrow="Integrations"
-        title="Shopify"
-        subtitle="Sync orders, customers, refunds and fulfilment events in real time."
-        breadcrumbs={[
-          { label: 'Settings', href: '/settings/account' },
-          { label: 'Integrations', href: '/settings/integrations' },
-          { label: 'Shopify' },
-        ]}
-      />
-
-      <div className="p-6 lg:p-8 max-w-2xl space-y-6">
+    <SettingsPageShell
+      eyebrow="Integrations"
+      title="Shopify"
+      subtitle="Sync orders, customers, refunds, and fulfillment events in real time."
+      breadcrumbs={[
+        { label: 'Settings', href: '/settings/account' },
+        { label: 'Integrations', href: '/settings/integrations' },
+        { label: 'Shopify' },
+      ]}
+    >
+      <div className="max-w-2xl space-y-6">
         <Suspense fallback={null}>
           <ShopifyIntegrationBanner />
         </Suspense>
         <SyncStatusCard />
         {canManage && <ShopifyDisconnectClient />}
       </div>
-    </div>
+    </SettingsPageShell>
   );
 }

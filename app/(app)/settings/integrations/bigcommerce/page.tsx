@@ -5,6 +5,7 @@ import { Store } from 'lucide-react';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import BigCommerceConnectClient from '@/components/settings/BigCommerceConnectClient';
+import { PROVIDER_BRAND_COLOURS } from '@/components/settings/providerBrand';
 
 export default async function BigCommerceIntegrationPage() {
   const userClient = createClient();
@@ -26,22 +27,22 @@ export default async function BigCommerceIntegrationPage() {
         <Link
           href="/settings/integrations"
           className="mb-4 inline-flex items-center gap-1.5 text-xs hover:underline"
-          style={{ color: 'var(--text-muted)' }}
+          style={{ color: 'var(--text-secondary)' }}
         >
           ← Integrations
         </Link>
         <div className="flex items-center gap-3">
-          <Store className="h-5 w-5" style={{ color: '#34313F' }} />
+          <Store className="h-5 w-5" style={{ color: PROVIDER_BRAND_COLOURS.bigcommerce }} />
           <h1 className="text-heading-lg" style={{ color: 'var(--text)' }}>
             Connect BigCommerce
           </h1>
         </div>
-        <p className="mt-1 text-sm" style={{ color: 'var(--text-muted)' }}>
+        <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
           Authorize via OAuth to sync orders and refunds into audit transactions.
         </p>
       </div>
 
-      <Suspense fallback={<p className="text-sm" style={{ color: 'var(--text-muted)' }}>Loading…</p>}>
+      <Suspense fallback={<p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Loading…</p>}>
         <BigCommerceConnectClient canManage={canManage} />
       </Suspense>
     </div>

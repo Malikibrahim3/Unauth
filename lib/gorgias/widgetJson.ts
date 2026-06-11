@@ -5,10 +5,6 @@ import type {
   PrimaryReason,
   ThisStoreOrdersSource,
 } from '@/lib/gorgias/widgetData';
-import {
-  CONTEXT_UNLOCK_CTA_LABELS,
-} from '@/lib/billing/contextCredits';
-import type { CreditUsageWidgetFields } from '@/lib/billing/creditUsage';
 import { env } from '@/lib/utils/env';
 import { buildGorgiasWidgetUnlockUrlSet } from '@/lib/gorgias/widgetUnlockUrls';
 import { GORGIAS_SETTINGS_INTEGRATIONS_PATH } from '@/lib/support/gorgias/supportConnectionShared';
@@ -17,8 +13,8 @@ import { computeWidgetTrustSummary } from '@/lib/gorgias/widgetTrustSignals';
 /**
  * Flat root object — field paths must match buildGorgiasSidebarWidgetTemplate() exactly.
  *
- * Field paths must match `buildGorgiasSidebarWidgetTemplate()`. Pre-unlock payloads are
- * credit-gated copy + unlock CTAs unless `allowDetailedPreview` is set in non-production.
+ * All fields are factual context only. No risk scores, no outcome recommendations,
+ * no credit-amount language in user-facing copy.
  */
 export type GorgiasWidgetJsonPayload = {
   /** PRIMARY: identity confidence grade + what it matched on. */
@@ -36,6 +32,10 @@ export type GorgiasWidgetJsonPayload = {
    * never merchant watchlist state. Do not use for new product logic.
    */
   watchlisted: string;
+  /** Order reference detected from the current Gorgias ticket, or '—' when unavailable. */
+  order_context: string;
+  /** Neutral, factual summary of available claim context for this ticket. No outcome recommendations. */
+  context_summary: string;
   cta_label: string;
   cta_url: string;
   /** Browser-openable GET unlock links (Gorgias custom.links). */
@@ -45,10 +45,6 @@ export type GorgiasWidgetJsonPayload = {
   basic_unlock_label: string;
   full_unlock_label: string;
   evidence_unlock_label: string;
-  /** Set when monthly usage is high or exhausted (80%+ / cap). */
-  credit_usage_banner?: string;
-  credit_topup_label?: string;
-  credit_topup_url?: string;
 };
 
 export type GorgiasWidgetLinkContext = {
@@ -67,7 +63,6 @@ export type GorgiasWidgetJsonOptions = {
   allowDetailedPreview?: boolean;
   /** Show cross-merchant network intelligence (Growth+ tier). Own-store data is always shown. */
   showNetworkIntelligence?: boolean;
-  creditUsage?: CreditUsageWidgetFields | null;
 };
 
 /** True unless an explicit non-production diagnostic preview was requested. */
@@ -76,9 +71,9 @@ export function useCreditGatedWidgetPreview(options?: GorgiasWidgetJsonOptions):
 }
 
 const UNLOCK_LABELS = {
-  basic_unlock_label: CONTEXT_UNLOCK_CTA_LABELS.basic_context,
-  full_unlock_label: CONTEXT_UNLOCK_CTA_LABELS.full_context,
-  evidence_unlock_label: CONTEXT_UNLOCK_CTA_LABELS.evidence_summary,
+  basic_unlock_label: 'View full context →',
+  full_unlock_label: 'View network context →',
+  evidence_unlock_label: 'View claim summary →',
 } as const;
 
 const NO_NETWORK_LABEL = 'No network history found';
@@ -94,6 +89,73 @@ type WidgetCorePayload = Omit<
   | 'full_unlock_label'
   | 'evidence_unlock_label'
 >;
+
+// ---------------------------------------------------------------------------
+// Context helpers — order reference and neutral summary
+// ---------------------------------------------------------------------------
+
+function buildOrderContext(link?: GorgiasWidgetLinkContext): string {
+  const ref = link?.orderRef?.trim();
+  if (!ref) return 'No order reference detected in this ticket';
+  return `Ticket linked to order ${ref}`;
+}
+
+function pluralWord(n: number, singular: string, plural: string): string {
+  return n === 1 ? singular : plural;
+}
+
+function buildContextSummary(
+  result: GorgiasClaimWidgetResult,
+  link: GorgiasWidgetLinkContext | undefined,
+  showNetworkIntelligence: boolean,
+): string {
+  const orderRef = link?.orderRef?.trim() ?? null;
+
+  if (!result.ok) {
+    switch (result.kind) {
+      case 'not_found':
+        return orderRef
+          ? `Order ${orderRef} · no prior claim history at your store`
+          : 'No prior claim history at your store';
+      case 'identity_unresolved':
+        return 'Customer identity not resolved — no context available for this ticket';
+      case 'helpdesk_disconnected':
+        return 'Helpdesk not connected — reconnect Gorgias in Unauth settings';
+      default:
+        return 'Context unavailable for this ticket';
+    }
+  }
+
+  const { thisStore, network, ce3EvidenceAvailable, storeRecentClaimCount } = result.data;
+  const parts: string[] = [];
+
+  if (orderRef) parts.push(`Order ${orderRef}`);
+
+  if (thisStore.orderCount > 0) {
+    parts.push(`${thisStore.orderCount} ${pluralWord(thisStore.orderCount, 'order', 'orders')} at your store`);
+  } else {
+    parts.push('No prior orders at your store');
+  }
+
+  if (thisStore.claimCount > 0) {
+    parts.push(`${thisStore.claimCount} prior ${pluralWord(thisStore.claimCount, 'claim', 'claims')}`);
+    if (storeRecentClaimCount > 0) {
+      parts.push(`${storeRecentClaimCount} in last 90 days`);
+    }
+  } else if (thisStore.orderCount > 0) {
+    parts.push('no prior claims');
+  }
+
+  if (ce3EvidenceAvailable) parts.push('claim evidence available');
+
+  if (showNetworkIntelligence && network && network.merchantCount > 0) {
+    parts.push(`network signal: seen at ${network.merchantCount} ${pluralWord(network.merchantCount, 'merchant', 'merchants')}`);
+  } else if (!showNetworkIntelligence && network && network.merchantCount > 0) {
+    parts.push('network intelligence available on Growth');
+  }
+
+  return parts.join(' · ') || 'Store context available — open in Unauth for details';
+}
 
 function unlockUrls(link: GorgiasWidgetLinkContext | undefined): Pick<
   GorgiasWidgetJsonPayload,
@@ -118,20 +180,11 @@ function unlockUrls(link: GorgiasWidgetLinkContext | undefined): Pick<
 function withUnlockFields(
   payload: WidgetCorePayload,
   link?: GorgiasWidgetLinkContext,
-  options?: GorgiasWidgetJsonOptions,
 ): GorgiasWidgetJsonPayload {
-  const credit = options?.creditUsage;
   return {
     ...payload,
     ...UNLOCK_LABELS,
     ...unlockUrls(link),
-    ...(credit
-      ? {
-          credit_usage_banner: credit.credit_usage_banner,
-          credit_topup_label: credit.credit_topup_label,
-          credit_topup_url: credit.credit_topup_url,
-        }
-      : {}),
   };
 }
 
@@ -266,10 +319,11 @@ export function claimWidgetToJson(
           recent_activity: '—',
           ce3_evidence: '—',
           watchlisted: 'Standard handling · no prior history found',
+          order_context: buildOrderContext(link),
+          context_summary: buildContextSummary(result, link, showNetworkIntelligence),
           ...baseCta(null, link),
         },
         link,
-        options,
       );
     }
     if (result.kind === 'identity_unresolved') {
@@ -283,6 +337,8 @@ export function claimWidgetToJson(
           recent_activity: '—',
           ce3_evidence: '—',
           watchlisted: '—',
+          order_context: buildOrderContext(link),
+          context_summary: buildContextSummary(result, link, showNetworkIntelligence),
           ...baseCta(null, link),
         },
         link,
@@ -299,10 +355,11 @@ export function claimWidgetToJson(
           recent_activity: 'Reconnect in Unauth',
           ce3_evidence: '—',
           watchlisted: '—',
+          order_context: buildOrderContext(link),
+          context_summary: buildContextSummary(result, link, showNetworkIntelligence),
           ...connectCta(),
         },
         link,
-        options,
       );
     }
     return withUnlockFields(
@@ -315,6 +372,8 @@ export function claimWidgetToJson(
         recent_activity: '—',
         ce3_evidence: '—',
         watchlisted: '—',
+        order_context: buildOrderContext(link),
+        context_summary: buildContextSummary(result, link, showNetworkIntelligence),
         ...baseCta(null, link),
       },
       link,
@@ -359,6 +418,8 @@ export function claimWidgetToJson(
           ce3EvidenceAvailable,
           lastClaimAt: null,
         }),
+        order_context: buildOrderContext(link),
+        context_summary: buildContextSummary(result, link, showNetworkIntelligence),
         ...baseCta(result.data.profileUrl, link),
       },
       link,
@@ -398,10 +459,11 @@ export function claimWidgetToJson(
         ce3EvidenceAvailable,
         lastClaimAt: thisStore.lastClaimAt,
       }),
+      order_context: buildOrderContext(link),
+      context_summary: buildContextSummary(result, link, showNetworkIntelligence),
       ...baseCta(result.data.profileUrl, link),
     },
     link,
-    options,
   );
 }
 

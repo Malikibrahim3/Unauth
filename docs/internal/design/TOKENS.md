@@ -40,7 +40,7 @@
 | `--text-primary` / `--text` | `#141821` | Primary body copy |
 | `--text-secondary` | `#2E3947` | Secondary labels |
 | `--text-tertiary` | `#56657A` | Captions, placeholders |
-| `--text-muted` | `#78889C` | (legacy) de-emphasised |
+| `--text-muted` | `#6B6560` | Warm neutral secondary text / de-emphasised |
 | `--text-subtle` | `#9CA8BB` | (legacy) ghost text |
 | `--text-disabled` | `#B9C2CF` | Disabled state |
 | `--text-inverse` | `#FFFFFF` | Text on dark/accent backgrounds |
@@ -48,19 +48,26 @@
 
 ---
 
-## 4 · Accent (Primary Action Blue)
+## 4 · Primary Action
 
 | Token | Value | Usage |
 |---|---|---|
-| `--accent-50` | `#EEF3FE` | |
-| `--accent-100` | `#D9E5FD` | |
-| `--accent-200` | `#B6CCFB` | |
-| `--accent-500` / `--accent` | `#2563EB` | CTA buttons, links |
-| `--accent-600` / `--accent-hover` | `#1D4ED8` | Hover state |
-| `--accent-700` | `#1E40AF` | Active / pressed |
+| `--accent-50` | `#ECE5DC` | Soft action surface |
+| `--accent-100` | `#ECE5DC` | Soft action surface |
+| `--accent-200` | action ink at 14% | Subtle selected state |
+| `--accent-500` / `--accent` | `#1C1008` | CTA buttons, tabs, links |
+| `--accent-600` / `--accent-hover` | `#140B05` | Hover state |
+| `--accent-700` | `#140B05` | Active / pressed |
 | `--accent-fg-on-500` | `#FFFFFF` | Text on accent background |
-| `--accent-soft` | `#EEF3FE` | (legacy alias → `--accent-50`) |
-| `--accent-soft-hover` | `#D9E5FD` | (legacy alias → `--accent-100`) |
+| `--accent-soft` | `#ECE5DC` | (legacy alias → `--accent-50`) |
+| `--accent-soft-hover` | action ink at 12% | Hover on subtle action fills |
+
+## 4.1 · Warm Neutral Data Tone
+
+| Token | Value | Usage |
+|---|---|---|
+| `--data-neutral` | `#6B6560` | Charts, progress fills, non-semantic quantitative UI |
+| `--data-neutral-soft` | `#E7E0D8` | Data tracks / soft fills |
 
 ---
 

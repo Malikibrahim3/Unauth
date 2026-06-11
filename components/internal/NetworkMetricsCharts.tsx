@@ -10,7 +10,7 @@ const NetworkMetricsChartsClient = dynamic(() => import('./NetworkMetricsChartsC
         <div
           key={key}
           className="h-[320px] w-full animate-pulse rounded-lg border"
-          style={{ background: 'var(--bg-subtle)', borderColor: 'var(--border-subtle)' }}
+          style={{ background: 'var(--bg-subtle)', borderColor: 'var(--border-muted)' }}
           aria-hidden="true"
         />
       ))}

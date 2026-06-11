@@ -31,7 +31,7 @@ export default async function SubmittedPage({ searchParams }: SubmittedPageProps
   const email = (audit as { submitted_email: string }).submitted_email;
 
   return (
-    <div style={{ minHeight: '100vh', background: '#F8F5EE', color: '#1A1814' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--surface-base)', color: 'var(--ink-primary)' }}>
       <header className="px-6 pt-5 md:px-10">
         <Link href="/" style={{ display: 'inline-block', textDecoration: 'none' }}>
           <UnauthLogo variant="wordmark-light" size={28} />
@@ -58,7 +58,7 @@ export default async function SubmittedPage({ searchParams }: SubmittedPageProps
               ...SANS_FONT,
               fontSize: '18px',
               lineHeight: 1.65,
-              color: '#3A3530',
+              color: 'var(--ink-secondary)',
               marginTop: '18px',
               marginBottom: 0,
             }}
@@ -73,7 +73,7 @@ export default async function SubmittedPage({ searchParams }: SubmittedPageProps
               fontSize: '12px',
               lineHeight: 1.7,
               letterSpacing: '0.02em',
-              color: '#6B6455',
+              color: 'var(--ink-secondary)',
               marginTop: '18px',
               marginBottom: 0,
             }}
@@ -86,7 +86,7 @@ export default async function SubmittedPage({ searchParams }: SubmittedPageProps
               ...SANS_FONT,
               fontSize: '14px',
               lineHeight: 1.6,
-              color: '#8A8472',
+              color: 'var(--ink-tertiary)',
               marginTop: '16px',
               marginBottom: 0,
             }}

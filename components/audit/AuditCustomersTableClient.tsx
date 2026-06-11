@@ -6,7 +6,8 @@ import {
   auditCustomersTableReducer,
   createAuditCustomersInitialState,
 } from '@/components/audit/auditCustomersTableReducer';
-import { ConfidenceBadge, type ConfidenceGradeValue } from '@/components/ui/ConfidenceBadge';
+import { ConfidenceBadge } from '@/components/ui/ConfidenceBadge';
+import { GradeBadge, type ConfidenceGradeValue } from '@/components/ui/GradeBadge';
 import { ArrowRight, Search, X } from 'lucide-react';
 import CustomerIntelligenceDrawer from '@/components/customers/CustomerIntelligenceDrawer';
 import type { CustomerIntelligencePanel } from '@/app/api/customers/[id]/route';
@@ -254,24 +255,24 @@ export default function AuditCustomersTableClient({
             type="button"
             onClick={() => dispatch({ type: 'patch', patch: { search: '', gradeFilter: '' } })}
             className="text-xs font-medium hover:underline"
-            style={{ color: 'var(--text-muted)' }}
+            style={{ color: 'var(--text-secondary)' }}
           >
             Clear filters
           </button>
         ) : null}
-        <span className="text-xs ml-auto" style={{ color: 'var(--text-subtle)' }}>
+        <span className="text-xs ml-auto" style={{ color: 'var(--text-tertiary)' }}>
           {filtered.length} of {rows.length}
         </span>
       </div>
 
       {/* Desktop table */}
-      <div className="hidden sm:block rounded-lg overflow-hidden border" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
+      <div className="hidden sm:block rounded-md overflow-hidden border" style={{ background: 'var(--surface)', borderColor: 'var(--border-muted)' }}>
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b" style={{ background: 'var(--bg-subtle)', borderColor: 'var(--border-subtle)' }}>
-              <th className="text-left px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Customer</th>
-              <th className="text-right px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Orders ↓</th>
-              <th className="text-right px-4 py-2.5 text-overline" style={{ color: 'var(--text-muted)' }}>Spend</th>
+            <tr className="border-b" style={{ background: 'var(--bg-subtle)', borderColor: 'var(--border-muted)' }}>
+              <th className="text-left px-4 py-2.5 text-overline" style={{ color: 'var(--text-secondary)' }}>Customer</th>
+              <th className="text-right px-4 py-2.5 text-overline" style={{ color: 'var(--text-secondary)' }}>Orders ↓</th>
+              <th className="text-right px-4 py-2.5 text-overline" style={{ color: 'var(--text-secondary)' }}>Spend</th>
               <th className="px-4 py-2.5" aria-label="Actions" />
             </tr>
           </thead>
@@ -280,15 +281,15 @@ export default function AuditCustomersTableClient({
               <tr
                 key={row.email}
                 className="border-b transition-colors cursor-pointer"
-                style={{ borderColor: 'var(--border-subtle)' }}
+                style={{ borderColor: 'var(--border-muted)' }}
                 onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-subtle)')}
                 onMouseLeave={e => (e.currentTarget.style.background = '')}
                 onClick={() => openDrawerForRow(row)}
               >
                 <td className="px-4 py-2.5">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono" style={{ color: 'var(--text-muted)' }}>{row.email}</span>
-                    <ConfidenceBadge grade={legacyGradeToNew(row.grade)} size="sm" />
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs font-mono" style={{ color: 'var(--text-secondary)' }}>{row.email}</span>
+                    <GradeBadge grade={legacyGradeToNew(row.grade)} size="sm" showLabel={false} />
                   </div>
                 </td>
                 <td className="px-4 py-2.5 text-right font-mono" style={{ color: 'var(--text)' }}>{row.orderCount}</td>
@@ -307,7 +308,7 @@ type="button"                     onClick={(e) => { e.stopPropagation(); openDra
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={4} className="px-4 py-6 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
+                <td colSpan={4} className="px-4 py-6 text-center text-sm" style={{ color: 'var(--text-secondary)' }}>
                   No customers match your filters.
                 </td>
               </tr>
@@ -322,16 +323,16 @@ type="button"                     onClick={(e) => { e.stopPropagation(); openDra
           <button
             key={row.email}
             type="button"
-            className="rounded-lg border px-4 py-3 flex w-full items-center justify-between gap-3 cursor-pointer transition-colors text-left"
-            style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
+            className="rounded-md border px-4 py-3 flex w-full items-center justify-between gap-3 cursor-pointer transition-colors text-left"
+            style={{ background: 'var(--surface)', borderColor: 'var(--border-muted)' }}
             onClick={() => openDrawerForRow(row)}
           >
             <div className="min-w-0">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-xs font-mono truncate" style={{ color: 'var(--text-muted)' }}>{row.email}</span>
-                <ConfidenceBadge grade={legacyGradeToNew(row.grade)} size="sm" />
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-mono truncate" style={{ color: 'var(--text-secondary)' }}>{row.email}</span>
+                <GradeBadge grade={legacyGradeToNew(row.grade)} size="sm" showLabel={false} />
               </div>
-              <div className="flex items-center gap-3 mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>
+              <div className="flex items-center gap-3 mt-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
                 <span>{row.orderCount} orders</span>
                 <span>{formatCurrency(row.totalSpend)}</span>
               </div>
@@ -346,7 +347,7 @@ type="button"                     onClick={(e) => { e.stopPropagation(); openDra
           </button>
         ))}
         {filtered.length === 0 && (
-          <p className="text-center text-sm py-6" style={{ color: 'var(--text-muted)' }}>No customers match your filters.</p>
+          <p className="text-center text-sm py-6" style={{ color: 'var(--text-secondary)' }}>No customers match your filters.</p>
         )}
       </div>
 

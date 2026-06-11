@@ -27,7 +27,7 @@ export function WorkbenchPageSkeleton({
       <section className="overflow-hidden border" style={workbenchSectionStyle}>
         <header
           className="border-b px-4 py-3"
-          style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-raised)' }}
+          style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
         >
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0 flex-1 space-y-2">
@@ -52,14 +52,14 @@ export function WorkbenchPageSkeleton({
         {kpiCount > 0 && (
         <div
           className={cn('grid border-b', kpiColsClassName)}
-          style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-raised)' }}
+          style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
         >
           {KPI_SLOT_KEYS.slice(0, kpiCount).map((slotKey, idx) => (
             <div
               key={slotKey}
               className="min-w-0 p-3 md:px-4 space-y-2"
               style={{
-                borderRightColor: 'var(--surface-border)',
+                borderRightColor: 'var(--border)',
                 borderRightWidth: idx === kpiCount - 1 ? 0 : 1,
                 borderRightStyle: idx === kpiCount - 1 ? 'none' : 'solid',
               }}
@@ -75,7 +75,7 @@ export function WorkbenchPageSkeleton({
         {showActionBar && (
           <div
             className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-2"
-            style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-overlay)' }}
+            style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
           >
             <Bone className="h-9 w-full max-w-md" />
             <Bone className="h-8 w-24" />

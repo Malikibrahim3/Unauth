@@ -27,7 +27,7 @@ export function PageHeader({ title, subtitle, breadcrumbs, actions }: PageHeader
     <div className="flex items-start justify-between flex-wrap gap-3">
       <div>
         {breadcrumbs && breadcrumbs.length > 0 && (
-          <nav className="flex items-center gap-1.5 text-body-sm mb-1" style={{ color: 'var(--text-muted)' }}>
+          <nav className="flex items-center gap-1.5 text-body-sm mb-1" style={{ color: 'var(--text-secondary)' }}>
             {breadcrumbs.map((crumb, i) => (
               <span key={crumb.href ?? crumb.label} className="flex items-center gap-1.5">
                 {i > 0 && <span className="opacity-40">/</span>}
@@ -45,7 +45,7 @@ export function PageHeader({ title, subtitle, breadcrumbs, actions }: PageHeader
         )}
         <h1 className="text-heading-lg" style={{ color: 'var(--text)' }}>{title}</h1>
         {subtitle && (
-          <p className="text-body-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>{subtitle}</p>
+          <p className="text-body-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>{subtitle}</p>
         )}
       </div>
       {actions && (

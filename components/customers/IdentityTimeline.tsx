@@ -18,19 +18,19 @@ interface IdentityTimelineProps {
 export default function IdentityTimeline({ entries }: IdentityTimelineProps) {
   if (entries.length === 0) {
     return (
-      <p className="text-body-sm italic" style={{ color: 'var(--ink-secondary)' }}>No identity history available.</p>
+      <p className="text-body-sm italic" style={{ color: 'var(--text-secondary)' }}>No identity history available.</p>
     );
   }
 
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto rounded-[var(--radius-md)] border bg-[var(--surface)]" style={{ borderColor: 'var(--border)', boxShadow: 'var(--shadow-1)' }}>
       <table className="w-full border-collapse" style={{ fontSize: 12 }}>
         <thead>
-          <tr style={{ background: 'var(--surface-base)', borderBottom: '1px solid var(--surface-border)' }}>
-            <th style={{ padding: '8px 10px', textAlign: 'left', fontSize: 12, fontWeight: 600, letterSpacing: '0.01em', color: 'var(--ink-secondary)' }}>First Seen</th>
-            <th style={{ padding: '8px 10px', textAlign: 'left', fontSize: 12, fontWeight: 600, letterSpacing: '0.01em', color: 'var(--ink-secondary)' }}>Field</th>
-            <th style={{ padding: '8px 10px', textAlign: 'left', fontSize: 12, fontWeight: 600, letterSpacing: '0.01em', color: 'var(--ink-secondary)' }}>Value</th>
-            <th style={{ padding: '8px 10px', textAlign: 'left', fontSize: 12, fontWeight: 600, letterSpacing: '0.01em', color: 'var(--ink-secondary)' }}>Change type</th>
+          <tr style={{ background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
+            <th style={{ padding: '12px 14px', textAlign: 'left', fontSize: 12, fontWeight: 500, color: 'var(--text-tertiary)' }}>First Seen</th>
+            <th style={{ padding: '12px 14px', textAlign: 'left', fontSize: 12, fontWeight: 500, color: 'var(--text-tertiary)' }}>Field</th>
+            <th style={{ padding: '12px 14px', textAlign: 'left', fontSize: 12, fontWeight: 500, color: 'var(--text-tertiary)' }}>Value</th>
+            <th style={{ padding: '12px 14px', textAlign: 'left', fontSize: 12, fontWeight: 500, color: 'var(--text-tertiary)' }}>Change type</th>
           </tr>
         </thead>
         <tbody>
@@ -38,16 +38,16 @@ export default function IdentityTimeline({ entries }: IdentityTimelineProps) {
             <tr
               key={`${entry.field}-${entry.date}-${entry.value}`}
               style={{
-                borderBottom: '1px solid var(--surface-border)',
-                borderLeft: entry.isVariant ? '2px solid var(--surface-border)' : '2px solid transparent',
-                background: 'var(--surface-raised)',
+                borderBottom: '1px solid var(--border-muted)',
+                borderLeft: entry.isVariant ? '2px solid var(--lime)' : '2px solid transparent',
+                background: 'var(--surface)',
               }}
             >
-              <td className="num" style={{ padding: '10px', fontFamily: 'var(--font-mono)', color: 'var(--data-date)' }}>{formatDateMode(entry.date, 'table')}</td>
-              <td style={{ padding: '10px' }}>
-                <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.01em', color: 'var(--ink-secondary)' }}>{FIELD_LABELS[entry.field]}</div>
+              <td className="num" style={{ padding: '12px 14px', fontFamily: 'var(--font-mono)', color: 'var(--data-date)' }}>{formatDateMode(entry.date, 'table')}</td>
+              <td style={{ padding: '12px 14px' }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)' }}>{FIELD_LABELS[entry.field]}</div>
               </td>
-              <td style={{ padding: '10px' }}>
+              <td style={{ padding: '12px 14px' }}>
                 <div className="font-mono break-all" style={{ color: 'var(--data-id)' }}>{entry.value}</div>
                 {entry.isVariant && (
                   <div className="mt-1">
@@ -57,7 +57,7 @@ export default function IdentityTimeline({ entries }: IdentityTimelineProps) {
                   </div>
                 )}
               </td>
-              <td style={{ padding: '10px', fontSize: 12, color: 'var(--ink-secondary)' }}>
+              <td style={{ padding: '12px 14px', fontSize: 12, color: 'var(--text-secondary)' }}>
                 {entry.isVariant ? 'Changed later' : 'First seen'}
               </td>
             </tr>

@@ -10,7 +10,7 @@ type UploadExportGuideProps = {
 
 export function UploadExportGuide({ open, onToggle }: UploadExportGuideProps) {
   return (
-    <div className="rounded-lg overflow-hidden border" style={uploadSubtleBorderStyle}>
+    <div className="rounded-md overflow-hidden border" style={uploadSubtleBorderStyle}>
       <button
         type="button"
         onClick={onToggle}
@@ -23,7 +23,7 @@ export function UploadExportGuide({ open, onToggle }: UploadExportGuideProps) {
       {open && (
         <div
           className="px-5 pb-5 pt-1 text-sm space-y-1.5"
-          style={{ borderTop: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}
+          style={{ borderTop: '1px solid var(--border-muted)', color: 'var(--text-secondary)' }}
         >
           <ol className="list-decimal list-inside space-y-1.5">
             <li>

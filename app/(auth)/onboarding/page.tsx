@@ -9,6 +9,10 @@ import { ensureMerchantContextForUser } from '@/lib/account/ensureMerchantContex
 
 export const dynamic = 'force-dynamic';
 
+type ShopifyConnectionRow = {
+  shop_domain: string | null;
+};
+
 export default async function OnboardingPage() {
   const supabase = createClient();
   const serviceClient = createServiceClient();
@@ -34,7 +38,7 @@ export default async function OnboardingPage() {
     : Promise.resolve({ data: [] });
   const shopifyPromise = ctx
     ? serviceClient
-      .from('merchant_shopify_connections' as any)
+      .from(TABLES.MERCHANT_SHOPIFY_CONNECTIONS)
       .select('shop_domain')
       .eq('merchant_id', ctx.merchantId)
       .maybeSingle()
@@ -57,8 +61,8 @@ export default async function OnboardingPage() {
       initialPlatform={(merchant as { platform?: string | null } | null)?.platform ?? (user.user_metadata?.platform as string | undefined) ?? ''}
       initialAnnualVolume={(merchant as { monthly_order_volume?: string | null } | null)?.monthly_order_volume ?? (user.user_metadata?.monthly_order_volume as string | undefined) ?? ''}
       initialPrimaryConcern={(merchant as { primary_fraud_concern?: string | null } | null)?.primary_fraud_concern ?? (user.user_metadata?.primary_fraud_concern as string | undefined) ?? ''}
-      shopifyConnected={!!(shopifyConnection as any)?.shop_domain}
-      shopifyShopDomain={(shopifyConnection as any)?.shop_domain ?? ''}
+      shopifyConnected={!!(shopifyConnection as ShopifyConnectionRow | null)?.shop_domain}
+      shopifyShopDomain={(shopifyConnection as ShopifyConnectionRow | null)?.shop_domain ?? ''}
     />
   );
 }

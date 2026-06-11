@@ -40,8 +40,8 @@ export function MerchantEnvChip({ merchantName, environment = 'production', clas
           'inline-flex items-center rounded px-1 py-px',
           'text-xs font-semibold uppercase leading-none tracking-wide',
           isProd
-            ? 'bg-[var(--risk-low-bg)] text-[var(--risk-low-fg)]'
-            : 'bg-[var(--bg-subtle)] text-[var(--text-muted)]',
+            ? 'bg-[var(--info-bg)] border border-[var(--info-bd)] text-[var(--info)]'
+            : 'bg-[var(--bg-subtle)] text-[var(--text-secondary)]',
         )}
       >
         {isProd ? 'prod' : environment.slice(0, 4)}

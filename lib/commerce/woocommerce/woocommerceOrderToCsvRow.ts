@@ -34,6 +34,11 @@ export type WooCommerceOrderPayload = {
   payment_method?: string | null;
   payment_method_title?: string | null;
   customer_id?: number | null;
+  customer_ip_address?: string | null;
+  customer_user_agent?: string | null;
+  customer_note?: string | null;
+  discount_total?: string | null;
+  line_items?: unknown[] | null;
   refunds?: Array<{ id?: number | string }> | null;
 };
 

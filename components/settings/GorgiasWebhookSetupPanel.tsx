@@ -20,25 +20,25 @@ export function GorgiasWebhookSetupPanel({
 }: GorgiasWebhookSetupPanelProps) {
   return (
     <div
-      className="rounded-lg border p-5 space-y-4"
+      className="rounded-md border p-5 space-y-4"
       style={{
-        borderColor: 'var(--surface-border)',
-        background: 'var(--surface-raised)',
+        borderColor: 'var(--border)',
+        background: 'var(--surface)',
       }}
     >
       <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>
         One-time webhook setup
       </p>
-      <p className="text-sm" style={{ color: 'var(--warning, #b45309)' }}>
+      <p className="text-sm" style={{ color: 'var(--warning)' }}>
         {secret.warning}
       </p>
-      <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+      <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
         This secret is shown once. If lost, rotate it.
       </p>
 
       <div className="space-y-3 text-sm">
         <div>
-          <p className="text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
+          <p className="text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
             Webhook URL
           </p>
           <pre
@@ -60,7 +60,7 @@ export function GorgiasWebhookSetupPanel({
         </div>
 
         <div>
-          <p className="text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
+          <p className="text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
             Header name
           </p>
           <code className="text-xs" style={{ color: 'var(--text)' }}>
@@ -69,7 +69,7 @@ export function GorgiasWebhookSetupPanel({
         </div>
 
         <div>
-          <p className="text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
+          <p className="text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
             Secret value
           </p>
           <pre
@@ -83,7 +83,7 @@ export function GorgiasWebhookSetupPanel({
             disabled={!canManage}
             onClick={() => void onCopy('secret', secret.secret)}
             className="mt-2 inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium"
-            style={{ background: 'var(--accent)', color: 'var(--accent-fg, #fff)' }}
+            style={{ background: 'var(--accent)', color: 'white' }}
           >
             {copiedField === 'secret' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
             {copiedField === 'secret' ? 'Copied' : 'Copy secret'}
@@ -91,7 +91,7 @@ export function GorgiasWebhookSetupPanel({
         </div>
       </div>
 
-      <ol className="list-decimal space-y-2 pl-5 text-sm" style={{ color: 'var(--text-muted)' }}>
+      <ol className="list-decimal space-y-2 pl-5 text-sm" style={{ color: 'var(--text-secondary)' }}>
         <li>
           Log into Gorgias → click <strong>Settings</strong> in the left sidebar → click{' '}
           <strong>Apps &amp; Plugins</strong> → click <strong>HTTP Integration</strong> → click{' '}
@@ -121,7 +121,7 @@ export function GorgiasWebhookSetupPanel({
         type="button"
         onClick={onDismiss}
         className="text-xs underline"
-        style={{ color: 'var(--text-muted)' }}
+        style={{ color: 'var(--text-secondary)' }}
       >
         I saved the secret - hide this panel
       </button>

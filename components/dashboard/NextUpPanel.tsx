@@ -33,11 +33,11 @@ interface NextUpPanelProps {
 
 export default function NextUpPanel({ claims, inboxCount }: NextUpPanelProps) {
   return (
-    <section className="border-b" style={{ borderColor: 'var(--border-default)' }}>
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3" style={{ borderColor: 'var(--border-default)', background: 'var(--bg-surface-alt)' }}>
+    <section className="border-b" style={{ borderColor: 'var(--border)' }}>
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3" style={{ borderColor: 'var(--border)', background: 'var(--surface-sunken)' }}>
         <div>
-          <h2 className="text-body-sm font-semibold" style={{ color: 'var(--ink-primary)' }}>Next up</h2>
-          <p className="text-caption mt-0.5" style={{ color: 'var(--text-muted)' }}>
+          <h2 className="text-body-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Next up</h2>
+          <p className="text-caption mt-0.5" style={{ color: 'var(--text-secondary)' }}>
             Priority claims and queue work requiring analyst attention
           </p>
         </div>
@@ -56,8 +56,8 @@ export default function NextUpPanel({ claims, inboxCount }: NextUpPanelProps) {
       {claims.length === 0 ? (
         <div className="px-4 py-6">
           <p className="text-body-sm" style={{ color: 'var(--text)' }}>No open claims need immediate review.</p>
-          <p className="text-caption mt-1" style={{ color: 'var(--text-muted)' }}>
-            Check the inbox queue as new claims arrive from Shopify and your helpdesk.
+          <p className="text-caption mt-1" style={{ color: 'var(--text-secondary)' }}>
+            Claim records surface here as evidence arrives from Shopify and your helpdesk.
           </p>
           <Link href="/claims" className="mt-3 inline-block text-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
             Open claims →
@@ -69,17 +69,17 @@ export default function NextUpPanel({ claims, inboxCount }: NextUpPanelProps) {
             const sla = getClaimSlaState(claim);
             const slaTone =
               sla.state === 'overdue'
-                ? { bg: 'var(--sev-definite-fill)', text: 'var(--sev-definite)' }
+                ? { bg: 'var(--sev-definite-fill)', text: 'var(--success)' }
                 : sla.state === 'approaching'
-                  ? { bg: 'var(--sev-probable-fill)', text: 'var(--sev-probable)' }
-                  : { bg: 'var(--bg-subtle)', text: 'var(--text-muted)' };
+                  ? { bg: 'var(--sev-probable-fill)', text: 'var(--warning)' }
+                  : { bg: 'var(--bg-subtle)', text: 'var(--text-secondary)' };
 
             return (
               <Link
                 key={claim.id}
                 href={`/customers/${claim.customerId}/claims?claimId=${claim.id}`}
-                className="grid grid-cols-1 gap-3 border-b px-4 py-3 transition-colors hover:bg-[var(--bg-hover)] md:grid-cols-[minmax(0,1.4fr)_auto_auto]"
-                style={{ borderColor: 'var(--border-subtle)' }}
+                className="grid grid-cols-1 gap-3 border-b px-4 py-3 transition-colors hover:bg-[var(--surface-hover)] md:grid-cols-[minmax(0,1.4fr)_auto_auto]"
+                style={{ borderColor: 'var(--border-muted)' }}
               >
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
@@ -93,11 +93,11 @@ export default function NextUpPanel({ claims, inboxCount }: NextUpPanelProps) {
                       {sla.label}
                     </span>
                   </div>
-                  <p className="text-caption mt-1 truncate" style={{ color: 'var(--text-muted)' }}>
+                  <p className="text-caption mt-1 truncate" style={{ color: 'var(--text-secondary)' }}>
                     {CLAIM_TYPE_LABELS[claim.claimType] ?? claim.claimType}
                     {claim.customerEmail ? ` · ${claim.customerEmail}` : ''}
                   </p>
-                  <p className="text-caption mt-1" style={{ color: 'var(--text-subtle)' }}>
+                  <p className="text-caption mt-1" style={{ color: 'var(--text-tertiary)' }}>
                     {formatClaimAge(claim)} · Updated {claim.updatedAt ? new Date(claim.updatedAt).toLocaleDateString('en-US') : '-'}
                   </p>
                 </div>
@@ -105,7 +105,7 @@ export default function NextUpPanel({ claims, inboxCount }: NextUpPanelProps) {
                   <p className="text-body-sm font-semibold tabular-nums" style={{ color: 'var(--text)' }}>
                     {formatCurrencyNullable(claim.amountAtRisk, claim.currency ?? undefined)}
                   </p>
-                  <p className="text-caption" style={{ color: 'var(--text-muted)' }}>At risk</p>
+                  <p className="text-caption" style={{ color: 'var(--text-secondary)' }}>At risk</p>
                 </div>
                 <span className="self-center text-caption font-semibold whitespace-nowrap" style={{ color: 'var(--accent)' }}>
                   Review claim →

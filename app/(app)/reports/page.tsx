@@ -8,12 +8,13 @@ import { requirePermission, PERMISSIONS, resolveDefaultAppPath } from '@/lib/per
 import { getExposureAtRisk } from '@/lib/supabase/merchantHelpers';
 import { buildClaimOpsMetrics } from '@/lib/claims/reporting';
 import { ReportsPageView } from '@/app/(app)/reports/ReportsPageView';
-import type { ClaimRow, GradeBucket, OutcomeRow, ReportsTab, RunSummary, TxGradeRow } from '@/app/(app)/reports/reportsPageTypes';
+import type { ClaimRow, ClaimTypeBreakdown, GradeBucket, OutcomeBreakdown, OutcomeRow, ReportsTab, RunSummary, SourcesCoverage, TxGradeRow } from '@/app/(app)/reports/reportsPageTypes';
 import {
   GRADE_SAMPLE_LIMIT,
-  buildChartPaths,
+  buildClaimTypeBreakdown,
   buildGradeBuckets,
-  buildRatePoints,
+  buildMatchRateTrend,
+  buildOutcomeBreakdown,
   gradeFromTransaction,
   liveSetupCta,
 } from '@/app/(app)/reports/reportsPageUtils';
@@ -86,19 +87,18 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
   const totalRows = rows.reduce((sum, row) => sum + row.total_rows, 0);
   const totalFlagged = rows.reduce((sum, row) => sum + (row.flagged_count ?? 0), 0);
   const trend = rows.slice(0, 7).reverse();
-  const { points } = buildRatePoints(trend);
-  const { linePath, areaPath } = buildChartPaths(points);
+  const matchRateTrend = buildMatchRateTrend(trend);
   const buckets = buildGradeBuckets(gradeCounts);
 
   let claimsQuery = serviceClient
     .from('merchant_claims' as never)
-    .select('id,status,amount_at_risk,submitted_at,created_at,updated_at')
+    .select('id,status,claim_type,amount_at_risk,submitted_at,created_at,updated_at')
     .eq('merchant_id', ctx.merchantId);
   if (cutoff) claimsQuery = claimsQuery.gte('submitted_at', cutoff);
 
   let priorClaimsQuery = serviceClient
     .from('merchant_claims' as never)
-    .select('id,status,amount_at_risk,submitted_at,created_at,updated_at')
+    .select('id,status,claim_type,amount_at_risk,submitted_at,created_at,updated_at')
     .eq('merchant_id', ctx.merchantId);
   if (priorCutoff) priorClaimsQuery = priorClaimsQuery.gte('submitted_at', priorCutoff);
   if (priorEnd) priorClaimsQuery = priorClaimsQuery.lte('submitted_at', priorEnd);
@@ -132,12 +132,23 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
     ? null
     : buildClaimOpsMetrics(priorClaims, priorOutcomeResult.data ?? []);
 
+  const claimTypeBreakdown: ClaimTypeBreakdown = buildClaimTypeBreakdown(claims);
+  const outcomeBreakdown: OutcomeBreakdown = buildOutcomeBreakdown(outcomeResult.data ?? []);
+
+  const sourcesCoverage: SourcesCoverage = {
+    customerProfiles: dataPresence.sources.customerProfiles,
+    merchantClaims: dataPresence.sources.merchantClaims,
+    supportCases: dataPresence.sources.supportCases,
+    evidencePackages: dataPresence.sources.evidencePackages,
+    auditTransactions: dataPresence.sources.auditTransactions,
+  };
+
   const hasAnyData = dataPresence.hasAnyData;
   const liveCta = liveSetupCta(connectionState);
   const gradeSampled = (txRows ?? []).length >= GRADE_SAMPLE_LIMIT;
   const analysedRows = (txRows ?? []).length;
 
-  const chartProps = { points, linePath, areaPath, gradeSampled, analysedRows, buckets };
+  const chartProps = { matchRateTrend, gradeSampled, analysedRows, buckets };
 
   return (
     <ReportsPageView
@@ -172,6 +183,9 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
           claimMetrics,
           priorMetrics,
           exposureAtRisk,
+          claimTypeBreakdown,
+          outcomeBreakdown,
+          sourcesCoverage,
         },
       }}
     />

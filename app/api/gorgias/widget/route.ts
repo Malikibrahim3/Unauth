@@ -3,17 +3,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createServiceClient } from '@/lib/supabase/server';
 import { getClientIp } from '@/lib/ratelimit';
-import {
-  buildGorgiasClaimWidgetData,
-  type GorgiasClaimWidgetResult,
-} from '@/lib/gorgias/widgetData';
+import { type GorgiasClaimWidgetResult } from '@/lib/gorgias/widgetData';
+import { buildGorgiasClaimWidgetDataV2 as buildGorgiasClaimWidgetData } from '@/lib/gorgias/widgetDataV2';
 import type { MerchantCustomerLookupDiagnostics } from '@/lib/gorgias/findMerchantCustomerByEmail';
-import { buildCreditUsageWidgetFields } from '@/lib/billing/creditUsage';
-import { CONTEXT_UNLOCK_CTA_LABELS, getContextCreditSnapshot } from '@/lib/billing/contextCredits';
+import { getContextCreditSnapshot } from '@/lib/billing/contextCredits';
 import { TIER_ORDER } from '@/lib/billing/tiers';
 import {
   claimWidgetToJson,
-  hasGorgiasUnlockCaseScope,
   type GorgiasWidgetJsonPayload,
   type GorgiasWidgetLinkContext,
   type GorgiasWidgetJsonOptions,
@@ -33,7 +29,7 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 export const maxDuration = 60;
 
-/** Deploy marker — Vercel commit SHA when available (logging only). */
+/** Deploy marker -- Vercel commit SHA when available (logging only). */
 function gorgiasWidgetBuildMarker(): string {
   return process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? 'local';
 }
@@ -45,21 +41,23 @@ const JSON_RESPONSE_HEADERS = {
 
 const GORGIAS_WIDGET_JSON_FALLBACK: GorgiasWidgetJsonPayload = {
   identity: 'Case context preview unavailable',
-  claims: CONTEXT_UNLOCK_CTA_LABELS.basic_context,
-  orders: CONTEXT_UNLOCK_CTA_LABELS.full_context,
-  claim_rate: CONTEXT_UNLOCK_CTA_LABELS.evidence_summary,
-  primary_reason: "Uses your store's own order, claim, delivery, and customer history.",
-  recent_activity: 'Adds pseudonymous network intelligence from participating merchants.',
-  ce3_evidence: 'Unauth provides contextual information for merchant review. Unauth does not make refund, fulfilment, account, or customer eligibility decisions.',
-  watchlisted: 'Other merchants’ raw customer data is not exposed.',
-  cta_label: 'Open case in Unauth →',
+  claims: 'Claim history unavailable',
+  orders: 'Order context unavailable',
+  claim_rate: '—',
+  primary_reason: '—',
+  recent_activity: '—',
+  ce3_evidence: '—',
+  watchlisted: '—',
+  order_context: '—',
+  context_summary: 'Context unavailable — check your Gorgias connection in Unauth settings',
+  cta_label: 'Open Unauth settings →',
   cta_url: `${process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '') ?? ''}/settings/integrations/gorgias`,
   basic_unlock_url: '',
   full_unlock_url: '',
   evidence_unlock_url: '',
-  basic_unlock_label: CONTEXT_UNLOCK_CTA_LABELS.basic_context,
-  full_unlock_label: CONTEXT_UNLOCK_CTA_LABELS.full_context,
-  evidence_unlock_label: CONTEXT_UNLOCK_CTA_LABELS.evidence_summary,
+  basic_unlock_label: 'View full context →',
+  full_unlock_label: 'View network context →',
+  evidence_unlock_label: 'View claim summary →',
 };
 
 type WidgetReturnContext = {
@@ -92,7 +90,7 @@ function logFallbackReturned(input: {
   });
 }
 
-/** Single JSON exit — always logs final_return before responding. */
+/** Single JSON exit -- always logs final_return before responding. */
 function returnWidgetJson(
   branch: string,
   body: GorgiasWidgetJsonPayload,
@@ -142,15 +140,10 @@ async function enrichWidgetJsonOptions(
   service: SupabaseClient,
   merchantId: string,
   base: GorgiasWidgetJsonOptions,
-  link?: GorgiasWidgetLinkContext,
 ): Promise<GorgiasWidgetJsonOptions> {
   const snapshot = await getContextCreditSnapshot(service, merchantId);
   const showNetworkIntelligence = TIER_ORDER[snapshot.tier] >= TIER_ORDER['growth'];
-  const creditUsage =
-    link && hasGorgiasUnlockCaseScope(link)
-      ? buildCreditUsageWidgetFields(snapshot, env.NEXT_PUBLIC_APP_URL)
-      : null;
-  return { ...base, showNetworkIntelligence, ...(creditUsage ? { creditUsage } : {}) };
+  return { ...base, showNetworkIntelligence };
 }
 
 function isUnresolvedGorgiasVar(value: string): boolean {
@@ -404,7 +397,6 @@ export async function GET(request: NextRequest) {
       service,
       authResult.merchantId,
       jsonOptions,
-      linkContext,
     );
     gorgiasWidgetLog('widget_options', { showNetworkIntelligence: enrichedJsonOptions.showNetworkIntelligence });
 

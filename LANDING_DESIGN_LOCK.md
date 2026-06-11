@@ -1,22 +1,29 @@
 # Landing Page Design Lock
 
-**Status:** LOCKED as of 2026-05-25
+**Status:** REBUILT 2026-06-10 by explicit user request (editorial display rebuild, foundation.house-style layout language). The previous lock (2026-05-25, commit `c208eb9`) was overridden per the exception below.
 
-**Commit:** `c208eb9` (landing done mobile)
+## Current design (2026-06-10)
+
+Editorial display landing: dusk hero with stacked display headline + glass identity-record phone, statement section with 01–04 feature list + evidence manifest card, stat bento (colored blocks, giant numerals), giant-figures section, tabbed claim-programs section on sky, purple closer, dark footer with oversized wordmark.
+
+Files:
+
+```
+app/(public)/landing/page.tsx
+app/(public)/landing/_lib/foundationContent.ts        (all copy — real product facts only)
+app/(public)/landing/_components/foundation/*.tsx
+app/(public)/landing/_components/foundation/foundation.module.css
+app/globals.css                                       (--fl-* token block)
+```
+
+The previous component set under `app/(public)/landing/_components/*.tsx` is retained on disk but unused (easy rollback).
 
 ## Scope
 
-The following are LOCKED and should not be changed without explicit user request:
+The following should not be changed without explicit user request:
 
 - Landing page layout, spacing, typography across all breakpoints (320 px – desktop)
-- Hero section (CTA, heading, subtitle, screenshot)
-- Section 1 — Why it Matters (cards, stats, case snippets)
-- Section 2 — The Pipeline (tabs, step descriptions, screenshots)
-- Section 3 — Data Schema (field chips, categories)
-- Section 4 — Merchant Dashboard (KPI cards)
-- Section 5 — How Unauth Compares (feature comparison matrix)
-- Section 6 — FAQ (collapsible Q&A)
-- Footer (product links, legal, contact, version info)
+- All sections listed under "Current design" above
 
 ## Exception: unlocked for explicit requests
 

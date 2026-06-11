@@ -32,6 +32,25 @@ export function normaliseEmail(raw: string | null | undefined): string | null {
   return `${localPart}@${domain}`;
 }
 
+/**
+ * Derived email root for the v2 `email_root` identity signal: catches
+ * plus-tag rotation on every provider while folding dots ONLY where the
+ * provider treats them as insignificant (Gmail — already folded by
+ * normaliseEmail). Dots are preserved for all other domains because they
+ * denote distinct mailboxes per RFC 5321 (e.g. outlook.com).
+ *
+ * History: the Phase 4 migration worker stripped dots for ALL domains,
+ * which falsely merged non-Gmail dot-variants (test 2.3, REPORT.md).
+ */
+export function emailRoot(raw: string | null | undefined): string | null {
+  const norm = normaliseEmail(raw);
+  if (!norm) return null;
+  const at = norm.indexOf('@');
+  const root = norm.slice(0, at).split('+')[0];
+  if (!root) return null;
+  return `${root}@${norm.slice(at + 1)}`;
+}
+
 const ADDRESS_ABBREVIATIONS: Record<string, string> = {
   st: 'street',
   rd: 'road',

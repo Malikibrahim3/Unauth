@@ -145,8 +145,8 @@ export default function TeamManagementClient() {
         <output
           className="block rounded-md border px-3 py-2 text-sm"
           style={{
-            background: message.type === 'success' ? 'rgba(47, 107, 67, 0.10)' : 'rgba(248, 113, 113, 0.10)',
-            borderColor: message.type === 'success' ? 'rgba(47, 107, 67, 0.30)' : 'rgba(248, 113, 113, 0.35)',
+            background: message.type === 'success' ? 'var(--success-bg)' : 'var(--sev-definite-fill)',
+            borderColor: message.type === 'success' ? 'var(--success-bd)' : 'color-mix(in srgb, var(--success) 35%, var(--border))',
             color: 'var(--text)',
           }}
         >

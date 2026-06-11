@@ -80,32 +80,42 @@ export function Drawer({
         <button
           type="button"
           aria-label="Close panel"
-          className="absolute inset-0 cursor-default border-0 bg-[rgba(20,24,33,0.45)] p-0"
+          className="absolute inset-0 cursor-default border-0 p-0 backdrop-blur-[3px]"
+          style={{ background: 'color-mix(in srgb, var(--text-primary) 42%, transparent)' }}
           onClick={onClose}
         />
       ) : null}
       <div
         ref={drawerRef}
-        className="relative z-10 flex h-full max-h-full flex-col bg-[var(--bg-surface)]"
+        className="relative z-10 flex h-full max-h-full flex-col"
         style={{
           width: typeof width === 'number' ? `min(${width}px, 100vw)` : width,
+          background: 'var(--surface)',
+          borderLeft: '1px solid var(--border-muted)',
           boxShadow: 'var(--shadow-drawer)',
         }}
         onClick={(e) => e.stopPropagation()}
       >
         {title && (
           <div
-            className="flex items-center justify-between px-[var(--space-5)] py-[var(--space-4)] border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] shrink-0"
-            style={{ position: 'sticky', top: 0, zIndex: 'var(--z-sticky)' as unknown as number }}
+            className="flex items-center justify-between border-b border-[var(--border-muted)] shrink-0"
+            style={{
+              height: 56,
+              padding: '0 18px',
+              background: 'var(--surface)',
+              position: 'sticky',
+              top: 0,
+              zIndex: 'var(--z-sticky)' as unknown as number,
+            }}
           >
-            <h2 className="text-h2 text-[var(--text-primary)]">{title}</h2>
+            <h2 className="text-h3" style={{ color: 'var(--text-primary)' }}>{title}</h2>
             <button
               type="button"
               onClick={onClose}
-              className="p-1 rounded-[var(--radius-2)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors"
+              className="flex h-7 w-7 items-center justify-center rounded-[var(--radius-sm)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-hover)] transition-colors"
               aria-label="Close"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
           </div>
         )}
@@ -114,7 +124,7 @@ export function Drawer({
 
         {footer && (
           <div
-            className="shrink-0 bg-[var(--bg-surface)] border-t border-[var(--border-subtle)]"
+            className="shrink-0 bg-[var(--surface)] border-t border-[var(--border-muted)]"
             style={{ position: 'sticky', bottom: 0 }}
           >
             {footer}

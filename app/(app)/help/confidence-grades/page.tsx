@@ -18,8 +18,8 @@ interface GradeRowProps {
 function GradeRow({ grade, color, meaning, signals, action }: GradeRowProps) {
   return (
     <div
-      className="rounded-lg p-5 space-y-3 border"
-      style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
+      className="rounded-md p-5 space-y-3 border"
+      style={{ background: 'var(--surface)', borderColor: 'var(--border-muted)' }}
     >
       <div className="flex items-center gap-2">
         <span
@@ -31,7 +31,7 @@ function GradeRow({ grade, color, meaning, signals, action }: GradeRowProps) {
           {grade}
         </span>
       </div>
-      <div className="space-y-1.5 text-body-sm" style={{ color: 'var(--text-muted)' }}>
+      <div className="space-y-1.5 text-body-sm" style={{ color: 'var(--text-secondary)' }}>
         <p>
           <span className="font-medium" style={{ color: 'var(--text)' }}>What it means: </span>
           {meaning}
@@ -55,8 +55,8 @@ export default function ConfidenceGradesPage() {
       <div className="flex items-center gap-3">
         <Link
           href="/help"
-          className="inline-flex items-center gap-1.5 text-sm transition-colors hover:opacity-80"
-          style={{ color: 'var(--text-muted)' }}
+          className="inline-flex items-center gap-1.5 text-caption transition-colors hover:opacity-80"
+          style={{ color: 'var(--text-secondary)' }}
         >
           <ArrowLeft className="h-4 w-4" />
           Help
@@ -67,7 +67,7 @@ export default function ConfidenceGradesPage() {
         <h1 className="text-heading-lg" style={{ color: 'var(--text)' }}>
           Understanding confidence grades
         </h1>
-        <p className="text-body-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+        <p className="text-body-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
           Every flagged customer in Unauth receives a confidence grade rather than a numeric score. Grades are
           designed to translate directly into operational decisions - they answer the question{' '}
           <em>"how certain should I be, and what should I do?"</em> without requiring an analyst to interpret a
@@ -75,7 +75,7 @@ export default function ConfidenceGradesPage() {
         </p>
       </section>
 
-      <div style={{ borderTop: '1px solid var(--border-subtle)' }} />
+      <div style={{ borderTop: '1px solid var(--border-muted)' }} />
 
       <section className="space-y-4">
         <h2 className="text-heading-md" style={{ color: 'var(--text)' }}>
@@ -113,13 +113,13 @@ export default function ConfidenceGradesPage() {
         </div>
       </section>
 
-      <div style={{ borderTop: '1px solid var(--border-subtle)' }} />
+      <div style={{ borderTop: '1px solid var(--border-muted)' }} />
 
       <section className="space-y-4">
         <h2 className="text-heading-md" style={{ color: 'var(--text)' }}>
           How grades are assigned
         </h2>
-        <div className="space-y-3 text-body-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+        <div className="space-y-3 text-body-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
           <p>
             Grades are determined by the number and quality of matching signals, not a raw score. Signal quality
             is weighted by uniqueness - a card fingerprint is harder to share accidentally than an IP address, so
@@ -138,13 +138,13 @@ export default function ConfidenceGradesPage() {
         </div>
       </section>
 
-      <div style={{ borderTop: '1px solid var(--border-subtle)' }} />
+      <div style={{ borderTop: '1px solid var(--border-muted)' }} />
 
       <section className="space-y-4">
         <h2 className="text-heading-md" style={{ color: 'var(--text)' }}>
           Grades and identity evidence
         </h2>
-        <p className="text-body-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+        <p className="text-body-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
           Higher confidence grades reflect stronger cross-signal overlap across a customer&apos;s history. Unauth surfaces
           prior matching transactions and identity signals from your own records that you may use when preparing a dispute
           response. Prior-match detection is strongest at Definite grade, where multiple independent signal types align.
@@ -155,8 +155,8 @@ export default function ConfidenceGradesPage() {
       <div className="pt-2">
         <Link
           href="/help"
-          className="text-sm hover:opacity-80 transition-opacity"
-          style={{ color: 'var(--text-muted)' }}
+          className="text-caption hover:opacity-80 transition-opacity"
+          style={{ color: 'var(--text-secondary)' }}
         >
           ← Back to Help &amp; Docs
         </Link>

@@ -13,6 +13,7 @@ import { CustomersOverviewPageView } from '@/app/(app)/customers/CustomersOvervi
 import { resolveCustomerActions } from '@/app/(app)/customers/customersOverviewPageUtils';
 
 export const dynamic = 'force-dynamic';
+export const maxDuration = 30;
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
 const DEFAULT_PAGE_SIZE = 25;
@@ -30,14 +31,17 @@ export default async function CustomersOverviewPage({
   const { denied, ctx } = await requirePermission(svc, user.id, PERMISSIONS.VIEW_CUSTOMERS);
   if (denied) return redirect(await resolveDefaultAppPath(svc, user.id));
 
-  const [connectionState, dataPresence] = await Promise.all([
-    getConnectionState(svc, ctx.merchantId),
-    getMerchantDataPresence(svc, ctx.merchantId, user.id),
+  // Run connection state and search-param resolution in parallel — neither blocks the other.
+  const [[connectionState, dataPresence], sp] = await Promise.all([
+    Promise.all([
+      getConnectionState(svc, ctx.merchantId),
+      getMerchantDataPresence(svc, ctx.merchantId, user.id),
+    ]),
+    Promise.resolve(searchParams).then((p) => p ?? {}),
   ]);
   const setupState = resolveMerchantSetupState(connectionState, dataPresence);
 
-  // `searchParams` may be a Promise in newer Next.js versions - await to normalize.
-  const sp = (await Promise.resolve(searchParams)) ?? {};
+  // sp already resolved above in parallel with connection state.
 
   const page = Math.max(1, parseInt(sp.page ?? '1', 10));
   const requestedPageSize = parseInt(sp.pageSize ?? String(DEFAULT_PAGE_SIZE), 10);
@@ -275,7 +279,19 @@ export default async function CustomersOverviewPage({
 
   query = query.range(offset, offset + PAGE_SIZE - 1);
 
-  const { data: profiles, count } = await query;
+  // Gracefully fall back to empty results on any query error.
+  // Server-level timeout is provided by the `maxDuration` export at the top of this file.
+  // Note: Supabase query builders are thenable but do not implement .catch() — use try/catch.
+  let profiles: unknown[] | null = null;
+  let count: number | null = null;
+  try {
+    const result = await query;
+    profiles = result.data;
+    count = result.count;
+  } catch {
+    profiles = [];
+    count = 0;
+  }
 
   const rows = (profiles ?? []) as Array<{
     id: string;

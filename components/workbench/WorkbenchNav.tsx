@@ -15,19 +15,20 @@ interface WorkbenchNavProps {
 
 export function WorkbenchNav({ items, activeKey }: WorkbenchNavProps) {
   return (
-    <nav className="flex items-center gap-4" aria-label="Section navigation">
+    <nav className="flex items-center gap-5 overflow-x-auto" aria-label="Section navigation">
       {items.map((item) => {
         const active = item.key === activeKey;
         return (
           <Link
             key={item.key}
             href={item.href}
-            className="border-b-2 pb-1 text-body-sm transition-colors"
+            className="border-b-2 pb-3 text-body-sm transition-colors"
             style={{
-              borderBottomColor: active ? 'var(--accent)' : 'transparent',
-              color: active ? 'var(--text)' : 'var(--text-muted)',
+              borderBottomColor: active ? 'var(--text-primary)' : 'transparent',
+              color: active ? 'var(--text-primary)' : 'var(--text-secondary)',
               fontWeight: active ? 600 : 500,
               letterSpacing: active ? '0' : undefined,
+              whiteSpace: 'nowrap',
             }}
           >
             {item.label}

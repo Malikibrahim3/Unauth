@@ -10,18 +10,14 @@
     "grep": {},
     "grepInvert": null,
     "maxFailures": 0,
-    "metadata": {
-      "actualWorkers": 1
-    },
+    "metadata": {},
     "preserveOutput": "always",
     "projects": [
       {
         "outputDir": "/Users/malikibrahim/Downloads/Unauth/test-results",
         "repeatEach": 1,
         "retries": 0,
-        "metadata": {
-          "actualWorkers": 1
-        },
+        "metadata": {},
         "id": "ux-desktop",
         "name": "ux-desktop",
         "testDir": "/Users/malikibrahim/Downloads/Unauth/tests/ux-audit",
@@ -29,15 +25,13 @@
         "testMatch": [
           "ux-audit.spec.ts"
         ],
-        "timeout": 120000
+        "timeout": 360000
       },
       {
         "outputDir": "/Users/malikibrahim/Downloads/Unauth/test-results",
         "repeatEach": 1,
         "retries": 0,
-        "metadata": {
-          "actualWorkers": 1
-        },
+        "metadata": {},
         "id": "ux-mobile",
         "name": "ux-mobile",
         "testDir": "/Users/malikibrahim/Downloads/Unauth/tests/ux-audit",
@@ -47,7 +41,7 @@
         "testMatch": [
           "ux-audit.spec.ts"
         ],
-        "timeout": 120000
+        "timeout": 360000
       }
     ],
     "quiet": false,
@@ -75,109 +69,24 @@
     "workers": 1,
     "webServer": {
       "command": "npm run dev",
-      "url": "http://localhost:3002",
+      "url": "http://localhost:3000",
       "reuseExistingServer": true,
       "timeout": 120000
     }
   },
-  "suites": [
+  "suites": [],
+  "errors": [
     {
-      "title": "ux-audit.spec.ts",
-      "file": "ux-audit.spec.ts",
-      "column": 0,
-      "line": 0,
-      "specs": [],
-      "suites": [
-        {
-          "title": "Playwright UX audit",
-          "file": "ux-audit.spec.ts",
-          "line": 47,
-          "column": 6,
-          "specs": [
-            {
-              "title": "full merchant audit journey",
-              "ok": false,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 120000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "ux-desktop",
-                  "projectName": "ux-desktop",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "timedOut",
-                      "duration": 120917,
-                      "error": {
-                        "message": "\u001b[31mTest timeout of 120000ms exceeded.\u001b[39m",
-                        "stack": "\u001b[31mTest timeout of 120000ms exceeded.\u001b[39m"
-                      },
-                      "errors": [
-                        {
-                          "message": "\u001b[31mTest timeout of 120000ms exceeded.\u001b[39m"
-                        },
-                        {
-                          "location": {
-                            "file": "/Users/malikibrahim/Downloads/Unauth/tests/ux-audit/ux-audit.spec.ts",
-                            "column": 32,
-                            "line": 315
-                          },
-                          "message": "Error: page.waitForEvent: Test timeout of 120000ms exceeded.\n=========================== logs ===========================\nwaiting for event \"download\"\n============================================================\n\n  313 | async function recordDownload(page: Page, pageName: string, label: string) {\n  314 |   const before = page.url()\n> 315 |   const downloadPromise = page.waitForEvent('download')\n      |                                ^\n  316 |   await page.getByText(label, { exact: false }).click()\n  317 |   const download = await downloadPromise\n  318 |   const savePath = path.join(DOWNLOAD_DIR, download.suggestedFilename())\n    at recordDownload (/Users/malikibrahim/Downloads/Unauth/tests/ux-audit/ux-audit.spec.ts:315:32)\n    at /Users/malikibrahim/Downloads/Unauth/tests/ux-audit/ux-audit.spec.ts:168:11"
-                        },
-                        {
-                          "location": {
-                            "file": "/Users/malikibrahim/Downloads/Unauth/tests/ux-audit/ux-audit.spec.ts",
-                            "column": 49,
-                            "line": 316
-                          },
-                          "message": "Error: locator.click: Test timeout of 120000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByText('Export CSV')\u001b[22m\n\n\n  314 |   const before = page.url()\n  315 |   const downloadPromise = page.waitForEvent('download')\n> 316 |   await page.getByText(label, { exact: false }).click()\n      |                                                 ^\n  317 |   const download = await downloadPromise\n  318 |   const savePath = path.join(DOWNLOAD_DIR, download.suggestedFilename())\n  319 |   await download.saveAs(savePath)\n    at recordDownload (/Users/malikibrahim/Downloads/Unauth/tests/ux-audit/ux-audit.spec.ts:316:49)\n    at /Users/malikibrahim/Downloads/Unauth/tests/ux-audit/ux-audit.spec.ts:168:11"
-                        },
-                        {
-                          "message": "Error: browserContext._wrapApiCall: Test timeout of 120000ms exceeded."
-                        }
-                      ],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-05-05T16:27:29.170Z",
-                      "annotations": [],
-                      "attachments": [
-                        {
-                          "name": "error-context",
-                          "contentType": "text/markdown",
-                          "path": "/Users/malikibrahim/Downloads/Unauth/test-results/ux-audit-Playwright-UX-audit-full-merchant-audit-journey-ux-desktop/error-context.md"
-                        },
-                        {
-                          "name": "trace",
-                          "contentType": "application/zip",
-                          "path": "/Users/malikibrahim/Downloads/Unauth/test-results/ux-audit-Playwright-UX-audit-full-merchant-audit-journey-ux-desktop/trace.zip"
-                        }
-                      ]
-                    }
-                  ],
-                  "status": "unexpected"
-                }
-              ],
-              "id": "55dd31b28b3eb887cf3d-29509311eb3f6f4b77f6",
-              "file": "ux-audit.spec.ts",
-              "line": 58,
-              "column": 7
-            }
-          ]
-        }
-      ]
+      "message": "Error: Timed out waiting 120000ms from config.webServer.",
+      "stack": "Error: Timed out waiting 120000ms from config.webServer."
     }
   ],
-  "errors": [],
   "stats": {
-    "startTime": "2026-05-05T16:27:14.481Z",
-    "duration": 137504.94,
+    "startTime": "2026-06-09T12:21:04.166Z",
+    "duration": 121177.859,
     "expected": 0,
     "skipped": 0,
-    "unexpected": 1,
+    "unexpected": 0,
     "flaky": 0
   }
 }

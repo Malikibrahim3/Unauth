@@ -70,11 +70,11 @@ export default function FoundingMerchantApplicationForm({ defaultStoreName }: { 
 
   if (submitted) {
     return (
-      <div className="rounded-sm border px-8 py-10" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
+      <div className="rounded-sm border px-8 py-10" style={{ background: 'var(--surface)', borderColor: 'var(--border-muted)' }}>
         <h1 className="text-3xl font-medium tracking-tight" style={{ color: 'var(--text)' }}>
           Application received.
         </h1>
-        <p className="mt-3 text-base leading-7" style={{ color: 'var(--text-muted)' }}>
+        <p className="mt-3 text-base leading-7" style={{ color: 'var(--text-secondary)' }}>
           We&apos;ll be in touch within two business days.
         </p>
       </div>
@@ -82,7 +82,7 @@ export default function FoundingMerchantApplicationForm({ defaultStoreName }: { 
   }
 
   return (
-    <form onSubmit={handleSubmit} className="rounded-sm border px-8 py-10" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
+    <form onSubmit={handleSubmit} className="rounded-sm border px-8 py-10" style={{ background: 'var(--surface)', borderColor: 'var(--border-muted)' }}>
       <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: '#7B2D26' }}>
         Tier 2
       </p>
@@ -132,7 +132,7 @@ export default function FoundingMerchantApplicationForm({ defaultStoreName }: { 
           />
         </Field>
 
-        <label className="flex items-start gap-3 text-sm" style={{ color: 'var(--text-muted)' }}>
+        <label className="flex items-start gap-3 text-sm" style={{ color: 'var(--text-secondary)' }}>
           <input
             type="checkbox"
             checked={agreed}

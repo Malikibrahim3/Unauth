@@ -69,8 +69,8 @@ export default async function ChargebacksPage() {
 
   return (
     <ChargebacksPageWorkbench
-      title="Evidence & Defence"
-      subtitle="Generate evidence packages for dispute escalations. CE 3.0 readiness is checked automatically where data exists."
+      title="Dispute evidence"
+      subtitle="Generate evidence packages when a claim escalates to a dispute. CE 3.0 readiness is checked automatically where data exists."
       navItems={WORKBENCH_NAV_ITEMS}
       actions={
         <ButtonLink href="/customers" variant="secondary" size="sm">View customers</ButtonLink>
@@ -92,87 +92,96 @@ export default async function ChargebacksPage() {
       ) : (
         <div>
           {/* Readiness distribution */}
-          <div className="border-b p-4" style={{ borderColor: 'var(--border-default)' }}>
-            <p className="text-body-sm font-semibold mb-3" style={{ color: 'var(--ink-primary)' }}>Package readiness</p>
+          <div className="border-b p-4" style={{ borderColor: 'var(--border)' }}>
+            <p className="text-sm font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>Package readiness</p>
             <ReadinessFunnel
               total={pkgs.length}
               ready={pkgs.filter((p) => p.ce3_eligible).length}
               inProgress={pkgs.filter((p) => !p.ce3_eligible && Boolean(p.narrative_summary)).length}
               missing={pkgs.filter((p) => !p.ce3_eligible && !p.narrative_summary).length}
             />
-            <p className="text-caption mt-2" style={{ color: 'var(--ink-tertiary)' }}>
+            <p className="text-xs mt-2" style={{ color: 'var(--text-tertiary)' }}>
               CE 3.0-ready packages have a confirmed prior identity match where required data exists. Other packages may still be evidence-ready or missing IP/device checkout-time signals.
             </p>
           </div>
-        <div className="w-full overflow-x-auto">
-          <table className="w-full border-collapse text-sm" style={{ background: 'var(--bg-surface)' }}>
-            <thead>
-              <tr className="border-b" style={{ background: 'var(--bg-surface-alt)', borderColor: 'var(--border-default)' }}>
-                {['Reference', 'Customer', 'Readiness', 'Last generated', 'Prior match', 'Cross-merchant', ''].map((header) => (
-                  <th key={header} className="px-4 py-2.5 text-left text-overline" style={{ color: 'var(--text-muted)' }}>
-                    {header}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {pkgs.map((pkg) => (
-                <tr key={pkg.id} className="border-b" style={{ borderColor: 'var(--border-subtle)' }}>
-                  <td className="px-4 py-3">
-                    <span className="font-mono text-xs" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+        <div className="divide-y" style={{ borderColor: 'var(--border-muted)' }}>
+          {pkgs.map((pkg) => {
+            const readinessLabel = ce3ListStatusLabel(pkg.ce3_eligible, Boolean(pkg.narrative_summary));
+            const readinessTone = pkg.ce3_eligible ? 'success' : pkg.narrative_summary ? 'warning' : 'neutral';
+            const maskedEmail = pkg.customer_profile_id
+              ? (profileMap[pkg.customer_profile_id]?.maskedEmail ?? null)
+              : null;
+            return (
+              <div
+                key={pkg.id}
+                className="group grid grid-cols-[minmax(0,1fr)_auto] gap-4 items-center px-5 py-4 transition-colors"
+                style={{ borderBottom: '1px solid var(--border-muted)' }}
+              >
+                <div className="min-w-0 space-y-1.5">
+                  {/* Row 1: reference + badges */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span
+                      className="font-mono text-sm font-semibold"
+                      style={{ color: 'var(--text-primary)' }}
+                    >
                       {pkg.reference_number}
                     </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="text-xs" style={{ color: 'var(--text)' }}>
-                      {pkg.customer_profile_id ? (profileMap[pkg.customer_profile_id]?.maskedEmail ?? '-') : '-'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    {(() => {
-                      const label = ce3ListStatusLabel(pkg.ce3_eligible, Boolean(pkg.narrative_summary));
-                      const tone = pkg.ce3_eligible ? 'success' : pkg.narrative_summary ? 'warning' : 'neutral';
-                      return <Badge tone={tone} size="sm">{label}</Badge>;
-                    })()}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="text-xs font-mono" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                      {formatDate(pkg.generated_at)}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    {pkg.ce3_eligible
-                      ? <span title="Prior orders share identity signals with the disputed order"><Badge tone="neutral" size="sm">Matched</Badge></span>
-                      : <span className="text-caption" style={{ color: 'var(--text-subtle)' }}>-</span>}
-                  </td>
-                  <td className="px-4 py-3">
-                    {pkg.cross_merchant_indicator
-                      ? <Badge tone="info" size="sm">Network</Badge>
-                      : <span className="text-caption" style={{ color: 'var(--text-subtle)' }}>-</span>}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="flex items-center justify-end gap-3">
-                      <a
-                        href={`/api/evidence/${pkg.id}/pdf`}
-                        className="text-caption hover:underline"
-                        style={{ color: 'var(--text-muted)' }}
-                        download
+                    <Badge tone={readinessTone} size="sm">{readinessLabel}</Badge>
+                    {pkg.ce3_eligible && (
+                      <Badge tone="neutral" size="sm">Prior match</Badge>
+                    )}
+                    {pkg.cross_merchant_indicator && (
+                      <Badge tone="info" size="sm">Network</Badge>
+                    )}
+                  </div>
+                  {/* Row 2: customer + order */}
+                  <div className="flex flex-wrap items-center gap-3">
+                    {maskedEmail && (
+                      <span
+                        className="text-xs font-mono"
+                        style={{ color: 'var(--text-secondary)' }}
                       >
-                        Download
-                      </a>
-                      <Link
-                        href={`/chargebacks/${pkg.id}`}
-                        className="text-caption hover:underline"
-                        style={{ color: 'var(--text-muted)' }}
+                        {maskedEmail}
+                      </span>
+                    )}
+                    {pkg.generated_for_order_id && (
+                      <span
+                        className="text-xs font-mono"
+                        style={{ color: 'var(--text-tertiary)' }}
                       >
-                        Open
-                      </Link>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                        Order {pkg.generated_for_order_id.slice(0, 20)}
+                      </span>
+                    )}
+                    <span
+                      className="text-xs"
+                      style={{ color: 'var(--text-tertiary)' }}
+                    >
+                      Generated {formatDate(pkg.generated_at)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center gap-3 shrink-0">
+                  <a
+                    href={`/api/evidence/${pkg.id}/pdf`}
+                    className="text-xs font-medium hover:underline"
+                    style={{ color: 'var(--text-tertiary)' }}
+                    download
+                  >
+                    PDF
+                  </a>
+                  <Link
+                    href={`/chargebacks/${pkg.id}`}
+                    className="text-xs font-semibold hover:underline"
+                    style={{ color: 'var(--accent)' }}
+                  >
+                    Open →
+                  </Link>
+                </div>
+              </div>
+            );
+          })}
         </div>
         </div>
       )}

@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation';
+import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
 import FoundingMerchantApplicationForm from '@/components/apply/FoundingMerchantApplicationForm';
@@ -9,7 +9,7 @@ export default async function ApplyPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) notFound();
+  if (!user) redirect('/login');
 
   const { data: merchant } = await supabase
     .from(TABLES.MERCHANTS)
@@ -17,7 +17,7 @@ export default async function ApplyPage() {
     .eq('user_id', user.id)
     .maybeSingle();
 
-  if (!merchant) notFound();
+  if (!merchant) redirect('/dashboard');
 
   const { data: completedAudit } = await supabase
     .from(TABLES.PROCESSING_JOBS)
@@ -28,7 +28,7 @@ export default async function ApplyPage() {
     .limit(1)
     .maybeSingle();
 
-  if (!completedAudit) notFound();
+  if (!completedAudit) redirect('/upload');
 
   return (
     <div className="p-6 md:p-8">

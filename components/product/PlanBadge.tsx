@@ -27,7 +27,7 @@ export function PlanBadge({
       className={cn(
         'inline-flex items-center rounded-sm px-1.5 py-0.5',
         'text-[10px] font-semibold uppercase tracking-wide leading-none',
-        'bg-[var(--surface-muted)] text-[var(--ink-tertiary)]',
+        'bg-[var(--surface-sunken)] text-[var(--text-tertiary)]',
         className,
       )}
     >

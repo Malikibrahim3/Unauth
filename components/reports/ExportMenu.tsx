@@ -39,39 +39,39 @@ export default function ExportMenu({ range }: ExportMenuProps) {
         <div
           role="menu"
           className="absolute right-0 z-20 mt-1 min-w-[220px] rounded-md border py-1 shadow-lg"
-          style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-raised)' }}
+          style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
         >
           <p
             className="px-3 pb-1 pt-1.5 text-xs font-bold uppercase tracking-wider"
-            style={{ color: 'var(--ink-tertiary)' }}
+            style={{ color: 'var(--text-tertiary)' }}
           >
             Live reports - Shopify + helpdesk
           </p>
           <a
             role="menuitem"
             href={`/api/reports/claims?range=${range}`}
-            className="block px-3 py-2 text-xs hover:bg-[var(--surface-overlay)]"
+            className="block px-3 py-2 text-xs hover:bg-[var(--surface)]"
             style={{ color: 'var(--text)' }}
             onClick={() => setOpen(false)}
           >
             Claims CSV
-            <span className="ml-1 opacity-60">- status, amounts, SLA</span>
+            <span className="ml-1 opacity-60">- status, amounts, response signals</span>
           </a>
           <a
             role="menuitem"
             href={`/api/reports/claims?range=${range}&view=outcomes`}
-            className="block px-3 py-2 text-xs hover:bg-[var(--surface-overlay)]"
+            className="block px-3 py-2 text-xs hover:bg-[var(--surface)]"
             style={{ color: 'var(--text)' }}
             onClick={() => setOpen(false)}
           >
             Outcomes CSV
-            <span className="ml-1 opacity-60">- decisions, refunds</span>
+            <span className="ml-1 opacity-60">- merchant responses, refunds</span>
           </a>
 
-          <div className="my-1 border-t" style={{ borderColor: 'var(--surface-border)' }} />
+          <div className="my-1 border-t" style={{ borderColor: 'var(--border)' }} />
           <p
             className="px-3 pb-1 pt-0.5 text-xs font-bold uppercase tracking-wider"
-            style={{ color: 'var(--ink-tertiary)' }}
+            style={{ color: 'var(--text-tertiary)' }}
           >
             Activity log
           </p>
@@ -79,7 +79,7 @@ export default function ExportMenu({ range }: ExportMenuProps) {
             role="menuitem"
             href="/api/audit-trail?format=csv&limit=200"
             prefetch={false}
-            className="block px-3 py-2 text-xs hover:bg-[var(--surface-overlay)]"
+            className="block px-3 py-2 text-xs hover:bg-[var(--surface)]"
             style={{ color: 'var(--text)' }}
             onClick={() => setOpen(false)}
           >

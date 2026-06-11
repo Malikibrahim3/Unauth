@@ -13,7 +13,7 @@ type HistoryPageActionBarProps = {
 
 export function HistoryPageActionBarLeft({ pageSize }: { pageSize: number }) {
   return (
-    <Suspense fallback={<span className="text-xs" style={{ color: 'var(--text-muted)' }}>Rows per page…</span>}>
+    <Suspense fallback={<span className="text-xs" style={{ color: 'var(--text-secondary)' }}>Rows per page…</span>}>
       <PageSizeSelect pathname="/history" pageSize={pageSize} />
     </Suspense>
   );
@@ -28,7 +28,7 @@ export function HistoryPageActionBarRight({
   const pagination = useMemo(() => {
     if (totalPages <= 1) return null;
     return (
-      <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+      <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
         <span>Page {page} of {totalPages}</span>
         {page > 1 ? (
           <ButtonLink

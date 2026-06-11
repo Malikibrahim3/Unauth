@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { labelFor } from '@/lib/copy/labels';
 import { formatCurrencyNullable, formatDate } from '@/lib/utils/format';
-import { letterGradeTone } from '@/lib/utils/confidenceStyles';
+import { GradeBadge, type ConfidenceGradeValue } from '@/components/ui/GradeBadge';
 import { Badge } from '@/components/ui/Badge';
 import { labelize, type RoadmapTransaction } from '@/app/(app)/customers/[id]/customerProfilePageLabels';
 
@@ -28,10 +28,10 @@ function TimelineDetail({
 }) {
   if (value == null || value === '') return null;
   return (
-    <div className="min-w-0 rounded-md border p-3" style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)' }}>
+    <div className="min-w-0 rounded-md border p-3" style={{ borderColor: 'var(--border-muted)', background: 'var(--bg-inset)' }}>
       <div className="flex items-center gap-2">
-        <Icon className="h-3.5 w-3.5 shrink-0" style={{ color: 'var(--text-subtle)' }} />
-        <p className="text-caption" style={{ color: 'var(--text-subtle)' }}>{label}</p>
+        <Icon className="h-3.5 w-3.5 shrink-0" style={{ color: 'var(--text-tertiary)' }} />
+        <p className="text-caption" style={{ color: 'var(--text-tertiary)' }}>{label}</p>
       </div>
       <p className={`mt-1 text-body-sm break-words ${mono ? 'font-mono' : ''}`} style={{ color: 'var(--text)' }}>{value}</p>
     </div>
@@ -41,7 +41,7 @@ function TimelineDetail({
 export function IdentityDatum({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div>
-      <dt className="text-caption mb-1" style={{ color: 'var(--text-muted)' }}>{label}</dt>
+      <dt className="text-caption mb-1" style={{ color: 'var(--text-secondary)' }}>{label}</dt>
       <dd className="space-y-1">{children}</dd>
     </div>
   );
@@ -54,14 +54,13 @@ function roadmapTitle(tx: RoadmapTransaction) {
 }
 
 export function ConfidencePill({ grade }: { grade: string }) {
-  const tone = letterGradeTone(grade);
   return (
-    <span
-      className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold"
-      style={{ background: tone.fill, color: tone.fg }}
-    >
-      {tone.label}
-    </span>
+    <GradeBadge
+      grade={grade as ConfidenceGradeValue}
+      size="sm"
+      showLabel={true}
+      compact={true}
+    />
   );
 }
 
@@ -84,37 +83,37 @@ export function RoadmapOrderCard({ tx, isLast }: { tx: RoadmapTransaction; isLas
         <span
           aria-hidden="true"
           className="absolute left-[13px] top-8 bottom-0 w-px"
-          style={{ background: 'var(--border-subtle)' }}
+          style={{ background: 'var(--border-muted)' }}
         />
       )}
       <span
         aria-hidden="true"
         className="absolute left-0 top-1 flex h-7 w-7 items-center justify-center rounded-full border"
         style={{
-          background: hasClaim ? 'var(--risk-high-bg)' : 'var(--bg-surface)',
+          background: hasClaim ? 'var(--risk-high-bg)' : 'var(--surface)',
           borderColor: hasClaim ? 'var(--risk-high-bd)' : 'var(--border)',
-          color: hasClaim ? 'var(--risk-high)' : 'var(--text-muted)',
+          color: hasClaim ? 'var(--risk-high)' : 'var(--text-secondary)',
         }}
       >
         {tx.chargeback_filed ? <AlertTriangle className="h-4 w-4" /> : hasClaim ? <RotateCcw className="h-4 w-4" /> : <ReceiptText className="h-4 w-4" />}
       </span>
 
-      <article className="rounded-lg border bg-[var(--bg-surface)]" style={{ borderColor: 'var(--border-subtle)' }}>
-        <div className="flex flex-wrap items-start justify-between gap-3 border-b px-4 py-3" style={{ borderColor: 'var(--border-subtle)' }}>
+      <article className="rounded-md border bg-[var(--surface)]" style={{ borderColor: 'var(--border-muted)' }}>
+        <div className="flex flex-wrap items-start justify-between gap-3 border-b px-4 py-3" style={{ borderColor: 'var(--border-muted)' }}>
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="text-h2" style={{ color: 'var(--text-primary)' }}>{roadmapTitle(tx)}</h3>
               {tx.source && (
-                <span className="inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-medium" style={{ background: 'var(--bg-subtle)', borderColor: 'var(--border-subtle)', color: 'var(--text-muted)' }}>
+                <span className="inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-medium" style={{ background: 'var(--bg-subtle)', borderColor: 'var(--border-muted)', color: 'var(--text-secondary)' }}>
                   {SOURCE_LABELS[tx.source] ?? tx.source}
                 </span>
               )}
             </div>
-            <p className="mt-1 text-caption font-mono" style={{ color: 'var(--text-muted)' }}>{tx.order_id}</p>
+            <p className="mt-1 text-caption font-mono" style={{ color: 'var(--text-secondary)' }}>{tx.order_id}</p>
           </div>
           <div className="text-right">
             <p className="text-body-strong num" style={{ color: 'var(--text)' }}>{formatCurrencyNullable(Number(tx.order_value) || null)}</p>
-            <p className="text-caption" style={{ color: 'var(--text-muted)' }}>{formatDate(eventDate)}</p>
+            <p className="text-caption" style={{ color: 'var(--text-secondary)' }}>{formatDate(eventDate)}</p>
           </div>
         </div>
 

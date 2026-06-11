@@ -70,10 +70,10 @@ export function UploadDropzone({
         </div>
       ) : (
         <div>
-          <p className="t-subhead" style={{ color: 'var(--ink-primary)' }}>
+          <p className="t-subhead" style={{ color: 'var(--text-primary)' }}>
             Drop one or more CSVs here, or click to browse
           </p>
-          <p className="t-caption mt-2" style={{ color: 'var(--ink-tertiary)' }}>
+          <p className="t-caption mt-2" style={{ color: 'var(--text-tertiary)' }}>
             Accepted formats: CSV. Batch upload supported. Max 200 MB per file.
           </p>
         </div>

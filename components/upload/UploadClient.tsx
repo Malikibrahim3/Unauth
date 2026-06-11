@@ -63,7 +63,7 @@ export default function UploadClient({ recentImports = EMPTY_RECENT_IMPORTS }: U
       ) : null}
 
       {state.phase === 'idle' ? (
-        <p className="t-caption max-w-2xl" style={{ color: 'var(--ink-tertiary)' }}>
+        <p className="t-caption max-w-2xl" style={{ color: 'var(--text-tertiary)' }}>
           Your uploaded data is processed to identify patterns within your own order history. Data handling details are
           available in your merchant agreement.
         </p>

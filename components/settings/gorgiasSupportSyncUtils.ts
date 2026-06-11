@@ -55,6 +55,25 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
 
+export function isGorgiasIntegrationLimitError(error: string | null | undefined): boolean {
+  if (!error?.trim()) return false;
+  const lower = error.toLowerCase();
+  return lower.includes('integration limit') || lower.includes('upgrade your plan');
+}
+
+export function formatGorgiasSidebarWidgetRegistrationWarning(
+  sidebarError: string | null | undefined,
+  webhookAutoRegistered: boolean,
+): string {
+  const prefix = `Gorgias connected${webhookAutoRegistered ? ' and ticket sync is active' : ''}, but the sidebar widget couldn't be registered automatically`;
+
+  if (isGorgiasIntegrationLimitError(sidebarError)) {
+    return `${prefix}. Your Gorgias account has reached its integration limit. In Gorgias, go to Settings → Integrations and remove an unused integration, or upgrade your Gorgias plan. Then reconnect here.`;
+  }
+
+  return `${prefix} (${sidebarError ?? 'unknown error'}). Reconnect to try again.`;
+}
+
 function parseSidebarWidget(value: unknown): GorgiasSidebarWidgetSetupResult | null {
   if (!isRecord(value)) return null;
   const status = value.status;
@@ -120,7 +139,7 @@ export function resolveGorgiasConnectMessage(
         ephemeral,
         message: {
           type: 'warning',
-          text: `Gorgias connected${webhookAutoRegistered ? ' and ticket sync is active' : ''}, but the sidebar widget couldn't be registered automatically (${sidebar.error ?? 'unknown error'}). Reconnect to try again.`,
+          text: formatGorgiasSidebarWidgetRegistrationWarning(sidebar.error, webhookAutoRegistered),
         },
       };
     }
@@ -139,7 +158,7 @@ export function resolveGorgiasConnectMessage(
       showSetup: false,
       message: {
         type: 'warning',
-        text: `Gorgias connected${webhookAutoRegistered ? ' and ticket sync is active' : ''}, but the sidebar widget couldn't be registered automatically (${sidebar.error ?? 'unknown error'}). Reconnect to try again.`,
+        text: formatGorgiasSidebarWidgetRegistrationWarning(sidebar.error, webhookAutoRegistered),
       },
     };
   }

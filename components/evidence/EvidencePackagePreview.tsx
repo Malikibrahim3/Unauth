@@ -31,22 +31,22 @@ export function EvidencePackagePreview({ packageId, referenceNumber }: EvidenceP
   return (
     <div
       className="border overflow-hidden"
-      style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)', borderRadius: 4 }}
+      style={{ background: 'var(--surface)', borderColor: 'var(--border-muted)', borderRadius: 4 }}
     >
       {/* Toolbar */}
       <div
         className="flex items-center justify-between px-4 py-3 gap-3"
-        style={{ borderBottom: '1px solid var(--border-subtle)', background: 'var(--bg-inset)' }}
+        style={{ borderBottom: '1px solid var(--border-muted)', background: 'var(--bg-inset)' }}
       >
         <div className="flex items-center gap-2 min-w-0">
-          <FileText className="h-4 w-4 shrink-0" style={{ color: 'var(--text-muted)' }} />
+          <FileText className="h-4 w-4 shrink-0" style={{ color: 'var(--text-secondary)' }} />
           <div className="min-w-0">
-            <p className="text-xs font-semibold truncate uppercase tracking-[0.12em]" style={{ color: 'var(--text-muted)' }}>
+            <p className="text-xs font-semibold truncate uppercase tracking-[0.12em]" style={{ color: 'var(--text-secondary)' }}>
               <span aria-hidden="true" className="ua-section-dot" />
               Evidence Package
             </p>
             {referenceNumber && (
-              <p className="text-xs font-mono truncate" style={{ color: 'var(--text-muted)' }}>
+              <p className="text-xs font-mono truncate" style={{ color: 'var(--text-secondary)' }}>
                 {referenceNumber} · Draft preview
               </p>
             )}
@@ -68,7 +68,7 @@ export function EvidencePackagePreview({ packageId, referenceNumber }: EvidenceP
             href={pdfUrl}
             download
             className="inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs font-semibold transition-colors"
-            style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}
+            style={{ background: 'var(--accent)', color: 'white' }}
           >
             <Download className="h-3.5 w-3.5" />
             Download
@@ -76,7 +76,7 @@ export function EvidencePackagePreview({ packageId, referenceNumber }: EvidenceP
         </div>
       </div>
 
-      <div className="px-4 py-2 flex items-center justify-between text-xs uppercase tracking-[0.12em]" style={{ color: 'var(--text-muted)', borderBottom: '1px solid var(--border-subtle)' }}>
+      <div className="px-4 py-2 flex items-center justify-between text-xs uppercase tracking-[0.12em]" style={{ color: 'var(--text-secondary)', borderBottom: '1px solid var(--border-muted)' }}>
         <span>Document preview</span>
         <span>01 / 04</span>
       </div>
@@ -89,8 +89,8 @@ export function EvidencePackagePreview({ packageId, referenceNumber }: EvidenceP
             className="absolute inset-0 flex flex-col items-center justify-center gap-3"
             style={{ background: 'var(--bg-subtle)' }}
           >
-            <Loader2 className="h-6 w-6 animate-spin" style={{ color: 'var(--text-muted)' }} />
-            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Loading PDF preview…</p>
+            <Loader2 className="h-6 w-6 animate-spin" style={{ color: 'var(--text-secondary)' }} />
+            <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>Loading PDF preview…</p>
           </div>
         )}
 
@@ -105,7 +105,7 @@ export function EvidencePackagePreview({ packageId, referenceNumber }: EvidenceP
               <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
                 Preview unavailable
               </p>
-              <p className="mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>
+              <p className="mt-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
                 Your browser may not support inline PDF rendering.
               </p>
             </div>
@@ -113,7 +113,7 @@ export function EvidencePackagePreview({ packageId, referenceNumber }: EvidenceP
               href={pdfUrl}
               download
               className="inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-xs font-semibold"
-              style={{ background: 'var(--accent)', color: 'var(--text-inverse)' }}
+              style={{ background: 'var(--accent)', color: 'white' }}
             >
               <Download className="h-3.5 w-3.5" />
               Download PDF instead
@@ -132,7 +132,7 @@ export function EvidencePackagePreview({ packageId, referenceNumber }: EvidenceP
           style={{ display: errored ? 'none' : 'block' }}
         />
       </div>
-      <div className="px-4 py-2 flex items-center justify-between text-xs uppercase tracking-[0.12em]" style={{ color: 'var(--text-muted)', borderTop: '1px solid var(--border-subtle)', background: 'var(--bg-inset)' }}>
+      <div className="px-4 py-2 flex items-center justify-between text-xs uppercase tracking-[0.12em]" style={{ color: 'var(--text-secondary)', borderTop: '1px solid var(--border-muted)', background: 'var(--bg-inset)' }}>
         <span>Generated evidence package</span>
         <span>{referenceNumber ?? 'Draft'}</span>
       </div>

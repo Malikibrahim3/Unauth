@@ -25,6 +25,12 @@ export type BigCommerceOrderPayload = {
   status_id?: number | null;
   payment_method?: string | null;
   customer_id?: number | null;
+  ip_address?: string | null;
+  items_total?: number | null;
+  staff_notes?: string | null;
+  customer_message?: string | null;
+  subtotal_ex_tax?: string | number | null;
+  discount_amount?: string | number | null;
   billing_address?: BigCommerceAddress | null;
   shipping_addresses?: BigCommerceAddress[] | null;
   refunded_amount?: string | number | null;

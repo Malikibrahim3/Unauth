@@ -378,8 +378,8 @@ export function useClaimReviewWorkbench(profileId: string, initialClaimId?: stri
     if (r.message.toLowerCase().includes('saved')) {
       showMsg(
         state.decision === 'escalated'
-          ? 'Merchant decision recorded. Claim moved to escalated review.'
-          : 'Merchant decision recorded. Claim resolved and removed from the active queue.',
+          ? 'Merchant outcome recorded. Claim flagged for high evidence density review.'
+          : 'Merchant outcome recorded.',
         'success',
       );
       saveClaimDraft(profileId, pickDraftFields(state, resolvedActiveClaimId));

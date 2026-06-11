@@ -92,19 +92,19 @@
   "suites": [],
   "errors": [
     {
-      "message": "Error: page.waitForSelector: Target page, context or browser has been closed\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"audit-results\"], [data-status=\"completed\"]') to be visible\u001b[22m\n",
-      "stack": "Error: page.waitForSelector: Target page, context or browser has been closed\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"audit-results\"], [data-status=\"completed\"]') to be visible\u001b[22m\n\n    at uploadSeedCSV (/Users/malikibrahim/Downloads/Unauth/tests/global-setup.ts:199:14)\n    at globalSetup (/Users/malikibrahim/Downloads/Unauth/tests/global-setup.ts:128:5)",
+      "message": "Error: Failed to create merchant profile: Could not find the 'monthly_order_volume' column of 'merchants' in the schema cache",
+      "stack": "Error: Failed to create merchant profile: Could not find the 'monthly_order_volume' column of 'merchants' in the schema cache\n    at globalSetup (/Users/malikibrahim/Downloads/Unauth/tests/global-setup.ts:64:11)",
       "location": {
         "file": "/Users/malikibrahim/Downloads/Unauth/tests/global-setup.ts",
-        "column": 14,
-        "line": 199
+        "column": 11,
+        "line": 64
       },
-      "snippet": "\u001b[90m   at \u001b[39mglobal-setup.ts:199\n\n  197 |   ).click()\n  198 |\n> 199 |   await page.waitForSelector(\n      |              ^\n  200 |     '[data-testid=\"audit-results\"], [data-status=\"completed\"]',\n  201 |     { timeout: 180000 }\n  202 |   )"
+      "snippet": "\u001b[90m   at \u001b[39mglobal-setup.ts:64\n\n  62 |\n  63 |   if (merchantError) {\n> 64 |     throw new Error(`Failed to create merchant profile: ${merchantError.message}`)\n     |           ^\n  65 |   }\n  66 |\n  67 |   fs.writeFileSync(CREDENTIALS_PATH, JSON.stringify({"
     }
   ],
   "stats": {
-    "startTime": "2026-06-03T23:03:40.696Z",
-    "duration": 206314.805,
+    "startTime": "2026-06-11T19:50:30.893Z",
+    "duration": 1002.3370000000001,
     "expected": 0,
     "skipped": 0,
     "unexpected": 0,

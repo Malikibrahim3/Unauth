@@ -1,6 +1,14 @@
+import { ChevronRight } from 'lucide-react';
 import { isValidElement, type ReactNode } from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import {
+  PAGE_EYEBROW_STYLE,
+  PAGE_HEADER_STYLE,
+  PAGE_SHELL_INNER_CLASS,
+  PAGE_SUBTITLE_STYLE,
+  PAGE_TITLE_STYLE,
+} from '@/components/ui/pageShellStyles';
 
 interface Breadcrumb {
   label: string;
@@ -15,9 +23,13 @@ interface PageHeaderProps {
   primaryAction?: ReactNode;
   secondaryActions?: ReactNode[];
   meta?: ReactNode;
+  metricSlot?: ReactNode;
   tabs?: ReactNode;
+  statusBadge?: ReactNode;
   className?: string;
 }
+
+export type { Breadcrumb };
 
 export function PageHeader({
   title,
@@ -27,20 +39,15 @@ export function PageHeader({
   primaryAction,
   secondaryActions,
   meta,
+  metricSlot,
   tabs,
+  statusBadge,
   className,
 }: PageHeaderProps) {
   return (
     <header
-      className={cn(className)}
-      style={{
-        background: 'var(--bg-canvas)',
-        borderBottom: '1px solid var(--border-default)',
-        paddingLeft: 24,
-        paddingRight: 24,
-        paddingTop: tabs ? 20 : 16,
-        paddingBottom: tabs ? 0 : 16,
-      }}
+      className={cn(PAGE_SHELL_INNER_CLASS, className)}
+      style={PAGE_HEADER_STYLE}
     >
       {/* Breadcrumbs */}
       {breadcrumbs && breadcrumbs.length > 0 && (
@@ -49,71 +56,49 @@ export function PageHeader({
             <span
               key={crumb.href ?? crumb.label}
               className="flex items-center gap-1"
-              style={{ fontSize: 12, color: 'var(--text-subtle)' }}
+              style={{ fontSize: 12, color: 'var(--text-tertiary)' }}
             >
-              {i > 0 && <span aria-hidden="true" style={{ opacity: 0.4 }}>›</span>}
+              {i > 0 && <ChevronRight size={12} aria-hidden="true" style={{ opacity: 0.5 }} />}
               {crumb.href ? (
                 <Link
                   href={crumb.href}
                   className="hover:underline transition-colors"
-                  style={{ color: 'var(--text-muted)' }}
+                  style={{ color: 'var(--text-secondary)' }}
                 >
                   {crumb.label}
                 </Link>
               ) : (
-                <span style={{ color: 'var(--text-subtle)' }}>{crumb.label}</span>
+                <span style={{ color: 'var(--text-tertiary)' }}>{crumb.label}</span>
               )}
             </span>
           ))}
         </nav>
       )}
 
-      {/* Eyebrow overline */}
+      {/* Eyebrow overline — Ramp-style category label */}
       {eyebrow && (
-        <div
-          className="mb-1"
-          style={{
-            fontSize: 12,
-            fontWeight: 600,
-            letterSpacing: '0.12em',
-            textTransform: 'uppercase',
-            color: 'var(--text-muted)',
-            lineHeight: 1,
-          }}
-        >
-          <span
-            aria-hidden="true"
-            style={{
-              display: 'inline-block',
-              width: 5,
-              height: 5,
-              borderRadius: 999,
-              background: 'var(--accent)',
-              marginRight: 7,
-              verticalAlign: '1px',
-            }}
-          />
+        <div className="mb-2" style={PAGE_EYEBROW_STYLE}>
           {eyebrow}
         </div>
       )}
 
       {/* Title row */}
-      <div className="flex items-center justify-between gap-5">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
-          <h1
-            className="truncate"
-            style={{ fontSize: 18, fontWeight: 600, color: 'var(--text)', letterSpacing: '-0.01em' }}
-          >
-            {title}
-          </h1>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="truncate" style={PAGE_TITLE_STYLE}>
+              {title}
+            </h1>
+            {statusBadge}
+          </div>
           {subtitle && (
-            <p className="mt-0.5" style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+            <p className="mt-2" style={PAGE_SUBTITLE_STYLE}>
               {subtitle}
             </p>
           )}
         </div>
         {(primaryAction || (secondaryActions && secondaryActions.length > 0)) && (
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
             {secondaryActions?.map((action) => (
               <span
                 key={
@@ -134,14 +119,21 @@ export function PageHeader({
 
       {/* Meta row */}
       {meta && (
-        <div className="flex items-center gap-2 mt-2 flex-wrap">
+        <div className="mt-3 flex flex-wrap items-center gap-2.5">
           {meta}
+        </div>
+      )}
+
+      {/* Metric slot */}
+      {metricSlot && (
+        <div className="mt-5 flex flex-wrap items-baseline gap-6">
+          {metricSlot}
         </div>
       )}
 
       {/* Tabs row */}
       {tabs && (
-        <div className="mt-4">
+        <div className="mt-6">
           {tabs}
         </div>
       )}

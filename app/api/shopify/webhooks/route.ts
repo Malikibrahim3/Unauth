@@ -1,59 +1,56 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { createServiceClient } from '@/lib/supabase/server';
-import { normalizeAddress, normalizeEmail, normalizePhone, type MerchantIdentityInsert, upsertMerchantIdentityRows } from '@/lib/shopify/identity';
 import { verifyShopifyWebhookHmac } from '@/lib/shopify/webhooks';
-import { syncShopifyProfilesForShop } from '@/lib/shopify/profileLinking';
-import { enqueueShopifyOrderAuditScore, resolveMerchantIdForShop } from '@/lib/shopify/auditBridge';
-import { buildShopifyOrderSignalRow } from '@/lib/shopify/orderSignals';
-import { upsertMerchantClaim } from '@/lib/claims/store';
-import { appendClaimEvent } from '@/lib/claims/events';
 import { enforceRateLimit, getClientIp, limitFromEnv, rateLimitKey } from '@/lib/ratelimit';
 import {
   claimProcessedWebhook,
   completeProcessedWebhook,
 } from '@/lib/commerce/processedWebhookHandler';
+import { normaliseAddress, normaliseCard } from '@/lib/identity/normalise';
+import { emitIdentityObservations, type ObservationEntity } from '@/lib/identity/observations';
+import { resolveIdentitiesForKeys, linkClaimToIdentity } from '@/lib/identity/resolver';
 
-async function markShopifyTokenRevoked(supabase: any, shopDomain: string, now = new Date().toISOString()) {
-  await supabase
-    .from('shopify_merchants' as any)
-    .update({ access_token: null, updated_at: now })
-    .eq('shop_domain', shopDomain);
-  await supabase
-    .from('merchant_shopify_connections' as any)
-    .update({ active: false, updated_at: now })
-    .eq('shop_domain', shopDomain);
+/**
+ * Shopify ingestion → v2 schema. Writes platform-agnostic layer-1 rows
+ * (source_customers / source_addresses / source_orders / source_refunds /
+ * source_fulfillments / source_disputes), emits hashed identity observations
+ * through lib/identity/observations, and runs the resolution engine.
+ * Replaces the legacy shopify_order_signals / merchant_identities path that
+ * was dropped at the 2026-06-11 v2 cutover.
+ */
+
+type ServiceClient = ReturnType<typeof createServiceClient>;
+
+const FINANCIAL_STATUSES = new Set([
+  'pending', 'authorized', 'paid', 'partially_paid', 'partially_refunded',
+  'refunded', 'voided', 'cancelled',
+]);
+
+function mapFinancialStatus(value: unknown): string {
+  const v = typeof value === 'string' ? value.trim().toLowerCase() : '';
+  return FINANCIAL_STATUSES.has(v) ? v : 'unknown';
 }
 
-async function fetchShopifyCustomerIdentity(input: {
-  shopDomain: string;
-  customerId: string;
-  supabase: any;
-}) {
-  const { shopDomain, customerId, supabase } = input;
-  const tokenRes = await supabase
-    .from('shopify_merchants' as any)
-    .select('access_token')
-    .eq('shop_domain', shopDomain)
-    .maybeSingle();
-  const accessToken = tokenRes.data?.access_token as string | null | undefined;
-  if (!accessToken) return null;
+function mapFulfillmentState(value: unknown): string {
+  const v = typeof value === 'string' ? value.trim().toLowerCase() : '';
+  if (!v) return 'unfulfilled';
+  if (v === 'fulfilled') return 'fulfilled';
+  if (v === 'partial') return 'partial';
+  if (v === 'restocked') return 'returned';
+  return 'unknown';
+}
 
-  const url = `https://${shopDomain}/admin/api/2025-10/customers/${customerId}.json?fields=id,email,phone,default_address`;
-  const res = await fetch(url, {
-    headers: {
-      'X-Shopify-Access-Token': accessToken,
-      'Content-Type': 'application/json',
-    },
-    cache: 'no-store',
-  });
-  if (res.status === 401 || res.status === 403) {
-    await markShopifyTokenRevoked(supabase, shopDomain);
-    return null;
-  }
-  if (!res.ok) return null;
-  const payload = (await res.json()) as any;
-  return payload?.customer ?? null;
+const IPV4_RE = /^(\d{1,3}\.){3}\d{1,3}$/;
+const IPV6_RE = /^[0-9a-f:]+$/i;
+
+function validInetOrNull(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const v = value.trim();
+  if (!v || v.toLowerCase() === 'unknown') return null;
+  if (IPV4_RE.test(v) && v.split('.').every((o) => Number(o) <= 255)) return v;
+  if (v.includes(':') && IPV6_RE.test(v)) return v;
+  return null;
 }
 
 function moneyValue(value: unknown): number | null {
@@ -61,19 +58,251 @@ function moneyValue(value: unknown): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-function detectRefundType(payload: any, refundedAmount: number): 'full' | 'partial' | 'unknown' {
+function tagsToArray(value: unknown): string[] {
+  if (Array.isArray(value)) return value.map(String).filter(Boolean);
+  if (typeof value === 'string') return value.split(',').map((t) => t.trim()).filter(Boolean);
+  return [];
+}
+
+type ShopifyAddress = {
+  address1?: string | null; address2?: string | null; city?: string | null;
+  province?: string | null; province_code?: string | null;
+  zip?: string | null; country_code?: string | null; country?: string | null;
+  phone?: string | null;
+};
+
+/** Compose an address string with zip5 truncation (schema: postal_code is zip5). */
+function addressParts(a: ShopifyAddress | null | undefined) {
+  if (!a || (!a.address1 && !a.city && !a.zip)) return null;
+  const zip5 = typeof a.zip === 'string' ? a.zip.trim().split('-')[0] : null;
+  const composed = [a.address1, a.address2, a.city, a.province_code ?? a.province, zip5]
+    .filter(Boolean).join(', ');
+  const normalized = normaliseAddress(composed);
+  if (!normalized) return null;
+  return {
+    line1: a.address1 ?? null,
+    line2: a.address2 ?? null,
+    city: a.city ?? null,
+    region: a.province_code ?? a.province ?? null,
+    postal_code: zip5,
+    country: a.country_code ?? a.country ?? null,
+    phone: a.phone ?? null,
+    normalized_full: normalized,
+  };
+}
+
+async function resolveStoreConnection(supabase: ServiceClient, shopDomain: string) {
+  const { data, error } = await supabase
+    .from('store_connections')
+    .select('id, merchant_id, status')
+    .eq('platform', 'shopify')
+    .eq('store_key', shopDomain)
+    .maybeSingle();
+  if (error) throw new Error(`store_connection_lookup_failed: ${error.message}`);
+  return data ?? null;
+}
+
+async function insertAddress(
+  supabase: ServiceClient, merchantId: string, customerId: string | null,
+  kind: 'shipping' | 'billing', a: ShopifyAddress | null | undefined
+): Promise<{ id: string; normalized: string } | null> {
+  const parts = addressParts(a);
+  if (!parts) return null;
+  const { data, error } = await supabase.from('source_addresses').insert({
+    merchant_id: merchantId,
+    source_customer_id: customerId,
+    kind,
+    ...parts,
+  }).select('id').single();
+  if (error) throw new Error(`source_address_insert_failed: ${error.message}`);
+  return { id: data.id, normalized: parts.normalized_full };
+}
+
+async function upsertSourceCustomer(
+  supabase: ServiceClient, merchantId: string, connectionId: string, payload: any, now: string
+): Promise<string | null> {
+  const c = payload.customer;
+  if (!c?.id) return null;
+  const { data, error } = await supabase.from('source_customers').upsert({
+    merchant_id: merchantId,
+    source: 'shopify',
+    connection_id: connectionId,
+    external_id: String(c.id),
+    email: c.email ?? null,
+    phone: c.phone ?? null,
+    first_name: c.first_name ?? null,
+    last_name: c.last_name ?? null,
+    verified_email: typeof c.verified_email === 'boolean' ? c.verified_email : null,
+    account_created_at: c.created_at ?? null,
+    orders_count: Number.isFinite(Number(c.orders_count)) ? Number(c.orders_count) : null,
+    total_spent: moneyValue(c.total_spent),
+    tags: tagsToArray(c.tags),
+    updated_at: now,
+  }, { onConflict: 'merchant_id,source,external_id' }).select('id').single();
+  if (error) throw new Error(`source_customer_upsert_failed: ${error.message}`);
+  return data.id;
+}
+
+async function findOrderByExternalId(supabase: ServiceClient, merchantId: string, externalId: string) {
+  const { data, error } = await supabase.from('source_orders')
+    .select('id, shipping_address_id, billing_address_id')
+    .eq('merchant_id', merchantId).eq('source', 'shopify').eq('external_id', externalId)
+    .maybeSingle();
+  if (error) throw new Error(`source_order_lookup_failed: ${error.message}`);
+  return data ?? null;
+}
+
+async function processOrderTopic(
+  supabase: ServiceClient, merchantId: string, connectionId: string,
+  payload: any, rawBody: string, now: string
+) {
+  const externalId = String(payload.id);
+  const customerId = await upsertSourceCustomer(supabase, merchantId, connectionId, payload, now);
+  const existing = await findOrderByExternalId(supabase, merchantId, externalId);
+
+  // reuse address rows on updates; create on first sight
+  let shippingId = existing?.shipping_address_id ?? null;
+  let billingId = existing?.billing_address_id ?? null;
+  let shippingNorm: string | null = null;
+  let billingNorm: string | null = null;
+  if (!shippingId) {
+    const r = await insertAddress(supabase, merchantId, customerId, 'shipping',
+      payload.shipping_address ?? payload.customer?.default_address);
+    shippingId = r?.id ?? null;
+    shippingNorm = r?.normalized ?? null;
+  } else {
+    shippingNorm = addressParts(payload.shipping_address ?? payload.customer?.default_address)?.normalized_full ?? null;
+  }
+  if (!billingId) {
+    const r = await insertAddress(supabase, merchantId, customerId, 'billing',
+      payload.billing_address ?? payload.customer?.default_address);
+    billingId = r?.id ?? null;
+    billingNorm = r?.normalized ?? null;
+  } else {
+    billingNorm = addressParts(payload.billing_address ?? payload.customer?.default_address)?.normalized_full ?? null;
+  }
+
+  const gateway = payload.payment_gateway_names?.[0] ?? payload.gateway ?? null;
+  const cardLast4 = normaliseCard(payload.payment_details?.credit_card_number ?? null) || null;
+  const email = payload.email ?? payload.contact_email ?? payload.customer?.email ?? null;
+  const phone = payload.phone ?? payload.customer?.phone ?? null;
+
+  const { data: orderRow, error } = await supabase.from('source_orders').upsert({
+    merchant_id: merchantId,
+    source: 'shopify',
+    connection_id: connectionId,
+    external_id: externalId,
+    order_number: payload.order_number != null ? String(payload.order_number) : (payload.name ?? null),
+    source_customer_id: customerId,
+    email,
+    phone,
+    financial_status: mapFinancialStatus(payload.financial_status),
+    fulfillment_state: mapFulfillmentState(payload.fulfillment_status),
+    total_price: moneyValue(payload.total_price),
+    subtotal_price: moneyValue(payload.subtotal_price),
+    total_discounts: moneyValue(payload.total_discounts),
+    currency: payload.currency ?? null,
+    discount_codes: Array.isArray(payload.discount_codes) ? payload.discount_codes : [],
+    payment_gateway: gateway,
+    card_last4: cardLast4,
+    browser_ip: validInetOrNull(payload.browser_ip ?? payload.client_details?.browser_ip),
+    user_agent: payload.client_details?.user_agent ?? null,
+    accept_language: payload.client_details?.accept_language ?? null,
+    landing_site: payload.landing_site ?? null,
+    referring_site: payload.referring_site ?? null,
+    source_name: payload.source_name ?? null,
+    shipping_address_id: shippingId,
+    billing_address_id: billingId,
+    line_items_count: Array.isArray(payload.line_items) ? payload.line_items.length : null,
+    note: payload.note ?? null,
+    tags: tagsToArray(payload.tags),
+    placed_at: payload.created_at ?? now,
+    cancelled_at: payload.cancelled_at ?? null,
+    cancel_reason: payload.cancel_reason ?? null,
+    raw_payload_hash: crypto.createHash('sha256').update(rawBody, 'utf8').digest('hex'),
+    updated_at: now,
+  }, { onConflict: 'merchant_id,source,external_id' }).select('id').single();
+  if (error) throw new Error(`source_order_upsert_failed: ${error.message}`);
+
+  // hashed identity observations + resolution
+  const entities: ObservationEntity[] = [{
+    provenance: { orderId: orderRow.id },
+    source: 'shopify',
+    observedAt: payload.created_at ?? now,
+    email,
+    phone,
+    ip: payload.browser_ip ?? payload.client_details?.browser_ip ?? null,
+    paymentGateway: gateway,
+    cardLast4,
+    shippingNormalized: shippingNorm,
+    billingNormalized: billingNorm,
+    platformCustomerExternalId: payload.customer?.id ? String(payload.customer.id) : null,
+  }];
+  if (customerId && payload.customer) {
+    entities.push({
+      provenance: { customerId },
+      source: 'shopify',
+      observedAt: payload.customer.created_at ?? null,
+      email: payload.customer.email ?? null,
+      phone: payload.customer.phone ?? null,
+      platformCustomerExternalId: String(payload.customer.id),
+    });
+  }
+  const { signalKeys } = await emitIdentityObservations(supabase, merchantId, entities);
+  await resolveIdentitiesForKeys(supabase, signalKeys);
+}
+
+function detectRefundType(payload: any, refundedAmount: number): boolean | null {
   const refundLineItems = Array.isArray(payload.refund_line_items) ? payload.refund_line_items : [];
   const orderLineItems = Array.isArray(payload.order?.line_items) ? payload.order.line_items : [];
   if (refundLineItems.length > 0 && orderLineItems.length > 0) {
-    return refundLineItems.length >= orderLineItems.length ? 'full' : 'partial';
+    return refundLineItems.length >= orderLineItems.length;
   }
-
   const total = moneyValue(payload.order?.total_price ?? payload.order?.current_total_price);
-  if (total !== null && refundedAmount > 0) {
-    return refundedAmount >= total ? 'full' : 'partial';
-  }
+  if (total !== null && refundedAmount > 0) return refundedAmount >= total;
+  return null;
+}
 
-  return refundLineItems.length > 0 ? 'partial' : 'unknown';
+async function processRefundTopic(supabase: ServiceClient, merchantId: string, payload: any, rawBody: string) {
+  const orderExternalId = payload.order_id != null ? String(payload.order_id) : null;
+  if (!orderExternalId) return;
+  const order = await findOrderByExternalId(supabase, merchantId, orderExternalId);
+  if (!order) return; // order never ingested — nothing to anchor to
+  const refundedAmount = Number(payload.transactions?.reduce((sum: number, tx: any) => {
+    const amount = Number(tx?.amount ?? 0);
+    return sum + (Number.isFinite(amount) ? amount : 0);
+  }, 0) ?? 0);
+  const { error } = await supabase.from('source_refunds').upsert({
+    merchant_id: merchantId,
+    source_order_id: order.id,
+    external_id: String(payload.id),
+    amount: Number.isFinite(refundedAmount) ? refundedAmount : null,
+    currency: payload.currency ?? null,
+    reason: payload.note ?? payload.reason ?? null,
+    is_full_refund: detectRefundType(payload, refundedAmount),
+    refunded_at: payload.created_at ?? null,
+    raw_payload_hash: crypto.createHash('sha256').update(rawBody, 'utf8').digest('hex'),
+  }, { onConflict: 'merchant_id,source_order_id,external_id' });
+  if (error) throw new Error(`source_refund_upsert_failed: ${error.message}`);
+}
+
+async function processFulfillmentTopic(supabase: ServiceClient, merchantId: string, payload: any, rawBody: string) {
+  const orderExternalId = payload.order_id != null ? String(payload.order_id) : null;
+  if (!orderExternalId) return;
+  const order = await findOrderByExternalId(supabase, merchantId, orderExternalId);
+  if (!order) return;
+  const { error } = await supabase.from('source_fulfillments').upsert({
+    merchant_id: merchantId,
+    source_order_id: order.id,
+    external_id: String(payload.id),
+    status: payload.status ?? null,
+    shipment_status: typeof payload.shipment_status === 'string' ? payload.shipment_status : null,
+    tracking_company: payload.tracking_company ?? null,
+    tracking_number: payload.tracking_number ?? null,
+    occurred_at: payload.created_at ?? null,
+    updated_at_source: payload.updated_at ?? null,
+  }, { onConflict: 'merchant_id,source_order_id,external_id' });
+  if (error) throw new Error(`source_fulfillment_upsert_failed: ${error.message}`);
 }
 
 function mapDisputeStatusToClaimStatus(status: unknown): 'escalated' | 'resolved_won' | 'resolved_lost' {
@@ -83,257 +312,132 @@ function mapDisputeStatusToClaimStatus(status: unknown): 'escalated' | 'resolved
   return 'escalated';
 }
 
-async function upsertShopifyDisputeClaim(input: {
-  supabase: any;
-  shopDomain: string;
-  payload: any;
-  topic: string;
-  now: string;
-}) {
-  const orderId = input.payload.order_id ?? input.payload.order?.id ?? null;
-  if (!orderId) return null;
+async function processDisputeTopic(
+  supabase: ServiceClient, merchantId: string, payload: any, topic: string, now: string
+) {
+  const orderExternalId = payload.order_id != null
+    ? String(payload.order_id)
+    : (payload.order?.id != null ? String(payload.order.id) : null);
+  if (!orderExternalId || payload.id == null) return;
+  const order = await findOrderByExternalId(supabase, merchantId, orderExternalId);
 
-  const merchantId = await resolveMerchantIdForShop(input.supabase, input.shopDomain);
-  if (!merchantId) return null;
-
-  const claim = await upsertMerchantClaim(
-    input.supabase,
-    {
-      merchant_id: merchantId,
-      shop_domain: input.shopDomain,
-      shopify_order_id: String(orderId),
-      claim_type: 'chargeback',
-      status: mapDisputeStatusToClaimStatus(input.payload.status),
-      customer_claim_reason: input.payload.reason ?? input.payload.dispute_reason ?? null,
-      normalized_reason: 'dispute',
-      amount_at_risk: moneyValue(input.payload.amount ?? input.payload.disputed_amount),
-      currency: input.payload.currency ?? null,
-      submitted_at: input.payload.created_at ?? input.now,
-      detection_method: 'shopify_dispute',
-      requires_merchant_review: false,
-    },
-    { ignoreDuplicates: input.topic === 'disputes/create' }
-  );
-  await appendClaimEvent(input.supabase, {
-    claim_id: claim.id,
+  const { error: de } = await supabase.from('source_disputes').upsert({
     merchant_id: merchantId,
-    shop_domain: input.shopDomain,
-    event_type: input.topic === 'disputes/create' ? 'claim_created' : 'status_changed',
-    new_status: claim.status,
-    triggered_by: 'shopify_dispute',
-    metadata: {
-      triggered_by: 'shopify_dispute',
-      shopify_dispute_id: input.payload.id ? String(input.payload.id) : null,
-      topic: input.topic,
-    },
-  });
-  return claim;
-}
+    source_order_id: order?.id ?? null,
+    external_id: String(payload.id),
+    dispute_type: payload.type ?? 'chargeback',
+    reason: payload.reason ?? payload.dispute_reason ?? null,
+    amount: moneyValue(payload.amount ?? payload.disputed_amount),
+    currency: payload.currency ?? null,
+    status: typeof payload.status === 'string' ? payload.status : null,
+    initiated_at: payload.created_at ?? null,
+    finalized_at: payload.finalized_on ?? null,
+  }, { onConflict: 'merchant_id,external_id' });
+  if (de) throw new Error(`source_dispute_upsert_failed: ${de.message}`);
 
-export async function processWebhook(rawBody: string, shopDomain: string, topic: string, supabaseClient?: any) {
-  const payload = JSON.parse(rawBody) as any;
-  const now = new Date().toISOString();
-  const supabase = supabaseClient ?? createServiceClient();
-  const rows: MerchantIdentityInsert[] = [];
-  const payloadHash = crypto.createHash('sha256').update(rawBody, 'utf8').digest('hex');
+  if (!order) return; // cannot anchor a claim without the order
 
-  if (topic === 'app/uninstalled') {
-    await supabase
-      .from('shopify_merchants' as any)
-      .update({
-        access_token: null,
-        uninstalled_at: now,
-        updated_at: now,
-      })
-      .eq('shop_domain', shopDomain);
-    await supabase
-      .from('merchant_shopify_connections' as any)
-      .update({
-        active: false,
-        uninstalled_at: now,
-        updated_at: now,
-      })
-      .eq('shop_domain', shopDomain);
+  const claimStatus = mapDisputeStatusToClaimStatus(payload.status);
+  const { data: existingClaim, error: ce } = await supabase.from('claims')
+    .select('id')
+    .eq('merchant_id', merchantId)
+    .eq('source_order_id', order.id)
+    .eq('claim_type', 'chargeback')
+    .eq('detection_method', 'platform_dispute')
+    .maybeSingle();
+  if (ce) throw new Error(`claim_lookup_failed: ${ce.message}`);
+
+  if (existingClaim) {
+    if (topic === 'disputes/updated') {
+      const { error } = await supabase.from('claims')
+        .update({ status: claimStatus, updated_at: now }).eq('id', existingClaim.id);
+      if (error) throw new Error(`claim_update_failed: ${error.message}`);
+      // status transition audited by trg_claims_status_audit
+    }
     return;
   }
 
+  const { data: claim, error: ci } = await supabase.from('claims').insert({
+    merchant_id: merchantId,
+    source_order_id: order.id,
+    claim_type: 'chargeback',
+    status: claimStatus,
+    detection_method: 'platform_dispute',
+    detection_detail: { shopify_dispute_id: String(payload.id), topic },
+    reason_raw: payload.reason ?? payload.dispute_reason ?? null,
+    reason_normalized: 'dispute',
+    amount_at_risk: moneyValue(payload.amount ?? payload.disputed_amount),
+    currency: payload.currency ?? null,
+    submitted_at: payload.created_at ?? now,
+  }).select('id').single();
+  if (ci) throw new Error(`claim_insert_failed: ${ci.message}`);
+
+  const { error: ee } = await supabase.from('claim_events').insert({
+    claim_id: claim.id,
+    merchant_id: merchantId,
+    event_type: 'created',
+    to_status: claimStatus,
+    metadata: { triggered_by: 'shopify_dispute', shopify_dispute_id: String(payload.id), topic },
+  });
+  if (ee) throw new Error(`claim_event_insert_failed: ${ee.message}`);
+
+  await linkClaimToIdentity(supabase, claim.id, order.id);
+}
+
+async function processCancellationTopic(supabase: ServiceClient, merchantId: string, payload: any, now: string) {
+  const externalId = payload?.id != null ? String(payload.id) : null;
+  if (!externalId) return;
+  const order = await findOrderByExternalId(supabase, merchantId, externalId);
+  if (!order) return;
+  const { error } = await supabase.from('source_orders').update({
+    cancelled_at: payload.cancelled_at ?? now,
+    cancel_reason: payload.cancel_reason ?? null,
+    financial_status: mapFinancialStatus(payload.financial_status ?? 'cancelled'),
+    updated_at: now,
+  }).eq('id', order.id);
+  if (error) throw new Error(`order_cancel_update_failed: ${error.message}`);
+  // void open claims on the cancelled order; trg_claims_status_audit logs each
+  const { error: ve } = await supabase.from('claims')
+    .update({ status: 'voided', updated_at: now })
+    .eq('merchant_id', merchantId)
+    .eq('source_order_id', order.id)
+    .in('status', ['pending', 'open', 'escalated']);
+  if (ve) throw new Error(`claim_void_failed: ${ve.message}`);
+}
+
+export async function processWebhook(rawBody: string, shopDomain: string, topic: string, supabaseClient?: ServiceClient) {
+  const payload = JSON.parse(rawBody) as any;
   if (payload?.test === true) return;
+  const now = new Date().toISOString();
+  const supabase = supabaseClient ?? createServiceClient();
 
-  if (topic === 'orders/create' || topic === 'orders/updated') {
-    const customerId = payload.customer?.id ? String(payload.customer.id) : null;
-    let email = normalizeEmail(payload.email ?? payload.contact_email ?? payload.customer?.email ?? null);
-    let phone = normalizePhone(payload.phone ?? payload.customer?.phone ?? null);
-    let shippingAddress = normalizeAddress(payload.shipping_address ?? payload.customer?.default_address ?? null);
-    let billingAddress = normalizeAddress(payload.billing_address ?? payload.customer?.default_address ?? null);
+  const connection = await resolveStoreConnection(supabase, shopDomain);
+  if (!connection) {
+    console.warn('Shopify webhook for unknown store — skipped', { shopDomain, topic });
+    return;
+  }
 
-    if (customerId && (!email || !shippingAddress || !billingAddress)) {
-      const hydrated = await fetchShopifyCustomerIdentity({
-        shopDomain,
-        customerId,
-        supabase,
-      });
-      if (hydrated) {
-        email = email ?? normalizeEmail(hydrated.email);
-        phone = phone ?? normalizePhone(hydrated.phone);
-        shippingAddress = shippingAddress ?? normalizeAddress(hydrated.default_address);
-        billingAddress = billingAddress ?? normalizeAddress(hydrated.default_address);
-      }
-    }
-
-    rows.push({
-      shop_domain: shopDomain,
-      source: 'order',
-      source_id: String(payload.id),
-      email,
-      phone,
-      shipping_address: shippingAddress,
-      billing_address: billingAddress,
-      customer_id: customerId,
+  if (topic === 'app/uninstalled') {
+    const { error } = await supabase.from('store_connections').update({
+      status: 'revoked',
+      uninstalled_at: now,
       updated_at: now,
-    });
-
-    await supabase
-      .from('shopify_order_signals' as any)
-      .upsert(buildShopifyOrderSignalRow(shopDomain, payload, rawBody), {
-        onConflict: 'shop_domain,shopify_order_id',
-      });
-  }
-
-  if (topic === 'refunds/create') {
-    const refundedAmount = Number(payload.transactions?.reduce((sum: number, tx: any) => {
-      const amount = Number(tx?.amount ?? 0);
-      return sum + (Number.isFinite(amount) ? amount : 0);
-    }, 0) ?? 0);
-    const refundType = detectRefundType(payload, Number.isFinite(refundedAmount) ? refundedAmount : 0);
-    await supabase
-      .from('shopify_refund_events' as any)
-      .upsert({
-        shop_domain: shopDomain,
-        shopify_order_id: payload.order_id ? String(payload.order_id) : null,
-        refund_id: String(payload.id),
-        refunded_amount: Number.isFinite(refundedAmount) ? refundedAmount : 0,
-        currency: payload.currency ?? null,
-        refund_reason: payload.note ?? payload.reason ?? null,
-        refund_type: refundType,
-        refunded_line_items_count: Array.isArray(payload.refund_line_items) ? payload.refund_line_items.length : 0,
-        created_at_shopify: payload.created_at ?? null,
-        raw_payload_hash: payloadHash,
-        updated_at: now,
-      }, { onConflict: 'shop_domain,refund_id' });
-
-    rows.push({
-      shop_domain: shopDomain,
-      source: 'refund',
-      source_id: String(payload.id),
-      email: normalizeEmail(payload.order?.email ?? payload.email),
-      phone: normalizePhone(payload.order?.phone ?? payload.phone),
-      shipping_address: normalizeAddress(payload.order?.shipping_address),
-      billing_address: normalizeAddress(payload.order?.billing_address),
-      customer_id: payload.order?.customer?.id ? String(payload.order.customer.id) : null,
-      updated_at: now,
-    });
-  }
-
-  if (topic === 'fulfillments/create' || topic === 'fulfillments/update') {
-    const trackingNumberRaw = payload.tracking_number ?? payload.shipment_status?.tracking_number ?? null;
-    const trackingNumberHash = typeof trackingNumberRaw === 'string' && trackingNumberRaw.trim()
-      ? crypto.createHash('sha256').update(trackingNumberRaw.trim(), 'utf8').digest('hex')
-      : null;
-    const trackingUrlsCount = Array.isArray(payload.tracking_urls) ? payload.tracking_urls.length : 0;
-    await supabase
-      .from('shopify_fulfillment_events' as any)
-      .upsert({
-        shop_domain: shopDomain,
-        shopify_order_id: payload.order_id ? String(payload.order_id) : null,
-        fulfillment_id: String(payload.id),
-        tracking_company: payload.tracking_company ?? null,
-        tracking_number_hash: trackingNumberHash,
-        tracking_urls_count: trackingUrlsCount,
-        shipment_status: payload.shipment_status ?? null,
-        status: payload.status ?? null,
-        created_at_shopify: payload.created_at ?? null,
-        updated_at_shopify: payload.updated_at ?? null,
-        raw_payload_hash: payloadHash,
-        updated_at: now,
-      }, { onConflict: 'shop_domain,fulfillment_id' });
-  }
-
-  if (topic === 'orders/cancelled') {
-    const merchantId = await resolveMerchantIdForShop(supabase, shopDomain);
-    const orderId = payload?.id ? String(payload.id) : null;
-    if (merchantId && orderId) {
-      const { data: voidedClaims } = await supabase
-        .from('merchant_claims' as any)
-        .update({
-          status: 'voided',
-          updated_at: now,
-        })
-        .eq('merchant_id', merchantId)
-        .eq('shop_domain', shopDomain)
-        .eq('shopify_order_id', orderId)
-        .select('id,status');
-      await Promise.all(
-        (voidedClaims ?? []).map((claim: { id: string }) =>
-          appendClaimEvent(supabase, {
-            claim_id: claim.id,
-            merchant_id: merchantId,
-            shop_domain: shopDomain,
-            event_type: 'status_changed',
-            new_status: 'voided',
-            triggered_by: 'shopify_order_cancelled',
-            metadata: {
-              triggered_by: 'shopify_order_cancelled',
-              shopify_order_id: orderId,
-            },
-          })
-        )
-      );
-    }
-  }
-
-  if (topic === 'disputes/create' || topic === 'disputes/updated') {
-    rows.push({
-      shop_domain: shopDomain,
-      source: 'dispute',
-      source_id: String(payload.id),
-      email: normalizeEmail(payload.evidence?.customer_email ?? payload.customer_email ?? null),
-      phone: normalizePhone(payload.evidence?.customer_phone ?? null),
-      shipping_address: null,
-      billing_address: null,
-      customer_id: payload.customer_id ? String(payload.customer_id) : null,
-      updated_at: now,
-    });
-    await upsertShopifyDisputeClaim({ supabase, shopDomain, payload, topic, now });
-  }
-
-  if (rows.length) {
-    await upsertMerchantIdentityRows(supabase, rows);
+    }).eq('id', connection.id);
+    if (error) throw new Error(`store_connection_uninstall_failed: ${error.message}`);
+    return;
   }
 
   if (topic === 'orders/create' || topic === 'orders/updated') {
-    const orderId = payload?.id ? String(payload.id) : null;
-    const syncResult = await syncShopifyProfilesForShop({
-      shopDomain,
-      supabase,
-      onlyOrderIds: orderId ? [orderId] : undefined,
-    });
-    console.info('Shopify profile sync result', {
-      shopDomain,
-      topic,
-      orderId,
-      groups: syncResult.groups,
-      profilesCreated: syncResult.profilesCreated,
-      profilesLinked: syncResult.profilesLinked,
-      identitiesUpserted: syncResult.identitiesUpserted,
-    });
-
-    if (orderId) {
-      enqueueShopifyOrderAuditScore({
-        supabase,
-        shopDomain,
-        shopifyOrderId: orderId,
-      });
-    }
+    if (payload?.id == null) return; // nothing to ingest
+    await processOrderTopic(supabase, connection.merchant_id, connection.id, payload, rawBody, now);
+  } else if (topic === 'refunds/create') {
+    await processRefundTopic(supabase, connection.merchant_id, payload, rawBody);
+  } else if (topic === 'fulfillments/create' || topic === 'fulfillments/update') {
+    await processFulfillmentTopic(supabase, connection.merchant_id, payload, rawBody);
+  } else if (topic === 'orders/cancelled') {
+    await processCancellationTopic(supabase, connection.merchant_id, payload, now);
+  } else if (topic === 'disputes/create' || topic === 'disputes/updated') {
+    await processDisputeTopic(supabase, connection.merchant_id, payload, topic, now);
   }
 }
 
@@ -370,22 +474,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: true, duplicate: true });
     }
     idempotencyKey = claim.idempotencyKey;
-  } catch {
+  } catch (err) {
+    console.error('Shopify webhook claim failed', {
+      webhookId, topic, shopDomain,
+      message: err instanceof Error ? err.message : String(err),
+    });
     return NextResponse.json({ error: 'Failed to claim webhook' }, { status: 500 });
   }
 
   try {
-    await processWebhook(rawBody, shopDomain, topic);
+    await processWebhook(rawBody, shopDomain, topic, supabase);
     await completeProcessedWebhook(supabase, idempotencyKey, 'completed', null);
   } catch (err) {
     const message = err instanceof Error ? err.message.slice(0, 300) : 'webhook_processing_failed';
     await completeProcessedWebhook(supabase, idempotencyKey, 'failed', message);
-    console.error('Shopify webhook processing failed', {
-      webhookId,
-      topic,
-      shopDomain,
-      message,
-    });
+    console.error('Shopify webhook processing failed', { webhookId, topic, shopDomain, message });
   }
 
   return NextResponse.json({ ok: true });

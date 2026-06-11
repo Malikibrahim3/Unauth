@@ -1,19 +1,19 @@
 import type { CSSProperties } from 'react';
 
 export const uploadTextStyle: CSSProperties = { color: 'var(--text)' };
-export const uploadMutedTextStyle: CSSProperties = { color: 'var(--text-muted)' };
-export const uploadSubtleTextStyle: CSSProperties = { color: 'var(--text-subtle)' };
+export const uploadMutedTextStyle: CSSProperties = { color: 'var(--text-secondary)' };
+export const uploadSubtleTextStyle: CSSProperties = { color: 'var(--text-tertiary)' };
 export const uploadAccentTextStyle: CSSProperties = { color: 'var(--accent)' };
 export const uploadIconMutedStyle: CSSProperties = { color: 'var(--icon-muted)' };
 export const uploadSuccessIconStyle: CSSProperties = { color: 'var(--success)' };
 export const uploadCriticalIconStyle: CSSProperties = { color: 'var(--risk-critical)' };
 export const uploadHighRiskIconStyle: CSSProperties = { color: 'var(--risk-high)' };
 
-export const uploadSubtleBorderStyle: CSSProperties = { borderColor: 'var(--border-subtle)' };
+export const uploadSubtleBorderStyle: CSSProperties = { borderColor: 'var(--border-muted)' };
 
 export const uploadSurfaceCardStyle: CSSProperties = {
-  borderColor: 'var(--border-subtle)',
-  background: 'var(--bg-surface)',
+  borderColor: 'var(--border-muted)',
+  background: 'var(--surface)',
 };
 
 export const uploadInsetFieldStyle: CSSProperties = {
@@ -24,7 +24,7 @@ export const uploadInsetFieldStyle: CSSProperties = {
 
 export const uploadPrimaryButtonStyle: CSSProperties = {
   background: 'var(--accent)',
-  color: 'var(--text-inverse)',
+  color: 'white',
 };
 
 export const uploadSecondaryButtonStyle: CSSProperties = {
@@ -72,17 +72,17 @@ export const uploadPulseProgressStyle: CSSProperties = {
 export const uploadDropzoneStyle = (dragOver: boolean, isProcessing: boolean): CSSProperties => ({
   cursor: isProcessing ? 'default' : 'pointer',
   opacity: isProcessing ? 0.6 : 1,
-  borderColor: dragOver ? 'var(--copper-bright)' : 'var(--surface-border)',
-  background: dragOver ? 'var(--copper-glow)' : 'var(--surface-raised)',
+  borderColor: dragOver ? 'var(--accent)' : 'var(--border)',
+  background: dragOver ? 'var(--copper-glow)' : 'var(--surface)',
 });
 
 export const uploadStepBarStyle = (index: number, stepIndex: number): CSSProperties => ({
   background:
-    index < stepIndex ? 'var(--copper-bright)' : index === stepIndex ? 'var(--copper-dim)' : 'var(--surface-muted)',
+    index < stepIndex ? 'var(--accent)' : index === stepIndex ? 'var(--accent-soft)' : 'var(--surface-sunken)',
 });
 
 export const uploadStepLabelStyle = (index: number, stepIndex: number): CSSProperties => ({
-  color: index <= stepIndex ? 'var(--ink-secondary)' : 'var(--ink-tertiary)',
+  color: index <= stepIndex ? 'var(--text-secondary)' : 'var(--text-tertiary)',
 });
 
 export function uploadMappedRowStyle(isUnmapped: boolean, isImprover = false): CSSProperties {
@@ -115,6 +115,6 @@ export function batchStatusColor(status: string): string {
   if (status === 'complete') return 'var(--success)';
   if (status === 'error') return 'var(--risk-critical)';
   if (status === 'processing' || status === 'uploading') return 'var(--accent)';
-  return 'var(--text-muted)';
+  return 'var(--text-secondary)';
 }
 

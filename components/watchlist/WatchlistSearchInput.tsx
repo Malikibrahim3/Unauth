@@ -39,7 +39,7 @@ function WatchlistSearchInputInner({ defaultValue = '' }: WatchlistSearchInputPr
     <div className="relative">
       <Search
         className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5"
-        style={{ color: 'var(--text-muted)' }}
+        style={{ color: 'var(--text-secondary)' }}
         aria-hidden="true"
       />
       <input
@@ -53,7 +53,7 @@ function WatchlistSearchInputInner({ defaultValue = '' }: WatchlistSearchInputPr
         placeholder="Search by name or email…"
         className="rounded-md border pl-8 pr-3 py-1.5 text-sm outline-none transition-colors focus:ring-1"
         style={{
-          background: 'var(--bg-surface)',
+          background: 'var(--surface)',
           borderColor: 'var(--border)',
           color: 'var(--text)',
           width: 220,
@@ -72,7 +72,7 @@ export default function WatchlistSearchInput(props: WatchlistSearchInputProps) {
       fallback={
         <div
           className="rounded-md border pl-8 pr-3 py-1.5 text-sm"
-          style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)', width: 220, color: 'var(--text-muted)' }}
+          style={{ background: 'var(--surface)', borderColor: 'var(--border)', width: 220, color: 'var(--text-secondary)' }}
         >
           Search…
         </div>

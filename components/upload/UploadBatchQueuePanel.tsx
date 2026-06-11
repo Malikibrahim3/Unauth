@@ -30,10 +30,10 @@ export function UploadBatchQueuePanel({
   const completeCount = batchQueue.filter((item) => item.status === 'complete').length;
 
   return (
-    <div className="rounded-lg border overflow-hidden" style={uploadSubtleBorderStyle}>
+    <div className="rounded-md border overflow-hidden" style={uploadSubtleBorderStyle}>
       <div
         className="flex items-center justify-between px-4 py-2.5 border-b"
-        style={{ background: 'var(--bg-subtle)', borderColor: 'var(--border-subtle)' }}
+        style={{ background: 'var(--bg-subtle)', borderColor: 'var(--border-muted)' }}
       >
         <div className="flex items-center gap-2 text-sm font-semibold" style={uploadTextStyle}>
           <Layers className="h-4 w-4" style={uploadIconMutedStyle} />

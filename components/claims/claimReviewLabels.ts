@@ -20,33 +20,33 @@ export const CLAIM_TYPE_LABELS: Record<ClaimType, string> = {
 };
 
 export const DECISION_LABELS: Record<Decision, string> = {
-  approved: 'Merchant resolved in customer favour',
-  denied: 'Merchant closed without payout',
-  escalated: 'Escalated for review',
-  partial_refund: 'Partial resolution',
-  full_refund: 'Full resolution',
-  chargeback_disputed: 'Chargeback disputed',
-  blacklist: 'Legacy restricted action',
-  internal_watch: 'Internal watch',
-  no_action: 'No further action',
+  approved: 'Merchant response recorded',
+  denied: 'Merchant response recorded',
+  escalated: 'Merchant response recorded',
+  partial_refund: 'Merchant response recorded',
+  full_refund: 'Merchant response recorded',
+  chargeback_disputed: 'Merchant response recorded',
+  blacklist: 'Merchant response recorded',
+  internal_watch: 'Merchant response recorded',
+  no_action: 'No action recorded',
 };
 
 export const OUTCOME_LABELS: Record<Outcome, string> = {
-  loss: 'Loss accepted',
-  recovered: 'Recovered',
-  pending: 'Pending',
-  chargeback_won: 'Chargeback won',
-  chargeback_lost: 'Chargeback lost',
-  customer_verified: 'Additional identity details verified',
-  suspected_fraud: 'Pattern requires closer review',
-  legitimate: 'Claim context resolved',
+  loss: 'Merchant response recorded',
+  recovered: 'Merchant response recorded',
+  pending: 'Merchant response pending',
+  chargeback_won: 'Merchant response recorded',
+  chargeback_lost: 'Merchant response recorded',
+  customer_verified: 'Merchant response recorded',
+  suspected_fraud: 'Merchant response recorded',
+  legitimate: 'Merchant response recorded',
 };
 
 export const EVIDENCE_TYPE_LABELS: Record<EvidenceType, string> = {
   tracking: 'Tracking record',
   proof_of_delivery: 'Proof of delivery',
   customer_message: 'Customer message',
-  support_ticket: 'Support ticket',
+  support_ticket: 'Helpdesk case record',
   return_label: 'Return label',
   warehouse_scan: 'Warehouse scan',
   payment_dispute: 'Payment dispute',
@@ -66,18 +66,18 @@ export const EVIDENCE_SOURCE_LABELS: Record<EvidenceSource, string> = {
 };
 
 export const STATUS_LABELS: Record<string, string> = {
-  open: 'Open',
+  open: 'Active',
   under_review: 'Under review',
   evidence_requested: 'Evidence requested',
-  pending: 'Pending external evidence',
-  escalated: 'Escalated',
-  resolved: 'Resolved',
-  closed: 'Closed',
+  pending: 'Waiting on source data',
+  escalated: 'High evidence',
+  resolved: 'Outcome recorded',
+  closed: 'Archived',
 };
 
 export const QUICK_LIFECYCLE_STATUSES: Array<{ value: ClaimStatus; label: string }> = [
   { value: 'under_review', label: 'Under review' },
   { value: 'evidence_requested', label: 'Awaiting evidence' },
-  { value: 'pending', label: 'Awaiting info' },
-  { value: 'escalated', label: 'Escalated' },
+  { value: 'pending', label: 'Waiting on source data' },
+  { value: 'escalated', label: 'High evidence' },
 ];

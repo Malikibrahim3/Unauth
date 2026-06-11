@@ -27,7 +27,7 @@ export function SensitiveField({
   return (
     <div className={cn('space-y-1', className)}>
       <div className="flex items-center gap-2">
-        <span className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>{label}</span>
+        <span className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>{label}</span>
         {!revealed && <PrivacyBadge value="PII masked" />}
         {revealed && (
           <span
@@ -51,8 +51,8 @@ export function SensitiveField({
             onClick={() => setRevealed((v) => !v)}
             className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1"
             style={{
-              borderColor: 'var(--border-subtle)',
-              color: 'var(--text-muted)',
+              borderColor: 'var(--border-muted)',
+              color: 'var(--text-secondary)',
               outlineColor: 'var(--accent)',
             }}
             aria-pressed={revealed}

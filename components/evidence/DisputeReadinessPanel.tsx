@@ -42,9 +42,9 @@ function readinessTone(passed: boolean | 'warning'): BadgeTone {
 }
 
 function readinessMarker(passed: boolean | 'warning') {
-  if (passed === true) return { symbol: '●', color: 'var(--sev-clear)' };
-  if (passed === 'warning') return { symbol: '◐', color: 'var(--sev-probable)' };
-  return { symbol: '○', color: 'var(--sev-definite)' };
+  if (passed === true) return { symbol: '●', color: 'var(--neutral)' };
+  if (passed === 'warning') return { symbol: '◐', color: 'var(--warning)' };
+  return { symbol: '○', color: 'var(--success)' };
 }
 
 export function DisputeReadinessPanel({
@@ -103,7 +103,7 @@ export function DisputeReadinessPanel({
   return (
     <div
       className="border p-5 space-y-3"
-      style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)', borderRadius: 4 }}
+      style={{ background: 'var(--surface)', borderColor: 'var(--border-muted)', borderRadius: 4 }}
     >
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-overline"><span aria-hidden="true" className="ua-section-dot" />Signal checklist</h2>
@@ -147,7 +147,7 @@ export function DisputeReadinessPanel({
                 </Badge>
               </div>
               {check.detail && (
-                <p className="mt-0.5 text-xs" style={{ color: 'var(--text-muted)' }}>
+                <p className="mt-0.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
                   {check.detail}
                 </p>
               )}
@@ -157,11 +157,11 @@ export function DisputeReadinessPanel({
       </div>
 
       <div
-        className="flex items-start gap-2 rounded-lg px-3 py-2"
-        style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-subtle)' }}
+        className="flex items-start gap-2 rounded-md px-3 py-2"
+        style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border-muted)' }}
       >
-        <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" style={{ color: 'var(--text-subtle)' }} />
-        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+        <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" style={{ color: 'var(--text-tertiary)' }} />
+        <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
           Read-only CE 3.0 readiness checklist based on signal data in your records. Full CE 3.0 qualification may require checkout-time IP/device capture. Use alongside your acquirer guidelines when preparing a dispute response.
         </p>
       </div>

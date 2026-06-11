@@ -23,6 +23,7 @@ const PROTECTED_ROUTES = [
 const PUBLIC_ROUTES = [
   '/login',
   '/demo',
+  '/pricing',
   '/legal/privacy',
   '/legal/data-handling',
   '/api/demo/runs',

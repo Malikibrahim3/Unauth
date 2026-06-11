@@ -82,20 +82,20 @@ export function claimEventLabel(eventType: string): string {
     claim_created: 'Claim created',
     claim_updated: 'Claim updated',
     claim_viewed: 'Claim viewed',
-    claim_assigned: 'Claim assigned',
-    claim_unassigned: 'Claim unassigned',
-    claim_snoozed: 'Claim snoozed',
-    claim_unsnoozed: 'Claim unsnoozed',
+    claim_assigned: 'Reviewer updated',
+    claim_unassigned: 'Reviewer cleared',
+    claim_snoozed: 'Review deferred',
+    claim_unsnoozed: 'Review resumed',
     note_added: 'Internal note added',
     evidence_added: 'Evidence added',
     outcome_added: 'Outcome recorded',
     status_changed: 'Status changed',
-    claim_resolved: 'Claim resolved',
+    claim_resolved: 'Outcome recorded',
     claim_reopened: 'Claim reopened',
     decision_reversed: 'Decision reversed',
     customer_response_copied: 'Customer response copied',
     customer_response_saved: 'Customer response saved',
-    escalation_added: 'Claim escalated',
+    escalation_added: 'High evidence flag added',
   };
   return labels[eventType] ?? eventType.replace(/_/g, ' ');
 }
@@ -112,14 +112,14 @@ type ClaimEventSummaryInput = {
 };
 
 const STATUS_LABELS: Record<string, string> = {
-  open: 'Open',
-  pending: 'Pending external evidence',
-  escalated: 'Escalated',
-  resolved_refunded: 'Resolved: refunded',
-  resolved_won: 'Resolved: won',
-  resolved_lost: 'Resolved: lost',
-  resolved_denied: 'Resolved: denied',
-  resolved_exchanged: 'Resolved: exchanged',
+  open: 'Active',
+  pending: 'Waiting on source data',
+  escalated: 'High evidence',
+  resolved_refunded: 'Outcome recorded: refunded',
+  resolved_won: 'Outcome recorded: won',
+  resolved_lost: 'Outcome recorded: lost',
+  resolved_denied: 'Outcome recorded: denied',
+  resolved_exchanged: 'Outcome recorded: exchanged',
   voided: 'Voided',
   stale: 'Stale',
 };
@@ -184,13 +184,13 @@ export function claimEventSummary(event: ClaimEventSummaryInput): string {
     case 'claim_viewed':
       return 'The claim was opened for review.';
     case 'claim_assigned':
-      return 'Ownership was assigned for this claim.';
+      return 'A reviewer was linked to this claim record.';
     case 'claim_unassigned':
-      return 'Ownership was removed from this claim.';
+      return 'Reviewer link was cleared from this claim record.';
     case 'claim_snoozed':
-      return 'The claim was snoozed until follow-up is due.';
+      return 'Evidence review was deferred until follow-up is due.';
     case 'claim_unsnoozed':
-      return 'The claim returned to the active queue.';
+      return 'Evidence review resumed for this claim.';
     case 'evidence_added':
       return 'Supporting evidence was attached to the claim.';
     case 'outcome_added':

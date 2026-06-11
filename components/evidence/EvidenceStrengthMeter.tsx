@@ -33,10 +33,10 @@ export function EvidenceStrengthMeter({ strength, label }: EvidenceStrengthMeter
   return (
     <div
       className="border p-3 animate-fade-in"
-      style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-inset)', borderRadius: 4 }}
+      style={{ borderColor: 'var(--border-muted)', background: 'var(--bg-inset)', borderRadius: 4 }}
     >
       <div className="flex items-center justify-between mb-2 gap-2">
-        <p className="text-xs font-medium tracking-[0.12em] uppercase" style={{ color: 'var(--text-muted)' }}>{label}</p>
+        <p className="text-xs font-medium tracking-[0.12em] uppercase" style={{ color: 'var(--text-secondary)' }}>{label}</p>
         <span
           className="text-xs font-semibold px-2 py-0.5 rounded"
           style={{
@@ -64,13 +64,13 @@ export function EvidenceStrengthMeter({ strength, label }: EvidenceStrengthMeter
                   : 'var(--bg-subtle)',
                 border: isActive
                   ? `1px solid var(--evidence-${barStrength}-line)`
-                  : '1px solid var(--border-subtle)',
+                  : '1px solid var(--border-muted)',
               }}
             />
           );
         })}
       </figure>
-      <div className="mt-2 text-xs font-semibold tracking-[0.12em] uppercase" style={{ color: 'var(--text-muted)' }}>
+      <div className="mt-2 text-xs font-semibold tracking-[0.12em] uppercase" style={{ color: 'var(--text-secondary)' }}>
         {STRENGTH_LABEL[strength]}
       </div>
     </div>

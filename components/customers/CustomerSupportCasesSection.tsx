@@ -23,11 +23,11 @@ export default function CustomerSupportCasesSection({ profileId }: { profileId: 
 
   return (
     <SectionCard
-      title="Support cases"
-      description="Tickets and support conversations linked to this customer or their orders."
+      title="Helpdesk source records"
+      description="Helpdesk case records linked to this customer or their orders."
     >
       {loading ? (
-        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
           Loading support cases…
         </p>
       ) : (

@@ -4,6 +4,7 @@ import { Headphones } from 'lucide-react';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import ZendeskSetupClient from '@/components/settings/ZendeskSetupClient';
+import { PROVIDER_BRAND_COLOURS } from '@/components/settings/providerBrand';
 
 export default async function ZendeskIntegrationPage() {
   const userClient = createClient();
@@ -24,17 +25,17 @@ export default async function ZendeskIntegrationPage() {
         <Link
           href="/settings/integrations"
           className="mb-4 inline-flex items-center gap-1.5 text-xs hover:underline"
-          style={{ color: 'var(--text-muted)' }}
+          style={{ color: 'var(--text-secondary)' }}
         >
           ← Integrations
         </Link>
         <div className="flex items-center gap-3">
-          <Headphones className="h-5 w-5" style={{ color: '#03363D' }} />
+          <Headphones className="h-5 w-5" style={{ color: PROVIDER_BRAND_COLOURS.zendesk }} />
           <h1 className="text-heading-lg" style={{ color: 'var(--text)' }}>
             Connect Zendesk
           </h1>
         </div>
-        <p className="mt-1 text-sm" style={{ color: 'var(--text-muted)' }}>
+        <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
           Show identity confidence and claims history on every support ticket.
         </p>
       </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import type { Dispatch } from 'react';
+import { Search } from 'lucide-react';
 import type { CommandPaletteAction } from '@/components/layout/commandPaletteReducer';
 
 type CommandPaletteInputBarProps = {
@@ -23,19 +24,13 @@ export function CommandPaletteInputBar({
   return (
     <div
       className="flex items-center gap-3 px-4 py-3"
-      style={{ borderBottom: '1px solid var(--border-subtle)' }}
+      style={{ borderBottom: '1px solid var(--border-muted)' }}
     >
-      <svg
-        width="16"
-        height="16"
-        viewBox="0 0 16 16"
-        fill="none"
+      <Search
+        size={16}
         aria-hidden="true"
         style={{ color: 'var(--icon-muted)', flexShrink: 0 }}
-      >
-        <circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" strokeWidth="1.4" />
-        <path d="M11 11L14 14" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-      </svg>
+      />
       <input
         ref={inputRef}
         type="text"
@@ -67,14 +62,14 @@ export function CommandPaletteInputBar({
             dispatch({ type: 'searchClear' });
           }}
           className="text-xs px-1.5 py-0.5 rounded"
-          style={{ color: 'var(--text-subtle)', background: 'var(--bg-subtle)' }}
+          style={{ color: 'var(--text-tertiary)', background: 'var(--bg-subtle)' }}
         >
           Clear
         </button>
       ) : null}
       <kbd
         className="hidden sm:inline font-mono text-xs px-1.5 py-0.5 rounded"
-        style={{ color: 'var(--text-subtle)', background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
+        style={{ color: 'var(--text-tertiary)', background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
       >
         esc
       </kbd>
@@ -86,15 +81,15 @@ export function CommandPaletteFooter() {
   return (
     <div
       className="flex items-center gap-4 px-4 py-2"
-      style={{ borderTop: '1px solid var(--border-subtle)', background: 'var(--bg-subtle)' }}
+      style={{ borderTop: '1px solid var(--border-muted)', background: 'var(--bg-subtle)' }}
     >
-      <span className="text-xs" style={{ color: 'var(--text-subtle)' }}>
+      <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
         <kbd className="font-mono mr-1">↑↓</kbd>navigate
       </span>
-      <span className="text-xs" style={{ color: 'var(--text-subtle)' }}>
+      <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
         <kbd className="font-mono mr-1">↵</kbd>open
       </span>
-      <span className="text-xs" style={{ color: 'var(--text-subtle)' }}>
+      <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
         <kbd className="font-mono mr-1">esc</kbd>close
       </span>
     </div>

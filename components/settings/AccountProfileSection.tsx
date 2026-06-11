@@ -26,7 +26,7 @@ export default function AccountProfileSection({ state, dispatch, onSave }: Props
             disabled
             className="opacity-50 cursor-not-allowed"
           />
-          <p className="mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>
+          <p className="mt-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
             To change your email, contact{' '}
             <a href="mailto:support@unauth.co" className="underline" style={{ color: 'var(--accent)' }}>support@unauth.co</a>.
           </p>

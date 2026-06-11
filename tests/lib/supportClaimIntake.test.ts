@@ -254,6 +254,7 @@ describe('ingestSupportCase — claim intelligence', () => {
 
     const orderCtx = rowsOf(client, TABLES.ORDER_CLAIM_CONTEXT)[0];
     expect(orderCtx.days_since_delivery_at_claim).toBe(1);
+    expect(orderCtx.time_to_claim_days).toBe(1);
     expect(result.claim_type).toBe('INR');
   });
 
@@ -275,6 +276,7 @@ describe('ingestSupportCase — claim intelligence', () => {
 
     const orderCtx = rowsOf(client, TABLES.ORDER_CLAIM_CONTEXT)[0];
     expect(orderCtx.days_since_delivery_at_claim).toBe(1);
+    expect(orderCtx.time_to_claim_days).toBe(1);
 
     const identity = rowsOf(client, TABLES.CUSTOMER_IDENTITY_SIGNALS)[0];
     expect(identity.customer_account_type).toBe('guest');

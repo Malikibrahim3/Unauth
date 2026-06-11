@@ -45,12 +45,12 @@ export function SyncStatusDisconnectedView({
   if (variant === 'inline') {
     return (
       <>
-        <div className="pt-3 mt-3 border-t space-y-3" style={{ borderColor: 'var(--surface-border)' }}>
+        <div className="pt-3 mt-3 border-t space-y-3" style={{ borderColor: 'var(--border)' }}>
           <button
             type="button"
             onClick={onOpenModal}
             className="inline-flex items-center rounded-md px-3 py-1.5 text-xs font-semibold"
-            style={{ background: 'var(--accent)', color: '#fff' }}
+            style={{ background: 'var(--accent)', color: 'white' }}
             data-testid="open-connect-shopify-modal"
           >
             {actionLabel}
@@ -66,8 +66,8 @@ export function SyncStatusDisconnectedView({
   return (
     <>
       <div
-        className="rounded-xl p-5 border space-y-4"
-        style={{ borderColor: 'var(--border-subtle)', background: 'var(--bg-surface)' }}
+        className="rounded-md p-5 border space-y-4"
+        style={{ borderColor: 'var(--border-muted)', background: 'var(--surface)' }}
       >
         <div className="flex items-start gap-3">
           <div
@@ -75,22 +75,22 @@ export function SyncStatusDisconnectedView({
             style={{
               background:
                 linkState === 'installed_unlinked'
-                  ? 'var(--risk-medium, #D97706)'
-                  : 'var(--text-muted)',
+                  ? 'var(--sev-possible)'
+                  : 'var(--text-secondary)',
             }}
           />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
               {title}
             </p>
-            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
               {description}
             </p>
             <button
               type="button"
               onClick={onOpenModal}
               className="inline-flex items-center mt-3 rounded-md px-3 py-1.5 text-xs font-semibold"
-              style={{ background: 'var(--accent)', color: '#fff' }}
+              style={{ background: 'var(--accent)', color: 'white' }}
               data-testid="open-connect-shopify-modal"
             >
               {actionLabel}

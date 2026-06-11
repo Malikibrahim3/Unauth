@@ -11,6 +11,10 @@
  */
 
 import Link from 'next/link';
+import { AnalyticsBarChart } from '@/components/analytics/AnalyticsBarChart';
+import { AnalyticsDonutChart } from '@/components/analytics/AnalyticsDonutChart';
+import { AnalyticsLineChart } from '@/components/analytics/AnalyticsLineChart';
+import { SectionCard } from '@/components/ui';
 
 const DEMO_MERCHANT_ID = process.env.NEXT_PUBLIC_DEMO_MERCHANT_ID;
 
@@ -57,18 +61,67 @@ async function getDemoRuns(): Promise<DemoRun[]> {
 export default async function DemoPage() {
   if (!DEMO_MERCHANT_ID) {
     return (
-      <div className="flex min-h-screen items-center justify-center p-8">
-        <div className="max-w-md text-center space-y-4">
-          <h1 className="text-2xl font-bold text-[var(--text)]">Unauth demo</h1>
-          <p className="text-[var(--text-muted)]">
-            Explore the public audit walkthrough, then create a workspace when you are ready to test your own CSV.
-          </p>
-          <Link
-            href="/audit-demo"
-            className="inline-block rounded-md bg-[var(--accent)] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[var(--accent-hover)]"
-          >
-            Open audit demo →
-          </Link>
+      <div className="min-h-screen px-6 py-20" style={{ background: 'var(--bg-canvas)' }}>
+        <div className="mx-auto grid max-w-5xl gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-center">
+          <div className="space-y-4">
+            <h1 className="text-4xl font-bold leading-tight text-[var(--text)]">Unauth demo</h1>
+            <p className="max-w-xl text-base leading-7 text-[var(--text-muted)]">
+              Explore the public audit walkthrough, then create a workspace when you are ready to test your own CSV.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <Link
+                href="/audit-demo"
+                className="inline-block rounded-md bg-[var(--accent)] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[var(--accent-hover)]"
+              >
+                Open audit demo →
+              </Link>
+              <Link
+                href="/login"
+                className="inline-block rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-6 py-2.5 text-sm font-semibold text-[var(--text)]"
+              >
+                Create workspace
+              </Link>
+            </div>
+          </div>
+
+          <div className="rounded-md border p-5 shadow-sm" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}>
+            <div className="grid gap-4 sm:grid-cols-3">
+              {[
+                { label: 'Likely identities', value: '32' },
+                { label: 'Signal rate', value: '14.8%' },
+                { label: 'Evidence-ready', value: '7' },
+              ].map((item) => (
+                <div key={item.label}>
+                  <p className="text-[11px] uppercase tracking-wide text-[var(--text-muted)]">{item.label}</p>
+                  <p className="mt-1 text-[28px] font-semibold leading-none text-[var(--text)]">{item.value}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              <SectionCard title="Pattern mix" description="Illustrative demo preview">
+                <AnalyticsDonutChart
+                  data={[
+                    { label: 'Refund patterns', value: 48, color: 'var(--accent)' },
+                    { label: 'Chargebacks', value: 20, color: 'var(--sev-probable, #C7762B)' },
+                    { label: 'Repeat identities', value: 32, color: 'var(--sev-clear, #3E7A63)' },
+                  ]}
+                  height={180}
+                />
+              </SectionCard>
+              <SectionCard title="Projected review load" description="How a seeded audit tends to ramp">
+                <AnalyticsBarChart
+                  data={[
+                    { label: 'Week 1', value: 14, color: 'var(--surface-border)' },
+                    { label: 'Week 2', value: 19, color: 'var(--surface-border)' },
+                    { label: 'Week 3', value: 27, color: 'var(--accent)' },
+                    { label: 'Week 4', value: 32, color: 'var(--accent)' },
+                  ]}
+                  height={180}
+                />
+              </SectionCard>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -79,6 +132,24 @@ export default async function DemoPage() {
   const totalFlagged = typedRuns.reduce((sum, r) => sum + (r.flagged_count ?? 0), 0);
   const runSizes = new Set(typedRuns.map((run) => run.total_rows));
   const seededScenarioCount = EXPECTED_RUN_SIZES.filter((size) => runSizes.has(size)).length;
+  const trendData = typedRuns
+    .slice()
+    .reverse()
+    .map((run) => ({
+      label: new Date(run.created_at).toLocaleDateString('en-GB', { month: 'short', day: 'numeric' }),
+      value: run.total_rows > 0 ? Number((((run.flagged_count ?? 0) / run.total_rows) * 100).toFixed(1)) : 0,
+    }));
+  const scenarioBars = typedRuns
+    .slice(0, 4)
+    .map((run) => ({
+      label: scenarioLabel(run.total_rows),
+      value: run.flagged_count ?? 0,
+      color: 'var(--accent)',
+    }));
+  const runStateDonut = [
+    { label: 'Seeded scenarios', value: seededScenarioCount, color: 'var(--accent)' },
+    { label: 'Unseeded / other', value: Math.max(typedRuns.length - seededScenarioCount, 0), color: 'var(--surface-border)' },
+  ];
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-canvas)' }}>
@@ -123,7 +194,7 @@ export default async function DemoPage() {
           ].map(({ label, value }) => (
             <div
               key={label}
-              className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-5 py-4"
+              className="rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-5 py-4"
             >
               <div className="text-xs font-medium uppercase tracking-wide text-[var(--text-muted)] mb-1">
                 {label}
@@ -131,6 +202,35 @@ export default async function DemoPage() {
               <div className="text-2xl font-mono font-bold text-[var(--text)]">{value}</div>
             </div>
           ))}
+        </div>
+
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
+          <SectionCard
+            title="Review signal trend"
+            description="Flagged-row rate across recent demo runs"
+          >
+            <AnalyticsLineChart
+              data={trendData}
+              height={220}
+              valueFormatter={(n) => `${n.toFixed(1)}%`}
+              seriesName="Flag rate"
+              emptyLabel="No seeded runs yet"
+            />
+          </SectionCard>
+
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
+            <SectionCard
+              title="Scenario coverage"
+              description="How much of the demo is ready to explore"
+            >
+              <AnalyticsDonutChart
+                data={runStateDonut}
+                height={220}
+                showLegend
+                emptyLabel="No scenario data"
+              />
+            </SectionCard>
+          </div>
         </div>
 
         <div className="grid gap-4 lg:grid-cols-3">
@@ -155,7 +255,7 @@ export default async function DemoPage() {
             return (
               <div
                 key={scenario.rows}
-                className="rounded-xl border p-5"
+                className="rounded-md border p-5"
                 style={{
                   backgroundColor: seeded ? 'var(--bg-surface)' : 'var(--bg-inset)',
                   borderColor: seeded ? 'var(--border)' : 'var(--border-subtle)',
@@ -180,8 +280,20 @@ export default async function DemoPage() {
           })}
         </div>
 
+        <SectionCard
+          title="Where the review volume sits"
+          description="Flagged identities by recent scenario"
+        >
+          <AnalyticsBarChart
+            data={scenarioBars}
+            height={240}
+            valueFormatter={(n) => n.toLocaleString()}
+            emptyLabel="No review data yet"
+          />
+        </SectionCard>
+
         {/* Audit runs table */}
-        <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] overflow-hidden">
+        <div className="rounded-md border border-[var(--border-subtle)] bg-[var(--bg-surface)] overflow-hidden">
           <div className="px-4 py-3 border-b border-[var(--border-subtle)] flex items-center justify-between">
             <span className="font-semibold text-[var(--text)]">Audit Runs</span>
             <span className="text-xs text-[var(--text-muted)]">Nightly reset on staging</span>
@@ -245,7 +357,7 @@ export default async function DemoPage() {
         </div>
 
         {/* CTA */}
-        <div className="rounded-xl border border-[var(--info-bd)] bg-[var(--info-bg)] p-6 flex items-center justify-between gap-6">
+        <div className="rounded-md border border-[var(--info-bd)] bg-[var(--info-bg)] p-6 flex items-center justify-between gap-6">
           <div>
             <h2 className="font-semibold text-[var(--text-primary)] text-lg">Ready to run it on your data?</h2>
             <p className="mt-1 text-sm text-[var(--info)]">

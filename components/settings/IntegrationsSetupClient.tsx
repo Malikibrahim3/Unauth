@@ -138,10 +138,10 @@ function ConnectedSetupCard({
 }) {
   return (
     <div
-      className="flex gap-3 rounded-xl border p-4"
+      className="flex gap-3 rounded-md border p-4"
       style={{
-        borderColor: 'color-mix(in srgb, var(--sev-clear, #2f6b43) 30%, var(--surface-border))',
-        background: 'color-mix(in srgb, var(--sev-clear, #2f6b43) 4%, var(--surface-raised))',
+        borderColor: 'color-mix(in srgb, var(--success) 30%, var(--border))',
+        background: 'color-mix(in srgb, var(--success) 4%, var(--surface))',
       }}
     >
       <Image src={logo} alt="" width={32} height={32} className="h-8 w-8 shrink-0 rounded-md object-contain" />
@@ -151,21 +151,21 @@ function ConnectedSetupCard({
             <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
               {name}
             </p>
-            <p className="mt-0.5 flex items-center gap-1.5 text-xs font-medium" style={{ color: 'var(--sev-clear, #2f6b43)' }}>
+            <p className="mt-0.5 flex items-center gap-1.5 text-xs font-medium" style={{ color: 'var(--success)' }}>
               <CheckCircle2 className="h-3.5 w-3.5" />
               Connected
-              {detail ? <span style={{ color: 'var(--text-muted)' }}>· {detail}</span> : null}
+              {detail ? <span style={{ color: 'var(--text-secondary)' }}>· {detail}</span> : null}
             </p>
           </div>
           <Link
             href={manageHref}
             className="inline-flex shrink-0 items-center rounded-md border px-2.5 py-1 text-xs font-medium"
-            style={{ borderColor: 'var(--surface-border)', color: 'var(--text-muted)' }}
+            style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
           >
             Manage
           </Link>
         </div>
-        <p className="mt-2 text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+        <p className="mt-2 text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
           {copy}
         </p>
       </div>
@@ -194,14 +194,14 @@ function ActivationSetupCard({
 }) {
   return (
     <div
-      className={`flex gap-4 rounded-xl border ${prominent ? 'p-6' : 'p-4'}`}
+      className={`flex gap-4 rounded-md border ${prominent ? 'p-6' : 'p-4'}`}
       style={{
         borderColor: prominent
-          ? 'color-mix(in srgb, var(--accent) 45%, var(--surface-border))'
-          : 'var(--surface-border)',
+          ? 'color-mix(in srgb, var(--accent) 45%, var(--border))'
+          : 'var(--border)',
         background: prominent
-          ? 'color-mix(in srgb, var(--accent) 6%, var(--surface-raised))'
-          : 'var(--surface-raised)',
+          ? 'color-mix(in srgb, var(--accent) 6%, var(--surface))'
+          : 'var(--surface)',
       }}
     >
       <Image
@@ -217,27 +217,27 @@ function ActivationSetupCard({
             {title}
           </p>
           {connected ? (
-            <p className="mt-0.5 flex items-center gap-1.5 text-xs font-medium" style={{ color: 'var(--sev-clear, #2f6b43)' }}>
+            <p className="mt-0.5 flex items-center gap-1.5 text-xs font-medium" style={{ color: 'var(--success)' }}>
               <CheckCircle2 className="h-3.5 w-3.5" />
               Connected
-              {detail ? <span style={{ color: 'var(--text-muted)' }}>· {detail}</span> : null}
+              {detail ? <span style={{ color: 'var(--text-secondary)' }}>· {detail}</span> : null}
             </p>
           ) : (
-            <p className="mt-0.5 text-xs font-medium" style={{ color: prominent ? 'var(--accent)' : 'var(--text-muted)' }}>
+            <p className="mt-0.5 text-xs font-medium" style={{ color: prominent ? 'var(--accent)' : 'var(--text-secondary)' }}>
               Not connected
             </p>
           )}
-          <p className={`mt-2 leading-relaxed ${prominent ? 'text-sm' : 'text-xs'}`} style={{ color: 'var(--text-muted)' }}>
+          <p className={`mt-2 leading-relaxed ${prominent ? 'text-sm' : 'text-xs'}`} style={{ color: 'var(--text-secondary)' }}>
             {copy}
           </p>
         </div>
         {!connected ? (
           <Link
             href={href}
-            className={`inline-flex items-center gap-2 rounded-lg font-semibold ${
+            className={`inline-flex items-center gap-2 rounded-md font-semibold ${
               prominent ? 'px-5 py-2.5 text-sm' : 'px-3.5 py-2 text-xs'
             }`}
-            style={{ background: 'var(--accent)', color: 'var(--accent-fg, #fff)' }}
+            style={{ background: 'var(--accent)', color: 'white' }}
           >
             {ctaLabel}
             <ArrowRight className="h-4 w-4" />
@@ -254,14 +254,14 @@ function CommercePlatformsPanel({ status }: { status: IntegrationsSetupStatus })
 
   return (
     <div
-      className="rounded-xl border p-4 space-y-3"
-      style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-raised)' }}
+      className="rounded-md border p-4 space-y-3"
+      style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
     >
       <div>
         <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
           Order data
         </p>
-        <p className="mt-0.5 text-xs" style={{ color: 'var(--text-muted)' }}>
+        <p className="mt-0.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
           {orderSourceConnected
             ? 'Order, customer, refund and fulfilment context is syncing.'
             : 'Connect your storefront to sync orders and customer identity.'}
@@ -277,14 +277,14 @@ function CommercePlatformsPanel({ status }: { status: IntegrationsSetupStatus })
           return (
             <div
               key={platform.id}
-              className="flex gap-3 rounded-lg border p-3"
+              className="flex gap-3 rounded-md border p-3"
               style={{
                 borderColor: connected
-                  ? 'color-mix(in srgb, var(--sev-clear, #2f6b43) 30%, var(--surface-border))'
-                  : 'var(--surface-border)',
+                  ? 'color-mix(in srgb, var(--success) 30%, var(--border))'
+                  : 'var(--border)',
                 background: connected
-                  ? 'color-mix(in srgb, var(--sev-clear, #2f6b43) 4%, var(--bg-surface))'
-                  : 'var(--bg-surface)',
+                  ? 'color-mix(in srgb, var(--success) 4%, var(--surface))'
+                  : 'var(--surface)',
                 opacity: demoted ? 0.75 : 1,
               }}
             >
@@ -305,7 +305,7 @@ function CommercePlatformsPanel({ status }: { status: IntegrationsSetupStatus })
                       <Link
                         href={platform.href}
                         className="inline-flex shrink-0 items-center rounded-md border px-2.5 py-1 text-xs font-medium"
-                        style={{ borderColor: 'var(--surface-border)', color: 'var(--text-muted)' }}
+                        style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
                       >
                         Manage
                       </Link>
@@ -315,8 +315,8 @@ function CommercePlatformsPanel({ status }: { status: IntegrationsSetupStatus })
                         className="inline-flex shrink-0 items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold"
                         style={{
                           background: !orderSourceConnected && isShopify ? 'var(--accent)' : 'transparent',
-                          border: !orderSourceConnected && isShopify ? 'none' : '1px solid var(--surface-border)',
-                          color: !orderSourceConnected && isShopify ? 'var(--accent-fg, #fff)' : 'var(--text-muted)',
+                          border: !orderSourceConnected && isShopify ? 'none' : '1px solid var(--border)',
+                          color: !orderSourceConnected && isShopify ? 'white' : 'var(--text-secondary)',
                         }}
                       >
                         Connect
@@ -327,8 +327,8 @@ function CommercePlatformsPanel({ status }: { status: IntegrationsSetupStatus })
                     <span
                       className="inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-xs font-semibold uppercase tracking-wide"
                       style={{
-                        background: 'color-mix(in srgb, var(--text-muted) 10%, transparent)',
-                        color: 'var(--text-muted)',
+                        background: 'color-mix(in srgb, var(--text-secondary) 10%, transparent)',
+                        color: 'var(--text-secondary)',
                       }}
                     >
                       Coming soon
@@ -340,20 +340,20 @@ function CommercePlatformsPanel({ status }: { status: IntegrationsSetupStatus })
                     aria-hidden
                     className="inline-block h-1.5 w-1.5 shrink-0 rounded-full"
                     style={{
-                      background: connected ? 'var(--sev-clear, #2f6b43)' : 'transparent',
-                      border: connected ? 'none' : '1px solid var(--text-muted)',
+                      background: connected ? 'var(--success)' : 'transparent',
+                      border: connected ? 'none' : '1px solid var(--text-secondary)',
                     }}
                   />
-                  <span style={{ color: connected ? 'var(--sev-clear, #2f6b43)' : 'var(--text-muted)' }}>
+                  <span style={{ color: connected ? 'var(--success)' : 'var(--text-secondary)' }}>
                     {connected ? 'Connected' : 'Not connected'}
                   </span>
                   {connected && detail ? (
-                    <span className="truncate" style={{ color: 'var(--text-muted)' }}>
+                    <span className="truncate" style={{ color: 'var(--text-secondary)' }}>
                       · {detail}
                     </span>
                   ) : null}
                 </p>
-                <p className="mt-1 text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+                <p className="mt-1 text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
                   {platform.description}
                 </p>
               </div>
@@ -368,12 +368,12 @@ function CommercePlatformsPanel({ status }: { status: IntegrationsSetupStatus })
 function OtherHelpdesksDisclosure({ items }: { items: SecondaryIntegration[] }) {
   return (
     <details
-      className="group rounded-xl border"
-      style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-raised)' }}
+      className="group rounded-md border"
+      style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
     >
       <summary
         className="cursor-pointer list-none px-4 py-3 text-sm font-medium [&::-webkit-details-marker]:hidden"
-        style={{ color: 'var(--text-muted)' }}
+        style={{ color: 'var(--text-secondary)' }}
       >
         <span className="inline-flex items-center gap-2">
           <span aria-hidden className="inline-block transition-transform group-open:rotate-90">
@@ -382,15 +382,15 @@ function OtherHelpdesksDisclosure({ items }: { items: SecondaryIntegration[] }) 
           Using another helpdesk?
         </span>
       </summary>
-      <div className="space-y-3 border-t px-4 pb-4 pt-3" style={{ borderColor: 'var(--surface-border)' }}>
-        <p className="text-xs leading-relaxed" style={{ color: 'var(--text-muted)', opacity: 0.85 }}>
+      <div className="space-y-3 border-t px-4 pb-4 pt-3" style={{ borderColor: 'var(--border)' }}>
+        <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)', opacity: 0.85 }}>
           Zendesk and Freshdesk are available for pilot or advanced setup.
         </p>
         <div className="space-y-2">
           {items.map((item) => (
             <div
               key={item.id}
-              className="flex items-center gap-3 rounded-lg px-2 py-2"
+              className="flex items-center gap-3 rounded-md px-2 py-2"
               style={{ opacity: 0.8 }}
             >
               <Image src={item.logo} alt="" width={20} height={20} className="h-5 w-5 shrink-0 rounded object-contain" />
@@ -398,18 +398,18 @@ function OtherHelpdesksDisclosure({ items }: { items: SecondaryIntegration[] }) 
                 <p className="text-xs font-medium" style={{ color: 'var(--text)' }}>
                   {item.name}
                   {item.connected ? (
-                    <span className="ml-1.5 font-normal" style={{ color: 'var(--sev-clear, #2f6b43)' }}>
+                    <span className="ml-1.5 font-normal" style={{ color: 'var(--success)' }}>
                       · Connected
                     </span>
                   ) : null}
                   {!item.available ? (
-                    <span className="ml-1.5 font-normal" style={{ color: 'var(--text-muted)' }}>
+                    <span className="ml-1.5 font-normal" style={{ color: 'var(--text-secondary)' }}>
                       · Coming soon
                     </span>
                   ) : null}
                 </p>
                 {item.connected && item.detail ? (
-                  <p className="truncate text-xs" style={{ color: 'var(--text-muted)' }}>
+                  <p className="truncate text-xs" style={{ color: 'var(--text-secondary)' }}>
                     {item.detail}
                   </p>
                 ) : null}
@@ -418,7 +418,7 @@ function OtherHelpdesksDisclosure({ items }: { items: SecondaryIntegration[] }) 
                 <Link
                   href={item.href}
                   className="shrink-0 text-xs font-medium"
-                  style={{ color: 'var(--text-muted)' }}
+                  style={{ color: 'var(--text-secondary)' }}
                 >
                   {item.connected ? 'Manage' : 'Connect'}
                 </Link>
@@ -437,8 +437,8 @@ export default function IntegrationsSetupClient() {
   if (!status) {
     return (
       <div
-        className="h-48 animate-pulse rounded-xl border"
-        style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-raised)' }}
+        className="h-48 animate-pulse rounded-md border"
+        style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
       />
     );
   }
@@ -476,7 +476,7 @@ export default function IntegrationsSetupClient() {
         <h2 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
           {heading}
         </h2>
-        <p className="mt-0.5 text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+        <p className="mt-0.5 text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
           {subcopy}
         </p>
       </div>

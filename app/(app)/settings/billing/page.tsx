@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 
 export default function BillingSettingsPage() {
   return (
-    <Suspense fallback={<p className="p-6 text-sm text-[var(--ink-secondary)]">Loading billing…</p>}>
+    <Suspense fallback={<p className="p-6 text-sm text-[var(--text-secondary)]">Loading billing…</p>}>
       <BillingSettingsClient />
     </Suspense>
   );

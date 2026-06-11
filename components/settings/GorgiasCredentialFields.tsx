@@ -26,7 +26,7 @@ export function GorgiasCredentialFields({
   return (
     <>
       <div>
-        <label htmlFor="gorgias-api-email" className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
+        <label htmlFor="gorgias-api-email" className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
           Gorgias API email
         </label>
         <input
@@ -45,15 +45,15 @@ export function GorgiasCredentialFields({
           disabled={!canManage || busy}
           autoComplete="off"
         />
-        <p className="mt-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+        <p className="mt-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
           The email you use to log into Gorgias.
         </p>
       </div>
       <div>
-        <p className="mb-2 text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+        <p className="mb-2 text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
           Your API key is stored encrypted and used only to connect Gorgias to Unauth. It is never shown to other merchants.
         </p>
-        <label htmlFor="gorgias-api-key" className="block text-xs font-medium mb-1" style={{ color: 'var(--text-muted)' }}>
+        <label htmlFor="gorgias-api-key" className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
           Gorgias API key
         </label>
         <input
@@ -72,7 +72,7 @@ export function GorgiasCredentialFields({
           disabled={!canManage || busy}
           autoComplete="off"
         />
-        <p className="mt-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+        <p className="mt-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
           Found in Gorgias under Settings → REST API → API key (password).
         </p>
       </div>
@@ -86,7 +86,7 @@ export function GorgiasCredentialFields({
           Where do I find this?
         </button>
         {showCredHelp && (
-          <p className="mt-2 text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+          <p className="mt-2 text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
             In Gorgias, open <strong>Settings → REST API</strong>. The API email is the address you
             log in with; the API key is the value labelled <strong>API key (password)</strong>.
             Unauth uses them once to register the sidebar widget, then stores them encrypted so it

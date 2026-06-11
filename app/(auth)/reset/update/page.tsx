@@ -2,32 +2,10 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
-import { UnauthLogo } from '@/components/ui/UnauthLogo';
-import { resetSubmitButtonStyle } from '@/app/(auth)/reset/resetFormStyles';
-
-const LABEL_STYLE: React.CSSProperties = {
-  display: 'block',
-  fontSize: '12px',
-  fontWeight: 500,
-  color: 'var(--ink-tertiary)',
-  marginBottom: '6px',
-  letterSpacing: '0.04em',
-  textTransform: 'uppercase',
-};
-
-const INPUT_BASE: React.CSSProperties = {
-  width: '100%',
-  padding: '10px 12px',
-  fontSize: '13px',
-  color: 'var(--ink-primary)',
-  background: 'var(--surface-input)',
-  border: '1px solid var(--surface-border)',
-  borderRadius: '6px',
-  outline: 'none',
-  boxSizing: 'border-box',
-};
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
 
 export default function UpdatePasswordPage() {
   const [password, setPassword] = useState('');
@@ -65,89 +43,72 @@ export default function UpdatePasswordPage() {
   }
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        background: 'var(--surface-base)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '32px',
-        fontFamily: 'var(--font-sans), var(--font-dm-sans), sans-serif',
-      }}
-    >
-      <div style={{ width: '100%', maxWidth: '400px' }}>
-        <Link href="/login" style={{ display: 'block', textAlign: 'center', textDecoration: 'none', marginBottom: 18 }}>
-          <UnauthLogo variant="auto" size={26} />
-        </Link>
-        <div style={{ background: 'var(--surface-raised)', border: '1px solid var(--surface-border)', borderRadius: 10, padding: 32 }}>
-          <div style={{ marginBottom: '28px' }}>
-            <p
-              style={{
-                fontSize: '12px',
-                fontWeight: 500,
-                letterSpacing: '0.04em',
-                textTransform: 'uppercase',
-                color: 'var(--ink-tertiary)',
-                marginBottom: '10px',
-              }}
+    <div className="w-full max-w-[400px]">
+      <Card variant="raised" density="relaxed">
+        <div className="mb-7">
+          <p className="text-meta mb-2.5" style={{ color: 'var(--ink-tertiary)' }}>
+            Account recovery
+          </p>
+          <h1 className="text-h1" style={{ color: 'var(--ink-primary)' }}>
+            Choose a new password
+          </h1>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label
+              htmlFor="reset-update-password"
+              className="text-meta mb-1.5 block"
+              style={{ color: 'var(--ink-secondary)' }}
             >
-              ACCOUNT RECOVERY
-            </p>
-            <h2
-              style={{
-                fontSize: '20px',
-                fontWeight: 600,
-                letterSpacing: 0,
-                color: 'var(--ink-primary)',
-                lineHeight: 1.2,
-              }}
-            >
-              Choose a new password
-            </h2>
+              New password
+            </label>
+            <Input
+              id="reset-update-password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              placeholder="At least 8 characters"
+            />
           </div>
 
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '13px' }}>
-            <div>
-              <label htmlFor="reset-update-password" style={LABEL_STYLE}>New password</label>
-              <input
-                id="reset-update-password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                placeholder="At least 8 characters"
-                style={INPUT_BASE}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="reset-update-confirm-password" style={LABEL_STYLE}>Confirm password</label>
-              <input
-                id="reset-update-confirm-password"
-                type="password"
-                value={confirm}
-                onChange={(e) => setConfirm(e.target.value)}
-                required
-                placeholder="••••••••"
-                style={INPUT_BASE}
-              />
-            </div>
-
-            {error && (
-              <p style={{ fontSize: '12px', color: 'var(--sev-definite)', margin: 0 }}>{error}</p>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading || !password || !confirm}
-              style={resetSubmitButtonStyle(loading || !password || !confirm)}
+          <div>
+            <label
+              htmlFor="reset-update-confirm-password"
+              className="text-meta mb-1.5 block"
+              style={{ color: 'var(--ink-secondary)' }}
             >
-              {loading ? 'Updating…' : 'Update password'}
-            </button>
-          </form>
-        </div>
-      </div>
+              Confirm password
+            </label>
+            <Input
+              id="reset-update-confirm-password"
+              type="password"
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              required
+              placeholder="••••••••"
+            />
+          </div>
+
+          {error ? (
+            <p className="text-meta" style={{ color: 'var(--sev-definite)' }}>
+              {error}
+            </p>
+          ) : null}
+
+          <Button
+            type="submit"
+            variant="primary"
+            size="lg"
+            loading={loading}
+            disabled={loading || !password || !confirm}
+            className="w-full"
+          >
+            {loading ? 'Updating…' : 'Update password'}
+          </Button>
+        </form>
+      </Card>
     </div>
   );
 }

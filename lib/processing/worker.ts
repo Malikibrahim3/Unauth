@@ -1052,6 +1052,7 @@ export async function processCsvJob(
     serviceClient,
     context,
     merchantId,
+    sourceProvider: ingestionSource,
     jobId,
     chunkIndex: chunkInfo?.index ?? 0,
     identityResultsByOrder,
@@ -1088,6 +1089,7 @@ function startBackgroundIntelligenceWrites(args: {
   serviceClient: SupabaseClient<Database>;
   context: import('../engine/fastContext').FastScoringContext;
   merchantId?: string;
+  sourceProvider: import('./types').ProcessCsvJobIngestion['source'];
   jobId: string;
   chunkIndex: number;
   identityResultsByOrder: Map<string, { grade: any; signalsMatched: string[]; clusterId: string | null; matchStatus: any }>;
@@ -1102,6 +1104,7 @@ function startBackgroundIntelligenceWrites(args: {
     serviceClient,
     context,
     merchantId,
+    sourceProvider,
     jobId,
     chunkIndex,
     identityResultsByOrder,
@@ -1109,7 +1112,7 @@ function startBackgroundIntelligenceWrites(args: {
     checkpoint,
     checkpointStart,
     checkpointEnd,
-  jobLog,
+    jobLog,
   } = args;
 
   return (async () => {
@@ -1177,7 +1180,9 @@ function startBackgroundIntelligenceWrites(args: {
                 )
               );
               for (const txRows of txResults) {
-                for (const row of txRows) txIdMap.set(row.order_id, row.id);
+                for (const row of txRows) {
+                  if (row.order_id) txIdMap.set(row.order_id, row.id);
+                }
               }
               checkpointEnd('entity_resolution_bulk_lookups', erLookupStart, {
                 txIdsResolved: txIdMap.size,
@@ -1273,6 +1278,24 @@ function startBackgroundIntelligenceWrites(args: {
           } catch (err) {
             checkpoint('co_occurrence_writes', 'error', { message: String((err as Error)?.message ?? err) });
             console.error('[worker] writeCoOccurrences failed:', err);
+          }
+        })(),
+        (async () => {
+          if (!merchantId) return;
+          const graphStart = checkpointStart('identifier_graph_writes', { rows: scored.length });
+          try {
+            const { writeIdentifierGraphFromScoredBatch, mapIngestionSourceToGraphProvider } =
+              await import('../identity/writeIdentifierGraph');
+            const result = await writeIdentifierGraphFromScoredBatch(scored, serviceClient, {
+              merchantId,
+              sourceProvider: mapIngestionSourceToGraphProvider(sourceProvider),
+            });
+            checkpointEnd('identifier_graph_writes', graphStart, result);
+          } catch (err) {
+            checkpoint('identifier_graph_writes', 'error', {
+              message: String((err as Error)?.message ?? err),
+            });
+            console.error('[worker] writeIdentifierGraphFromScoredBatch failed:', err);
           }
         })(),
         writeIdentityClusters(identityClusterMap, serviceClient).catch((err) =>

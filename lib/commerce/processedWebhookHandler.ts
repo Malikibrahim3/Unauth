@@ -3,7 +3,6 @@ import { buildWebhookIdempotencyKey } from '@/lib/commerce/webhookIdempotency';
 
 export type ProcessedWebhookRow = {
   idempotency_key: string;
-  webhook_id: string;
   status: string;
   attempts: number;
 };
@@ -14,7 +13,7 @@ export async function readProcessedWebhook(
 ): Promise<ProcessedWebhookRow | null> {
   const { data, error } = await supabase
     .from('processed_webhooks' as never)
-    .select('idempotency_key, webhook_id, status, attempts')
+    .select('idempotency_key, status, attempts')
     .eq('idempotency_key', idempotencyKey)
     .maybeSingle();
 
@@ -50,10 +49,8 @@ export async function claimProcessedWebhook(
   const { error: claimError } = await supabase.from('processed_webhooks' as never).upsert(
     {
       idempotency_key: idempotencyKey,
-      webhook_id: input.nativeWebhookId,
-      platform: input.platform,
+      provider: input.platform,
       store_key: input.storeKey,
-      shop_domain: input.storeKey,
       status: 'processing',
       attempts: nextAttempts,
       last_error: null,

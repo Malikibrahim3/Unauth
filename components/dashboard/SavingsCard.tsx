@@ -18,6 +18,7 @@
  * READ-ONLY. No writes. Merchant-scoped.
  */
 
+import { Shield } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCountUp } from '@/hooks/useCountUp';
 
@@ -53,7 +54,7 @@ export function SavingsCard({ data, loading, className }: SavingsCardProps) {
   return (
     <div
       className={cn(
-        'rounded-[var(--radius-3)] border border-[var(--border-subtle)] bg-[var(--bg-surface)]',
+        'rounded-[var(--radius-3)] border border-[var(--border-muted)] bg-[var(--surface)]',
         'p-[var(--space-5)] flex flex-col gap-[var(--space-3)]',
         'transition-shadow hover:shadow-[var(--shadow-1)]',
         className,
@@ -65,26 +66,16 @@ export function SavingsCard({ data, loading, className }: SavingsCardProps) {
           Confirmed savings · last 30 days
         </span>
         {/* Visual shield icon */}
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 16 16"
-          fill="none"
+        <Shield
+          size={16}
           aria-hidden="true"
           className="shrink-0 text-[var(--text-tertiary)]"
-        >
-          <path
-            d="M8 2L3 4.5V8c0 3.333 2 5.167 5 6 3-0.833 5-2.667 5-6V4.5L8 2z"
-            stroke="currentColor"
-            strokeWidth="1.4"
-            strokeLinejoin="round"
-          />
-        </svg>
+        />
       </div>
 
       {/* Hero value */}
       {loading ? (
-        <div className="h-9 rounded animate-pulse" style={{ background: 'var(--bg-surface-sunk)', width: '60%' }} />
+        <div className="h-9 rounded animate-pulse" style={{ background: 'var(--surface-sunken)', width: '60%' }} />
       ) : data ? (
         <p className="text-display-xl num leading-none text-[var(--text-primary)]">
           {animatedValue}

@@ -1,8 +1,6 @@
 'use client';
 
 import { useReducer, useRef } from 'react';
-import { User, ArrowLeft } from 'lucide-react';
-import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import AppearanceSettings from '@/components/settings/AppearanceSettings';
 import { useFetchJson } from '@/lib/react/useFetchJson';
@@ -14,6 +12,7 @@ import {
 import AccountProfileSection from '@/components/settings/AccountProfileSection';
 import AccountPasswordSection from '@/components/settings/AccountPasswordSection';
 import AccountDangerSection from '@/components/settings/AccountDangerSection';
+import { SettingsPageShell } from '@/components/ui';
 
 type AccountSetupPayload = {
   user?: { email?: string };
@@ -125,28 +124,16 @@ export default function AccountSettingsPage() {
   }
 
   return (
-    <div className="p-8 space-y-8 max-w-2xl">
-      <div>
-        <Link
-          href="/settings"
-          className="inline-flex items-center gap-1.5 text-xs mb-4 hover:underline"
-          style={{ color: 'var(--text-muted)' }}
-        >
-          <ArrowLeft className="h-3 w-3" /> Settings
-        </Link>
-        <div className="flex items-center gap-3">
-          <User className="h-5 w-5" style={{ color: 'var(--icon-muted)' }} />
-          <h1 className="text-heading-lg" style={{ color: 'var(--text)' }}>Account & Profile</h1>
-        </div>
-        <p className="mt-1 text-sm" style={{ color: 'var(--text-muted)' }}>
-          Update your store information and account preferences.
-        </p>
+    <SettingsPageShell
+      title="Account"
+      subtitle="Update your store profile, account credentials, and workspace preferences."
+    >
+      <div className="max-w-2xl space-y-8">
+        <AccountProfileSection state={state} dispatch={dispatch} onSave={handleProfileSave} />
+        <AppearanceSettings />
+        <AccountPasswordSection state={state} dispatch={dispatch} onSubmit={handlePasswordChange} />
+        <AccountDangerSection state={state} dispatch={dispatch} onDelete={handleDeleteAccount} />
       </div>
-
-      <AccountProfileSection state={state} dispatch={dispatch} onSave={handleProfileSave} />
-      <AppearanceSettings />
-      <AccountPasswordSection state={state} dispatch={dispatch} onSubmit={handlePasswordChange} />
-      <AccountDangerSection state={state} dispatch={dispatch} onDelete={handleDeleteAccount} />
-    </div>
+    </SettingsPageShell>
   );
 }

@@ -1,42 +1,48 @@
-import PipelineTabs from './_components/PipelineTabs';
-import { LandingHeaderSection } from './_components/sections/LandingHeaderSection';
-import { LandingHeroSection } from './_components/sections/LandingHeroSection';
-import { LandingTrustStrip } from './_components/sections/LandingTrustStrip';
-import { LandingIntegrationsSection } from './_components/sections/LandingIntegrationsSection';
-import {
-  LandingProductTierSection,
-  LandingPricingSection,
-} from './_components/sections/LandingProductTierSection';
-import { LandingNetworkSection } from './_components/sections/LandingNetworkSection';
-import { LandingDataSchemaSection } from './_components/sections/LandingDataSchemaSection';
-import { LandingDashboardSection } from './_components/sections/LandingDashboardSection';
-import { LandingComparisonSection } from './_components/sections/LandingComparisonSection';
-import { LandingFaqSection } from './_components/sections/LandingFaqSection';
-import { LandingFooterSection } from './_components/sections/LandingFooterSection';
+import type { Metadata } from 'next';
+import FoundationNav from './_components/foundation/FoundationNav';
+import FoundationHero from './_components/foundation/FoundationHero';
+import FoundationHeroCta from './_components/foundation/FoundationHeroCta';
+import HeroPin from './_components/foundation/HeroPin';
+import FoundationStatement from './_components/foundation/FoundationStatement';
+import FoundationSignalsEvidence from './_components/foundation/FoundationSignalsEvidence';
+import FoundationHowItWorks from './_components/foundation/FoundationHowItWorks';
+import FoundationFigures from './_components/foundation/FoundationFigures';
+import FoundationBento from './_components/foundation/FoundationBento';
+import FoundationFaq from './_components/foundation/FoundationFaq';
+import FoundationFinalCta from './_components/foundation/FoundationFinalCta';
+import FoundationFooter from './_components/foundation/FoundationFooter';
 
-export const metadata = {
-  title: 'Unauth — Live Claim Intelligence for Ecommerce Teams',
+export const metadata: Metadata = {
+  title: 'Unauth — Every Claim Leaves a Trail',
   description:
-    'Connect your store and helpdesk to know which claims to trust, review, or challenge. Unauth syncs orders, refunds, chargebacks, and support context into one merchant-controlled workspace. CSV import stays available for historical backfill.',
+    'Cross-merchant identity evidence for post-checkout claim reviews. Unauth attaches graded, review-ready context to claims — hashed signals across participating merchants, decided by your team.',
 };
 
+/**
+ * Editorial display landing. The hero is pinned (sticky) under the page:
+ * everything after it scrolls over it like a curtain while the hero layers
+ * drift and dim at their own depths — the reference's signature move.
+ */
 export default function LandingPage() {
-  const todayISO = new Date().toISOString().slice(0, 10);
   return (
-    <div className="ua-landing-shell ua-landing-page-root">
-      <LandingHeaderSection />
-      <LandingHeroSection todayISO={todayISO} />
-      <LandingTrustStrip />
-      <LandingIntegrationsSection />
-      <LandingProductTierSection />
-      <PipelineTabs />
-      <LandingDashboardSection />
-      <LandingNetworkSection />
-      <LandingDataSchemaSection />
-      <LandingPricingSection />
-      <LandingComparisonSection />
-      <LandingFaqSection />
-      <LandingFooterSection todayISO={todayISO} />
+    <div className="overflow-x-clip bg-[var(--fl-bg)] text-[var(--fl-ink)]">
+      <FoundationNav />
+      <main>
+        <HeroPin>
+          <FoundationHero />
+        </HeroPin>
+        <div className="relative z-10">
+          <FoundationHeroCta />
+          <FoundationStatement />
+          <FoundationSignalsEvidence />
+          <FoundationHowItWorks />
+          <FoundationFigures />
+          <FoundationBento />
+          <FoundationFaq />
+          <FoundationFinalCta />
+          <FoundationFooter />
+        </div>
+      </main>
     </div>
   );
 }

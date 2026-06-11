@@ -7,8 +7,8 @@ export default function HowItWorksPage() {
       <div className="flex items-center gap-3">
         <Link
           href="/help"
-          className="inline-flex items-center gap-1.5 text-sm transition-colors hover:opacity-80"
-          style={{ color: 'var(--text-muted)' }}
+          className="inline-flex items-center gap-1.5 text-caption transition-colors hover:opacity-80"
+          style={{ color: 'var(--text-secondary)' }}
         >
           <ArrowLeft className="h-4 w-4" />
           Help
@@ -38,7 +38,7 @@ export default function HowItWorksPage() {
         </div>
       </section>
 
-      <div style={{ borderTop: '1px solid var(--border-subtle)' }} />
+      <div style={{ borderTop: '1px solid var(--border-muted)' }} />
 
       <section className="space-y-4">
         <h2 className="text-heading-md" style={{ color: 'var(--text)' }}>
@@ -61,7 +61,7 @@ export default function HowItWorksPage() {
         </div>
       </section>
 
-      <div style={{ borderTop: '1px solid var(--border-subtle)' }} />
+      <div style={{ borderTop: '1px solid var(--border-muted)' }} />
 
       <section className="space-y-4">
         <h2 className="text-heading-md" style={{ color: 'var(--text)' }}>
@@ -91,10 +91,10 @@ export default function HowItWorksPage() {
       </section>
 
       <div
-        className="rounded-lg px-5 py-4 border"
-        style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-subtle)' }}
+        className="rounded-md px-5 py-4 border"
+        style={{ background: 'var(--surface)', borderColor: 'var(--border-muted)' }}
       >
-        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+        <p className="text-body-sm" style={{ color: 'var(--text-secondary)' }}>
           Questions? Contact us at{' '}
           <a
             href="mailto:support@unauth.co"

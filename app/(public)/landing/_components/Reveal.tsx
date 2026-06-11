@@ -1,87 +1,54 @@
 'use client';
 
-import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import styles from './landing.module.css';
 
-type Props = {
-  children: ReactNode;
-  as?: keyof JSX.IntrinsicElements;
-  delay?: number;
-  duration?: number;
-  className?: string;
-  style?: CSSProperties;
-  once?: boolean;
-  threshold?: number;
-  rootMargin?: string;
-  /** Don't apply ua-reveal fade - just toggle is-visible for descendant animations. */
-  noFade?: boolean;
-  [key: `data-${string}`]: string | number | undefined;
-};
-
-// Set on <html> once so CSS can safely hide reveals (no-JS fallback: class never added = content always visible)
-let motionReadySet = false;
-
+/**
+ * IntersectionObserver scroll reveal. The transition itself is pure CSS
+ * (landing.module.css), so prefers-reduced-motion is honoured there without
+ * JS branching. If IntersectionObserver is unavailable, content shows
+ * immediately.
+ */
 export default function Reveal({
   children,
-  as = 'div',
   delay = 0,
-  duration,
   className = '',
-  style,
-  once = true,
-  threshold = 0.12,
-  rootMargin = '0px 0px -8% 0px',
-  noFade = false, ...dataAttributes
-}: Props) {
-  const ref = useRef<HTMLElement | null>(null);
-  const observerConfigKey = `${once}|${threshold}|${rootMargin}`;
-
-  // Activate motion layer once per page (skipped if reduced-motion)
-  useEffect(() => {
-    if (motionReadySet) return;
-    if (typeof window === 'undefined') return;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    document.documentElement.classList.add('ua-motion-ready');
-    motionReadySet = true;
-  }, []);
+}: {
+  children: React.ReactNode;
+  delay?: number;
+  className?: string;
+}) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const revealOnce = once;
-    el.classList.remove('is-visible');
+    const node = ref.current;
+    if (!node) return;
     if (typeof IntersectionObserver === 'undefined') {
-      const frame = window.requestAnimationFrame(() => {
-        el.classList.add('is-visible');
-      });
-      return () => window.cancelAnimationFrame(frame);
+      // No IO support: reveal via the DOM directly (no synchronous setState in effect).
+      node.classList.add(styles.revealVisible);
+      return;
     }
-    const obs = new IntersectionObserver(
+    const io = new IntersectionObserver(
       (entries) => {
-        for (const e of entries) {
-          if (e.isIntersecting) {
-            el.classList.add('is-visible');
-            if (revealOnce) obs.disconnect();
-          } else if (!revealOnce) {
-            el.classList.remove('is-visible');
-          }
+        if (entries.some((e) => e.isIntersecting)) {
+          setVisible(true);
+          io.disconnect();
         }
       },
-      { threshold, rootMargin },
+      { rootMargin: '0px 0px -10% 0px', threshold: 0.05 },
     );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, [observerConfigKey, once, threshold, rootMargin]);
-
-  const Tag = as as unknown as 'div';
-  const cls = `${noFade ? '' : 'ua-reveal'} ${className}`.trim();
-  const styleWithDelay: CSSProperties = { ...style,
-    ...(delay ? ({ ['--ua-reveal-delay' as string]: `${delay}ms` } as CSSProperties) : {}),
-    ...(duration ? ({ ['--ua-reveal-duration' as string]: `${duration}ms` } as CSSProperties) : {}),
-  };
+    io.observe(node);
+    return () => io.disconnect();
+  }, []);
 
   return (
-    <Tag ref={ref as never} className={cls} style={styleWithDelay} {...dataAttributes}>
+    <div
+      ref={ref}
+      className={`${styles.reveal} ${visible ? styles.revealVisible : ''} ${className}`}
+      style={{ '--d': `${delay}ms` } as React.CSSProperties}
+    >
       {children}
-    </Tag>
+    </div>
   );
 }

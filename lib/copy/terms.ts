@@ -38,7 +38,7 @@ export const COPY = {
   profilesForReview: 'Profiles for review',
   matchedProfiles: 'Matched profiles',
   strongEvidenceSignals: 'Strong evidence signals',
-  identityMatchConfidence: 'Identity match confidence',
+  identityMatchConfidence: 'Identity confidence',
   orderValueUnderReview: 'Order value under review',
   reviewList: 'Review list',
 

@@ -40,19 +40,19 @@ export default function ChromeSetupClient({ hasApiKeys, keyPrefixes }: Props) {
   if (!hasApiKeys) {
     return (
       <div
-        className="rounded-lg border p-5"
-        style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-raised)' }}
+        className="rounded-md border p-5"
+        style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
       >
         <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>
           You need an API key first
         </p>
-        <p className="mt-2 text-sm" style={{ color: 'var(--text-muted)' }}>
+        <p className="mt-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
           Create a key in API &amp; Integrations, then return here to install the extension.
         </p>
         <Link
           href="/settings/integrations"
           className="mt-4 inline-flex rounded-md px-3 py-2 text-sm font-medium"
-          style={{ background: 'var(--accent)', color: 'var(--accent-fg, #fff)' }}
+          style={{ background: 'var(--accent)', color: 'white' }}
         >
           Settings → API &amp; Integrations
         </Link>
@@ -66,7 +66,7 @@ export default function ChromeSetupClient({ hasApiKeys, keyPrefixes }: Props) {
     <div className="space-y-8">
       <p
         className="rounded-md border px-4 py-3 text-sm"
-        style={{ borderColor: 'var(--surface-border)', color: 'var(--text-muted)' }}
+        style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
       >
         Available for manual install while Chrome Web Store listing is pending.
       </p>
@@ -77,17 +77,17 @@ export default function ChromeSetupClient({ hasApiKeys, keyPrefixes }: Props) {
           onClick={() => void downloadZip()}
           disabled={downloading}
           className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium disabled:opacity-60"
-          style={{ background: 'var(--accent)', color: 'var(--accent-fg, #fff)' }}
+          style={{ background: 'var(--accent)', color: 'white' }}
         >
           <Download className="h-4 w-4" />
           {downloading ? 'Preparing zip…' : 'Download Chrome extension (.zip)'}
         </button>
         {downloadError && (
-          <p className="mt-2 text-sm" style={{ color: 'var(--danger, #e8362a)' }}>
+          <p className="mt-2 text-sm" style={{ color: 'var(--success)' }}>
             {downloadError}
           </p>
         )}
-        <p className="mt-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+        <p className="mt-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
           Unzip the download on your computer, then follow the steps below in Chrome.
         </p>
       </div>
@@ -107,21 +107,21 @@ export default function ChromeSetupClient({ hasApiKeys, keyPrefixes }: Props) {
       </ol>
 
       <div
-        className="rounded-lg border p-4 text-sm"
-        style={{ borderColor: 'var(--surface-border)', background: 'var(--surface-raised)' }}
+        className="rounded-md border p-4 text-sm"
+        style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
       >
         <p style={{ color: 'var(--text)' }}>
           Use key:{' '}
-          <span className="font-mono text-xs" style={{ color: 'var(--text-muted)' }}>
+          <span className="font-mono text-xs" style={{ color: 'var(--text-secondary)' }}>
             {displayPrefix}
           </span>
         </p>
         {keyPrefixes.length > 1 && (
-          <p className="mt-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+          <p className="mt-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
             Additional keys: {keyPrefixes.slice(1).join(', ')}
           </p>
         )}
-        <p className="mt-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+        <p className="mt-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
           Paste the full secret you saved when the key was created - only the prefix is shown here.
         </p>
       </div>
