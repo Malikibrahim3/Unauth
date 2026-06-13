@@ -8,7 +8,7 @@ import { claimStatusForOutcome } from '@/lib/claims/statusMachine';
 
 async function latestOutcome(serviceClient: any, claimId: string) {
   const { data } = await serviceClient
-    .from('merchant_case_outcomes' as any)
+    .from('claim_outcomes')
     .select('decision,outcome,updated_at')
     .eq('claim_id', claimId)
     .order('updated_at', { ascending: false })
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  const parsed = createOutcomeSchema.safeParse({ ...body as object, claim_id: claimId, shop_domain: claim.shop_domain });
+  const parsed = createOutcomeSchema.safeParse({ ...body as object, claim_id: claimId });
   if (!parsed.success) return NextResponse.json({ error: 'Invalid outcome payload' }, { status: 400 });
 
   try {
@@ -56,7 +56,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       appendClaimEvent(serviceClient, {
       claim_id: claimId,
       merchant_id: ctx.merchantId,
-      shop_domain: claim.shop_domain,
       event_type: 'outcome_added',
       previous_status: claim.status,
       new_status: newStatus,
@@ -78,7 +77,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     await appendClaimEvent(serviceClient, {
       claim_id: claimId,
       merchant_id: ctx.merchantId,
-      shop_domain: claim.shop_domain,
       event_type: newStatus === 'escalated' ? 'escalation_added' : 'claim_resolved',
       previous_status: claim.status,
       new_status: newStatus,

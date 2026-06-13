@@ -1,22 +1,18 @@
 // TODO(product-gating): require CUSTOMER_DOSSIER entitlement when ENFORCE_PRODUCT_GATES is enabled.
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
-import { TABLES } from '@/lib/supabase/tables';
-import { createScopedClient } from '@/lib/supabase/scoped';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { logAction } from '@/lib/permissions/audit';
 import { buildBehavioralNarrative } from '@/lib/customers/narrative';
-import { scoreToGrade } from '@/lib/engine/weights';
 import { withRequestLogging } from '@/lib/log';
-import { fetchMerchantScopedCustomerProfile } from '@/lib/supabase/merchantHelpers';
 import {
-  countShopifyCommerceOrdersForProfile,
-  deriveCanonicalCommerceOrderStats,
-} from '@/lib/customers/commerceOrders';
+  buildCustomerIdentifierHashes,
+  lookupNetworkIdentity,
+} from '@/lib/customers/identityNetwork';
 
 export const dynamic = 'force-dynamic';
 
-function uniqueProfileValues(values: Array<string | null | undefined>): string[] {
+function uniqueValues(values: Array<string | null | undefined>): string[] {
   return Array.from(new Set(values.flatMap((value) => {
     const v = value?.trim();
     return v ? [v] : [];
@@ -35,7 +31,7 @@ export interface IdentityTimelineEntry {
 }
 
 export interface OrderHistoryEntry {
-  /** audit_transactions.id — used for evidence package generation */
+  /** source_orders.id — used for evidence package generation */
   transactionId: string;
   orderId: string;
   orderDate: string | null;
@@ -107,8 +103,42 @@ export interface CustomerIntelligencePanel {
   narrative: string;
 }
 
-const TX_SELECT =
-  'id,job_id,order_id,customer_email,customer_name,shipping_address,device_ip,card_last4,order_value,match_score,fraud_flags,risk_level,refund_claimed,refund_reason,chargeback_filed,processed_at,cluster_id';
+type SourceCustomerRow = {
+  id: string;
+  email: string | null;
+  phone: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  other_emails: unknown;
+  orders_count: number | null;
+  account_created_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+type SourceOrderRow = {
+  id: string;
+  external_id: string;
+  order_number: string | null;
+  email: string | null;
+  phone: string | null;
+  total_price: number | string | null;
+  card_last4: string | null;
+  browser_ip: string | null;
+  placed_at: string | null;
+  shipping_address_id: string | null;
+};
+
+type ClaimRow = {
+  id: string;
+  claim_type: string;
+  status: string;
+  source_order_id: string | null;
+  reason_normalized: string | null;
+  reason_raw: string | null;
+  amount_at_risk: number | string | null;
+  submitted_at: string | null;
+};
 
 // ---------------------------------------------------------------------------
 // GET /api/customers/[id]
@@ -128,248 +158,131 @@ async function GETHandler(
   const serviceClient = createServiceClient();
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_CUSTOMERS);
   if (denied) return denied;
-  const scopedClient = createScopedClient(ctx.merchantId, serviceClient);
 
-  const profileId = resolvedParams.id;
-
-  // -------------------------------------------------------------------------
-  // 1. Fetch the customer profile — verify merchant has access
-  //
-  //    merchant_ids stores the merchants-table UUID for uploads processed
-  //    after the merchants table was introduced. Older uploads stored the
-  //    auth user UUID directly. Accept either to handle legacy data.
-  // -------------------------------------------------------------------------
-  let profile = await fetchMerchantScopedCustomerProfile(
-    serviceClient,
-    ctx.merchantId,
-    profileId,
-    ctx.userId
-  ) as any | null;
+  const customerId = resolvedParams.id;
 
   // -------------------------------------------------------------------------
-  // 2. Resolve merchant-owned job IDs — used as the security boundary for
-  //     ALL subsequent transaction queries. Service role bypasses RLS so
-  //     we MUST enforce merchant scope at the application layer.
+  // 1. The merchant's OWN customer record (layer 1, merchant-scoped).
   // -------------------------------------------------------------------------
-  const { data: ownedJobs } = await scopedClient
-    .from(TABLES.PROCESSING_JOBS)
-    .select('id')
+  const { data: customer } = await serviceClient
+    .from('source_customers')
+    .select('id, email, phone, first_name, last_name, other_emails, orders_count, account_created_at, created_at, updated_at')
+    .eq('id', customerId)
     .eq('merchant_id', ctx.merchantId)
-    .eq('hidden_by_merchant', false) as unknown as { data: { id: string }[] | null };
+    .maybeSingle() as unknown as { data: SourceCustomerRow | null };
 
-  const ownedJobIds = (ownedJobs ?? []).map((j) => j.id);
-
-  // -------------------------------------------------------------------------
-  // 3b. Fetch audit appearances scoped strictly to this merchant's jobs
-  // -------------------------------------------------------------------------
-  let appearances: { audit_id: string; transaction_id: string | null }[] = [];
-  if (ownedJobIds.length > 0) {
-    const { data: appRows } = await serviceClient
-      .from('customer_profile_audit_appearances')
-      .select('audit_id,transaction_id')
-      .eq('profile_id', profileId)
-      .in('audit_id', ownedJobIds) as unknown as { data: { audit_id: string; transaction_id: string | null }[] | null };
-    appearances = appRows ?? [];
-  }
-
-  const auditIds = appearances.map((a) => a.audit_id);
-  const transactionIds = appearances
-    .map((a) => (a as { transaction_id?: string | null }).transaction_id)
-    .filter((id): id is string => typeof id === 'string' && id.length > 0);
-
-  // -------------------------------------------------------------------------
-  // 4. Fetch fraud transactions for this profile
-  //    Primary path: join on appearance job_ids + identity match
-  //    Fallback path: direct identity query when appearances are missing/stale
-  // -------------------------------------------------------------------------
-  const transactions: Array<any> = [];
-  const profileEmails = Array.isArray(profile?.emails) ? profile.emails as string[] : [];
-  const profileCards = Array.isArray(profile?.card_last4s) ? profile.card_last4s as string[] : [];
-  const profileIps = Array.isArray(profile?.ips) ? profile.ips as string[] : [];
-
-  async function fetchDirectIdentityRows() {
-    // Scope by merchant-owned job IDs to prevent cross-merchant data leakage.
-    if (ownedJobIds.length === 0) return [];
-
-    // Identify the primary identity attribute to match on.
-    // If none present, return empty — we cannot scope safely.
-    let identityField: string | null = null;
-    let identityValues: string[] = [];
-    if (profileEmails.length > 0) {
-      identityField = 'customer_email';
-      identityValues = profileEmails;
-    } else if (profileCards.length > 0) {
-      identityField = 'card_last4';
-      identityValues = profileCards;
-    } else if (profileIps.length > 0) {
-      identityField = 'device_ip';
-      identityValues = profileIps;
-    } else {
-      return [];
-    }
-
-    // Paginate without a fixed cap.  Uses the same 1000-row page size as the
-    // primary path above, but loops until exhausted (no hard limit).
-    const rows: Array<any> = [];
-    const PAGE = 1000;
-    const fetchIdentityPage = async (offset: number): Promise<void> => {
-      const { data: page } = await (serviceClient
-        .from(TABLES.AUDIT_TRANSACTIONS)
-        .select(TX_SELECT)
-        .in('job_id', ownedJobIds)
-        .in(identityField, identityValues)
-        .order('processed_at', { ascending: true })
-        .range(offset, offset + PAGE - 1)) as unknown as { data: Array<any> | null };
-      if (!page || page.length === 0) return;
-      rows.push(...page);
-      if (page.length < PAGE) return;
-      return fetchIdentityPage(offset + PAGE);
-    };
-    await fetchIdentityPage(0);
-    return rows;
-  }
-
-  const pushRows = (rows: Array<any>) => {
-    const seen = new Set(transactions.map((row) => row.id ?? `${row.order_id}-${row.processed_at}`));
-    for (const row of rows) {
-      const key = row.id ?? `${row.order_id}-${row.processed_at}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      transactions.push(row);
-    }
-  };
-
-  if (transactionIds.length > 0) {
-    // Paginate to remove the 1000-row cap; always include job_id scope.
-    const BATCH = 1000;
-    const fetchAppearancePage = async (offset: number): Promise<void> => {
-      const { data: txByAppearance } = await serviceClient
-        .from(TABLES.AUDIT_TRANSACTIONS)
-        .select(TX_SELECT)
-        .in('id', transactionIds)
-        .in('job_id', ownedJobIds)
-        .order('processed_at', { ascending: true })
-        .range(offset, offset + BATCH - 1) as unknown as { data: Array<any> | null };
-      const rows = txByAppearance ?? [];
-      if (rows.length === 0) return;
-      pushRows(rows);
-      if (rows.length < BATCH) return;
-      return fetchAppearancePage(offset + BATCH);
-    };
-    await fetchAppearancePage(0);
-  }
-
-  if (transactions.length < (profile?.total_orders ?? 0) && auditIds.length > 0) {
-    const BATCH = 1000;
-    for (let offset = 0; ; offset += BATCH) {
-      let txQuery = serviceClient
-        .from(TABLES.AUDIT_TRANSACTIONS)
-        .select(TX_SELECT)
-        .in('job_id', auditIds)
-        .order('processed_at', { ascending: true })
-        .range(offset, offset + BATCH - 1);
-
-      if (profileEmails.length > 0) {
-        txQuery = txQuery.in('customer_email', profileEmails);
-      } else if (profileCards.length > 0) {
-        txQuery = txQuery.in('card_last4', profileCards);
-      } else if (profileIps.length > 0) {
-        txQuery = txQuery.in('device_ip', profileIps);
-      }
-
-      const { data: txData } = await txQuery as unknown as { data: typeof transactions | null };
-      const rows = txData ?? [];
-      if (rows.length === 0) break;
-      pushRows(rows);
-      if (rows.length < BATCH) break;
-    }
-  }
-
-  if (transactions.length === 0 && auditIds.length === 0) {
-    const rows = await fetchDirectIdentityRows();
-    pushRows(rows);
-  }
-
-  if (!profile && transactions.length === 0) {
+  if (!customer) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
   // -------------------------------------------------------------------------
-  // 5. Build order history
+  // 2. Own-store orders + claims (layers 1 and 4).
   // -------------------------------------------------------------------------
-  const orderHistory: OrderHistoryEntry[] = transactions.map((tx) => ({
-    transactionId: tx.id,
-    orderId: tx.order_id,
-    orderDate: null,
-    processedAt: tx.processed_at,
-    email: tx.customer_email,
-    name: tx.customer_name,
-    address: tx.shipping_address,
-    ip: tx.device_ip,
-    cardLast4: tx.card_last4,
-    orderValue: tx.order_value,
-    fraudScore: tx.match_score,
-    // Repurposed: per-order identity confidence grade.
-    riskLevel: scoreToGrade(Number(tx.match_score ?? 0)),
-    fraudFlags: Array.isArray(tx.fraud_flags) ? tx.fraud_flags : [],
-    refundStatus: null,
-    refundRequested: !!tx.refund_claimed,
-    refundReason: tx.refund_reason ?? null,
-    refundDate: null,
-    refundAmount: null,
-    returnRequested: false,
-    chargebackFiled: !!tx.chargeback_filed,
-    chargebackDate: tx.chargeback_filed ? tx.processed_at : null,
-    chargebackReasonCode: null,
-  }));
+  const { data: orderRows } = await serviceClient
+    .from('source_orders')
+    .select('id, external_id, order_number, email, phone, total_price, card_last4, browser_ip, placed_at, shipping_address_id')
+    .eq('merchant_id', ctx.merchantId)
+    .eq('source_customer_id', customer.id)
+    .order('placed_at', { ascending: true })
+    .limit(500) as unknown as { data: SourceOrderRow[] | null };
+  const orders = orderRows ?? [];
 
-  if (!profile) {
-    const uniqueValues = uniqueProfileValues;
-    const scores = orderHistory.map((order) => order.fraudScore ?? 0);
-    const maxScore = scores.length > 0 ? Math.max(...scores) : 0;
-    const processedAts = orderHistory.flatMap((order) => (order.processedAt ? [order.processedAt] : []));
-    const firstSeen = processedAts.length > 0
-      ? processedAts.reduce((min, t) => (t < min ? t : min))
-      : new Date().toISOString();
-    const lastSeen = processedAts.length > 0
-      ? processedAts.reduce((max, t) => (t > max ? t : max))
-      : firstSeen;
+  const addressIds = uniqueValues(orders.map((o) => o.shipping_address_id));
+  const addressById = new Map<string, string>();
+  if (addressIds.length > 0) {
+    const { data: addressRows } = await serviceClient
+      .from('source_addresses')
+      .select('id, line1, line2, city, region, postal_code, country')
+      .eq('merchant_id', ctx.merchantId)
+      .in('id', addressIds) as unknown as {
+        data: Array<{
+          id: string;
+          line1: string | null;
+          line2: string | null;
+          city: string | null;
+          region: string | null;
+          postal_code: string | null;
+          country: string | null;
+        }> | null;
+      };
+    for (const row of addressRows ?? []) {
+      const formatted = [row.line1, row.line2, row.city, row.region, row.postal_code, row.country]
+        .map((part) => part?.trim())
+        .filter(Boolean)
+        .join(', ');
+      if (formatted) addressById.set(row.id, formatted);
+    }
+  }
 
-    profile = {
-      id: profileId,
-      primary_email: uniqueValues(orderHistory.map((order) => order.email))[0] ?? null,
-      emails: uniqueValues(orderHistory.map((order) => order.email)),
-      names: uniqueValues(orderHistory.map((order) => order.name)),
-      addresses: uniqueValues(orderHistory.map((order) => order.address)),
-      ips: uniqueValues(orderHistory.map((order) => order.ip)),
-      card_last4s: uniqueValues(orderHistory.map((order) => order.cardLast4)),
-      phones: [],
-      risk_score: maxScore,
-      // Repurposed: identity confidence grade (definite/probable/possible/weak).
-      risk_level: scoreToGrade(maxScore),
-      fraud_flags: uniqueValues(orderHistory.flatMap((order) => order.fraudFlags)),
-      total_orders: orderHistory.length,
-      total_refund_claims: orderHistory.filter((order) => order.refundRequested).length,
-      total_chargebacks: orderHistory.filter((order) => order.chargebackFiled).length,
-      total_merchants_seen_at: 1,
-      refund_rate: orderHistory.length > 0 ? orderHistory.filter((order) => order.refundRequested).length / orderHistory.length : 0,
-      fastest_claim_days: null,
-      avg_claim_days: null,
-      refund_acceleration_score: 0,
-      first_seen: firstSeen,
-      last_seen: lastSeen,
-      profile_confidence: maxScore,
-      manually_reviewed: false,
-      on_watchlist: false,
-      watchlist_entry_id: null,
-    };
+  const orderIds = orders.map((o) => o.id);
+  let claims: ClaimRow[] = [];
+  if (orderIds.length > 0) {
+    const { data: claimRows } = await serviceClient
+      .from('claims')
+      .select('id, claim_type, status, source_order_id, reason_normalized, reason_raw, amount_at_risk, submitted_at')
+      .eq('merchant_id', ctx.merchantId)
+      .in('source_order_id', orderIds)
+      .limit(500) as unknown as { data: ClaimRow[] | null };
+    claims = claimRows ?? [];
+  }
+  const claimsByOrder = new Map<string, ClaimRow[]>();
+  for (const claim of claims) {
+    if (!claim.source_order_id) continue;
+    const list = claimsByOrder.get(claim.source_order_id) ?? [];
+    list.push(claim);
+    claimsByOrder.set(claim.source_order_id, list);
   }
 
   // -------------------------------------------------------------------------
-  // 6. Build identity timeline — derive first-seen value per field, mark variants
+  // 3. Network identity via the k-anonymous RPC (layers 3/5; service-role-only
+  //    tables are never read directly here).
+  // -------------------------------------------------------------------------
+  const network = await lookupNetworkIdentity(
+    serviceClient,
+    ctx.merchantId,
+    buildCustomerIdentifierHashes(customer),
+  );
+
+  // -------------------------------------------------------------------------
+  // 4. Build order history
+  // -------------------------------------------------------------------------
+  const customerName = [customer.first_name, customer.last_name].filter(Boolean).join(' ').trim() || null;
+  const orderHistory: OrderHistoryEntry[] = orders.map((order) => {
+    const orderClaims = claimsByOrder.get(order.id) ?? [];
+    const chargeback = orderClaims.find((c) => c.claim_type === 'chargeback') ?? null;
+    const refundClaim = orderClaims.find((c) => c.claim_type !== 'chargeback') ?? null;
+    return {
+      transactionId: order.id,
+      orderId: order.order_number ?? order.external_id,
+      orderDate: order.placed_at,
+      processedAt: order.placed_at ?? customer.created_at,
+      email: order.email ?? customer.email,
+      name: customerName,
+      address: order.shipping_address_id ? addressById.get(order.shipping_address_id) ?? null : null,
+      ip: order.browser_ip,
+      cardLast4: order.card_last4,
+      orderValue: order.total_price == null ? null : Number(order.total_price),
+      fraudScore: 0,
+      // Identity confidence grade applies at identity level in v2, not per order.
+      riskLevel: 'none',
+      fraudFlags: [],
+      refundStatus: refundClaim?.status ?? null,
+      refundRequested: Boolean(refundClaim),
+      refundReason: refundClaim?.reason_normalized ?? refundClaim?.reason_raw ?? null,
+      refundDate: refundClaim?.submitted_at ?? null,
+      refundAmount: refundClaim?.amount_at_risk == null ? null : Number(refundClaim.amount_at_risk),
+      returnRequested: orderClaims.some((c) => c.claim_type === 'return_abuse'),
+      chargebackFiled: Boolean(chargeback),
+      chargebackDate: chargeback?.submitted_at ?? null,
+      chargebackReasonCode: chargeback?.reason_normalized ?? null,
+    };
+  });
+
+  // -------------------------------------------------------------------------
+  // 5. Build identity timeline — derive first-seen value per field, mark variants
   // -------------------------------------------------------------------------
   const identityTimeline: IdentityTimelineEntry[] = [];
-  const firstSeen: Record<string, string> = {};
+  const firstSeenByField: Record<string, string> = {};
 
   function addEntry(
     date: string,
@@ -378,11 +291,10 @@ async function GETHandler(
   ) {
     const v = (value ?? '').trim();
     if (!v) return;
-    const key = field;
-    if (!(key in firstSeen)) {
-      firstSeen[key] = v;
+    if (!(field in firstSeenByField)) {
+      firstSeenByField[field] = v;
       identityTimeline.push({ date, field, value: v, isVariant: false });
-    } else if (firstSeen[key] !== v) {
+    } else if (firstSeenByField[field] !== v) {
       const alreadyAdded = identityTimeline.some((e) => e.field === field && e.value === v);
       if (!alreadyAdded) {
         identityTimeline.push({ date, field, value: v, isVariant: true });
@@ -390,29 +302,21 @@ async function GETHandler(
     }
   }
 
-  for (const tx of transactions) {
-    addEntry(tx.processed_at, 'email', tx.customer_email);
-    addEntry(tx.processed_at, 'name', tx.customer_name);
-    addEntry(tx.processed_at, 'address', tx.shipping_address);
-    addEntry(tx.processed_at, 'ip', tx.device_ip);
-    addEntry(tx.processed_at, 'card_last4', tx.card_last4);
+  for (const order of orderHistory) {
+    addEntry(order.processedAt, 'email', order.email);
+    addEntry(order.processedAt, 'name', order.name);
+    addEntry(order.processedAt, 'address', order.address);
+    addEntry(order.processedAt, 'ip', order.ip);
+    addEntry(order.processedAt, 'card_last4', order.cardLast4);
   }
 
   identityTimeline.sort((a, b) => a.date.localeCompare(b.date));
 
   // -------------------------------------------------------------------------
-  // 7. Derive linked-identity signals from merchant-owned audit_transactions.
-  //    SECURITY: Do NOT read the global identity cluster graph table — that
-  //    table contains cross-merchant entity values, cluster membership counts,
-  //    entity types, confidence scores, and match reasons that must never be
-  //    exposed via merchant-facing APIs, even in aggregated form.
-  //    Instead, surface identity signals directly from the transactions this
-  //    merchant uploaded: count how many distinct identity fields the customer
-  //    has used, treating each distinct variant as a linked-account signal.
+  // 6. Linked-identity signals from the merchant's own records only.
+  //    Cross-merchant data is confined to the k-anonymous rollup above.
   // -------------------------------------------------------------------------
   const linkedAccounts: LinkedAccount[] = [];
-
-  // Group variants by field type — each distinct value variant is a signal.
   const variantsByField = new Map<string, Set<string>>();
   for (const entry of identityTimeline) {
     if (!variantsByField.has(entry.field)) {
@@ -423,7 +327,6 @@ async function GETHandler(
 
   for (const [field, values] of variantsByField.entries()) {
     if (values.size > 1) {
-      // Multiple distinct values for this field type — signals identity change/alias
       linkedAccounts.push({
         entityType: field,
         entityValue: `${values.size} distinct values observed`,
@@ -433,96 +336,69 @@ async function GETHandler(
     }
   }
 
-  // Also count distinct orders across this merchant's jobs as a corroboration signal.
-  const distinctJobIds = new Set(transactions.flatMap((tx: any) => (tx.job_id ? [tx.job_id] : [])));
-  if (distinctJobIds.size > 1) {
-    linkedAccounts.push({
-      entityType: 'job',
-      entityValue: `Seen across ${distinctJobIds.size} uploads`,
-      confidence: 0.5,
-      matchReasons: ['multi_upload_recurrence'],
-    });
-  }
+  // -------------------------------------------------------------------------
+  // 7. Aggregate stats — own store first, network rollup where disclosed.
+  // -------------------------------------------------------------------------
+  const totalOrderValue = orders.reduce((sum, o) => sum + (Number(o.total_price) || 0), 0);
+  const computedTotalOrders = Math.max(orders.length, customer.orders_count ?? 0);
+  const computedRefundClaims = claims.filter((c) => c.claim_type !== 'chargeback').length;
+  const computedChargebacks = claims.filter((c) => c.claim_type === 'chargeback').length;
+  const computedRefundRate = computedTotalOrders > 0 ? claims.length / computedTotalOrders : 0;
+  const processedAts = orderHistory.flatMap((o) => (o.processedAt ? [o.processedAt] : []));
+  const computedFirstSeen = processedAts.length > 0
+    ? processedAts.reduce((min, t) => (t < min ? t : min))
+    : customer.account_created_at ?? customer.created_at;
+  const computedLastSeen = processedAts.length > 0
+    ? processedAts.reduce((max, t) => (t > max ? t : max))
+    : customer.updated_at;
 
   // -------------------------------------------------------------------------
-  // 8. Recompute aggregate stats from canonical commerce records.
-  //    Integration rows are the source of truth when connected (Shopify today),
-  //    then visible CSV/audit rows, then stored profile totals. Identity anchors
-  //    remain evidence, not customer-facing order counts.
-  // -------------------------------------------------------------------------
-  const shopifyCommerceStats = await countShopifyCommerceOrdersForProfile(
-    serviceClient,
-    ctx.merchantId,
-    profile.id
-  );
-  const commerceStats = deriveCanonicalCommerceOrderStats({
-    shopifyOrderCount: shopifyCommerceStats.orderCount,
-    shopifyTotalValue: shopifyCommerceStats.totalValue,
-    auditTransactions: orderHistory.map((order) => ({
-      order_id: order.orderId,
-      order_value: order.orderValue,
-    })),
-    profileTotalOrders: profile.total_orders,
-  });
-  const computedTotalOrders = commerceStats.orderCount;
-  const computedRefundClaims = orderHistory.filter((o) => o.refundRequested || o.returnRequested).length;
-  const computedChargebacks = orderHistory.filter((o) => o.chargebackFiled).length;
-  const computedRefundRate = computedTotalOrders > 0 ? computedRefundClaims / computedTotalOrders : 0;
-  const computedProcessedAts = orderHistory.flatMap((o) => (o.processedAt ? [o.processedAt] : []));
-  const computedFirstSeen = computedProcessedAts.length > 0
-    ? computedProcessedAts.reduce((min, t) => (t < min ? t : min))
-    : profile.first_seen;
-  const computedLastSeen = computedProcessedAts.length > 0
-    ? computedProcessedAts.reduce((max, t) => (t > max ? t : max))
-    : profile.last_seen;
-
-  // -------------------------------------------------------------------------
-  // 9. Build behavioral narrative
+  // 8. Build behavioral narrative
   // -------------------------------------------------------------------------
   const narrative = buildBehavioralNarrative({
     totalOrders: computedTotalOrders,
     totalRefundClaims: computedRefundClaims,
     refundRate: computedRefundRate,
-    fastestClaimDays: profile.fastest_claim_days,
-    avgClaimDays: profile.avg_claim_days,
-    refundAccelerationScore: profile.refund_acceleration_score,
+    fastestClaimDays: network?.fastestClaimDays ?? null,
+    avgClaimDays: null,
+    refundAccelerationScore: 0,
     firstSeen: computedFirstSeen,
     lastSeen: computedLastSeen,
-    fraudFlags: profile.fraud_flags,
+    fraudFlags: [],
     linkedAccountCount: linkedAccounts.length,
   });
 
   // -------------------------------------------------------------------------
-  // 10. Compose response
+  // 9. Compose response
   // -------------------------------------------------------------------------
   const panel: CustomerIntelligencePanel = {
     profile: {
-      id: profile.id,
-      primary_email: profile.primary_email,
-      emails: profile.emails,
-      names: profile.names,
-      addresses: profile.addresses,
-      ips: profile.ips,
-      card_last4s: profile.card_last4s,
-      phones: profile.phones,
-      risk_score: profile.risk_score,
-      // Repurposed: identity confidence grade (definite/probable/possible/weak).
-      risk_level: scoreToGrade(Number(profile.risk_score ?? 0)),
-      fraud_flags: profile.fraud_flags,
+      id: customer.id,
+      primary_email: customer.email,
+      emails: uniqueValues([customer.email, ...orderHistory.map((o) => o.email)]),
+      names: customerName ? [customerName] : [],
+      addresses: uniqueValues(orderHistory.map((o) => o.address)),
+      ips: uniqueValues(orderHistory.map((o) => o.ip)),
+      card_last4s: uniqueValues(orderHistory.map((o) => o.cardLast4)),
+      phones: uniqueValues([customer.phone, ...orders.map((o) => o.phone)]),
+      risk_score: network?.confidenceScore ?? 0,
+      // Identity confidence grade (displayed as confidence, never a verdict).
+      risk_level: network?.confidenceGrade ?? 'none',
+      fraud_flags: [],
       total_orders: computedTotalOrders,
-      commerce_total_value: commerceStats.totalValue,
-      commerce_order_source: commerceStats.source,
+      commerce_total_value: totalOrderValue,
+      commerce_order_source: orders.length > 0 ? 'source_orders' : 'none',
       total_refund_claims: computedRefundClaims,
       total_chargebacks: computedChargebacks,
-      total_merchants_seen_at: profile.total_merchants_seen_at,
+      total_merchants_seen_at: Math.max(network?.merchantCount ?? 1, 1),
       refund_rate: computedRefundRate,
-      fastest_claim_days: profile.fastest_claim_days,
-      avg_claim_days: profile.avg_claim_days,
-      refund_acceleration_score: profile.refund_acceleration_score,
+      fastest_claim_days: network?.fastestClaimDays ?? null,
+      avg_claim_days: null,
+      refund_acceleration_score: 0,
       first_seen: computedFirstSeen,
       last_seen: computedLastSeen,
-      profile_confidence: profile.profile_confidence,
-      manually_reviewed: profile.manually_reviewed,
+      profile_confidence: network?.confidenceScore ?? 0,
+      manually_reviewed: false,
       on_watchlist: false,
       watchlist_entry_id: null,
     },
@@ -535,8 +411,8 @@ async function GETHandler(
   logAction({
     ctx,
     action: 'view_customer',
-    resourceType: 'customer_profile',
-    resourceId: profileId,
+    resourceType: 'source_customer',
+    resourceId: customerId,
     ip,
   });
 

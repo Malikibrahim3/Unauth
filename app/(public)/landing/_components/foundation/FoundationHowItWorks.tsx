@@ -1,5 +1,3 @@
-import Link from 'next/link';
-import { ArrowUpRight } from 'lucide-react';
 import Reveal from '../Reveal';
 import ParallaxLayer from './ParallaxLayer';
 import SetupFlowVisual from './SetupFlowVisual';
@@ -15,12 +13,12 @@ export default function FoundationHowItWorks() {
     <section
       id="how-it-works"
       aria-labelledby="fl-how-it-works-heading"
-      className="isolate bg-[#efece5]"
+      className={`${styles.howField} isolate`}
     >
-      <div className="mx-auto w-full max-w-[100rem] px-5 pb-28 pt-24 sm:px-10 lg:pb-36 lg:pt-32">
+      <div className="relative z-10 mx-auto w-full max-w-[100rem] px-5 pb-14 pt-12 sm:px-10 lg:pb-[4.5rem] lg:pt-16">
         <div className="flex flex-col gap-14 lg:gap-20">
-          <div className="grid grid-cols-1 items-start gap-14 lg:grid-cols-[0.92fr_1.08fr] lg:gap-x-16 xl:gap-x-20">
-            <ParallaxLayer speed={0.28} className="min-w-0">
+          <div className="grid min-h-[58svh] grid-cols-1 items-start gap-14 lg:grid-cols-[0.92fr_1.08fr] lg:gap-x-16 xl:gap-x-20">
+            <ParallaxLayer speed={0.14} className="min-w-0 translate-y-[10%]">
               <Reveal>
                 <h2 id="fl-how-it-works-heading" className="text-[var(--fl-ink)]">
                   {FL_HOW_IT_WORKS.displayLines.map((line) => (
@@ -32,13 +30,6 @@ export default function FoundationHowItWorks() {
                 <p className="mt-8 max-w-[32rem] text-[1.0625rem] leading-[1.65] text-[var(--fl-ink-secondary)]">
                   {FL_HOW_IT_WORKS.subhead}
                 </p>
-                <Link
-                  href={FL_HOW_IT_WORKS.cta.href}
-                  className="mt-[5%] inline-flex items-center gap-1.5 rounded-full border border-[var(--fl-line)] bg-[var(--fl-paper)] px-6 py-3 text-[0.9375rem] font-semibold text-[var(--fl-ink)] transition-colors hover:border-[var(--fl-ink)]"
-                >
-                  {FL_HOW_IT_WORKS.cta.label}
-                  <ArrowUpRight size={16} aria-hidden />
-                </Link>
               </Reveal>
             </ParallaxLayer>
 
@@ -49,13 +40,13 @@ export default function FoundationHowItWorks() {
             </div>
           </div>
 
-          <ParallaxLayer speed={0.2}>
+          <ParallaxLayer speed={0.2} className="-translate-y-[20%]">
           <Reveal delay={120}>
-            <ol className="-mt-[5%] grid grid-cols-1 gap-x-10 gap-y-10 border-t border-[var(--fl-line)] pt-12 sm:grid-cols-2 lg:grid-cols-4 lg:gap-x-8 lg:pt-14">
+            <ol className="-mt-[5%] grid grid-cols-1 gap-x-10 gap-y-6 border-t border-[var(--fl-line)] pt-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-x-8 lg:pt-12">
               {FL_HOW_IT_WORKS.steps.map((step) => (
                 <li
                   key={step.id}
-                  className="flex min-w-0 flex-col gap-3 lg:border-r lg:border-[var(--fl-line)] lg:pr-8 lg:last:border-r-0"
+                  className="flex min-w-0 flex-col gap-3 border-l-2 border-[var(--fl-line)] pl-5 lg:border-l-0 lg:border-r lg:border-[var(--fl-line)] lg:pl-0 lg:pr-8 lg:last:border-r-0"
                 >
                   <span className="font-mono text-sm text-[var(--fl-ink-tertiary)]">
                     {step.id}

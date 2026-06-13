@@ -17,9 +17,10 @@ export async function POST(req: Request) {
   if (denied) return denied;
 
   const { error } = await service
-    .from('merchant_shopify_connections' as never)
-    .update({ active: false } as never)
-    .eq('merchant_id', ctx.merchantId);
+    .from('store_connections')
+    .update({ status: 'revoked', uninstalled_at: new Date().toISOString() })
+    .eq('merchant_id', ctx.merchantId)
+    .eq('platform', 'shopify');
 
   if (error) {
     return NextResponse.json({ error: 'Failed to disconnect Shopify' }, { status: 500 });
@@ -28,9 +29,9 @@ export async function POST(req: Request) {
   logAction({
     ctx,
     action: 'disconnect_shopify',
-    resourceType: 'merchant_shopify_connection',
+    resourceType: 'store_connection',
     resourceId: ctx.merchantId,
-    metadata: {},
+    metadata: { platform: 'shopify' },
     ip,
   });
 

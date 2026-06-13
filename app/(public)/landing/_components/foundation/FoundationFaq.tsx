@@ -11,8 +11,8 @@ export default function FoundationFaq() {
   const [open, setOpen] = useState<number | null>(null);
 
   return (
-    <section id="faq" aria-labelledby="fl-faq-heading" className="bg-[var(--fl-bg)]">
-      <div className="mx-auto w-full max-w-[100rem] px-5 pb-24 pt-10 sm:px-10 lg:pb-32 lg:pt-16">
+    <section id="faq" aria-labelledby="fl-faq-heading" className={styles.faqField}>
+      <div className="relative z-10 mx-auto w-full max-w-[100rem] px-5 pb-24 pt-10 sm:px-10 lg:pb-32 lg:pt-16">
         <ParallaxLayer speed={0.24}>
           <Reveal>
             <h2

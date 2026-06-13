@@ -30,21 +30,11 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ error: 'Customer response contains internal language' }, { status: 400 });
   }
   try {
-    const { error: updateError } = await serviceClient
-      .from('merchant_claims' as any)
-      .update({
-        last_customer_response_text: responseText,
-        last_customer_response_at: new Date().toISOString(),
-        last_customer_response_by: user.id,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', claimId)
-      .eq('merchant_id', ctx.merchantId);
-    if (updateError) throw updateError;
+    // v2 claims has no last_customer_response_* columns; the response record
+    // lives on the customer_response_saved event below.
     await appendClaimEvent(serviceClient, {
       claim_id: claimId,
       merchant_id: ctx.merchantId,
-      shop_domain: claim.shop_domain,
       event_type: 'customer_response_saved',
       actor_user_id: user.id,
       metadata: {
@@ -56,7 +46,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     await appendClaimEvent(serviceClient, {
       claim_id: claimId,
       merchant_id: ctx.merchantId,
-      shop_domain: claim.shop_domain,
       event_type: 'customer_response_copied',
       actor_user_id: user.id,
       metadata: {

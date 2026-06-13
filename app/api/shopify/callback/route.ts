@@ -12,6 +12,7 @@ import { shopifyAuditError } from '@/lib/shopify/auditLog';
 import { getAppUrl } from '@/lib/utils/appUrl';
 import { exchangeShopifyOAuthAccessToken } from '@/lib/shopify/exchangeOAuthAccessToken';
 import { persistShopifyOAuthConnection } from '@/lib/shopify/persistOAuthConnection';
+import { registerShopifyCollectorScriptTags } from '@/lib/shopify/collectorScripts';
 
 const SHOP_REGEX = /^[a-zA-Z0-9][a-zA-Z0-9-]*\.myshopify\.com$/;
 const INTEGRATIONS_PATH = '/settings/integrations';
@@ -204,12 +205,44 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    let collectorRegistrationSuccess = true;
+    try {
+      const collectorTags = await registerShopifyCollectorScriptTags({
+        shopDomain: shop,
+        accessToken,
+      });
+      await serviceClient
+        .from('store_connections')
+        .update({
+          collector_metadata: {
+            shopify_collector_script_tag_id: collectorTags.collectorScriptTagId,
+            shopify_collector_init_script_tag_id: collectorTags.initScriptTagId,
+          },
+        })
+        .eq('platform', 'shopify')
+        .eq('store_key', shop);
+      await serviceClient
+        .from('merchants')
+        .update({
+          shopify_collector_script_tag_id: collectorTags.collectorScriptTagId,
+          shopify_collector_init_script_tag_id: collectorTags.initScriptTagId,
+        })
+        .eq('id', connectedMerchantId);
+    } catch (collectorError) {
+      collectorRegistrationSuccess = false;
+      shopifyDebugLog('collector_registration.failure', {
+        callbackShopDomain: shop,
+        message: collectorError instanceof Error ? collectorError.message : 'unknown',
+      });
+    }
+
     const successParams: Record<string, string> = {
       shopify_connected: '1',
       shop: shop,
     };
     if (!identityBackfillSuccess) successParams.shopify_warning = 'backfill_failed';
     if (!webhookRegistrationSuccess) successParams.shopify_warning = 'webhook_registration_failed';
+    if (!collectorRegistrationSuccess) successParams.shopify_warning = 'collector_registration_failed';
 
     const response = integrationsRedirect(request, successParams);
     clearOAuthCookies(response);

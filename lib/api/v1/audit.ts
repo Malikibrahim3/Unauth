@@ -23,7 +23,7 @@ export async function logPublicApiAccess(
     queried_hashes: params.queriedHashes,
     matched_merchant_count: params.matchedMerchantCount,
     request_ip: params.requestIp,
-  } as never);
+  });
 
   if (error) {
     console.error('[public-api] audit_log insert failed:', error.message);

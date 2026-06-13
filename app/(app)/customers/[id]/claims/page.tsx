@@ -28,7 +28,6 @@ async function markClaimViewedOnOpen(claimId: string) {
       await appendClaimEvent(serviceClient, {
         claim_id: claimId,
         merchant_id: ctx.merchantId,
-        shop_domain: loaded.claim.shop_domain,
         event_type: 'claim_viewed',
         actor_user_id: user.id,
         metadata: { first_view: true },

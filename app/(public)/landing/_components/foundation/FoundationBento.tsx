@@ -3,36 +3,50 @@ import ParallaxLayer from './ParallaxLayer';
 import { FL_BENTO, FL_BENTO_SOURCES } from '../../_lib/foundationContent';
 import styles from './foundation.module.css';
 
+const toneClass = {
+  purple: styles.metricCardPurple,
+  dark: styles.metricCardDark,
+  light: styles.metricCardLight,
+} as const;
+
 /**
- * Compressed stat strip — three headline numbers in a single row.
- * Demoted from a full-bleed bento to a closing credibility beat.
+ * Sourced metric cards — a staggered bridge between the pale editorial intro
+ * and the dark evidence section, echoing the oversized numbered-card system.
  */
 export default function FoundationBento() {
   return (
-    <section id="network" aria-labelledby="fl-bento-heading" className="bg-[var(--fl-bg)]">
+    <section
+      id="network"
+      aria-labelledby="fl-bento-heading"
+      className={styles.metricBridge}
+    >
       <h2 id="fl-bento-heading" className="sr-only">
         Post-checkout claims by the numbers
       </h2>
       <ParallaxLayer speed={0.28}>
       <Reveal>
-        <div className="mx-auto w-full max-w-[100rem] px-5 py-20 sm:px-10 lg:py-24">
-          <div className="grid grid-cols-1 gap-0 border-t border-[var(--fl-line-strong)] sm:grid-cols-3">
+        <div className="relative z-10 mx-auto w-full max-w-[100rem] px-5 pb-20 pt-12 sm:px-10 sm:pb-24 lg:pb-36 lg:pt-20">
+          <div className={styles.metricCardGrid}>
             {FL_BENTO.map((stat) => (
               <div
                 key={stat.value}
-                className="flex flex-col gap-4 border-b border-[var(--fl-line)] py-10 sm:border-b-0 sm:border-r sm:last:border-r-0 sm:px-10 sm:first:pl-0 sm:last:pr-0"
+                className={`${styles.metricCard} ${toneClass[stat.tone]}`}
               >
-                <p className={`${styles.bentoNumeral} text-[var(--fl-ink)]`}>
+                <p
+                  className={`${styles.metricCardValue} ${
+                    stat.value.length > 4 ? styles.metricCardValueLong : ''
+                  }`}
+                >
                   {stat.value}
                 </p>
-                <p className="text-[0.9375rem] leading-snug text-[var(--fl-ink-secondary)]">
-                  {stat.label}
-                </p>
+                <div className={styles.metricCardFooter}>
+                  <p className={styles.metricCardLabel}>{stat.label}</p>
+                </div>
               </div>
             ))}
           </div>
-          <p className="mt-6 text-[0.75rem] leading-relaxed text-[var(--fl-ink-tertiary)]">
-            <span className="font-medium text-[var(--fl-ink-secondary)]">Sources:</span>{' '}
+          <p className={`${styles.metricSources} mt-12 text-[0.75rem] leading-relaxed lg:mt-24`}>
+            <span className="font-medium text-[var(--fl-dusk-ink-dim)]">Sources:</span>{' '}
             {FL_BENTO_SOURCES.join(' · ')}
           </p>
         </div>

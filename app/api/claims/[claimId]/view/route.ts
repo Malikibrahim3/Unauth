@@ -30,7 +30,6 @@ export async function POST(_request: Request, { params }: { params: Promise<{ cl
         await appendClaimEvent(serviceClient, {
           claim_id: claimId,
           merchant_id: ctx.merchantId,
-          shop_domain: claim.shop_domain,
           event_type: 'claim_viewed',
           actor_user_id: user.id,
           metadata: { first_view: true },
@@ -46,8 +45,8 @@ export async function POST(_request: Request, { params }: { params: Promise<{ cl
     return NextResponse.json({
       claim: {
         id: claimId,
+        // v2 claims tracks first_viewed_at only; there is no first_viewed_by column.
         first_viewed_at: updated.first_viewed_at ?? claim.first_viewed_at ?? null,
-        first_viewed_by: updated.first_viewed_by ?? claim.first_viewed_by ?? null,
       },
     });
   } catch (error: any) {

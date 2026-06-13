@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import FoundationNav from './_components/foundation/FoundationNav';
 import FoundationHero from './_components/foundation/FoundationHero';
-import FoundationHeroCta from './_components/foundation/FoundationHeroCta';
 import HeroPin from './_components/foundation/HeroPin';
+import EvidenceNotVerdictsHero from '@/components/sections/EvidenceNotVerdictsHero';
 import FoundationStatement from './_components/foundation/FoundationStatement';
 import FoundationSignalsEvidence from './_components/foundation/FoundationSignalsEvidence';
 import FoundationHowItWorks from './_components/foundation/FoundationHowItWorks';
@@ -13,9 +13,19 @@ import FoundationFinalCta from './_components/foundation/FoundationFinalCta';
 import FoundationFooter from './_components/foundation/FoundationFooter';
 
 export const metadata: Metadata = {
-  title: 'Unauth — Every Claim Leaves a Trail',
+  title: 'Unauth — Cross-Merchant Claim Evidence',
   description:
-    'Cross-merchant identity evidence for post-checkout claim reviews. Unauth attaches graded, review-ready context to claims — hashed signals across participating merchants, decided by your team.',
+    'Cross-merchant identity evidence for post-checkout claim reviews. Unauth attaches graded context to claims — decided by your team.',
+  openGraph: {
+    title: 'Unauth — Cross-Merchant Claim Evidence',
+    description:
+      'Cross-merchant identity evidence for post-checkout claim reviews. Unauth attaches graded context to claims — decided by your team.',
+  },
+  twitter: {
+    title: 'Unauth — Cross-Merchant Claim Evidence',
+    description:
+      'Cross-merchant identity evidence for post-checkout claim reviews. Unauth attaches graded context to claims — decided by your team.',
+  },
 };
 
 /**
@@ -32,12 +42,12 @@ export default function LandingPage() {
           <FoundationHero />
         </HeroPin>
         <div className="relative z-10">
-          <FoundationHeroCta />
+          <EvidenceNotVerdictsHero />
           <FoundationStatement />
+          <FoundationBento />
           <FoundationSignalsEvidence />
           <FoundationHowItWorks />
           <FoundationFigures />
-          <FoundationBento />
           <FoundationFaq />
           <FoundationFinalCta />
           <FoundationFooter />

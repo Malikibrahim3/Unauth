@@ -34,7 +34,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     await appendClaimEvent(serviceClient, {
       claim_id: claimId,
       merchant_id: ctx.merchantId,
-      shop_domain: claim.shop_domain,
       event_type: assignedTo ? 'claim_assigned' : 'claim_unassigned',
       actor_user_id: user.id,
       metadata: {

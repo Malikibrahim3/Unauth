@@ -8,6 +8,7 @@ import {
   clearBigCommerceOAuthCookieOptions,
 } from '@/lib/commerce/bigcommerce/oauthCookies';
 import { registerBigCommerceWebhooks } from '@/lib/commerce/bigcommerce/registerWebhooks';
+import { registerBigCommerceCollectorScript } from '@/lib/commerce/bigcommerce/collectorScript';
 import { resolveBigCommerceOAuthMerchantId } from '@/lib/commerce/bigcommerce/resolveOAuthMerchantId';
 import { getAppUrl } from '@/lib/utils/appUrl';
 import { logAction } from '@/lib/permissions/audit';
@@ -144,6 +145,33 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    let collectorWarning = false;
+    try {
+      const scriptUuid = await registerBigCommerceCollectorScript({
+        storeHash,
+        accessToken: tokenExchange.token.access_token,
+        merchantId: persisted.merchantId,
+      });
+      await serviceClient
+        .from('store_connections')
+        .update({
+          collector_metadata: { bigcommerce_script_uuid: scriptUuid },
+        })
+        .eq('merchant_id', persisted.merchantId)
+        .eq('platform', 'bigcommerce')
+        .eq('store_key', storeHash);
+      await serviceClient
+        .from('merchants')
+        .update({ bigcommerce_script_uuid: scriptUuid })
+        .eq('id', persisted.merchantId);
+    } catch (collectorError) {
+      collectorWarning = true;
+      console.error('BigCommerce collector script registration failed', {
+        storeHash,
+        message: collectorError instanceof Error ? collectorError.message : 'unknown',
+      });
+    }
+
     const connectedMerchantId = persisted.merchantId;
     const accessToken = tokenExchange.token.access_token;
     after(async () => {
@@ -167,6 +195,7 @@ export async function GET(request: NextRequest) {
       store: storeHash,
     };
     if (webhookWarning) successParams.bigcommerce_warning = 'webhook_registration_failed';
+    if (collectorWarning) successParams.bigcommerce_warning = 'collector_registration_failed';
 
     const response = integrationsRedirect(successParams);
     clearOAuthCookies(response);

@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const service = createServiceClient();
-  const { denied, ctx } = await requirePermission(service, user.id, PERMISSIONS.LOOKUP_CUSTOMER);
+  const { denied, ctx: callerCtx } = await requirePermission(service, user.id, PERMISSIONS.LOOKUP_CUSTOMER);
   if (denied) return denied;
 
   const body = await request.json().catch(() => ({}));
@@ -56,11 +56,11 @@ export async function POST(request: NextRequest) {
   }
 
   // Shared rate limit with the main lookup endpoint
-  const merchantId = ctx.merchantId;
-  const today = new Date().toISOString().slice(0, 10) as unknown as Date;
+  const merchantId = callerCtx.merchantId;
+  const today = new Date().toISOString().slice(0, 10);
 
   const { data: newCount, error: countError } = await service.rpc(
-    'increment_lookup_count' as any,
+    'increment_lookup_count',
     { p_merchant_id: merchantId, p_date: today }
   );
 

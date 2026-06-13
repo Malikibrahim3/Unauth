@@ -11,6 +11,7 @@ export const BIGCOMMERCE_OAUTH_SCOPES = [
   'store_v2_orders',
   'store_v2_customers',
   'store_v2_transactions',
+  'store_v2_content',
 ].join(' ');
 
 export type BigCommerceConnectionSettings = {

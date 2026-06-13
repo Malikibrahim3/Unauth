@@ -1,14 +1,16 @@
 // TODO(product-gating): require CUSTOMER_SEARCH entitlement when ENFORCE_PRODUCT_GATES is enabled.
 import { createClient, createServiceClient } from '@/lib/supabase/server';
-import { TABLES } from '@/lib/supabase/tables';
 import { getConnectionState } from '@/lib/connections/getConnectionState';
 import { getMerchantDataPresence } from '@/lib/supabase/getMerchantDataPresence';
 import { resolveMerchantSetupState } from '@/lib/connections/getMerchantSetupState';
 import { redirect } from 'next/navigation';
 import { requirePermission, PERMISSIONS, resolveDefaultAppPath } from '@/lib/permissions';
-import { escapePostgrestFilterValue, getMerchantOwnedJobIds } from '@/lib/supabase/merchantHelpers';
+import { escapePostgrestFilterValue } from '@/lib/supabase/merchantHelpers';
 import { isOrderReferenceSearchTerm, orderReferenceIlike } from '@/lib/customers/orderSearch';
-import { findCustomerProfileIdsByText } from '@/lib/customers/profileSearch';
+import { hashIdentifier } from '@/lib/identity/hash';
+import { normaliseEmail } from '@/lib/identity/normalise';
+import { lookupIdentityGradesByEmailHash } from '@/lib/customers/identityNetwork';
+import type { IdentityGradeBadge } from '@/lib/customers/identityNetwork';
 import { CustomersOverviewPageView } from '@/app/(app)/customers/CustomersOverviewPageView';
 import { resolveCustomerActions } from '@/app/(app)/customers/customersOverviewPageUtils';
 
@@ -17,6 +19,40 @@ export const maxDuration = 30;
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
 const DEFAULT_PAGE_SIZE = 25;
+
+const OPEN_CLAIM_STATUSES = ['pending', 'open', 'escalated'] as const;
+const CHARGEBACK_CLAIM_TYPE = 'chargeback';
+
+type SourceCustomerRow = {
+  id: string;
+  email: string | null;
+  phone: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  orders_count: number | null;
+  total_spent: number | string | null;
+  account_created_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+type OrderAggRow = {
+  id: string;
+  source_customer_id: string | null;
+  placed_at: string | null;
+};
+
+type ClaimAggRow = {
+  id: string;
+  claim_type: string;
+  status: string;
+  source_order_id: string | null;
+};
+
+function displayNames(row: SourceCustomerRow): string[] {
+  const name = [row.first_name, row.last_name].filter(Boolean).join(' ').trim();
+  return name ? [name] : [];
+}
 
 export default async function CustomersOverviewPage({
   searchParams,
@@ -41,8 +77,6 @@ export default async function CustomersOverviewPage({
   ]);
   const setupState = resolveMerchantSetupState(connectionState, dataPresence);
 
-  // sp already resolved above in parallel with connection state.
-
   const page = Math.max(1, parseInt(sp.page ?? '1', 10));
   const requestedPageSize = parseInt(sp.pageSize ?? String(DEFAULT_PAGE_SIZE), 10);
   const PAGE_SIZE = PAGE_SIZE_OPTIONS.includes(requestedPageSize as (typeof PAGE_SIZE_OPTIONS)[number])
@@ -58,223 +92,93 @@ export default async function CustomersOverviewPage({
   /** Legacy query param — ignored (watchlist filter retired). */
   void (sp.watchlisted === '1');
   const openClaimsOnly = sp.openClaims === '1';
-  const manuallyReviewed = sp.manuallyReviewed === '1';
   const sort            = sp.sort ?? 'risk';
 
-  // Identity
-  const ipFilter      = sp.ip?.trim() ?? '';
-  const addressFilter = sp.address?.trim() ?? '';
-  const cardFilter    = sp.card?.trim() ?? '';
-  const phoneFilter   = sp.phone?.trim() ?? '';
-
-  // Numeric ranges
-  const riskMin         = sp.riskMin ? parseFloat(sp.riskMin) : null;
-  const riskMax         = sp.riskMax ? parseFloat(sp.riskMax) : null;
-  const refundRateMin   = sp.refundRateMin ? parseFloat(sp.refundRateMin) : null;
-  const refundRateMax   = sp.refundRateMax ? parseFloat(sp.refundRateMax) : null;
-  const ordersMin       = sp.ordersMin ? parseInt(sp.ordersMin, 10) : null;
-  const ordersMax       = sp.ordersMax ? parseInt(sp.ordersMax, 10) : null;
-  const claimsMin       = sp.claimsMin ? parseInt(sp.claimsMin, 10) : null;
-  const claimsMax       = sp.claimsMax ? parseInt(sp.claimsMax, 10) : null;
-  const chargebacksMin  = sp.chargebacksMin ? parseInt(sp.chargebacksMin, 10) : null;
-  const merchantsMin    = sp.merchantsMin ? parseInt(sp.merchantsMin, 10) : null;
-  const fastestClaimMax = sp.fastestClaimMax ? parseFloat(sp.fastestClaimMax) : null;
-
-  // Date ranges
-  const firstSeenFrom = sp.firstSeenFrom ?? '';
-  const firstSeenTo   = sp.firstSeenTo ?? '';
-  const lastSeenFrom  = sp.lastSeenFrom ?? '';
-  const lastSeenTo    = sp.lastSeenTo ?? '';
-
-  // Fraud flag
-  const flagFilter = sp.flag?.trim() ?? '';
-
-  // Investigation status
+  // Investigation status (merchant_identity_state.investigation_status)
   const statusFilter = sp.status?.trim() ?? '';
 
-  // Scope to profiles this merchant owns - accepts both the auth-user UUID
-  // (legacy, pre-merchants-table uploads) and the merchants-table UUID (current).
-  const merchantFilter = [
-    `merchant_ids.cs.${JSON.stringify([ctx.merchantId])}`,
-    `merchant_ids.cs.${JSON.stringify([user.id])}`,
-  ].join(',');
+  // -------------------------------------------------------------------------
+  // Customer ID pre-filters (search / claims-derived filters).
+  //
+  // The merchant's own customer list comes from layer-1 source_customers /
+  // source_orders / claims. Identity grade is a per-row enrichment (below) —
+  // never a base-table join, since identities are network-level.
+  // -------------------------------------------------------------------------
   const isOrderReferenceSearch = isOrderReferenceSearchTerm(q);
-  let orderMatchedProfileIds: string[] | null = null;
-  let textMatchedProfileIds: string[] | null = null;
+  let restrictToCustomerIds: string[] | null = null;
 
   if (isOrderReferenceSearch) {
-    const ids = new Set<string>();
     const ilike = orderReferenceIlike(q);
-
-    const claimsWithOrderRef = await svc
-      .from('merchant_claims' as any)
-      .select('customer_id')
+    const { data: orderRows } = await svc
+      .from('source_orders')
+      .select('source_customer_id')
       .eq('merchant_id', ctx.merchantId)
-      .or(`shopify_order_id.ilike.${ilike},order_ref.ilike.${ilike}`)
-      .limit(100);
-    let claimRows = claimsWithOrderRef.data as Array<{ customer_id: string | null }> | null;
-
-    if (claimsWithOrderRef.error) {
-      const fallbackClaims = await svc
-        .from('merchant_claims' as any)
-        .select('customer_id')
-        .eq('merchant_id', ctx.merchantId)
-        .ilike('shopify_order_id', ilike)
-        .limit(100);
-      claimRows = fallbackClaims.data as Array<{ customer_id: string | null }> | null;
-    }
-
-    for (const row of claimRows ?? []) {
-      if (row.customer_id) ids.add(row.customer_id);
-    }
-
-    const ownedJobIds = await getMerchantOwnedJobIds(svc, ctx.merchantId);
-    if (ownedJobIds.length > 0) {
-      const { data: txRows } = await svc
-        .from(TABLES.AUDIT_TRANSACTIONS)
-        .select('id')
-        .in('job_id', ownedJobIds)
-        .ilike('order_id', ilike)
-        .limit(100) as unknown as { data: Array<{ id: string }> | null };
-      const txIds = (txRows ?? []).map((row) => row.id);
-      if (txIds.length > 0) {
-        const { data: appearanceRows } = await svc
-          .from('customer_profile_audit_appearances' as any)
-          .select('profile_id')
-          .in('audit_id', ownedJobIds)
-          .in('transaction_id', txIds) as unknown as { data: Array<{ profile_id: string }> | null };
-        for (const row of appearanceRows ?? []) ids.add(row.profile_id);
-      }
-    }
-
-    orderMatchedProfileIds = Array.from(ids);
-  } else if (q.length >= 2) {
-    textMatchedProfileIds = await findCustomerProfileIdsByText(svc, {
-      merchantIds: [ctx.merchantId, user.id],
-      merchantFilter,
-      query: q,
-    });
+      .or(`external_id.ilike.${ilike},order_number.ilike.${ilike}`)
+      .not('source_customer_id', 'is', null)
+      .limit(200) as unknown as { data: Array<{ source_customer_id: string | null }> | null };
+    restrictToCustomerIds = Array.from(
+      new Set((orderRows ?? []).flatMap((r) => (r.source_customer_id ? [r.source_customer_id] : []))),
+    );
   }
 
-  let query = svc
-    .from(TABLES.CUSTOMER_PROFILES)
-    .select(
-      'id, risk_score, risk_level, total_orders, total_refund_claims, total_chargebacks, refund_rate, refund_acceleration_score, total_merchants_seen_at, fastest_claim_days, primary_email, names, manually_reviewed, last_seen, first_seen, profile_confidence, investigation_status',
-      { count: 'exact' }
-    )
-    .or(merchantFilter);
-
-  // Text search (email or name)
-  if (q.length >= 2) {
-    if (isOrderReferenceSearch) {
-      query = orderMatchedProfileIds && orderMatchedProfileIds.length > 0
-        ? query.in('id', orderMatchedProfileIds)
-        : query.eq('id', '00000000-0000-0000-0000-000000000000');
-    } else {
-      query = textMatchedProfileIds && textMatchedProfileIds.length > 0
-        ? query.in('id', textMatchedProfileIds)
-        : query.eq('id', '00000000-0000-0000-0000-000000000000');
-    }
-  }
-
-  // Identity exact-match filters
-  if (ipFilter.length >= 4) {
-    query = query.filter('ips', 'cs', JSON.stringify([ipFilter]));
-  }
-  if (addressFilter.length >= 4) {
-    query = (query as any).ilike('addresses::text', `%${escapePostgrestFilterValue(addressFilter)}%`);
-  }
-  if (cardFilter.length >= 2) {
-    query = query.filter('card_last4s', 'cs', JSON.stringify([cardFilter]));
-  }
-  if (phoneFilter.length >= 4) {
-    query = (query as any).ilike('phones::text', `%${escapePostgrestFilterValue(phoneFilter)}%`);
-  }
-
-  // Identity match band (stored as risk_level — internal column name only)
-  if (riskFilter) {
-    query = query.eq('risk_level', riskFilter);
-  }
-
-  if (openClaimsOnly) {
-    const { data: openClaimRows } = await svc
-      .from(TABLES.MERCHANT_CLAIMS as never)
-      .select('customer_id')
-      .eq('merchant_id' as never, ctx.merchantId as never)
-      .in('status' as never, ['open', 'under_review', 'pending_evidence', 'evidence_requested', 'pending', 'escalated'] as never)
-      .not('customer_id', 'is', null)
-      .limit(500) as unknown as { data: Array<{ customer_id: string | null }> | null };
-    const openClaimProfileIds = Array.from(
+  const claimFiltersActive = hasRefunds || hasChargebacks || openClaimsOnly;
+  if (claimFiltersActive) {
+    let claimQuery = svc
+      .from('claims')
+      .select('source_order_id, claim_type, status, source_orders!inner(source_customer_id)')
+      .eq('merchant_id', ctx.merchantId)
+      .not('source_order_id', 'is', null);
+    if (hasChargebacks && !hasRefunds) claimQuery = claimQuery.eq('claim_type', CHARGEBACK_CLAIM_TYPE);
+    if (openClaimsOnly) claimQuery = claimQuery.in('status', [...OPEN_CLAIM_STATUSES]);
+    const { data: claimRows } = await claimQuery.limit(2000) as unknown as {
+      data: Array<{ source_orders: { source_customer_id: string | null } | null }> | null;
+    };
+    const claimCustomerIds = Array.from(
       new Set(
-        (openClaimRows ?? [])
-          .map((r) => r.customer_id)
-          .filter((id): id is string => typeof id === 'string' && id.length > 0),
+        (claimRows ?? []).flatMap((r) =>
+          r.source_orders?.source_customer_id ? [r.source_orders.source_customer_id] : [],
+        ),
       ),
     );
-    query =
-      openClaimProfileIds.length > 0
-        ? query.in('id', openClaimProfileIds)
-        : query.eq('id', '00000000-0000-0000-0000-000000000000');
+    restrictToCustomerIds = restrictToCustomerIds
+      ? restrictToCustomerIds.filter((id) => claimCustomerIds.includes(id))
+      : claimCustomerIds;
   }
 
-  // Numeric ranges
-  if (riskMin !== null)        query = query.gte('risk_score', riskMin);
-  if (riskMax !== null)        query = query.lte('risk_score', riskMax);
-  if (refundRateMin !== null)  query = query.gte('refund_rate', refundRateMin / 100);
-  if (refundRateMax !== null)  query = query.lte('refund_rate', refundRateMax / 100);
-  if (ordersMin !== null)      query = query.gte('total_orders', ordersMin);
-  if (ordersMax !== null)      query = query.lte('total_orders', ordersMax);
-  if (claimsMin !== null)      query = query.gte('total_refund_claims', claimsMin);
-  if (claimsMax !== null)      query = query.lte('total_refund_claims', claimsMax);
-  if (chargebacksMin !== null) query = query.gte('total_chargebacks', chargebacksMin);
-  if (merchantsMin !== null)   query = query.gte('total_merchants_seen_at', merchantsMin);
-  if (fastestClaimMax !== null) query = query.lte('fastest_claim_days', fastestClaimMax);
+  // -------------------------------------------------------------------------
+  // Base query: the merchant's own customers (layer-1, merchant-scoped).
+  // -------------------------------------------------------------------------
+  let query = svc
+    .from('source_customers')
+    .select(
+      'id, email, phone, first_name, last_name, orders_count, total_spent, account_created_at, created_at, updated_at',
+      { count: 'exact' },
+    )
+    .eq('merchant_id', ctx.merchantId);
 
-  // Boolean flags
-  if (hasRefunds)      query = query.gt('total_refund_claims', 0);
-  if (hasChargebacks)  query = query.gt('total_chargebacks', 0);
-  if (manuallyReviewed) query = query.eq('manually_reviewed', true);
-
-  // Date ranges
-  if (firstSeenFrom) query = query.gte('first_seen', firstSeenFrom);
-  if (firstSeenTo)   query = query.lte('first_seen', firstSeenTo);
-  if (lastSeenFrom)  query = query.gte('last_seen', lastSeenFrom);
-  if (lastSeenTo)    query = query.lte('last_seen', lastSeenTo);
-
-  // Fraud flag substring
-  if (flagFilter.length >= 2) {
-    query = (query as any).ilike('identity_signals::text', `%${escapePostgrestFilterValue(flagFilter)}%`);
+  if (q.length >= 2 && !isOrderReferenceSearch) {
+    const safeLike = `%${escapePostgrestFilterValue(q)}%`;
+    query = query.or(`email.ilike.${safeLike},first_name.ilike.${safeLike},last_name.ilike.${safeLike}`);
   }
 
-  // Investigation status
-  if (statusFilter) {
-    query = query.eq('investigation_status', statusFilter);
+  if (restrictToCustomerIds !== null) {
+    query = restrictToCustomerIds.length > 0
+      ? query.in('id', restrictToCustomerIds)
+      : query.eq('id', '00000000-0000-0000-0000-000000000000');
   }
 
   switch (sort) {
-    case 'recent':
-      query = query.order('last_seen', { ascending: false });
-      break;
     case 'oldest':
-      query = query.order('first_seen', { ascending: true });
+      query = query.order('created_at', { ascending: true });
       break;
     case 'orders':
-      query = query.order('total_orders', { ascending: false });
+      query = query.order('orders_count', { ascending: false, nullsFirst: false });
       break;
-    case 'refundRate':
-      query = query.order('refund_rate', { ascending: false });
-      break;
-    case 'chargebacks':
-      query = query.order('total_chargebacks', { ascending: false });
-      break;
-    case 'merchants':
-      query = query.order('total_merchants_seen_at', { ascending: false });
-      break;
-    case 'fastestClaim':
-      query = query.order('fastest_claim_days', { ascending: true });
-      break;
+    case 'recent':
     default:
-      query = query.order('risk_score', { ascending: false });
+      // Identity grade is a per-page enrichment, so "risk" sorting falls back
+      // to recency at the database level.
+      query = query.order('updated_at', { ascending: false });
   }
 
   query = query.range(offset, offset + PAGE_SIZE - 1);
@@ -282,48 +186,129 @@ export default async function CustomersOverviewPage({
   // Gracefully fall back to empty results on any query error.
   // Server-level timeout is provided by the `maxDuration` export at the top of this file.
   // Note: Supabase query builders are thenable but do not implement .catch() — use try/catch.
-  let profiles: unknown[] | null = null;
+  let customers: SourceCustomerRow[] = [];
   let count: number | null = null;
   try {
-    const result = await query;
-    profiles = result.data;
+    const result = await query as unknown as { data: SourceCustomerRow[] | null; count: number | null };
+    customers = result.data ?? [];
     count = result.count;
   } catch {
-    profiles = [];
+    customers = [];
     count = 0;
   }
 
-  const rows = (profiles ?? []) as Array<{
-    id: string;
-    risk_score: number;
-    risk_level: string;
-    total_orders: number;
-    total_refund_claims: number;
-    total_chargebacks: number;
-    refund_rate: number;
-    refund_acceleration_score: number;
-    total_merchants_seen_at: number;
-    fastest_claim_days: number | null;
-    primary_email: string | null;
-    names: string[] | null;
-    manually_reviewed: boolean;
-    last_seen: string;
-    first_seen: string;
-    profile_confidence: number;
-    investigation_status: string;
-  }>;
+  const customerIds = customers.map((c) => c.id);
+
+  // -------------------------------------------------------------------------
+  // Per-page aggregates: own-store orders + claims + identity grade.
+  // -------------------------------------------------------------------------
+  const ordersByCustomer = new Map<string, { count: number; first: string | null; last: string | null; orderIds: string[] }>();
+  const claimsByCustomer = new Map<string, { claims: number; chargebacks: number }>();
+  let gradeByEmailHash = new Map<string, IdentityGradeBadge>();
+  let stateByIdentity = new Map<string, string>();
+
+  if (customerIds.length > 0) {
+    const [{ data: orderRows }, gradeMap] = await Promise.all([
+      svc
+        .from('source_orders')
+        .select('id, source_customer_id, placed_at')
+        .eq('merchant_id', ctx.merchantId)
+        .in('source_customer_id', customerIds)
+        .limit(10000) as unknown as Promise<{ data: OrderAggRow[] | null }>,
+      lookupIdentityGradesByEmailHash(
+        svc,
+        ctx.merchantId,
+        customers.flatMap((c) => {
+          const norm = normaliseEmail(c.email);
+          return norm ? [hashIdentifier(norm)] : [];
+        }),
+      ),
+    ]);
+    gradeByEmailHash = gradeMap;
+
+    const orderCustomer = new Map<string, string>();
+    for (const order of orderRows ?? []) {
+      if (!order.source_customer_id) continue;
+      orderCustomer.set(order.id, order.source_customer_id);
+      const agg = ordersByCustomer.get(order.source_customer_id) ?? { count: 0, first: null, last: null, orderIds: [] };
+      agg.count += 1;
+      agg.orderIds.push(order.id);
+      if (order.placed_at) {
+        if (!agg.first || order.placed_at < agg.first) agg.first = order.placed_at;
+        if (!agg.last || order.placed_at > agg.last) agg.last = order.placed_at;
+      }
+      ordersByCustomer.set(order.source_customer_id, agg);
+    }
+
+    const orderIds = Array.from(orderCustomer.keys());
+    if (orderIds.length > 0) {
+      const { data: claimRows } = await svc
+        .from('claims')
+        .select('id, claim_type, status, source_order_id')
+        .eq('merchant_id', ctx.merchantId)
+        .in('source_order_id', orderIds)
+        .limit(10000) as unknown as { data: ClaimAggRow[] | null };
+      for (const claim of claimRows ?? []) {
+        const customerId = claim.source_order_id ? orderCustomer.get(claim.source_order_id) : undefined;
+        if (!customerId) continue;
+        const agg = claimsByCustomer.get(customerId) ?? { claims: 0, chargebacks: 0 };
+        agg.claims += 1;
+        if (claim.claim_type === CHARGEBACK_CLAIM_TYPE) agg.chargebacks += 1;
+        claimsByCustomer.set(customerId, agg);
+      }
+    }
+
+    // Merchant-side investigation status for the resolved identities.
+    const identityIds = Array.from(new Set([...gradeMap.values()].map((g) => g.identityId)));
+    if (identityIds.length > 0) {
+      const { data: stateRows } = await svc
+        .from('merchant_identity_state')
+        .select('identity_id, investigation_status')
+        .eq('merchant_id', ctx.merchantId)
+        .in('identity_id', identityIds) as unknown as {
+          data: Array<{ identity_id: string; investigation_status: string }> | null;
+        };
+      stateByIdentity = new Map((stateRows ?? []).map((r) => [r.identity_id, r.investigation_status]));
+    }
+  }
+
+  let rows = customers.map((c) => {
+    const norm = normaliseEmail(c.email);
+    const grade = norm ? gradeByEmailHash.get(hashIdentifier(norm)) : undefined;
+    const orders = ordersByCustomer.get(c.id);
+    const claims = claimsByCustomer.get(c.id) ?? { claims: 0, chargebacks: 0 };
+    const orderCount = Math.max(orders?.count ?? 0, c.orders_count ?? 0);
+    return {
+      id: c.id,
+      risk_score: grade?.score ?? 0,
+      // Identity confidence grade (displayed as confidence, never a verdict).
+      risk_level: grade?.grade ?? 'none',
+      total_orders: orderCount,
+      total_refund_claims: claims.claims,
+      total_chargebacks: claims.chargebacks,
+      refund_rate: orderCount > 0 ? claims.claims / orderCount : 0,
+      refund_acceleration_score: 0,
+      total_merchants_seen_at: grade?.merchantCount ?? 1,
+      fastest_claim_days: null as number | null,
+      primary_email: c.email,
+      names: displayNames(c),
+      manually_reviewed: false,
+      last_seen: orders?.last ?? c.updated_at,
+      first_seen: orders?.first ?? c.account_created_at ?? c.created_at,
+      profile_confidence: grade?.score ?? 0,
+      investigation_status: (grade && stateByIdentity.get(grade.identityId)) ?? 'new',
+    };
+  });
+
+  // Page-local filters that depend on identity enrichment.
+  if (riskFilter) rows = rows.filter((r) => r.risk_level === riskFilter);
+  if (statusFilter) rows = rows.filter((r) => r.investigation_status === statusFilter);
 
   const total = Math.max(count ?? 0, rows.length);
   const totalPages = Math.ceil(total / PAGE_SIZE);
   const from = total === 0 ? 0 : offset + 1;
   const to = Math.min(offset + PAGE_SIZE, total);
-  const noFilters = !q && !riskFilter && !hasRefunds && !hasChargebacks && !openClaimsOnly &&
-    !manuallyReviewed && !ipFilter && !addressFilter && !cardFilter && !phoneFilter &&
-    riskMin === null && riskMax === null && refundRateMin === null && refundRateMax === null &&
-    ordersMin === null && ordersMax === null && claimsMin === null && claimsMax === null &&
-    chargebacksMin === null && merchantsMin === null && fastestClaimMax === null &&
-    !firstSeenFrom && !firstSeenTo && !lastSeenFrom && !lastSeenTo && !flagFilter && !statusFilter;
-
+  const noFilters = !q && !riskFilter && !hasRefunds && !hasChargebacks && !openClaimsOnly && !statusFilter;
 
   const { primary: primaryAction, subtitle: pageSubtitle } = resolveCustomerActions(setupState, connectionState);
 

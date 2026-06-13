@@ -40,7 +40,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     await appendClaimEvent(serviceClient, {
       claim_id: claimId,
       merchant_id: ctx.merchantId,
-      shop_domain: claim.shop_domain,
       event_type: parsed.data.snoozed_until ? 'claim_snoozed' : 'claim_unsnoozed',
       previous_status: claim.status,
       new_status: updated.status ?? claim.status,

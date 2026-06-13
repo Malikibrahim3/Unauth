@@ -4,6 +4,7 @@ import { normaliseAddress } from '@/lib/identity/normalise';
 import { emitIdentityObservations, type ObservationEntity } from '@/lib/identity/observations';
 import { resolveIdentitiesForKeys } from '@/lib/identity/resolver';
 import type { WooCommerceOrderPayload } from '@/lib/commerce/woocommerce/woocommerceOrderToCsvRow';
+import { linkCheckoutSignalsToOrder } from '@/lib/checkoutSignals/linkOrder';
 
 /**
  * WooCommerce ingestion → v2 schema, mirroring app/api/shopify/webhooks/route.ts:
@@ -43,6 +44,17 @@ function validInetOrNull(value: unknown): string | null {
 function moneyValue(value: unknown): number | null {
   const n = Number(value);
   return Number.isFinite(n) ? n : null;
+}
+
+function extractUnauthVisitorId(payload: WooCommerceOrderPayload): string | null {
+  const meta = (payload as WooCommerceOrderPayload & {
+    meta_data?: Array<{ key?: string; value?: unknown }> | null;
+  }).meta_data;
+  if (!Array.isArray(meta)) return null;
+  const item = meta.find((entry) => entry?.key === '_unauth_visitor_id' || entry?.key === '_unauth_vid');
+  const visitorId = typeof item?.value === 'string' ? item.value.trim() : null;
+  if (!visitorId || visitorId.length > 128) return null;
+  return visitorId;
 }
 
 type WooAddress = {
@@ -211,4 +223,22 @@ export async function processWooCommerceOrderWebhook(input: {
   }];
   const { signalKeys } = await emitIdentityObservations(supabase, merchantId, entities);
   await resolveIdentitiesForKeys(supabase, signalKeys);
+
+  const visitorId = extractUnauthVisitorId(payload);
+  if (visitorId) {
+    try {
+      await linkCheckoutSignalsToOrder(supabase, {
+        merchantId,
+        platformOrderId: externalId,
+        visitorId,
+        platform: 'woocommerce',
+      });
+    } catch (error) {
+      console.error('WooCommerce checkout signal order link failed', {
+        storeKey,
+        orderId: externalId,
+        message: error instanceof Error ? error.message : 'unknown',
+      });
+    }
+  }
 }

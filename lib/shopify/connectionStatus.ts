@@ -14,39 +14,31 @@ export type ShopifyConnectionStatus = {
 };
 
 type ConnectionRow = {
-  shop_domain?: string | null;
-  active?: boolean | null;
-  uninstalled_at?: string | null;
+  store_key: string | null;
+  status: string | null;
+  uninstalled_at: string | null;
+  credentials_encrypted: string | null;
+  last_error: string | null;
 };
 
-type ShopMerchantRow = {
-  access_token?: string | null;
-  uninstalled_at?: string | null;
-};
-
-async function shopHasLiveToken(
-  serviceClient: SupabaseClient,
-  shopDomain: string,
-): Promise<boolean> {
-  const { data } = await serviceClient
-    .from('shopify_merchants' as never)
-    .select('access_token, uninstalled_at')
-    .eq('shop_domain', shopDomain)
-    .maybeSingle();
-
-  const row = data as ShopMerchantRow | null;
-  return Boolean(row?.access_token) && !row?.uninstalled_at;
-}
-
-/** Canonical Shopify connection check for the current merchant workspace. */
+/**
+ * Canonical Shopify connection check for the current merchant workspace.
+ *
+ * v2: a single `store_connections` row (platform='shopify', store_key=shop_domain)
+ * holds status, uninstall state and the encrypted credentials. There is no longer a
+ * separate token table, so "has a live token" == status='active' && uninstalled_at is null.
+ */
 export async function getShopifyConnectionStatus(
   serviceClient: SupabaseClient,
   merchantId: string,
 ): Promise<ShopifyConnectionStatus> {
   const { data, error } = await serviceClient
-    .from('merchant_shopify_connections' as never)
-    .select('shop_domain, active, uninstalled_at')
+    .from('store_connections')
+    .select('store_key, status, uninstalled_at, credentials_encrypted, last_error')
     .eq('merchant_id', merchantId)
+    .eq('platform', 'shopify')
+    .order('installed_at', { ascending: false })
+    .limit(1)
     .maybeSingle();
 
   if (error) {
@@ -55,14 +47,15 @@ export async function getShopifyConnectionStatus(
   }
 
   const row = data as ConnectionRow | null;
-  const shopDomain = row?.shop_domain ?? null;
+  const shopDomain = row?.store_key ?? null;
+  const hasLiveCredentials = Boolean(row?.credentials_encrypted) && !row?.uninstalled_at;
 
-  if (row?.active && shopDomain && (await shopHasLiveToken(serviceClient, shopDomain))) {
+  if (row?.status === 'active' && shopDomain && hasLiveCredentials) {
     return {
       connected: true,
       linkState: 'connected',
       shopDomain,
-      lastError: null,
+      lastError: row?.last_error ?? null,
     };
   }
 
@@ -71,16 +64,16 @@ export async function getShopifyConnectionStatus(
       connected: false,
       linkState: 'disconnected',
       shopDomain,
-      lastError: null,
+      lastError: row?.last_error ?? null,
     };
   }
 
-  if (shopDomain && !row?.active && (await shopHasLiveToken(serviceClient, shopDomain))) {
+  if (shopDomain && row?.status !== 'active' && hasLiveCredentials) {
     return {
       connected: false,
       linkState: 'installed_unlinked',
       shopDomain,
-      lastError: null,
+      lastError: row?.last_error ?? null,
     };
   }
 

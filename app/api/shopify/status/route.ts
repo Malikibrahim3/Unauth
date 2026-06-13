@@ -26,80 +26,53 @@ export async function GET() {
   }
 
   const shopDomain = connection.shopDomain;
+  const merchantId = ctx.merchantId;
 
-  const [countResult, signalResult, auditCountResult, webhookResult, webhookHealthResult, recentWebhooksResult] =
-    await Promise.all([
+  // v2: Shopify orders live in the merchant-scoped `source_orders` table
+  // (source='shopify'). The legacy signal/audit distinction collapses into a
+  // single store of ingested orders. Webhook delivery telemetry
+  // (`processed_webhooks`) has no v2 equivalent yet, so it degrades to null/zero.
+  const [countResult, lastOrderResult] = await Promise.all([
     serviceClient
-      .from('shopify_order_signals' as never)
+      .from('source_orders')
       .select('id', { count: 'exact', head: true })
-      .eq('shop_domain', shopDomain),
-    serviceClient
-      .from('shopify_order_signals' as never)
-      .select('created_at_shopify')
-      .eq('shop_domain', shopDomain)
-      .order('created_at_shopify', { ascending: false })
-      .limit(1)
-      .maybeSingle(),
-    serviceClient
-      .from('audit_transactions' as never)
-      .select('id', { count: 'exact', head: true })
-      .eq('shop_domain', shopDomain)
+      .eq('merchant_id', merchantId)
       .eq('source', 'shopify'),
     serviceClient
-      .from('processed_webhooks' as never)
-      .select('created_at,topic,status')
-      .eq('shop_domain', shopDomain)
-      .order('created_at', { ascending: false })
+      .from('source_orders')
+      .select('placed_at, ingested_at')
+      .eq('merchant_id', merchantId)
+      .eq('source', 'shopify')
+      .order('placed_at', { ascending: false, nullsFirst: false })
       .limit(1)
       .maybeSingle(),
-    serviceClient
-      .from('processed_webhooks' as never)
-      .select('status', { count: 'exact', head: true })
-      .eq('shop_domain', shopDomain)
-      .eq('status', 'failed'),
-    serviceClient
-      .from('processed_webhooks' as never)
-      .select('created_at,topic,status')
-      .eq('shop_domain', shopDomain)
-      .order('created_at', { ascending: false })
-      .limit(5),
   ]);
 
-  const lastSignal = signalResult.data as { created_at_shopify?: string | null } | null;
-  const signalCountError = countResult.error;
-  const lastSignalError = signalResult.error;
-  if (signalCountError || lastSignalError) {
-    console.error('shopify status signal query failed', {
+  const lastOrder = lastOrderResult.data as { placed_at?: string | null; ingested_at?: string | null } | null;
+  if (countResult.error || lastOrderResult.error) {
+    console.error('shopify status order query failed', {
+      merchantId,
       shopDomain,
-      signalCountError: signalCountError?.message,
-      lastSignalError: lastSignalError?.message,
+      countError: countResult.error?.message,
+      lastOrderError: lastOrderResult.error?.message,
     });
   }
-  const lastWebhook = webhookResult.data as { created_at?: string; topic?: string | null; status?: string | null } | null;
-  const recentWebhooks = (recentWebhooksResult.data ?? []) as Array<{
-    created_at: string;
-    topic: string | null;
-    status: string | null;
-  }>;
+  const orderCount = countResult.count ?? 0;
 
   return NextResponse.json({
     connected: true,
     linkState: connection.linkState,
     shopDomain,
-    lastOrderSyncedAt: lastSignal?.created_at_shopify ?? null,
-    lastWebhookAt: lastWebhook?.created_at ?? null,
-    lastWebhookTopic: lastWebhook?.topic ?? null,
-    lastWebhookStatus: lastWebhook?.status ?? null,
-    orderCount: countResult.count ?? 0,
-    auditTransactionCount: auditCountResult.count ?? 0,
+    lastOrderSyncedAt: lastOrder?.placed_at ?? lastOrder?.ingested_at ?? null,
+    lastWebhookAt: null,
+    lastWebhookTopic: null,
+    lastWebhookStatus: null,
+    orderCount,
+    auditTransactionCount: orderCount,
     lastError: connection.lastError,
     scopes: [...SHOPIFY_SCOPES],
     dataSources: ['Shopify live sync', 'CSV historical import'],
-    webhookFailures: webhookHealthResult.count ?? 0,
-    recentWebhooks: recentWebhooks.map((row) => ({
-      at: row.created_at,
-      topic: row.topic,
-      status: row.status ?? 'received',
-    })),
+    webhookFailures: 0,
+    recentWebhooks: [],
   });
 }

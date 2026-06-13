@@ -109,7 +109,7 @@ export function countClaimsFromRows(rows: ClaimQueueCountRow[], now = new Date()
 
 function activeClaimsCountQuery(serviceClient: any, merchantId: string, nowIso: string) {
   return serviceClient
-    .from('merchant_claims' as any)
+    .from('claims')
     .select('id', { count: 'exact', head: true })
     .eq('merchant_id', merchantId)
     .in('status', [...ACTIVE_CLAIM_STATUSES])
@@ -118,7 +118,7 @@ function activeClaimsCountQuery(serviceClient: any, merchantId: string, nowIso: 
 
 function snoozedClaimsCountQuery(serviceClient: any, merchantId: string, nowIso: string) {
   return serviceClient
-    .from('merchant_claims' as any)
+    .from('claims')
     .select('id', { count: 'exact', head: true })
     .eq('merchant_id', merchantId)
     .in('status', [...ACTIVE_CLAIM_STATUSES])
@@ -141,15 +141,13 @@ export async function fetchClaimQueueCounts(
     assignedRes,
     snoozedRes,
     resolvedRes,
-    evidenceRes,
     pendingRes,
     escalatedRes,
     openRes,
-    underReviewRes,
     slaRowsRes,
   ] = await Promise.all([
     serviceClient
-      .from('merchant_claims' as any)
+      .from('claims')
       .select('id', { count: 'exact', head: true })
       .eq('merchant_id', merchantId),
     activeClaimsCountQuery(serviceClient, merchantId, nowIso),
@@ -160,17 +158,15 @@ export async function fetchClaimQueueCounts(
       : Promise.resolve({ count: 0 }),
     snoozedClaimsCountQuery(serviceClient, merchantId, nowIso),
     serviceClient
-      .from('merchant_claims' as any)
+      .from('claims')
       .select('id', { count: 'exact', head: true })
       .eq('merchant_id', merchantId)
       .in('status', [...FINAL_CLAIM_STATUSES]),
-    activeClaimsCountQuery(serviceClient, merchantId, nowIso).eq('status', 'evidence_requested'),
     activeClaimsCountQuery(serviceClient, merchantId, nowIso).eq('status', 'pending'),
     activeClaimsCountQuery(serviceClient, merchantId, nowIso).eq('status', 'escalated'),
     activeClaimsCountQuery(serviceClient, merchantId, nowIso).eq('status', 'open'),
-    activeClaimsCountQuery(serviceClient, merchantId, nowIso).eq('status', 'under_review'),
     serviceClient
-      .from('merchant_claims' as any)
+      .from('claims')
       .select('status,submitted_at,created_at,updated_at,snoozed_until,first_viewed_at,assigned_to')
       .eq('merchant_id', merchantId)
       .in('status', [...ACTIVE_CLAIM_STATUSES]),
@@ -188,11 +184,12 @@ export async function fetchClaimQueueCounts(
     assignedToMe: assignedRes.count ?? 0,
     snoozed: snoozedRes.count ?? 0,
     resolved: resolvedRes.count ?? 0,
-    awaitingEvidence: evidenceRes.count ?? 0,
+    // 'evidence_requested' / 'under_review' are not v2 claim_status values.
+    awaitingEvidence: 0,
     awaitingInfo: pendingRes.count ?? 0,
     escalated: escalatedRes.count ?? 0,
     open: openRes.count ?? 0,
-    underReview: underReviewRes.count ?? 0,
+    underReview: 0,
     overdue,
   };
 }

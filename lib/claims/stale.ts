@@ -10,28 +10,27 @@ export async function markStalePendingClaims(
   const limit = options.limit ?? 500;
 
   const { data: claims, error: selectError } = await serviceClient
-    .from('merchant_claims' as any)
-    .select('id,merchant_id,shop_domain,status,updated_at,submitted_at')
+    .from('claims')
+    .select('id,merchant_id,status,updated_at,submitted_at')
     .eq('status', 'pending')
     .lt('updated_at', cutoff)
     .limit(limit);
-  if (selectError) throw new Error(`select stale merchant_claims failed: ${selectError.message}`);
+  if (selectError) throw new Error(`select stale claims failed: ${selectError.message}`);
 
   const markResults = await Promise.all(
-    (claims ?? []).map(async (claim: { id: string; merchant_id: string; shop_domain: string }) => {
+    (claims ?? []).map(async (claim: { id: string; merchant_id: string }) => {
       const { data, error } = await serviceClient
-        .from('merchant_claims' as any)
-        .update({ status: 'stale', updated_at: now.toISOString() })
+        .from('claims')
+        .update({ status: 'stale' })
         .eq('id', claim.id)
         .eq('status', 'pending')
         .select('id,status')
         .maybeSingle();
-      if (error) throw new Error(`mark stale merchant_claims failed: ${error.message}`);
+      if (error) throw new Error(`mark stale claims failed: ${error.message}`);
       if (!data) return false;
       await appendClaimEvent(serviceClient, {
         claim_id: claim.id,
-        merchant_id: claim.merchant_id ?? null,
-        shop_domain: claim.shop_domain ?? null,
+        merchant_id: claim.merchant_id,
         event_type: 'status_changed',
         previous_status: 'pending',
         new_status: 'stale',

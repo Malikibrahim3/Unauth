@@ -28,30 +28,31 @@ export async function GET(request: NextRequest) {
     : new Date(Date.now() - (range === '7d' ? 7 : range === '90d' ? 90 : 30) * 86400000).toISOString();
 
   let claimsQuery = serviceClient
-    .from('merchant_claims' as any)
+    .from('claims')
     .select('id,status,amount_at_risk,submitted_at,created_at,updated_at')
     .eq('merchant_id', ctx.merchantId);
   if (cutoff) claimsQuery = claimsQuery.gte('submitted_at', cutoff);
   const { data: claims } = await claimsQuery;
   const claimRows = claims ?? [];
+  // claim_outcomes is one-row-per-claim (claim_id UNIQUE) — fetch directly by claim id.
   const { data: outcomes } = claimRows.length > 0
     ? await serviceClient
-      .from('merchant_case_outcomes' as any)
-      .select('claim_id,decision,outcome,amount_refunded,decided_at,created_at,updated_at')
-      .in('claim_id', claimRows.map((claim: any) => claim.id))
-    : { data: [] };
+      .from('claim_outcomes')
+      .select('claim_id,decision,outcome,amount_refunded,decided_at,updated_at')
+      .in('claim_id', claimRows.map((claim) => claim.id))
+    : { data: [] as Array<{ claim_id: string; decision: string | null; outcome: string | null; amount_refunded: number | null; decided_at: string | null; updated_at: string | null }> };
 
   if (view === 'outcomes') {
-    const claimStatusById = new Map(claimRows.map((claim: any) => [claim.id, claim.status]));
+    const claimStatusById = new Map(claimRows.map((claim) => [claim.id, claim.status]));
     const csv = [
       ['claim_id', 'status', 'decision', 'outcome', 'amount_refunded', 'decided_at'].join(','),
-      ...(outcomes ?? []).map((row: any) => [
+      ...(outcomes ?? []).map((row) => [
         row.claim_id,
         claimStatusById.get(row.claim_id) ?? '',
         row.decision ?? '',
         row.outcome ?? '',
         row.amount_refunded ?? '',
-        row.decided_at ?? row.updated_at ?? row.created_at ?? '',
+        row.decided_at ?? row.updated_at ?? '',
       ].map(csvCell).join(',')),
     ].join('\n');
 

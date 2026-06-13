@@ -27,27 +27,48 @@ export const FL_ROUTES = {
 
 export const FL_NAV = {
   links: [
-    { label: 'Product', href: '/landing#about' },
-    { label: 'Network', href: '/landing#network' },
-    { label: 'Evidence', href: '/landing#evidence' },
+    { label: 'Platform', href: '/landing#about' },
+    { label: 'Solutions', href: '/landing#evidence' },
+    { label: 'Resources', href: '/landing#faq' },
     { label: 'Pricing', href: FL_ROUTES.pricing },
-    { label: 'Privacy', href: '/landing#privacy' },
+    { label: 'Company', href: '/landing#about' },
   ],
   signIn: 'Sign in',
-  cta: 'Run a free claim audit',
+  cta: 'Get a Demo',
 } as const;
 
 /* ── Hero ──────────────────────────────────────────────────────────────── */
 
 export const FL_HERO = {
-  // Stacked display lines — claim-centric; three-line rhythm with article intact.
-  headlineLines: ['EVERY CLAIM', 'LEAVES', 'A TRAIL'],
-  subheadLight: 'When a customer says "it never arrived," see whether they\'ve said it before',
-  subheadBold: '— at your store, or anyone else\'s.',
-  ctaNote: 'Read-only audit of your order history · no card · ~20 min',
-  pinnedCta: 'Run a free claim audit',
-  contactCta: 'Sign in',
-  applyCta: 'Run a free claim audit',
+  eyebrow: 'Evidence Layer for Commerce',
+  headlineLines: ['One ticket.', 'More context.'],
+  subcopy:
+    'Unauth turns fragmented signals into verifiable evidence—so you can stop fraud, resolve claims, and unlock growth with confidence.',
+  primaryCta: 'Get a Demo',
+  secondaryCta: 'Explore the Platform',
+  pinnedCta: 'Get a Demo',
+  contactCta: 'Get a Demo',
+  orderHistoryCard: {
+    title: 'Order history',
+    status: '6 orders · $847 lifetime',
+    meta: '3 refund requests · 2 approved',
+    pattern: 'Pattern: claims on high-value orders',
+  },
+  claimTimingCard: {
+    title: 'Claim timing',
+    status: 'Filed 4 hrs post-delivery scan',
+    meta: '3rd claim in 90 days',
+  },
+  crossMerchantCard: {
+    title: 'Cross-merchant signal',
+    status: 'Matched across 4 merchants · device_hmac',
+    meta: '2 prior INR claims, different stores',
+  },
+  chargebackCard: {
+    title: 'Prior claims',
+    status: 'Chargeback filed 11 days later · $94',
+    meta: 'Same address',
+  },
 } as const;
 
 /* Floating identity record — mirrors the real product panel. */
@@ -55,9 +76,9 @@ export const FL_PHONE = {
   title: 'Identity record',
   subtitle: 'hash 9f3b…12c8 · 4 merchants',
   valueLabel: 'Linked Exposure',
-  value: '£1,210',
+  value: '$1,210',
   compareA: { label: 'Claims / Orders', value: '6 / 9', delta: '67% claim rate', up: false },
-  compareB: { label: 'Merchants', value: '4', delta: 'k ≥ 3 · gate open', up: true },
+  compareB: { label: 'Merchants', value: '4', delta: '3+ independent merchants · gate open', up: true },
   status: { label: 'Status', value: 'Evidence Ready' },
   rows: [
     { k: 'Match Grade', v: 'B · Probable' },
@@ -88,7 +109,6 @@ export const FL_STATEMENT = {
     { id: '03', title: 'Repeated signals are matched across merchants' },
     { id: '04', title: 'Evidence packs sit one click from the ticket' },
   ],
-  cta: 'Run a free claim audit',
 } as const;
 
 /* Evidence manifest card — stands where the reference puts a 3D render. */
@@ -100,7 +120,7 @@ export const FL_MANIFEST = {
     { name: 'identity_signals.csv', meta: '12 signals · graded' },
     { name: 'delivery_confirmation.pdf', meta: 'carrier GPS + photo' },
     { name: 'cross_merchant_history.txt', meta: 'k-gated · pseudonymous' },
-    { name: 'order_record.json', meta: '#UA-10482 · £162.40' },
+    { name: 'order_record.json', meta: '#UA-10482 · $162.40' },
   ],
   footer: 'assembled in 38ms · formatted for representment',
 } as const;
@@ -146,14 +166,14 @@ export const FL_SIGNALS_EVIDENCE = {
     {
       key: 'timing',
       tab: 'Claim timing',
-      caseLine: ['CB-2291', 'Never arrived', '£162.40'],
+      caseLine: ['CB-2291', 'Never arrived', '$162.40'],
       gradeLetter: 'B',
       gradeTier: 'Probable match',
       mainLine:
         '"Never arrived" for the third time — each claim opened after a confirmed delivery window.',
       details: [
         { k: 'Signals matched', v: '4 of 6' },
-        { k: 'Matched across', v: '4 merchants · k ≥ 3' },
+        { k: 'Matched across', v: '4 merchants · 3+ independent merchants' },
         { k: 'Strongest signal', v: 'device_hmac' },
         { k: 'Prior claims', v: '3 in 120 days' },
       ],
@@ -169,7 +189,7 @@ export const FL_SIGNALS_EVIDENCE = {
         'Carrier GPS puts the parcel at the door — the claim arrived four days after the scan.',
       details: [
         { k: 'Signals matched', v: '5 of 6' },
-        { k: 'Matched across', v: '5 merchants · k ≥ 3' },
+        { k: 'Matched across', v: '5 merchants · 3+ independent merchants' },
         { k: 'Delivery proof', v: 'carrier GPS + photo' },
         { k: 'Claim opened', v: '+4 days post-scan' },
       ],
@@ -185,7 +205,7 @@ export const FL_SIGNALS_EVIDENCE = {
         'One fulfilment address, six prior claims, three different names.',
       details: [
         { k: 'Signals matched', v: '2 of 6' },
-        { k: 'Matched across', v: '3 merchants · k ≥ 3' },
+        { k: 'Matched across', v: '3 merchants · 3+ independent merchants' },
         { k: 'Address overlap', v: '0.94' },
         { k: 'Strongest signal', v: 'address_tokens' },
       ],
@@ -201,7 +221,7 @@ export const FL_SIGNALS_EVIDENCE = {
         'Three chargebacks in ninety days, tied together by a single device hash.',
       details: [
         { k: 'Signals matched', v: '4 of 6' },
-        { k: 'Matched across', v: '4 merchants · k ≥ 3' },
+        { k: 'Matched across', v: '4 merchants · 3+ independent merchants' },
         { k: 'Strongest signal', v: 'card_hmac' },
         { k: 'Prior disputes', v: '3 in 90 days' },
       ],
@@ -216,7 +236,6 @@ export const FL_HOW_IT_WORKS = {
   displayLines: ['CONNECT ONCE.', 'REVIEW EVERY CLAIM', 'WITH CONTEXT.'],
   subhead:
     'Unauth connects to your ecommerce and support tools, audits historical claims, then attaches cross-merchant evidence to post-checkout reviews — without changing your refund workflow.',
-  cta: { label: 'Run a free claim audit', href: FL_ROUTES.audit },
   privacyNote: 'Identifiers are hashed before they leave your store. Raw customer data never enters the network.',
   steps: [
     {
@@ -245,7 +264,7 @@ export const FL_HOW_IT_WORKS = {
     },
   ],
   image: {
-    src: '/setup-flow-visual.png',
+    src: '/strdtfygh.png',
     alt: 'Architectural illustration of a merchant store, Unauth intelligence hub, and helpdesk module connected for claim review setup',
   },
 } as const;

@@ -16,7 +16,7 @@ const inter = Inter({
   subsets: ['latin'],
   variable: '--font-dm-sans',
   display: 'swap',
-  weight: ['400', '500', '600', '700'],
+  weight: ['300', '400', '500', '600', '700'],
 });
 
 const interTight = Inter_Tight({
@@ -36,7 +36,8 @@ const dmMono = DM_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'),
   title: 'Unauth — Order Identity Review',
-  description: 'CSV-based identity match and evidence review tool for ecommerce merchants.',
+  description:
+    'Cross-merchant identity evidence for post-checkout claim reviews. Unauth attaches graded context to claims — decided by your team.',
   icons: {
     icon: [
       { url: '/favicon.svg', type: 'image/svg+xml' },
@@ -47,8 +48,14 @@ export const metadata: Metadata = {
   manifest: '/manifest.json',
   openGraph: {
     title: 'Unauth — Order Identity Review',
-    description: 'CSV-based identity match and evidence review tool for ecommerce merchants.',
+    description:
+      'Cross-merchant identity evidence for post-checkout claim reviews. Unauth attaches graded context to claims — decided by your team.',
     images: [{ url: '/logo-wordmark.png', width: 980, height: 212, alt: 'Unauth wordmark' }],
+  },
+  twitter: {
+    title: 'Unauth — Order Identity Review',
+    description:
+      'Cross-merchant identity evidence for post-checkout claim reviews. Unauth attaches graded context to claims — decided by your team.',
   },
 };
 

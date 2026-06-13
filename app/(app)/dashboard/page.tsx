@@ -88,17 +88,17 @@ export default async function DashboardPage() {
     countEvidence(serviceClient, ctx.merchantId),
     countClaimsNeedingAction(serviceClient, ctx.merchantId),
     serviceClient
-      .from('merchant_claims' as never)
+      .from('claims')
       .select('submitted_at,created_at,amount_at_risk')
-      .eq('merchant_id' as never, ctx.merchantId as never)
-      .gte('submitted_at' as never, new Date(Date.now() - 56 * 24 * 3600 * 1000).toISOString() as never)
-      .then((r: { data: Array<{ submitted_at: string | null; created_at: string; amount_at_risk: number | null }> | null; error: unknown }) => r.error ? [] : (r.data ?? [])),
+      .eq('merchant_id', ctx.merchantId)
+      .gte('submitted_at', new Date(Date.now() - 56 * 24 * 3600 * 1000).toISOString())
+      .then((r) => r.error ? [] : (r.data ?? [])),
     serviceClient
-      .from('merchant_claims' as never)
+      .from('claims')
       .select('amount_at_risk')
-      .eq('merchant_id' as never, ctx.merchantId as never)
-      .in('status' as never, ['open', 'under_review', 'evidence_requested', 'pending', 'escalated'] as never)
-      .then((r: { data: Array<{ amount_at_risk: number | null }> | null; error: unknown }) => r.error ? [] : (r.data ?? [])),
+      .eq('merchant_id', ctx.merchantId)
+      .in('status', ['open', 'pending', 'escalated'])
+      .then((r) => r.error ? [] : (r.data ?? [])),
   ]);
 
   const claimTrend: TrendDataPoint[] = buildWeeklyTrend(

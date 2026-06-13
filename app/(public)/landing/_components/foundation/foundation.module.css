@@ -113,6 +113,308 @@
   font-size: 1.125rem;
 }
 
+.statementFeatureList {
+  max-width: 34rem;
+}
+
+.statementFeatureItem {
+  position: relative;
+  display: grid;
+  grid-template-columns: 3.25rem minmax(0, 1fr);
+  align-items: center;
+  gap: 1.25rem;
+  min-height: 4.25rem;
+  padding: 1.125rem 0;
+  border-top: 1px solid var(--fl-line);
+}
+
+.statementFeatureNumber {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1;
+  color: var(--fl-ink-tertiary);
+}
+
+.statementFeatureTitle {
+  display: block;
+  max-width: 25rem;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--fl-ink);
+}
+
+/* ── Section scenery + transition fields ───────────────────────────────── */
+
+.statementField,
+.metricBridge,
+.espressoEvidence,
+.howField,
+.figuresField,
+.faqField,
+.finalField {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.statementField::before,
+.statementField::after,
+.metricBridge::before,
+.metricBridge::after,
+.espressoEvidence::before,
+.espressoEvidence::after,
+.howField::before,
+.howField::after,
+.figuresField::before,
+.figuresField::after,
+.faqField::before,
+.finalField::before,
+.finalField::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.statementField {
+  background:
+    radial-gradient(44rem 26rem at 91% 18%, color-mix(in srgb, var(--fl-slate-card) 7%, transparent), transparent 72%),
+    var(--fl-bg);
+}
+
+.statementField::before {
+  width: min(74rem, 82vw);
+  height: 18rem;
+  right: 8%;
+  bottom: -12rem;
+  background: color-mix(in srgb, var(--fl-line) 54%, transparent);
+  clip-path: polygon(0 66%, 62% 0, 100% 70%, 100% 100%, 0 100%);
+  opacity: 0.52;
+}
+
+.statementField::after {
+  width: 24rem;
+  height: 16rem;
+  left: -8rem;
+  bottom: 3rem;
+  background: color-mix(in srgb, var(--fl-status-bg) 32%, transparent);
+  clip-path: polygon(0 18%, 76% 0, 100% 74%, 18% 100%);
+  opacity: 0.46;
+}
+
+.metricBridge {
+  margin-top: -1px;
+  background:
+    linear-gradient(
+      180deg,
+      var(--fl-bg) 0%,
+      var(--fl-bg) 28%,
+      color-mix(in srgb, var(--fl-bg) 58%, var(--fl-dark-card)) 45%,
+      var(--fl-dark-card) 62%,
+      var(--fl-dark-card) 100%
+    );
+}
+
+.metricBridge::before {
+  width: min(70rem, 86vw);
+  height: 34rem;
+  top: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: color-mix(in srgb, var(--fl-line) 70%, transparent);
+  clip-path: polygon(50% 0, 100% 34%, 86% 100%, 14% 100%, 0 34%);
+  opacity: 0.58;
+}
+
+.metricBridge::after {
+  width: 42rem;
+  height: 30rem;
+  right: -16rem;
+  bottom: 2rem;
+  background: color-mix(in srgb, var(--fl-slate-card) 28%, transparent);
+  clip-path: polygon(0 0, 100% 22%, 74% 100%, 12% 82%);
+  opacity: 0.5;
+}
+
+.metricCardGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.875rem;
+  align-items: end;
+}
+
+.metricCard {
+  min-height: 18rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border-radius: var(--radius-3);
+  padding: 4.75rem 1.5rem 1.5rem;
+  box-shadow: var(--fl-shadow-card);
+}
+
+.metricCardPurple {
+  color: var(--fl-on-color);
+  background: var(--fl-purple-card);
+}
+
+.metricCardDark {
+  color: var(--fl-on-color);
+  background: var(--fl-dark-card);
+}
+
+.metricCardLight {
+  color: var(--fl-ink);
+  background: var(--fl-status-bg);
+}
+
+.metricCardValue {
+  max-width: 100%;
+  font-family: var(--ua-font-display);
+  font-size: 4.25rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 0.86;
+  white-space: nowrap;
+}
+
+.metricCardValueLong {
+  font-size: 3.75rem;
+}
+
+.metricCardFooter {
+  margin-top: 2.5rem;
+  border-top: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  padding-top: 1rem;
+}
+
+.metricCardLabel {
+  max-width: 18rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.metricSources {
+  max-width: 48rem;
+  color: color-mix(in srgb, var(--fl-dusk-ink) 58%, transparent);
+}
+
+.espressoEvidence::before {
+  inset: auto 0 0;
+  height: 13rem;
+  background: linear-gradient(180deg, transparent 0%, color-mix(in srgb, var(--fl-sky-1) 8%, transparent) 100%);
+}
+
+.espressoEvidence::after {
+  width: 46rem;
+  height: 36rem;
+  top: -16rem;
+  right: -20rem;
+  background: color-mix(in srgb, var(--fl-slate-card) 14%, transparent);
+  clip-path: polygon(20% 0, 100% 18%, 78% 100%, 0 76%);
+  opacity: 0.56;
+}
+
+.howField {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--fl-dark-card) 10%, var(--fl-sky-1)) 0%,
+      color-mix(in srgb, var(--fl-sky-1) 42%, var(--fl-bg)) 12rem,
+      color-mix(in srgb, var(--fl-sky-1) 42%, var(--fl-bg)) 100%
+    );
+}
+
+.howField::before {
+  width: 52rem;
+  height: 42rem;
+  top: -12rem;
+  right: -18rem;
+  background: color-mix(in srgb, var(--fl-slate-card) 18%, transparent);
+  clip-path: polygon(50% 0, 100% 29%, 100% 72%, 50% 100%, 0 72%, 0 29%);
+}
+
+.howField::after {
+  width: 38rem;
+  height: 22rem;
+  left: -16rem;
+  bottom: -7rem;
+  background: color-mix(in srgb, var(--fl-status-bg) 46%, transparent);
+  clip-path: polygon(8% 0, 100% 28%, 72% 100%, 0 78%);
+  opacity: 0.58;
+}
+
+.figuresField {
+  background:
+    radial-gradient(44rem 26rem at 86% 20%, color-mix(in srgb, var(--fl-status-bg) 18%, transparent), transparent 70%),
+    linear-gradient(180deg, var(--fl-bg) 0%, color-mix(in srgb, var(--fl-slate-card) 7%, var(--fl-bg)) 100%);
+}
+
+.figuresField::before {
+  width: 44rem;
+  height: 54rem;
+  right: -22rem;
+  top: 8rem;
+  background: color-mix(in srgb, var(--fl-line) 74%, transparent);
+  clip-path: polygon(0 0, 100% 18%, 76% 100%, 0 78%);
+  opacity: 0.72;
+}
+
+.figuresField::after {
+  width: 36rem;
+  height: 20rem;
+  left: 10%;
+  bottom: -9rem;
+  background: color-mix(in srgb, var(--fl-purple-card) 10%, transparent);
+  clip-path: polygon(24% 0, 100% 20%, 78% 100%, 0 72%);
+}
+
+.faqField {
+  background:
+    linear-gradient(180deg, var(--fl-bg) 0%, color-mix(in srgb, var(--fl-purple) 6%, var(--fl-bg)) 100%);
+}
+
+.faqField::before {
+  width: 46rem;
+  height: 36rem;
+  right: -18rem;
+  bottom: -14rem;
+  background: color-mix(in srgb, var(--fl-line) 64%, transparent);
+  clip-path: polygon(50% 0, 100% 30%, 100% 72%, 50% 100%, 0 72%, 0 30%);
+}
+
+.finalField {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--fl-bg) 24%, var(--fl-purple)) 0%,
+      var(--fl-purple) 18%,
+      var(--fl-purple-hover) 100%
+    );
+}
+
+.finalField::before {
+  width: 48rem;
+  height: 34rem;
+  top: -18rem;
+  right: -12rem;
+  background: color-mix(in srgb, var(--fl-line) 18%, transparent);
+  clip-path: polygon(10% 0, 100% 24%, 74% 100%, 0 72%);
+}
+
+.finalField::after {
+  width: 36rem;
+  height: 26rem;
+  left: -14rem;
+  bottom: -9rem;
+  background: color-mix(in srgb, var(--fl-purple-card) 26%, transparent);
+  clip-path: polygon(50% 0, 100% 30%, 100% 72%, 50% 100%, 0 72%, 0 30%);
+}
+
 @media (min-width: 640px) {
   .displayHero {
     font-size: 4.75rem;
@@ -153,6 +455,32 @@
 
   .statement {
     font-size: 1.375rem;
+  }
+
+  .statementFeatureList {
+    max-width: 38rem;
+  }
+
+  .statementFeatureItem {
+    grid-template-columns: 3.75rem minmax(0, 1fr);
+    min-height: 4.75rem;
+  }
+
+  .statementFeatureTitle {
+    font-size: 1.0625rem;
+  }
+
+  .metricCard {
+    min-height: 20rem;
+    padding: 1.75rem;
+  }
+
+  .metricCardValue {
+    font-size: 5.5rem;
+  }
+
+  .metricCardValueLong {
+    font-size: 4.75rem;
   }
 }
 
@@ -197,6 +525,54 @@
   .statement {
     font-size: 1.75rem;
   }
+
+  .statementFeatureList {
+    max-width: 36rem;
+  }
+
+  .metricBridge {
+    background:
+      linear-gradient(
+        180deg,
+        var(--fl-bg) 0%,
+        var(--fl-bg) 25%,
+        color-mix(in srgb, var(--fl-bg) 52%, var(--fl-dark-card)) 43%,
+        var(--fl-dark-card) 62%,
+        var(--fl-dark-card) 100%
+      );
+  }
+
+  .metricCardGrid {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .metricCard {
+    min-height: 22rem;
+    padding: 1.75rem;
+  }
+
+  .metricCard:nth-child(1) {
+    grid-column: 1 / span 4;
+  }
+
+  .metricCard:nth-child(2) {
+    grid-column: 5 / span 4;
+    transform: translateY(3.75rem);
+  }
+
+  .metricCard:nth-child(3) {
+    grid-column: 9 / span 4;
+    transform: translateY(7.5rem);
+  }
+
+  .metricCardValue {
+    font-size: 6.1rem;
+  }
+
+  .metricCardValueLong {
+    font-size: 5.2rem;
+  }
 }
 
 @media (min-width: 1280px) {
@@ -236,6 +612,19 @@
   .statement {
     font-size: 1.95rem;
   }
+
+  .metricCard {
+    min-height: 25rem;
+    padding: 2rem;
+  }
+
+  .metricCardValue {
+    font-size: 7.5rem;
+  }
+
+  .metricCardValueLong {
+    font-size: 6.3rem;
+  }
 }
 
 @media (min-width: 1600px) {
@@ -266,6 +655,19 @@
 
   .figureNumeral {
     font-size: 10rem;
+  }
+
+  .metricCard {
+    min-height: 28rem;
+    padding: 2.25rem;
+  }
+
+  .metricCardValue {
+    font-size: 8.5rem;
+  }
+
+  .metricCardValueLong {
+    font-size: 7.25rem;
   }
 }
 
@@ -304,11 +706,787 @@
   }
 }
 
-/* ── Dusk hero atmosphere — gradient + faint grain + vignette ──────────── */
+/* ── Hero typography — Inter system ──────────────────────────────────── */
+
+.heroFont {
+  font-family: var(--font-dm-sans), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', sans-serif;
+}
+
+.heroLogo {
+  composes: heroFont;
+  font-weight: 600;
+  font-size: 23px;
+  line-height: 28px;
+  letter-spacing: -0.035em;
+  color: rgba(255, 255, 255, 0.94);
+  transition: color 180ms ease, font-size 180ms ease, line-height 180ms ease, letter-spacing 180ms ease;
+}
+
+.heroEyebrow {
+  composes: heroFont;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.4375rem 0.875rem;
+  font-weight: 500;
+  font-size: 13px;
+  line-height: 18px;
+  letter-spacing: -0.01em;
+  color: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(8px);
+}
+
+.heroEyebrow svg,
+.heroEyebrowIcon {
+  flex-shrink: 0;
+  color: rgba(255, 255, 255, 0.78);
+  stroke: currentColor;
+}
+
+.heroHeadline {
+  composes: heroFont;
+  font-weight: 300;
+  font-size: clamp(46px, 13vw, 64px);
+  line-height: 0.96;
+  letter-spacing: -0.06em;
+  color: rgba(255, 255, 255, 0.92);
+  max-width: 680px;
+}
+
+.heroSubhead {
+  composes: heroFont;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1.55;
+  letter-spacing: -0.018em;
+  color: rgba(255, 255, 255, 0.68);
+  max-width: 430px;
+}
+
+.heroCtaPrimary {
+  composes: heroFont;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  border-radius: 9999px;
+  background: #f4efe6;
+  padding: 0.625rem 1.25rem;
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: -0.015em;
+  color: #11100e;
+  transition: background-color 0.15s ease;
+}
+
+.heroCtaPrimary:hover {
+  background: #ebe4d9;
+}
+
+.heroCtaSecondary {
+  composes: heroFont;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: -0.015em;
+  color: rgba(255, 255, 255, 0.82);
+  transition: color 0.15s ease;
+}
+
+.heroCtaSecondary:hover {
+  color: #ffffff;
+}
+
+/* ── Hero navbar ─────────────────────────────────────────────────────── */
+
+.heroNavbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 50;
+  width: 100%;
+  height: 72px;
+  background: transparent;
+  transition: height 220ms ease, background-color 220ms ease, box-shadow 220ms ease;
+}
+
+.heroNavbarLight {
+  height: 92px;
+  background: transparent;
+}
+
+.heroNavbarInner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.heroNavLogoGroup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.heroNavLogoIcon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  color: #ffffff;
+  opacity: 0.95;
+  transition: color 180ms ease;
+}
+
+.heroNavCentre {
+  display: none;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  align-items: center;
+  gap: 36px;
+}
+
+.heroNavLink {
+  composes: heroFont;
+  font-weight: 400;
+  font-size: 15px;
+  line-height: 20px;
+  letter-spacing: -0.012em;
+  color: rgba(255, 255, 255, 0.72);
+  transition: color 180ms ease, opacity 180ms ease;
+  white-space: nowrap;
+}
+
+.heroNavLink:hover {
+  color: rgba(255, 255, 255, 0.96);
+}
+
+.heroNavRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.heroNavCta {
+  composes: heroFont;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 44px;
+  padding: 0 8px 0 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(8, 8, 7, 0.18);
+  backdrop-filter: blur(12px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  transition: border-color 180ms ease, background-color 180ms ease;
+}
+
+.heroNavCta:hover {
+  border-color: rgba(255, 255, 255, 0.42);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.heroNavCtaText {
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: -0.015em;
+  color: rgba(255, 255, 255, 0.92);
+  white-space: nowrap;
+  transition: color 180ms ease;
+}
+
+.heroNavCtaArrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.94);
+  color: #11100e;
+}
+
+.heroNavMenuBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.92);
+  cursor: pointer;
+  transition: color 180ms ease;
+}
+
+.heroNavbarLight .heroNavLogoIcon {
+  color: #111111;
+  width: 22px;
+  height: 22px;
+}
+
+.heroNavbarLight .heroLogo {
+  font-size: 24px;
+  line-height: 30px;
+  letter-spacing: -0.045em;
+  color: #111111;
+}
+
+.heroNavbarLight .heroNavLink {
+  font-size: 14.5px;
+  color: rgba(17, 17, 17, 0.92);
+}
+
+.heroNavbarLight .heroNavLink:hover {
+  color: rgba(17, 17, 17, 0.65);
+}
+
+.heroNavbarLight .heroNavCta {
+  height: 46px;
+  gap: 14px;
+  padding: 0 12px 0 22px;
+  border-color: transparent;
+  background: #080807;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16);
+}
+
+.heroNavbarLight .heroNavCta:hover {
+  border-color: transparent;
+  background: #080807;
+}
+
+.heroNavbarLight .heroNavCtaText {
+  font-size: 14.5px;
+  color: #ffffff;
+}
+
+.heroNavbarLight .heroNavCtaArrow {
+  width: 28px;
+  height: 28px;
+}
+
+.heroNavbarLight .heroNavMenuBtn {
+  color: #111111;
+}
+
+.heroNavSheet {
+  position: fixed;
+  inset-inline: 16px;
+  top: 80px;
+  z-index: 50;
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(18, 16, 14, 0.96);
+  padding: 0.75rem;
+  box-shadow: 0 24px 64px -16px rgba(10, 14, 18, 0.6);
+  backdrop-filter: blur(16px);
+}
+
+.heroNavSheetLink {
+  composes: heroNavLink;
+  display: block;
+  border-radius: 0.75rem;
+  padding: 0.875rem 1rem;
+}
+
+.heroNavSheetLink:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+@media (min-width: 768px) {
+  .heroNavbarInner {
+    padding: 0 32px;
+  }
+}
+
+@media (min-width: 900px) {
+  .heroNavCentre {
+    display: flex;
+  }
+
+  .heroNavMenuBtn {
+    display: none;
+  }
+}
+
+@media (min-width: 1024px) {
+  .heroNavbar {
+    height: 88px;
+  }
+
+  .heroNavbarLight {
+    height: 104px;
+  }
+
+  .heroNavbarInner {
+    padding: 0 56px;
+  }
+
+  .heroNavSheet {
+    top: 96px;
+  }
+}
+
+@media (max-width: 519px) {
+  .heroNavCta {
+    height: 40px;
+    padding: 0 7px 0 14px;
+  }
+
+  .heroNavCtaText {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 419px) {
+  .heroNavCtaText {
+    display: none;
+  }
+
+  .heroNavCta {
+    padding: 0 5px;
+    width: 40px;
+    height: 40px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .heroHeadline {
+    font-size: clamp(58px, 6.1vw, 94px);
+    line-height: 0.94;
+    letter-spacing: -0.065em;
+  }
+}
+
+/* ── Hero evidence cards — suspended glass over the parcel mist ───────── */
+
+.evidenceCardsLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 25;
+  display: block;
+  pointer-events: none;
+}
+
+.evidenceCard {
+  composes: heroFont;
+  position: absolute;
+  overflow: hidden;
+  pointer-events: auto;
+  opacity: 0;
+  color: rgba(255, 255, 255, 0.88);
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.105) 0%,
+      rgba(255, 255, 255, 0.055) 48%,
+      rgba(255, 255, 255, 0.035) 100%
+    );
+  box-shadow:
+    0 24px 80px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.035);
+  backdrop-filter: blur(18px) saturate(118%);
+  -webkit-backdrop-filter: blur(18px) saturate(118%);
+  animation: evidenceCardIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  transition:
+    background 220ms ease,
+    border-color 220ms ease,
+    box-shadow 220ms ease,
+    transform 220ms ease;
+}
+
+.evidenceCard:hover {
+  border-color: rgba(255, 242, 218, 0.32);
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.17) 0%,
+      rgba(255, 255, 255, 0.092) 48%,
+      rgba(255, 255, 255, 0.058) 100%
+    );
+  box-shadow:
+    0 26px 82px rgba(0, 0, 0, 0.34),
+    0 0 24px rgba(242, 215, 162, 0.18),
+    0 0 54px rgba(242, 215, 162, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.075);
+  transform: translateY(-2px);
+}
+
+.evidenceCard:hover::after {
+  background:
+    radial-gradient(circle at 22% 0%, rgba(255, 239, 205, 0.24), transparent 45%),
+    radial-gradient(circle at 78% 84%, rgba(242, 215, 162, 0.1), transparent 42%);
+}
+
+.evidenceCard::before,
+.evidenceCard::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.evidenceCard::before {
+  opacity: 0.12;
+  background-image:
+    radial-gradient(circle at 14% 24%, rgba(255, 255, 255, 0.48) 0 1px, transparent 1px),
+    radial-gradient(circle at 78% 32%, rgba(255, 255, 255, 0.42) 0 1px, transparent 1px),
+    radial-gradient(circle at 42% 72%, rgba(255, 255, 255, 0.35) 0 1px, transparent 1px);
+  background-size: 19px 19px, 29px 29px, 37px 37px;
+}
+
+.evidenceCard::after {
+  background:
+    radial-gradient(circle at 22% 0%, rgba(255, 239, 205, 0.14), transparent 42%);
+}
+
+.evidenceIcon {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.82);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 8px 22px rgba(0, 0, 0, 0.22);
+}
+
+.evidenceIcon svg {
+  color: rgba(255, 255, 255, 0.82);
+  stroke: currentColor;
+  flex-shrink: 0;
+}
+
+.evidenceCardTitle,
+.evidenceCardBody,
+.evidenceCardMuted,
+.evidenceProgress,
+.evidenceSparkline {
+  position: relative;
+  z-index: 1;
+}
+
+.evidenceCardTitle {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: -0.025em;
+  line-height: 23px;
+}
+
+.evidenceCardBody,
+.evidenceCardMuted {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 400;
+  letter-spacing: -0.012em;
+  line-height: 20px;
+}
+
+.evidenceCardBody {
+  color: rgba(255, 255, 255, 0.66);
+}
+
+.evidenceCardMuted {
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.evidenceOrderHistoryCard {
+  bottom: 76px;
+  left: clamp(48px, 4vw, 72px);
+  z-index: 8;
+  display: grid;
+  width: 340px;
+  min-height: 150px;
+  grid-template-columns: 42px 1fr;
+  align-items: start;
+  gap: 18px;
+  padding: 24px;
+  animation-delay: 0ms;
+}
+
+.evidenceOrderHistoryCard .evidenceCardTitle {
+  margin-bottom: 8px;
+}
+
+.evidenceOrderHistoryCard .evidenceCardBody,
+.evidenceOrderHistoryCard .evidenceCardMuted {
+  margin-top: 4px;
+}
+
+.evidenceClaimCard {
+  bottom: clamp(265px, 30vh, 340px);
+  left: clamp(calc(490px + 5vw), 29vw, calc(728px + 5vw));
+  z-index: 7;
+  width: 300px;
+  min-height: 138px;
+  padding: 24px;
+  animation-delay: 120ms;
+}
+
+.evidenceTitleRow {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.evidenceProgress {
+  display: none;
+}
+
+.evidenceCrossMerchantCard {
+  bottom: 76px;
+  left: clamp(calc(600px + 2vw), 53vw, calc(980px + 2vw));
+  z-index: 7;
+  display: grid;
+  width: 320px;
+  min-height: 138px;
+  grid-template-columns: 42px 1fr;
+  align-items: center;
+  gap: 18px;
+  padding: 24px;
+  animation-delay: 220ms;
+}
+
+.evidenceSparkline {
+  position: absolute;
+  right: 22px;
+  bottom: 18px;
+  width: 72px;
+  height: 28px;
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.36);
+  stroke-linecap: round;
+  stroke-width: 1.5;
+}
+
+.evidenceChargebackCard {
+  right: calc(-22px + 12vw);
+  bottom: 150px;
+  z-index: 9;
+  display: grid;
+  width: 300px;
+  min-height: 160px;
+  grid-template-columns: 42px 1fr;
+  align-items: center;
+  gap: 18px;
+  padding: 24px;
+  animation-name: evidenceExternalIn;
+  animation-delay: 340ms;
+}
+
+.evidenceChargebackCard:hover {
+  transform: translate(42px, -2px);
+}
+
+.evidenceExternalDot {
+  position: absolute;
+  top: 48%;
+  left: 13px;
+  z-index: 2;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #f2d7a2;
+  opacity: 0.95;
+  box-shadow:
+    0 0 14px rgba(242, 215, 162, 0.95),
+    0 0 34px rgba(242, 215, 162, 0.38);
+}
+
+.evidenceConnector {
+  position: absolute;
+  right: 236px;
+  bottom: 232px;
+  z-index: 6;
+  width: min(25vw, 360px);
+  height: 1px;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(242, 215, 162, 0),
+      rgba(242, 215, 162, 0.55),
+      rgba(242, 215, 162, 0)
+    );
+  opacity: 0.7;
+  box-shadow: 0 0 12px rgba(242, 215, 162, 0.32);
+}
+
+@media (min-width: 1024px) and (max-width: 1919px) {
+  .evidenceClaimCard {
+    bottom: 236px;
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .evidenceOrderHistoryCard {
+    left: 28px;
+    width: 300px;
+  }
+
+  .evidenceClaimCard {
+    bottom: 260px;
+    left: 29vw;
+    width: 280px;
+  }
+
+  .evidenceCrossMerchantCard {
+    bottom: 64px;
+    left: 50vw;
+    width: 290px;
+  }
+
+  .evidenceChargebackCard {
+    right: calc(-74px + 12vw);
+    bottom: 150px;
+    width: 280px;
+  }
+}
+
+@media (max-width: 1023px) {
+  .evidenceCardsLayer {
+    z-index: 15;
+  }
+
+  .evidenceOrderHistoryCard {
+    right: 18px;
+    bottom: 24px;
+    left: 18px;
+    width: auto;
+    min-height: 132px;
+    grid-template-columns: 38px minmax(0, 1fr);
+    gap: 14px;
+    padding: 18px;
+  }
+
+  .evidenceClaimCard,
+  .evidenceCrossMerchantCard,
+  .evidenceConnector {
+    display: none;
+  }
+
+  .evidenceChargebackCard {
+    right: calc(-118px + 12vw);
+    bottom: 178px;
+    width: 260px;
+    min-height: 132px;
+    grid-template-columns: 38px minmax(0, 1fr);
+    gap: 14px;
+    padding: 18px;
+    animation-name: evidenceExternalPeekIn;
+  }
+
+  .evidenceIcon {
+    width: 34px;
+    height: 34px;
+  }
+
+  .evidenceCardTitle {
+    font-size: 15px;
+    line-height: 20px;
+  }
+
+  .evidenceCardBody,
+  .evidenceCardMuted {
+    font-size: 12.5px;
+    line-height: 18px;
+  }
+}
+
+@keyframes evidenceCardIn {
+  from {
+    opacity: 0;
+    filter: blur(8px);
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
+}
+
+@keyframes evidenceExternalIn {
+  from {
+    opacity: 0;
+    filter: blur(8px);
+    transform: translateX(90px);
+  }
+  to {
+    opacity: 0.92;
+    filter: blur(0);
+    transform: translateX(42px);
+  }
+}
+
+@keyframes evidenceExternalPeekIn {
+  from {
+    opacity: 0;
+    filter: blur(8px);
+    transform: translateX(90px);
+  }
+  to {
+    opacity: 0.78;
+    filter: blur(0);
+    transform: translateX(0);
+  }
+}
+
+/* ── Hero — full-bleed photography + left readability scrim ────────────── */
 
 .dusk {
-  background: #EDE9E3;
+  background-color: #0a0a0c;
+  background-image: url('/unauth-hero.png');
+  background-size: cover;
+  background-position: center right;
+  background-repeat: no-repeat;
   position: relative;
+  transition: background-size 420ms ease;
+}
+
+.dusk::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    rgba(10, 10, 12, 0.62) 0%,
+    rgba(10, 10, 12, 0.28) 38%,
+    transparent 62%
+  );
 }
 
 .dusk::after {
@@ -316,8 +1494,18 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
+  opacity: 1;
   background:
-    radial-gradient(80% 55% at 50% 110%, rgba(26, 24, 20, 0.06) 0%, transparent 60%);
+    radial-gradient(80% 55% at 50% 110%, rgba(10, 10, 12, 0.35) 0%, transparent 60%);
+  transition:
+    opacity 260ms ease,
+    background 260ms ease;
+}
+
+@media (max-width: 1023px) {
+  .dusk {
+    background-position: 72% center;
+  }
 }
 
 .grain {
@@ -383,9 +1571,12 @@
 
 @media (prefers-reduced-motion: reduce) {
   .riseIn,
-  .phoneIn {
+  .phoneIn,
+  .evidenceCard {
     animation: none;
     opacity: 1;
+    filter: none;
+    transform: none;
   }
 
   .ctaBar::after {

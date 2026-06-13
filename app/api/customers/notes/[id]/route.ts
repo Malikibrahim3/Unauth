@@ -1,10 +1,10 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server';
-import { createScopedClient } from '@/lib/supabase/scoped';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { logAction } from '@/lib/permissions/audit';
-import { writeActivityLog } from '@/lib/customers/activityLog';
 import { NextRequest, NextResponse } from 'next/server';
 import { withRequestLogging } from '@/lib/log';
+
+// Soft-deletes an identity_notes row (merchant-scoped, deleted_at timestamp).
 
 async function DELETEHandler(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
@@ -17,39 +17,23 @@ async function DELETEHandler(req: NextRequest, { params }: { params: Promise<{ i
   const serviceClient = createServiceClient();
   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.DELETE_CUSTOMER_NOTE);
   if (denied) return denied;
-  const scopedClient = createScopedClient(ctx.merchantId, serviceClient);
 
-  // Fetch the note before deleting so we have profile_id for activity log
-  const [{ data: noteRow }, { error }] = await Promise.all([
-    scopedClient
-      .from('customer_notes')
-      .select('id, customer_profile_id')
-      .eq('id', resolvedParams.id)
-      .maybeSingle(),
-    scopedClient
-      .from('customer_notes')
-      .update({ deleted_by_merchant: true } as any)
-      .eq('id', resolvedParams.id),
-  ]);
+  const { error } = await serviceClient
+    .from('identity_notes')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', resolvedParams.id)
+    .eq('merchant_id', ctx.merchantId)
+    .is('deleted_at', null);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   logAction({
     ctx,
     action: 'delete_customer_note',
-    resourceType: 'customer_note',
+    resourceType: 'identity_note',
     resourceId: resolvedParams.id,
     ip,
   });
-
-  if (noteRow?.customer_profile_id) {
-    await writeActivityLog({
-      supabase: scopedClient,
-      profileId: noteRow.customer_profile_id,
-      merchantId: ctx.merchantId,
-      eventType: 'note_deleted',
-    });
-  }
 
   return NextResponse.json({ ok: true });
 }

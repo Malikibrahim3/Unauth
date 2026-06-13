@@ -11,6 +11,7 @@ import { gradeToLetter, type ConfidenceGrade } from '@/lib/engine/weights';
 import type { Database } from '@/lib/supabase/types';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { fetchMerchantScopedTransaction } from '@/lib/supabase/merchantHelpers';
+import { CheckoutSignalPanel } from '@/components/CheckoutSignalPanel';
 
 type AuditTxRow = Database['public']['Tables']['audit_transactions']['Row'];
 
@@ -120,6 +121,8 @@ export default async function TransactionDetailPage({ params }: Props) {
           ))}
         </dl>
       </div>
+
+      <CheckoutSignalPanel orderId={String(txData.id)} merchantId={ctx.merchantId} />
 
       <div className="rounded-md p-5 border" style={{ background: 'var(--surface)', borderColor: 'var(--border-muted)' }}>
         <h2 className="text-heading-sm mb-3">Identity match signals ({signals.length})</h2>

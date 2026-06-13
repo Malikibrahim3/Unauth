@@ -71,7 +71,7 @@ export async function getCommercePlatformConnectionStatus(
   platform: CommercePlatform,
 ): Promise<{ connected: boolean; storeKey: string | null; lastError: string | null }> {
   const { data, error } = await serviceClient
-    .from('commerce_store_connections' as never)
+    .from('store_connections')
     .select('store_key, status, last_error, uninstalled_at')
     .eq('merchant_id', merchantId)
     .eq('platform', platform)

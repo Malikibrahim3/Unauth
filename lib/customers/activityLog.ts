@@ -1,6 +1,11 @@
 // lib/customers/activityLog.ts
-// Server-side helper for writing to the customer_activity_log table.
-// Must only be called from API routes — never from client components.
+// Server-side helper for recording customer activity events.
+//
+// v2 SCHEMA NOTE: the legacy `customer_activity_log` table was dropped in the
+// v2 cutover and has no replacement. This helper is intentionally a safe no-op
+// so existing call sites keep working without throwing. Activity logging was
+// always best-effort (errors were swallowed), so degrading to a no-op preserves
+// the original contract: the main flow is never affected.
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 
@@ -24,26 +29,13 @@ interface ActivityLogParams {
 }
 
 /**
- * Write a single event to customer_activity_log.
- * Silently swallows errors — activity logging must never break the main flow.
+ * Record a customer activity event.
+ *
+ * No-op under the v2 schema: `customer_activity_log` no longer exists. The
+ * signature is preserved so callers do not need to change. Returns immediately
+ * and never throws.
  */
-export async function writeActivityLog({
-  supabase,
-  profileId,
-  merchantId,
-  eventType,
-  eventData = {},
-}: ActivityLogParams): Promise<void> {
-  try {
-    await (supabase as any)
-      .from('customer_activity_log')
-      .insert({
-        profile_id:  profileId,
-        merchant_id: merchantId,
-        event_type:  eventType,
-        event_data:  eventData,
-      });
-  } catch (err) {
-    console.error('[activityLog] write failed:', err);
-  }
+export async function writeActivityLog(_params: ActivityLogParams): Promise<void> {
+  // Intentionally does nothing — see v2 schema note above.
+  return;
 }

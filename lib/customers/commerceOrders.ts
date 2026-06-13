@@ -1,56 +1,20 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-import { TABLES } from '@/lib/supabase/tables';
-
 export type CanonicalCommerceOrderStats = {
   orderCount: number;
   totalValue: number;
   source: 'shopify' | 'audit_transactions' | 'profile_totals' | 'none';
 };
 
-type ShopifyIdentityRow = {
-  identity_type?: string | null;
-  identity_value?: string | null;
-};
-
-type ShopifySignalRow = {
-  shop_domain?: string | null;
-  shopify_order_id?: string | number | null;
+type SourceOrderRow = {
+  external_id?: string | null;
   order_number?: string | number | null;
   total_price?: string | number | null;
 };
 
-function uniqueNonEmpty(values: Array<string | null | undefined>): string[] {
-  return Array.from(
-    new Set(
-      values
-        .map((value) => value?.trim())
-        .filter((value): value is string => Boolean(value))
-    )
-  );
-}
-
-function isCustomerVisibleShopifyOrder(row: ShopifySignalRow): boolean {
+function isCustomerVisibleOrder(row: SourceOrderRow): boolean {
   const orderNumber = row.order_number == null ? null : String(row.order_number).trim();
   return !orderNumber || /^\d+$/.test(orderNumber);
-}
-
-function addSignalRows(
-  orderKeys: Set<string>,
-  rows: ShopifySignalRow[] | null | undefined
-): number {
-  let totalValue = 0;
-  for (const row of rows ?? []) {
-    if (!isCustomerVisibleShopifyOrder(row) || row.shopify_order_id == null) continue;
-    const shopDomain = String(row.shop_domain ?? '').trim();
-    const orderId = String(row.shopify_order_id).trim();
-    if (!shopDomain || !orderId) continue;
-    const key = `${shopDomain}:${orderId}`;
-    if (orderKeys.has(key)) continue;
-    orderKeys.add(key);
-    totalValue += Number(row.total_price ?? 0) || 0;
-  }
-  return totalValue;
 }
 
 export function deriveCanonicalCommerceOrderStats(input: {
@@ -93,68 +57,52 @@ export function deriveCanonicalCommerceOrderStats(input: {
   return { orderCount: 0, totalValue: 0, source: 'none' };
 }
 
+/**
+ * Count the merchant's own Shopify orders for an identity.
+ *
+ * v2: a merchant's orders live in the merchant-scoped `source_orders` table.
+ * The only first-class identity↔order linkage is `claims.identity_id` ->
+ * `claims.source_order_id`, so we resolve the identity's linked Shopify orders
+ * through the merchant's claims and read the order rows from `source_orders`.
+ * (The legacy `merchant_shopify_connections` / `customer_profile_identities` /
+ * `shopify_order_signals` tables were dropped in the v2 cutover.)
+ */
 export async function countShopifyCommerceOrdersForProfile(
   service: SupabaseClient,
   merchantId: string,
   profileId: string
 ): Promise<{ orderCount: number; totalValue: number }> {
-  const { data: connections } = await service
-    .from('merchant_shopify_connections' as never)
-    .select('shop_domain')
+  const { data: claimRows } = await service
+    .from('claims')
+    .select('source_order_id')
     .eq('merchant_id', merchantId)
-    .eq('active', true);
+    .eq('identity_id', profileId)
+    .not('source_order_id', 'is', null);
 
-  const shopDomains = uniqueNonEmpty(
-    ((connections ?? []) as Array<{ shop_domain?: string | null }>).map((row) => row.shop_domain)
-  );
-  if (shopDomains.length === 0) return { orderCount: 0, totalValue: 0 };
-
-  const { data: identityRows } = await service
-    .from(TABLES.CUSTOMER_PROFILE_IDENTITIES)
-    .select('identity_type, identity_value')
-    .eq('merchant_id', merchantId)
-    .eq('customer_profile_id', profileId)
-    .in('identity_type', ['shopify_order_id', 'shopify_customer_id']);
-
-  const identities = (identityRows ?? []) as ShopifyIdentityRow[];
-  const orderIds = uniqueNonEmpty(
-    identities.flatMap((row) =>
-      row.identity_type === 'shopify_order_id' ? [row.identity_value] : [],
+  const sourceOrderIds = Array.from(
+    new Set(
+      ((claimRows ?? []) as Array<{ source_order_id: string | null }>)
+        .flatMap((row) => (row.source_order_id ? [row.source_order_id] : [])),
     ),
   );
-  const customerIds = uniqueNonEmpty(
-    identities.flatMap((row) =>
-      row.identity_type === 'shopify_customer_id' ? [row.identity_value] : [],
-    ),
-  );
+  if (sourceOrderIds.length === 0) return { orderCount: 0, totalValue: 0 };
+
+  const { data: orderRows } = await service
+    .from('source_orders')
+    .select('external_id, order_number, total_price')
+    .eq('merchant_id', merchantId)
+    .eq('source', 'shopify')
+    .in('id', sourceOrderIds);
 
   const orderKeys = new Set<string>();
   let totalValue = 0;
-
-  const shopTotals = await Promise.all(
-    shopDomains.map(async (shopDomain) => {
-      let shopValue = 0;
-      if (orderIds.length > 0) {
-        const { data: byOrderId } = await service
-          .from('shopify_order_signals' as never)
-          .select('shop_domain, shopify_order_id, order_number, total_price')
-          .eq('shop_domain', shopDomain)
-          .in('shopify_order_id', orderIds);
-        shopValue += addSignalRows(orderKeys, byOrderId as ShopifySignalRow[] | null);
-      }
-
-      if (customerIds.length > 0) {
-        const { data: byCustomerId } = await service
-          .from('shopify_order_signals' as never)
-          .select('shop_domain, shopify_order_id, order_number, total_price')
-          .eq('shop_domain', shopDomain)
-          .in('customer_id', customerIds);
-        shopValue += addSignalRows(orderKeys, byCustomerId as ShopifySignalRow[] | null);
-      }
-      return shopValue;
-    })
-  );
-  totalValue += shopTotals.reduce((sum, value) => sum + value, 0);
+  for (const row of (orderRows ?? []) as SourceOrderRow[]) {
+    if (!isCustomerVisibleOrder(row)) continue;
+    const externalId = String(row.external_id ?? '').trim();
+    if (!externalId || orderKeys.has(externalId)) continue;
+    orderKeys.add(externalId);
+    totalValue += Number(row.total_price ?? 0) || 0;
+  }
 
   return { orderCount: orderKeys.size, totalValue };
 }

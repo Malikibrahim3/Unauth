@@ -223,54 +223,15 @@ export function detectClaimFromTags(
 }
 
 export async function getMerchantClaimTagConfig(
-  supabase: unknown,
-  merchantId: string,
+  _supabase: unknown,
+  _merchantId: string,
   platform: SupportProvider
 ): Promise<{ config: MerchantClaimTagConfig; isDefault: boolean }> {
-  const client = supabase as {
-    from: (table: string) => {
-      select: (columns?: string) => {
-        eq: (column: string, value: string) => {
-          eq: (column: string, value: string) => {
-            maybeSingle: () => Promise<{
-              data: Record<string, unknown> | null;
-              error: { message: string } | null;
-            }>;
-          };
-        };
-      };
-    };
-  };
-
-  try {
-    const { data, error } = await client
-    .from('merchant_claim_tag_configs')
-    .select('claim_trigger_tags,outcome_tags,void_tags,keyword_fallback_enabled')
-    .eq('merchant_id', merchantId)
-    .eq('helpdesk_platform', platform)
-      .maybeSingle();
-
-    if (error || !data) {
-      return { config: getDefaultTagConfig(platform), isDefault: true };
-    }
-
-    return {
-      config: {
-        claim_trigger_tags: Array.isArray(data.claim_trigger_tags)
-          ? data.claim_trigger_tags.filter((v): v is string => typeof v === 'string')
-          : [],
-        outcome_tags:
-          data.outcome_tags && typeof data.outcome_tags === 'object' && !Array.isArray(data.outcome_tags)
-            ? (data.outcome_tags as Record<string, string>)
-            : {},
-        void_tags: Array.isArray(data.void_tags)
-          ? data.void_tags.filter((v): v is string => typeof v === 'string')
-          : [],
-        keyword_fallback_enabled: data.keyword_fallback_enabled !== false,
-      },
-      isDefault: false,
-    };
-  } catch {
-    return { config: getDefaultTagConfig(platform), isDefault: true };
-  }
+  // v2 SCHEMA NOTE: the `merchant_claim_tag_configs` table was dropped in the
+  // v2 cutover with no replacement. Per-merchant tag overrides are therefore
+  // unavailable; every merchant uses the built-in default config for their
+  // platform. Detection already treats `isDefault: true` as "use default", and
+  // sets requiresMerchantReview on default-config tag detections, so this is a
+  // safe, honest degradation rather than fabricating per-merchant config.
+  return { config: getDefaultTagConfig(platform), isDefault: true };
 }

@@ -1,0 +1,10 @@
+api_version = "2024-01"
+
+[[extensions]]
+type = "ui_extension"
+name = "Unauth Signal Collector"
+handle = "unauth-signal-collector"
+
+[[extensions.targeting]]
+module = "./src/index.jsx"
+target = "purchase.checkout.block.render"

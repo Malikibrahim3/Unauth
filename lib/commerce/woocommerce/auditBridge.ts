@@ -45,16 +45,16 @@ async function ensureWooCommerceProcessingJob(
     .from(TABLES.PROCESSING_JOBS)
     .insert({
       merchant_id: merchantId,
-      status: 'processing',
+      job_kind: 'platform_backfill',
+      source: 'woocommerce',
+      status: 'running',
       total_rows: 0,
       processed_rows: 0,
       failed_rows: 0,
-      filename: `woocommerce-${storeKey}`,
       label,
-      upload_type: 'woocommerce',
       created_at: now,
       updated_at: now,
-    } as never)
+    })
     .select('id')
     .single();
 
@@ -99,8 +99,8 @@ export async function scoreWooCommerceOrderIntoAudit(input: {
 
   const now = new Date().toISOString();
   await supabase
-    .from('commerce_store_connections' as never)
-    .update({ last_sync_at: now, updated_at: now } as never)
+    .from('store_connections')
+    .update({ last_sync_at: now, updated_at: now })
     .eq('merchant_id', merchantId)
     .eq('platform', 'woocommerce')
     .eq('store_key', storeKey);

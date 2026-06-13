@@ -33,21 +33,21 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   try {
     const evidence = await upsertClaimEvidenceItem(serviceClient, {
       ...parsed.data,
+      merchant_id: ctx.merchantId,
       actor_user_id: parsed.data.actor_user_id ?? user.id,
     });
     await appendClaimEvent(serviceClient, {
       claim_id: claimId,
       merchant_id: ctx.merchantId,
-      shop_domain: claim.shop_domain,
       event_type: 'evidence_added',
       actor_user_id: user.id,
       metadata: {
         evidence_id: evidence.id,
         evidence_type: evidence.evidence_type,
-        source: evidence.source,
+        source: parsed.data.source,
       },
     });
-    return NextResponse.json({ evidence: { id: evidence.id, claim_id: evidence.claim_id, evidence_type: evidence.evidence_type, source: evidence.source } });
+    return NextResponse.json({ evidence: { id: evidence.id, claim_id: evidence.claim_id, evidence_type: evidence.evidence_type, source: parsed.data.source } });
   } catch {
     return NextResponse.json({ error: 'Failed to add evidence' }, { status: 500 });
   }

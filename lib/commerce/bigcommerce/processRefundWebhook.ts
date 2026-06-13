@@ -1,15 +1,13 @@
+import crypto from 'crypto';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import {
-  normalizeEmail,
-  normalizePhone,
-  type MerchantIdentityInsert,
-  upsertMerchantIdentityRows,
-} from '@/lib/shopify/identity';
-import { upsertMerchantClaim } from '@/lib/claims/store';
-import { appendClaimEvent } from '@/lib/claims/events';
 import { fetchBigCommerceOrder, loadBigCommerceAccessToken } from '@/lib/commerce/bigcommerce/bigcommerceApi';
-import { resolveMerchantIdForBigCommerceStore } from '@/lib/commerce/bigcommerce/auditBridge';
-import { loadBigCommerceCredentialsForStore } from '@/lib/commerce/bigcommerce/connectionSettings';
+
+/**
+ * BigCommerce refund ingestion → v2 source_refunds, anchored to the
+ * already-ingested source_orders row. Mirrors the Shopify refund path.
+ * BC webhooks carry only ids, so the order is fetched via the v2 API to
+ * recover the refunded amount.
+ */
 
 function moneyValue(value: unknown): number | null {
   const n = Number(value);
@@ -29,80 +27,55 @@ export async function processBigCommerceRefundWebhook(input: {
   } | undefined;
   const orderId = data?.order_id ?? data?.id;
   const refundId = data?.refund?.refund_id ?? webhookPayload.id;
-  if (refundId === undefined || orderId === undefined || orderId === null) return;
+  if (refundId === undefined || refundId === null || orderId === undefined || orderId === null) return;
 
-  const merchantId = await resolveMerchantIdForBigCommerceStore(supabase, storeHash);
-  if (!merchantId) return;
+  const { data: connection, error: connectionError } = await supabase
+    .from('store_connections')
+    .select('id, merchant_id, credentials_encrypted')
+    .eq('platform', 'bigcommerce')
+    .eq('store_key', storeHash)
+    .maybeSingle();
+  if (connectionError) throw new Error(`store_connection_lookup_failed: ${connectionError.message}`);
+  if (!connection) {
+    console.warn('BigCommerce refund webhook for unknown store — skipped', { storeHash });
+    return;
+  }
 
-  const credentialRow = await loadBigCommerceCredentialsForStore(supabase, storeHash);
-  if (!credentialRow) return;
-
-  const accessToken = await loadBigCommerceAccessToken(credentialRow.credentials_encrypted);
-  const order = await fetchBigCommerceOrder({
-    storeHash,
-    accessToken,
-    orderId,
-  });
-
-  const now = new Date().toISOString();
   const orderIdStr = String(orderId);
   const refundIdStr = String(refundId);
 
-  const rows: MerchantIdentityInsert[] = [
-    {
-      shop_domain: storeHash,
-      source: 'refund',
-      source_id: refundIdStr,
-      email: normalizeEmail(
-        (order?.billing_address as { email?: string } | undefined)?.email ?? null,
-      ),
-      phone: normalizePhone(
-        (order?.billing_address as { phone?: string } | undefined)?.phone ?? null,
-      ),
-      shipping_address: null,
-      billing_address: null,
-      customer_id: null,
-      updated_at: now,
-    },
-  ];
-  await upsertMerchantIdentityRows(supabase, rows);
+  const { data: orderRow, error: orderError } = await supabase
+    .from('source_orders')
+    .select('id, total_price')
+    .eq('merchant_id', connection.merchant_id)
+    .eq('source', 'bigcommerce')
+    .eq('external_id', orderIdStr)
+    .maybeSingle();
+  if (orderError) throw new Error(`source_order_lookup_failed: ${orderError.message}`);
+  if (!orderRow) return; // order never ingested — nothing to anchor to
 
-  const refundedAmount =
+  let fetchedOrder: Record<string, unknown> | null = null;
+  if (typeof connection.credentials_encrypted === 'string' && connection.credentials_encrypted.trim()) {
+    const accessToken = await loadBigCommerceAccessToken(connection.credentials_encrypted);
+    fetchedOrder = await fetchBigCommerceOrder({ storeHash, accessToken, orderId });
+  }
+
+  const amount =
     moneyValue(webhookPayload.refunded_amount) ??
-    moneyValue((webhookPayload.data as { amount?: unknown })?.amount) ??
-    moneyValue(order?.refunded_amount) ??
-    0;
+    moneyValue((webhookPayload.data as { amount?: unknown } | undefined)?.amount) ??
+    moneyValue(fetchedOrder?.refunded_amount);
+  const total = moneyValue(orderRow.total_price);
+  const isFullRefund = amount !== null && total !== null && amount > 0 ? amount >= total : null;
 
-  const claim = await upsertMerchantClaim(
-    supabase,
-    {
-      merchant_id: merchantId,
-      shop_domain: storeHash,
-      shopify_order_id: orderIdStr,
-      order_ref: orderIdStr,
-      claim_type: 'refund_request',
-      status: 'open',
-      customer_claim_reason: null,
-      normalized_reason: 'refund',
-      amount_at_risk: refundedAmount > 0 ? refundedAmount : null,
-      submitted_at: now,
-      detection_method: 'bigcommerce_refund',
-      requires_merchant_review: false,
-    },
-    { ignoreDuplicates: true },
-  );
-
-  await appendClaimEvent(supabase, {
-    claim_id: claim.id,
-    merchant_id: merchantId,
-    shop_domain: storeHash,
-    event_type: 'claim_created',
-    new_status: claim.status,
-    triggered_by: 'bigcommerce_refund',
-    metadata: {
-      triggered_by: 'bigcommerce_refund',
-      bigcommerce_refund_id: refundIdStr,
-      bigcommerce_order_id: orderIdStr,
-    },
-  });
+  const { error } = await supabase.from('source_refunds').upsert({
+    merchant_id: connection.merchant_id,
+    source_order_id: orderRow.id,
+    external_id: refundIdStr,
+    amount,
+    currency: typeof fetchedOrder?.currency_code === 'string' ? fetchedOrder.currency_code : null,
+    is_full_refund: isFullRefund,
+    refunded_at: new Date().toISOString(),
+    raw_payload_hash: crypto.createHash('sha256').update(JSON.stringify(webhookPayload), 'utf8').digest('hex'),
+  }, { onConflict: 'merchant_id,source_order_id,external_id' });
+  if (error) throw new Error(`source_refund_upsert_failed: ${error.message}`);
 }

@@ -3,18 +3,8 @@ import { notFound, redirect } from 'next/navigation';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
-import {
-  fetchMerchantScopedCustomerProfile,
-  fetchMerchantScopedCustomerTransactions,
-  getMerchantOwnedJobIds,
-  TX_SAFE_SELECT,
-} from '@/lib/supabase/merchantHelpers';
 import { buildBehavioralNarrative } from '@/lib/customers/narrative';
-import {
-  countShopifyCommerceOrdersForProfile,
-  deriveCanonicalCommerceOrderStats,
-} from '@/lib/customers/commerceOrders';
-import { deriveProfileIdentityConfidence } from '@/lib/customers/identityConfidence';
+import { riskLevelToNewGrade } from '@/lib/confidence';
 import type { ConfidenceGradeValue } from '@/lib/confidence';
 import type { CustomerIntelligencePanel } from '@/app/api/customers/[id]/route';
 import { ACTIVE_CLAIM_STATUSES } from '@/lib/claims/sla';
@@ -26,10 +16,13 @@ import {
   firstArrayValue,
   type RoadmapTransaction,
 } from '@/app/(app)/customers/[id]/customerProfilePageLabels';
+import {
+  buildCustomerIdentifierHashes,
+  lookupNetworkIdentity,
+  resolveIdentityIdForCustomer,
+} from '@/lib/customers/identityNetwork';
 import { getEventStream } from '@/lib/analysis/customerIntelligence';
 import type { BehaviorRoadmapEvent } from '@/components/customers/BehaviorRoadmap';
-
-const TX_SELECT = TX_SAFE_SELECT;
 
 export type CustomerProfileSearchParams = {
   audit?: string;
@@ -147,57 +140,71 @@ export type CustomerProfilePageViewProps = {
   merchantRefundRate: number;
 };
 
+type SourceCustomerRow = {
+  id: string;
+  email: string | null;
+  phone: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  other_emails: unknown;
+  orders_count: number | null;
+  account_created_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+type SourceOrderRow = {
+  id: string;
+  external_id: string;
+  order_number: string | null;
+  email: string | null;
+  phone: string | null;
+  total_price: number | string | null;
+  card_last4: string | null;
+  browser_ip: string | null;
+  source: string | null;
+  placed_at: string | null;
+  shipping_address_id: string | null;
+};
+
+type SourceAddressRow = {
+  id: string;
+  line1: string | null;
+  line2: string | null;
+  city: string | null;
+  region: string | null;
+  postal_code: string | null;
+  country: string | null;
+};
+
+type ClaimRow = {
+  id: string;
+  claim_type: string;
+  status: string;
+  source_order_id: string | null;
+  reason_normalized: string | null;
+  reason_raw: string | null;
+  submitted_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 function toStringArray(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   return value.filter((item): item is string => typeof item === 'string');
 }
 
-function toCustomerProfileDisplay(row: Record<string, unknown>): CustomerProfileDisplay {
-  return {
-    id: String(row.id ?? ''),
-    names: toStringArray(row.names),
-    emails: toStringArray(row.emails),
-    addresses: toStringArray(row.addresses),
-    card_last4s: toStringArray(row.card_last4s),
-    phones: toStringArray(row.phones),
-    ips: toStringArray(row.ips),
-    primary_email: typeof row.primary_email === 'string' ? row.primary_email : null,
-    risk_level: typeof row.risk_level === 'string' ? row.risk_level : 'low',
-    total_orders: Number(row.total_orders ?? 0),
-    total_refund_claims: Number(row.total_refund_claims ?? 0),
-    total_chargebacks: Number(row.total_chargebacks ?? 0),
-    total_merchants_seen_at: Number(row.total_merchants_seen_at ?? 1),
-    refund_rate: Number(row.refund_rate ?? 0),
-    fastest_claim_days: row.fastest_claim_days == null ? null : Number(row.fastest_claim_days),
-    avg_claim_days: row.avg_claim_days == null ? null : Number(row.avg_claim_days),
-    refund_acceleration_score: Number(row.refund_acceleration_score ?? 0),
-    first_seen: String(row.first_seen ?? ''),
-    last_seen: String(row.last_seen ?? ''),
-    fraud_flags: toStringArray(row.fraud_flags),
-    identity_signals: toStringArray(row.identity_signals),
-    investigation_status: typeof row.investigation_status === 'string' ? row.investigation_status : undefined,
-  };
+function uniqueNonEmpty(values: Array<string | null | undefined>): string[] {
+  return Array.from(
+    new Set(values.map((v) => v?.trim()).filter((v): v is string => Boolean(v))),
+  );
 }
 
-function toRoadmapTransactions(rows: Record<string, unknown>[]): RoadmapTransaction[] {
-  return rows.map((tx) => ({
-    order_id: String(tx.order_id ?? ''),
-    processed_at: String(tx.processed_at ?? ''),
-    order_value: typeof tx.order_value === 'number' || typeof tx.order_value === 'string' ? tx.order_value : null,
-    customer_email: typeof tx.customer_email === 'string' ? tx.customer_email : null,
-    customer_name: typeof tx.customer_name === 'string' ? tx.customer_name : null,
-    shipping_address: typeof tx.shipping_address === 'string' ? tx.shipping_address : null,
-    card_last4: typeof tx.card_last4 === 'string' ? tx.card_last4 : null,
-    device_ip: typeof tx.device_ip === 'string' ? tx.device_ip : null,
-    source: typeof tx.source === 'string' ? tx.source : null,
-    chargeback_filed: Boolean(tx.chargeback_filed),
-    refund_claimed: Boolean(tx.refund_claimed),
-    chargeback_date: typeof tx.chargeback_date === 'string' ? tx.chargeback_date : null,
-    chargeback_reason_code: typeof tx.chargeback_reason_code === 'string' ? tx.chargeback_reason_code : null,
-    refund_reason: typeof tx.refund_reason === 'string' ? tx.refund_reason : null,
-    fraud_flags: toStringArray(tx.fraud_flags),
-    risk_level: typeof tx.risk_level === 'string' ? tx.risk_level : null,
-  }));
+function formatAddress(row: SourceAddressRow): string {
+  return [row.line1, row.line2, row.city, row.region, row.postal_code, row.country]
+    .map((part) => part?.trim())
+    .filter(Boolean)
+    .join(', ');
 }
 
 function buildIdentitySignalRows(profile: CustomerProfileDisplay): IdentitySignalRow[] {
@@ -227,7 +234,6 @@ export async function loadCustomerProfilePage(
 
   const svc = createServiceClient();
   let merchantId = '';
-  let permissionUserId: string | undefined;
 
   if (viewToken) {
     const parsed = parseAndVerifySignedToken(viewToken);
@@ -262,46 +268,165 @@ export async function loadCustomerProfilePage(
     }
 
     merchantId = ctx.merchantId;
-    permissionUserId = ctx.userId;
   }
 
-  const [connectionState, profileRow] = await Promise.all([
+  // ---------------------------------------------------------------------------
+  // Layer 1 — the merchant's OWN customer record. `profileId` is a
+  // source_customers.id, scoped hard to the merchant.
+  // ---------------------------------------------------------------------------
+  const [connectionState, customerRes] = await Promise.all([
     getConnectionState(svc, merchantId),
-    fetchMerchantScopedCustomerProfile(svc, merchantId, profileId, permissionUserId),
+    svc
+      .from('source_customers')
+      .select('id, email, phone, first_name, last_name, other_emails, orders_count, account_created_at, created_at, updated_at')
+      .eq('id', profileId)
+      .eq('merchant_id', merchantId)
+      .maybeSingle() as unknown as Promise<{ data: SourceCustomerRow | null }>,
   ]);
 
-  if (!profileRow) {
+  const customer = customerRes.data;
+  if (!customer) {
     if (viewToken) {
       return { blocked: true, reason: 'link_expired' };
     }
     notFound();
   }
 
-  const profile = toCustomerProfileDisplay(profileRow);
+  // Own-store orders (layer 1).
+  const { data: orderRows } = await svc
+    .from('source_orders')
+    .select('id, external_id, order_number, email, phone, total_price, card_last4, browser_ip, source, placed_at, shipping_address_id')
+    .eq('merchant_id', merchantId)
+    .eq('source_customer_id', customer.id)
+    .order('placed_at', { ascending: true })
+    .limit(500) as unknown as { data: SourceOrderRow[] | null };
+  const orders = orderRows ?? [];
 
-  let transactionRows: Record<string, unknown>[] = await fetchMerchantScopedCustomerTransactions(
-    svc,
-    merchantId,
-    profileId,
-    profileRow,
-    { select: TX_SELECT },
-  );
-
-  if (transactionRows.length === 0 && profile.emails.length > 0) {
-    const ownedJobIds = await getMerchantOwnedJobIds(svc, merchantId);
-    if (ownedJobIds.length > 0) {
-      const { data: fallbackRows } = await svc
-        .from(TABLES.AUDIT_TRANSACTIONS)
-        .select(TX_SELECT)
-        .in('job_id', ownedJobIds)
-        .in('customer_email', profile.emails)
-        .order('processed_at', { ascending: true })
-        .limit(200) as unknown as { data: Record<string, unknown>[] | null };
-      transactionRows = fallbackRows ?? [];
+  // Shipping addresses for the orders (atomic in v2; render as one string).
+  const addressIds = uniqueNonEmpty(orders.map((o) => o.shipping_address_id));
+  const addressById = new Map<string, string>();
+  if (addressIds.length > 0) {
+    const { data: addressRows } = await svc
+      .from('source_addresses')
+      .select('id, line1, line2, city, region, postal_code, country')
+      .eq('merchant_id', merchantId)
+      .in('id', addressIds) as unknown as { data: SourceAddressRow[] | null };
+    for (const row of addressRows ?? []) {
+      const formatted = formatAddress(row);
+      if (formatted) addressById.set(row.id, formatted);
     }
   }
 
-  const transactions = toRoadmapTransactions(transactionRows);
+  // Own-store claims (layer 4, merchant-scoped, linked through orders).
+  const orderIds = orders.map((o) => o.id);
+  let claimRows: ClaimRow[] = [];
+  if (orderIds.length > 0) {
+    const { data } = await svc
+      .from('claims')
+      .select('id, claim_type, status, source_order_id, reason_normalized, reason_raw, submitted_at, created_at, updated_at')
+      .eq('merchant_id', merchantId)
+      .in('source_order_id', orderIds)
+      .order('updated_at', { ascending: false })
+      .limit(200) as unknown as { data: ClaimRow[] | null };
+    claimRows = data ?? [];
+  }
+
+  const claimsByOrder = new Map<string, ClaimRow[]>();
+  for (const claim of claimRows) {
+    if (!claim.source_order_id) continue;
+    const list = claimsByOrder.get(claim.source_order_id) ?? [];
+    list.push(claim);
+    claimsByOrder.set(claim.source_order_id, list);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Network identity (layers 3/5) — via the k-anonymous RPC only.
+  // ---------------------------------------------------------------------------
+  const identifierHashes = buildCustomerIdentifierHashes(customer);
+  const [network, identityId] = await Promise.all([
+    lookupNetworkIdentity(svc, merchantId, identifierHashes),
+    resolveIdentityIdForCustomer(svc, merchantId, customer),
+  ]);
+
+  // Merchant-side state (watchlist / investigation status) for the identity.
+  let investigationStatus: string | undefined;
+  if (identityId) {
+    const { data: stateRow } = await svc
+      .from('merchant_identity_state')
+      .select('investigation_status')
+      .eq('merchant_id', merchantId)
+      .eq('identity_id', identityId)
+      .maybeSingle() as unknown as { data: { investigation_status: string } | null };
+    investigationStatus = stateRow?.investigation_status;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Display assembly (own-store data first; network aggregates where disclosed).
+  // ---------------------------------------------------------------------------
+  const customerName = [customer.first_name, customer.last_name].filter(Boolean).join(' ').trim();
+  const emails = uniqueNonEmpty([customer.email, ...orders.map((o) => o.email), ...toStringArray(customer.other_emails)]);
+  const phones = uniqueNonEmpty([customer.phone, ...orders.map((o) => o.phone)]);
+  const ips = uniqueNonEmpty(orders.map((o) => o.browser_ip));
+  const cardLast4s = uniqueNonEmpty(orders.map((o) => o.card_last4));
+  const addresses = uniqueNonEmpty(orders.map((o) => (o.shipping_address_id ? addressById.get(o.shipping_address_id) : null)));
+
+  const merchantOrderCount = Math.max(orders.length, customer.orders_count ?? 0);
+  const merchantClaimCount = claimRows.length;
+  const merchantChargebacks = claimRows.filter((c) => c.claim_type === 'chargeback').length;
+
+  const placedAts = uniqueNonEmpty(orders.map((o) => o.placed_at)).sort();
+  const firstSeenLocal = placedAts[0] ?? customer.account_created_at ?? customer.created_at;
+  const lastSeenLocal = placedAts[placedAts.length - 1] ?? customer.updated_at;
+
+  const profile: CustomerProfileDisplay = {
+    id: customer.id,
+    names: customerName ? [customerName] : [],
+    emails,
+    addresses,
+    card_last4s: cardLast4s,
+    phones,
+    ips,
+    primary_email: customer.email,
+    // Identity confidence grade (displayed as confidence, never a verdict).
+    risk_level: network?.confidenceGrade ?? 'none',
+    total_orders: Math.max(network?.totalOrders ?? 0, merchantOrderCount),
+    total_refund_claims: Math.max(network?.totalClaims ?? 0, merchantClaimCount),
+    total_chargebacks: Math.max(network?.totalChargebacks ?? 0, merchantChargebacks),
+    total_merchants_seen_at: Math.max(network?.merchantCount ?? 1, 1),
+    refund_rate: network?.claimRate ?? (merchantOrderCount > 0 ? merchantClaimCount / merchantOrderCount : 0),
+    fastest_claim_days: network?.fastestClaimDays ?? null,
+    avg_claim_days: null,
+    refund_acceleration_score: 0,
+    first_seen: network?.firstSeenAt ?? firstSeenLocal,
+    last_seen: network?.lastSeenAt ?? lastSeenLocal,
+    fraud_flags: [],
+    identity_signals: [],
+    investigation_status: investigationStatus,
+  };
+
+  const transactions: RoadmapTransaction[] = orders.map((order) => {
+    const orderClaims = claimsByOrder.get(order.id) ?? [];
+    const chargeback = orderClaims.find((c) => c.claim_type === 'chargeback') ?? null;
+    const refundClaim = orderClaims.find((c) => c.claim_type !== 'chargeback') ?? null;
+    return {
+      order_id: order.order_number ?? order.external_id,
+      processed_at: order.placed_at ?? customer.created_at,
+      order_value: order.total_price,
+      customer_email: order.email ?? customer.email,
+      customer_name: customerName || null,
+      shipping_address: order.shipping_address_id ? addressById.get(order.shipping_address_id) ?? null : null,
+      card_last4: order.card_last4,
+      device_ip: order.browser_ip,
+      source: order.source,
+      chargeback_filed: Boolean(chargeback),
+      refund_claimed: Boolean(refundClaim),
+      chargeback_date: chargeback?.submitted_at ?? null,
+      chargeback_reason_code: chargeback?.reason_normalized ?? null,
+      refund_reason: refundClaim?.reason_normalized ?? refundClaim?.reason_raw ?? null,
+      fraud_flags: [],
+      risk_level: null,
+    };
+  });
 
   type TimelineField = 'email' | 'name' | 'address' | 'ip' | 'card_last4';
   const identityTimeline: CustomerIntelligencePanel['identityTimeline'] = [];
@@ -366,38 +491,37 @@ export async function loadCustomerProfilePage(
   const displayName = profile.names[0] ?? profile.primary_email ?? 'Unknown Customer';
   const variantCount = identityTimeline.filter((e) => e.isVariant).length;
 
-  const { data: activityRows } = await svc
-    .from('customer_activity_log' as never)
-    .select('id, event_type, event_data, created_at')
-    .eq('profile_id', profileId)
-    .eq('merchant_id', merchantId)
-    .order('created_at', { ascending: false })
-    .limit(20) as unknown as { data: ActivityLogEntry[] | null };
+  // Activity log: derived from claim_events for this customer's claims
+  // (replaces the legacy customer_activity_log table).
+  let activityLog: ActivityLogEntry[] = [];
+  if (claimRows.length > 0) {
+    const { data: eventRows } = await svc
+      .from('claim_events')
+      .select('id, event_type, metadata, created_at')
+      .eq('merchant_id', merchantId)
+      .in('claim_id', claimRows.map((c) => c.id))
+      .order('created_at', { ascending: false })
+      .limit(20) as unknown as {
+        data: Array<{ id: string; event_type: string; metadata: Record<string, unknown> | null; created_at: string }> | null;
+      };
+    activityLog = (eventRows ?? []).map((row) => ({
+      id: row.id,
+      event_type: row.event_type,
+      event_data: row.metadata ?? {},
+      created_at: row.created_at,
+    }));
+  }
 
-  const activityLog = activityRows ?? [];
-
-  const refundRate = Math.round(profile.refund_rate * 100);
   const isEligibleForEvidence = transactions.some((tx) => tx.refund_claimed || tx.chargeback_filed) || profile.total_chargebacks > 0;
-  const shopifyCommerceStats = await countShopifyCommerceOrdersForProfile(svc, merchantId, profileId);
-  const commerceStats = deriveCanonicalCommerceOrderStats({
-    shopifyOrderCount: shopifyCommerceStats.orderCount,
-    shopifyTotalValue: shopifyCommerceStats.totalValue,
-    auditTransactions: transactions.map((tx) => ({
-      order_id: tx.order_id,
-      order_value: tx.order_value,
-    })),
-    profileTotalOrders: profile.total_orders,
-  });
-  const totalOrderValue = commerceStats.totalValue;
+  const totalOrderValue = orders.reduce((sum, order) => sum + (Number(order.total_price) || 0), 0);
   const totalRefundedValue = transactions
     .filter((tx) => tx.refund_claimed || tx.chargeback_filed)
     .reduce((sum, tx) => sum + (Number(tx.order_value) || 0), 0);
-  const claimCount = transactions.filter((tx) => tx.refund_claimed || tx.chargeback_filed).length;
-  const merchantOrderCount = commerceStats.orderCount;
-  const merchantClaimCount = transactions.length > 0 ? claimCount : profile.total_refund_claims;
-  const merchantRefundRate = merchantOrderCount > 0 ? Math.round((merchantClaimCount / merchantOrderCount) * 100) : refundRate;
+  const merchantRefundRate = merchantOrderCount > 0
+    ? Math.round((merchantClaimCount / merchantOrderCount) * 100)
+    : Math.round(profile.refund_rate * 100);
   const hasCleanRecord = merchantClaimCount === 0 && profile.total_chargebacks === 0;
-  const identitySignals = profile.identity_signals ?? profile.fraud_flags ?? [];
+  const identitySignals: string[] = [];
 
   const density = Array.from({ length: 12 }, () => 0);
   for (const tx of transactions) {
@@ -439,45 +563,43 @@ export async function loadCustomerProfilePage(
     linkedAccountCount: 0,
   });
 
-  const identityConfidence = deriveProfileIdentityConfidence(profile, transactionRows);
-  const profileGrade = identityConfidence.letter;
+  const profileGrade = riskLevelToNewGrade(network?.confidenceGrade ?? null);
 
-  let { data: profileClaims, error: profileClaimsError } = await svc
-    .from('merchant_claims' as never)
-    .select('id,claim_type,status,shopify_order_id,order_ref,submitted_at,created_at,updated_at')
-    .eq('merchant_id', merchantId)
-    .eq('customer_id', profileId)
-    .order('updated_at', { ascending: false })
-    .limit(20);
-
-  if (profileClaimsError) {
-    const fallback = await svc
-      .from('merchant_claims' as never)
-      .select('id,claim_type,status,shopify_order_id,submitted_at,created_at,updated_at')
-      .eq('merchant_id', merchantId)
-      .eq('customer_id', profileId)
-      .order('updated_at', { ascending: false })
-      .limit(20);
-    profileClaims = fallback.data;
-  }
-
-  const claimSummaryRows = (profileClaims ?? []) as ClaimSummaryRow[];
+  const claimSummaryRows: ClaimSummaryRow[] = claimRows.slice(0, 20).map((claim) => {
+    const order = claim.source_order_id ? orders.find((o) => o.id === claim.source_order_id) : undefined;
+    return {
+      id: claim.id,
+      claim_type: claim.claim_type,
+      status: claim.status,
+      shopify_order_id: order?.external_id ?? null,
+      order_ref: order?.order_number ?? null,
+      submitted_at: claim.submitted_at,
+      created_at: claim.created_at,
+      updated_at: claim.updated_at,
+    };
+  });
   const openClaimCount = claimSummaryRows.filter((claim) =>
     ACTIVE_CLAIM_STATUSES.includes(claim.status as (typeof ACTIVE_CLAIM_STATUSES)[number]),
   ).length;
   const latestClaim = claimSummaryRows[0] ?? null;
-  const profileWideOrders = Math.max(0, Number(profile.total_orders ?? merchantOrderCount));
-  const merchantsSeen = Math.max(1, Number(profile.total_merchants_seen_at ?? 1));
+  const profileWideOrders = Math.max(0, profile.total_orders);
+  const merchantsSeen = Math.max(1, profile.total_merchants_seen_at);
   const localOrderSharePct = profileWideOrders > 0 ? (merchantOrderCount / profileWideOrders) * 100 : 0;
   const localClaimRatePct = merchantOrderCount > 0 ? (merchantClaimCount / merchantOrderCount) * 100 : 0;
   const networkChargebackRatePct = profileWideOrders > 0 ? (profile.total_chargebacks / profileWideOrders) * 100 : 0;
   const thisStoreMerchantSharePct = (1 / merchantsSeen) * 100;
-  const merchantSignalCount = Math.max(0, Number(profile.total_merchants_seen_at ?? 1));
-  const merchantSignalPills: MerchantSignalPill[] = merchantSignalCount > 0
-    ? Array.from({ length: merchantSignalCount }, (_, i) => ({
-      merchantLabel: `Merchant #${String.fromCharCode(65 + (i % 26))}`,
-      claimType: CLAIM_TYPE_LABELS[claimSummaryRows[i % Math.max(claimSummaryRows.length, 1)]?.claim_type ?? 'other'] ?? 'Other',
-    }))
+
+  // Cross-merchant claim-type mix from the k-anonymous rollup only. Counts are
+  // aggregates; no per-merchant identification is possible or implied.
+  const merchantSignalPills: MerchantSignalPill[] = network
+    ? Object.entries(network.claimTypeCounts).flatMap(([claimType, claimCount]) => {
+      const label = CLAIM_TYPE_LABELS[claimType] ?? 'Other';
+      const safeCount = Math.max(0, Math.min(Number(claimCount) || 0, 12));
+      return Array.from({ length: safeCount }, () => ({
+        merchantLabel: 'Network report',
+        claimType: label,
+      }));
+    })
     : [];
 
   const primaryIdentifier = profile.primary_email ?? firstArrayValue(profile.emails) ?? 'primary';

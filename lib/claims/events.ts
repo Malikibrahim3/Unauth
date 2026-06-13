@@ -25,7 +25,6 @@ export type ClaimEventType = z.infer<typeof claimEventTypeSchema>;
 export type ClaimEventInput = {
   claim_id: string;
   merchant_id?: string | null;
-  shop_domain?: string | null;
   event_type: ClaimEventType;
   previous_status?: string | null;
   new_status?: string | null;
@@ -42,34 +41,38 @@ export type ClaimEventInput = {
 };
 
 export async function appendClaimEvent(supabase: any, input: ClaimEventInput) {
+  if (!input.merchant_id) {
+    throw new Error('insert claim_events failed: merchant_id is required');
+  }
   const metadata = input.metadata ?? {};
   const triggeredBy =
     input.triggered_by ??
     (typeof metadata.triggered_by === 'string' ? metadata.triggered_by : null) ??
     input.event_type;
+  // v2 claim_events keeps status transitions in dedicated columns; decision /
+  // outcome transitions and actor context live in metadata.
   const payload = {
     claim_id: input.claim_id,
-    merchant_id: input.merchant_id ?? null,
-    shop_domain: input.shop_domain ?? null,
+    merchant_id: input.merchant_id,
     event_type: input.event_type,
-    from_state: input.previous_status ?? null,
-    to_state: input.new_status ?? null,
-    triggered_by: triggeredBy,
-    triggered_at: input.triggered_at ?? new Date().toISOString(),
-    previous_status: input.previous_status ?? null,
-    new_status: input.new_status ?? null,
-    previous_decision: input.previous_decision ?? null,
-    new_decision: input.new_decision ?? null,
-    previous_outcome: input.previous_outcome ?? null,
-    new_outcome: input.new_outcome ?? null,
+    from_status: input.previous_status ?? null,
+    to_status: input.new_status ?? null,
     note: input.note ?? null,
     actor_user_id: input.actor_user_id ?? null,
-    actor_email_hash: input.actor_email_hash ?? null,
-    metadata,
+    metadata: {
+      ...metadata,
+      triggered_by: triggeredBy,
+      triggered_at: input.triggered_at ?? new Date().toISOString(),
+      ...(input.previous_decision != null ? { previous_decision: input.previous_decision } : {}),
+      ...(input.new_decision != null ? { new_decision: input.new_decision } : {}),
+      ...(input.previous_outcome != null ? { previous_outcome: input.previous_outcome } : {}),
+      ...(input.new_outcome != null ? { new_outcome: input.new_outcome } : {}),
+      ...(input.actor_email_hash != null ? { actor_email_hash: input.actor_email_hash } : {}),
+    },
   };
 
   const { data, error } = await supabase
-    .from('claim_events' as any)
+    .from('claim_events')
     .insert(payload)
     .select()
     .single();

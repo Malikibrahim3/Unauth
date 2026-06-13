@@ -7,11 +7,12 @@ export async function resolveMerchantIdForCommerceStore(
   storeKey: string,
 ): Promise<string | null> {
   const { data, error } = await supabase
-    .from('commerce_store_connections' as never)
+    .from('store_connections')
     .select('merchant_id')
     .eq('platform', platform)
     .eq('store_key', storeKey)
     .eq('status', 'active')
+    .is('uninstalled_at', null)
     .maybeSingle();
 
   if (error) {

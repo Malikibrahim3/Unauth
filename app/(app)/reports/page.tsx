@@ -19,6 +19,30 @@ import {
   liveSetupCta,
 } from '@/app/(app)/reports/reportsPageUtils';
 
+/**
+ * v2 `claim_outcomes` has no `created_at` column (one row per claim, keyed on
+ * decided_at/updated_at). Map onto the OutcomeRow shape the reporting helpers
+ * expect, with created_at degraded to null.
+ */
+function mapOutcomeRow(row: {
+  claim_id: string;
+  decision: string | null;
+  outcome: string | null;
+  amount_refunded: number | null;
+  decided_at: string | null;
+  updated_at: string | null;
+}): OutcomeRow {
+  return {
+    claim_id: row.claim_id,
+    decision: row.decision,
+    outcome: row.outcome,
+    amount_refunded: row.amount_refunded,
+    decided_at: row.decided_at,
+    updated_at: row.updated_at,
+    created_at: null,
+  };
+}
+
 export default async function ReportsPage({ searchParams }: { searchParams?: Promise<{ range?: string; tab?: string }> }) {
   const supabase = createClient();
   const serviceClient = createServiceClient();
@@ -91,39 +115,39 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
   const buckets = buildGradeBuckets(gradeCounts);
 
   let claimsQuery = serviceClient
-    .from('merchant_claims' as never)
+    .from('claims')
     .select('id,status,claim_type,amount_at_risk,submitted_at,created_at,updated_at')
     .eq('merchant_id', ctx.merchantId);
   if (cutoff) claimsQuery = claimsQuery.gte('submitted_at', cutoff);
 
   let priorClaimsQuery = serviceClient
-    .from('merchant_claims' as never)
+    .from('claims')
     .select('id,status,claim_type,amount_at_risk,submitted_at,created_at,updated_at')
     .eq('merchant_id', ctx.merchantId);
   if (priorCutoff) priorClaimsQuery = priorClaimsQuery.gte('submitted_at', priorCutoff);
   if (priorEnd) priorClaimsQuery = priorClaimsQuery.lte('submitted_at', priorEnd);
 
   const [claimsResult, priorClaimResult] = await Promise.all([
-    claimsQuery.then((r: { data: ClaimRow[] | null; error: unknown }) => ({ data: r.error ? [] as ClaimRow[] : (r.data ?? []) })),
-    range === 'all' ? Promise.resolve({ data: [] as ClaimRow[] }) : priorClaimsQuery.then((r: { data: ClaimRow[] | null; error: unknown }) => ({ data: r.error ? [] as ClaimRow[] : (r.data ?? []) })),
+    claimsQuery.then((r) => ({ data: r.error ? [] as ClaimRow[] : ((r.data ?? []) as ClaimRow[]) })),
+    range === 'all' ? Promise.resolve({ data: [] as ClaimRow[] }) : priorClaimsQuery.then((r) => ({ data: r.error ? [] as ClaimRow[] : ((r.data ?? []) as ClaimRow[]) })),
   ]);
   const claims = claimsResult.data;
-  const priorClaims = (priorClaimResult.data ?? []) as ClaimRow[];
+  const priorClaims = priorClaimResult.data;
 
   const [outcomeResult, priorOutcomeResult] = await Promise.all([
     claims.length > 0
       ? serviceClient
-        .from('merchant_case_outcomes' as never)
-        .select('claim_id,decision,outcome,amount_refunded,decided_at,created_at,updated_at')
+        .from('claim_outcomes')
+        .select('claim_id,decision,outcome,amount_refunded,decided_at,updated_at')
         .in('claim_id', claims.map((claim: ClaimRow) => claim.id))
-        .then((r: { data: OutcomeRow[] | null; error: unknown }) => ({ data: r.error ? [] as OutcomeRow[] : (r.data ?? []) }))
+        .then((r) => ({ data: r.error ? [] as OutcomeRow[] : ((r.data ?? []).map(mapOutcomeRow)) }))
       : Promise.resolve({ data: [] as OutcomeRow[] }),
     priorClaims.length > 0
       ? serviceClient
-        .from('merchant_case_outcomes' as never)
-        .select('claim_id,decision,outcome,amount_refunded,decided_at,created_at,updated_at')
+        .from('claim_outcomes')
+        .select('claim_id,decision,outcome,amount_refunded,decided_at,updated_at')
         .in('claim_id', priorClaims.map((c) => c.id))
-        .then((r: { data: OutcomeRow[] | null; error: unknown }) => ({ data: r.error ? [] as OutcomeRow[] : (r.data ?? []) }))
+        .then((r) => ({ data: r.error ? [] as OutcomeRow[] : ((r.data ?? []).map(mapOutcomeRow)) }))
       : Promise.resolve({ data: [] as OutcomeRow[] }),
   ]);
 

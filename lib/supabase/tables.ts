@@ -44,6 +44,9 @@ export const TABLES = {
   WEBHOOK_LOGS: 'webhook_logs',
   IDENTITY_IDENTIFIERS: 'identity_identifiers',
   IDENTIFIER_CO_OCCURRENCE_EDGES: 'identity_edges',
+  CHECKOUT_SIGNALS: 'checkout_signals',
+  CHECKOUT_SIGNAL_ORDER_LINKS: 'checkout_signal_order_links',
+  INGEST_RATE_LIMITS: 'ingest_rate_limits',
 } as const;
 
 /** Step 3 compatibility / derived views — see PHASE_2_IMPLEMENTATION_SPEC.md */

@@ -5,7 +5,7 @@ import { emitIdentityObservations, type ObservationEntity } from '@/lib/identity
 import { resolveIdentitiesForKeys } from '@/lib/identity/resolver';
 import { fetchBigCommerceOrder, loadBigCommerceAccessToken } from '@/lib/commerce/bigcommerce/bigcommerceApi';
 import type { BigCommerceAddress, BigCommerceOrderPayload } from '@/lib/commerce/bigcommerce/bigcommerceOrderToCsvRow';
-import { loadBigCommerceCredentialsForStore } from '@/lib/commerce/bigcommerce/connectionSettings';
+import { linkCheckoutSignalsToOrder } from '@/lib/checkoutSignals/linkOrder';
 
 /**
  * BigCommerce ingestion → v2 schema, mirroring app/api/shopify/webhooks/route.ts.
@@ -59,6 +59,28 @@ function moneyValue(value: unknown): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+function readNamedField(value: unknown, key: string): string | null {
+  if (!Array.isArray(value)) return null;
+  for (const item of value) {
+    if (!item || typeof item !== 'object') continue;
+    const record = item as Record<string, unknown>;
+    const name = record.name ?? record.key;
+    const fieldValue = record.value;
+    if (name === key && typeof fieldValue === 'string' && fieldValue.trim()) {
+      return fieldValue.trim();
+    }
+  }
+  return null;
+}
+
+function extractUnauthVisitorId(order: Record<string, unknown>): string | null {
+  const visitorId =
+    readNamedField(order.form_fields, '_unauth_vid') ??
+    readNamedField(order.custom_fields, '_unauth_vid');
+  if (!visitorId || visitorId.length > 128) return null;
+  return visitorId;
+}
+
 /** Compose an address string with zip5 truncation (schema: postal_code is zip5). */
 function addressParts(a: BigCommerceAddress | null | undefined) {
   if (!a || (!a.street_1 && !a.city && !a.zip)) return null;
@@ -108,7 +130,7 @@ export async function processBigCommerceOrderWebhook(input: {
 
   const { data: connection, error: connectionError } = await supabase
     .from('store_connections')
-    .select('id, merchant_id')
+    .select('id, merchant_id, credentials_encrypted')
     .eq('platform', 'bigcommerce')
     .eq('store_key', storeHash)
     .maybeSingle();
@@ -119,9 +141,8 @@ export async function processBigCommerceOrderWebhook(input: {
   }
   const merchantId = connection.merchant_id;
 
-  const credentialRow = await loadBigCommerceCredentialsForStore(supabase, storeHash);
-  if (!credentialRow) return;
-  const accessToken = await loadBigCommerceAccessToken(credentialRow.credentials_encrypted);
+  if (typeof connection.credentials_encrypted !== 'string' || !connection.credentials_encrypted.trim()) return;
+  const accessToken = await loadBigCommerceAccessToken(connection.credentials_encrypted);
 
   const fetched = await fetchBigCommerceOrder({ storeHash, accessToken, orderId });
   if (!fetched) return;
@@ -228,4 +249,22 @@ export async function processBigCommerceOrderWebhook(input: {
   }];
   const { signalKeys } = await emitIdentityObservations(supabase, merchantId, entities);
   await resolveIdentitiesForKeys(supabase, signalKeys);
+
+  const visitorId = extractUnauthVisitorId(order as unknown as Record<string, unknown>);
+  if (visitorId) {
+    try {
+      await linkCheckoutSignalsToOrder(supabase, {
+        merchantId,
+        platformOrderId: externalId,
+        visitorId,
+        platform: 'bigcommerce',
+      });
+    } catch (error) {
+      console.error('BigCommerce checkout signal order link failed', {
+        storeHash,
+        orderId: externalId,
+        message: error instanceof Error ? error.message : 'unknown',
+      });
+    }
+  }
 }

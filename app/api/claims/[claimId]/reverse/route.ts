@@ -17,7 +17,7 @@ const reverseBodySchema = z.object({
 
 async function latestOutcome(serviceClient: any, claimId: string) {
   const { data } = await serviceClient
-    .from('merchant_case_outcomes' as any)
+    .from('claim_outcomes')
     .select('id,decision,outcome,updated_at')
     .eq('claim_id', claimId)
     .order('updated_at', { ascending: false })
@@ -57,7 +57,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const outcome = await upsertMerchantCaseOutcome(serviceClient, {
       claim_id: claimId,
-      shop_domain: claim.shop_domain,
       decision: parsed.data.decision,
       outcome: parsed.data.outcome,
       amount_refunded: parsed.data.amount_refunded ?? null,
@@ -70,7 +69,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     await appendClaimEvent(serviceClient, {
       claim_id: claimId,
       merchant_id: ctx.merchantId,
-      shop_domain: claim.shop_domain,
       event_type: 'decision_reversed',
       previous_status: claim.status,
       new_status: status,

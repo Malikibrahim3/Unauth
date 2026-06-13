@@ -42,10 +42,10 @@ async function GETHandler(
 
   const { data: grants } = await scopedService
     .from('user_permission_grants')
-    .select('id, permission, granted_at, grantor_user_id')
+    .select('id, permission, created_at, granted_by')
     .eq('grantee_user_id', member.user_id)
     .eq('revoked', false)
-    .order('granted_at', { ascending: true });
+    .order('created_at', { ascending: true });
 
   return NextResponse.json({ grants: grants ?? [] });
 }
@@ -70,7 +70,7 @@ async function POSTHandler(
   const { permission } = body as { permission: string };
 
   if (!permission) return NextResponse.json({ error: 'permission required' }, { status: 400 });
-  if (!DELEGATABLE_PERMISSIONS.includes(permission as any)) {
+  if (!DELEGATABLE_PERMISSIONS.some((p) => p === permission)) {
     return NextResponse.json({ error: 'Permission cannot be delegated' }, { status: 400 });
   }
 

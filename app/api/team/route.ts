@@ -31,23 +31,35 @@ async function GETHandler(req: NextRequest) {
   const includeAudit = req ? new URL(req.url).searchParams.get('includeAudit') === 'true' : false;
   const includeOwner = req ? new URL(req.url).searchParams.get('includeOwner') === 'true' : false;
 
-  const [{ data: merchant }, { data: members, error }] = await Promise.all([
-    serviceClient.from(TABLES.MERCHANTS).select('id, name, user_id').eq('id', ctx.merchantId).single(),
+  // v2 tenancy: ownership lives on merchant_users (role='owner'), not on a
+  // merchants.user_id column. Resolve the owner membership row directly so the
+  // synthetic owner entry reflects the real owner account.
+  const [{ data: merchant }, { data: members, error }, { data: ownerRow }] = await Promise.all([
+    serviceClient.from(TABLES.MERCHANTS).select('id, name').eq('id', ctx.merchantId).single(),
     scopedClient
       .from(TABLES.MERCHANT_MEMBERS)
       .select('*')
       .neq('invite_status', 'revoked')
+      .neq('role', 'owner')
       .order('created_at', { ascending: true }),
+    scopedClient
+      .from(TABLES.MERCHANT_MEMBERS)
+      .select('id, user_id, invited_email')
+      .eq('role', 'owner')
+      .neq('invite_status', 'revoked')
+      .maybeSingle(),
   ]);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  const ownerEmail = merchant?.user_id === user.id ? user.email ?? 'Account owner' : 'Account owner';
+  const ownerUserId = ownerRow?.user_id ?? null;
+  const ownerEmail =
+    ownerUserId === user.id ? user.email ?? 'Account owner' : ownerRow?.invited_email ?? 'Account owner';
   const ownerMember = includeOwner && merchant
     ? {
-        id: `owner:${merchant.user_id}`,
+        id: ownerRow?.id ?? `owner:${ownerUserId ?? ctx.merchantId}`,
         merchant_id: ctx.merchantId,
-        user_id: merchant.user_id,
+        user_id: ownerUserId,
         invited_email: ownerEmail,
         role: 'owner',
         invite_status: 'active',
@@ -118,13 +130,14 @@ async function POSTHandler(req: NextRequest) {
     .select('id, invite_status')
     .eq('invited_email', email)
     .maybeSingle();
-  if (existing) {
-    if ((existing as any).invite_status === 'active') return NextResponse.json({ error: 'This person is already a team member.' }, { status: 409 });
-    if ((existing as any).invite_status === 'pending') return NextResponse.json({ error: 'An invite is already pending for this email.' }, { status: 409 });
+  const existingMember = existing as { id: string; invite_status: string } | null;
+  if (existingMember) {
+    if (existingMember.invite_status === 'active') return NextResponse.json({ error: 'This person is already a team member.' }, { status: 409 });
+    if (existingMember.invite_status === 'pending') return NextResponse.json({ error: 'An invite is already pending for this email.' }, { status: 409 });
   }
 
-  let member: any;
-  if (existing) {
+  let member: { id: string; [key: string]: unknown };
+  if (existingMember) {
     const { data: updated, error: updateError } = await scopedClient
       .from(TABLES.MERCHANT_MEMBERS)
       .update({
@@ -133,8 +146,8 @@ async function POSTHandler(req: NextRequest) {
         invite_status: 'pending',
         invited_by: user.id,
         accepted_at: null,
-      } as any)
-      .eq('id', (existing as any).id)
+      })
+      .eq('id', existingMember.id)
       .select()
       .single();
     if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 });
@@ -159,7 +172,7 @@ async function POSTHandler(req: NextRequest) {
     if (inviteError) {
       await scopedClient
         .from(TABLES.MERCHANT_MEMBERS)
-        .update({ invite_status: 'revoked' } as any)
+        .update({ invite_status: 'revoked' })
         .eq('id', member.id);
       return NextResponse.json({ error: inviteError.message }, { status: 502 });
     }
@@ -167,7 +180,7 @@ async function POSTHandler(req: NextRequest) {
     if (invitedUserId) {
       const { data: updatedMember } = await scopedClient
         .from(TABLES.MERCHANT_MEMBERS)
-        .update({ user_id: invitedUserId } as any)
+        .update({ user_id: invitedUserId })
         .eq('id', member.id)
         .select()
         .single();
@@ -176,7 +189,7 @@ async function POSTHandler(req: NextRequest) {
   } catch (err) {
     await scopedClient
       .from(TABLES.MERCHANT_MEMBERS)
-      .update({ invite_status: 'revoked' } as any)
+      .update({ invite_status: 'revoked' })
       .eq('id', member.id);
     return NextResponse.json(
       { error: err instanceof Error ? err.message : 'Failed to send invite.' },

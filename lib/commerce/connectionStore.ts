@@ -1,20 +1,36 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/lib/supabase/types';
 import type { CommerceConnectionStatus, CommercePlatform } from '@/lib/commerce/types';
 
-export type CommerceStoreConnectionRow = {
-  id: string;
-  merchant_id: string;
+const STORE_CONNECTIONS_TABLE = 'store_connections';
+
+type StoreConnectionsRow = Database['public']['Tables']['store_connections']['Row'];
+type StoreConnectionUpdate = Database['public']['Tables']['store_connections']['Update'];
+
+/**
+ * Commerce-cluster view of a {@link StoreConnectionsRow}. Narrows the platform
+ * to the WooCommerce/BigCommerce subset this cluster manages and treats the
+ * always-populated columns (store_url, credentials_encrypted) as non-null for
+ * the rows this code writes.
+ */
+export type CommerceStoreConnectionRow = Omit<
+  StoreConnectionsRow,
+  'platform' | 'status' | 'store_url' | 'scopes'
+> & {
   platform: CommercePlatform;
-  store_key: string;
-  store_url: string;
   status: CommerceConnectionStatus;
-  credentials_encrypted: string;
-  uninstalled_at: string | null;
-  last_sync_at: string | null;
-  last_error: string | null;
-  created_at: string;
-  updated_at: string;
+  store_url: string;
+  scopes: StoreConnectionsRow['scopes'];
 };
+
+function toCommerceStoreConnectionRow(row: StoreConnectionsRow): CommerceStoreConnectionRow {
+  return {
+    ...row,
+    platform: row.platform as CommercePlatform,
+    status: row.status as CommerceConnectionStatus,
+    store_url: row.store_url ?? '',
+  };
+}
 
 export async function upsertCommerceStoreConnection(
   supabase: SupabaseClient,
@@ -28,26 +44,28 @@ export async function upsertCommerceStoreConnection(
     last_error?: string | null;
     last_sync_at?: string | null;
     uninstalled_at?: string | null;
+    scopes?: string[] | null;
   },
 ): Promise<CommerceStoreConnectionRow> {
   const now = new Date().toISOString();
+  const upsertRow: StoreConnectionUpdate = {
+    merchant_id: input.merchant_id,
+    platform: input.platform,
+    store_key: input.store_key,
+    store_url: input.store_url,
+    status: input.status,
+    credentials_encrypted: input.credentials_encrypted,
+    last_error: input.last_error ?? null,
+    last_sync_at: input.last_sync_at ?? null,
+    uninstalled_at: input.uninstalled_at ?? null,
+    updated_at: now,
+  };
+  if (input.scopes !== undefined) {
+    upsertRow.scopes = input.scopes ?? [];
+  }
   const { data, error } = await supabase
-    .from('commerce_store_connections' as never)
-    .upsert(
-      {
-        merchant_id: input.merchant_id,
-        platform: input.platform,
-        store_key: input.store_key,
-        store_url: input.store_url,
-        status: input.status,
-        credentials_encrypted: input.credentials_encrypted,
-        last_error: input.last_error ?? null,
-        last_sync_at: input.last_sync_at ?? null,
-        uninstalled_at: input.uninstalled_at ?? null,
-        updated_at: now,
-      } as never,
-      { onConflict: 'merchant_id,platform,store_key' },
-    )
+    .from(STORE_CONNECTIONS_TABLE)
+    .upsert(upsertRow, { onConflict: 'platform,store_key' })
     .select('*')
     .single();
 
@@ -55,7 +73,7 @@ export async function upsertCommerceStoreConnection(
     throw new Error(`upsert_commerce_store_connection_failed: ${error?.message ?? 'unknown'}`);
   }
 
-  return data as CommerceStoreConnectionRow;
+  return toCommerceStoreConnectionRow(data as StoreConnectionsRow);
 }
 
 export async function getActiveCommerceStoreConnection(
@@ -64,11 +82,12 @@ export async function getActiveCommerceStoreConnection(
   platform: CommercePlatform,
 ): Promise<CommerceStoreConnectionRow | null> {
   const { data, error } = await supabase
-    .from('commerce_store_connections' as never)
+    .from(STORE_CONNECTIONS_TABLE)
     .select('*')
     .eq('merchant_id', merchantId)
     .eq('platform', platform)
     .eq('status', 'active')
+    .is('uninstalled_at', null)
     .order('updated_at', { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -77,5 +96,5 @@ export async function getActiveCommerceStoreConnection(
     throw new Error(`get_commerce_store_connection_failed: ${error.message}`);
   }
 
-  return (data as CommerceStoreConnectionRow | null) ?? null;
+  return data ? toCommerceStoreConnectionRow(data as StoreConnectionsRow) : null;
 }

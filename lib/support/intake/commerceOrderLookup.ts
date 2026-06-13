@@ -1,5 +1,3 @@
-import { TABLES } from '@/lib/supabase/tables';
-
 export type CommerceOrderMatch = {
   /** Commerce order id (stored on support_case.shopify_order_id). */
   shopify_order_id: string;
@@ -78,77 +76,45 @@ function mergeOrderMatches(
   return [...byKey.values()];
 }
 
-async function listShopifySignalOrdersForStore(
-  supabase: ServiceClient,
-  storeKey: string
-): Promise<CommerceOrderMatch[]> {
-  const { data, error } = await (supabase.from('shopify_order_signals') as {
-    select: (columns: string) => {
-      eq: (col: string, val: string) => Promise<{
-        data: Array<Record<string, unknown>> | null;
-        error: { message: string } | null;
-      }>;
-    };
-  })
-    .select('shopify_order_id, order_number, customer_id, shop_domain')
-    .eq('shop_domain', storeKey);
-
-  if (error) throw new Error(`list_shopify_orders_failed: ${error.message}`);
-
-  return (data ?? []).map((row) => ({
-    shopify_order_id: String(row.shopify_order_id),
-    order_number: asString(row.order_number),
-    customer_id: asString(row.customer_id),
-    shop_domain: String(row.shop_domain),
-    source: 'shopify_signal' as const,
-  }));
-}
-
-async function findAuditOrdersByOrderIds(
+/**
+ * v2: a merchant's Shopify orders live in the merchant-scoped `source_orders`
+ * table (source='shopify'). The legacy `shopify_order_signals` and the separate
+ * "audit_transactions" store both collapse into this single table, so we read
+ * every connected-store Shopify order for the merchant and match in memory.
+ * `storeKey` is the connected store domain, carried through to `shop_domain`.
+ */
+async function listShopifySourceOrdersForStore(
   supabase: ServiceClient,
   merchantId: string,
-  storeKey: string,
-  orderIds: string[]
+  storeKey: string
 ): Promise<CommerceOrderMatch[]> {
-  if (orderIds.length === 0) return [];
-
-  const { data, error } = await (supabase.from(TABLES.AUDIT_TRANSACTIONS) as {
+  const { data, error } = await (supabase.from('source_orders') as {
     select: (columns: string) => {
       eq: (col: string, val: string) => {
-        eq: (col2: string, val2: string) => {
-          in: (col3: string, vals: string[]) => Promise<{
-            data: Array<Record<string, unknown>> | null;
-            error: { message: string } | null;
-          }>;
-        };
+        eq: (col2: string, val2: string) => Promise<{
+          data: Array<Record<string, unknown>> | null;
+          error: { message: string } | null;
+        }>;
       };
     };
   })
-    .select('order_id, shop_domain')
+    .select('external_id, order_number, source_customer_id')
     .eq('merchant_id', merchantId)
-    .eq('shop_domain', storeKey)
-    .in('order_id', orderIds);
+    .eq('source', 'shopify');
 
-  if (error) throw new Error(`list_audit_orders_failed: ${error.message}`);
+  if (error) throw new Error(`list_shopify_orders_failed: ${error.message}`);
 
-  const seen = new Set<string>();
-  const matches: CommerceOrderMatch[] = [];
-  for (const row of data ?? []) {
-    const orderId = asString(row.order_id);
-    const shopDomain = asString(row.shop_domain) ?? storeKey;
-    if (!orderId) continue;
-    const key = `${shopDomain}:${orderId}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    matches.push({
-      shopify_order_id: orderId,
-      order_number: orderId,
-      customer_id: null,
-      shop_domain: shopDomain,
-      source: 'audit_transaction',
-    });
-  }
-  return matches;
+  return (data ?? []).flatMap((row) => {
+    const externalId = asString(row.external_id);
+    if (!externalId) return [];
+    return [{
+      shopify_order_id: externalId,
+      order_number: asString(row.order_number),
+      customer_id: asString(row.source_customer_id),
+      shop_domain: storeKey,
+      source: 'shopify_signal' as const,
+    }];
+  });
 }
 
 export async function findCommerceOrdersForStoreByOrderRef(
@@ -156,19 +122,8 @@ export async function findCommerceOrdersForStoreByOrderRef(
   input: { merchantId: string; storeKey: string; orderRef: string }
 ): Promise<CommerceOrderMatch[]> {
   const client = supabase as ServiceClient;
-  const [signalOrders, auditOrders] = await Promise.all([
-    listShopifySignalOrdersForStore(client, input.storeKey),
-    findAuditOrdersByOrderIds(
-      client,
-      input.merchantId,
-      input.storeKey,
-      buildOrderRefLookupCandidates(input.orderRef)
-    ),
-  ]);
-
-  const signalMatches = matchShopifyOrdersByOrderRef(signalOrders, input.orderRef);
-  const auditMatches = matchShopifyOrdersByOrderRef(auditOrders, input.orderRef);
-  return mergeOrderMatches(signalMatches, auditMatches);
+  const orders = await listShopifySourceOrdersForStore(client, input.merchantId, input.storeKey);
+  return mergeOrderMatches(matchShopifyOrdersByOrderRef(orders, input.orderRef), []);
 }
 
 export async function findCommerceOrdersForStoreByOrderId(
@@ -179,12 +134,6 @@ export async function findCommerceOrdersForStoreByOrderId(
   const orderId = input.orderId.trim();
   if (!orderId) return [];
 
-  const [signalOrders, auditOrders] = await Promise.all([
-    listShopifySignalOrdersForStore(client, input.storeKey),
-    findAuditOrdersByOrderIds(client, input.merchantId, input.storeKey, [orderId]),
-  ]);
-
-  const signalMatches = signalOrders.filter((o) => o.shopify_order_id === orderId);
-  const auditMatches = auditOrders.filter((o) => o.shopify_order_id === orderId);
-  return mergeOrderMatches(signalMatches, auditMatches);
+  const orders = await listShopifySourceOrdersForStore(client, input.merchantId, input.storeKey);
+  return mergeOrderMatches(orders.filter((o) => o.shopify_order_id === orderId), []);
 }

@@ -1,8 +1,6 @@
-import Link from 'next/link';
-import { ArrowUpRight } from 'lucide-react';
 import Reveal from '../Reveal';
 import ParallaxLayer from './ParallaxLayer';
-import { FL_ROUTES, FL_STATEMENT } from '../../_lib/foundationContent';
+import { FL_STATEMENT } from '../../_lib/foundationContent';
 import styles from './foundation.module.css';
 
 /**
@@ -12,8 +10,8 @@ import styles from './foundation.module.css';
  */
 export default function FoundationStatement() {
   return (
-    <section id="about" className="isolate bg-[#f5f6f5]">
-      <div className="relative mx-auto w-full max-w-[100rem] px-5 pb-12 pt-20 sm:px-10 lg:pb-16 lg:pt-24">
+    <section id="about" className={`${styles.statementField} isolate`}>
+      <div className="relative z-10 mx-auto w-full max-w-[100rem] px-5 pb-12 pt-20 sm:px-10 lg:pb-16 lg:pt-24">
         <ParallaxLayer speed={0.24} className="relative z-10">
           <Reveal>
             <h2 className="text-[var(--fl-ink)]">
@@ -28,7 +26,6 @@ export default function FoundationStatement() {
               <span className="block">
                 <strong className="font-semibold text-[var(--fl-ink)]">
                   {FL_STATEMENT.brand}
-                  <sup className="text-[0.45em] font-semibold">®</sup>
                 </strong>{' '}
                 {FL_STATEMENT.post}
               </span>
@@ -50,48 +47,36 @@ export default function FoundationStatement() {
 
               <div className="-translate-y-[5%]">
                 <Reveal delay={120}>
-                <ol className="mt-16 grid grid-cols-1 gap-x-12">
+                <ol className={`${styles.statementFeatureList} mt-14 grid grid-cols-1 gap-3`}>
                   {FL_STATEMENT.features.map((feature) => (
                     <li
                       key={feature.id}
-                      className="py-6"
+                      className={styles.statementFeatureItem}
                     >
-                      <div className="w-[70%] border-t border-[var(--fl-line)] pt-6">
-                        <div className="flex items-baseline gap-4">
-                          <span className="font-mono text-sm text-[var(--fl-ink-tertiary)]">
-                            {feature.id}
-                          </span>
-                          <span className="text-[1.0625rem] font-bold leading-snug text-[var(--fl-ink)]">
-                            {feature.title}
-                          </span>
-                        </div>
+                      <div className={styles.statementFeatureNumber}>
+                        {feature.id}
+                      </div>
+                      <div className="min-w-0">
+                        <span className={styles.statementFeatureTitle}>
+                          {feature.title}
+                        </span>
                       </div>
                     </li>
                   ))}
                 </ol>
                 </Reveal>
               </div>
-
-              <Reveal delay={180}>
-                <Link
-                  href={FL_ROUTES.audit}
-                  className="mt-12 inline-flex items-center gap-1.5 rounded-full border border-[var(--fl-line)] bg-[var(--fl-paper)] px-6 py-3 text-[0.9375rem] font-semibold text-[var(--fl-ink)] transition-colors hover:border-[var(--fl-ink)]"
-                >
-                  {FL_STATEMENT.cta}
-                  <ArrowUpRight size={16} aria-hidden />
-                </Link>
-              </Reveal>
           </ParallaxLayer>
 
           <div className="pointer-events-none relative z-0 lg:justify-self-end lg:self-start">
             <div
               className="w-full max-w-[32rem] origin-bottom-right lg:max-w-[36rem]"
-              style={{ transform: 'translate(20%, 70%) scale(2.4)' }}
+              style={{ transform: 'translate(20%, 45%) scale(1.68)' }}
             >
               <Reveal delay={140}>
                 <img
                   id="evidence"
-                  src="/statement-facility-v3.png"
+                  src="/unauth-cluster-network-f5f6f5-v2.png"
                   alt="Fulfillment and claims operations facility illustration"
                   className="pointer-events-none w-full object-contain object-right"
                 />

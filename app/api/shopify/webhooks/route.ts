@@ -10,6 +10,7 @@ import {
 import { normaliseAddress, normaliseCard } from '@/lib/identity/normalise';
 import { emitIdentityObservations, type ObservationEntity } from '@/lib/identity/observations';
 import { resolveIdentitiesForKeys, linkClaimToIdentity } from '@/lib/identity/resolver';
+import { linkCheckoutSignalsToOrder } from '@/lib/checkoutSignals/linkOrder';
 
 /**
  * Shopify ingestion → v2 schema. Writes platform-agnostic layer-1 rows
@@ -62,6 +63,34 @@ function tagsToArray(value: unknown): string[] {
   if (Array.isArray(value)) return value.map(String).filter(Boolean);
   if (typeof value === 'string') return value.split(',').map((t) => t.trim()).filter(Boolean);
   return [];
+}
+
+function readAttributeValue(value: unknown, key: string): string | null {
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      if (!item || typeof item !== 'object') continue;
+      const record = item as Record<string, unknown>;
+      const itemKey = record.name ?? record.key;
+      if (itemKey === key && typeof record.value === 'string' && record.value.trim()) {
+        return record.value.trim();
+      }
+    }
+  }
+  if (value && typeof value === 'object') {
+    const record = value as Record<string, unknown>;
+    const direct = record[key];
+    if (typeof direct === 'string' && direct.trim()) return direct.trim();
+  }
+  return null;
+}
+
+function extractUnauthVisitorId(payload: any): string | null {
+  const value =
+    readAttributeValue(payload.note_attributes, '_unauth_vid') ??
+    readAttributeValue(payload.cart_attributes, '_unauth_vid') ??
+    readAttributeValue(payload.attributes, '_unauth_vid');
+  if (!value || value.length > 128) return null;
+  return value;
 }
 
 type ShopifyAddress = {
@@ -430,6 +459,23 @@ export async function processWebhook(rawBody: string, shopDomain: string, topic:
   if (topic === 'orders/create' || topic === 'orders/updated') {
     if (payload?.id == null) return; // nothing to ingest
     await processOrderTopic(supabase, connection.merchant_id, connection.id, payload, rawBody, now);
+    const visitorId = extractUnauthVisitorId(payload);
+    if (visitorId) {
+      try {
+        await linkCheckoutSignalsToOrder(supabase, {
+          merchantId: connection.merchant_id,
+          platformOrderId: String(payload.id),
+          visitorId,
+          platform: 'shopify',
+        });
+      } catch (error) {
+        console.error('Shopify checkout signal order link failed', {
+          shopDomain,
+          orderId: String(payload.id),
+          message: error instanceof Error ? error.message : 'unknown',
+        });
+      }
+    }
   } else if (topic === 'refunds/create') {
     await processRefundTopic(supabase, connection.merchant_id, payload, rawBody);
   } else if (topic === 'fulfillments/create' || topic === 'fulfillments/update') {

@@ -11,6 +11,8 @@ export const V1_IDENTIFIER_TYPES = [
   'helpdesk_customer_id',
   'platform_order_id',
   'helpdesk_ticket_id',
+  'visitor_id',
+  'device_fingerprint',
 ] as const;
 
 export type V1IdentifierType = (typeof V1_IDENTIFIER_TYPES)[number];

@@ -62,6 +62,8 @@ import { scoreClusterIdentity, type IdentityMatchResult } from '../identity/matc
 import { computeContextInsights } from '../identity/contextInsights';
 import { classifyIdentityReview } from '../identity/reviewClassifier';
 import { persistGlobalIdentityGraph } from '../identity/globalIdentityStore';
+import { emitIdentityObservations, type ObservationEntity } from '../identity/observations';
+import { resolveIdentitiesForKeys } from '../identity/resolver';
 import { env } from '../utils/env';
 
 const BATCH_SIZE = 1000;  // 1k rows per upsert keeps payloads reasonable while halving round-trips
@@ -1047,12 +1049,28 @@ export async function processCsvJob(
 
   await mergePipelineWarnings(serviceClient, jobId, pipelineWarnings, jobLog);
 
+  // -----------------------------------------------------------------------
+  // 8. v2 layer-1 persistence — source_orders + source_addresses + hashed
+  //    identity signals/resolution (canonical observations/resolver modules).
+  //    Runs after the merchant-facing progress flush; non-fatal by design.
+  //    One emitIdentityObservations + one resolveIdentitiesForKeys per chunk.
+  // -----------------------------------------------------------------------
+  if (merchantId) {
+    const v2Start = checkpointStart('v2_source_persistence', { rows: validPairs.length });
+    try {
+      await persistV2SourceOrders({ validPairs, normOrders, merchantId, serviceClient, jobLog });
+      checkpointEnd('v2_source_persistence', v2Start);
+    } catch (err) {
+      checkpoint('v2_source_persistence', 'error', { message: String((err as Error)?.message ?? err) });
+      console.error('[worker] persistV2SourceOrders failed:', err);
+    }
+  }
+
   const backgroundWrites = startBackgroundIntelligenceWrites({
     scored,
     serviceClient,
     context,
     merchantId,
-    sourceProvider: ingestionSource,
     jobId,
     chunkIndex: chunkInfo?.index ?? 0,
     identityResultsByOrder,
@@ -1084,12 +1102,218 @@ export async function processCsvJob(
   return scored;
 }
 
+// ---------------------------------------------------------------------------
+// v2 layer-1 persistence (source_orders / source_addresses) + identity-signal
+// emission. Mirrors the webhook ingestion paths (e.g. processWooCommerceOrder-
+// Webhook) but batched: one chunked source_orders upsert keyed on
+// (merchant_id, source, external_id), address rows created only on first
+// insert of an order, then ONE emitIdentityObservations + ONE
+// resolveIdentitiesForKeys call for the whole chunk.
+// ---------------------------------------------------------------------------
+type SourceOrderInsert = Database['public']['Tables']['source_orders']['Insert'];
+type SourceAddressInsert = Database['public']['Tables']['source_addresses']['Insert'];
+
+const V2_PERSIST_CHUNK = 500;
+
+const IPV4_RE = /^(\d{1,3}\.){3}\d{1,3}$/;
+const IPV6_RE = /^[0-9a-f:]+$/i;
+
+/** inet-safe value or null — Postgres rejects junk like 'unknown' outright. */
+function validInetOrNull(value: string | null | undefined): string | null {
+  if (typeof value !== 'string') return null;
+  const v = value.trim();
+  if (!v || v.toLowerCase() === 'unknown') return null;
+  if (IPV4_RE.test(v) && v.split('.').every((octet) => Number(octet) <= 255)) return v;
+  if (v.includes(':') && IPV6_RE.test(v)) return v;
+  return null;
+}
+
+function csvFinancialStatus(order: NormalisedOrder): SourceOrderInsert['financial_status'] {
+  if (order.refundStatus === 'full') return 'refunded';
+  if (order.refundStatus === 'partial') return 'partially_refunded';
+  switch (order.orderStatus) {
+    case 'completed': return 'paid';
+    case 'refunded':  return 'refunded';
+    case 'cancelled': return 'cancelled';
+    case 'pending':   return 'pending';
+    default:          return 'unknown';
+  }
+}
+
+function csvFulfillmentState(order: NormalisedOrder): SourceOrderInsert['fulfillment_state'] {
+  switch (order.deliveryStatus) {
+    case 'delivered':  return 'delivered';
+    case 'in_transit': return 'in_transit';
+    case 'pending':    return 'unfulfilled';
+    default:           return 'unknown';
+  }
+}
+
+async function persistV2SourceOrders(args: {
+  validPairs: { raw: ParsedCsvRow; parsed: CsvRow }[];
+  normOrders: NormalisedOrder[];
+  merchantId: string;
+  serviceClient: SupabaseClient<Database>;
+  jobLog: (msg: string) => void;
+}): Promise<void> {
+  const { validPairs, normOrders, merchantId, serviceClient, jobLog } = args;
+
+  type PendingOrder = {
+    parsed: CsvRow;
+    order: NormalisedOrder;
+    shippingNormalized: string | null;
+    billingNormalized: string | null;
+  };
+
+  // Dedupe by external_id (first occurrence wins) — a single upsert payload
+  // cannot affect the same conflict key twice.
+  const pendingByExternalId = new Map<string, PendingOrder>();
+  for (let i = 0; i < validPairs.length; i++) {
+    const parsed = validPairs[i].parsed;
+    const order = normOrders[i];
+    if (!order || pendingByExternalId.has(parsed.order_id)) continue;
+    pendingByExternalId.set(parsed.order_id, {
+      parsed,
+      order,
+      shippingNormalized: normaliseAddress(parsed.shipping_address ?? null),
+      billingNormalized: normaliseAddress(parsed.billing_address ?? null),
+    });
+  }
+  if (pendingByExternalId.size === 0) return;
+
+  // 1. Existing rows — address rows are only created when the order row is
+  //    first inserted (re-uploads keep their original address rows).
+  const externalIds = Array.from(pendingByExternalId.keys());
+  const existingByExternalId = new Map<
+    string,
+    { shippingAddressId: string | null; billingAddressId: string | null }
+  >();
+  for (const slice of splitIntoBatches(externalIds, V2_PERSIST_CHUNK)) {
+    const { data, error } = await withTransportRetry(async () =>
+      serviceClient
+        .from('source_orders')
+        .select('external_id, shipping_address_id, billing_address_id')
+        .eq('merchant_id', merchantId)
+        .eq('source', 'csv')
+        .in('external_id', slice)
+    );
+    if (error) throw new Error(`source_orders lookup failed: ${error.message}`);
+    for (const row of data ?? []) {
+      existingByExternalId.set(row.external_id, {
+        shippingAddressId: row.shipping_address_id,
+        billingAddressId: row.billing_address_id,
+      });
+    }
+  }
+
+  // 2. Address rows for first-seen orders (kind shipping/billing).
+  const addressInserts: SourceAddressInsert[] = [];
+  const addressSlots: Array<{ externalId: string; kind: 'shipping' | 'billing' }> = [];
+  for (const [externalId, pending] of pendingByExternalId) {
+    if (existingByExternalId.has(externalId)) continue;
+    if (pending.shippingNormalized) {
+      addressInserts.push({
+        merchant_id: merchantId,
+        kind: 'shipping',
+        line1: pending.parsed.shipping_address ?? null,
+        normalized_full: pending.shippingNormalized,
+      });
+      addressSlots.push({ externalId, kind: 'shipping' });
+    }
+    if (pending.billingNormalized) {
+      addressInserts.push({
+        merchant_id: merchantId,
+        kind: 'billing',
+        line1: pending.parsed.billing_address ?? null,
+        normalized_full: pending.billingNormalized,
+      });
+      addressSlots.push({ externalId, kind: 'billing' });
+    }
+  }
+  const addressIdBySlot = new Map<string, string>();
+  let slotOffset = 0;
+  for (const slice of splitIntoBatches(addressInserts, V2_PERSIST_CHUNK)) {
+    const { data, error } = await withTransportRetry(async () =>
+      serviceClient.from('source_addresses').insert(slice).select('id')
+    );
+    if (error) throw new Error(`source_addresses insert failed: ${error.message}`);
+    (data ?? []).forEach((row, i) => {
+      const slot = addressSlots[slotOffset + i];
+      if (slot) addressIdBySlot.set(`${slot.externalId}|${slot.kind}`, row.id);
+    });
+    slotOffset += slice.length;
+  }
+
+  // 3. Upsert source_orders, mapping enums with 'unknown' fallback.
+  const now = new Date().toISOString();
+  const orderInserts: SourceOrderInsert[] = Array.from(pendingByExternalId.entries()).map(
+    ([externalId, pending]) => {
+      const existing = existingByExternalId.get(externalId);
+      return {
+        merchant_id:        merchantId,
+        source:             'csv',
+        external_id:        externalId,
+        email:              pending.parsed.customer_email ?? null,
+        phone:              pending.parsed.customer_phone ?? null,
+        financial_status:   csvFinancialStatus(pending.order),
+        fulfillment_state:  csvFulfillmentState(pending.order),
+        total_price:        Number.isFinite(pending.order.orderTotal) ? pending.order.orderTotal : null,
+        currency:           pending.parsed.currency ?? null,
+        payment_gateway:    pending.parsed.payment_method ?? null,
+        card_last4:         pending.parsed.card_last4 ?? null,
+        browser_ip:         validInetOrNull(pending.parsed.ip_address),
+        shipping_address_id: existing?.shippingAddressId ?? addressIdBySlot.get(`${externalId}|shipping`) ?? null,
+        billing_address_id:  existing?.billingAddressId ?? addressIdBySlot.get(`${externalId}|billing`) ?? null,
+        placed_at:          pending.order.orderDate.toISOString(),
+        updated_at:         now,
+      };
+    }
+  );
+  const orderUuidByExternalId = new Map<string, string>();
+  for (const slice of splitIntoBatches(orderInserts, V2_PERSIST_CHUNK)) {
+    const { data, error } = await withTransportRetry(async () =>
+      serviceClient
+        .from('source_orders')
+        .upsert(slice, { onConflict: 'merchant_id,source,external_id' })
+        .select('id, external_id')
+    );
+    if (error) throw new Error(`source_orders upsert failed: ${error.message}`);
+    for (const row of data ?? []) orderUuidByExternalId.set(row.external_id, row.id);
+  }
+
+  // 4. Hashed identity observations + resolution via the canonical modules —
+  //    one entity per order, one emit + one resolve for the whole chunk.
+  const entities: ObservationEntity[] = [];
+  for (const [externalId, pending] of pendingByExternalId) {
+    const orderUuid = orderUuidByExternalId.get(externalId);
+    if (!orderUuid) continue;
+    entities.push({
+      provenance: { orderId: orderUuid },
+      source: 'csv',
+      observedAt: pending.order.orderDate.toISOString(),
+      email: pending.parsed.customer_email ?? null,
+      phone: pending.parsed.customer_phone ?? null,
+      ip: pending.parsed.ip_address ?? null,
+      paymentGateway: pending.parsed.payment_method ?? null,
+      cardLast4: pending.parsed.card_last4 ?? null,
+      shippingNormalized: pending.shippingNormalized,
+      billingNormalized: pending.billingNormalized,
+    });
+  }
+  const { signals, edges, signalKeys } = await emitIdentityObservations(serviceClient, merchantId, entities);
+  const resolved = await resolveIdentitiesForKeys(serviceClient, signalKeys);
+  jobLog(
+    `v2 persistence: ${orderUuidByExternalId.size} source_orders, ${addressInserts.length} source_addresses, ` +
+      `${signals} signals, ${edges} edges, identities created=${resolved.created} ` +
+      `updated=${resolved.updated} merged=${resolved.merged}`
+  );
+}
+
 function startBackgroundIntelligenceWrites(args: {
   scored: ScoredOrder[];
   serviceClient: SupabaseClient<Database>;
   context: import('../engine/fastContext').FastScoringContext;
   merchantId?: string;
-  sourceProvider: import('./types').ProcessCsvJobIngestion['source'];
   jobId: string;
   chunkIndex: number;
   identityResultsByOrder: Map<string, { grade: any; signalsMatched: string[]; clusterId: string | null; matchStatus: any }>;
@@ -1104,7 +1328,6 @@ function startBackgroundIntelligenceWrites(args: {
     serviceClient,
     context,
     merchantId,
-    sourceProvider,
     jobId,
     chunkIndex,
     identityResultsByOrder,
@@ -1278,24 +1501,6 @@ function startBackgroundIntelligenceWrites(args: {
           } catch (err) {
             checkpoint('co_occurrence_writes', 'error', { message: String((err as Error)?.message ?? err) });
             console.error('[worker] writeCoOccurrences failed:', err);
-          }
-        })(),
-        (async () => {
-          if (!merchantId) return;
-          const graphStart = checkpointStart('identifier_graph_writes', { rows: scored.length });
-          try {
-            const { writeIdentifierGraphFromScoredBatch, mapIngestionSourceToGraphProvider } =
-              await import('../identity/writeIdentifierGraph');
-            const result = await writeIdentifierGraphFromScoredBatch(scored, serviceClient, {
-              merchantId,
-              sourceProvider: mapIngestionSourceToGraphProvider(sourceProvider),
-            });
-            checkpointEnd('identifier_graph_writes', graphStart, result);
-          } catch (err) {
-            checkpoint('identifier_graph_writes', 'error', {
-              message: String((err as Error)?.message ?? err),
-            });
-            console.error('[worker] writeIdentifierGraphFromScoredBatch failed:', err);
           }
         })(),
         writeIdentityClusters(identityClusterMap, serviceClient).catch((err) =>

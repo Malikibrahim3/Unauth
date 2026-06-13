@@ -84,7 +84,7 @@ export function logAction(params: LogActionParams): void {
       action,
       resource_type: resourceType  ?? null,
       resource_id:   resourceId    ?? null,
-      metadata:      (metadata ?? null) as any,
+      metadata:      metadata      ?? null,
       request_ip:    ip            ?? null,
     })
     .then((res: any) => {

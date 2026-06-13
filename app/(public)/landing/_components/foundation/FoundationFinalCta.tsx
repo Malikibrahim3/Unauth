@@ -8,8 +8,8 @@ import styles from './foundation.module.css';
 /** Accent closer: display headline on the purple field, single CTA. */
 export default function FoundationFinalCta() {
   return (
-    <section className="bg-[var(--fl-purple)]">
-      <div className="mx-auto w-full max-w-[100rem] px-5 py-28 sm:px-10 lg:py-36">
+    <section className={styles.finalField}>
+      <div className="relative z-10 mx-auto w-full max-w-[100rem] px-5 py-28 sm:px-10 lg:py-36">
         <ParallaxLayer speed={0.3}>
           <Reveal>
             <h2 className="text-[var(--fl-on-color)]">

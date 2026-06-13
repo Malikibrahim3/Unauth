@@ -171,35 +171,37 @@ export async function resolveCallerContext(
   serviceClient: SupabaseClient,
   userId: string
 ): Promise<CallerContext | null> {
-  // 1. Is the user the merchant owner?
-  const { data: ownerMerchant } = await serviceClient
-    .from(TABLES.MERCHANTS)
-    .select('id')
-    .eq('user_id', userId)
-    .maybeSingle();
+  // v2 tenancy: ownership IS membership. merchant_users holds every
+  // affiliation; a row with role='owner' is the account owner (the old
+  // merchants.user_id column was dropped at the v2 cutover). memberId stays
+  // null for owners so isAccountOwner checks keep working.
+  const ROLE_RANK: Record<Role, number> = { owner: 3, admin: 2, analyst: 1, viewer: 0 };
+  const toCtx = (row: { id: string; merchant_id: string; role: string }): CallerContext => {
+    const role = row.role as Role;
+    return {
+      userId,
+      merchantId: row.merchant_id,
+      role,
+      memberId: role === 'owner' ? null : row.id,
+    };
+  };
 
-  if (ownerMerchant) {
-    return { userId, merchantId: ownerMerchant.id, role: 'owner', memberId: null };
-  }
-
-  // 2. Is the user an active team member?
-  const { data: member } = await serviceClient
+  // 1. Active memberships (prefer the highest-privilege row if the user
+  //    belongs to several merchants).
+  const { data: active } = await serviceClient
     .from(TABLES.MERCHANT_MEMBERS)
     .select('id, merchant_id, role')
     .eq('user_id', userId)
-    .eq('invite_status', 'active')
-    .maybeSingle();
+    .eq('invite_status', 'active');
 
-  if (member) {
-    return {
-      userId,
-      merchantId: member.merchant_id as string,
-      role: member.role as Role,
-      memberId: member.id as string,
-    };
+  if (active && active.length > 0) {
+    const best = [...active].sort(
+      (a, b) => (ROLE_RANK[b.role as Role] ?? -1) - (ROLE_RANK[a.role as Role] ?? -1)
+    )[0];
+    return toCtx(best);
   }
 
-  // 3. Did the user just accept a magic-link team invite?
+  // 2. Did the user just accept a magic-link team invite? Auto-activate it.
   const { data: pendingMember } = await serviceClient
     .from(TABLES.MERCHANT_MEMBERS)
     .select('id, merchant_id, role')
@@ -216,15 +218,10 @@ export async function resolveCallerContext(
       })
       .eq('id', pendingMember.id);
 
-    return {
-      userId,
-      merchantId: pendingMember.merchant_id as string,
-      role: pendingMember.role as Role,
-      memberId: pendingMember.id as string,
-    };
+    return toCtx(pendingMember);
   }
 
-  // 4. No merchant + no team membership — onboarding is required.
+  // 3. No membership — onboarding is required.
   return null;
 }
 

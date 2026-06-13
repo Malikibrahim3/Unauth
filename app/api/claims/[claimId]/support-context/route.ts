@@ -31,8 +31,8 @@ export async function GET(
   }
 
   const { data: claim, error } = await serviceClient
-    .from('merchant_claims')
-    .select('id, merchant_id, shopify_order_id, shop_domain')
+    .from('claims')
+    .select('id, merchant_id, source_order_id')
     .eq('id', claimId)
     .eq('merchant_id', ctx.merchantId)
     .maybeSingle();
@@ -41,11 +41,24 @@ export async function GET(
     return NextResponse.json({ error: 'not_found' }, { status: 404 });
   }
 
+  let externalOrderId: string | null = null;
+  let orderNumber: string | null = null;
+  if (claim.source_order_id) {
+    const { data: order } = await serviceClient
+      .from('source_orders')
+      .select('external_id, order_number')
+      .eq('id', claim.source_order_id)
+      .eq('merchant_id', ctx.merchantId)
+      .maybeSingle();
+    externalOrderId = order?.external_id ?? null;
+    orderNumber = order?.order_number ?? null;
+  }
+
   const supportCases = await listSupportCasesForClaimContext(serviceClient, ctx.merchantId, {
     merchantClaimId: claim.id,
-    shopifyOrderId: claim.shopify_order_id,
-    orderRef: null,
-    shopDomain: claim.shop_domain,
+    shopifyOrderId: externalOrderId,
+    orderRef: orderNumber,
+    shopDomain: null,
   });
 
   return NextResponse.json({ support_cases: supportCases });

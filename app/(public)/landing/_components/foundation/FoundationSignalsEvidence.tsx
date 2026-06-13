@@ -38,7 +38,7 @@ export default function FoundationSignalsEvidence() {
     <section
       id="signals-evidence"
       aria-labelledby="fl-signals-evidence-heading"
-      className={`${styles.espresso} relative isolate overflow-x-clip`}
+      className={`${styles.espresso} ${styles.espressoEvidence} relative isolate overflow-x-clip`}
     >
       <img
         src="/signals-hero-left-33r18z-2.png"
@@ -49,7 +49,7 @@ export default function FoundationSignalsEvidence() {
         className="pointer-events-none absolute bottom-[calc(-2%_-_5rem)] left-[-10%] z-0 hidden w-[73.6rem] max-w-none opacity-95 lg:block"
       />
       <div className="mx-auto grid w-full max-w-[100rem] gap-12 px-5 pb-24 pt-28 sm:px-10 sm:pt-32 lg:min-h-[min(105.8svh,64.4rem)] lg:grid-cols-[0.95fr_1.05fr] lg:items-start lg:gap-14 lg:pb-32 lg:pt-36">
-        <div className="relative z-10 min-w-0 lg:-translate-y-24 xl:-translate-y-28">
+        <div className="relative z-10 min-w-0 translate-y-[20%] lg:translate-y-[calc(20%-6rem)] xl:translate-y-[calc(20%-7rem)]">
           <ParallaxLayer speed={0.17}>
             <Reveal>
               <h2 id="fl-signals-evidence-heading" className="text-[var(--fl-dusk-ink)]">
@@ -73,7 +73,7 @@ export default function FoundationSignalsEvidence() {
           </ParallaxLayer>
         </div>
 
-        <div className="relative z-10 min-w-0">
+        <div className="relative z-10 min-w-0 translate-y-[5%]">
           <Reveal delay={100}>
             <div className={`relative z-10 ${styles.espressoCard}`}>
               <div
