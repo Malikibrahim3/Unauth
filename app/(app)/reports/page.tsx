@@ -128,8 +128,8 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
   if (priorEnd) priorClaimsQuery = priorClaimsQuery.lte('submitted_at', priorEnd);
 
   const [claimsResult, priorClaimResult] = await Promise.all([
-    claimsQuery.then((r) => ({ data: r.error ? [] as ClaimRow[] : ((r.data ?? []) as ClaimRow[]) })),
-    range === 'all' ? Promise.resolve({ data: [] as ClaimRow[] }) : priorClaimsQuery.then((r) => ({ data: r.error ? [] as ClaimRow[] : ((r.data ?? []) as ClaimRow[]) })),
+    claimsQuery.then((r: { error: unknown; data: ClaimRow[] | null }) => ({ data: r.error ? [] as ClaimRow[] : ((r.data ?? []) as ClaimRow[]) })),
+    range === 'all' ? Promise.resolve({ data: [] as ClaimRow[] }) : priorClaimsQuery.then((r: { error: unknown; data: ClaimRow[] | null }) => ({ data: r.error ? [] as ClaimRow[] : ((r.data ?? []) as ClaimRow[]) })),
   ]);
   const claims = claimsResult.data;
   const priorClaims = priorClaimResult.data;
@@ -140,14 +140,34 @@ export default async function ReportsPage({ searchParams }: { searchParams?: Pro
         .from('claim_outcomes')
         .select('claim_id,decision,outcome,amount_refunded,decided_at,updated_at')
         .in('claim_id', claims.map((claim: ClaimRow) => claim.id))
-        .then((r) => ({ data: r.error ? [] as OutcomeRow[] : ((r.data ?? []).map(mapOutcomeRow)) }))
+        .then((r: {
+          error: unknown;
+          data: Array<{
+            claim_id: string;
+            decision: string | null;
+            outcome: string | null;
+            amount_refunded: number | null;
+            decided_at: string | null;
+            updated_at: string | null;
+          }> | null;
+        }) => ({ data: r.error ? [] as OutcomeRow[] : ((r.data ?? []).map(mapOutcomeRow)) }))
       : Promise.resolve({ data: [] as OutcomeRow[] }),
     priorClaims.length > 0
       ? serviceClient
         .from('claim_outcomes')
         .select('claim_id,decision,outcome,amount_refunded,decided_at,updated_at')
-        .in('claim_id', priorClaims.map((c) => c.id))
-        .then((r) => ({ data: r.error ? [] as OutcomeRow[] : ((r.data ?? []).map(mapOutcomeRow)) }))
+        .in('claim_id', priorClaims.map((c: ClaimRow) => c.id))
+        .then((r: {
+          error: unknown;
+          data: Array<{
+            claim_id: string;
+            decision: string | null;
+            outcome: string | null;
+            amount_refunded: number | null;
+            decided_at: string | null;
+            updated_at: string | null;
+          }> | null;
+        }) => ({ data: r.error ? [] as OutcomeRow[] : ((r.data ?? []).map(mapOutcomeRow)) }))
       : Promise.resolve({ data: [] as OutcomeRow[] }),
   ]);
 

@@ -92,13 +92,15 @@ export default async function DashboardPage() {
       .select('submitted_at,created_at,amount_at_risk')
       .eq('merchant_id', ctx.merchantId)
       .gte('submitted_at', new Date(Date.now() - 56 * 24 * 3600 * 1000).toISOString())
-      .then((r) => r.error ? [] : (r.data ?? [])),
+      .then((r: { error: unknown; data: Array<{ submitted_at: string | null; created_at: string; amount_at_risk: number | null }> | null }) =>
+        r.error ? [] : (r.data ?? [])),
     serviceClient
       .from('claims')
       .select('amount_at_risk')
       .eq('merchant_id', ctx.merchantId)
       .in('status', ['open', 'pending', 'escalated'])
-      .then((r) => r.error ? [] : (r.data ?? [])),
+      .then((r: { error: unknown; data: Array<{ amount_at_risk: number | null }> | null }) =>
+        r.error ? [] : (r.data ?? [])),
   ]);
 
   const claimTrend: TrendDataPoint[] = buildWeeklyTrend(

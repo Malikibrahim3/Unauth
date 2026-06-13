@@ -9,6 +9,24 @@ function csvCell(value: unknown) {
   return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }
 
+type ClaimExportRow = {
+  id: string;
+  status: string;
+  amount_at_risk: number | null;
+  submitted_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+type OutcomeExportRow = {
+  claim_id: string;
+  decision: string | null;
+  outcome: string | null;
+  amount_refunded: number | null;
+  decided_at: string | null;
+  updated_at: string | null;
+};
+
 export async function GET(request: NextRequest) {
   const userClient = createClient();
   const { data: { user } } = await userClient.auth.getUser();
@@ -33,20 +51,20 @@ export async function GET(request: NextRequest) {
     .eq('merchant_id', ctx.merchantId);
   if (cutoff) claimsQuery = claimsQuery.gte('submitted_at', cutoff);
   const { data: claims } = await claimsQuery;
-  const claimRows = claims ?? [];
+  const claimRows = (claims ?? []) as ClaimExportRow[];
   // claim_outcomes is one-row-per-claim (claim_id UNIQUE) — fetch directly by claim id.
   const { data: outcomes } = claimRows.length > 0
     ? await serviceClient
       .from('claim_outcomes')
       .select('claim_id,decision,outcome,amount_refunded,decided_at,updated_at')
       .in('claim_id', claimRows.map((claim) => claim.id))
-    : { data: [] as Array<{ claim_id: string; decision: string | null; outcome: string | null; amount_refunded: number | null; decided_at: string | null; updated_at: string | null }> };
+    : { data: [] as OutcomeExportRow[] };
 
   if (view === 'outcomes') {
     const claimStatusById = new Map(claimRows.map((claim) => [claim.id, claim.status]));
     const csv = [
       ['claim_id', 'status', 'decision', 'outcome', 'amount_refunded', 'decided_at'].join(','),
-      ...(outcomes ?? []).map((row) => [
+      ...(outcomes ?? []).map((row: OutcomeExportRow) => [
         row.claim_id,
         claimStatusById.get(row.claim_id) ?? '',
         row.decision ?? '',
