@@ -49,6 +49,7 @@ export async function renderEvidencePDF(
 ): Promise<Buffer> {
   const { renderToBuffer } = await import('@react-pdf/renderer');
   const tree = toLegacyElement(<EvidenceDocument pkg={pkg} narrative={narrative} />);
-  const buffer = await renderToBuffer(tree as React.ReactElement);
+  type PdfTree = Parameters<typeof renderToBuffer>[0];
+  const buffer = await renderToBuffer(tree as PdfTree);
   return Buffer.from(buffer);
 }

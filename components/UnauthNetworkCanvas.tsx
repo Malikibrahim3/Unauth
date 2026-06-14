@@ -25,12 +25,13 @@ export function UnauthNetworkCanvas() {
   const mouseRef = useRef({ clientX: 0, clientY: 0, active: false });
 
   useEffect(() => {
-    const mount = mountRef.current;
-    if (!mount) return;
+    const mountNode = mountRef.current;
+    if (!mountNode) return;
+    const el: HTMLDivElement = mountNode;
 
     let raf = 0;
-    let W = mount.clientWidth;
-    let H = mount.clientHeight;
+    let W = el.clientWidth;
+    let H = el.clientHeight;
 
     const scene  = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(45, W / H, 0.1, 100);
@@ -40,7 +41,7 @@ export function UnauthNetworkCanvas() {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(W, H);
     renderer.setClearColor(0x000000, 0);
-    mount.appendChild(renderer.domElement);
+    el.appendChild(renderer.domElement);
 
     /* ── Globe group ─────────────────────────────────────────────────────── */
     const globe = new THREE.Group();
@@ -203,7 +204,7 @@ export function UnauthNetworkCanvas() {
     let targetScrollT = 0;
     let connectOp = 0;
     let hoverValid = false;
-    const section = mount.closest('section') as HTMLElement | null;
+    const section = el.closest('section') as HTMLElement | null;
 
     /* ── IntersectionObserver — fire reveal on entry ─────────────────────── */
     const io = new IntersectionObserver(
@@ -217,7 +218,7 @@ export function UnauthNetworkCanvas() {
       },
       { threshold: 0.08 },
     );
-    io.observe(section ?? mount);
+    io.observe(section ?? el);
 
     /* ── Scroll handler — exit drift + fade ──────────────────────────────── */
     function onScroll() {
@@ -232,7 +233,7 @@ export function UnauthNetworkCanvas() {
 
     /* ── Mouse ───────────────────────────────────────────────────────────── */
     function onMove(e: PointerEvent) {
-      const r = mount.getBoundingClientRect();
+      const r = el.getBoundingClientRect();
       if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) {
         mouseRef.current.active = false;
         return;
@@ -244,7 +245,7 @@ export function UnauthNetworkCanvas() {
     window.addEventListener('pointerleave', onLeave);
 
     function onResize() {
-      W = mount.clientWidth; H = mount.clientHeight;
+      W = el.clientWidth; H = el.clientHeight;
       camera.aspect = W / H; camera.updateProjectionMatrix();
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       renderer.setSize(W, H);
@@ -293,7 +294,7 @@ export function UnauthNetworkCanvas() {
       globe.updateMatrixWorld(true);
       hoverValid = false;
       if (mouse.active) {
-        const r = mount.getBoundingClientRect();
+        const r = el.getBoundingClientRect();
         ndc.x = ((mouse.clientX - r.left) / r.width) * 2 - 1;
         ndc.y = -((mouse.clientY - r.top) / r.height) * 2 + 1;
         raycaster.setFromCamera(ndc, camera);
@@ -401,7 +402,7 @@ export function UnauthNetworkCanvas() {
       window.removeEventListener('pointerleave', onLeave);
       window.removeEventListener('resize', onResize);
       dotGeo.dispose(); dotMat.dispose(); connGeo.dispose(); connMat.dispose(); renderer.dispose();
-      if (renderer.domElement.parentElement === mount) mount.removeChild(renderer.domElement);
+      if (renderer.domElement.parentElement === el) el.removeChild(renderer.domElement);
     };
   }, []);
 

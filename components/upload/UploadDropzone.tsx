@@ -10,7 +10,7 @@ type UploadDropzoneProps = {
   batchQueue: BatchItem[];
   dragOver: boolean;
   isProcessing: boolean;
-  fileInputRef: RefObject<HTMLInputElement>;
+  fileInputRef: RefObject<HTMLInputElement | null>;
   onDrop: (e: React.DragEvent) => void;
   onDragOver: (e: React.DragEvent) => void;
   onDragLeave: () => void;
