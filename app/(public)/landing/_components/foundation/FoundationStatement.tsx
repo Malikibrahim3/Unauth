@@ -10,7 +10,7 @@ import styles from './foundation.module.css';
  */
 export default function FoundationStatement() {
   return (
-    <section id="about" className={`${styles.statementField} isolate`}>
+    <section data-nav-theme="light" id="about" className={`${styles.statementField} isolate`}>
       <div className="relative z-10 mx-auto w-full max-w-[100rem] px-5 pb-12 pt-20 sm:px-10 lg:pb-16 lg:pt-24">
         <ParallaxLayer speed={0.24} className="relative z-10">
           <Reveal>

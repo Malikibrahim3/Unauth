@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { ChevronRight, Layers } from 'lucide-react';
+import UnauthEvidenceHeroCards from '@/components/UnauthEvidenceHeroCards';
 import { HeroDrift } from './ParallaxLayer';
-import FoundationEvidenceCards from './FoundationEvidenceCards';
 import { FL_HERO, FL_ROUTES } from '../../_lib/foundationContent';
 import styles from './foundation.module.css';
 
@@ -16,8 +16,18 @@ function delay(ms: number): React.CSSProperties {
 export default function FoundationHero() {
   return (
     <section
+      data-nav-theme="light"
       className={`${styles.dusk} relative flex min-h-[100svh] flex-col justify-end overflow-hidden lg:h-[100svh] lg:min-h-0 lg:justify-center`}
     >
+      <img
+        src="/hero-background.png"
+        alt=""
+        className={styles.heroImage}
+        fetchPriority="high"
+        decoding="async"
+        aria-hidden
+      />
+      <UnauthEvidenceHeroCards />
       <div className="relative z-20 mx-auto flex w-full max-w-[100rem] flex-1 flex-col justify-center px-5 pb-14 pt-[72px] sm:px-10 sm:pb-16 lg:pb-16 lg:pt-[88px]">
         <div className="min-w-0 max-w-[42.5rem] self-start">
           <HeroDrift factor={-0.22}>
@@ -56,7 +66,7 @@ export default function FoundationHero() {
                 {FL_HERO.primaryCta}
                 <ChevronRight size={16} aria-hidden />
               </Link>
-              <Link href="/landing#about" className={styles.heroCtaSecondary}>
+              <Link href="/landing#how-it-works" className={styles.heroCtaSecondary}>
                 {FL_HERO.secondaryCta}
                 <ChevronRight size={16} aria-hidden />
               </Link>
@@ -64,8 +74,6 @@ export default function FoundationHero() {
           </HeroDrift>
         </div>
       </div>
-
-      <FoundationEvidenceCards />
     </section>
   );
 }

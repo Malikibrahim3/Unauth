@@ -30,6 +30,7 @@ const remotePatterns = supabaseHostname
 
 const nextConfig = {
   serverExternalPackages: ['papaparse'],
+  transpilePackages: ['three'],
   devIndicators: false,
   allowedDevOrigins: ['127.0.0.1'],
   // The Chrome download route reads extension files from disk at runtime.

@@ -1,64 +1,65 @@
-import { ClipboardList, Clock, CreditCard, Globe2 } from 'lucide-react';
-import { FL_HERO } from '../../_lib/foundationContent';
+'use client';
+
+import { ClipboardList, Clock, CreditCard, Workflow } from 'lucide-react';
+import FloatingEvidenceCard from './FloatingEvidenceCard';
+import { HeroDrift } from './ParallaxLayer';
+import { FL_HERO_FLOATING_CARDS } from '../../_lib/foundationContent';
 import styles from './foundation.module.css';
 
-function IconCircle({ children }: { children: React.ReactNode }) {
-  return <span className={styles.evidenceIcon}>{children}</span>;
-}
-
 export default function FoundationEvidenceCards() {
+  const cards = FL_HERO_FLOATING_CARDS;
+
   return (
-    <div className={styles.evidenceCardsLayer} aria-label="Suspicious claimant evidence trail">
-      <article className={`${styles.evidenceCard} ${styles.evidenceOrderHistoryCard}`}>
-        <IconCircle>
-          <ClipboardList size={18} aria-hidden />
-        </IconCircle>
-        <div className="min-w-0">
-          <h2 className={styles.evidenceCardTitle}>{FL_HERO.orderHistoryCard.title}</h2>
-          <p className={styles.evidenceCardBody}>{FL_HERO.orderHistoryCard.status}</p>
-          <p className={styles.evidenceCardMuted}>{FL_HERO.orderHistoryCard.meta}</p>
-          <p className={styles.evidenceCardMuted}>{FL_HERO.orderHistoryCard.pattern}</p>
-        </div>
-      </article>
+    <HeroDrift
+      factor={-0.28}
+      fade
+      scrollMax={1000}
+      fadeEnd={850}
+      className={styles.evidenceCardsLayer}
+    >
+      <FloatingEvidenceCard
+        className={styles.evidenceCardOrderHistory}
+        label={cards.orderHistory.label}
+        title={cards.orderHistory.title}
+        details={[...cards.orderHistory.details]}
+        icon={<ClipboardList size={17} aria-hidden />}
+        tone="neutral"
+        delay={0}
+        showSignalDot
+      />
 
-      <article className={`${styles.evidenceCard} ${styles.evidenceClaimCard}`}>
-        <div className={styles.evidenceTitleRow}>
-          <IconCircle>
-            <Clock size={18} aria-hidden />
-          </IconCircle>
-          <h2 className={styles.evidenceCardTitle}>{FL_HERO.claimTimingCard.title}</h2>
-        </div>
-        <p className={styles.evidenceCardBody}>{FL_HERO.claimTimingCard.status}</p>
-        <p className={styles.evidenceCardMuted}>{FL_HERO.claimTimingCard.meta}</p>
-      </article>
+      <FloatingEvidenceCard
+        className={styles.evidenceCardClaimTiming}
+        label={cards.claimTiming.label}
+        title={cards.claimTiming.title}
+        details={[...cards.claimTiming.details]}
+        icon={<Clock size={17} aria-hidden />}
+        tone="amber"
+        delay={0.08}
+      />
 
-      <article className={`${styles.evidenceCard} ${styles.evidenceCrossMerchantCard}`}>
-        <IconCircle>
-          <Globe2 size={18} aria-hidden />
-        </IconCircle>
-        <div>
-          <h2 className={styles.evidenceCardTitle}>{FL_HERO.crossMerchantCard.title}</h2>
-          <p className={styles.evidenceCardBody}>{FL_HERO.crossMerchantCard.status}</p>
-          <p className={styles.evidenceCardMuted}>{FL_HERO.crossMerchantCard.meta}</p>
-        </div>
-        <svg className={styles.evidenceSparkline} viewBox="0 0 72 28" aria-hidden>
-          <path d="M2 22 L18 14 L34 18 L52 8 L70 12" />
-        </svg>
-      </article>
+      <FloatingEvidenceCard
+        className={styles.evidenceCardCrossMerchant}
+        label={cards.crossMerchant.label}
+        title={cards.crossMerchant.title}
+        details={[...cards.crossMerchant.details]}
+        icon={<Workflow size={17} aria-hidden />}
+        tone="rust"
+        delay={0.16}
+        showSignalDot
+      />
 
-      <article className={`${styles.evidenceCard} ${styles.evidenceChargebackCard}`}>
-        <span className={styles.evidenceExternalDot} aria-hidden />
-        <IconCircle>
-          <CreditCard size={18} aria-hidden />
-        </IconCircle>
-        <div>
-          <h2 className={styles.evidenceCardTitle}>{FL_HERO.chargebackCard.title}</h2>
-          <p className={styles.evidenceCardBody}>{FL_HERO.chargebackCard.status}</p>
-          <p className={styles.evidenceCardMuted}>{FL_HERO.chargebackCard.meta}</p>
-        </div>
-      </article>
+      <FloatingEvidenceCard
+        className={styles.evidenceCardPriorClaims}
+        label={cards.priorClaims.label}
+        title={cards.priorClaims.title}
+        details={[...cards.priorClaims.details]}
+        icon={<CreditCard size={17} aria-hidden />}
+        tone="amber"
+        delay={0.24}
+      />
 
       <span className={styles.evidenceConnector} aria-hidden />
-    </div>
+    </HeroDrift>
   );
 }

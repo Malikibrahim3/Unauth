@@ -11,11 +11,11 @@ import styles from './foundation.module.css';
  */
 export default function FoundationFigures() {
   return (
-    <section id="numbers" className={styles.figuresField}>
+    <section data-nav-theme="light" id="numbers" className={styles.figuresField}>
       <div className="relative z-10 mx-auto w-full max-w-[100rem] px-5 pb-32 pt-10 sm:px-10">
         <Reveal>
-          <h2 className="text-[1.0625rem] font-bold text-[var(--fl-ink)]">{FL_FIGURES.label}</h2>
-          <p className="mt-8 max-w-[28rem] text-[1.0625rem] leading-[1.6] text-[var(--fl-ink-secondary)]">
+          <h2 className={`${styles.landingSectionTitle} text-[var(--fl-ink)]`}>{FL_FIGURES.label}</h2>
+          <p className={`${styles.landingSectionLead} mt-8 max-w-[28rem] text-[var(--fl-ink-secondary)]`}>
             {FL_FIGURES.body}
           </p>
         </Reveal>

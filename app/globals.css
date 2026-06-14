@@ -434,7 +434,7 @@
     --landing-info-border:   rgba(60, 87, 115, 0.22);
 
     /* ── Landing type scale ── */
-    --ua-font-display:    var(--font-bricolage, var(--font-dm-sans));
+    --ua-font-display:    var(--font-dm-sans);
     --text-display-1:     clamp(40px, 5vw, 60px);
     --text-display-2:     clamp(30px, 3.4vw, 42px);
     --text-h3-landing:    22px;
@@ -493,10 +493,16 @@
     --fl-nav-ink: rgba(246,243,238,0.92);
     --fl-nav-ink-dim: rgba(246,243,238,0.62);
 
-    /* Accent + stat block palette — rust replaces purple */
-    --fl-purple:        #7B2D26;   /* primary accent — rust */
-    --fl-purple-hover:  #5E2018;
-    --fl-purple-card:   #7B2D26;   /* stat block */
+    /* Brand accent — burnt copper/rust, intentionally separate from app accent */
+    --fl-brand:         #A85040;
+    --fl-brand-deep:    #7B2D26;
+    --fl-brand-hover:   #5E2018;
+    --fl-brand-soft:    #F4E6E0;
+    --fl-brand-wash:    rgba(168, 80, 64, 0.14);
+    --fl-brand-glow:    rgba(168, 80, 64, 0.32);
+    --fl-purple:        var(--fl-brand-deep);
+    --fl-purple-hover:  var(--fl-brand-hover);
+    --fl-purple-card:   var(--fl-brand-deep);
     --fl-slate-card:    #8F816F;   /* warm slate stat block */
     --fl-dark-card:     #1A1814;   /* espresso stat block */
     --fl-mint-card:     #E5DECE;   /* warm neutral stat block */

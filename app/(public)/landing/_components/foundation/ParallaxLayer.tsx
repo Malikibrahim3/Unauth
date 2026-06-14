@@ -63,7 +63,10 @@ export function HeroDrift({
   const opacity = useTransform(scrollY, [0, fadeEnd], [1, fade ? 0.25 : 1]);
 
   return (
-    <motion.div style={reduce ? undefined : { y, opacity }} className={className}>
+    <motion.div
+      style={reduce ? undefined : fade ? { y, opacity } : { y }}
+      className={className}
+    >
       {children}
     </motion.div>
   );

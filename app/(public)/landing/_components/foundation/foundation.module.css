@@ -4,13 +4,233 @@
  * app/globals.css — no hex here.
  */
 
+/* Landing section headers — same family as hero headline (Inter / --font-dm-sans) */
+.landingHeadings :is(h1, h2, h3) {
+  font-family: var(--ua-font-display), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', sans-serif;
+  letter-spacing: -0.05em;
+}
+
+/* Unified section typography — all blocks after the hero */
+.landingSectionEyebrow {
+  font-family: var(--ua-font-display), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(17, 17, 17, 0.42);
+}
+
+.landingSectionTitle {
+  margin-top: 1rem;
+  font-family: var(--ua-font-display), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', sans-serif;
+  font-size: clamp(2.25rem, 3.6vw, 2.625rem);
+  font-weight: 600;
+  line-height: 0.98;
+  letter-spacing: -0.05em;
+  color: #111111;
+}
+
+.landingSectionLead {
+  margin-top: 1.25rem;
+  font-family: var(--ua-font-display), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', sans-serif;
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 1.55;
+  letter-spacing: -0.025em;
+  color: rgba(17, 17, 17, 0.56);
+}
+
+.landingSectionBody {
+  font-family: var(--ua-font-display), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', sans-serif;
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 1.55;
+  letter-spacing: -0.025em;
+  color: rgba(17, 17, 17, 0.56);
+}
+
+.landingSubsectionTitle {
+  font-family: var(--ua-font-display), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', sans-serif;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.05em;
+  color: #111111;
+}
+
+.landingSectionTitle:first-child {
+  margin-top: 0;
+}
+
+.landingSectionFaqQuestion {
+  font-family: var(--ua-font-display), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', sans-serif;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.45;
+  letter-spacing: -0.025em;
+  color: var(--fl-ink);
+}
+
+.landingSectionFaqAnswer {
+  font-family: var(--ua-font-display), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', sans-serif;
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 1.55;
+  letter-spacing: -0.025em;
+  color: var(--fl-ink-secondary);
+}
+
+/* ── Pricing page (landing continuation) ─────────────────────────────────── */
+
+.pricingHero,
+.pricingField,
+.pricingCreditsField {
+  position: relative;
+  isolation: isolate;
+  background: var(--fl-bg);
+}
+
+.pricingHero {
+  border-bottom: 1px solid var(--fl-line);
+}
+
+.pricingTierCard {
+  display: flex;
+  min-height: 34rem;
+  flex-direction: column;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.92);
+  padding: 1.5rem 1.75rem;
+  box-shadow: 0 18px 44px -24px rgba(0, 0, 0, 0.12);
+}
+
+.pricingTierCardFeatured {
+  border-color: var(--fl-ink);
+  background: var(--fl-paper);
+  box-shadow: var(--fl-shadow-card);
+}
+
+.pricingTierBadge {
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: var(--fl-ink);
+  padding: 0.25rem 0.75rem;
+  font-family: var(--ua-font-display), ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--fl-paper);
+}
+
+.pricingTierPrice {
+  font-family: var(--ua-font-display), ui-sans-serif, system-ui, sans-serif;
+  font-size: clamp(2rem, 3vw, 2.75rem);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.05em;
+  color: var(--fl-ink);
+}
+
+.pricingTierFeatures {
+  margin: 2rem 0 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  border-top: 1px solid var(--fl-line);
+  padding-top: 1.5rem;
+  list-style: none;
+}
+
+.pricingTierFeatures li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  font-family: var(--ua-font-display), ui-sans-serif, system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.45;
+  letter-spacing: -0.02em;
+  color: var(--fl-ink-secondary);
+}
+
+.pricingTierFeatures svg {
+  margin-top: 0.125rem;
+  flex-shrink: 0;
+  color: var(--fl-ink-tertiary);
+}
+
+.pricingTierCtaPrimary,
+.pricingTierCtaSecondary {
+  display: inline-flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  border-radius: 999px;
+  padding: 0.75rem 1.25rem;
+  font-family: var(--ua-font-display), ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  text-decoration: none;
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease;
+}
+
+.pricingTierCtaPrimary {
+  background: var(--fl-ink);
+  color: var(--fl-paper);
+}
+
+.pricingTierCtaPrimary:hover {
+  background: #2c1e12;
+}
+
+.pricingTierCtaSecondary {
+  border: 1px solid var(--fl-line);
+  background: var(--fl-paper);
+  color: var(--fl-ink);
+}
+
+.pricingTierCtaSecondary:hover {
+  border-color: var(--fl-ink);
+}
+
+.pricingCreditsPanel {
+  max-width: 56rem;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.72);
+  padding: 1.75rem 1.5rem;
+  box-shadow: 0 18px 44px -28px rgba(0, 0, 0, 0.1);
+}
+
+@media (min-width: 640px) {
+  .pricingCreditsPanel {
+    padding: 2rem 2.25rem;
+  }
+}
+
 /* ── Display type ──────────────────────────────────────────────────────── */
 
 .display {
   font-family: var(--ua-font-display);
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0;
+  letter-spacing: 0.025em;
   line-height: 0.9;
 }
 
@@ -35,7 +255,7 @@
   font-weight: 650;
   text-transform: uppercase;
   letter-spacing: 0;
-  color: var(--fl-dusk-ink);
+  color: var(--fl-ink);
   line-height: 0.9;
   font-size: 2.75rem;
 }
@@ -50,9 +270,9 @@
 /* Deep espresso editorial panel — follows stats bento */
 .espresso {
   background:
-    radial-gradient(88% 55% at 8% 0%, rgba(122, 106, 88, 0.24) 0%, transparent 58%),
-    radial-gradient(70% 45% at 92% 100%, rgba(91, 96, 120, 0.12) 0%, transparent 55%),
-    linear-gradient(180deg, #1a1814 0%, #2c1e12 48%, #1a1814 100%);
+    radial-gradient(88% 55% at 8% 0%, rgba(0, 0, 0, 0.055) 0%, transparent 58%),
+    radial-gradient(70% 45% at 92% 100%, rgba(91, 96, 120, 0.08) 0%, transparent 55%),
+    linear-gradient(180deg, var(--fl-bg) 0%, var(--fl-paper) 48%, var(--fl-bg) 100%);
 }
 
 .espressoCard {
@@ -303,6 +523,107 @@
   color: color-mix(in srgb, var(--fl-dusk-ink) 58%, transparent);
 }
 
+/* ── White-ground 6-stat bridge ─────────────────────────────────────────── */
+
+.metricBridgeWhite {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: var(--fl-paper);
+}
+
+.metricCardGridSix {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.875rem;
+}
+
+/* All-black card */
+.metricCardBlack {
+  composes: metricCard;
+  color: var(--fl-on-color);
+  background: var(--fl-ink);
+}
+
+/* Source attribution — light variant (on dark cards) */
+.metricCardSource {
+  margin-top: 0.375rem;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  line-height: 1.4;
+  color: rgba(253, 252, 251, 0.36);
+}
+
+/* ── Network hero field ──────────────────────────────────────────────────── */
+
+.networkHeroField {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background:
+    radial-gradient(62% 50% at 94% 18%, color-mix(in srgb, var(--fl-slate-card) 7%, transparent), transparent 72%),
+    radial-gradient(40% 32% at 6% 86%, color-mix(in srgb, var(--fl-status-bg) 12%, transparent), transparent 68%),
+    var(--fl-bg);
+}
+
+.networkHeroField::before {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+  z-index: 0;
+  width: min(54rem, 74vw);
+  height: 26rem;
+  right: 3%;
+  bottom: -14rem;
+  background: color-mix(in srgb, var(--fl-line) 54%, transparent);
+  clip-path: polygon(0 64%, 58% 0, 100% 68%, 100% 100%, 0 100%);
+  opacity: 0.38;
+}
+
+.networkHeroHeading {
+  font-family: var(--ua-font-display), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', sans-serif;
+  font-size: clamp(2.5rem, 4.2vw, 3.75rem);
+  font-weight: 500;
+  line-height: 1.01;
+  letter-spacing: -0.055em;
+  color: rgba(17, 17, 17, 0.92);
+}
+
+/* ── Network hero — compact borderline stat rows ────────────────────────── */
+
+.networkStatRow {
+  border-top: 1px solid var(--fl-line);
+  padding: 1.375rem 0 1.375rem;
+}
+
+.networkStatValue {
+  font-family: var(--ua-font-display), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-size: clamp(2rem, 2.8vw, 2.75rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 0.9;
+  color: var(--fl-ink);
+}
+
+.networkStatLabel {
+  margin-top: 0.75rem;
+  font-family: var(--ua-font-display), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  line-height: 1.35;
+  letter-spacing: -0.02em;
+  color: var(--fl-ink-secondary);
+}
+
+.networkStatSource {
+  margin-top: 0.375rem;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  line-height: 1.4;
+  color: var(--fl-ink-tertiary);
+}
+
 .espressoEvidence::before {
   inset: auto 0 0;
   height: 13rem;
@@ -391,9 +712,9 @@
   background:
     linear-gradient(
       180deg,
-      color-mix(in srgb, var(--fl-bg) 24%, var(--fl-purple)) 0%,
-      var(--fl-purple) 18%,
-      var(--fl-purple-hover) 100%
+      var(--fl-bg) 0%,
+      var(--fl-paper) 38%,
+      color-mix(in srgb, var(--fl-line) 58%, var(--fl-bg)) 100%
     );
 }
 
@@ -416,6 +737,11 @@
 }
 
 @media (min-width: 640px) {
+  .metricCardGridSix {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
   .displayHero {
     font-size: 4.75rem;
   }
@@ -485,6 +811,15 @@
 }
 
 @media (min-width: 1024px) {
+  .metricCardGridSix {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  /* column-stagger: depth cascade left → right */
+  .metricCardGridSix > :nth-child(3n-1) { margin-top: 3rem; }
+  .metricCardGridSix > :nth-child(3n)   { margin-top: 6rem; }
+
   .displayHero {
     font-size: 5.25rem;
   }
@@ -674,14 +1009,14 @@
 /* ── Hero entrance ─────────────────────────────────────────────────────── */
 
 .riseIn {
-  opacity: 0;
+  opacity: 1;
   animation: flRise 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   animation-delay: var(--d, 0ms);
 }
 
 @keyframes flRise {
   from {
-    opacity: 0;
+    opacity: 1;
     transform: translateY(16px);
   }
   to {
@@ -709,7 +1044,7 @@
 /* ── Hero typography — Inter system ──────────────────────────────────── */
 
 .heroFont {
-  font-family: var(--font-dm-sans), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+  font-family: var(--ua-font-display), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
     'Segoe UI', sans-serif;
 }
 
@@ -729,41 +1064,41 @@
   align-items: center;
   gap: 0.5rem;
   border-radius: 9999px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: rgba(255, 255, 255, 0.74);
   padding: 0.4375rem 0.875rem;
   font-weight: 500;
   font-size: 13px;
   line-height: 18px;
   letter-spacing: -0.01em;
-  color: rgba(255, 255, 255, 0.78);
+  color: rgba(17, 17, 17, 0.72);
   backdrop-filter: blur(8px);
 }
 
 .heroEyebrow svg,
 .heroEyebrowIcon {
   flex-shrink: 0;
-  color: rgba(255, 255, 255, 0.78);
+  color: #a85040;
   stroke: currentColor;
 }
 
 .heroHeadline {
   composes: heroFont;
-  font-weight: 300;
-  font-size: clamp(46px, 13vw, 64px);
+  font-weight: 420;
+  font-size: clamp(42px, 12vw, 58px);
   line-height: 0.96;
-  letter-spacing: -0.06em;
-  color: rgba(255, 255, 255, 0.92);
+  letter-spacing: -0.05em;
+  color: rgba(17, 17, 17, 0.92);
   max-width: 680px;
 }
 
 .heroSubhead {
   composes: heroFont;
   font-weight: 400;
-  font-size: 16px;
+  font-size: 17px;
   line-height: 1.55;
   letter-spacing: -0.018em;
-  color: rgba(255, 255, 255, 0.68);
+  color: rgba(17, 17, 17, 0.66);
   max-width: 430px;
 }
 
@@ -773,18 +1108,18 @@
   align-items: center;
   gap: 0.375rem;
   border-radius: 9999px;
-  background: #f4efe6;
+  background: #a85040;
   padding: 0.625rem 1.25rem;
   font-weight: 600;
   font-size: 14px;
   line-height: 20px;
   letter-spacing: -0.015em;
-  color: #11100e;
+  color: #ffffff;
   transition: background-color 0.15s ease;
 }
 
 .heroCtaPrimary:hover {
-  background: #ebe4d9;
+  background: #7b2d26;
 }
 
 .heroCtaSecondary {
@@ -796,15 +1131,15 @@
   font-size: 14px;
   line-height: 20px;
   letter-spacing: -0.015em;
-  color: rgba(255, 255, 255, 0.82);
+  color: rgba(17, 17, 17, 0.78);
   transition: color 0.15s ease;
 }
 
 .heroCtaSecondary:hover {
-  color: #ffffff;
+  color: #111111;
 }
 
-/* ── Hero navbar ─────────────────────────────────────────────────────── */
+/* ── Hero navbar — fixed pill, theme follows section behind ───────────── */
 
 .heroNavbar {
   position: fixed;
@@ -812,14 +1147,35 @@
   left: 0;
   z-index: 50;
   width: 100%;
-  height: 72px;
+  padding: 12px 14px 0;
   background: transparent;
-  transition: height 220ms ease, background-color 220ms ease, box-shadow 220ms ease;
+  pointer-events: none;
 }
 
-.heroNavbarLight {
-  height: 92px;
-  background: transparent;
+.heroNavbarPill {
+  pointer-events: auto;
+  max-width: min(1140px, 100%);
+  margin: 0 auto;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(10, 10, 12, 0.58);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  box-shadow:
+    0 10px 40px rgba(0, 0, 0, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  transition:
+    background-color 220ms ease,
+    border-color 220ms ease,
+    box-shadow 220ms ease;
+}
+
+.heroNavbarLight .heroNavbarPill {
+  border-color: rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow:
+    0 10px 40px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 1);
 }
 
 .heroNavbarInner {
@@ -827,10 +1183,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 100%;
-  max-width: 1440px;
-  margin: 0 auto;
-  padding: 0 20px;
+  height: 52px;
+  padding: 0 8px 0 16px;
 }
 
 .heroNavLogoGroup {
@@ -844,7 +1198,7 @@
   width: 24px;
   height: 24px;
   flex-shrink: 0;
-  color: #ffffff;
+  color: #e5b4aa;
   opacity: 0.95;
   transition: color 180ms ease;
 }
@@ -878,6 +1232,12 @@
   align-items: center;
   gap: 10px;
   flex-shrink: 0;
+}
+
+.heroNavSignIn {
+  composes: heroNavLink;
+  display: none;
+  padding: 0 4px;
 }
 
 .heroNavCta {
@@ -919,8 +1279,8 @@
   height: 30px;
   flex-shrink: 0;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.94);
-  color: #11100e;
+  background: #f4e6e0;
+  color: #7b2d26;
 }
 
 .heroNavMenuBtn {
@@ -937,7 +1297,7 @@
 }
 
 .heroNavbarLight .heroNavLogoIcon {
-  color: #111111;
+  color: #a85040;
   width: 22px;
   height: 22px;
 }
@@ -964,7 +1324,7 @@
   padding: 0 12px 0 22px;
   border-color: transparent;
   background: #080807;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16), 0 0 0 1px rgba(168, 80, 64, 0.18);
 }
 
 .heroNavbarLight .heroNavCta:hover {
@@ -980,6 +1340,8 @@
 .heroNavbarLight .heroNavCtaArrow {
   width: 28px;
   height: 28px;
+  background: #f4e6e0;
+  color: #7b2d26;
 }
 
 .heroNavbarLight .heroNavMenuBtn {
@@ -989,14 +1351,30 @@
 .heroNavSheet {
   position: fixed;
   inset-inline: 16px;
-  top: 80px;
+  top: 74px;
   z-index: 50;
+  pointer-events: auto;
   border-radius: 1rem;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(18, 16, 14, 0.96);
   padding: 0.75rem;
   box-shadow: 0 24px 64px -16px rgba(10, 14, 18, 0.6);
   backdrop-filter: blur(16px);
+}
+
+.heroNavSheetLight {
+  border-color: rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 24px 64px -16px rgba(0, 0, 0, 0.12);
+}
+
+.heroNavSheetLight .heroNavSheetLink {
+  color: rgba(17, 17, 17, 0.92);
+}
+
+.heroNavSheetLight .heroNavSheetLink:hover {
+  background: rgba(0, 0, 0, 0.04);
+  color: rgba(17, 17, 17, 0.65);
 }
 
 .heroNavSheetLink {
@@ -1010,15 +1388,34 @@
   background: rgba(255, 255, 255, 0.06);
 }
 
+.heroNavSheetSignIn {
+  display: block;
+}
+
+@media (min-width: 900px) {
+  .heroNavSheetSignIn {
+    display: none;
+  }
+}
+
 @media (min-width: 768px) {
+  .heroNavbar {
+    padding: 14px 20px 0;
+  }
+
   .heroNavbarInner {
-    padding: 0 32px;
+    height: 54px;
+    padding: 0 10px 0 20px;
   }
 }
 
 @media (min-width: 900px) {
   .heroNavCentre {
     display: flex;
+  }
+
+  .heroNavSignIn {
+    display: block;
   }
 
   .heroNavMenuBtn {
@@ -1028,19 +1425,16 @@
 
 @media (min-width: 1024px) {
   .heroNavbar {
-    height: 88px;
-  }
-
-  .heroNavbarLight {
-    height: 104px;
+    padding: 16px 24px 0;
   }
 
   .heroNavbarInner {
-    padding: 0 56px;
+    height: 56px;
+    padding: 0 12px 0 22px;
   }
 
   .heroNavSheet {
-    top: 96px;
+    top: 82px;
   }
 }
 
@@ -1069,13 +1463,13 @@
 
 @media (min-width: 1024px) {
   .heroHeadline {
-    font-size: clamp(58px, 6.1vw, 94px);
+    font-size: clamp(52px, 5.6vw, 86px);
     line-height: 0.94;
     letter-spacing: -0.065em;
   }
 }
 
-/* ── Hero evidence cards — suspended glass over the parcel mist ───────── */
+/* ── Hero evidence cards — Linear-style modules over the parcel ───────── */
 
 .evidenceCardsLayer {
   position: absolute;
@@ -1085,293 +1479,77 @@
   pointer-events: none;
 }
 
-.evidenceCard {
-  composes: heroFont;
-  position: absolute;
-  overflow: hidden;
-  pointer-events: auto;
-  opacity: 0;
-  color: rgba(255, 255, 255, 0.88);
-  border-radius: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.13);
-  background:
-    linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.105) 0%,
-      rgba(255, 255, 255, 0.055) 48%,
-      rgba(255, 255, 255, 0.035) 100%
-    );
-  box-shadow:
-    0 24px 80px rgba(0, 0, 0, 0.34),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.035);
-  backdrop-filter: blur(18px) saturate(118%);
-  -webkit-backdrop-filter: blur(18px) saturate(118%);
-  animation: evidenceCardIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  transition:
-    background 220ms ease,
-    border-color 220ms ease,
-    box-shadow 220ms ease,
-    transform 220ms ease;
-}
-
-.evidenceCard:hover {
-  border-color: rgba(255, 242, 218, 0.32);
-  background:
-    linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.17) 0%,
-      rgba(255, 255, 255, 0.092) 48%,
-      rgba(255, 255, 255, 0.058) 100%
-    );
-  box-shadow:
-    0 26px 82px rgba(0, 0, 0, 0.34),
-    0 0 24px rgba(242, 215, 162, 0.18),
-    0 0 54px rgba(242, 215, 162, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.22),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.075);
-  transform: translateY(-2px);
-}
-
-.evidenceCard:hover::after {
-  background:
-    radial-gradient(circle at 22% 0%, rgba(255, 239, 205, 0.24), transparent 45%),
-    radial-gradient(circle at 78% 84%, rgba(242, 215, 162, 0.1), transparent 42%);
-}
-
-.evidenceCard::before,
-.evidenceCard::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-.evidenceCard::before {
-  opacity: 0.12;
-  background-image:
-    radial-gradient(circle at 14% 24%, rgba(255, 255, 255, 0.48) 0 1px, transparent 1px),
-    radial-gradient(circle at 78% 32%, rgba(255, 255, 255, 0.42) 0 1px, transparent 1px),
-    radial-gradient(circle at 42% 72%, rgba(255, 255, 255, 0.35) 0 1px, transparent 1px);
-  background-size: 19px 19px, 29px 29px, 37px 37px;
-}
-
-.evidenceCard::after {
-  background:
-    radial-gradient(circle at 22% 0%, rgba(255, 239, 205, 0.14), transparent 42%);
-}
-
-.evidenceIcon {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  width: 38px;
-  height: 38px;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.82);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.14),
-    0 8px 22px rgba(0, 0, 0, 0.22);
-}
-
-.evidenceIcon svg {
-  color: rgba(255, 255, 255, 0.82);
-  stroke: currentColor;
-  flex-shrink: 0;
-}
-
-.evidenceCardTitle,
-.evidenceCardBody,
-.evidenceCardMuted,
-.evidenceProgress,
-.evidenceSparkline {
-  position: relative;
-  z-index: 1;
-}
-
-.evidenceCardTitle {
-  margin: 0;
-  color: rgba(255, 255, 255, 0.88);
-  font-size: 17px;
-  font-weight: 500;
-  letter-spacing: -0.025em;
-  line-height: 23px;
-}
-
-.evidenceCardBody,
-.evidenceCardMuted {
-  margin: 0;
-  font-size: 13.5px;
-  font-weight: 400;
-  letter-spacing: -0.012em;
-  line-height: 20px;
-}
-
-.evidenceCardBody {
-  color: rgba(255, 255, 255, 0.66);
-}
-
-.evidenceCardMuted {
-  color: rgba(255, 255, 255, 0.48);
-}
-
-.evidenceOrderHistoryCard {
-  bottom: 76px;
-  left: clamp(48px, 4vw, 72px);
+.evidenceCardOrderHistory {
+  bottom: 80px;
+  left: clamp(40px, 4vw, 68px);
   z-index: 8;
-  display: grid;
-  width: 340px;
-  min-height: 150px;
-  grid-template-columns: 42px 1fr;
-  align-items: start;
-  gap: 18px;
-  padding: 24px;
-  animation-delay: 0ms;
+  width: 290px;
+  pointer-events: auto;
 }
 
-.evidenceOrderHistoryCard .evidenceCardTitle {
-  margin-bottom: 8px;
-}
-
-.evidenceOrderHistoryCard .evidenceCardBody,
-.evidenceOrderHistoryCard .evidenceCardMuted {
-  margin-top: 4px;
-}
-
-.evidenceClaimCard {
-  bottom: clamp(265px, 30vh, 340px);
-  left: clamp(calc(490px + 5vw), 29vw, calc(728px + 5vw));
+.evidenceCardClaimTiming {
+  bottom: clamp(248px, 28vh, 318px);
+  left: clamp(calc(470px + 5vw), 28vw, calc(700px + 5vw));
   z-index: 7;
   width: 300px;
-  min-height: 138px;
-  padding: 24px;
-  animation-delay: 120ms;
+  pointer-events: auto;
 }
 
-.evidenceTitleRow {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin-bottom: 12px;
-}
-
-.evidenceProgress {
-  display: none;
-}
-
-.evidenceCrossMerchantCard {
-  bottom: 76px;
-  left: clamp(calc(600px + 2vw), 53vw, calc(980px + 2vw));
+.evidenceCardCrossMerchant {
+  bottom: 72px;
+  left: clamp(calc(580px + 2vw), 52vw, calc(940px + 2vw));
   z-index: 7;
-  display: grid;
-  width: 320px;
-  min-height: 138px;
-  grid-template-columns: 42px 1fr;
-  align-items: center;
-  gap: 18px;
-  padding: 24px;
-  animation-delay: 220ms;
+  width: 295px;
+  pointer-events: auto;
 }
 
-.evidenceSparkline {
-  position: absolute;
-  right: 22px;
-  bottom: 18px;
-  width: 72px;
-  height: 28px;
-  fill: none;
-  stroke: rgba(255, 255, 255, 0.36);
-  stroke-linecap: round;
-  stroke-width: 1.5;
-}
-
-.evidenceChargebackCard {
-  right: calc(-22px + 12vw);
-  bottom: 150px;
+.evidenceCardPriorClaims {
+  right: calc(-18px + 11vw);
+  bottom: 148px;
   z-index: 9;
-  display: grid;
-  width: 300px;
-  min-height: 160px;
-  grid-template-columns: 42px 1fr;
-  align-items: center;
-  gap: 18px;
-  padding: 24px;
-  animation-name: evidenceExternalIn;
-  animation-delay: 340ms;
-}
-
-.evidenceChargebackCard:hover {
-  transform: translate(42px, -2px);
-}
-
-.evidenceExternalDot {
-  position: absolute;
-  top: 48%;
-  left: 13px;
-  z-index: 2;
-  width: 7px;
-  height: 7px;
-  border-radius: 999px;
-  background: #f2d7a2;
-  opacity: 0.95;
-  box-shadow:
-    0 0 14px rgba(242, 215, 162, 0.95),
-    0 0 34px rgba(242, 215, 162, 0.38);
+  width: 285px;
+  pointer-events: auto;
 }
 
 .evidenceConnector {
   position: absolute;
-  right: 236px;
-  bottom: 232px;
+  right: 228px;
+  bottom: 228px;
   z-index: 6;
-  width: min(25vw, 360px);
-  height: 1px;
-  background:
-    linear-gradient(
-      90deg,
-      rgba(242, 215, 162, 0),
-      rgba(242, 215, 162, 0.55),
-      rgba(242, 215, 162, 0)
-    );
-  opacity: 0.7;
-  box-shadow: 0 0 12px rgba(242, 215, 162, 0.32);
+  width: min(24vw, 340px);
+  height: 0;
+  border-top: 1px dashed rgba(255, 255, 255, 0.12);
+  opacity: 0.85;
 }
 
 @media (min-width: 1024px) and (max-width: 1919px) {
-  .evidenceClaimCard {
-    bottom: 236px;
+  .evidenceCardClaimTiming {
+    bottom: 232px;
   }
 }
 
 @media (min-width: 1024px) and (max-width: 1279px) {
-  .evidenceOrderHistoryCard {
+  .evidenceCardOrderHistory {
     left: 28px;
-    width: 300px;
+    width: 268px;
   }
 
-  .evidenceClaimCard {
-    bottom: 260px;
-    left: 29vw;
-    width: 280px;
+  .evidenceCardClaimTiming {
+    bottom: 252px;
+    left: 28vw;
+    width: 278px;
   }
 
-  .evidenceCrossMerchantCard {
-    bottom: 64px;
+  .evidenceCardCrossMerchant {
+    bottom: 60px;
     left: 50vw;
-    width: 290px;
+    width: 278px;
   }
 
-  .evidenceChargebackCard {
-    right: calc(-74px + 12vw);
-    bottom: 150px;
-    width: 280px;
+  .evidenceCardPriorClaims {
+    right: calc(-70px + 11vw);
+    bottom: 142px;
+    width: 268px;
   }
 }
 
@@ -1380,100 +1558,43 @@
     z-index: 15;
   }
 
-  .evidenceOrderHistoryCard {
+  .evidenceCardOrderHistory {
     right: 18px;
     bottom: 24px;
     left: 18px;
     width: auto;
-    min-height: 132px;
-    grid-template-columns: 38px minmax(0, 1fr);
-    gap: 14px;
-    padding: 18px;
+    max-width: none;
   }
 
-  .evidenceClaimCard,
-  .evidenceCrossMerchantCard,
+  .evidenceCardClaimTiming,
+  .evidenceCardCrossMerchant,
   .evidenceConnector {
     display: none;
   }
 
-  .evidenceChargebackCard {
-    right: calc(-118px + 12vw);
-    bottom: 178px;
-    width: 260px;
-    min-height: 132px;
-    grid-template-columns: 38px minmax(0, 1fr);
-    gap: 14px;
-    padding: 18px;
-    animation-name: evidenceExternalPeekIn;
-  }
-
-  .evidenceIcon {
-    width: 34px;
-    height: 34px;
-  }
-
-  .evidenceCardTitle {
-    font-size: 15px;
-    line-height: 20px;
-  }
-
-  .evidenceCardBody,
-  .evidenceCardMuted {
-    font-size: 12.5px;
-    line-height: 18px;
-  }
-}
-
-@keyframes evidenceCardIn {
-  from {
-    opacity: 0;
-    filter: blur(8px);
-    transform: translateY(22px);
-  }
-  to {
-    opacity: 1;
-    filter: blur(0);
-    transform: translateY(0);
-  }
-}
-
-@keyframes evidenceExternalIn {
-  from {
-    opacity: 0;
-    filter: blur(8px);
-    transform: translateX(90px);
-  }
-  to {
-    opacity: 0.92;
-    filter: blur(0);
-    transform: translateX(42px);
-  }
-}
-
-@keyframes evidenceExternalPeekIn {
-  from {
-    opacity: 0;
-    filter: blur(8px);
-    transform: translateX(90px);
-  }
-  to {
-    opacity: 0.78;
-    filter: blur(0);
-    transform: translateX(0);
+  .evidenceCardPriorClaims {
+    display: none;
   }
 }
 
 /* ── Hero — full-bleed photography + left readability scrim ────────────── */
 
 .dusk {
-  background-color: #0a0a0c;
-  background-image: url('/unauth-hero.png');
-  background-size: cover;
-  background-position: center right;
-  background-repeat: no-repeat;
+  background:
+    radial-gradient(75% 65% at 78% 42%, rgba(255, 255, 255, 0.78) 0%, rgba(246, 246, 244, 0.88) 46%, transparent 72%),
+    linear-gradient(110deg, #fbfbfa 0%, #f3f3f0 52%, #e8e8e3 100%);
   position: relative;
-  transition: background-size 420ms ease;
+}
+
+.heroImage {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 58% top;
+  filter: brightness(1.03);
 }
 
 .dusk::before {
@@ -1483,9 +1604,9 @@
   pointer-events: none;
   background: linear-gradient(
     90deg,
-    rgba(10, 10, 12, 0.62) 0%,
-    rgba(10, 10, 12, 0.28) 38%,
-    transparent 62%
+    rgba(255, 255, 255, 0.84) 0%,
+    rgba(255, 255, 255, 0.62) 42%,
+    rgba(255, 255, 255, 0.18) 68%
   );
 }
 
@@ -1496,15 +1617,15 @@
   pointer-events: none;
   opacity: 1;
   background:
-    radial-gradient(80% 55% at 50% 110%, rgba(10, 10, 12, 0.35) 0%, transparent 60%);
+    radial-gradient(80% 55% at 50% 110%, rgba(255, 255, 255, 0.56) 0%, transparent 60%);
   transition:
     opacity 260ms ease,
     background 260ms ease;
 }
 
 @media (max-width: 1023px) {
-  .dusk {
-    background-position: 72% center;
+  .heroImage {
+    object-position: 58% top;
   }
 }
 
@@ -1571,8 +1692,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .riseIn,
-  .phoneIn,
-  .evidenceCard {
+  .phoneIn {
     animation: none;
     opacity: 1;
     filter: none;

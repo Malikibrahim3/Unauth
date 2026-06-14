@@ -40,35 +40,83 @@ export const FL_NAV = {
 /* ── Hero ──────────────────────────────────────────────────────────────── */
 
 export const FL_HERO = {
-  eyebrow: 'Evidence Layer for Commerce',
-  headlineLines: ['One ticket.', 'More context.'],
+  eyebrow: 'System Architecture',
+  headlineLines: ['One ticket', 'More context '],
   subcopy:
-    'Unauth turns fragmented signals into verifiable evidence—so you can stop fraud, resolve claims, and unlock growth with confidence.',
+    'Whether the ticket says "never arrived" or the chargeback lands weeks later, Unauth surfaces cross-merchant claim history and assembles graded evidence for every review — automatically. Your team decides.',
   primaryCta: 'Get a Demo',
-  secondaryCta: 'Explore the Platform',
+  secondaryCta: 'See How It Works',
   pinnedCta: 'Get a Demo',
   contactCta: 'Get a Demo',
   orderHistoryCard: {
-    title: 'Order history',
-    status: '6 orders · $847 lifetime',
-    meta: '3 refund requests · 2 approved',
-    pattern: 'Pattern: claims on high-value orders',
+    title: '01 Zero automated decisions',
+    status: 'Unauth does not approve, deny, or refund.',
+    meta: 'Evidence only',
+    pattern: 'Every final decision stays with your team.',
   },
   claimTimingCard: {
-    title: 'Claim timing',
-    status: 'Filed 4 hrs post-delivery scan',
-    meta: '3rd claim in 90 days',
+    title: '02 Before you reply',
+    status: 'Claim, order, delivery, and ticket history attached.',
+    meta: 'Before your team opens the ticket',
   },
   crossMerchantCard: {
-    title: 'Cross-merchant signal',
-    status: 'Matched across 4 merchants · device_hmac',
-    meta: '2 prior INR claims, different stores',
+    title: '03 Cross-merchant matching',
+    status: 'Repeated claim patterns across stores.',
+    meta: 'Privacy-safe signal context',
   },
   chargebackCard: {
-    title: 'Prior claims',
-    status: 'Chargeback filed 11 days later · $94',
-    meta: 'Same address',
+    title: '04 One-click evidence packs',
+    status: 'Open the pack, review the context, decide.',
+    meta: 'Merchant-ready evidence',
   },
+} as const;
+
+export const FL_HERO_FLOATING_CARDS = {
+  orderHistory: {
+    label: '01 ZERO AUTOMATED DECISIONS',
+    title: 'Evidence only',
+    details: ['No approve, deny, or refund action', 'Every final decision stays with your team'],
+  },
+  claimTiming: {
+    label: '02 BEFORE YOU REPLY',
+    title: 'Context arrives first',
+    details: ['Claim, order, delivery, and ticket history', 'Attached before review'],
+  },
+  crossMerchant: {
+    label: '03 CROSS-MERCHANT MATCHING',
+    title: 'Repeated patterns across stores',
+    details: ['Privacy-safe signal context', 'Isolated claim or wider behaviour'],
+  },
+  priorClaims: {
+    label: '04 ONE-CLICK EVIDENCE PACKS',
+    title: 'Merchant-ready evidence',
+    details: ['Open the pack', 'Review the context', 'Decide with confidence'],
+  },
+} as const;
+
+/* ── Network hero (canvas section) ─────────────────────────────────────── */
+
+export const FL_NETWORK_HERO = {
+  title: 'Fraud is a network problem. Now so is your intelligence.',
+  lead:
+    'Serial abusers count on merchants not talking to each other. Every store in the Unauth network shares what they see — so the pattern that got someone flagged elsewhere shows up in your queue before you pay out.',
+  stats: [
+    {
+      value: '$4.61',
+      label: 'Cost for every $1 of fraud',
+      source: 'LexisNexis 2025',
+    },
+    {
+      value: '$103B',
+      label: 'Lost to fraudulent returns and claims in 2024',
+      source: 'Appriss Retail + Deloitte',
+    },
+    {
+      value: 'Up to 75%',
+      label: 'Of chargebacks may be friendly fraud',
+      source: 'Visa',
+    },
+  ],
 } as const;
 
 /* Floating identity record — mirrors the real product panel. */
@@ -102,12 +150,12 @@ export const FL_STATEMENT = {
   post: 'attaches cross-merchant claim context to the review —',
   postContinuation: 'graded evidence, assembled automatically,',
   postTail: 'decided by your team.',
-  body: 'Unauth links hashed identity signals across participating merchants so post-checkout claims arrive with context attached. It never blocks orders, never denies refunds, and never makes the decision for you.',
+  body: 'Unauth connects to your store and helpdesk, surfaces cross-merchant claim history, and attaches graded evidence to every ticket — automatically. No workflow changes. No automated decisions.',
   features: [
     { id: '01', title: 'Zero automated decisions, by design' },
     { id: '02', title: 'Every claim arrives with context' },
-    { id: '03', title: 'Repeated signals are matched across merchants' },
-    { id: '04', title: 'Evidence packs sit one click from the ticket' },
+    { id: '03', title: 'Repeated patterns, matched across every merchant' },
+    { id: '04', title: 'Evidence packs, one click from every ticket' },
   ],
 } as const;
 
@@ -125,39 +173,48 @@ export const FL_MANIFEST = {
   footer: 'assembled in 38ms · formatted for representment',
 } as const;
 
-/* ── Stats bento — post-checkout chargeback pressure (sourced) ─────────── */
+/* ── Stats bento — fraud landscape (6 sourced stats) ──────────────────── */
 
 export const FL_BENTO = [
   {
-    value: '45%',
-    label: 'Of chargebacks merchants identify as fraudulent',
-    tone: 'purple' as const,
-  },
-  {
     value: '$4.61',
     label: 'Cost for every $1 of fraud — US ecommerce & retail',
-    tone: 'dark' as const,
+    source: 'LexisNexis 2025 True Cost of Fraud Study',
   },
   {
-    value: '$42B',
-    label: 'Global chargeback cost forecast by 2028',
-    tone: 'light' as const,
+    value: '$46.1B',
+    label: 'Global chargeback losses forecast by 2029',
+    source: 'Mastercard / Datos Insights 2026',
   },
-] as const;
-
-export const FL_BENTO_SOURCES = [
-  'Mastercard / Ethoca, 2025 State of Chargebacks',
-  'Mastercard, 2025 global chargebacks outlook',
-  'LexisNexis Risk Solutions, 2025 True Cost of Fraud',
+  {
+    value: '$103B',
+    label: 'Lost to fraudulent returns in 2024',
+    source: 'Appriss Retail + Deloitte + NRF',
+  },
+  {
+    value: '75%',
+    label: 'Of chargebacks are friendly fraud, not criminal attacks',
+    source: 'Visa',
+  },
+  {
+    value: '16%',
+    label: 'Of consumers admit filing false claims — even when satisfied',
+    source: 'Sift Q4 2025 Digital Trust Index',
+  },
+  {
+    value: '18%',
+    label: 'Net chargeback recovery rate for merchants who fight back',
+    source: 'Chargebacks911 2024 Chargeback Field Report',
+  },
 ] as const;
 
 /* ── Signals → evidence (espresso tabbed section) ──────────────────────── */
 
 export const FL_SIGNALS_EVIDENCE = {
-  displayLines: ['SIGNALS', 'BECOME', 'EVIDENCE'],
+  displayLines: ['CLAIMS', 'BECOME', 'EVIDENCE'],
   subhead:
-    'Four signal types. One evidence pack beside every claim. Your team decides.',
-  cta: { label: 'Run a free claim audit', href: FL_ROUTES.audit },
+    'Claim timing, delivery context, address patterns, and chargeback trails are assembled into one evidence pack beside the review.',
+  cta: { label: 'Review a claim example', href: FL_ROUTES.audit },
   image: {
     src: '/statement-facility-v3.png',
     alt: 'Architectural illustration of Unauth’s cross-merchant evidence hub',
@@ -233,33 +290,33 @@ export const FL_SIGNALS_EVIDENCE = {
 /* ── How it works (setup flow) ─────────────────────────────────────────── */
 
 export const FL_HOW_IT_WORKS = {
-  displayLines: ['CONNECT ONCE.', 'REVIEW EVERY CLAIM', 'WITH CONTEXT.'],
+  displayLines: ['THE CLAIM STARTS', 'WITH A PARCEL.'],
   subhead:
-    'Unauth connects to your ecommerce and support tools, audits historical claims, then attaches cross-merchant evidence to post-checkout reviews — without changing your refund workflow.',
+    'Unauth connects the delivery event, customer history, helpdesk conversation, and cross-merchant claim patterns before your team decides how to respond.',
   privacyNote: 'Identifiers are hashed before they leave your store. Raw customer data never enters the network.',
   steps: [
     {
       id: '01',
-      title: 'Connect your store',
-      body: 'Import orders, claims, deliveries, refunds, and fulfilment records from your ecommerce stack.',
-      note: 'Identifiers are hashed before they leave your store.',
+      title: 'Delivery and fulfilment timeline',
+      body: 'Import order, carrier, fulfilment, refund, and reshipment events from your commerce stack.',
+      note: 'The delivery record becomes review context, not an automatic outcome.',
     },
     {
       id: '02',
-      title: 'Connect your helpdesk',
-      body: 'Link claim tickets from tools like Gorgias, Zendesk, or your support inbox.',
+      title: 'Claim timing after confirmed delivery',
+      body: 'Link helpdesk tickets and chargeback records to the exact order and delivery window.',
       note: 'Raw customer data never enters the network.',
     },
     {
       id: '03',
-      title: 'Run a historical audit',
-      body: 'Unauth looks for repeated post-checkout patterns across your own history and the shared network.',
+      title: 'Prior refund and reshipment behaviour',
+      body: 'Surface earlier claims, refund requests, replacements, and support history before the reply is written.',
       note: null,
     },
     {
       id: '04',
-      title: 'Review evidence in context',
-      body: 'Your team sees the evidence pack beside the claim. No auto-declines. No workflow replacement.',
+      title: 'Cross-merchant pattern context',
+      body: 'Show whether the claim is isolated or matches repeated behaviour across participating merchants.',
       note: null,
     },
   ],
@@ -350,6 +407,63 @@ export const FL_PROGRAMS = {
         { k: 'Exposure', v: 'Patterns only, never records' },
         { k: 'Decisions', v: 'Yours — always' },
       ],
+    },
+  ],
+} as const;
+
+/* ── Pricing page ──────────────────────────────────────────────────────── */
+
+export const FL_PRICING = {
+  eyebrow: 'Pricing',
+  headline: 'Pay for context, not seats.',
+  lead:
+    'Every plan includes the widget, store context, and pseudonymous network context. Usage is controlled by monthly context credits — raw cross-merchant customer data is never exposed.',
+  featuredTierKey: 'pro' as const,
+  ctaDefault: 'Start free',
+  ctaTrial: 'Start free trial',
+  ctaCustom: 'Talk to us',
+  trialNote: '7-day trial on Pro · no card required',
+  credits: {
+    heading: 'How credits work',
+    intro:
+      'Each time you run an identity check on a ticket, it costs credits depending on the depth of context requested:',
+    rows: [
+      ['Own-store context only', '1 credit'],
+      ['Full network context', '2 credits'],
+      ['Evidence summary + deeper review', '3 credits'],
+    ] as const,
+    footer:
+      'Credits reset monthly. Unused credits do not roll over. Pro and Growth teams can purchase top-up packs if they exceed their allowance before the next cycle.',
+  },
+  integration: {
+    prefix: 'Using Gorgias or Zendesk?',
+    linkLabel: 'See how Unauth attaches to your helpdesk',
+    href: '/landing#how-it-works',
+  },
+} as const;
+
+export const FL_PRICING_FAQ = {
+  heading: 'Pricing questions',
+  items: [
+    {
+      q: 'How does pricing work?',
+      a: 'Every plan includes the widget, store context, and pseudonymous network context. Free includes 100 monthly context credits, Pro includes 1,000, Growth includes 5,000, and Scale uses dedicated monthly volume agreed at onboarding.',
+    },
+    {
+      q: 'Will it always be free?',
+      a: 'Free remains a real entry point for occasional claim review and network participation, but higher-volume teams will need more monthly context credits, history, controls, and support.',
+    },
+    {
+      q: 'What happens if I run out of credits?',
+      a: 'Checks pause until your monthly reset or you purchase a top-up pack on Pro and Growth. Your existing evidence and case history stay available — only new context lookups are gated.',
+    },
+    {
+      q: 'Do I need a card to start?',
+      a: 'No card is required for Free or the Pro trial. Connect your store or upload a CSV to see context on real claims before committing to a paid plan.',
+    },
+    {
+      q: 'Can I change plans later?',
+      a: 'Yes. Upgrade or downgrade any time from settings. Plan changes take effect on your next billing cycle; unused credits on the outgoing plan do not roll over.',
     },
   ],
 } as const;

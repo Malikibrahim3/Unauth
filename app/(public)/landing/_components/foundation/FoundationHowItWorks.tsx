@@ -3,6 +3,8 @@ import ParallaxLayer from './ParallaxLayer';
 import SetupFlowVisual from './SetupFlowVisual';
 import { FL_HOW_IT_WORKS } from '../../_lib/foundationContent';
 import styles from './foundation.module.css';
+import Link from 'next/link';
+import { ArrowUpRight } from 'lucide-react';
 
 /**
  * Editorial setup section: connect store + helpdesk, audit, review evidence.
@@ -11,6 +13,7 @@ import styles from './foundation.module.css';
 export default function FoundationHowItWorks() {
   return (
     <section
+      data-nav-theme="light"
       id="how-it-works"
       aria-labelledby="fl-how-it-works-heading"
       className={`${styles.howField} isolate`}
@@ -30,6 +33,13 @@ export default function FoundationHowItWorks() {
                 <p className="mt-8 max-w-[32rem] text-[1.0625rem] leading-[1.65] text-[var(--fl-ink-secondary)]">
                   {FL_HOW_IT_WORKS.subhead}
                 </p>
+                <Link
+                  href="/audit"
+                  className="mt-7 inline-flex items-center gap-2 rounded-full border border-[var(--fl-line-strong)] px-5 py-3 text-[0.9375rem] font-semibold text-[var(--fl-ink)] transition-colors hover:bg-[rgba(26,24,20,0.04)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--fl-ink)]"
+                >
+                  Review a claim example
+                  <ArrowUpRight size={15} aria-hidden />
+                </Link>
               </Reveal>
             </ParallaxLayer>
 

@@ -36,6 +36,7 @@ export default function FoundationSignalsEvidence() {
 
   return (
     <section
+      data-nav-theme="light"
       id="signals-evidence"
       aria-labelledby="fl-signals-evidence-heading"
       className={`${styles.espresso} ${styles.espressoEvidence} relative isolate overflow-x-clip`}
@@ -52,19 +53,19 @@ export default function FoundationSignalsEvidence() {
         <div className="relative z-10 min-w-0 translate-y-[20%] lg:translate-y-[calc(20%-6rem)] xl:translate-y-[calc(20%-7rem)]">
           <ParallaxLayer speed={0.17}>
             <Reveal>
-              <h2 id="fl-signals-evidence-heading" className="text-[var(--fl-dusk-ink)]">
+              <h2 id="fl-signals-evidence-heading" className="text-[var(--fl-ink)]">
                 {FL_SIGNALS_EVIDENCE.displayLines.map((line) => (
                   <span key={line} className={`${styles.displayEspresso} block`}>
                     {line}{' '}
                   </span>
                 ))}
               </h2>
-              <p className="mt-7 max-w-[24rem] text-[1.0625rem] leading-[1.65] text-[var(--fl-dusk-ink-dim)]">
+              <p className="mt-7 max-w-[24rem] text-[1.0625rem] leading-[1.65] text-[var(--fl-ink-secondary)]">
                 {FL_SIGNALS_EVIDENCE.subhead}
               </p>
               <Link
                 href={FL_SIGNALS_EVIDENCE.cta.href}
-                className="mt-6 inline-flex items-center gap-1.5 rounded-full border border-[rgba(246,243,238,0.28)] px-6 py-3 text-[0.9375rem] font-semibold text-[var(--fl-dusk-ink)] transition-colors hover:border-[rgba(246,243,238,0.5)] hover:bg-[rgba(246,243,238,0.06)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--fl-dusk-ink)] lg:-mt-2 lg:ml-80 xl:ml-96"
+                className="mt-6 inline-flex items-center gap-1.5 rounded-full border border-black/[0.14] bg-white px-6 py-3 text-[0.9375rem] font-semibold text-[var(--fl-ink)] shadow-[0_10px_28px_rgba(0,0,0,0.06)] transition-colors hover:border-black/28 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--fl-ink)] lg:-mt-2 lg:ml-80 xl:ml-96"
               >
                 {FL_SIGNALS_EVIDENCE.cta.label}
                 <ArrowUpRight size={16} aria-hidden />
