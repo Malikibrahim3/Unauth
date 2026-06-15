@@ -12,7 +12,6 @@ import {
 } from 'lucide-react';
 import { FL_ROUTES } from '@/app/(public)/landing/_lib/foundationContent';
 import foundationStyles from '@/app/(public)/landing/_components/foundation/foundation.module.css';
-import { MobileExpandableFeature } from '@/components/landing/MobileExpandableFeature';
 
 export default function EvidenceNotVerdictsRampSection() {
   return (
@@ -38,88 +37,14 @@ export default function EvidenceNotVerdictsRampSection() {
             required.
           </p>
         </div>
-        <div className="grid grid-cols-1 gap-5 md:hidden">
-          <MobileFeatureCard
-            number="01"
-            title="Zero automated decisions, by design"
-            preview={<FeatureCardOneBody />}
-          >
-            <p className={`${foundationStyles.landingSectionBody} max-w-[30rem]`}>
-              Unauth assembles evidence beside the ticket, but your team keeps the final decision every time.
-            </p>
-            <div className="mt-6">
-              <MockPanel>
-                <FeatureCardOneBody />
-              </MockPanel>
-            </div>
-          </MobileFeatureCard>
-          <MobileFeatureCard
-            number="02"
-            title="Every claim arrives with context"
-            preview={<FeatureCardTwoBody />}
-          >
-            <p className={`${foundationStyles.landingSectionBody} max-w-[30rem]`}>
-              Order history, customer history, cross-merchant signals, and the evidence grade are attached before your team replies.
-            </p>
-            <div className="mt-6">
-              <MockPanel>
-                <FeatureCardTwoBody />
-              </MockPanel>
-            </div>
-          </MobileFeatureCard>
-          <MobileFeatureCard
-            number="03"
-            title="Repeated patterns, matched across every merchant"
-            preview={<FeatureCardThreeBody />}
-          >
-            <p className={`${foundationStyles.landingSectionBody} max-w-[30rem]`}>
-              Similar claims across merchants become pattern evidence, so the review starts with signal instead of guesswork.
-            </p>
-            <div className="mt-6">
-              <MockPanel>
-                <FeatureCardThreeBody />
-              </MockPanel>
-            </div>
-          </MobileFeatureCard>
-          <BottomStrip />
-        </div>
-        <div className="hidden grid-cols-1 gap-6 md:grid lg:grid-cols-3 lg:gap-[24px]">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-[24px]">
           <FeatureCardOne />
           <FeatureCardTwo />
           <FeatureCardThree />
         </div>
-        <div className="hidden md:block">
-          <BottomStrip />
-        </div>
+        <BottomStrip />
       </main>
     </section>
-  );
-}
-
-function MobileFeatureCard({
-  number,
-  title,
-  preview,
-  children,
-}: {
-  number: string;
-  title: string;
-  preview: ReactNode;
-  children: ReactNode;
-}) {
-  return (
-    <MobileExpandableFeature
-      eyebrow={`0${number.slice(-1)}`}
-      title={title}
-      preview={
-        <div className="rounded-[14px] border border-[#dddddd] bg-[#f4f3f1] p-3">
-          <MockPanel>{preview}</MockPanel>
-        </div>
-      }
-      expandLabel={`Open ${title}`}
-    >
-      {children}
-    </MobileExpandableFeature>
   );
 }
 
@@ -162,30 +87,6 @@ function MockPanel({ children }: { children: ReactNode }) {
 function FeatureCardOne() {
   return (
     <FeatureCard number="01" title="Zero automated decisions, by design">
-      <FeatureCardOneBody />
-    </FeatureCard>
-  );
-}
-
-function FeatureCardTwo() {
-  return (
-    <FeatureCard number="02" title="Every claim arrives with context">
-      <FeatureCardTwoBody />
-    </FeatureCard>
-  );
-}
-
-function FeatureCardThree() {
-  return (
-    <FeatureCard number="03" title="Repeated patterns, matched across every merchant">
-      <FeatureCardThreeBody />
-    </FeatureCard>
-  );
-}
-
-function FeatureCardOneBody() {
-  return (
-    <>
       <div className="mb-5 flex items-center gap-2.5">
         <IconBox small>
           <ShieldCheck size={15} />
@@ -214,13 +115,13 @@ function FeatureCardOneBody() {
           </div>
         </div>
       </div>
-    </>
+    </FeatureCard>
   );
 }
 
-function FeatureCardTwoBody() {
+function FeatureCardTwo() {
   return (
-    <>
+    <FeatureCard number="02" title="Every claim arrives with context">
       <h3 className="mb-4 text-[16px] font-semibold tracking-[-0.04em]">Claim context attached</h3>
       <div className="space-y-2">
         <ContextRow icon={<PackageCheck size={14} />} label="Customer claim" value="“Never arrived”" />
@@ -232,13 +133,13 @@ function FeatureCardTwoBody() {
       <div className="mt-3.5 rounded-lg border border-[#e9e5dd] bg-[#fbfaf5] px-3.5 py-3 text-[14px] font-semibold tracking-[-0.025em]">
         Full context. Ready for your review.
       </div>
-    </>
+    </FeatureCard>
   );
 }
 
-function FeatureCardThreeBody() {
+function FeatureCardThree() {
   return (
-    <>
+    <FeatureCard number="03" title="Repeated patterns, matched across every merchant">
       <h3 className="mb-4 text-[16px] font-semibold tracking-[-0.04em]">Cross-merchant matches</h3>
       <div className="space-y-2">
         <MerchantMatch merchant="Merchant A" detail="Claim · 6/18/25" status="Matched" />
@@ -263,7 +164,7 @@ function FeatureCardThreeBody() {
           </div>
         </div>
       </div>
-    </>
+    </FeatureCard>
   );
 }
 

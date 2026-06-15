@@ -18,7 +18,6 @@ import {
   Video,
 } from 'lucide-react';
 import foundationStyles from '@/app/(public)/landing/_components/foundation/foundation.module.css';
-import { MobileExpandableFeature } from '@/components/landing/MobileExpandableFeature';
 
 export default function UnauthLinearClaimHero() {
   return (
@@ -26,34 +25,6 @@ export default function UnauthLinearClaimHero() {
       <Background />
 
       <main className="relative z-10 mx-auto max-w-[1536px] px-5 pb-16 pt-14 sm:px-8 sm:pb-20 lg:px-10 lg:pt-12">
-        <div className="md:hidden">
-          <MobileExpandableFeature
-            eyebrow="Claim patterns"
-            title="Common complaints become cross-merchant evidence."
-            summary="Claim timing, delivery context, and repeated refund behavior become review-ready evidence."
-            expandLabel="Open claim pattern details"
-            preview={<MobileClaimPreview />}
-          >
-            <p className={`${foundationStyles.landingSectionLead} max-w-[32rem]`}>
-              “Never arrived”, missing items, damaged orders, late delivery, refund pressure —
-              Unauth links isolated claims to cross-merchant patterns — so your team reviews
-              evidence, not noise.
-            </p>
-            <div className="mt-6 flex items-center gap-4 font-mono text-[15px] tracking-[-0.02em] text-black/42">
-              <span>1.0</span>
-              <span>Claim intake</span>
-              <ArrowRight size={16} />
-            </div>
-            <div className="mt-6">
-              <ClaimThread />
-            </div>
-            <div className="mt-6">
-              <ClaimsBoard />
-            </div>
-          </MobileExpandableFeature>
-        </div>
-
-        <div className="hidden md:block">
         <div className="mb-[42px] grid gap-8 lg:grid-cols-[minmax(0,0.9fr)_auto] lg:items-end">
           <div className="max-w-[690px]">
             <p className={foundationStyles.landingSectionEyebrow}>
@@ -82,26 +53,8 @@ export default function UnauthLinearClaimHero() {
             <ClaimsBoard />
           </div>
         </div>
-        </div>
       </main>
     </section>
-  );
-}
-
-function MobileClaimPreview() {
-  return (
-    <div className="space-y-4">
-      <div className="relative h-[260px] overflow-hidden rounded-[14px] bg-white/94 shadow-[0_18px_42px_rgba(0,0,0,0.1)]">
-        <div className="absolute left-0 top-0 w-[125%] origin-top-left scale-[0.8]">
-          <ClaimThread />
-        </div>
-      </div>
-      <div className="relative h-[390px] overflow-hidden rounded-[14px] bg-white/82 shadow-[0_16px_34px_rgba(0,0,0,0.08)]">
-        <div className="absolute left-0 top-0 w-[135%] origin-top-left scale-[0.74]">
-          <ClaimsBoard />
-        </div>
-      </div>
-    </div>
   );
 }
 
