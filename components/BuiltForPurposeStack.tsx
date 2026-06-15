@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react';
 import Image from 'next/image';
 import foundationStyles from '@/app/(public)/landing/_components/foundation/foundation.module.css';
+import { MobileExpandableFeature } from '@/components/landing/MobileExpandableFeature';
 
 function FourPartLinearSection() {
   return (
@@ -80,7 +81,26 @@ export default function BuiltForPurposeStack() {
       <Background />
 
       <div className="relative mx-auto max-w-[1380px] px-5 sm:px-8 lg:px-10 xl:px-12">
-        <div className="grid gap-10 pb-8 pt-14 sm:pt-16 lg:grid-cols-[minmax(300px,420px)_minmax(0,1fr)] lg:items-center lg:gap-12 xl:gap-16">
+        <div className="pt-14 md:hidden">
+          <MobileExpandableFeature
+            eyebrow="Integrations"
+            title="Connect your stack in minutes."
+            summary="Link your store and helpdesk once. The context appears beside every claim."
+            expandLabel="Open integration details"
+            preview={<MobileIntegrationPreview />}
+          >
+            <p className={`${foundationStyles.landingSectionLead} max-w-[32rem]`}>
+              Link your store and helpdesk once. Unauth pulls in orders, refunds, and delivery data automatically
+              — cross-merchant intelligence appears beside every claim before your team replies.
+            </p>
+            <div className="mt-6 rounded-[16px] border border-black/[0.08] bg-[#f7f6f3] p-3">
+              <MobileIntegrationPreview />
+            </div>
+            <FourPartLinearSection />
+          </MobileExpandableFeature>
+        </div>
+
+        <div className="hidden md:grid gap-10 pb-8 pt-14 sm:pt-16 lg:grid-cols-[minmax(300px,420px)_minmax(0,1fr)] lg:items-center lg:gap-12 xl:gap-16">
           <div className="max-w-[620px] pt-2 lg:max-w-none">
             <p className={foundationStyles.landingSectionEyebrow}>Integrations</p>
             <h2 className={`${foundationStyles.landingSectionTitle} max-w-[440px]`}>
@@ -113,9 +133,31 @@ export default function BuiltForPurposeStack() {
           </div>
         </div>
 
-        <FourPartLinearSection />
+        <div className="hidden md:block">
+          <FourPartLinearSection />
+        </div>
       </div>
     </section>
+  );
+}
+
+function MobileIntegrationPreview() {
+  return (
+    <div className="relative mx-auto flex h-[330px] w-full items-center justify-center overflow-hidden rounded-[16px] bg-white">
+      <div className="absolute left-5 top-3 w-[1020px] origin-top-left scale-[0.3]">
+        <div className="pl-5 font-mono text-[25px] tracking-[0.12em] text-black/40">INTEGRATION</div>
+        <div className="relative mt-6 h-[560px] w-full" aria-hidden>
+          <StackDiagram />
+          <div className="absolute inset-0 translate-x-[3%]">
+            <EvidenceAnnotation />
+            <HelpdeskAnnotation />
+            <StoreAnnotation />
+            <HelpdeskLogoRail />
+            <StoreLogoRail />
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 

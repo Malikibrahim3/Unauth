@@ -2,6 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ChevronRight, Layers } from 'lucide-react';
 import UnauthEvidenceHeroCards from '@/components/UnauthEvidenceHeroCards';
+import { MobileExpandableFeature } from '@/components/landing/MobileExpandableFeature';
 import { HeroDrift } from './ParallaxLayer';
 import { FL_HERO, FL_ROUTES } from '../../_lib/foundationContent';
 import styles from './foundation.module.css';
@@ -32,50 +33,102 @@ export default function FoundationHero() {
       <UnauthEvidenceHeroCards />
       <div className="relative z-20 mx-auto flex w-full max-w-[100rem] flex-1 flex-col justify-center px-5 pb-48 pt-[72px] sm:px-10 sm:pb-56 md:pb-20 lg:pb-16 lg:pt-[88px]">
         <div className="min-w-0 max-w-[42.5rem] self-start">
-          <HeroDrift factor={-0.22}>
-            <div className={`${styles.riseIn} mb-7`} style={delay(60)}>
-              <span className={styles.heroEyebrow}>
-                <Layers size={14} strokeWidth={2} className={styles.heroEyebrowIcon} aria-hidden />
-                {FL_HERO.eyebrow}
-              </span>
-            </div>
-          </HeroDrift>
-
-          <HeroDrift factor={-0.36}>
-            <h1 className={styles.heroHeadline}>
-              {FL_HERO.headlineLines.map((line, i) => (
-                <span
-                  key={line}
-                  className={`${styles.riseIn} block`}
-                  style={delay(120 + i * 90)}
-                >
-                  {line}
+          <div className="md:hidden">
+            <MobileExpandableFeature
+              eyebrow={
+                <span className={styles.heroEyebrow}>
+                  <Layers size={14} strokeWidth={2} className={styles.heroEyebrowIcon} aria-hidden />
+                  {FL_HERO.eyebrow}
                 </span>
-              ))}
-            </h1>
-          </HeroDrift>
-
-          <HeroDrift factor={-0.22}>
-            <p className={`${styles.riseIn} ${styles.heroSubhead} mt-6`} style={delay(420)}>
-              {FL_HERO.subcopy}
-            </p>
-
-            <div
-              className={`${styles.riseIn} mt-8 flex flex-row flex-wrap items-center gap-x-5 gap-y-3 sm:gap-x-6`}
-              style={delay(560)}
+              }
+              title={
+                <>
+                  <span className="block">{FL_HERO.headlineLines[0]}</span>
+                  <span className="block">{FL_HERO.headlineLines[1]}</span>
+                </>
+              }
+              expandLabel="See evidence context"
+              actions={
+                <Link href={FL_ROUTES.audit} prefetch={false} className={styles.heroCtaPrimary}>
+                  {FL_HERO.primaryCta}
+                  <ChevronRight size={16} aria-hidden />
+                </Link>
+              }
+              preview={<HeroMobilePreview />}
             >
-              <Link href={FL_ROUTES.audit} prefetch={false} className={styles.heroCtaPrimary}>
-                {FL_HERO.primaryCta}
-                <ChevronRight size={16} aria-hidden />
-              </Link>
-              <Link href="/landing#how-it-works" className={styles.heroCtaSecondary}>
-                {FL_HERO.secondaryCta}
-                <ChevronRight size={16} aria-hidden />
-              </Link>
-            </div>
-          </HeroDrift>
+              <p className={`${styles.heroSubhead} max-w-[30rem]`}>{FL_HERO.subcopy}</p>
+              <div className="mt-6 flex flex-col items-start gap-3">
+                <Link href={FL_ROUTES.audit} prefetch={false} className={styles.heroCtaPrimary}>
+                  {FL_HERO.primaryCta}
+                  <ChevronRight size={16} aria-hidden />
+                </Link>
+                <Link href="/landing#how-it-works" className={styles.heroCtaSecondary}>
+                  {FL_HERO.secondaryCta}
+                  <ChevronRight size={16} aria-hidden />
+                </Link>
+              </div>
+              <div className="mt-8 grid gap-3 text-[14px] leading-[1.45] text-black/62">
+                <p>Cross-merchant claim history.</p>
+                <p>Graded evidence assembled automatically.</p>
+                <p>Your team keeps the final decision.</p>
+              </div>
+            </MobileExpandableFeature>
+          </div>
+
+          <div className="hidden md:block">
+            <HeroDrift factor={-0.22}>
+              <div className={`${styles.riseIn} mb-7`} style={delay(60)}>
+                <span className={styles.heroEyebrow}>
+                  <Layers size={14} strokeWidth={2} className={styles.heroEyebrowIcon} aria-hidden />
+                  {FL_HERO.eyebrow}
+                </span>
+              </div>
+            </HeroDrift>
+
+            <HeroDrift factor={-0.36}>
+              <h1 className={styles.heroHeadline}>
+                {FL_HERO.headlineLines.map((line, i) => (
+                  <span
+                    key={line}
+                    className={`${styles.riseIn} block`}
+                    style={delay(120 + i * 90)}
+                  >
+                    {line}
+                  </span>
+                ))}
+              </h1>
+            </HeroDrift>
+
+            <HeroDrift factor={-0.22}>
+              <p className={`${styles.riseIn} ${styles.heroSubhead} mt-6`} style={delay(420)}>
+                {FL_HERO.subcopy}
+              </p>
+
+              <div
+                className={`${styles.riseIn} mt-8 flex flex-row flex-wrap items-center gap-x-5 gap-y-3 sm:gap-x-6`}
+                style={delay(560)}
+              >
+                <Link href={FL_ROUTES.audit} prefetch={false} className={styles.heroCtaPrimary}>
+                  {FL_HERO.primaryCta}
+                  <ChevronRight size={16} aria-hidden />
+                </Link>
+                <Link href="/landing#how-it-works" className={styles.heroCtaSecondary}>
+                  {FL_HERO.secondaryCta}
+                  <ChevronRight size={16} aria-hidden />
+                </Link>
+              </div>
+            </HeroDrift>
+          </div>
         </div>
       </div>
     </section>
+  );
+}
+
+function HeroMobilePreview() {
+  return (
+    <div className="relative h-[220px] overflow-hidden rounded-[16px] border border-black/[0.08] bg-white/90">
+      <UnauthEvidenceHeroCards />
+    </div>
   );
 }

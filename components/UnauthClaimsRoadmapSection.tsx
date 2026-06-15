@@ -25,6 +25,7 @@ import {
   UsersRound,
 } from 'lucide-react';
 import foundationStyles from '@/app/(public)/landing/_components/foundation/foundation.module.css';
+import { MobileExpandableFeature } from '@/components/landing/MobileExpandableFeature';
 
 type CardTone = 'yellow' | 'red' | 'purple' | 'green' | 'neutral';
 
@@ -240,6 +241,38 @@ export default function UnauthClaimsRoadmapSection() {
       <Background />
 
       <main className="relative z-10 mx-auto max-w-[1536px] px-5 pb-[58px] pt-14 sm:px-8 sm:pt-16 lg:px-[84px] lg:pt-[52px]">
+        <div className="md:hidden">
+          <MobileExpandableFeature
+            eyebrow="Evidence pipeline"
+            title="Patterns your queue already knows."
+            summary="The roadmap stays legible on mobile without flattening the claim detail."
+            expandLabel="Open evidence pipeline"
+            actions={
+              <Link
+                href="/audit"
+                prefetch={false}
+                className="inline-flex min-h-11 w-max items-center gap-2 rounded-full border border-black/[0.14] bg-white px-5 text-[14px] font-semibold tracking-[-0.02em] text-black/72 shadow-[0_10px_28px_rgba(0,0,0,0.06)] transition hover:border-black/28 hover:text-black"
+              >
+                Explore claim patterns
+                <ArrowUpRight size={15} />
+              </Link>
+            }
+            preview={<MobileRoadmapPreview />}
+          >
+            <p className={`${foundationStyles.landingSectionLead} max-w-[32rem]`}>
+              Every complaint type carries timing, order, and support context. Unauth groups the
+              reason, finds repeated signals, and attaches a graded context pack to every ticket.
+            </p>
+            <div className="mt-6">
+              <ClaimsBoard />
+            </div>
+            <div className="mt-8">
+              <BottomLabels />
+            </div>
+          </MobileExpandableFeature>
+        </div>
+
+        <div className="hidden md:block">
         <div className="mx-auto mb-9 flex max-w-[1320px] flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-[700px]">
             <p className={foundationStyles.landingSectionEyebrow}>
@@ -275,8 +308,19 @@ export default function UnauthClaimsRoadmapSection() {
         </motion.div>
 
         <BottomLabels />
+        </div>
       </main>
     </section>
+  );
+}
+
+function MobileRoadmapPreview() {
+  return (
+    <div className="relative h-[430px] overflow-hidden rounded-[16px] bg-white/82 shadow-[0_20px_46px_rgba(0,0,0,0.08)]">
+      <div className="absolute left-0 top-0 w-[135%] origin-top-left scale-[0.74]">
+        <ClaimsBoard />
+      </div>
+    </div>
   );
 }
 
