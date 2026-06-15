@@ -49,7 +49,7 @@ export default function FoundationFinalCta({ hideFaq = false }: { hideFaq?: bool
                             aria-controls={`fl-faq-answer-${i}`}
                             id={`fl-faq-question-${i}`}
                             onClick={() => setOpen(isOpen ? null : i)}
-                            className="flex min-h-11 w-full items-start justify-between gap-6 py-6 text-left"
+                            className="flex w-full items-start justify-between gap-6 py-6 text-left"
                           >
                             <span className={styles.landingSectionFaqQuestion}>
                               {item.q}
@@ -105,13 +105,13 @@ export default function FoundationFinalCta({ hideFaq = false }: { hideFaq?: bool
                       <p className="mt-2 text-[0.9375rem] font-semibold text-[var(--fl-ink)]">
                         {figure.label}
                       </p>
-                      <p className="mt-1 font-mono text-[14px] leading-snug text-[var(--fl-ink-tertiary)]">
+                      <p className="mt-1 font-mono text-[0.6875rem] leading-snug text-[var(--fl-ink-tertiary)]">
                         {figure.note}
                       </p>
                     </div>
                   ))}
                 </div>
-                <p className="mt-3 font-mono text-[14px] leading-relaxed text-[var(--fl-ink-tertiary)]">
+                <p className="mt-3 font-mono text-[0.6875rem] leading-relaxed text-[var(--fl-ink-tertiary)]">
                   {FL_FIGURES.disclaimer}
                 </p>
               </Reveal>
@@ -125,7 +125,7 @@ export default function FoundationFinalCta({ hideFaq = false }: { hideFaq?: bool
                 <Link
                   href={FL_ROUTES.audit}
                   prefetch={false}
-                  className="mt-8 inline-flex min-h-11 items-center gap-2 rounded-full bg-[var(--fl-ink)] px-7 py-4 text-[1.0625rem] font-semibold text-white shadow-[0_16px_36px_rgba(0,0,0,0.16)] transition-transform hover:scale-[1.02]"
+                  className="mt-8 inline-flex items-center gap-2 rounded-full bg-[var(--fl-ink)] px-7 py-4 text-[1.0625rem] font-semibold text-white shadow-[0_16px_36px_rgba(0,0,0,0.16)] transition-transform hover:scale-[1.02]"
                 >
                   {FL_FINAL.cta}
                   <ArrowUpRight size={18} aria-hidden />

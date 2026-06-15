@@ -24,7 +24,7 @@ export default function UnauthLinearClaimHero() {
     <section className="relative min-h-screen overflow-hidden bg-white text-[#111111] border-t border-black/[0.07]" data-nav-theme="light">
       <Background />
 
-      <main className="relative z-10 mx-auto max-w-[1536px] px-5 pb-16 pt-14 sm:px-8 sm:pb-20 lg:px-10 lg:pt-12">
+      <main className="relative z-10 mx-auto max-w-[1536px] px-5 pb-20 pt-16 sm:px-8 lg:px-10 lg:pt-12">
         <div className="mb-[42px] grid gap-8 lg:grid-cols-[minmax(0,0.9fr)_auto] lg:items-end">
           <div className="max-w-[690px]">
             <p className={foundationStyles.landingSectionEyebrow}>
@@ -48,8 +48,9 @@ export default function UnauthLinearClaimHero() {
 
         <div className="relative mx-auto max-w-[1380px] lg:h-[630px]">
           <ClaimThread />
-          {/* Board: stacks below the thread on small screens; pins beside it from lg up. */}
-          <div className="mt-8 pb-3 lg:mt-0 lg:pb-0">
+          {/* Board: stacks below the thread and scrolls horizontally on small
+              screens; pins beside it (absolute) from lg up. */}
+          <div className="-mx-5 mt-8 overflow-x-auto px-5 pb-3 sm:-mx-8 sm:px-8 lg:mx-0 lg:mt-0 lg:overflow-visible lg:px-0">
             <ClaimsBoard />
           </div>
         </div>
@@ -76,7 +77,7 @@ function Background() {
 function ClaimThread() {
   return (
     <motion.div
-      initial={false}
+      initial={{ opacity: 0, y: 18 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-80px' }}
       transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
@@ -93,21 +94,21 @@ function ClaimThread() {
       <div className="px-7 pb-5 pt-8">
         <div className="space-y-7">
           <ThreadMessage
-            initials="LE"
+            avatar="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&h=80&fit=crop&crop=face"
             name="lena"
             time="6:03 PM"
           >
             Customer says “never arrived” again. Third claim in 2 months.
           </ThreadMessage>
           <ThreadMessage
-            initials="DI"
+            avatar="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&h=80&fit=crop&crop=face"
             name="didier"
             time="6:03 PM"
           >
             We’ve seen this email across multiple merchants. Same address cluster too.
           </ThreadMessage>
           <ThreadMessage
-            initials="AN"
+            avatar="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=80&h=80&fit=crop&crop=face"
             name="andreas"
             time="6:03 PM"
           >
@@ -122,27 +123,29 @@ function ClaimThread() {
 }
 
 function ThreadMessage({
-  initials,
+  avatar,
   name,
   time,
   children,
 }: {
-  initials: string;
+  avatar: string;
   name: string;
   time: string;
   children: ReactNode;
 }) {
   return (
     <motion.div
-      initial={false}
+      initial={{ opacity: 0, y: 8 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
       className="flex gap-4"
     >
-      <div className="mt-1 grid h-[42px] w-[42px] shrink-0 place-items-center rounded-lg bg-[#f4e6e0] text-[14px] font-semibold text-[#7b2d26] ring-1 ring-black/10">
-        {initials}
-      </div>
+      <img
+        src={avatar}
+        alt=""
+        className="mt-1 h-[42px] w-[42px] shrink-0 rounded-lg object-cover ring-1 ring-black/10"
+      />
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-3">
           <div className="text-[18px] font-semibold tracking-[-0.035em] text-[#111111]">{name}</div>
@@ -189,8 +192,7 @@ function Composer() {
         </div>
 
         <button
-          aria-label="Send claim command"
-          className="flex h-11 min-w-11 overflow-hidden rounded-md text-white"
+          className="flex h-[34px] overflow-hidden rounded-md text-white"
           style={{
             background: '#A85040',
             boxShadow: '0 0 34px rgba(168,80,64,0.32)',
@@ -212,15 +214,15 @@ function Composer() {
 function ClaimsBoard() {
   return (
     <motion.div
-      initial={false}
+      initial={{ opacity: 0, x: 34 }}
       whileInView={{ opacity: 1, x: 0 }}
       viewport={{ once: true, margin: '-80px' }}
       transition={{ duration: 0.85, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-      className="relative z-10 w-full overflow-hidden rounded-[16px] border border-black/[0.11] bg-white/72 shadow-[0_1px_0_rgba(255,255,255,0.9)_inset,0_18px_46px_rgba(0,0,0,0.09),0_60px_130px_rgba(0,0,0,0.14)] backdrop-blur-xl lg:absolute lg:left-[508px] lg:top-[29px] lg:h-[580px] lg:w-[914px]"
+      className="relative z-10 h-[580px] w-[914px] overflow-hidden rounded-[16px] border border-black/[0.11] bg-white/72 shadow-[0_1px_0_rgba(255,255,255,0.9)_inset,0_18px_46px_rgba(0,0,0,0.09),0_60px_130px_rgba(0,0,0,0.14)] backdrop-blur-xl lg:absolute lg:left-[508px] lg:top-[29px]"
     >
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_36%_24%,rgba(0,0,0,0.035),transparent_38%)]" />
 
-      <div className="relative grid grid-cols-1 gap-3 p-3 sm:grid-cols-3 sm:p-4 lg:h-full">
+      <div className="relative grid h-full grid-cols-3 gap-3 p-4">
         <BoardColumn
           title="To do"
           count="71"
@@ -320,9 +322,9 @@ function ClaimsBoard() {
         />
       </div>
 
-      <div className="absolute inset-y-0 right-0 hidden w-[360px] bg-gradient-to-r from-transparent via-white/46 to-white/88 lg:block" />
-      <div className="absolute inset-x-0 bottom-0 hidden h-[270px] bg-gradient-to-t from-white via-white/78 to-transparent lg:block" />
-      <div className="absolute inset-x-0 top-0 hidden h-[80px] bg-gradient-to-b from-white/82 to-transparent lg:block" />
+      <div className="absolute inset-y-0 right-0 w-[360px] bg-gradient-to-r from-transparent via-white/46 to-white/88" />
+      <div className="absolute inset-x-0 bottom-0 h-[270px] bg-gradient-to-t from-white via-white/78 to-transparent" />
+      <div className="absolute inset-x-0 top-0 h-[80px] bg-gradient-to-b from-white/82 to-transparent" />
     </motion.div>
   );
 }
@@ -388,18 +390,20 @@ function ClaimCard({
 }) {
   return (
     <motion.div
-      initial={false}
+      initial={{ opacity: 0, y: 9 }}
       whileInView={{ opacity: muted ? 0.55 : 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.42, delay: 0.35 + delay }}
       className="relative min-h-[112px] rounded-lg border border-black/[0.07] bg-white/78 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_24px_rgba(0,0,0,0.045)]"
     >
       {avatar && (
-        <div className="absolute right-4 top-4 grid h-8 w-8 place-items-center rounded-full bg-[#f4e6e0] text-[14px] font-semibold text-[#7b2d26] ring-1 ring-black/12">
-          {id.slice(-2)}
-        </div>
+        <img
+          src={avatar}
+          alt=""
+          className="absolute right-4 top-4 h-[22px] w-[22px] rounded-full object-cover ring-1 ring-black/12"
+        />
       )}
-      <div className="text-[14px] font-medium text-black/34">{id}</div>
+      <div className="text-[13px] font-medium text-black/34">{id}</div>
       <div className="mt-2 max-w-[215px] text-[16px] leading-[1.35] tracking-[-0.025em] text-black/62">
         {title}
       </div>
@@ -438,7 +442,7 @@ function Tag({ label }: { label: string }) {
 
   return (
     <span
-      className="inline-flex h-7 items-center gap-1.5 rounded px-2.5 text-[14px] font-medium"
+      className="inline-flex h-[27px] items-center gap-1.5 rounded px-2.5 text-[14px] font-medium"
       style={{
         background: tone.bg,
         color: tone.color,

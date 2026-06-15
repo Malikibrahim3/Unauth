@@ -26,9 +26,9 @@
   margin-top: 1rem;
   font-family: var(--ua-font-display), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
     'Segoe UI', sans-serif;
-  font-size: clamp(2rem, 8.4vw, 2.625rem);
+  font-size: clamp(2.25rem, 3.6vw, 2.625rem);
   font-weight: 600;
-  line-height: 1.02;
+  line-height: 0.98;
   letter-spacing: -0.05em;
   color: #111111;
 }
@@ -37,7 +37,7 @@
   margin-top: 1.25rem;
   font-family: var(--ua-font-display), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
     'Segoe UI', sans-serif;
-  font-size: clamp(15px, 4vw, 17px);
+  font-size: 17px;
   font-weight: 400;
   line-height: 1.55;
   letter-spacing: -0.025em;
@@ -47,7 +47,7 @@
 .landingSectionBody {
   font-family: var(--ua-font-display), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
     'Segoe UI', sans-serif;
-  font-size: clamp(15px, 4vw, 17px);
+  font-size: 17px;
   font-weight: 400;
   line-height: 1.55;
   letter-spacing: -0.025em;
@@ -1143,7 +1143,6 @@
   align-items: center;
   gap: 10px;
   flex-shrink: 0;
-  min-height: 44px;
 }
 
 .heroNavLogoIcon {
@@ -1239,8 +1238,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   border: none;
   background: transparent;
   color: rgba(255, 255, 255, 0.92);
@@ -1331,11 +1330,9 @@
 
 .heroNavSheetLink {
   composes: heroNavLink;
-  display: flex;
-  min-height: 44px;
-  align-items: center;
+  display: block;
   border-radius: 0.75rem;
-  padding: 0.75rem 1rem;
+  padding: 0.875rem 1rem;
 }
 
 .heroNavSheetLink:hover {
@@ -1394,7 +1391,7 @@
 
 @media (max-width: 519px) {
   .heroNavCta {
-    height: 44px;
+    height: 40px;
     padding: 0 7px 0 14px;
   }
 
@@ -1410,40 +1407,8 @@
 
   .heroNavCta {
     padding: 0 5px;
-    width: 44px;
-    height: 44px;
-  }
-}
-
-@media (max-width: 767px) {
-  .landingSectionEyebrow {
-    font-size: 14px;
-    letter-spacing: 0.1em;
-  }
-
-  .networkStatSource {
-    font-size: 14px;
-  }
-
-  .heroEyebrow {
-    font-size: 14px;
-  }
-
-  .heroHeadline {
-    font-size: clamp(42px, 11.5vw, 52px);
-    line-height: 0.98;
-    letter-spacing: -0.052em;
-  }
-
-  .heroSubhead {
-    font-size: 17px;
-    line-height: 1.55;
-  }
-
-  .heroCtaPrimary,
-  .heroCtaSecondary {
-    min-height: 44px;
-    font-size: 14px;
+    width: 40px;
+    height: 40px;
   }
 }
 

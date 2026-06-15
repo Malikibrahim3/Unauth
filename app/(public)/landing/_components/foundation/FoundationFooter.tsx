@@ -18,13 +18,13 @@ export default function FoundationFooter() {
                 Unauth
               </span>
             </div>
-            <p className="mt-4 max-w-[240px] text-[14px] leading-[1.65] tracking-[-0.01em] text-black/44">
+            <p className="mt-4 max-w-[240px] text-[13px] leading-[1.65] tracking-[-0.01em] text-black/44">
               {FL_FOOTER.tagline}
             </p>
             <Link
               href={FL_ROUTES.audit}
               prefetch={false}
-              className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-full border border-black/[0.13] px-4 text-[14px] font-semibold tracking-[-0.02em] text-black/68 transition hover:border-black/28 hover:text-black"
+              className="mt-6 inline-flex h-9 items-center gap-2 rounded-full border border-black/[0.13] px-4 text-[13px] font-semibold tracking-[-0.02em] text-black/68 transition hover:border-black/28 hover:text-black"
             >
               Run a free audit
             </Link>
@@ -33,7 +33,7 @@ export default function FoundationFooter() {
           {/* Link columns */}
           {FL_FOOTER.columns.map((column) => (
             <nav key={column.heading} aria-label={column.heading}>
-              <p className="text-[14px] font-semibold uppercase tracking-[0.1em] text-black/36">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-black/36">
                 {column.heading}
               </p>
               <ul className="mt-4 space-y-2.5">
@@ -42,7 +42,7 @@ export default function FoundationFooter() {
                     <li key={link.label}>
                       <a
                         href={link.href}
-                        className="flex min-h-11 items-center text-[14px] tracking-[-0.015em] text-black/52 transition hover:text-black md:min-h-0 md:inline"
+                        className="text-[14px] tracking-[-0.015em] text-black/52 transition hover:text-black"
                       >
                         {link.label}
                       </a>
@@ -52,7 +52,7 @@ export default function FoundationFooter() {
                       <Link
                         href={link.href}
                         prefetch={false}
-                        className="flex min-h-11 items-center text-[14px] tracking-[-0.015em] text-black/52 transition hover:text-black md:min-h-0 md:inline"
+                        className="text-[14px] tracking-[-0.015em] text-black/52 transition hover:text-black"
                       >
                         {link.label}
                       </Link>
@@ -66,10 +66,10 @@ export default function FoundationFooter() {
 
         {/* Bottom strip */}
         <div className="mt-14 flex flex-wrap items-center justify-between gap-4 border-t border-black/[0.07] pt-6">
-          <p className="font-mono text-[14px] text-black/30">
+          <p className="font-mono text-[11px] text-black/30">
             {FL_FOOTER.legal}
           </p>
-          <p className="font-mono text-[14px] text-black/30">
+          <p className="font-mono text-[11px] text-black/30">
             © {new Date().getFullYear()} Unauth
           </p>
         </div>

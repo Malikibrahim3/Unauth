@@ -266,7 +266,7 @@ export default function UnauthEvidenceHeroCards() {
             <section className={styles.recent}>
               <div className={styles.recentHead}>
                 <h2>Recent Claims & Chargebacks</h2>
-                <span className={styles.recentLink}>View all activity →</span>
+                <a>View all activity →</a>
               </div>
               <table className={styles.table}>
                 <thead>

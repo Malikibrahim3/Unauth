@@ -30,7 +30,7 @@ export default function FoundationHero() {
         aria-hidden
       />
       <UnauthEvidenceHeroCards />
-      <div className="relative z-20 mx-auto flex w-full max-w-[100rem] flex-1 flex-col justify-center px-5 pb-48 pt-[72px] sm:px-10 sm:pb-56 md:pb-20 lg:pb-16 lg:pt-[88px]">
+      <div className="relative z-20 mx-auto flex w-full max-w-[100rem] flex-1 flex-col justify-center px-5 pb-14 pt-[72px] sm:px-10 sm:pb-16 lg:pb-16 lg:pt-[88px]">
         <div className="min-w-0 max-w-[42.5rem] self-start">
           <HeroDrift factor={-0.22}>
             <div className={`${styles.riseIn} mb-7`} style={delay(60)}>
@@ -61,7 +61,7 @@ export default function FoundationHero() {
             </p>
 
             <div
-              className={`${styles.riseIn} mt-8 flex flex-row flex-wrap items-center gap-x-5 gap-y-3 sm:gap-x-6`}
+              className={`${styles.riseIn} mt-8 flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-6`}
               style={delay(560)}
             >
               <Link href={FL_ROUTES.audit} prefetch={false} className={styles.heroCtaPrimary}>
