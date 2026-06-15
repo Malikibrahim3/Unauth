@@ -239,7 +239,7 @@ export default function UnauthClaimsRoadmapSection() {
     <section id="evidence" className="relative min-h-screen scroll-mt-24 overflow-hidden bg-white text-[#111111] border-t border-black/[0.07]" data-nav-theme="light">
       <Background />
 
-      <main className="relative z-10 mx-auto max-w-[1536px] px-5 pb-[58px] pt-16 sm:px-8 lg:px-[84px] lg:pt-[52px]">
+      <main className="relative z-10 mx-auto max-w-[1536px] px-5 pb-[58px] pt-14 sm:px-8 sm:pt-16 lg:px-[84px] lg:pt-[52px]">
         <div className="mx-auto mb-9 flex max-w-[1320px] flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-[700px]">
             <p className={foundationStyles.landingSectionEyebrow}>
@@ -256,22 +256,20 @@ export default function UnauthClaimsRoadmapSection() {
           <Link
             href="/audit"
             prefetch={false}
-            className="inline-flex h-11 w-max items-center gap-2 rounded-full border border-black/[0.14] bg-white px-5 text-[14px] font-semibold tracking-[-0.02em] text-black/72 shadow-[0_10px_28px_rgba(0,0,0,0.06)] transition hover:border-black/28 hover:text-black"
+            className="inline-flex min-h-11 w-max items-center gap-2 rounded-full border border-black/[0.14] bg-white px-5 text-[14px] font-semibold tracking-[-0.02em] text-black/72 shadow-[0_10px_28px_rgba(0,0,0,0.06)] transition hover:border-black/28 hover:text-black"
           >
             Explore claim patterns
             <ArrowUpRight size={15} />
           </Link>
         </div>
         <motion.div
-          initial={{ opacity: 0, y: 18 }}
+          initial={false}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-80px' }}
           transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
-          className="relative mx-auto h-[660px] max-w-[1320px]"
+          className="relative mx-auto max-w-[1320px] lg:h-[660px]"
         >
-          {/* Horizontal scroll on small screens so all four quarters stay
-              readable; full board from lg up. */}
-          <div className="-mx-5 h-full overflow-x-auto px-5 sm:-mx-8 sm:px-8 lg:mx-0 lg:overflow-visible lg:px-0">
+          <div className="h-full">
             <ClaimsBoard />
           </div>
         </motion.div>
@@ -296,19 +294,19 @@ function Background() {
 
 function ClaimsBoard() {
   return (
-    <div className="relative mx-auto h-full w-full min-w-[900px] overflow-hidden rounded-[16px] border border-black/[0.08] bg-white/74 shadow-[0_36px_110px_rgba(0,0,0,0.14)] lg:min-w-0">
+    <div className="relative mx-auto h-auto w-full overflow-hidden rounded-[16px] border border-black/[0.08] bg-white/74 shadow-[0_36px_110px_rgba(0,0,0,0.14)] lg:h-full">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_28%,rgba(0,0,0,0.035),transparent_32%)]" />
 
-      <div className="relative grid h-full grid-cols-4">
+      <div className="relative grid grid-cols-1 sm:grid-cols-2 lg:h-full lg:grid-cols-4">
         {columns.map((column, index) => (
           <BoardColumn key={column.quarter} column={column} index={index} />
         ))}
       </div>
 
       <div className="pointer-events-none absolute inset-x-0 top-0 h-[86px] bg-gradient-to-b from-white/82 to-transparent" />
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[210px] bg-gradient-to-t from-white via-white/86 to-transparent" />
-      <div className="pointer-events-none absolute left-0 top-0 h-full w-[92px] bg-gradient-to-r from-white to-transparent" />
-      <div className="pointer-events-none absolute right-0 top-0 h-full w-[92px] bg-gradient-to-l from-white to-transparent" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 hidden h-[210px] bg-gradient-to-t from-white via-white/86 to-transparent lg:block" />
+      <div className="pointer-events-none absolute left-0 top-0 hidden h-full w-[92px] bg-gradient-to-r from-white to-transparent lg:block" />
+      <div className="pointer-events-none absolute right-0 top-0 hidden h-full w-[92px] bg-gradient-to-l from-white to-transparent lg:block" />
     </div>
   );
 }
@@ -323,7 +321,7 @@ function BoardColumn({
   return (
     <div
       className={`relative min-w-0 px-3 pb-6 pt-[22px] ${
-        index > 0 ? 'border-l border-black/[0.07]' : ''
+        index > 0 ? 'border-t border-black/[0.07] sm:border-l sm:border-t-0' : ''
       }`}
     >
       <div className="mb-[18px] flex h-7 items-center justify-between px-3">
@@ -350,7 +348,7 @@ function BoardColumn({
 function RoadmapCard({ card, delay }: { card: ClaimCard; delay: number }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 9 }}
+      initial={false}
       whileInView={{ opacity: card.muted ? 0.35 : 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.44, delay, ease: [0.22, 1, 0.36, 1] }}
@@ -364,13 +362,13 @@ function RoadmapCard({ card, delay }: { card: ClaimCard; delay: number }) {
         </div>
 
         <div className="min-w-0 flex-1 pr-[54px]">
-          <div className="truncate text-[13px] font-semibold tracking-[-0.03em] text-black/86">
+          <div className="text-[14px] font-semibold leading-[1.2] tracking-[-0.03em] text-black/86">
             {card.title}
           </div>
-          <p className="mt-2 line-clamp-2 max-w-[230px] text-[12px] leading-[1.45] tracking-[-0.015em] text-black/52">
+          <p className="mt-2 max-w-[230px] text-[14px] leading-[1.45] tracking-[-0.015em] text-black/52">
             “{card.quote}”
           </p>
-          <div className="mt-2.5 inline-flex h-[20px] items-center gap-1.5 rounded bg-black/[0.045] px-2 text-[11px] text-black/48">
+          <div className="mt-2.5 inline-flex min-h-7 items-center gap-1.5 rounded bg-black/[0.045] px-2 text-[14px] text-black/48">
             <CircleHelp size={11} />
             {card.tag}
           </div>

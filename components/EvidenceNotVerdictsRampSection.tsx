@@ -23,7 +23,7 @@ export default function EvidenceNotVerdictsRampSection() {
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_24%,rgba(0,0,0,0.055),transparent_58%)]" />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-white to-transparent" />
 
-      <main className="relative mx-auto max-w-[1180px] px-6 pb-24 pt-20 md:pt-24">
+      <main className="relative mx-auto max-w-[1180px] px-5 pb-16 pt-16 sm:px-6 sm:pb-24 md:pt-24">
         <div className="mb-10 max-w-[720px]">
           <p className={foundationStyles.landingSectionEyebrow}>
             How it works
@@ -58,17 +58,17 @@ function FeatureCard({
   children: ReactNode;
 }) {
   return (
-    <article className="flex min-h-[620px] flex-col rounded-[16px] border border-[#dedede] bg-[#f4f3f1] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
+    <article className="flex min-h-[480px] flex-col rounded-[16px] border border-[#dedede] bg-[#f4f3f1] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] sm:min-h-[560px] sm:p-6 lg:min-h-[620px]">
       <div className="flex items-start justify-between gap-3">
         <NumberBadge>{number}</NumberBadge>
         <OpenButton />
       </div>
 
-      <h2 className="mt-5 max-w-[280px] text-[26px] font-semibold leading-[1.08] tracking-[-0.06em] text-[#111111]">
+      <h2 className="mt-5 max-w-[280px] text-[24px] font-semibold leading-[1.08] tracking-[-0.05em] text-[#111111] sm:text-[26px] sm:tracking-[-0.06em]">
         {title}
       </h2>
 
-      <div className="mt-auto flex justify-center pt-14">
+      <div className="mt-auto flex justify-center pt-10 sm:pt-14">
         <MockPanel>{children}</MockPanel>
       </div>
     </article>
@@ -96,7 +96,7 @@ function FeatureCardOne() {
         </div>
       </div>
 
-      <div className="space-y-3.5 text-[13px] leading-[1.2] text-[#555555]">
+      <div className="space-y-3.5 text-[14px] leading-[1.25] text-[#555555]">
         <DecisionLine>No automated approvals</DecisionLine>
         <DecisionLine>No automated denials</DecisionLine>
         <DecisionLine>No refund automation</DecisionLine>
@@ -108,7 +108,7 @@ function FeatureCardOne() {
           <IconBox small>
             <UsersRound size={15} />
           </IconBox>
-          <div className="text-[13px] font-semibold leading-[1.25] tracking-[-0.03em]">
+          <div className="text-[14px] font-semibold leading-[1.25] tracking-[-0.03em]">
             Your team reviews.
             <br />
             You make the call.
@@ -130,7 +130,7 @@ function FeatureCardTwo() {
         <ContextRow icon={<Workflow size={14} />} label="Cross-merchant signals" badge="3 matches" />
         <ContextRow icon={<ShieldCheck size={14} />} label="Evidence grade" badge="High" green />
       </div>
-      <div className="mt-3.5 rounded-lg border border-[#e9e5dd] bg-[#fbfaf5] px-3.5 py-3 text-[12px] font-semibold tracking-[-0.025em]">
+      <div className="mt-3.5 rounded-lg border border-[#e9e5dd] bg-[#fbfaf5] px-3.5 py-3 text-[14px] font-semibold tracking-[-0.025em]">
         Full context. Ready for your review.
       </div>
     </FeatureCard>
@@ -152,13 +152,13 @@ function FeatureCardThree() {
                 <Workflow size={13} />
               </IconBox>
               <div>
-                <div className="text-[13px] font-semibold tracking-[-0.03em]">Pattern</div>
-                <div className="mt-0.5 text-[12px] leading-[1.2] text-[#555555]">
+                <div className="text-[14px] font-semibold tracking-[-0.03em]">Pattern</div>
+                <div className="mt-0.5 text-[14px] leading-[1.2] text-[#555555]">
                   “Never arrived” opened after delivery
                 </div>
               </div>
             </div>
-            <span className="shrink-0 rounded-md bg-[#e4d7ff] px-2 py-0.5 text-[11px] font-semibold text-[#6b43c9]">
+            <span className="shrink-0 rounded-md bg-[#e4d7ff] px-2 py-0.5 text-[14px] font-semibold text-[#6b43c9]">
               Consistent
             </span>
           </div>
@@ -190,10 +190,10 @@ function BottomStrip() {
           <FolderOpen size={24} />
           <div>
             <div className="text-[15px] font-semibold tracking-[-0.03em]">Open evidence pack</div>
-            <div className="mt-1 text-[13px] text-[#666666]">One click from the ticket</div>
+            <div className="mt-1 text-[14px] text-[#666666]">One click from the ticket</div>
           </div>
         </div>
-        <ArrowRight size={17} />
+        <ArrowRight size={17} className="shrink-0" />
       </Link>
     </section>
   );
@@ -201,7 +201,7 @@ function BottomStrip() {
 
 function NumberBadge({ children }: { children: ReactNode }) {
   return (
-    <div className="inline-flex h-[24px] min-w-[27px] items-center justify-center rounded-md border border-[#dedede] bg-white px-1.5 text-[13px] font-semibold tracking-[-0.03em] shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+    <div className="inline-flex h-7 min-w-8 items-center justify-center rounded-md border border-[#dedede] bg-white px-1.5 text-[14px] font-semibold tracking-[-0.03em] shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
       {children}
     </div>
   );
@@ -212,7 +212,7 @@ function OpenButton() {
     <button
       type="button"
       aria-label="Open preview"
-      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#e3e3e3] bg-white shadow-[0_4px_14px_rgba(0,0,0,0.05)]"
+      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-[#e3e3e3] bg-white shadow-[0_4px_14px_rgba(0,0,0,0.05)]"
     >
       <ExternalLink size={18} />
     </button>
@@ -264,17 +264,17 @@ function ContextRow({
   green?: boolean;
 }) {
   return (
-    <div className="flex min-h-[36px] items-center justify-between gap-2 rounded-lg border border-[#e8e8e8] bg-white px-3">
+    <div className="flex min-h-11 items-center justify-between gap-2 rounded-lg border border-[#e8e8e8] bg-white px-3">
       <div className="flex min-w-0 items-center gap-2">
         <span className="shrink-0 text-[#666666]">{icon}</span>
-        <span className="text-[12px] font-semibold leading-[1.1] tracking-[-0.025em]">{label}</span>
+        <span className="text-[14px] font-semibold leading-[1.1] tracking-[-0.025em]">{label}</span>
       </div>
       {value && (
-        <span className="shrink-0 text-right text-[11px] leading-[1.15] text-[#555555]">{value}</span>
+        <span className="shrink-0 text-right text-[14px] leading-[1.15] text-[#555555]">{value}</span>
       )}
       {badge && (
         <span
-          className={`shrink-0 rounded-md px-2 py-0.5 text-[11px] font-semibold ${
+          className={`shrink-0 rounded-md px-2 py-0.5 text-[14px] font-semibold ${
             green ? 'bg-[#dff5d7] text-[#4d8d3d]' : 'bg-[#e4d7ff] text-[#6b43c9]'
           }`}
         >
@@ -295,17 +295,17 @@ function MerchantMatch({
   status: string;
 }) {
   return (
-    <div className="flex min-h-[48px] items-center justify-between rounded-lg border border-[#ececec] bg-white px-3">
+    <div className="flex min-h-[52px] items-center justify-between rounded-lg border border-[#ececec] bg-white px-3">
       <div className="flex min-w-0 items-center gap-2.5">
         <IconBox small>
           <Store size={13} />
         </IconBox>
         <div className="min-w-0">
-          <div className="text-[12px] font-semibold tracking-[-0.03em]">{merchant}</div>
-          <div className="mt-0.5 text-[11px] leading-[1.1] text-[#555555]">{detail}</div>
+          <div className="text-[14px] font-semibold tracking-[-0.03em]">{merchant}</div>
+          <div className="mt-0.5 text-[14px] leading-[1.1] text-[#555555]">{detail}</div>
         </div>
       </div>
-      <span className="shrink-0 rounded-md bg-[#dff5d7] px-2 py-0.5 text-[11px] font-semibold text-[#4d8d3d]">
+      <span className="shrink-0 rounded-md bg-[#dff5d7] px-2 py-0.5 text-[14px] font-semibold text-[#4d8d3d]">
         {status}
       </span>
     </div>

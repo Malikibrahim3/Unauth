@@ -380,6 +380,8 @@ function LogoRow({ src, name }: { src: string; name: string }) {
         alt=""
         width={32}
         height={32}
+        loading="eager"
+        unoptimized
         className="h-8 w-8 shrink-0 object-contain"
       />
       <div className="text-[20px] font-medium tracking-[-0.04em] text-[#111111]">{name}</div>

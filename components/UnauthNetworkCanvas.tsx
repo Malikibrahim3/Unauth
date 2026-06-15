@@ -32,19 +32,24 @@ export function UnauthNetworkCanvas() {
     let raf = 0;
     let W = el.clientWidth;
     let H = el.clientHeight;
+    const viewportWidth = window.innerWidth;
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
     const lowPowerDevice =
       prefersReducedMotion.matches ||
-      window.innerWidth < 768 ||
+      viewportWidth <= 1024 ||
       navigator.hardwareConcurrency <= 4;
-    const dotCount = lowPowerDevice ? 220 : N_DOTS;
-    const maxPixelRatio = lowPowerDevice ? 1.25 : 1.75;
+    const dotCount = viewportWidth < 480 ? 140 : lowPowerDevice ? 220 : N_DOTS;
+    const maxPixelRatio = lowPowerDevice ? 1 : 1.6;
 
     const scene  = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(45, W / H, 0.1, 100);
     camera.position.z = 14;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: true,
+      powerPreference: lowPowerDevice ? 'low-power' : 'high-performance',
+    });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, maxPixelRatio));
     renderer.setSize(W, H);
     renderer.setClearColor(0x000000, 0);
@@ -285,7 +290,7 @@ export function UnauthNetworkCanvas() {
     window.addEventListener('resize', onResize);
 
     /* ── Render loop ─────────────────────────────────────────────────────── */
-    const clock = new THREE.Clock();
+    const startTime = performance.now();
 
     function tick() {
       renderQueued = false;
@@ -297,7 +302,7 @@ export function UnauthNetworkCanvas() {
         raf = requestAnimationFrame(tick);
         renderQueued = true;
       }
-      const t = clock.getElapsedTime();
+      const t = (performance.now() - startTime) / 1000;
       const posAttr = dotGeo.getAttribute('position') as THREE.BufferAttribute;
       const mouse   = mouseRef.current;
 

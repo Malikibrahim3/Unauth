@@ -1,21 +1,105 @@
 .root {
   pointer-events: none;
   position: absolute;
-  right: 0;
-  top: 72px;
-  z-index: 10;
-  display: none;
+  right: 50%;
+  bottom: 16px;
+  z-index: 8;
+  display: block;
   overflow: visible;
-  transform: translate(-8%, 27%) scale(0.8625);
-  transform-origin: top right;
+  transform: translateX(50%) scale(0.225);
+  transform-origin: bottom center;
   color: #111111;
   font-family: var(--ua-font-display), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
     'Segoe UI', sans-serif;
 }
 
+@media (max-width: 767px) {
+  .root :is(p, span, b, a, th, td, h1, h2, h3) {
+    font-size: max(14px, 1em);
+  }
+
+  .ticketHead span,
+  .avatar,
+  .meta,
+  .desc,
+  .status,
+  .caseId,
+  .certaintyBadge,
+  .count,
+  .profileHeader p,
+  .panelNote,
+  .stats p,
+  .firstSeen,
+  .activityTitle p,
+  .metricLabel strong,
+  .metricLabel span,
+  .metricValue span,
+  .recentLink,
+  .table th,
+  .table td {
+    font-size: 14px;
+  }
+}
+
+@media (min-width: 390px) {
+  .root {
+    bottom: 60px;
+    transform: translateX(50%) scale(0.255);
+  }
+}
+
+@media (min-width: 390px) and (min-height: 800px) {
+  .root {
+    bottom: 64px;
+    transform: translateX(50%) scale(0.285);
+  }
+}
+
+@media (min-width: 640px) {
+  .root {
+    right: -44px;
+    bottom: 24px;
+    transform: scale(0.34);
+    transform-origin: bottom right;
+  }
+}
+
+@media (min-width: 768px) {
+  .root {
+    right: 16px;
+    bottom: 28px;
+    transform: scale(0.42);
+  }
+}
+
 @media (min-width: 1024px) {
   .root {
-    display: block;
+    top: 112px;
+    right: 16px;
+    bottom: auto;
+    transform: scale(0.5);
+    transform-origin: top right;
+  }
+}
+
+@media (min-width: 1280px) {
+  .root {
+    top: 72px;
+    right: 20px;
+    transform: translate(0, 28%) scale(0.66);
+  }
+}
+
+@media (min-width: 1440px) {
+  .root {
+    right: 24px;
+    transform: translate(0, 27%) scale(0.76);
+  }
+}
+
+@media (min-width: 1600px) {
+  .root {
+    transform: translate(-4%, 27%) scale(0.8625);
   }
 }
 
@@ -428,7 +512,7 @@
   letter-spacing: -0.03em;
 }
 
-.recentHead a {
+.recentLink {
   color: #7b2d26;
   font-size: 12px;
   text-decoration: none;
@@ -500,4 +584,29 @@
   color: #ff685e;
   background: rgba(255, 84, 77, 0.13);
   font-weight: 650;
+}
+
+@media (max-width: 767px) {
+  .root :is(p, span, b, a, th, td, h1, h2, h3),
+  .ticketHead span,
+  .avatar,
+  .meta,
+  .desc,
+  .status,
+  .caseId,
+  .certaintyBadge,
+  .count,
+  .profileHeader p,
+  .panelNote,
+  .stats p,
+  .firstSeen,
+  .activityTitle p,
+  .metricLabel strong,
+  .metricLabel span,
+  .metricValue span,
+  .recentLink,
+  .table th,
+  .table td {
+    font-size: 14px;
+  }
 }
