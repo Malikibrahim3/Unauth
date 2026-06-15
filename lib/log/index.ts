@@ -141,14 +141,6 @@ export function withRequestLogging<TArgs extends [Request, ...unknown[]]>(
       });
       return response;
     } catch (error) {
-      const { captureServerException } = await import('@/lib/sentry');
-      captureServerException(error, {
-        requestId,
-        merchantId,
-        route,
-        method: request.method,
-      });
-
       logger.error('request.error', {
         status: 500,
         durationMs: Date.now() - startedAt,

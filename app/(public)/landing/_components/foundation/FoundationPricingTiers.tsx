@@ -15,7 +15,17 @@ function tierCta(tierKey: string, custom: boolean) {
 export default function FoundationPricingTiers() {
   return (
     <section data-nav-theme="light" className={styles.pricingField}>
-      <div className="relative z-10 mx-auto w-full max-w-[100rem] px-5 pb-16 sm:px-10 lg:pb-24">
+      <div className="relative z-10 mx-auto w-full max-w-[100rem] px-5 pb-16 pt-28 sm:px-10 lg:pb-24 lg:pt-36">
+        <Reveal>
+          <div className="mb-14 max-w-[52rem]">
+            <h1 className={`${styles.landingSectionTitle} text-[var(--fl-ink)]`}>
+              {FL_PRICING.headline}
+            </h1>
+            <p className={`${styles.landingSectionLead} mt-6 text-[var(--fl-ink-secondary)]`}>
+              {FL_PRICING.lead}
+            </p>
+          </div>
+        </Reveal>
         <ParallaxLayer speed={0.18}>
           <Reveal delay={80}>
             <div className="grid grid-cols-1 gap-3 lg:grid-cols-4">
@@ -69,6 +79,7 @@ export default function FoundationPricingTiers() {
                     <div className="mt-8">
                       <Link
                         href={cta.href}
+                        prefetch={false}
                         className={
                           featured ? styles.pricingTierCtaPrimary : styles.pricingTierCtaSecondary
                         }

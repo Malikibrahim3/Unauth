@@ -297,11 +297,6 @@
   line-height: 0.88;
 }
 
-.footerWordmark {
-  font-size: 5rem;
-  line-height: 0.9;
-  letter-spacing: 0;
-}
 
 /* Card-width numeral sizing — keeps every stat block visually consistent */
 .bentoCard {
@@ -563,22 +558,9 @@
   background:
     radial-gradient(62% 50% at 94% 18%, color-mix(in srgb, var(--fl-slate-card) 7%, transparent), transparent 72%),
     radial-gradient(40% 32% at 6% 86%, color-mix(in srgb, var(--fl-status-bg) 12%, transparent), transparent 68%),
-    var(--fl-bg);
+    #ffffff;
 }
 
-.networkHeroField::before {
-  content: '';
-  position: absolute;
-  pointer-events: none;
-  z-index: 0;
-  width: min(54rem, 74vw);
-  height: 26rem;
-  right: 3%;
-  bottom: -14rem;
-  background: color-mix(in srgb, var(--fl-line) 54%, transparent);
-  clip-path: polygon(0 64%, 58% 0, 100% 68%, 100% 100%, 0 100%);
-  opacity: 0.38;
-}
 
 .networkHeroHeading {
   font-family: var(--ua-font-display), ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
@@ -709,31 +691,12 @@
 }
 
 .finalField {
-  background:
-    linear-gradient(
-      180deg,
-      var(--fl-bg) 0%,
-      var(--fl-paper) 38%,
-      color-mix(in srgb, var(--fl-line) 58%, var(--fl-bg)) 100%
-    );
+  background: #ffffff;
 }
 
-.finalField::before {
-  width: 48rem;
-  height: 34rem;
-  top: -18rem;
-  right: -12rem;
-  background: color-mix(in srgb, var(--fl-line) 18%, transparent);
-  clip-path: polygon(10% 0, 100% 24%, 74% 100%, 0 72%);
-}
-
+.finalField::before,
 .finalField::after {
-  width: 36rem;
-  height: 26rem;
-  left: -14rem;
-  bottom: -9rem;
-  background: color-mix(in srgb, var(--fl-purple-card) 26%, transparent);
-  clip-path: polygon(50% 0, 100% 30%, 100% 72%, 50% 100%, 0 72%, 0 30%);
+  display: none;
 }
 
 @media (min-width: 640px) {
@@ -767,9 +730,6 @@
     font-size: 5rem;
   }
 
-  .footerWordmark {
-    font-size: 7rem;
-  }
 
   .bentoNumeral {
     font-size: 3.5rem;
@@ -845,9 +805,6 @@
     font-size: 5.75rem;
   }
 
-  .footerWordmark {
-    font-size: 10rem;
-  }
 
   .bentoNumeral {
     font-size: 4.25rem;
@@ -936,9 +893,6 @@
     font-size: 6.25rem;
   }
 
-  .footerWordmark {
-    font-size: 13rem;
-  }
 
   .figureNumeral {
     font-size: 9rem;
@@ -980,9 +934,6 @@
     font-size: 5.5rem;
   }
 
-  .footerWordmark {
-    font-size: 15rem;
-  }
 
   .bentoNumeral {
     font-size: 5rem;

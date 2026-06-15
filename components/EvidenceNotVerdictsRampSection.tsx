@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import Link from 'next/link';
 import {
   ArrowRight,
   ExternalLink,
@@ -8,23 +9,21 @@ import {
   Store,
   UsersRound,
   Workflow,
-  X,
 } from 'lucide-react';
+import { FL_ROUTES } from '@/app/(public)/landing/_lib/foundationContent';
 import foundationStyles from '@/app/(public)/landing/_components/foundation/foundation.module.css';
 
 export default function EvidenceNotVerdictsRampSection() {
   return (
     <section
       id="how-it-works"
-      className="relative min-h-screen overflow-hidden bg-[#f6f6f4] text-[#111111]"
+      className="relative min-h-screen scroll-mt-24 overflow-hidden bg-white text-[#111111] border-t border-black/[0.07]"
       data-nav-theme="light"
     >
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_24%,rgba(0,0,0,0.055),transparent_58%)]" />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-white to-transparent" />
 
-      <TopBanner />
-
-      <main className="relative mx-auto max-w-[1180px] px-6 pb-24 pt-14 md:pt-16">
+      <main className="relative mx-auto max-w-[1180px] px-6 pb-24 pt-20 md:pt-24">
         <div className="mb-10 max-w-[720px]">
           <p className={foundationStyles.landingSectionEyebrow}>
             How it works
@@ -34,8 +33,8 @@ export default function EvidenceNotVerdictsRampSection() {
           </h2>
           <p className={`${foundationStyles.landingSectionLead} max-w-[660px]`}>
             Unauth connects to your store and helpdesk, surfaces cross-merchant claim history,
-            and attaches graded evidence to every ticket — automatically. No workflow changes.
-            No automated decisions.
+            and attaches graded evidence to every ticket — automatically. No workflow changes
+            required.
           </p>
         </div>
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-[24px]">
@@ -46,26 +45,6 @@ export default function EvidenceNotVerdictsRampSection() {
         <BottomStrip />
       </main>
     </section>
-  );
-}
-
-function TopBanner() {
-  return (
-    <div className="relative z-10 flex h-9 items-center justify-center border-b border-black/[0.08] bg-white px-6 text-center text-[13px] font-medium text-black/72">
-      <span>
-        Evidence, not verdicts — cross-merchant claim context for every review.{' '}
-        <a href="#" className="underline underline-offset-2">
-          Learn more
-        </a>
-      </span>
-      <button
-        type="button"
-        aria-label="Dismiss banner"
-        className="absolute right-5 top-1/2 -translate-y-1/2 text-black/45 transition hover:text-black"
-      >
-        <X size={15} />
-      </button>
-    </div>
   );
 }
 
@@ -202,9 +181,10 @@ function BottomStrip() {
         Open the evidence pack from the claim review flow, review the timeline and cross-merchant
         context, then decide with confidence.
       </p>
-      <a
-        href="#"
-        className="flex h-[58px] items-center justify-between rounded-lg border border-[#dddddd] bg-white px-5 shadow-[0_12px_30px_rgba(0,0,0,0.06)]"
+      <Link
+        href={FL_ROUTES.demo}
+        prefetch={false}
+        className="flex h-[58px] items-center justify-between rounded-lg border border-[#dddddd] bg-white px-5 shadow-[0_12px_30px_rgba(0,0,0,0.06)] transition hover:border-black/28"
       >
         <div className="flex items-center gap-4">
           <FolderOpen size={24} />
@@ -214,7 +194,7 @@ function BottomStrip() {
           </div>
         </div>
         <ArrowRight size={17} />
-      </a>
+      </Link>
     </section>
   );
 }

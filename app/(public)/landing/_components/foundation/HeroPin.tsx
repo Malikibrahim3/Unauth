@@ -16,8 +16,13 @@ export default function HeroPin({ children }: { children: React.ReactNode }) {
     if (!node) return;
     const onScroll = () => {
       const covered = window.scrollY > Math.max(node.offsetHeight, window.innerHeight);
-      if (covered) node.setAttribute('inert', '');
-      else node.removeAttribute('inert');
+      if (covered) {
+        node.setAttribute('inert', '');
+        node.style.visibility = 'hidden';
+      } else {
+        node.removeAttribute('inert');
+        node.style.visibility = 'visible';
+      }
     };
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
@@ -29,7 +34,7 @@ export default function HeroPin({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <div ref={ref} className="z-0 lg:sticky lg:top-0">
+    <div ref={ref} data-hero-pin className="z-0 lg:sticky lg:top-0">
       {children}
     </div>
   );

@@ -3,7 +3,6 @@ import { createServerClient } from '@supabase/ssr';
 import { TABLES } from './lib/supabase/tables';
 import { enforceRateLimit, getClientIp, limitFromEnv, rateLimitKey } from '@/lib/ratelimit';
 import { createRequestId, merchantIdHeader, requestIdHeader } from '@/lib/log';
-import { captureServerException, initSentryServer } from '@/lib/sentry';
 
 function isPhoneUserAgent(userAgent: string): boolean {
   const ua = userAgent.toLowerCase();
@@ -30,8 +29,6 @@ function isPhoneUserAgent(userAgent: string): boolean {
 }
 
 export async function proxy(request: NextRequest) {
-  initSentryServer();
-
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set(requestIdHeader, request.headers.get(requestIdHeader) ?? createRequestId());
   requestHeaders.set('x-pathname', request.nextUrl.pathname);
@@ -181,7 +178,8 @@ export async function proxy(request: NextRequest) {
         });
       }
     } catch (error) {
-      captureServerException(error, {
+      console.error('proxy merchant lookup failed', {
+        error,
         requestId: requestHeaders.get(requestIdHeader),
         route: pathname,
         method: request.method,

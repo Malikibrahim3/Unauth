@@ -3,7 +3,6 @@ import { DM_Mono, Inter, Inter_Tight } from 'next/font/google';
 import SentryInit from '@/components/common/SentryInit';
 import ThemeBootstrap from '@/components/common/ThemeBootstrap';
 import ScrollToTop from '@/components/navigation/ScrollToTop';
-import 'reactflow/dist/style.css';
 import './globals.css';
 
 // Ramp redesign — Inter is the closest free analog to Ramp's neutral grotesque.

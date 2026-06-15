@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
+import 'reactflow/dist/style.css';
 import ReactFlow, {
   Background,
   Controls,

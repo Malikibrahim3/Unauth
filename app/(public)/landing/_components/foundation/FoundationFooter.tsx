@@ -1,29 +1,48 @@
 import Link from 'next/link';
-import Wordmark from '../Wordmark';
-import { FL_FOOTER } from '../../_lib/foundationContent';
-import styles from './foundation.module.css';
+import { Layers } from 'lucide-react';
+import { FL_FOOTER, FL_ROUTES } from '../../_lib/foundationContent';
 
-/** Light footer: link columns over a hairline, oversized wordmark beneath. */
 export default function FoundationFooter() {
   return (
-    <footer data-nav-theme="light" id="privacy" className="bg-[var(--fl-bg)]">
-      <div className="mx-auto w-full max-w-[100rem] px-5 pb-12 pt-20 sm:px-10">
-        <div className="grid gap-12 md:grid-cols-[1.2fr_repeat(3,0.6fr)]">
-          <p className="max-w-[20rem] text-[0.9375rem] leading-[1.6] text-[var(--fl-ink-secondary)]">
-            {FL_FOOTER.tagline}
-          </p>
+    <footer data-nav-theme="light" id="privacy" className="bg-white border-t border-black/[0.07]">
+      <div className="mx-auto w-full max-w-[100rem] px-5 pt-14 pb-10 sm:px-10">
+
+        {/* Top grid: brand column + link columns */}
+        <div className="grid gap-10 sm:grid-cols-2 md:grid-cols-[1.6fr_1fr_1fr_1fr]">
+
+          {/* Brand */}
+          <div>
+            <div className="flex items-center gap-2.5">
+              <Layers size={16} strokeWidth={2} className="text-[#111111]" aria-hidden />
+              <span className="text-[15px] font-semibold tracking-[-0.03em] text-[#111111]">
+                Unauth
+              </span>
+            </div>
+            <p className="mt-4 max-w-[240px] text-[13px] leading-[1.65] tracking-[-0.01em] text-black/44">
+              {FL_FOOTER.tagline}
+            </p>
+            <Link
+              href={FL_ROUTES.audit}
+              prefetch={false}
+              className="mt-6 inline-flex h-9 items-center gap-2 rounded-full border border-black/[0.13] px-4 text-[13px] font-semibold tracking-[-0.02em] text-black/68 transition hover:border-black/28 hover:text-black"
+            >
+              Run a free audit
+            </Link>
+          </div>
+
+          {/* Link columns */}
           {FL_FOOTER.columns.map((column) => (
             <nav key={column.heading} aria-label={column.heading}>
-              <p className="text-[0.8125rem] font-semibold uppercase tracking-[0.08em] text-[var(--fl-ink-tertiary)]">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-black/36">
                 {column.heading}
               </p>
               <ul className="mt-4 space-y-2.5">
                 {column.links.map((link) =>
-                  link.href.startsWith('#') ? (
+                  link.href.startsWith('#') || link.href.startsWith('/landing#') ? (
                     <li key={link.label}>
                       <a
                         href={link.href}
-                        className="text-[0.9375rem] text-[var(--fl-ink-secondary)] transition-colors hover:text-[var(--fl-ink)]"
+                        className="text-[14px] tracking-[-0.015em] text-black/52 transition hover:text-black"
                       >
                         {link.label}
                       </a>
@@ -32,7 +51,8 @@ export default function FoundationFooter() {
                     <li key={link.label}>
                       <Link
                         href={link.href}
-                        className="text-[0.9375rem] text-[var(--fl-ink-secondary)] transition-colors hover:text-[var(--fl-ink)]"
+                        prefetch={false}
+                        className="text-[14px] tracking-[-0.015em] text-black/52 transition hover:text-black"
                       >
                         {link.label}
                       </Link>
@@ -44,18 +64,16 @@ export default function FoundationFooter() {
           ))}
         </div>
 
-        <div className="mt-20 border-t border-[var(--fl-line)] pt-10">
-          <Wordmark
-            tone="light"
-            className={styles.footerWordmark}
-          />
-          <div className="mt-8 flex flex-wrap items-center justify-between gap-4">
-            <p className="font-mono text-xs text-[var(--fl-ink-tertiary)]">{FL_FOOTER.legal}</p>
-            <p className="font-mono text-xs text-[var(--fl-ink-tertiary)]">
-              © {new Date().getFullYear()} Unauth
-            </p>
-          </div>
+        {/* Bottom strip */}
+        <div className="mt-14 flex flex-wrap items-center justify-between gap-4 border-t border-black/[0.07] pt-6">
+          <p className="font-mono text-[11px] text-black/30">
+            {FL_FOOTER.legal}
+          </p>
+          <p className="font-mono text-[11px] text-black/30">
+            © {new Date().getFullYear()} Unauth
+          </p>
         </div>
+
       </div>
     </footer>
   );

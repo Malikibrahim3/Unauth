@@ -982,10 +982,17 @@
     color: var(--text);
     background-color: var(--bg-canvas);
     color-scheme: light;
+    scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     scrollbar-color: var(--surface-muted) transparent;
     scrollbar-width: thin;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
   }
 
   body {

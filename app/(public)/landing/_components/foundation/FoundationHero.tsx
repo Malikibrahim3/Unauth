@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { ChevronRight, Layers } from 'lucide-react';
 import UnauthEvidenceHeroCards from '@/components/UnauthEvidenceHeroCards';
 import { HeroDrift } from './ParallaxLayer';
@@ -19,12 +20,13 @@ export default function FoundationHero() {
       data-nav-theme="light"
       className={`${styles.dusk} relative flex min-h-[100svh] flex-col justify-end overflow-hidden lg:h-[100svh] lg:min-h-0 lg:justify-center`}
     >
-      <img
+      <Image
         src="/hero-background.png"
         alt=""
+        fill
+        sizes="100vw"
         className={styles.heroImage}
-        fetchPriority="high"
-        decoding="async"
+        priority
         aria-hidden
       />
       <UnauthEvidenceHeroCards />
@@ -62,7 +64,7 @@ export default function FoundationHero() {
               className={`${styles.riseIn} mt-8 flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-6`}
               style={delay(560)}
             >
-              <Link href={FL_ROUTES.audit} className={styles.heroCtaPrimary}>
+              <Link href={FL_ROUTES.audit} prefetch={false} className={styles.heroCtaPrimary}>
                 {FL_HERO.primaryCta}
                 <ChevronRight size={16} aria-hidden />
               </Link>

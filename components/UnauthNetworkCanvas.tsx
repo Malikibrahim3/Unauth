@@ -32,13 +32,20 @@ export function UnauthNetworkCanvas() {
     let raf = 0;
     let W = el.clientWidth;
     let H = el.clientHeight;
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const lowPowerDevice =
+      prefersReducedMotion.matches ||
+      window.innerWidth < 768 ||
+      navigator.hardwareConcurrency <= 4;
+    const dotCount = lowPowerDevice ? 220 : N_DOTS;
+    const maxPixelRatio = lowPowerDevice ? 1.25 : 1.75;
 
     const scene  = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(45, W / H, 0.1, 100);
     camera.position.z = 14;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, maxPixelRatio));
     renderer.setSize(W, H);
     renderer.setClearColor(0x000000, 0);
     el.appendChild(renderer.domElement);
@@ -107,13 +114,13 @@ export function UnauthNetworkCanvas() {
     }, []);
 
     const dots: Dot[] = [];
-    const pos = new Float32Array(N_DOTS * 3);
-    const col = new Float32Array(N_DOTS * 3);
-    const sz  = new Float32Array(N_DOTS);
+    const pos = new Float32Array(dotCount * 3);
+    const col = new Float32Array(dotCount * 3);
+    const sz  = new Float32Array(dotCount);
     const PHI_G = Math.PI * (3 - Math.sqrt(5));
 
-    for (let i = 0; i < N_DOTS; i++) {
-      const phi   = Math.acos(1 - 2 * (i / N_DOTS));
+    for (let i = 0; i < dotCount; i++) {
+      const phi   = Math.acos(1 - 2 * (i / dotCount));
       const theta = PHI_G * i;
       const r     = GLOBE_R + (Math.random() - 0.5) * 0.08;
       const x = r * Math.sin(phi) * Math.cos(theta);
@@ -133,10 +140,10 @@ export function UnauthNetworkCanvas() {
       sz[i] = (tier.sizeBase + Math.random() * tier.sizeRange) * DOT_SCALE;
     }
 
-    const neighbors: number[][] = Array.from({ length: N_DOTS }, () => []);
-    for (let i = 0; i < N_DOTS; i++) {
+    const neighbors: number[][] = Array.from({ length: dotCount }, () => []);
+    for (let i = 0; i < dotCount; i++) {
       const near: { j: number; d: number }[] = [];
-      for (let j = 0; j < N_DOTS; j++) {
+      for (let j = 0; j < dotCount; j++) {
         if (i === j) continue;
         const dx = dots[i].bx - dots[j].bx;
         const dy = dots[i].by - dots[j].by;
@@ -148,7 +155,7 @@ export function UnauthNetworkCanvas() {
       neighbors[i] = near.slice(0, MAX_NEIGHBORS_PER_DOT).map((n) => n.j);
     }
 
-    const maxSegments = N_DOTS * MAX_NEIGHBORS_PER_DOT;
+    const maxSegments = dotCount * MAX_NEIGHBORS_PER_DOT;
     const connPositions = new Float32Array(maxSegments * 6);
     const connGeo = new THREE.BufferGeometry();
     connGeo.setAttribute('position', new THREE.BufferAttribute(connPositions, 3));
@@ -169,7 +176,7 @@ export function UnauthNetworkCanvas() {
     const dotMat = new THREE.ShaderMaterial({
       transparent: true, depthWrite: false, vertexColors: true,
       uniforms: {
-        uPR:      { value: Math.min(window.devicePixelRatio, 2) },
+        uPR:      { value: Math.min(window.devicePixelRatio, maxPixelRatio) },
         uOpacity: { value: 0 }, // animated by reveal
       },
       vertexShader: `
@@ -204,16 +211,27 @@ export function UnauthNetworkCanvas() {
     let targetScrollT = 0;
     let connectOp = 0;
     let hoverValid = false;
+    let isVisible = false;
+    let isInViewport = false;
+    let renderQueued = false;
     const section = el.closest('section') as HTMLElement | null;
+    const hoverTarget = section ?? el;
+    const scheduleRender = () => {
+      if (renderQueued) return;
+      renderQueued = true;
+      raf = requestAnimationFrame(tick);
+    };
 
     /* ── IntersectionObserver — fire reveal on entry ─────────────────────── */
     const io = new IntersectionObserver(
       (entries) => {
         entries.forEach(e => {
+          isInViewport = e.isIntersecting;
           if (e.isIntersecting && !revealTriggered) {
             revealTriggered = true;
             revealStartTime = performance.now();
           }
+          if (e.isIntersecting) scheduleRender();
         });
       },
       { threshold: 0.08 },
@@ -227,6 +245,7 @@ export function UnauthNetworkCanvas() {
       const scrolled = window.scrollY - sectionTop;
       const animH = section.clientHeight * 0.5;
       targetScrollT = Math.max(0, Math.min(1, scrolled / animH));
+      scheduleRender();
     }
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll(); // initialise immediately
@@ -236,20 +255,32 @@ export function UnauthNetworkCanvas() {
       const r = el.getBoundingClientRect();
       if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) {
         mouseRef.current.active = false;
+        scheduleRender();
         return;
       }
       mouseRef.current = { clientX: e.clientX, clientY: e.clientY, active: true };
+      scheduleRender();
     }
-    function onLeave() { mouseRef.current.active = false; }
-    window.addEventListener('pointermove', onMove);
-    window.addEventListener('pointerleave', onLeave);
+    function onLeave() {
+      mouseRef.current.active = false;
+      scheduleRender();
+    }
+    function onVisibilityChange() {
+      isVisible = document.visibilityState === 'visible';
+      if (isVisible) scheduleRender();
+    }
+    isVisible = document.visibilityState === 'visible';
+    hoverTarget.addEventListener('pointermove', onMove);
+    hoverTarget.addEventListener('pointerleave', onLeave);
+    document.addEventListener('visibilitychange', onVisibilityChange);
 
     function onResize() {
       W = el.clientWidth; H = el.clientHeight;
       camera.aspect = W / H; camera.updateProjectionMatrix();
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, maxPixelRatio));
       renderer.setSize(W, H);
-      dotMat.uniforms.uPR.value = Math.min(window.devicePixelRatio, 2);
+      dotMat.uniforms.uPR.value = Math.min(window.devicePixelRatio, maxPixelRatio);
+      scheduleRender();
     }
     window.addEventListener('resize', onResize);
 
@@ -257,14 +288,24 @@ export function UnauthNetworkCanvas() {
     const clock = new THREE.Clock();
 
     function tick() {
-      raf = requestAnimationFrame(tick);
+      renderQueued = false;
+      if (!isVisible || !isInViewport) return;
+
+      const animateContinuously =
+        !prefersReducedMotion.matches && (revealProgIncomplete() || scrollActive() || mouseRef.current.active);
+      if (animateContinuously) {
+        raf = requestAnimationFrame(tick);
+        renderQueued = true;
+      }
       const t = clock.getElapsedTime();
       const posAttr = dotGeo.getAttribute('position') as THREE.BufferAttribute;
       const mouse   = mouseRef.current;
 
       /* Reveal progress (0 until triggered, then 0→1 over REVEAL_MS) */
       const revealElapsed = revealTriggered ? performance.now() - revealStartTime : 0;
-      const revealProg    = Math.min(1, revealElapsed / REVEAL_MS);
+      const revealProg = prefersReducedMotion.matches && revealTriggered
+        ? 1
+        : Math.min(1, revealElapsed / REVEAL_MS);
       const revealEased   = easeOutQuart(revealProg);
 
       /* Scale: 0.35 → 1.0, then GLOBE_SCALE */
@@ -280,7 +321,9 @@ export function UnauthNetworkCanvas() {
       /* Globe drifts left + pitches down as user scrolls past */
       globe.position.x = GLOBE_X - GLOBE_R * 0.65 * scrollT;
       globe.position.y = -GLOBE_R * 0.25 * scrollT;
-      globe.rotation.y += ROT_SPEED + scrollT * 0.006; // spins faster while exiting
+      if (!prefersReducedMotion.matches) {
+        globe.rotation.y += ROT_SPEED + scrollT * 0.006; // spins faster while exiting
+      }
       globe.rotation.x  = -Math.PI * 0.14 * scrollT;  // tips forward
 
       /* Fade out in second half of scroll exit */
@@ -307,7 +350,7 @@ export function UnauthNetworkCanvas() {
       }
 
       /* Dots — shimmer + mouse repulsion (globe-local 3D) */
-      for (let i = 0; i < N_DOTS; i++) {
+      for (let i = 0; i < dotCount; i++) {
         const d = dots[i];
         let x = d.bx + Math.sin(t * 0.22 + i * 0.29) * 0.014 * d.strength;
         let y = d.by + Math.cos(t * 0.18 + i * 0.17) * 0.011 * d.strength;
@@ -335,7 +378,7 @@ export function UnauthNetworkCanvas() {
       const drawn = new Set<string>();
       if (connectOp > 0.02 && hoverValid) {
         const nearDots: number[] = [];
-        for (let i = 0; i < N_DOTS; i++) {
+        for (let i = 0; i < dotCount; i++) {
           const dx = posAttr.getX(i) - hoverLocal.x;
           const dy = posAttr.getY(i) - hoverLocal.y;
           const dz = posAttr.getZ(i) - hoverLocal.z;
@@ -345,7 +388,7 @@ export function UnauthNetworkCanvas() {
         if (nearDots.length === 0) {
           let best = -1;
           let bestD = Infinity;
-          for (let i = 0; i < N_DOTS; i++) {
+          for (let i = 0; i < dotCount; i++) {
             const dx = posAttr.getX(i) - hoverLocal.x;
             const dy = posAttr.getY(i) - hoverLocal.y;
             const dz = posAttr.getZ(i) - hoverLocal.z;
@@ -391,15 +434,28 @@ export function UnauthNetworkCanvas() {
       connMat.opacity = connectOp * finalOp * 0.34;
 
       renderer.render(scene, camera);
+
+      if (!animateContinuously) {
+        cancelAnimationFrame(raf);
+        raf = 0;
+      }
     }
-    tick();
+    function revealProgIncomplete() {
+      return revealTriggered && performance.now() - revealStartTime < REVEAL_MS;
+    }
+    function scrollActive() {
+      return Math.abs(targetScrollT - scrollT) > 0.002 || targetScrollT > 0.001;
+    }
+
+    scheduleRender();
 
     return () => {
       cancelAnimationFrame(raf);
       io.disconnect();
       window.removeEventListener('scroll', onScroll);
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerleave', onLeave);
+      hoverTarget.removeEventListener('pointermove', onMove);
+      hoverTarget.removeEventListener('pointerleave', onLeave);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
       window.removeEventListener('resize', onResize);
       dotGeo.dispose(); dotMat.dispose(); connGeo.dispose(); connMat.dispose(); renderer.dispose();
       if (renderer.domElement.parentElement === el) el.removeChild(renderer.domElement);

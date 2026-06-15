@@ -52,6 +52,7 @@ export default function FoundationFigures() {
         <Reveal delay={200}>
           <Link
             href={FL_ROUTES.audit}
+            prefetch={false}
             className="mt-16 inline-flex items-center gap-1.5 rounded-full border border-[var(--fl-line)] bg-[var(--fl-paper)] px-6 py-3 text-[0.9375rem] font-semibold text-[var(--fl-ink)] transition-colors hover:border-[var(--fl-ink)]"
           >
             {FL_FIGURES.cta}

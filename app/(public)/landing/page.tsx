@@ -1,18 +1,24 @@
 import type { Metadata } from 'next';
+import dynamic from 'next/dynamic';
 import FoundationNav from './_components/foundation/FoundationNav';
 import FoundationHero from './_components/foundation/FoundationHero';
 import HeroPin from './_components/foundation/HeroPin';
-import UnauthIntakeContextEvidenceSection from '@/components/UnauthIntakeContextEvidenceSection';
-import EvidenceNotVerdictsRampSection from '@/components/EvidenceNotVerdictsRampSection';
-import UnauthLinearClaimHero from '@/components/UnauthLinearClaimHero';
-import UnauthClaimsRoadmapSection from '@/components/UnauthClaimsRoadmapSection';
-import BuiltForPurposeStack from '@/components/BuiltForPurposeStack';
-import FoundationFigures from './_components/foundation/FoundationFigures';
-import FoundationFaq from './_components/foundation/FoundationFaq';
 import FoundationFinalCta from './_components/foundation/FoundationFinalCta';
 import FoundationFooter from './_components/foundation/FoundationFooter';
-import { UnauthNetworkHero } from '@/components/UnauthNetworkHero';
 import foundationStyles from './_components/foundation/foundation.module.css';
+
+const UnauthNetworkHero = dynamic(
+  () => import('@/components/UnauthNetworkHero').then((mod) => mod.UnauthNetworkHero),
+);
+const UnauthGlobeHero = dynamic(
+  () => import('@/components/UnauthGlobeHero').then((mod) => mod.UnauthGlobeHero),
+);
+const UnauthLinearClaimHero = dynamic(() => import('@/components/UnauthLinearClaimHero'));
+const EvidenceNotVerdictsRampSection = dynamic(
+  () => import('@/components/EvidenceNotVerdictsRampSection'),
+);
+const BuiltForPurposeStack = dynamic(() => import('@/components/BuiltForPurposeStack'));
+const UnauthClaimsRoadmapSection = dynamic(() => import('@/components/UnauthClaimsRoadmapSection'));
 
 export const metadata: Metadata = {
   title: 'Unauth — Cross-Merchant Claim Evidence',
@@ -43,15 +49,13 @@ export default function LandingPage() {
         <HeroPin>
           <FoundationHero />
         </HeroPin>
-        <div className="relative z-10">
+        <div className="relative z-10 bg-white">
           <UnauthNetworkHero />
+          <UnauthGlobeHero />
           <UnauthLinearClaimHero />
-          <UnauthIntakeContextEvidenceSection />
           <EvidenceNotVerdictsRampSection />
-          <UnauthClaimsRoadmapSection />
           <BuiltForPurposeStack />
-          <FoundationFigures />
-          <FoundationFaq />
+          <UnauthClaimsRoadmapSection />
           <FoundationFinalCta />
           <FoundationFooter />
         </div>

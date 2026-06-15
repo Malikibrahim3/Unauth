@@ -21,10 +21,10 @@ import foundationStyles from '@/app/(public)/landing/_components/foundation/foun
 
 export default function UnauthLinearClaimHero() {
   return (
-    <section className="relative min-h-screen overflow-hidden bg-[#f7f7f5] text-[#111111]" data-nav-theme="light">
+    <section className="relative min-h-screen overflow-hidden bg-white text-[#111111] border-t border-black/[0.07]" data-nav-theme="light">
       <Background />
 
-      <main className="relative z-10 mx-auto max-w-[1536px] px-10 pb-20 pt-12">
+      <main className="relative z-10 mx-auto max-w-[1536px] px-5 pb-20 pt-16 sm:px-8 lg:px-10 lg:pt-12">
         <div className="mb-[42px] grid gap-8 lg:grid-cols-[minmax(0,0.9fr)_auto] lg:items-end">
           <div className="max-w-[690px]">
             <p className={foundationStyles.landingSectionEyebrow}>
@@ -46,9 +46,13 @@ export default function UnauthLinearClaimHero() {
           </div>
         </div>
 
-        <div className="relative mx-auto h-[630px] max-w-[1380px]">
+        <div className="relative mx-auto max-w-[1380px] lg:h-[630px]">
           <ClaimThread />
-          <ClaimsBoard />
+          {/* Board: stacks below the thread and scrolls horizontally on small
+              screens; pins beside it (absolute) from lg up. */}
+          <div className="-mx-5 mt-8 overflow-x-auto px-5 pb-3 sm:-mx-8 sm:px-8 lg:mx-0 lg:mt-0 lg:overflow-visible lg:px-0">
+            <ClaimsBoard />
+          </div>
         </div>
       </main>
     </section>
@@ -58,14 +62,14 @@ export default function UnauthLinearClaimHero() {
 function Background() {
   return (
     <div className="pointer-events-none absolute inset-0">
-      <div className="absolute inset-0 bg-[#f7f7f5]" />
+      <div className="absolute inset-0 bg-white" />
       <div className="absolute left-1/2 top-[190px] h-[540px] w-[980px] -translate-x-1/2 rounded-full bg-black/[0.045] blur-[120px]" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_42%,rgba(0,0,0,0.055),transparent_36%)]" />
       <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(0,0,0,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(0,0,0,0.05)_1px,transparent_1px)] bg-[size:64px_64px] opacity-[0.13] [mask-image:radial-gradient(circle_at_50%_45%,black_0%,transparent_63%)]" />
       <div className="absolute inset-x-0 top-0 h-[250px] bg-gradient-to-b from-white to-transparent" />
-      <div className="absolute inset-x-0 bottom-0 h-[420px] bg-gradient-to-t from-[#f7f7f5] via-[#f7f7f5]/94 to-transparent" />
-      <div className="absolute left-0 top-0 h-full w-[430px] bg-gradient-to-r from-[#f7f7f5] to-transparent" />
-      <div className="absolute right-0 top-0 h-full w-[430px] bg-gradient-to-l from-[#f7f7f5] to-transparent" />
+      <div className="absolute inset-x-0 bottom-0 h-[420px] bg-gradient-to-t from-white via-white/94 to-transparent" />
+      <div className="absolute left-0 top-0 h-full w-[430px] bg-gradient-to-r from-white to-transparent" />
+      <div className="absolute right-0 top-0 h-full w-[430px] bg-gradient-to-l from-white to-transparent" />
     </div>
   );
 }
@@ -77,7 +81,7 @@ function ClaimThread() {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-80px' }}
       transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-      className="absolute left-0 top-0 z-20 w-[508px] overflow-hidden rounded-[16px] border border-black/[0.12] bg-white/92 shadow-[0_1px_0_rgba(255,255,255,0.9)_inset,0_18px_45px_rgba(0,0,0,0.10),0_58px_120px_rgba(0,0,0,0.16)] backdrop-blur-2xl"
+      className="relative z-20 mx-auto w-full max-w-[520px] overflow-hidden rounded-[16px] border border-black/[0.12] bg-white/92 shadow-[0_1px_0_rgba(255,255,255,0.9)_inset,0_18px_45px_rgba(0,0,0,0.10),0_58px_120px_rgba(0,0,0,0.16)] backdrop-blur-2xl lg:absolute lg:left-0 lg:top-0 lg:mx-0 lg:w-[508px]"
     >
       <div className="flex h-[70px] items-center justify-between border-b border-black/[0.08] px-7">
         <div className="flex items-center gap-4 text-[18px] font-medium tracking-[-0.03em] text-black/48">
@@ -214,7 +218,7 @@ function ClaimsBoard() {
       whileInView={{ opacity: 1, x: 0 }}
       viewport={{ once: true, margin: '-80px' }}
       transition={{ duration: 0.85, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-      className="absolute left-[508px] top-[29px] z-10 h-[580px] w-[914px] overflow-hidden rounded-[16px] border border-black/[0.11] bg-white/72 shadow-[0_1px_0_rgba(255,255,255,0.9)_inset,0_18px_46px_rgba(0,0,0,0.09),0_60px_130px_rgba(0,0,0,0.14)] backdrop-blur-xl"
+      className="relative z-10 h-[580px] w-[914px] overflow-hidden rounded-[16px] border border-black/[0.11] bg-white/72 shadow-[0_1px_0_rgba(255,255,255,0.9)_inset,0_18px_46px_rgba(0,0,0,0.09),0_60px_130px_rgba(0,0,0,0.14)] backdrop-blur-xl lg:absolute lg:left-[508px] lg:top-[29px]"
     >
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_36%_24%,rgba(0,0,0,0.035),transparent_38%)]" />
 

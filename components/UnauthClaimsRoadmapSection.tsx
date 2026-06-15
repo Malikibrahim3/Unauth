@@ -236,10 +236,10 @@ const columns = [
 
 export default function UnauthClaimsRoadmapSection() {
   return (
-    <section className="relative min-h-screen overflow-hidden bg-[#f6f6f4] text-[#111111]" data-nav-theme="light">
+    <section id="evidence" className="relative min-h-screen scroll-mt-24 overflow-hidden bg-white text-[#111111] border-t border-black/[0.07]" data-nav-theme="light">
       <Background />
 
-      <main className="relative z-10 mx-auto max-w-[1536px] px-[84px] pb-[58px] pt-[52px]">
+      <main className="relative z-10 mx-auto max-w-[1536px] px-5 pb-[58px] pt-16 sm:px-8 lg:px-[84px] lg:pt-[52px]">
         <div className="mx-auto mb-9 flex max-w-[1320px] flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-[700px]">
             <p className={foundationStyles.landingSectionEyebrow}>
@@ -250,11 +250,12 @@ export default function UnauthClaimsRoadmapSection() {
             </h2>
             <p className={`${foundationStyles.landingSectionLead} max-w-[650px]`}>
               Every complaint type carries timing, order, and support context. Unauth groups the
-              reason, finds repeated signals, and keeps the decision with your team.
+              reason, finds repeated signals, and attaches a graded context pack to every ticket.
             </p>
           </div>
           <Link
             href="/audit"
+            prefetch={false}
             className="inline-flex h-11 w-max items-center gap-2 rounded-full border border-black/[0.14] bg-white px-5 text-[14px] font-semibold tracking-[-0.02em] text-black/72 shadow-[0_10px_28px_rgba(0,0,0,0.06)] transition hover:border-black/28 hover:text-black"
           >
             Explore claim patterns
@@ -268,7 +269,11 @@ export default function UnauthClaimsRoadmapSection() {
           transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
           className="relative mx-auto h-[660px] max-w-[1320px]"
         >
-          <ClaimsBoard />
+          {/* Horizontal scroll on small screens so all four quarters stay
+              readable; full board from lg up. */}
+          <div className="-mx-5 h-full overflow-x-auto px-5 sm:-mx-8 sm:px-8 lg:mx-0 lg:overflow-visible lg:px-0">
+            <ClaimsBoard />
+          </div>
         </motion.div>
 
         <BottomLabels />
@@ -280,10 +285,10 @@ export default function UnauthClaimsRoadmapSection() {
 function Background() {
   return (
     <div className="pointer-events-none absolute inset-0">
-      <div className="absolute inset-0 bg-[#f6f6f4]" />
+      <div className="absolute inset-0 bg-white" />
       <div className="absolute left-1/2 top-[300px] h-[420px] w-[1050px] -translate-x-1/2 rounded-full bg-black/[0.04] blur-[105px]" />
       <div className="absolute inset-x-0 top-0 h-[215px] bg-gradient-to-b from-white to-transparent" />
-      <div className="absolute inset-x-0 bottom-0 h-[370px] bg-gradient-to-t from-white via-[#f6f6f4]/96 to-transparent" />
+      <div className="absolute inset-x-0 bottom-0 h-[370px] bg-gradient-to-t from-white via-white/96 to-transparent" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,transparent_56%,rgba(0,0,0,0.05)_78%,rgba(0,0,0,0.10)_100%)]" />
     </div>
   );
@@ -291,7 +296,7 @@ function Background() {
 
 function ClaimsBoard() {
   return (
-    <div className="relative mx-auto h-full w-full overflow-hidden rounded-[16px] border border-black/[0.08] bg-white/74 shadow-[0_36px_110px_rgba(0,0,0,0.14)]">
+    <div className="relative mx-auto h-full w-full min-w-[900px] overflow-hidden rounded-[16px] border border-black/[0.08] bg-white/74 shadow-[0_36px_110px_rgba(0,0,0,0.14)] lg:min-w-0">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_28%,rgba(0,0,0,0.035),transparent_32%)]" />
 
       <div className="relative grid h-full grid-cols-4">
@@ -420,7 +425,7 @@ function StatusDot({ tone }: { tone: CardTone }) {
 
 function BottomLabels() {
   return (
-    <div className="relative z-10 mx-auto mt-[60px] grid max-w-[1320px] grid-cols-4">
+    <div className="relative z-10 mx-auto mt-12 grid max-w-[1320px] grid-cols-1 gap-y-8 sm:grid-cols-2 sm:gap-y-10 lg:mt-[60px] lg:grid-cols-4 lg:gap-y-0">
       <BottomLabel title="Claim intake" body="Customer complaints are grouped by reason, timing, and order context." />
       <BottomLabel title="Evidence pipeline" body="Repeated patterns are surfaced without changing the helpdesk workflow." bordered />
       <BottomLabel title="Cross-merchant context" body="Signals are matched privacy-safely across participating merchants." bordered />
@@ -439,7 +444,7 @@ function BottomLabel({
   bordered?: boolean;
 }) {
   return (
-    <div className={`min-h-[64px] px-6 ${bordered ? 'border-l border-black/[0.08]' : ''}`}>
+    <div className={`min-h-[64px] px-0 lg:px-6 ${bordered ? 'lg:border-l lg:border-black/[0.08]' : ''}`}>
       <h3 className="text-[17px] font-medium tracking-[-0.04em] text-black/48">{title}</h3>
       <p className="mt-3 max-w-[250px] text-[14px] leading-[1.45] tracking-[-0.015em] text-black/34">
         {body}

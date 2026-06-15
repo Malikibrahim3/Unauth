@@ -35,6 +35,7 @@ export default function FoundationHowItWorks() {
                 </p>
                 <Link
                   href="/audit"
+                  prefetch={false}
                   className="mt-7 inline-flex items-center gap-2 rounded-full border border-[var(--fl-line-strong)] px-5 py-3 text-[0.9375rem] font-semibold text-[var(--fl-ink)] transition-colors hover:bg-[rgba(26,24,20,0.04)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--fl-ink)]"
                 >
                   Review a claim example

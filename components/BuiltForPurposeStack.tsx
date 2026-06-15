@@ -2,12 +2,11 @@
 
 import type { ReactNode } from 'react';
 import Image from 'next/image';
-import { ArrowRight } from 'lucide-react';
 import foundationStyles from '@/app/(public)/landing/_components/foundation/foundation.module.css';
 
 function FourPartLinearSection() {
   return (
-    <div className="relative pt-8 lg:pt-10">
+    <div className="relative pt-14 lg:pt-16">
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute left-1/2 top-[-160px] h-[420px] w-[920px] -translate-x-1/2 rounded-full bg-black/[0.025] blur-[110px]" />
       </div>
@@ -36,9 +35,9 @@ function FourPartLinearSection() {
 
         <FourPartCard
           number="4.0"
-          label="Decide"
-          heading="Your team stays in control"
-          body="Context surfaces beside the ticket. Evidence in, verdict yours."
+          label="Review"
+          heading="Reply with full context"
+          body="Order history, delivery signals, and cross-merchant flags are already loaded when the ticket opens. No tabs, no manual lookups."
         />
       </div>
     </div>
@@ -68,14 +67,6 @@ function FourPartCard({
       </h3>
 
       <p className={`${foundationStyles.landingSectionBody} mt-4 max-w-[270px]`}>{body}</p>
-
-      <a
-        href="#"
-        className="mt-8 inline-flex items-center gap-2 text-[14px] font-medium tracking-[-0.02em] text-black/52 transition hover:text-black"
-      >
-        Learn more
-        <ArrowRight size={14} strokeWidth={1.7} />
-      </a>
     </article>
   );
 }
@@ -83,7 +74,7 @@ function FourPartCard({
 export default function BuiltForPurposeStack() {
   return (
     <section
-      className="relative overflow-hidden bg-[#f7f7f5] pb-14 text-[#111111] sm:pb-16 lg:pb-20"
+      className="relative overflow-hidden bg-white pb-14 text-[#111111] sm:pb-16 lg:pb-20 border-t border-black/[0.07]"
       data-nav-theme="light"
     >
       <Background />
@@ -91,6 +82,7 @@ export default function BuiltForPurposeStack() {
       <div className="relative mx-auto max-w-[1380px] px-5 sm:px-8 lg:px-10 xl:px-12">
         <div className="grid gap-10 pb-8 pt-14 sm:pt-16 lg:grid-cols-[minmax(300px,420px)_minmax(0,1fr)] lg:items-center lg:gap-12 xl:gap-16">
           <div className="max-w-[620px] pt-2 lg:max-w-none">
+            <p className={foundationStyles.landingSectionEyebrow}>Integrations</p>
             <h2 className={`${foundationStyles.landingSectionTitle} max-w-[440px]`}>
               Connect your stack in minutes.
             </h2>
@@ -130,7 +122,7 @@ export default function BuiltForPurposeStack() {
 function Background() {
   return (
     <div className="pointer-events-none absolute inset-0">
-      <div className="absolute inset-0 bg-[#f7f7f5]" />
+      <div className="absolute inset-0 bg-white" />
       <div className="absolute left-[22%] top-[160px] h-[420px] w-[620px] rounded-full bg-black/[0.035] blur-[110px]" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_38%_32%,rgba(0,0,0,0.038)_0%,transparent_52%)]" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,transparent_60%,rgba(0,0,0,0.06)_86%,rgba(0,0,0,0.12)_100%)]" />
@@ -145,79 +137,109 @@ function StackDiagram() {
       <IsometricPlate className="left-[20px] top-[245px]" />
       <IsometricPlate className="left-[20px] top-[450px]" />
 
-      <StackArrow x={418} y={228} height={14} />
-      <StackArrow x={418} y={433} height={14} />
+      {/* Left vertex = plate left(20) + SVG vertex x(20) = 40
+          Right vertex = plate left(20) + SVG vertex x(420) = 440
+          Gap 1: plate1 side bottom(174) → plate2 left vertex(325), centre=249, yTop=204
+          Gap 2: plate2 side bottom(379) → plate3 left vertex(530), centre=454, yTop=409 */}
+      <StackArrowColumn x={40}  yTop={204} />
+      <StackArrowColumn x={440} yTop={204} baseDelay={0.18} />
 
-      <Connector fromX={455} fromY={125} toX={520} />
-      <Connector fromX={455} fromY={330} toX={520} />
-      <Connector fromX={455} fromY={535} toX={520} />
+      <StackArrowColumn x={40}  yTop={409} />
+      <StackArrowColumn x={440} yTop={409} baseDelay={0.18} />
+
+      <Connector fromX={455} fromY={147} toX={520} />
+      <Connector fromX={455} fromY={352} toX={520} />
+      <Connector fromX={455} fromY={557} toX={520} />
     </>
+  );
+}
+
+function StackArrowColumn({ x, yTop, count = 5, baseDelay = 0 }: { x: number; yTop: number; count?: number; baseDelay?: number }) {
+  const spacing = 18;
+  const totalH = count * spacing;
+  return (
+    <svg
+      className="absolute overflow-visible"
+      style={{ left: x - 6, top: yTop, width: 12, height: totalH }}
+      aria-hidden
+    >
+      <style>{`
+        @keyframes ua-flow-up {
+          0%   { opacity: 0.12; transform: translateY(3px);  }
+          45%  { opacity: 0.85; transform: translateY(0px);  }
+          100% { opacity: 0.12; transform: translateY(-3px); }
+        }
+      `}</style>
+      {Array.from({ length: count }, (_, i) => {
+        const cy = totalH - i * spacing - 6;
+        const delay = `${(baseDelay + i * 0.14).toFixed(2)}s`;
+        return (
+          <path
+            key={i}
+            d={`M2.5 ${cy + 5} L6 ${cy} L9.5 ${cy + 5}`}
+            fill="none"
+            stroke="rgba(0,0,0,0.75)"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{ animation: `ua-flow-up 1.05s ease-in-out infinite`, animationDelay: delay }}
+          />
+        );
+      })}
+    </svg>
   );
 }
 
 function IsometricPlate({ className, prominent = false }: { className: string; prominent?: boolean }) {
   const uid = className.replace(/\W/g, '');
+  const strokeColor = prominent ? 'rgba(0,0,0,0.44)' : 'rgba(0,0,0,0.28)';
+
+  // r=8 rounded corners, pre-computed for each vertex.
+  // Outer silhouette: (220,10)→(420,80)→(420,134)→(220,204)→(20,134)→(20,80)
+  const outerPath =
+    'M 212.44 12.64 Q 220 10 227.56 12.64 ' +
+    'L 412.44 77.36 Q 420 80 420 88 ' +
+    'L 420 126 Q 420 134 412.44 136.64 ' +
+    'L 227.56 201.36 Q 220 204 212.44 201.36 ' +
+    'L 27.56 136.64 Q 20 134 20 126 ' +
+    'L 20 88 Q 20 80 27.56 77.36 Z';
+
+  // Top face: (220,10)→(420,80)→(220,150)→(20,80)
+  const topFacePath =
+    'M 212.44 12.64 Q 220 10 227.56 12.64 ' +
+    'L 412.44 77.36 Q 420 80 412.44 82.64 ' +
+    'L 227.56 147.36 Q 220 150 212.44 147.36 ' +
+    'L 27.56 82.64 Q 20 80 27.56 77.36 Z';
+
+  // Interior crease — fold line between top face and side band
+  const creasePath =
+    'M 27.56 82.64 L 212.44 147.36 Q 220 150 227.56 147.36 L 412.44 82.64';
 
   return (
-    <div className={`absolute h-[190px] w-[440px] ${className}`}>
-      <svg
-        viewBox="0 0 440 190"
-        width={440}
-        height={190}
-        className="block"
-        aria-hidden
-      >
+    <div className={`absolute h-[226px] w-[440px] ${className}`}>
+      <svg viewBox="0 0 440 226" width={440} height={226} className="block" aria-hidden>
         <defs>
           <filter id={`plate-shadow-${uid}`} x="-20%" y="-20%" width="140%" height="150%">
-            <feDropShadow dx="0" dy="10" stdDeviation="12" floodColor="#000000" floodOpacity="0.16" />
+            <feDropShadow dx="0" dy="10" stdDeviation="12" floodColor="#000000" floodOpacity="0.14" />
           </filter>
         </defs>
 
-        <polygon
-          points="20,80 220,150 420,80 420,98 220,168 20,98"
-          fill="#e6e6e2"
-          stroke="rgba(0,0,0,0.26)"
-          strokeWidth="1"
-        />
-        <polygon
-          points="220,10 420,80 220,150 20,80"
-          fill="#f5f5f2"
-          stroke={prominent ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.34)'}
-          strokeWidth="1"
-          filter={`url(#plate-shadow-${uid})`}
-        />
+        {/* Full silhouette — side fill + shadow */}
+        <path d={outerPath} fill="#e6e6e2" filter={`url(#plate-shadow-${uid})`} />
+
+        {/* Top face — lighter fill drawn over the silhouette */}
+        <path d={topFacePath} fill="#f5f5f2" />
+
+        {/* Outer stroke — single clean outline, no double-stroke */}
+        <path d={outerPath} fill="none" stroke={strokeColor} strokeWidth="1.5" strokeLinejoin="round" />
+
+        {/* Interior crease between top face and side band */}
+        <path d={creasePath} fill="none" stroke={strokeColor} strokeWidth="1" opacity="0.55" />
       </svg>
     </div>
   );
 }
 
-function StackArrow({ x, y, height }: { x: number; y: number; height: number }) {
-  return (
-    <svg
-      className="absolute"
-      style={{ left: x - 6, top: y, width: 12, height: height + 10 }}
-      aria-hidden
-    >
-      <line
-        x1="6"
-        y1={height + 6}
-        x2="6"
-        y2="4"
-        stroke="rgba(0,0,0,0.86)"
-        strokeWidth="1.5"
-        strokeDasharray="2 4"
-      />
-      <path
-        d="M2.5 9 L6 4 L9.5 9"
-        fill="none"
-        stroke="rgba(0,0,0,0.86)"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
 
 function Connector({ fromX, fromY, toX }: { fromX: number; fromY: number; toX: number }) {
   const width = toX - fromX;
@@ -245,7 +267,7 @@ function Connector({ fromX, fromY, toX }: { fromX: number; fromY: number; toX: n
 function EvidenceAnnotation() {
   return (
     <AnnotationBlock
-      className="left-[520px] top-[120px]"
+      className="left-[520px] top-[142px]"
       eyebrow="UNAUTH"
       eyebrowPill
       title="Evidence layer"
@@ -257,7 +279,7 @@ function EvidenceAnnotation() {
 function HelpdeskAnnotation() {
   return (
     <AnnotationBlock
-      className="left-[520px] top-[311px]"
+      className="left-[520px] top-[333px]"
       eyebrow="HELPDESK"
       title="Your helpdesk"
       body="Evidence appears beside the ticket before your team replies"
@@ -268,7 +290,7 @@ function HelpdeskAnnotation() {
 function StoreAnnotation() {
   return (
     <AnnotationBlock
-      className="left-[520px] top-[544px]"
+      className="left-[520px] top-[566px]"
       eyebrow="STORE"
       title="Your store"
       body="Orders, customers, deliveries, refunds, and chargebacks"
@@ -306,7 +328,7 @@ function AnnotationBlock({
 
 function HelpdeskLogoRail() {
   return (
-    <LogoRail className="left-[780px] top-[311px]" label="HELPDESK">
+    <LogoRail className="left-[780px] top-[333px]" label="HELPDESK">
       <LogoRow src="/integrations/gorgias.png" name="Gorgias" />
       <LogoRow src="/integrations/zendesk.svg" name="Zendesk" />
       <LogoRow src="/integrations/freshdesk.svg" name="Freshdesk" />
@@ -316,7 +338,7 @@ function HelpdeskLogoRail() {
 
 function StoreLogoRail() {
   return (
-    <LogoRail className="left-[780px] top-[544px]" label="STORE">
+    <LogoRail className="left-[780px] top-[566px]" label="STORE">
       <LogoRow src="/integrations/shopify.svg" name="Shopify" />
       <LogoRow src="/integrations/bigcommerce.svg" name="BigCommerce" />
       <LogoRow src="/integrations/woocommerce.svg" name="WooCommerce" />

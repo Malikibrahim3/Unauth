@@ -13,6 +13,7 @@ export default function FoundationHeroCta() {
     <div className="pointer-events-none absolute inset-x-0 top-0 z-30 -translate-y-full">
       <Link
         href={FL_ROUTES.audit}
+        prefetch={false}
         className={`${styles.ctaBar} pointer-events-auto flex w-full items-center justify-between gap-5 bg-[var(--fl-dusk-2)] px-7 py-5 text-[1.375rem] font-medium text-[var(--fl-on-color)] transition-colors hover:bg-[var(--fl-dusk-1)] sm:inline-flex sm:w-auto sm:min-w-[28.6rem] sm:px-8 sm:text-[1.4375rem]`}
       >
         {FL_HERO.pinnedCta}

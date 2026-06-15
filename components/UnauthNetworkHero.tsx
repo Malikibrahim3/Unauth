@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import { ChevronRight, Network } from 'lucide-react';
-import { UnauthNetworkCanvas } from './UnauthNetworkCanvas';
 import Reveal from '@/app/(public)/landing/_components/Reveal';
 import { FL_NETWORK_HERO, FL_ROUTES } from '@/app/(public)/landing/_lib/foundationContent';
 import styles from '@/app/(public)/landing/_components/foundation/foundation.module.css';
@@ -8,17 +7,12 @@ import styles from '@/app/(public)/landing/_components/foundation/foundation.mod
 export function UnauthNetworkHero() {
   return (
     <section
-      className={`${styles.networkHeroField} min-h-[100svh]`}
+      id="network"
+      className={`${styles.networkHeroField} min-h-[100svh] scroll-mt-24 border-t border-black/[0.07]`}
       data-nav-theme="light"
       aria-labelledby="fl-network-hero-heading"
     >
-      <UnauthNetworkCanvas />
 
-      {/* Left-to-right scrim — keeps globe behind text without blocking it */}
-      {/* fl-bg = #F6F5F3 → rgba(246,245,243) */}
-      <div className="pointer-events-none absolute inset-0 z-[1] bg-[linear-gradient(to_right,rgba(246,245,243,1)_0%,rgba(246,245,243,0.97)_32%,rgba(246,245,243,0.75)_50%,rgba(246,245,243,0.18)_64%,transparent_76%)]" />
-      {/* Bottom fade */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-48 bg-gradient-to-b from-transparent to-[#F6F5F3]" />
 
       <div className="relative z-10 mx-auto flex min-h-[100svh] w-full max-w-[100rem] flex-col justify-center px-5 py-24 sm:px-10 sm:py-28">
         <div className="max-w-[46rem]">
@@ -51,11 +45,11 @@ export function UnauthNetworkHero() {
           {/* CTAs */}
           <Reveal delay={340}>
             <div className="mt-8 flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-6">
-              <Link href={FL_ROUTES.audit} className={styles.heroCtaPrimary}>
+              <Link href={FL_ROUTES.audit} prefetch={false} className={styles.heroCtaPrimary}>
                 Get a Demo
                 <ChevronRight size={16} aria-hidden />
               </Link>
-              <Link href="/landing#about" className={styles.heroCtaSecondary}>
+              <Link href="/landing#how-it-works" className={styles.heroCtaSecondary}>
                 See how it works
                 <ChevronRight size={16} aria-hidden />
               </Link>

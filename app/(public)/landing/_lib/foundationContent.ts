@@ -27,11 +27,11 @@ export const FL_ROUTES = {
 
 export const FL_NAV = {
   links: [
-    { label: 'Platform', href: '/landing#about' },
-    { label: 'Solutions', href: '/landing#evidence' },
-    { label: 'Resources', href: '/landing#faq' },
+    { label: 'Platform', href: '/landing#network' },
+    { label: 'How it works', href: '/landing#how-it-works' },
+    { label: 'Evidence', href: '/landing#evidence' },
     { label: 'Pricing', href: FL_ROUTES.pricing },
-    { label: 'Company', href: '/landing#about' },
+    { label: 'FAQ', href: '/landing#faq' },
   ],
   signIn: 'Sign in',
   cta: 'Get a Demo',
@@ -508,8 +508,8 @@ export const FL_FOOTER = {
     {
       heading: 'Product',
       links: [
-        { label: 'Product', href: '/landing#about' },
-        { label: 'Network', href: '/landing#network' },
+        { label: 'Platform', href: '/landing#network' },
+        { label: 'How it works', href: '/landing#how-it-works' },
         { label: 'Evidence', href: '/landing#evidence' },
         { label: 'Pricing', href: FL_ROUTES.pricing },
         { label: 'Live demo', href: FL_ROUTES.demo },

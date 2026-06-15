@@ -13,18 +13,15 @@ const NAV_PROBE_Y = 38;
 function resolveNavTheme(navRoot: HTMLElement | null): NavTheme {
   const x = Math.round(window.innerWidth / 2);
   const y = NAV_PROBE_Y;
-  const stack = document.elementsFromPoint(x, y);
+  const hit = document.elementFromPoint(x, y);
 
-  for (const hit of stack) {
-    if (navRoot?.contains(hit)) continue;
-
+  if (hit && !navRoot?.contains(hit)) {
     let node = hit as HTMLElement | null;
     while (node) {
       const theme = node.dataset.navTheme;
       if (theme === 'dark' || theme === 'light') return theme;
       node = node.parentElement;
     }
-    break;
   }
 
   return 'light';
@@ -86,7 +83,7 @@ export default function FoundationNav() {
       <header className={`${styles.heroNavbar} ${onLightBg || open ? styles.heroNavbarLight : ''}`}>
         <div ref={pillRef} className={styles.heroNavbarPill}>
           <div className={styles.heroNavbarInner}>
-            <Link href="/landing" aria-label="Unauth home" className={styles.heroNavLogoGroup}>
+            <Link href="/landing" prefetch={false} aria-label="Unauth home" className={styles.heroNavLogoGroup}>
               <Layers className={styles.heroNavLogoIcon} strokeWidth={2} aria-hidden />
               <span className={styles.heroLogo}>Unauth</span>
             </Link>
@@ -100,10 +97,10 @@ export default function FoundationNav() {
             </nav>
 
             <div className={styles.heroNavRight}>
-              <Link href={FL_ROUTES.login} className={styles.heroNavSignIn}>
+              <Link href={FL_ROUTES.login} prefetch={false} className={styles.heroNavSignIn}>
                 {FL_NAV.signIn}
               </Link>
-              <Link href={FL_ROUTES.audit} className={styles.heroNavCta} aria-label={FL_NAV.cta}>
+              <Link href={FL_ROUTES.audit} prefetch={false} className={styles.heroNavCta} aria-label={FL_NAV.cta}>
                 <span className={styles.heroNavCtaText}>{FL_NAV.cta}</span>
                 <span className={styles.heroNavCtaArrow} aria-hidden>
                   <ChevronRight size={14} strokeWidth={2.25} />
@@ -143,6 +140,7 @@ export default function FoundationNav() {
           ))}
           <Link
             href={FL_ROUTES.login}
+            prefetch={false}
             onClick={() => setOpen(false)}
             className={`${styles.heroNavSheetLink} ${styles.heroNavSheetSignIn}`}
           >
@@ -151,6 +149,7 @@ export default function FoundationNav() {
           <div className={`mt-2 border-t pt-2 ${onLightBg ? 'border-[rgba(0,0,0,0.08)]' : 'border-[rgba(255,255,255,0.1)]'}`}>
             <Link
               href={FL_ROUTES.audit}
+              prefetch={false}
               onClick={() => setOpen(false)}
               className={`${styles.heroNavCta} w-full`}
             >
