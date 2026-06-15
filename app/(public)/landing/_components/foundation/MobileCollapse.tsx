@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { Maximize2, Minimize2 } from 'lucide-react';
 import styles from './foundation.module.css';
 
 /**
@@ -41,7 +41,11 @@ export default function MobileCollapse({
         data-expand-toggle
         className={styles.collapseToggle}
       >
-        <ChevronDown size={20} strokeWidth={2.25} className={styles.collapseChevron} aria-hidden />
+        {expanded ? (
+          <Minimize2 size={17} strokeWidth={2.25} className={styles.collapseIcon} aria-hidden />
+        ) : (
+          <Maximize2 size={17} strokeWidth={2.25} className={styles.collapseIcon} aria-hidden />
+        )}
       </button>
     </div>
   );

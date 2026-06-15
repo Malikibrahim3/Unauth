@@ -65,10 +65,12 @@ export default function UnauthLinearClaimHero() {
             Common complaints become cross-merchant evidence.
           </h2>
 
-          <div className="mt-8 flex flex-col items-center gap-8">
+          <div className="mt-8 flex flex-col gap-7">
             <ClaimThread />
-            <div className={`${foundationStyles.mobileFitBoard914} mx-auto`}>
-              <ClaimsBoard />
+            <div className={foundationStyles.artifactRail}>
+              <div className={foundationStyles.artifactRailScroll}>
+                <ClaimsBoard />
+              </div>
             </div>
           </div>
 

@@ -126,20 +126,22 @@ export default function BuiltForPurposeStack() {
             Connect your stack in minutes.
           </h2>
 
-          <div className="relative mt-8 flex w-full items-center justify-center overflow-hidden">
-            <div className="relative h-[210px] w-full max-w-[765px] overflow-visible sm:h-[330px]">
-              <div className="absolute left-[46%] top-0 w-[1020px] origin-top -translate-x-1/2 scale-[0.29] sm:scale-[0.44]">
-                <div className="pl-5 font-mono text-[25px] tracking-[0.12em] text-black/40">INTEGRATION</div>
+          <div className={`${foundationStyles.artifactRail} mt-8`}>
+            <div className={foundationStyles.artifactRailScroll}>
+              <div className="relative h-[372px] w-[600px] sm:h-[472px] sm:w-[760px]">
+                <div className="absolute left-0 top-0 w-[1020px] origin-top-left scale-[0.56] sm:scale-[0.72]">
+                  <div className="pl-5 font-mono text-[25px] tracking-[0.12em] text-black/40">INTEGRATION</div>
 
-                <div className="relative mt-6 h-[560px] w-full" aria-hidden>
-                  <StackDiagram />
+                  <div className="relative mt-6 h-[560px] w-full" aria-hidden>
+                    <StackDiagram />
 
-                  <div className="absolute inset-0 translate-x-[3%]">
-                    <EvidenceAnnotation />
-                    <HelpdeskAnnotation />
-                    <StoreAnnotation />
-                    <HelpdeskLogoRail />
-                    <StoreLogoRail />
+                    <div className="absolute inset-0 translate-x-[3%]">
+                      <EvidenceAnnotation />
+                      <HelpdeskAnnotation />
+                      <StoreAnnotation />
+                      <HelpdeskLogoRail />
+                      <StoreLogoRail />
+                    </div>
                   </div>
                 </div>
               </div>

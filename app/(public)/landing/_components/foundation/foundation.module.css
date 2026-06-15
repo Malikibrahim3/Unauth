@@ -1695,8 +1695,8 @@
     margin-top: 1.5rem;
   }
 
-  /* Simple square button pinned to the card's top-right corner —
-     matches the in-card "open" buttons used elsewhere on the page. */
+  /* Stripe-style square "expand" affordance, pinned top-right.
+     Brand-tinted by default; fills solid (active) when expanded. */
   .collapseToggle {
     position: absolute;
     top: 0;
@@ -1705,33 +1705,31 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    height: 40px;
-    width: 40px;
-    border-radius: 10px;
-    border: 1px solid rgba(0, 0, 0, 0.12);
-    background: #ffffff;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
-    color: rgba(17, 17, 17, 0.66);
+    height: 42px;
+    width: 42px;
+    border-radius: 11px;
+    border: 1px solid color-mix(in srgb, var(--landing-accent, #7b2d26) 18%, transparent);
+    background: var(--accent-50, #faf0ec);
+    color: var(--landing-accent, #7b2d26);
     cursor: pointer;
-    transition: border-color 0.2s ease, color 0.2s ease;
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease,
+      transform 0.12s ease, box-shadow 0.2s ease;
     -webkit-tap-highlight-color: transparent;
   }
 
-  .collapseToggle:hover {
-    border-color: rgba(0, 0, 0, 0.28);
-    color: rgba(17, 17, 17, 0.9);
-  }
-
   .collapseToggle:active {
-    transform: scale(0.96);
+    transform: scale(0.94);
   }
 
-  .collapseChevron {
-    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  [data-collapse][data-expanded='true'] .collapseToggle {
+    background: var(--landing-accent, #7b2d26);
+    border-color: var(--landing-accent, #7b2d26);
+    color: #ffffff;
+    box-shadow: 0 6px 18px color-mix(in srgb, var(--landing-accent, #7b2d26) 28%, transparent);
   }
 
-  [data-collapse][data-expanded='true'] .collapseChevron {
-    transform: rotate(180deg);
+  .collapseIcon {
+    transition: transform 0.2s ease;
   }
 
   /* Mobile typographic scale — keep section titles from dominating the card. */
@@ -1748,24 +1746,39 @@
   }
 }
 
-/* Fixed-width mockup artifacts scaled to fit the mobile viewport.
-   `zoom` resizes the layout box (no leftover whitespace, no clipping)
-   and is supported by all modern engines incl. mobile Safari/Chrome.
-   These only apply ≤768px; desktop keeps the original 1:1 artifact. */
+/* Wide mockup artifacts (boards, stack diagram) are shown at full, legible
+   1:1 size inside a horizontally-scrollable rail that bleeds to the screen
+   edges — matching how Stripe presents large artifacts on mobile (legible,
+   cropped at the edge, never shrunk). Applies ≤768px only. */
 @media (max-width: 768px) {
-  .mobileFitBoard914 {
-    zoom: 0.74;
+  .artifactRail {
+    position: relative;
+    margin-left: -1rem;
+    margin-right: -1rem;
   }
-  .mobileFitBoard900 {
-    zoom: 0.76;
-  }
-}
 
-@media (max-width: 480px) {
-  .mobileFitBoard914 {
-    zoom: 0.37;
+  .artifactRailScroll {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 0.5rem 1rem 0.75rem;
   }
-  .mobileFitBoard900 {
-    zoom: 0.38;
+
+  .artifactRailScroll::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Right-edge fade hinting there is more to scroll. */
+  .artifactRail::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 2rem;
+    height: 100%;
+    background: linear-gradient(to left, #ffffff, transparent);
+    pointer-events: none;
+    z-index: 2;
   }
 }

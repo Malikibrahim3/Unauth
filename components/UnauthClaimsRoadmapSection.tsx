@@ -289,9 +289,11 @@ export default function UnauthClaimsRoadmapSection() {
             Patterns your queue already knows.
           </h2>
 
-          <div className="mt-8 flex justify-center">
-            <div className={`${foundationStyles.mobileFitBoard900} h-[660px] w-[900px]`}>
-              <ClaimsBoard />
+          <div className={`${foundationStyles.artifactRail} mt-8`}>
+            <div className={foundationStyles.artifactRailScroll}>
+              <div className="h-[620px] w-[900px]">
+                <ClaimsBoard />
+              </div>
             </div>
           </div>
 
