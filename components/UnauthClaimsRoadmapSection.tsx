@@ -24,6 +24,7 @@ import {
   UserRound,
   UsersRound,
 } from 'lucide-react';
+import MobileCollapse from '@/app/(public)/landing/_components/foundation/MobileCollapse';
 import foundationStyles from '@/app/(public)/landing/_components/foundation/foundation.module.css';
 
 type CardTone = 'yellow' | 'red' | 'purple' | 'green' | 'neutral';
@@ -239,7 +240,8 @@ export default function UnauthClaimsRoadmapSection() {
     <section id="evidence" className="relative min-h-screen scroll-mt-24 overflow-hidden bg-white text-[#111111] border-t border-black/[0.07]" data-nav-theme="light">
       <Background />
 
-      <main className="relative z-10 mx-auto max-w-[1536px] px-5 pb-[58px] pt-16 sm:px-8 lg:px-[84px] lg:pt-[52px]">
+      {/* Desktop / tablet-landscape (≥769px) — original layout, untouched */}
+      <main className="relative z-10 mx-auto hidden max-w-[1536px] px-5 pb-[58px] pt-16 sm:px-8 lg:px-[84px] lg:pt-[52px] min-[769px]:block">
         <div className="mx-auto mb-9 flex max-w-[1320px] flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-[700px]">
             <p className={foundationStyles.landingSectionEyebrow}>
@@ -277,6 +279,40 @@ export default function UnauthClaimsRoadmapSection() {
         </motion.div>
 
         <BottomLabels />
+      </main>
+
+      {/* Mobile (≤768px) — Stripe-style collapse */}
+      <main className="relative z-10 px-4 pb-14 pt-16 min-[769px]:hidden">
+        <MobileCollapse collapsedLabel="See the pattern board">
+          <p className={foundationStyles.landingSectionEyebrow}>Evidence pipeline</p>
+          <h2 className={`${foundationStyles.landingSectionTitle} mt-3`}>
+            Patterns your queue already knows.
+          </h2>
+
+          <div className="mt-8 flex justify-center">
+            <div className={`${foundationStyles.mobileFitBoard900} h-[660px] w-[900px]`}>
+              <ClaimsBoard />
+            </div>
+          </div>
+
+          <div className={foundationStyles.collapseDetails}>
+            <div className={foundationStyles.collapseDetailsInner}>
+              <p className={foundationStyles.landingSectionLead}>
+                Every complaint type carries timing, order, and support context. Unauth groups the
+                reason, finds repeated signals, and attaches a graded context pack to every ticket.
+              </p>
+              <Link
+                href="/audit"
+                prefetch={false}
+                className="mt-6 inline-flex h-11 w-full items-center justify-center gap-2 rounded-full border border-black/[0.14] bg-white px-5 text-[14px] font-semibold tracking-[-0.02em] text-black/72 shadow-[0_10px_28px_rgba(0,0,0,0.06)]"
+              >
+                Explore claim patterns
+                <ArrowUpRight size={15} />
+              </Link>
+              <BottomLabels />
+            </div>
+          </div>
+        </MobileCollapse>
       </main>
     </section>
   );

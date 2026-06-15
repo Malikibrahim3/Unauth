@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 import Image from 'next/image';
+import MobileCollapse from '@/app/(public)/landing/_components/foundation/MobileCollapse';
 import foundationStyles from '@/app/(public)/landing/_components/foundation/foundation.module.css';
 
 function FourPartLinearSection() {
@@ -79,7 +80,8 @@ export default function BuiltForPurposeStack() {
     >
       <Background />
 
-      <div className="relative mx-auto max-w-[1380px] px-5 sm:px-8 lg:px-10 xl:px-12">
+      {/* Desktop / tablet-landscape (≥769px) — original layout, untouched */}
+      <div className="relative mx-auto hidden max-w-[1380px] px-5 sm:px-8 lg:px-10 xl:px-12 min-[769px]:block">
         <div className="grid gap-10 pb-8 pt-14 sm:pt-16 lg:grid-cols-[minmax(300px,420px)_minmax(0,1fr)] lg:items-center lg:gap-12 xl:gap-16">
           <div className="max-w-[620px] pt-2 lg:max-w-none">
             <p className={foundationStyles.landingSectionEyebrow}>Integrations</p>
@@ -114,6 +116,46 @@ export default function BuiltForPurposeStack() {
         </div>
 
         <FourPartLinearSection />
+      </div>
+
+      {/* Mobile (≤768px) — Stripe-style collapse */}
+      <div className="relative mx-auto px-4 pt-14 min-[769px]:hidden">
+        <MobileCollapse collapsedLabel="See how it connects">
+          <p className={foundationStyles.landingSectionEyebrow}>Integrations</p>
+          <h2 className={`${foundationStyles.landingSectionTitle} mt-3 max-w-[440px]`}>
+            Connect your stack in minutes.
+          </h2>
+
+          <div className="relative mt-8 flex w-full items-center justify-center overflow-hidden">
+            <div className="relative h-[210px] w-full max-w-[765px] overflow-visible sm:h-[330px]">
+              <div className="absolute left-[46%] top-0 w-[1020px] origin-top -translate-x-1/2 scale-[0.29] sm:scale-[0.44]">
+                <div className="pl-5 font-mono text-[25px] tracking-[0.12em] text-black/40">INTEGRATION</div>
+
+                <div className="relative mt-6 h-[560px] w-full" aria-hidden>
+                  <StackDiagram />
+
+                  <div className="absolute inset-0 translate-x-[3%]">
+                    <EvidenceAnnotation />
+                    <HelpdeskAnnotation />
+                    <StoreAnnotation />
+                    <HelpdeskLogoRail />
+                    <StoreLogoRail />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className={foundationStyles.collapseDetails}>
+            <div className={foundationStyles.collapseDetailsInner}>
+              <p className={foundationStyles.landingSectionLead}>
+                Link your store and helpdesk once. Unauth pulls in orders, refunds, and delivery data automatically
+                — cross-merchant intelligence appears beside every claim before your team replies.
+              </p>
+              <FourPartLinearSection />
+            </div>
+          </div>
+        </MobileCollapse>
       </div>
     </section>
   );

@@ -1654,3 +1654,95 @@
     display: none;
   }
 }
+
+/* ───────────────────────────────────────────────────────────────
+   Stripe-style mobile collapse (≤768px only)
+   A section opts in by wrapping its content in <MobileCollapse>,
+   which renders [data-collapse][data-expanded]. The collapsible
+   body lives in .collapseDetails; title + artifact stay visible.
+   On desktop (≥769px) everything is always shown and the toggle
+   is hidden — the section keeps its original layout untouched.
+   ─────────────────────────────────────────────────────────────── */
+
+/* Desktop / tablet-landscape default: no collapse behaviour at all. */
+.collapseToggle {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .collapseDetails {
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    transition: grid-template-rows 0.46s cubic-bezier(0.22, 1, 0.36, 1),
+      opacity 0.34s ease, margin-top 0.46s cubic-bezier(0.22, 1, 0.36, 1);
+    margin-top: 0;
+  }
+
+  .collapseDetailsInner {
+    overflow: hidden;
+    min-height: 0;
+  }
+
+  [data-collapse][data-expanded='true'] .collapseDetails {
+    grid-template-rows: 1fr;
+    opacity: 1;
+    margin-top: 1.5rem;
+  }
+
+  .collapseToggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    min-height: 46px;
+    margin-top: 1.5rem;
+    padding: 0 1.25rem;
+    border-radius: 11px;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 6px 18px rgba(0, 0, 0, 0.05);
+    font-family: var(--ua-font-display), ui-sans-serif, system-ui, sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: rgba(17, 17, 17, 0.74);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .collapseToggle:active {
+    transform: scale(0.99);
+  }
+
+  .collapseChevron {
+    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  [data-collapse][data-expanded='true'] .collapseChevron {
+    transform: rotate(180deg);
+  }
+}
+
+/* Fixed-width mockup artifacts scaled to fit the mobile viewport.
+   `zoom` resizes the layout box (no leftover whitespace, no clipping)
+   and is supported by all modern engines incl. mobile Safari/Chrome.
+   These only apply ≤768px; desktop keeps the original 1:1 artifact. */
+@media (max-width: 768px) {
+  .mobileFitBoard914 {
+    zoom: 0.74;
+  }
+  .mobileFitBoard900 {
+    zoom: 0.76;
+  }
+}
+
+@media (max-width: 480px) {
+  .mobileFitBoard914 {
+    zoom: 0.37;
+  }
+  .mobileFitBoard900 {
+    zoom: 0.38;
+  }
+}

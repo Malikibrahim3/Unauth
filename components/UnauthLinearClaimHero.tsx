@@ -17,6 +17,7 @@ import {
   Smile,
   Video,
 } from 'lucide-react';
+import MobileCollapse from '@/app/(public)/landing/_components/foundation/MobileCollapse';
 import foundationStyles from '@/app/(public)/landing/_components/foundation/foundation.module.css';
 
 export default function UnauthLinearClaimHero() {
@@ -24,7 +25,8 @@ export default function UnauthLinearClaimHero() {
     <section className="relative min-h-screen overflow-hidden bg-white text-[#111111] border-t border-black/[0.07]" data-nav-theme="light">
       <Background />
 
-      <main className="relative z-10 mx-auto max-w-[1536px] px-5 pb-20 pt-16 sm:px-8 lg:px-10 lg:pt-12">
+      {/* Desktop / tablet-landscape (≥769px) — original layout, untouched */}
+      <main className="relative z-10 mx-auto hidden max-w-[1536px] px-5 pb-20 pt-16 sm:px-8 lg:px-10 lg:pt-12 min-[769px]:block">
         <div className="mb-[42px] grid gap-8 lg:grid-cols-[minmax(0,0.9fr)_auto] lg:items-end">
           <div className="max-w-[690px]">
             <p className={foundationStyles.landingSectionEyebrow}>
@@ -48,12 +50,43 @@ export default function UnauthLinearClaimHero() {
 
         <div className="relative mx-auto max-w-[1380px] lg:h-[630px]">
           <ClaimThread />
-          {/* Board: stacks below the thread and scrolls horizontally on small
-              screens; pins beside it (absolute) from lg up. */}
+          {/* Board scrolls horizontally below lg, pins beside the thread (absolute) from lg up. */}
           <div className="-mx-5 mt-8 overflow-x-auto px-5 pb-3 sm:-mx-8 sm:px-8 lg:mx-0 lg:mt-0 lg:overflow-visible lg:px-0">
             <ClaimsBoard />
           </div>
         </div>
+      </main>
+
+      {/* Mobile (≤768px) — Stripe-style collapse: title + artifact, tap to reveal copy */}
+      <main className="relative z-10 px-4 pb-16 pt-14 min-[769px]:hidden">
+        <MobileCollapse collapsedLabel="See the claim flow">
+          <p className={foundationStyles.landingSectionEyebrow}>Claim patterns</p>
+          <h2 className={`${foundationStyles.landingSectionTitle} mt-3`}>
+            Common complaints become cross-merchant evidence.
+          </h2>
+
+          <div className="mt-8 flex flex-col items-center gap-8">
+            <ClaimThread />
+            <div className={`${foundationStyles.mobileFitBoard914} mx-auto`}>
+              <ClaimsBoard />
+            </div>
+          </div>
+
+          <div className={foundationStyles.collapseDetails}>
+            <div className={foundationStyles.collapseDetailsInner}>
+              <p className={foundationStyles.landingSectionLead}>
+                “Never arrived”, missing items, damaged orders, late delivery, refund pressure —
+                Unauth links isolated claims to cross-merchant patterns — so your team reviews
+                evidence, not noise.
+              </p>
+              <div className="mt-5 flex items-center gap-3 font-mono text-[14px] tracking-[-0.02em] text-black/42">
+                <span>1.0</span>
+                <span>Claim intake</span>
+                <ArrowRight size={15} />
+              </div>
+            </div>
+          </div>
+        </MobileCollapse>
       </main>
     </section>
   );

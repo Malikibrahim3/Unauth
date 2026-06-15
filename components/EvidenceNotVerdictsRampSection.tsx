@@ -11,6 +11,7 @@ import {
   Workflow,
 } from 'lucide-react';
 import { FL_ROUTES } from '@/app/(public)/landing/_lib/foundationContent';
+import MobileCollapse from '@/app/(public)/landing/_components/foundation/MobileCollapse';
 import foundationStyles from '@/app/(public)/landing/_components/foundation/foundation.module.css';
 
 export default function EvidenceNotVerdictsRampSection() {
@@ -23,7 +24,8 @@ export default function EvidenceNotVerdictsRampSection() {
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_24%,rgba(0,0,0,0.055),transparent_58%)]" />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-white to-transparent" />
 
-      <main className="relative mx-auto max-w-[1180px] px-6 pb-24 pt-20 md:pt-24">
+      {/* Desktop / tablet-landscape (≥769px) — original layout, untouched */}
+      <main className="relative mx-auto hidden max-w-[1180px] px-6 pb-24 pt-20 md:pt-24 min-[769px]:block">
         <div className="mb-10 max-w-[720px]">
           <p className={foundationStyles.landingSectionEyebrow}>
             How it works
@@ -43,6 +45,35 @@ export default function EvidenceNotVerdictsRampSection() {
           <FeatureCardThree />
         </div>
         <BottomStrip />
+      </main>
+
+      {/* Mobile (≤768px) — Stripe-style collapse */}
+      <main className="relative px-4 pb-20 pt-16 min-[769px]:hidden">
+        <MobileCollapse collapsedLabel="See how context is attached">
+          <p className={foundationStyles.landingSectionEyebrow}>How it works</p>
+          <h2 className={`${foundationStyles.landingSectionTitle} mt-3`}>
+            Context attached before every reply.
+          </h2>
+
+          <div className="mt-8 grid grid-cols-1 gap-5">
+            <FeatureCardOne />
+            <FeatureCardTwo />
+            <FeatureCardThree />
+          </div>
+
+          <div className={foundationStyles.collapseDetails}>
+            <div className={foundationStyles.collapseDetailsInner}>
+              <p className={foundationStyles.landingSectionLead}>
+                Unauth connects to your store and helpdesk, surfaces cross-merchant claim history,
+                and attaches graded evidence to every ticket — automatically. No workflow changes
+                required.
+              </p>
+              <div className="mt-6">
+                <BottomStrip />
+              </div>
+            </div>
+          </div>
+        </MobileCollapse>
       </main>
     </section>
   );

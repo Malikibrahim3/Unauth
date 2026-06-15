@@ -1,6 +1,7 @@
 'use client';
 
 import Reveal from '@/app/(public)/landing/_components/Reveal';
+import MobileCollapse from '@/app/(public)/landing/_components/foundation/MobileCollapse';
 import { UnauthNetworkCanvas } from './UnauthNetworkCanvas';
 import styles from '@/app/(public)/landing/_components/foundation/foundation.module.css';
 
@@ -38,7 +39,7 @@ export function UnauthGlobeHero() {
 
       {/* Content */}
       <div className="relative z-10 mx-auto flex min-h-[100svh] w-full max-w-[100rem] flex-col justify-center px-5 py-24 sm:px-10 sm:py-28">
-        <div className="max-w-[46rem]">
+        <MobileCollapse className="max-w-[46rem]" collapsedLabel="See what crosses the network">
 
           <Reveal>
             <h2
@@ -49,50 +50,54 @@ export function UnauthGlobeHero() {
             </h2>
           </Reveal>
 
-          <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:gap-10">
-            <Reveal delay={80}>
-              <p className={styles.landingSectionLead}>
-                The same patterns repeat across stores. Unauth connects the signals no single merchant could see alone.
-              </p>
-            </Reveal>
-            <Reveal delay={160}>
-              <p className={styles.landingSectionLead}>
-                Behavioural signals cross the network. Customer data never does.
-              </p>
-            </Reveal>
+          <div className={styles.collapseDetails}>
+            <div className={styles.collapseDetailsInner}>
+              <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:gap-10">
+                <Reveal delay={80}>
+                  <p className={styles.landingSectionLead}>
+                    The same patterns repeat across stores. Unauth connects the signals no single merchant could see alone.
+                  </p>
+                </Reveal>
+                <Reveal delay={160}>
+                  <p className={styles.landingSectionLead}>
+                    Behavioural signals cross the network. Customer data never does.
+                  </p>
+                </Reveal>
+              </div>
+
+              <div className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-2">
+                <Reveal delay={240}>
+                  <div>
+                    <p className={`${styles.landingSectionEyebrow} mb-4`}>What stays in your store</p>
+                    <ul className="space-y-2.5">
+                      {PRIVATE_ITEMS.map((item) => (
+                        <li key={item} className={`${styles.landingSectionBody} flex items-center gap-3`}>
+                          <span className="h-px w-4 shrink-0 bg-black/25" aria-hidden />
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </Reveal>
+
+                <Reveal delay={300}>
+                  <div>
+                    <p className={`${styles.landingSectionEyebrow} mb-4`}>What the network sees</p>
+                    <ul className="space-y-2.5">
+                      {NETWORK_ITEMS.map((item) => (
+                        <li key={item} className={`${styles.landingSectionBody} flex items-center gap-3`}>
+                          <span className="h-px w-4 shrink-0 bg-black/25" aria-hidden />
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </Reveal>
+              </div>
+            </div>
           </div>
 
-          <div className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-2">
-            <Reveal delay={240}>
-              <div>
-                <p className={`${styles.landingSectionEyebrow} mb-4`}>What stays in your store</p>
-                <ul className="space-y-2.5">
-                  {PRIVATE_ITEMS.map((item) => (
-                    <li key={item} className={`${styles.landingSectionBody} flex items-center gap-3`}>
-                      <span className="h-px w-4 shrink-0 bg-black/25" aria-hidden />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </Reveal>
-
-            <Reveal delay={300}>
-              <div>
-                <p className={`${styles.landingSectionEyebrow} mb-4`}>What the network sees</p>
-                <ul className="space-y-2.5">
-                  {NETWORK_ITEMS.map((item) => (
-                    <li key={item} className={`${styles.landingSectionBody} flex items-center gap-3`}>
-                      <span className="h-px w-4 shrink-0 bg-black/25" aria-hidden />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </Reveal>
-          </div>
-
-        </div>
+        </MobileCollapse>
       </div>
     </section>
   );
