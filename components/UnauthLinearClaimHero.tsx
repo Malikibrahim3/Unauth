@@ -61,7 +61,7 @@ export default function UnauthLinearClaimHero() {
       <main className="relative z-10 px-4 pb-16 pt-14 min-[769px]:hidden">
         <MobileCollapse collapsedLabel="See the claim flow">
           <p className={foundationStyles.landingSectionEyebrow}>Claim patterns</p>
-          <h2 className={`${foundationStyles.landingSectionTitle} mt-3`}>
+          <h2 className={`${foundationStyles.landingSectionTitle} mt-3 pr-14`}>
             Common complaints become cross-merchant evidence.
           </h2>
 

@@ -285,7 +285,7 @@ export default function UnauthClaimsRoadmapSection() {
       <main className="relative z-10 px-4 pb-14 pt-16 min-[769px]:hidden">
         <MobileCollapse collapsedLabel="See the pattern board">
           <p className={foundationStyles.landingSectionEyebrow}>Evidence pipeline</p>
-          <h2 className={`${foundationStyles.landingSectionTitle} mt-3`}>
+          <h2 className={`${foundationStyles.landingSectionTitle} mt-3 pr-14`}>
             Patterns your queue already knows.
           </h2>
 

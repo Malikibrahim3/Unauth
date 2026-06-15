@@ -44,7 +44,7 @@ export function UnauthGlobeHero() {
           <Reveal>
             <h2
               id="fl-globe-hero-heading"
-              className={`${styles.networkHeroHeading}`}
+              className={`${styles.networkHeroHeading} max-[768px]:pr-14`}
             >
               Every merchant that joins makes the evidence stronger.
             </h2>

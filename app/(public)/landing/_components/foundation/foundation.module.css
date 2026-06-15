@@ -1670,6 +1670,11 @@
 }
 
 @media (max-width: 768px) {
+  /* The collapsible card is the positioning context for the corner toggle. */
+  .collapseRoot {
+    position: relative;
+  }
+
   .collapseDetails {
     display: grid;
     grid-template-rows: 0fr;
@@ -1690,30 +1695,35 @@
     margin-top: 1.5rem;
   }
 
+  /* Simple square button pinned to the card's top-right corner —
+     matches the in-card "open" buttons used elsewhere on the page. */
   .collapseToggle {
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 5;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.5rem;
-    width: 100%;
-    min-height: 46px;
-    margin-top: 1.5rem;
-    padding: 0 1.25rem;
-    border-radius: 11px;
+    height: 40px;
+    width: 40px;
+    border-radius: 10px;
     border: 1px solid rgba(0, 0, 0, 0.12);
-    background: rgba(255, 255, 255, 0.9);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 6px 18px rgba(0, 0, 0, 0.05);
-    font-family: var(--ua-font-display), ui-sans-serif, system-ui, sans-serif;
-    font-size: 15px;
-    font-weight: 600;
-    letter-spacing: -0.02em;
-    color: rgba(17, 17, 17, 0.74);
+    background: #ffffff;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+    color: rgba(17, 17, 17, 0.66);
     cursor: pointer;
+    transition: border-color 0.2s ease, color 0.2s ease;
     -webkit-tap-highlight-color: transparent;
   }
 
+  .collapseToggle:hover {
+    border-color: rgba(0, 0, 0, 0.28);
+    color: rgba(17, 17, 17, 0.9);
+  }
+
   .collapseToggle:active {
-    transform: scale(0.99);
+    transform: scale(0.96);
   }
 
   .collapseChevron {
@@ -1722,6 +1732,19 @@
 
   [data-collapse][data-expanded='true'] .collapseChevron {
     transform: rotate(180deg);
+  }
+
+  /* Mobile typographic scale — keep section titles from dominating the card. */
+  .landingSectionTitle {
+    font-size: 1.75rem;
+    line-height: 1.04;
+    letter-spacing: -0.045em;
+  }
+
+  .networkHeroHeading {
+    font-size: 1.9375rem;
+    line-height: 1.05;
+    letter-spacing: -0.045em;
   }
 }
 

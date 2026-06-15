@@ -122,7 +122,7 @@ export default function BuiltForPurposeStack() {
       <div className="relative mx-auto px-4 pt-14 min-[769px]:hidden">
         <MobileCollapse collapsedLabel="See how it connects">
           <p className={foundationStyles.landingSectionEyebrow}>Integrations</p>
-          <h2 className={`${foundationStyles.landingSectionTitle} mt-3 max-w-[440px]`}>
+          <h2 className={`${foundationStyles.landingSectionTitle} mt-3 max-w-[440px] pr-14`}>
             Connect your stack in minutes.
           </h2>
 

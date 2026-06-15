@@ -51,7 +51,7 @@ export default function EvidenceNotVerdictsRampSection() {
       <main className="relative px-4 pb-20 pt-16 min-[769px]:hidden">
         <MobileCollapse collapsedLabel="See how context is attached">
           <p className={foundationStyles.landingSectionEyebrow}>How it works</p>
-          <h2 className={`${foundationStyles.landingSectionTitle} mt-3`}>
+          <h2 className={`${foundationStyles.landingSectionTitle} mt-3 pr-14`}>
             Context attached before every reply.
           </h2>
 
