@@ -8,6 +8,7 @@ import { withRequestLogging } from '@/lib/log';
 import {
   buildCustomerIdentifierHashes,
   lookupNetworkIdentity,
+  resolveIdentitySiblingCustomers,
 } from '@/lib/customers/identityNetwork';
 
 export const dynamic = 'force-dynamic';
@@ -37,6 +38,8 @@ export interface OrderHistoryEntry {
   orderDate: string | null;
   processedAt: string;
   email: string | null;
+  /** Alias email this order came from, when it belongs to a linked sibling record (not the primary). */
+  viaEmail?: string | null;
   name: string | null;
   address: string | null;
   ip: string | null;
@@ -84,6 +87,10 @@ export interface CustomerIntelligencePanel {
     total_refund_claims: number;
     total_chargebacks: number;
     total_merchants_seen_at: number;
+    /** Count of OTHER linked source_customers records collapsed into this identity (0 if none). */
+    sibling_count?: number;
+    /** Distinct emails across the linked records (incl. primary). */
+    linked_customer_emails?: string[];
     refund_rate: number;
     fastest_claim_days: number | null;
     avg_claim_days: number | null;
@@ -120,6 +127,7 @@ type SourceOrderRow = {
   id: string;
   external_id: string;
   order_number: string | null;
+  source_customer_id: string | null;
   email: string | null;
   phone: string | null;
   total_price: number | string | null;
@@ -176,15 +184,29 @@ async function GETHandler(
   }
 
   // -------------------------------------------------------------------------
-  // 2. Own-store orders + claims (layers 1 and 4).
+  // 1b. Sibling records: other source_customers the network identity links to
+  //     this one (same merchant, own-signal disciplined). Orders/claims below
+  //     are aggregated across all of them so the dossier reflects the whole
+  //     resolved identity, not just the record that was clicked.
+  // -------------------------------------------------------------------------
+  const { customerIds: identityCustomerIds, siblings } = await resolveIdentitySiblingCustomers(
+    serviceClient,
+    ctx.merchantId,
+    customer,
+  );
+  const siblingById = new Map(siblings.map((s) => [s.id, s]));
+  const siblingCount = Math.max(identityCustomerIds.length - 1, 0);
+
+  // -------------------------------------------------------------------------
+  // 2. Own-store orders + claims (layers 1 and 4), across all linked records.
   // -------------------------------------------------------------------------
   const { data: orderRows } = await serviceClient
     .from('source_orders')
-    .select('id, external_id, order_number, email, phone, total_price, card_last4, browser_ip, placed_at, shipping_address_id')
+    .select('id, external_id, order_number, source_customer_id, email, phone, total_price, card_last4, browser_ip, placed_at, shipping_address_id')
     .eq('merchant_id', ctx.merchantId)
-    .eq('source_customer_id', customer.id)
+    .in('source_customer_id', identityCustomerIds)
     .order('placed_at', { ascending: true })
-    .limit(500) as unknown as { data: SourceOrderRow[] | null };
+    .limit(2000) as unknown as { data: SourceOrderRow[] | null };
   const orders = orderRows ?? [];
 
   const addressIds = uniqueValues(orders.map((o) => o.shipping_address_id));
@@ -251,12 +273,16 @@ async function GETHandler(
     const orderClaims = claimsByOrder.get(order.id) ?? [];
     const chargeback = orderClaims.find((c) => c.claim_type === 'chargeback') ?? null;
     const refundClaim = orderClaims.find((c) => c.claim_type !== 'chargeback') ?? null;
+    const viaCustomerId = order.source_customer_id;
+    const isSibling = viaCustomerId != null && viaCustomerId !== customer.id;
+    const viaEmail = isSibling ? (siblingById.get(viaCustomerId)?.email ?? order.email ?? null) : null;
     return {
       transactionId: order.id,
       orderId: order.order_number ?? order.external_id,
       orderDate: order.placed_at,
       processedAt: order.placed_at ?? customer.created_at,
       email: order.email ?? customer.email,
+      viaEmail,
       name: customerName,
       address: order.shipping_address_id ? addressById.get(order.shipping_address_id) ?? null : null,
       ip: order.browser_ip,
@@ -340,7 +366,9 @@ async function GETHandler(
   // 7. Aggregate stats — own store first, network rollup where disclosed.
   // -------------------------------------------------------------------------
   const totalOrderValue = orders.reduce((sum, o) => sum + (Number(o.total_price) || 0), 0);
-  const computedTotalOrders = Math.max(orders.length, customer.orders_count ?? 0);
+  const siblingOrdersCountSum = siblings.reduce((sum, s) => sum + (s.ordersCount ?? 0), 0);
+  const computedTotalOrders = Math.max(orders.length, siblingOrdersCountSum, customer.orders_count ?? 0);
+  const linkedCustomerEmails = uniqueValues([customer.email, ...siblings.map((s) => s.email)]);
   const computedRefundClaims = claims.filter((c) => c.claim_type !== 'chargeback').length;
   const computedChargebacks = claims.filter((c) => c.claim_type === 'chargeback').length;
   const computedRefundRate = computedTotalOrders > 0 ? claims.length / computedTotalOrders : 0;
@@ -391,6 +419,8 @@ async function GETHandler(
       total_refund_claims: computedRefundClaims,
       total_chargebacks: computedChargebacks,
       total_merchants_seen_at: Math.max(network?.merchantCount ?? 1, 1),
+      sibling_count: siblingCount,
+      linked_customer_emails: linkedCustomerEmails,
       refund_rate: computedRefundRate,
       fastest_claim_days: network?.fastestClaimDays ?? null,
       avg_claim_days: null,

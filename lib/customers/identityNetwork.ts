@@ -245,6 +245,83 @@ export async function resolveIdentityForSourceCustomerId(
   return { customer, identityId };
 }
 
+export type IdentitySibling = {
+  id: string;
+  email: string | null;
+  name: string | null;
+  ordersCount: number | null;
+};
+
+/**
+ * Resolve the merchant-owned source_customers records that the network identity
+ * has linked together (e.g. one shopper who checked out under several emails
+ * sharing a card / address / phone). SAME-MERCHANT ONLY and own-signal
+ * disciplined: we read the identity's member hashes, then map back to this
+ * merchant's records via its OWN identity_signals provenance — never any
+ * cross-merchant record. Always includes the primary customer.
+ */
+export async function resolveIdentitySiblingCustomers(
+  service: SupabaseClient,
+  merchantId: string,
+  customer: { id: string; email?: string | null; phone?: string | null },
+): Promise<{ identityId: string | null; customerIds: string[]; siblings: IdentitySibling[] }> {
+  const loadSiblings = async (ids: string[]): Promise<IdentitySibling[]> => {
+    const out: IdentitySibling[] = [];
+    for (let i = 0; i < ids.length; i += 200) {
+      const { data } = await service
+        .from('source_customers')
+        .select('id, email, first_name, last_name, orders_count')
+        .eq('merchant_id', merchantId)
+        .in('id', ids.slice(i, i + 200)) as unknown as {
+          data: Array<{ id: string; email: string | null; first_name: string | null; last_name: string | null; orders_count: number | null }> | null;
+        };
+      for (const r of data ?? []) {
+        out.push({ id: r.id, email: r.email, name: [r.first_name, r.last_name].filter(Boolean).join(' ').trim() || null, ordersCount: r.orders_count });
+      }
+    }
+    return out;
+  };
+
+  const identityId = await resolveIdentityIdForCustomer(service, merchantId, customer);
+  if (!identityId) {
+    return { identityId: null, customerIds: [customer.id], siblings: await loadSiblings([customer.id]) };
+  }
+
+  const { data: memberRows } = await service
+    .from('identity_members')
+    .select('identifier_hash')
+    .eq('identity_id', identityId) as unknown as { data: Array<{ identifier_hash: string }> | null };
+  const hashes = Array.from(new Set((memberRows ?? []).map((m) => m.identifier_hash)));
+
+  const customerIds = new Set<string>([customer.id]);
+  const orderIds = new Set<string>();
+  for (let i = 0; i < hashes.length; i += 200) {
+    const { data: sigs } = await service
+      .from('identity_signals')
+      .select('source_customer_id, source_order_id')
+      .eq('merchant_id', merchantId)
+      .in('identifier_hash', hashes.slice(i, i + 200)) as unknown as {
+        data: Array<{ source_customer_id: string | null; source_order_id: string | null }> | null;
+      };
+    for (const s of sigs ?? []) {
+      if (s.source_customer_id) customerIds.add(s.source_customer_id);
+      if (s.source_order_id) orderIds.add(s.source_order_id);
+    }
+  }
+  const orderIdArr = [...orderIds];
+  for (let i = 0; i < orderIdArr.length; i += 200) {
+    const { data: ords } = await service
+      .from('source_orders')
+      .select('source_customer_id')
+      .eq('merchant_id', merchantId)
+      .in('id', orderIdArr.slice(i, i + 200)) as unknown as { data: Array<{ source_customer_id: string | null }> | null };
+    for (const o of ords ?? []) if (o.source_customer_id) customerIds.add(o.source_customer_id);
+  }
+
+  const siblings = await loadSiblings([...customerIds]);
+  return { identityId, customerIds: siblings.map((s) => s.id), siblings };
+}
+
 export async function resolveIdentityIdForCustomer(
   service: SupabaseClient,
   merchantId: string,

@@ -108,6 +108,15 @@ export function RoadmapOrderCard({ tx, isLast }: { tx: RoadmapTransaction; isLas
                   {SOURCE_LABELS[tx.source] ?? tx.source}
                 </span>
               )}
+              {tx.via_email && (
+                <span
+                  className="inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-medium"
+                  style={{ background: 'var(--accent-soft)', borderColor: 'var(--accent-border)', color: 'var(--accent)' }}
+                  title="This order came from a linked account resolved to the same identity"
+                >
+                  via {tx.via_email}
+                </span>
+              )}
             </div>
             <p className="mt-1 text-caption font-mono" style={{ color: 'var(--text-secondary)' }}>{tx.order_id}</p>
           </div>

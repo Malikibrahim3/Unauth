@@ -9,6 +9,8 @@ export type RoadmapTransaction = {
   processed_at: string;
   order_value: number | string | null;
   customer_email?: string | null;
+  /** Alias email when this order came from a linked sibling record (not the primary). */
+  via_email?: string | null;
   customer_name?: string | null;
   shipping_address?: string | null;
   card_last4?: string | null;

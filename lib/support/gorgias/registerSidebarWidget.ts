@@ -124,6 +124,8 @@ export const GORGIAS_SIDEBAR_CARD_TITLE = 'Unauth claim context';
 export const GORGIAS_SIDEBAR_ROW_LABELS = {
   order_context: 'Order',
   context_summary: 'Context',
+  recommendation: 'Recommendation',
+  recommendation_detail: 'Why this recommendation',
   identity: 'Identity',
   claims: 'Claim history',
   orders: 'Orders',
@@ -164,6 +166,8 @@ export function buildGorgiasSidebarWidgetTemplate(appBaseUrl: string) {
         widgets: [
           { path: 'order_context', title: labels.order_context, type: 'text' },
           { path: 'context_summary', title: labels.context_summary, type: 'text' },
+          { path: 'recommendation', title: labels.recommendation, type: 'text' },
+          { path: 'recommendation_detail', title: labels.recommendation_detail, type: 'text' },
           { path: 'identity', title: labels.identity, type: 'text' },
           { path: 'claims', title: labels.claims, type: 'text' },
           { path: 'orders', title: labels.orders, type: 'text' },

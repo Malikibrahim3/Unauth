@@ -10,10 +10,14 @@ import { getContextCreditSnapshot } from '@/lib/billing/contextCredits';
 import { TIER_ORDER } from '@/lib/billing/tiers';
 import {
   claimWidgetToJson,
+  formatRecommendationFields,
   type GorgiasWidgetJsonPayload,
   type GorgiasWidgetLinkContext,
   type GorgiasWidgetJsonOptions,
 } from '@/lib/gorgias/widgetJson';
+import { evaluateRules } from '@/lib/rules-engine';
+import { fetchActiveMerchantRules, writeRuleEvaluationAudit } from '@/lib/rules/store';
+import { widgetDataToSignals } from '@/lib/rules/widgetSignals';
 import { env } from '@/lib/utils/env';
 import { gorgiasWidgetLog, gorgiasWidgetLogError } from '@/lib/gorgias/widgetLog';
 import { computeWidgetReviewLevel } from '@/lib/gorgias/widgetTrustSignals';
@@ -50,6 +54,8 @@ const GORGIAS_WIDGET_JSON_FALLBACK: GorgiasWidgetJsonPayload = {
   watchlisted: '—',
   order_context: '—',
   context_summary: 'Context unavailable — check your Gorgias connection in Unauth settings',
+  recommendation: '—',
+  recommendation_detail: '—',
   cta_label: 'Open Unauth settings →',
   cta_url: `${process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '') ?? ''}/settings/integrations/gorgias`,
   basic_unlock_url: '',
@@ -180,8 +186,12 @@ function returnJsonForResult(input: {
   status?: number;
   linkContext?: GorgiasWidgetLinkContext;
   widgetJsonOptions?: GorgiasWidgetJsonOptions;
+  recommendationFields?: Pick<GorgiasWidgetJsonPayload, 'recommendation' | 'recommendation_detail'>;
 }): NextResponse {
-  const body = claimWidgetToJson(input.result, input.linkContext, input.widgetJsonOptions);
+  const body = {
+    ...claimWidgetToJson(input.result, input.linkContext, input.widgetJsonOptions),
+    ...(input.recommendationFields ?? {}),
+  };
   const status = input.status ?? 200;
   const state = input.result.ok ? 'ok' : input.result.kind;
 
@@ -400,6 +410,38 @@ export async function GET(request: NextRequest) {
     );
     gorgiasWidgetLog('widget_options', { showNetworkIntelligence: enrichedJsonOptions.showNetworkIntelligence });
 
+    // Recommendation layer — output of the MERCHANT'S OWN rules applied to
+    // Unauth's signals. Evaluated server-side and embedded in the native widget
+    // JSON (the Gorgias sidebar widget can't make a second fetch). Fails
+    // silently: any error leaves the neutral recommendation defaults in place
+    // so identity signals always render.
+    let recommendationFields:
+      | Pick<GorgiasWidgetJsonPayload, 'recommendation' | 'recommendation_detail'>
+      | undefined;
+    if (result.ok) {
+      try {
+        const rules = await fetchActiveMerchantRules(service, authResult.merchantId);
+        const signals = widgetDataToSignals(result.data);
+        const evaluation = evaluateRules(signals, rules);
+        await writeRuleEvaluationAudit(service, {
+          merchantId: authResult.merchantId,
+          claimId: null,
+          identityId: null,
+          signals,
+          rules,
+          result: evaluation,
+        });
+        recommendationFields = formatRecommendationFields(evaluation, rules.length);
+        gorgiasWidgetLog('rules_evaluated', {
+          recommendation: evaluation.recommendation,
+          ruleCount: rules.length,
+          ruleMatched: Boolean(evaluation.rule_id),
+        });
+      } catch (evalErr) {
+        gorgiasWidgetLogError('rules_evaluation_failed', evalErr);
+      }
+    }
+
     return returnJsonForResult({
       branch: result.ok ? 'result_ok' : `result_${result.kind}`,
       result,
@@ -408,6 +450,7 @@ export async function GET(request: NextRequest) {
       returnHtml,
       linkContext,
       widgetJsonOptions: enrichedJsonOptions,
+      recommendationFields,
     });
   } catch (err) {
     gorgiasWidgetLogError('fatal_error', err);

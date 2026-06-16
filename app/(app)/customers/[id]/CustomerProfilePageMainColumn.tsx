@@ -72,8 +72,22 @@ export function CustomerProfilePageMainColumn({
     { label: 'Cross-store', value: Math.max((profile.total_merchants_seen_at ?? 1) - 1, 0), color: 'var(--neutral)' },
   ].filter((item) => item.value > 0);
 
+  const siblingCount = profile.sibling_count ?? 0;
+
   return (
     <div className="min-w-0 space-y-[var(--space-5)]">
+      {siblingCount > 0 && (
+        <div
+          className="flex items-start gap-2 rounded-md border px-[var(--space-4)] py-[var(--space-3)]"
+          style={{ borderColor: 'var(--accent-border)', background: 'var(--accent-soft)' }}
+        >
+          <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" style={{ color: 'var(--accent)' }} />
+          <p className="text-body-sm leading-relaxed" style={{ color: 'var(--text)' }}>
+            <span className="font-semibold">{siblingCount} linked {siblingCount === 1 ? 'account' : 'accounts'}</span>
+            {' '}resolve to this identity. Orders and claims below are aggregated across all linked records; orders from a linked account are tagged with their email.
+          </p>
+        </div>
+      )}
       {!hasCleanRecord && (
         <SectionCard title="Order & claim history" description="Chronological orders and claim events for this customer.">
           <div className="mb-[var(--space-5)] rounded-md border p-[var(--space-4)]" style={{ borderColor: 'var(--border-muted)', background: 'var(--bg-inset)' }}>

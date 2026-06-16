@@ -36,6 +36,13 @@ export type GorgiasWidgetJsonPayload = {
   order_context: string;
   /** Neutral, factual summary of available claim context for this ticket. No outcome recommendations. */
   context_summary: string;
+  /**
+   * Output of the MERCHANT'S OWN configured rules applied to Unauth's signals.
+   * Never Unauth's own judgment. '—' when no rule matched or no rules configured.
+   */
+  recommendation: string;
+  /** Which rule fired + matched conditions, or a neutral prompt/state. */
+  recommendation_detail: string;
   cta_label: string;
   cta_url: string;
   /** Browser-openable GET unlock links (Gorgias custom.links). */
@@ -88,7 +95,19 @@ type WidgetCorePayload = Omit<
   | 'basic_unlock_label'
   | 'full_unlock_label'
   | 'evidence_unlock_label'
+  | 'recommendation'
+  | 'recommendation_detail'
 >;
+
+/**
+ * Recommendation fields default to neutral here. The widget route overrides
+ * them with the merchant's own rule evaluation when one is available — the
+ * recommendation is never Unauth's own judgment.
+ */
+const RECOMMENDATION_DEFAULTS = {
+  recommendation: '—',
+  recommendation_detail: 'Set up fraud rules to get recommendations',
+} as const;
 
 // ---------------------------------------------------------------------------
 // Context helpers — order reference and neutral summary
@@ -182,10 +201,54 @@ function withUnlockFields(
   link?: GorgiasWidgetLinkContext,
 ): GorgiasWidgetJsonPayload {
   return {
+    ...RECOMMENDATION_DEFAULTS,
     ...payload,
     ...UNLOCK_LABELS,
     ...unlockUrls(link),
   };
+}
+
+// ---------------------------------------------------------------------------
+// Recommendation — output of the merchant's own rules (never Unauth's judgment)
+// ---------------------------------------------------------------------------
+
+const RECOMMENDATION_LABELS: Record<string, string> = {
+  approve: 'Approve',
+  manual_review: 'Manual review',
+  deny: 'Deny',
+};
+
+/**
+ * Formats a rules-engine result into the two native widget fields.
+ *
+ * @param ruleCount number of active rules the merchant has configured. Used to
+ *        distinguish "no rules configured" from "rules exist, none matched".
+ */
+export function formatRecommendationFields(
+  result: { recommendation: string; rule_name: string | null; justification_lines: string[] },
+  ruleCount: number,
+): Pick<GorgiasWidgetJsonPayload, 'recommendation' | 'recommendation_detail'> {
+  if (result.recommendation === 'no_match') {
+    if (ruleCount === 0) {
+      return {
+        recommendation: 'No rules configured',
+        recommendation_detail: 'Set up fraud rules in Unauth to get recommendations',
+      };
+    }
+    return {
+      recommendation: 'No rule matched',
+      recommendation_detail: 'None of your configured rules matched this identity',
+    };
+  }
+
+  const label = RECOMMENDATION_LABELS[result.recommendation] ?? result.recommendation;
+  const heading = result.rule_name ? `${label} · ${result.rule_name}` : label;
+  // justification_lines[0] is the "Rule … triggered" line; the rest are the
+  // matched conditions. Join with " · " for the single-line native text widget.
+  const detail = result.justification_lines.length > 0
+    ? result.justification_lines.join(' · ')
+    : 'Based on your configured rules';
+  return { recommendation: heading, recommendation_detail: detail };
 }
 
 /** Case-scoped Gorgias tickets get credit unlock links; preview must not leak stats before unlock. */

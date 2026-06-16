@@ -19,7 +19,7 @@ import {
 import {
   buildCustomerIdentifierHashes,
   lookupNetworkIdentity,
-  resolveIdentityIdForCustomer,
+  resolveIdentitySiblingCustomers,
 } from '@/lib/customers/identityNetwork';
 import { getEventStream } from '@/lib/analysis/customerIntelligence';
 import type { BehaviorRoadmapEvent } from '@/components/customers/BehaviorRoadmap';
@@ -65,6 +65,8 @@ export type CustomerProfileDisplay = {
   fraud_flags: string[];
   identity_signals?: string[];
   investigation_status?: string;
+  /** Count of OTHER linked source_customers records collapsed into this identity (0 if none). */
+  sibling_count?: number;
 };
 
 export type LinkedAccountRow = {
@@ -157,6 +159,7 @@ type SourceOrderRow = {
   id: string;
   external_id: string;
   order_number: string | null;
+  source_customer_id: string | null;
   email: string | null;
   phone: string | null;
   total_price: number | string | null;
@@ -292,14 +295,22 @@ export async function loadCustomerProfilePage(
     notFound();
   }
 
-  // Own-store orders (layer 1).
+  // Sibling records linked by the network identity (same merchant, own-signal
+  // disciplined). Orders/claims are aggregated across all linked records so the
+  // dossier reflects the whole resolved identity, not just the clicked record.
+  const { identityId: resolvedIdentityId, customerIds: identityCustomerIds, siblings } =
+    await resolveIdentitySiblingCustomers(svc, merchantId, customer);
+  const siblingById = new Map(siblings.map((s) => [s.id, s]));
+  const siblingCount = Math.max(identityCustomerIds.length - 1, 0);
+
+  // Own-store orders (layer 1), across all linked records.
   const { data: orderRows } = await svc
     .from('source_orders')
-    .select('id, external_id, order_number, email, phone, total_price, card_last4, browser_ip, source, placed_at, shipping_address_id')
+    .select('id, external_id, order_number, source_customer_id, email, phone, total_price, card_last4, browser_ip, source, placed_at, shipping_address_id')
     .eq('merchant_id', merchantId)
-    .eq('source_customer_id', customer.id)
+    .in('source_customer_id', identityCustomerIds)
     .order('placed_at', { ascending: true })
-    .limit(500) as unknown as { data: SourceOrderRow[] | null };
+    .limit(2000) as unknown as { data: SourceOrderRow[] | null };
   const orders = orderRows ?? [];
 
   // Shipping addresses for the orders (atomic in v2; render as one string).
@@ -343,10 +354,8 @@ export async function loadCustomerProfilePage(
   // Network identity (layers 3/5) — via the k-anonymous RPC only.
   // ---------------------------------------------------------------------------
   const identifierHashes = buildCustomerIdentifierHashes(customer);
-  const [network, identityId] = await Promise.all([
-    lookupNetworkIdentity(svc, merchantId, identifierHashes),
-    resolveIdentityIdForCustomer(svc, merchantId, customer),
-  ]);
+  const network = await lookupNetworkIdentity(svc, merchantId, identifierHashes);
+  const identityId = resolvedIdentityId;
 
   // Merchant-side state (watchlist / investigation status) for the identity.
   let investigationStatus: string | undefined;
@@ -370,7 +379,8 @@ export async function loadCustomerProfilePage(
   const cardLast4s = uniqueNonEmpty(orders.map((o) => o.card_last4));
   const addresses = uniqueNonEmpty(orders.map((o) => (o.shipping_address_id ? addressById.get(o.shipping_address_id) : null)));
 
-  const merchantOrderCount = Math.max(orders.length, customer.orders_count ?? 0);
+  const siblingOrdersCountSum = siblings.reduce((sum, s) => sum + (s.ordersCount ?? 0), 0);
+  const merchantOrderCount = Math.max(orders.length, siblingOrdersCountSum, customer.orders_count ?? 0);
   const merchantClaimCount = claimRows.length;
   const merchantChargebacks = claimRows.filter((c) => c.claim_type === 'chargeback').length;
 
@@ -393,6 +403,7 @@ export async function loadCustomerProfilePage(
     total_refund_claims: Math.max(network?.totalClaims ?? 0, merchantClaimCount),
     total_chargebacks: Math.max(network?.totalChargebacks ?? 0, merchantChargebacks),
     total_merchants_seen_at: Math.max(network?.merchantCount ?? 1, 1),
+    sibling_count: siblingCount,
     refund_rate: network?.claimRate ?? (merchantOrderCount > 0 ? merchantClaimCount / merchantOrderCount : 0),
     fastest_claim_days: network?.fastestClaimDays ?? null,
     avg_claim_days: null,
@@ -408,11 +419,16 @@ export async function loadCustomerProfilePage(
     const orderClaims = claimsByOrder.get(order.id) ?? [];
     const chargeback = orderClaims.find((c) => c.claim_type === 'chargeback') ?? null;
     const refundClaim = orderClaims.find((c) => c.claim_type !== 'chargeback') ?? null;
+    const viaCustomerId = order.source_customer_id;
+    const viaEmail = viaCustomerId != null && viaCustomerId !== customer.id
+      ? (siblingById.get(viaCustomerId)?.email ?? order.email ?? null)
+      : null;
     return {
       order_id: order.order_number ?? order.external_id,
       processed_at: order.placed_at ?? customer.created_at,
       order_value: order.total_price,
       customer_email: order.email ?? customer.email,
+      via_email: viaEmail,
       customer_name: customerName || null,
       shipping_address: order.shipping_address_id ? addressById.get(order.shipping_address_id) ?? null : null,
       card_last4: order.card_last4,

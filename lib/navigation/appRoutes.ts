@@ -10,6 +10,7 @@ import {
   Store,
   FileWarning,
   GitBranch,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { PERMISSIONS, type Permission } from '@/lib/permissions';
 import type { ProductTier } from '@/lib/product/tiers';
@@ -26,7 +27,8 @@ export type AppRouteKey =
   | 'settings'
   | 'help'
   | 'global'
-  | 'lookup';
+  | 'lookup'
+  | 'rules';
 
 export type AppRoute = {
   key: AppRouteKey;
@@ -174,6 +176,20 @@ export const APP_ROUTES = {
     commandPalette: true,
     commandDescription: 'Cross-merchant identity network (Growth+)',
   },
+  rules: {
+    key: 'rules',
+    href: '/rules',
+    label: 'Fraud Rules',
+    pageTitle: 'Fraud Rules',
+    permission: PERMISSIONS.VIEW_SETTINGS,
+    tier: 'pro',
+    tierLabel: 'Rules',
+    icon: SlidersHorizontal,
+    sidebar: true,
+    workbench: true,
+    commandPalette: true,
+    commandDescription: 'Configure rules that drive widget recommendations',
+  },
   lookup: {
     key: 'lookup',
     href: '/lookup',
@@ -204,7 +220,7 @@ export const COMMAND_PALETTE_FILTERS = [
 
 export const SIDEBAR_NAV_GROUPS: Array<{ label: string; routeKeys: AppRouteKey[] }> = [
   { label: 'Overview', routeKeys: ['dashboard'] },
-  { label: 'Operations', routeKeys: ['claims', 'customers', 'evidencePackages', 'watchlist'] },
+  { label: 'Operations', routeKeys: ['claims', 'customers', 'evidencePackages', 'watchlist', 'rules'] },
   { label: 'Analytics', routeKeys: ['reports'] },
 ];
 

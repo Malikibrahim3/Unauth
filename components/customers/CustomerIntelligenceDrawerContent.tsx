@@ -84,6 +84,19 @@ export function CustomerIntelligenceDrawerContent({
         variantCount={variantCount}
         hasCleanRecord={hasCleanRecord}
       />
+      {(drawerProfile.sibling_count ?? 0) > 0 && (
+        <div
+          className="mt-3 flex items-start gap-2 rounded-md border px-3 py-2"
+          style={{ borderColor: 'var(--accent-border)', background: 'var(--accent-soft)' }}
+        >
+          <span className="text-xs leading-relaxed" style={{ color: 'var(--text)' }}>
+            <span className="font-semibold">
+              {drawerProfile.sibling_count} linked {drawerProfile.sibling_count === 1 ? 'account' : 'accounts'}
+            </span>{' '}
+            resolve to this identity — orders and totals below span all linked records.
+          </span>
+        </div>
+      )}
       <CustomerIntelligenceDrawerCaseCard
         profile={drawerProfile}
         linkedAccounts={linkedAccounts}
