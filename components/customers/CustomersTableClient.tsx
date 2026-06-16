@@ -21,6 +21,14 @@ interface CustomerRow {
   names: string[] | null;
   last_seen: string;
   investigation_status: string;
+  /** Number of source_customer records collapsed into this identity row (>= 1). */
+  linked_customer_count?: number;
+  /** Distinct emails across the collapsed records, for the "linked" tooltip. */
+  linked_emails?: string[] | null;
+}
+
+function linkedAliasEmails(p: CustomerRow): string[] {
+  return (p.linked_emails ?? []).filter((email) => email !== p.primary_email);
 }
 
 interface CustomersTableClientProps {
@@ -37,16 +45,37 @@ export default function CustomersTableClient({ rows }: CustomersTableClientProps
     {
       key: 'customer',
       header: 'Customer',
-      render: (p: CustomerRow) => (
-        <div>
-          <div className="flex items-center gap-1.5">
-            <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>
-              {p.names?.[0] ?? '-'}
-            </span>
+      render: (p: CustomerRow) => {
+        const aliases = linkedAliasEmails(p);
+        return (
+          <div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>
+                {p.names?.[0] ?? '-'}
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-mono" style={{ color: 'var(--text-secondary)' }}>{p.primary_email ?? '-'}</span>
+              {(p.linked_customer_count ?? 1) > 1 && (
+                <Tooltip
+                  content={
+                    aliases.length > 0
+                      ? `Same identity as: ${aliases.join(', ')}`
+                      : `${p.linked_customer_count} linked customer records resolve to this identity`
+                  }
+                >
+                  <span
+                    className="rounded-[3px] px-1 py-0.5 text-[10px] font-semibold leading-none"
+                    style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
+                  >
+                    +{(p.linked_customer_count ?? 1) - 1} linked
+                  </span>
+                </Tooltip>
+              )}
+            </div>
           </div>
-          <div className="text-xs font-mono" style={{ color: 'var(--text-secondary)' }}>{p.primary_email ?? '-'}</div>
-        </div>
-      ),
+        );
+      },
     },
     {
       key: 'risk',
@@ -137,6 +166,14 @@ export default function CustomersTableClient({ rows }: CustomersTableClientProps
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <span className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{p.names?.[0] ?? '-'}</span>
+                  {(p.linked_customer_count ?? 1) > 1 && (
+                    <span
+                      className="rounded-[3px] px-1 py-0.5 text-[10px] font-semibold leading-none"
+                      style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}
+                    >
+                      +{(p.linked_customer_count ?? 1) - 1} linked
+                    </span>
+                  )}
                 </div>
                 <p className="text-xs truncate mt-0.5" style={{ color: 'var(--text-secondary)' }}>{p.primary_email ?? '-'}</p>
               </div>
