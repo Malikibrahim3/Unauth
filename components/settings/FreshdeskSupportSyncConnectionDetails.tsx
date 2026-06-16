@@ -19,6 +19,8 @@ type Props = {
   onPatch: (patch: Partial<FreshdeskSupportSyncState>) => void;
   onRotateSecret: () => void;
   onDisableConnection: () => void;
+  syncing: boolean;
+  onSyncNow: () => void;
   onReconnect: (event: FormEvent) => void;
 };
 
@@ -80,6 +82,8 @@ export function FreshdeskSupportSyncConnectionDetails({
   onPatch,
   onRotateSecret,
   onDisableConnection,
+  syncing,
+  onSyncNow,
   onReconnect,
 }: Props) {
   const isActive = connection.status === 'active';
@@ -163,6 +167,16 @@ export function FreshdeskSupportSyncConnectionDetails({
       {/* Danger zone */}
       {canManage ? (
         <div className="flex flex-wrap gap-2 border-t pt-4" style={{ borderColor: 'var(--border)' }}>
+          <button
+            type="button"
+            disabled={state.busy || syncing || !isActive || !connection.freshdesk_api_configured}
+            onClick={onSyncNow}
+            className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium disabled:opacity-50"
+            style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${syncing ? 'animate-spin' : ''}`} />
+            {syncing ? 'Syncing tickets' : 'Sync tickets now'}
+          </button>
           <button
             type="button"
             disabled={state.busy}

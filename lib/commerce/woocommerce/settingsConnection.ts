@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { TABLES } from '@/lib/supabase/tables';
 import {
   encryptWooCommerceCredentials,
 } from '@/lib/commerce/credentialCrypto';
@@ -49,7 +50,7 @@ export async function getMerchantWooCommerceConnection(
   const row = await getActiveCommerceStoreConnection(supabase, merchantId, 'woocommerce');
   if (!row) {
     const { data } = await supabase
-      .from('commerce_store_connections' as never)
+      .from(TABLES.MERCHANT_SHOPIFY_CONNECTIONS)
       .select('*')
       .eq('merchant_id', merchantId)
       .eq('platform', 'woocommerce')
@@ -109,7 +110,7 @@ export async function createMerchantWooCommerceConnection(
   if (webhookResult.failed.length > 0) {
     const summary = webhookResult.failed.map((f) => `${f.topic}: ${f.error}`).join('; ');
     await supabase
-      .from('commerce_store_connections' as never)
+      .from(TABLES.MERCHANT_SHOPIFY_CONNECTIONS)
       .update({ last_error: `webhook_register_partial: ${summary.slice(0, 500)}` } as never)
       .eq('id', row.id);
   }
@@ -172,7 +173,7 @@ export async function disableMerchantWooCommerceConnection(
 
   const now = new Date().toISOString();
   const { data, error } = await supabase
-    .from('commerce_store_connections' as never)
+    .from(TABLES.MERCHANT_SHOPIFY_CONNECTIONS)
     .update({
       status: 'disabled',
       uninstalled_at: now,
@@ -196,7 +197,7 @@ export async function loadWooCommerceCredentialsForStore(
   storeKey: string,
 ): Promise<{ store_url: string; credentials_encrypted: string } | null> {
   const { data, error } = await supabase
-    .from('commerce_store_connections' as never)
+    .from(TABLES.MERCHANT_SHOPIFY_CONNECTIONS)
     .select('store_url, credentials_encrypted')
     .eq('platform', 'woocommerce')
     .eq('store_key', storeKey)

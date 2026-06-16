@@ -1,8 +1,9 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/lib/supabase/types';
+import { TABLES } from '@/lib/supabase/tables';
 import type { CommerceConnectionStatus, CommercePlatform } from '@/lib/commerce/types';
 
-const STORE_CONNECTIONS_TABLE = 'store_connections';
+const STORE_CONNECTIONS_TABLE = TABLES.MERCHANT_SHOPIFY_CONNECTIONS;
 
 type StoreConnectionsRow = Database['public']['Tables']['store_connections']['Row'];
 type StoreConnectionUpdate = Database['public']['Tables']['store_connections']['Update'];

@@ -96,7 +96,7 @@ export async function scoreBigCommerceOrderIntoAudit(input: {
 
   const now = new Date().toISOString();
   await supabase
-    .from('commerce_store_connections' as never)
+    .from(TABLES.MERCHANT_SHOPIFY_CONNECTIONS)
     .update({ last_sync_at: now, updated_at: now } as never)
     .eq('merchant_id', merchantId)
     .eq('platform', 'bigcommerce')

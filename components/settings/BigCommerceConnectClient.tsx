@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { RefreshCw } from 'lucide-react';
 import { useFetchJson } from '@/lib/react/useFetchJson';
 import type { BigCommerceConnectionSettings } from '@/lib/commerce/bigcommerce/bigcommerceConnectionShared';
 
@@ -13,6 +14,7 @@ export default function BigCommerceConnectClient({ canManage }: Props) {
   const searchParams = useSearchParams();
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [syncing, setSyncing] = useState(false);
 
   const {
     data: connectionPayload,
@@ -80,6 +82,29 @@ export default function BigCommerceConnectClient({ canManage }: Props) {
     }
   }
 
+  async function syncNow() {
+    if (!canManage || !isActive || syncing) return;
+    setSyncing(true);
+    setMessage(null);
+    try {
+      const res = await fetch('/api/settings/bigcommerce/sync', { method: 'POST' });
+      const body = (await res.json()) as { orders?: number; pages?: number; error?: string };
+      if (!res.ok) throw new Error(body.error ?? 'Failed to sync BigCommerce orders');
+      setMessage({
+        type: 'success',
+        text: `BigCommerce sync finished: ${body.orders ?? 0} order(s) ingested across ${body.pages ?? 0} page(s).`,
+      });
+      reloadConnection();
+    } catch (err) {
+      setMessage({
+        type: 'error',
+        text: err instanceof Error ? err.message : 'Failed to sync BigCommerce orders',
+      });
+    } finally {
+      setSyncing(false);
+    }
+  }
+
   if (loading && !connection) {
     return <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Loading…</p>;
   }
@@ -117,15 +142,27 @@ export default function BigCommerceConnectClient({ canManage }: Props) {
             </p>
           )}
           {canManage && (
-            <button
-              type="button"
-              onClick={() => void disconnect()}
-              disabled={busy}
-              className="text-xs font-medium underline"
-              style={{ color: 'var(--text-secondary)' }}
-            >
-              Disconnect
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => void syncNow()}
+                disabled={busy || syncing}
+                className="inline-flex items-center gap-1.5 rounded-md border px-3 py-2 text-xs font-medium disabled:opacity-50"
+                style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+              >
+                <RefreshCw className={`h-3.5 w-3.5 ${syncing ? 'animate-spin' : ''}`} />
+                {syncing ? 'Syncing orders' : 'Sync orders now'}
+              </button>
+              <button
+                type="button"
+                onClick={() => void disconnect()}
+                disabled={busy || syncing}
+                className="text-xs font-medium underline disabled:opacity-50"
+                style={{ color: 'var(--text-secondary)' }}
+              >
+                Disconnect
+              </button>
+            </div>
           )}
         </div>
       )}

@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { after } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { logAction } from '@/lib/permissions/audit';
 import { getClientIp } from '@/lib/ratelimit';
 import { withRequestLogging } from '@/lib/log';
+import { getConnectionState } from '@/lib/connections/getConnectionState';
+import { backfillFreshdeskSupportCases } from '@/lib/support/freshdesk/backfill';
 import {
   createMerchantFreshdeskSupportConnection,
   getMerchantFreshdeskSupportConnection,
@@ -15,6 +18,30 @@ import {
   FRESHDESK_CONNECT_CREDENTIALS_ERROR,
   FRESHDESK_CONNECT_CREDENTIALS_ERROR_CODE,
 } from '@/lib/support/freshdesk/supportConnectionShared';
+
+function scheduleFreshdeskBackfill(
+  service: ReturnType<typeof createServiceClient>,
+  merchantId: string,
+  connectionId: string,
+) {
+  after(async () => {
+    try {
+      const orderSource = await getConnectionState(service, merchantId);
+      await backfillFreshdeskSupportCases({
+        supabase: service,
+        merchantId,
+        providerConnectionId: connectionId,
+        shopDomain: orderSource.orderSourceStoreKey,
+      });
+    } catch (err) {
+      console.error('Freshdesk historical ticket backfill failed', {
+        merchantId,
+        connectionId,
+        message: err instanceof Error ? err.message : 'unknown',
+      });
+    }
+  });
+}
 
 async function GETHandler() {
   const userClient = createClient();
@@ -82,6 +109,10 @@ async function POSTHandler(req: NextRequest) {
         ip,
       });
 
+      if (updated.connection.status === 'active' && updated.connection.freshdesk_api_configured) {
+        scheduleFreshdeskBackfill(service, ctx.merchantId, updated.connection.id);
+      }
+
       return NextResponse.json({ connection: updated.connection });
     }
 
@@ -101,6 +132,8 @@ async function POSTHandler(req: NextRequest) {
       },
       ip,
     });
+
+    scheduleFreshdeskBackfill(service, ctx.merchantId, created.connection.id);
 
     return NextResponse.json(created);
   } catch (err) {

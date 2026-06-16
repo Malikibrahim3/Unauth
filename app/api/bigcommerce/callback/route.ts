@@ -15,6 +15,7 @@ import { logAction } from '@/lib/permissions/audit';
 import { PERMISSIONS, requirePermission, resolveCallerContext } from '@/lib/permissions';
 import { getClientIp } from '@/lib/ratelimit';
 import { backfillBigCommerceOrders } from '@/lib/commerce/bigcommerce/backfill';
+import { TABLES } from '@/lib/supabase/tables';
 
 const INTEGRATIONS_PATH = '/settings/integrations/bigcommerce';
 
@@ -131,7 +132,7 @@ export async function GET(request: NextRequest) {
         webhookWarning = true;
         const summary = webhookResult.failed.map((f) => `${f.scope}: ${f.error}`).join('; ');
         await serviceClient
-          .from('commerce_store_connections' as never)
+          .from(TABLES.MERCHANT_SHOPIFY_CONNECTIONS)
           .update({ last_error: `webhook_register_partial: ${summary.slice(0, 500)}` } as never)
           .eq('merchant_id', persisted.merchantId)
           .eq('platform', 'bigcommerce')
@@ -153,7 +154,7 @@ export async function GET(request: NextRequest) {
         merchantId: persisted.merchantId,
       });
       await serviceClient
-        .from('store_connections')
+        .from(TABLES.MERCHANT_SHOPIFY_CONNECTIONS)
         .update({
           collector_metadata: { bigcommerce_script_uuid: scriptUuid },
         })

@@ -19,6 +19,31 @@ import {
 import { backfillWooCommerceOrders } from '@/lib/commerce/woocommerce/backfill';
 import { normalizeWooCommerceStoreUrl } from '@/lib/commerce/woocommerce/normalizeStoreUrl';
 
+function scheduleWooCommerceBackfill(
+  service: ReturnType<typeof createServiceClient>,
+  merchantId: string,
+  storeUrl: string,
+  storeKey: string,
+  credentials: { consumer_key: string; consumer_secret: string },
+) {
+  after(async () => {
+    try {
+      await backfillWooCommerceOrders({
+        supabase: service,
+        storeUrl,
+        storeKey,
+        credentials,
+      });
+    } catch (err) {
+      console.error('WooCommerce historical order backfill failed', {
+        storeKey,
+        merchantId,
+        message: err instanceof Error ? err.message : 'unknown',
+      });
+    }
+  });
+}
+
 async function GETHandler() {
   const userClient = createClient();
   const {
@@ -82,6 +107,12 @@ async function POSTHandler(req: NextRequest) {
         ip,
       });
 
+      const { store_url } = normalizeWooCommerceStoreUrl(parsed.data.store_url);
+      scheduleWooCommerceBackfill(service, ctx.merchantId, store_url, updated.connection.store_key, {
+        consumer_key: parsed.data.consumer_key,
+        consumer_secret: parsed.data.consumer_secret,
+      });
+
       return NextResponse.json({ connection: updated.connection });
     }
 
@@ -106,30 +137,7 @@ async function POSTHandler(req: NextRequest) {
       consumer_key: parsed.data.consumer_key,
       consumer_secret: parsed.data.consumer_secret,
     };
-    try {
-      after(async () => {
-        try {
-          await backfillWooCommerceOrders({
-            supabase: service,
-            storeUrl: store_url,
-            storeKey,
-            credentials,
-          });
-        } catch (err) {
-          console.error('WooCommerce historical order backfill failed', {
-            storeKey,
-            merchantId: ctx.merchantId,
-            message: err instanceof Error ? err.message : 'unknown',
-          });
-        }
-      });
-    } catch (err) {
-      console.error('WooCommerce historical order backfill scheduling failed', {
-        storeKey,
-        merchantId: ctx.merchantId,
-        message: err instanceof Error ? err.message : 'unknown',
-      });
-    }
+    scheduleWooCommerceBackfill(service, ctx.merchantId, store_url, storeKey, credentials);
 
     return NextResponse.json(created);
   } catch (err) {

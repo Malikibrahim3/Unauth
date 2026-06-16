@@ -99,7 +99,7 @@ export async function scoreWooCommerceOrderIntoAudit(input: {
 
   const now = new Date().toISOString();
   await supabase
-    .from('store_connections')
+    .from(TABLES.MERCHANT_SHOPIFY_CONNECTIONS)
     .update({ last_sync_at: now, updated_at: now })
     .eq('merchant_id', merchantId)
     .eq('platform', 'woocommerce')

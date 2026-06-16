@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { TABLES } from '@/lib/supabase/tables';
 import {
   getActiveCommerceStoreConnection,
   type CommerceStoreConnectionRow,
@@ -30,7 +31,7 @@ export async function getMerchantBigCommerceConnection(
   const row = await getActiveCommerceStoreConnection(supabase, merchantId, 'bigcommerce');
   if (!row) {
     const { data } = await supabase
-      .from('commerce_store_connections' as never)
+      .from(TABLES.MERCHANT_SHOPIFY_CONNECTIONS)
       .select('*')
       .eq('merchant_id', merchantId)
       .eq('platform', 'bigcommerce')
@@ -54,7 +55,7 @@ export async function disableMerchantBigCommerceConnection(
 
   const now = new Date().toISOString();
   const { data, error } = await supabase
-    .from('commerce_store_connections' as never)
+    .from(TABLES.MERCHANT_SHOPIFY_CONNECTIONS)
     .update({
       status: 'disabled',
       uninstalled_at: now,
@@ -78,7 +79,7 @@ export async function loadBigCommerceCredentialsForStore(
   storeHash: string,
 ): Promise<{ store_url: string; credentials_encrypted: string } | null> {
   const { data, error } = await supabase
-    .from('commerce_store_connections' as never)
+    .from(TABLES.MERCHANT_SHOPIFY_CONNECTIONS)
     .select('store_url, credentials_encrypted')
     .eq('platform', 'bigcommerce')
     .eq('store_key', storeHash)

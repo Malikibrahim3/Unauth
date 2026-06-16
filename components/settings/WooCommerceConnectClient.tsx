@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useReducer, useRef, type FormEvent } from 'react';
+import { useEffect, useReducer, useRef, useState, type FormEvent } from 'react';
+import { RefreshCw } from 'lucide-react';
 import { useFetchJson } from '@/lib/react/useFetchJson';
 import {
   WOOCOMMERCE_CONNECT_CREDENTIALS_ERROR,
@@ -49,6 +50,7 @@ export default function WooCommerceConnectClient({ canManage }: Props) {
     loadError,
     createInitialWooCommerceSupportSyncState,
   );
+  const [syncing, setSyncing] = useState(false);
   const patch = (patchState: Partial<typeof state>) => dispatch({ type: 'patch', patch: patchState });
 
   const seededConnectionIdRef = useRef<string | null>(null);
@@ -132,6 +134,33 @@ export default function WooCommerceConnectClient({ canManage }: Props) {
     }
   }
 
+  async function syncNow() {
+    if (!canManage || !isActive || syncing) return;
+    setSyncing(true);
+    patch({ message: null });
+    try {
+      const res = await fetch('/api/settings/woocommerce/sync', { method: 'POST' });
+      const body = (await res.json()) as { orders?: number; pages?: number; error?: string };
+      if (!res.ok) throw new Error(body.error ?? 'Failed to sync WooCommerce orders');
+      patch({
+        message: {
+          type: 'success',
+          text: `WooCommerce sync finished: ${body.orders ?? 0} order(s) ingested across ${body.pages ?? 0} page(s).`,
+        },
+      });
+      reloadConnection();
+    } catch (err) {
+      patch({
+        message: {
+          type: 'error',
+          text: err instanceof Error ? err.message : 'Failed to sync WooCommerce orders',
+        },
+      });
+    } finally {
+      setSyncing(false);
+    }
+  }
+
   if (loading && !connection) {
     return <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Loading…</p>;
   }
@@ -169,15 +198,27 @@ export default function WooCommerceConnectClient({ canManage }: Props) {
             </p>
           )}
           {canManage && (
-            <button
-              type="button"
-              onClick={() => void disconnect()}
-              disabled={state.busy}
-              className="text-xs font-medium underline"
-              style={{ color: 'var(--text-secondary)' }}
-            >
-              Disconnect
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => void syncNow()}
+                disabled={state.busy || syncing}
+                className="inline-flex items-center gap-1.5 rounded-md border px-3 py-2 text-xs font-medium disabled:opacity-50"
+                style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+              >
+                <RefreshCw className={`h-3.5 w-3.5 ${syncing ? 'animate-spin' : ''}`} />
+                {syncing ? 'Syncing orders' : 'Sync orders now'}
+              </button>
+              <button
+                type="button"
+                onClick={() => void disconnect()}
+                disabled={state.busy || syncing}
+                className="text-xs font-medium underline disabled:opacity-50"
+                style={{ color: 'var(--text-secondary)' }}
+              >
+                Disconnect
+              </button>
+            </div>
           )}
         </div>
       )}

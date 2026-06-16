@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useReducer, useRef, type FormEvent } from 'react';
+import { useEffect, useReducer, useRef, useState, type FormEvent } from 'react';
 import { useFetchJson } from '@/lib/react/useFetchJson';
 import { FreshdeskSupportSyncConnectionDetails } from '@/components/settings/FreshdeskSupportSyncConnectionDetails';
 import { FreshdeskSupportSyncCreateForm } from '@/components/settings/FreshdeskSupportSyncCreateForm';
@@ -50,6 +50,7 @@ export default function FreshdeskSupportSyncClient({ canManage }: Props) {
     loadError,
     createInitialFreshdeskSupportSyncState
   );
+  const [syncing, setSyncing] = useState(false);
   const patch = (patchState: Partial<typeof state>) => dispatch({ type: 'patch', patch: patchState });
 
   const seededConnectionIdRef = useRef<string | null>(null);
@@ -153,6 +154,40 @@ export default function FreshdeskSupportSyncClient({ canManage }: Props) {
     }
   }
 
+  async function syncNow() {
+    if (!canManage || syncing) return;
+    setSyncing(true);
+    patch({ message: null });
+    try {
+      const res = await fetch('/api/settings/freshdesk/support-connection/sync', {
+        method: 'POST',
+      });
+      const body = (await res.json()) as {
+        tickets_listed?: number;
+        ingested?: number;
+        errors?: number;
+        error?: string;
+      };
+      if (!res.ok) throw new Error(body.error ?? 'Failed to sync Freshdesk tickets');
+      patch({
+        message: {
+          type: body.errors ? 'warning' : 'success',
+          text: `Freshdesk sync finished: ${body.ingested ?? 0} ticket(s) ingested from ${body.tickets_listed ?? 0} listed.`,
+        },
+      });
+      reloadConnection();
+    } catch (err) {
+      patch({
+        message: {
+          type: 'error',
+          text: err instanceof Error ? err.message : 'Failed to sync Freshdesk tickets',
+        },
+      });
+    } finally {
+      setSyncing(false);
+    }
+  }
+
   async function disableConnection() {
     if (!canManage) return;
     patch({ busy: true, message: null });
@@ -240,6 +275,8 @@ export default function FreshdeskSupportSyncClient({ canManage }: Props) {
           onPatch={patch}
           onRotateSecret={() => void rotateSecret()}
           onDisableConnection={() => void disableConnection()}
+          syncing={syncing}
+          onSyncNow={() => void syncNow()}
           onReconnect={(event) => void saveConnection(event)}
         />
       )}
