@@ -1,16 +1,17 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowRight, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Zap } from 'lucide-react';
 import { useAsyncResource } from '@/lib/react/useFetchJson';
 import { fetchIntegrationConnectionStatus } from '@/components/settings/fetchIntegrationConnectionStatus';
 import type { IntegrationsSetupStatus } from '@/components/settings/apiIntegrationsTypes';
 
-type SetupPhase = 'neither' | 'order_source_only' | 'helpdesk_only' | 'both';
+type CommercePlatformId = 'shopify' | 'woocommerce' | 'bigcommerce' | 'magento';
+type HelpdeskPlatformId = 'gorgias' | 'freshdesk' | 'zendesk';
 
-type CommercePlatform = {
-  id: string;
+type Platform = {
   name: string;
   description: string;
   href: string;
@@ -18,21 +19,11 @@ type CommercePlatform = {
   available: boolean;
 };
 
-type SecondaryIntegration = {
-  id: string;
-  name: string;
-  href: string;
-  logo: string;
-  available: boolean;
-  connected: boolean;
-  detail: string | null;
-};
-
-const COMMERCE_PLATFORMS: CommercePlatform[] = [
+const COMMERCE_PLATFORMS: (Platform & { id: CommercePlatformId })[] = [
   {
     id: 'shopify',
     name: 'Shopify',
-    description: 'Sync orders, customers, refunds and fulfilment events in real time',
+    description: 'Sync orders, customers, refunds and fulfillment in real time',
     href: '/settings/integrations/shopify',
     logo: '/integrations/shopify.svg',
     available: true,
@@ -48,7 +39,7 @@ const COMMERCE_PLATFORMS: CommercePlatform[] = [
   {
     id: 'bigcommerce',
     name: 'BigCommerce',
-    description: 'Sync orders and customers from your BigCommerce storefront',
+    description: 'Connect your BigCommerce storefront to sync orders and customers',
     href: '/settings/integrations/bigcommerce',
     logo: '/integrations/bigcommerce.svg',
     available: true,
@@ -63,378 +54,227 @@ const COMMERCE_PLATFORMS: CommercePlatform[] = [
   },
 ];
 
-function resolveSetupPhase(orderSourceConnected: boolean, helpdeskConnected: boolean): SetupPhase {
-  if (orderSourceConnected && helpdeskConnected) return 'both';
-  if (orderSourceConnected) return 'order_source_only';
-  if (helpdeskConnected) return 'helpdesk_only';
-  return 'neither';
-}
+const HELPDESK_PLATFORMS: (Platform & { id: HelpdeskPlatformId })[] = [
+  {
+    id: 'gorgias',
+    name: 'Gorgias',
+    description: 'Show claim intelligence inside your Gorgias ticket sidebar',
+    href: '/settings/integrations/gorgias',
+    logo: '/integrations/gorgias.png',
+    available: true,
+  },
+  {
+    id: 'freshdesk',
+    name: 'Freshdesk',
+    description: 'Surface order history and trust signals inside Freshdesk tickets',
+    href: '/settings/integrations/freshdesk',
+    logo: '/integrations/freshdesk.svg',
+    available: true,
+  },
+  {
+    id: 'zendesk',
+    name: 'Zendesk',
+    description: 'Install the Zendesk sidebar app for in-ticket claim context',
+    href: '/settings/integrations/zendesk',
+    logo: '/integrations/zendesk.svg',
+    available: true,
+  },
+];
 
-function connectedOrderSourceName(status: IntegrationsSetupStatus): string | null {
-  if (status.shopify.connected) return 'Shopify';
-  if (status.woocommerce.connected) return 'WooCommerce';
-  if (status.bigcommerce.connected) return 'BigCommerce';
-  return null;
-}
-
-function connectedHelpdeskName(status: IntegrationsSetupStatus): string | null {
-  if (status.gorgias.connected) return 'Gorgias';
-  if (status.freshdesk.connected) return 'Freshdesk';
-  return null;
-}
-
-function sectionCopy(phase: SetupPhase, status: IntegrationsSetupStatus): { heading: string; subcopy: string } {
-  const orderSourceName = connectedOrderSourceName(status);
-  const helpdeskName = connectedHelpdeskName(status);
-  switch (phase) {
-    case 'both':
-      return {
-        heading: 'Claim intelligence active',
-        subcopy:
-          `Your order source and ${helpdeskName ?? 'helpdesk'} are connected. Agents see order history, prior claims, trust indicators and review indicators inside support tickets.`,
-      };
-    case 'order_source_only':
-      return {
-        heading: 'Finish setup',
-        subcopy: orderSourceName
-          ? `${orderSourceName} is connected. Connect a helpdesk to show claim intelligence inside support tickets.`
-          : 'Your order source is connected. Connect a helpdesk to show claim intelligence inside support tickets.',
-      };
-    case 'helpdesk_only':
-      return {
-        heading: 'Finish setup',
-        subcopy:
-          `${helpdeskName ?? 'Your helpdesk'} is connected. Connect an order source so Unauth can power the widget with order, refund, customer and fulfilment context.`,
-      };
-    default:
-      return {
-        heading: 'Finish setup',
-        subcopy: 'Connect an order source and a helpdesk to show claim context inside support tickets.',
-      };
-  }
-}
-
-function commercePlatformState(
-  platform: CommercePlatform,
+function getCommerceState(
+  id: CommercePlatformId,
   status: IntegrationsSetupStatus,
 ): { connected: boolean; detail: string | null } {
-  if (platform.id === 'shopify') {
-    return { connected: status.shopify.connected, detail: status.shopify.detail };
-  }
-  if (platform.id === 'woocommerce') {
-    return { connected: status.woocommerce.connected, detail: status.woocommerce.detail };
-  }
-  if (platform.id === 'bigcommerce') {
-    return { connected: status.bigcommerce.connected, detail: status.bigcommerce.detail };
-  }
+  if (id === 'shopify') return { connected: status.shopify.connected, detail: status.shopify.detail };
+  if (id === 'woocommerce') return { connected: status.woocommerce.connected, detail: status.woocommerce.detail };
+  if (id === 'bigcommerce') return { connected: status.bigcommerce.connected, detail: status.bigcommerce.detail };
   return { connected: false, detail: null };
 }
 
-function ConnectedSetupCard({
+function getHelpdeskState(
+  id: HelpdeskPlatformId,
+  status: IntegrationsSetupStatus,
+): { connected: boolean; detail: string | null } {
+  if (id === 'gorgias') return { connected: status.gorgias.connected, detail: status.gorgias.detail };
+  if (id === 'freshdesk') return { connected: status.freshdesk.connected, detail: status.freshdesk.detail };
+  if (id === 'zendesk') return { connected: status.zendesk.connected, detail: status.zendesk.detail };
+  return { connected: false, detail: null };
+}
+
+function IntegrationCard({
   logo,
   name,
-  copy,
+  description,
+  href,
+  connected,
   detail,
-  manageHref,
+  available,
 }: {
   logo: string;
   name: string;
-  copy: string;
-  detail?: string | null;
-  manageHref: string;
+  description: string;
+  href: string;
+  connected: boolean;
+  detail: string | null;
+  available: boolean;
 }) {
   return (
     <div
-      className="flex gap-3 rounded-md border p-4"
+      className="flex flex-col rounded-xl border p-4"
+      style={{
+        borderColor: connected
+          ? 'color-mix(in srgb, var(--success) 35%, var(--border))'
+          : 'var(--border)',
+        background: connected
+          ? 'color-mix(in srgb, var(--success) 3%, var(--surface))'
+          : 'var(--surface)',
+      }}
+    >
+      <div className="flex items-start justify-between gap-2 mb-3">
+        <Image src={logo} alt="" width={36} height={36} className="h-9 w-9 rounded-lg object-contain" />
+        {connected ? (
+          <span
+            className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium"
+            style={{
+              background: 'color-mix(in srgb, var(--success) 12%, transparent)',
+              color: 'var(--success)',
+            }}
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-current" />
+            Connected
+          </span>
+        ) : !available ? (
+          <span
+            className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium uppercase tracking-wide"
+            style={{
+              background: 'color-mix(in srgb, var(--text-secondary) 10%, transparent)',
+              color: 'var(--text-secondary)',
+            }}
+          >
+            Soon
+          </span>
+        ) : null}
+      </div>
+
+      <p className="text-sm font-semibold mb-0.5" style={{ color: 'var(--text)' }}>
+        {name}
+      </p>
+      {connected && detail ? (
+        <p className="text-xs mb-2 truncate" style={{ color: 'var(--text-secondary)' }}>
+          {detail}
+        </p>
+      ) : null}
+      <p className="text-xs leading-relaxed flex-1" style={{ color: 'var(--text-secondary)' }}>
+        {description}
+      </p>
+
+      <div className="mt-4">
+        {available ? (
+          <Link
+            href={href}
+            className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors"
+            style={{
+              borderColor: 'var(--border)',
+              color: connected ? 'var(--text-secondary)' : 'var(--text)',
+              background: 'transparent',
+            }}
+          >
+            {connected ? 'Manage' : <><span>Connect</span><ArrowRight className="h-3 w-3" /></>}
+          </Link>
+        ) : (
+          <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+            Coming soon
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function StepSection({
+  number,
+  title,
+  subtitle,
+  complete,
+  children,
+}: {
+  number: number;
+  title: string;
+  subtitle: string;
+  complete: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex gap-5">
+      {/* Left: step indicator + connector line */}
+      <div className="flex flex-col items-center">
+        <div
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold"
+          style={{
+            background: complete ? 'var(--success)' : 'var(--surface)',
+            color: complete ? 'white' : 'var(--text-secondary)',
+            border: complete
+              ? 'none'
+              : '1.5px solid var(--border)',
+          }}
+        >
+          {complete ? <CheckCircle2 className="h-4 w-4" /> : <span>{number}</span>}
+        </div>
+        <div
+          className="mt-2 w-px flex-1 min-h-4"
+          style={{ background: 'var(--border)' }}
+        />
+      </div>
+
+      {/* Right: content */}
+      <div className="flex-1 pb-8 min-w-0">
+        <div className="mb-4 mt-0.5">
+          <p
+            className="text-sm font-semibold"
+            style={{ color: complete ? 'var(--text)' : 'var(--text)' }}
+          >
+            {title}
+          </p>
+          <p className="mt-0.5 text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+            {subtitle}
+          </p>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function LiveBanner({
+  storeName,
+  helpdeskName,
+}: {
+  storeName: string;
+  helpdeskName: string;
+}) {
+  return (
+    <div
+      className="flex items-center gap-3 rounded-xl border px-4 py-3 mb-8"
       style={{
         borderColor: 'color-mix(in srgb, var(--success) 30%, var(--border))',
         background: 'color-mix(in srgb, var(--success) 4%, var(--surface))',
       }}
     >
-      <Image src={logo} alt="" width={32} height={32} className="h-8 w-8 shrink-0 rounded-md object-contain" />
-      <div className="min-w-0 flex-1">
-        <div className="flex items-start justify-between gap-2">
-          <div>
-            <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
-              {name}
-            </p>
-            <p className="mt-0.5 flex items-center gap-1.5 text-xs font-medium" style={{ color: 'var(--success)' }}>
-              <CheckCircle2 className="h-3.5 w-3.5" />
-              Connected
-              {detail ? <span style={{ color: 'var(--text-secondary)' }}>· {detail}</span> : null}
-            </p>
-          </div>
-          <Link
-            href={manageHref}
-            className="inline-flex shrink-0 items-center rounded-md border px-2.5 py-1 text-xs font-medium"
-            style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
-          >
-            Manage
-          </Link>
-        </div>
-        <p className="mt-2 text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-          {copy}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function ActivationSetupCard({
-  logo,
-  title,
-  copy,
-  href,
-  ctaLabel,
-  prominent = false,
-  connected = false,
-  detail,
-}: {
-  logo: string;
-  title: string;
-  copy: string;
-  href: string;
-  ctaLabel: string;
-  prominent?: boolean;
-  connected?: boolean;
-  detail?: string | null;
-}) {
-  return (
-    <div
-      className={`flex gap-4 rounded-md border ${prominent ? 'p-6' : 'p-4'}`}
-      style={{
-        borderColor: prominent
-          ? 'color-mix(in srgb, var(--accent) 45%, var(--border))'
-          : 'var(--border)',
-        background: prominent
-          ? 'color-mix(in srgb, var(--accent) 6%, var(--surface))'
-          : 'var(--surface)',
-      }}
-    >
-      <Image
-        src={logo}
-        alt=""
-        width={prominent ? 40 : 32}
-        height={prominent ? 40 : 32}
-        className={`${prominent ? 'h-10 w-10' : 'h-8 w-8'} shrink-0 rounded-md object-contain`}
-      />
-      <div className="min-w-0 flex-1 space-y-3">
-        <div>
-          <p className={`font-semibold ${prominent ? 'text-base' : 'text-sm'}`} style={{ color: 'var(--text)' }}>
-            {title}
-          </p>
-          {connected ? (
-            <p className="mt-0.5 flex items-center gap-1.5 text-xs font-medium" style={{ color: 'var(--success)' }}>
-              <CheckCircle2 className="h-3.5 w-3.5" />
-              Connected
-              {detail ? <span style={{ color: 'var(--text-secondary)' }}>· {detail}</span> : null}
-            </p>
-          ) : (
-            <p className="mt-0.5 text-xs font-medium" style={{ color: prominent ? 'var(--accent)' : 'var(--text-secondary)' }}>
-              Not connected
-            </p>
-          )}
-          <p className={`mt-2 leading-relaxed ${prominent ? 'text-sm' : 'text-xs'}`} style={{ color: 'var(--text-secondary)' }}>
-            {copy}
-          </p>
-        </div>
-        {!connected ? (
-          <Link
-            href={href}
-            className={`inline-flex items-center gap-2 rounded-md font-semibold ${
-              prominent ? 'px-5 py-2.5 text-sm' : 'px-3.5 py-2 text-xs'
-            }`}
-            style={{ background: 'var(--accent)', color: 'white' }}
-          >
-            {ctaLabel}
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
-function CommercePlatformsPanel({ status }: { status: IntegrationsSetupStatus }) {
-  const orderSourceConnected =
-    status.shopify.connected || status.woocommerce.connected || status.bigcommerce.connected;
-
-  return (
-    <div
-      className="rounded-md border p-4 space-y-3"
-      style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
-    >
-      <div>
-        <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
-          Order data
-        </p>
-        <p className="mt-0.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
-          {orderSourceConnected
-            ? 'Order, customer, refund and fulfilment context is syncing.'
-            : 'Connect your storefront to sync orders and customer identity.'}
-        </p>
-      </div>
-
-      <div className="space-y-2">
-        {COMMERCE_PLATFORMS.map((platform) => {
-          const { connected, detail } = commercePlatformState(platform, status);
-          const isShopify = platform.id === 'shopify';
-          const demoted = orderSourceConnected && !connected && !isShopify;
-
-          return (
-            <div
-              key={platform.id}
-              className="flex gap-3 rounded-md border p-3"
-              style={{
-                borderColor: connected
-                  ? 'color-mix(in srgb, var(--success) 30%, var(--border))'
-                  : 'var(--border)',
-                background: connected
-                  ? 'color-mix(in srgb, var(--success) 4%, var(--surface))'
-                  : 'var(--surface)',
-                opacity: demoted ? 0.75 : 1,
-              }}
-            >
-              <Image
-                src={platform.logo}
-                alt=""
-                width={28}
-                height={28}
-                className="h-7 w-7 shrink-0 rounded-md object-contain"
-              />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-start justify-between gap-2">
-                  <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>
-                    {platform.name}
-                  </p>
-                  {platform.available ? (
-                    connected ? (
-                      <Link
-                        href={platform.href}
-                        className="inline-flex shrink-0 items-center rounded-md border px-2.5 py-1 text-xs font-medium"
-                        style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
-                      >
-                        Manage
-                      </Link>
-                    ) : (
-                      <Link
-                        href={platform.href}
-                        className="inline-flex shrink-0 items-center gap-1 rounded-md px-2.5 py-1 text-xs font-semibold"
-                        style={{
-                          background: !orderSourceConnected && isShopify ? 'var(--accent)' : 'transparent',
-                          border: !orderSourceConnected && isShopify ? 'none' : '1px solid var(--border)',
-                          color: !orderSourceConnected && isShopify ? 'white' : 'var(--text-secondary)',
-                        }}
-                      >
-                        Connect
-                        {!orderSourceConnected && isShopify ? <ArrowRight className="h-3 w-3" /> : null}
-                      </Link>
-                    )
-                  ) : (
-                    <span
-                      className="inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-xs font-semibold uppercase tracking-wide"
-                      style={{
-                        background: 'color-mix(in srgb, var(--text-secondary) 10%, transparent)',
-                        color: 'var(--text-secondary)',
-                      }}
-                    >
-                      Coming soon
-                    </span>
-                  )}
-                </div>
-                <p className="mt-1 flex items-center gap-1.5 text-xs font-medium">
-                  <span
-                    aria-hidden
-                    className="inline-block h-1.5 w-1.5 shrink-0 rounded-full"
-                    style={{
-                      background: connected ? 'var(--success)' : 'transparent',
-                      border: connected ? 'none' : '1px solid var(--text-secondary)',
-                    }}
-                  />
-                  <span style={{ color: connected ? 'var(--success)' : 'var(--text-secondary)' }}>
-                    {connected ? 'Connected' : 'Not connected'}
-                  </span>
-                  {connected && detail ? (
-                    <span className="truncate" style={{ color: 'var(--text-secondary)' }}>
-                      · {detail}
-                    </span>
-                  ) : null}
-                </p>
-                <p className="mt-1 text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                  {platform.description}
-                </p>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function OtherHelpdesksDisclosure({ items }: { items: SecondaryIntegration[] }) {
-  return (
-    <details
-      className="group rounded-md border"
-      style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
-    >
-      <summary
-        className="cursor-pointer list-none px-4 py-3 text-sm font-medium [&::-webkit-details-marker]:hidden"
-        style={{ color: 'var(--text-secondary)' }}
+      <div
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
+        style={{ background: 'color-mix(in srgb, var(--success) 15%, transparent)' }}
       >
-        <span className="inline-flex items-center gap-2">
-          <span aria-hidden className="inline-block transition-transform group-open:rotate-90">
-            ›
-          </span>
-          Using Zendesk?
-        </span>
-      </summary>
-      <div className="space-y-3 border-t px-4 pb-4 pt-3" style={{ borderColor: 'var(--border)' }}>
-        <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)', opacity: 0.85 }}>
-          Zendesk is available for advanced setup.
-        </p>
-        <div className="space-y-2">
-          {items.map((item) => (
-            <div
-              key={item.id}
-              className="flex items-center gap-3 rounded-md px-2 py-2"
-              style={{ opacity: 0.8 }}
-            >
-              <Image src={item.logo} alt="" width={20} height={20} className="h-5 w-5 shrink-0 rounded object-contain" />
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-medium" style={{ color: 'var(--text)' }}>
-                  {item.name}
-                  {item.connected ? (
-                    <span className="ml-1.5 font-normal" style={{ color: 'var(--success)' }}>
-                      · Connected
-                    </span>
-                  ) : null}
-                  {!item.available ? (
-                    <span className="ml-1.5 font-normal" style={{ color: 'var(--text-secondary)' }}>
-                      · Coming soon
-                    </span>
-                  ) : null}
-                </p>
-                {item.connected && item.detail ? (
-                  <p className="truncate text-xs" style={{ color: 'var(--text-secondary)' }}>
-                    {item.detail}
-                  </p>
-                ) : null}
-              </div>
-              {item.available ? (
-                <Link
-                  href={item.href}
-                  className="shrink-0 text-xs font-medium"
-                  style={{ color: 'var(--text-secondary)' }}
-                >
-                  {item.connected ? 'Manage' : 'Connect'}
-                </Link>
-              ) : null}
-            </div>
-          ))}
-        </div>
+        <Zap className="h-4 w-4" style={{ color: 'var(--success)' }} />
       </div>
-    </details>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
+          Claim intelligence is active
+        </p>
+        <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+          {storeName} and {helpdeskName} are connected. Agents see order history, trust indicators and prior claims inside every ticket.
+        </p>
+      </div>
+    </div>
   );
 }
 
@@ -443,93 +283,109 @@ export default function IntegrationsSetupClient() {
 
   if (!status) {
     return (
-      <div
-        className="h-48 animate-pulse rounded-md border"
-        style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
-      />
+      <div className="space-y-6">
+        {[0, 1].map((i) => (
+          <div key={i} className="flex gap-5">
+            <div
+              className="h-8 w-8 shrink-0 rounded-full animate-pulse"
+              style={{ background: 'var(--border)' }}
+            />
+            <div className="flex-1 space-y-3">
+              <div className="h-4 w-32 rounded animate-pulse" style={{ background: 'var(--border)' }} />
+              <div
+                className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4"
+              >
+                {[0, 1, 2, 3].map((j) => (
+                  <div
+                    key={j}
+                    className="h-36 rounded-xl animate-pulse"
+                    style={{ background: 'var(--border)' }}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
     );
   }
 
   const orderSourceConnected =
     status.shopify.connected || status.woocommerce.connected || status.bigcommerce.connected;
-  const gorgiasConnected = status.gorgias.connected;
-  const freshdeskConnected = status.freshdesk.connected;
-  const helpdeskConnected = gorgiasConnected || freshdeskConnected;
-  const phase = resolveSetupPhase(orderSourceConnected, helpdeskConnected);
-  const { heading, subcopy } = sectionCopy(phase, status);
+  const helpdeskConnected =
+    status.gorgias.connected || status.freshdesk.connected || status.zendesk.connected;
 
-  const zendesks: SecondaryIntegration[] = [
-    {
-      id: 'zendesk',
-      name: 'Zendesk',
-      href: '/settings/integrations/zendesk',
-      logo: '/integrations/zendesk.svg',
-      available: true,
-      connected: status.zendesk.connected,
-      detail: status.zendesk.detail,
-    },
-  ];
+  const connectedStoreName = status.shopify.connected
+    ? 'Shopify'
+    : status.woocommerce.connected
+    ? 'WooCommerce'
+    : status.bigcommerce.connected
+    ? 'BigCommerce'
+    : null;
+
+  const connectedHelpdeskName = status.gorgias.connected
+    ? 'Gorgias'
+    : status.freshdesk.connected
+    ? 'Freshdesk'
+    : status.zendesk.connected
+    ? 'Zendesk'
+    : null;
 
   return (
-    <section className="space-y-4">
-      <div>
-        <h2 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
-          {heading}
-        </h2>
-        <p className="mt-0.5 text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-          {subcopy}
-        </p>
-      </div>
+    <div>
+      {orderSourceConnected && helpdeskConnected && connectedStoreName && connectedHelpdeskName ? (
+        <LiveBanner storeName={connectedStoreName} helpdeskName={connectedHelpdeskName} />
+      ) : null}
 
-      <div className="space-y-3">
-        <CommercePlatformsPanel status={status} />
+      <StepSection
+        number={1}
+        title="Connect your store"
+        subtitle="Sync orders, customers, refunds and fulfillment so Unauth has the context it needs."
+        complete={orderSourceConnected}
+      >
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          {COMMERCE_PLATFORMS.map((platform) => {
+            const { connected, detail } = getCommerceState(platform.id, status);
+            return (
+              <IntegrationCard
+                key={platform.id}
+                logo={platform.logo}
+                name={platform.name}
+                description={platform.description}
+                href={platform.href}
+                connected={connected}
+                detail={detail}
+                available={platform.available}
+              />
+            );
+          })}
+        </div>
+      </StepSection>
 
-        {/* Gorgias */}
-        {gorgiasConnected ? (
-          <ConnectedSetupCard
-            logo="/integrations/gorgias.png"
-            name="Gorgias"
-            copy={
-              status.gorgias.widgetReady
-                ? 'Claim intelligence is active in your Gorgias sidebar.'
-                : 'Gorgias is connected. Finish widget setup if agents do not see claim context yet.'
-            }
-            detail={status.gorgias.detail}
-            manageHref="/settings/integrations/gorgias"
-          />
-        ) : (
-          <ActivationSetupCard
-            logo="/integrations/gorgias.png"
-            title="Activate claim intelligence in Gorgias"
-            copy="Agents see order history, prior claims, trust indicators and review indicators without leaving Gorgias."
-            href="/settings/integrations/gorgias"
-            ctaLabel="Connect Gorgias"
-            prominent={phase === 'order_source_only' && !freshdeskConnected}
-          />
-        )}
-
-        {/* Freshdesk — first-class peer to Gorgias */}
-        {freshdeskConnected ? (
-          <ConnectedSetupCard
-            logo="/integrations/freshdesk.svg"
-            name="Freshdesk"
-            copy="Claim intelligence is active via the Freshdesk webhook. Agents see order history, prior claims and identity context inside tickets."
-            detail={status.freshdesk.detail}
-            manageHref="/settings/integrations/freshdesk"
-          />
-        ) : (
-          <ActivationSetupCard
-            logo="/integrations/freshdesk.svg"
-            title="Activate claim intelligence in Freshdesk"
-            copy="Connect via webhook to surface order history, prior claims and trust indicators inside your Freshdesk tickets."
-            href="/settings/integrations/freshdesk"
-            ctaLabel="Connect Freshdesk"
-            prominent={phase === 'order_source_only' && gorgiasConnected === false && freshdeskConnected === false}
-          />
-        )}
-      </div>
-
-      <OtherHelpdesksDisclosure items={zendesks} />
-    </section>
+      <StepSection
+        number={2}
+        title="Connect your helpdesk"
+        subtitle="Surface claim intelligence — order history, trust indicators and prior claims — inside support tickets."
+        complete={helpdeskConnected}
+      >
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {HELPDESK_PLATFORMS.map((platform) => {
+            const { connected, detail } = getHelpdeskState(platform.id, status);
+            return (
+              <IntegrationCard
+                key={platform.id}
+                logo={platform.logo}
+                name={platform.name}
+                description={platform.description}
+                href={platform.href}
+                connected={connected}
+                detail={detail}
+                available={platform.available}
+              />
+            );
+          })}
+        </div>
+      </StepSection>
+    </div>
   );
 }
