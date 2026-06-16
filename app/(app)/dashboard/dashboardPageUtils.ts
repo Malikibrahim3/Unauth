@@ -81,7 +81,6 @@ export function buildConfig(state: MerchantSetupState, connection: ConnectionSta
       return {
         subtitle: 'Showing intelligence from your imported history.',
         primaryCta: { label: 'Connect Shopify & helpdesk', href: integrations },
-        secondaryCta: { label: 'Import more', href: '/upload' },
         banner: {
           tone: 'stale',
           title: 'Running from imported history — connect live sources for real-time monitoring.',

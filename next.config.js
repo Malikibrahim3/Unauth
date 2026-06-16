@@ -40,8 +40,21 @@ const nextConfig = {
     '/api/settings/chrome/download': ['./extensions/chrome/dist/**/*'],
   },
   async redirects() {
+    // Backward-compat aliases for renamed routes. Page-level redirect stubs were
+    // removed in favour of these config redirects so the route tree stays clean
+    // while old bookmarks/links keep working.
     return [
       { source: '/inbox', destination: '/claims', permanent: false },
+      { source: '/audits', destination: '/history', permanent: false },
+      { source: '/audit-history', destination: '/history', permanent: false },
+      { source: '/saved', destination: '/history', permanent: false },
+      { source: '/new-audit', destination: '/upload', permanent: false },
+      { source: '/audits/new', destination: '/upload', permanent: false },
+      { source: '/evidence', destination: '/chargebacks', permanent: false },
+      { source: '/evidence-packages', destination: '/chargebacks', permanent: false },
+      { source: '/clusters', destination: '/customers?merchantsMin=2', permanent: false },
+      { source: '/graph', destination: '/global', permanent: false },
+      { source: '/report/:runId', destination: '/audit/:runId', permanent: false },
     ];
   },
   // SECURITY: Explicit image optimizer allowlist — mitigates GHSA-9g9p-9gw9-jx7f.

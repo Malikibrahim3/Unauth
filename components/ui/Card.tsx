@@ -18,12 +18,12 @@ const CARD_STYLES: Record<CardVariant, CSSProperties> = {
   raised: {
     background: 'var(--surface)',
     border: '1px solid var(--border)',
-    boxShadow: 'none',
+    boxShadow: 'var(--shadow-md)',
   },
   overlay: {
     background: 'var(--surface)',
     border: '1px solid var(--border)',
-    boxShadow: 'none',
+    boxShadow: 'var(--shadow-overlay)',
   },
   flat: {
     background: 'var(--surface)',

@@ -1,20 +1,13 @@
 import Link from 'next/link';
-import { BookOpen, FileText, HelpCircle, Info } from 'lucide-react';
+import { BookOpen, HelpCircle, Info } from 'lucide-react';
 
 const ARTICLES = [
   {
     icon: Info,
     title: 'How Unauth works',
     description:
-      'How identity analysis works, how uploads build on each other, and how the chargeback evidence is generated.',
+      'How identity analysis works, how orders are analysed over time, and how chargeback evidence is generated.',
     href: '/help/how-it-works',
-  },
-  {
-    icon: FileText,
-    title: 'Exporting your orders CSV',
-    description:
-      'Step-by-step guide to exporting your orders CSV from any platform and getting the best results from Unauth.',
-    href: '/help/csv-export',
   },
   {
     icon: BookOpen,

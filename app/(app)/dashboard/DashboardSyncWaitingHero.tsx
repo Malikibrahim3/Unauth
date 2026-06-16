@@ -42,9 +42,6 @@ export function DashboardSyncWaitingHero({ connection }: { connection: Connectio
         <Link href="/settings/integrations" className="btn-accent inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold">
           Check sync status
         </Link>
-        <Link href="/upload" className="text-sm font-medium hover:underline" style={{ color: 'var(--text-tertiary)' }}>
-          Historical import →
-        </Link>
       </div>
     </div>
   );

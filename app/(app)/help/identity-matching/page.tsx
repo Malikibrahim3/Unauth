@@ -90,9 +90,9 @@ export default function IdentityMatchingPage() {
             orders in your account to find overlapping signals.
           </p>
           <p>
-            Overlaps are grouped into candidate identity clusters: sets of accounts that share at least one signal.
-            Within each cluster, the quality and quantity of the shared signals determine the confidence grade
-            assigned to the customer.
+            Overlaps are grouped into candidate identities: sets of accounts that share at least one signal.
+            Within each identity, the quality and quantity of the shared signals determine the confidence grade
+            assigned to the link.
           </p>
           <p>
             The matching logic is deterministic and graph-based - there is no machine learning involved. Every

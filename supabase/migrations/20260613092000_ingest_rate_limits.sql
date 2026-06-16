@@ -66,7 +66,7 @@ DO $$
 BEGIN
   PERFORM cron.unschedule('cleanup-rate-limits');
 EXCEPTION
-  WHEN undefined_function OR undefined_schema THEN
+  WHEN OTHERS THEN
     NULL;
 END;
 $$;

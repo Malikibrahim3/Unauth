@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import { GRADE_COLOURS } from '@/lib/utils/confidenceStyles';
 
 export const metadata = {
   title: 'Understanding confidence grades — Unauth',
@@ -84,28 +85,28 @@ export default function ConfidenceGradesPage() {
         <div className="space-y-3">
           <GradeRow
             grade="Definite"
-            color="var(--risk-critical)"
+            color={GRADE_COLOURS.definite}
             meaning="We are highly confident that two or more accounts belong to the same underlying person. The evidence is convergent across multiple independent signal types."
             signals="Card fingerprint match + device ID match + overlapping IP address, or card fingerprint match + same shipping address used under different names/emails."
             action="Strongest signal overlap. Review the full order set and chargeback history. Where refund claims or chargebacks are present, this grade supports compiling identity evidence for dispute review."
           />
           <GradeRow
             grade="Probable"
-            color="var(--risk-high)"
-            meaning="Strong evidence exists but falls short of convergent multi-signal proof. One high-quality signal (e.g. card match) combined with soft corroboration (e.g. similar name pattern, shared postcode)."
+            color={GRADE_COLOURS.probable}
+            meaning="Strong evidence exists but falls short of convergence across multiple independent signal types. One high-quality signal (e.g. card match) combined with soft corroboration (e.g. similar name pattern, shared postcode)."
             signals="Card last 4 + billing postcode match across different emails, or device ID reuse across accounts with different card numbers."
             action="Strong signal overlap that merits closer review, particularly on high-value orders. The pattern may support a narrative when compiling signal data for a dispute response."
           />
           <GradeRow
             grade="Possible"
-            color="var(--risk-medium)"
+            color={GRADE_COLOURS.possible}
             meaning="Overlapping signals exist but are individually explainable. The pattern is worth noting; it should not be acted on in isolation."
             signals="Shared IP address without card or device corroboration, or email address variation (e.g. firstname.lastname vs. f.lastname) without stronger linking signals."
             action="Partial signal overlap worth noting for context. Use it to track patterns over time — particularly if the same customer later appears with stronger signal overlap."
           />
           <GradeRow
             grade="Weak"
-            color="var(--risk-low)"
+            color={GRADE_COLOURS.weak}
             meaning="A single soft signal was found. This may be coincidental — shared ISP IP ranges, common name patterns, or platform-level data artefacts."
             signals="Single IP address match only, or name similarity without any corroborating signal."
             action="Treat as informational. Weak grades appear in the customer profile for completeness but should not drive any operational decision on their own."

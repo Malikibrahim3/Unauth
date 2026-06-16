@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
+import foundation from '@/app/(public)/landing/_components/foundation/foundation.module.css';
 
 function formatAuthError(message: string): string {
   const lower = message.toLowerCase();
@@ -129,14 +130,19 @@ function LoginPageInner() {
   }
 
   return (
-    <div className="w-full max-w-[400px]">
-      <Card variant="raised" density="relaxed">
-        <h1 className="text-h1 mb-1" style={{ color: 'var(--ink-primary)' }}>
-          {isSignUp ? 'Create account' : 'Sign in to your workspace'}
+    <div className="w-full max-w-[420px]">
+      <div className="mb-7">
+        <p className={foundation.landingSectionEyebrow}>{isSignUp ? 'Create your workspace' : 'Welcome back'}</p>
+        <h1 className={foundation.landingSectionTitle} style={{ marginTop: '0.75rem' }}>
+          {isSignUp ? 'Create account' : 'Sign in'}
         </h1>
-        <p className="text-small mb-5" style={{ color: 'var(--ink-secondary)' }}>
-          {isSignUp ? 'Create your store workspace' : 'Claim intelligence for your support and disputes team.'}
+        <p className={foundation.landingSectionLead} style={{ marginTop: '0.75rem' }}>
+          {isSignUp
+            ? 'Set up your store workspace in one quick step.'
+            : 'Claim intelligence for your support and disputes team.'}
         </p>
+      </div>
+      <Card variant="raised" density="relaxed">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="login-email" className="text-meta mb-1.5 block" style={{ color: 'var(--ink-secondary)' }}>

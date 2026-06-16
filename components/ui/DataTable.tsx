@@ -163,18 +163,18 @@ export function DataTable<T>({
                   style={{
                     height: rowH,
                     borderBottom: '1px solid var(--border-muted)',
-                    background: isSelected ? 'var(--surface)' : 'var(--surface)',
+                    background: isSelected ? 'var(--surface-hover)' : 'var(--surface)',
                     cursor: onRowClick ? 'pointer' : undefined,
-                    boxShadow: isSelected ? 'inset 2px 0 0 var(--lime)' : 'none',
+                    boxShadow: isSelected ? 'inset 2px 0 0 var(--accent)' : 'none',
                     transition: ROW_TRANSITION,
                   }}
-                  className={onRowClick && !isSelected ? 'hover:bg-[var(--surface)]' : undefined}
+                  className={onRowClick && !isSelected ? 'hover:bg-[var(--surface-hover)]' : undefined}
                 >
                   {columns.map((col) => (
                     <td
                       key={col.key}
                       style={{
-                        padding: '0 16px',
+                        padding: '0 var(--space-4)',
                         verticalAlign: 'middle',
                         textAlign: col.align === 'right' ? 'right' : col.align === 'center' ? 'center' : 'left',
                         color: 'var(--text-primary)',

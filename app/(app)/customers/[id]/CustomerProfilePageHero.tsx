@@ -355,13 +355,13 @@ export function CustomerProfilePageHero({
                   <span className="text-caption truncate" style={{ color: 'var(--text)' }}>{signal.value}</span>
                   <span className="text-caption" style={{ color: 'var(--text-secondary)' }}>{signal.signalType}</span>
                   <ConfidencePill grade={signal.grade} />
-                  <span className="font-mono text-caption" style={{ color: 'var(--text-secondary)' }}>{observed}</span>
+                  <span className="font-mono text-caption" style={{ color: 'var(--text-tertiary)', borderBottom: '1px dashed var(--border-muted)' }} title="Profile-wide range (per-signal range unavailable)">{observed}</span>
                 </div>
                 <div className="md:hidden border-t p-3 space-y-2" style={{ borderColor: 'var(--border-muted)', background: 'var(--bg-inset)' }}>
                   <div><span className="text-caption" style={{ color: 'var(--text-secondary)' }}>Primary</span><p className="font-mono text-caption break-all" style={{ color: 'var(--text)' }}>{primaryIdentifier}</p></div>
                   <div><span className="text-caption" style={{ color: 'var(--text-secondary)' }}>Linked signal</span><p className="text-caption break-all" style={{ color: 'var(--text)' }}>{signal.value}</p></div>
                   <div className="flex items-center justify-between gap-2"><span className="text-caption" style={{ color: 'var(--text-secondary)' }}>{signal.signalType}</span><ConfidencePill grade={signal.grade} /></div>
-                  <div><span className="text-caption" style={{ color: 'var(--text-secondary)' }}>Observed</span><p className="font-mono text-caption" style={{ color: 'var(--text-secondary)' }}>{observed}</p></div>
+                  <div><span className="text-caption" style={{ color: 'var(--text-secondary)' }}>Observed</span><p className="font-mono text-caption" style={{ color: 'var(--text-tertiary)', borderBottom: '1px dashed var(--border-muted)', display: 'inline-block' }} title="Profile-wide range (per-signal range unavailable)">{observed}</p></div>
                 </div>
               </div>
             );

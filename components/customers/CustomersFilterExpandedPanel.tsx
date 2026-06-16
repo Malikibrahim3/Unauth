@@ -122,7 +122,7 @@ type="button"               onClick={() => setAdvancedOpen((v) => !v)}
                   <p className="text-xs font-semibold mb-2" style={{ color: 'var(--text-secondary)' }}>Identity confidence</p>
                   <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 max-w-md">
                     <input
-                      key={searchParams.get('riskMin')}
+                      key={`riskMin-${searchParams.get('riskMin') ?? ''}`}
                       type="number" min={0} max={100} aria-label="Minimum identity confidence"
                       placeholder="Min (0)"
                       defaultValue={searchParams.get('riskMin') ?? ''}
@@ -132,7 +132,7 @@ type="button"               onClick={() => setAdvancedOpen((v) => !v)}
                     />
                     <span className="text-xs flex-shrink-0" style={{ color: 'var(--text-tertiary)' }}>–</span>
                     <input
-                      key={searchParams.get('riskMax')}
+                      key={`riskMax-${searchParams.get('riskMax') ?? ''}`}
                       type="number" min={0} max={100} aria-label="Maximum identity confidence"
                       placeholder="Max (100)"
                       defaultValue={searchParams.get('riskMax') ?? ''}
@@ -155,9 +155,9 @@ type="button"               onClick={() => setAdvancedOpen((v) => !v)}
                       <div key={label} className="space-y-1">
                         <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{label}</span>
                         <div className="flex items-center gap-1">
-                          <input key={searchParams.get(minKey)} type="number" min={min} max={max} aria-label={`${label} minimum`} placeholder="Min" defaultValue={searchParams.get(minKey) ?? ''} onChange={(e) => makeDebounced(minKey, 1)(e.target.value)} className={inputCls} style={inputStyle} onFocus={inputFocus} onBlur={inputBlur} />
+                          <input key={`${minKey}-${searchParams.get(minKey) ?? ''}`} type="number" min={min} max={max} aria-label={`${label} minimum`} placeholder="Min" defaultValue={searchParams.get(minKey) ?? ''} onChange={(e) => makeDebounced(minKey, 1)(e.target.value)} className={inputCls} style={inputStyle} onFocus={inputFocus} onBlur={inputBlur} />
                           <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>–</span>
-                          <input key={searchParams.get(maxKey)} type="number" min={min} max={max} aria-label={`${label} maximum`} placeholder="Max" defaultValue={searchParams.get(maxKey) ?? ''} onChange={(e) => makeDebounced(maxKey, 1)(e.target.value)} className={inputCls} style={inputStyle} onFocus={inputFocus} onBlur={inputBlur} />
+                          <input key={`${maxKey}-${searchParams.get(maxKey) ?? ''}`} type="number" min={min} max={max} aria-label={`${label} maximum`} placeholder="Max" defaultValue={searchParams.get(maxKey) ?? ''} onChange={(e) => makeDebounced(maxKey, 1)(e.target.value)} className={inputCls} style={inputStyle} onFocus={inputFocus} onBlur={inputBlur} />
                         </div>
                       </div>
                     ))}

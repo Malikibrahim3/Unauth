@@ -3,12 +3,12 @@ import { cn } from '@/lib/utils';
 import type { ButtonSize, ButtonVariant } from './Button';
 
 const BUTTON_BASE =
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium transition-colors duration-[120ms] focus-visible:outline-none disabled:opacity-50 disabled:cursor-not-allowed select-none';
+  'inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium transition-colors duration-[var(--duration-fast)] focus-visible:outline-none disabled:opacity-50 disabled:cursor-not-allowed select-none';
 
 const BUTTON_SIZES: Record<ButtonSize, { height: string; px: string; fontSize: number }> = {
   sm: { height: 'var(--button-height-sm)', px: 'var(--space-2)', fontSize: 12 },
-  md: { height: 'var(--button-height-md)', px: '14px', fontSize: 13 },
-  lg: { height: 'var(--button-height-lg)', px: '18px', fontSize: 14 },
+  md: { height: 'var(--button-height-md)', px: 'var(--space-4)', fontSize: 13 },
+  lg: { height: 'var(--button-height-lg)', px: 'var(--space-5)', fontSize: 14 },
 };
 
 export const BUTTON_ICON_SIZES: Record<ButtonSize, string> = {
@@ -19,7 +19,7 @@ export const BUTTON_ICON_SIZES: Record<ButtonSize, string> = {
 
 const BUTTON_VARIANT_CLASSES: Record<ButtonVariant, string> = {
   primary: 'hover:bg-[var(--action-primary-hover)] active:bg-[var(--action-primary-hover)]',
-  cta: 'hover:bg-[var(--lime-hover)] active:bg-[var(--lime-hover)]',
+  cta: 'hover:bg-[var(--accent-hover)] active:bg-[var(--accent-hover)]',
   secondary: 'hover:bg-[var(--surface-hover)] active:bg-[var(--surface-sunken)]',
   ghost: 'hover:bg-[var(--surface-hover)] active:bg-[var(--surface-sunken)]',
   danger: 'hover:opacity-90 active:opacity-80',
@@ -37,9 +37,9 @@ function buttonVariantStyle(variant: ButtonVariant): CSSProperties {
     // Lime brand CTA — sparing: marketing CTAs, "New X" marquee actions.
     case 'cta':
       return {
-        background: 'var(--lime)',
-        color: 'var(--lime-fg)',
-        border: '1px solid var(--lime)',
+        background: 'var(--accent)',
+        color: 'var(--accent-fg-on-500)',
+        border: '1px solid var(--accent)',
         fontWeight: 600,
       };
     case 'secondary':
@@ -47,7 +47,7 @@ function buttonVariantStyle(variant: ButtonVariant): CSSProperties {
     case 'ghost':
       return { background: 'transparent', color: 'var(--text-secondary)' };
     case 'danger':
-      return { background: 'var(--success)', color: 'white', border: '1px solid var(--success)' };
+      return { background: 'var(--risk-critical)', color: 'white', border: '1px solid var(--risk-critical)' };
     case 'link':
       return { background: 'transparent', color: 'var(--text-secondary)' };
   }

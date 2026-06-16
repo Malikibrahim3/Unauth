@@ -59,10 +59,10 @@ export type EvidencePackageRow = {
 export const STATUS_META: Record<string, { label: string; bg: string; text: string }> = {
   open: { label: 'Active', bg: 'var(--surface)', text: 'var(--text-secondary)' },
   pending: { label: 'Waiting on source data', bg: 'var(--warning-bg)', text: 'var(--warning)' },
-  escalated: { label: 'High evidence', bg: 'var(--sev-definite-fill)', text: 'var(--success)' },
+  escalated: { label: 'High evidence', bg: 'var(--sev-probable-fill)', text: 'var(--sev-probable)' },
   resolved_refunded: { label: 'Resolved: refunded', bg: 'var(--success-bg)', text: 'var(--success)' },
   resolved_won: { label: 'Resolved: won', bg: 'var(--success-bg)', text: 'var(--success)' },
-  resolved_lost: { label: 'Resolved: lost', bg: 'var(--sev-definite-fill)', text: 'var(--success)' },
+  resolved_lost: { label: 'Resolved: lost', bg: 'var(--risk-critical-bg)', text: 'var(--risk-critical-fg)' },
   resolved_denied: { label: 'Resolved: denied', bg: 'var(--surface)', text: 'var(--text-secondary)' },
   resolved_exchanged: { label: 'Resolved: exchanged', bg: 'var(--success-bg)', text: 'var(--success)' },
   voided: { label: 'Voided', bg: 'var(--surface)', text: 'var(--text-secondary)' },
@@ -72,6 +72,6 @@ export const STATUS_META: Record<string, { label: string; bg: string; text: stri
 export const SLA_COLOUR_MAP: Record<string, { bg: string; text: string }> = {
   normal: { bg: 'var(--surface)', text: 'var(--text-secondary)' },
   approaching: { bg: 'var(--warning-bg)', text: 'var(--warning)' },
-  overdue: { bg: 'var(--sev-definite-fill)', text: 'var(--success)' },
+  overdue: { bg: 'var(--warning-bg)', text: 'var(--warning)' },
   resolved: { bg: 'var(--success-bg)', text: 'var(--success)' },
 };

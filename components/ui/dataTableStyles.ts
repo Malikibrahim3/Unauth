@@ -17,7 +17,7 @@ export const DATA_TABLE_HEADER_CELL_BASE: CSSProperties = {
   fontWeight: 500,
   letterSpacing: '0',
   color: 'var(--text-tertiary)',
-  padding: '0 16px',
+  padding: '0 var(--space-4)',
   height: 42,
   whiteSpace: 'nowrap',
 };
@@ -29,7 +29,7 @@ export const DATA_TABLE_EMPTY_STYLE: CSSProperties = {
 };
 
 export const DATA_TABLE_SKELETON_CELL_STYLE: CSSProperties = {
-  padding: '10px 16px',
+  padding: 'var(--space-2) var(--space-4)',
 };
 
 export const DATA_TABLE_SKELETON_BAR_STYLE: CSSProperties = {

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { DataQualityReport } from '@/lib/csv/dataQuality';
+import type { DataQualityReport } from '@/lib/types/dataQuality';
 import type { Database } from '@/lib/supabase/types';
 
 type RunRow = Database['public']['Tables']['processing_jobs']['Row'];

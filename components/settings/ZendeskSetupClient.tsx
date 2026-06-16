@@ -99,7 +99,7 @@ export default function ZendeskSetupClient({ canManage = true }: Props) {
         </button>
       </div>
       {verifyError && (
-        <p className="text-sm" style={{ color: 'var(--success)' }}>
+        <p className="text-sm" style={{ color: 'var(--risk-critical-fg)' }}>
           {verifyError}
         </p>
       )}

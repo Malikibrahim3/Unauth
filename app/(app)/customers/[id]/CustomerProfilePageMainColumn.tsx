@@ -137,7 +137,7 @@ export function CustomerProfilePageMainColumn({
             <AnalyticsDonutChart data={signalMix} height={190} emptyLabel="No exposure mix yet" />
           </div>
           <div>
-            <p className="mb-2 text-caption font-semibold" style={{ color: 'var(--text-secondary)' }}>Linked identifier confidence</p>
+            <p className="mb-2 text-caption font-semibold" style={{ color: 'var(--text-secondary)' }}>Link strength</p>
             <AnalyticsHBarChart data={linkedAccountBars} yAxisWidth={120} emptyLabel="No linked identifiers yet" />
           </div>
         </div>

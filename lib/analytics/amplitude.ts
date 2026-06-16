@@ -77,6 +77,7 @@ export type AnalyticsEvent =
   | 'Watchlist Viewed'
   | 'History Viewed'
   | 'Store Viewed'
+  | 'Catches Page Viewed'
   // Demo
   | 'Demo Loaded'
   | 'Demo Sign Up Clicked'

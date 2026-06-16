@@ -6,12 +6,10 @@ import type { NavItem } from '@/components/layout/commandPaletteReducer';
 import {
   AlertCircle,
   Clipboard,
-  Clock,
   Download,
   LayoutGrid,
   Settings,
   Star,
-  Upload,
   Users,
 } from 'lucide-react';
 import CommandPaletteSurface from '@/components/layout/CommandPaletteSurface';
@@ -20,10 +18,8 @@ const PALETTE_ICONS: Record<string, React.ReactNode> = {
   '/dashboard': <LayoutGrid size={14} aria-hidden="true" />,
   '/customers': <Users size={14} aria-hidden="true" />,
   '/claims': <Clipboard size={14} aria-hidden="true" />,
-  '/upload': <Upload size={14} aria-hidden="true" />,
   '/chargebacks': <Download size={14} aria-hidden="true" />,
   '/watchlist': <Star size={14} aria-hidden="true" />,
-  '/history': <Clock size={14} aria-hidden="true" />,
   '/settings': <Settings size={14} aria-hidden="true" />,
   filter_high_risk: <Star size={14} aria-hidden="true" />,
   filter_new: <AlertCircle size={14} aria-hidden="true" />,

@@ -10,6 +10,7 @@ import AmplitudeInit from '@/components/common/AmplitudeInit';
 import { createServiceClient } from '@/lib/supabase/server';
 import { shouldRequireOnboarding } from '@/lib/account/onboardingGate';
 import { ensureMerchantContextForUser } from '@/lib/account/ensureMerchantContext';
+import { getMerchantProfileById } from '@/lib/account/merchantProfile';
 import { getConnectionState } from '@/lib/connections/getConnectionState';
 import { ConnectionStateProvider } from '@/components/connections/ConnectionStateContext';
 import { NavigationProvider } from '@/components/navigation/NavigationProvider';
@@ -32,20 +33,25 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const ctx = await ensureMerchantContextForUser(serviceClient, user);
 
   const merchantPromise = ctx
-    ? serviceClient
-      .from(TABLES.MERCHANTS)
-      .select('id, name, monthly_order_volume, primary_fraud_concern, setup_complete')
-      .eq('id', ctx.merchantId)
-      .maybeSingle()
-    : Promise.resolve({ data: null });
+    ? getMerchantProfileById(serviceClient, ctx.merchantId)
+    : Promise.resolve(null);
 
   const jobsPromise = ctx
     ? serviceClient
       .from(TABLES.PROCESSING_JOBS)
-      .select('is_demo')
+      .select('id')
       .eq('merchant_id', ctx.merchantId)
-      .limit(20)
+      .limit(1)
     : Promise.resolve({ data: [] });
+
+  const merchantFlagsPromise = ctx
+    ? serviceClient
+      .from(TABLES.MERCHANTS)
+      .select('is_demo')
+      .eq('id', ctx.merchantId)
+      .maybeSingle()
+    : Promise.resolve({ data: null });
+
   const connectionPromise = ctx
     ? getConnectionState(serviceClient, ctx.merchantId)
     : Promise.resolve({
@@ -63,14 +69,16 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         linkState: 'not_connected' as const,
       });
 
-  const [{ data: merchantProfile }, { data: jobs }, connectionState] = await Promise.all([
-    merchantPromise,
-    jobsPromise,
-    connectionPromise,
-  ]);
+  const [merchantProfile, { data: jobs }, { data: merchantFlags }, connectionState] =
+    await Promise.all([
+      merchantPromise,
+      jobsPromise,
+      merchantFlagsPromise,
+      connectionPromise,
+    ]);
 
   const merchantComplete =
-    !!(merchantProfile as unknown as { setup_complete?: boolean } | null)?.setup_complete;
+    merchantProfile?.setup_complete === true || user.user_metadata?.setup_complete === true;
 
   if (shouldRequireOnboarding({
     hasMerchantContext: !!ctx,
@@ -80,11 +88,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     redirect('/onboarding');
   }
 
-  const allDemo =
-    (jobs ?? []).length > 0 &&
-    (jobs as unknown as Array<{ is_demo: boolean }>).every((j) => j.is_demo);
+  const allDemo = !!(merchantFlags as { is_demo?: boolean } | null)?.is_demo;
 
-  const merchantName = ((merchantProfile as { name?: string | null })?.name) ?? null;
+  const merchantName = merchantProfile?.name ?? null;
   const connectedStoreKey =
     connectionState.orderSourceStoreKey ?? connectionState.shopDomain;
   const displayMerchantName = connectedStoreKey
@@ -112,10 +118,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         />
 
         <AmplitudeInit
-          merchantId={(merchantProfile as { id?: string })?.id ?? null}
-          storeName={(merchantProfile as { name?: string })?.name ?? null}
-          monthlyOrderVolume={(merchantProfile as { monthly_order_volume?: string })?.monthly_order_volume ?? null}
-          primaryConcern={(merchantProfile as { primary_fraud_concern?: string })?.primary_fraud_concern ?? null}
+          merchantId={merchantProfile?.id ?? null}
+          storeName={merchantProfile?.name ?? null}
+          monthlyOrderVolume={merchantProfile?.monthly_order_volume ?? null}
+          primaryConcern={merchantProfile?.primary_fraud_concern ?? null}
         />
 
         <div className="flex flex-1 flex-col overflow-hidden">

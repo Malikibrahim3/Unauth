@@ -28,7 +28,7 @@ export default async function ApplyPage() {
     .limit(1)
     .maybeSingle();
 
-  if (!completedAudit) redirect('/upload');
+  if (!completedAudit) redirect('/dashboard');
 
   return (
     <div className="p-6 md:p-8">

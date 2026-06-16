@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Upload, ArrowRight, ShoppingBag, Headphones, ShieldCheck, Users, BarChart3, FileText } from 'lucide-react';
+import { ArrowRight, ShoppingBag, Headphones, ShieldCheck, Users, BarChart3, FileText } from 'lucide-react';
 import { GradeBadge, type ConfidenceGradeValue } from '@/components/ui/GradeBadge';
 
 function IntegrationMark({ type }: { type: 'shopify' | 'helpdesk' }) {
@@ -138,33 +138,6 @@ export default function EmptyDashboardHero() {
         ))}
       </div>
 
-      {/* Secondary - CSV */}
-      <div
-        className="flex flex-wrap items-center justify-between gap-3 rounded-md px-4 py-3"
-        style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-      >
-        <div className="flex items-center gap-2.5 min-w-0">
-          <Upload className="h-4 w-4 shrink-0" style={{ color: 'var(--text-tertiary)' }} />
-          <div>
-            <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Not ready to connect yet?</p>
-            <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-              Upload a CSV export to explore what Unauth surfaces - integrations can be added later.
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3 shrink-0">
-          <Link
-            href="/upload?welcome=1"
-            className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-semibold transition-colors"
-            style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-          >
-            Historical import
-          </Link>
-          <Link href="/demo" className="text-sm font-medium hover:underline" style={{ color: 'var(--text-tertiary)' }}>
-            View sample <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-          </Link>
-        </div>
-      </div>
     </div>
   );
 }

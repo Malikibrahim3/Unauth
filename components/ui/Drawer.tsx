@@ -101,7 +101,7 @@ export function Drawer({
             className="flex items-center justify-between border-b border-[var(--border-muted)] shrink-0"
             style={{
               height: 56,
-              padding: '0 18px',
+              padding: '0 var(--space-5)',
               background: 'var(--surface)',
               position: 'sticky',
               top: 0,

@@ -14,7 +14,6 @@ import {
   ShieldCheck,
   Users,
   Search,
-  Upload,
   Activity,
   ArrowRight,
 } from 'lucide-react';
@@ -34,6 +33,7 @@ import {
   toNumber,
 } from '@/app/(app)/dashboard/dashboardPageUtils';
 import type { ActivityItem, DashboardConfig, QueueRow } from '@/app/(app)/dashboard/dashboardPageTypes';
+import { RecentCatchesFeed } from '@/components/catches/RecentCatchesFeed';
 
 type RunRow = Database['public']['Tables']['processing_jobs']['Row'];
 
@@ -97,7 +97,7 @@ export function DashboardPageCockpit(props: DashboardPageCockpitProps) {
       {/* Header */}
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>Claim overview</h1>
+          <h1 className="text-display-md font-semibold" style={{ color: 'var(--text-primary)' }}>Claim overview</h1>
           <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>{config.subtitle}</p>
         </div>
         <div className="flex items-center gap-2">
@@ -193,7 +193,7 @@ export function DashboardPageCockpit(props: DashboardPageCockpitProps) {
         <section className="flex flex-col gap-4 rounded-[10px] border p-4" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
           <div>
             <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Open claim value</p>
-            <p className="text-xl font-semibold tabular-nums mt-1" style={{ color: exposureAtRisk > 0 ? 'var(--success)' : 'var(--text-primary)' }}>
+            <p className="text-xl font-semibold tabular-nums mt-1" style={{ color: exposureAtRisk > 0 ? 'var(--text-primary)' : 'var(--text-tertiary)', fontFamily: 'var(--font-mono)' }}>
               {exposureAtRisk > 0 ? formatCurrencyNullable(exposureAtRisk) : '—'}
             </p>
             <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
@@ -207,6 +207,9 @@ export function DashboardPageCockpit(props: DashboardPageCockpitProps) {
         </section>
       </div>
 
+      {/* Identity catches — full-width retention story */}
+      <RecentCatchesFeed />
+
       {/* Main cockpit grid */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
         {/* Attention queue */}
@@ -217,7 +220,7 @@ export function DashboardPageCockpit(props: DashboardPageCockpitProps) {
               <div>
                 <p className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>Claim intelligence</p>
                 <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                  Customers with prior claims or repeat patterns — high-confidence identity matches surface here
+                  Customers with linked identity signals or cross-merchant patterns (confidence Definite/Probable). Your team reviews and decides.
                 </p>
               </div>
             </div>
@@ -367,38 +370,6 @@ export function DashboardPageCockpit(props: DashboardPageCockpitProps) {
             )}
           </ModuleCard>
 
-          {/* Secondary: import / backfill summary */}
-          <section className="rounded-[10px] border" style={{ background: 'var(--surface-sunken)', borderColor: 'var(--border)' }}>
-            <div className="flex items-center justify-between px-4 py-2.5">
-              <div className="flex items-center gap-2">
-                <Upload className="h-3.5 w-3.5" style={{ color: 'var(--text-tertiary)' }} />
-                <p className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>Imports & backfill</p>
-              </div>
-              <Link href="/history" className="text-xs font-semibold hover:underline" style={{ color: 'var(--text-tertiary)' }}>
-                History <ArrowRight className="inline h-3 w-3 align-[-2px]" aria-hidden="true" />
-              </Link>
-            </div>
-            <div className="border-t px-4 py-2.5" style={{ borderColor: 'var(--border-muted)' }}>
-              {recentRuns.length === 0 ? (
-                <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                  {setupState === 'csv_only'
-                    ? 'No imports yet.'
-                    : 'No CSV imports — your data is syncing from live sources. CSV is optional for backfills.'}
-                </p>
-              ) : (
-                <div className="space-y-1.5">
-                  {recentRuns.map((run) => (
-                    <Link key={run.id} href={`/audit/${run.id}`} className="block hover:opacity-80">
-                      <p className="truncate text-xs font-medium" style={{ color: 'var(--text-primary)' }}>{run.filename}</p>
-                      <p className="text-xs font-mono" style={{ color: 'var(--text-secondary)' }}>
-                        {(run.flagged_count ?? 0).toLocaleString()} flagged · {formatDateMode(run.created_at, 'recent')}
-                      </p>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-          </section>
         </aside>
       </div>
     </div>

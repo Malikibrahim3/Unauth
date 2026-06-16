@@ -30,7 +30,7 @@ export default function DataHandlingPage() {
             {[
               'Your raw order data (customer names, emails, addresses, order values)',
               'Your audit results and evidence packages',
-              'Your notes and watchlist',
+              'Your notes and case context',
             ].map((item) => (
               <li key={item} className="flex items-start gap-2">
                 <span className="mt-1 h-2 w-2 flex-shrink-0 rounded-full bg-[var(--accent)]" aria-hidden="true" />

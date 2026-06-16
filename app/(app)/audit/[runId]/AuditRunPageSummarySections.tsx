@@ -111,19 +111,12 @@ export function AuditRunPageSummarySections({
         <SectionCard title="No signals found">
           <div className="py-4 space-y-2">
             <p className="text-body-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-              No identity match signals were found in this upload.
+              No identity match signals were found in this run.
             </p>
             <p className="t-caption" style={{ color: 'var(--text-secondary)' }}>
-              Try uploading a longer date range to surface repeat patterns across more orders.
+              A longer date range may surface repeat patterns across more orders.
             </p>
             <div className="flex items-center gap-3 pt-2 flex-wrap">
-              <Link
-                href="/upload"
-                className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-md"
-                style={{ background: 'var(--accent)', color: 'white' }}
-              >
-                Upload a longer range
-              </Link>
               <Link
                 href={`/audit/${jobId}?tab=transactions`}
                 className="text-sm font-medium hover:underline"

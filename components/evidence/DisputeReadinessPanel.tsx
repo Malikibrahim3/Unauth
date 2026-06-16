@@ -42,9 +42,9 @@ function readinessTone(passed: boolean | 'warning'): BadgeTone {
 }
 
 function readinessMarker(passed: boolean | 'warning') {
-  if (passed === true) return { symbol: '●', color: 'var(--neutral)' };
+  if (passed === true) return { symbol: '●', color: 'var(--success)' };
   if (passed === 'warning') return { symbol: '◐', color: 'var(--warning)' };
-  return { symbol: '○', color: 'var(--success)' };
+  return { symbol: '○', color: 'var(--risk-critical-fg)' };
 }
 
 export function DisputeReadinessPanel({

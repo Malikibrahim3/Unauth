@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient, createClient, createServiceClient } from '@/lib/supabase/server';
-import { TABLES } from '@/lib/supabase/tables';
 import { upsertMerchantForUser } from '@/lib/account/upsertMerchantForUser';
+import { getMerchantProfileById } from '@/lib/account/merchantProfile';
+import { resolveCallerContext } from '@/lib/permissions';
 
 interface SetupBody {
   storeName?: string;
@@ -100,18 +101,23 @@ export async function GET() {
   }
 
   const serviceClient = createServiceClient();
-  const { data: merchant, error } = await serviceClient
-    .from(TABLES.MERCHANTS)
-    .select('id, name, monthly_order_volume, primary_fraud_concern, setup_complete')
-    .eq('user_id', user.id)
-    .maybeSingle();
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  const ctx = await resolveCallerContext(serviceClient, user.id);
+  if (!ctx) {
+    return NextResponse.json({ user: { email: user.email ?? '' }, merchant: null });
   }
+
+  const merchant = await getMerchantProfileById(serviceClient, ctx.merchantId);
 
   return NextResponse.json({
     user: { email: user.email ?? '' },
-    merchant,
+    merchant: merchant
+      ? {
+          id: merchant.id,
+          name: merchant.name,
+          monthly_order_volume: merchant.monthly_order_volume,
+          primary_fraud_concern: merchant.primary_fraud_concern,
+          setup_complete: merchant.setup_complete,
+        }
+      : null,
   });
 }

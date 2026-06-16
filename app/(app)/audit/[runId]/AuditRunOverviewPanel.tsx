@@ -7,7 +7,7 @@ import { gradeToLetter, type ConfidenceGrade } from '@/lib/engine/weights';
 import { CONFIDENCE_TIER_LABELS } from '@/lib/copy/merchantUx';
 import { ConfidenceBadge } from '@/components/ui/ConfidenceBadge';
 import { AnalyticsDonutChart } from '@/components/analytics/AnalyticsDonutChart';
-import { LIGHT_TOKENS } from '@/components/charts/echartsTheme';
+import { GRADE_COLOURS } from '@/lib/utils/confidenceStyles';
 import type { AuditRunPageViewProps } from '@/app/(app)/audit/[runId]/auditRunPageViewTypes';
 
 type AuditRunOverviewPanelProps = Pick<
@@ -25,12 +25,6 @@ type AuditRunOverviewPanelProps = Pick<
   | 'txPageSize'
 >;
 
-const GRADE_CHART_COLORS = {
-  definite: LIGHT_TOKENS.sev_clear,
-  probable: LIGHT_TOKENS.sev_probable,
-  possible: LIGHT_TOKENS.sev_neutral,
-  weak: LIGHT_TOKENS.sev_weak,
-};
 
 export function AuditRunOverviewPanel({
   runData,
@@ -51,14 +45,14 @@ export function AuditRunOverviewPanel({
     .map((g) => ({
       label: `${gradeToLetter(g)} · ${CONFIDENCE_TIER_LABELS[g]}`,
       value: gradeCounts[g],
-      color: GRADE_CHART_COLORS[g],
+      color: GRADE_COLOURS[g],
     }));
 
   return (
     <div className="space-y-6">
 
       {/* ── Grade summary tiles (click to filter) ───────────────────────── */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {(['definite', 'probable', 'possible', 'weak'] as const).map((grade) => (
           <Link key={grade} href={`/audit/${jobId}?tab=customers&grade=${grade}`}>
             <div
@@ -119,7 +113,7 @@ export function AuditRunOverviewPanel({
       {/* ── In-progress notice ────────────────────────────────────────────── */}
       {!isRunComplete ? (
         <div className="rounded-md px-6 py-8 text-center border space-y-3" style={{ background: 'var(--info-bg)', borderColor: 'var(--info-bd)' }}>
-          <p className="text-body-sm font-semibold" style={{ color: 'var(--info)' }}>Still analyzing your upload</p>
+          <p className="text-body-sm font-semibold" style={{ color: 'var(--info)' }}>Still processing</p>
           <p className="text-caption" style={{ color: 'var(--text-secondary)' }}>
             Match counts and confidence grades update when processing finishes. Refresh this page in a moment.
           </p>
@@ -130,15 +124,12 @@ export function AuditRunOverviewPanel({
       {isRunComplete && !hasFlags ? (
         <div className="rounded-md px-6 py-8 text-center border space-y-3" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
           <p className="text-body-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
-            No identity match signals were found in this upload.
+            No identity match signals were found in this run.
           </p>
           <p className="text-caption" style={{ color: 'var(--text-tertiary)' }}>
-            Upload a longer date range to surface slower repeat patterns.
+            A longer date range may surface slower repeat patterns.
           </p>
           <div className="flex items-center justify-center gap-3 pt-1 flex-wrap">
-            <Link href="/upload" className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-md transition-colors" style={{ background: 'var(--accent)', color: 'white' }}>
-              Upload a longer range
-            </Link>
             <Link href={`/audit/${runData.id}?tab=transactions`} className="text-sm font-medium hover:underline" style={{ color: 'var(--text-secondary)' }}>
               View all transactions
             </Link>

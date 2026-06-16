@@ -7,7 +7,7 @@ import { useAsyncResource } from '@/lib/react/useFetchJson';
 import { fetchIntegrationConnectionStatus } from '@/components/settings/fetchIntegrationConnectionStatus';
 import type { IntegrationsSetupStatus } from '@/components/settings/apiIntegrationsTypes';
 
-type SetupPhase = 'neither' | 'order_source_only' | 'gorgias_only' | 'both';
+type SetupPhase = 'neither' | 'order_source_only' | 'helpdesk_only' | 'both';
 
 type CommercePlatform = {
   id: string;
@@ -63,10 +63,10 @@ const COMMERCE_PLATFORMS: CommercePlatform[] = [
   },
 ];
 
-function resolveSetupPhase(orderSourceConnected: boolean, gorgiasConnected: boolean): SetupPhase {
-  if (orderSourceConnected && gorgiasConnected) return 'both';
+function resolveSetupPhase(orderSourceConnected: boolean, helpdeskConnected: boolean): SetupPhase {
+  if (orderSourceConnected && helpdeskConnected) return 'both';
   if (orderSourceConnected) return 'order_source_only';
-  if (gorgiasConnected) return 'gorgias_only';
+  if (helpdeskConnected) return 'helpdesk_only';
   return 'neither';
 }
 
@@ -77,32 +77,39 @@ function connectedOrderSourceName(status: IntegrationsSetupStatus): string | nul
   return null;
 }
 
+function connectedHelpdeskName(status: IntegrationsSetupStatus): string | null {
+  if (status.gorgias.connected) return 'Gorgias';
+  if (status.freshdesk.connected) return 'Freshdesk';
+  return null;
+}
+
 function sectionCopy(phase: SetupPhase, status: IntegrationsSetupStatus): { heading: string; subcopy: string } {
   const orderSourceName = connectedOrderSourceName(status);
+  const helpdeskName = connectedHelpdeskName(status);
   switch (phase) {
     case 'both':
       return {
         heading: 'Claim intelligence active',
         subcopy:
-          'Your order source and Gorgias are connected. Agents see order history, prior claims, trust indicators and review indicators inside support tickets.',
+          `Your order source and ${helpdeskName ?? 'helpdesk'} are connected. Agents see order history, prior claims, trust indicators and review indicators inside support tickets.`,
       };
     case 'order_source_only':
       return {
         heading: 'Finish setup',
         subcopy: orderSourceName
-          ? `${orderSourceName} is connected. Connect Gorgias to show claim intelligence inside support tickets.`
-          : 'Your order source is connected. Connect Gorgias to show claim intelligence inside support tickets.',
+          ? `${orderSourceName} is connected. Connect a helpdesk to show claim intelligence inside support tickets.`
+          : 'Your order source is connected. Connect a helpdesk to show claim intelligence inside support tickets.',
       };
-    case 'gorgias_only':
+    case 'helpdesk_only':
       return {
         heading: 'Finish setup',
         subcopy:
-          'Gorgias is connected. Connect an order source so Unauth can power the widget with order, refund, customer and fulfilment context.',
+          `${helpdeskName ?? 'Your helpdesk'} is connected. Connect an order source so Unauth can power the widget with order, refund, customer and fulfilment context.`,
       };
     default:
       return {
         heading: 'Finish setup',
-        subcopy: 'Connect an order source and Gorgias to show claim context inside support tickets.',
+        subcopy: 'Connect an order source and a helpdesk to show claim context inside support tickets.',
       };
   }
 }
@@ -379,12 +386,12 @@ function OtherHelpdesksDisclosure({ items }: { items: SecondaryIntegration[] }) 
           <span aria-hidden className="inline-block transition-transform group-open:rotate-90">
             ›
           </span>
-          Using another helpdesk?
+          Using Zendesk?
         </span>
       </summary>
       <div className="space-y-3 border-t px-4 pb-4 pt-3" style={{ borderColor: 'var(--border)' }}>
         <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)', opacity: 0.85 }}>
-          Zendesk and Freshdesk are available for pilot or advanced setup.
+          Zendesk is available for advanced setup.
         </p>
         <div className="space-y-2">
           {items.map((item) => (
@@ -446,10 +453,12 @@ export default function IntegrationsSetupClient() {
   const orderSourceConnected =
     status.shopify.connected || status.woocommerce.connected || status.bigcommerce.connected;
   const gorgiasConnected = status.gorgias.connected;
-  const phase = resolveSetupPhase(orderSourceConnected, gorgiasConnected);
+  const freshdeskConnected = status.freshdesk.connected;
+  const helpdeskConnected = gorgiasConnected || freshdeskConnected;
+  const phase = resolveSetupPhase(orderSourceConnected, helpdeskConnected);
   const { heading, subcopy } = sectionCopy(phase, status);
 
-  const secondaryHelpdesks: SecondaryIntegration[] = [
+  const zendesks: SecondaryIntegration[] = [
     {
       id: 'zendesk',
       name: 'Zendesk',
@@ -458,15 +467,6 @@ export default function IntegrationsSetupClient() {
       available: true,
       connected: status.zendesk.connected,
       detail: status.zendesk.detail,
-    },
-    {
-      id: 'freshdesk',
-      name: 'Freshdesk',
-      href: '/settings/integrations/freshdesk',
-      logo: '/integrations/freshdesk.svg',
-      available: true,
-      connected: status.freshdesk.connected,
-      detail: status.freshdesk.detail,
     },
   ];
 
@@ -484,7 +484,8 @@ export default function IntegrationsSetupClient() {
       <div className="space-y-3">
         <CommercePlatformsPanel status={status} />
 
-        {phase === 'both' ? (
+        {/* Gorgias */}
+        {gorgiasConnected ? (
           <ConnectedSetupCard
             logo="/integrations/gorgias.png"
             name="Gorgias"
@@ -496,23 +497,6 @@ export default function IntegrationsSetupClient() {
             detail={status.gorgias.detail}
             manageHref="/settings/integrations/gorgias"
           />
-        ) : phase === 'order_source_only' ? (
-          <ActivationSetupCard
-            logo="/integrations/gorgias.png"
-            title="Activate claim intelligence in Gorgias"
-            copy="Connect Gorgias so agents can see claim context, trust indicators and review indicators directly inside support tickets."
-            href="/settings/integrations/gorgias"
-            ctaLabel="Connect Gorgias"
-            prominent
-          />
-        ) : phase === 'gorgias_only' ? (
-          <ConnectedSetupCard
-            logo="/integrations/gorgias.png"
-            name="Gorgias"
-            copy="Claim history is syncing from Gorgias. Connect an order source above to add order and fulfilment context to every ticket."
-            detail={status.gorgias.detail}
-            manageHref="/settings/integrations/gorgias"
-          />
         ) : (
           <ActivationSetupCard
             logo="/integrations/gorgias.png"
@@ -520,11 +504,32 @@ export default function IntegrationsSetupClient() {
             copy="Agents see order history, prior claims, trust indicators and review indicators without leaving Gorgias."
             href="/settings/integrations/gorgias"
             ctaLabel="Connect Gorgias"
+            prominent={phase === 'order_source_only' && !freshdeskConnected}
+          />
+        )}
+
+        {/* Freshdesk — first-class peer to Gorgias */}
+        {freshdeskConnected ? (
+          <ConnectedSetupCard
+            logo="/integrations/freshdesk.svg"
+            name="Freshdesk"
+            copy="Claim intelligence is active via the Freshdesk webhook. Agents see order history, prior claims and identity context inside tickets."
+            detail={status.freshdesk.detail}
+            manageHref="/settings/integrations/freshdesk"
+          />
+        ) : (
+          <ActivationSetupCard
+            logo="/integrations/freshdesk.svg"
+            title="Activate claim intelligence in Freshdesk"
+            copy="Connect via webhook to surface order history, prior claims and trust indicators inside your Freshdesk tickets."
+            href="/settings/integrations/freshdesk"
+            ctaLabel="Connect Freshdesk"
+            prominent={phase === 'order_source_only' && gorgiasConnected === false && freshdeskConnected === false}
           />
         )}
       </div>
 
-      <OtherHelpdesksDisclosure items={secondaryHelpdesks} />
+      <OtherHelpdesksDisclosure items={zendesks} />
     </section>
   );
 }

@@ -47,6 +47,7 @@ export const TABLES = {
   CHECKOUT_SIGNALS: 'checkout_signals',
   CHECKOUT_SIGNAL_ORDER_LINKS: 'checkout_signal_order_links',
   INGEST_RATE_LIMITS: 'ingest_rate_limits',
+  IDENTITY_CATCH_EVENTS: 'identity_catch_events',
 } as const;
 
 /** Step 3 compatibility / derived views — see PHASE_2_IMPLEMENTATION_SPEC.md */

@@ -207,7 +207,7 @@ export default function GorgiasSupportSyncClient({ canManage }: Props) {
           style={{
             background:
               state.message.type === 'error'
-                ? 'color-mix(in srgb, var(--success) 8%, transparent)'
+                ? 'color-mix(in srgb, var(--risk-critical) 8%, transparent)'
                 : state.message.type === 'warning'
                   ? 'color-mix(in srgb, var(--warning) 12%, transparent)'
                   : 'var(--success-bg)',

@@ -52,7 +52,7 @@ export function MetricCard({ label, value, delta, hint, icon, density = 'default
         border: '1px solid var(--border)',
         borderRadius: 'var(--radius-md)',
         padding,
-        boxShadow: 'none',
+        boxShadow: 'var(--shadow-1)',
       }}
     >
       <div className="flex items-start justify-between gap-2">
@@ -80,7 +80,7 @@ export function MetricCard({ label, value, delta, hint, icon, density = 'default
           fontWeight: 600,
           color: 'var(--text-primary)',
           letterSpacing: '-0.04em',
-          fontFamily: 'var(--font-sans)',
+          fontFamily: 'var(--font-mono)',
         }}
       >
         {displayValue}

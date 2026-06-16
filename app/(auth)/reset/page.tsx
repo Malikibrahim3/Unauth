@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import foundation from '@/app/(public)/landing/_components/foundation/foundation.module.css';
 
 export default function ResetPage() {
   const [email, setEmail] = useState('');
@@ -34,17 +35,14 @@ export default function ResetPage() {
   }
 
   return (
-    <div className="w-full max-w-[400px]">
+    <div className="w-full max-w-[420px]">
+      <div className="mb-7">
+        <p className={foundation.landingSectionEyebrow}>Account recovery</p>
+        <h1 className={foundation.landingSectionTitle} style={{ marginTop: '0.75rem' }}>
+          Reset your password
+        </h1>
+      </div>
       <Card variant="raised" density="relaxed">
-        <div className="mb-7">
-          <p className="text-meta mb-2.5" style={{ color: 'var(--ink-tertiary)' }}>
-            Account recovery
-          </p>
-          <h1 className="text-h1" style={{ color: 'var(--ink-primary)' }}>
-            Reset your password
-          </h1>
-        </div>
-
         {sent ? (
           <div
             className="rounded-[var(--radius-md)] border px-4 py-4"

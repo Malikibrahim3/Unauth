@@ -108,21 +108,6 @@ export default function PartialSetupHero({ connection }: PartialSetupHeroProps) 
         </div>
       </div>
 
-      <div
-        className="flex flex-wrap items-center justify-between gap-3 rounded-md px-4 py-3"
-        style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-      >
-        <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-          Not ready to connect yet? Upload a CSV export to explore what Unauth surfaces - integrations can be added later.
-        </p>
-        <Link
-          href="/upload?welcome=1"
-          className="shrink-0 inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-semibold transition-colors"
-          style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-        >
-          Historical import
-        </Link>
-      </div>
     </div>
   );
 }

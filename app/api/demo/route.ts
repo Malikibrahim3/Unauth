@@ -251,7 +251,7 @@ async function POSTHandler(_request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.UPLOAD_CSV);
+    const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.VIEW_AUDIT);
     if (denied) return denied;
 
     const scopedServiceClient = createScopedClient(ctx.merchantId, serviceClient);

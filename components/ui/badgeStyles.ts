@@ -25,8 +25,8 @@ export const BADGE_LAYOUT_STYLE: Record<BadgeSize, CSSProperties> = {
   },
   md: {
     height: 'var(--badge-height-md)',
-    paddingLeft: '7px',
-    paddingRight: '7px',
+    paddingLeft: 'var(--space-2)',
+    paddingRight: 'var(--space-2)',
     fontSize: 12,
     fontWeight: 700,
     letterSpacing: '0.02em',
@@ -42,8 +42,8 @@ const CHIP_STYLES: Record<BadgeTone, { background: string; color: string; border
   accent: { background: 'var(--copper-glow)', color: 'var(--accent)', border: 'var(--accent-soft)' },
   success: { background: 'var(--sev-clear-fill)', color: 'var(--neutral)', border: 'var(--risk-low-bd)' },
   warning: { background: 'var(--sev-probable-fill)', color: 'var(--warning)', border: 'var(--risk-high-bd)' },
-  danger: { background: 'var(--sev-definite-fill)', color: 'var(--success)', border: 'var(--risk-critical-bd)' },
-  critical: { background: 'var(--sev-definite-fill)', color: 'var(--success)', border: 'var(--success)' },
+  danger: { background: 'var(--sev-definite-fill)', color: 'var(--risk-critical-fg)', border: 'var(--risk-critical-bd)' },
+  critical: { background: 'var(--risk-critical)', color: 'white', border: 'var(--risk-critical)' },
 };
 
 const SOLID_STYLES: Record<BadgeTone, { background: string; color: string }> = {
@@ -52,8 +52,8 @@ const SOLID_STYLES: Record<BadgeTone, { background: string; color: string }> = {
   accent: { background: 'var(--accent)', color: 'white' },
   success: { background: 'var(--neutral)', color: 'var(--text-primary)' },
   warning: { background: 'var(--warning)', color: 'white' },
-  danger: { background: 'var(--success)', color: 'var(--text-primary)' },
-  critical: { background: 'var(--success)', color: 'var(--text-primary)' },
+  danger: { background: 'var(--risk-critical)', color: 'white' },
+  critical: { background: 'var(--risk-critical)', color: 'white' },
 };
 
 export function badgeToneStyle(

@@ -1,7 +1,5 @@
 'use client';
 
-import Link from 'next/link';
-
 export default function DemoBanner() {
   return (
     <div
@@ -13,11 +11,7 @@ export default function DemoBanner() {
       }}
     >
       <span>
-        You&apos;re viewing demo data.{' '}
-        <Link href="/upload" className="font-semibold underline" style={{ color: 'var(--info)' }}>
-          Upload your own CSV &rarr;
-        </Link>{' '}
-        to see real data.
+        You&apos;re viewing demo data. Connect your store to see real data.
       </span>
     </div>
   );

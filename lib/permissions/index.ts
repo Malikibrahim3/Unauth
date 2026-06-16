@@ -26,7 +26,6 @@ export const PERMISSIONS = {
   VIEW_LOOKUP:            'view_lookup',
   VIEW_WATCHLIST:         'view_watchlist',
   VIEW_CHARGEBACKS:       'view_chargebacks',
-  VIEW_HISTORY:           'view_history',
   VIEW_INBOX:             'view_inbox',
   VIEW_SAVED:             'view_saved',
   VIEW_TEAM:              'view_team',
@@ -34,7 +33,6 @@ export const PERMISSIONS = {
   VIEW_AUDIT_TRAIL:       'view_audit_trail',   // ← owner/admin only by default
 
   // ── Data actions ─────────────────────────────────────────────────────────
-  UPLOAD_CSV:             'upload_csv',
   EXPORT_AUDIT:           'export_audit',
   LOOKUP_CUSTOMER:        'lookup_customer',
   UPDATE_CUSTOMER_STATUS: 'update_customer_status',
@@ -68,7 +66,6 @@ const VIEWER_PERMISSIONS: Permission[] = [
   PERMISSIONS.VIEW_LOOKUP,
   PERMISSIONS.VIEW_WATCHLIST,
   PERMISSIONS.VIEW_CHARGEBACKS,
-  PERMISSIONS.VIEW_HISTORY,
   PERMISSIONS.VIEW_INBOX,
   PERMISSIONS.VIEW_SAVED,
   PERMISSIONS.VIEW_TEAM,
@@ -79,7 +76,6 @@ const VIEWER_PERMISSIONS: Permission[] = [
 
 const ANALYST_PERMISSIONS: Permission[] = [
   ...VIEWER_PERMISSIONS,
-  PERMISSIONS.UPLOAD_CSV,
   PERMISSIONS.UPDATE_CUSTOMER_STATUS,
   PERMISSIONS.ADD_CUSTOMER_NOTE,
   PERMISSIONS.MANAGE_WATCHLIST,
@@ -118,13 +114,11 @@ export const PERMISSION_LABELS: Record<Permission, string> = {
   view_lookup:             'View Lookup Page',
   view_watchlist:          'View Watchlist',
   view_chargebacks:        'View Chargebacks',
-  view_history:            'View Upload History',
   view_inbox:              'View Inbox / Alerts',
   view_saved:              'View Saved Reports',
   view_team:               'View Team Members',
   view_settings:           'View Settings',
   view_audit_trail:        'View Audit Trail',
-  upload_csv:              'Upload CSV / Run Audit',
   export_audit:            'Export Audit Reports',
   lookup_customer:         'Customer Lookup',
   update_customer_status:  'Update Investigation Status',
@@ -254,12 +248,9 @@ const DEFAULT_APP_DESTINATIONS: Array<{ permission: Permission; href: string }> 
   { permission: PERMISSIONS.VIEW_DASHBOARD, href: '/dashboard' },
   { permission: PERMISSIONS.VIEW_INBOX, href: '/claims' },
   { permission: PERMISSIONS.VIEW_CUSTOMERS, href: '/customers' },
-  { permission: PERMISSIONS.VIEW_HISTORY, href: '/history' },
   { permission: PERMISSIONS.VIEW_CHARGEBACKS, href: '/chargebacks' },
   { permission: PERMISSIONS.VIEW_WATCHLIST, href: '/watchlist' },
-  { permission: PERMISSIONS.VIEW_SAVED, href: '/saved' },
   { permission: PERMISSIONS.VIEW_SETTINGS, href: '/settings' },
-  { permission: PERMISSIONS.UPLOAD_CSV, href: '/upload' },
 ];
 
 /**
@@ -297,7 +288,7 @@ export async function resolveDefaultAppPath(
  * One-liner guard for API routes.
  *
  * Usage:
- *   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.UPLOAD_CSV);
+ *   const { denied, ctx } = await requirePermission(serviceClient, user.id, PERMISSIONS.EXPORT_AUDIT);
  *   if (denied) return denied;
  *   // ctx.merchantId is now available and correct for both owner + team members
  */

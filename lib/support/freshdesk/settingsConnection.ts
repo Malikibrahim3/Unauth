@@ -39,8 +39,9 @@ type FreshdeskConnectionDbRow = {
   access_token_encrypted: string | null;
 };
 
+// v2 helpdesk_connections has webhook_secret_rotated_at only (no *_created_at in SELECT)
 const CONNECTION_SETTINGS_SELECT =
-  'id, merchant_id, provider_account_id, provider_account_name, provider_base_url, status, last_sync_at, last_error, webhook_secret_hash, webhook_secret_created_at, webhook_secret_rotated_at, access_token_encrypted';
+  'id, merchant_id, provider_account_id, provider_account_name, provider_base_url, status, last_sync_at, last_error, webhook_secret_hash, webhook_secret_rotated_at, access_token_encrypted';
 
 type ListableSupabase = {
   from: (table: string) => {

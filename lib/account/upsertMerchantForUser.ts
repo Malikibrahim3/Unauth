@@ -1,6 +1,12 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/lib/supabase/types';
 import { TABLES } from '@/lib/supabase/tables';
+import { resolveCallerContext } from '@/lib/permissions';
+import {
+  getMerchantProfileById,
+  mergeMerchantSettings,
+  parseMerchantSettings,
+} from '@/lib/account/merchantProfile';
 
 type ServiceClient = SupabaseClient<Database>;
 
@@ -24,53 +30,98 @@ export async function upsertMerchantForUser(
   serviceClient: ServiceClient,
   input: MerchantSetupInput
 ): Promise<{ id: string; setup_complete: boolean }> {
-  const existingResult = await serviceClient
-    .from(TABLES.MERCHANTS)
-    .select('id, name, platform, monthly_order_volume, primary_fraud_concern, setup_complete')
-    .eq('user_id', input.userId)
-    .maybeSingle();
-
-  if (existingResult.error) {
-    throw new Error(`Failed to load merchant profile: ${existingResult.error.message}`);
-  }
+  const existingContext = await resolveCallerContext(serviceClient, input.userId);
+  const existingProfile = existingContext
+    ? await getMerchantProfileById(serviceClient, existingContext.merchantId)
+    : null;
 
   const storeName =
     cleanValue(input.storeName) ??
-    cleanValue((existingResult.data as { name?: string | null } | null)?.name) ??
+    cleanValue(existingProfile?.name) ??
     cleanValue(input.email) ??
     'My Store';
   const platform =
-    cleanValue(input.platform) ??
-    cleanValue((existingResult.data as { platform?: string | null } | null)?.platform);
+    cleanValue(input.platform) ?? cleanValue(existingProfile?.platform);
   const monthlyOrderVolume =
-    cleanValue(input.monthlyOrderVolume) ??
-    cleanValue((existingResult.data as { monthly_order_volume?: string | null } | null)?.monthly_order_volume);
+    cleanValue(input.monthlyOrderVolume) ?? cleanValue(existingProfile?.monthly_order_volume);
   const primaryFraudConcern =
-    cleanValue(input.primaryFraudConcern) ??
-    cleanValue((existingResult.data as { primary_fraud_concern?: string | null } | null)?.primary_fraud_concern);
+    cleanValue(input.primaryFraudConcern) ?? cleanValue(existingProfile?.primary_fraud_concern);
   const setupComplete =
-    input.setupComplete === true ||
-    Boolean((existingResult.data as { setup_complete?: boolean } | null)?.setup_complete);
+    input.setupComplete === true || Boolean(existingProfile?.setup_complete);
 
-  const upsertResult = await serviceClient
-    .from(TABLES.MERCHANTS)
-    .upsert(
-      {
-        user_id: input.userId,
+  const settingsPatch = {
+    platform,
+    monthly_order_volume: monthlyOrderVolume,
+    primary_fraud_concern: primaryFraudConcern,
+    setup_complete: setupComplete,
+  };
+
+  if (existingContext) {
+    const { data: merchantRow, error: loadError } = await serviceClient
+      .from(TABLES.MERCHANTS)
+      .select('settings')
+      .eq('id', existingContext.merchantId)
+      .maybeSingle();
+
+    if (loadError) {
+      throw new Error(`Failed to load merchant profile: ${loadError.message}`);
+    }
+
+    const { error: updateError } = await serviceClient
+      .from(TABLES.MERCHANTS)
+      .update({
         name: storeName,
-        platform,
-        monthly_order_volume: monthlyOrderVolume,
-        primary_fraud_concern: primaryFraudConcern,
-        setup_complete: setupComplete,
-      } as never,
-      { onConflict: 'user_id' }
-    )
-    .select('id, setup_complete')
-    .single();
+        settings: mergeMerchantSettings(merchantRow?.settings, settingsPatch),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', existingContext.merchantId);
 
-  if (upsertResult.error || !upsertResult.data) {
-    throw new Error(`Failed to save merchant profile: ${upsertResult.error?.message ?? 'unknown error'}`);
+    if (updateError) {
+      throw new Error(`Failed to save merchant profile: ${updateError.message}`);
+    }
+
+    return { id: existingContext.merchantId, setup_complete: setupComplete };
   }
 
-  return upsertResult.data as { id: string; setup_complete: boolean };
+  const invitedEmail = cleanValue(input.email) ?? `user-${input.userId}@placeholder.local`;
+  const { data: createdMerchant, error: createError } = await serviceClient
+    .from(TABLES.MERCHANTS)
+    .insert({
+      name: storeName,
+      settings: mergeMerchantSettings(null, settingsPatch),
+    })
+    .select('id')
+    .single();
+
+  if (createError || !createdMerchant) {
+    throw new Error(`Failed to create merchant profile: ${createError?.message ?? 'unknown error'}`);
+  }
+
+  const merchantId = (createdMerchant as { id: string }).id;
+  const { error: memberError } = await serviceClient.from(TABLES.MERCHANT_MEMBERS).insert({
+    merchant_id: merchantId,
+    user_id: input.userId,
+    invited_email: invitedEmail,
+    role: 'owner',
+    invite_status: 'active',
+    accepted_at: new Date().toISOString(),
+  });
+
+  if (memberError) {
+    throw new Error(`Failed to create merchant membership: ${memberError.message}`);
+  }
+
+  return { id: merchantId, setup_complete: setupComplete };
+}
+
+export function merchantProfileFromRow(row: {
+  id: string;
+  name: string;
+  settings?: unknown;
+}) {
+  return {
+    id: row.id,
+    name: row.name,
+    ...parseMerchantSettings(row.settings),
+  };
 }

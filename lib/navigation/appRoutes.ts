@@ -1,8 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import {
   Home,
-  ListChecks,
-  Upload,
   Users,
   Star,
   HelpCircle,
@@ -25,8 +23,6 @@ export type AppRouteKey =
   | 'watchlist'
   | 'evidencePackages'
   | 'reports'
-  | 'upload'
-  | 'history'
   | 'settings'
   | 'help'
   | 'global'
@@ -147,29 +143,6 @@ export const APP_ROUTES = {
     sidebar: true,
     workbench: true,
   },
-  upload: {
-    key: 'upload',
-    href: '/upload',
-    label: 'Historical import',
-    pageTitle: 'Historical import',
-    permission: PERMISSIONS.UPLOAD_CSV,
-    icon: Upload,
-    sidebar: false,
-    commandPalette: true,
-    commandDescription: 'Import a CSV for historical backfill',
-  },
-  history: {
-    key: 'history',
-    href: '/history',
-    label: 'Import history',
-    pageTitle: 'Import history',
-    permission: PERMISSIONS.VIEW_HISTORY,
-    icon: ListChecks,
-    sidebar: false,
-    workbench: true,
-    commandPalette: true,
-    commandDescription: 'Past import runs and results',
-  },
   settings: {
     key: 'settings',
     href: '/settings',
@@ -247,8 +220,8 @@ export function getWorkbenchNavItems() {
   for (const r of Object.values(APP_ROUTES) as AppRoute[]) {
     if (!r.workbench) continue;
     items.push({
-      key: r.key === 'evidencePackages' ? 'evidence' : r.key === 'history' ? 'audits' : r.key,
-      label: r.key === 'history' ? 'Import history' : r.label,
+      key: r.key === 'evidencePackages' ? 'evidence' : r.key,
+      label: r.label,
       href: r.href,
     });
   }

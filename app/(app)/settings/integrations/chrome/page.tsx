@@ -1,11 +1,9 @@
-import Image from 'next/image';
-import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { Chrome } from 'lucide-react';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { TABLES } from '@/lib/supabase/tables';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import ChromeSetupClient from '@/components/settings/ChromeSetupClient';
+import { SettingsPageShell } from '@/components/ui';
 
 export default async function ChromeIntegrationPage() {
   const userClient = createClient();
@@ -30,33 +28,19 @@ export default async function ChromeIntegrationPage() {
   const keyPrefixes = (keys ?? []).map((k) => k.key_prefix);
 
   return (
-    <div className="space-y-8 p-8 max-w-2xl">
-      <div>
-        <Link
-          href="/settings/integrations"
-          className="mb-4 inline-flex items-center gap-1.5 text-xs hover:underline"
-          style={{ color: 'var(--text-secondary)' }}
-        >
-          ← Integrations
-        </Link>
-        <div className="flex items-center gap-3">
-          <Image
-            src="/integrations/chrome.svg"
-            alt=""
-            width={32}
-            height={32}
-            style={{ objectFit: 'contain' }}
-          />
-          <h1 className="text-heading-lg" style={{ color: 'var(--text)' }}>
-            Install Chrome Extension
-          </h1>
-        </div>
-        <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
-          Look up any customer email from any tab - Gorgias, Zendesk, Shopify, Gmail
-        </p>
+    <SettingsPageShell
+      eyebrow="Integrations"
+      title="Chrome Extension"
+      subtitle="Look up any customer email from any tab — Gorgias, Zendesk, Shopify, Gmail."
+      breadcrumbs={[
+        { label: 'Settings', href: '/settings/account' },
+        { label: 'Integrations', href: '/settings/integrations' },
+        { label: 'Chrome Extension' },
+      ]}
+    >
+      <div className="max-w-2xl space-y-6">
+        <ChromeSetupClient hasApiKeys={keyPrefixes.length > 0} keyPrefixes={keyPrefixes} />
       </div>
-
-      <ChromeSetupClient hasApiKeys={keyPrefixes.length > 0} keyPrefixes={keyPrefixes} />
-    </div>
+    </SettingsPageShell>
   );
 }

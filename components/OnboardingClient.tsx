@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Check, ShoppingBag, Headphones, Store, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import foundation from '@/app/(public)/landing/_components/foundation/foundation.module.css';
 import { ORDER_VOLUME_OPTIONS, FRAUD_CONCERN_OPTIONS } from '@/lib/constants/merchantProfile';
 import {
   createInitialOnboardingState,
@@ -131,14 +132,26 @@ export default function OnboardingClient({
   const CurrentIcon = current.icon;
 
   return (
-    <main className="min-h-screen p-4 md:p-8" style={{ background: 'var(--surface-base)' }}>
+    <main className="min-h-screen p-4 md:p-10" style={{ background: 'var(--surface-base)' }}>
+      <div className="mx-auto mb-8 max-w-6xl">
+        <p className={foundation.landingSectionEyebrow}>Welcome to Unauth</p>
+        <h1 className={foundation.landingSectionTitle} style={{ marginTop: '0.75rem' }}>
+          Get set up
+        </h1>
+        <p className={foundation.landingSectionLead} style={{ marginTop: '0.75rem', maxWidth: '52ch' }}>
+          A few quick steps to bring claim intelligence into every support ticket.
+        </p>
+      </div>
       <div className="mx-auto grid max-w-6xl gap-5 lg:grid-cols-[360px_minmax(0,1fr)]">
         {/* Sidebar checklist */}
-        <aside className="rounded-md border p-4" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+        <aside
+          className="rounded-md border p-5"
+          style={{ background: 'var(--surface)', borderColor: 'var(--border)', boxShadow: 'var(--shadow-md)' }}
+        >
           <div className="mb-6 flex items-start justify-between gap-3">
             <div>
-              <h1 className="t-heading" style={{ color: 'var(--text-primary)' }}>Get started</h1>
-              <p className="t-caption mt-1" style={{ color: 'var(--text-tertiary)' }}>
+              <p className={foundation.landingSectionEyebrow}>Checklist</p>
+              <p className="t-caption mt-1.5" style={{ color: 'var(--text-tertiary)' }}>
                 Add claim intelligence to your Gorgias tickets
               </p>
             </div>
@@ -181,27 +194,17 @@ export default function OnboardingClient({
             })}
           </div>
 
-          {/* Secondary: CSV path */}
-          <div className="mt-6 rounded-md border px-3 py-2.5" style={{ background: 'var(--surface-sunken)', borderColor: 'var(--border)' }}>
-            <p className="t-caption" style={{ color: 'var(--text-tertiary)' }}>
-              Not on Gorgias yet?{' '}
-              <Link href="/upload" className="font-medium hover:underline" style={{ color: 'var(--text-secondary)' }}>
-                Start with a CSV import
-              </Link>
-              {' '}to explore your data first.
-            </p>
-          </div>
         </aside>
 
         {/* Step content */}
-        <section className="rounded-md border p-6" style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}>
+        <section className="rounded-md border p-7" style={{ background: 'var(--surface)', borderColor: 'var(--border)', boxShadow: 'var(--shadow-md)' }}>
           <div className="mb-6 flex items-start gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-md" style={{ background: 'var(--surface-sunken)', color: 'var(--accent)' }}>
+            <span className="flex h-10 w-10 items-center justify-center rounded-md" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>
               <CurrentIcon className="h-5 w-5" />
             </span>
             <div>
-              <p className="t-label" style={{ color: 'var(--text-tertiary)' }}>STEP {activeStep + 1} OF {STEPS.length}</p>
-              <h2 className="t-heading mt-1" style={{ color: 'var(--text-primary)' }}>{current.label}</h2>
+              <p className={foundation.landingSectionEyebrow}>Step {activeStep + 1} of {STEPS.length}</p>
+              <h2 className={foundation.landingSubsectionTitle} style={{ marginTop: '0.4rem' }}>{current.label}</h2>
               <p className="text-body-sm mt-2 max-w-2xl" style={{ color: 'var(--text-secondary)' }}>{current.body}</p>
             </div>
           </div>
@@ -243,7 +246,7 @@ export default function OnboardingClient({
                   ))}
                 </select>
               </Field>
-              {error && <p className="md:col-span-2 t-caption" style={{ color: 'var(--success)' }}>{error}</p>}
+              {error && <p className="md:col-span-2 t-caption" style={{ color: 'var(--risk-critical-fg)' }}>{error}</p>}
               <div className="md:col-span-2 flex justify-end">
                 <Button
                   type="button"

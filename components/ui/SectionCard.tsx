@@ -32,7 +32,7 @@ export function SectionCard({
         background: 'var(--surface)',
         border: '1px solid var(--border)',
         borderRadius: 'var(--radius-md)',
-        boxShadow: 'none',
+        boxShadow: 'var(--shadow-1)',
         ...style,
       }}
     >
@@ -41,7 +41,7 @@ export function SectionCard({
         className="flex items-center justify-between gap-3"
         style={{
           borderBottom: '1px solid var(--border-muted)',
-          padding: '14px 18px',
+          padding: 'var(--space-3) var(--space-4)',
         }}
       >
         <div>

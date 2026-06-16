@@ -53,10 +53,7 @@ export function CsvTab({
       >
         {rows.length === 0 ? (
           <div className="py-6 text-center space-y-2">
-            <p className="text-body-sm" style={{ color: 'var(--text-secondary)' }}>No CSV audits yet.</p>
-            <Link href="/upload" className="inline-flex items-center gap-1 t-caption font-semibold hover:underline" style={{ color: 'var(--accent)' }}>
-              Upload a file to start <ArrowRight className="h-3 w-3" aria-hidden="true" />
-            </Link>
+            <p className="text-body-sm" style={{ color: 'var(--text-secondary)' }}>No CSV audit history.</p>
           </div>
         ) : (
           <div className="divide-y" style={{ borderColor: 'var(--border)' }}>

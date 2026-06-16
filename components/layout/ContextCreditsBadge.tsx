@@ -51,7 +51,7 @@ export function ContextCreditsBadge() {
       </span>
       <span
         className="text-xs font-semibold"
-        style={{ color: low || warn ? 'var(--status-warn)' : 'var(--text-secondary)' }}
+        style={{ color: low || warn ? 'var(--warning)' : 'var(--text-secondary)' }}
       >
         {remaining} of {limit} remaining
       </span>

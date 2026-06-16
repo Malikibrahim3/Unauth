@@ -55,7 +55,6 @@ function buildConfig(state: MerchantSetupState, connection: ConnectionState): St
       return {
         subtitle: 'Shopify orders and customers are syncing. Add your helpdesk to complete claim context.',
         primaryCta: { label: 'Connect helpdesk', href: integrations },
-        secondaryCta: { label: 'Import CSV', href: '/upload' },
         banner: {
           tone: 'incomplete',
           title: 'Shopify is connected. Connect your helpdesk to finish setup.',
@@ -66,7 +65,6 @@ function buildConfig(state: MerchantSetupState, connection: ConnectionState): St
       return {
         subtitle: 'Claim history is syncing from your helpdesk. Connect Shopify for order and customer context.',
         primaryCta: { label: 'Connect Shopify', href: integrations },
-        secondaryCta: { label: 'Import CSV', href: '/upload' },
         banner: {
           tone: 'incomplete',
           title: 'Your helpdesk is connected. Connect Shopify to add order context.',
@@ -77,7 +75,6 @@ function buildConfig(state: MerchantSetupState, connection: ConnectionState): St
       return {
         subtitle: 'Showing store intelligence from your imported history.',
         primaryCta: { label: 'Connect Shopify & helpdesk', href: integrations },
-        secondaryCta: { label: 'Import more', href: '/upload' },
         banner: {
           tone: 'incomplete',
           title: 'Connect Shopify and your helpdesk for live store monitoring.',
@@ -88,7 +85,6 @@ function buildConfig(state: MerchantSetupState, connection: ConnectionState): St
       return {
         subtitle: 'Showing your existing store and order intelligence.',
         primaryCta: { label: 'Reconnect sources', href: integrations },
-        secondaryCta: { label: 'Import CSV', href: '/upload' },
         banner: {
           tone: 'stale',
           title: 'Showing existing data.',
@@ -100,7 +96,6 @@ function buildConfig(state: MerchantSetupState, connection: ConnectionState): St
       return {
         subtitle: 'Live store intelligence across your Shopify orders and helpdesk claims.',
         primaryCta: { label: 'Review customers', href: '/customers' },
-        secondaryCta: { label: 'Import CSV', href: '/upload' },
         banner: null,
       };
   }
@@ -310,10 +305,6 @@ export default async function StorePage() {
                     <ButtonLink href={primary.href} variant="primary" leadingIcon={<Store className="h-4 w-4" />}>
                       {primary.label}
                     </ButtonLink>
-                    <Link href="/upload" className="inline-flex items-center gap-1.5 text-sm font-medium hover:underline" style={{ color: 'var(--text-tertiary)' }}>
-                      Import CSV instead
-                      <ArrowRight className="h-3.5 w-3.5" />
-                    </Link>
                   </div>
                 }
               />

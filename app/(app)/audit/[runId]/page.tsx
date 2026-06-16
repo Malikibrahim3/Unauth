@@ -1,7 +1,7 @@
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { notFound, redirect } from 'next/navigation';
 import { ESTIMATED_CHARGEBACK_RATE } from '@/lib/engine/weights';
-import type { DataQualityReport } from '@/lib/csv/dataQuality';
+import type { DataQualityReport } from '@/lib/types/dataQuality';
 import type { Database } from '@/lib/supabase/types';
 import { requirePermission, PERMISSIONS, resolveDefaultAppPath } from '@/lib/permissions';
 import { buildReviewableFilter } from '@/lib/supabase/filters';

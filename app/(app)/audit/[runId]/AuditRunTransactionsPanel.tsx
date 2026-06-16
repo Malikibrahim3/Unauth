@@ -140,12 +140,6 @@ export function AuditRunTransactionsPanel({
         <div className="rounded-md px-6 py-8 text-center border space-y-3" style={{ background: 'var(--bg-subtle)', borderColor: 'var(--border-muted)' }}>
           <p className="text-body-sm font-semibold" style={{ color: 'var(--text)' }}>No transactions found for this audit.</p>
           <p className="text-caption" style={{ color: 'var(--text-secondary)' }}>This audit may still be processing, or the file had no recognised order rows.</p>
-          <div className="flex items-center justify-center gap-3 pt-1">
-            <Link href="/upload" className="inline-flex items-center gap-1.5 px-4 py-2 text-caption font-semibold rounded-md transition-colors" style={{ background: 'var(--accent)', color: 'white' }}>
-              Run a new audit
-            </Link>
-            <Link href="/history" className="text-caption font-medium hover:underline" style={{ color: 'var(--text-secondary)' }}>View audit history</Link>
-          </div>
         </div>
       ) : null}
     </div>

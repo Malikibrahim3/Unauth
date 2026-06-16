@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import CommandPalette from './CommandPalette';
 import { MerchantEnvChip } from './MerchantEnvChip';
 import { AvatarMenu } from './AvatarMenu';
+import { ContextCreditsBadge } from './ContextCreditsBadge';
 
 export interface BreadcrumbSegment {
   label: string;
@@ -154,6 +155,9 @@ export default function AppHeader({
         </div>
       )}
 
+      {/* Context credits — monthly metered usage (renders null on unmetered tiers) */}
+      <ContextCreditsBadge />
+
       {/* MerchantEnvChip - left of search */}
       <MerchantEnvChip merchantName={merchantName ?? null} environment={environment} />
 
@@ -192,12 +196,9 @@ export default function AppHeader({
 function deriveFromPathname(pathname: string): BreadcrumbSegment[] {
   const segmentMap: Record<string, string> = {
     dashboard:   'Dashboard',
-    upload:      'Import CSV',
-    audits:      'Import history',
     customers:   'Customers',
     claims:      'Claims',
     watchlist:   'Watchlist',
-    history:     'Import history',
     inbox:       'Claims',
     store:       'Store overview',
     reports:     'Analytics',
@@ -205,16 +206,12 @@ function deriveFromPathname(pathname: string): BreadcrumbSegment[] {
     onboarding:  'Onboarding',
     help:        'Help',
     settings:    'Settings',
-    saved:       'Import history',
     audit:       'Audit results',
-    new:         'Import CSV',
   };
   const pathMap: Record<string, string> = {
     'settings/audit-trail': 'Audit trail',
     'settings/data-privacy': 'Data & privacy',
     chargebacks: 'Evidence packages',
-    'new-audit': 'Import CSV',
-    'audit-history': 'Import history',
     'evidence-packages': 'Evidence packages',
   };
 

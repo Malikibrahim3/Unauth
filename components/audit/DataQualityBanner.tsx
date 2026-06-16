@@ -1,7 +1,6 @@
 'use client';
 
-import Link from 'next/link';
-import type { DataQualityReport } from '@/lib/csv/dataQuality';
+import type { DataQualityReport } from '@/lib/types/dataQuality';
 import { useAdjustStateWhenPropChanges } from '@/lib/react/adjustStateWhenPropChanges';
 
 interface Props {
@@ -105,13 +104,6 @@ type="button"           onClick={dismiss}
               {message}
             </p>
           ))}
-          <Link
-            href="/help/csv-export"
-            className="text-xs underline"
-            style={{ color: 'var(--risk-high)' }}
-          >
-            Improve future audits →
-          </Link>
         </div>
         <button
 type="button"           onClick={dismiss}
@@ -143,13 +135,6 @@ type="button"           onClick={dismiss}
             {message}
           </p>
         ))}
-        <Link
-          href="/help/csv-export"
-          className="text-xs underline"
-          style={{ color: 'var(--text-secondary)' }}
-        >
-          See which fields to add →
-        </Link>
       </div>
       <button
 type="button"         onClick={dismiss}
