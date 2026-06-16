@@ -187,41 +187,41 @@ export default function GorgiasSupportSyncClient({ canManage }: Props) {
   }
 
   return (
-    <section
-      className="rounded-md border p-5 space-y-5"
-      style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
-    >
-      <div>
-        <h2 className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
-          Gorgias support ticket sync
-        </h2>
-        <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
-          Connect Gorgias support tickets so Unauth can link refund/missing parcel conversations to Shopify orders,
-          customer profiles, and claim review.
-        </p>
-      </div>
-
+    <div className="space-y-5">
       {state.message ? (
-        <p
-          className="rounded-md px-3 py-2 text-sm"
+        <div
+          className="rounded-xl border px-4 py-3 text-sm"
           style={{
+            borderColor:
+              state.message.type === 'error'
+                ? 'color-mix(in srgb, var(--risk-critical) 30%, var(--border))'
+                : state.message.type === 'warning'
+                ? 'color-mix(in srgb, var(--warning) 30%, var(--border))'
+                : 'color-mix(in srgb, var(--success) 30%, var(--border))',
             background:
               state.message.type === 'error'
-                ? 'color-mix(in srgb, var(--risk-critical) 8%, transparent)'
+                ? 'color-mix(in srgb, var(--risk-critical) 6%, var(--surface))'
                 : state.message.type === 'warning'
-                  ? 'color-mix(in srgb, var(--warning) 12%, transparent)'
-                  : 'var(--success-bg)',
+                ? 'color-mix(in srgb, var(--warning) 6%, var(--surface))'
+                : 'color-mix(in srgb, var(--success) 6%, var(--surface))',
             color: 'var(--text)',
           }}
         >
           {state.message.text}
-        </p>
+        </div>
       ) : null}
 
       {loading ? (
-        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-          Loading connection…
-        </p>
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl animate-pulse" style={{ background: 'var(--border)' }} />
+            <div className="space-y-1.5 flex-1">
+              <div className="h-4 w-40 rounded animate-pulse" style={{ background: 'var(--border)' }} />
+              <div className="h-3 w-24 rounded animate-pulse" style={{ background: 'var(--border)' }} />
+            </div>
+          </div>
+          <div className="h-40 rounded-xl animate-pulse" style={{ background: 'var(--border)' }} />
+        </div>
       ) : state.ephemeralSecret ? (
         <GorgiasWebhookSetupPanel
           secret={state.ephemeralSecret}
@@ -251,6 +251,6 @@ export default function GorgiasSupportSyncClient({ canManage }: Props) {
           onReconnect={(event) => void createConnection(event)}
         />
       )}
-    </section>
+    </div>
   );
 }

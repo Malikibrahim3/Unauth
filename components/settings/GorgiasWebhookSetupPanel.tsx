@@ -1,9 +1,10 @@
 'use client';
 
-import { Check, Copy } from 'lucide-react';
+import { Check, Copy, AlertTriangle } from 'lucide-react';
 import type { GorgiasEphemeralSecret, GorgiasSupportSyncState } from '@/components/settings/gorgiasSupportSyncReducer';
+import { GORGIAS_SUPPORT_WEBHOOK_HEADER_NAME } from '@/lib/support/gorgias/supportConnectionShared';
 
-type GorgiasWebhookSetupPanelProps = {
+type Props = {
   secret: GorgiasEphemeralSecret;
   canManage: boolean;
   copiedField: GorgiasSupportSyncState['copiedField'];
@@ -11,119 +12,154 @@ type GorgiasWebhookSetupPanelProps = {
   onDismiss: () => void;
 };
 
+function CopyRow({
+  label,
+  value,
+  field,
+  mono,
+  copiedField,
+  onCopy,
+}: {
+  label: string;
+  value: string;
+  field: string;
+  mono?: boolean;
+  copiedField: string | null;
+  onCopy: (field: string, value: string) => void;
+}) {
+  const copied = copiedField === field;
+  return (
+    <div className="space-y-1.5">
+      <p className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
+        {label}
+      </p>
+      <div
+        className="flex items-center gap-2 rounded-lg px-3 py-2"
+        style={{ background: 'color-mix(in srgb, var(--text) 5%, transparent)' }}
+      >
+        <span
+          className={`flex-1 truncate text-xs ${mono ? 'font-mono' : ''}`}
+          style={{ color: 'var(--text)' }}
+        >
+          {value}
+        </span>
+        <button
+          type="button"
+          onClick={() => onCopy(field, value)}
+          className="shrink-0 ml-1"
+          style={{ color: copied ? 'var(--success)' : 'var(--text-secondary)' }}
+        >
+          {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function GorgiasWebhookSetupPanel({
   secret,
   canManage,
   copiedField,
   onCopy,
   onDismiss,
-}: GorgiasWebhookSetupPanelProps) {
+}: Props) {
   return (
-    <div
-      className="rounded-md border p-5 space-y-4"
-      style={{
-        borderColor: 'var(--border)',
-        background: 'var(--surface)',
-      }}
-    >
-      <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>
-        One-time webhook setup
-      </p>
-      <p className="text-sm" style={{ color: 'var(--warning)' }}>
-        {secret.warning}
-      </p>
-      <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-        This secret is shown once. If lost, rotate it.
-      </p>
-
-      <div className="space-y-3 text-sm">
-        <div>
-          <p className="text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
-            Webhook URL
+    <div className="space-y-5">
+      {/* Warning banner */}
+      <div
+        className="flex gap-3 rounded-xl border px-4 py-3"
+        style={{
+          borderColor: 'color-mix(in srgb, var(--warning) 35%, var(--border))',
+          background: 'color-mix(in srgb, var(--warning) 8%, var(--surface))',
+        }}
+      >
+        <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" style={{ color: 'var(--warning)' }} />
+        <div className="space-y-1">
+          <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
+            Copy your secret now
           </p>
-          <pre
-            className="overflow-x-auto rounded-md p-3 text-xs"
-            style={{ background: 'var(--bg-inset)', color: 'var(--text)' }}
-          >
-            {secret.webhookUrl}
-          </pre>
-          <button
-            type="button"
-            disabled={!canManage}
-            onClick={() => void onCopy('webhookUrl', secret.webhookUrl)}
-            className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium"
-            style={{ color: 'var(--accent)' }}
-          >
-            {copiedField === 'webhookUrl' ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-            Copy webhook URL
-          </button>
-        </div>
-
-        <div>
-          <p className="text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
-            Header name
+          <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+            {secret.warning} This secret is shown once — if you lose it, rotate it from the connection settings.
           </p>
-          <code className="text-xs" style={{ color: 'var(--text)' }}>
-            {secret.headerName}
-          </code>
-        </div>
-
-        <div>
-          <p className="text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
-            Secret value
-          </p>
-          <pre
-            className="overflow-x-auto rounded-md p-3 text-xs font-mono"
-            style={{ background: 'var(--bg-inset)', color: 'var(--text)' }}
-          >
-            {secret.secret}
-          </pre>
-          <button
-            type="button"
-            disabled={!canManage}
-            onClick={() => void onCopy('secret', secret.secret)}
-            className="mt-2 inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium"
-            style={{ background: 'var(--accent)', color: 'white' }}
-          >
-            {copiedField === 'secret' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-            {copiedField === 'secret' ? 'Copied' : 'Copy secret'}
-          </button>
         </div>
       </div>
 
-      <ol className="list-decimal space-y-2 pl-5 text-sm" style={{ color: 'var(--text-secondary)' }}>
-        <li>
-          Log into Gorgias → click <strong>Settings</strong> in the left sidebar → click{' '}
-          <strong>Apps &amp; Plugins</strong> → click <strong>HTTP Integration</strong> → click{' '}
-          <strong>Add HTTP Integration</strong>.
-        </li>
-        <li>
-          In the <strong>URL</strong> field, paste the webhook URL above.
-        </li>
-        <li>
-          Set the <strong>Request type</strong> (method) to <strong>POST</strong>.
-        </li>
-        <li>
-          Under <strong>Headers</strong>, add a new header: set the name to{' '}
-          <code>{secret.headerName}</code> and the value to the secret you copied above.
-        </li>
-        <li>
-          Still under Headers, add a second header: name <code>x-gorgias-account-id</code> with your numeric
-          Gorgias account ID as the value (visible in your Gorgias URL, e.g. <code>12345</code>).
-        </li>
-        <li>
-          Click <strong>Save</strong>, then use the <strong>Send test</strong> button to confirm Unauth receives
-          the event.
-        </li>
-      </ol>
+      {/* Credentials to copy */}
+      <div
+        className="rounded-xl border divide-y p-4 space-y-3"
+        style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
+      >
+        <p className="text-xs font-semibold uppercase tracking-wider pb-3" style={{ color: 'var(--text-secondary)', borderColor: 'var(--border)' }}>
+          Webhook credentials
+        </p>
+        <div className="pt-3 space-y-3">
+          <CopyRow
+            label="Webhook URL"
+            value={secret.webhookUrl}
+            field="webhookUrl"
+            copiedField={canManage ? copiedField : null}
+            onCopy={onCopy}
+          />
+          <CopyRow
+            label="Header name"
+            value={secret.headerName}
+            field="headerName"
+            mono
+            copiedField={canManage ? copiedField : null}
+            onCopy={onCopy}
+          />
+          <CopyRow
+            label="Secret value"
+            value={secret.secret}
+            field="secret"
+            mono
+            copiedField={canManage ? copiedField : null}
+            onCopy={onCopy}
+          />
+        </div>
+      </div>
+
+      {/* Setup steps */}
+      <div
+        className="rounded-xl border divide-y"
+        style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
+      >
+        <div className="px-4 py-2.5">
+          <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-secondary)' }}>
+            How to configure in Gorgias
+          </p>
+        </div>
+        {[
+          'Go to Gorgias → Settings → Apps & Plugins → HTTP Integration → Add HTTP Integration',
+          'Set Request type to POST and paste the Webhook URL above into the URL field',
+          `Under Headers, add: name = ${GORGIAS_SUPPORT_WEBHOOK_HEADER_NAME}, value = the secret above`,
+          'Add a second header: name = x-gorgias-account-id, value = your numeric Gorgias account ID (visible in your Gorgias URL)',
+          'Click Save, then use the Send test button to confirm Unauth receives the event',
+        ].map((step, i) => (
+          <div key={i} className="flex gap-3 px-4 py-3" style={{ borderColor: 'var(--border)' }}>
+            <span
+              className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold mt-0.5"
+              style={{
+                background: 'color-mix(in srgb, var(--text-secondary) 10%, transparent)',
+                color: 'var(--text-secondary)',
+              }}
+            >
+              {i + 1}
+            </span>
+            <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+              {step}
+            </p>
+          </div>
+        ))}
+      </div>
 
       <button
         type="button"
         onClick={onDismiss}
-        className="text-xs underline"
+        className="text-xs font-medium underline"
         style={{ color: 'var(--text-secondary)' }}
       >
-        I saved the secret - hide this panel
+        I saved the secret — hide this panel
       </button>
     </div>
   );
