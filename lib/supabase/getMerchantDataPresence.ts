@@ -34,15 +34,11 @@ export type MerchantDataPresence = {
  * cheap existence counts (head: true, count: 'exact') and explicitly scoped to
  * the merchant.
  *
- * Scoping notes (verified against the schema, not guessed):
- * - customer_profiles has no scalar merchant_id — it uses merchant_ids (jsonb
- *   array). We match the current merchantId and, for legacy profiles created
- *   before the merchants table, the auth userId.
- * - shopify_order_signals is keyed by shop_domain only, so we resolve
- *   merchant_shopify_connections (merchant_id -> shop_domain) first.
- * - audit_transactions, processing_jobs, merchant_claims, support_case_intake,
- *   evidence_packages, and customer_activity_log all carry a scalar merchant_id
- *   referencing merchants(id).
+ * Scoping notes (verified against the v2 schema):
+ * - source_customers / source_orders / claims / source_tickets are all
+ *   merchant-scoped by merchant_id and are the app's canonical read model.
+ * - Shopify orders are source_orders rows with source='shopify'. The old
+ *   shopify_order_signals and merchant_shopify_connections names are legacy.
  * - public_audits is intentionally excluded: it is the public free-audit intake
  *   table and must not count as merchant workspace data until claimed and
  *   re-tenanted.
@@ -52,23 +48,7 @@ export async function getMerchantDataPresence(
   merchantId: string,
   userId?: string,
 ): Promise<MerchantDataPresence> {
-  // Containment filter for customer_profiles (current + legacy id).
-  const profileFilter =
-    userId && userId !== merchantId
-      ? [
-          `merchant_ids.cs.${JSON.stringify([merchantId])}`,
-          `merchant_ids.cs.${JSON.stringify([userId])}`,
-        ].join(',')
-      : `merchant_ids.cs.${JSON.stringify([merchantId])}`;
-
-  // Resolve the merchant's Shopify shop_domain first; shopify_order_signals is
-  // keyed by shop_domain, not merchant_id.
-  const { data: shopifyConn } = await serviceClient
-    .from(TABLES.MERCHANT_SHOPIFY_CONNECTIONS)
-    .select('shop_domain')
-    .eq('merchant_id', merchantId)
-    .maybeSingle();
-  const shopDomain = (shopifyConn as { shop_domain?: string } | null)?.shop_domain ?? null;
+  void userId;
 
   const [
     { count: customerProfiles },
@@ -82,9 +62,9 @@ export async function getMerchantDataPresence(
     { count: shopifyOrderSignals },
   ] = await Promise.all([
     serviceClient
-      .from(TABLES.CUSTOMER_PROFILES)
+      .from('source_customers')
       .select('id', { count: 'exact', head: true })
-      .or(profileFilter),
+      .eq('merchant_id', merchantId),
     serviceClient
       .from(TABLES.AUDIT_TRANSACTIONS)
       .select('id', { count: 'exact', head: true })
@@ -93,16 +73,16 @@ export async function getMerchantDataPresence(
       .from(TABLES.PROCESSING_JOBS)
       .select('id', { count: 'exact', head: true })
       .eq('merchant_id', merchantId)
-      .eq('hidden_by_merchant', false),
+      .eq('hidden', false),
     // CSV/import jobs only — Shopify-sourced jobs use upload_type = 'shopify'.
     serviceClient
       .from(TABLES.PROCESSING_JOBS)
       .select('id', { count: 'exact', head: true })
       .eq('merchant_id', merchantId)
-      .eq('hidden_by_merchant', false)
-      .neq('upload_type', 'shopify'),
+      .eq('hidden', false)
+      .neq('source', 'shopify'),
     serviceClient
-      .from('merchant_claims' as never)
+      .from(TABLES.MERCHANT_CLAIMS)
       .select('id', { count: 'exact', head: true })
       .eq('merchant_id', merchantId),
     serviceClient
@@ -117,12 +97,11 @@ export async function getMerchantDataPresence(
       .from('customer_activity_log' as never)
       .select('id', { count: 'exact', head: true })
       .eq('merchant_id', merchantId),
-    shopDomain
-      ? serviceClient
-          .from('shopify_order_signals' as never)
-          .select('id', { count: 'exact', head: true })
-          .eq('shop_domain', shopDomain)
-      : Promise.resolve({ count: 0 } as { count: number }),
+    serviceClient
+      .from(TABLES.AUDIT_TRANSACTIONS)
+      .select('id', { count: 'exact', head: true })
+      .eq('merchant_id', merchantId)
+      .eq('source', 'shopify'),
   ]);
 
   const sources = {

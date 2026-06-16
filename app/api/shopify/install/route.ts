@@ -6,15 +6,70 @@ import { shopifyDebugLog } from '@/lib/shopify/debugLog';
 import { clearShopifyOAuthCookieOptions, shopifyOAuthCookieOptions } from '@/lib/shopify/oauthCookies';
 import { normalizeShopInput } from '@/lib/shopify/normalizeShopInput';
 import { getAppUrl } from '@/lib/utils/appUrl';
+import { SHOPIFY_SCOPES } from '@/lib/shopify/scopes';
 
 const INTEGRATIONS_URL = '/settings/integrations';
 
-function integrationsRedirect(request: NextRequest, params: Record<string, string>): NextResponse {
-  const url = new URL(INTEGRATIONS_URL, request.url);
+function oauthCompleteResponse(params: Record<string, string>): NextResponse {
+  const appUrl = getAppUrl();
+  const fallbackUrl = new URL(INTEGRATIONS_URL, appUrl);
   for (const [key, value] of Object.entries(params)) {
-    url.searchParams.set(key, value);
+    fallbackUrl.searchParams.set(key, value);
   }
-  return NextResponse.redirect(url);
+
+  const error = params.shopify_error ?? null;
+  const response = new NextResponse(
+    `<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Returning to Unauth</title>
+    <style>
+      body {
+        align-items: center;
+        background: #f7f5f2;
+        color: #211f1c;
+        display: flex;
+        font: 14px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        height: 100vh;
+        justify-content: center;
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <p>Returning to Unauth...</p>
+    <script>
+      const payload = ${JSON.stringify({
+        type: 'shopify_oauth_complete',
+        success: !error,
+        error,
+      })};
+      const targetOrigin = ${JSON.stringify(new URL(appUrl).origin)};
+      const fallbackHref = ${JSON.stringify(fallbackUrl.toString())};
+
+      try {
+        if (window.opener && !window.opener.closed) {
+          window.opener.postMessage(payload, targetOrigin);
+          window.close();
+        } else {
+          window.location.replace(fallbackHref);
+        }
+      } catch {
+        window.location.replace(fallbackHref);
+      }
+    </script>
+  </body>
+</html>`,
+    {
+      headers: {
+        'content-type': 'text/html; charset=utf-8',
+      },
+    },
+  );
+
+  return response;
 }
 
 export async function GET(request: NextRequest) {
@@ -28,7 +83,7 @@ export async function GET(request: NextRequest) {
 
   if (normalized.error !== null) {
     const reason = normalized.error === 'public_domain' ? 'public_domain' : 'invalid_shop';
-    return integrationsRedirect(request, { shopify_error: reason });
+    return oauthCompleteResponse({ shopify_error: reason });
   }
 
   const shop = normalized.domain;
@@ -39,12 +94,12 @@ export async function GET(request: NextRequest) {
     const appUrl = getAppUrl();
     if (!apiKey) {
       shopifyDebugLog('shopify.install.misconfigured', { missing: 'SHOPIFY_API_KEY' });
-      return integrationsRedirect(request, { shopify_error: 'misconfigured' });
+      return oauthCompleteResponse({ shopify_error: 'misconfigured' });
     }
 
     const state = crypto.randomBytes(16).toString('hex');
     const redirectUri = `${appUrl.replace(/\/$/, '')}/api/shopify/callback`;
-    const scope = 'read_orders,read_all_orders,read_customers';
+    const scope = SHOPIFY_SCOPES.join(',');
     const installUrl = new URL(`https://${shop}/admin/oauth/authorize`);
     installUrl.searchParams.set('client_id', apiKey);
     installUrl.searchParams.set('scope', scope);
@@ -80,7 +135,7 @@ export async function GET(request: NextRequest) {
       message: error instanceof Error ? error.message : String(error),
       shop,
     });
-    const response = integrationsRedirect(request, { shopify_error: 'install_failed' });
+    const response = oauthCompleteResponse({ shopify_error: 'install_failed' });
     response.cookies.set('shopify_oauth_state', '', clearShopifyOAuthCookieOptions());
     response.cookies.set('shopify_oauth_merchant_id', '', clearShopifyOAuthCookieOptions());
     return response;

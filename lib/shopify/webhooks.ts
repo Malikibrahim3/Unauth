@@ -9,12 +9,15 @@ const WEBHOOK_TOPICS = [
   'fulfillments/create',
   'fulfillments/update',
   'disputes/create',
-  'disputes/updated',
+  'disputes/update',
   'app/uninstalled',
 ] as const;
 
 type WebhookTopic = (typeof WEBHOOK_TOPICS)[number];
 type WebhookRegistrationFailure = { topic: WebhookTopic; status: number; body: string };
+type ShopifyWebhookListResponse = {
+  webhooks?: Array<{ topic?: string | null; address?: string | null }>;
+};
 
 export function verifyShopifyWebhookHmac(rawBody: string, providedHmac: string | null): boolean {
   if (!providedHmac) return false;
@@ -32,8 +35,30 @@ export async function registerShopifyWebhooks(input: { shopDomain: string; acces
   const { shopDomain, accessToken } = input;
   const address = `${getAppUrl()}/api/shopify/webhooks`;
   const apiVersion = '2025-10';
+  const existing = new Set<string>();
+  try {
+    const listResponse = await fetch(`https://${shopDomain}/admin/api/${apiVersion}/webhooks.json?limit=250`, {
+      headers: {
+        'X-Shopify-Access-Token': accessToken,
+        'Content-Type': 'application/json',
+      },
+      cache: 'no-store',
+    });
+    if (listResponse.ok && typeof listResponse.json === 'function') {
+      const payload = (await listResponse.json()) as ShopifyWebhookListResponse;
+      for (const webhook of payload.webhooks ?? []) {
+        if (webhook.topic && webhook.address) {
+          existing.add(`${webhook.topic}|${webhook.address}`);
+        }
+      }
+    }
+  } catch {
+    // Listing is an optimization. Creation below is still idempotent for duplicates.
+  }
+
   const results = await Promise.all(
     WEBHOOK_TOPICS.map(async (topic): Promise<WebhookRegistrationFailure | null> => {
+      if (existing.has(`${topic}|${address}`)) return null;
       const response = await fetch(`https://${shopDomain}/admin/api/${apiVersion}/webhooks.json`, {
         method: 'POST',
         headers: {
@@ -45,6 +70,7 @@ export async function registerShopifyWebhooks(input: { shopDomain: string; acces
       });
       if (response.ok) return null;
       const body = await response.text().catch(() => '');
+      if (response.status === 422 && /already|taken|exists/i.test(body)) return null;
       return { topic, status: response.status, body: body.slice(0, 300) };
     })
   );

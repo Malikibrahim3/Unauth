@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { after } from 'next/server';
 import crypto from 'crypto';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { backfillShopifyMerchantIdentities } from '@/lib/shopify/backfill';
-import { backfillShopifyAuditTransactions } from '@/lib/shopify/auditBridge';
 import { shopifyDebugLog } from '@/lib/shopify/debugLog';
 import { clearShopifyOAuthCookieOptions } from '@/lib/shopify/oauthCookies';
 import { resolveOAuthMerchantId } from '@/lib/shopify/resolveOAuthMerchantId';
 import { registerShopifyWebhooks } from '@/lib/shopify/webhooks';
-import { shopifyAuditError } from '@/lib/shopify/auditLog';
 import { getAppUrl } from '@/lib/utils/appUrl';
 import { exchangeShopifyOAuthAccessToken } from '@/lib/shopify/exchangeOAuthAccessToken';
 import { persistShopifyOAuthConnection } from '@/lib/shopify/persistOAuthConnection';
@@ -16,6 +13,8 @@ import { registerShopifyCollectorScriptTags } from '@/lib/shopify/collectorScrip
 
 const SHOP_REGEX = /^[a-zA-Z0-9][a-zA-Z0-9-]*\.myshopify\.com$/;
 const INTEGRATIONS_PATH = '/settings/integrations';
+
+export const maxDuration = 300;
 
 function normalizeShopDomain(shop: string): string | null {
   const value = shop.trim();
@@ -35,17 +34,71 @@ function verifyOAuthHmac(params: URLSearchParams, secret: string): boolean {
   return crypto.timingSafeEqual(Buffer.from(digest, 'utf8'), Buffer.from(hmac, 'utf8'));
 }
 
-function integrationsRedirect(
-  request: NextRequest,
-  params: Record<string, string>,
-): NextResponse {
+function oauthCompleteResponse(params: Record<string, string>): NextResponse {
   const appUrl = getAppUrl();
-  const url = new URL(INTEGRATIONS_PATH, appUrl);
+  const fallbackUrl = new URL(INTEGRATIONS_PATH, appUrl);
   for (const [key, value] of Object.entries(params)) {
-    url.searchParams.set(key, value);
+    fallbackUrl.searchParams.set(key, value);
   }
-  shopifyDebugLog('final_redirect', { path: `${url.pathname}${url.search}` });
-  return NextResponse.redirect(url);
+
+  const error = params.shopify_error ?? null;
+  const payload = JSON.stringify({
+    type: 'shopify_oauth_complete',
+    success: !error,
+    error,
+  });
+  const targetOrigin = JSON.stringify(new URL(appUrl).origin);
+  const fallbackHref = JSON.stringify(fallbackUrl.toString());
+
+  const response = new NextResponse(
+    `<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Returning to Unauth</title>
+    <style>
+      body {
+        align-items: center;
+        background: #f7f5f2;
+        color: #211f1c;
+        display: flex;
+        font: 14px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        height: 100vh;
+        justify-content: center;
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <p>Returning to Unauth...</p>
+    <script>
+      const payload = ${payload};
+      const targetOrigin = ${targetOrigin};
+      const fallbackHref = ${fallbackHref};
+
+      try {
+        if (window.opener && !window.opener.closed) {
+          window.opener.postMessage(payload, targetOrigin);
+          window.close();
+        } else {
+          window.location.replace(fallbackHref);
+        }
+      } catch {
+        window.location.replace(fallbackHref);
+      }
+    </script>
+  </body>
+</html>`,
+    {
+      headers: {
+        'content-type': 'text/html; charset=utf-8',
+      },
+    },
+  );
+
+  shopifyDebugLog('oauth_complete_response', { path: `${fallbackUrl.pathname}${fallbackUrl.search}` });
+  return response;
 }
 
 function clearOAuthCookies(response: NextResponse): void {
@@ -71,7 +124,7 @@ export async function GET(request: NextRequest) {
   });
 
   if (!code || !shop || !state || !hmac || !timestamp) {
-    const response = integrationsRedirect(request, { shopify_error: 'missing_params' });
+    const response = oauthCompleteResponse({ shopify_error: 'missing_params' });
     clearOAuthCookies(response);
     return response;
   }
@@ -79,7 +132,7 @@ export async function GET(request: NextRequest) {
   const stateCookie = request.cookies.get('shopify_oauth_state')?.value;
   if (!stateCookie || stateCookie !== state) {
     shopifyDebugLog('callback.state_invalid', { hasStateCookie: Boolean(stateCookie) });
-    const response = integrationsRedirect(request, { shopify_error: 'invalid_state' });
+    const response = oauthCompleteResponse({ shopify_error: 'invalid_state' });
     clearOAuthCookies(response);
     return response;
   }
@@ -87,7 +140,7 @@ export async function GET(request: NextRequest) {
   const apiKey = process.env.SHOPIFY_API_KEY;
   const apiSecret = process.env.SHOPIFY_API_SECRET;
   if (!apiKey || !apiSecret) {
-    const response = integrationsRedirect(request, { shopify_error: 'misconfigured' });
+    const response = oauthCompleteResponse({ shopify_error: 'misconfigured' });
     clearOAuthCookies(response);
     return response;
   }
@@ -95,7 +148,7 @@ export async function GET(request: NextRequest) {
   const hmacValid = verifyOAuthHmac(params, apiSecret);
   shopifyDebugLog('callback.hmac_valid', { callbackHmacValid: hmacValid, callbackShopDomain: shop });
   if (!hmacValid) {
-    const response = integrationsRedirect(request, { shopify_error: 'invalid_hmac' });
+    const response = oauthCompleteResponse({ shopify_error: 'invalid_hmac' });
     clearOAuthCookies(response);
     return response;
   }
@@ -109,7 +162,7 @@ export async function GET(request: NextRequest) {
         status: tokenExchange.status,
         reason: tokenExchange.reason,
       });
-      const response = integrationsRedirect(request, { shopify_error: 'token_exchange_failed' });
+      const response = oauthCompleteResponse({ shopify_error: 'token_exchange_failed' });
       clearOAuthCookies(response);
       return response;
     }
@@ -124,6 +177,7 @@ export async function GET(request: NextRequest) {
     const persisted = await persistShopifyOAuthConnection(serviceClient, {
       shop,
       accessToken,
+      scope: tokenExchange.scope,
       merchantId,
     });
 
@@ -135,7 +189,7 @@ export async function GET(request: NextRequest) {
         merchantConnectionUpserted: false,
         merchantConnectionActive: false,
       });
-      const response = integrationsRedirect(request, { shopify_error: persisted.error });
+      const response = oauthCompleteResponse({ shopify_error: persisted.error });
       clearOAuthCookies(response);
       return response;
     }
@@ -156,7 +210,7 @@ export async function GET(request: NextRequest) {
       shopifyDebugLog('backfill.identity.success', {
         callbackShopDomain: shop,
         orders: identityResult.orders,
-        signalsUpserted: identityResult.signals_upserted,
+        sourceOrdersUpserted: identityResult.source_orders_upserted,
       });
     } catch (backfillError) {
       identityBackfillSuccess = false;
@@ -165,29 +219,7 @@ export async function GET(request: NextRequest) {
       shopifyDebugLog('backfill.identity.failed', { callbackShopDomain: shop, message });
     }
 
-    // Score into audit_transactions after the redirect so OAuth does not hit serverless timeouts.
     const connectedMerchantId = persisted.merchantId;
-    after(async () => {
-      try {
-        const auditBackfill = await backfillShopifyAuditTransactions({
-          supabase: serviceClient,
-          shopDomain: shop,
-          merchantId: connectedMerchantId,
-        });
-        shopifyDebugLog('backfill.audit.finished', {
-          callbackShopDomain: shop,
-          scored: auditBackfill.scored,
-          skipped: auditBackfill.skipped,
-          batches: auditBackfill.batches,
-        });
-      } catch (auditError) {
-        shopifyAuditError('backfill.audit.failed', auditError, { shopDomain: shop, merchantId: connectedMerchantId });
-        shopifyDebugLog('backfill.audit.failed', {
-          callbackShopDomain: shop,
-          message: auditError instanceof Error ? auditError.message : 'unknown',
-        });
-      }
-    });
 
     shopifyDebugLog('webhook_registration.started', { callbackShopDomain: shop });
     let webhookRegistrationSuccess = true;
@@ -244,7 +276,7 @@ export async function GET(request: NextRequest) {
     if (!webhookRegistrationSuccess) successParams.shopify_warning = 'webhook_registration_failed';
     if (!collectorRegistrationSuccess) successParams.shopify_warning = 'collector_registration_failed';
 
-    const response = integrationsRedirect(request, successParams);
+    const response = oauthCompleteResponse(successParams);
     clearOAuthCookies(response);
     return response;
   } catch (error) {
@@ -252,7 +284,7 @@ export async function GET(request: NextRequest) {
       message: error instanceof Error ? error.message : String(error),
       shop,
     });
-    const response = integrationsRedirect(request, { shopify_error: 'callback_failed' });
+    const response = oauthCompleteResponse({ shopify_error: 'callback_failed' });
     clearOAuthCookies(response);
     return response;
   }

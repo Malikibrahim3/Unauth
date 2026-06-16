@@ -21,6 +21,30 @@ import { evaluateGorgiasHelpdeskLink } from '@/lib/support/gorgias/helpdeskLinkS
 import { backfillGorgiasSupportCases } from '@/lib/support/gorgias/backfill';
 import { getConnectionState } from '@/lib/connections/getConnectionState';
 
+function scheduleGorgiasBackfill(
+  service: ReturnType<typeof createServiceClient>,
+  merchantId: string,
+  connectionId: string,
+) {
+  after(async () => {
+    try {
+      const orderSource = await getConnectionState(service, merchantId);
+      await backfillGorgiasSupportCases({
+        supabase: service,
+        merchantId,
+        providerConnectionId: connectionId,
+        shopDomain: orderSource.orderSourceStoreKey,
+      });
+    } catch (err) {
+      console.error('Gorgias historical ticket backfill failed', {
+        merchantId,
+        connectionId,
+        message: err instanceof Error ? err.message : 'unknown',
+      });
+    }
+  });
+}
+
 async function GETHandler() {
   const userClient = createClient();
   const {
@@ -92,6 +116,10 @@ async function POSTHandler(req: NextRequest) {
         ip,
       });
 
+      if (updated.connection.status === 'active' && updated.connection.gorgias_api_configured) {
+        scheduleGorgiasBackfill(service, ctx.merchantId, updated.connection.id);
+      }
+
       return NextResponse.json({
         connection: updated.connection,
         sidebar_widget: updated.sidebar_widget,
@@ -117,23 +145,7 @@ async function POSTHandler(req: NextRequest) {
 
     const merchantId = ctx.merchantId;
     const connectionId = created.connection.id;
-    after(async () => {
-      try {
-        const orderSource = await getConnectionState(service, merchantId);
-        await backfillGorgiasSupportCases({
-          supabase: service,
-          merchantId,
-          providerConnectionId: connectionId,
-          shopDomain: orderSource.orderSourceStoreKey,
-        });
-      } catch (err) {
-        console.error('Gorgias historical ticket backfill failed', {
-          merchantId,
-          connectionId,
-          message: err instanceof Error ? err.message : 'unknown',
-        });
-      }
-    });
+    scheduleGorgiasBackfill(service, merchantId, connectionId);
 
     return NextResponse.json(created);
   } catch (err) {

@@ -657,6 +657,19 @@ export async function updateMerchantGorgiasSupportConnectionMetadata(
     );
   }
 
+  const preservedWebhookScope: GorgiasSupportWebhookScopeEntry | null =
+    existing.support_webhook_integration_id != null
+      ? {
+          kind: 'gorgias_support_webhook',
+          integration_id: existing.support_webhook_integration_id,
+          registered_at: new Date().toISOString(),
+        }
+      : null;
+  const mergedScopes: unknown[] = [
+    ...(sidebarRegistration.scopes ?? []),
+    ...(preservedWebhookScope ? [preservedWebhookScope] : []),
+  ];
+
   await upsertGorgiasSupportConnection(supabase, {
     merchant_id: merchantId,
     provider_account_id: identity.provider_account_id,
@@ -668,7 +681,7 @@ export async function updateMerchantGorgiasSupportConnectionMetadata(
     ...(sidebarRegistration.accessTokenEncrypted
       ? { accessTokenEncrypted: sidebarRegistration.accessTokenEncrypted }
       : {}),
-    ...(sidebarRegistration.scopes ? { scopes: sidebarRegistration.scopes } : {}),
+    ...(mergedScopes.length > 0 ? { scopes: mergedScopes } : {}),
   });
 
   const connection = await getMerchantGorgiasSupportConnection(supabase, merchantId);

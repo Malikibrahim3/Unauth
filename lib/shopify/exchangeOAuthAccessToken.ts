@@ -3,7 +3,7 @@ export async function exchangeShopifyOAuthAccessToken(
   code: string,
   clientId: string,
   clientSecret: string,
-): Promise<{ ok: true; accessToken: string } | { ok: false; status?: number; reason: string }> {
+): Promise<{ ok: true; accessToken: string; scope: string | null } | { ok: false; status?: number; reason: string }> {
   const tokenRes = await fetch(`https://${shop}/admin/oauth/access_token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -18,11 +18,15 @@ export async function exchangeShopifyOAuthAccessToken(
     return { ok: false, status: tokenRes.status, reason: 'token_exchange_failed' };
   }
 
-  const tokenPayload = (await tokenRes.json()) as { access_token?: string };
+  const tokenPayload = (await tokenRes.json()) as { access_token?: string; scope?: string };
   const accessToken = tokenPayload.access_token;
   if (!accessToken) {
     return { ok: false, reason: 'missing_token' };
   }
 
-  return { ok: true, accessToken };
+  return {
+    ok: true,
+    accessToken,
+    scope: typeof tokenPayload.scope === 'string' && tokenPayload.scope.trim() ? tokenPayload.scope : null,
+  };
 }

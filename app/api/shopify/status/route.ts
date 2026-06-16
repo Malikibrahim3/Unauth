@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
 import { getShopifyConnectionStatus } from '@/lib/shopify/connectionStatus';
-import { SHOPIFY_SCOPES } from '@/lib/shopify/client';
+import { SHOPIFY_SCOPES } from '@/lib/shopify/scopes';
 
 export async function GET() {
   const userClient = createClient();

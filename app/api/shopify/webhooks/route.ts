@@ -11,6 +11,7 @@ import { normaliseAddress, normaliseCard } from '@/lib/identity/normalise';
 import { emitIdentityObservations, type ObservationEntity } from '@/lib/identity/observations';
 import { resolveIdentitiesForKeys, linkClaimToIdentity } from '@/lib/identity/resolver';
 import { linkCheckoutSignalsToOrder } from '@/lib/checkoutSignals/linkOrder';
+import { processShopifyWebhook } from '@/lib/shopify/ingest';
 
 /**
  * Shopify ingestion → v2 schema. Writes platform-agnostic layer-1 rows
@@ -435,6 +436,10 @@ async function processCancellationTopic(supabase: ServiceClient, merchantId: str
 }
 
 export async function processWebhook(rawBody: string, shopDomain: string, topic: string, supabaseClient?: ServiceClient) {
+  return processShopifyWebhook({ rawBody, shopDomain, topic, supabaseClient });
+}
+
+async function processWebhookLegacy(rawBody: string, shopDomain: string, topic: string, supabaseClient?: ServiceClient) {
   const payload = JSON.parse(rawBody) as any;
   if (payload?.test === true) return;
   const now = new Date().toISOString();

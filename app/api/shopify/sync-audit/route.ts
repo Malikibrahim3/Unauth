@@ -1,18 +1,18 @@
 import { NextResponse } from 'next/server';
 import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { requirePermission, PERMISSIONS } from '@/lib/permissions';
-import { backfillShopifyAuditTransactions } from '@/lib/shopify/auditBridge';
+import { decryptBigCommerceOAuthCredentials } from '@/lib/commerce/credentialCrypto';
+import { backfillShopifyMerchantIdentities } from '@/lib/shopify/backfill';
 import { getShopifyConnectionStatus } from '@/lib/shopify/connectionStatus';
-import { shopifyAuditError, shopifyAuditLog } from '@/lib/shopify/auditLog';
+import { shopifyDebugLog } from '@/lib/shopify/debugLog';
 
 /** Allow large Shopify backfills on Vercel (same as CSV processing routes). */
 export const maxDuration = 300;
 
 /**
- * Score existing shopify_order_signals into audit_transactions (manual / reconnect follow-up).
+ * Pull Shopify historical orders into the v2 source tables (manual / reconnect follow-up).
  */
 export async function POST() {
-  console.log('[shopify.sync-audit] POST handler hit');
   const userClient = createClient();
   const {
     data: { user },
@@ -30,7 +30,22 @@ export async function POST() {
 
   const shopDomain = connection.shopDomain;
 
-  shopifyAuditLog('sync_audit.session', {
+  const { data: storeConnection, error: connectionError } = await serviceClient
+    .from('store_connections')
+    .select('credentials_encrypted')
+    .eq('merchant_id', ctx.merchantId)
+    .eq('platform', 'shopify')
+    .eq('store_key', shopDomain)
+    .maybeSingle();
+
+  if (connectionError) {
+    return NextResponse.json({ error: `Shopify connection lookup failed: ${connectionError.message}` }, { status: 500 });
+  }
+  if (!storeConnection?.credentials_encrypted) {
+    return NextResponse.json({ error: 'Shopify credentials are missing. Reconnect Shopify.' }, { status: 400 });
+  }
+
+  shopifyDebugLog('sync_orders.session', {
     merchantId: ctx.merchantId,
     userId: user.id,
     shopDomain,
@@ -38,13 +53,14 @@ export async function POST() {
   });
 
   try {
-    const result = await backfillShopifyAuditTransactions({
+    const credentials = decryptBigCommerceOAuthCredentials(storeConnection.credentials_encrypted);
+    const result = await backfillShopifyMerchantIdentities({
       supabase: serviceClient,
       shopDomain,
-      merchantId: ctx.merchantId,
+      accessToken: credentials.access_token,
     });
 
-    shopifyAuditLog('sync_audit.complete', {
+    shopifyDebugLog('sync_orders.complete', {
       merchantId: ctx.merchantId,
       shopDomain,
       ...result,
@@ -56,8 +72,7 @@ export async function POST() {
       ...result,
     });
   } catch (err) {
-    shopifyAuditError('sync_audit.route_failed', err, { shopDomain, merchantId: ctx.merchantId });
-    const message = err instanceof Error ? err.message : 'audit_sync_failed';
+    const message = err instanceof Error ? err.message : 'shopify_order_sync_failed';
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

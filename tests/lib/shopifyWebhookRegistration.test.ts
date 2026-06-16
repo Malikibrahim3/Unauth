@@ -16,12 +16,13 @@ describe('registerShopifyWebhooks', () => {
       accessToken: 'shop-token',
     });
 
-    expect(global.fetch).toHaveBeenCalledTimes(9);
-    const bodies = (global.fetch as jest.Mock).mock.calls.map((call) => JSON.parse(call[1].body));
+    const createCalls = (global.fetch as jest.Mock).mock.calls.filter((call) => call[1]?.method === 'POST');
+    expect(createCalls).toHaveLength(9);
+    const bodies = createCalls.map((call) => JSON.parse(call[1].body));
     expect(bodies.map((body) => body.webhook.topic).sort()).toEqual([
       'app/uninstalled',
       'disputes/create',
-      'disputes/updated',
+      'disputes/update',
       'fulfillments/create',
       'fulfillments/update',
       'orders/cancelled',
@@ -34,6 +35,14 @@ describe('registerShopifyWebhooks', () => {
 
   it('throws when Shopify rejects webhook registration', async () => {
     global.fetch = jest.fn(async (_url, init) => {
+      if (!init?.body) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({ webhooks: [] }),
+          text: async () => '',
+        };
+      }
       const topic = JSON.parse(String(init?.body)).webhook.topic;
       return {
         ok: topic !== 'orders/create',

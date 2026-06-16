@@ -14,6 +14,7 @@ export async function persistShopifyOAuthConnection(
   params: {
     shop: string;
     accessToken: string;
+    scope?: string | null;
     merchantId: string | null;
   },
 ): Promise<
@@ -31,7 +32,7 @@ export async function persistShopifyOAuthConnection(
   try {
     credentialsEncrypted = encryptBigCommerceOAuthCredentials({
       access_token: params.accessToken,
-      scope: null,
+      scope: params.scope ?? null,
     });
   } catch (err) {
     return {
@@ -40,6 +41,9 @@ export async function persistShopifyOAuthConnection(
       message: err instanceof Error ? err.message : 'credential_encrypt_failed',
     };
   }
+  const scopes = params.scope
+    ? params.scope.split(',').map((scope) => scope.trim()).filter(Boolean)
+    : [];
 
   const { error } = await serviceClient
     .from('store_connections')
@@ -51,6 +55,7 @@ export async function persistShopifyOAuthConnection(
         store_url: `https://${params.shop}`,
         status: 'active',
         credentials_encrypted: credentialsEncrypted,
+        scopes,
         uninstalled_at: null,
         last_error: null,
         updated_at: now,

@@ -1,11 +1,7 @@
-import { normalizeAddress, normalizeEmail, normalizePhone, upsertMerchantIdentityRows, type MerchantIdentityInsert, type ShopifyAddress } from '@/lib/shopify/identity';
-import { syncShopifyProfilesForShop } from '@/lib/shopify/profileLinking';
-import { buildShopifyOrderSignalRow, type ShopifyOrderWebhookPayload } from '@/lib/shopify/orderSignals';
+import { integrationBackfillSinceIso } from '@/lib/integrations/backfillWindow';
+import { processShopifyOrderPayload } from '@/lib/shopify/ingest';
 
-type ShopifyOrder = ShopifyOrderWebhookPayload & {
-  shipping_address?: ShopifyAddress | null;
-  billing_address?: ShopifyAddress | null;
-};
+type ShopifyOrder = Record<string, any> & { id?: string | number | null };
 
 function parseNextLink(linkHeader: string | null): string | null {
   if (!linkHeader) return null;
@@ -57,62 +53,89 @@ export async function backfillShopifyMerchantIdentities(input: {
   accessToken: string;
   supabase: any;
 }) {
+  return backfillShopifyOrders(input);
+}
+
+export async function backfillShopifyOrders(input: {
+  shopDomain: string;
+  accessToken: string;
+  supabase: any;
+}) {
   const { shopDomain, accessToken, supabase } = input;
-  const since = new Date();
-  since.setMonth(since.getMonth() - 24);
-  const createdAtMin = since.toISOString();
+  const createdAtMin = integrationBackfillSinceIso();
   const apiVersion = '2025-10';
 
   const base = `https://${shopDomain}/admin/api/${apiVersion}`;
   const ordersUrl =
-    `${base}/orders.json?status=any&limit=250&created_at_min=` + encodeURIComponent(createdAtMin);
+    `${base}/orders.json?status=any&limit=250&order=created_at%20asc&created_at_min=` +
+    encodeURIComponent(createdAtMin);
 
   const { rows: orders, pages } = await fetchAllPages<ShopifyOrder>(ordersUrl, accessToken, 'orders');
 
+  let ingested = 0;
+  let skipped = 0;
+  let errors = 0;
+  let ordersWithNoIdentityFields = 0;
+
+  for (const order of orders) {
+    if (order.id === undefined || order.id === null) {
+      skipped += 1;
+      continue;
+    }
+
+    const hasIdentity =
+      Boolean(order.email ?? order.contact_email ?? order.customer?.email) ||
+      Boolean(order.phone ?? order.customer?.phone) ||
+      Boolean(order.shipping_address ?? order.customer?.default_address) ||
+      Boolean(order.billing_address);
+    if (!hasIdentity) ordersWithNoIdentityFields += 1;
+
+    try {
+      const result = await processShopifyOrderPayload({
+        supabase,
+        shopDomain,
+        payload: order,
+        rawBody: JSON.stringify(order),
+        ingestEmbeddedResources: true,
+      });
+      if (result.ingested) ingested += 1;
+      else skipped += 1;
+    } catch (error) {
+      errors += 1;
+      console.error('Shopify historical order ingest failed', {
+        shopDomain,
+        orderId: String(order.id),
+        message: error instanceof Error ? error.message : 'unknown',
+      });
+    }
+  }
+
   const now = new Date().toISOString();
-  const rows: MerchantIdentityInsert[] = orders.map((order) => ({
-      shop_domain: shopDomain,
-      source: 'order' as const,
-      source_id: String(order.id),
-      email: normalizeEmail(order.email),
-      phone: null,
-      shipping_address: normalizeAddress(order.shipping_address),
-      billing_address: normalizeAddress(order.billing_address),
-      customer_id: null,
+  await supabase
+    .from('store_connections')
+    .update({
+      last_sync_at: now,
       updated_at: now,
-  }));
-
-  if (!rows.length) return { orders: 0, inserted: 0 };
-
-  const ordersWithNoIdentitySignals = rows.filter(
-    (row) => !row.email && !row.shipping_address && !row.billing_address
-  ).length;
-
-  await upsertMerchantIdentityRows(supabase, rows);
-
-  const signalRows = orders.map((order) => buildShopifyOrderSignalRow(shopDomain, order));
-  const signalBatchSize = 250;
-  const signalBatches = Array.from({ length: Math.ceil(signalRows.length / signalBatchSize) }, (_, i) =>
-    signalRows.slice(i * signalBatchSize, i * signalBatchSize + signalBatchSize)
-  );
-  await Promise.all(
-    signalBatches.map(async (batch) => {
-      const { error: signalError } = await supabase
-        .from('shopify_order_signals' as never)
-        .upsert(batch as never, { onConflict: 'shop_domain,shopify_order_id' });
-      if (signalError) {
-        throw new Error(`shopify_order_signals_backfill_failed: ${signalError.message}`);
-      }
+      last_error:
+        errors > 0
+          ? `shopify_backfill_partial: ${errors} order(s) failed`
+          : null,
     })
-  );
+    .eq('platform', 'shopify')
+    .eq('store_key', shopDomain);
 
-  await syncShopifyProfilesForShop({ shopDomain, supabase });
+  if (orders.length > 0 && ingested === 0 && errors > 0) {
+    throw new Error(`shopify_backfill_failed: ${errors} order(s) failed`);
+  }
 
   return {
     pages_fetched: pages,
     orders: orders.length,
-    inserted: rows.length,
-    orders_with_no_identity_fields: ordersWithNoIdentitySignals,
-    signals_upserted: signalRows.length,
+    inserted: ingested,
+    source_orders_upserted: ingested,
+    skipped,
+    errors,
+    orders_with_no_identity_fields: ordersWithNoIdentityFields,
+    signals_upserted: 0,
   };
 }

@@ -36,16 +36,16 @@ export function useSyncStatusCard() {
       try {
         body = text ? (JSON.parse(text) as { error?: string }) : null;
       } catch {
-        console.error('[shopify] sync-audit non-JSON response:', res.status, text.slice(0, 200));
+        console.error('[shopify] sync non-JSON response:', res.status, text.slice(0, 200));
         setSyncError(`Sync failed (${res.status}). The API may not be deployed yet.`);
         return;
       }
       if (!res.ok) {
-        console.warn('[shopify] sync-audit failed:', res.status, body);
+        console.warn('[shopify] sync failed:', res.status, body);
         setSyncError(body?.error ?? `Sync failed (${res.status}). Try again or reconnect Shopify.`);
         return;
       }
-      console.log('[shopify] sync-audit ok:', body);
+      console.log('[shopify] sync ok:', body);
       await loadStatus();
     } catch (err) {
       console.error('[shopify] sync-audit request error:', err);
