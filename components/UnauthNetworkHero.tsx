@@ -89,7 +89,7 @@ function IncidentTileCluster() {
                       opacity: 0,
                       transform: `${TILE_ORIGINS[index]} scale(0.65)`,
                     }),
-              } as React.CSSProperties
+              } as unknown as React.CSSProperties
             }
           >
             <Icon

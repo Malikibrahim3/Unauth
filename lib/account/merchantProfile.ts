@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Json } from '@/lib/supabase/types';
 import { TABLES } from '@/lib/supabase/tables';
 
 export type MerchantSettingsProfile = {
@@ -32,7 +33,7 @@ export function parseMerchantSettings(settings: unknown): MerchantSettingsProfil
 export function mergeMerchantSettings(
   existing: unknown,
   patch: Partial<MerchantSettingsProfile>,
-): Record<string, unknown> {
+): Json {
   const current =
     existing && typeof existing === 'object' && !Array.isArray(existing)
       ? { ...(existing as Record<string, unknown>) }
@@ -47,7 +48,7 @@ export function mergeMerchantSettings(
   }
   if (patch.setup_complete !== undefined) current.setup_complete = patch.setup_complete;
 
-  return current;
+  return current as Json;
 }
 
 export async function getMerchantProfileById(

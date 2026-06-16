@@ -74,7 +74,7 @@ export function AuditRunOverviewPanel({
                 <div
                   style={{
                     width: `${totalGrades > 0 ? (gradeCounts[grade] / totalGrades) * 100 : 0}%`,
-                    background: GRADE_CHART_COLORS[grade],
+                    background: GRADE_COLOURS[grade as ConfidenceGrade],
                     height: '100%',
                     transition: 'width 0.4s ease',
                   }}

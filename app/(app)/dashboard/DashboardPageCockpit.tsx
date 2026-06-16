@@ -16,6 +16,7 @@ import {
   Search,
   Activity,
   ArrowRight,
+  Upload,
 } from 'lucide-react';
 import type { TrendDataPoint } from '@/components/charts/WeeklyTrendChart';
 import type { GradeDistEntry } from '@/components/charts/GradeDistBar';
