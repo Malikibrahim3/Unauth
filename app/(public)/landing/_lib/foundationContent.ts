@@ -480,24 +480,32 @@ export const FL_FAQ = {
   heading: 'Common questions',
   items: [
     {
+      q: 'How is this different from Shopify Protect or Stripe Radar?',
+      a: 'Shopify Protect and Stripe Radar operate at the transaction layer — built to catch payment fraud before an order is placed. Unauth works after the transaction, at the claim layer, where friendly fraud and return abuse actually surface. By the time a customer files an INR or refund claim, those tools have already done their job. Ours is just getting started.',
+    },
+    {
+      q: 'How do you distinguish a genuine customer complaint from abuse?',
+      a: 'Unauth doesn\'t make that call — your team does. We surface identity signals and assembled evidence against the claim: order history, cross-merchant claim patterns, device and contact consistency. A first-time customer with a clean history looks different from someone who has filed six INR claims across three merchants in 90 days. We show you the difference. You decide.',
+    },
+    {
+      q: 'How does Unauth reduce friendly fraud and chargeback losses?',
+      a: 'By correlating claim history, identity signals, and cross-merchant patterns, Unauth surfaces whether a claimant has a documented abuse history before your team responds. Evidence is assembled automatically and presented inline on the ticket, ready to support dispute representment or inform your response. Less time investigating. Stronger evidence when it matters.',
+    },
+    {
       q: 'Will this flag or block legitimate customers?',
       a: 'No. Unauth never blocks orders, denies refunds, or takes any automated action. It attaches evidence context to the claim review — your team makes every decision.',
     },
     {
       q: 'What data actually leaves my store?',
-      a: 'Identifiers (email, phone, device fingerprint) are HMAC-SHA256 hashed with a per-tenant salt before they leave your store. Raw customer data never enters the network — only irreversible hashed signals are shared, and only when k-anonymity thresholds are met (≥ 3 merchants).',
+      a: 'Identifiers such as email, phone, and device fingerprint are HMAC-SHA256 hashed with a per-tenant salt before they leave your store. Raw customer data never enters the network — only irreversible hashed signals are shared, and only when k-anonymity thresholds are met across three or more merchants.',
+    },
+    {
+      q: 'We\'re a single merchant — does this work without network data?',
+      a: 'Yes. Single-merchant signals — repeat claim behaviour, contact permutations, order history — are valuable on their own. The network makes the picture sharper: a claimant who appears clean on your store may have a documented abuse pattern elsewhere. You get value from day one; it compounds as the network grows.',
     },
     {
       q: 'Does it change my refund or dispute workflow?',
       a: 'No. Unauth sits beside your existing support and dispute workflows. It adds an evidence pack to the claim review — nothing is replaced, no new approval step is required, and your current tools keep working as they do today.',
-    },
-    {
-      q: 'What does the free audit actually show me?',
-      a: 'A graded report of repeated post-checkout patterns in your own order history — repeat claim identities, claim-rate clusters, delivery context gaps, and cross-merchant signal matches. You see real findings on your data before committing to anything.',
-    },
-    {
-      q: 'What happens after the audit?',
-      a: 'You keep the findings. If you want ongoing cross-merchant evidence and live claim review, we\'ll discuss a pilot. No card is required for the audit, and there\'s no obligation to continue.',
     },
   ],
 } as const;
