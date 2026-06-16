@@ -1,9 +1,10 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowRight, CheckCircle2, Zap } from 'lucide-react';
+import { AlertTriangle, ArrowRight, CheckCircle2, X, Zap } from 'lucide-react';
 import { useAsyncResource } from '@/lib/react/useFetchJson';
 import { fetchIntegrationConnectionStatus } from '@/components/settings/fetchIntegrationConnectionStatus';
 import type { IntegrationsSetupStatus } from '@/components/settings/apiIntegrationsTypes';
@@ -84,21 +85,21 @@ const HELPDESK_PLATFORMS: (Platform & { id: HelpdeskPlatformId })[] = [
 function getCommerceState(
   id: CommercePlatformId,
   status: IntegrationsSetupStatus,
-): { connected: boolean; detail: string | null } {
-  if (id === 'shopify') return { connected: status.shopify.connected, detail: status.shopify.detail };
-  if (id === 'woocommerce') return { connected: status.woocommerce.connected, detail: status.woocommerce.detail };
-  if (id === 'bigcommerce') return { connected: status.bigcommerce.connected, detail: status.bigcommerce.detail };
-  return { connected: false, detail: null };
+): { connected: boolean; connectionIssue: boolean; detail: string | null } {
+  if (id === 'shopify') return { connected: status.shopify.connected, connectionIssue: Boolean(status.shopify.connectionIssue), detail: status.shopify.detail };
+  if (id === 'woocommerce') return { connected: status.woocommerce.connected, connectionIssue: false, detail: status.woocommerce.detail };
+  if (id === 'bigcommerce') return { connected: status.bigcommerce.connected, connectionIssue: false, detail: status.bigcommerce.detail };
+  return { connected: false, connectionIssue: false, detail: null };
 }
 
 function getHelpdeskState(
   id: HelpdeskPlatformId,
   status: IntegrationsSetupStatus,
-): { connected: boolean; detail: string | null } {
-  if (id === 'gorgias') return { connected: status.gorgias.connected, detail: status.gorgias.detail };
-  if (id === 'freshdesk') return { connected: status.freshdesk.connected, detail: status.freshdesk.detail };
-  if (id === 'zendesk') return { connected: status.zendesk.connected, detail: status.zendesk.detail };
-  return { connected: false, detail: null };
+): { connected: boolean; connectionIssue: boolean; detail: string | null } {
+  if (id === 'gorgias') return { connected: status.gorgias.connected, connectionIssue: Boolean(status.gorgias.connectionIssue), detail: status.gorgias.detail };
+  if (id === 'freshdesk') return { connected: status.freshdesk.connected, connectionIssue: Boolean(status.freshdesk.connectionIssue), detail: status.freshdesk.detail };
+  if (id === 'zendesk') return { connected: status.zendesk.connected, connectionIssue: Boolean(status.zendesk.connectionIssue), detail: status.zendesk.detail };
+  return { connected: false, connectionIssue: false, detail: null };
 }
 
 function IntegrationCard({
@@ -107,86 +108,157 @@ function IntegrationCard({
   description,
   href,
   connected,
+  connectionIssue,
   detail,
   available,
+  onConnect,
 }: {
   logo: string;
   name: string;
   description: string;
   href: string;
   connected: boolean;
+  connectionIssue: boolean;
   detail: string | null;
   available: boolean;
+  onConnect?: () => void;
 }) {
+  const badge = connected ? (
+    <span
+      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium"
+      style={{
+        background: 'color-mix(in srgb, var(--success) 12%, transparent)',
+        color: 'var(--success)',
+      }}
+    >
+      <span className="h-1.5 w-1.5 rounded-full bg-current" />
+      Connected
+    </span>
+  ) : connectionIssue ? (
+    <span
+      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium"
+      style={{
+        background: 'color-mix(in srgb, var(--warning) 12%, transparent)',
+        color: 'var(--warning)',
+      }}
+    >
+      <AlertTriangle className="h-3 w-3" />
+      Issue
+    </span>
+  ) : !available ? (
+    <span
+      className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium uppercase tracking-wide"
+      style={{
+        background: 'color-mix(in srgb, var(--text-secondary) 10%, transparent)',
+        color: 'var(--text-secondary)',
+      }}
+    >
+      Soon
+    </span>
+  ) : null;
+
+  const cta = available ? (
+    connected ? (
+      <Link
+        href={href}
+        className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium"
+        style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+      >
+        Manage
+      </Link>
+    ) : connectionIssue ? (
+      onConnect ? (
+        <button
+          type="button"
+          onClick={onConnect}
+          className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium"
+          style={{
+            borderColor: 'color-mix(in srgb, var(--warning) 40%, var(--border))',
+            color: 'var(--warning)',
+          }}
+        >
+          Reconnect
+          <ArrowRight className="h-3 w-3" />
+        </button>
+      ) : (
+        <Link
+          href={href}
+          className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium"
+          style={{
+            borderColor: 'color-mix(in srgb, var(--warning) 40%, var(--border))',
+            color: 'var(--warning)',
+          }}
+        >
+          Reconnect
+          <ArrowRight className="h-3 w-3" />
+        </Link>
+      )
+    ) : onConnect ? (
+      <button
+        type="button"
+        onClick={onConnect}
+        className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium"
+        style={{ borderColor: 'var(--border)', color: 'var(--text)' }}
+      >
+        Connect
+        <ArrowRight className="h-3 w-3" />
+      </button>
+    ) : (
+      <Link
+        href={href}
+        className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium"
+        style={{ borderColor: 'var(--border)', color: 'var(--text)' }}
+      >
+        Connect
+        <ArrowRight className="h-3 w-3" />
+      </Link>
+    )
+  ) : (
+    <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+      Coming soon
+    </span>
+  );
+
   return (
     <div
       className="flex flex-col rounded-xl border p-4"
       style={{
         borderColor: connected
           ? 'color-mix(in srgb, var(--success) 35%, var(--border))'
+          : connectionIssue
+          ? 'color-mix(in srgb, var(--warning) 35%, var(--border))'
           : 'var(--border)',
         background: connected
           ? 'color-mix(in srgb, var(--success) 3%, var(--surface))'
+          : connectionIssue
+          ? 'color-mix(in srgb, var(--warning) 3%, var(--surface))'
           : 'var(--surface)',
       }}
     >
       <div className="flex items-start justify-between gap-2 mb-3">
         <Image src={logo} alt="" width={36} height={36} className="h-9 w-9 rounded-lg object-contain" />
-        {connected ? (
-          <span
-            className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium"
-            style={{
-              background: 'color-mix(in srgb, var(--success) 12%, transparent)',
-              color: 'var(--success)',
-            }}
-          >
-            <span className="h-1.5 w-1.5 rounded-full bg-current" />
-            Connected
-          </span>
-        ) : !available ? (
-          <span
-            className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium uppercase tracking-wide"
-            style={{
-              background: 'color-mix(in srgb, var(--text-secondary) 10%, transparent)',
-              color: 'var(--text-secondary)',
-            }}
-          >
-            Soon
-          </span>
-        ) : null}
+        {badge}
       </div>
 
       <p className="text-sm font-semibold mb-0.5" style={{ color: 'var(--text)' }}>
         {name}
       </p>
-      {connected && detail ? (
+      {(connected || connectionIssue) && detail ? (
         <p className="text-xs mb-2 truncate" style={{ color: 'var(--text-secondary)' }}>
           {detail}
         </p>
       ) : null}
-      <p className="text-xs leading-relaxed flex-1" style={{ color: 'var(--text-secondary)' }}>
-        {description}
-      </p>
+      {connectionIssue && !connected ? (
+        <p className="text-xs mb-2 leading-relaxed" style={{ color: 'var(--warning)' }}>
+          Connection lost — token may have been revoked. Reconnect to restore.
+        </p>
+      ) : (
+        <p className="text-xs leading-relaxed flex-1" style={{ color: 'var(--text-secondary)' }}>
+          {description}
+        </p>
+      )}
 
-      <div className="mt-4">
-        {available ? (
-          <Link
-            href={href}
-            className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors"
-            style={{
-              borderColor: 'var(--border)',
-              color: connected ? 'var(--text-secondary)' : 'var(--text)',
-              background: 'transparent',
-            }}
-          >
-            {connected ? 'Manage' : <><span>Connect</span><ArrowRight className="h-3 w-3" /></>}
-          </Link>
-        ) : (
-          <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-            Coming soon
-          </span>
-        )}
-      </div>
+      <div className="mt-4">{cta}</div>
     </div>
   );
 }
@@ -206,33 +278,23 @@ function StepSection({
 }) {
   return (
     <div className="flex gap-5">
-      {/* Left: step indicator + connector line */}
       <div className="flex flex-col items-center">
         <div
           className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold"
           style={{
             background: complete ? 'var(--success)' : 'var(--surface)',
             color: complete ? 'white' : 'var(--text-secondary)',
-            border: complete
-              ? 'none'
-              : '1.5px solid var(--border)',
+            border: complete ? 'none' : '1.5px solid var(--border)',
           }}
         >
           {complete ? <CheckCircle2 className="h-4 w-4" /> : <span>{number}</span>}
         </div>
-        <div
-          className="mt-2 w-px flex-1 min-h-4"
-          style={{ background: 'var(--border)' }}
-        />
+        <div className="mt-2 w-px flex-1 min-h-4" style={{ background: 'var(--border)' }} />
       </div>
 
-      {/* Right: content */}
       <div className="flex-1 pb-8 min-w-0">
         <div className="mb-4 mt-0.5">
-          <p
-            className="text-sm font-semibold"
-            style={{ color: complete ? 'var(--text)' : 'var(--text)' }}
-          >
+          <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
             {title}
           </p>
           <p className="mt-0.5 text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
@@ -245,13 +307,7 @@ function StepSection({
   );
 }
 
-function LiveBanner({
-  storeName,
-  helpdeskName,
-}: {
-  storeName: string;
-  helpdeskName: string;
-}) {
+function LiveBanner({ storeName, helpdeskName }: { storeName: string; helpdeskName: string }) {
   return (
     <div
       className="flex items-center gap-3 rounded-xl border px-4 py-3 mb-8"
@@ -278,29 +334,163 @@ function LiveBanner({
   );
 }
 
+function ShopifyConnectModal({
+  open,
+  onClose,
+  onPopupOpen,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onPopupOpen: (shop: string) => void;
+}) {
+  const [value, setValue] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (open) {
+      setValue('');
+      setError(null);
+      setTimeout(() => inputRef.current?.focus(), 50);
+    }
+  }, [open]);
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const raw = value.trim();
+    if (!raw) { setError('Enter your Shopify store domain.'); return; }
+    onPopupOpen(raw);
+  }
+
+  if (!open) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.45)' }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div
+        className="w-full max-w-sm rounded-2xl border p-6 shadow-2xl"
+        style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
+      >
+        <div className="flex items-start justify-between mb-5">
+          <div className="flex items-center gap-3">
+            <Image src="/integrations/shopify.svg" alt="Shopify" width={36} height={36} className="h-9 w-9 rounded-lg" />
+            <div>
+              <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>Connect Shopify</p>
+              <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>Opens Shopify login to authorise</p>
+            </div>
+          </div>
+          <button type="button" onClick={onClose} style={{ color: 'var(--text-secondary)' }}>
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label
+              htmlFor="shopify-domain-input"
+              className="block text-xs font-medium mb-1.5"
+              style={{ color: 'var(--text)' }}
+            >
+              Your Shopify store domain
+            </label>
+            <input
+              id="shopify-domain-input"
+              ref={inputRef}
+              value={value}
+              onChange={(e) => { setValue(e.target.value); setError(null); }}
+              placeholder="yourstore or yourstore.myshopify.com"
+              className="w-full rounded-xl px-3 py-2.5 text-sm outline-none"
+              style={{
+                background: 'var(--bg-inset)',
+                border: `1px solid ${error ? 'var(--risk-critical)' : 'var(--border)'}`,
+                color: 'var(--text)',
+              }}
+            />
+            {error ? (
+              <p className="mt-1.5 text-xs" style={{ color: 'var(--risk-critical)' }}>{error}</p>
+            ) : (
+              <p className="mt-1.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                Shopify will open in a new window so you don&apos;t lose your place.
+              </p>
+            )}
+          </div>
+          <button
+            type="submit"
+            className="w-full rounded-xl px-4 py-2.5 text-sm font-semibold"
+            style={{ background: 'var(--accent)', color: 'white' }}
+          >
+            Continue with Shopify →
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export default function IntegrationsSetupClient() {
-  const { data: status } = useAsyncResource('integrations-setup-status', fetchIntegrationConnectionStatus);
+  const { data: status, reload } = useAsyncResource('integrations-setup-status', fetchIntegrationConnectionStatus);
+  const [shopifyModalOpen, setShopifyModalOpen] = useState(false);
+  const [popupError, setPopupError] = useState<string | null>(null);
+  const popupRef = useRef<Window | null>(null);
+
+  const openShopifyPopup = useCallback((shop: string) => {
+    setShopifyModalOpen(false);
+    setPopupError(null);
+
+    const w = 600, h = 700;
+    const left = Math.max(0, (window.screen.width - w) / 2);
+    const top = Math.max(0, (window.screen.height - h) / 2);
+    const popup = window.open(
+      `/api/shopify/install?shop=${encodeURIComponent(shop)}`,
+      'shopify_oauth',
+      `width=${w},height=${h},left=${left},top=${top},toolbar=no,menubar=no,scrollbars=yes`,
+    );
+
+    if (!popup) {
+      setPopupError('Pop-up blocked. Allow pop-ups for this site and try again.');
+      setShopifyModalOpen(true);
+      return;
+    }
+    popupRef.current = popup;
+  }, []);
+
+  useEffect(() => {
+    function handleMessage(event: MessageEvent) {
+      if (event.origin !== window.location.origin) return;
+      const data = event.data as { type?: string; success?: boolean; error?: string | null };
+      if (data?.type !== 'shopify_oauth_complete') return;
+
+      popupRef.current = null;
+      if (data.success) {
+        reload();
+      } else {
+        setPopupError(
+          data.error === 'invalid_shop' ? 'Invalid store domain. Check the URL and try again.' :
+          data.error === 'public_domain' ? 'Enter your .myshopify.com store domain, not a custom domain.' :
+          'Shopify authorisation failed. Please try again.',
+        );
+        setShopifyModalOpen(true);
+      }
+    }
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [reload]);
 
   if (!status) {
     return (
       <div className="space-y-6">
         {[0, 1].map((i) => (
           <div key={i} className="flex gap-5">
-            <div
-              className="h-8 w-8 shrink-0 rounded-full animate-pulse"
-              style={{ background: 'var(--border)' }}
-            />
+            <div className="h-8 w-8 shrink-0 rounded-full animate-pulse" style={{ background: 'var(--border)' }} />
             <div className="flex-1 space-y-3">
               <div className="h-4 w-32 rounded animate-pulse" style={{ background: 'var(--border)' }} />
-              <div
-                className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4"
-              >
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                 {[0, 1, 2, 3].map((j) => (
-                  <div
-                    key={j}
-                    className="h-36 rounded-xl animate-pulse"
-                    style={{ background: 'var(--border)' }}
-                  />
+                  <div key={j} className="h-36 rounded-xl animate-pulse" style={{ background: 'var(--border)' }} />
                 ))}
               </div>
             </div>
@@ -332,60 +522,87 @@ export default function IntegrationsSetupClient() {
     : null;
 
   return (
-    <div>
-      {orderSourceConnected && helpdeskConnected && connectedStoreName && connectedHelpdeskName ? (
-        <LiveBanner storeName={connectedStoreName} helpdeskName={connectedHelpdeskName} />
+    <>
+      <ShopifyConnectModal
+        open={shopifyModalOpen}
+        onClose={() => { setShopifyModalOpen(false); setPopupError(null); }}
+        onPopupOpen={openShopifyPopup}
+      />
+
+      {popupError ? (
+        <div
+          className="mb-6 flex items-start gap-3 rounded-xl border px-4 py-3"
+          style={{
+            borderColor: 'color-mix(in srgb, var(--risk-critical) 30%, var(--border))',
+            background: 'color-mix(in srgb, var(--risk-critical) 6%, var(--surface))',
+          }}
+        >
+          <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" style={{ color: 'var(--risk-critical)' }} />
+          <p className="text-sm flex-1" style={{ color: 'var(--text)' }}>{popupError}</p>
+          <button type="button" onClick={() => setPopupError(null)} style={{ color: 'var(--text-secondary)' }}>
+            <X className="h-4 w-4" />
+          </button>
+        </div>
       ) : null}
 
-      <StepSection
-        number={1}
-        title="Connect your store"
-        subtitle="Sync orders, customers, refunds and fulfillment so Unauth has the context it needs."
-        complete={orderSourceConnected}
-      >
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-          {COMMERCE_PLATFORMS.map((platform) => {
-            const { connected, detail } = getCommerceState(platform.id, status);
-            return (
-              <IntegrationCard
-                key={platform.id}
-                logo={platform.logo}
-                name={platform.name}
-                description={platform.description}
-                href={platform.href}
-                connected={connected}
-                detail={detail}
-                available={platform.available}
-              />
-            );
-          })}
-        </div>
-      </StepSection>
+      <div>
+        {orderSourceConnected && helpdeskConnected && connectedStoreName && connectedHelpdeskName ? (
+          <LiveBanner storeName={connectedStoreName} helpdeskName={connectedHelpdeskName} />
+        ) : null}
 
-      <StepSection
-        number={2}
-        title="Connect your helpdesk"
-        subtitle="Surface claim intelligence — order history, trust indicators and prior claims — inside support tickets."
-        complete={helpdeskConnected}
-      >
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {HELPDESK_PLATFORMS.map((platform) => {
-            const { connected, detail } = getHelpdeskState(platform.id, status);
-            return (
-              <IntegrationCard
-                key={platform.id}
-                logo={platform.logo}
-                name={platform.name}
-                description={platform.description}
-                href={platform.href}
-                connected={connected}
-                detail={detail}
-                available={platform.available}
-              />
-            );
-          })}
-        </div>
-      </StepSection>
-    </div>
+        <StepSection
+          number={1}
+          title="Connect your store"
+          subtitle="Sync orders, customers, refunds and fulfillment so Unauth has the context it needs."
+          complete={orderSourceConnected}
+        >
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {COMMERCE_PLATFORMS.map((platform) => {
+              const { connected, connectionIssue, detail } = getCommerceState(platform.id, status);
+              return (
+                <IntegrationCard
+                  key={platform.id}
+                  logo={platform.logo}
+                  name={platform.name}
+                  description={platform.description}
+                  href={platform.href}
+                  connected={connected}
+                  connectionIssue={connectionIssue}
+                  detail={detail}
+                  available={platform.available}
+                  onConnect={platform.id === 'shopify' ? () => setShopifyModalOpen(true) : undefined}
+                />
+              );
+            })}
+          </div>
+        </StepSection>
+
+        <StepSection
+          number={2}
+          title="Connect your helpdesk"
+          subtitle="Surface claim intelligence — order history, trust indicators and prior claims — inside support tickets."
+          complete={helpdeskConnected}
+        >
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {HELPDESK_PLATFORMS.map((platform) => {
+              const { connected, connectionIssue, detail } = getHelpdeskState(platform.id, status);
+              return (
+                <IntegrationCard
+                  key={platform.id}
+                  logo={platform.logo}
+                  name={platform.name}
+                  description={platform.description}
+                  href={platform.href}
+                  connected={connected}
+                  connectionIssue={connectionIssue}
+                  detail={detail}
+                  available={platform.available}
+                />
+              );
+            })}
+          </div>
+        </StepSection>
+      </div>
+    </>
   );
 }

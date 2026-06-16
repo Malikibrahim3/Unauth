@@ -16,7 +16,12 @@ export type HelpdeskOption = {
   logo: string;
 };
 
-export type ConnectionState = { connected: boolean; detail: string | null };
+export type ConnectionState = {
+  connected: boolean;
+  detail: string | null;
+  /** True when DB says connected but live API verification failed (token revoked, etc.) */
+  connectionIssue?: boolean;
+};
 
 export type GorgiasHelpdeskConnectionState = ConnectionState & {
   widgetReady: boolean;

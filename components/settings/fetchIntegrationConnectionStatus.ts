@@ -1,5 +1,22 @@
 import type { IntegrationsSetupStatus } from '@/components/settings/apiIntegrationsTypes';
 
+type VerifyResult = { ok: boolean; inconclusive?: boolean };
+
+async function callVerify(url: string): Promise<VerifyResult> {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 6000);
+    const res = await fetch(url, { cache: 'no-store', signal: controller.signal });
+    clearTimeout(timeout);
+    if (!res.ok) return { ok: true, inconclusive: true }; // verify endpoint itself errored — don't penalise
+    const body = (await res.json()) as { ok?: boolean; inconclusive?: boolean };
+    if (body.inconclusive) return { ok: true, inconclusive: true };
+    return { ok: body.ok === true };
+  } catch {
+    return { ok: true, inconclusive: true }; // network error — don't false-alarm
+  }
+}
+
 export async function fetchIntegrationConnectionStatus(): Promise<IntegrationsSetupStatus> {
   const [gRes, sRes, zRes, fRes, wooRes, bcRes] = await Promise.all([
     fetch('/api/settings/gorgias/support-connection', { cache: 'no-store' }),
@@ -33,17 +50,33 @@ export async function fetchIntegrationConnectionStatus(): Promise<IntegrationsSe
       }
     | undefined;
   const fConn = fBody?.connection ?? null;
-  const gorgiasConnected = gLink?.helpdeskLinked ?? Boolean(gConn && gConn.status === 'active');
+
+  const shopifyDbConnected = Boolean(sBody?.connected);
+  const gorgiasDbConnected = gLink?.helpdeskLinked ?? Boolean(gConn && gConn.status === 'active');
+
+  // Run live verification in parallel for any integration that looks connected in DB
+  const [shopifyVerify, gorgiasVerify] = await Promise.all([
+    shopifyDbConnected ? callVerify('/api/shopify/verify') : Promise.resolve(null),
+    gorgiasDbConnected ? callVerify('/api/settings/gorgias/support-connection/verify') : Promise.resolve(null),
+  ]);
+
+  const shopifyConnected = shopifyDbConnected && (shopifyVerify?.ok !== false);
+  const shopifyIssue = shopifyDbConnected && shopifyVerify?.ok === false;
+
+  const gorgiasConnected = gorgiasDbConnected && (gorgiasVerify?.ok !== false);
+  const gorgiasIssue = gorgiasDbConnected && gorgiasVerify?.ok === false;
 
   return {
     gorgias: {
       connected: gorgiasConnected,
+      connectionIssue: gorgiasIssue,
       widgetReady: gLink?.widgetReady ?? Boolean(gConn?.sidebar_widget_registered),
       linkState: gLink?.state ?? (gorgiasConnected ? 'connected' : 'disconnected'),
       detail: gConn?.provider_account_name ?? gConn?.provider_account_id ?? null,
     },
     shopify: {
-      connected: Boolean(sBody?.connected),
+      connected: shopifyConnected,
+      connectionIssue: shopifyIssue,
       detail: sBody?.shopDomain ?? null,
     },
     zendesk: {
