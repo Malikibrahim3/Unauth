@@ -46,7 +46,7 @@ export function UnauthGlobeHero() {
               id="fl-globe-hero-heading"
               className={`${styles.networkHeroHeading} max-[768px]:pr-14`}
             >
-              Every merchant makes the evidence layer stronger.
+              Every merchant makes the evidence and rules layer stronger.
             </h2>
           </Reveal>
 
@@ -60,7 +60,7 @@ export function UnauthGlobeHero() {
                 </Reveal>
                 <Reveal delay={160}>
                   <p className={styles.landingSectionLead}>
-                    The network learns from behaviour, not exposed customer records. Raw customer data stays inside each merchant’s environment.
+                    Rules are merchant-owned. The network supplies privacy-safe evidence signals; each merchant decides how those signals should be evaluated inside their own workflow.
                   </p>
                 </Reveal>
               </div>

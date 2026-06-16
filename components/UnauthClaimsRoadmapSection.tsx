@@ -248,12 +248,12 @@ export default function UnauthClaimsRoadmapSection() {
               Evidence pipeline
             </p>
             <h2 className={foundationStyles.landingSectionTitle}>
-              Turn claim history into review-ready evidence.
+              Turn claim history into traceable recommendations.
             </h2>
             <p className={`${foundationStyles.landingSectionLead} max-w-[650px]`}>
               Every claim carries useful signals: reason, timing, delivery state, customer history,
-              identity consistency, and prior outcomes. Unauth structures those signals into a clear
-              evidence pack for each review.
+              identity consistency, and prior outcomes. Unauth structures those signals, evaluates your
+              merchant rules, and shows exactly why a recommendation appeared.
             </p>
           </div>
           <Link
@@ -287,7 +287,7 @@ export default function UnauthClaimsRoadmapSection() {
         <MobileCollapse collapsedLabel="See the pattern board">
           <p className={foundationStyles.landingSectionEyebrow}>Evidence pipeline</p>
           <h2 className={`${foundationStyles.landingSectionTitle} mt-3 pr-14`}>
-            Turn claim history into review-ready evidence.
+            Turn claim history into traceable recommendations.
           </h2>
 
           <div className={`${foundationStyles.artifactRail} mt-8`}>
@@ -302,8 +302,8 @@ export default function UnauthClaimsRoadmapSection() {
             <div className={foundationStyles.collapseDetailsInner}>
               <p className={foundationStyles.landingSectionLead}>
                 Every claim carries useful signals: reason, timing, delivery state, customer history,
-                identity consistency, and prior outcomes. Unauth structures those signals into a clear
-                evidence pack for each review.
+                identity consistency, and prior outcomes. Unauth structures those signals, evaluates your
+                merchant rules, and shows exactly why a recommendation appeared.
               </p>
               <Link
                 href="/audit"
@@ -468,8 +468,8 @@ function BottomLabels() {
     <div className="relative z-10 mx-auto mt-12 grid max-w-[1320px] grid-cols-1 gap-y-8 sm:grid-cols-2 sm:gap-y-10 lg:mt-[60px] lg:grid-cols-4 lg:gap-y-0">
       <BottomLabel title="Claim intake" body="Customer complaints are grouped by reason, timing, delivery state, and order context." />
       <BottomLabel title="Evidence pipeline" body="Repeated patterns are surfaced without changing your helpdesk workflow." bordered />
-      <BottomLabel title="Cross-merchant context" body="Signals are matched privacy-safely across participating merchants." bordered />
-      <BottomLabel title="Human review" body="Unauth gives your team evidence. Your team makes the decision." bordered />
+      <BottomLabel title="Rules evaluation" body="Merchant-defined rules evaluate the evidence and return a traceable recommendation." bordered />
+      <BottomLabel title="Human review" body="Unauth shows evidence and rule matches. Your team makes the decision." bordered />
     </div>
   );
 }

@@ -66,9 +66,14 @@ export default function FoundationFooter() {
 
         {/* Bottom strip */}
         <div className="mt-14 flex flex-wrap items-center justify-between gap-4 border-t border-black/[0.07] pt-6">
-          <p className="font-mono text-[11px] text-black/30">
-            {FL_FOOTER.legal}
-          </p>
+          <div className="space-y-1">
+            <p className="font-mono text-[11px] text-black/30">
+              {FL_FOOTER.legal}
+            </p>
+            <p className="font-mono text-[11px] text-black/30">
+              {FL_FOOTER.legalRules}
+            </p>
+          </div>
           <p className="font-mono text-[11px] text-black/30">
             © {new Date().getFullYear()} Unauth
           </p>

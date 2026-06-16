@@ -31,12 +31,12 @@ export default function EvidenceNotVerdictsRampSection() {
             How it works
           </p>
           <h2 className={foundationStyles.landingSectionTitle}>
-            Evidence attached before every refund decision.
+            Evidence attached. Rules evaluated. Decision kept with your team.
           </h2>
           <p className={`${foundationStyles.landingSectionLead} max-w-[660px]`}>
             Unauth connects to your store and helpdesk, checks each claim against order history and
-            network patterns, then adds a structured evidence pack to the ticket. Your workflow stays
-            the same. Your team gets more context.
+            network patterns, then evaluates your configured rules against those signals. The ticket
+            opens with evidence, a traceable recommendation, and the exact rule that fired.
           </p>
         </div>
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-[24px]">
@@ -49,10 +49,10 @@ export default function EvidenceNotVerdictsRampSection() {
 
       {/* Mobile (≤768px) — Stripe-style collapse */}
       <main className="relative px-4 pb-20 pt-16 min-[769px]:hidden">
-        <MobileCollapse collapsedLabel="See how evidence is attached">
+        <MobileCollapse collapsedLabel="See how evidence and rules are attached">
           <p className={foundationStyles.landingSectionEyebrow}>How it works</p>
           <h2 className={`${foundationStyles.landingSectionTitle} mt-3 pr-14`}>
-            Evidence attached before every refund decision.
+            Evidence attached. Rules evaluated. Decision kept with your team.
           </h2>
 
           <div className="mt-8 grid grid-cols-1 gap-5">
@@ -65,8 +65,8 @@ export default function EvidenceNotVerdictsRampSection() {
             <div className={foundationStyles.collapseDetailsInner}>
               <p className={foundationStyles.landingSectionLead}>
                 Unauth connects to your store and helpdesk, checks each claim against order history and
-                network patterns, then adds a structured evidence pack to the ticket. Your workflow stays
-                the same. Your team gets more context.
+                network patterns, then evaluates your configured rules against those signals. The ticket
+                opens with evidence, a traceable recommendation, and the exact rule that fired.
               </p>
               <div className="mt-6">
                 <BottomStrip />
@@ -140,9 +140,9 @@ function FeatureCardOne() {
             <UsersRound size={15} />
           </IconBox>
           <div className="text-[13px] font-semibold leading-[1.25] tracking-[-0.03em]">
-            Unauth informs the review.
+            Unauth runs your rules.
             <br />
-            Your team makes the call.
+            Your team owns the decision.
           </div>
         </div>
       </div>
@@ -152,7 +152,7 @@ function FeatureCardOne() {
 
 function FeatureCardTwo() {
   return (
-    <FeatureCard number="02" title="Every claim arrives with context">
+    <FeatureCard number="02" title="Every claim arrives with evidence">
       <h3 className="mb-4 text-[16px] font-semibold tracking-[-0.04em]">Claim context attached</h3>
       <div className="space-y-2">
         <ContextRow icon={<PackageCheck size={14} />} label="Customer claim" value="“Never arrived”" />
@@ -162,7 +162,7 @@ function FeatureCardTwo() {
         <ContextRow icon={<ShieldCheck size={14} />} label="Evidence strength" badge="High" green />
       </div>
       <div className="mt-3.5 rounded-lg border border-[#e9e5dd] bg-[#fbfaf5] px-3.5 py-3 text-[12px] font-semibold tracking-[-0.025em]">
-        The ticket opens with the context already attached.
+        The ticket opens with context already attached.
       </div>
     </FeatureCard>
   );
@@ -170,12 +170,12 @@ function FeatureCardTwo() {
 
 function FeatureCardThree() {
   return (
-    <FeatureCard number="03" title="Repeated patterns, matched across every merchant">
-      <h3 className="mb-4 text-[16px] font-semibold tracking-[-0.04em]">Cross-merchant pattern matches</h3>
+    <FeatureCard number="03" title="Merchant rules turn signals into recommendations">
+      <h3 className="mb-4 text-[16px] font-semibold tracking-[-0.04em]">Rule match</h3>
       <div className="space-y-2">
-        <MerchantMatch merchant="Merchant A" detail="Claim · 6/18/25" status="Matched" />
-        <MerchantMatch merchant="Merchant B" detail="Claim · 5/03/25" status="Matched" />
-        <MerchantMatch merchant="Merchant C" detail="Chargeback · 4/28/25" status="Matched" />
+        <RuleMatch rule="Serial claim review" condition="Network claims ≥ 3" status="Matched" />
+        <RuleMatch rule="Serial claim review" condition="Confidence is probable or definite" status="Matched" />
+        <RuleMatch rule="High-value review" condition="Order value ≥ $500" status="Not matched" />
         <div className="rounded-lg border border-[#ececec] bg-white px-3.5 py-3">
           <div className="flex items-start justify-between gap-3">
             <div className="flex min-w-0 gap-2.5">
@@ -183,15 +183,12 @@ function FeatureCardThree() {
                 <Workflow size={13} />
               </IconBox>
               <div>
-                <div className="text-[13px] font-semibold tracking-[-0.03em]">Pattern</div>
+                <div className="text-[13px] font-semibold tracking-[-0.03em]">Recommendation</div>
                 <div className="mt-0.5 text-[12px] leading-[1.2] text-[#555555]">
-                  “Never arrived” claim opened after confirmed delivery — repeated pattern
+                  Manual Review — based on your configured rules
                 </div>
               </div>
             </div>
-            <span className="shrink-0 rounded-md bg-[#e4d7ff] px-2 py-0.5 text-[11px] font-semibold text-[#6b43c9]">
-              Consistent
-            </span>
           </div>
         </div>
       </div>
@@ -209,8 +206,8 @@ function BottomStrip() {
         </h2>
       </div>
       <p className="max-w-[520px] text-[14px] leading-[1.45] tracking-[-0.02em] text-[#333333]">
-        Open the evidence pack from the claim review flow, review the timeline, compare your store
-        history with network context, then decide with confidence.
+        Open the evidence pack from the claim review flow, review the matched signals, see which
+        merchant rule fired, then decide with confidence.
       </p>
       <Link
         href={FL_ROUTES.demo}
@@ -316,27 +313,32 @@ function ContextRow({
   );
 }
 
-function MerchantMatch({
-  merchant,
-  detail,
+function RuleMatch({
+  rule,
+  condition,
   status,
 }: {
-  merchant: string;
-  detail: string;
+  rule: string;
+  condition: string;
   status: string;
 }) {
+  const matched = status === 'Matched';
   return (
     <div className="flex min-h-[48px] items-center justify-between rounded-lg border border-[#ececec] bg-white px-3">
       <div className="flex min-w-0 items-center gap-2.5">
         <IconBox small>
-          <Store size={13} />
+          <Workflow size={13} />
         </IconBox>
         <div className="min-w-0">
-          <div className="text-[12px] font-semibold tracking-[-0.03em]">{merchant}</div>
-          <div className="mt-0.5 text-[11px] leading-[1.1] text-[#555555]">{detail}</div>
+          <div className="text-[12px] font-semibold tracking-[-0.03em]">{rule}</div>
+          <div className="mt-0.5 text-[11px] leading-[1.1] text-[#555555]">{condition}</div>
         </div>
       </div>
-      <span className="shrink-0 rounded-md bg-[#dff5d7] px-2 py-0.5 text-[11px] font-semibold text-[#4d8d3d]">
+      <span
+        className={`shrink-0 rounded-md px-2 py-0.5 text-[11px] font-semibold ${
+          matched ? 'bg-[#dff5d7] text-[#4d8d3d]' : 'bg-black/[0.06] text-[#555555]'
+        }`}
+      >
         {status}
       </span>
     </div>

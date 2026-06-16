@@ -37,8 +37,8 @@ export default function UnauthLinearClaimHero() {
             </h2>
             <p className={`${foundationStyles.landingSectionLead} max-w-[620px]`}>
               “Never arrived”, missing items, damaged orders, late delivery, refund pressure —
-              Unauth turns isolated claims into structured evidence by linking the reason, timing,
-              order history, and matched network patterns.
+              Unauth turns isolated claims into structured evidence, then your rules decide whether
+              the ticket should be approved, reviewed, or escalated.
             </p>
           </div>
           <div className="flex items-center gap-4 justify-self-start font-mono text-[15px] tracking-[-0.02em] text-black/42 lg:justify-self-end">
@@ -78,8 +78,8 @@ export default function UnauthLinearClaimHero() {
             <div className={foundationStyles.collapseDetailsInner}>
               <p className={foundationStyles.landingSectionLead}>
                 “Never arrived”, missing items, damaged orders, late delivery, refund pressure —
-                Unauth turns isolated claims into structured evidence by linking the reason, timing,
-                order history, and matched network patterns.
+                Unauth turns isolated claims into structured evidence, then your rules decide whether
+                the ticket should be approved, reviewed, or escalated.
               </p>
               <div className="mt-5 flex items-center gap-3 font-mono text-[14px] tracking-[-0.02em] text-black/42">
                 <span>1.0</span>
@@ -147,7 +147,7 @@ function ClaimThread() {
             name="andreas"
             time="6:03 PM"
           >
-            Open the evidence pack before we reply. Let’s review the timeline first.
+            Merchant rule returned Manual Review. Open the evidence pack before we reply.
           </ThreadMessage>
         </div>
 
@@ -205,7 +205,7 @@ function Composer() {
     <div className="mt-10 rounded-[14px] border border-black/[0.10] bg-[#f8f8f6] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_16px_36px_rgba(0,0,0,0.08)]">
       <div className="min-h-[95px] text-[19px] leading-[1.45] tracking-[-0.035em] text-[#111111]">
         <span className="rounded-md px-1.5 py-0.5 font-medium" style={mentionStyle}>@Unauth</span>{' '}
-        open evidence pack for CB-2291
+        open evidence pack and rule match for CB-2291
         <motion.span
           animate={{ opacity: [0, 1, 0] }}
           transition={{ duration: 1.2, repeat: Infinity }}
@@ -265,8 +265,8 @@ function ClaimsBoard() {
           cards={[
             {
               id: 'CB-2291',
-              title: 'Never arrived — $162.40',
-              tags: ['INR', 'Delivery'],
+              title: 'Never arrived — rule review',
+              tags: ['INR', 'Rules'],
               avatar:
                 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=60&h=60&fit=crop&crop=face',
             },
@@ -279,7 +279,7 @@ function ClaimsBoard() {
             },
             {
               id: 'CB-2043',
-              title: 'Refund requested after delivery',
+              title: 'Refund after delivery',
               tags: ['Timing'],
             },
             {
@@ -298,8 +298,8 @@ function ClaimsBoard() {
           cards={[
             {
               id: 'CB-1930',
-              title: 'Claim review — repeated identity signal',
-              tags: ['Context'],
+              title: 'Merchant rule matched',
+              tags: ['Rules'],
               avatar:
                 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=60&h=60&fit=crop&crop=face',
             },
@@ -312,8 +312,8 @@ function ClaimsBoard() {
             },
             {
               id: 'CB-1742',
-              title: 'Repeat claim context needed',
-              tags: ['INR', 'Evidence'],
+              title: 'Evidence pack open',
+              tags: ['Evidence'],
               avatar:
                 'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=60&h=60&fit=crop&crop=face',
             },
@@ -327,7 +327,7 @@ function ClaimsBoard() {
           cards={[
             {
               id: 'CB-1721',
-              title: 'Refund approved',
+              title: 'Refund approved by team',
               tags: ['Approved'],
               avatar:
                 'https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=60&h=60&fit=crop&crop=face',
@@ -459,6 +459,7 @@ function Tag({ label }: { label: string }) {
     Quality: { bg: '#edf9f2', color: '#2f8a58', dot: '#46b779' },
     Risk: { bg: '#F4E6E0', color: '#7B2D26', dot: '#A85040', strong: true },
     Context: { bg: '#F4E6E0', color: '#7B2D26', dot: '#A85040', strong: true },
+    Rules: { bg: '#F4E6E0', color: '#7B2D26', dot: '#A85040', strong: true },
     Evidence: { bg: '#F4E6E0', color: '#7B2D26', dot: '#A85040', strong: true },
     Approved: { bg: '#edf9f2', color: '#2f8a58', dot: '#46b779' },
     Closed: { bg: '#edf6ff', color: '#326ea8', dot: '#4f93d2' },

@@ -43,7 +43,7 @@ export const FL_HERO = {
   eyebrow: 'Post-checkout evidence layer',
   headlineLines: ['One claim.', 'The context behind it.'],
   subcopy:
-    'Refund requests and chargebacks rarely arrive with the full story. Unauth checks claim history, identity consistency, delivery context, and cross-merchant patterns — then attaches the evidence to the ticket before your team replies.',
+    'Refund requests and chargebacks rarely arrive with the full story. Unauth attaches identity signals, delivery context, claim history, and network patterns to the ticket — then your configured rules can return a traceable recommendation before your team replies.',
   primaryCta: 'Get a Demo',
   secondaryCta: 'See How It Works',
   pinnedCta: 'Get a Demo',
@@ -99,7 +99,7 @@ export const FL_HERO_FLOATING_CARDS = {
 export const FL_NETWORK_HERO = {
   title: 'Claims repeat across stores. Most merchants only see their own.',
   lead:
-    'A customer can look new to you while carrying the same refund or chargeback pattern across the market. Unauth gives every participating merchant privacy-safe visibility into repeated claim behaviour — before money leaves the business.',
+    'A customer can look new to you while carrying the same refund or chargeback pattern across the market. Unauth gives every participating merchant privacy-safe visibility into repeated claim behaviour, then lets each merchant apply their own rules before money leaves the business.',
   stats: [
     {
       value: '$4.61',
@@ -472,7 +472,7 @@ export const FL_PRICING_FAQ = {
 
 export const FL_FINAL = {
   headlineLines: ['THE NEXT CLAIM', 'SHOULD NOT', 'ARRIVE BLIND'],
-  body: 'Run a free claim audit and see whether repeated post-checkout patterns already exist in your order history. No card. No auto-actions. Just evidence your team can review.',
+  body: 'Run a free claim audit and see whether repeated post-checkout patterns already exist in your order history. Then turn those patterns into merchant-defined rules your team can review before every refund decision.',
   cta: 'Run a free claim audit',
 } as const;
 
@@ -481,37 +481,41 @@ export const FL_FAQ = {
   items: [
     {
       q: 'How is this different from Shopify Protect or Stripe Radar?',
-      a: 'Shopify Protect and Stripe Radar work at the transaction layer. They help assess payment risk before or during checkout. Unauth works after the transaction, at the claim layer, where refund abuse, INR claims, return misuse, and chargeback pressure usually appear. When a claim reaches your support team, Unauth adds the context those tools do not provide.',
+      a: 'Shopify Protect and Stripe Radar work at the transaction layer. They help assess payment risk before or during checkout. Unauth works after the transaction, at the claim layer, where refund requests, INR claims, return misuse, and chargeback pressure usually appear. When a claim reaches your support team, Unauth adds evidence and can apply your configured rules to show a traceable recommendation.',
     },
     {
       q: 'How do you distinguish a genuine customer complaint from abuse?',
-      a: 'Unauth does not make that decision. Your team does. We show the evidence around the claim: order history, delivery status, previous refund behaviour, identity consistency, and matched cross-merchant patterns. A first-time delivery issue looks different from a repeated claim pattern across multiple stores. Unauth shows the difference. Your team decides what to do.',
+      a: 'Unauth does not make that decision. Your team does. We show the evidence around the claim: order history, delivery status, previous refund behaviour, identity consistency, and matched cross-merchant patterns. Your configured rules can then return a recommendation based on your own policy logic. The agent still owns the final decision.',
     },
     {
       q: 'How does Unauth reduce friendly fraud and chargeback losses?',
-      a: 'Unauth gives your team evidence before they respond. It shows whether the claim matches previous refund behaviour, whether similar claims appeared across the network, and whether the identity signals are consistent. That means less manual investigation, stronger dispute evidence, and fewer blind refund decisions.',
+      a: 'Unauth gives your team evidence before they respond. It shows whether the claim matches previous refund behaviour, whether similar claims appeared across the network, and whether the identity signals are consistent. Merchant-defined rules can then route the ticket toward approval, review, or escalation with a clear explanation of which rule fired.',
     },
     {
       q: 'Will this flag or block legitimate customers?',
-      a: 'No. Unauth never blocks orders, denies refunds, or takes automated action against customers. It adds context to the claim review so your team can make a better-informed decision.',
+      a: 'No. Unauth never blocks orders, denies refunds, or takes automated action against customers. Even when a merchant rule returns a recommendation, it is only shown as context inside the claim review. Your team decides what action to take.',
     },
     {
       q: 'What data actually leaves my store?',
-      a: 'Raw customer data does not enter the network. Identifiers such as email, phone, and device fingerprint are HMAC-SHA256 hashed with a per-tenant salt before they leave your environment. The network uses privacy-safe signals and threshold controls to identify repeated patterns without exposing customer records between merchants.',
+      a: 'Raw customer data does not enter the network. Identifiers such as email, phone, and device fingerprint are HMAC-SHA256 hashed with a per-tenant salt before they leave your environment. The network uses privacy-safe signals and threshold controls to identify repeated patterns without exposing customer records between merchants. Your rules remain scoped to your merchant account.',
     },
     {
       q: 'We\'re a single merchant — does this work without network data?',
-      a: 'Yes. Unauth still helps you structure your own claim history, spot repeat behaviour, connect identity signals, and attach evidence to each review. The network makes the evidence stronger over time, but single-merchant value starts from your own order, refund, and support history.',
+      a: 'Yes. Unauth still helps you structure your own claim history, spot repeat behaviour, connect identity signals, and apply your own rules to each review. The network makes the evidence stronger over time, but single-merchant value starts from your own order, refund, support, and policy history.',
     },
     {
       q: 'Does it change my refund or dispute workflow?',
-      a: 'No. Unauth sits beside your existing support and dispute process. It adds an evidence pack to the ticket, but your team keeps using the tools and policies they already use.',
+      a: 'No. Unauth sits beside your existing support and dispute process. It adds an evidence pack and, if configured, a rule-based recommendation to the ticket. Your team keeps using the tools and policies they already use.',
+    },
+    {
+      q: 'Who controls the recommendation rules?',
+      a: 'The merchant does. Rules are configured in your dashboard using your own policy logic. Unauth evaluates those rules against the evidence signals and shows which rule matched, which conditions passed, and why the recommendation appeared.',
     },
   ],
 } as const;
 
 export const FL_FOOTER = {
-  tagline: 'Claim evidence for refund and chargeback reviews.',
+  tagline: 'Claim evidence and merchant-defined rules for refund and chargeback reviews.',
   columns: [
     {
       heading: 'Product',
@@ -541,4 +545,5 @@ export const FL_FOOTER = {
     },
   ],
   legal: 'Identifiers are hashed before they leave your store.',
+  legalRules: 'Recommendations are generated from merchant-configured rules. No action is taken automatically.',
 } as const;

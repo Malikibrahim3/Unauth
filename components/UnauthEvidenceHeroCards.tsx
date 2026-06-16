@@ -58,52 +58,52 @@ const tickets = [
 const rows = [
   {
     icon: 'bag',
-    type: 'Refund claim',
+    signal: 'Refund claim',
     store: 'Order #A1234',
     network: 'Similar pattern at 12 merchants',
-    amount: '$129.99',
-    outcome: 'Refunded',
+    value: '$129.99',
+    ruleUse: 'Matched',
     date: '2d ago',
     color: 'purple',
   },
   {
     icon: 'card',
-    type: 'Chargeback',
+    signal: 'Chargeback',
     store: 'Order #B5678',
     network: 'Similar pattern at 8 merchants',
-    amount: '$249.99',
-    outcome: 'Lost',
+    value: '$249.99',
+    ruleUse: 'Matched',
     date: '5d ago',
     color: 'green',
   },
   {
     icon: 'coin',
-    type: 'Refund claim',
+    signal: 'Refund claim',
     store: 'Order #C9101',
     network: 'Similar pattern at 7 merchants',
-    amount: '$189.00',
-    outcome: 'Refunded',
+    value: '$189.00',
+    ruleUse: 'Matched',
     date: '1w ago',
     color: 'yellow',
   },
   {
     icon: 'grid',
-    type: 'Chargeback',
+    signal: 'Chargeback',
     store: 'Order #D1121',
     network: 'Similar pattern at 15 merchants',
-    amount: '$129.50',
-    outcome: 'Lost',
+    value: '$129.50',
+    ruleUse: 'Matched',
     date: '1w ago',
     color: 'blue',
   },
   {
-    icon: 'home',
-    type: 'Refund claim',
-    store: 'Order #E3141',
-    network: 'Similar pattern at 9 merchants',
-    amount: '$99.99',
-    outcome: 'Refunded',
-    date: '2w ago',
+    icon: 'rule',
+    signal: 'Rule fired',
+    store: 'Serial claim review',
+    network: 'Merchant-defined logic',
+    value: 'Manual Review',
+    ruleUse: 'Active',
+    date: 'Now',
     color: 'pink',
   },
 ] as const;
@@ -113,6 +113,7 @@ function rowIconGlyph(icon: string) {
   if (icon === 'card') return '▤';
   if (icon === 'coin') return '◉';
   if (icon === 'grid') return '▦';
+  if (icon === 'rule') return '◎';
   return '◆';
 }
 
@@ -150,7 +151,7 @@ export default function UnauthEvidenceHeroCards() {
           <div className={styles.profileTop}>
             <div>
               <span className={styles.caseId}>UNAUTH-8873</span>
-              <span className={styles.certaintyBadge}>High-context match</span>
+              <span className={styles.certaintyBadge}>Merchant rule matched</span>
             </div>
             <div className={styles.count}>
               <span>01 / 15</span>
@@ -160,10 +161,10 @@ export default function UnauthEvidenceHeroCards() {
           </div>
           <div className={styles.profileInner}>
             <header className={styles.profileHeader}>
-              <h1>Evidence Overview</h1>
+              <h1>Evidence &amp; Rule Overview</h1>
               <p>
-                Claim history and pattern context for this customer, shown across your store and the
-                Unauth network.
+                Claim history, identity context, and the merchant rule that produced this
+                recommendation.
               </p>
             </header>
 
@@ -214,8 +215,8 @@ export default function UnauthEvidenceHeroCards() {
 
             <section className={styles.activity}>
               <div className={styles.activityTitle}>
-                <h2>Activity Summary</h2>
-                <p>Compare claim behaviour at your store with matched network activity.</p>
+                <h2>Evidence Summary</h2>
+                <p>Signals used by your configured rules for this claim review.</p>
               </div>
               <div className={styles.activityGrid}>
                 <Metric
@@ -248,53 +249,56 @@ export default function UnauthEvidenceHeroCards() {
                   rightLabel="network orders"
                 />
                 <Metric
-                  icon="▣"
+                  icon="◎"
                   tone="orangeTone"
-                  label="Total refunded"
-                  left="$2,318.40"
+                  label="Rule result"
+                  left="Manual Review"
                   leftLabel="Your store"
-                  right="$8,742.18"
-                  rightLabel="network total"
+                  right="—"
+                  rightLabel="Based on merchant rules"
                 />
               </div>
             </section>
 
             <section className={styles.recent}>
               <div className={styles.recentHead}>
-                <h2>Recent Claims & Chargebacks</h2>
+                <h2>Matched Evidence</h2>
                 <a>View all activity →</a>
               </div>
               <table className={styles.table}>
                 <thead>
                   <tr>
-                    <th>Type</th>
+                    <th>Signal</th>
                     <th>At Your Store</th>
                     <th>Network Context</th>
-                    <th>Amount</th>
-                    <th>Outcome</th>
+                    <th>Value</th>
+                    <th>Rule Use</th>
                     <th>Date</th>
                   </tr>
                 </thead>
                 <tbody>
                   {rows.map((row) => (
-                    <tr key={row.store}>
+                    <tr key={`${row.signal}-${row.store}`}>
                       <td>
                         <span className={`${styles.rowIcon} ${styles[row.color]}`}>
                           {rowIconGlyph(row.icon)}
                         </span>
-                        {row.type}
+                        {row.signal}
                       </td>
                       <td>{row.store}</td>
                       <td>{row.network}</td>
-                      <td>{row.amount}</td>
+                      <td>{row.value}</td>
                       <td>
-                        <span className={styles.outcome}>{row.outcome}</span>
+                        <span className={styles.outcome}>{row.ruleUse}</span>
                       </td>
                       <td>{row.date}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+              <p className={styles.meta}>
+                Recommendation shown from your configured rules. No action is taken automatically.
+              </p>
             </section>
           </div>
         </section>

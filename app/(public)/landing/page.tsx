@@ -21,18 +21,18 @@ const BuiltForPurposeStack = dynamic(() => import('@/components/BuiltForPurposeS
 const UnauthClaimsRoadmapSection = dynamic(() => import('@/components/UnauthClaimsRoadmapSection'));
 
 export const metadata: Metadata = {
-  title: 'Unauth — Claim Evidence for Refund and Chargeback Reviews',
+  title: 'Unauth — Claim Evidence and Merchant Rules for Refund Reviews',
   description:
-    'Unauth attaches cross-merchant claim context to refund and chargeback reviews, so your team can see repeated patterns before deciding.',
+    'Unauth attaches claim evidence to refund and chargeback reviews, then applies your configured rules to show a traceable recommendation before your team replies.',
   openGraph: {
-    title: 'Unauth — Claim Evidence for Refund and Chargeback Reviews',
+    title: 'Unauth — Claim Evidence and Merchant Rules for Refund Reviews',
     description:
-      'Unauth attaches cross-merchant claim context to refund and chargeback reviews, so your team can see repeated patterns before deciding.',
+      'Unauth attaches claim evidence to refund and chargeback reviews, then applies your configured rules to show a traceable recommendation before your team replies.',
   },
   twitter: {
-    title: 'Unauth — Claim Evidence for Refund and Chargeback Reviews',
+    title: 'Unauth — Claim Evidence and Merchant Rules for Refund Reviews',
     description:
-      'Unauth attaches cross-merchant claim context to refund and chargeback reviews, so your team can see repeated patterns before deciding.',
+      'Unauth attaches claim evidence to refund and chargeback reviews, then applies your configured rules to show a traceable recommendation before your team replies.',
   },
 };
 

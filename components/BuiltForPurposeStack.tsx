@@ -22,9 +22,9 @@ function FourPartLinearSection() {
 
         <FourPartCard
           number="2.0"
-          label="Connect"
-          heading="Link your helpdesk"
-          body="Connect Gorgias, Zendesk, or Freshdesk so evidence appears where your team already works."
+          label="Configure"
+          heading="Set your rules"
+          body="Define when claims should be approved, reviewed, or escalated using your own policy logic."
         />
 
         <FourPartCard
@@ -37,8 +37,8 @@ function FourPartLinearSection() {
         <FourPartCard
           number="4.0"
           label="Review"
-          heading="Reply with full context"
-          body="When the ticket opens, the evidence is already there. No tab-hopping. No manual investigation."
+          heading="See the recommendation"
+          body="The ticket opens with evidence, the matched rule, and a traceable recommendation. Your team decides."
         />
       </div>
     </div>
@@ -86,11 +86,12 @@ export default function BuiltForPurposeStack() {
           <div className="max-w-[620px] pt-2 lg:max-w-none">
             <p className={foundationStyles.landingSectionEyebrow}>Integrations</p>
             <h2 className={`${foundationStyles.landingSectionTitle} max-w-[440px]`}>
-              Connect the tools your team already uses.
+              Connect your stack. Apply your policy.
             </h2>
             <p className={`${foundationStyles.landingSectionLead} max-w-[620px] lg:max-w-[390px]`}>
               Link your store and helpdesk once. Unauth pulls in order, refund, delivery, and claim
-              data automatically — then displays evidence beside the ticket before your team replies.
+              data automatically, evaluates your merchant rules, and displays the result beside the
+              ticket before your team replies.
             </p>
           </div>
 
@@ -123,7 +124,7 @@ export default function BuiltForPurposeStack() {
         <MobileCollapse collapsedLabel="See how it connects">
           <p className={foundationStyles.landingSectionEyebrow}>Integrations</p>
           <h2 className={`${foundationStyles.landingSectionTitle} mt-3 max-w-[440px] pr-14`}>
-            Connect the tools your team already uses.
+            Connect your stack. Apply your policy.
           </h2>
 
           <div className={`${foundationStyles.artifactRail} mt-8`}>
@@ -152,7 +153,8 @@ export default function BuiltForPurposeStack() {
             <div className={foundationStyles.collapseDetailsInner}>
               <p className={foundationStyles.landingSectionLead}>
                 Link your store and helpdesk once. Unauth pulls in order, refund, delivery, and claim
-                data automatically — then displays evidence beside the ticket before your team replies.
+                data automatically, evaluates your merchant rules, and displays the result beside the
+                ticket before your team replies.
               </p>
               <FourPartLinearSection />
             </div>
@@ -314,8 +316,8 @@ function EvidenceAnnotation() {
       className="left-[520px] top-[142px]"
       eyebrow="UNAUTH"
       eyebrowPill
-      title="Evidence layer"
-      body="Claim history, identity consistency, and network context on every review"
+      title="Evidence and rules layer"
+      body="Claim context, identity signals, and merchant-defined recommendations on every review"
     />
   );
 }
@@ -326,7 +328,7 @@ function HelpdeskAnnotation() {
       className="left-[520px] top-[333px]"
       eyebrow="HELPDESK"
       title="Your helpdesk"
-      body="Evidence appears beside the ticket before your team responds"
+      body="Evidence and rule matches appear beside the ticket before your team responds"
     />
   );
 }
@@ -337,7 +339,7 @@ function StoreAnnotation() {
       className="left-[520px] top-[566px]"
       eyebrow="STORE"
       title="Your store"
-      body="Orders, customers, deliveries, refunds, and chargebacks"
+      body="Orders, customers, deliveries, refunds, chargebacks, and policy logic"
     />
   );
 }
