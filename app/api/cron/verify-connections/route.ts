@@ -1,11 +1,11 @@
 /**
  * POST /api/cron/verify-connections
  *
- * Runs every 15 minutes. For every merchant with an active store or helpdesk
- * connection, makes a live API call to verify the credentials are still valid.
- * When a connection fails, updates status='error' and last_error in the DB so
- * the UI immediately reflects the broken state — even before the merchant
- * opens their settings page.
+ * Runs every 15 minutes via Vercel cron. For every merchant with an active
+ * store or helpdesk connection, makes a live API call to verify the
+ * credentials are still valid. When a connection fails, updates status='error'
+ * and last_error in the DB so the UI immediately reflects the broken state —
+ * even before the merchant opens their settings page.
  *
  * Secured by Authorization: Bearer <CRON_SECRET>.
  */
