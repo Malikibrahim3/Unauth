@@ -31,12 +31,12 @@ export default function EvidenceNotVerdictsRampSection() {
             How it works
           </p>
           <h2 className={foundationStyles.landingSectionTitle}>
-            Context attached before every reply.
+            Evidence attached before every refund decision.
           </h2>
           <p className={`${foundationStyles.landingSectionLead} max-w-[660px]`}>
-            Unauth connects to your store and helpdesk, surfaces cross-merchant claim history,
-            and attaches graded evidence to every ticket — automatically. No workflow changes
-            required.
+            Unauth connects to your store and helpdesk, checks each claim against order history and
+            network patterns, then adds a structured evidence pack to the ticket. Your workflow stays
+            the same. Your team gets more context.
           </p>
         </div>
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-[24px]">
@@ -49,10 +49,10 @@ export default function EvidenceNotVerdictsRampSection() {
 
       {/* Mobile (≤768px) — Stripe-style collapse */}
       <main className="relative px-4 pb-20 pt-16 min-[769px]:hidden">
-        <MobileCollapse collapsedLabel="See how context is attached">
+        <MobileCollapse collapsedLabel="See how evidence is attached">
           <p className={foundationStyles.landingSectionEyebrow}>How it works</p>
           <h2 className={`${foundationStyles.landingSectionTitle} mt-3 pr-14`}>
-            Context attached before every reply.
+            Evidence attached before every refund decision.
           </h2>
 
           <div className="mt-8 grid grid-cols-1 gap-5">
@@ -64,9 +64,9 @@ export default function EvidenceNotVerdictsRampSection() {
           <div className={foundationStyles.collapseDetails}>
             <div className={foundationStyles.collapseDetailsInner}>
               <p className={foundationStyles.landingSectionLead}>
-                Unauth connects to your store and helpdesk, surfaces cross-merchant claim history,
-                and attaches graded evidence to every ticket — automatically. No workflow changes
-                required.
+                Unauth connects to your store and helpdesk, checks each claim against order history and
+                network patterns, then adds a structured evidence pack to the ticket. Your workflow stays
+                the same. Your team gets more context.
               </p>
               <div className="mt-6">
                 <BottomStrip />
@@ -140,9 +140,9 @@ function FeatureCardOne() {
             <UsersRound size={15} />
           </IconBox>
           <div className="text-[13px] font-semibold leading-[1.25] tracking-[-0.03em]">
-            Your team reviews.
+            Unauth informs the review.
             <br />
-            You make the call.
+            Your team makes the call.
           </div>
         </div>
       </div>
@@ -158,11 +158,11 @@ function FeatureCardTwo() {
         <ContextRow icon={<PackageCheck size={14} />} label="Customer claim" value="“Never arrived”" />
         <ContextRow icon={<Store size={14} />} label="Order & delivery" value="Delivered · 7/21/25" />
         <ContextRow icon={<UsersRound size={14} />} label="Customer history" value="4 orders · 2 refunds" />
-        <ContextRow icon={<Workflow size={14} />} label="Cross-merchant signals" badge="3 matches" />
-        <ContextRow icon={<ShieldCheck size={14} />} label="Evidence grade" badge="High" green />
+        <ContextRow icon={<Workflow size={14} />} label="Network patterns" badge="3 matched signals" />
+        <ContextRow icon={<ShieldCheck size={14} />} label="Evidence strength" badge="High" green />
       </div>
       <div className="mt-3.5 rounded-lg border border-[#e9e5dd] bg-[#fbfaf5] px-3.5 py-3 text-[12px] font-semibold tracking-[-0.025em]">
-        Full context. Ready for your review.
+        The ticket opens with the context already attached.
       </div>
     </FeatureCard>
   );
@@ -171,7 +171,7 @@ function FeatureCardTwo() {
 function FeatureCardThree() {
   return (
     <FeatureCard number="03" title="Repeated patterns, matched across every merchant">
-      <h3 className="mb-4 text-[16px] font-semibold tracking-[-0.04em]">Cross-merchant matches</h3>
+      <h3 className="mb-4 text-[16px] font-semibold tracking-[-0.04em]">Cross-merchant pattern matches</h3>
       <div className="space-y-2">
         <MerchantMatch merchant="Merchant A" detail="Claim · 6/18/25" status="Matched" />
         <MerchantMatch merchant="Merchant B" detail="Claim · 5/03/25" status="Matched" />
@@ -185,7 +185,7 @@ function FeatureCardThree() {
               <div>
                 <div className="text-[13px] font-semibold tracking-[-0.03em]">Pattern</div>
                 <div className="mt-0.5 text-[12px] leading-[1.2] text-[#555555]">
-                  “Never arrived” opened after delivery
+                  “Never arrived” claim opened after confirmed delivery — repeated pattern
                 </div>
               </div>
             </div>
@@ -209,8 +209,8 @@ function BottomStrip() {
         </h2>
       </div>
       <p className="max-w-[520px] text-[14px] leading-[1.45] tracking-[-0.02em] text-[#333333]">
-        Open the evidence pack from the claim review flow, review the timeline and cross-merchant
-        context, then decide with confidence.
+        Open the evidence pack from the claim review flow, review the timeline, compare your store
+        history with network context, then decide with confidence.
       </p>
       <Link
         href={FL_ROUTES.demo}

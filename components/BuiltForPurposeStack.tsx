@@ -17,28 +17,28 @@ function FourPartLinearSection() {
           number="1.0"
           label="Connect"
           heading="Link your store"
-          body="Shopify, BigCommerce, or WooCommerce. One OAuth flow, no engineering required."
+          body="Connect Shopify, BigCommerce, or WooCommerce through OAuth. No engineering project required."
         />
 
         <FourPartCard
           number="2.0"
           label="Connect"
           heading="Link your helpdesk"
-          body="Gorgias, Zendesk, or Freshdesk. Unauth attaches to the tools your team already lives in."
+          body="Connect Gorgias, Zendesk, or Freshdesk so evidence appears where your team already works."
         />
 
         <FourPartCard
           number="3.0"
           label="Enrich"
           heading="Claims enrich automatically"
-          body="Every inbound ticket pulls in order history, delivery signals, and cross-merchant flags — no manual lookups."
+          body="Every inbound claim is checked against order history, delivery context, identity signals, and network patterns."
         />
 
         <FourPartCard
           number="4.0"
           label="Review"
           heading="Reply with full context"
-          body="Order history, delivery signals, and cross-merchant flags are already loaded when the ticket opens. No tabs, no manual lookups."
+          body="When the ticket opens, the evidence is already there. No tab-hopping. No manual investigation."
         />
       </div>
     </div>
@@ -86,11 +86,11 @@ export default function BuiltForPurposeStack() {
           <div className="max-w-[620px] pt-2 lg:max-w-none">
             <p className={foundationStyles.landingSectionEyebrow}>Integrations</p>
             <h2 className={`${foundationStyles.landingSectionTitle} max-w-[440px]`}>
-              Connect your stack in minutes.
+              Connect the tools your team already uses.
             </h2>
             <p className={`${foundationStyles.landingSectionLead} max-w-[620px] lg:max-w-[390px]`}>
-              Link your store and helpdesk once. Unauth pulls in orders, refunds, and delivery data automatically
-              — cross-merchant intelligence appears beside every claim before your team replies.
+              Link your store and helpdesk once. Unauth pulls in order, refund, delivery, and claim
+              data automatically — then displays evidence beside the ticket before your team replies.
             </p>
           </div>
 
@@ -123,7 +123,7 @@ export default function BuiltForPurposeStack() {
         <MobileCollapse collapsedLabel="See how it connects">
           <p className={foundationStyles.landingSectionEyebrow}>Integrations</p>
           <h2 className={`${foundationStyles.landingSectionTitle} mt-3 max-w-[440px] pr-14`}>
-            Connect your stack in minutes.
+            Connect the tools your team already uses.
           </h2>
 
           <div className={`${foundationStyles.artifactRail} mt-8`}>
@@ -151,8 +151,8 @@ export default function BuiltForPurposeStack() {
           <div className={foundationStyles.collapseDetails}>
             <div className={foundationStyles.collapseDetailsInner}>
               <p className={foundationStyles.landingSectionLead}>
-                Link your store and helpdesk once. Unauth pulls in orders, refunds, and delivery data automatically
-                — cross-merchant intelligence appears beside every claim before your team replies.
+                Link your store and helpdesk once. Unauth pulls in order, refund, delivery, and claim
+                data automatically — then displays evidence beside the ticket before your team replies.
               </p>
               <FourPartLinearSection />
             </div>
@@ -315,7 +315,7 @@ function EvidenceAnnotation() {
       eyebrow="UNAUTH"
       eyebrowPill
       title="Evidence layer"
-      body="Cross-merchant context and graded evidence on every ticket"
+      body="Claim history, identity consistency, and network context on every review"
     />
   );
 }
@@ -326,7 +326,7 @@ function HelpdeskAnnotation() {
       className="left-[520px] top-[333px]"
       eyebrow="HELPDESK"
       title="Your helpdesk"
-      body="Evidence appears beside the ticket before your team replies"
+      body="Evidence appears beside the ticket before your team responds"
     />
   );
 }

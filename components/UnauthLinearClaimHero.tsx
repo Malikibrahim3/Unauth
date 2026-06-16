@@ -33,12 +33,12 @@ export default function UnauthLinearClaimHero() {
               Claim patterns
             </p>
             <h2 className={foundationStyles.landingSectionTitle}>
-              Common complaints become cross-merchant evidence.
+              The complaint is only the start of the review.
             </h2>
             <p className={`${foundationStyles.landingSectionLead} max-w-[620px]`}>
               “Never arrived”, missing items, damaged orders, late delivery, refund pressure —
-              Unauth links isolated claims to cross-merchant patterns — so your team reviews
-              evidence, not noise.
+              Unauth turns isolated claims into structured evidence by linking the reason, timing,
+              order history, and matched network patterns.
             </p>
           </div>
           <div className="flex items-center gap-4 justify-self-start font-mono text-[15px] tracking-[-0.02em] text-black/42 lg:justify-self-end">
@@ -62,7 +62,7 @@ export default function UnauthLinearClaimHero() {
         <MobileCollapse collapsedLabel="See the claim flow">
           <p className={foundationStyles.landingSectionEyebrow}>Claim patterns</p>
           <h2 className={`${foundationStyles.landingSectionTitle} mt-3 pr-14`}>
-            Common complaints become cross-merchant evidence.
+            The complaint is only the start of the review.
           </h2>
 
           <div className="mt-8 flex flex-col gap-7">
@@ -78,8 +78,8 @@ export default function UnauthLinearClaimHero() {
             <div className={foundationStyles.collapseDetailsInner}>
               <p className={foundationStyles.landingSectionLead}>
                 “Never arrived”, missing items, damaged orders, late delivery, refund pressure —
-                Unauth links isolated claims to cross-merchant patterns — so your team reviews
-                evidence, not noise.
+                Unauth turns isolated claims into structured evidence by linking the reason, timing,
+                order history, and matched network patterns.
               </p>
               <div className="mt-5 flex items-center gap-3 font-mono text-[14px] tracking-[-0.02em] text-black/42">
                 <span>1.0</span>
@@ -133,21 +133,21 @@ function ClaimThread() {
             name="lena"
             time="6:03 PM"
           >
-            Customer says “never arrived” again. Third claim in 2 months.
+            Customer says “never arrived” again. Third delivery claim in two months.
           </ThreadMessage>
           <ThreadMessage
             avatar="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&h=80&fit=crop&crop=face"
             name="didier"
             time="6:03 PM"
           >
-            We’ve seen this email across multiple merchants. Same address cluster too.
+            Unauth shows matching claim patterns across other merchants. Same address cluster too.
           </ThreadMessage>
           <ThreadMessage
             avatar="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=80&h=80&fit=crop&crop=face"
             name="andreas"
             time="6:03 PM"
           >
-            Let’s pull full context before we reply. Pattern looks similar to prior INR cases.
+            Open the evidence pack before we reply. Let’s review the timeline first.
           </ThreadMessage>
         </div>
 
@@ -265,7 +265,7 @@ function ClaimsBoard() {
           cards={[
             {
               id: 'CB-2291',
-              title: 'Never arrived – $162.40',
+              title: 'Never arrived — $162.40',
               tags: ['INR', 'Delivery'],
               avatar:
                 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=60&h=60&fit=crop&crop=face',
@@ -273,14 +273,14 @@ function ClaimsBoard() {
             {
               id: 'CB-2187',
               title: 'Item not as described',
-              tags: ['INR'],
+              tags: ['Product'],
               avatar:
                 'https://images.unsplash.com/photo-1527980965255-d3b416303d12?w=60&h=60&fit=crop&crop=face',
             },
             {
               id: 'CB-2043',
               title: 'Refund requested after delivery',
-              tags: ['Policy'],
+              tags: ['Timing'],
             },
             {
               id: 'CB-1988',
@@ -298,7 +298,7 @@ function ClaimsBoard() {
           cards={[
             {
               id: 'CB-1930',
-              title: 'Claim review – repeated email signal',
+              title: 'Claim review — repeated identity signal',
               tags: ['Context'],
               avatar:
                 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=60&h=60&fit=crop&crop=face',
@@ -306,7 +306,7 @@ function ClaimsBoard() {
             {
               id: 'CB-1865',
               title: 'Chargeback threatened',
-              tags: ['Risk'],
+              tags: ['Dispute'],
               avatar:
                 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=60&h=60&fit=crop&crop=face',
             },
@@ -327,28 +327,28 @@ function ClaimsBoard() {
           cards={[
             {
               id: 'CB-1721',
-              title: 'Approved refund',
+              title: 'Refund approved',
               tags: ['Approved'],
               avatar:
                 'https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=60&h=60&fit=crop&crop=face',
             },
             {
               id: 'CB-1682',
-              title: 'Policy exception',
+              title: 'Policy exception granted',
               tags: ['Approved'],
               avatar:
                 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=60&h=60&fit=crop&crop=face',
             },
             {
               id: 'CB-1609',
-              title: 'Duplicate claim – closed',
+              title: 'Duplicate claim closed',
               tags: ['Closed'],
               avatar:
                 'https://images.unsplash.com/photo-1502685104226-ee32379fefbe?w=60&h=60&fit=crop&crop=face',
             },
             {
               id: 'CB-1510',
-              title: 'Resolved – shipped',
+              title: 'Resolved — delivery confirmed',
               tags: ['Closed'],
               avatar:
                 'https://images.unsplash.com/photo-1519345182560-3f2917c472ef?w=60&h=60&fit=crop&crop=face',

@@ -46,7 +46,7 @@ export function UnauthGlobeHero() {
               id="fl-globe-hero-heading"
               className={`${styles.networkHeroHeading} max-[768px]:pr-14`}
             >
-              Every merchant that joins makes the evidence stronger.
+              Every merchant makes the evidence layer stronger.
             </h2>
           </Reveal>
 
@@ -55,12 +55,12 @@ export function UnauthGlobeHero() {
               <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:gap-10">
                 <Reveal delay={80}>
                   <p className={styles.landingSectionLead}>
-                    The same patterns repeat across stores. Unauth connects the signals no single merchant could see alone.
+                    The same claim patterns often repeat across stores: not received, missing items, refund pressure, chargeback threats, policy exceptions. Unauth connects those patterns so one merchant is no longer reviewing in isolation.
                   </p>
                 </Reveal>
                 <Reveal delay={160}>
                   <p className={styles.landingSectionLead}>
-                    Behavioural signals cross the network. Customer data never does.
+                    The network learns from behaviour, not exposed customer records. Raw customer data stays inside each merchant’s environment.
                   </p>
                 </Reveal>
               </div>

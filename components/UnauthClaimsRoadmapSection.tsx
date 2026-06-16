@@ -46,7 +46,7 @@ const columns = [
     count: '23',
     cards: [
       {
-        title: 'INR (Item Not Received)',
+        title: 'Item Not Received',
         quote: 'My order never arrived. It’s been over 10 days and I still don’t have it.',
         tag: 'Shipping / Delivery',
         icon: <Package size={20} />,
@@ -78,7 +78,7 @@ const columns = [
         activity: 'bars',
       },
       {
-        title: 'Package Stolen / Not Delivered',
+        title: 'Delivered But Not Received',
         quote: 'Tracking shows delivered but I didn’t receive anything.',
         tag: 'Shipping / Delivery',
         icon: <Circle size={20} />,
@@ -93,9 +93,9 @@ const columns = [
     count: '18',
     cards: [
       {
-        title: 'Refund-after-delivery (INR)',
-        quote: 'I received the item but want a refund anyway.',
-        tag: 'Refund Abuse',
+        title: 'Refund After Delivery',
+        quote: 'It arrived, but I still want a refund.',
+        tag: 'Timing',
         icon: <Truck size={20} />,
         tone: 'yellow',
         activity: 'up',
@@ -109,7 +109,7 @@ const columns = [
         activity: 'bars',
       },
       {
-        title: 'Payment Issue / Declined',
+        title: 'Payment Issue',
         quote: 'My payment was declined but you still took my money.',
         tag: 'Payment Issues',
         icon: <CreditCard size={20} />,
@@ -117,15 +117,15 @@ const columns = [
         activity: 'up',
       },
       {
-        title: 'Didn’t Authorize This Order',
+        title: 'Unauthorized Order',
         quote: 'I didn’t place this order on my account.',
-        tag: 'Fraudulent Claim',
+        tag: 'Account Claim',
         icon: <Shield size={20} />,
         tone: 'red',
         activity: 'bars',
       },
       {
-        title: 'Overcharged / Wrong Amount',
+        title: 'Overcharged',
         quote: 'I was charged the wrong amount for my order.',
         tag: 'Billing / Pricing',
         icon: <CircleDollarSign size={20} />,
@@ -140,16 +140,16 @@ const columns = [
     count: '15',
     cards: [
       {
-        title: 'Return Policy Exploit',
-        quote: 'You won’t accept my return but your policy says you should.',
+        title: 'Return Policy Exception',
+        quote: 'Your policy says I should be able to return this.',
         tag: 'Returns',
         icon: <Shield size={20} />,
         tone: 'neutral',
         activity: 'bars',
       },
       {
-        title: 'Reshipment Abuse',
-        quote: 'I claim missing items just to get them reshipped.',
+        title: 'Repeat Reshipment Request',
+        quote: 'Can you send the missing item again?',
         tag: 'INR',
         icon: <Box size={20} />,
         tone: 'yellow',
@@ -164,9 +164,9 @@ const columns = [
         activity: 'bars',
       },
       {
-        title: 'Free Item / Bonus Abuse',
+        title: 'Free Item Missing',
         quote: 'I didn’t receive my free item or bonus.',
-        tag: 'Promotion Abuse',
+        tag: 'Promotion',
         icon: <Gift size={20} />,
         tone: 'purple',
         activity: 'bars',
@@ -187,8 +187,8 @@ const columns = [
     count: '6',
     cards: [
       {
-        title: 'Multi-Account Abuse',
-        quote: 'I keep getting flagged but I’m just a different person.',
+        title: 'Multi-Account Pattern',
+        quote: 'I keep getting flagged but I’m a different person.',
         tag: 'Identity',
         icon: <UsersRound size={20} />,
         tone: 'yellow',
@@ -213,13 +213,13 @@ const columns = [
       {
         title: 'Policy Exception Request',
         quote: 'Make an exception this time, I’m a loyal customer.',
-        tag: 'Policy Abuse',
+        tag: 'Policy',
         icon: <Shield size={20} />,
         tone: 'neutral',
         activity: 'bars',
       },
       {
-        title: 'Poor Customer Service',
+        title: 'Support Escalation',
         quote: 'Your support is terrible and I want a full refund.',
         tag: 'Customer Service',
         icon: <Mail size={20} />,
@@ -248,11 +248,12 @@ export default function UnauthClaimsRoadmapSection() {
               Evidence pipeline
             </p>
             <h2 className={foundationStyles.landingSectionTitle}>
-              Patterns your queue already knows.
+              Turn claim history into review-ready evidence.
             </h2>
             <p className={`${foundationStyles.landingSectionLead} max-w-[650px]`}>
-              Every complaint type carries timing, order, and support context. Unauth groups the
-              reason, finds repeated signals, and attaches a graded context pack to every ticket.
+              Every claim carries useful signals: reason, timing, delivery state, customer history,
+              identity consistency, and prior outcomes. Unauth structures those signals into a clear
+              evidence pack for each review.
             </p>
           </div>
           <Link
@@ -286,7 +287,7 @@ export default function UnauthClaimsRoadmapSection() {
         <MobileCollapse collapsedLabel="See the pattern board">
           <p className={foundationStyles.landingSectionEyebrow}>Evidence pipeline</p>
           <h2 className={`${foundationStyles.landingSectionTitle} mt-3 pr-14`}>
-            Patterns your queue already knows.
+            Turn claim history into review-ready evidence.
           </h2>
 
           <div className={`${foundationStyles.artifactRail} mt-8`}>
@@ -300,8 +301,9 @@ export default function UnauthClaimsRoadmapSection() {
           <div className={foundationStyles.collapseDetails}>
             <div className={foundationStyles.collapseDetailsInner}>
               <p className={foundationStyles.landingSectionLead}>
-                Every complaint type carries timing, order, and support context. Unauth groups the
-                reason, finds repeated signals, and attaches a graded context pack to every ticket.
+                Every claim carries useful signals: reason, timing, delivery state, customer history,
+                identity consistency, and prior outcomes. Unauth structures those signals into a clear
+                evidence pack for each review.
               </p>
               <Link
                 href="/audit"
@@ -464,10 +466,10 @@ function StatusDot({ tone }: { tone: CardTone }) {
 function BottomLabels() {
   return (
     <div className="relative z-10 mx-auto mt-12 grid max-w-[1320px] grid-cols-1 gap-y-8 sm:grid-cols-2 sm:gap-y-10 lg:mt-[60px] lg:grid-cols-4 lg:gap-y-0">
-      <BottomLabel title="Claim intake" body="Customer complaints are grouped by reason, timing, and order context." />
-      <BottomLabel title="Evidence pipeline" body="Repeated patterns are surfaced without changing the helpdesk workflow." bordered />
+      <BottomLabel title="Claim intake" body="Customer complaints are grouped by reason, timing, delivery state, and order context." />
+      <BottomLabel title="Evidence pipeline" body="Repeated patterns are surfaced without changing your helpdesk workflow." bordered />
       <BottomLabel title="Cross-merchant context" body="Signals are matched privacy-safely across participating merchants." bordered />
-      <BottomLabel title="Human review" body="Unauth informs the decision. Your team makes it." bordered />
+      <BottomLabel title="Human review" body="Unauth gives your team evidence. Your team makes the decision." bordered />
     </div>
   );
 }

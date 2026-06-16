@@ -21,18 +21,18 @@ const BuiltForPurposeStack = dynamic(() => import('@/components/BuiltForPurposeS
 const UnauthClaimsRoadmapSection = dynamic(() => import('@/components/UnauthClaimsRoadmapSection'));
 
 export const metadata: Metadata = {
-  title: 'Unauth — Cross-Merchant Claim Evidence',
+  title: 'Unauth — Claim Evidence for Refund and Chargeback Reviews',
   description:
-    'Cross-merchant identity evidence for post-checkout claim reviews. Unauth attaches graded context to claims — decided by your team.',
+    'Unauth attaches cross-merchant claim context to refund and chargeback reviews, so your team can see repeated patterns before deciding.',
   openGraph: {
-    title: 'Unauth — Cross-Merchant Claim Evidence',
+    title: 'Unauth — Claim Evidence for Refund and Chargeback Reviews',
     description:
-      'Cross-merchant identity evidence for post-checkout claim reviews. Unauth attaches graded context to claims — decided by your team.',
+      'Unauth attaches cross-merchant claim context to refund and chargeback reviews, so your team can see repeated patterns before deciding.',
   },
   twitter: {
-    title: 'Unauth — Cross-Merchant Claim Evidence',
+    title: 'Unauth — Claim Evidence for Refund and Chargeback Reviews',
     description:
-      'Cross-merchant identity evidence for post-checkout claim reviews. Unauth attaches graded context to claims — decided by your team.',
+      'Unauth attaches cross-merchant claim context to refund and chargeback reviews, so your team can see repeated patterns before deciding.',
   },
 };
 

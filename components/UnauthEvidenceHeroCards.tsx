@@ -6,9 +6,9 @@ const tickets = [
   {
     initials: 'JS',
     avatar: 'avatarBlue',
-    title: 'Refund request – Order not received',
+    title: 'Refund request — Order not received',
     meta: '#12345  ·  Order #A1234',
-    desc: 'Customer did not receive their order and is requesting a full refund.',
+    desc: 'Customer says the package never arrived and is requesting a full refund.',
     status: 'Open',
     time: '3m ago',
     dot: 'dotBlue',
@@ -16,9 +16,9 @@ const tickets = [
   {
     initials: 'AP',
     avatar: 'avatarGreen',
-    title: 'Refund request – Duplicate charge',
+    title: 'Refund request — Duplicate charge',
     meta: '#12346  ·  Order #B5678',
-    desc: 'Customer was charged twice for the same order.',
+    desc: 'Customer says they were charged twice for the same order.',
     status: 'Open',
     time: '12m ago',
     dot: 'dotBlue',
@@ -26,9 +26,9 @@ const tickets = [
   {
     initials: 'LM',
     avatar: 'avatarSlate',
-    title: 'Refund request – Item not as described',
+    title: 'Refund request — Item not as described',
     meta: '#12347  ·  Order #C9101',
-    desc: 'Customer says the item received is not as described on the website.',
+    desc: 'Customer says the item received does not match the product listing.',
     status: 'Pending',
     time: '27m ago',
     dot: 'dotYellow',
@@ -36,9 +36,9 @@ const tickets = [
   {
     initials: 'MR',
     avatar: 'avatarPink',
-    title: 'Refund request – Missing items',
+    title: 'Refund request — Missing items',
     meta: '#12348  ·  Order #D1121',
-    desc: 'Customer says the package arrived but one item was missing from the box.',
+    desc: 'Customer says the parcel arrived, but one item was missing from the box.',
     status: 'Open',
     time: '45m ago',
     dot: 'dotBlue',
@@ -46,9 +46,9 @@ const tickets = [
   {
     initials: 'SK',
     avatar: 'avatarCyan',
-    title: 'Refund request – Late delivery',
+    title: 'Refund request — Late delivery',
     meta: '#12349  ·  Order #E3141',
-    desc: 'Order arrived after the expected delivery date.',
+    desc: 'Customer says the order arrived after the expected delivery window.',
     status: 'Pending',
     time: '1h ago',
     dot: 'dotYellow',
@@ -60,7 +60,7 @@ const rows = [
     icon: 'bag',
     type: 'Refund claim',
     store: 'Order #A1234',
-    network: '12 other merchants',
+    network: 'Similar pattern at 12 merchants',
     amount: '$129.99',
     outcome: 'Refunded',
     date: '2d ago',
@@ -70,7 +70,7 @@ const rows = [
     icon: 'card',
     type: 'Chargeback',
     store: 'Order #B5678',
-    network: '8 other merchants',
+    network: 'Similar pattern at 8 merchants',
     amount: '$249.99',
     outcome: 'Lost',
     date: '5d ago',
@@ -80,7 +80,7 @@ const rows = [
     icon: 'coin',
     type: 'Refund claim',
     store: 'Order #C9101',
-    network: '7 other merchants',
+    network: 'Similar pattern at 7 merchants',
     amount: '$189.00',
     outcome: 'Refunded',
     date: '1w ago',
@@ -90,7 +90,7 @@ const rows = [
     icon: 'grid',
     type: 'Chargeback',
     store: 'Order #D1121',
-    network: '15 other merchants',
+    network: 'Similar pattern at 15 merchants',
     amount: '$129.50',
     outcome: 'Lost',
     date: '1w ago',
@@ -100,7 +100,7 @@ const rows = [
     icon: 'home',
     type: 'Refund claim',
     store: 'Order #E3141',
-    network: '9 other merchants',
+    network: 'Similar pattern at 9 merchants',
     amount: '$99.99',
     outcome: 'Refunded',
     date: '2w ago',
@@ -123,7 +123,7 @@ export default function UnauthEvidenceHeroCards() {
         <aside className={`${styles.ticketCard} ${styles.card}`}>
           <div className={styles.ticketHead}>
             <div className={styles.spark}>✣</div>
-            <strong>Tickets</strong>
+            <strong>Claims</strong>
             <span>#refunds</span>
           </div>
           <div className={styles.ticketList}>
@@ -150,7 +150,7 @@ export default function UnauthEvidenceHeroCards() {
           <div className={styles.profileTop}>
             <div>
               <span className={styles.caseId}>UNAUTH-8873</span>
-              <span className={styles.certaintyBadge}>Definite</span>
+              <span className={styles.certaintyBadge}>High-context match</span>
             </div>
             <div className={styles.count}>
               <span>01 / 15</span>
@@ -160,18 +160,16 @@ export default function UnauthEvidenceHeroCards() {
           </div>
           <div className={styles.profileInner}>
             <header className={styles.profileHeader}>
-              <h1>Unauth Profile Overview</h1>
+              <h1>Evidence Overview</h1>
               <p>
-                Overview of this customer’s refund behavior across your store and the Unauth
-                network.
+                Claim history and pattern context for this customer, shown across your store and the
+                Unauth network.
               </p>
             </header>
 
             <div className={styles.summaryGrid}>
               <div className={styles.summaryPanel}>
-                <h2>
-                  Your Store <span className={styles.panelNote}>(This merchant)</span>
-                </h2>
+                <h2>Your Store</h2>
                 <div className={styles.stats}>
                   <div>
                     <p>Refund claims</p>
@@ -192,9 +190,7 @@ export default function UnauthEvidenceHeroCards() {
                 </div>
               </div>
               <div className={styles.summaryPanel}>
-                <h2>
-                  Network Wide <span className={styles.panelNote}>(All merchants)</span>
-                </h2>
+                <h2>Network Context</h2>
                 <div className={styles.stats}>
                   <div>
                     <p>Refund claims</p>
@@ -219,7 +215,7 @@ export default function UnauthEvidenceHeroCards() {
             <section className={styles.activity}>
               <div className={styles.activityTitle}>
                 <h2>Activity Summary</h2>
-                <p>Compare behavior at your store vs. across the network.</p>
+                <p>Compare claim behaviour at your store with matched network activity.</p>
               </div>
               <div className={styles.activityGrid}>
                 <Metric
@@ -230,7 +226,7 @@ export default function UnauthEvidenceHeroCards() {
                   left="9.2%"
                   leftLabel="Your store"
                   right="11.6%"
-                  rightLabel="Network avg"
+                  rightLabel="network pattern"
                 />
                 <Metric
                   icon="▣"
@@ -240,7 +236,7 @@ export default function UnauthEvidenceHeroCards() {
                   left="4.4%"
                   leftLabel="Your store"
                   right="6.3%"
-                  rightLabel="Network avg"
+                  rightLabel="network pattern"
                 />
                 <Metric
                   icon="⌁"
@@ -249,7 +245,7 @@ export default function UnauthEvidenceHeroCards() {
                   left="249"
                   leftLabel="Your store"
                   right="750+"
-                  rightLabel="Network"
+                  rightLabel="network orders"
                 />
                 <Metric
                   icon="▣"
@@ -258,7 +254,7 @@ export default function UnauthEvidenceHeroCards() {
                   left="$2,318.40"
                   leftLabel="Your store"
                   right="$8,742.18"
-                  rightLabel="Network"
+                  rightLabel="network total"
                 />
               </div>
             </section>
@@ -273,7 +269,7 @@ export default function UnauthEvidenceHeroCards() {
                   <tr>
                     <th>Type</th>
                     <th>At Your Store</th>
-                    <th>At Other Merchants (Network)</th>
+                    <th>Network Context</th>
                     <th>Amount</th>
                     <th>Outcome</th>
                     <th>Date</th>
