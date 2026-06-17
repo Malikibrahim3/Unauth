@@ -15,7 +15,7 @@
  *   - Audit row written (rule_evaluations) for EVERY outcome including no_match
  *   - all_rules_evaluated persisted with per-rule trace
  *   - Template clone: confirm copying a template produces a real merchant rule
- *   - Signal shape: all 10 required IdentitySignals fields present
+ *   - Signal shape: all 13 required IdentitySignals fields present (incl. evidence_*)
  *   - Recommendation never attributes judgment to Unauth
  *   - Error resilience: evaluate with no rules → no_match, no throw
  *   - Cleanup: all test data removed at the end
@@ -39,7 +39,27 @@ import { runRuleEvaluation, fetchActiveMerchantRules, writeRuleEvaluationAudit }
 import { widgetDataToSignals } from '@/lib/rules/widgetSignals';
 import { formatRecommendationFields } from '@/lib/gorgias/widgetJson';
 import { TABLES } from '@/lib/supabase/tables';
-import type { ClaimWidgetData } from '@/lib/gorgias/widgetData';
+import { type ClaimWidgetData } from '@/lib/gorgias/widgetData';
+
+/** Original four templates from 20260616100000_merchant_rules.sql (pre-evidence migration). */
+const LEGACY_DEFAULT_TEMPLATE_COUNT = 4;
+
+/** Full catalogue after 20260617170000_evidence_default_rule_templates.sql is applied. */
+const EXPECTED_DEFAULT_TEMPLATE_NAMES = [
+  'Serial Network Abuser',
+  'Known Cross-Merchant Fraudster',
+  'First Time Claimant',
+  'High Value Order Review',
+  'Standard Review Threshold',
+  'High Confidence Deny',
+  'Clean Identity Fast-Track',
+] as const;
+
+const EVIDENCE_DEFAULT_TEMPLATE_NAMES = [
+  'Standard Review Threshold',
+  'High Confidence Deny',
+  'Clean Identity Fast-Track',
+] as const;
 
 // ---------------------------------------------------------------------------
 // Harness
@@ -103,7 +123,34 @@ async function phase1_env(client: SupabaseClient): Promise<boolean> {
     .order('sort_order', { ascending: true });
   check('default_rule_templates seeded (>0)', !tmplErr && (templates?.length ?? 0) > 0, tmplErr?.message);
   if (templates?.length) {
-    pass(`${templates.length} templates found: ${templates.map((t) => t.name).join(', ')}`);
+    const names = templates.map((t) => t.name);
+    pass(`${templates.length} templates found: ${names.join(', ')}`);
+
+    if (templates.length === EXPECTED_DEFAULT_TEMPLATE_NAMES.length) {
+      for (const expected of EXPECTED_DEFAULT_TEMPLATE_NAMES) {
+        check(`default template present: ${expected}`, names.includes(expected));
+      }
+      for (const evidenceName of EVIDENCE_DEFAULT_TEMPLATE_NAMES) {
+        const tmpl = templates.find((t) => t.name === evidenceName);
+        if (tmpl) {
+          const errs = validateConditions(tmpl.conditions as RuleCondition[]);
+          check(`evidence template "${evidenceName}" conditions valid`, errs.length === 0, errs.map((e) => e.message).join('; '));
+        }
+      }
+    } else if (templates.length === LEGACY_DEFAULT_TEMPLATE_COUNT) {
+      warn(
+        `default_rule_templates has ${LEGACY_DEFAULT_TEMPLATE_COUNT} rows — pending evidence migrations not applied on this DB (expected ${EXPECTED_DEFAULT_TEMPLATE_NAMES.length} after 20260617150000/160000/170000)`,
+      );
+      for (const expected of EXPECTED_DEFAULT_TEMPLATE_NAMES.slice(0, LEGACY_DEFAULT_TEMPLATE_COUNT)) {
+        check(`legacy default template present: ${expected}`, names.includes(expected));
+      }
+    } else {
+      fail(
+        'default_rule_templates unexpected count',
+        `got ${templates.length}, expected ${LEGACY_DEFAULT_TEMPLATE_COUNT} (pre-migration) or ${EXPECTED_DEFAULT_TEMPLATE_NAMES.length} (post-migration)`,
+      );
+    }
+
     payloadSamples['template_example'] = templates[0];
   }
 
@@ -201,6 +248,9 @@ async function phase3_evaluation(client: SupabaseClient, merchantId: string, rul
     order_value_usd: 249.99,
     account_age_days: 90,
     is_network_flagged: false,
+    evidence_score: 62,
+    evidence_level: 'substantial',
+    has_sufficient_data: true,
   };
   payloadSamples['test_signals'] = testSignals;
 
@@ -209,8 +259,9 @@ async function phase3_evaluation(client: SupabaseClient, merchantId: string, rul
     'confidence_grade', 'network_claim_count', 'merchant_claim_count', 'days_since_last_claim',
     'has_cross_merchant_identity', 'network_merchant_count', 'claim_types',
     'order_value_usd', 'account_age_days', 'is_network_flagged',
+    'evidence_score', 'evidence_level', 'has_sufficient_data',
   ];
-  check('IdentitySignals has all 10 required fields', REQUIRED_FIELDS.every((f) => f in testSignals));
+  check('IdentitySignals has all required fields', REQUIRED_FIELDS.every((f) => f in testSignals));
 
   // 3b — runRuleEvaluation writes audit + returns result
   const preCount = await countEvals(client, merchantId);
@@ -285,21 +336,47 @@ async function phase3_evaluation(client: SupabaseClient, merchantId: string, rul
   check('"Unauth never decides" copy guard passes', offending.length === 0, offending.join('; '));
 
   // 3h — Widget signal mapping round-trip
-  const widgetData = {
-    confidenceGrade: 'definite' as const,
+  const widgetData: ClaimWidgetData = {
+    confidenceGrade: 'definite',
     matchedOn: ['email address'],
     ce3EvidenceAvailable: true,
-    thisStore: { claimCount: 2, claimRate: 0.1, lastClaimAt: '2026-06-01T00:00:00.000Z', ordersCountSource: 'network' as const },
-    network: { claimCount: 8, merchantCount: 3, lastClaimAt: '2026-06-10T00:00:00.000Z' },
+    thisStore: {
+      orderCount: 2,
+      claimCount: 2,
+      claimRate: 0.1,
+      lastClaimAt: '2026-06-01T00:00:00.000Z',
+      ordersCountSource: 'merchant_profile_totals',
+    },
+    network: {
+      merchantCount: 3,
+      orderCount: 10,
+      claimCount: 8,
+      claimRate: 0.8,
+      lastClaimAt: '2026-06-10T00:00:00.000Z',
+      primaryReason: null,
+      recentClaimCount: 0,
+      recentWindowDays: 90,
+    },
     storeClaimValue: null,
+    storePrimaryReason: null,
     storeRecentClaimCount: 1,
     profileUrl: '',
     dataFreshAt: new Date().toISOString(),
     watchlisted: false,
-  } as unknown as ClaimWidgetData;
+    evidenceDisclosed: true,
+    evidenceScore: 62,
+    evidenceLevel: 'substantial',
+    hasSufficientData: true,
+    scoreBreakdown: [],
+    scoringConfigVersion: 'evidence-v1',
+    claimTypes: ['item_not_received'],
+    isNetworkFlagged: false,
+  };
   const mappedSignals = widgetDataToSignals(widgetData, Date.now());
   check('widgetDataToSignals produces valid IdentitySignals', REQUIRED_FIELDS.every((f) => f in mappedSignals));
   check('widgetDataToSignals confidence_grade maps correctly', mappedSignals.confidence_grade === 'definite');
+  check('widgetDataToSignals maps evidence_score', mappedSignals.evidence_score === 62);
+  check('widgetDataToSignals maps claim_types', mappedSignals.claim_types.includes('item_not_received'));
   payloadSamples['widget_mapped_signals'] = mappedSignals;
 
   // 3i — Condition validation server-side (integration check)
@@ -321,7 +398,7 @@ async function phase4_errors(client: SupabaseClient, merchantId: string): Promis
   try {
     const result = await runRuleEvaluation({
       client, merchantId: emptyMerchantId, claimId: null, identityId: null,
-      signals: { confidence_grade: 'definite', network_claim_count: 10, merchant_claim_count: 3, days_since_last_claim: 5, has_cross_merchant_identity: true, network_merchant_count: 5, claim_types: ['item_not_received'], order_value_usd: 100, account_age_days: 30, is_network_flagged: true },
+      signals: { confidence_grade: 'definite', network_claim_count: 10, merchant_claim_count: 3, days_since_last_claim: 5, has_cross_merchant_identity: true, network_merchant_count: 5, claim_types: ['item_not_received'], order_value_usd: 100, account_age_days: 30, is_network_flagged: true, evidence_score: 0, evidence_level: 'minimal', has_sufficient_data: false },
     });
     check('No-rules merchant returns no_match without throw', result.recommendation === 'no_match');
   } catch (err) {
@@ -331,12 +408,13 @@ async function phase4_errors(client: SupabaseClient, merchantId: string): Promis
   }
 
   // 4b — Missing required signal fields (undefined/null) don't crash the engine
-  const sparseSignals = {
-    confidence_grade: 'probable' as const,
+  const sparseSignals: IdentitySignals = {
+    confidence_grade: 'probable',
     network_claim_count: 0, merchant_claim_count: 0,
     days_since_last_claim: null, has_cross_merchant_identity: false,
     network_merchant_count: 0, claim_types: [],
     order_value_usd: null, account_age_days: null, is_network_flagged: false,
+    evidence_score: 0, evidence_level: 'minimal', has_sufficient_data: false,
   };
   const activeRules = await fetchActiveMerchantRules(client, merchantId);
   try {
@@ -375,7 +453,7 @@ function phase5_manualSteps(): void {
   console.log('  6. Save the rule → appears in the list with priority appended');
   console.log('  7. Toggle active/inactive → card style changes');
   console.log('  8. Drag/reorder via arrow buttons → priority updates');
-  console.log('  9. Click "Templates" → shows 4 templates from default_rule_templates');
+  console.log('  9. Click "Templates" → shows 7 templates from default_rule_templates (4 if evidence migrations not yet applied)');
   console.log(' 10. "Use template" copies it to the list');
   console.log(' 11. Delete a rule → confirmation + removal from list');
 
@@ -408,6 +486,9 @@ function phase5_manualSteps(): void {
       order_value_usd: 249.99,
       account_age_days: 90,
       is_network_flagged: false,
+      evidence_score: 62,
+      evidence_level: 'substantial',
+      has_sufficient_data: true,
     },
   }, null, 2);
   console.log(`  curl -s -X POST ${base}/api/rules/evaluate \\`);
