@@ -166,8 +166,6 @@ export function buildGorgiasSidebarWidgetTemplate(appBaseUrl: string) {
         widgets: [
           { path: 'order_context', title: labels.order_context, type: 'text' },
           { path: 'context_summary', title: labels.context_summary, type: 'text' },
-          { path: 'recommendation', title: labels.recommendation, type: 'text' },
-          { path: 'recommendation_detail', title: labels.recommendation_detail, type: 'text' },
           { path: 'identity', title: labels.identity, type: 'text' },
           { path: 'claims', title: labels.claims, type: 'text' },
           { path: 'orders', title: labels.orders, type: 'text' },
@@ -176,6 +174,8 @@ export function buildGorgiasSidebarWidgetTemplate(appBaseUrl: string) {
           { path: 'recent_activity', title: labels.recent_activity, type: 'text' },
           { path: 'ce3_evidence', title: labels.ce3_evidence, type: 'text' },
           { path: 'watchlisted', title: labels.watchlisted, type: 'text' },
+          { path: 'recommendation', title: labels.recommendation, type: 'text' },
+          { path: 'recommendation_detail', title: labels.recommendation_detail, type: 'text' },
         ],
       },
     ],

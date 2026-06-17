@@ -29,6 +29,7 @@ import {
 import { validateConditions, RULE_FIELDS, operatorsForField } from '@/lib/rules/fields';
 import { widgetDataToSignals } from '@/lib/rules/widgetSignals';
 import { formatRecommendationFields } from '@/lib/gorgias/widgetJson';
+import { buildGorgiasSidebarWidgetTemplate } from '@/lib/support/gorgias/registerSidebarWidget';
 import type { ClaimWidgetData } from '@/lib/gorgias/widgetData';
 
 // ---------------------------------------------------------------------------
@@ -324,6 +325,27 @@ console.log('10. Recommendation formatting');
   check('matched -> action label present', /manual review/i.test(matched.recommendation));
   check('matched -> rule name present', matched.recommendation.includes('Serial Network Abuser'));
   check('matched -> justification in detail', matched.recommendation_detail.includes('actual: 5'));
+  check('matched -> based on merchant rules', /based on your configured rules/i.test(matched.recommendation_detail));
+}
+
+// ---------------------------------------------------------------------------
+// 10b. Gorgias sidebar widget field order (identity before recommendation)
+// ---------------------------------------------------------------------------
+
+console.log('10b. Gorgias sidebar widget field order');
+
+{
+  const paths = buildGorgiasSidebarWidgetTemplate('https://app.unauth.test')
+    .widgets[0].widgets.map((w: { path: string }) => w.path);
+  const identityIdx = paths.indexOf('identity');
+  const claimsIdx = paths.indexOf('claims');
+  const recommendationIdx = paths.indexOf('recommendation');
+  const recommendationDetailIdx = paths.indexOf('recommendation_detail');
+  check('identity field present', identityIdx >= 0);
+  check('recommendation below identity', recommendationIdx > identityIdx);
+  check('recommendation below claim history', recommendationIdx > claimsIdx);
+  check('recommendation_detail follows recommendation', recommendationDetailIdx === recommendationIdx + 1);
+  check('recommendation fields are last rows', recommendationDetailIdx === paths.length - 1);
 }
 
 // ---------------------------------------------------------------------------

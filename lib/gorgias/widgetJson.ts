@@ -245,8 +245,11 @@ export function formatRecommendationFields(
   const heading = result.rule_name ? `${label} · ${result.rule_name}` : label;
   // justification_lines[0] is the "Rule … triggered" line; the rest are the
   // matched conditions. Join with " · " for the single-line native text widget.
-  const detail = result.justification_lines.length > 0
+  const justification = result.justification_lines.length > 0
     ? result.justification_lines.join(' · ')
+    : null;
+  const detail = justification
+    ? `${justification} · Based on your configured rules`
     : 'Based on your configured rules';
   return { recommendation: heading, recommendation_detail: detail };
 }
