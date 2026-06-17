@@ -43,7 +43,7 @@ export const FL_HERO = {
   eyebrow: 'Post-checkout evidence layer',
   headlineLines: ['One claim.', 'The context behind it.'],
   subcopy:
-    'Refund requests and chargebacks rarely arrive with the full story. Unauth attaches identity signals, delivery context, claim history, and network patterns to the ticket — then your configured rules can return a traceable recommendation before your team replies.',
+    'Before the chargeback comes the decision. Unauth surfaces the context support teams need while the claim is still being reviewed.',
   primaryCta: 'Get a Demo',
   secondaryCta: 'See How It Works',
   pinnedCta: 'Get a Demo',
